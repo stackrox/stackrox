@@ -112,6 +112,8 @@ spec:
               fieldPath: spec.nodeName
         - name: ROX_ADVERTISED_ENDPOINT
           value: {{ quote ._rox.sensor.endpoint }}
+        - name: ROX_NODE_SCANNING_ENDPOINT
+          value: {{ quote ._rox.collector.nodescanningEndpoint }}
         {{- include "srox.envVars" (list . "daemonset" "collector" "compliance") | nindent 8 }}
         image: {{ quote ._rox.image.main.fullRef }}
         imagePullPolicy: {{ ._rox.collector.complianceImagePullPolicy }}

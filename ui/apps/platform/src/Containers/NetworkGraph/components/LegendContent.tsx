@@ -1,6 +1,11 @@
 import React from 'react';
 import { Flex, FlexItem, Title } from '@patternfly/react-core';
-import { PficonNetworkRangeIcon, BuilderImageIcon } from '@patternfly/react-icons';
+import {
+    PficonNetworkRangeIcon,
+    BuilderImageIcon,
+    CodeBranchIcon,
+    FilterIcon,
+} from '@patternfly/react-icons';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
 import DescriptionListCompact from 'Components/DescriptionListCompact';
@@ -27,6 +32,15 @@ function LegendContent() {
                             term={<PficonNetworkRangeIcon />}
                             desc="External CIDR block"
                         />
+                    </DescriptionListCompact>
+                </FlexItem>
+                <FlexItem>
+                    <Title headingLevel="h5" className="pf-u-pb-sm">
+                        Namespace types
+                    </Title>
+                    <DescriptionListCompact isHorizontal termWidth="20px" className="pf-u-pl-md">
+                        <DescriptionListItem term={<CodeBranchIcon />} desc="Derived namespace" />
+                        <DescriptionListItem term={<FilterIcon />} desc="Filtered namespace" />
                     </DescriptionListCompact>
                 </FlexItem>
                 <FlexItem>

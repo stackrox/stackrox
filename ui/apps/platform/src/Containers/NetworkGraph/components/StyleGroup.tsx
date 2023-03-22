@@ -77,12 +77,21 @@ const StyleGroup: React.FunctionComponent<StyleGroupProps> = ({
         return newData as CustomGroupNodeData;
     }, [data]);
 
+    let className = '';
+
+    if (passedData.type === 'NAMESPACE') {
+        className = `${className} ${
+            passedData.isFilteredNamespace ? 'filtered-namespace' : 'derived-namespace'
+        }`.trim();
+    }
+
     return (
         <DefaultGroup
             element={element}
             collapsedWidth={collapsedWidth}
             collapsedHeight={collapsedHeight}
             showLabel={detailsLevel === ScaleDetailsLevel.high}
+            className={className}
             {...rest}
             {...passedData}
         >

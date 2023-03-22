@@ -239,6 +239,7 @@ describe('flowUtils', () => {
                         isExternallyConnected: false,
                         showExternalState: false,
                         isFadedOut: false,
+                        labelIconClass: '',
                     },
                 },
                 {
@@ -260,6 +261,7 @@ describe('flowUtils', () => {
                         isExternallyConnected: false,
                         showExternalState: false,
                         isFadedOut: false,
+                        labelIconClass: '',
                     },
                 },
             ];
@@ -551,6 +553,7 @@ describe('flowUtils', () => {
                         isExternallyConnected: false,
                         showExternalState: false,
                         isFadedOut: false,
+                        labelIconClass: '',
                     },
                 },
                 {
@@ -592,6 +595,7 @@ describe('flowUtils', () => {
                         isExternallyConnected: false,
                         showExternalState: false,
                         isFadedOut: false,
+                        labelIconClass: '',
                     },
                 },
             ];
@@ -624,6 +628,7 @@ describe('flowUtils', () => {
                         isExternallyConnected: false,
                         showExternalState: false,
                         isFadedOut: false,
+                        labelIconClass: '',
                     },
                 },
                 {
@@ -665,6 +670,7 @@ describe('flowUtils', () => {
                         isExternallyConnected: false,
                         showExternalState: false,
                         isFadedOut: false,
+                        labelIconClass: '',
                     },
                 },
             ];
