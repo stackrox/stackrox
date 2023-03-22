@@ -299,7 +299,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         def processesListeningOnPorts = evaluateWithRetry(10, 10) {
                 def temp = ProcessesListeningOnPortsService
-                        .getProcessesListeningOnPortsResponse(deploymentId3)
+                        .getProcessesListeningOnPortsResponse(deploymentId2)
                 return temp
         }
 
