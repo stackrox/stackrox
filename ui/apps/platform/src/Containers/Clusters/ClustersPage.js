@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { useQuery } from '@apollo/client';
 
