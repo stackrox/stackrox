@@ -49,7 +49,7 @@ export const nodeScanMessages = {
         body: 'This node’s kernel is not supported at this time.',
     },
     certifiedRHELCVEsUnavailable: {
-        header: 'Node’s certified RHEL CVEs unavailable',
-        body: 'The CVEs of this certified RHEL Node are unavailable at this time.',
+        header: 'Unavailable or invalid CPE data',
+        body: 'The scan results are unavailable because CPE data was not found when scanning this node',
     },
 };
