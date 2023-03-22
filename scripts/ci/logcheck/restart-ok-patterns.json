@@ -22,5 +22,17 @@
         "job": "scale-tests",
         "logfile": "sensor-previous",
         "logline": "checking central status failed after 15 retries"
+    },
+    {
+        "comment": "collector initialization restart with download failure due to bouncing in upgrade test",
+        "job": "upgrade",
+        "logfile": "collector-previous",
+        "logline": "No suitable kernel object downloaded for kernel"
+    },
+    {
+        "comment": "collector restart due to bouncing in upgrade test",
+        "job": "upgrade",
+        "logfile": "collector-previous",
+        "logline": "Unable to connect to Sensor at"
     }
 ]
