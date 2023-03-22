@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/sensor/common/registry"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -151,4 +152,46 @@ func TestOpenShiftRegistrySecret_4x(t *testing.T) {
 
 	assert.Equal(t, "image-registry.openshift-image-registry.svc:5000", reg.Name())
 	assert.Equal(t, expectedRegConfig, reg.Config())
+}
+
+func TestSAAnnotationImageIntegrationEvents(t *testing.T) {
+	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
+	d := newSecretDispatcher(regStore)
+
+	// a secret w/ the `default` sa annotation should trigger no imageintegration events
+	secret := openshift4xDockerConfigSecret.DeepCopy()
+	secret.Annotations[saAnnotation] = defaultSA
+	events := d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
+	iiEvents := getImageIntegrationEvents(events)
+	assert.Len(t, iiEvents, 0)
+
+	// a secret w/ any sa annotation should trigger no imageintegration events
+	secret.Annotations[saAnnotation] = "blah"
+	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
+	iiEvents = getImageIntegrationEvents(events)
+	assert.Len(t, iiEvents, 0)
+
+	// a secret w/ an empty sa annotation should trigger no imageintegration events
+	secret.Annotations[saAnnotation] = ""
+	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
+	iiEvents = getImageIntegrationEvents(events)
+	assert.Len(t, iiEvents, 1)
+
+	// a secret w/ no sa annotation should trigger an imageintegration event
+	delete(secret.Annotations, saAnnotation)
+	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
+	iiEvents = getImageIntegrationEvents(events)
+	assert.Len(t, iiEvents, 1)
+}
+
+func getImageIntegrationEvents(events *component.ResourceEvent) []*central.SensorEvent_ImageIntegration {
+	var iiEvents []*central.SensorEvent_ImageIntegration
+	for _, e := range events.ForwardMessages {
+		msg, ok := e.Resource.(*central.SensorEvent_ImageIntegration)
+		if ok {
+			iiEvents = append(iiEvents, msg)
+		}
+	}
+
+	return iiEvents
 }

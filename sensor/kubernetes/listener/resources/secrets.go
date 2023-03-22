@@ -247,7 +247,8 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	sensorEvents := make([]*central.SensorEvent, 0, len(dockerConfig)+1)
 	registries := make([]*storage.ImagePullSecret_Registry, 0, len(dockerConfig))
 
-	saName, hasAnnotation := secret.GetAnnotations()[saAnnotation]
+	saName := secret.GetAnnotations()[saAnnotation]
+	hasSAAnnotation := len(saName) > 0
 
 	// In Kubernetes, the `default` service account always exists in each namespace (it is recreated upon deletion).
 	// The default service account always contains an API token.
@@ -263,7 +264,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			if err != nil {
 				log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
 			}
-		} else if !hasAnnotation {
+		} else if !hasSAAnnotation {
 			// only send integrations to central that do not have the k8s SA annotation
 			// this will ignore secrets associated with OCP builder, deployer, etc. service accounts
 			ii, err := DockerConfigToImageIntegration(secret, registry, dce)
