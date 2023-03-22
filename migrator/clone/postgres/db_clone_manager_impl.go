@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"os/exec"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/clone/metadata"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -184,7 +186,33 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 			// Create a temp clone for processing of current
 			// If such a clone already exists then we were previously in the middle of processing
 			if !d.databaseExists(TempClone) {
-				err := pgadmin.CreateDB(d.sourceMap, d.adminConfig, CurrentClone, TempClone)
+				// Set the options for pg_dump from the connection config
+				options := []string{
+					"-d",
+					pgconfig.GetActiveDB(),
+					"-Fc", // Custom format, compressed hopefully supports stdin to restore
+					"-v",
+				}
+
+				// Get the common DB connection info
+				options = append(options, pgadmin.GetConnectionOptions(d.adminConfig)...)
+
+				cmd := exec.Command("pg_dump", options...)
+
+				//// Set the stdout of the command to be the output writer.
+				//cmd.Stdout = out
+
+				pgadmin.SetPostgresCmdEnv(cmd, d.sourceMap, d.adminConfig)
+				log.Infof("SHREWS -- about to a dump for fun")
+				err := pgadmin.ExecutePostgresCmd(cmd)
+				if err != nil {
+					log.Infof("SHREWS -- error %v", err)
+				}
+				log.Infof("SHREWS -- took the dump")
+
+				log.Infof("SHREWS -- about to make a copy")
+				err = pgadmin.CreateDB(d.sourceMap, d.adminConfig, CurrentClone, TempClone)
+				log.Infof("SHREWS -- made the copy")
 
 				// If for some reason, we cannot create a temp clone we will need to continue to upgrade
 				// with the current and thus no fallback.
