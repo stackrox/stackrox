@@ -295,11 +295,11 @@ func getAvailablePostgresCapacity(postgresConfig *postgres.Config) (int64, error
 
 	// Connect to database for admin functions
 	connectPool, err := GetAdminPool(postgresConfig)
-	// Close the admin connection pool
-	defer connectPool.Close()
 	if err != nil {
 		return pgconfig.GetPostgresCapacity(), nil
 	}
+	// Close the admin connection pool
+	defer connectPool.Close()
 
 	// Wrap in a transaction
 	ctx, cancel := context.WithTimeout(context.Background(), PostgresQueryTimeout)
@@ -404,11 +404,11 @@ func GetRemainingCapacity(postgresConfig *postgres.Config) (int64, error) {
 
 	// Connect to database for admin functions
 	connectPool, err := GetAdminPool(postgresConfig)
-	// Close the admin connection pool
-	defer connectPool.Close()
 	if err != nil {
 		return pgconfig.GetPostgresCapacity(), nil
 	}
+	// Close the admin connection pool
+	defer connectPool.Close()
 
 	sizeUsed, err := GetTotalPostgresSize(postgresConfig)
 	if err != nil {
@@ -433,11 +433,11 @@ func GetDatabaseSize(postgresConfig *postgres.Config, dbName string) (int64, err
 
 	// Connect to different database for admin functions
 	connectPool, err := GetAdminPool(postgresConfig)
-	// Close the admin connection pool
-	defer connectPool.Close()
 	if err != nil {
 		return 0, err
 	}
+	// Close the admin connection pool
+	defer connectPool.Close()
 
 	// Create a context with a timeout
 	ctx, cancel := context.WithTimeout(context.Background(), PostgresQueryTimeout)
@@ -460,7 +460,7 @@ func GetTotalPostgresSize(postgresConfig *postgres.Config) (int64, error) {
 	// Close the admin connection pool
 	defer connectPool.Close()
 	if err != nil {
-
+		return 0, err
 	}
 
 	// Create a context with a timeout
