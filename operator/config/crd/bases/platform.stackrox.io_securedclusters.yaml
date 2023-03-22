@@ -388,12 +388,11 @@ spec:
                       collection:
                         default: EBPF
                         description: The method for system-level data collection.
-                          EBPF is recommended. If you select "NoCollection",
-                          you will not be able to see any information about network
-                          activity and process executions. The remaining settings
-                          in these section will not have any effect.
-                          KernelModule collection is deprecated and will be
-                          removed in release 4.1.
+                          EBPF is recommended. KernelModule collection is deprecated
+                          and will be removed in the 4.1 release. If you select
+                          "NoCollection", you will not be able to see any
+                          information about network activity and process executions.
+                          The remaining settings in these section will not have any effect.
                         enum:
                         - EBPF
                         - KernelModule
