@@ -266,6 +266,7 @@ func (d *detectorImpl) processNetworkBaselineSync(sync *central.NetworkBaselineS
 func (d *detectorImpl) processUpdatedImage(image *storage.Image) error {
 	key := imagecacheutils.GetImageCacheKey(image)
 
+	log.Debugf("Receiving update for image: %s from central. Updating cache", image.GetName().GetFullName())
 	newValue := &cacheValue{
 		image:     image,
 		localScan: d.enricher.localScan,

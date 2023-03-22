@@ -57,6 +57,8 @@ func (r *resolverImpl) getImageMetadataFromDeploymentContainers(prebuiltDeployme
 				IsClusterLocal: r.storeProvider.Registries().HasRegistryForImage(image.GetName()),
 			}
 		}
+
+		// TODO: Add other conditions for updating NotPullable add IsClusterLocal
 	}
 	return result
 }
