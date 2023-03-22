@@ -68,7 +68,7 @@ type managerImpl struct {
 	reconciliationCtx context.Context
 
 	declarativeConfigErrorReporter integrationhealth.Reporter
-	errorsPerDeclarativeConfig     map[string]int
+	errorsPerDeclarativeConfig     map[string]int32
 
 	updaters map[reflect.Type]updater.ResourceUpdater
 }
@@ -100,7 +100,7 @@ func New(reconciliationTickerDuration, watchIntervalDuration time.Duration, upda
 		updaters:                       updaters,
 		reconciliationCtx:              writeDeclarativeRoleCtx,
 		declarativeConfigErrorReporter: reconciliationErrorReporter,
-		errorsPerDeclarativeConfig:     map[string]int{},
+		errorsPerDeclarativeConfig:     map[string]int32{},
 		idExtractor:                    idExtractor,
 		nameExtractor:                  nameExtractor,
 		shortCircuitSignal:             concurrency.NewSignal(),
@@ -319,15 +319,12 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 // In case err == nil, the health status will be set to healthy.
 // In case err != nil _and_ the number of errors for this message is >= the given threshold, the health
 // status will be set to unhealthy.
-func (m *managerImpl) updateHealthForMessage(handler string, message proto.Message, err error, threshold int) {
+func (m *managerImpl) updateHealthForMessage(handler string, message proto.Message, err error, threshold int32) {
 	messageID := m.idExtractor(message)
 	integrationHealth := declarativeConfigUtils.IntegrationHealthForProtoMessage(message, handler, err, m.idExtractor, m.nameExtractor)
 
 	if err != nil {
-		// Limit the number of recorded errors to the threshold.
-		if m.errorsPerDeclarativeConfig[messageID] < threshold {
-			m.errorsPerDeclarativeConfig[messageID]++
-		}
+		m.errorsPerDeclarativeConfig[messageID]++
 		if m.errorsPerDeclarativeConfig[messageID] >= threshold {
 			m.declarativeConfigErrorReporter.UpdateIntegrationHealthAsync(integrationHealth)
 		}

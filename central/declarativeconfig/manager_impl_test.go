@@ -271,6 +271,185 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 	}
 }
 
+func TestReconcileTransformedMessages_SkipReconciliationWithNoChanges(t *testing.T) {
+	controller := gomock.NewController(t)
+	mockUpdater := updaterMocks.NewMockResourceUpdater(controller)
+	reporter := reporterMocks.NewMockReporter(controller)
+
+	permissionSet1 := &storage.PermissionSet{
+		Name: "permission-set-1",
+		Id:   "some-id",
+	}
+
+	m := newTestManager(t)
+	m.updaters = map[reflect.Type]updater.ResourceUpdater{
+		types.PermissionSetType: mockUpdater,
+		types.AccessScopeType:   mockUpdater,
+		types.GroupType:         mockUpdater,
+		types.AuthProviderType:  mockUpdater,
+		types.RoleType:          mockUpdater,
+	}
+	m.declarativeConfigErrorReporter = reporter
+
+	// 1. Run the first reconciliation where the hash is not yet set. Everything should be run (upsert, delete).
+
+	gomock.InOrder(
+		mockUpdater.EXPECT().Upsert(gomock.Any(), permissionSet1).Return(nil).Times(1),
+		reporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).Times(1),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).Times(5),
+		reporter.EXPECT().RetrieveIntegrationHealths(storage.IntegrationHealth_DECLARATIVE_CONFIG).
+			Return(nil, nil).Times(1),
+	)
+
+	messages := map[string]protoMessagesByType{
+		"test-handler-1": {
+			types.PermissionSetType: []proto.Message{
+				permissionSet1,
+			},
+		},
+	}
+
+	m.reconcileTransformedMessages(messages)
+	assert.False(t, m.lastDeletionFailed.Get())
+	assert.False(t, m.lastUpsertFailed.Get())
+
+	// 2. Run the reconciliation again which should be a no-op. Nothing should be called.
+
+	m.reconcileTransformedMessages(messages)
+	assert.False(t, m.lastDeletionFailed.Get())
+	assert.False(t, m.lastUpsertFailed.Get())
+}
+
+func TestReconcileTransformedMessages_SkipDeletion(t *testing.T) {
+	controller := gomock.NewController(t)
+	mockUpdater := updaterMocks.NewMockResourceUpdater(controller)
+	reporter := reporterMocks.NewMockReporter(controller)
+
+	permissionSet1 := &storage.PermissionSet{
+		Name: "permission-set-1",
+		Id:   "some-id",
+	}
+
+	m := newTestManager(t)
+	m.updaters = map[reflect.Type]updater.ResourceUpdater{
+		types.PermissionSetType: mockUpdater,
+		types.AccessScopeType:   mockUpdater,
+		types.GroupType:         mockUpdater,
+		types.AuthProviderType:  mockUpdater,
+		types.RoleType:          mockUpdater,
+	}
+	m.declarativeConfigErrorReporter = reporter
+
+	// 1. Run the first reconciliation where the hash is not yet set. Everything should be run (upsert, delete).
+
+	gomock.InOrder(
+		mockUpdater.EXPECT().Upsert(gomock.Any(), permissionSet1).Return(errors.New("some error")).Times(1),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).Times(5),
+		reporter.EXPECT().RetrieveIntegrationHealths(storage.IntegrationHealth_DECLARATIVE_CONFIG).
+			Return(nil, nil).Times(1),
+	)
+
+	messages := map[string]protoMessagesByType{
+		"test-handler-1": {
+			types.PermissionSetType: []proto.Message{
+				permissionSet1,
+			},
+		},
+	}
+
+	m.reconcileTransformedMessages(messages)
+	assert.False(t, m.lastDeletionFailed.Get())
+	assert.True(t, m.lastUpsertFailed.Get())
+
+	// 2. Run the reconciliation again. Only upsert should be done.
+
+	gomock.InOrder(
+		mockUpdater.EXPECT().Upsert(gomock.Any(), permissionSet1).Return(errors.New("some error")).Times(1),
+	)
+
+	m.reconcileTransformedMessages(messages)
+	assert.False(t, m.lastDeletionFailed.Get())
+	assert.True(t, m.lastUpsertFailed.Get())
+
+	// 3. Run the reconciliation again. Only upsert should be done, and if successful no upsert error should be indicated.
+
+	gomock.InOrder(
+		mockUpdater.EXPECT().Upsert(gomock.Any(), permissionSet1).Return(nil).Times(1),
+		reporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).Times(1),
+	)
+
+	m.reconcileTransformedMessages(messages)
+	assert.False(t, m.lastDeletionFailed.Get())
+	assert.False(t, m.lastUpsertFailed.Get())
+}
+
+func TestReconcileTransformedMessages_SkipUpsert(t *testing.T) {
+	controller := gomock.NewController(t)
+	mockUpdater := updaterMocks.NewMockResourceUpdater(controller)
+	reporter := reporterMocks.NewMockReporter(controller)
+
+	permissionSet1 := &storage.PermissionSet{
+		Name: "permission-set-1",
+		Id:   "some-id",
+	}
+
+	m := newTestManager(t)
+	m.updaters = map[reflect.Type]updater.ResourceUpdater{
+		types.PermissionSetType: mockUpdater,
+		types.AccessScopeType:   mockUpdater,
+		types.GroupType:         mockUpdater,
+		types.AuthProviderType:  mockUpdater,
+		types.RoleType:          mockUpdater,
+	}
+	m.declarativeConfigErrorReporter = reporter
+
+	// 1. Run the first reconciliation where the hash is not yet set. Everything should be run (upsert, delete).
+
+	gomock.InOrder(
+		mockUpdater.EXPECT().Upsert(gomock.Any(), permissionSet1).Return(nil).Times(1),
+		reporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).Times(1),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, errors.New("some error")).Times(5),
+		reporter.EXPECT().RetrieveIntegrationHealths(storage.IntegrationHealth_DECLARATIVE_CONFIG).
+			Return(nil, nil).Times(1),
+	)
+
+	messages := map[string]protoMessagesByType{
+		"test-handler-1": {
+			types.PermissionSetType: []proto.Message{
+				permissionSet1,
+			},
+		},
+	}
+
+	m.reconcileTransformedMessages(messages)
+	assert.True(t, m.lastDeletionFailed.Get())
+	assert.False(t, m.lastUpsertFailed.Get())
+
+	// 2. Run the reconciliation again. Only deletion should be done.
+
+	gomock.InOrder(
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, errors.New("some error")).Times(5),
+		reporter.EXPECT().RetrieveIntegrationHealths(storage.IntegrationHealth_DECLARATIVE_CONFIG).
+			Return(nil, nil).Times(1),
+	)
+
+	m.reconcileTransformedMessages(messages)
+	assert.True(t, m.lastDeletionFailed.Get())
+	assert.False(t, m.lastUpsertFailed.Get())
+
+	// 3. Run the reconciliation again. Only deletion should be done, and if successful no deletion error should be indicated.
+
+	gomock.InOrder(
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).Times(5),
+		reporter.EXPECT().RetrieveIntegrationHealths(storage.IntegrationHealth_DECLARATIVE_CONFIG).
+			Return(nil, nil).Times(1),
+	)
+
+	m.reconcileTransformedMessages(messages)
+	assert.False(t, m.lastDeletionFailed.Get())
+	assert.False(t, m.lastUpsertFailed.Get())
+}
+
 func TestUpdateDeclarativeConfigContents_RegisterHealthStatus(t *testing.T) {
 	controller := gomock.NewController(t)
 	reporter := reporterMocks.NewMockReporter(controller)
