@@ -288,22 +288,25 @@ refresh_gke_token() {
 }
 
 teardown_gke_cluster() {
-    info "Tearing down the GKE cluster: ${CLUSTER_NAME:-}"
+    local cluster_name="${1:-$CLUSTER_NAME}"
 
-    require_environment "CLUSTER_NAME"
+    info "Tearing down the GKE cluster: $cluster_name"
+
     require_executable "gcloud"
 
     # (prefix output to avoid triggering prow log focus)
     "$SCRIPTS_ROOT/scripts/ci/cleanup-deployment.sh" 2>&1 | sed -e 's/^/out: /' || true
 
-    gcloud container clusters delete "$CLUSTER_NAME" --async
+    gcloud container clusters delete "$cluster_name" --async
 
     info "Cluster deleting asynchronously"
 
-    create_log_explorer_links
+    create_log_explorer_links "$cluster_name"
 }
 
 create_log_explorer_links() {
+    local cluster_name="$1"
+
     if [[ -z "${ARTIFACT_DIR:-}" ]]; then
         info "No place for artifacts, skipping generation of links to logs explorer"
         return
@@ -334,7 +337,7 @@ HEAD
         <a href="https://console.cloud.google.com/logs/query
 ;query=
 resource.type=%22k8s_container%22%0A
-resource.labels.cluster_name%3D%22$CLUSTER_NAME%22%0A
+resource.labels.cluster_name%3D%22$cluster_name%22%0A
 resource.labels.namespace_name%3D%22stackrox%22%0A
 ;timeRange=$start_ts%2F$end_ts
 ;cursorTimestamp=$start_ts

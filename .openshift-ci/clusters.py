@@ -37,6 +37,7 @@ class GKECluster:
         self.num_nodes = num_nodes
         self.machine_type = machine_type
         self.refresh_token_cmd = None
+        self.cluster_name = None
 
     def provision(self):
         with subprocess.Popen(
@@ -71,6 +72,8 @@ class GKECluster:
             [GKECluster.REFRESH_PATH, "refresh_gke_token"]
         )
 
+        self.cluster_name = os.environ["CLUSTER_NAME"]
+
         return self
 
     def teardown(self):
@@ -86,7 +89,7 @@ class GKECluster:
                 print(f"Could not terminate the token refresh: {err}")
 
         subprocess.run(
-            [GKECluster.TEARDOWN_PATH, "teardown_gke_cluster"],
+            [GKECluster.TEARDOWN_PATH, "teardown_gke_cluster", self.cluster_name],
             check=True,
             timeout=GKECluster.TEARDOWN_TIMEOUT,
         )
@@ -136,3 +139,45 @@ class OpenShiftScaleWorkersCluster:
 
     def teardown(self):
         pass
+
+"""
+SeparateClusters - central and sensor are deployed to separate clusters. If
+either of the two kubeconfig args are not passed a GKE cluster is created.
+"""
+class SeparateClusters:
+    def __init__(self, cluster_id, central_cluster_kubeconfig="", sensor_cluster_kubeconfig=""):
+        self.cluster_id = cluster_id
+        self.central_cluster_kubeconfig = central_cluster_kubeconfig
+        self.sensor_cluster_kubeconfig = sensor_cluster_kubeconfig
+        self.central_cluster = None
+        self.sensor_cluster = None
+
+    def provision(self):
+        if self.central_cluster_kubeconfig == "":
+            kubeconfig = tempfile.NamedTemporaryFile(delete=False)
+            kubeconfig.close()
+            os.environ["KUBECONFIG"] = kubeconfig.name
+            self.central_cluster = GKECluster(self.cluster_id + "-central")
+            self.central_cluster.provision()
+            os.environ["CENTRAL_CLUSTER_KUBECONFIG"] = kubeconfig.name
+            self.central_cluster_kubeconfig = kubeconfig.name
+
+        if self.sensor_cluster_kubeconfig == "":
+            kubeconfig = tempfile.NamedTemporaryFile(delete=False)
+            kubeconfig.close()
+            os.environ["KUBECONFIG"] = kubeconfig.name
+            self.sensor_cluster = GKECluster(self.cluster_id + "-central")
+            self.sensor_cluster.provision()
+            os.environ["SENSOR_CLUSTER_KUBECONFIG"] = kubeconfig.name
+            self.sensor_cluster_kubeconfig = kubeconfig.name
+
+        return self
+
+    def teardown(self):
+        if self.central_cluster is not None:
+            self.central_cluster.teardown()
+
+        if self.sensor_cluster is not None:
+            self.sensor_cluster.teardown()
+
+        return self

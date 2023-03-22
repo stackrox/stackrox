@@ -1,30 +1,35 @@
 #!/usr/bin/env -S python3 -u
 
+# temporarily borrows the scale test in order to (a) avoid modifications to
+# openshift/release and (b) avoid the powervs allocation step while developing.
+# Once dev complete the contents of this file will move to
+# powervs_qa_e2e_tests.py.
+
 """
-Run the scale test in a GKE cluster
+Run QA e2e tests with sensor & collector deployed to a powervs cluster. Central
+will be deployed to a GKE cluster.
 """
 import os
 from runners import ClusterTestRunner
-from clusters import GKECluster
+from clusters import SeparateClusters
 from pre_tests import PreSystemTests
-from ci_tests import ScaleTest
+from ci_tests import QaE2eTestPart1
 from post_tests import PostClusterTest, FinalPost
 
-os.environ["COMPARISON_METRICS"] = "scale-test/gke"
-os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
-os.environ["OUTPUT_FORMAT"] = "helm"
-os.environ["STORAGE"] = "pvc"
-os.environ["STORAGE_CLASS"] = "faster"
-os.environ["STORAGE_SIZE"] = "100"
-os.environ["STORE_METRICS"] = os.environ["COMPARISON_METRICS"]
+os.environ["SEPARATE_CLUSTERS_TEST"] = "true"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 
 ClusterTestRunner(
-    cluster=GKECluster("scale-test", machine_type="e2-standard-8"),
+    cluster=SeparateClusters("powervs"),
+    # For powervs this will be:
+    # cluster=SeparateClusters("powervs", sensor_cluster_kubeconfig=os.environ["KUBECONFIG"]),
     pre_test=PreSystemTests(),
-    test=ScaleTest(),
+    test=QaE2eTestPart1(),
     post_test=PostClusterTest(
         check_stackrox_logs=True,
     ),
-    final_post=FinalPost(),
+    final_post=FinalPost(
+        store_qa_test_debug_logs=True,
+        store_qa_spock_results=True,
+    ),
 ).run()
