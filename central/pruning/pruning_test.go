@@ -71,7 +71,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -703,12 +702,6 @@ func (s *PruningTestSuite) TestImagePruning() {
 }
 
 func (s *PruningTestSuite) TestClusterPruning() {
-	s.T().Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
-	if !features.DecommissionedClusterRetention.Enabled() {
-		// if it's still not enabled, we're probably in release tests so skip
-		s.T().Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
-	}
-
 	s.T().Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameRHACSRelease)
 
 	versionUtils.SetExampleVersion(s.T())
@@ -938,12 +931,6 @@ func (s *PruningTestSuite) TestClusterPruning() {
 }
 
 func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
-	s.T().Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
-	if !features.DecommissionedClusterRetention.Enabled() {
-		// if it's still not enabled, we're probably in release tests so skip
-		s.T().Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
-	}
-
 	s.T().Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameRHACSRelease)
 
 	versionUtils.SetExampleVersion(s.T())

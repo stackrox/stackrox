@@ -155,10 +155,6 @@
                         "value": "false"
                     },
                     {
-                        "name": "ROX_DECOMMISSIONED_CLUSTER_RETENTION",
-                        "value": "true"
-                    },
-                    {
                         "name": "ROX_INTEGRATIONS_AS_CONFIG",
                         "value": "false"
                     },
