@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/sensor/common/registry"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -154,9 +155,9 @@ func TestOpenShiftRegistrySecret_4x(t *testing.T) {
 	assert.Equal(t, expectedRegConfig, reg.Config())
 }
 
-// TestProcessDockerConfig_ForceLocalScanning tests that dockerconfig secrets are stored
+// TestForceLocalScanning tests that dockerconfig secrets are stored
 // in the regStore as expected when local scanning is forced
-func TestProcessDockerConfig_ForceLocalScanning(t *testing.T) {
+func TestForceLocalScanning(t *testing.T) {
 	fakeNamespace := "fake-namespace"
 	dockerConfigSecret := &v1.Secret{
 		TypeMeta:   metav1.TypeMeta{Kind: "Secret", APIVersion: "v1"},
@@ -217,4 +218,48 @@ func TestProcessDockerConfig_ForceLocalScanning(t *testing.T) {
 	reg, err = regStore.GetRegistryForImageInNamespace(fakeImage, fakeNamespace)
 	assert.NotNil(t, reg)
 	assert.NoError(t, err)
+}
+
+// TestSAAnnotationImageIntegrationEvents tests that image integration events
+// are not generated for secrets that contain a service account annotation
+func TestSAAnnotationImageIntegrationEvents(t *testing.T) {
+	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
+	d := newSecretDispatcher(regStore)
+
+	// a secret w/ the `default` sa annotation should trigger no imageintegration events
+	secret := openshift4xDockerConfigSecret.DeepCopy()
+	secret.Annotations[saAnnotation] = defaultSA
+	events := d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
+	iiEvents := getImageIntegrationEvents(events)
+	assert.Len(t, iiEvents, 0)
+
+	// a secret w/ any sa annotation should trigger no imageintegration events
+	secret.Annotations[saAnnotation] = "blah"
+	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
+	iiEvents = getImageIntegrationEvents(events)
+	assert.Len(t, iiEvents, 0)
+
+	// a secret w/ an empty sa annotation should trigger no imageintegration events
+	secret.Annotations[saAnnotation] = ""
+	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
+	iiEvents = getImageIntegrationEvents(events)
+	assert.Len(t, iiEvents, 1)
+
+	// a secret w/ no sa annotation should trigger an imageintegration event
+	delete(secret.Annotations, saAnnotation)
+	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
+	iiEvents = getImageIntegrationEvents(events)
+	assert.Len(t, iiEvents, 1)
+}
+
+func getImageIntegrationEvents(events *component.ResourceEvent) []*central.SensorEvent_ImageIntegration {
+	var iiEvents []*central.SensorEvent_ImageIntegration
+	for _, e := range events.ForwardMessages {
+		msg, ok := e.Resource.(*central.SensorEvent_ImageIntegration)
+		if ok {
+			iiEvents = append(iiEvents, msg)
+		}
+	}
+
+	return iiEvents
 }

@@ -248,7 +248,8 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	sensorEvents := make([]*central.SensorEvent, 0, len(dockerConfig)+1)
 	registries := make([]*storage.ImagePullSecret_Registry, 0, len(dockerConfig))
 
-	saName, hasAnnotation := secret.GetAnnotations()[saAnnotation]
+	saName := secret.GetAnnotations()[saAnnotation]
+	hasSAAnnotation := len(saName) > 0
 
 	// In Kubernetes, the `default` service account always exists in each namespace (it is recreated upon deletion).
 	// The default service account always contains an API token.
@@ -264,7 +265,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			if err != nil {
 				log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
 			}
-		} else {
+		} else if !hasSAAnnotation {
 			ii, err := DockerConfigToImageIntegration(secret, registry, dce)
 			if err != nil {
 				log.Errorf("unable to create docker config for secret %s: %v", secret.GetName(), err)
@@ -281,7 +282,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 				}
 			}
 
-			if env.ForceLocalImageScanning.BooleanSetting() && !hasAnnotation {
+			if env.ForceLocalImageScanning.BooleanSetting() {
 				// Store registry secrets to enable downstream scanning of all images
 				//
 				// Ignore secrets with the service-account.name annotation, each auto-generated secret for an OCP service
