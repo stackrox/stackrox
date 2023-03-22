@@ -240,9 +240,6 @@ func imageIntegationIDSetFromSecret(secret *v1.Secret) (set.StringSet, error) {
 }
 
 func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret, action central.ResourceAction) *component.ResourceEvent {
-	// Since re-sync is now disabled, secret events could trigger new deployment events or alerts.
-	var deploymentReference resolver.DeploymentReference
-
 	dockerConfig := getDockerConfigFromSecret(secret)
 	if len(dockerConfig) == 0 {
 		return nil
@@ -265,10 +262,6 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 				log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
 			}
 
-			// If this is a defaultSA docker config, it could change the `IsClusterLocal` and `NotPullable` from Deployment
-			// Container. Since docker config pull secrets are applied globally, we need to reprocess every deployment
-			// in the cluster.
-			deploymentReference = resolver.ResolveAllDeployments()
 		} else {
 			ii, err := DockerConfigToImageIntegration(secret, registry, dce)
 			if err != nil {
@@ -324,9 +317,11 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	}}
 	events := component.NewEvent(sensorEvents...)
 	events.AddSensorEvent(secretToSensorEvent(action, protoSecret))
-	if deploymentReference != nil {
-		events.AddDeploymentReference(deploymentReference, central.ResourceAction_UPDATE_RESOURCE, false)
-	}
+
+	// When adding new docker config secrets we need to reprocess every deployment in this cluster.
+	// This is because the field `NotPullable` could be updated and hence new image scan results will appear.
+	events.AddDeploymentReference(resolver.ResolveAllDeployments(), central.ResourceAction_UPDATE_RESOURCE, false)
+
 	return events
 }
 
