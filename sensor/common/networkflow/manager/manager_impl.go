@@ -58,10 +58,10 @@ type hostConnections struct {
 }
 
 type connStatus struct {
-	firstSeen  timestamp.MicroTS
-	lastSeen   timestamp.MicroTS
-	used       bool
-	usedProces bool
+	firstSeen   timestamp.MicroTS
+	lastSeen    timestamp.MicroTS
+	used        bool
+	usedProcess bool
 	// rotten implies we expected to correlate the flow with a container, but were unable to
 	rotten bool
 }
