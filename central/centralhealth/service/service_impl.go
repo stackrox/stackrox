@@ -91,9 +91,11 @@ func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v
 
 				// Get a short-lived connection for the purposes of checking the version of the previous clone.
 				pool, err := pgadmin.GetClonePool(adminConfig, migrations.GetPreviousClone())
-				defer pool.Close()
 				if err != nil {
 					log.Infof("Unable to get previous database, leaving ForceRollbackTo empty.  %v", err)
+				}
+				if pool != nil {
+					defer pool.Close()
 				}
 
 				// Get rollback to version

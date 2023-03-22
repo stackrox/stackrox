@@ -420,9 +420,9 @@ func (m *mockCentral) runMigratorWithBreaksInPersist(breakpoint string) {
 
 		// Connect to different database for admin functions
 		connectPool, err := pgadmin.GetAdminPool(m.adminConfig)
+		assert.NoError(m.t, err)
 		// Close the admin connection pool
 		defer connectPool.Close()
-		assert.NoError(m.t, err)
 
 		log.Infof("runMigratorWithBreaksInPersist, prev = %s", prev)
 		pgtest.DropDatabase(m.t, prev)

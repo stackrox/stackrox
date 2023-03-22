@@ -298,11 +298,11 @@ func (d *dbCloneManagerImpl) doPersist(cloneName string, prev string) error {
 func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) error {
 	// Connect to different database for admin functions
 	connectPool, err := pgadmin.GetAdminPool(d.adminConfig)
-	// Close the admin connection pool
-	defer connectPool.Close()
 	if err != nil {
 		return err
 	}
+	// Close the admin connection pool
+	defer connectPool.Close()
 
 	// Wrap in a transaction so either both renames work or none work
 	ctx, cancel := context.WithTimeout(context.Background(), pgadmin.PostgresQueryTimeout)
