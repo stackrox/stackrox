@@ -40,7 +40,6 @@ import installRaven from 'installRaven';
 import { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import { fetchFeatureFlagsThunk } from './reducers/featureFlags';
 import { fetchPublicConfigThunk } from './reducers/publicConfig';
-import { fetchTelemetryConfigThunk } from './reducers/telemetryConfig';
 import configureApollo from './configureApolloClient';
 
 // This enables syntax highlighting for the patternfly code editor

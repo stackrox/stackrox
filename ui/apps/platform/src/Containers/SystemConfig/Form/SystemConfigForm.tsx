@@ -112,17 +112,17 @@ const SystemConfigForm = ({
                             initializeSegment(telemetryConfig.storageKeyV1, telemetryConfig.userId);
                         }
 
-                        const isTelemetryEnabledPrev = publicConfig.telemetry?.enabled;
-                        const isTelemetryEnabledCurr = data.publicConfig?.telemetry?.enabled;
-                        if (isTelemetryEnabledPrev && !isTelemetryEnabledCurr) {
-                            window.location.reload();
-                        }
-
                         dispatch(action);
                         setSystemConfig(data);
                         setErrorMessage(null);
                         setSubmitting(false);
                         setIsNotEditing();
+
+                        const isTelemetryEnabledPrev = publicConfig.telemetry?.enabled;
+                        const isTelemetryEnabledCurr = data.publicConfig?.telemetry?.enabled;
+                        if (isTelemetryEnabledPrev && !isTelemetryEnabledCurr) {
+                            window.location.reload();
+                        }
                     })
                     .catch((error) => {
                         setSubmitting(false);
