@@ -235,6 +235,7 @@ func (d *detectorImpl) processPolicySync(sync *central.PolicySync) error {
 }
 
 func (d *detectorImpl) processReassessPolicies(_ *central.ReassessPolicies) error {
+	log.Debugf("Reassess Policies triggered")
 	// Clear the image caches and make all the deployments flow back through by clearing out the hash
 	d.enricher.imageCache.RemoveAll()
 	if d.admCtrlSettingsMgr != nil {
@@ -277,6 +278,8 @@ func (d *detectorImpl) processUpdatedImage(image *storage.Image) error {
 }
 
 func (d *detectorImpl) processReprocessDeployments() error {
+	log.Debugf("Reprocess deployments triggered. Clearing cache and deduper")
+	// TODO: Also clear scan result cache here?
 	if d.admissionCacheNeedsFlush && d.admCtrlSettingsMgr != nil {
 		// Would prefer to do a targeted flush
 		d.admCtrlSettingsMgr.FlushCache()
