@@ -92,7 +92,6 @@ export_test_environment() {
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
     ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
-    ci_export ROX_DECOMMISSIONED_CLUSTER_RETENTION "${ROX_DECOMMISSIONED_CLUSTER_RETENTION:-true}"
     ci_export ROX_NETWORK_GRAPH_PATTERNFLY "${ROX_NETWORK_GRAPH_PATTERNFLY:-true}"
     ci_export ROX_QUAY_ROBOT_ACCOUNTS "${ROX_QUAY_ROBOT_ACCOUNTS:-true}"
     ci_export ROX_SYSTEM_HEALTH_PF "${ROX_SYSTEM_HEALTH_PF:-true}"
@@ -544,7 +543,7 @@ wait_for_api() {
     info "Waiting for Central to be ready"
 
     start_time="$(date '+%s')"
-    max_seconds=300
+    max_seconds=${MAX_WAIT_SECONDS:-300}
 
     while true; do
         central_json="$(kubectl -n stackrox get deploy/central -o json)"
