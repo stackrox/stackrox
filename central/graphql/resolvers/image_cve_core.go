@@ -29,7 +29,7 @@ func init() {
 			}),
 		schema.AddQuery("imageCVECount(query: String): Int!"),
 		schema.AddQuery("imageCVEs(query: String, pagination: Pagination): [ImageCVECore!]!"),
-		schema.AddQuery("imageCVE(cve: String): ImageCVECore"),
+		schema.AddQuery("imageCVE(cve: String, query: String): ImageCVECore"),
 	)
 }
 
@@ -124,7 +124,8 @@ func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {
 
 // ImageCVE returns graphQL resolver for specified image cve.
 func (resolver *Resolver) ImageCVE(ctx context.Context, args struct {
-	Cve *string
+	Cve   *string
+	Query *RawQuery
 }) (*imageCVECoreResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEMetadata")
 
@@ -139,6 +140,14 @@ func (resolver *Resolver) ImageCVE(ctx context.Context, args struct {
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.CVE, *args.Cve).ProtoQuery()
+	if args.Query != nil {
+		filterQuery, err := args.Query.AsV1QueryOrEmpty()
+		if err != nil {
+			return nil, err
+		}
+		query = search.ConjunctionQuery(query, filterQuery)
+	}
+
 	cves, err := resolver.ImageCVEView.Get(ctx, query, views.ReadOptions{})
 	if len(cves) == 0 {
 		return nil, nil

@@ -131,18 +131,51 @@ func (s *ImageCVECoreResolverTestSuite) TestCountImageCVEsWithQuery() {
 }
 
 func (s *ImageCVECoreResolverTestSuite) TestGetImageCVEMalformed() {
-	_, err := s.resolver.ImageCVE(s.ctx, struct{ Cve *string }{})
+	_, err := s.resolver.ImageCVE(s.ctx, struct {
+		Cve   *string
+		Query *RawQuery
+	}{})
 	s.Error(err)
 }
 
 func (s *ImageCVECoreResolverTestSuite) TestGetImageCVENonEmpty() {
+	// without filter
 	expectedQ := search.NewQueryBuilder().AddExactMatches(search.CVE, "cve-xyz").ProtoQuery()
 	expected := []imagecve.CveCore{
 		imageCVEViewMock.NewMockCveCore(s.mockCtrl),
 	}
 
 	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ, views.ReadOptions{}).Return(expected, nil)
-	response, err := s.resolver.ImageCVE(s.ctx, struct{ Cve *string }{Cve: pointers.String("cve-xyz")})
+	response, err := s.resolver.ImageCVE(
+		s.ctx, struct {
+			Cve   *string
+			Query *RawQuery
+		}{
+			Cve:   pointers.String("cve-xyz"),
+			Query: nil,
+		},
+	)
+	s.NoError(err)
+	s.NotNil(response.data)
+
+	// with filter
+	expectedQ = search.NewQueryBuilder().
+		AddExactMatches(search.CVE, "cve-xyz").
+		AddStrings(search.Fixable, "true").
+		ProtoQuery()
+	expected = []imagecve.CveCore{
+		imageCVEViewMock.NewMockCveCore(s.mockCtrl),
+	}
+
+	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ, views.ReadOptions{}).Return(expected, nil)
+	response, err = s.resolver.ImageCVE(s.ctx, struct {
+		Cve   *string
+		Query *RawQuery
+	}{
+		Cve:   pointers.String("cve-xyz"),
+		Query: &RawQuery{Query: pointers.String("Fixable:true")},
+	},
+	)
 	s.NoError(err)
 	s.NotNil(response.data)
 }
