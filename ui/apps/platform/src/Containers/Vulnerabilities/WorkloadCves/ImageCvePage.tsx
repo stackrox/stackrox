@@ -6,17 +6,27 @@ import {
     BreadcrumbItem,
     Bullseye,
     Divider,
+    Flex,
     PageSection,
+    Pagination,
     Skeleton,
+    Spinner,
+    Split,
+    SplitItem,
 } from '@patternfly/react-core';
 import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLSearch from 'hooks/useURLSearch';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import useURLStringUnion from 'hooks/useURLStringUnion';
+import useURLPagination from 'hooks/useURLPagination';
+import useURLSort from 'hooks/useURLSort';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { Pagination as PaginationParam } from 'services/types';
+
 import { getHiddenSeverities, getOverviewCvesPath, parseQuerySearchFilter } from './searchUtils';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import ImageCvePageHeader, {
@@ -29,6 +39,13 @@ import ImageCveSummaryCards, {
     ImageCveSummaryCount,
     imageCveSummaryCountFragment,
 } from './ImageCveSummaryCards';
+import AffectedImagesTable, {
+    ImageForCve,
+    imagesForCveFragment,
+} from './Tables/AffectedImagesTable';
+import EntityTypeToggleGroup from './EntityTypeToggleGroup';
+import AffectedDeploymentsTable from './Tables/AffectedDeploymentsTable';
+import { DynamicTableLabel } from './DynamicIcon';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
@@ -56,10 +73,40 @@ export const imageCveSummaryQuery = gql`
     }
 `;
 
+export const imageCveAffectedImagesQuery = gql`
+    ${imagesForCveFragment}
+    # by default, query must include the CVE id
+    query getImagesForCVE(
+        $query: String
+        $imageListPagination: Pagination
+        $imageComponentPagination: Pagination
+    ) {
+        imageCount(query: $query)
+        images(query: $query, pagination: $imageListPagination) {
+            ...ImagesForCVE
+        }
+    }
+`;
+
+const defaultSortFields = ['Image', 'Severity', 'Fixable', 'Operating System'];
+
 function ImageCvePage() {
     const { cveId } = useParams();
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(25);
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields: defaultSortFields,
+        defaultSortOption: {
+            field: 'Severity',
+            direction: 'desc',
+        },
+        onSort: () => setPage(1),
+    });
+
+    // TODO This will need to be updated once https://github.com/stackrox/stackrox/pull/5392 is merged
+    const [entityTab] = useURLStringUnion('entityTab', ['Image', 'Deployment'] as const);
+
     const metadataRequest = useQuery<{ imageCVE: ImageCveMetadata }, { cve: string }>(
         imageCveMetadataQuery,
         { variables: { cve: cveId } }
@@ -72,8 +119,55 @@ function ImageCvePage() {
         variables: { cve: cveId, query: getRequestQueryStringForSearchFilter(querySearchFilter) },
     });
 
+    const imageDataRequest = useQuery<
+        { imageCount: number; images: ImageForCve[] },
+        {
+            query: string;
+            imageListPagination: PaginationParam;
+            // TODO If required, fix this
+            imageComponentPagination?: PaginationParam;
+        }
+    >(imageCveAffectedImagesQuery, {
+        variables: {
+            query: getRequestQueryStringForSearchFilter({
+                ...querySearchFilter,
+                CVE: cveId,
+            }),
+            imageListPagination: {
+                offset: (page - 1) * perPage,
+                limit: perPage,
+                sortOption,
+            },
+            // TODO Benchmark whether or not server side pagination is really needed at this
+            // level, and if so, fix the implementation here
+            imageComponentPagination: undefined,
+        },
+        skip: entityTab !== 'Image',
+    });
+
+    // We generalize the imageData and deploymentData requests here so that we can use most of
+    // the same logic for both tables and components in the return value below
+    const imageData = imageDataRequest.data ?? imageDataRequest.previousData;
+    let tableDataAvailable = false;
+    let tableRowCount = 0;
+    let tableError: Error | undefined;
+    let tableLoading = false;
+
+    if (entityTab === 'Image') {
+        tableDataAvailable = !!imageData;
+        tableRowCount = imageDataRequest.data?.imageCount ?? 0;
+        tableError = imageDataRequest.error;
+        tableLoading = imageDataRequest.loading;
+    } else if (entityTab === 'Deployment') {
+        tableDataAvailable = false;
+        tableRowCount = 0;
+        tableError = undefined;
+        tableLoading = false;
+    }
+
     const cveName = metadataRequest.data?.imageCVE?.cve;
 
+    const isFiltered = getHasSearchApplied(querySearchFilter);
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
 
     return (
@@ -139,7 +233,67 @@ function ImageCvePage() {
                             />
                         )}
                     </div>
-                    <Divider />
+                </div>
+                <Divider />
+                <div className="pf-u-background-color-100 pf-u-flex-grow-1">
+                    {tableError ? (
+                        <Bullseye>
+                            <EmptyStateTemplate
+                                headingLevel="h2"
+                                title={getAxiosErrorMessage(tableError)}
+                                icon={ExclamationCircleIcon}
+                                iconClassName="pf-u-danger-color-100"
+                            >
+                                Adjust your filters and try again
+                            </EmptyStateTemplate>
+                        </Bullseye>
+                    ) : (
+                        <>
+                            {tableLoading && !tableDataAvailable && (
+                                <Bullseye>
+                                    <Spinner isSVG />
+                                </Bullseye>
+                            )}
+                            {tableDataAvailable && (
+                                <>
+                                    <Split className="pf-u-px-lg pf-u-py-sm pf-u-align-items-baseline">
+                                        <SplitItem isFilled>
+                                            <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                                                <EntityTypeToggleGroup />
+                                                {isFiltered && <DynamicTableLabel />}
+                                            </Flex>
+                                        </SplitItem>
+                                        <SplitItem>
+                                            <Pagination
+                                                isCompact
+                                                itemCount={tableRowCount}
+                                                page={page}
+                                                perPage={perPage}
+                                                onSetPage={(_, newPage) => setPage(newPage)}
+                                                onPerPageSelect={(_, newPerPage) => {
+                                                    if (tableRowCount < (page - 1) * newPerPage) {
+                                                        setPage(1);
+                                                    }
+                                                    setPerPage(newPerPage);
+                                                }}
+                                            />
+                                        </SplitItem>
+                                    </Split>
+                                    <Divider />
+                                    <div className="pf-u-px-lg">
+                                        {entityTab === 'Image' && (
+                                            <AffectedImagesTable
+                                                images={imageData?.images ?? []}
+                                                getSortParams={getSortParams}
+                                                isFiltered={isFiltered}
+                                            />
+                                        )}
+                                        {entityTab === 'Deployment' && <AffectedDeploymentsTable />}
+                                    </div>
+                                </>
+                            )}
+                        </>
+                    )}
                 </div>
             </PageSection>
         </>

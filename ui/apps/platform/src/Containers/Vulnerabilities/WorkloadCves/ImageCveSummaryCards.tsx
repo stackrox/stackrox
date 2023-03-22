@@ -2,11 +2,12 @@ import React from 'react';
 import { gql } from '@apollo/client';
 import { Flex } from '@patternfly/react-core';
 import { VulnerabilitySeverity } from 'types/cve.proto';
-import EnvironmentalImpact from './SummaryCards/EnvironmentalImpact';
+import AffectedImages from './SummaryCards/AffectedImages';
 import TopCvssScoreBreakdown from './SummaryCards/TopCvssScoreBreakdown';
 import BySeveritySummaryCard from './SummaryCards/BySeveritySummaryCard';
 
 export type ImageCveSummaryCount = {
+    totalImageCount: number;
     imageCount: number;
     deploymentCount: number;
 };
@@ -39,6 +40,7 @@ export const imageCveSeveritySummaryFragment = gql`
 
 export const imageCveSummaryCountFragment = gql`
     fragment ImageCVESummaryCounts on Query {
+        totalImageCount: imageCount
         imageCount(query: $query)
         deploymentCount(query: $query)
     }
@@ -57,20 +59,22 @@ function ImageCveSummaryCards({
 }: ImageCveSummaryCardsProps) {
     const { critical, important, moderate, low } = severitySummary.affectedImageCountBySeverity;
     const { affectedImageCount, topCVSS } = severitySummary;
-    const { imageCount } = summaryCounts;
+    const { totalImageCount } = summaryCounts;
     return (
         <Flex
             direction={{ default: 'column', lg: 'row' }}
             alignItems={{ lg: 'alignItemsStretch' }}
             justifyContent={{ default: 'justifyContentSpaceBetween' }}
         >
-            <EnvironmentalImpact
-                className="pf-u-flex-grow-1"
+            <AffectedImages
+                className="pf-u-flex-grow-1 pf-u-flex-basis-0"
+                // TODO Should affectedImagesCount be the value derived from
+                //      `imageCount(query: $query)` or from `affectedImageCount`?
                 affectedImageCount={affectedImageCount}
-                totalImagesCount={imageCount}
+                totalImagesCount={totalImageCount}
             />
             <BySeveritySummaryCard
-                className="pf-u-flex-grow-1"
+                className="pf-u-flex-grow-1 pf-u-flex-basis-0"
                 title="Images by severity"
                 severityCounts={{
                     CRITICAL_VULNERABILITY_SEVERITY: critical,
@@ -81,7 +85,7 @@ function ImageCveSummaryCards({
                 hiddenSeverities={hiddenSeverities}
             />
             <TopCvssScoreBreakdown
-                className="pf-u-flex-grow-1"
+                className="pf-u-flex-grow-1 pf-u-flex-basis-0"
                 cvssScore={topCVSS}
                 vector="TODO - Not implemented"
             />
