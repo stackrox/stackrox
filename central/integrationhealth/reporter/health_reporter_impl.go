@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -113,7 +114,7 @@ func (d *DatastoreBasedIntegrationHealthReporter) RetrieveIntegrationHealths(typ
 	case storage.IntegrationHealth_NOTIFIER:
 		return d.integrationDS.GetNotifierPlugins(integrationWriteCtx)
 	}
-	return nil, nil
+	return nil, errox.InvalidArgs.Newf("type %s is not supported", typ)
 }
 
 func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdates() {

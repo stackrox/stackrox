@@ -57,11 +57,11 @@ func (u *authProviderUpdater) Upsert(ctx context.Context, m proto.Message) error
 }
 
 func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
-	resourcesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
+	authProviderIDsToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	authProviders, err := u.authProviderDS.GetAuthProvidersFiltered(ctx, func(authProvider *storage.AuthProvider) bool {
 		return authProvider.GetTraits().GetOrigin() == storage.Traits_DECLARATIVE &&
-			!resourcesToSkip.Contains(authProvider.GetId())
+			!authProviderIDsToSkip.Contains(authProvider.GetId())
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving declarative auth providers")

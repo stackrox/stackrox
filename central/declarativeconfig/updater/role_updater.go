@@ -53,14 +53,14 @@ func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...
 	}
 
 	var roleDeletionErr *multierror.Error
-	var roleIds []string
+	var roleNames []string
 	for _, role := range roles {
 		if err := u.roleDS.RemoveRole(ctx, role.GetName()); err != nil {
 			roleDeletionErr = multierror.Append(roleDeletionErr, err)
-			roleIds = append(roleIds, role.GetName())
+			roleNames = append(roleNames, role.GetName())
 			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(role, "", err,
 				u.idExtractor, u.nameExtractor))
 		}
 	}
-	return roleIds, roleDeletionErr.ErrorOrNil()
+	return roleNames, roleDeletionErr.ErrorOrNil()
 }

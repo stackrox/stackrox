@@ -106,7 +106,7 @@ func New(reconciliationTickerDuration, watchIntervalDuration time.Duration, upda
 
 func (m *managerImpl) ReconcileDeclarativeConfigurations() {
 	m.once.Do(func() {
-		if err := m.verifyUpdaters(protoTypesOrder); err != nil {
+		if err := m.verifyUpdaters(); err != nil {
 			utils.Should(err)
 			log.Error("Received an error during verification of updaters. No reconciliation will be done.")
 			return
@@ -350,7 +350,7 @@ func (m *managerImpl) removeStaleHealthStatus(idsToSkip []string) error {
 
 	idsToSkipSet := set.NewFrozenStringSet(idsToSkip...)
 
-	var removingIntegrationHealths *multierror.Error
+	var removingIntegrationHealthsErr *multierror.Error
 	for _, health := range healths {
 		if idsToSkipSet.Contains(health.GetId()) {
 			continue
@@ -361,15 +361,15 @@ func (m *managerImpl) removeStaleHealthStatus(idsToSkip []string) error {
 		}
 
 		if err := m.declarativeConfigErrorReporter.RemoveIntegrationHealth(health.GetId()); err != nil {
-			removingIntegrationHealths = multierror.Append(removingIntegrationHealths, err)
+			removingIntegrationHealthsErr = multierror.Append(removingIntegrationHealthsErr, err)
 		}
 	}
 
-	return removingIntegrationHealths.ErrorOrNil()
+	return removingIntegrationHealthsErr.ErrorOrNil()
 }
 
-func (m *managerImpl) verifyUpdaters(protoTypesToReconcile []reflect.Type) error {
-	for _, protoType := range protoTypesToReconcile {
+func (m *managerImpl) verifyUpdaters() error {
+	for _, protoType := range protoTypesOrder {
 		if _, ok := m.updaters[protoType]; !ok {
 			return errox.InvariantViolation.Newf("found no updater for proto type %v", protoType)
 		}
