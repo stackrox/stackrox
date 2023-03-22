@@ -29,7 +29,6 @@ import util.Timer
 
 import org.junit.Assume
 import org.junit.AssumptionViolatedException
-import org.junit.Ignore
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -702,7 +701,6 @@ class ImageScanningTest extends BaseSpecification {
         assert missingValues.size() == 0
     }
 
-    @Ignore("ROX-16068 : Skip this test while trying to figure reason for flake")
     def "Validate image deletion does not affect other images"() {
         cleanupSetupForRetry()
 
@@ -711,6 +709,11 @@ class ImageScanningTest extends BaseSpecification {
 
         when:
         "Scan CentOS image and derivative echo image (centos + touch file)"
+        def existingImages = ImageService.getImages(SearchServiceOuterClass.RawQuery.newBuilder()
+                .setQuery("Image:${CENTOS_IMAGE}").build())
+        for (ImageOuterClass.ListImage image : existingImages) {
+            log.info "ROX-16068 Image ${image.getName()} exists with id ${image.getId()} and ${image.getCves()} cves"
+        }
         ImageService.scanImage(CENTOS_ECHO_IMAGE, false)
         def expectedDetails = ImageService.scanImage(CENTOS_IMAGE, false)
 
