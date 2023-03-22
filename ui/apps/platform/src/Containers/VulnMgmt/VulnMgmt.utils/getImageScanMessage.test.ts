@@ -76,7 +76,7 @@ describe('getImageScanMessage', () => {
 
     it('should return an object for contentSetUnavailable when scan notes contain PARTIAL_SCAN_DATA and CONTENT_SET_UNAVAILABLE', () => {
         const imagesNotes = [];
-        const scanNotes = ['PARTIAL_SCAN_DATA', 'CONTENT_SET_UNAVAILABLE'];
+        const scanNotes = ['CONTENT_SET_UNAVAILABLE'];
 
         const messageObj = getImageScanMessage(imagesNotes, scanNotes);
 
