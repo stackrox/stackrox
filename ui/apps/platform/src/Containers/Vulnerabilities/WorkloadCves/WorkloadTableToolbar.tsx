@@ -96,7 +96,7 @@ function WorkloadTableToolbar({
 
     return (
         <Toolbar id="workload-cves-table-toolbar" clearAllFilters={onDeleteAll}>
-            <ToolbarContent className="workload-cves-table-toolbar-dropdowns">
+            <ToolbarContent>
                 <FilterAutocomplete
                     searchFilter={searchFilter}
                     setSearchFilter={setSearchFilter}

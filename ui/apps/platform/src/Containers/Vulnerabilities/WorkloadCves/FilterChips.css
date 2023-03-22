@@ -7,14 +7,11 @@
     flex-wrap: nowrap;
 }
 
-#workload-cves-table-toolbar .pf-c-chip-group, .pf-c-chip-group__list {
-    flex-wrap: nowrap;
+#workload-cves-table-toolbar .pf-m-typeahead .pf-c-chip-group,
+#workload-cves-table-toolbar .pf-m-typeahead button.pf-c-select__toggle-clear {
+    display: none;
 }
 
-#workload-cves-table-toolbar .pf-c-toolbar__group {
-    flex-wrap: wrap;
-}
-
-#workload-cves-table-toolbar .workload-cves-table-toolbar-dropdowns .pf-c-toolbar__group  {
-    flex-wrap: nowrap;
+#workload-cves-table-toolbar .cve-severity-select .pf-c-select__toggle-wrapper {
+    flex-wrap: nowrap
 }

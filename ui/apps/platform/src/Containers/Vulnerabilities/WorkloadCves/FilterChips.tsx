@@ -1,12 +1,28 @@
-/* eslint-disable react/no-children-prop */
 import React from 'react';
 import { Globe } from 'react-feather';
-import { Flex, ToolbarChip, ToolbarFilter } from '@patternfly/react-core';
+import { Flex, FlexItem, ChipGroup, Chip } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
 import { VulnerabilitySeverityLabel, FixableStatus, DefaultFilters } from './types';
 
 import './FilterChips.css';
+
+type FilterChipProps = {
+    isGlobal?: boolean;
+    name: string;
+};
+
+function FilterChip({ isGlobal, name }: FilterChipProps) {
+    if (isGlobal) {
+        return (
+            <Flex alignItems={{ default: 'alignItemsCenter' }} flexWrap={{ default: 'nowrap' }}>
+                <Globe height="15px" />
+                {name}
+            </Flex>
+        );
+    }
+    return <Flex>{name}</Flex>;
+}
 
 type FilterChipsProps = {
     defaultFilters: DefaultFilters;
@@ -16,107 +32,109 @@ type FilterChipsProps = {
 };
 
 function FilterChips({ defaultFilters, searchFilter, onDeleteGroup, onDelete }: FilterChipsProps) {
-    const severityFilterChips: ToolbarChip[] = [];
-    const fixableFilterChips: ToolbarChip[] = [];
-    const severitySearchFilter = searchFilter.Severity as VulnerabilitySeverityLabel[];
-    severitySearchFilter?.forEach((sev) => {
-        if (defaultFilters.Severity?.includes(sev)) {
-            severityFilterChips.push({
-                key: sev,
-                node: (
-                    <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                        <Globe height="15px" />
-                        {sev}
-                    </Flex>
-                ),
-            });
-        } else {
-            severityFilterChips.push({
-                key: sev,
-                node: <Flex>{sev}</Flex>,
-            });
-        }
-    });
-
-    const fixableSearchFilter = searchFilter.Fixable as FixableStatus[];
-    fixableSearchFilter?.forEach((status) => {
-        if (defaultFilters.Fixable?.includes(status)) {
-            fixableFilterChips.push({
-                key: status,
-                node: (
-                    <Flex
-                        alignItems={{ default: 'alignItemsCenter' }}
-                        flexWrap={{ default: 'nowrap' }}
-                    >
-                        <Globe height="15px" />
-                        {status}
-                    </Flex>
-                ),
-            });
-        } else {
-            fixableFilterChips.push({
-                key: status,
-                node: <Flex>{status}</Flex>,
-            });
-        }
-    });
+    const deployments = (searchFilter.DEPLOYMENT as string[]) || [];
+    const cves = (searchFilter.CVE as string[]) || [];
+    const images = (searchFilter.IMAGE as string[]) || [];
+    const namespaces = (searchFilter.NAMESPACE as string[]) || [];
+    const clusters = (searchFilter.CLUSTER as string[]) || [];
+    const severities = (searchFilter.Severity as VulnerabilitySeverityLabel[]) || [];
+    const fixables = (searchFilter.Fixable as FixableStatus[]) || [];
 
     return (
-        <>
-            {/* adding children as undefined here because we want to show the filter chips even
-            when the resource is set to something else in the dropdown
-            (children are required for the ToolbarFilter component even though functionally 
-            it seems to work fine) */}
-            <ToolbarFilter
-                chips={searchFilter.DEPLOYMENT ? (searchFilter.DEPLOYMENT as string[]) : []}
-                deleteChip={(_, chip) => onDelete('DEPLOYMENT', chip as string)}
-                deleteChipGroup={() => onDeleteGroup('DEPLOYMENT')}
-                categoryName="Deployment"
-                children={undefined}
-            />
-            <ToolbarFilter
-                chips={searchFilter.IMAGE_CVE ? (searchFilter.IMAGE_CVE as string[]) : []}
-                deleteChip={(_, chip) => onDelete('IMAGE_CVE', chip as string)}
-                deleteChipGroup={() => onDeleteGroup('IMAGE_CVE')}
-                categoryName="CVE"
-                children={undefined}
-            />
-            <ToolbarFilter
-                chips={searchFilter.IMAGE ? (searchFilter.IMAGE as string[]) : []}
-                deleteChip={(_, chip) => onDelete('IMAGE', chip as string)}
-                deleteChipGroup={() => onDeleteGroup('IMAGE')}
-                categoryName="Image"
-                children={undefined}
-            />
-            <ToolbarFilter
-                chips={searchFilter.NAMESPACE ? (searchFilter.NAMESPACE as string[]) : []}
-                deleteChip={(_, chip) => onDelete('NAMESPACE', chip as string)}
-                deleteChipGroup={() => onDeleteGroup('NAMESPACE')}
-                categoryName="Namespace"
-                children={undefined}
-            />
-            <ToolbarFilter
-                chips={searchFilter.CLUSTER ? (searchFilter.CLUSTER as string[]) : []}
-                deleteChip={(_, chip) => onDelete('CLUSTER', chip as string)}
-                deleteChipGroup={() => onDeleteGroup('CLUSTER')}
-                categoryName="Cluster"
-                children={undefined}
-            />
-            <ToolbarFilter
-                chips={severityFilterChips}
-                deleteChip={(_, chip) => onDelete('Severity', chip as ToolbarChip)}
-                deleteChipGroup={() => onDeleteGroup('Severity')}
-                categoryName="Severity"
-                children={undefined}
-            />
-            <ToolbarFilter
-                chips={fixableFilterChips}
-                deleteChip={(_, chip) => onDelete('Fixable', chip as ToolbarChip)}
-                deleteChipGroup={() => onDeleteGroup('Fixable')}
-                categoryName="Fixable"
-                children={undefined}
-            />
-        </>
+        <Flex spaceItems={{ default: 'spaceItemsXs' }}>
+            <FlexItem className="pf-u-pt-xs">
+                <ChipGroup
+                    categoryName="Deployment"
+                    isClosable
+                    onClick={() => onDeleteGroup('DEPLOYMENT')}
+                >
+                    {deployments.map((deployment) => (
+                        <Chip key={deployment} onClick={() => onDelete('DEPLOYMENT', deployment)}>
+                            {deployment}
+                        </Chip>
+                    ))}
+                </ChipGroup>
+            </FlexItem>
+            <FlexItem className="pf-u-pt-xs">
+                <ChipGroup categoryName="CVE" isClosable onClick={() => onDeleteGroup('CVE')}>
+                    {cves.map((cve) => (
+                        <Chip key={cve} onClick={() => onDelete('CVE', cve)}>
+                            {cve}
+                        </Chip>
+                    ))}
+                </ChipGroup>
+            </FlexItem>
+            <FlexItem className="pf-u-pt-xs">
+                <ChipGroup categoryName="Image" isClosable onClick={() => onDeleteGroup('IMAGE')}>
+                    {images.map((image) => (
+                        <Chip key={image} onClick={() => onDelete('IMAGE', image)}>
+                            {image}
+                        </Chip>
+                    ))}
+                </ChipGroup>
+            </FlexItem>
+            <FlexItem className="pf-u-pt-xs">
+                <ChipGroup
+                    categoryName="Namespace"
+                    isClosable
+                    onClick={() => onDeleteGroup('NAMESPACE')}
+                >
+                    {namespaces.map((namespace) => (
+                        <Chip key={namespace} onClick={() => onDelete('NAMESPACE', namespace)}>
+                            {namespace}
+                        </Chip>
+                    ))}
+                </ChipGroup>
+            </FlexItem>
+            <FlexItem className="pf-u-pt-xs">
+                <ChipGroup
+                    categoryName="Cluster"
+                    isClosable
+                    onClick={() => onDeleteGroup('CLUSTER')}
+                >
+                    {clusters.map((cluster) => (
+                        <Chip key={cluster} onClick={() => onDelete('CLUSTER', cluster)}>
+                            {cluster}
+                        </Chip>
+                    ))}
+                </ChipGroup>
+            </FlexItem>
+            <FlexItem className="pf-u-pt-xs">
+                <ChipGroup
+                    categoryName="Severity"
+                    isClosable
+                    onClick={() => onDeleteGroup('Severity')}
+                >
+                    {severities.map((severity) => (
+                        <Chip key={severity} onClick={() => onDelete('Severity', severity)}>
+                            <FilterChip
+                                isGlobal={defaultFilters.Severity?.includes(severity)}
+                                name={severity}
+                            />
+                        </Chip>
+                    ))}
+                </ChipGroup>
+            </FlexItem>
+            <FlexItem className="pf-u-pt-xs">
+                <ChipGroup
+                    categoryName="Fixable"
+                    isClosable
+                    onClick={() => onDeleteGroup('Fixable')}
+                >
+                    {fixables.map((fixableStatus) => (
+                        <Chip
+                            key={fixableStatus}
+                            onClick={() => onDelete('Fixable', fixableStatus)}
+                        >
+                            <FilterChip
+                                isGlobal={defaultFilters.Fixable?.includes(fixableStatus)}
+                                name={fixableStatus}
+                            />
+                        </Chip>
+                    ))}
+                </ChipGroup>
+            </FlexItem>
+        </Flex>
     );
 }
 

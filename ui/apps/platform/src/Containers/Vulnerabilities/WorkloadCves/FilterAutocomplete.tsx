@@ -24,13 +24,11 @@ function getAutocompleteOptionsQueryString(searchFilter: SearchFilter): string {
         .join('+');
 }
 
-// we have to convert IMAGE_CVE to CVE for the query to populate
-// autocomplete for Image CVEs
-function getResourceQueryString(resource: Resource) {
-    if (resource === 'IMAGE_CVE') {
-        return 'CVE';
+function getSearchCategoriesForAutocomplete(resource: Resource) {
+    if (resource === 'CVE') {
+        return 'IMAGE_CVE';
     }
-    return resource;
+    return searchCategories[resource];
 }
 
 type FilterAutocompleteSelectProps = {
@@ -47,17 +45,18 @@ function FilterAutocompleteSelect({
     onDeleteGroup,
 }: FilterAutocompleteSelectProps) {
     const [resource, setResource] = useState<Resource>('DEPLOYMENT');
-    const [typeahead, setTypeahead] = useState(searchFilter[resource] || '');
+    const [typeahead, setTypeahead] = useState('');
     const { isOpen, onToggle } = useSelectToggle();
     const variables = {
-        query: getAutocompleteOptionsQueryString({ [getResourceQueryString(resource)]: typeahead }),
-        categories: searchCategories[resource],
+        query: getAutocompleteOptionsQueryString({ [resource]: typeahead }),
+        categories: getSearchCategoriesForAutocomplete(resource),
     };
 
     const { data } = useQuery(SEARCH_AUTOCOMPLETE_QUERY, { variables });
 
     function onSelect(newValue) {
         const oldValue = searchFilter[resource] as string[];
+        setTypeahead('');
         if (oldValue?.includes(newValue)) {
             setSearchFilter({
                 ...searchFilter,
