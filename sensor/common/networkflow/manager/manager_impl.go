@@ -495,7 +495,7 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 
 	// Multiple endpoints from a collector can result in a single enriched endpoint,
 	// hence update the timestamp only if we have a more recent endpoint than the one we have already enriched.
-	if oldTS, found := processesListening[indicator]; !found || oldTS < status.lastSeen {
+	if oldTS, found := processesListening[indicator]; !found || oldTS < status.lastSeen || oldTS == timestamp.InfiniteFuture {
 		processesListening[indicator] = status.lastSeen
 	}
 }
@@ -522,7 +522,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 	prevSize := len(hostConns.endpoints)
 	for ep, status := range hostConns.endpoints {
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
-		if status.used && status.usedProcess && status.lastSeen != timestamp.InfiniteFuture || oldTS == timestamp.InfiniteFuture {
+		if status.used && status.usedProcess && status.lastSeen != timestamp.InfiniteFuture {
 			// endpoints that are no longer active and have already been used can be deleted.
 			delete(hostConns.endpoints, ep)
 		}
