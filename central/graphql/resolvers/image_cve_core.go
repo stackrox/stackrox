@@ -125,7 +125,7 @@ func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {
 // ImageCVE returns graphQL resolver for specified image cve.
 func (resolver *Resolver) ImageCVE(ctx context.Context, args struct {
 	Cve   *string
-	Query *RawQuery
+	Query *string
 }) (*imageCVECoreResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEMetadata")
 
@@ -141,7 +141,10 @@ func (resolver *Resolver) ImageCVE(ctx context.Context, args struct {
 
 	query := search.NewQueryBuilder().AddExactMatches(search.CVE, *args.Cve).ProtoQuery()
 	if args.Query != nil {
-		filterQuery, err := args.Query.AsV1QueryOrEmpty()
+		rQuery := RawQuery{
+			Query: args.Query,
+		}
+		filterQuery, err := rQuery.AsV1QueryOrEmpty()
 		if err != nil {
 			return nil, err
 		}

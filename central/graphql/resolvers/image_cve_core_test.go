@@ -133,7 +133,7 @@ func (s *ImageCVECoreResolverTestSuite) TestCountImageCVEsWithQuery() {
 func (s *ImageCVECoreResolverTestSuite) TestGetImageCVEMalformed() {
 	_, err := s.resolver.ImageCVE(s.ctx, struct {
 		Cve   *string
-		Query *RawQuery
+		Query *string
 	}{})
 	s.Error(err)
 }
@@ -149,10 +149,9 @@ func (s *ImageCVECoreResolverTestSuite) TestGetImageCVENonEmpty() {
 	response, err := s.resolver.ImageCVE(
 		s.ctx, struct {
 			Cve   *string
-			Query *RawQuery
+			Query *string
 		}{
-			Cve:   pointers.String("cve-xyz"),
-			Query: nil,
+			Cve: pointers.String("cve-xyz"),
 		},
 	)
 	s.NoError(err)
@@ -170,10 +169,10 @@ func (s *ImageCVECoreResolverTestSuite) TestGetImageCVENonEmpty() {
 	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ, views.ReadOptions{}).Return(expected, nil)
 	response, err = s.resolver.ImageCVE(s.ctx, struct {
 		Cve   *string
-		Query *RawQuery
+		Query *string
 	}{
 		Cve:   pointers.String("cve-xyz"),
-		Query: &RawQuery{Query: pointers.String("Fixable:true")},
+		Query: pointers.String("Fixable:true"),
 	},
 	)
 	s.NoError(err)
