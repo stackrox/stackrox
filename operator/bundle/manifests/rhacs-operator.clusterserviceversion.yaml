@@ -180,6 +180,10 @@ spec:
         path: central.db.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: Config map containing postgresql.conf and pg_hba.conf that will
+          be used if modifications need to be applied.
+        displayName: Config map that will override postgresql.conf and pg_hba.conf
+        path: central.db.configOverride
       - description: Deprecated field. It is no longer necessary to specify it. This
           field will be removed in a future release. Central is configured to use
           PostgreSQL by default.
@@ -187,6 +191,11 @@ spec:
         path: central.db.isEnabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: The name of the referenced config map.
+        displayName: Name
+        path: central.db.configOverride.name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:ConfigMap
       - description: The name of the referenced secret.
         displayName: Name
         path: central.db.passwordSecret.name

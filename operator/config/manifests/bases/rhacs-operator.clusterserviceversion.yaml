@@ -390,6 +390,15 @@ spec:
         path: central.adminPasswordSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Config map containing postgresql.conf and pg_hba.conf that will
+          be used if modifications need to be applied.
+        displayName: Config map that will override postgresql.conf and pg_hba.conf
+        path: central.db.configOverride
+      - description: The name of the referenced config map.
+        displayName: Name
+        path: central.db.configOverride.name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:ConfigMap
       - description: Deprecated field. It is no longer necessary to specify it. This
           field will be removed in a future release. Central is configured to use
           PostgreSQL by default.
