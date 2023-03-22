@@ -522,7 +522,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 	prevSize := len(hostConns.endpoints)
 	for ep, status := range hostConns.endpoints {
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
-		if status.used && status.usedProcess && status.lastSeen != timestamp.InfiniteFuture {
+		if status.used && status.usedProcess && status.lastSeen != timestamp.InfiniteFuture || oldTS == timestamp.InfiniteFuture {
 			// endpoints that are no longer active and have already been used can be deleted.
 			delete(hostConns.endpoints, ep)
 		}
@@ -617,7 +617,7 @@ func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.Mic
 
 	for pl, currTS := range current {
 		prevTS, ok := previous[pl]
-		if !ok || currTS > prevTS {
+		if !ok || currTS > prevTS  || (prevTS == timestamp.InfiniteFuture && currTS != timestamp.InfiniteFuture) {
 			updates = append(updates, pl.toProto(currTS))
 		}
 	}
