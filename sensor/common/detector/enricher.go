@@ -142,7 +142,7 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 		return
 	}
 
-	log.Debugf("Successful image scan for image %s: components: %+v", scannedImage.GetImage().GetScan().GetComponents())
+	log.Debugf("Successful image scan for image %s: components: %+v", req.containerImage.GetName().GetFullName(), scannedImage.GetImage().GetScan().GetComponents())
 	c.image = scannedImage.GetImage()
 }
 
@@ -187,6 +187,7 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 
 	img, ok := e.getImageFromCache(key)
 	if ok {
+		log.Debugf("Image scan loaded from cache: key %s | image name: %s", key, req.containerImage.GetName().GetFullName())
 		// If the container image name is already within the cached images names, we can short-circuit.
 		if protoutils.SliceContains(req.containerImage.GetName(), img.GetNames()) {
 			return imageChanResult{

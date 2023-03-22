@@ -529,6 +529,12 @@ function launch_sensor {
         helm_args+=(--set "helmManaged=false")
       fi
 
+      if [[ -n "$LOGLEVEL" ]]; then
+        helm_args+=(
+          --set customize.envVars.LOGLEVEL="${LOGLEVEL}"
+        )
+      fi
+
       if [[ -n "$CI" ]]; then
         helm lint "$k8s_dir/sensor-deploy/chart"
         helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox
