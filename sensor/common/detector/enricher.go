@@ -187,9 +187,9 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 
 	img, ok := e.getImageFromCache(key)
 	if ok {
-		log.Debugf("Image scan loaded from cache: %s: Components: (%d)", req.containerImage.GetName().GetFullName(), len(img.GetScan().GetComponents()))
 		// If the container image name is already within the cached images names, we can short-circuit.
 		if protoutils.SliceContains(req.containerImage.GetName(), img.GetNames()) {
+			log.Debugf("Image scan loaded from cache: %s: Components: (%d)", req.containerImage.GetName().GetFullName(), len(img.GetScan().GetComponents()))
 			return imageChanResult{
 				image:        img,
 				containerIdx: req.containerIdx,

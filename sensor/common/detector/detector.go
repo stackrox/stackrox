@@ -325,6 +325,14 @@ func (d *detectorImpl) runDetector() {
 				NetworkPoliciesApplied: scanOutput.networkPoliciesApplied,
 			})
 
+			if scanOutput.deployment.GetNamespace() == "stackrox" {
+				var components []*storage.EmbeddedImageScanComponent
+				for _, img := range scanOutput.images {
+					components = append(components, img.GetScan().GetComponents()...)
+				}
+				log.Debugf("Processed deployment %s for alerts (%d alerts) (%d components)", scanOutput.deployment.GetName(), len(alerts), len(components))
+			}
+
 			sort.Slice(alerts, func(i, j int) bool {
 				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
 			})
