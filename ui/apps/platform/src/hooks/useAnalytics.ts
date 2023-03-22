@@ -6,36 +6,27 @@ import { selectors } from 'reducers';
 
 const useAnalytics = () => {
     const telemetry = useSelector(selectors.publicConfigTelemetrySelector);
-    const { enabled: telemetryEnabled } = telemetry || ({} as Telemetry);
-
-    const analyticsIdentity = useCallback(
-        (userId: string, traits = {}): void => {
-            if (telemetryEnabled) {
-                window.analytics?.identify(userId, traits);
-            }
-        },
-        [telemetryEnabled]
-    );
+    const { enabled: isTelemetryEnabled } = telemetry || ({} as Telemetry);
 
     const analyticsPageVisit = useCallback(
         (type: string, name: string, additionalProperties = {}): void => {
-            if (telemetryEnabled) {
+            if (isTelemetryEnabled) {
                 window.analytics?.page(type, name, additionalProperties);
             }
         },
-        [telemetryEnabled]
+        [isTelemetryEnabled]
     );
 
     const analyticsTrack = useCallback(
         (event: string, additionalProperties = {}): void => {
-            if (telemetryEnabled) {
+            if (isTelemetryEnabled) {
                 window.analytics?.track(event, additionalProperties);
             }
         },
-        [telemetryEnabled]
+        [isTelemetryEnabled]
     );
 
-    return { analyticsIdentity, analyticsPageVisit, analyticsTrack };
+    return { analyticsPageVisit, analyticsTrack };
 };
 
 export default useAnalytics;
