@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -533,10 +534,18 @@ func (resolver *imageComponentResolver) LayerIndex() (*int32, error) {
 		return &v, nil
 	}
 
-	scope, hasScope := scoped.GetScope(resolver.ctx)
-	if !hasScope || scope.Level != v1.SearchCategory_IMAGES {
-		return nil, nil
+	var scope scoped.Scope
+	var hasScope bool
+	if features.VulnMgmtWorkloadCVEs.Enabled() {
+		if scope, hasScope = scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES); !hasScope {
+			return nil, nil
+		}
+	} else {
+		if scope, hasScope = scoped.GetScope(resolver.ctx); !hasScope || scope.Level != v1.SearchCategory_IMAGES {
+			return nil, nil
+		}
 	}
+
 	edges, err := resolver.root.ImageComponentEdgeDataStore.SearchRawEdges(resolver.ctx, resolver.componentQuery())
 	if err != nil {
 		return nil, err
