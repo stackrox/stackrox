@@ -76,9 +76,10 @@ message NodeScan {
     repeated EmbeddedNodeScanComponent components       = 2 [(gogoproto.moretags) = 'sql:"-"'];
 
     enum Note {
-        UNSET              = 0;
-        UNSUPPORTED        = 1;
-        KERNEL_UNSUPPORTED = 2;
+        UNSET                           = 0;
+        UNSUPPORTED                     = 1;
+        KERNEL_UNSUPPORTED              = 2;
+        CERTIFIED_RHEL_CVES_UNAVAILABLE = 3;
     }
     repeated Note                      notes            = 4;
 }

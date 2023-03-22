@@ -33,10 +33,6 @@ export const imageScanMessages = {
         header: 'Image out of scope for Red Hat Vulnerability Scanner Certification.',
         body: 'The scan results are not certified, as the base RHEL image is out of scope for certification. Please consider updating the base image.',
     },
-    contentSetUnavailable: {
-        header: 'Unavailable or invalid CPE data',
-        body: 'The NodeInventory is either missing CPE data or is holding invalid CPE data.',
-    },
 };
 
 export const nodeScanMessages = {
@@ -51,5 +47,9 @@ export const nodeScanMessages = {
     kernelUnsupported: {
         header: 'Node’s kernel unsupported.',
         body: 'This node’s kernel is not supported at this time.',
+    },
+    certifiedRHELCVEsUnavailable: {
+        header: 'Node’s certified RHEL CVEs unavailable',
+        body: 'The CVEs of this certified RHEL Node are unavailable at this time.',
     },
 };
