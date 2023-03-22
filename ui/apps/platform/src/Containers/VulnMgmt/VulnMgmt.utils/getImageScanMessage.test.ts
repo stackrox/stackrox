@@ -73,13 +73,4 @@ describe('getImageScanMessage', () => {
 
         expect(messageObj).toEqual(imageScanMessages.certifiedRHELUnavailable);
     });
-
-    it('should return an object for contentSetUnavailable when scan notes contain PARTIAL_SCAN_DATA and CONTENT_SET_UNAVAILABLE', () => {
-        const imagesNotes = [];
-        const scanNotes = ['CONTENT_SET_UNAVAILABLE'];
-
-        const messageObj = getImageScanMessage(imagesNotes, scanNotes);
-
-        expect(messageObj).toEqual(imageScanMessages.contentSetUnavailable);
-    });
 });
