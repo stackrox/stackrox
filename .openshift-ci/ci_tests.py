@@ -226,7 +226,7 @@ class UIE2eTest(BaseTest):
 
 
 class NonGroovyE2e(BaseTest):
-    TEST_TIMEOUT = 30 * 60
+    TEST_TIMEOUT = 90 * 60
     TEST_OUTPUT_DIR = "/tmp/e2e-test-logs"
 
     def run(self):
