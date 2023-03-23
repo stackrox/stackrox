@@ -62,6 +62,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:8082,fork STDOUT & " +
 			"sleep 90 && pkill socat && sleep 3600)" as String,]),
+                    // The 8082 port is opened. 90 seconds later the process is killed. After that we sleep forever
         ]
     }
 
@@ -241,7 +242,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
     @Tag("BAT")
     def "Verify networking endpoints disappear when process is terminated"() {
         given:
-        "Two deployments that listen on ports are started up"
+        "When a deployment listening on a port is created and then the process is terminated"
 
         rebuildForRetries()
         def clusterId = ClusterService.getClusterId()
@@ -250,6 +251,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         def gotCorrectNumElements = waitForResponseToHaveNumElements(1, deploymentId3, 240)
 
+        // First check that the listening endpoint appears in the API
         assert gotCorrectNumElements
 
         def processesListeningOnPorts = evaluateWithRetry(10, 10) {
@@ -278,15 +280,14 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         gotCorrectNumElements = waitForResponseToHaveNumElements(0, deploymentId3, 180)
 
+        // Allow enough time for the process and port to close and check that it is not in the API response
         assert gotCorrectNumElements
-
-        destroyDeployments()
     }
 
     @Tag("BAT")
     def "Verify networking endpoints doesn't disappear when port stays open"() {
         given:
-        "Two deployments that listen on ports are started up"
+        "A deployment listening on a port is brought up and it is checked twice that the port is found"
 
         rebuildForRetries()
         def clusterId = ClusterService.getClusterId()
@@ -295,6 +296,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         def gotCorrectNumElements = waitForResponseToHaveNumElements(1, deploymentId2, 240)
 
+        // First check that the listening endpoint appears in the API
         assert gotCorrectNumElements
 
         def processesListeningOnPorts = evaluateWithRetry(10, 10) {
@@ -321,8 +323,9 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
         assert endpoint.signal.pid
 
-        gotCorrectNumElements = waitForResponseToHaveNumElements(0, deploymentId2, 180)
+        gotCorrectNumElements = waitForResponseToHaveNumElements(0, deploymentId2, 65)
 
+        // Confirm that the listening endpoint still appears in the API 65 seconds later
         assert !gotCorrectNumElements
 
         destroyDeployments()
