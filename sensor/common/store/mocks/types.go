@@ -69,6 +69,20 @@ func (mr *MockDeploymentStoreMockRecorder) CountDeploymentsForNamespace(namespac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDeploymentsForNamespace", reflect.TypeOf((*MockDeploymentStore)(nil).CountDeploymentsForNamespace), namespaceName)
 }
 
+// FindDeploymentIDsByImage mocks base method.
+func (m *MockDeploymentStore) FindDeploymentIDsByImage(image *storage.Image) []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindDeploymentIDsByImage", image)
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// FindDeploymentIDsByImage indicates an expected call of FindDeploymentIDsByImage.
+func (mr *MockDeploymentStoreMockRecorder) FindDeploymentIDsByImage(image interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindDeploymentIDsByImage", reflect.TypeOf((*MockDeploymentStore)(nil).FindDeploymentIDsByImage), image)
+}
+
 // FindDeploymentIDsByLabels mocks base method.
 func (m *MockDeploymentStore) FindDeploymentIDsByLabels(namespace string, sel selector.Selector) []string {
 	m.ctrl.T.Helper()
@@ -123,6 +137,20 @@ func (m *MockDeploymentStore) GetAll() []*storage.Deployment {
 func (mr *MockDeploymentStoreMockRecorder) GetAll() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockDeploymentStore)(nil).GetAll))
+}
+
+// GetBuiltDeployment mocks base method.
+func (m *MockDeploymentStore) GetBuiltDeployment(id string) *storage.Deployment {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBuiltDeployment", id)
+	ret0, _ := ret[0].(*storage.Deployment)
+	return ret0
+}
+
+// GetBuiltDeployment indicates an expected call of GetBuiltDeployment.
+func (mr *MockDeploymentStoreMockRecorder) GetBuiltDeployment(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBuiltDeployment", reflect.TypeOf((*MockDeploymentStore)(nil).GetBuiltDeployment), id)
 }
 
 // MockPodStore is a mock of PodStore interface.
