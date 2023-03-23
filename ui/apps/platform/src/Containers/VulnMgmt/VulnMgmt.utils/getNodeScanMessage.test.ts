@@ -44,6 +44,6 @@ describe('getNodeScanMessage', () => {
 
         const messageObj = getNodeScanMessage(nodesNotes, scanNotes);
 
-        expect(messageObj).toEqual(nodeScanMessages.kernelUnsupported);
+        expect(messageObj).toEqual(nodeScanMessages.certifiedRHELCVEsUnavailable);
     });
 });
