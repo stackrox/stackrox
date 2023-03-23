@@ -1,11 +1,5 @@
 import React, { useEffect } from 'react';
-import {
-    Toolbar,
-    ToolbarItem,
-    ToolbarGroup,
-    ToolbarContent,
-    ToolbarChip,
-} from '@patternfly/react-core';
+import { Toolbar, ToolbarGroup, ToolbarContent, ToolbarChip } from '@patternfly/react-core';
 
 import useURLSearch from 'hooks/useURLSearch';
 import { uniq } from 'lodash';

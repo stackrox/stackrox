@@ -22,6 +22,8 @@ function FilterResourceDropdown({
         setResource(selection);
     }
 
+    // TODO: this will need to be dynamic once the endpoint is in
+    // /v1/internal/search/metadata/options
     const resourceOptions = [
         <SelectOption key="CVE" value="CVE">
             CVE
