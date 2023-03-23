@@ -634,12 +634,11 @@ func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID str
 		if !exists {
 			errorList.AddStringf("notifier with id: %s not found", notifierID)
 			continue
-		} else {
-			if notifierSet.Contains(notifierID) {
-				continue
-			}
-			policy.Notifiers = append(policy.Notifiers, notifierID)
 		}
+		if notifierSet.Contains(notifierID) {
+			continue
+		}
+		policy.Notifiers = append(policy.Notifiers, notifierID)
 	}
 
 	_, err = s.PutPolicy(ctx, policy)
