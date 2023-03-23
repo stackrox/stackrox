@@ -124,3 +124,45 @@ func TestParsePairs(t *testing.T) {
 		})
 	}
 }
+
+func TestValueAndModifierFromString(t *testing.T) {
+	cases := []struct {
+		value            string
+		expectedValue    string
+		expectedModifier []QueryModifier
+	}{
+		{
+			value:            "test",
+			expectedValue:    "test",
+			expectedModifier: nil,
+		},
+		{
+			value:            "\"test\"",
+			expectedValue:    "test",
+			expectedModifier: []QueryModifier{Equality},
+		},
+		{
+			value:            "\"\"",
+			expectedValue:    "",
+			expectedModifier: []QueryModifier{Equality},
+		},
+		{
+			value:            "\"",
+			expectedValue:    "\"",
+			expectedModifier: nil,
+		},
+		{
+			value:            "\"test",
+			expectedValue:    "\"test",
+			expectedModifier: nil,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.value, func(t *testing.T) {
+			value, modifier := GetValueAndModifiersFromString(c.value)
+			assert.Equal(t, c.expectedValue, value)
+			assert.Equal(t, c.expectedModifier, modifier)
+		})
+	}
+}

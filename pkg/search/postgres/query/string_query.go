@@ -1,7 +1,6 @@
 package pgsearch
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -19,10 +18,6 @@ func newStringQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 }
 
 func newStringQueryWhereClause(columnName string, value string, queryModifiers ...pkgSearch.QueryModifier) (WhereClause, error) {
-	if len(value) == 0 {
-		return WhereClause{}, errors.New("value in search query cannot be empty")
-	}
-
 	if len(queryModifiers) == 0 {
 		return WhereClause{
 			Query:  fmt.Sprintf("%s ilike $$", columnName),
