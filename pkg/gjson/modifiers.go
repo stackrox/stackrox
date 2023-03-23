@@ -144,14 +144,7 @@ func TextModifier() CustomModifier {
 		res := gjson.Parse(jsonString)
 		texts := map[int]string{}
 		res.ForEach(func(key, value gjson.Result) bool {
-			if !value.IsArray() {
-				texts[0] += modifier.resultToText(key, value)
-				return true
-			}
-
-			for i, val := range value.Array() {
-				texts[i] += modifier.resultToText(key, val)
-			}
+			toText(texts, key, value, modifier, 0)
 			return true
 		})
 		// Ensure we keep the same order for the texts we generated.
@@ -164,6 +157,23 @@ func TextModifier() CustomModifier {
 		bytes, _ := json.Marshal(result)
 		return string(bytes)
 	}
+}
+
+func toText(texts map[int]string, key gjson.Result, value gjson.Result, modifier resultToTextModifier, index int) int {
+	if !value.IsArray() {
+		texts[index] += modifier.resultToText(key, value)
+		index++
+		return index
+	}
+	for _, val := range value.Array() {
+		if val.IsArray() {
+			index = toText(texts, key, val, modifier, index)
+			continue
+		}
+		texts[index] += modifier.resultToText(key, val)
+		index++
+	}
+	return index
 }
 
 type resultToTextModifier struct {

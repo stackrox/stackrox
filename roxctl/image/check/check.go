@@ -48,17 +48,17 @@ var (
 	}
 
 	sarifJSONPathExpressions = map[string]string{
-		printers.RuleJSONPathExpressionKey:        "result.#.violatedPolicies.#.name",
-		printers.DescriptionJSONPathExpressionKey: "result.#.violatedPolicies.#.description",
+		printers.RuleJSONPathExpressionKey:        "results.#.violatedPolicies.#.name",
+		printers.DescriptionJSONPathExpressionKey: "results.#.violatedPolicies.#.description",
 		printers.HelpJSONPathExpressionKey: gjson.MultiPathExpression(
 			"@text",
 			gjson.Expression{
 				Key:        "Policy",
-				Expression: "result.#.violatedPolicies.#.name",
+				Expression: "results.#.violatedPolicies.#.name",
 			},
 			gjson.Expression{
 				Key:        "Severity",
-				Expression: "result.#.violatedPolicies.#.severity",
+				Expression: "results.#.violatedPolicies.#.severity",
 			},
 			gjson.Expression{
 				Key:        "Violations",
@@ -69,7 +69,7 @@ var (
 				Expression: "results.#.violatedPolicies.#.remediation",
 			},
 		),
-		printers.SeverityJSONPathExpressionKey: "result.#.violatedPolicies.#.severity",
+		printers.SeverityJSONPathExpressionKey: "results.#.violatedPolicies.#.severity",
 	}
 
 	// supported output formats with default values
