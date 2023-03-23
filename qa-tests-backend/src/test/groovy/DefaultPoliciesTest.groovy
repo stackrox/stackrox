@@ -201,7 +201,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         "Verify Violation for #policyName is triggered"
         // Some of these policies require scans so extend the timeout as the scan will be done inline
         // with our scanner
-        assert waitForViolation(deploymentName,  policyName, 60)
+        assert waitForViolation(deploymentName,  policyName, 300)
 
         cleanup:
         if (policyEnabled) {
