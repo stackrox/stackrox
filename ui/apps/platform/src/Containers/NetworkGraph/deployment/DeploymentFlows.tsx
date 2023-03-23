@@ -15,9 +15,9 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
+import pluralize from 'pluralize';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import pluralize from 'pluralize';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import {
     filterNetworkFlows,

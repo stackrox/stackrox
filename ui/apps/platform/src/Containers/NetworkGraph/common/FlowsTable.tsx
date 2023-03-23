@@ -29,7 +29,7 @@ type FlowsTableProps = {
     flows: Flow[];
     numFlows: number;
     expandedRows: string[];
-    setExpandedRows?: React.Dispatch<React.SetStateAction<string[]>>;
+    setExpandedRows: React.Dispatch<React.SetStateAction<string[]>>;
     selectedRows: string[];
     setSelectedRows: React.Dispatch<React.SetStateAction<string[]>>;
     isEditable?: boolean;
