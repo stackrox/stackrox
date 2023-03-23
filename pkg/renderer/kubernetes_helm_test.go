@@ -181,9 +181,8 @@ func TestRenderSensorTLSSecretsOnly(t *testing.T) {
 		err := d.Decode(spec)
 		if errors.Is(err, io.EOF) {
 			break
-		} else {
-			require.NoError(t, err)
 		}
+		require.NoError(t, err)
 
 		secret := &corev1.Secret{}
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(spec, secret)

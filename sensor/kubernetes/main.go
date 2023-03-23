@@ -69,9 +69,8 @@ func main() {
 		case <-s.Stopped().Done():
 			if err := s.Stopped().Err(); err != nil {
 				log.Fatalf("Sensor exited with error: %v", err)
-			} else {
-				log.Info("Sensor exited normally")
 			}
+			log.Info("Sensor exited normally")
 			return
 		}
 	}
