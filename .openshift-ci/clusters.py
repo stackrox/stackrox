@@ -7,6 +7,7 @@ Clusters used in test
 import os
 import signal
 import subprocess
+import tempfile
 import time
 
 from common import popen_graceful_kill
@@ -140,11 +141,12 @@ class OpenShiftScaleWorkersCluster:
     def teardown(self):
         pass
 
-"""
-SeparateClusters - central and sensor are deployed to separate clusters. If
-either of the two kubeconfig args are not passed a GKE cluster is created.
-"""
 class SeparateClusters:
+    """
+    SeparateClusters - central and sensor are deployed to separate clusters. If
+    either of the two kubeconfig args are not passed a GKE cluster is created.
+    """
+
     def __init__(self, cluster_id, central_cluster_kubeconfig="", sensor_cluster_kubeconfig=""):
         self.cluster_id = cluster_id
         self.central_cluster_kubeconfig = central_cluster_kubeconfig
@@ -154,22 +156,22 @@ class SeparateClusters:
 
     def provision(self):
         if self.central_cluster_kubeconfig == "":
-            kubeconfig = tempfile.NamedTemporaryFile(delete=False)
-            kubeconfig.close()
-            os.environ["KUBECONFIG"] = kubeconfig.name
-            self.central_cluster = GKECluster(self.cluster_id + "-central")
-            self.central_cluster.provision()
-            os.environ["CENTRAL_CLUSTER_KUBECONFIG"] = kubeconfig.name
-            self.central_cluster_kubeconfig = kubeconfig.name
+            with tempfile.NamedTemporaryFile(delete=False) as kubeconfig:
+                kubeconfig.close()
+                os.environ["KUBECONFIG"] = kubeconfig.name
+                self.central_cluster = GKECluster(self.cluster_id + "-central")
+                self.central_cluster.provision()
+                os.environ["CENTRAL_CLUSTER_KUBECONFIG"] = kubeconfig.name
+                self.central_cluster_kubeconfig = kubeconfig.name
 
         if self.sensor_cluster_kubeconfig == "":
-            kubeconfig = tempfile.NamedTemporaryFile(delete=False)
-            kubeconfig.close()
-            os.environ["KUBECONFIG"] = kubeconfig.name
-            self.sensor_cluster = GKECluster(self.cluster_id + "-central")
-            self.sensor_cluster.provision()
-            os.environ["SENSOR_CLUSTER_KUBECONFIG"] = kubeconfig.name
-            self.sensor_cluster_kubeconfig = kubeconfig.name
+            with tempfile.NamedTemporaryFile(delete=False) as kubeconfig:
+                kubeconfig.close()
+                os.environ["KUBECONFIG"] = kubeconfig.name
+                self.sensor_cluster = GKECluster(self.cluster_id + "-central")
+                self.sensor_cluster.provision()
+                os.environ["SENSOR_CLUSTER_KUBECONFIG"] = kubeconfig.name
+                self.sensor_cluster_kubeconfig = kubeconfig.name
 
         return self
 
