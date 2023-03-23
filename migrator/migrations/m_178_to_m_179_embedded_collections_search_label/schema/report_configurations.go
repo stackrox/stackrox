@@ -26,14 +26,15 @@ var (
 )
 
 const (
+	// ReportConfigurationsTableName is the name of the table used for storage.
 	ReportConfigurationsTableName = "report_configurations"
 )
 
 // ReportConfigurations holds the Gorm model for Postgres table `report_configurations`.
 type ReportConfigurations struct {
-	Id         string                                 `gorm:"column:id;type:varchar;primaryKey"`
+	ID         string                                 `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string                                 `gorm:"column:name;type:varchar"`
 	Type       storage.ReportConfiguration_ReportType `gorm:"column:type;type:integer"`
-	ScopeId    string                                 `gorm:"column:scopeid;type:varchar"`
+	ScopeID    string                                 `gorm:"column:scopeid;type:varchar"`
 	Serialized []byte                                 `gorm:"column:serialized;type:bytea"`
 }
