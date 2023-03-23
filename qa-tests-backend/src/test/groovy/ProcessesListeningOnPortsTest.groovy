@@ -263,7 +263,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         def list = processesListeningOnPorts.listeningEndpointsList
         assert list.size() == 1
 
-        def endpoint = list.find { it.endpoint.port == 8081 }
+        def endpoint = list.find { it.endpoint.port == 8082 }
 
         assert endpoint
         assert endpoint.clusterId == clusterId
@@ -273,7 +273,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint.signal.time
         assert endpoint.signal.name == "socat"
         assert endpoint.signal.execFilePath == "/usr/bin/socat"
-        assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
+        assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8082,fork STDOUT"
         assert endpoint.signal.pid
 
         gotCorrectNumElements = waitForResponseToHaveNumElements(0, deploymentId3, 180)
