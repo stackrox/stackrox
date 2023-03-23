@@ -142,7 +142,7 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 		return
 	}
 
-	log.Debugf("Successful image scan for image %s: components: %+v", req.containerImage.GetName().GetFullName(), scannedImage.GetImage().GetScan().GetComponents())
+	log.Debugf("Successful image scan for image %s: %d components returned by scanner", req.containerImage.GetName().GetFullName(), len(scannedImage.GetImage().GetScan().GetComponents()))
 	c.image = scannedImage.GetImage()
 }
 

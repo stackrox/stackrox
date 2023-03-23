@@ -266,7 +266,6 @@ func (d *detectorImpl) processNetworkBaselineSync(sync *central.NetworkBaselineS
 
 func (d *detectorImpl) processUpdatedImage(image *storage.Image) error {
 	key := imagecacheutils.GetImageCacheKey(image)
-
 	log.Debugf("Receiving update for image: %s from central. Updating cache", image.GetName().GetFullName())
 	newValue := &cacheValue{
 		image:     image,
@@ -279,7 +278,6 @@ func (d *detectorImpl) processUpdatedImage(image *storage.Image) error {
 
 func (d *detectorImpl) processReprocessDeployments() error {
 	log.Debugf("Reprocess deployments triggered. Clearing cache and deduper")
-	// TODO: Also clear scan result cache here?
 	if d.admissionCacheNeedsFlush && d.admCtrlSettingsMgr != nil {
 		// Would prefer to do a targeted flush
 		d.admCtrlSettingsMgr.FlushCache()
@@ -324,14 +322,6 @@ func (d *detectorImpl) runDetector() {
 				Images:                 scanOutput.images,
 				NetworkPoliciesApplied: scanOutput.networkPoliciesApplied,
 			})
-
-			if scanOutput.deployment.GetNamespace() == "stackrox" {
-				var components []*storage.EmbeddedImageScanComponent
-				for _, img := range scanOutput.images {
-					components = append(components, img.GetScan().GetComponents()...)
-				}
-				log.Debugf("Processed deployment %s for alerts (%d alerts) (%d components)", scanOutput.deployment.GetName(), len(alerts), len(components))
-			}
 
 			sort.Slice(alerts, func(i, j int) bool {
 				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
