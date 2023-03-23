@@ -55,7 +55,7 @@ func (suite *NetworkflowManagerTestSuite) TestAddNothing() {
 
 	networkInfo := &sensor.NetworkConnectionInfo{}
 	nowTimestamp := timestamp.Now()
-	var sequenceID int64 = 0
+	var sequenceID int64
 	err := h.Process(networkInfo, nowTimestamp, sequenceID)
 	suite.NoError(err)
 	suite.Len(h.endpoints, 0)
@@ -70,7 +70,7 @@ func (suite *NetworkflowManagerTestSuite) TestAddOpen() {
 	}
 
 	nowTimestamp := timestamp.Now()
-	var sequenceID int64 = 0
+	var sequenceID int64
 	h.connectionsSequenceID = sequenceID
 	err := h.Process(networkInfo, nowTimestamp, sequenceID)
 	suite.NoError(err)
@@ -90,7 +90,7 @@ func (suite *NetworkflowManagerTestSuite) TestAddOpenAndClosed() {
 	}
 
 	nowTimestamp := timestamp.Now()
-	var sequenceID int64 = 0
+	var sequenceID int64
 	h.connectionsSequenceID = sequenceID
 
 	err := h.Process(networkInfoOpen, nowTimestamp, sequenceID)
