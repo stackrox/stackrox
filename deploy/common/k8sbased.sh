@@ -529,19 +529,6 @@ function launch_sensor {
         helm_args+=(--set "helmManaged=false")
       fi
 
-      if [[ -n "$LOGLEVEL" ]]; then
-        helm_args+=(
-          --set customize.envVars.LOGLEVEL="${LOGLEVEL}"
-        )
-      fi
-
-      if [[ -n "$ROX_RESYNC_DISABLED" ]]; then
-        echo "Setting re-sync disabled to $ROX_RESYNC_DISABLED"
-        helm_args+=(
-          --set customize.envVars.ROX_RESYNC_DISABLED="${ROX_RESYNC_DISABLED}"
-        )
-      fi
-
       if [[ -n "$CI" ]]; then
         helm lint "$k8s_dir/sensor-deploy/chart"
         helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox
@@ -592,10 +579,10 @@ function launch_sensor {
        fi
     fi
 
-#    # TODO(ROX-14310): Remove this patch when re-sync is disabled unconditionally
-#    if [[ "$ROX_RESYNC_DISABLED" == "true" ]]; then
-#        kubectl -n stackrox set env deploy/sensor ROX_RESYNC_DISABLED="true"
-#    fi
+    # TODO(ROX-14310): Remove this patch when re-sync is disabled unconditionally
+    if [[ "$ROX_RESYNC_DISABLED" == "true" ]]; then
+        kubectl -n stackrox set env deploy/sensor ROX_RESYNC_DISABLED="true"
+    fi
 
     if [[ "$MONITORING_SUPPORT" == "true" || ( "$(local_dev)" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
       "${COMMON_DIR}/monitoring.sh"
