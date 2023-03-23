@@ -3,7 +3,6 @@ package resolver
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -50,52 +49,6 @@ func (r *resolverImpl) runResolver() {
 	}
 }
 
-func (r *resolverImpl) getImageMetadataFromDeploymentContainers(prebuiltDeployment *storage.Deployment) map[string]store.ImageMetadata {
-	result := make(map[string]store.ImageMetadata)
-
-	// This is the same work that has to be done when parsing pod templates in `populateImageMetadata` in
-	// `sensor/kubernetes/listener/resources/convert.go`. This has to be done here as well because when re-sync
-	// is disabled, we are reprocessing deployments based on other resource updates. E.g. if a Secret is
-	// updated that would affect a deployment, we need to re-assess `NotPullable` and `IsClusterLocal` based on
-	// registry content. This can be done _without_ having to reprocess the entire deployment event. Just the
-	// parts would be changed.
-
-	for _, container := range prebuiltDeployment.GetContainers() {
-		image := container.GetImage()
-
-		// If there already is an image ID for the image then that implies that the name of the image was fully qualified
-		// with an image digest. e.g. stackrox.io/main@sha256:xyz
-		// If the ID already exists, populate NotPullable and IsClusterLocal.
-		if image != nil && image.GetId() != "" && image.GetName() != nil {
-			result[image.GetName().GetFullName()] = store.ImageMetadata{
-				NotPullable:    !imageUtils.IsPullable(image.GetId()),
-				IsClusterLocal: r.storeProvider.Registries().HasRegistryForImage(image.GetName()),
-			}
-			continue
-		}
-
-		fullName := image.GetName().GetFullName()
-		parsedName, err := imageUtils.GenerateImageFromStringWithOverride(fullName, r.config.GetConfig().GetRegistryOverride())
-		if err != nil {
-			// This error will only happen if we could not parse the image, this is possible if the image in kubernetes is malformed
-			// e.g. us.gcr.io/$PROJECT/xyz:latest is an example that we have seen
-			continue
-		}
-
-		// If the pod spec image doesn't match the top level image, then it is an old spec, so we should ignore its digest
-		if parsedName.GetName().GetFullName() != image.GetName().GetFullName() {
-			continue
-		}
-
-		if digest := imageUtils.ExtractImageDigest(image.GetId()); digest != "" {
-			image.Id = digest
-			image.NotPullable = !imageUtils.IsPullable(image.GetId())
-			image.IsClusterLocal = r.storeProvider.Registries().HasRegistryForImage(image.GetName())
-		}
-	}
-	return result
-}
-
 // processMessage resolves the dependencies and forwards the message to the outputQueue
 func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 	if msg.DeploymentReferences != nil {
@@ -126,12 +79,10 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 				permissionLevel := r.storeProvider.RBAC().GetPermissionLevelForDeployment(preBuiltDeployment)
 				exposureInfo := r.storeProvider.Services().
 					GetExposureInfos(preBuiltDeployment.GetNamespace(), preBuiltDeployment.GetPodLabels())
-				imageMetadata := r.getImageMetadataFromDeploymentContainers(preBuiltDeployment)
 
 				d, err := r.storeProvider.Deployments().BuildDeploymentWithDependencies(id, store.Dependencies{
 					PermissionLevel: permissionLevel,
 					Exposures:       exposureInfo,
-					ImageMetadata:   imageMetadata,
 				})
 
 				if err != nil {
