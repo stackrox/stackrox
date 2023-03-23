@@ -9,6 +9,11 @@ export type ImageVulnerabilitiesVariables = {
     pagination: Pagination;
 };
 
+export type ImageMetadataLayer = {
+    instruction: string;
+    value: string;
+};
+
 export type ImageVulnerabilityComponent = {
     id: string;
     name: string;
@@ -30,8 +35,14 @@ export type ImageVulnerabilityCounter = Record<
 export type ImageVulnerabilitiesResponse = {
     image: {
         id: string;
+        metadata: {
+            v1: {
+                layers: ImageMetadataLayer[];
+            } | null;
+        } | null;
         imageVulnerabilityCounter: ImageVulnerabilityCounter;
         imageVulnerabilities: {
+            id: string;
             severity: string;
             isFixable: boolean;
             cve: string;
@@ -46,6 +57,14 @@ export const imageVulnerabilitiesQuery = gql`
     query getImageVulnerabilities($id: ID!, $vulnQuery: String!, $pagination: Pagination!) {
         image(id: $id) {
             id
+            metadata {
+                v1 {
+                    layers {
+                        instruction
+                        value
+                    }
+                }
+            }
             imageVulnerabilityCounter(query: $vulnQuery) {
                 all {
                     total
@@ -69,6 +88,7 @@ export const imageVulnerabilitiesQuery = gql`
                 }
             }
             imageVulnerabilities(query: $vulnQuery, pagination: $pagination) {
+                id
                 severity
                 isFixable
                 cve

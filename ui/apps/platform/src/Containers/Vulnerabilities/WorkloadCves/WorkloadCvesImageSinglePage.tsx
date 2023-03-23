@@ -152,7 +152,7 @@ function WorkloadCvesImageSinglePage() {
                             eventKey="Vulnerabilities"
                             title={<TabTitleText>Vulnerabilities</TabTitleText>}
                         >
-                            <ImageSingleVulnerabilities imageId={imageId} imageData={imageData} />
+                            <ImageSingleVulnerabilities imageId={imageId} />
                         </Tab>
                         <Tab
                             className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
