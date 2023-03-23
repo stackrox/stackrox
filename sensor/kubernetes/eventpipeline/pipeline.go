@@ -24,7 +24,7 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 	var depResolver component.Resolver
 	var resourceListener component.PipelineComponent
 	if env.ResyncDisabled.BooleanSetting() {
-		depResolver = resolver.New(outputQueue, storeProvider, queueSize)
+		depResolver = resolver.New(outputQueue, storeProvider, configHandler, queueSize)
 		resourceListener = listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, depResolver, storeProvider)
 	} else {
 		resourceListener = listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, outputQueue, storeProvider)
