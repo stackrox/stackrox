@@ -12,6 +12,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/hashicorp/go-multierror"
+	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	"github.com/stackrox/rox/central/declarativeconfig/updater"
@@ -50,6 +51,10 @@ type managerImpl struct {
 
 	transformedMessagesByHandler map[string]protoMessagesByType
 	transformedMessagesMutex     sync.RWMutex
+
+	lastReconciliationHash uint64
+	lastUpsertFailed       concurrency.Flag
+	lastDeletionFailed     concurrency.Flag
 
 	reconciliationTickerDuration time.Duration
 	watchIntervalDuration        time.Duration
@@ -226,16 +231,38 @@ func (m *managerImpl) runReconciliation() {
 	m.transformedMessagesMutex.RLock()
 	transformedMessagesByHandler := maputil.ShallowClone(m.transformedMessagesByHandler)
 	m.transformedMessagesMutex.RUnlock()
+
 	m.reconcileTransformedMessages(transformedMessagesByHandler)
 }
 
 func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler map[string]protoMessagesByType) {
 	log.Debugf("Run reconciliation for the next handlers: %v", maputil.Keys(transformedMessagesByHandler))
-	m.doUpsert(transformedMessagesByHandler)
-	m.doDeletion(transformedMessagesByHandler)
+
+	hasChanges := m.calculateHashAndIndicateChanges(transformedMessagesByHandler)
+
+	// If no changes are indicated within the message we reconcile, and no previous reconciliation failed, do not
+	// run the reconciliation.
+	if !hasChanges && !m.lastUpsertFailed.Get() && !m.lastDeletionFailed.Get() {
+		log.Debug("No changes found compared to the previous reconciliation, and no errors have occurred." +
+			" The reconciliation will be skipped.")
+		return
+	}
+
+	// Only upsert resources if either the messages we reconcile on changed or the last upsert failed, as it might
+	// have been a transient error or successfully remediated by now.
+	if hasChanges || m.lastUpsertFailed.Get() {
+		m.doUpsert(transformedMessagesByHandler)
+	}
+
+	// Only delete resources if either the messages we reconcile on changed or the last deletion failed, as it might
+	// have been a transient error or successfully remediated by now.
+	if hasChanges || m.lastDeletionFailed.Get() {
+		m.doDeletion(transformedMessagesByHandler)
+	}
 }
 
 func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMessagesByType) {
+	var failureInUpsert bool
 	for _, protoType := range protoTypesOrder {
 		for handler, protoMessagesByType := range transformedMessagesByHandler {
 			messages, hasMessages := protoMessagesByType[protoType]
@@ -246,13 +273,18 @@ func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMess
 			for _, message := range messages {
 				err := typeUpdater.Upsert(m.reconciliationCtx, message)
 				m.updateHealthForMessage(handler, message, err, consecutiveReconciliationErrorThreshold)
+				if err != nil {
+					failureInUpsert = true
+				}
 			}
 		}
 	}
+	m.lastUpsertFailed.Set(failureInUpsert)
 }
 
 func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMessagesByType) {
 	reversedProtoTypes := sliceutils.Reversed(protoTypesOrder)
+	var failureInDeletion bool
 	var allProtoIDsToSkip []string
 	for _, protoType := range reversedProtoTypes {
 		var idsToSkip []string
@@ -273,12 +305,14 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 		if err != nil {
 			log.Debugf("The following IDs failed deletion: [%s]", strings.Join(failedDeletionIDs, ","))
 			allProtoIDsToSkip = append(allProtoIDsToSkip, failedDeletionIDs...)
+			failureInDeletion = true
 		}
 	}
 
 	if err := m.removeStaleHealthStatuses(allProtoIDsToSkip); err != nil {
 		log.Errorf("Failed to delete stale health status entries for declarative config: %v", err)
 	}
+	m.lastDeletionFailed.Set(failureInDeletion)
 }
 
 // updateHealthForMessage will update the health status of a message using the integrationhealth.Reporter.
@@ -290,10 +324,8 @@ func (m *managerImpl) updateHealthForMessage(handler string, message proto.Messa
 	integrationHealth := declarativeConfigUtils.IntegrationHealthForProtoMessage(message, handler, err, m.idExtractor, m.nameExtractor)
 
 	if err != nil {
-		currentDeclarativeConfigErrors := m.errorsPerDeclarativeConfig[messageID] + 1
-		m.errorsPerDeclarativeConfig[messageID] = currentDeclarativeConfigErrors
-
-		if currentDeclarativeConfigErrors >= threshold {
+		m.errorsPerDeclarativeConfig[messageID]++
+		if m.errorsPerDeclarativeConfig[messageID] >= threshold {
 			m.declarativeConfigErrorReporter.UpdateIntegrationHealthAsync(integrationHealth)
 		}
 		log.Debugf("Error within reconciliation for %+v: %v", message, err)
@@ -372,6 +404,29 @@ func (m *managerImpl) verifyUpdaters() error {
 		}
 	}
 	return nil
+}
+
+func (m *managerImpl) calculateHashAndIndicateChanges(transformedMessagesByHandler map[string]protoMessagesByType) bool {
+	// Create a hash from the transformed messages by handler map.
+	// Setting the option ZeroNil will ensure empty byte arrays will be treated as a zero value instead of using
+	// the pointer's value.
+	hash, err := hashstructure.Hash(transformedMessagesByHandler, hashstructure.FormatV2,
+		&hashstructure.HashOptions{ZeroNil: true})
+
+	// If we received an error for hash generation, log it and _always_ run the deletion. This way we ensure
+	// we don't mistakenly skip reconciliation runs where we shouldn't (e.g. consecutive errors).
+	if err != nil {
+		log.Errorf("Failed to create hash for transformed messages by handler %+v, "+
+			"reconciliation will be executed: %v",
+			transformedMessagesByHandler, err)
+		return true
+	}
+
+	if m.lastReconciliationHash != hash {
+		m.lastReconciliationHash = hash
+		return true
+	}
+	return false
 }
 
 func handlerNameForIntegrationHealth(handlerID string) string {
