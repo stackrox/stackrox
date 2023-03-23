@@ -61,7 +61,7 @@ func (s *resolverSuite) SetupTest() {
 		serviceStore:    s.mockServiceStore,
 		rbacStore:       s.mockRBACStore,
 		endpointManager: s.mockEndpointManager,
-	}, nil, 100)
+	}, 100)
 }
 
 func (s *resolverSuite) Test_MessageSentToOutput() {

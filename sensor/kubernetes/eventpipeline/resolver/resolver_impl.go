@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
@@ -16,8 +15,6 @@ var (
 type resolverImpl struct {
 	outputQueue component.OutputQueue
 	innerQueue  chan *component.ResourceEvent
-
-	config config.Handler
 
 	storeProvider store.Provider
 }
