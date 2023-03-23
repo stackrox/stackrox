@@ -4,41 +4,41 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/timestamp"
-	"github.com/stretchr/testify/suite"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stretchr/testify/suite"
 )
 
 var (
 	openNetworkEndpoint = &sensor.NetworkEndpoint{
-					SocketFamily: sensor.SocketFamily_SOCKET_FAMILY_IPV4,
-					Protocol:	storage.L4Protocol_L4_PROTOCOL_TCP,
-					ContainerId:	"FakeContainerId",
-					ListenAddress:	&sensor.NetworkAddress{
-						Port:	80,
-					},
-					Originator:	&storage.NetworkProcessUniqueKey{
-						ProcessName:	"socat",
-						ProcessExecFilePath:	"/usr/bin/socat",
-						ProcessArgs:		"port: 80",
-					},
-				}
+		SocketFamily: sensor.SocketFamily_SOCKET_FAMILY_IPV4,
+		Protocol:     storage.L4Protocol_L4_PROTOCOL_TCP,
+		ContainerId:  "FakeContainerId",
+		ListenAddress: &sensor.NetworkAddress{
+			Port: 80,
+		},
+		Originator: &storage.NetworkProcessUniqueKey{
+			ProcessName:         "socat",
+			ProcessExecFilePath: "/usr/bin/socat",
+			ProcessArgs:         "port: 80",
+		},
+	}
 	closedNetworkEndpoint = &sensor.NetworkEndpoint{
-					SocketFamily: sensor.SocketFamily_SOCKET_FAMILY_IPV4,
-					Protocol:	storage.L4Protocol_L4_PROTOCOL_TCP,
-					ContainerId:	"FakeContainerId",
-					CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
-					ListenAddress:	&sensor.NetworkAddress{
-						Port:	80,
-					},
-					Originator:	&storage.NetworkProcessUniqueKey{
-						ProcessName:	"socat",
-						ProcessExecFilePath:	"/usr/bin/socat",
-						ProcessArgs:		"port: 80",
-					},
-				}
+		SocketFamily:   sensor.SocketFamily_SOCKET_FAMILY_IPV4,
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+		ContainerId:    "FakeContainerId",
+		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
+		ListenAddress: &sensor.NetworkAddress{
+			Port: 80,
+		},
+		Originator: &storage.NetworkProcessUniqueKey{
+			ProcessName:         "socat",
+			ProcessExecFilePath: "/usr/bin/socat",
+			ProcessArgs:         "port: 80",
+		},
+	}
 )
 
 func TestNetworkflowManager(t *testing.T) {
