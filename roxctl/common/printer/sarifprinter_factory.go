@@ -49,6 +49,10 @@ func (s *SarifPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error
 		return nil, err
 	}
 
+	if *s.entity == "" {
+		return nil, errox.InvalidArgs.New("empty entity name given, please provide a name")
+	}
+
 	switch strings.ToLower(format) {
 	case "sarif":
 		return printers.NewSarifPrinter(s.jsonPathExpressions, *s.entity, s.reportType), nil
@@ -58,10 +62,6 @@ func (s *SarifPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error
 }
 
 func (s *SarifPrinterFactory) validate() error {
-	if *s.entity == "" {
-		return errox.InvalidArgs.New("empty entity name given, please provide a name")
-	}
-
 	if s.reportType != printers.VulnerabilityReport && s.reportType != printers.PolicyReport {
 		return errox.InvariantViolation.Newf("report type must be either %s or %s, but was %s",
 			printers.VulnerabilityReport, printers.PolicyReport, s.reportType)

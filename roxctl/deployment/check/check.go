@@ -83,9 +83,8 @@ var (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	deploymentCheckCmd := &deploymentCheckCommand{env: cliEnvironment}
 
-	supportedObjectPrinters = append(supportedObjectPrinters,
-		printer.NewSarifPrinterFactory(printers.PolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.file))
-	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", supportedObjectPrinters...)
+	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", append(supportedObjectPrinters,
+		printer.NewSarifPrinterFactory(printers.PolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.file))...)
 	// this error should never occur, it would only occur if default values are invalid
 	utils.Must(err)
 

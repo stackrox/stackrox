@@ -98,9 +98,9 @@ var (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	imageScanCmd := &imageScanCommand{env: cliEnvironment}
 
-	supportedObjectPrinters = append(supportedObjectPrinters,
-		printer.NewSarifPrinterFactory(printers.VulnerabilityReport, sarifJSONPathExpressions, &imageScanCmd.image))
-	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", supportedObjectPrinters...)
+	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table",
+		append(supportedObjectPrinters,
+			printer.NewSarifPrinterFactory(printers.VulnerabilityReport, sarifJSONPathExpressions, &imageScanCmd.image))...)
 	// should not happen when using default values, must be a programming error
 	utils.Must(err)
 	// Set the Output Format to empty, so by default the new output format will not be used and the legacy one will be

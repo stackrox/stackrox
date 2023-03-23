@@ -3,6 +3,7 @@ package printers
 import (
 	"os"
 	"path"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -74,5 +75,9 @@ func TestSarifPrinter_Print_Success(t *testing.T) {
 	err = printer.Print(obj, &out)
 	require.NoError(t, err)
 
-	assert.Equal(t, string(expectedOutput), out.String())
+	// Since the report contains the version, replace it specifically here.
+	exp, err := regexp.Compile(`"version": "3.*"`)
+	require.NoError(t, err)
+	output := exp.ReplaceAllString(out.String(), `"version": ""`)
+	assert.Equal(t, string(expectedOutput), output)
 }

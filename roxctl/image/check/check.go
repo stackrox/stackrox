@@ -84,11 +84,8 @@ var (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	imageCheckCmd := &imageCheckCommand{env: cliEnvironment}
 
-	// object printer factory - allows output formats of JSON, csv, table with table being the default
-	supportedObjectPrinters = append(supportedObjectPrinters,
-		printer.NewSarifPrinterFactory(printers.PolicyReport, sarifJSONPathExpressions, &imageCheckCmd.image))
-
-	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", supportedObjectPrinters...)
+	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", append(supportedObjectPrinters,
+		printer.NewSarifPrinterFactory(printers.PolicyReport, sarifJSONPathExpressions, &imageCheckCmd.image))...)
 	// the returned error only occurs when default values do not allow the creation of any printer, this should be considered
 	// a programming error rather than a user error
 	pkgUtils.Must(err)
