@@ -58,10 +58,9 @@ type hostConnections struct {
 }
 
 type connStatus struct {
-	firstSeen   timestamp.MicroTS
-	lastSeen    timestamp.MicroTS
-	used        bool
-	usedProcess bool
+	firstSeen timestamp.MicroTS
+	lastSeen  timestamp.MicroTS
+	used      bool
 	// rotten implies we expected to correlate the flow with a container, but were unable to
 	rotten bool
 }
@@ -133,10 +132,6 @@ func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.Proce
 			ProcessExecFilePath: i.key.process.processExec,
 			ProcessArgs:         i.key.process.processArgs,
 		},
-	}
-
-	if ts != timestamp.InfiniteFuture {
-		proto.CloseTimestamp = ts.GogoProtobuf()
 	}
 
 	return proto
@@ -466,7 +461,7 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 	if !isFresh {
-		status.usedProcess = true
+		status.used = true
 	}
 
 	container, ok := m.clusterEntities.LookupByContainerID(ep.containerID)
@@ -481,7 +476,7 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 		return
 	}
 
-	status.usedProcess = true
+	status.used = true
 
 	indicator := processListeningIndicator{
 		key: processUniqueKey{
@@ -495,7 +490,7 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 
 	// Multiple endpoints from a collector can result in a single enriched endpoint,
 	// hence update the timestamp only if we have a more recent endpoint than the one we have already enriched.
-	if oldTS, found := processesListening[indicator]; !found || oldTS < status.lastSeen || oldTS == timestamp.InfiniteFuture {
+	if oldTS, found := processesListening[indicator]; !found || oldTS < status.lastSeen {
 		processesListening[indicator] = status.lastSeen
 	}
 }
@@ -522,7 +517,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 	prevSize := len(hostConns.endpoints)
 	for ep, status := range hostConns.endpoints {
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
-		if status.used && status.usedProcess && status.lastSeen != timestamp.InfiniteFuture {
+		if status.used && status.lastSeen != timestamp.InfiniteFuture {
 			// endpoints that are no longer active and have already been used can be deleted.
 			delete(hostConns.endpoints, ep)
 		}
@@ -542,7 +537,7 @@ func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections
 		}
 
 		m.enrichProcessListening(&ep, status, processesListening)
-		if status.used && status.usedProcess && status.lastSeen != timestamp.InfiniteFuture {
+		if status.used && status.lastSeen != timestamp.InfiniteFuture {
 			// endpoints that are no longer active and have already been used can be deleted.
 			delete(hostConns.endpoints, ep)
 		}
@@ -617,16 +612,13 @@ func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.Mic
 
 	for pl, currTS := range current {
 		prevTS, ok := previous[pl]
-		if !ok || currTS > prevTS  || (prevTS == timestamp.InfiniteFuture && currTS != timestamp.InfiniteFuture) {
+		if !ok || currTS > prevTS {
 			updates = append(updates, pl.toProto(currTS))
 		}
 	}
 
 	for ep, prevTS := range previous {
 		if _, ok := current[ep]; !ok {
-			if prevTS == timestamp.InfiniteFuture {
-				prevTS = timestamp.Now()
-			}
 			updates = append(updates, ep.toProto(prevTS))
 		}
 	}

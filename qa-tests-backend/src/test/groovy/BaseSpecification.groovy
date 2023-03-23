@@ -37,7 +37,7 @@ import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Specification
 
-//@Retry(condition = { Helpers.determineRetry(failure) })
+@Retry(condition = { Helpers.determineRetry(failure) })
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
 
