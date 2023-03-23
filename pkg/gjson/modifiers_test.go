@@ -12,10 +12,17 @@ import (
 type modifierTestObject struct {
 	List     []string                `json:"list"`
 	BoolTest []boolReplaceTestObject `json:"boolTest"`
+	TextTest []textReplaceTestObject `json:"textTest"`
 }
 
 type boolReplaceTestObject struct {
 	Bool bool `json:"bool"`
+}
+
+type textReplaceTestObject struct {
+	Name    string `json:"name"`
+	Address string `json:"address"`
+	Age     int    `json:"age"`
 }
 
 func TestListModifier(t *testing.T) {
@@ -92,6 +99,71 @@ func TestBoolReplaceModifier(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			res := gjson.GetBytes(bytes, c.expression)
 			assert.Equal(t, c.expectedResult, res.String())
+		})
+	}
+}
+
+func TestTextModifier(t *testing.T) {
+	testObject := &modifierTestObject{
+		TextTest: []textReplaceTestObject{
+			{
+				Name:    "Harry Potter",
+				Address: "Privet Drive",
+				Age:     18,
+			},
+			{
+				Name:    "Ron Weasley",
+				Address: "The Burrow",
+				Age:     18,
+			},
+			{
+				Name:    "Hermione Granger",
+				Address: "Heathgate",
+				Age:     18,
+			},
+		},
+	}
+	bytes, err := json.Marshal(testObject)
+	require.NoError(t, err)
+
+	cases := map[string]struct {
+		expression string
+		result     string
+	}{
+		"without custom column names": {
+			expression: "{textTest.#.name,textTest.#.age,textTest.#.address}.@text",
+			result:     "[\"name Harry Potter\\nage 18\\naddress Privet Drive\",\"name Ron Weasley\\nage 18\\naddress The Burrow\",\"name Hermione Granger\\nage 18\\naddress Heathgate\"]",
+		},
+		"without modifier should not modify the output": {
+			expression: "{textTest.#.name,textTest.#.age,textTest.#.address}",
+			result:     "{\"name\":[\"Harry Potter\",\"Ron Weasley\",\"Hermione Granger\"],\"age\":[18,18,18],\"address\":[\"Privet Drive\",\"The Burrow\",\"Heathgate\"]}",
+		},
+		"with custom column names": {
+			expression: "{\"Super Cool Name\":textTest.#.name,textTest.#.age,textTest.#.address}.@text",
+			result:     "[\"Super Cool Name Harry Potter\\nage 18\\naddress Privet Drive\",\"Super Cool Name Ron Weasley\\nage 18\\naddress The Burrow\",\"Super Cool Name Hermione Granger\\nage 18\\naddress Heathgate\"]",
+		},
+		"with singular value": {
+			expression: "{textTest.0.name,textTest.0.age,textTest.0.address}.@text",
+			result:     "[\"name Harry Potter\\nage 18\\naddress Privet Drive\"]",
+		},
+		"without printing keys": {
+			expression: `{textTest.#.name,textTest.#.age,textTest.#.address}.@text:{"printKeys": "false"}`,
+			result:     "[\"Harry Potter\\n18\\nPrivet Drive\",\"Ron Weasley\\n18\\nThe Burrow\",\"Hermione Granger\\n18\\nHeathgate\"]",
+		},
+		"with custom separator": {
+			expression: `{textTest.#.name,textTest.#.age,textTest.#.address}.@text:{"customSeparator": "-"}`,
+			result:     "[\"name Harry Potter-age 18-address Privet Drive\",\"name Ron Weasley-age 18-address The Burrow\",\"name Hermione Granger-age 18-address Heathgate\"]",
+		},
+		"without printing keys and with custom separator": {
+			expression: `{textTest.#.name,textTest.#.age,textTest.#.address}.@text:{"customSeparator": "-", "printKeys": "false"}`,
+			result:     "[\"Harry Potter-18-Privet Drive\",\"Ron Weasley-18-The Burrow\",\"Hermione Granger-18-Heathgate\"]",
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			res := gjson.GetBytes(bytes, c.expression)
+			assert.Equal(t, c.result, res.String())
 		})
 	}
 }

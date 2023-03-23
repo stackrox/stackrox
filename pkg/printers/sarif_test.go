@@ -1,0 +1,78 @@
+package printers
+
+import (
+	"os"
+	"path"
+	"strings"
+	"testing"
+
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+type testObject struct {
+	Violations []violation `json:"violations"`
+}
+
+type violation struct {
+	ID          string `json:"id"`
+	Description string `json:"description"`
+	Reason      string `json:"reason"`
+	Severity    string `json:"severity"`
+}
+
+func TestSarifPrinter_Print_InvalidJSONPathExpressions(t *testing.T) {
+	expressions := map[string]string{
+		RuleJSONPathExpressionKey:        "",
+		DescriptionJSONPathExpressionKey: "",
+		HelpJSONPathExpressionKey:        "",
+	}
+
+	printer := NewSarifPrinter(expressions, "", "")
+
+	err := printer.Print(nil, nil)
+	assert.ErrorIs(t, err, errox.InvalidArgs)
+}
+
+func TestSarifPrinter_Print_Success(t *testing.T) {
+	obj := &testObject{
+		Violations: []violation{
+			{
+				ID:          "first-violation",
+				Description: "something about violation one",
+				Reason:      "something about misconfiguration",
+				Severity:    "HIGH",
+			},
+			{
+				ID:          "second-violation",
+				Description: "something about violation two",
+				Reason:      "something about vulnerabilities",
+				Severity:    "LOW",
+			},
+			{
+				ID:          "third-violation",
+				Description: "something about violation three",
+				Reason:      "something about secrets",
+				Severity:    "CRITICAL",
+			},
+		},
+	}
+
+	expressions := map[string]string{
+		RuleJSONPathExpressionKey:        "violations.#.id",
+		DescriptionJSONPathExpressionKey: "violations.#.description",
+		HelpJSONPathExpressionKey:        "violations.#.reason",
+		SeverityJSONPathExpressionKey:    "violations.#.severity",
+	}
+
+	out := strings.Builder{}
+	expectedOutput, err := os.ReadFile(path.Join("testdata", "sarif_report.json"))
+	require.NoError(t, err)
+
+	printer := NewSarifPrinter(expressions, "docker.io/nginx:1.19", PolicyReport)
+	err = printer.Print(obj, &out)
+	require.NoError(t, err)
+
+	assert.Equal(t, string(expectedOutput), out.String())
+}

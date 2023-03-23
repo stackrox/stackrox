@@ -1,0 +1,212 @@
+package printers
+
+import (
+	"io"
+	"strings"
+
+	"github.com/owenrumney/go-sarif/v2/sarif"
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/gjson"
+	"github.com/stackrox/rox/pkg/maputil"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/version"
+)
+
+// Required JSON path expressions for the sarif printer.
+const (
+	RuleJSONPathExpressionKey        string = "rule-id"
+	DescriptionJSONPathExpressionKey string = "description"
+	HelpJSONPathExpressionKey        string = "help"
+	SeverityJSONPathExpressionKey    string = "severity"
+)
+
+// Supported reports for the sarif printer. This will be converted into a rule name, with which you can then query
+// within the report for "types" of violations.
+const (
+	VulnerabilityReport = "Vulnerabilities"
+	PolicyReport        = "PolicyViolations"
+)
+
+var requiredKeys = []string{
+	RuleJSONPathExpressionKey,
+	DescriptionJSONPathExpressionKey,
+	HelpJSONPathExpressionKey,
+	SeverityJSONPathExpressionKey,
+}
+
+// SarifPrinter is capable of printing sarif reports from JSON objects, retrieving all relevant data for the report via
+// JSON path expressions.
+type SarifPrinter struct {
+	jsonPathExpressions map[string]string
+	entity              string
+	reportType          string
+}
+
+type sarifEntry struct {
+	ruleID      string
+	description string
+	help        string
+	severity    string
+	message     string
+}
+
+// NewSarifPrinter creates a printer capable of printing a sarif report.
+// (https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/sarif-support-for-code-scanning#about-sarif-support)
+// A SarifPrinter expects a JSON Object and a map of JSON path expressions that are compatible with
+// GJOSN (https://github.com/tidwall/gjson).
+//
+// When printing, the SarifPrinter will take the given JSON object and apply the JSON path expressions within the map
+// to retrieve all required data to generate a sarif report.
+//
+// The given JSON object itself MUST be passable to json.Marshal, so it CAN NOT be a direct JSON input.
+// For the structure of the JSON object, it is preferred to have arrays of structs instead of
+// array of elements, since structs will provide default values if a field is missing.
+//
+// The map of JSON path expressions given MUST contain JSON path expressions for the keys:
+//   - RuleJSONPathExpressionKey, yields the rule ID to use in the sarif report (e.g. CVE-XYZ-component-version).
+//   - DescriptionJSONPathExpressionKey, yields the  description to use in the sarif report.
+//   - HelpJSONPathExpressionKey, yields the help text to use in the sarif report. This should include remediation steps.
+//   - SeverityJSONPathExpressionKey, yields the severity to use in the sarif report.
+//
+// The values yielded from each JSON path expressions MUST be equal to one another, as each set of values will be used
+// to construct the report entries (result and rule).
+//
+// The GJSON expression syntax (https://github.com/tidwall/gjson/blob/master/SYNTAX.md) offers more complex
+// and advanced scenarios, if you require them and the below example is not sufficient.
+// Additionally, there are custom GJSON modifiers, which will post-process expression results. Currently,
+// the gjson.ListModifier, gjson.TextModifier and gjson.BoolReplaceModifier are available, see their documentation on
+// usage and GJSON's syntax expression to read more about modifiers.
+//
+// The following example illustrates a JSON compatible structure and an example for the map of JSON path expressions
+// to generate a sarif report.
+//
+// JSON structure:
+//
+//		type data struct {
+//					Violations []violation `json:"violations`
+//		}
+//
+//		type violation struct {
+//		      Id          string `json:"id"`
+//	          Description string `json:"description"`
+//	          Reason      string `json:"reason"`
+//	          Severity    string `json:"severity"`
+//		}
+//
+// Example:
+//
+//	 expressions := map[string] {
+//			RuleJSONPathExpressionKey: "violations.#.id",
+//			DescriptionJSONPathExpressionKey: "violations.#.description",
+//		    HelpJSONPathExpressionKey: "violations.#.reason",
+//		    SeverityJSONPathExpressionKey: "violations.#.severity",
+//		}
+//
+// For an example sarif report, see testdata/sarif_report.json.
+//
+// Advanced usages:
+// For constructing multiline help messages with values from different JSON fields, see roxctl/image/check/check.go
+// as an example usage of constructing 1) a rule ID with multiple values using gjson.TextModifier and 2) creating the
+// multiline help text via gjson.TextModifier.
+func NewSarifPrinter(jsonPathExpressions map[string]string, entity string, reportType string) *SarifPrinter {
+	return &SarifPrinter{jsonPathExpressions: jsonPathExpressions, entity: entity, reportType: reportType}
+}
+
+// Print will create a sarif report from the given object and write the output to the given io.Writer.
+func (s *SarifPrinter) Print(object interface{}, out io.Writer) error {
+	sarifEntries, err := sarifEntriesFromJSONObject(object, s.jsonPathExpressions)
+	if err != nil {
+		return err
+	}
+
+	run := sarif.NewRunWithInformationURI("roxctl", "https://github.com/stackrox/stackrox")
+	// Set the version information and the full name on the tool driver.
+	run.Tool.Driver.
+		WithVersion(version.GetMainVersion()).
+		WithFullName("roxctl command line utility")
+
+	report, err := sarif.New(sarif.Version210)
+	if err != nil {
+		return errors.Wrap(err, "creating sarif report")
+	}
+
+	for _, entry := range sarifEntries {
+		addEntry(run, entry, s.entity, s.reportType)
+	}
+
+	report.AddRun(run)
+	return report.PrettyWrite(out)
+}
+
+func addEntry(run *sarif.Run, entry sarifEntry, entity string, name string) {
+	run.AddRule(entry.ruleID).
+		WithName(name).
+		WithShortDescription(sarif.NewMultiformatMessageString(entry.description)).
+		WithFullDescription(sarif.NewMultiformatMessageString(entry.description)).
+		WithHelp(sarif.NewMultiformatMessageString(entry.help))
+
+	run.AddResult(sarif.NewRuleResult(entry.ruleID).
+		WithLevel(toSarifLevel(entry.severity)).
+		// Reusing the help here, since the help includes remediation information.
+		WithMessage(sarif.NewMessage().WithText(entry.help)).
+		WithLocations([]*sarif.Location{
+			{
+				PhysicalLocation: &sarif.PhysicalLocation{
+					ArtifactLocation: sarif.NewArtifactLocation().WithUri(entity),
+					Region: sarif.NewRegion().
+						WithStartLine(1).
+						WithStartColumn(1).
+						WithEndLine(1).
+						WithEndColumn(1),
+				},
+			},
+		}))
+}
+
+func sarifEntriesFromJSONObject(jsonObject interface{}, pathExpressions map[string]string) ([]sarifEntry, error) {
+	// We should receive the same amount of data for all keys.
+	if !set.NewStringSet(maputil.Keys(pathExpressions)...).Equal(set.NewStringSet(requiredKeys...)) {
+		return nil, errox.InvalidArgs.Newf("not all required JSON path expressions given, ensure JSON "+
+			"path expression are given for: [%s]", strings.Join(requiredKeys, ","))
+	}
+
+	sliceMapper, err := gjson.NewSliceMapper(jsonObject, pathExpressions)
+	if err != nil {
+		return nil, err
+	}
+	data := sliceMapper.CreateSlices()
+
+	numberOfValues := len(data[RuleJSONPathExpressionKey])
+	for key, values := range data {
+		if len(values) != numberOfValues {
+			return nil, errox.InvalidArgs.Newf("the amount of values retrieved from JSON path expressions "+
+				"should be %d, but got %d for key %s", numberOfValues, len(values), key)
+		}
+	}
+
+	sarifEntries := make([]sarifEntry, 0, numberOfValues)
+	for i := 0; i < numberOfValues; i++ {
+		sarifEntries = append(sarifEntries, sarifEntry{
+			ruleID:      data[RuleJSONPathExpressionKey][i],
+			description: data[DescriptionJSONPathExpressionKey][i],
+			help:        data[HelpJSONPathExpressionKey][i],
+			severity:    data[SeverityJSONPathExpressionKey][i],
+		})
+	}
+	return sarifEntries, nil
+}
+
+func toSarifLevel(severity string) string {
+	switch severity {
+	case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String():
+		return "error"
+	case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY.String():
+		return "warning"
+	case storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY.String(), storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY.String():
+		return "note"
+	default:
+		return "none"
+	}
+}

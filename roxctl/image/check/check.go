@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/gjson"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
@@ -45,6 +46,32 @@ var (
 		printers.JUnitSkippedTestCasesExpressionKey:     "results.#.violatedPolicies.#(failingCheck==~false)#.name",
 		printers.JUnitFailedTestCaseErrMsgExpressionKey: "results.#.violatedPolicies.#(failingCheck==~true)#.violation.@list",
 	}
+
+	sarifJSONPathExpressions = map[string]string{
+		printers.RuleJSONPathExpressionKey:        "result.#.violatedPolicies.#.name",
+		printers.DescriptionJSONPathExpressionKey: "result.#.violatedPolicies.#.description",
+		printers.HelpJSONPathExpressionKey: gjson.MultiPathExpression(
+			"@text",
+			gjson.Expression{
+				Key:        "Policy",
+				Expression: "result.#.violatedPolicies.#.name",
+			},
+			gjson.Expression{
+				Key:        "Severity",
+				Expression: "result.#.violatedPolicies.#.severity",
+			},
+			gjson.Expression{
+				Key:        "Violations",
+				Expression: "results.#.violatedPolicies.violation.@list",
+			},
+			gjson.Expression{
+				Key:        "Remediation",
+				Expression: "results.#.violatedPolicies.#.remediation",
+			},
+		),
+		printers.SeverityJSONPathExpressionKey: "result.#.violatedPolicies.#.severity",
+	}
+
 	// supported output formats with default values
 	supportedObjectPrinters = []printer.CustomPrinterFactory{
 		printer.NewTabularPrinterFactory(defaultImageCheckHeaders, defaultImageCheckJSONPathExpression),
@@ -58,6 +85,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	imageCheckCmd := &imageCheckCommand{env: cliEnvironment}
 
 	// object printer factory - allows output formats of JSON, csv, table with table being the default
+	supportedObjectPrinters = append(supportedObjectPrinters,
+		printer.NewSarifPrinterFactory(printers.PolicyReport, sarifJSONPathExpressions, &imageCheckCmd.image))
+
 	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", supportedObjectPrinters...)
 	// the returned error only occurs when default values do not allow the creation of any printer, this should be considered
 	// a programming error rather than a user error
