@@ -349,7 +349,6 @@ func (s *Schema) ResolveReferences(schemaProvider func(messageTypeName string) *
 		otherTable, columnNameInOtherSchema := referencedSchema.findTableAndColumnName(fieldRef.ProtoBufField)
 		if otherTable == nil || columnNameInOtherSchema == "" {
 			log.Panicf("Couldn't resolve reference in field %+v: no field with protobuf name found", f)
-			continue // This continue will not be hit, it's here because the linter doesn't realize that log.Panic panics.
 		}
 		fieldRef.OtherSchema = otherTable
 		fieldRef.ColumnName = columnNameInOtherSchema
