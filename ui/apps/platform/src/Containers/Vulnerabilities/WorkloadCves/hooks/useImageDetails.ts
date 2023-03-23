@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql, useQuery } from '@apollo/client';
 
 export type ImageDetailsVariables = {
     id: string;
@@ -54,4 +54,8 @@ export const imageDetailsQuery = gql`
     }
 `;
 
-export default function useImageDetails() {}
+export default function useImageDetails(imageId: string) {
+    return useQuery<ImageDetailsResponse, ImageDetailsVariables>(imageDetailsQuery, {
+        variables: { id: imageId },
+    });
+}
