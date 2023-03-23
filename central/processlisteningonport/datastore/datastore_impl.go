@@ -538,6 +538,7 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		Protocol:           value.Protocol,
 		ProcessIndicatorId: indicatorID,
 		Process:            processInfo,
+		DeploymentId:       value.DeploymentId,
 		Closed:             value.CloseTimestamp != nil,
 		CloseTimestamp:     value.CloseTimestamp,
 	}

@@ -112,6 +112,7 @@ func (i *containerEndpointIndicator) toProto(ts timestamp.MicroTS) *storage.Netw
 type processUniqueKey struct {
 	podID         string
 	containerName string
+	deploymentID  string
 	process       processInfo
 }
 
@@ -132,6 +133,11 @@ func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.Proce
 			ProcessExecFilePath: i.key.process.processExec,
 			ProcessArgs:         i.key.process.processArgs,
 		},
+		DeploymentId: i.key.deploymentID,
+	}
+
+	if ts != timestamp.InfiniteFuture {
+		proto.CloseTimestamp = ts.GogoProtobuf()
 	}
 
 	return proto
@@ -482,6 +488,7 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 		key: processUniqueKey{
 			podID:         container.PodID,
 			containerName: container.ContainerName,
+			deploymentID:  container.DeploymentID,
 			process:       *ep.processKey,
 		},
 		port:     ep.endpoint.IPAndPort.Port,
@@ -619,6 +626,9 @@ func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.Mic
 
 	for ep, prevTS := range previous {
 		if _, ok := current[ep]; !ok {
+			if prevTS == timestamp.InfiniteFuture {
+				prevTS = timestamp.Now()
+			}
 			updates = append(updates, ep.toProto(prevTS))
 		}
 	}
