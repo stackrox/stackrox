@@ -5,8 +5,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	newStore "github.com/stackrox/rox/migrator/migrations/m_177_to_m_178_embedded_collections_search_label/reportconfigstore"
-	frozenSchema "github.com/stackrox/rox/migrator/migrations/m_177_to_m_178_embedded_collections_search_label/schema"
+	newStore "github.com/stackrox/rox/migrator/migrations/m_178_to_m_179_embedded_collections_search_label/reportconfigstore"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/m_178_to_m_179_embedded_collections_search_label/schema"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	startSeqNum = 177
+	startSeqNum = 178
 
 	batchSize = 500
 )
@@ -22,7 +22,7 @@ const (
 var (
 	migration = types.Migration{
 		StartingSeqNum: startSeqNum,
-		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 178
+		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 179
 		Run: func(database *types.Databases) error {
 			return migrateReportConfigs(database.PostgresDB, database.GormDB)
 		},

@@ -8,8 +8,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	oldSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
-	newStore "github.com/stackrox/rox/migrator/migrations/m_177_to_m_178_embedded_collections_search_label/reportconfigstore"
-	oldStore "github.com/stackrox/rox/migrator/migrations/m_177_to_m_178_embedded_collections_search_label/test"
+	newStore "github.com/stackrox/rox/migrator/migrations/m_178_to_m_179_embedded_collections_search_label/reportconfigstore"
+	oldStore "github.com/stackrox/rox/migrator/migrations/m_178_to_m_179_embedded_collections_search_label/test"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
