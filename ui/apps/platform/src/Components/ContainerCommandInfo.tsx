@@ -1,19 +1,19 @@
 import React from 'react';
 import { Card, CardBody, CardTitle, EmptyState, List, ListItem } from '@patternfly/react-core';
 
-type ContainerCommandsInfoProps = {
+type ContainerCommandInfoProps = {
     command: string[]; // note: the k8s API, and our data of it, use singular "command" for this array
 };
 
-function ContainerCommandsInfo({ command }: ContainerCommandsInfoProps) {
+function ContainerCommandInfo({ command }: ContainerCommandInfoProps) {
     return (
         <Card>
             <CardTitle>Commands</CardTitle>
             {command.length > 0 ? (
-                <CardBody className="">
+                <CardBody>
                     <List isPlain>
-                        {command.map((arg) => (
-                            <ListItem>{arg}</ListItem>
+                        {command.map((cmd) => (
+                            <ListItem>{cmd}</ListItem>
                         ))}
                     </List>
                 </CardBody>
@@ -26,4 +26,4 @@ function ContainerCommandsInfo({ command }: ContainerCommandsInfoProps) {
     );
 }
 
-export default ContainerCommandsInfo;
+export default ContainerCommandInfo;

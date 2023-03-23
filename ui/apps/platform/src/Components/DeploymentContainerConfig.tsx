@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ExpandableSection, Stack, StackItem } from '@patternfly/react-core';
 
 import { Container } from 'types/deployment.proto';
+import ContainerImageInfo from 'Components/ContainerImageInfo';
 import ContainerResourcesInfo from 'Components/ContainerResouresInfo';
 import ContainerVolumesInfo from 'Components/ContainerVolumesInfo';
 import ContainerSecretsInfo from 'Components/ContainerSecretsInfo';
@@ -19,7 +20,7 @@ function DeploymentContainerConfig({ container }: DeploymentContainerConfigProps
         setIsExpanded(_isExpanded);
     };
 
-    const toggleText = container.image.name.fullName;
+    const toggleText = container.name;
 
     return (
         <ExpandableSection
@@ -30,6 +31,9 @@ function DeploymentContainerConfig({ container }: DeploymentContainerConfigProps
             isWidthLimited
         >
             <Stack hasGutter>
+                <StackItem>
+                    <ContainerImageInfo image={container.image} />
+                </StackItem>
                 <StackItem>
                     <ContainerResourcesInfo resources={container.resources} />
                 </StackItem>
