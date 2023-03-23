@@ -226,7 +226,7 @@ test_upgrader() {
 
     info "Verify resources were patched back by the upgrader"
     resources="$(kubectl -n stackrox get deploy/sensor -o 'jsonpath=cpu={.spec.template.spec.containers[?(@.name=="sensor")].resources.requests.cpu},memory={.spec.template.spec.containers[?(@.name=="sensor")].resources.requests.memory}')"
-    if [[ "$resources" != 'cpu=1,memory=1Gi' ]]; then
+    if [[ "$resources" != 'cpu=2,memory=4Gi' ]]; then
         echo "Resources ($resources) not patched back!"
         kubectl -n stackrox get deploy/sensor -o yaml
         exit 1
