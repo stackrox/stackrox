@@ -175,6 +175,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "'"${ROX_POSTGRES_DATASTORE:-false}"'"'
     customize_envVars+=$'\n      - name: ROX_PROCESSES_LISTENING_ON_PORT'
     customize_envVars+=$'\n        value: "'"${ROX_PROCESSES_LISTENING_ON_PORT:-true}"'"'
+    customize_envVars+=$'\n      - name: ROX_DECLARATIVE_CONFIGURATION'
+    customize_envVars+=$'\n        value: "'"${ROX_DECLARATIVE_CONFIGURATION:-true}"'"'
 
     env - \
       centralAdminPasswordBase64="$centralAdminPasswordBase64" \
