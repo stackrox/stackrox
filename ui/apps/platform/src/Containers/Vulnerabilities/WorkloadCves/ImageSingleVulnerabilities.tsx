@@ -9,7 +9,6 @@ import {
     Flex,
     Grid,
     GridItem,
-    Label,
     PageSection,
     Pagination,
     pluralize,
@@ -23,7 +22,7 @@ import {
     Text,
     Title,
 } from '@patternfly/react-core';
-import { ExclamationCircleIcon, InfoCircleIcon } from '@patternfly/react-icons';
+import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -39,6 +38,7 @@ import CvesByStatusSummaryCard from './SummaryCards/CvesByStatusSummaryCard';
 import SingleEntityVulnerabilitiesTable from './Tables/SingleEntityVulnerabilitiesTable';
 import { ImageDetailsResponse } from './hooks/useImageDetails';
 import useImageVulnerabilities from './hooks/useImageVulnerabilities';
+import { DynamicTableLabel } from './DynamicIcon';
 
 const defaultSortOptions: UseURLSortProps = {
     sortFields: ['CVE', 'Severity', 'Fixable'],
@@ -67,6 +67,8 @@ function ImageSingleVulnerabilities({ imageId, imageData }: ImageSingleVulnerabi
     const { data, previousData, loading, error } = useImageVulnerabilities(imageId, {}, pagination);
 
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('cveStatus', cveStatusTabValues);
+
+    const isFiltered = getHasSearchApplied(searchFilter);
 
     let mainContent: ReactNode | null = null;
 
@@ -121,17 +123,13 @@ function ImageSingleVulnerabilities({ imageId, imageData }: ImageSingleVulnerabi
                 </div>
                 <Divider />
                 <div className="pf-u-p-lg">
-                    <Split className="pf-u-pb-lg">
+                    <Split className="pf-u-pb-lg pf-u-align-items-baseline">
                         <SplitItem isFilled>
-                            <Flex alignContent={{ default: 'alignContentCenter' }}>
+                            <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                 <Title headingLevel="h2">
                                     {pluralize(totalVulnerabilityCount, 'result', 'results')} found
                                 </Title>
-                                {getHasSearchApplied(searchFilter) && (
-                                    <Label isCompact color="blue" icon={<InfoCircleIcon />}>
-                                        Filtered view
-                                    </Label>
-                                )}
+                                {isFiltered && <DynamicTableLabel />}
                             </Flex>
                         </SplitItem>
                         <SplitItem>
@@ -154,6 +152,7 @@ function ImageSingleVulnerabilities({ imageId, imageData }: ImageSingleVulnerabi
                         image={imageData}
                         imageVulnerabilities={vulnerabilities}
                         getSortParams={getSortParams}
+                        isFiltered={isFiltered}
                     />
                 </div>
             </>

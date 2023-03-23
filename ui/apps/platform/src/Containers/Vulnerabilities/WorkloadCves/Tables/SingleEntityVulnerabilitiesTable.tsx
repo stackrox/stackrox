@@ -22,19 +22,23 @@ import { ImageVulnerabilitiesResponse } from '../hooks/useImageVulnerabilities';
 import { getEntityPagePath } from '../searchUtils';
 import ImageComponentsTable from './ImageComponentsTable';
 import { ImageDetailsResponse } from '../hooks/useImageDetails';
+import { DynamicColumnIcon } from '../DynamicIcon';
 
 export type SingleEntityVulnerabilitiesTableProps = {
     image: ImageDetailsResponse['image'] | undefined;
     imageVulnerabilities: ImageVulnerabilitiesResponse['image']['imageVulnerabilities'];
     getSortParams: UseURLSortResult['getSortParams'];
+    isFiltered: boolean;
 };
 
 function SingleEntityVulnerabilitiesTable({
     image,
     imageVulnerabilities,
     getSortParams,
+    isFiltered,
 }: SingleEntityVulnerabilitiesTableProps) {
     const expandedRowSet = useSet<string>();
+
     return (
         <TableComposable>
             <Thead>
@@ -42,9 +46,15 @@ function SingleEntityVulnerabilitiesTable({
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('CVE')}>CVE</Th>
                     <Th sort={getSortParams('Severity')}>Severity</Th>
-                    <Th sort={getSortParams('Fixable')}>CVE Status</Th>
+                    <Th sort={getSortParams('Fixable')}>
+                        CVE Status
+                        {isFiltered && <DynamicColumnIcon />}
+                    </Th>
                     {/* TODO Add sorting for these columns once aggregate sorting is available in BE */}
-                    <Th>Affected components</Th>
+                    <Th>
+                        Affected components
+                        {isFiltered && <DynamicColumnIcon />}
+                    </Th>
                     <Th>First discovered</Th>
                 </Tr>
             </Thead>
