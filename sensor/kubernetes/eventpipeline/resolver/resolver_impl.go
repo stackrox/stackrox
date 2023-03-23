@@ -68,6 +68,16 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 					log.Warnf("Deployment with id %s not found", id)
 					continue
 				}
+				// Skip resolving the deployment dependencies
+				if deploymentReference.SkipResolving {
+					d := r.storeProvider.Deployments().GetBuiltDeployment(id)
+					if d == nil {
+						log.Warnf("Deployment with id %s not built", id)
+						continue
+					}
+					msg.AddDeploymentForDetection(component.DetectorMessage{Object: d, Action: deploymentReference.ParentResourceAction})
+					continue
+				}
 
 				// Remove actions are done at the handler level. This is not ideal but for now it allows us to be able to fetch deployments from the store
 				// in the resolver instead of sending a copy. We still manage OnDeploymentCreateOrUpdate here.

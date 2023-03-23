@@ -207,7 +207,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		} else {
 			// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
 			// references up the chain, which will be used to trigger the actual deployment event and detection.
-			events.AddDeploymentReference(resolver.ResolveDeploymentIds(deploymentWrap.GetId()), action, false)
+			events.AddDeploymentReference(resolver.ResolveDeploymentIds(deploymentWrap.GetId()), action, false, false)
 		}
 	} else {
 		exposureInfos := d.serviceStore.GetExposureInfos(deploymentWrap.GetNamespace(), deploymentWrap.PodLabels)

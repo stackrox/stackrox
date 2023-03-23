@@ -1,6 +1,7 @@
 package resolver
 
 import (
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
 )
@@ -47,5 +48,12 @@ func ResolveAllDeployments() DeploymentReference {
 			ids[i] = dp.GetId()
 		}
 		return ids
+	}
+}
+
+// ResolveDeploymentsByImage returns a function that returns a list of deployment ids based on an image
+func ResolveDeploymentsByImage(image *storage.Image) DeploymentReference {
+	return func(store store.DeploymentStore) []string {
+		return store.FindDeploymentIDsByImage(image)
 	}
 }

@@ -2,11 +2,14 @@ package eventpipeline
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
@@ -16,8 +19,9 @@ var (
 
 type eventPipeline struct {
 	output   component.OutputQueue
-	resolver component.PipelineComponent
+	resolver component.Resolver
 	listener component.PipelineComponent
+	detector detector.Detector
 
 	eventsC chan *central.MsgFromSensor
 	stopSig concurrency.Signal
@@ -29,7 +33,17 @@ func (*eventPipeline) Capabilities() []centralsensor.SensorCapability {
 }
 
 // ProcessMessage implements common.SensorComponent
-func (*eventPipeline) ProcessMessage(_ *central.MsgToSensor) error {
+func (p *eventPipeline) ProcessMessage(msg *central.MsgToSensor) error {
+	switch {
+	case msg.GetPolicySync() != nil:
+		return p.processPolicySync(msg.GetPolicySync())
+	case msg.GetReassessPolicies() != nil:
+		return p.processReassessPolicies()
+	case msg.GetUpdatedImage() != nil:
+		return p.processUpdatedImage(msg.GetUpdatedImage())
+	case msg.GetReprocessDeployments() != nil:
+		return p.processReprocessDeployments()
+	}
 	return nil
 }
 
@@ -89,4 +103,47 @@ func (p *eventPipeline) forwardMessages() {
 			p.eventsC <- msg
 		}
 	}
+}
+
+func (p *eventPipeline) processPolicySync(sync *central.PolicySync) error {
+	return p.detector.ProcessPolicySync(sync)
+}
+
+func (p *eventPipeline) processReassessPolicies() error {
+	if err := p.detector.ProcessReassessPolicies(); err != nil {
+		return err
+	}
+	if env.ResyncDisabled.BooleanSetting() {
+		message := component.NewEvent()
+		message.AddDeploymentReference(resolver.ResolveAllDeployments(), central.ResourceAction_UPDATE_RESOURCE, true, true)
+		log.Debugf("Reassess message to the Resolver: %+v", message)
+		p.resolver.Send(message)
+	}
+	return nil
+}
+
+func (p *eventPipeline) processReprocessDeployments() error {
+	if err := p.detector.ProcessReprocessDeployments(); err != nil {
+		return err
+	}
+	if env.ResyncDisabled.BooleanSetting() {
+		message := component.NewEvent()
+		message.AddDeploymentReference(resolver.ResolveAllDeployments(), central.ResourceAction_UPDATE_RESOURCE, true, true)
+		log.Debugf("Reprocess message to the Resolver: %+v", message)
+		p.resolver.Send(message)
+	}
+	return nil
+}
+
+func (p *eventPipeline) processUpdatedImage(image *storage.Image) error {
+	if err := p.detector.ProcessUpdatedImage(image); err != nil {
+		return err
+	}
+	if env.ResyncDisabled.BooleanSetting() {
+		message := component.NewEvent()
+		message.AddDeploymentReference(resolver.ResolveDeploymentsByImage(image), central.ResourceAction_UPDATE_RESOURCE, true, true)
+		log.Debugf("Updated Image message to the Resolver: %+v", message)
+		p.resolver.Send(message)
+	}
+	return nil
 }

@@ -49,7 +49,7 @@ func (r *routeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resour
 	if env.ResyncDisabled.BooleanSetting() {
 		// We do not append any Route event here because Routes, just like Services, are not tracked by central.
 		event := component.NewEvent()
-		event.AddDeploymentReference(resolver.ResolveDeploymentLabels(existingService.GetNamespace(), existingService.selector), central.ResourceAction_UPDATE_RESOURCE, false)
+		event.AddDeploymentReference(resolver.ResolveDeploymentLabels(existingService.GetNamespace(), existingService.selector), central.ResourceAction_UPDATE_RESOURCE, false, false)
 		return event
 	}
 	events := r.portExposureReconciler.UpdateExposuresForMatchingDeployments(existingService.Namespace, existingService.selector)

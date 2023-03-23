@@ -37,5 +37,6 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 		output:   outputQueue,
 		resolver: depResolver,
 		listener: resourceListener,
+		detector: detector,
 	}
 }

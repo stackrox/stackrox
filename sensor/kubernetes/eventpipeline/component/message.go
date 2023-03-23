@@ -32,6 +32,10 @@ type DeploymentReference struct {
 	// This is needed to trigger detection of deployments associated with a NetworkPolicy, since they are not part of the deployment spec
 	// and therefore will not be triggered since the deduper won't recognize that a deployment was changed.
 	ForceDetection bool
+
+	// SkipResolving indicates whether the deployments need to be resolved or not. This is set to true when a re-process
+	// is triggered after receiving a message from central (e.g. UpdatedImage).
+	SkipResolving bool
 }
 
 // ResourceEvent message used by the event pipeline's components
@@ -74,11 +78,12 @@ func (e *ResourceEvent) AddDeploymentForReprocessing(ids ...string) *ResourceEve
 }
 
 // AddDeploymentReference creates and sets a new deployment reference to this resource event.
-func (e *ResourceEvent) AddDeploymentReference(reference resolver.DeploymentReference, action central.ResourceAction, force bool) {
+func (e *ResourceEvent) AddDeploymentReference(reference resolver.DeploymentReference, action central.ResourceAction, force bool, skipResolving bool) {
 	e.DeploymentReferences = append(e.DeploymentReferences, DeploymentReference{
 		Reference:            reference,
 		ParentResourceAction: action,
 		ForceDetection:       force,
+		SkipResolving:        skipResolving,
 	})
 }
 

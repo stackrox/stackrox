@@ -167,6 +167,23 @@ func (ds *DeploymentStore) FindDeploymentIDsByLabels(namespace string, sel selec
 	return
 }
 
+// FindDeploymentIDsByImage returns a slice of deployment ids based on matching image ids
+func (ds *DeploymentStore) FindDeploymentIDsByImage(image *storage.Image) []string {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+	var ids []string
+	for _, d := range ds.deployments {
+		for _, c := range d.GetContainers() {
+			if c.GetImage().GetId() == image.GetId() {
+				ids = append(ids, d.GetId())
+				// The deployment id is already the slice, we can break here
+				break
+			}
+		}
+	}
+	return ids
+}
+
 func (ds *DeploymentStore) getWrap(id string) *deploymentWrap {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
@@ -179,6 +196,14 @@ func (ds *DeploymentStore) getWrap(id string) *deploymentWrap {
 func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 	wrap := ds.getWrap(id)
 	return wrap.GetDeployment()
+}
+
+// GetBuiltDeployment returns a cloned deployment for supplied id
+func (ds *DeploymentStore) GetBuiltDeployment(id string) *storage.Deployment {
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+	wrap := ds.getWrap(id)
+	return wrap.GetDeployment().Clone()
 }
 
 // BuildDeploymentWithDependencies creates storage.Deployment object using external object dependencies.
