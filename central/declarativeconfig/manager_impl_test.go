@@ -15,7 +15,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	transformMocks "github.com/stackrox/rox/pkg/declarativeconfig/transform/mocks"
+	"github.com/stackrox/rox/pkg/errox"
 	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -359,4 +361,24 @@ accessScope: access-scope
 permissionSet: permission-set
 `),
 	})
+}
+
+func TestVerifyUpdaters(t *testing.T) {
+	m := newTestManager(t)
+	m.updaters = map[reflect.Type]updater.ResourceUpdater{
+		types.PermissionSetType: nil,
+		types.AccessScopeType:   nil,
+		types.GroupType:         nil,
+		types.AuthProviderType:  nil,
+		types.RoleType:          nil,
+	}
+
+	err := m.verifyUpdaters()
+	assert.NoError(t, err)
+
+	m.updaters = map[reflect.Type]updater.ResourceUpdater{
+		types.PermissionSetType: nil,
+	}
+	err = m.verifyUpdaters()
+	assert.ErrorIs(t, err, errox.InvariantViolation)
 }

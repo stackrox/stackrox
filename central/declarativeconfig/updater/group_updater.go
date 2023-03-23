@@ -42,11 +42,11 @@ func (u *groupUpdater) Upsert(ctx context.Context, m proto.Message) error {
 }
 
 func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
-	resourcesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
+	groupsToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	groups, err := u.groupDS.GetFiltered(ctx, func(group *storage.Group) bool {
 		return group.GetProps().GetTraits().GetOrigin() == storage.Traits_DECLARATIVE &&
-			!resourcesToSkip.Contains(group.GetProps().GetId())
+			!groupsToSkip.Contains(group.GetProps().GetId())
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving declarative groups")

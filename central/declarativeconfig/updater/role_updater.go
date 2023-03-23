@@ -42,11 +42,11 @@ func (u *roleUpdater) Upsert(ctx context.Context, m proto.Message) error {
 }
 
 func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
-	resourcesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
+	rolesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	roles, err := u.roleDS.GetRolesFiltered(ctx, func(role *storage.Role) bool {
 		return role.GetTraits().GetOrigin() == storage.Traits_DECLARATIVE &&
-			!resourcesToSkip.Contains(role.GetName())
+			!rolesToSkip.Contains(role.GetName())
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving declarative roles")

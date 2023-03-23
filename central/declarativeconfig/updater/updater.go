@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	roleDatastore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
 // ResourceUpdater handles updates of proto resources within declarative config reconciliation routine.
@@ -25,10 +24,6 @@ type ResourceUpdater interface {
 	// TODO(ROX-14700): Extend the delete implementation to cover resolving references.
 	DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error)
 }
-
-var (
-	log = logging.LoggerForModule()
-)
 
 // DefaultResourceUpdaters return a map from proto type to an ResourceUpdater instance responsible
 // for updates for this type.

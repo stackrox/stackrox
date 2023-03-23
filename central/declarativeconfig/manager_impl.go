@@ -59,7 +59,6 @@ type managerImpl struct {
 
 	reconciliationTicker *time.Ticker
 	shortCircuitSignal   concurrency.Signal
-	stopSignal           concurrency.Signal
 
 	reconciliationCtx context.Context
 
@@ -100,7 +99,6 @@ func New(reconciliationTickerDuration, watchIntervalDuration time.Duration, upda
 		idExtractor:                    idExtractor,
 		nameExtractor:                  nameExtractor,
 		shortCircuitSignal:             concurrency.NewSignal(),
-		stopSignal:                     concurrency.NewSignal(),
 	}
 }
 
@@ -220,9 +218,6 @@ func (m *managerImpl) reconciliationLoop() {
 		case <-m.reconciliationTicker.C:
 			log.Debug("Received a ticker signal, running the reconciliation")
 			m.runReconciliation()
-		case <-m.stopSignal.Done():
-			log.Debug("Received a stop signal, stopping the reconciliation")
-			return
 		}
 	}
 }
@@ -281,7 +276,7 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 		}
 	}
 
-	if err := m.removeStaleHealthStatus(allProtoIDsToSkip); err != nil {
+	if err := m.removeStaleHealthStatuses(allProtoIDsToSkip); err != nil {
 		log.Errorf("Failed to delete stale health status entries for declarative config: %v", err)
 	}
 }
@@ -338,10 +333,10 @@ func (m *managerImpl) registerHealthForMessage(handler string, messages ...proto
 	}
 }
 
-// removeStaleHealthStatus is expected to run after reconciliation has deleted declarative proto messages.
-// In case the first creation of a resource failed, a dangling health status will be here, hence we have to
-// ensure that all stale health status entries are deleted.
-func (m *managerImpl) removeStaleHealthStatus(idsToSkip []string) error {
+// removeStaleHealthStatuses is expected to run after reconciliation has deleted declarative proto messages.
+// It deletes health status entries for deleted proto messages, as well as entries for which the first creation
+// of a resource failed.
+func (m *managerImpl) removeStaleHealthStatuses(idsToSkip []string) error {
 	healths, err := m.declarativeConfigErrorReporter.
 		RetrieveIntegrationHealths(storage.IntegrationHealth_DECLARATIVE_CONFIG)
 	if err != nil {

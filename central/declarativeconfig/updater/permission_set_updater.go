@@ -42,11 +42,11 @@ func (u *permissionSetUpdater) Upsert(ctx context.Context, m proto.Message) erro
 }
 
 func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
-	resourcesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
+	permissionSetsToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	permissionSets, err := u.roleDS.GetPermissionSetsFiltered(ctx, func(permissionSet *storage.PermissionSet) bool {
 		return permissionSet.GetTraits().GetOrigin() == storage.Traits_DECLARATIVE &&
-			!resourcesToSkip.Contains(permissionSet.GetId())
+			!permissionSetsToSkip.Contains(permissionSet.GetId())
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving declarative permission sets")

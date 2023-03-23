@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -27,6 +28,10 @@ type authProviderUpdater struct {
 }
 
 var _ ResourceUpdater = (*authProviderUpdater)(nil)
+
+var (
+	log = logging.LoggerForModule()
+)
 
 func newAuthProviderUpdater(authProvidersDS authproviders.Store, registry authproviders.Registry,
 	groupDS groupDataStore.DataStore, reporter integrationhealth.Reporter) ResourceUpdater {
@@ -78,7 +83,7 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 				u.idExtractor, u.nameExtractor))
 			continue
 		}
-		// TODO(ROX-14700): This currently deletes also declarative groups and should resolve these references.
+		// TODO(ROX-14700): This currently also deletes imperative groups and should resolve these references instead.
 		if err := u.groupDS.RemoveAllWithAuthProviderID(ctx, authProvider.GetId(), true); err != nil {
 			log.Errorf("Error deleting groups for auth provider id %s: %v", authProvider.GetId(), err)
 		}
