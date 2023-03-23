@@ -9892,10 +9892,6 @@
               {
                 "name": "CERTIFIED_RHEL_SCAN_UNAVAILABLE",
                 "integer": 3
-              },
-              {
-                "name": "CONTENT_SET_UNAVAILABLE"
-                "integer": 4
               }
             ]
           }
