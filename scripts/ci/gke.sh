@@ -33,6 +33,9 @@ assign_env_variables() {
     if is_OPENSHIFT_CI; then
         require_environment "BUILD_ID"
         build_num="${BUILD_ID}"
+    elif is_GITHUB_ACTIONS; then
+        require_environment "GITHUB_RUN_ID"
+        build_num="${GITHUB_RUN_ID}"
     else
         die "Support is missing for this CI environment"
     fi
@@ -100,6 +103,15 @@ create_cluster() {
         labels="${labels},stackrox-ci-job=${JOB_NAME:0:63}"
         labels="${labels/%-/x}"
         labels="${labels},stackrox-ci-build-id=${BUILD_ID:0:63}"
+        labels="${labels/%-/x}"
+    elif is_GITHUB_ACTIONS; then
+        require_environment "GITHUB_JOB"
+        require_environment "GITHUB_RUN_ID"
+        tags="${tags},stackrox-ci-${GITHUB_JOB:0:50}"
+        tags="${tags/%-/x}"
+        labels="${labels},stackrox-ci-job=${GITHUB_JOB:0:63}"
+        labels="${labels/%-/x}"
+        labels="${labels},stackrox-ci-build-id=${GITHUB_RUN_ID:0:63}"
         labels="${labels/%-/x}"
     else
         die "Support is missing for this CI environment"
