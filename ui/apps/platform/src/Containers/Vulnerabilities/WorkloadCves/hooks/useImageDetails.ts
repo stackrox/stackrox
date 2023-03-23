@@ -16,13 +16,9 @@ export type ImageDetailsResponse = {
             v1: {
                 created: Date | null;
                 digest: string;
-                layers: {
-                    instruction: string;
-                    value: string;
-                }[];
             } | null;
         } | null;
-        dataSource: { name: string } | null;
+        dataSource: { id: string; name: string } | null;
         scanTime: Date | null;
     };
 };
@@ -40,13 +36,10 @@ export const imageDetailsQuery = gql`
                 v1 {
                     created
                     digest
-                    layers {
-                        instruction
-                        value
-                    }
                 }
             }
             dataSource {
+                id
                 name
             }
             scanTime

@@ -36,7 +36,6 @@ import WorkloadTableToolbar from './WorkloadTableToolbar';
 import BySeveritySummaryCard from './SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from './SummaryCards/CvesByStatusSummaryCard';
 import SingleEntityVulnerabilitiesTable from './Tables/SingleEntityVulnerabilitiesTable';
-import { ImageDetailsResponse } from './hooks/useImageDetails';
 import useImageVulnerabilities from './hooks/useImageVulnerabilities';
 import { DynamicTableLabel } from './DynamicIcon';
 
@@ -50,10 +49,9 @@ const defaultSortOptions: UseURLSortProps = {
 
 export type ImageSingleVulnerabilitiesProps = {
     imageId: string;
-    imageData: ImageDetailsResponse['image'] | undefined;
 };
 
-function ImageSingleVulnerabilities({ imageId, imageData }: ImageSingleVulnerabilitiesProps) {
+function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps) {
     const { searchFilter } = useURLSearch();
     const { page, perPage, setPage, setPerPage } = useURLPagination(50);
     // TODO Need to reset current page at the same time sorting changes
@@ -94,8 +92,6 @@ function ImageSingleVulnerabilities({ imageId, imageData }: ImageSingleVulnerabi
             </Bullseye>
         );
     } else if (vulnerabilityData) {
-        const vulnerabilities = vulnerabilityData.image.imageVulnerabilities;
-
         // TODO Integrate these with page search filters
         const hiddenSeverities = new Set<VulnerabilitySeverity>([]);
         const hiddenStatuses = new Set<FixableStatus>([]);
@@ -149,8 +145,7 @@ function ImageSingleVulnerabilities({ imageId, imageData }: ImageSingleVulnerabi
                         </SplitItem>
                     </Split>
                     <SingleEntityVulnerabilitiesTable
-                        image={imageData}
-                        imageVulnerabilities={vulnerabilities}
+                        image={vulnerabilityData.image}
                         getSortParams={getSortParams}
                         isFiltered={isFiltered}
                     />
