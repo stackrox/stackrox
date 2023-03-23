@@ -191,7 +191,8 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 					"-d",
 					pgconfig.GetActiveDB(),
 					"-Fc", // Custom format, compressed hopefully supports stdin to restore
-					"-v",
+					"-f",
+					"/tmp/pg_dump.out",
 				}
 
 				// Get the common DB connection info
