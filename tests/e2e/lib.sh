@@ -9,6 +9,7 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 source "$TEST_ROOT/scripts/ci/test_state.sh"
+source "$TEST_ROOT/tests/e2e/separate-clusters.sh"
 
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 
@@ -523,6 +524,15 @@ collect_and_check_stackrox_logs() {
 # system tests against the same cluster.
 remove_existing_stackrox_resources() {
     info "Will remove any existing stackrox resources"
+
+    if separate_cluster_test; then
+        if [[ "${1:-}" == "" ]]; then
+            remove_existing_stackrox_resources "central"
+            remove_existing_stackrox_resources "sensor"
+            return
+        fi
+        target_cluster "$1"
+    fi
 
     (
         kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait

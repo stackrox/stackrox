@@ -156,8 +156,8 @@ class SeparateClusters:
 
     def provision(self):
         if self.central_cluster_kubeconfig == "":
-            kubeconfig = tempfile.NamedTemporaryFile(delete=False)
-            kubeconfig.close()
+            with tempfile.NamedTemporaryFile(delete=False) as kubeconfig:
+                kubeconfig.close()
             os.environ["KUBECONFIG"] = kubeconfig.name
             self.central_cluster = GKECluster(self.cluster_id + "-central")
             self.central_cluster.provision()
@@ -165,8 +165,8 @@ class SeparateClusters:
             self.central_cluster_kubeconfig = kubeconfig.name
 
         if self.sensor_cluster_kubeconfig == "":
-            kubeconfig = tempfile.NamedTemporaryFile(delete=False)
-            kubeconfig.close()
+            with tempfile.NamedTemporaryFile(delete=False) as kubeconfig:
+                kubeconfig.close()
             os.environ["KUBECONFIG"] = kubeconfig.name
             self.sensor_cluster = GKECluster(self.cluster_id + "-central")
             self.sensor_cluster.provision()
