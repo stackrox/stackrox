@@ -50,6 +50,6 @@ export const nodeScanMessages = {
     },
     certifiedRHELCVEsUnavailable: {
         header: 'Unavailable or invalid CPE data',
-        body: 'The scan results are unavailable because CPE data was not found when scanning this node',
+        body: 'The list of packages is missing scan results because the data required to conduct a scan is unavailable for this node.',
     },
 };
