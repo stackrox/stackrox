@@ -1,4 +1,4 @@
-package m200tom201
+package m178tom179
 
 import (
 	"embed"
@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	postgresHelper "github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_openshift_policy_exclusions/postgres"
+	postgresHelper "github.com/stackrox/rox/migrator/migrations/m_178_to_m_179_openshift_policy_exclusions/postgres"
 	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -14,8 +14,8 @@ import (
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: 200,
-		VersionAfter:   &storage.Version{SeqNum: 201},
+		StartingSeqNum: 178,
+		VersionAfter:   &storage.Version{SeqNum: 179},
 		Run: func(databases *types.Databases) error {
 			err := updatePolicies(databases.PostgresDB)
 			if err != nil {
