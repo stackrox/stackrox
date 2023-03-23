@@ -156,22 +156,22 @@ class SeparateClusters:
 
     def provision(self):
         if self.central_cluster_kubeconfig == "":
-            with tempfile.NamedTemporaryFile(delete=False) as kubeconfig:
-                kubeconfig.close()
-                os.environ["KUBECONFIG"] = kubeconfig.name
-                self.central_cluster = GKECluster(self.cluster_id + "-central")
-                self.central_cluster.provision()
-                os.environ["CENTRAL_CLUSTER_KUBECONFIG"] = kubeconfig.name
-                self.central_cluster_kubeconfig = kubeconfig.name
+            kubeconfig = tempfile.NamedTemporaryFile(delete=False)
+            kubeconfig.close()
+            os.environ["KUBECONFIG"] = kubeconfig.name
+            self.central_cluster = GKECluster(self.cluster_id + "-central")
+            self.central_cluster.provision()
+            os.environ["CENTRAL_CLUSTER_KUBECONFIG"] = kubeconfig.name
+            self.central_cluster_kubeconfig = kubeconfig.name
 
         if self.sensor_cluster_kubeconfig == "":
-            with tempfile.NamedTemporaryFile(delete=False) as kubeconfig:
-                kubeconfig.close()
-                os.environ["KUBECONFIG"] = kubeconfig.name
-                self.sensor_cluster = GKECluster(self.cluster_id + "-central")
-                self.sensor_cluster.provision()
-                os.environ["SENSOR_CLUSTER_KUBECONFIG"] = kubeconfig.name
-                self.sensor_cluster_kubeconfig = kubeconfig.name
+            kubeconfig = tempfile.NamedTemporaryFile(delete=False)
+            kubeconfig.close()
+            os.environ["KUBECONFIG"] = kubeconfig.name
+            self.sensor_cluster = GKECluster(self.cluster_id + "-central")
+            self.sensor_cluster.provision()
+            os.environ["SENSOR_CLUSTER_KUBECONFIG"] = kubeconfig.name
+            self.sensor_cluster_kubeconfig = kubeconfig.name
 
         return self
 
