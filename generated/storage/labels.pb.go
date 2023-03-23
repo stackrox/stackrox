@@ -91,6 +91,7 @@ func (SetBasedLabelSelector_Operator) EnumDescriptor() ([]byte, []int) {
 }
 
 // Label selector components are joined with logical AND, see
+//
 //     https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 //
 // Next available tag: 3
