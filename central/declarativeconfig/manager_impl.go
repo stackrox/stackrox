@@ -365,8 +365,10 @@ func (m *managerImpl) removeStaleHealthStatuses(idsToSkip []string) error {
 
 func (m *managerImpl) verifyUpdaters() error {
 	for _, protoType := range protoTypesOrder {
-		if _, ok := m.updaters[protoType]; !ok {
+		if updater, ok := m.updaters[protoType]; !ok {
 			return errox.InvariantViolation.Newf("found no updater for proto type %v", protoType)
+		} else if updater == nil {
+			return errox.InvariantViolation.Newf("updater for proto type %v was nil", protoType)
 		}
 	}
 	return nil

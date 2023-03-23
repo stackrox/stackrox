@@ -365,12 +365,15 @@ permissionSet: permission-set
 
 func TestVerifyUpdaters(t *testing.T) {
 	m := newTestManager(t)
+	controller := gomock.NewController(t)
+	mockUpdater := updaterMocks.NewMockResourceUpdater(controller)
+
 	m.updaters = map[reflect.Type]updater.ResourceUpdater{
-		types.PermissionSetType: nil,
-		types.AccessScopeType:   nil,
-		types.GroupType:         nil,
-		types.AuthProviderType:  nil,
-		types.RoleType:          nil,
+		types.PermissionSetType: mockUpdater,
+		types.AccessScopeType:   mockUpdater,
+		types.GroupType:         mockUpdater,
+		types.AuthProviderType:  mockUpdater,
+		types.RoleType:          mockUpdater,
 	}
 
 	err := m.verifyUpdaters()
@@ -379,6 +382,17 @@ func TestVerifyUpdaters(t *testing.T) {
 	m.updaters = map[reflect.Type]updater.ResourceUpdater{
 		types.PermissionSetType: nil,
 	}
+	err = m.verifyUpdaters()
+	assert.ErrorIs(t, err, errox.InvariantViolation)
+
+	m.updaters = map[reflect.Type]updater.ResourceUpdater{
+		types.PermissionSetType: mockUpdater,
+		types.AccessScopeType:   mockUpdater,
+		types.GroupType:         mockUpdater,
+		types.AuthProviderType:  mockUpdater,
+		types.RoleType:          nil,
+	}
+
 	err = m.verifyUpdaters()
 	assert.ErrorIs(t, err, errox.InvariantViolation)
 }
