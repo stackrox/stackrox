@@ -106,10 +106,12 @@ func (p *eventPipeline) forwardMessages() {
 }
 
 func (p *eventPipeline) processPolicySync(sync *central.PolicySync) error {
+	log.Debug("PolicySync message received from central")
 	return p.detector.ProcessPolicySync(sync)
 }
 
 func (p *eventPipeline) processReassessPolicies() error {
+	log.Debug("ReassessPolicies message received from central")
 	if err := p.detector.ProcessReassessPolicies(); err != nil {
 		return err
 	}
@@ -123,6 +125,7 @@ func (p *eventPipeline) processReassessPolicies() error {
 }
 
 func (p *eventPipeline) processReprocessDeployments() error {
+	log.Debug("ReprocessDeployments message received from central")
 	if err := p.detector.ProcessReprocessDeployments(); err != nil {
 		return err
 	}
@@ -136,6 +139,7 @@ func (p *eventPipeline) processReprocessDeployments() error {
 }
 
 func (p *eventPipeline) processUpdatedImage(image *storage.Image) error {
+	log.Debugf("UpdatedImage message received from central: image name: %s, number of components: %d", image.GetName().GetFullName(), image.GetComponents())
 	if err := p.detector.ProcessUpdatedImage(image); err != nil {
 		return err
 	}
