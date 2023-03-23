@@ -5,6 +5,7 @@ export default function getNodeScanMessage(nodeNotes: string[], scanNotes: strin
 
     const hasUnsupported = scanNotes?.includes('UNSUPPORTED');
     const hasKernelUnsupported = scanNotes?.includes('KERNEL_UNSUPPORTED');
+    const hasCertifiedRHELCVEsUnavailable = scanNotes?.includes('CERTIFIED_RHEL_CVES_UNAVAILABLE');
 
     if (hasMissingScanData) {
         return nodeScanMessages.missingScanData;
@@ -14,6 +15,9 @@ export default function getNodeScanMessage(nodeNotes: string[], scanNotes: strin
     }
     if (hasKernelUnsupported) {
         return nodeScanMessages.kernelUnsupported;
+    }
+    if (hasCertifiedRHELCVEsUnavailable) {
+        return nodeScanMessages.certifiedRHELCVEsUnavailable;
     }
 
     return {};

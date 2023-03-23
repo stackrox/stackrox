@@ -1812,8 +1812,8 @@ github.com/stackrox/oauth2 v0.0.0-20230323154701-8854a69ca091 h1:rQD7/1MwBEkhm9n
 github.com/stackrox/oauth2 v0.0.0-20230323154701-8854a69ca091/go.mod h1:ycmewcwgD4Rpr3eZJLSB4Kyyljb3qDh40vJ8STE5HKw=
 github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179 h1:5wzvROh+LGgeIeOpMuEpIkRIALDFU/ltFB8cY3916c4=
 github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179/go.mod h1:zwEXo3PEZZb6QQZBrBORMX0Hvnnwst3PduSaTQZMFYc=
-github.com/stackrox/scanner v0.0.0-20230320080549-581c726c4295 h1:lDZqRj8Hnfw4CcxQ8r/u0SEtuflDWdCNwpiM+NCH4pY=
-github.com/stackrox/scanner v0.0.0-20230320080549-581c726c4295/go.mod h1:r/euwOKjAP+6eCYmw1yazzI/mJD2BHeAc0vtJVxZsCg=
+github.com/stackrox/scanner v0.0.0-20230322091704-5cc0f02a7865 h1:kv2VnBF1XLKo/sDYtyHyNqooVt0xKTL7n8/IopUT4/8=
+github.com/stackrox/scanner v0.0.0-20230322091704-5cc0f02a7865/go.mod h1:3eU/8bFEZvaTPqdG3Y025xo/9s8UyDM/vfGr74bEepg=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d h1:jeM6QMtwE9BU0rfDYcmkI/aOChOUfIO18LDp/DSnZpI=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/stackrox/yaml/v2 v2.4.1 h1:09ux+QFfvp+Lk73pwGlMTAHeZoS2pqs6CCngYaJ6EQo=
