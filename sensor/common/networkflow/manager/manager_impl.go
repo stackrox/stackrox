@@ -497,12 +497,6 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 		port:     ep.endpoint.IPAndPort.Port,
 		protocol: ep.endpoint.L4Proto.ToProtobuf(),
 	}
-
-	// Multiple endpoints from a collector can result in a single enriched endpoint,
-	// hence update the timestamp only if we have a more recent endpoint than the one we have already enriched.
-	if oldTS, found := processesListening[indicator]; !found || oldTS < status.lastSeen || oldTS == timestamp.InfiniteFuture {
-		processesListening[indicator] = status.lastSeen
-	}
 }
 
 func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
