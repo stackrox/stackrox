@@ -193,7 +193,7 @@ function RuleGroups({
                                 <Button
                                     variant="link"
                                     isInline
-                                    isDisabled={false}
+                                    isDisabled={!!errors?.length}
                                     icon={<PlusCircleIcon className="pf-u-mr-sm" />}
                                     onClick={() =>
                                         arrayHelpers.push({
