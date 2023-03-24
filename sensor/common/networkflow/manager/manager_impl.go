@@ -46,6 +46,7 @@ type hostConnections struct {
 	connections        map[connection]*connStatus
 	endpoints          map[containerEndpoint]*connStatus
 	lastKnownTimestamp timestamp.MicroTS
+	processes          map[string]*processInfo
 
 	// connectionsSequenceID is the sequence ID of the current active connections state
 	connectionsSequenceID int64
@@ -58,9 +59,10 @@ type hostConnections struct {
 }
 
 type connStatus struct {
-	firstSeen timestamp.MicroTS
-	lastSeen  timestamp.MicroTS
-	used      bool
+	firstSeen   timestamp.MicroTS
+	lastSeen    timestamp.MicroTS
+	used        bool
+	usedProcess bool
 	// rotten implies we expected to correlate the flow with a container, but were unable to
 	rotten bool
 }
@@ -132,6 +134,10 @@ func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.Proce
 			ProcessExecFilePath: i.key.process.processExec,
 			ProcessArgs:         i.key.process.processArgs,
 		},
+	}
+
+	if ts != timestamp.InfiniteFuture {
+		proto.CloseTimestamp = ts.GogoProtobuf()
 	}
 
 	return proto
@@ -461,7 +467,7 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 	if !isFresh {
-		status.used = true
+		status.usedProcess = true
 	}
 
 	container, ok := m.clusterEntities.LookupByContainerID(ep.containerID)
@@ -476,7 +482,7 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 		return
 	}
 
-	status.used = true
+	status.usedProcess = true
 
 	indicator := processListeningIndicator{
 		key: processUniqueKey{
@@ -490,7 +496,7 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 
 	// Multiple endpoints from a collector can result in a single enriched endpoint,
 	// hence update the timestamp only if we have a more recent endpoint than the one we have already enriched.
-	if oldTS, found := processesListening[indicator]; !found || oldTS < status.lastSeen {
+	if oldTS, found := processesListening[indicator]; !found || oldTS < status.lastSeen || oldTS == timestamp.InfiniteFuture {
 		processesListening[indicator] = status.lastSeen
 	}
 }
@@ -510,6 +516,14 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 	flowMetrics.HostConnectionsRemoved.Add(float64(prevSize - len(hostConns.connections)))
 }
 
+func deleteEndpoint(hostConns *hostConnections, ep containerEndpoint) {
+
+	delete(hostConns.endpoints, ep)
+	processId := getProcessInfoString(ep.processKey)
+	delete(hostConns.processes, processId)
+}
+
+
 func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnections, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
@@ -517,9 +531,10 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 	prevSize := len(hostConns.endpoints)
 	for ep, status := range hostConns.endpoints {
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
-		if status.used && status.lastSeen != timestamp.InfiniteFuture {
+		if status.used && (status.usedProcess || !features.ProcessesListeningOnPort.Enabled())  && status.lastSeen != timestamp.InfiniteFuture {
 			// endpoints that are no longer active and have already been used can be deleted.
-			delete(hostConns.endpoints, ep)
+			// If processes listening on ports is enabled, it has to be used there before being deleted as well.
+			deleteEndpoint(hostConns, ep)
 		}
 	}
 	flowMetrics.HostEndpointsRemoved.Add(float64(prevSize - len(hostConns.endpoints)))
@@ -537,9 +552,10 @@ func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections
 		}
 
 		m.enrichProcessListening(&ep, status, processesListening)
-		if status.used && status.lastSeen != timestamp.InfiniteFuture {
+		if status.used && status.usedProcess && status.lastSeen != timestamp.InfiniteFuture {
 			// endpoints that are no longer active and have already been used can be deleted.
-			delete(hostConns.endpoints, ep)
+			// Before deleting it must be used here and in enrichContainerEndpoints.
+			deleteEndpoint(hostConns, ep)
 		}
 	}
 	flowMetrics.HostProcessesRemoved.Add(float64(prevSize - len(hostConns.endpoints)))
@@ -612,13 +628,21 @@ func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.Mic
 
 	for pl, currTS := range current {
 		prevTS, ok := previous[pl]
-		if !ok || currTS > prevTS {
+		if !ok || currTS > prevTS  || (prevTS == timestamp.InfiniteFuture && currTS != timestamp.InfiniteFuture) {
 			updates = append(updates, pl.toProto(currTS))
 		}
 	}
 
 	for ep, prevTS := range previous {
 		if _, ok := current[ep]; !ok {
+			// There is an endpoint in the previous state, but not current state.
+			// The timestamp is nil. We saw that it was open and now it doesn't exist.
+			// It must have been closed. The CloseTimestamp is not available so send the
+			// current time. This could happen if the pod was deleted and it was not possible
+			// to enrich the endpoint.
+			if prevTS == timestamp.InfiniteFuture {
+				prevTS = timestamp.Now()
+			}
 			updates = append(updates, ep.toProto(prevTS))
 		}
 	}
@@ -651,6 +675,7 @@ func (m *networkFlowManager) RegisterCollector(hostname string) (HostNetworkInfo
 			hostname:    hostname,
 			connections: make(map[connection]*connStatus),
 			endpoints:   make(map[containerEndpoint]*connStatus),
+			processes:   make(map[string]*processInfo),
 		}
 		m.connectionsByHost[hostname] = conns
 	}
@@ -718,7 +743,7 @@ func (m *networkFlowManager) UnregisterCollector(hostname string, sequenceID int
 
 func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error {
 	updatedConnections := getUpdatedConnections(h.hostname, networkInfo)
-	updatedEndpoints := getUpdatedContainerEndpoints(h.hostname, networkInfo)
+	updatedEndpoints := getUpdatedContainerEndpoints(h.hostname, networkInfo, h.processes)
 
 	collectorTS := timestamp.FromProtobuf(networkInfo.GetTime())
 	tsOffset := nowTimestamp - collectorTS
@@ -792,16 +817,39 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 	return nil
 }
 
-func getProcessKey(originator *storage.NetworkProcessUniqueKey) *processInfo {
+func getProcessString(processName string, processArgs string, processExecFilePath string) string {
+	return fmt.Sprintf("%s_%s_%s", processName, processArgs, processExecFilePath)
+}
+
+func getProcessOriginatorString(originator *storage.NetworkProcessUniqueKey) string {
+	return getProcessString(originator.ProcessName, originator.ProcessArgs, originator.ProcessExecFilePath)
+}
+
+func getProcessInfoString(process *processInfo) string {
+	return getProcessString(process.processName, process.processArgs, process.processExec)
+}
+
+func getProcessKey(originator *storage.NetworkProcessUniqueKey, processes map[string]*processInfo) *processInfo {
 	if originator == nil {
 		return nil
 	}
 
-	return &processInfo{
+	id := getProcessOriginatorString(originator)
+
+	process, ok := processes[id]
+	if ok {
+		return process
+	}
+
+	process = &processInfo{
 		processName: originator.ProcessName,
 		processArgs: originator.ProcessArgs,
 		processExec: originator.ProcessExecFilePath,
 	}
+
+	processes[id] = process
+
+	return process
 }
 
 func getIPAndPort(address *sensor.NetworkAddress) net.NetworkPeerID {
@@ -864,7 +912,7 @@ func getUpdatedConnections(hostname string, networkInfo *sensor.NetworkConnectio
 	return updatedConnections
 }
 
-func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkConnectionInfo) map[containerEndpoint]timestamp.MicroTS {
+func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkConnectionInfo, processes map[string]*processInfo) map[containerEndpoint]timestamp.MicroTS {
 	updatedEndpoints := make(map[containerEndpoint]timestamp.MicroTS)
 
 	flowMetrics.NetworkFlowMessagesPerNode.With(prometheus.Labels{"Hostname": hostname}).Inc()
@@ -878,7 +926,7 @@ func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkCo
 				IPAndPort: getIPAndPort(endpoint.GetListenAddress()),
 				L4Proto:   net.L4ProtoFromProtobuf(endpoint.GetProtocol()),
 			},
-			processKey: getProcessKey(endpoint.GetOriginator()),
+			processKey: getProcessKey(endpoint.GetOriginator(), processes),
 		}
 
 		// timestamp will be set to close timestamp for closed connections, and zero for newly added connection.

@@ -16,7 +16,7 @@ import services.ProcessesListeningOnPortsService
 
 @Stepwise
 // TODO: Solve the flake and change back to @IgnoreIf({ !Env.get("ROX_POSTGRES_DATASTORE", null) })
-@IgnoreIf({ Env.get("RUN_PROCESS_LISTENING_ON_PORTS_E2E_TESTS", "false") == "false" })
+//@IgnoreIf({ Env.get("RUN_PROCESS_LISTENING_ON_PORTS_E2E_TESTS", "false") == "false" })
 class ProcessesListeningOnPortsTest extends BaseSpecification {
 
     // Deployment names
