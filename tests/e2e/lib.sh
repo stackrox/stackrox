@@ -34,6 +34,12 @@ deploy_stackrox() {
 
     sensor_wait
 
+    touch /tmp/hold
+    while [[ -e /tmp/hold ]]; do
+        info "Holding this job for debug"
+        sleep 60
+    done
+
     wait_for_collectors_to_be_operational
 
     touch "${STATE_DEPLOYED}"
