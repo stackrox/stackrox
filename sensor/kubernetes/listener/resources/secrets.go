@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/registries/docker"
@@ -318,9 +319,11 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	events := component.NewEvent(sensorEvents...)
 	events.AddSensorEvent(secretToSensorEvent(action, protoSecret))
 
-	// When adding new docker config secrets we need to reprocess every deployment in this cluster.
-	// This is because the field `NotPullable` could be updated and hence new image scan results will appear.
-	events.AddDeploymentReference(resolver.ResolveAllDeployments(), central.ResourceAction_UPDATE_RESOURCE, false)
+	if env.ResyncDisabled.BooleanSetting() {
+		// When adding new docker config secrets we need to reprocess every deployment in this cluster.
+		// This is because the field `NotPullable` could be updated and hence new image scan results will appear.
+		events.AddDeploymentReference(resolver.ResolveAllDeployments(), central.ResourceAction_UPDATE_RESOURCE, false)
+	}
 
 	return events
 }
