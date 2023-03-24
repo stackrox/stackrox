@@ -114,7 +114,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         "Two deployments that listen on ports are started up"
 
         rebuildForRetries()
-        def clusterId = ClusterService.getClusterId()
 
         String deploymentId1 = targetDeployments[0].getDeploymentUid()
         String deploymentId2 = targetDeployments[1].getDeploymentUid()
