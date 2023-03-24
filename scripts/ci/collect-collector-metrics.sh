@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1091
+
 set -eu
 
 # Gather collector metrics script
 
+TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+source "$TEST_ROOT/scripts/lib.sh"
+source "$TEST_ROOT/tests/e2e/separate-clusters.sh"
+
 usage() {
     echo "$0 <namespace> <output-dir> <pod-port> <path>"
     echo "e.g. $0 stackrox /logs 9090 metrics"
-}
-
-die() {
-    echo >&2 "$@"
-    exit 1
 }
 
 main() {
@@ -40,6 +41,11 @@ main() {
     else
         metrics_path="metrics"
     fi
+
+    if separate_clusters_test; then
+        target_cluster "sensor"
+    fi
+
     set +e
 
     local_port=9090

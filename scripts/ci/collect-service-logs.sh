@@ -1,5 +1,10 @@
-#!/bin/sh
+#!/usr/bin/env bash
+# shellcheck disable=SC1091
 set -eu
+
+TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+source "$TEST_ROOT/scripts/lib.sh"
+source "$TEST_ROOT/tests/e2e/separate-clusters.sh"
 
 # Collect Service Logs script
 #
@@ -86,5 +91,14 @@ main() {
 
     find "${log_dir}" -type f -size 0 -delete
 }
+
+if separate_clusters_test; then
+    if [[ -z "${TARGET_CLUSTER:-}" ]]; then
+        TARGET_CLUSTER="central" main "$@"
+        TARGET_CLUSTER="sensor" main "$@"
+        return
+    fi
+    target_cluster "${TARGET_CLUSTER}"
+fi
 
 main "$@"

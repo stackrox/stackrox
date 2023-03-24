@@ -29,7 +29,7 @@ deploy_stackrox() {
     echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait
 
-    # Bounce collectors to avoid restarts on initial module pull
+    info Bounce collectors to avoid restarts on initial module pull
     kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     sensor_wait
@@ -67,7 +67,7 @@ deploy_stackrox_with_custom_sensor() {
     echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait
 
-    # Bounce collectors to avoid restarts on initial module pull
+    info Bounce collectors to avoid restarts on initial module pull
     kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     sensor_wait
@@ -563,6 +563,10 @@ remove_existing_stackrox_resources() {
 
 wait_for_api() {
     info "Waiting for Central to be ready"
+
+    if separate_clusters_test; then
+        target_cluster "central"
+    fi
 
     start_time="$(date '+%s')"
     max_seconds=${MAX_WAIT_SECONDS:-300}
