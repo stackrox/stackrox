@@ -199,6 +199,7 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type ProcessesListeningOnPortsServiceClient interface {
+	// GetProcessesListeningOnPorts returns the listening endpoints and the processes that opened them for a given deployment
 	GetProcessesListeningOnPorts(ctx context.Context, in *GetProcessesListeningOnPortsRequest, opts ...grpc.CallOption) (*GetProcessesListeningOnPortsResponse, error)
 }
 
@@ -221,6 +222,7 @@ func (c *processesListeningOnPortsServiceClient) GetProcessesListeningOnPorts(ct
 
 // ProcessesListeningOnPortsServiceServer is the server API for ProcessesListeningOnPortsService service.
 type ProcessesListeningOnPortsServiceServer interface {
+	// GetProcessesListeningOnPorts returns the listening endpoints and the processes that opened them for a given deployment
 	GetProcessesListeningOnPorts(context.Context, *GetProcessesListeningOnPortsRequest) (*GetProcessesListeningOnPortsResponse, error)
 }
 

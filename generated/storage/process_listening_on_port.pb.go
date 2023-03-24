@@ -342,12 +342,11 @@ type ProcessListeningOnPortStorage struct {
 	Closed bool `protobuf:"varint,6,opt,name=closed,proto3" json:"closed,omitempty" search:"Closed,store" sql:"index=btree"`
 	// ProcessIndicator will be not empty only for those cases when we were not
 	// able to find references process in the database
-	Process *ProcessIndicatorUniqueKey `protobuf:"bytes,7,opt,name=process,proto3" json:"process,omitempty"`
-	//  string deployment_id = 8 [(gogoproto.moretags) = 'search:"Deployment ID,store,hidden" policy:",prefer-parent" sql:"index=hash,fk(Deployment:id),no-fk-constraint,type(uuid)"'];
-	DeploymentId         string   `protobuf:"bytes,8,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" search:"Deployment ID,store" sql:"index=btree,type(uuid)"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Process              *ProcessIndicatorUniqueKey `protobuf:"bytes,7,opt,name=process,proto3" json:"process,omitempty"`
+	DeploymentId         string                     `protobuf:"bytes,8,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" search:"Deployment ID,store" sql:"index=btree,type(uuid)"`
+	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
+	XXX_unrecognized     []byte                     `json:"-"`
+	XXX_sizecache        int32                      `json:"-"`
 }
 
 func (m *ProcessListeningOnPortStorage) Reset()         { *m = ProcessListeningOnPortStorage{} }
