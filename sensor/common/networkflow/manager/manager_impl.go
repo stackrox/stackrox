@@ -517,7 +517,6 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 }
 
 func deleteEndpoint(hostConns *hostConnections, ep containerEndpoint) {
-
 	delete(hostConns.endpoints, ep)
 	processID := getProcessInfoString(ep.processKey)
 	delete(hostConns.processes, processID)
@@ -634,11 +633,8 @@ func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.Mic
 
 	for ep, prevTS := range previous {
 		if _, ok := current[ep]; !ok {
-			// There is an endpoint in the previous state, but not current state.
-			// The timestamp is nil. We saw that it was open and now it doesn't exist.
-			// It must have been closed. The CloseTimestamp is not available so send the
-			// current time. This could happen if the pod was deleted and it was not possible
-			// to enrich the endpoint.
+			// This condition means the deployment was removed before we got the
+			// close timestamp for the endpoint. Use the current timestamp instead.
 			if prevTS == timestamp.InfiniteFuture {
 				prevTS = timestamp.Now()
 			}
