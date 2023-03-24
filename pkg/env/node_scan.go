@@ -3,6 +3,9 @@ package env
 import "time"
 
 var (
+	// NodeScanningEndpoint is used to provide Compliance with the Node Scanner that is used to carry out Node Scans
+	NodeScanningEndpoint = RegisterSetting("ROX_NODE_SCANNING_ENDPOINT", WithDefault("127.0.0.1:8444"))
+
 	// NodeScanningInterval is the base value of the interval duration between node scans.
 	NodeScanningInterval = registerDurationSetting("ROX_NODE_SCANNING_INTERVAL", 4*time.Hour)
 

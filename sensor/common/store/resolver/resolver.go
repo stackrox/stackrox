@@ -37,3 +37,15 @@ func ResolveDeploymentLabels(namespace string, sel selector.Selector) Deployment
 		return store.FindDeploymentIDsByLabels(namespace, sel)
 	}
 }
+
+// ResolveAllDeployments returns a function that generates a list of a all deployment ids in the system
+func ResolveAllDeployments() DeploymentReference {
+	return func(store store.DeploymentStore) []string {
+		allDeployments := store.GetAll()
+		ids := make([]string, len(allDeployments))
+		for i, dp := range allDeployments {
+			ids[i] = dp.GetId()
+		}
+		return ids
+	}
+}

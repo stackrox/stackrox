@@ -49,7 +49,9 @@ export type NamespaceData = {
     showContextMenu: boolean;
     namespace: string;
     cluster: string;
+    isFilteredNamespace: boolean;
     labelIconClass: string;
+    isFadedOut: boolean;
 };
 
 export type NetworkPolicyState = 'none' | 'both' | 'ingress' | 'egress';
@@ -83,6 +85,7 @@ export type ExternalGroupData = {
     type: 'EXTERNAL_GROUP';
     collapsible: boolean;
     showContextMenu: boolean;
+    isFadedOut: boolean;
 };
 
 export type ExternalEntitiesData = {

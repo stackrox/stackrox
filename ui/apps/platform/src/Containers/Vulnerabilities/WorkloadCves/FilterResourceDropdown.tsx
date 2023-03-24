@@ -1,44 +1,56 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Select, SelectOption } from '@patternfly/react-core';
 
-import { SearchFilter } from 'types/search';
+import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
-export type Resource = 'CVE' | 'Image' | 'Deployment' | 'Namespace' | 'Cluster';
+export type Resource = 'CVE' | 'IMAGE' | 'DEPLOYMENT' | 'NAMESPACE' | 'CLUSTER';
 
 type FilterResourceDropdownProps = {
-    onSelect: (filterType, e, selection) => void;
-    searchFilter: SearchFilter;
+    setResource: (selection) => void;
+    resource: Resource;
     resourceContext?: Resource;
 };
 
 function FilterResourceDropdown({
-    onSelect,
-    searchFilter,
+    setResource,
+    resource,
     resourceContext,
 }: FilterResourceDropdownProps) {
-    const [resourceIsOpen, setResourceIsOpen] = useState(false);
-    function onResourceToggle(isOpen: boolean) {
-        setResourceIsOpen(isOpen);
-    }
+    const { isOpen, onToggle } = useSelectToggle();
+
     function onResourceSelect(e, selection) {
-        onSelect('resource', e, selection);
+        setResource(selection);
     }
+
+    // TODO: this will need to be dynamic once the endpoint is in
+    // /v1/internal/search/metadata/options
     const resourceOptions = [
-        <SelectOption key="CVE" value="CVE" />,
-        <SelectOption key="Image" value="Image" />,
-        <SelectOption key="Deployment" value="Deployment" />,
-        <SelectOption key="Namespace" value="Namespace" />,
-        <SelectOption key="Cluster" value="Cluster" />,
+        <SelectOption key="CVE" value="CVE">
+            CVE
+        </SelectOption>,
+        <SelectOption key="IMAGE" value="IMAGE">
+            Image
+        </SelectOption>,
+        <SelectOption key="DEPLOYMENT" value="DEPLOYMENT">
+            Deployment
+        </SelectOption>,
+        <SelectOption key="NAMESPACE" value="NAMESPACE">
+            Namespace
+        </SelectOption>,
+        <SelectOption key="CLUSTER" value="CLUSTER">
+            Cluster
+        </SelectOption>,
     ];
 
     return (
         <Select
             variant="single"
             aria-label="resource"
-            onToggle={onResourceToggle}
+            onToggle={onToggle}
             onSelect={onResourceSelect}
-            selections={searchFilter.resource}
-            isOpen={resourceIsOpen}
+            selections={resource}
+            isOpen={isOpen}
+            className="pf-u-w-25"
         >
             {resourceContext
                 ? resourceOptions.filter((res) => res.key !== resourceContext)

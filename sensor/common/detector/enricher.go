@@ -137,10 +137,12 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	if err != nil {
 		// Ignore the error and set the image to something basic,
 		// so alerting can progress.
+		log.Errorf("Scan request failed for image %s: %s", req.containerImage.GetName().GetFullName(), err)
 		c.image = types.ToImage(req.containerImage)
 		return
 	}
 
+	log.Debugf("Successful image scan for image %s: %d components returned by scanner", req.containerImage.GetName().GetFullName(), len(scannedImage.GetImage().GetScan().GetComponents()))
 	c.image = scannedImage.GetImage()
 }
 
@@ -170,6 +172,7 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 
 	// If the container image says that the image is not pullable, don't even bother trying to scan
 	if req.containerImage.GetNotPullable() {
+		log.Warnf("Skipping image scan for image: %s. Not pullable", req.containerImage.GetName().GetFullName())
 		return imageChanResult{
 			image:        types.ToImage(req.containerImage),
 			containerIdx: req.containerIdx,
@@ -186,6 +189,7 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	if ok {
 		// If the container image name is already within the cached images names, we can short-circuit.
 		if protoutils.SliceContains(req.containerImage.GetName(), img.GetNames()) {
+			log.Debugf("Image scan loaded from cache: %s: Components: (%d)", req.containerImage.GetName().GetFullName(), len(img.GetScan().GetComponents()))
 			return imageChanResult{
 				image:        img,
 				containerIdx: req.containerIdx,

@@ -229,7 +229,7 @@ forloop:
 			trimmedValue = strings.ToLower(trimmedValue[len(RegexPrefix):])
 			queryModifiers = append(queryModifiers, Regex)
 			break forloop // Once we see that it's a regex, we don't check for special-characters in the rest of the string.
-		case strings.HasPrefix(trimmedValue, EqualityPrefixSuffix) && strings.HasSuffix(trimmedValue, EqualityPrefixSuffix) && len(trimmedValue) > 2*len(EqualityPrefixSuffix):
+		case strings.HasPrefix(trimmedValue, EqualityPrefixSuffix) && strings.HasSuffix(trimmedValue, EqualityPrefixSuffix) && len(trimmedValue) >= 2*len(EqualityPrefixSuffix):
 			trimmedValue = trimmedValue[len(EqualityPrefixSuffix) : len(trimmedValue)-len(EqualityPrefixSuffix)]
 			queryModifiers = append(queryModifiers, Equality)
 			break forloop // Once it's within quotes, we take the value inside as is, and don't try to extract modifiers.

@@ -49,7 +49,7 @@ function getNamespaceNode(
     namespace: string,
     cluster: string,
     deploymentId: string,
-    isFiltered: boolean
+    isFilteredNamespace: boolean
 ): NamespaceNodeModel {
     const namespaceData: NamespaceData = {
         collapsible: true,
@@ -57,7 +57,8 @@ function getNamespaceNode(
         type: 'NAMESPACE',
         namespace,
         cluster,
-        labelIconClass: isFiltered ? filteredNamespaceSVG : derivedNamespaceSVG,
+        isFilteredNamespace,
+        labelIconClass: isFilteredNamespace ? filteredNamespaceSVG : derivedNamespaceSVG,
     };
     return {
         id: namespace,

@@ -691,7 +691,8 @@
       "enum": [
         "UNSET",
         "UNSUPPORTED",
-        "KERNEL_UNSUPPORTED"
+        "KERNEL_UNSUPPORTED",
+        "CERTIFIED_RHEL_CVES_UNAVAILABLE"
       ],
       "default": "UNSET"
     },

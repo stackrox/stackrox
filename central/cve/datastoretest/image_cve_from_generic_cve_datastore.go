@@ -36,9 +36,9 @@ func (s *imageCVEDataStoreFromGenericStore) SearchImageCVEs(ctx context.Context,
 }
 
 func (s *imageCVEDataStoreFromGenericStore) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([]*storage.ImageCVE, error) {
-	cves, error := s.genericStore.SearchRawCVEs(ctx, q)
-	if error != nil {
-		return nil, error
+	cves, err := s.genericStore.SearchRawCVEs(ctx, q)
+	if err != nil {
+		return nil, err
 	}
 	imageCVES := make([]*storage.ImageCVE, 0, len(cves))
 	for ix := range cves {

@@ -9,7 +9,6 @@ import {
     Flex,
     Grid,
     GridItem,
-    Label,
     PageSection,
     Pagination,
     pluralize,
@@ -23,41 +22,40 @@ import {
     Text,
     Title,
 } from '@patternfly/react-core';
-import { ExclamationCircleIcon, InfoCircleIcon } from '@patternfly/react-icons';
+import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
-import useURLSort, { UseURLSortProps } from 'hooks/useURLSort';
+import useURLSort from 'hooks/useURLSort';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { cveStatusTabValues, FixableStatus } from './types';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import BySeveritySummaryCard from './SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from './SummaryCards/CvesByStatusSummaryCard';
 import SingleEntityVulnerabilitiesTable from './Tables/SingleEntityVulnerabilitiesTable';
-import { ImageDetailsResponse } from './hooks/useImageDetails';
 import useImageVulnerabilities from './hooks/useImageVulnerabilities';
+import { DynamicTableLabel } from './DynamicIcon';
 
-const defaultSortOptions: UseURLSortProps = {
-    sortFields: ['CVE', 'Severity', 'Fixable'],
-    defaultSortOption: {
-        field: 'Severity',
-        direction: 'desc',
-    },
-};
+const defaultSortFields = ['CVE', 'Severity', 'Fixable'];
 
 export type ImageSingleVulnerabilitiesProps = {
     imageId: string;
-    imageData: ImageDetailsResponse['image'] | undefined;
 };
 
-function ImageSingleVulnerabilities({ imageId, imageData }: ImageSingleVulnerabilitiesProps) {
+function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps) {
     const { searchFilter } = useURLSearch();
     const { page, perPage, setPage, setPerPage } = useURLPagination(50);
-    // TODO Need to reset current page at the same time sorting changes
-    const { sortOption, getSortParams } = useURLSort(defaultSortOptions);
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields: defaultSortFields,
+        defaultSortOption: {
+            field: 'Severity',
+            direction: 'desc',
+        },
+        onSort: () => setPage(1),
+    });
     // TODO Still need to properly integrate search filter with query
     const pagination = {
         offset: (page - 1) * perPage,
@@ -67,6 +65,8 @@ function ImageSingleVulnerabilities({ imageId, imageData }: ImageSingleVulnerabi
     const { data, previousData, loading, error } = useImageVulnerabilities(imageId, {}, pagination);
 
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('cveStatus', cveStatusTabValues);
+
+    const isFiltered = getHasSearchApplied(searchFilter);
 
     let mainContent: ReactNode | null = null;
 
@@ -92,8 +92,6 @@ function ImageSingleVulnerabilities({ imageId, imageData }: ImageSingleVulnerabi
             </Bullseye>
         );
     } else if (vulnerabilityData) {
-        const vulnerabilities = vulnerabilityData.image.imageVulnerabilities;
-
         // TODO Integrate these with page search filters
         const hiddenSeverities = new Set<VulnerabilitySeverity>([]);
         const hiddenStatuses = new Set<FixableStatus>([]);
@@ -121,17 +119,13 @@ function ImageSingleVulnerabilities({ imageId, imageData }: ImageSingleVulnerabi
                 </div>
                 <Divider />
                 <div className="pf-u-p-lg">
-                    <Split className="pf-u-pb-lg">
+                    <Split className="pf-u-pb-lg pf-u-align-items-baseline">
                         <SplitItem isFilled>
-                            <Flex alignContent={{ default: 'alignContentCenter' }}>
+                            <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                 <Title headingLevel="h2">
                                     {pluralize(totalVulnerabilityCount, 'result', 'results')} found
                                 </Title>
-                                {getHasSearchApplied(searchFilter) && (
-                                    <Label isCompact color="blue" icon={<InfoCircleIcon />}>
-                                        Filtered view
-                                    </Label>
-                                )}
+                                {isFiltered && <DynamicTableLabel />}
                             </Flex>
                         </SplitItem>
                         <SplitItem>
@@ -151,9 +145,9 @@ function ImageSingleVulnerabilities({ imageId, imageData }: ImageSingleVulnerabi
                         </SplitItem>
                     </Split>
                     <SingleEntityVulnerabilitiesTable
-                        image={imageData}
-                        imageVulnerabilities={vulnerabilities}
+                        image={vulnerabilityData.image}
                         getSortParams={getSortParams}
+                        isFiltered={isFiltered}
                     />
                 </div>
             </>

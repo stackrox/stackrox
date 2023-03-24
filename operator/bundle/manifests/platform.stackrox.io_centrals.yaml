@@ -62,6 +62,16 @@ spec:
                     description: Settings for Central DB, which is responsible for
                       data persistence.
                     properties:
+                      configOverride:
+                        description: Config map containing postgresql.conf and pg_hba.conf
+                          that will be used if modifications need to be applied.
+                        properties:
+                          name:
+                            description: The name of the referenced config map.
+                            type: string
+                        required:
+                        - name
+                        type: object
                       connectionString:
                         description: Specify a connection string that corresponds
                           to an existing database. If set, the operator will not manage

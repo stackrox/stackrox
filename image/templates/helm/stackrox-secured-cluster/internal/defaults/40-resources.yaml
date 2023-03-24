@@ -3,11 +3,11 @@
 sensor:
   resources:
     requests:
-      memory: "1Gi"
-      cpu: "1"
-    limits:
       memory: "4Gi"
       cpu: "2"
+    limits:
+      memory: "8Gi"
+      cpu: "4"
 
 admissionControl:
   resources:
