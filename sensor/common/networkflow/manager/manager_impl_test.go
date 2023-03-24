@@ -128,6 +128,7 @@ func (suite *NetworkflowManagerTestSuite) TestAddOpenAndClosed() {
 func (suite *NetworkflowManagerTestSuite) TestAddTwoDifferent() {
 	h := hostConnections{}
 	h.endpoints = make(map[containerEndpoint]*connStatus)
+	h.processes = make(map[string]*processInfo)
 
 	networkInfoOpen := &sensor.NetworkConnectionInfo{
 		UpdatedEndpoints: []*sensor.NetworkEndpoint{openNetworkEndpoint},
@@ -153,6 +154,7 @@ func (suite *NetworkflowManagerTestSuite) TestAddTwoDifferent() {
 func (suite *NetworkflowManagerTestSuite) TestAddTwoDifferentSameBatch() {
 	h := hostConnections{}
 	h.endpoints = make(map[containerEndpoint]*connStatus)
+	h.processes = make(map[string]*processInfo)
 
 	networkInfoOpen := &sensor.NetworkConnectionInfo{
 		UpdatedEndpoints: []*sensor.NetworkEndpoint{openNetworkEndpoint, openNetworkEndpoint81},
@@ -171,6 +173,7 @@ func (suite *NetworkflowManagerTestSuite) TestAddTwoDifferentSameBatch() {
 func (suite *NetworkflowManagerTestSuite) TestAddNoOriginator() {
 	h := hostConnections{}
 	h.endpoints = make(map[containerEndpoint]*connStatus)
+	h.processes = make(map[string]*processInfo)
 
 	networkInfoOpen := &sensor.NetworkConnectionInfo{
 		UpdatedEndpoints: []*sensor.NetworkEndpoint{openNetworkEndpointNoOriginator},
