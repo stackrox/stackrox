@@ -101,7 +101,9 @@ export_test_environment() {
 
 
     version="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" tag)}"
-    ci_export IS_RELEASE_BUILD (is_nightly_run || is_release_version "${version}")
+    if ( is_nightly_run || is_release_version "${version}"); then
+        ci_export IS_RELEASE_BUILD "true"
+    fi
 }
 
 deploy_stackrox_operator() {
