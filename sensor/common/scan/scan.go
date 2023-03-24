@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/images/types"
-	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/signatures"
@@ -78,7 +77,7 @@ func (s *LocalScan) EnrichLocalImageFromRegistry(ctx context.Context, centralCli
 	// Send local enriched data to central to receive a fully enrich image. This includes image vulnerabilities and
 	// signature verification results.
 	centralResp, err := centralClient.EnrichLocalImageInternal(ctx, &v1.EnrichLocalImageInternalRequest{
-		ImageId:        utils.GetSHA(image),
+		ImageId:        image.GetId(),
 		ImageName:      image.GetName(),
 		Metadata:       image.GetMetadata(),
 		Components:     scannerResp.GetComponents(),
