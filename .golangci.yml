@@ -47,6 +47,12 @@ issues:
     - linters:
         - revive
       text: "don't use leading k in Go names"
+    - linters:
+        - revive
+      text: "unused-parameter"
+    - linters:
+        - revive
+      text: "if-return"
     - path: .*/bleve@.*/index\.go
       linters:
         - staticcheck

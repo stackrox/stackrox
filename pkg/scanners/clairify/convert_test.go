@@ -183,9 +183,9 @@ func TestConvertVulnResponseToNodeScan(t *testing.T) {
 						FixedBy: "4",
 					},
 				},
-				NodeNotes: []v1.NodeNote{v1.NodeNote_NODE_UNSUPPORTED, v1.NodeNote_NODE_KERNEL_UNSUPPORTED},
+				NodeNotes: []v1.NodeNote{v1.NodeNote_NODE_UNSUPPORTED, v1.NodeNote_NODE_KERNEL_UNSUPPORTED, v1.NodeNote_NODE_CERTIFIED_RHEL_CVES_UNAVAILABLE},
 			},
-			expectedNotes: []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_KERNEL_UNSUPPORTED},
+			expectedNotes: []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_KERNEL_UNSUPPORTED, storage.NodeScan_CERTIFIED_RHEL_CVES_UNAVAILABLE},
 			expectedComponents: []*storage.EmbeddedNodeScanComponent{
 				{
 					Name:    "docker",

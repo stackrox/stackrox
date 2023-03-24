@@ -199,6 +199,11 @@ function launch_central {
       add_args "--enable-pod-security-policies=${POD_SECURITY_POLICIES}"
     fi
 
+    # TODO(ROX-16008): Once the feature flag is enabled by default, always add the config map mount.
+    if [[ -n "${ROX_DECLARATIVE_CONFIGURATION}" ]]; then
+        add_args "--declarative-config-config-maps=declarative-configurations"
+    fi
+
     local unzip_dir="${k8s_dir}/central-deploy/"
     rm -rf "${unzip_dir}"
     if ! (( use_docker )); then
@@ -529,6 +534,20 @@ function launch_sensor {
         helm_args+=(--set "helmManaged=false")
       fi
 
+      if [[ -n "$LOGLEVEL" ]]; then
+        helm_args+=(
+          --set customize.envVars.LOGLEVEL="${LOGLEVEL}"
+        )
+      fi
+
+      # TODO(ROX-14310): Remove this patch when re-sync is disabled unconditionally
+      if [[ -n "$ROX_RESYNC_DISABLED" ]]; then
+        echo "Setting re-sync disabled to $ROX_RESYNC_DISABLED"
+        helm_args+=(
+          --set customize.envVars.ROX_RESYNC_DISABLED="${ROX_RESYNC_DISABLED}"
+        )
+      fi
+
       if [[ -n "$CI" ]]; then
         helm lint "$k8s_dir/sensor-deploy/chart"
         helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox
@@ -577,11 +596,6 @@ function launch_sensor {
        if [[ -z "${IS_RACE_BUILD}" ]]; then
            kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
        fi
-    fi
-
-    # TODO(ROX-14310): Remove this patch when re-sync is disabled unconditionally
-    if [[ "$ROX_RESYNC_DISABLED" == "true" ]]; then
-        kubectl -n stackrox set env deploy/sensor ROX_RESYNC_DISABLED="true"
     fi
 
     if [[ "$MONITORING_SUPPORT" == "true" || ( "$(local_dev)" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then

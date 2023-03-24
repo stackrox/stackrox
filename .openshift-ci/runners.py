@@ -38,7 +38,7 @@ class ClusterTestSetsRunner:
             self.log_event("provisioned")
             self.set_provisioned_state()
         except Exception as err:
-            self.log_event("ERROR: provision failed")
+            self.log_event(f"ERROR: provision failed [{err}]")
             hold = err
 
         if hold is None:
@@ -59,7 +59,7 @@ class ClusterTestSetsRunner:
                         self.run_test_set(test_set)
                         self.log_event("run completed", test_set)
                     except Exception as err:
-                        self.log_event("ERROR: run failed", test_set)
+                        self.log_event(f"ERROR: run failed [{err}]", test_set)
                         if hold is None:
                             hold = err
 
@@ -68,7 +68,7 @@ class ClusterTestSetsRunner:
             self.cluster.teardown()
             self.log_event("teardown completed")
         except Exception as err:
-            self.log_event("ERROR: teardown failed")
+            self.log_event(f"ERROR: teardown failed [{err}]")
             if hold is None:
                 hold = err
 
@@ -77,7 +77,7 @@ class ClusterTestSetsRunner:
             self.final_post.run()
             self.log_event("final post completed")
         except Exception as err:
-            self.log_event("ERROR: final post failed")
+            self.log_event(f"ERROR: final post failed [{err}]")
             if hold is None:
                 hold = err
 
@@ -91,7 +91,7 @@ class ClusterTestSetsRunner:
             test_set["pre_test"].run()
             self.log_event("pre test completed", test_set)
         except Exception as err:
-            self.log_event("ERROR: pre test failed", test_set)
+            self.log_event(f"ERROR: pre test failed [{err}]", test_set)
             hold = err
         if hold is None:
             try:
@@ -99,7 +99,7 @@ class ClusterTestSetsRunner:
                 test_set["test"].run()
                 self.log_event("test completed", test_set)
             except Exception as err:
-                self.log_event("ERROR: test failed", test_set)
+                self.log_event(f"ERROR: test failed [{err}]", test_set)
                 hold = err
             try:
                 self.log_event("About to run post test", test_set)
@@ -109,7 +109,7 @@ class ClusterTestSetsRunner:
                 )
                 self.log_event("post test completed", test_set)
             except Exception as err:
-                self.log_event("ERROR: post test failed", test_set)
+                self.log_event(f"ERROR: post test failed [{err}]", test_set)
                 if hold is None:
                     hold = err
 

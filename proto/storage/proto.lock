@@ -9868,6 +9868,10 @@
               {
                 "name": "KERNEL_UNSUPPORTED",
                 "integer": 2
+              },
+              {
+                "name": "CERTIFIED_RHEL_CVES_UNAVAILABLE",
+                "integer": 3
               }
             ]
           },

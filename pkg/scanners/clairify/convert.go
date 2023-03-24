@@ -137,6 +137,8 @@ func convertNodeNotes(v1Notes []v1.NodeNote) []storage.NodeScan_Note {
 			notes = append(notes, storage.NodeScan_UNSUPPORTED)
 		case v1.NodeNote_NODE_KERNEL_UNSUPPORTED:
 			notes = append(notes, storage.NodeScan_KERNEL_UNSUPPORTED)
+		case v1.NodeNote_NODE_CERTIFIED_RHEL_CVES_UNAVAILABLE:
+			notes = append(notes, storage.NodeScan_CERTIFIED_RHEL_CVES_UNAVAILABLE)
 		default:
 			continue
 		}

@@ -20,7 +20,6 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import { CopyIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
-import { useQuery } from '@apollo/client';
 import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -31,11 +30,7 @@ import ImageSingleVulnerabilities from './ImageSingleVulnerabilities';
 import ImageSingleResources from './ImageSingleResources';
 import { detailsTabValues } from './types';
 import { getOverviewCvesPath } from './searchUtils';
-import {
-    ImageDetailsResponse,
-    ImageDetailsVariables,
-    imageDetailsQuery,
-} from './hooks/useImageDetails';
+import useImageDetails, { ImageDetailsResponse } from './hooks/useImageDetails';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
@@ -96,13 +91,7 @@ function ImageDetailBadges({ imageData }: { imageData: ImageDetailsResponse['ima
 
 function WorkloadCvesImageSinglePage() {
     const { imageId } = useParams();
-    const { data, error } = useQuery<ImageDetailsResponse, ImageDetailsVariables>(
-        imageDetailsQuery,
-        {
-            variables: { id: imageId },
-        }
-    );
-
+    const { data, error } = useImageDetails(imageId);
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
     const imageData = data && data.image;
@@ -163,7 +152,7 @@ function WorkloadCvesImageSinglePage() {
                             eventKey="Vulnerabilities"
                             title={<TabTitleText>Vulnerabilities</TabTitleText>}
                         >
-                            <ImageSingleVulnerabilities imageId={imageId} imageData={imageData} />
+                            <ImageSingleVulnerabilities imageId={imageId} />
                         </Tab>
                         <Tab
                             className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"

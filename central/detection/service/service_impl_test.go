@@ -5,6 +5,9 @@ import (
 
 	openshiftAppsV1 "github.com/openshift/api/apps/v1"
 	openshiftRouteV1 "github.com/openshift/api/route/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -641,6 +644,44 @@ func TestParseList_IgnoredObjects(t *testing.T) {
 			}
 			assert.Len(t, ignoredObjRefs, len(c.expectedIgnoredObjects))
 			assert.ElementsMatch(t, ignoredObjRefs, c.expectedIgnoredObjects)
+		})
+	}
+}
+
+func TestFetchOptionFromRequest(t *testing.T) {
+	cases := map[string]struct {
+		req         *v1.BuildDetectionRequest
+		err         error
+		fetchOption enricher.FetchOption
+	}{
+		"no external metadata and no force should result in UseCachesIfPossible": {
+			req:         &v1.BuildDetectionRequest{},
+			fetchOption: enricher.UseCachesIfPossible,
+		},
+		"no external metadata set and no force should result in NoExternalMetadata": {
+			req:         &v1.BuildDetectionRequest{NoExternalMetadata: true},
+			fetchOption: enricher.NoExternalMetadata,
+		},
+		"force set and no external metadata should result in ForceRefetch": {
+			req:         &v1.BuildDetectionRequest{Force: true},
+			fetchOption: enricher.ForceRefetch,
+		},
+		"both force and no external metadata set should result in an error": {
+			req:         &v1.BuildDetectionRequest{NoExternalMetadata: true, Force: true},
+			fetchOption: enricher.UseCachesIfPossible,
+			err:         errox.InvalidArgs,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			fetchOpt, err := getFetchOptionFromRequest(c.req)
+			if c.err != nil {
+				assert.ErrorIs(t, err, c.err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, c.fetchOption, fetchOpt)
 		})
 	}
 }

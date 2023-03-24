@@ -13,7 +13,6 @@ import (
 	probeSourcesMocks "github.com/stackrox/rox/central/probesources/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -75,12 +74,6 @@ func (suite *ClusterServiceTestSuite) TestGetClusterDefaults() {
 }
 
 func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
-	suite.T().Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
-	if !features.DecommissionedClusterRetention.Enabled() {
-		// if it's still not enabled, we're probably in release tests so skip
-		suite.T().Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
-	}
-
 	cases := map[string]struct {
 		cluster  *storage.Cluster
 		config   *storage.Config
@@ -164,13 +157,6 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 }
 
 func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
-	suite.T().Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
-
-	if !features.DecommissionedClusterRetention.Enabled() {
-		// if it's still not enabled, we're probably in release tests so skip
-		suite.T().Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
-	}
-
 	config := suite.getTestSystemConfig(60, 30, 7)
 
 	clusters := []*storage.Cluster{

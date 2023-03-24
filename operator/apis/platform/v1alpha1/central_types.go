@@ -202,6 +202,10 @@ type CentralDBSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	Persistence *DBPersistence `json:"persistence,omitempty"`
 
+	// Config map containing postgresql.conf and pg_hba.conf that will be used if modifications need to be applied.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Config map that will override postgresql.conf and pg_hba.conf"
+	ConfigOverride LocalConfigMapReference `json:"configOverride,omitempty"`
+
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
 }

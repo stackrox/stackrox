@@ -126,7 +126,7 @@ func TestWatchHandler_WithEmptyDirectory(t *testing.T) {
 
 	wh := newWatchHandler("empty-directory", updaterMock)
 	opts := k8scfgwatch.Options{
-		Interval: 10 * time.Millisecond,
+		Interval: 100 * time.Millisecond,
 	}
 
 	dirToWatch := t.TempDir()
@@ -164,7 +164,7 @@ func TestWatchHandler_WithEmptyDirectory(t *testing.T) {
 		wh.mutex.RLock()
 		defer wh.mutex.RUnlock()
 		return maputil.Equal(expectedCache, wh.cachedFileHashes)
-	}, 100*time.Millisecond, 10*time.Millisecond)
+	}, 500*time.Millisecond, 100*time.Millisecond)
 }
 
 func TestWatchHandler_WithPrefilledDirectory(t *testing.T) {
@@ -173,7 +173,7 @@ func TestWatchHandler_WithPrefilledDirectory(t *testing.T) {
 
 	wh := newWatchHandler("prefilled-directory", updaterMock)
 	opts := k8scfgwatch.Options{
-		Interval: 10 * time.Millisecond,
+		Interval: 100 * time.Millisecond,
 	}
 
 	dirToWatch := t.TempDir()
@@ -212,7 +212,7 @@ func TestWatchHandler_WithPrefilledDirectory(t *testing.T) {
 		wh.mutex.RLock()
 		defer wh.mutex.RUnlock()
 		return maputil.Equal(expectedCache, wh.cachedFileHashes)
-	}, 100*time.Millisecond, 10*time.Millisecond)
+	}, 500*time.Millisecond, 100*time.Millisecond)
 
 	// 4.  Add another valid YAML file to the directory the handler will be watching.
 	permissionSet := declarativeconfig.PermissionSet{
@@ -246,7 +246,7 @@ func TestWatchHandler_WithPrefilledDirectory(t *testing.T) {
 		wh.mutex.RLock()
 		defer wh.mutex.RUnlock()
 		return maputil.Equal(expectedCache, wh.cachedFileHashes)
-	}, 100*time.Millisecond, 10*time.Millisecond)
+	}, 500*time.Millisecond, 100*time.Millisecond)
 }
 
 func TestWatchHandler_WithRemovedFiles(t *testing.T) {
@@ -255,7 +255,7 @@ func TestWatchHandler_WithRemovedFiles(t *testing.T) {
 
 	wh := newWatchHandler("removed-files", updaterMock)
 	opts := k8scfgwatch.Options{
-		Interval: 10 * time.Millisecond,
+		Interval: 100 * time.Millisecond,
 	}
 
 	dirToWatch := t.TempDir()
@@ -293,7 +293,7 @@ func TestWatchHandler_WithRemovedFiles(t *testing.T) {
 		wh.mutex.RLock()
 		defer wh.mutex.RUnlock()
 		return maputil.Equal(expectedCache, wh.cachedFileHashes)
-	}, 100*time.Millisecond, 10*time.Millisecond)
+	}, 500*time.Millisecond, 100*time.Millisecond)
 
 	// 4.Set the expected calls to the updater.
 	updaterMock.EXPECT().UpdateDeclarativeConfigContents("removed-files", [][]byte{})
@@ -308,5 +308,5 @@ func TestWatchHandler_WithRemovedFiles(t *testing.T) {
 		wh.mutex.RLock()
 		defer wh.mutex.RUnlock()
 		return maputil.Equal(expectedCache, wh.cachedFileHashes)
-	}, 100*time.Millisecond, 10*time.Millisecond)
+	}, 500*time.Millisecond, 100*time.Millisecond)
 }

@@ -23,6 +23,9 @@ class BaseTest:
                 if exitstatus != 0:
                     raise RuntimeError(f"Test failed: exit {exitstatus}")
             except subprocess.TimeoutExpired as err:
+                # Kill child processes as we cannot rely on bash scripts to handle signals and stop tests
+                subprocess.run(["/usr/bin/pkill", "-P", str(cmd.pid)], check=True, timeout=5)
+                # Then kill the test command
                 popen_graceful_kill(cmd)
                 raise err
 

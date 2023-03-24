@@ -43,6 +43,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-14251: StackRox now uses IMDSv2 to retrieve AWS metadata instead of IMDSv1.
 - ROX-12750: The `Analyst` permission set which used to have read access on all permissions except
   the now deprecated `DebugLogs` permission now has read access to all permissions except `Administration`.
+- The default resources for Sensor have moved to a request of 2 cores, 4GB of RAM and a limit of 4 cores, 8GB of RAM in order to
+  support a higher number of clusters without modification.
 
 ## [3.74.0]
 

@@ -85,6 +85,9 @@ const StyleGroup: React.FunctionComponent<StyleGroupProps> = ({
         }`.trim();
     }
 
+    // @TODO: If multiple classes need to be stringed together, then we need a more systematic way to generate those here
+    className = `${className} ${passedData?.isFadedOut ? 'pf-topology-node-faded' : ''}`.trim();
+
     return (
         <DefaultGroup
             element={element}

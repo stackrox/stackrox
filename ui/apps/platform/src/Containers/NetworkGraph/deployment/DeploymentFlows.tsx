@@ -4,6 +4,8 @@ import {
     AlertVariant,
     Bullseye,
     Divider,
+    EmptyState,
+    ExpandableSection,
     Flex,
     FlexItem,
     Spinner,
@@ -13,7 +15,9 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
+import pluralize from 'pluralize';
 
+import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import {
     filterNetworkFlows,
@@ -58,6 +62,10 @@ function DeploymentFlows({
     const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
         defaultAdvancedFlowsFilters
     );
+    const { isOpen: isAnomalousFlowsExpanded, onToggle: toggleAnomalousFlowsExpandable } =
+        useSelectToggle(true);
+    const { isOpen: isBaselineFlowsExpanded, onToggle: toggleBaselineFlowsExpandable } =
+        useSelectToggle(true);
 
     const {
         isLoading,
@@ -76,14 +84,24 @@ function DeploymentFlows({
         .filter((row) => row.children && !!row.children.length)
         .map((row) => row.id); // Default to all expanded
     const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
-    const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
+
+    const [selectedAnomalousRows, setSelectedAnomalousRows] = React.useState<string[]>([]);
+    const [selectedBaselineRows, setSelectedBaselineRows] = React.useState<string[]>([]);
 
     // derived data
+    const anomalousFlows = filteredFlows.filter((flow) => flow.isAnomalous);
+    const baselineFlows = filteredFlows.filter((flow) => !flow.isAnomalous);
+
     const numFlows = getNumFlows(filteredFlows);
+    const numAnomalousFlows = getNumFlows(anomalousFlows);
+    const numBaselineFlows = getNumFlows(baselineFlows);
+
     const allUniquePorts = getAllUniquePorts(networkFlows);
     const numExtraneousEgressFlows = getNumExtraneousEgressFlows(nodes);
     const numExtraneousIngressFlows = getNumExtraneousIngressFlows(nodes);
     const totalFlows = numFlows + numExtraneousEgressFlows + numExtraneousIngressFlows;
+
+    const selectedRows = [...selectedAnomalousRows, ...selectedBaselineRows];
 
     const onSelectFlow = (entityId: string) => {
         onNodeSelect(entityId);
@@ -99,14 +117,20 @@ function DeploymentFlows({
 
     function addSelectedToBaseline() {
         const selectedFlows = filteredFlows.filter((networkBaseline) => {
-            return selectedRows.includes(networkBaseline.id);
+            return (
+                selectedAnomalousRows.includes(networkBaseline.id) ||
+                selectedBaselineRows.includes(networkBaseline.id)
+            );
         });
         modifyBaselineStatuses(selectedFlows, 'BASELINE', refetchFlows);
     }
 
     function markSelectedAsAnomalous() {
         const selectedFlows = filteredFlows.filter((networkBaseline) => {
-            return selectedRows.includes(networkBaseline.id);
+            return (
+                selectedAnomalousRows.includes(networkBaseline.id) ||
+                selectedBaselineRows.includes(networkBaseline.id)
+            );
         });
         modifyBaselineStatuses(selectedFlows, 'ANOMALOUS', refetchFlows);
     }
@@ -158,7 +182,10 @@ function DeploymentFlows({
                                 <FlowsBulkActions
                                     type="active"
                                     selectedRows={selectedRows}
-                                    onClearSelectedRows={() => setSelectedRows([])}
+                                    onClearSelectedRows={() => {
+                                        setSelectedAnomalousRows([]);
+                                        setSelectedBaselineRows([]);
+                                    }}
                                     markSelectedAsAnomalous={markSelectedAsAnomalous}
                                     addSelectedToBaseline={addSelectedToBaseline}
                                 />
@@ -167,21 +194,68 @@ function DeploymentFlows({
                     </Toolbar>
                 </StackItem>
                 <StackItem>
-                    <FlowsTable
-                        label="Deployment flows"
-                        flows={filteredFlows}
-                        numFlows={numFlows}
-                        expandedRows={expandedRows}
-                        setExpandedRows={setExpandedRows}
-                        selectedRows={selectedRows}
-                        setSelectedRows={setSelectedRows}
-                        addToBaseline={addToBaseline}
-                        markAsAnomalous={markAsAnomalous}
-                        numExtraneousEgressFlows={numExtraneousEgressFlows}
-                        numExtraneousIngressFlows={numExtraneousIngressFlows}
-                        isEditable
-                        onSelectFlow={onSelectFlow}
-                    />
+                    <Stack hasGutter>
+                        <StackItem>
+                            <ExpandableSection
+                                toggleText={`${numAnomalousFlows} anomalous ${pluralize(
+                                    'flow',
+                                    numAnomalousFlows
+                                )}`}
+                                onToggle={toggleAnomalousFlowsExpandable}
+                                isExpanded={isAnomalousFlowsExpanded}
+                            >
+                                {numAnomalousFlows > 0 ? (
+                                    <FlowsTable
+                                        label="Deployment flows"
+                                        flows={anomalousFlows}
+                                        numFlows={numAnomalousFlows}
+                                        expandedRows={expandedRows}
+                                        setExpandedRows={setExpandedRows}
+                                        selectedRows={selectedAnomalousRows}
+                                        setSelectedRows={setSelectedAnomalousRows}
+                                        addToBaseline={addToBaseline}
+                                        markAsAnomalous={markAsAnomalous}
+                                        numExtraneousEgressFlows={numExtraneousEgressFlows}
+                                        numExtraneousIngressFlows={numExtraneousIngressFlows}
+                                        isEditable
+                                        onSelectFlow={onSelectFlow}
+                                    />
+                                ) : (
+                                    <EmptyState>No anomalous flows</EmptyState>
+                                )}
+                            </ExpandableSection>
+                        </StackItem>
+                        <StackItem>
+                            <ExpandableSection
+                                toggleText={`${numBaselineFlows} baseline ${pluralize(
+                                    'flow',
+                                    numBaselineFlows
+                                )}`}
+                                onToggle={toggleBaselineFlowsExpandable}
+                                isExpanded={isBaselineFlowsExpanded}
+                            >
+                                {numBaselineFlows > 0 ? (
+                                    <FlowsTable
+                                        label="Deployment flows"
+                                        flows={baselineFlows}
+                                        numFlows={numBaselineFlows}
+                                        expandedRows={expandedRows}
+                                        setExpandedRows={setExpandedRows}
+                                        selectedRows={selectedBaselineRows}
+                                        setSelectedRows={setSelectedBaselineRows}
+                                        addToBaseline={addToBaseline}
+                                        markAsAnomalous={markAsAnomalous}
+                                        numExtraneousEgressFlows={numExtraneousEgressFlows}
+                                        numExtraneousIngressFlows={numExtraneousIngressFlows}
+                                        isEditable
+                                        onSelectFlow={onSelectFlow}
+                                    />
+                                ) : (
+                                    <EmptyState>No anomalous flows</EmptyState>
+                                )}
+                            </ExpandableSection>
+                        </StackItem>
+                    </Stack>
                 </StackItem>
             </Stack>
         </div>
