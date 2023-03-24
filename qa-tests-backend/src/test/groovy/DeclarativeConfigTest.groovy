@@ -19,7 +19,6 @@ import io.stackrox.proto.storage.TraitsOuterClass.Traits
 import services.AuthProviderService
 import services.GroupService
 import services.IntegrationHealthService
-import services.MetadataService
 import services.RoleService
 
 import org.junit.Rule
@@ -30,7 +29,7 @@ import spock.lang.Tag
 
 @Retry(count = 0)
 // TODO(ROX-16008): Remove this once the declarative config feature flag is enabled by default.
-@IgnoreIf({ MetadataService.isReleaseBuild() })
+@IgnoreIf({ Env.get("ROX_DECLARATIVE_CONFIGURATION", "false") == "false" })
 class DeclarativeConfigTest extends BaseSpecification {
     static final private String DEFAULT_NAMESPACE = "stackrox"
 
