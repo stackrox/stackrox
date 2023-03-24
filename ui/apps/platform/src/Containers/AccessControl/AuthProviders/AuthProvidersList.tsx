@@ -10,7 +10,7 @@ import { actions as authActions } from 'reducers/auth';
 import { AuthProvider, AuthProviderInfo, getIsAuthProviderImmutable } from 'services/AuthService';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
-import { TraitsOriginLabel } from '../TraitsOriginLabel';
+import { getOriginLabel } from '../traits';
 
 // TODO import from where?
 const unselectedRowStyle = {};
@@ -86,9 +86,7 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                                         entityName={name}
                                     />
                                 </Td>
-                                <Td dataLabel="Origin">
-                                    <TraitsOriginLabel traits={traits} />
-                                </Td>
+                                <Td dataLabel="Origin">{getOriginLabel(traits)}</Td>
                                 <Td dataLabel="Type">{typeLabel}</Td>
                                 <Td dataLabel="Minimum access role">
                                     <AccessControlEntityLink
