@@ -285,13 +285,15 @@ deploy_sensor_via_operator() {
 }
 
 export_central_basic_auth_creds() {
-    if [[ -f "${DEPLOY_DIR}/central-deploy/password" ]]; then
+    local deploy_dir="deploy/${ORCHESTRATOR_FLAVOR:=${CENTRAL_ORCHESTRATOR_FLAVOR}}"
+
+    if [[ -f "${deploy_dir}/central-deploy/password" ]]; then
         info "Getting central basic auth creds from central-deploy/password"
-        ROX_PASSWORD="$(cat "${DEPLOY_DIR}"/central-deploy/password)"
+        ROX_PASSWORD="$(cat "${deploy_dir}"/central-deploy/password)"
     elif [[ -n "${ROX_PASSWORD:-}" ]]; then
         info "Using existing ROX_PASSWORD env"
     else
-        echo "Expected to find file ${DEPLOY_DIR}/central-deploy/password or ROX_PASSWORD env"
+        echo "Expected to find file ${deploy_dir}/central-deploy/password or ROX_PASSWORD env"
         exit 1
     fi
 
