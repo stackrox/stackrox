@@ -326,7 +326,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	if env.ResyncDisabled.BooleanSetting() {
 		// When adding new docker config secrets we need to reprocess every deployment in this cluster.
 		// This is because the field `NotPullable` could be updated and hence new image scan results will appear.
-		events.AddDeploymentReference(resolver.ResolveAllDeployments(), central.ResourceAction_UPDATE_RESOURCE, false)
+		events.AddDeploymentReference(resolver.ResolveAllDeployments(), central.ResourceAction_UPDATE_RESOURCE, false, false)
 	}
 
 	return events
