@@ -61,7 +61,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                     .setExposeAsService(true)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:8082,fork STDOUT & " +
-			"sleep 90 && pkill socat && sleep 3600)" as String,]),
+                            "sleep 90 && pkill socat && sleep 3600)" as String,]),
                     // The 8082 port is opened. 90 seconds later the process is killed. After that we sleep forever
         ]
     }
