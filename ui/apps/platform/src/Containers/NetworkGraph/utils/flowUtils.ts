@@ -180,7 +180,6 @@ export function filterNetworkFlows(
 ): Flow[] {
     const filteredFlows = flows.filter((flow) => {
         let matchedEntityName = false;
-        let matchedFlowType = true;
         let matchedDirectionality = true;
         const matchedProtocol = true;
         let matchedPort = true;
@@ -188,15 +187,6 @@ export function filterNetworkFlows(
         // check filtering by entity name
         if (flow.entity.includes(entityNameFilter)) {
             matchedEntityName = true;
-        }
-
-        // check filtering by flow type
-        if (advancedFilters.flows.length) {
-            const isAnomalousFiltered =
-                advancedFilters.flows.includes('anomalous') && flow.isAnomalous;
-            const isBaselineFiltered =
-                advancedFilters.flows.includes('baseline') && !flow.isAnomalous;
-            matchedFlowType = isAnomalousFiltered || isBaselineFiltered;
         }
 
         // check filtering by directionality
@@ -224,13 +214,7 @@ export function filterNetworkFlows(
             matchedPort = false;
         }
 
-        return (
-            matchedEntityName &&
-            matchedFlowType &&
-            matchedDirectionality &&
-            matchedProtocol &&
-            matchedPort
-        );
+        return matchedEntityName && matchedDirectionality && matchedProtocol && matchedPort;
     });
     return filteredFlows;
 }
