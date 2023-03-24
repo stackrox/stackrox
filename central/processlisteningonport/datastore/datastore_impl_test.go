@@ -389,6 +389,142 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseTwice() {
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
+// TestPLOPAddOpenTwice: Add the same open PLOP twice
+// There should only be one PLOP in the storage and one
+// PLOP returned by the API.
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
+	testNamespace := "test_namespace"
+
+	indicators := getIndicators()
+
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
+		{
+			Port:           1234,
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+			CloseTimestamp: nil,
+			Process: &storage.ProcessIndicatorUniqueKey{
+				PodId:               fixtureconsts.PodUID1,
+				ContainerName:       "test_container1",
+				ProcessName:         "test_process1",
+				ProcessArgs:         "test_arguments1",
+				ProcessExecFilePath: "test_path1",
+			},
+		},
+	}
+
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
+
+	// Add PLOP referencing those indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+	// Add the same PLOP again
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+	// Fetch inserted PLOP back
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	suite.Len(newPlops, 1)
+	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
+		ContainerName: "test_container1",
+		PodId:         fixtureconsts.PodUID1,
+		DeploymentId:  fixtureconsts.Deployment1,
+		ClusterId:     fixtureconsts.Cluster1,
+		Namespace:     testNamespace,
+		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			Port:     1234,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		},
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process1",
+			Args:         "test_arguments1",
+			ExecFilePath: "test_path1",
+		},
+	})
+
+	// Verify that newly added PLOP object doesn't have Process field set in
+	// the serialized column (because all the info is stored in the referenced
+	// process indicator record)
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:                 newPlopsFromDB[0].GetId(),
+		Port:               plopObjects[0].GetPort(),
+		Protocol:           plopObjects[0].GetProtocol(),
+		CloseTimestamp:     plopObjects[0].GetCloseTimestamp(),
+		ProcessIndicatorId: indicators[0].GetId(),
+		Closed:             false,
+		Process:            nil,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+}
+
+// TestPLOPAddCloseTwice: Add the same open PLOP twice
+// There should only be one PLOP in the storage and one
+// PLOP returned by the API.
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseTwice() {
+	indicators := getIndicators()
+
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{
+		{
+			Port:           1234,
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+			CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
+			Process: &storage.ProcessIndicatorUniqueKey{
+				PodId:               fixtureconsts.PodUID1,
+				ContainerName:       "test_container1",
+				ProcessName:         "test_process1",
+				ProcessArgs:         "test_arguments1",
+				ProcessExecFilePath: "test_path1",
+			},
+		},
+	}
+
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
+
+	// Add PLOP referencing those indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+	// Add the same PLOP again
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+	// Fetch inserted PLOP back
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	suite.Len(newPlops, 0)
+
+	// Verify that newly added PLOP object doesn't have Process field set in
+	// the serialized column (because all the info is stored in the referenced
+	// process indicator record)
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:                 newPlopsFromDB[0].GetId(),
+		Port:               plopObjects[0].GetPort(),
+		Protocol:           plopObjects[0].GetProtocol(),
+		CloseTimestamp:     plopObjects[0].GetCloseTimestamp(),
+		ProcessIndicatorId: indicators[0].GetId(),
+		Closed:             true,
+		Process:            nil,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+}
+
 // TestPLOPReopen: One PLOP object is added with a correct process indicator
 // reference and CloseTimestamp set to nil. It will reopen an existing PLOP and
 // present in the API result.
