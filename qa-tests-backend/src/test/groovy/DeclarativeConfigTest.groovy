@@ -29,7 +29,7 @@ import spock.lang.Tag
 
 @Retry(count = 0)
 // TODO(ROX-16008): Remove this once the declarative config feature flag is enabled by default.
-@IgnoreIf({ Env.get("IS_RELEASE_BUILD", "false") == "true" })
+@IgnoreIf({ Env.get("ROX_DECLARATIVE_CONFIGURATION", "false") == "false" })
 class DeclarativeConfigTest extends BaseSpecification {
     static final private String DEFAULT_NAMESPACE = "stackrox"
 
