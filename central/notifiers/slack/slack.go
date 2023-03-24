@@ -116,7 +116,7 @@ func (s *slack) getDescription(alert *storage.Alert) (string, error) {
 	return notifiers.FormatAlert(alert, alertLink, funcMap, s.mitreStore)
 }
 
-func (*slack) Close(ctx context.Context) error {
+func (*slack) Close(_ context.Context) error {
 	return nil
 }
 

@@ -29,7 +29,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (store.Store, er
 	}, nil
 }
 
-func (b *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
+func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return false, err
@@ -44,7 +44,7 @@ func (b *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return exists, nil
 }
 
-func (b *storeImpl) Count(ctx context.Context) (int, error) {
+func (b *storeImpl) Count(_ context.Context) (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "Image Component")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -62,7 +62,7 @@ func (b *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // GetImage returns image with given id.
-func (b *storeImpl) Get(ctx context.Context, id string) (image *storage.ImageComponent, exists bool, err error) {
+func (b *storeImpl) Get(_ context.Context, id string) (image *storage.ImageComponent, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "Image Component")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -80,7 +80,7 @@ func (b *storeImpl) Get(ctx context.Context, id string) (image *storage.ImageCom
 }
 
 // GetImagesBatch returns image with given sha.
-func (b *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ImageComponent, []int, error) {
+func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.ImageComponent, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Image Component")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()

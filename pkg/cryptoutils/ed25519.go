@@ -42,6 +42,6 @@ type ed25519Signer struct {
 	priv ed25519.PrivateKey
 }
 
-func (s *ed25519Signer) Sign(data []byte, entropySrc io.Reader) ([]byte, error) {
+func (s *ed25519Signer) Sign(data []byte, _ io.Reader) ([]byte, error) {
 	return ed25519.Sign(s.priv, data), nil
 }

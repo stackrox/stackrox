@@ -52,7 +52,7 @@ func clearExecutables(image *storage.Image) {
 
 // PopulateExecutableCache extracts executables from image scan and stores them in the executable cache.
 // Image executables are cleared on successful return.
-func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storage.Image) error {
+func (u *updaterImpl) PopulateExecutableCache(_ context.Context, image *storage.Image) error {
 	if !env.ActiveVulnMgmt.BooleanSetting() {
 		return nil
 	}

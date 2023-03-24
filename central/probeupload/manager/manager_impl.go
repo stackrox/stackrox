@@ -295,7 +295,7 @@ func (m *manager) StoreFile(ctx context.Context, file string, data io.Reader, si
 	return nil
 }
 
-func (m *manager) LoadProbe(ctx context.Context, file string) (io.ReadCloser, int64, error) {
+func (m *manager) LoadProbe(_ context.Context, file string) (io.ReadCloser, int64, error) {
 	if !probeupload.IsValidFilePath(file) {
 		return nil, 0, errors.Errorf("%q is not a valid probe file name", file)
 	}
@@ -323,7 +323,7 @@ func (m *manager) LoadProbe(ctx context.Context, file string) (io.ReadCloser, in
 	return dataFile, st.Size(), nil
 }
 
-func (m *manager) IsAvailable(ctx context.Context) (bool, error) {
+func (m *manager) IsAvailable(_ context.Context) (bool, error) {
 	entries, err := os.ReadDir(m.rootDir)
 	if err != nil {
 		return false, err

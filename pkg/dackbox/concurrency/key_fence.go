@@ -278,7 +278,7 @@ func EmptyKeySet() KeySet {
 
 type emptyKeySetImpl struct{}
 
-func (ekr *emptyKeySetImpl) Collides(in KeySet) bool {
+func (ekr *emptyKeySetImpl) Collides(_ KeySet) bool {
 	return false
 }
 

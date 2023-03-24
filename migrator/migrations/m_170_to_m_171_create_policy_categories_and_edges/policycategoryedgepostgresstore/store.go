@@ -58,7 +58,7 @@ func New(db *postgres.DB) Store {
 	}
 }
 
-func insertIntoPolicyCategoryEdges(ctx context.Context, batch *pgx.Batch, obj *storage.PolicyCategoryEdge) error {
+func insertIntoPolicyCategoryEdges(_ context.Context, batch *pgx.Batch, obj *storage.PolicyCategoryEdge) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -283,7 +283,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PolicyCategor
 	return nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*postgres.Conn, func(), error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err

@@ -64,7 +64,7 @@ func (w *flagsWrapper) Var(value pflag.Value, name, usage string, groups ...stri
 	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
 }
 
-func orchestratorCommand(shortName, longName string) *cobra.Command {
+func orchestratorCommand(shortName, _ string) *cobra.Command {
 	c := &cobra.Command{
 		Use: shortName,
 		Annotations: map[string]string{

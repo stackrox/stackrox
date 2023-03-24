@@ -196,7 +196,7 @@ func (c *endpointsTestCase) runConnectionTest(t *testing.T, testCtx *endpointsTe
 	}
 }
 
-func (c *endpointsTestCase) verifyAuthStatus(t *testing.T, testCtx *endpointsTestContext, authStatus *v1.AuthStatus) {
+func (c *endpointsTestCase) verifyAuthStatus(t *testing.T, _ *endpointsTestContext, authStatus *v1.AuthStatus) {
 	switch id := authStatus.GetId().(type) {
 	case *v1.AuthStatus_ServiceId:
 		assert.Equal(t, serviceAuth, c.expectAuth, "got service ID from auth status, expected this to be a service client")

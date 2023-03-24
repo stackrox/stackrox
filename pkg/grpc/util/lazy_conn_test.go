@@ -20,7 +20,7 @@ type helloServer struct {
 	helloworld.UnimplementedGreeterServer
 }
 
-func (s *helloServer) SayHello(ctx context.Context, in *helloworld.HelloRequest) (*helloworld.HelloReply, error) {
+func (s *helloServer) SayHello(_ context.Context, in *helloworld.HelloRequest) (*helloworld.HelloReply, error) {
 	return &helloworld.HelloReply{Message: "Hello " + in.GetName()}, nil
 }
 

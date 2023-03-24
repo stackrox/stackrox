@@ -247,7 +247,7 @@ func valueListToString(values []*storage.PolicyValue, opString string) string {
 	return strings.Join(valueList, joinWithWhitespace)
 }
 
-func (*teams) Close(ctx context.Context) error {
+func (*teams) Close(_ context.Context) error {
 	return nil
 }
 

@@ -82,7 +82,7 @@ func New(db *postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoGroups(ctx context.Context, batch *pgx.Batch, obj *storage.Group) error {
+func insertIntoGroups(_ context.Context, batch *pgx.Batch, obj *storage.Group) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -538,12 +538,12 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Group) error)
 //// Stubs for satisfying legacy interfaces
 
 // AckKeysIndexed acknowledges the passed keys were indexed.
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
+func (s *storeImpl) AckKeysIndexed(_ context.Context, _ ...string) error {
 	return nil
 }
 
 // GetKeysToIndex returns the keys that need to be indexed.
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
+func (s *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
 	return nil, nil
 }
 

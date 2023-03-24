@@ -47,7 +47,7 @@ type fromFileToStream struct {
 	filePath string
 }
 
-func (s *fromFileToStream) WriteTo(ctx context.Context, writer io.Writer) error {
+func (s *fromFileToStream) WriteTo(_ context.Context, writer io.Writer) error {
 	file, err := os.Open(s.filePath)
 	if err != nil {
 		return errors.Wrapf(err, "could not open file %s", s.filePath)

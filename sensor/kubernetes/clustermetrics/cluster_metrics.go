@@ -62,7 +62,7 @@ func (cm *clusterMetricsImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{}
 }
 
-func (cm *clusterMetricsImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (cm *clusterMetricsImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
@@ -70,7 +70,7 @@ func (cm *clusterMetricsImpl) ResponsesC() <-chan *central.MsgFromSensor {
 	return cm.output
 }
 
-func (cm *clusterMetricsImpl) ProcessIndicator(pi *storage.ProcessIndicator) {}
+func (cm *clusterMetricsImpl) ProcessIndicator(_ *storage.ProcessIndicator) {}
 
 func (cm *clusterMetricsImpl) Poll() {
 	defer cm.stopper.Flow().ReportStopped()

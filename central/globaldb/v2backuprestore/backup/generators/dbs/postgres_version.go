@@ -23,7 +23,7 @@ type PostgresVersion struct {
 }
 
 // WriteTo writes a backup of Postgres to the writer
-func (ps *PostgresVersion) WriteTo(ctx context.Context, out io.Writer) error {
+func (ps *PostgresVersion) WriteTo(_ context.Context, out io.Writer) error {
 	version, err := versionUtils.ReadVersionPostgres(ps.db)
 	if err != nil {
 		log.Fatalf("Could not retrieve version data: %v", err)

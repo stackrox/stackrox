@@ -63,7 +63,7 @@ func (s *service) RegisterServiceServer(grpcSrv *grpc.Server) {
 	sensor.RegisterCertDistributionServiceServer(grpcSrv, s)
 }
 
-func (s *service) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, cc *grpc.ClientConn) error {
+func (s *service) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	return nil
 }
 

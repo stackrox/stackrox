@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {}
+func handler(_ http.ResponseWriter, _ *http.Request) {}
 
 func TestTLS(t *testing.T) {
 	httpServer := httptest.NewServer(http.HandlerFunc(handler))
