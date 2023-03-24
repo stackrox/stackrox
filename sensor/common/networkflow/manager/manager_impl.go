@@ -61,6 +61,11 @@ type hostConnections struct {
 type connStatus struct {
 	firstSeen   timestamp.MicroTS
 	lastSeen    timestamp.MicroTS
+	// used keeps track of if an endpoint has been used by the the networkgraph path.
+	// usedProcess keeps track of if an endpoint has been used by the processes listening on
+	// ports path. If processes listening on ports is used, both must be true to delete the
+	// endpoint. Otherwise the endpoint will not be available to process listening on ports
+	// and it won't report endpoints that it doesn't have access to.
 	used        bool
 	usedProcess bool
 	// rotten implies we expected to correlate the flow with a container, but were unable to
@@ -529,9 +534,10 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 	prevSize := len(hostConns.endpoints)
 	for ep, status := range hostConns.endpoints {
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
-		if status.used && (status.usedProcess || !features.ProcessesListeningOnPort.Enabled()) && status.lastSeen != timestamp.InfiniteFuture {
+		// If processes listening on ports is enabled, it has to be used there as well before being deleted.
+		used := status.used && (status.usedProcess || !features.ProcessesListeningOnPort.Enabled())
+		if used && status.lastSeen != timestamp.InfiniteFuture {
 			// endpoints that are no longer active and have already been used can be deleted.
-			// If processes listening on ports is enabled, it has to be used there before being deleted as well.
 			deleteEndpoint(hostConns, ep)
 		}
 	}
