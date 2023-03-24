@@ -519,10 +519,9 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 func deleteEndpoint(hostConns *hostConnections, ep containerEndpoint) {
 
 	delete(hostConns.endpoints, ep)
-	processId := getProcessInfoString(ep.processKey)
-	delete(hostConns.processes, processId)
+	processID := getProcessInfoString(ep.processKey)
+	delete(hostConns.processes, processID)
 }
-
 
 func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnections, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
 	hostConns.mutex.Lock()
@@ -531,7 +530,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 	prevSize := len(hostConns.endpoints)
 	for ep, status := range hostConns.endpoints {
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
-		if status.used && (status.usedProcess || !features.ProcessesListeningOnPort.Enabled())  && status.lastSeen != timestamp.InfiniteFuture {
+		if status.used && (status.usedProcess || !features.ProcessesListeningOnPort.Enabled()) && status.lastSeen != timestamp.InfiniteFuture {
 			// endpoints that are no longer active and have already been used can be deleted.
 			// If processes listening on ports is enabled, it has to be used there before being deleted as well.
 			deleteEndpoint(hostConns, ep)
@@ -628,7 +627,7 @@ func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.Mic
 
 	for pl, currTS := range current {
 		prevTS, ok := previous[pl]
-		if !ok || currTS > prevTS  || (prevTS == timestamp.InfiniteFuture && currTS != timestamp.InfiniteFuture) {
+		if !ok || currTS > prevTS || (prevTS == timestamp.InfiniteFuture && currTS != timestamp.InfiniteFuture) {
 			updates = append(updates, pl.toProto(currTS))
 		}
 	}
