@@ -187,7 +187,10 @@ func (ds *DeploymentStore) FindDeploymentIDsByImage(image *storage.Image) []stri
 func (ds *DeploymentStore) getWrap(id string) *deploymentWrap {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
+	return ds.getWrapNoLock(id)
+}
 
+func (ds *DeploymentStore) getWrapNoLock(id string) *deploymentWrap {
 	wrap := ds.deployments[id]
 	return wrap
 }
@@ -202,7 +205,7 @@ func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 func (ds *DeploymentStore) GetBuiltDeployment(id string) *storage.Deployment {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
-	wrap := ds.getWrap(id)
+	wrap := ds.getWrapNoLock(id)
 	return wrap.GetDeployment().Clone()
 }
 
