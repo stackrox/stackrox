@@ -38,7 +38,6 @@ class GKECluster:
         self.num_nodes = num_nodes
         self.machine_type = machine_type
         self.refresh_token_cmd = None
-        self.cluster_name = None
 
     def provision(self):
         with subprocess.Popen(
@@ -73,8 +72,6 @@ class GKECluster:
             [GKECluster.REFRESH_PATH, "refresh_gke_token"]
         )
 
-        self.cluster_name = os.environ["CLUSTER_NAME"]
-
         return self
 
     def teardown(self):
@@ -90,7 +87,7 @@ class GKECluster:
                 print(f"Could not terminate the token refresh: {err}")
 
         subprocess.run(
-            [GKECluster.TEARDOWN_PATH, "teardown_gke_cluster", self.cluster_name],
+            [GKECluster.TEARDOWN_PATH, "teardown_gke_cluster"],
             check=True,
             timeout=GKECluster.TEARDOWN_TIMEOUT,
         )
@@ -177,9 +174,11 @@ class SeparateClusters:
 
     def teardown(self):
         if self.central_cluster is not None:
+            os.environ["KUBECONFIG"] = self.central_cluster_kubeconfig
             self.central_cluster.teardown()
 
         if self.sensor_cluster is not None:
+            os.environ["KUBECONFIG"] = self.sensor_cluster_kubeconfig
             self.sensor_cluster.teardown()
 
         return self

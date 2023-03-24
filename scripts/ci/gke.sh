@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1091
 
-# A collection of GKE related reusable bash functions for CI
+# A collection of GKE related reusable bash functions for CI.
 
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$SCRIPTS_ROOT/scripts/ci/lib.sh"
@@ -8,19 +9,21 @@ source "$SCRIPTS_ROOT/scripts/ci/gcp.sh"
 
 set -euo pipefail
 
+GKE_CLUSTER_DB="/tmp/gke-clusters"
+
 provision_gke_cluster() {
     info "Provisioning a GKE cluster"
 
     setup_gcp
-    assign_env_variables "$@"
+    export_defaults "$@"
     create_cluster
 }
 
-assign_env_variables() {
-    info "Assigning environment variables for later steps"
+export_defaults() {
+    info "Assigning environment variables with default values for CI"
 
     if [[ "$#" -lt 1 ]]; then
-        die "missing args. usage: assign_env_variables <cluster-id> [<num-nodes> <machine-type>]"
+        die "missing args. usage: export_defaults <cluster-id> [<num-nodes> <machine-type>]"
     fi
 
     local cluster_id="$1"
@@ -39,13 +42,13 @@ assign_env_variables() {
 
     local cluster_name="rox-ci-${cluster_id}-${build_num}"
     cluster_name="${cluster_name:0:40}" # (for GKE name limit)
-    ci_export CLUSTER_NAME "$cluster_name"
+    export CLUSTER_NAME="$cluster_name"
     echo "Assigned cluster name is $cluster_name"
 
-    ci_export NUM_NODES "$num_nodes"
+    export NUM_NODES="$num_nodes"
     echo "Number of nodes for cluster is $num_nodes"
 
-    ci_export MACHINE_TYPE "$machine_type"
+    export MACHINE_TYPE="$machine_type"
     echo "Machine type is set as to $machine_type"
 
     choose_release_channel
@@ -148,7 +151,6 @@ create_cluster() {
     success=0
     for zone in $zones; do
         echo "Trying zone $zone"
-        ci_export ZONE "$zone"
         gcloud config set compute/zone "${zone}"
         status=0
         # shellcheck disable=SC2153
@@ -193,6 +195,10 @@ create_cluster() {
                 ls -l "${kubeconfig}" || true
                 gcloud container clusters get-credentials "$CLUSTER_NAME"
                 ls -l "${kubeconfig}" || true
+                mkdir -p "${GKE_CLUSTER_DB}"
+                local context
+                context="$(kubectl config current-context)"
+                gcloud container clusters describe "${CLUSTER_NAME}" --format json > "${GKE_CLUSTER_DB}/$context"
                 break
             fi
             info "Timed out"
@@ -208,8 +214,6 @@ create_cluster() {
         info "Cluster creation failed"
         return 1
     fi
-
-    date -u +"%Y-%m-%dT%H:%M:%SZ" > /tmp/GKE_CLUSTER_CREATED_TIMESTAMP
 }
 
 wait_for_cluster() {
@@ -256,11 +260,31 @@ ensure_supported_cluster_version() {
     GKE_CLUSTER_VERSION=$(sed -e 's/^"//' -e 's/"$//' <<<"${match}")
 }
 
-refresh_gke_token() {
-    info "Starting a GKE token refresh loop"
+get_cluster_name_from_context() {
+    local context
+    context="$(kubectl config current-context)"
+    jq -r '.name' "${GKE_CLUSTER_DB}/${context}.json"
+}
 
-    require_environment "ZONE"
-    require_environment "CLUSTER_NAME"
+get_cluster_zone_from_context() {
+    local context
+    context="$(kubectl config current-context)"
+    jq -r '.zone' "${GKE_CLUSTER_DB}/${context}.json"
+}
+
+get_cluster_create_time_from_context() {
+    local context
+    context="$(kubectl config current-context)"
+    jq -r '.createTime' "${GKE_CLUSTER_DB}/${context}.json"
+}
+
+refresh_gke_token() {
+    local name
+    name="$(get_cluster_name_from_context)"
+    local zone
+    zone="$(get_cluster_zone_from_context)"
+
+    info "Starting a GKE token refresh loop for $name"
 
     local real_kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
 
@@ -281,31 +305,43 @@ refresh_gke_token() {
         echo >/tmp/kubeconfig-new
         chmod 0600 /tmp/kubeconfig-new
         # shellcheck disable=SC2153
-        KUBECONFIG=/tmp/kubeconfig-new gcloud container clusters get-credentials --project stackrox-ci --zone "$ZONE" "$CLUSTER_NAME"
+        KUBECONFIG=/tmp/kubeconfig-new gcloud container clusters get-credentials \
+            --project stackrox-ci \
+            --zone "$zone" \
+            "$name"
         KUBECONFIG=/tmp/kubeconfig-new kubectl get ns >/dev/null
         mv /tmp/kubeconfig-new "$real_kubeconfig"
     done
 }
 
 teardown_gke_cluster() {
-    local cluster_name="${1:-$CLUSTER_NAME}"
+    local name
+    name="$(get_cluster_name_from_context)"
+    local zone
+    zone="$(get_cluster_zone_from_context)"
 
-    info "Tearing down the GKE cluster: $cluster_name"
+    info "Tearing down the GKE cluster: $name"
 
     require_executable "gcloud"
 
     # (prefix output to avoid triggering prow log focus)
     "$SCRIPTS_ROOT/scripts/ci/cleanup-deployment.sh" 2>&1 | sed -e 's/^/out: /' || true
 
-    gcloud container clusters delete "$cluster_name" --async
+    gcloud container clusters delete \
+        --async \
+        --project stackrox-ci \
+        --zone "$zone" \
+        "$name"
 
     info "Cluster deleting asynchronously"
 
-    create_log_explorer_links "$cluster_name"
+    create_log_explorer_links "$name"
 }
 
 create_log_explorer_links() {
     local cluster_name="$1"
+    local create_time
+    create_time="$(get_cluster_create_time_from_context)"
 
     if [[ -z "${ARTIFACT_DIR:-}" ]]; then
         info "No place for artifacts, skipping generation of links to logs explorer"
@@ -324,12 +360,9 @@ create_log_explorer_links() {
     <ul style="padding-bottom: 28px; padding-left: 30px; font-family: Roboto,Helvetica,Arial,sans-serif;">
 HEAD
 
-    local start_ts
-    start_ts="$(cat /tmp/GKE_CLUSTER_CREATED_TIMESTAMP)"
+    local start_ts="$create_time"
     local end_ts
     end_ts="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-    local project
-    project="$(gcloud config get project --quiet)"
 
     for authUser in {0..2}; do
     cat >> "$artifact_file" << LINK
@@ -342,7 +375,7 @@ resource.labels.namespace_name%3D%22stackrox%22%0A
 ;timeRange=$start_ts%2F$end_ts
 ;cursorTimestamp=$start_ts
 ?authuser=$authUser
-&project=$project
+&project=stackrox-ci
 &orgonly=true&supportedpurview=organizationId">authUser $authUser</a>
       </li>
 LINK
