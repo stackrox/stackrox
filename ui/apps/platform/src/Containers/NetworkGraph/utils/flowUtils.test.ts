@@ -400,7 +400,6 @@ describe('flowUtils', () => {
             ];
             const entityNameFilter = 'deployment2';
             const advancedFilters: AdvancedFlowsFilterType = {
-                flows: ['baseline'],
                 directionality: ['ingress'],
                 protocols: ['L4_PROTOCOL_TCP'],
                 ports: ['8443'],
