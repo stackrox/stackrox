@@ -195,10 +195,6 @@ create_cluster() {
                 ls -l "${kubeconfig}" || true
                 gcloud container clusters get-credentials "$CLUSTER_NAME"
                 ls -l "${kubeconfig}" || true
-                mkdir -p "${GKE_CLUSTER_DB}"
-                local context
-                context="$(kubectl config current-context)"
-                gcloud container clusters describe "${CLUSTER_NAME}" --format json > "${GKE_CLUSTER_DB}/${context}.json"
                 break
             fi
             info "Timed out"
@@ -214,6 +210,11 @@ create_cluster() {
         info "Cluster creation failed"
         return 1
     fi
+
+    mkdir -p "${GKE_CLUSTER_DB}"
+    local context
+    context="$(kubectl config current-context)"
+    gcloud container clusters describe "${CLUSTER_NAME}" --format json > "${GKE_CLUSTER_DB}/${context}.json"
 }
 
 wait_for_cluster() {
