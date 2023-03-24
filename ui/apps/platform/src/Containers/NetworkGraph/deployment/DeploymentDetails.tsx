@@ -29,12 +29,15 @@ import { getDateTime } from 'utils/dateUtils';
 import { NetworkPolicyState } from 'Containers/NetworkGraph/types/topology.type';
 
 import DeploymentPortConfig from 'Components/DeploymentPortConfig';
+import DeploymentContainerConfig from 'Components/DeploymentContainerConfig';
 
 import { ReactComponent as BothPolicyRules } from 'images/network-graph/both-policy-rules.svg';
 import { ReactComponent as EgressOnly } from 'images/network-graph/egress-only.svg';
 import { ReactComponent as IngressOnly } from 'images/network-graph/ingress-only.svg';
 import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
 import { deploymentTabs } from '../utils/deploymentUtils';
+
+import './DeploymentDetails.css';
 
 type DeploymentDetailsProps = {
     deployment: Deployment;
@@ -258,7 +261,7 @@ function DeploymentDetails({
                 </li>
                 <Divider component="li" className="pf-u-mb-sm" />
                 <li>
-                    <DetailSection title="Deployment configuration">
+                    <DetailSection title="Deployment overview">
                         <Stack hasGutter>
                             <StackItem>
                                 <DescriptionList columnModifier={{ default: '2Col' }}>
@@ -366,6 +369,28 @@ function DeploymentDetails({
                             <EmptyState variant={EmptyStateVariant.xs}>
                                 <Title headingLevel="h4" size="md">
                                     No ports available
+                                </Title>
+                            </EmptyState>
+                        )}
+                    </DetailSection>
+                </li>
+                <Divider component="li" className="pf-u-mb-sm" />
+                <li>
+                    <DetailSection title="Container configurations">
+                        {deployment.containers.length ? (
+                            <Stack hasGutter>
+                                {deployment.containers.map((container) => {
+                                    return (
+                                        <StackItem key={container.id}>
+                                            <DeploymentContainerConfig container={container} />
+                                        </StackItem>
+                                    );
+                                })}
+                            </Stack>
+                        ) : (
+                            <EmptyState variant={EmptyStateVariant.xs}>
+                                <Title headingLevel="h4" size="md">
+                                    No containers available
                                 </Title>
                             </EmptyState>
                         )}
