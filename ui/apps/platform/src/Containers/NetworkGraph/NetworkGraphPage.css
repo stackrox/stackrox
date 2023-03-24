@@ -66,6 +66,10 @@ div#topology-resize-panel table td {
     fill: #000000;
 }
 
+.derived-namespace.pf-m-selected text, .derived-namespace.pf-m-selected .pf-topology__node__action-icon svg {
+    fill: #ffffff;
+}
+
 .derived-namespace path.pf-topology__group__background {
     stroke-dasharray: 5;
 }
