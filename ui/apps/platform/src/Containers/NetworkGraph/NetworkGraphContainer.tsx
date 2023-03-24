@@ -232,7 +232,7 @@ function NetworkGraphContainer({
     let filteredNodes: CustomNodeModel[] = [...baseModel.nodes];
     let filteredEdges: CustomEdgeModel[] = [...baseModel.edges];
     // if edgeState is extraneous && there is a selectedNode, add in/egress flows nodes/edges
-    if (edgeState === 'extraneous' && selectedNode?.data.type === 'DEPLOYMENT') {
+    if (edgeState === 'inactive' && selectedNode?.data.type === 'DEPLOYMENT') {
         const extraneousFlowsNodes = getExtraneousNodes(extraneousNodes, selectedNode.data);
         filteredNodes = [...extraneousModel.nodes, ...extraneousFlowsNodes];
         const extraneousFlowsEdges = getExtraneousEdges(selectedNode.data);
