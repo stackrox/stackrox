@@ -136,10 +136,6 @@ func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.Proce
 		DeploymentId: i.key.deploymentID,
 	}
 
-	if ts != timestamp.InfiniteFuture {
-		proto.CloseTimestamp = ts.GogoProtobuf()
-	}
-
 	return proto
 }
 
@@ -626,9 +622,6 @@ func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.Mic
 
 	for ep, prevTS := range previous {
 		if _, ok := current[ep]; !ok {
-			if prevTS == timestamp.InfiniteFuture {
-				prevTS = timestamp.Now()
-			}
 			updates = append(updates, ep.toProto(prevTS))
 		}
 	}
