@@ -59,7 +59,5 @@ message ProcessListeningOnPortStorage {
     // able to find references process in the database
     ProcessIndicatorUniqueKey process = 7;
 
-    //  string deployment_id = 8 [(gogoproto.moretags) = 'search:"Deployment ID,store,hidden" policy:",prefer-parent" sql:"index=hash,fk(Deployment:id),no-fk-constraint,type(uuid)"'];
     string deployment_id = 8 [(gogoproto.moretags) = 'search:"Deployment ID,store" sql:"index=btree,type(uuid)"'];
-    //string deployment_id = 8 [(gogoproto.moretags) = 'search:"Deployment ID,store" sql:"type(uuid)"'];
 }
