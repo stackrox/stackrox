@@ -34,11 +34,13 @@ deploy_stackrox() {
 
     sensor_wait
 
-    touch /tmp/hold
-    while [[ -e /tmp/hold ]]; do
-        info "Holding this job for debug"
-        sleep 60
-    done
+    # if [[ "${CI_JOB_NAME}" == "gke-scale-tests" ]]; then
+    # touch /tmp/hold
+    # while [[ -e /tmp/hold ]]; do
+    #     info "Holding this job for debug"
+    #     sleep 60
+    # done
+    # fi
 
     wait_for_collectors_to_be_operational
 
@@ -250,6 +252,7 @@ deploy_sensor() {
         if separate_clusters_test; then
             target_cluster "sensor"
             deploy_dir="deploy/${SENSOR_ORCHESTRATOR_FLAVOR}"
+            export CLUSTER_API_ENDPOINT="${API_ENDPOINT}"
         else
             deploy_dir="deploy/${ORCHESTRATOR_FLAVOR}"
         fi
