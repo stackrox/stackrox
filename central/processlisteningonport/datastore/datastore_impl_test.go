@@ -212,7 +212,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
-
 // TestPLOPAddClosed: Happy path for ProcessListeningOnPort closing, one PLOP object is added
 // with a correct process indicator reference and CloseTimestamp set. It will
 // be exluded from the API result.
