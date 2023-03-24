@@ -148,6 +148,24 @@ func (suite *NetworkflowManagerTestSuite) TestAddTwoDifferent() {
 	suite.Len(h.endpoints, 2)
 }
 
+func (suite *NetworkflowManagerTestSuite) TestAddTwoDifferentSameBatch() {
+	h := hostConnections{}
+	h.endpoints = make(map[containerEndpoint]*connStatus)
+
+	networkInfoOpen := &sensor.NetworkConnectionInfo{
+		UpdatedEndpoints: []*sensor.NetworkEndpoint{openNetworkEndpoint, openNetworkEndpoint81},
+	}
+
+	nowTimestamp := timestamp.Now()
+	var sequenceID int64
+	h.connectionsSequenceID = sequenceID
+
+	err := h.Process(networkInfoOpen, nowTimestamp, sequenceID)
+	suite.NoError(err)
+
+	suite.Len(h.endpoints, 2)
+}
+
 func (suite *NetworkflowManagerTestSuite) TestAddNoOriginator() {
 	h := hostConnections{}
 	h.endpoints = make(map[containerEndpoint]*connStatus)
