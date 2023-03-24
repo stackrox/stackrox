@@ -186,16 +186,22 @@ helm_upgrade_to_latest_postgres() {
         sed -i "" 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     fi
 
-    # Create Postgres password and secrets
-    password=`echo ${RANDOM}_$(date +%s-%d-%M) |base64|cut -c 1-20`
-    kubectl -n stackrox create secret generic central-db-password --from-literal=password=$password
-    kubectl -n stackrox apply -f $TEST_ROOT/tests/upgrade/pvc.yaml
-    create_db_tls_secret
+
+    local root_certificate_path="$(mktemp -d)/root_certs_values.yaml"
+    create_certificate_values_file $root_certificate_path
 
     ########################################################################################
     # Use helm to upgrade to current Postgres release.                                     #
     ########################################################################################
-    helm upgrade -n stackrox stackrox-central-services /tmp/stackrox-central-services-chart --set central.db.enabled=true --set central.exposure.loadBalancer.enabled=true -f "$TEST_ROOT/tests/upgrade/scale-values-public.yaml" --force
+    helm upgrade -n stackrox stackrox-central-services /tmp/stackrox-central-services-chart \
+     --set central.db.enabled=true \
+     --set central.db.password.generate=true \
+     --set central.db.serviceTLS.generate=true \
+     --set central.db.persistence.persistentVolumeClaim.createClaim=true \
+     --set central.exposure.loadBalancer.enabled=true \
+     -f "$TEST_ROOT/tests/upgrade/scale-values-public.yaml" \
+     -f "$root_certificate_path" \
+     --force
 
     # Return back to test root
     cd "$TEST_ROOT"
