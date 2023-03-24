@@ -249,7 +249,6 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	registries := make([]*storage.ImagePullSecret_Registry, 0, len(dockerConfig))
 
 	saName := secret.GetAnnotations()[saAnnotation]
-	hasSAAnnotation := len(saName) > 0
 
 	// In Kubernetes, the `default` service account always exists in each namespace (it is recreated upon deletion).
 	// The default service account always contains an API token.
@@ -265,7 +264,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			if err != nil {
 				log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
 			}
-		} else if !hasSAAnnotation {
+		} else if saName == "" {
 			ii, err := DockerConfigToImageIntegration(secret, registry, dce)
 			if err != nil {
 				log.Errorf("unable to create docker config for secret %s: %v", secret.GetName(), err)
