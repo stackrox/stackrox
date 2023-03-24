@@ -10,8 +10,8 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 
-separate_cluster_test() {
-    [[ "${SEPARATE_CLUSTER_TEST:-}" == "true" ]]
+separate_clusters_test() {
+    [[ "${SEPARATE_CLUSTERS_TEST:-}" == "true" ]]
 }
 
 target_cluster() {

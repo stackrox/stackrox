@@ -198,7 +198,7 @@ create_cluster() {
                 mkdir -p "${GKE_CLUSTER_DB}"
                 local context
                 context="$(kubectl config current-context)"
-                gcloud container clusters describe "${CLUSTER_NAME}" --format json > "${GKE_CLUSTER_DB}/$context"
+                gcloud container clusters describe "${CLUSTER_NAME}" --format json > "${GKE_CLUSTER_DB}/${context}.json"
                 break
             fi
             info "Timed out"

@@ -17,6 +17,8 @@ from ci_tests import QaE2eTestPart1
 from post_tests import PostClusterTest, FinalPost
 
 os.environ["SEPARATE_CLUSTERS_TEST"] = "true"
+# For powervs this will be:
+# os.environ["CENTRAL_ORCHESTRATOR_FLAVOR"] = "openshift"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 
 ClusterTestRunner(

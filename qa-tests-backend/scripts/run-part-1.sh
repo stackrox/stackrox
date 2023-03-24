@@ -27,7 +27,7 @@ config_part_1() {
         require_environment "KUBECONFIG"
     fi
 
-    local certs_dir="deploy/k8s"
+    local certs_dir="$ROOT/deploy/k8s"
 
     export_test_environment
 
@@ -49,7 +49,7 @@ config_part_1() {
 reuse_config_part_1() {
     info "Reusing config from a prior part 1 e2e test"
 
-    local certs_dir="deploy/k8s"
+    local certs_dir="$ROOT/deploy/k8s"
 
     export_test_environment
     setup_deployment_env false false
@@ -68,6 +68,11 @@ reuse_config_part_1() {
 
 test_part_1() {
     info "QA Automation Platform Part 1"
+
+    if separate_clusters_test; then
+        ORCHESTRATOR_FLAVOR="${SENSOR_ORCHESTRATOR_FLAVOR}"
+        target_cluster "sensor"
+    fi
 
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
         oc get scc qatest-anyuid || oc create -f "${ROOT}/qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"

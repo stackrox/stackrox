@@ -135,9 +135,14 @@ deploy_central() {
                 ci_export OUTPUT_FORMAT helm
             fi
         fi
-
-        DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-        "$ROOT/${DEPLOY_DIR}/central.sh"
+        local deploy_dir
+        if separate_clusters_test; then
+            target_cluster "central"
+            deploy_dir="deploy/${CENTRAL_ORCHESTRATOR_FLAVOR}"
+        else
+            deploy_dir="deploy/${ORCHESTRATOR_FLAVOR}"
+        fi
+        "$ROOT/${deploy_dir}/central.sh"
     fi
 }
 
@@ -235,12 +240,17 @@ deploy_sensor() {
                 ci_export ROXCTL_TIMEOUT "60s"
             fi
         fi
-
-        DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-        "$ROOT/${DEPLOY_DIR}/sensor.sh"
+        local deploy_dir
+        if separate_clusters_test; then
+            target_cluster "sensor"
+            deploy_dir="deploy/${SENSOR_ORCHESTRATOR_FLAVOR}"
+        else
+            deploy_dir="deploy/${ORCHESTRATOR_FLAVOR}"
+        fi
+        "$ROOT/${deploy_dir}/sensor.sh"
     fi
 
-    if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
+    if [[ "${ORCHESTRATOR_FLAVOR:-${SENSOR_ORCHESTRATOR_FLAVOR}}" == "openshift" ]]; then
         # Sensor is CPU starved under OpenShift causing all manner of test failures:
         # https://stack-rox.atlassian.net/browse/ROX-5334
         # https://stack-rox.atlassian.net/browse/ROX-6891
@@ -525,7 +535,7 @@ collect_and_check_stackrox_logs() {
 remove_existing_stackrox_resources() {
     info "Will remove any existing stackrox resources"
 
-    if separate_cluster_test; then
+    if separate_clusters_test; then
         if [[ "${1:-}" == "" ]]; then
             remove_existing_stackrox_resources "central"
             remove_existing_stackrox_resources "sensor"
