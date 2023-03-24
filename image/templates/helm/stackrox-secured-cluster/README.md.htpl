@@ -152,11 +152,11 @@ the options which you can configure:
     # Use custom resource overrides for sensor
     resources:
       requests:
-        cpu: "1"
-        memory: "1Gi"
-      limits:
         cpu: "2"
         memory: "4Gi"
+      limits:
+        cpu: "4"
+        memory: "8Gi"
   
   admissionControl:
     dynamic:

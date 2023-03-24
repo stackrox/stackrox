@@ -29,6 +29,9 @@ body {
     align-self: center !important;
 }
 
+.pf-c-expandable-section__toggle-text {
+    text-align: left;
+}
 .pf-c-card__expandable-content {
     border-top: var(--pf-global--BorderColor--100) var(--pf-global--BorderWidth--sm) solid;
 }

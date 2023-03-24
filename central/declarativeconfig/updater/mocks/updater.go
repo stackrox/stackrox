@@ -35,6 +35,26 @@ func (m *MockResourceUpdater) EXPECT() *MockResourceUpdaterMockRecorder {
 	return m.recorder
 }
 
+// DeleteResources mocks base method.
+func (m *MockResourceUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx}
+	for _, a := range resourceIDsToSkip {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteResources", varargs...)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteResources indicates an expected call of DeleteResources.
+func (mr *MockResourceUpdaterMockRecorder) DeleteResources(ctx interface{}, resourceIDsToSkip ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx}, resourceIDsToSkip...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResources", reflect.TypeOf((*MockResourceUpdater)(nil).DeleteResources), varargs...)
+}
+
 // Upsert mocks base method.
 func (m_2 *MockResourceUpdater) Upsert(ctx context.Context, m proto.Message) error {
 	m_2.ctrl.T.Helper()

@@ -2,16 +2,14 @@ import React from 'react';
 import { CodeBlock, CodeBlockCode } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import { ImageVulnerabilityComponent } from '../hooks/useImageVulnerabilities';
-import { ImageDetailsResponse } from '../hooks/useImageDetails';
+import { ImageMetadataLayer, ImageVulnerabilityComponent } from '../hooks/useImageVulnerabilities';
 
 export type ImageComponentsTableProps = {
-    image: ImageDetailsResponse['image'] | undefined;
+    layers: ImageMetadataLayer[];
     imageComponents: ImageVulnerabilityComponent[];
 };
 
-function ImageComponentsTable({ image, imageComponents }: ImageComponentsTableProps) {
-    const layers = image?.metadata?.v1?.layers ?? [];
+function ImageComponentsTable({ layers, imageComponents }: ImageComponentsTableProps) {
     return (
         <TableComposable borders={false}>
             <Thead>

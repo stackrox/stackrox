@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/registry"
+	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/core/v1"
 )
@@ -338,6 +339,13 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	}}
 	events := component.NewEvent(sensorEvents...)
 	events.AddSensorEvent(secretToSensorEvent(action, protoSecret))
+
+	if env.ResyncDisabled.BooleanSetting() {
+		// When adding new docker config secrets we need to reprocess every deployment in this cluster.
+		// This is because the field `NotPullable` could be updated and hence new image scan results will appear.
+		events.AddDeploymentReference(resolver.ResolveAllDeployments(), central.ResourceAction_UPDATE_RESOURCE, false)
+	}
+
 	return events
 }
 
