@@ -38,6 +38,10 @@ var (
 			FieldsToCompare: fieldsToCompare,
 			PolicyFileName:  "containers_should_run_as_a_non-root_user.json",
 		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "exec-iptables.json",
+		},
 	}
 )
 
