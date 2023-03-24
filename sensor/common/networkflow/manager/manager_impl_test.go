@@ -25,6 +25,27 @@ var (
 			ProcessArgs:         "port: 80",
 		},
 	}
+	openNetworkEndpoint81 = &sensor.NetworkEndpoint{
+		SocketFamily: sensor.SocketFamily_SOCKET_FAMILY_IPV4,
+		Protocol:     storage.L4Protocol_L4_PROTOCOL_TCP,
+		ContainerId:  "FakeContainerId",
+		ListenAddress: &sensor.NetworkAddress{
+			Port: 81,
+		},
+		Originator: &storage.NetworkProcessUniqueKey{
+			ProcessName:         "socat",
+			ProcessExecFilePath: "/usr/bin/socat",
+			ProcessArgs:         "port: 81",
+		},
+	}
+	openNetworkEndpointNoOriginator = &sensor.NetworkEndpoint{
+		SocketFamily: sensor.SocketFamily_SOCKET_FAMILY_IPV4,
+		Protocol:     storage.L4Protocol_L4_PROTOCOL_TCP,
+		ContainerId:  "FakeContainerId",
+		ListenAddress: &sensor.NetworkAddress{
+			Port: 80,
+		},
+	}
 	closedNetworkEndpoint = &sensor.NetworkEndpoint{
 		SocketFamily:   sensor.SocketFamily_SOCKET_FAMILY_IPV4,
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
@@ -97,6 +118,49 @@ func (suite *NetworkflowManagerTestSuite) TestAddOpenAndClosed() {
 	suite.NoError(err)
 
 	err = h.Process(networkInfoClosed, nowTimestamp, sequenceID)
+	suite.NoError(err)
+
+	suite.Len(h.endpoints, 1)
+}
+
+func (suite *NetworkflowManagerTestSuite) TestAddTwoDifferent() {
+	h := hostConnections{}
+	h.endpoints = make(map[containerEndpoint]*connStatus)
+
+	networkInfoOpen := &sensor.NetworkConnectionInfo{
+		UpdatedEndpoints: []*sensor.NetworkEndpoint{openNetworkEndpoint},
+	}
+
+	networkInfoOpen81 := &sensor.NetworkConnectionInfo{
+		UpdatedEndpoints: []*sensor.NetworkEndpoint{openNetworkEndpoint81},
+	}
+
+	nowTimestamp := timestamp.Now()
+	var sequenceID int64
+	h.connectionsSequenceID = sequenceID
+
+	err := h.Process(networkInfoOpen, nowTimestamp, sequenceID)
+	suite.NoError(err)
+
+	err = h.Process(networkInfoOpen81, nowTimestamp, sequenceID)
+	suite.NoError(err)
+
+	suite.Len(h.endpoints, 2)
+}
+
+func (suite *NetworkflowManagerTestSuite) TestAddNoOriginator() {
+	h := hostConnections{}
+	h.endpoints = make(map[containerEndpoint]*connStatus)
+
+	networkInfoOpen := &sensor.NetworkConnectionInfo{
+		UpdatedEndpoints: []*sensor.NetworkEndpoint{openNetworkEndpointNoOriginator},
+	}
+
+	nowTimestamp := timestamp.Now()
+	var sequenceID int64
+	h.connectionsSequenceID = sequenceID
+
+	err := h.Process(networkInfoOpen, nowTimestamp, sequenceID)
 	suite.NoError(err)
 
 	suite.Len(h.endpoints, 1)
