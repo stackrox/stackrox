@@ -91,7 +91,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	allPLOPs := append(normalizedPLOPs, completedInBatch...)
 	indicatorIds := getIndicatorIdsForPlops(allPLOPs)
 
-	// Error is not handled, because we can still report information on the plop without a
+	// Errors are not handled, because we can still report information on the plop without a
 	// matching process in the process_indicator table.
 	indicators, nonempty, err := ds.indicatorDataStore.GetProcessIndicators(ctx, indicatorIds)
 	indicatorsMap := make(map[string]bool)
