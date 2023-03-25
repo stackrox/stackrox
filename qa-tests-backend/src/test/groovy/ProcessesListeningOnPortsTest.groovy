@@ -125,6 +125,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         given:
         "Two deployments that listen on ports are started up"
 
+        setupSpec()
         rebuildForRetries()
         def clusterId = ClusterService.getClusterId()
 
@@ -237,6 +238,8 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         def list3 = processesListeningOnPorts.listeningEndpointsList
         assert list3.size() == 0
+
+        destroyDeployments()
     }
 
     @Tag("BAT")
@@ -244,6 +247,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         given:
         "When a deployment listening on a port is created and then the process is terminated"
 
+        setupSpec()
         rebuildForRetries()
         def clusterId = ClusterService.getClusterId()
 
@@ -282,6 +286,8 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         // Allow enough time for the process and port to close and check that it is not in the API response
         assert gotCorrectNumElements
+
+        destroyDeployments()
     }
 
     @Tag("BAT")
@@ -289,6 +295,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         given:
         "A deployment listening on a port is brought up and it is checked twice that the port is found"
 
+        setupSpec()
         rebuildForRetries()
         def clusterId = ClusterService.getClusterId()
 
