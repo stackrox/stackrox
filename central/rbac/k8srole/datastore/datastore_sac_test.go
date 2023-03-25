@@ -139,7 +139,7 @@ func (s *k8sRoleSACSuite) TestGetRole() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.True(found)
-				s.Equal(*role, *res)
+				s.Equal(role, res)
 			} else {
 				s.False(found)
 				s.Nil(res)

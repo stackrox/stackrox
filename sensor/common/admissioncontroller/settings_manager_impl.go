@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	pkgPolicies "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/transitional/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -43,7 +44,9 @@ func NewSettingsManager(deployments store.DeploymentStore, pods store.PodStore) 
 func (p *settingsManager) newSettingsNoLock() *sensor.AdmissionControlSettings {
 	settings := &sensor.AdmissionControlSettings{}
 	if p.currSettings != nil {
-		*settings = *p.currSettings
+		// Do a shallow clone because the settings contain all actively enforced policies, which can be a lot
+		// (measured relative to how often this function can be invoked).
+		settings = protocompat.ShallowClone(p.currSettings)
 	}
 	settings.ClusterId = clusterid.Get()
 	settings.CentralEndpoint = p.centralEndpoint

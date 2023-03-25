@@ -424,12 +424,12 @@ func isGenericViolation(violation *storage.Alert_Violation) bool {
 }
 
 func extractProcessInfo(alertID string, from *storage.ProcessIndicator) *integrations.SplunkViolation_ProcessInfo {
-	var signal storage.ProcessSignal
+	var signal *storage.ProcessSignal
 	var pid, uid, gid *types.UInt32Value
 	var lineage []*storage.ProcessSignal_LineageInfo
 
 	if from.GetSignal() != nil {
-		signal = *from.GetSignal()
+		signal = from.GetSignal()
 		pid = &types.UInt32Value{Value: signal.GetPid()}
 		uid = &types.UInt32Value{Value: signal.GetUid()}
 		gid = &types.UInt32Value{Value: signal.GetGid()}

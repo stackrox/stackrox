@@ -113,7 +113,7 @@ func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies() {
 	wrap := s.createDeploymentWrap(makeDeploymentObject("test-deployment", "test-ns", types.UID(uid.String())))
 	s.deploymentStore.addOrUpdateDeployment(wrap)
 
-	expectedExposureInfo := storage.PortConfig_ExposureInfo{
+	expectedExposureInfo := &storage.PortConfig_ExposureInfo{
 		Level:       storage.PortConfig_EXTERNAL,
 		ServiceName: "test.service",
 		ServicePort: 5432,
@@ -123,7 +123,7 @@ func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies() {
 		PermissionLevel: storage.PermissionLevel_CLUSTER_ADMIN,
 		Exposures: []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
 			{
-				service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{&expectedExposureInfo},
+				service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{expectedExposureInfo},
 			},
 		},
 	})
@@ -133,7 +133,7 @@ func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies() {
 	s.Require().Len(deployment.GetPorts(), 1)
 	s.Require().Len(deployment.GetPorts()[0].GetExposureInfos(), 1)
 
-	s.Equal(expectedExposureInfo, *deployment.GetPorts()[0].GetExposureInfos()[0])
+	s.Equal(expectedExposureInfo, deployment.GetPorts()[0].GetExposureInfos()[0])
 	s.Equal(storage.PermissionLevel_CLUSTER_ADMIN, deployment.GetServiceAccountPermissionLevel(), "Service account permission level")
 }
 

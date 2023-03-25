@@ -246,7 +246,7 @@ func (s *alertDatastoreSACTestSuite) TestGetAlert() {
 			s.NoError(err1)
 			if c.ExpectedFound {
 				s.True(found1)
-				s.Equal(*alert1, *readAlert1)
+				s.Equal(alert1, readAlert1)
 			} else {
 				s.False(found1)
 				s.Nil(readAlert1)
@@ -255,7 +255,7 @@ func (s *alertDatastoreSACTestSuite) TestGetAlert() {
 			s.NoError(err2)
 			if c.ExpectedFound {
 				s.True(found2)
-				s.Equal(*alert2, *readAlert2)
+				s.Equal(alert2, readAlert2)
 			} else {
 				s.False(found2)
 				s.Nil(readAlert2)

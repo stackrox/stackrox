@@ -124,7 +124,7 @@ func (s *processBaselineResultsDatastoreSACSuite) TestGetBaselineResults() {
 			res, err := s.datastore.GetBaselineResults(ctx, processBaselineResult.GetDeploymentId())
 			if c.ExpectedFound {
 				s.NoError(err)
-				s.Equal(*processBaselineResult, *res)
+				s.Equal(processBaselineResult, res)
 			} else {
 				s.Require().Error(err)
 				s.ErrorIs(err, sac.ErrResourceAccessDenied)

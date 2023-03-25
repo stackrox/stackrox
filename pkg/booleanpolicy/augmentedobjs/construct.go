@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/transitional/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -193,7 +194,9 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 		return pathutil.NewAugmentedObj(image), nil
 	}
 
-	img := *image
+	// Images can be potentially huge, but we just want to possibly add non-nil image signature verification data,
+	// nothing else, so deeply cloning seems disproportionally expensive.
+	img := protocompat.ShallowClone(image)
 
 	// When evaluating policies, the evaluator will stop when any of the objects within the path
 	// are nil and immediately return, not matching. Within the image signature criteria, we have
@@ -208,7 +211,7 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 		}
 	}
 
-	obj := pathutil.NewAugmentedObj(&img)
+	obj := pathutil.NewAugmentedObj(img)
 
 	// Since policies query for Dockerfile Line as a single compound field, we simulate it by creating a "composite"
 	// dockerfile line under each layer.

@@ -266,7 +266,7 @@ func (s *nodeDatastoreSACSuite) TestGetNode() {
 
 				// Priority can have updated value, and we want to ignore it.
 				fetchedNode.Priority = s.testNodes[nodeID].Priority
-				s.Equal(*s.testNodes[nodeID], *fetchedNode)
+				s.Equal(s.testNodes[nodeID], fetchedNode)
 			} else {
 				s.False(found)
 				s.Nil(fetchedNode)

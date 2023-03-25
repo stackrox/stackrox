@@ -140,7 +140,7 @@ func (s *k8sRoleBindingSACSuite) TestGetRoleBinding() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.True(found)
-				s.Equal(*roleBinding, *res)
+				s.Equal(roleBinding, res)
 			} else {
 				s.False(found)
 				s.Nil(res)

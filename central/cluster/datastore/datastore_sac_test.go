@@ -308,7 +308,7 @@ func (s *clusterDatastoreSACSuite) TestGetCluster() {
 			if c.ExpectedFound {
 				s.True(found)
 				s.Require().NotNil(fetchedCluster)
-				s.Equal(*cluster, *fetchedCluster)
+				s.Equal(cluster, fetchedCluster)
 			} else {
 				s.False(found)
 				s.Nil(fetchedCluster)
@@ -654,17 +654,17 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterCertExpiryStatus() {
 			s.NoError(postUpdateErr)
 			s.True(postUpdateFound)
 			if c.ExpectError {
-				s.Equal(*oldSensorExpiry, *preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
-				s.Equal(*oldSensorCertNotBefore, *preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
+				s.Equal(oldSensorExpiry, preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
+				s.Equal(oldSensorCertNotBefore, preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
 				s.ErrorIs(updateErr, c.ExpectedError)
-				s.Equal(*oldSensorExpiry, *postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
-				s.Equal(*oldSensorCertNotBefore, *postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
+				s.Equal(oldSensorExpiry, postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
+				s.Equal(oldSensorCertNotBefore, postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
 			} else {
-				s.Equal(*oldSensorExpiry, *preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
-				s.Equal(*oldSensorCertNotBefore, *preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
+				s.Equal(oldSensorExpiry, preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
+				s.Equal(oldSensorCertNotBefore, preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
 				s.NoError(updateErr)
-				s.Equal(*newSensorExpiry, *postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
-				s.Equal(*newSensorCertNotBefore, *postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
+				s.Equal(newSensorExpiry, postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
+				s.Equal(newSensorCertNotBefore, postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
 			}
 			// Revert to pre-test state
 			err := s.datastore.UpdateClusterCertExpiryStatus(globalReadWriteCtx, clusterID, oldCertExpiryStatus)
@@ -672,8 +672,8 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterCertExpiryStatus() {
 			fetchedCluster, found, err := s.datastore.GetCluster(globalReadWriteCtx, clusterID)
 			s.Require().NoError(err)
 			s.Require().True(found)
-			s.Require().Equal(*oldSensorExpiry, *fetchedCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
-			s.Require().Equal(*oldSensorCertNotBefore, *fetchedCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
+			s.Require().Equal(oldSensorExpiry, fetchedCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
+			s.Require().Equal(oldSensorCertNotBefore, fetchedCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
 		})
 	}
 }
@@ -737,19 +737,19 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterHealth() {
 			if c.ExpectError {
 				s.Equal(oldHealthStatus.GetCollectorHealthStatus(), preUpdateCluster.GetHealthStatus().GetCollectorHealthStatus())
 				s.Equal(oldHealthStatus.GetOverallHealthStatus(), preUpdateCluster.GetHealthStatus().GetOverallHealthStatus())
-				s.Equal(*oldHealthStatus.GetLastContact(), *preUpdateCluster.GetHealthStatus().GetLastContact())
+				s.Equal(oldHealthStatus.GetLastContact(), preUpdateCluster.GetHealthStatus().GetLastContact())
 				s.ErrorIs(updateErr, c.ExpectedError)
 				s.Equal(oldHealthStatus.GetCollectorHealthStatus(), postUpdateCluster.GetHealthStatus().GetCollectorHealthStatus())
 				s.Equal(oldHealthStatus.GetOverallHealthStatus(), postUpdateCluster.GetHealthStatus().GetOverallHealthStatus())
-				s.Equal(*oldHealthStatus.GetLastContact(), *preUpdateCluster.GetHealthStatus().GetLastContact())
+				s.Equal(oldHealthStatus.GetLastContact(), preUpdateCluster.GetHealthStatus().GetLastContact())
 			} else {
 				s.Equal(oldHealthStatus.GetCollectorHealthStatus(), preUpdateCluster.GetHealthStatus().GetCollectorHealthStatus())
 				s.Equal(oldHealthStatus.GetOverallHealthStatus(), preUpdateCluster.GetHealthStatus().GetOverallHealthStatus())
-				s.Equal(*oldHealthStatus.GetLastContact(), *preUpdateCluster.GetHealthStatus().GetLastContact())
+				s.Equal(oldHealthStatus.GetLastContact(), preUpdateCluster.GetHealthStatus().GetLastContact())
 				s.NoError(updateErr)
 				s.Equal(newHealthStatus.GetCollectorHealthStatus(), postUpdateCluster.GetHealthStatus().GetCollectorHealthStatus())
 				s.Equal(newHealthStatus.GetOverallHealthStatus(), postUpdateCluster.GetHealthStatus().GetOverallHealthStatus())
-				s.Equal(*newHealthStatus.GetLastContact(), *postUpdateCluster.GetHealthStatus().GetLastContact())
+				s.Equal(newHealthStatus.GetLastContact(), postUpdateCluster.GetHealthStatus().GetLastContact())
 			}
 			// Revert to pre-test state
 			err := s.datastore.UpdateClusterHealth(globalReadWriteCtx, clusterID, oldHealthStatus)
@@ -759,7 +759,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterHealth() {
 			s.Require().True(found)
 			s.Require().Equal(oldHealthStatus.GetCollectorHealthStatus(), fetchedCluster.GetHealthStatus().GetCollectorHealthStatus())
 			s.Require().Equal(oldHealthStatus.GetOverallHealthStatus(), fetchedCluster.GetHealthStatus().GetOverallHealthStatus())
-			s.Require().Equal(*oldHealthStatus.GetLastContact(), *preUpdateCluster.GetHealthStatus().GetLastContact())
+			s.Require().Equal(oldHealthStatus.GetLastContact(), preUpdateCluster.GetHealthStatus().GetLastContact())
 		})
 	}
 }
@@ -966,29 +966,29 @@ func (s *clusterDatastoreSACSuite) TestUpdateAuditLogFileStates() {
 				s.Require().Equal(len(oldAuditLogFileState), len(preUpdateCluster.GetAuditLogState()))
 				for k := range oldAuditLogFileState {
 					s.Require().Equal(oldAuditLogFileState[k].GetLastAuditId(), preUpdateCluster.GetAuditLogState()[k].GetLastAuditId())
-					s.Require().NotNil(*preUpdateCluster.GetAuditLogState()[k])
-					s.Require().Equal(*oldAuditLogFileState[k].GetCollectLogsSince(), *preUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince())
+					s.Require().NotNil(preUpdateCluster.GetAuditLogState()[k])
+					s.Require().Equal(oldAuditLogFileState[k].GetCollectLogsSince(), preUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince())
 				}
 				s.ErrorIs(updateErr, c.ExpectedError)
 				s.Require().Equal(len(oldAuditLogFileState), len(postUpdateCluster.GetAuditLogState()))
 				for k := range oldAuditLogFileState {
 					s.Require().Equal(oldAuditLogFileState[k].GetLastAuditId(), postUpdateCluster.GetAuditLogState()[k].GetLastAuditId())
-					s.Require().NotNil(*postUpdateCluster.GetAuditLogState()[k])
-					s.Require().Equal(*oldAuditLogFileState[k].GetCollectLogsSince(), *postUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince())
+					s.Require().NotNil(postUpdateCluster.GetAuditLogState()[k])
+					s.Require().Equal(oldAuditLogFileState[k].GetCollectLogsSince(), postUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince())
 				}
 			} else {
 				s.Require().Equal(len(oldAuditLogFileState), len(preUpdateCluster.GetAuditLogState()))
 				for k := range oldAuditLogFileState {
 					s.Require().Equal(oldAuditLogFileState[k].GetLastAuditId(), preUpdateCluster.GetAuditLogState()[k].GetLastAuditId())
-					s.Require().NotNil(*preUpdateCluster.GetAuditLogState()[k])
-					s.Require().Equal(*oldAuditLogFileState[k].GetCollectLogsSince(), *preUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince())
+					s.Require().NotNil(preUpdateCluster.GetAuditLogState()[k])
+					s.Require().Equal(oldAuditLogFileState[k].GetCollectLogsSince(), preUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince())
 				}
 				s.NoError(updateErr)
 				s.Require().Equal(len(newAuditLogFileState), len(postUpdateCluster.GetAuditLogState()))
 				for k := range newAuditLogFileState {
 					s.Require().Equal(newAuditLogFileState[k].GetLastAuditId(), postUpdateCluster.GetAuditLogState()[k].GetLastAuditId())
-					s.Require().NotNil(*postUpdateCluster.GetAuditLogState()[k])
-					s.Require().Equal(*newAuditLogFileState[k].GetCollectLogsSince(), *postUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince())
+					s.Require().NotNil(postUpdateCluster.GetAuditLogState()[k])
+					s.Require().Equal(newAuditLogFileState[k].GetCollectLogsSince(), postUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince())
 				}
 				// Revert to pre-test state
 				err := s.datastore.UpdateAuditLogFileStates(globalReadWriteCtx, clusterID, oldAuditLogFileState)
@@ -999,8 +999,8 @@ func (s *clusterDatastoreSACSuite) TestUpdateAuditLogFileStates() {
 				s.Require().Equal(len(oldAuditLogFileState), len(fetchedCluster.GetAuditLogState()))
 				for k := range oldAuditLogFileState {
 					s.Require().Equal(oldAuditLogFileState[k].GetLastAuditId(), fetchedCluster.GetAuditLogState()[k].GetLastAuditId())
-					s.Require().NotNil(*fetchedCluster.GetAuditLogState()[k])
-					s.Require().Equal(*oldAuditLogFileState[k].GetCollectLogsSince(), *fetchedCluster.GetAuditLogState()[k].GetCollectLogsSince())
+					s.Require().NotNil(fetchedCluster.GetAuditLogState()[k])
+					s.Require().Equal(oldAuditLogFileState[k].GetCollectLogsSince(), fetchedCluster.GetAuditLogState()[k].GetCollectLogsSince())
 				}
 			}
 		})

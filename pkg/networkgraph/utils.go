@@ -1,6 +1,7 @@
 package networkgraph
 
 import (
+	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -157,7 +158,8 @@ func PopulateExternalSrcsDesc(entity *storage.NetworkEntityInfo, extSrcMapper fu
 	src := extSrcMapper(entity.GetId())
 	if src == nil {
 		// If the external source (CIDR block) is not visible, mark this entity as INTERNET.
-		*entity = *InternetEntity().ToProto()
+		entity.Reset()
+		proto.Merge(entity, InternetEntity().ToProto())
 		return
 	}
 	entity.Desc = src.GetDesc()
