@@ -31,6 +31,10 @@ config_part_1() {
 
     export_test_environment
 
+    if separate_clusters_test; then
+        target_cluster "central"
+    fi
+
     setup_gcp
     setup_deployment_env false false
     setup_podsecuritypolicies_config
@@ -39,8 +43,17 @@ config_part_1() {
 
     deploy_stackrox "$certs_dir/client_TLS_certs"
 
+    if separate_clusters_test; then
+        target_cluster "central"
+    fi
+
     deploy_default_psp
     deploy_webhook_server "$certs_dir/webhook_server_certs"
+    if separate_clusters_test; then
+        target_cluster "sensor"
+        deploy_default_psp
+    fi
+
     get_ECR_docker_pull_password
     # TODO(ROX-14759): Re-enable once image pulling is fixed.
     #deploy_clair_v4
