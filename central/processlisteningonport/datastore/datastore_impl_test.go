@@ -603,7 +603,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
 }
 
 // TestPLOPAddNoIndicator: A PLOP object with a wrong process indicator
-// reference. It's being stored in the database and will be returned by 
+// reference. It's being stored in the database and will be returned by
 // the API even though it is not matched to a process.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 
@@ -724,7 +724,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenNoIndicatorThenClose() {
 
 	closedPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
 
-	// Add closed PLOP now with a matching indicator 
+	// Add closed PLOP now with a matching indicator
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
 		suite.hasWriteCtx, closedPlopObjects...))
 
@@ -1214,7 +1214,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 	}
 
 	id.SetIndicatorID(initialIndicators[0])
-
 
 	openPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 
