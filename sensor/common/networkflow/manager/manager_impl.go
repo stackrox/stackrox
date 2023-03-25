@@ -58,8 +58,8 @@ type hostConnections struct {
 }
 
 type connStatus struct {
-	firstSeen   timestamp.MicroTS
-	lastSeen    timestamp.MicroTS
+	firstSeen timestamp.MicroTS
+	lastSeen  timestamp.MicroTS
 	// used keeps track of if an endpoint has been used by the the networkgraph path.
 	// usedProcess keeps track of if an endpoint has been used by the processes listening on
 	// ports path. If processes listening on ports is used, both must be true to delete the
@@ -497,6 +497,8 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 		port:     ep.endpoint.IPAndPort.Port,
 		protocol: ep.endpoint.L4Proto.ToProtobuf(),
 	}
+
+	processesListening[indicator] = status.lastSeen
 }
 
 func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
@@ -514,10 +516,6 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 	flowMetrics.HostConnectionsRemoved.Add(float64(prevSize - len(hostConns.connections)))
 }
 
-func deleteEndpoint(hostConns *hostConnections, ep containerEndpoint) {
-	delete(hostConns.endpoints, ep)
-}
-
 func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnections, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
@@ -529,7 +527,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 		used := status.used && (status.usedProcess || !features.ProcessesListeningOnPort.Enabled())
 		if used && status.lastSeen != timestamp.InfiniteFuture {
 			// endpoints that are no longer active and have already been used can be deleted.
-			deleteEndpoint(hostConns, ep)
+			delete(hostConns.endpoints, ep)
 		}
 	}
 	flowMetrics.HostEndpointsRemoved.Add(float64(prevSize - len(hostConns.endpoints)))
@@ -552,7 +550,7 @@ func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections
 		if status.used && status.usedProcess && status.lastSeen != timestamp.InfiniteFuture {
 			// endpoints that are no longer active and have already been used can be deleted.
 			// Before deleting it must be used here and in enrichContainerEndpoints.
-			deleteEndpoint(hostConns, ep)
+			delete(hostConns.endpoints, ep)
 		}
 	}
 	flowMetrics.HostProcessesRemoved.Add(float64(prevSize - len(hostConns.endpoints)))
@@ -808,18 +806,6 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 	}
 
 	return nil
-}
-
-func getProcessString(processName string, processArgs string, processExecFilePath string) string {
-	return fmt.Sprintf("%s_%s_%s", processName, processArgs, processExecFilePath)
-}
-
-func getProcessOriginatorString(originator *storage.NetworkProcessUniqueKey) string {
-	return getProcessString(originator.ProcessName, originator.ProcessArgs, originator.ProcessExecFilePath)
-}
-
-func getProcessInfoString(process *processInfo) string {
-	return getProcessString(process.processName, process.processArgs, process.processExec)
 }
 
 func getProcessKey(originator *storage.NetworkProcessUniqueKey) processInfo {
