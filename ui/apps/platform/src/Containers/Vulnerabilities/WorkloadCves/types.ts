@@ -27,3 +27,11 @@ export type CveStatusTab = typeof cveStatusTabValues[number];
 export function isValidCveStatusTab(value: unknown): value is CveStatusTab {
     return cveStatusTabValues.some((tab) => tab === value);
 }
+
+export const entityTabValues = ['CVE', 'Image', 'Deployment'] as const;
+
+export type EntityTab = typeof entityTabValues[number];
+
+export function isValidEntityTab(value: unknown): value is EntityTab {
+    return entityTabValues.some((tab) => tab === value);
+}
