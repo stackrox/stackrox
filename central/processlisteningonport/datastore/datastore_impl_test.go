@@ -1233,15 +1233,38 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 
 	idsToDelete := []string{initialIndicators[0].Id}
 
+	// Verify the state of the PLOP table after opening and closing the endpoint
+	plopsFromDB1 := suite.getPlopsFromDB()
+	suite.Len(plopsFromDB1, 1)
+
+	expectedPlopStorage1 := &storage.ProcessListeningOnPortStorage{
+		Id:                 plopsFromDB1[0].GetId(),
+		Port:               openPlopObject.GetPort(),
+		Protocol:           openPlopObject.GetProtocol(),
+		CloseTimestamp:     closedPlopObject.GetCloseTimestamp(),
+		ProcessIndicatorId: initialIndicators[0].GetId(),
+		Closed:             true,
+		Process:            nil,
+		DeploymentId:       fixtureconsts.Deployment1,
+	}
+
+	suite.Equal(expectedPlopStorage1, plopsFromDB1[0])
+
 	// Delete the indicator
 	suite.NoError(suite.indicatorDataStore.RemoveProcessIndicators(
 		suite.hasWriteCtx, idsToDelete))
 
+	// Verify the state of the PLOP table after deleting the process indicator
+	plopsFromDB2 := suite.getPlopsFromDB()
+	suite.Len(plopsFromDB2, 0)
+
 	// Create a new indicator in a new deployment
 	newIndicators := []*storage.ProcessIndicator{
 		{
-			Id:            fixtureconsts.ProcessIndicatorID1,
-			DeploymentId:  fixtureconsts.Deployment2,
+			Id:           fixtureconsts.ProcessIndicatorID1,
+			DeploymentId: fixtureconsts.Deployment2,
+			// Keeping the same PodId even though a new deployment almost certainly would have a new PodId
+			// The code is robust even for that case
 			PodId:         fixtureconsts.PodUID1,
 			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container1",
@@ -1276,13 +1299,13 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 
 	// Add new indicator
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
-		suite.hasWriteCtx, initialIndicators...))
+		suite.hasWriteCtx, newIndicators...))
 
 	// Add the PLOP with the new DeploymentId
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
 		suite.hasWriteCtx, newOpenPlopObjects...))
 
-	// Fetch inserted PLOP back
+	// Fetch inserted PLOP back from the new deployment
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
 		suite.hasWriteCtx, fixtureconsts.Deployment2)
 	suite.NoError(err)
@@ -1305,6 +1328,14 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 			ExecFilePath: "test_path1",
 		},
 	})
+
+	// Fetch inserted PLOP back from the old deployment
+	oldPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	// It's closed and doesn't appear in the API
+	suite.Len(oldPlops, 0)
 
 	// Verify the state of the table after the test
 	newPlopsFromDB := suite.getPlopsFromDB()

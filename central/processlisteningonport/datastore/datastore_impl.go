@@ -146,7 +146,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 			existingPLOP.CloseTimestamp = val.CloseTimestamp
 			existingPLOP.Closed = existingPLOP.CloseTimestamp != nil
-			existingPLOP.DeploymentId = val.DeploymentId
 			plopObjects = append(plopObjects, existingPLOP)
 		}
 
@@ -196,7 +195,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 				// An existing closed PLOP, update timestamp
 				existingPLOP.CloseTimestamp = val.CloseTimestamp
-				existingPLOP.DeploymentId = val.DeploymentId
 				plopObjects = append(plopObjects, existingPLOP)
 			}
 
