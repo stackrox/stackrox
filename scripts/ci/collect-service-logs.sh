@@ -94,11 +94,12 @@ main() {
 
 if separate_clusters_test; then
     if [[ -z "${TARGET_CLUSTER:-}" ]]; then
-        TARGET_CLUSTER="central" main "$@"
-        TARGET_CLUSTER="sensor" main "$@"
-        return
+        target_cluster "central"
+        main "$@"
+        target_cluster "sensor"
+        main "$@"
+        exit 0
     fi
-    target_cluster "${TARGET_CLUSTER}"
 fi
 
 main "$@"
