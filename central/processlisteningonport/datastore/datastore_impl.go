@@ -97,6 +97,19 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 		existingPLOP, prevExists := existingPLOPMap[plopKey]
 
+		if prevExists {
+			if existingPLOP.CloseTimestamp != nil && val.CloseTimestamp != nil {
+				log.Infof("Got two consecutive close plops")
+				log.Infof("existingPLOP= %+v", existingPLOP)
+				log.Infof("val= %+v", val)
+			}
+			if existingPLOP.CloseTimestamp == nil && val.CloseTimestamp == nil {
+				log.Infof("Got two consecutive open plops")
+				log.Infof("existingPLOP= %+v", existingPLOP)
+				log.Infof("val= %+v", val)
+			}
+		}
+
 		// There are three options:
 		// * We found an existing PLOP object with different close timestamp.
 		//   It has to be updated.
@@ -147,6 +160,19 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
 
 		existingPLOP, prevExists := existingPLOPMap[plopKey]
+
+		if prevExists {
+			if existingPLOP.CloseTimestamp != nil && val.CloseTimestamp != nil {
+				log.Infof("Got two consecutive close plops")
+				log.Infof("existingPLOP= %+v", existingPLOP)
+				log.Infof("val= %+v", val)
+			}
+			if existingPLOP.CloseTimestamp == nil && val.CloseTimestamp == nil {
+				log.Infof("Got two consecutive open plops")
+				log.Infof("existingPLOP= %+v", existingPLOP)
+				log.Infof("val= %+v", val)
+			}
+		}
 
 		if prevExists {
 			log.Debugf("Got existing PLOP to update timestamp: %+v", existingPLOP)
@@ -422,6 +448,16 @@ func normalizePLOPs(
 			normalizedResult = append(normalizedResult, value.open[nOpen-1])
 		} else {
 			normalizedResult = append(normalizedResult, value.closed[nClosed-1])
+		}
+
+		if nOpen + nClosed > 1 {
+			log.Infof("The same listening endpoint appears multiple times in a batch")
+			for openPlop, _ := range value.open {
+				log.Infof("Batch open %+v", openPlop)
+			}
+			for closePlop, _ := range value.closed {
+				log.Infof("Batch close %+v", closePlop)
+			}
 		}
 	}
 
