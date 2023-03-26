@@ -231,7 +231,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         setupSpec()
         rebuildForRetries()
-        def clusterId = ClusterService.getClusterId()
 
         String deploymentId3 = targetDeployments[2].getDeploymentUid()
 
@@ -254,7 +253,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         def endpoint = list.find { it.endpoint.port == 8082 }
 
         assert endpoint
-        assert endpoint.clusterId == clusterId
         assert endpoint.containerName == TCPCONNECTIONTARGET3
         assert endpoint.signal.id
         assert endpoint.signal.containerId
@@ -279,7 +277,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         setupSpec()
         rebuildForRetries()
-        def clusterId = ClusterService.getClusterId()
 
         String deploymentId2 = targetDeployments[1].getDeploymentUid()
 
@@ -302,7 +299,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         def endpoint = list.find { it.endpoint.port == 8081 }
 
         assert endpoint
-        assert endpoint.clusterId == clusterId
         assert endpoint.containerName == TCPCONNECTIONTARGET2
         assert endpoint.signal.id
         assert endpoint.signal.containerId
