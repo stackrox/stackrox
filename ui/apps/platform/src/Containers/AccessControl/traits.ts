@@ -15,3 +15,9 @@ export const originLabelColours = {
     User: 'green',
     Declarative: 'blue',
 };
+
+export function getOriginLabel(traits?: Traits): string {
+    return traits && traits.origin && traitsOriginLabels[traits.origin]
+        ? traitsOriginLabels[traits.origin]
+        : 'User';
+}
