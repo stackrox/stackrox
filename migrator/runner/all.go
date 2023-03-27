@@ -134,4 +134,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_175_to_m_176_create_notification_schedule_table"
 	_ "github.com/stackrox/rox/migrator/migrations/m_176_to_m_177_network_baselines_cidr"
 	_ "github.com/stackrox/rox/migrator/migrations/m_177_to_m_178_group_permissions"
+	_ "github.com/stackrox/rox/migrator/migrations/m_178_to_m_179_embedded_collections_search_label"
 )
