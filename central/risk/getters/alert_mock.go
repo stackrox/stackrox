@@ -14,6 +14,7 @@ type MockAlertsSearcher struct {
 	Alerts []*storage.ListAlert
 }
 
+// SearchListAlerts implements the AlertsSearcher interface
 func (m MockAlertsSearcher) SearchListAlerts(_ context.Context, q *v1.Query) (alerts []*storage.ListAlert, err error) {
 	state := storage.ViolationState_ACTIVE.String()
 	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
