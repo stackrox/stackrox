@@ -59,7 +59,7 @@ func unmarshalMessageStrings(iterator *gorocksdb.Iterator) (*storage.ComplianceS
 	return &stringsProto, nil
 }
 
-func (r *rocksdbStore) Walk(ctx context.Context, fn func(obj *storage.ComplianceStrings) error) error {
+func (r *rocksdbStore) Walk(_ context.Context, fn func(obj *storage.ComplianceStrings) error) error {
 	iterator := r.db.NewIterator(readOptions)
 	defer iterator.Close()
 	// Runs are sorted by time so we must iterate over each key to see if it has the correct run ID.
@@ -89,7 +89,7 @@ func (r *rocksdbStore) createKay() []byte {
 	return key
 }
 
-func (r *rocksdbStore) UpsertMany(ctx context.Context, objs []*storage.ComplianceStrings) error {
+func (r *rocksdbStore) UpsertMany(_ context.Context, objs []*storage.ComplianceStrings) error {
 	batch := gorocksdb.NewWriteBatch()
 	defer batch.Destroy()
 

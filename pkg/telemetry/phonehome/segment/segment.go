@@ -41,7 +41,7 @@ func getMessageType(msg segment.Message) string {
 
 type logOnFailure struct{}
 
-func (*logOnFailure) Success(msg segment.Message) {}
+func (*logOnFailure) Success(_ segment.Message) {}
 func (*logOnFailure) Failure(msg segment.Message, err error) {
 	log.Error("Failure with message '", getMessageType(msg), "': ", err)
 }

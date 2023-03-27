@@ -96,7 +96,7 @@ func getPrefix(leftPrefix, rightPrefix string) []byte {
 	return []byte(leftPrefix + ":" + rightPrefix)
 }
 
-func (r *rocksdbStore) Walk(ctx context.Context, fn func(obj *storage.ComplianceRunMetadata) error) error {
+func (r *rocksdbStore) Walk(_ context.Context, fn func(obj *storage.ComplianceRunMetadata) error) error {
 	iterator := r.db.NewIterator(readOptions)
 	defer iterator.Close()
 	// Runs are sorted by time so we must iterate over each key to see if it has the correct run ID.
@@ -112,7 +112,7 @@ func (r *rocksdbStore) Walk(ctx context.Context, fn func(obj *storage.Compliance
 	return nil
 }
 
-func (r *rocksdbStore) UpsertMany(ctx context.Context, objs []*storage.ComplianceRunMetadata) error {
+func (r *rocksdbStore) UpsertMany(_ context.Context, objs []*storage.ComplianceRunMetadata) error {
 	batch := gorocksdb.NewWriteBatch()
 	defer batch.Destroy()
 

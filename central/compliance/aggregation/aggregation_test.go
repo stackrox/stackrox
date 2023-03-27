@@ -35,7 +35,7 @@ func (mockStandardsRepo) Control(controlID string) *v1.ComplianceControl {
 	}
 }
 
-func (mockStandardsRepo) GetCategoryByControl(controlID string) *standards.Category {
+func (mockStandardsRepo) GetCategoryByControl(_ string) *standards.Category {
 	return &standards.Category{
 		Category: metadata.Category{
 			ID: "",

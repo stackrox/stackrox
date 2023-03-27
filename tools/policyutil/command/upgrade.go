@@ -74,7 +74,7 @@ func Command() *cobra.Command {
 	return c
 }
 
-func upgrade(c *cobra.Command, _ []string) error {
+func upgrade(_ *cobra.Command, _ []string) error {
 	fileStat, fileErr := os.Stat(file)
 	dirStat, dirErr := os.Stat(dir)
 

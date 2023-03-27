@@ -54,7 +54,7 @@ func (s *serviceImpl) ReconciliationStatsByCluster(context.Context, *central.Emp
 	return &resp, nil
 }
 
-func (s *serviceImpl) URLHasValidCert(ctx context.Context, req *central.URLHasValidCertRequest) (*central.URLHasValidCertResponse, error) {
+func (s *serviceImpl) URLHasValidCert(_ context.Context, req *central.URLHasValidCertRequest) (*central.URLHasValidCertResponse, error) {
 	if !strings.HasPrefix(req.GetUrl(), "https://") {
 		return nil, errors.Wrapf(errox.InvalidArgs, "url %q must start with https", req.GetUrl())
 	}
@@ -83,14 +83,14 @@ func (s *serviceImpl) URLHasValidCert(ctx context.Context, req *central.URLHasVa
 	}, nil
 }
 
-func (s *serviceImpl) EnvVars(ctx context.Context, _ *central.Empty) (*central.EnvVarsResponse, error) {
+func (s *serviceImpl) EnvVars(_ context.Context, _ *central.Empty) (*central.EnvVarsResponse, error) {
 	envVars := os.Environ()
 	return &central.EnvVarsResponse{
 		EnvVars: envVars,
 	}, nil
 }
 
-func (s *serviceImpl) RandomData(ctx context.Context, req *central.RandomDataRequest) (*central.RandomDataResponse, error) {
+func (s *serviceImpl) RandomData(_ context.Context, req *central.RandomDataRequest) (*central.RandomDataResponse, error) {
 	resp := &central.RandomDataResponse{
 		Data: make([]byte, req.GetSize_()),
 	}

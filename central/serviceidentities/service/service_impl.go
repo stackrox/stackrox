@@ -92,7 +92,7 @@ func (s *serviceImpl) CreateServiceIdentity(ctx context.Context, request *v1.Cre
 }
 
 // GetAuthorities returns the authorities currently in use.
-func (s *serviceImpl) GetAuthorities(ctx context.Context, request *v1.Empty) (*v1.Authorities, error) {
+func (s *serviceImpl) GetAuthorities(_ context.Context, _ *v1.Empty) (*v1.Authorities, error) {
 	ca, err := mtls.CACertPEM()
 	if err != nil {
 		return nil, err

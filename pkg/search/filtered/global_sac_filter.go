@@ -12,7 +12,7 @@ type globalFilterImpl struct {
 	access         storage.Access
 }
 
-func (f *globalFilterImpl) Apply(ctx context.Context, from ...string) ([]int, bool, error) {
+func (f *globalFilterImpl) Apply(ctx context.Context, _ ...string) ([]int, bool, error) {
 	if ok, err := f.resourceHelper.AccessAllowed(ctx, f.access); err != nil || !ok {
 		return nil, false, err
 	}

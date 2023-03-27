@@ -29,7 +29,7 @@ func (*eventPipeline) Capabilities() []centralsensor.SensorCapability {
 }
 
 // ProcessMessage implements common.SensorComponent
-func (*eventPipeline) ProcessMessage(msg *central.MsgToSensor) error {
+func (*eventPipeline) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 

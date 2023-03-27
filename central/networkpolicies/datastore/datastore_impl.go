@@ -203,7 +203,7 @@ func (ds *datastoreImpl) getNetworkPolicy(ctx context.Context, id string) (*stor
 	return netpol, true, nil
 }
 
-func filterResults(ctx context.Context, resourceScopeChecker sac.ScopeChecker, results []*storage.NetworkPolicy) ([]*storage.NetworkPolicy, error) {
+func filterResults(_ context.Context, resourceScopeChecker sac.ScopeChecker, results []*storage.NetworkPolicy) ([]*storage.NetworkPolicy, error) {
 	var allowed []*storage.NetworkPolicy
 	for _, netPol := range results {
 		scopeKeys := sac.KeyForNSScopedObj(netPol)

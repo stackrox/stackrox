@@ -42,17 +42,17 @@ type EmbeddedVulnerabilityResolver struct {
 }
 
 // Suppressed returns whether CVE is suppressed (UI term: Snooze) or not
-func (evr *EmbeddedVulnerabilityResolver) Suppressed(ctx context.Context) bool {
+func (evr *EmbeddedVulnerabilityResolver) Suppressed(_ context.Context) bool {
 	return evr.data.GetSuppressed()
 }
 
 // SuppressActivation returns the time when the CVE was suppressed
-func (evr *EmbeddedVulnerabilityResolver) SuppressActivation(ctx context.Context) (*graphql.Time, error) {
+func (evr *EmbeddedVulnerabilityResolver) SuppressActivation(_ context.Context) (*graphql.Time, error) {
 	return timestamp(evr.data.GetSuppressActivation())
 }
 
 // SuppressExpiry returns the time when the CVE suppression expires
-func (evr *EmbeddedVulnerabilityResolver) SuppressExpiry(ctx context.Context) (*graphql.Time, error) {
+func (evr *EmbeddedVulnerabilityResolver) SuppressExpiry(_ context.Context) (*graphql.Time, error) {
 	return timestamp(evr.data.GetSuppressExpiry())
 }
 
@@ -72,58 +72,58 @@ func (evr *EmbeddedVulnerabilityResolver) Vectors() *EmbeddedVulnerabilityVector
 }
 
 // ID returns the CVE string (which is effectively an id)
-func (evr *EmbeddedVulnerabilityResolver) ID(ctx context.Context) graphql.ID {
+func (evr *EmbeddedVulnerabilityResolver) ID(_ context.Context) graphql.ID {
 	return graphql.ID(evr.data.GetCve())
 }
 
 // CVE returns the CVE string (which is effectively an id)
-func (evr *EmbeddedVulnerabilityResolver) CVE(ctx context.Context) string {
+func (evr *EmbeddedVulnerabilityResolver) CVE(_ context.Context) string {
 	return evr.data.GetCve()
 }
 
 // Cvss returns the CVSS score.
-func (evr *EmbeddedVulnerabilityResolver) Cvss(ctx context.Context) float64 {
+func (evr *EmbeddedVulnerabilityResolver) Cvss(_ context.Context) float64 {
 	return float64(evr.data.GetCvss())
 }
 
 // Link returns a link to the vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) Link(ctx context.Context) string {
+func (evr *EmbeddedVulnerabilityResolver) Link(_ context.Context) string {
 	return evr.data.GetLink()
 }
 
 // Summary returns the summary of the vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) Summary(ctx context.Context) string {
+func (evr *EmbeddedVulnerabilityResolver) Summary(_ context.Context) string {
 	return evr.data.GetSummary()
 }
 
 // ScoreVersion returns the version of the CVSS score returned.
-func (evr *EmbeddedVulnerabilityResolver) ScoreVersion(ctx context.Context) string {
+func (evr *EmbeddedVulnerabilityResolver) ScoreVersion(_ context.Context) string {
 	value := evr.data.GetScoreVersion()
 	return value.String()
 }
 
 // FixedByVersion returns the version of the parent component that removes this CVE.
-func (evr *EmbeddedVulnerabilityResolver) FixedByVersion(ctx context.Context) (string, error) {
+func (evr *EmbeddedVulnerabilityResolver) FixedByVersion(_ context.Context) (string, error) {
 	return evr.data.GetFixedBy(), nil
 }
 
 // IsFixable returns whether or not a component with a fix exists.
-func (evr *EmbeddedVulnerabilityResolver) IsFixable(ctx context.Context, _ RawQuery) (bool, error) {
+func (evr *EmbeddedVulnerabilityResolver) IsFixable(_ context.Context, _ RawQuery) (bool, error) {
 	return evr.data.GetFixedBy() != "", nil
 }
 
 // LastScanned is the last time the vulnerability was scanned in an image.
-func (evr *EmbeddedVulnerabilityResolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
+func (evr *EmbeddedVulnerabilityResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
 	return timestamp(evr.lastScanned)
 }
 
 // CreatedAt is the firsts time the vulnerability was scanned in an image. Unavailable in an image context.
-func (evr *EmbeddedVulnerabilityResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
+func (evr *EmbeddedVulnerabilityResolver) CreatedAt(_ context.Context) (*graphql.Time, error) {
 	return timestamp(evr.lastScanned)
 }
 
 // DiscoveredAtImage is the first time the vulnerability was discovered in the parent image.
-func (evr *EmbeddedVulnerabilityResolver) DiscoveredAtImage(ctx context.Context, _ RawQuery) (*graphql.Time, error) {
+func (evr *EmbeddedVulnerabilityResolver) DiscoveredAtImage(_ context.Context, _ RawQuery) (*graphql.Time, error) {
 	return timestamp(evr.data.FirstImageOccurrence)
 }
 
@@ -409,22 +409,22 @@ func (evr *EmbeddedVulnerabilityResolver) EnvImpact(ctx context.Context) (float6
 }
 
 // Severity return the severity of the vulnerability (CVSSv3 or CVSSv2).
-func (evr *EmbeddedVulnerabilityResolver) Severity(ctx context.Context) string {
+func (evr *EmbeddedVulnerabilityResolver) Severity(_ context.Context) string {
 	return evr.data.GetSeverity().String()
 }
 
 // PublishedOn is the time the vulnerability was published (ref: NVD).
-func (evr *EmbeddedVulnerabilityResolver) PublishedOn(ctx context.Context) (*graphql.Time, error) {
+func (evr *EmbeddedVulnerabilityResolver) PublishedOn(_ context.Context) (*graphql.Time, error) {
 	return timestamp(evr.data.GetPublishedOn())
 }
 
 // LastModified is the time the vulnerability was last modified (ref: NVD).
-func (evr *EmbeddedVulnerabilityResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
+func (evr *EmbeddedVulnerabilityResolver) LastModified(_ context.Context) (*graphql.Time, error) {
 	return timestamp(evr.data.GetLastModified())
 }
 
 // ImpactScore returns the impact score of the vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) ImpactScore(ctx context.Context) float64 {
+func (evr *EmbeddedVulnerabilityResolver) ImpactScore(_ context.Context) float64 {
 	if val := evr.data.GetCvssV3(); val != nil {
 		return float64(evr.data.GetCvssV3().GetImpactScore())
 	}
@@ -435,7 +435,7 @@ func (evr *EmbeddedVulnerabilityResolver) ImpactScore(ctx context.Context) float
 }
 
 // UnusedVarSink represents a query sink
-func (evr *EmbeddedVulnerabilityResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+func (evr *EmbeddedVulnerabilityResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
 	return nil
 }
 
@@ -516,7 +516,7 @@ func (evr *EmbeddedVulnerabilityResolver) ActiveState(ctx context.Context, _ Raw
 }
 
 // VulnerabilityState return the effective state of this vulnerability (observed, deferred or marked as false positive).
-func (evr *EmbeddedVulnerabilityResolver) VulnerabilityState(ctx context.Context) string {
+func (evr *EmbeddedVulnerabilityResolver) VulnerabilityState(_ context.Context) string {
 	return evr.data.GetState().String()
 }
 
@@ -540,6 +540,6 @@ func (evr *EmbeddedVulnerabilityResolver) vulnRawQuery() string {
 }
 
 // EffectiveVulnerabilityRequest is not implemented for v1.
-func (evr *EmbeddedVulnerabilityResolver) EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error) {
+func (evr *EmbeddedVulnerabilityResolver) EffectiveVulnerabilityRequest(_ context.Context) (*VulnerabilityRequestResolver, error) {
 	return nil, nil
 }

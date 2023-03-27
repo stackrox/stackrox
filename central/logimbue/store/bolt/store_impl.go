@@ -66,10 +66,10 @@ func (b *storeImpl) Upsert(_ context.Context, log *storage.LogImbue) error {
 	})
 }
 
-func (b *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
+func (b *storeImpl) DeleteMany(_ context.Context, _ []string) error {
 	return nil
 }
 
-func (b *storeImpl) Walk(ctx context.Context, fn func(obj *storage.LogImbue) error) error {
+func (b *storeImpl) Walk(_ context.Context, _ func(obj *storage.LogImbue) error) error {
 	return nil
 }

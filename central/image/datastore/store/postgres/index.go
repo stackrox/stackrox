@@ -25,13 +25,13 @@ type indexerImpl struct {
 	db *postgres.DB
 }
 
-func (b *indexerImpl) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+func (b *indexerImpl) Count(ctx context.Context, q *v1.Query, _ ...blevesearch.SearchOption) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "Image")
 
 	return pgSearch.RunCountRequest(ctx, v1.SearchCategory_IMAGES, q, b.db)
 }
 
-func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
+func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, _ ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Image")
 
 	return pgSearch.RunSearchRequest(ctx, v1.SearchCategory_IMAGES, q, b.db)
@@ -39,7 +39,7 @@ func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesear
 
 //// Stubs for satisfying interfaces
 
-func (b *indexerImpl) AddImage(deployment *storage.Image) error {
+func (b *indexerImpl) AddImage(_ *storage.Image) error {
 	return nil
 }
 
@@ -47,7 +47,7 @@ func (b *indexerImpl) AddImages(_ []*storage.Image) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteImage(id string) error {
+func (b *indexerImpl) DeleteImage(_ string) error {
 	return nil
 }
 

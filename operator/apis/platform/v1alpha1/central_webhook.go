@@ -47,7 +47,7 @@ func (c *Central) ValidateCreate() error {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (c *Central) ValidateUpdate(old runtime.Object) error {
+func (c *Central) ValidateUpdate(_ runtime.Object) error {
 	centrallog.Info("validate update", "name", c.Name)
 
 	// TODO(ROX-7683): add validation logic upon object update.

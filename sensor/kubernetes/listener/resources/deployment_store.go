@@ -57,7 +57,7 @@ func (ds *DeploymentStore) removeDeployment(wrap *deploymentWrap) {
 	delete(ds.deployments, wrap.GetId())
 }
 
-func (ds *DeploymentStore) getDeploymentsByIDs(namespace string, idSet set.StringSet) []*deploymentWrap {
+func (ds *DeploymentStore) getDeploymentsByIDs(_ string, idSet set.StringSet) []*deploymentWrap {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 

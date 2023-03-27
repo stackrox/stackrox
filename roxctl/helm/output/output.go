@@ -148,7 +148,7 @@ func (cfg *helmOutputCommand) getChartMetaValues(release bool) (*charts.MetaValu
 	return charts.GetMetaValuesForFlavor(imageFlavor), nil
 }
 
-func handleRhacsWarnings(rhacs, imageFlavorProvided bool, logger logger.Logger) {
+func handleRhacsWarnings(rhacs, _ bool, logger logger.Logger) {
 	if rhacs {
 		logger.WarnfLn("'--rhacs' is deprecated, please use '--%s=%s' instead", flags.ImageDefaultsFlagName, defaults.ImageFlavorNameRHACSRelease)
 	}

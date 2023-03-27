@@ -27,7 +27,7 @@ var (
 	}
 )
 
-func move(gormDB *gorm.DB, postgresDB *postgres.DB) error {
+func move(_ *gorm.DB, _ *postgres.DB) error {
 	return nil
 }
 

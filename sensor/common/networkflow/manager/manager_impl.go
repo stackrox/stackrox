@@ -121,7 +121,7 @@ type processListeningIndicator struct {
 	protocol storage.L4Protocol
 }
 
-func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.ProcessListeningOnPortFromSensor {
+func (i *processListeningIndicator) toProto(_ timestamp.MicroTS) *storage.ProcessListeningOnPortFromSensor {
 	proto := &storage.ProcessListeningOnPortFromSensor{
 		Port:     uint32(i.port),
 		Protocol: i.protocol,
@@ -213,7 +213,7 @@ type networkFlowManager struct {
 	policyDetector detector.Detector
 }
 
-func (m *networkFlowManager) ProcessMessage(msg *central.MsgToSensor) error {
+func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 

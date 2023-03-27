@@ -70,7 +70,7 @@ func BenchmarkListDeployment(b *testing.B) {
 }
 
 // This really isn't a benchmark, but just prints out how many ListDeployments can be returned in an API call
-func BenchmarkListDeployments(b *testing.B) {
+func BenchmarkListDeployments(_ *testing.B) {
 	listDeployment := &storage.ListDeployment{
 		Id:        uuid.NewDummy().String(),
 		Name:      "quizzical_cat",

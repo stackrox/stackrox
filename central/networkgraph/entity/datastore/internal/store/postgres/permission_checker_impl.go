@@ -61,15 +61,15 @@ func (permissionCheckerImpl) WalkAllowed(ctx context.Context) (bool, error) {
 	return genericPassThrough(ctx, storage.Access_READ_ACCESS)
 }
 
-func (permissionCheckerImpl) UpsertAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
+func (permissionCheckerImpl) UpsertAllowed(ctx context.Context, _ ...sac.ScopeKey) (bool, error) {
 	return genericPassThrough(ctx, storage.Access_READ_WRITE_ACCESS)
 }
 
-func (permissionCheckerImpl) UpsertManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
+func (permissionCheckerImpl) UpsertManyAllowed(ctx context.Context, _ ...sac.ScopeKey) (bool, error) {
 	return genericPassThrough(ctx, storage.Access_READ_WRITE_ACCESS)
 }
 
-func (permissionCheckerImpl) DeleteAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
+func (permissionCheckerImpl) DeleteAllowed(ctx context.Context, _ ...sac.ScopeKey) (bool, error) {
 	return genericPassThrough(ctx, storage.Access_READ_WRITE_ACCESS)
 }
 
@@ -81,6 +81,6 @@ func (permissionCheckerImpl) GetManyAllowed(ctx context.Context) (bool, error) {
 	return genericPassThrough(ctx, storage.Access_READ_ACCESS)
 }
 
-func (permissionCheckerImpl) DeleteManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
+func (permissionCheckerImpl) DeleteManyAllowed(ctx context.Context, _ ...sac.ScopeKey) (bool, error) {
 	return genericPassThrough(ctx, storage.Access_READ_WRITE_ACCESS)
 }

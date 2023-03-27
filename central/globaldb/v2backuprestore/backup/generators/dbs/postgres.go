@@ -29,7 +29,7 @@ type PostgresBackup struct {
 }
 
 // WriteTo writes a backup of Postgres to the writer
-func (bu *PostgresBackup) WriteTo(ctx context.Context, out io.Writer) error {
+func (bu *PostgresBackup) WriteTo(_ context.Context, out io.Writer) error {
 	sourceMap, config, err := pgconfig.GetPostgresConfig()
 	if err != nil {
 		log.Fatalf("Could not parse postgres config: %v", err)

@@ -45,15 +45,15 @@ func (permissionChecker) GetAllowed(ctx context.Context) (bool, error) {
 	return checkAccess(ctx, storage.Access_READ_ACCESS)
 }
 
-func (permissionChecker) UpsertAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
+func (permissionChecker) UpsertAllowed(ctx context.Context, _ ...sac.ScopeKey) (bool, error) {
 	return checkAccess(ctx, storage.Access_READ_WRITE_ACCESS)
 }
 
-func (permissionChecker) UpsertManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
+func (permissionChecker) UpsertManyAllowed(ctx context.Context, _ ...sac.ScopeKey) (bool, error) {
 	return checkAccess(ctx, storage.Access_READ_WRITE_ACCESS)
 }
 
-func (permissionChecker) DeleteAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
+func (permissionChecker) DeleteAllowed(ctx context.Context, _ ...sac.ScopeKey) (bool, error) {
 	return checkAccess(ctx, storage.Access_READ_WRITE_ACCESS)
 }
 
@@ -65,7 +65,7 @@ func (permissionChecker) GetManyAllowed(ctx context.Context) (bool, error) {
 	return checkAccess(ctx, storage.Access_READ_ACCESS)
 }
 
-func (permissionChecker) DeleteManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
+func (permissionChecker) DeleteManyAllowed(ctx context.Context, _ ...sac.ScopeKey) (bool, error) {
 	return checkAccess(ctx, storage.Access_READ_WRITE_ACCESS)
 }
 
