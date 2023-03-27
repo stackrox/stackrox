@@ -115,6 +115,7 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
         const hiddenStatuses = getHiddenStatuses(querySearchFilter);
         const vulnCounter = vulnerabilityData.image.imageVulnerabilityCounter;
         const totalVulnerabilityCount = vulnCounter.all.total;
+        const { critical, important, moderate, low } = vulnCounter;
 
         mainContent = (
             <>
@@ -124,10 +125,10 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
                             <BySeveritySummaryCard
                                 title="CVEs by severity"
                                 severityCounts={{
-                                    CRITICAL_VULNERABILITY_SEVERITY: vulnCounter.critical.total,
-                                    IMPORTANT_VULNERABILITY_SEVERITY: vulnCounter.important.total,
-                                    MODERATE_VULNERABILITY_SEVERITY: vulnCounter.moderate.total,
-                                    LOW_VULNERABILITY_SEVERITY: vulnCounter.low.total,
+                                    CRITICAL_VULNERABILITY_SEVERITY: critical.total,
+                                    IMPORTANT_VULNERABILITY_SEVERITY: important.total,
+                                    MODERATE_VULNERABILITY_SEVERITY: moderate.total,
+                                    LOW_VULNERABILITY_SEVERITY: low.total,
                                 }}
                                 hiddenSeverities={hiddenSeverities}
                             />

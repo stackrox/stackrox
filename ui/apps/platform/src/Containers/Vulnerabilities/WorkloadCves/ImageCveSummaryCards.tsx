@@ -55,7 +55,9 @@ function ImageCveSummaryCards({
     severitySummary,
     hiddenSeverities,
 }: ImageCveSummaryCardsProps) {
-    const countBySeverity = severitySummary.affectedImageCountBySeverity;
+    const { critical, important, moderate, low } = severitySummary.affectedImageCountBySeverity;
+    const { affectedImageCount, topCVSS } = severitySummary;
+    const { imageCount } = summaryCounts;
     return (
         <Flex
             direction={{ default: 'column', lg: 'row' }}
@@ -64,23 +66,23 @@ function ImageCveSummaryCards({
         >
             <EnvironmentalImpact
                 className="pf-u-flex-grow-1"
-                affectedImageCount={severitySummary.affectedImageCount}
-                totalImagesCount={summaryCounts.imageCount}
+                affectedImageCount={affectedImageCount}
+                totalImagesCount={imageCount}
             />
             <BySeveritySummaryCard
                 className="pf-u-flex-grow-1"
                 title="Images by severity"
                 severityCounts={{
-                    CRITICAL_VULNERABILITY_SEVERITY: countBySeverity.critical,
-                    IMPORTANT_VULNERABILITY_SEVERITY: countBySeverity.important,
-                    MODERATE_VULNERABILITY_SEVERITY: countBySeverity.moderate,
-                    LOW_VULNERABILITY_SEVERITY: countBySeverity.low,
+                    CRITICAL_VULNERABILITY_SEVERITY: critical,
+                    IMPORTANT_VULNERABILITY_SEVERITY: important,
+                    MODERATE_VULNERABILITY_SEVERITY: moderate,
+                    LOW_VULNERABILITY_SEVERITY: low,
                 }}
                 hiddenSeverities={hiddenSeverities}
             />
             <TopCvssScoreBreakdown
                 className="pf-u-flex-grow-1"
-                cvssScore={severitySummary.topCVSS}
+                cvssScore={topCVSS}
                 vector="TODO - Not implemented"
             />
         </Flex>
