@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
@@ -18,10 +19,11 @@ var (
 )
 
 type eventPipeline struct {
-	output   component.OutputQueue
-	resolver component.Resolver
-	listener component.PipelineComponent
-	detector detector.Detector
+	output      component.OutputQueue
+	resolver    component.Resolver
+	listener    component.PipelineComponent
+	detector    detector.Detector
+	reprocessor reprocessor.Handler
 
 	eventsC chan *central.MsgFromSensor
 	stopSig concurrency.Signal
@@ -43,6 +45,10 @@ func (p *eventPipeline) ProcessMessage(msg *central.MsgToSensor) error {
 		return p.processUpdatedImage(msg.GetUpdatedImage())
 	case msg.GetReprocessDeployments() != nil:
 		return p.processReprocessDeployments()
+	case msg.GetReprocessDeployment() != nil:
+		return p.processReprocessDeployment(msg.GetReprocessDeployment())
+	case msg.GetInvalidateImageCache() != nil:
+		return p.processInvalidateImageCache(msg.GetInvalidateImageCache())
 	}
 	return nil
 }
@@ -153,6 +159,36 @@ func (p *eventPipeline) processUpdatedImage(image *storage.Image) error {
 			component.DeploymentRefWithForceDetection(true),
 			component.DeploymentRefWithSkipResolving(true))
 		log.Debugf("Updated Image message to the Resolver: %+v", message)
+		p.resolver.Send(message)
+	}
+	return nil
+}
+
+func (p *eventPipeline) processReprocessDeployment(req *central.ReprocessDeployment) error {
+	if err := p.reprocessor.ProcessReprocessDeployments(req); err != nil {
+		return err
+	}
+	if env.ResyncDisabled.BooleanSetting() {
+		message := component.NewEvent()
+		message.AddDeploymentReference(resolver.ResolveDeploymentIds(req.GetDeploymentIds()...),
+			component.DeploymentRefWithForceDetection(true),
+			component.DeploymentRefWithSkipResolving(true))
+		log.Debugf("Reprocess message to the Resolver: %+v", message)
+		p.resolver.Send(message)
+	}
+	return nil
+}
+
+func (p *eventPipeline) processInvalidateImageCache(req *central.InvalidateImageCache) error {
+	if err := p.reprocessor.ProcessInvalidateImageCache(req); err != nil {
+		return err
+	}
+	if env.ResyncDisabled.BooleanSetting() {
+		message := component.NewEvent()
+		message.AddDeploymentReference(resolver.ResolveAllDeployments(),
+			component.DeploymentRefWithForceDetection(true),
+			component.DeploymentRefWithSkipResolving(true))
+		log.Debugf("Reprocess message to the Resolver: %+v", message)
 		p.resolver.Send(message)
 	}
 	return nil
