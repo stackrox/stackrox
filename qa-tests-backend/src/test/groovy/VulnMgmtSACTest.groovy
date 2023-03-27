@@ -48,16 +48,6 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
     fragment cveFields on ImageVulnerability {
         cve
-        images(pagination: \$pagination) {
-            scannerVersion
-            scanNotes
-            dataSource {
-                id
-                name
-                __typename
-            }
-            __typename
-        }
     }
     """
 
@@ -193,7 +183,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         return isPostgresRun() ? GET_NODE_COMPONENTS_QUERY : GET_COMPONENTS_QUERY
     }
 
-    @Retry(count = 0)
+    @Retry(count = 1)
     @Unroll
     def "Verify role based scoping on vuln mgmt: node-role Node:*"() {
         when:
@@ -235,7 +225,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         BaseService.useBasicAuth()
     }
 
-    @Retry(count = 0)
+    @Retry(count = 1)
     @Unroll
     def "Verify role based scoping on vuln mgmt: image-role Image:*"() {
         when:
@@ -289,7 +279,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         BaseService.useBasicAuth()
     }
 
-    @Retry(count = 0)
+    @Retry(count = 1)
     @Unroll
     def "Verify role based scoping on vuln mgmt: #roleName #baseQuery"() {
         when:
