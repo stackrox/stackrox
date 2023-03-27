@@ -17,6 +17,8 @@ var (
 )
 
 // Handler handles request to reprocess deployment (sent by Central).
+//
+//go:generate mockgen-wrapper
 type Handler interface {
 	common.SensorComponent
 	ProcessReprocessDeployments(*central.ReprocessDeployment) error
