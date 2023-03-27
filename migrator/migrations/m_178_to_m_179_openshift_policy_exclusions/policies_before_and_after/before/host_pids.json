@@ -18,14 +18,6 @@
           "namespace": "openshift-sdn"
         }
       }
-    },
-    {
-      "name": "Don't alert on deployment node-exporter in namespace openshift-monitoring",
-      "deployment": {
-        "scope": {
-          "namespace": "openshift-monitoring"
-        }
-      }
     }
   ],
   "severity": "MEDIUM_SEVERITY",
