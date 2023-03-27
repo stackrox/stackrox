@@ -21,7 +21,7 @@ type SarifPrinterFactory struct {
 
 	// The type of report that should be created.
 	// This is currently NOT expected to be given by the user, but rather be set by the command using the format.
-	// The values can be either printers.VulnerabilityReport or printers.PolicyReport.
+	// The values can be either printers.SarifVulnerabilityReport or printers.SarifPolicyReport.
 	reportType string
 }
 
@@ -62,9 +62,9 @@ func (s *SarifPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error
 }
 
 func (s *SarifPrinterFactory) validate() error {
-	if s.reportType != printers.VulnerabilityReport && s.reportType != printers.PolicyReport {
+	if s.reportType != printers.SarifVulnerabilityReport && s.reportType != printers.SarifPolicyReport {
 		return errox.InvariantViolation.Newf("report type must be either %s or %s, but was %s",
-			printers.VulnerabilityReport, printers.PolicyReport, s.reportType)
+			printers.SarifVulnerabilityReport, printers.SarifPolicyReport, s.reportType)
 	}
 
 	return nil

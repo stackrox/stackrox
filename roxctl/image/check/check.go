@@ -48,9 +48,9 @@ var (
 	}
 
 	sarifJSONPathExpressions = map[string]string{
-		printers.RuleJSONPathExpressionKey:        "results.#.violatedPolicies.#.name",
-		printers.DescriptionJSONPathExpressionKey: "results.#.violatedPolicies.#.description",
-		printers.HelpJSONPathExpressionKey: gjson.MultiPathExpression(
+		printers.SarifRuleJSONPathExpressionKey:        "results.#.violatedPolicies.#.name",
+		printers.SarifDescriptionJSONPathExpressionKey: "results.#.violatedPolicies.#.description",
+		printers.SarifHelpJSONPathExpressionKey: gjson.MultiPathExpression(
 			"@text",
 			gjson.Expression{
 				Key:        "Policy",
@@ -62,14 +62,14 @@ var (
 			},
 			gjson.Expression{
 				Key:        "Violations",
-				Expression: "results.#.violatedPolicies.violation.@list",
+				Expression: "results.#.violatedPolicies.#.violation.@list",
 			},
 			gjson.Expression{
 				Key:        "Remediation",
 				Expression: "results.#.violatedPolicies.#.remediation",
 			},
 		),
-		printers.SeverityJSONPathExpressionKey: "results.#.violatedPolicies.#.severity",
+		printers.SarifSeverityJSONPathExpressionKey: "results.#.violatedPolicies.#.severity",
 	}
 
 	// supported output formats with default values
@@ -85,7 +85,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	imageCheckCmd := &imageCheckCommand{env: cliEnvironment}
 
 	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", append(supportedObjectPrinters,
-		printer.NewSarifPrinterFactory(printers.PolicyReport, sarifJSONPathExpressions, &imageCheckCmd.image))...)
+		printer.NewSarifPrinterFactory(printers.SarifPolicyReport, sarifJSONPathExpressions, &imageCheckCmd.image))...)
 	// the returned error only occurs when default values do not allow the creation of any printer, this should be considered
 	// a programming error rather than a user error
 	pkgUtils.Must(err)

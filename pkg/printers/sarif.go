@@ -16,24 +16,25 @@ import (
 
 // Required JSON path expressions for the sarif printer.
 const (
-	RuleJSONPathExpressionKey        string = "rule-id"
-	DescriptionJSONPathExpressionKey string = "description"
-	HelpJSONPathExpressionKey        string = "help"
-	SeverityJSONPathExpressionKey    string = "severity"
+	SarifRuleJSONPathExpressionKey        string = "rule-id"
+	SarifDescriptionJSONPathExpressionKey string = "description"
+	SarifHelpJSONPathExpressionKey        string = "help"
+	SarifSeverityJSONPathExpressionKey    string = "severity"
+	SarifHelpLinkJSONPathExpressionKey    string = "help-link"
 )
 
 // Supported reports for the sarif printer. This will be converted into a rule name, with which you can then query
 // within the report for "types" of violations.
 const (
-	VulnerabilityReport = "Vulnerabilities"
-	PolicyReport        = "PolicyViolations"
+	SarifVulnerabilityReport = "Vulnerabilities"
+	SarifPolicyReport        = "PolicyViolations"
 )
 
 var requiredKeys = []string{
-	RuleJSONPathExpressionKey,
-	DescriptionJSONPathExpressionKey,
-	HelpJSONPathExpressionKey,
-	SeverityJSONPathExpressionKey,
+	SarifRuleJSONPathExpressionKey,
+	SarifDescriptionJSONPathExpressionKey,
+	SarifHelpJSONPathExpressionKey,
+	SarifSeverityJSONPathExpressionKey,
 }
 
 // SarifPrinter is capable of printing sarif reports from JSON objects, retrieving all relevant data for the report via
@@ -49,7 +50,7 @@ type sarifEntry struct {
 	description string
 	help        string
 	severity    string
-	message     string
+	helpLink    string
 }
 
 // NewSarifPrinter creates a printer capable of printing a sarif report.
@@ -65,10 +66,13 @@ type sarifEntry struct {
 // array of elements, since structs will provide default values if a field is missing.
 //
 // The map of JSON path expressions given MUST contain JSON path expressions for the keys:
-//   - RuleJSONPathExpressionKey, yields the rule ID to use in the sarif report (e.g. CVE-XYZ-component-version).
-//   - DescriptionJSONPathExpressionKey, yields the  description to use in the sarif report.
-//   - HelpJSONPathExpressionKey, yields the help text to use in the sarif report. This should include remediation steps.
-//   - SeverityJSONPathExpressionKey, yields the severity to use in the sarif report.
+//   - SarifRuleJSONPathExpressionKey, yields the rule ID to use in the sarif report (e.g. CVE-XYZ-component-version).
+//   - SarifDescriptionJSONPathExpressionKey, yields the  description to use in the sarif report.
+//   - SarifHelpJSONPathExpressionKey, yields the help text to use in the sarif report. This should include remediation steps.
+//   - SarifSeverityJSONPathExpressionKey, yields the severity to use in the sarif report.
+//
+// Optionally, you MAY specify the JSON path expression SarifHelpLinkJSONPathExpressionKey in case your data contains a valid
+// link for the reported violation (e.g. NVD CVE page).
 //
 // The values yielded from each JSON path expressions MUST be equal to one another, as each set of values will be used
 // to construct the report entries (result and rule).
@@ -98,10 +102,10 @@ type sarifEntry struct {
 // Example:
 //
 //	 expressions := map[string] {
-//			RuleJSONPathExpressionKey: "violations.#.id",
-//			DescriptionJSONPathExpressionKey: "violations.#.description",
-//		    HelpJSONPathExpressionKey: "violations.#.reason",
-//		    SeverityJSONPathExpressionKey: "violations.#.severity",
+//			SarifRuleJSONPathExpressionKey: "violations.#.id",
+//			SarifDescriptionJSONPathExpressionKey: "violations.#.description",
+//		    SarifHelpJSONPathExpressionKey: "violations.#.reason",
+//		    SarifSeverityJSONPathExpressionKey: "violations.#.severity",
 //		}
 //
 // For an example sarif report, see testdata/sarif_report.json.
@@ -141,11 +145,15 @@ func (s *SarifPrinter) Print(object interface{}, out io.Writer) error {
 }
 
 func addEntry(run *sarif.Run, entry sarifEntry, entity string, name string) {
-	run.AddRule(entry.ruleID).
-		WithName(name).
+	rule := run.AddRule(entry.ruleID)
+	rule.WithName(name).
 		WithShortDescription(sarif.NewMultiformatMessageString(entry.description)).
 		WithFullDescription(sarif.NewMultiformatMessageString(entry.description)).
 		WithHelp(sarif.NewMultiformatMessageString(entry.help))
+
+	if entry.helpLink != "" {
+		rule.WithHelpURI(entry.helpLink)
+	}
 
 	run.AddResult(sarif.NewRuleResult(entry.ruleID).
 		WithLevel(toSarifLevel(entry.severity)).
@@ -155,21 +163,19 @@ func addEntry(run *sarif.Run, entry sarifEntry, entity string, name string) {
 			{
 				PhysicalLocation: &sarif.PhysicalLocation{
 					ArtifactLocation: sarif.NewArtifactLocation().WithUri(entity),
-					Region: sarif.NewRegion().
-						WithStartLine(1).
-						WithStartColumn(1).
-						WithEndLine(1).
-						WithEndColumn(1),
+					Region:           sarif.NewSimpleRegion(1, 1),
 				},
 			},
 		}))
 }
 
 func sarifEntriesFromJSONObject(jsonObject interface{}, pathExpressions map[string]string) ([]sarifEntry, error) {
-	// We should receive the same amount of data for all keys.
-	if !set.NewStringSet(maputil.Keys(pathExpressions)...).Equal(set.NewStringSet(requiredKeys...)) {
-		return nil, errox.InvalidArgs.Newf("not all required JSON path expressions given, ensure JSON "+
-			"path expression are given for: [%s]", strings.Join(requiredKeys, ","))
+	pathExpr := set.NewStringSet(maputil.Keys(pathExpressions)...)
+	for _, requiredKey := range requiredKeys {
+		if !pathExpr.Contains(requiredKey) {
+			return nil, errox.InvalidArgs.Newf("not all required JSON path expressions given, ensure JSON "+
+				"path expression are given for: [%s]", strings.Join(requiredKeys, ","))
+		}
 	}
 
 	sliceMapper, err := gjson.NewSliceMapper(jsonObject, pathExpressions)
@@ -178,7 +184,7 @@ func sarifEntriesFromJSONObject(jsonObject interface{}, pathExpressions map[stri
 	}
 	data := sliceMapper.CreateSlices()
 
-	numberOfValues := len(data[RuleJSONPathExpressionKey])
+	numberOfValues := len(data[SarifRuleJSONPathExpressionKey])
 	for key, values := range data {
 		if len(values) != numberOfValues {
 			return nil, errox.InvalidArgs.Newf("the amount of values retrieved from JSON path expressions "+
@@ -188,12 +194,16 @@ func sarifEntriesFromJSONObject(jsonObject interface{}, pathExpressions map[stri
 
 	sarifEntries := make([]sarifEntry, 0, numberOfValues)
 	for i := 0; i < numberOfValues; i++ {
-		sarifEntries = append(sarifEntries, sarifEntry{
-			ruleID:      data[RuleJSONPathExpressionKey][i],
-			description: data[DescriptionJSONPathExpressionKey][i],
-			help:        data[HelpJSONPathExpressionKey][i],
-			severity:    data[SeverityJSONPathExpressionKey][i],
-		})
+		entry := sarifEntry{
+			ruleID:      data[SarifRuleJSONPathExpressionKey][i],
+			description: data[SarifDescriptionJSONPathExpressionKey][i],
+			help:        data[SarifHelpJSONPathExpressionKey][i],
+			severity:    data[SarifSeverityJSONPathExpressionKey][i],
+		}
+		if len(data[SarifHelpLinkJSONPathExpressionKey]) > 0 {
+			entry.helpLink = data[SarifHelpLinkJSONPathExpressionKey][i]
+		}
+		sarifEntries = append(sarifEntries, entry)
 	}
 	return sarifEntries, nil
 }

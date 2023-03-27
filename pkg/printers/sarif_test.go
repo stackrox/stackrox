@@ -25,9 +25,9 @@ type violation struct {
 
 func TestSarifPrinter_Print_InvalidJSONPathExpressions(t *testing.T) {
 	expressions := map[string]string{
-		RuleJSONPathExpressionKey:        "",
-		DescriptionJSONPathExpressionKey: "",
-		HelpJSONPathExpressionKey:        "",
+		SarifRuleJSONPathExpressionKey:        "",
+		SarifDescriptionJSONPathExpressionKey: "",
+		SarifHelpJSONPathExpressionKey:        "",
 	}
 
 	printer := NewSarifPrinter(expressions, "", "")
@@ -61,17 +61,17 @@ func TestSarifPrinter_Print_Success(t *testing.T) {
 	}
 
 	expressions := map[string]string{
-		RuleJSONPathExpressionKey:        "violations.#.id",
-		DescriptionJSONPathExpressionKey: "violations.#.description",
-		HelpJSONPathExpressionKey:        "violations.#.reason",
-		SeverityJSONPathExpressionKey:    "violations.#.severity",
+		SarifRuleJSONPathExpressionKey:        "violations.#.id",
+		SarifDescriptionJSONPathExpressionKey: "violations.#.description",
+		SarifHelpJSONPathExpressionKey:        "violations.#.reason",
+		SarifSeverityJSONPathExpressionKey:    "violations.#.severity",
 	}
 
 	out := strings.Builder{}
 	expectedOutput, err := os.ReadFile(path.Join("testdata", "sarif_report.json"))
 	require.NoError(t, err)
 
-	printer := NewSarifPrinter(expressions, "docker.io/nginx:1.19", PolicyReport)
+	printer := NewSarifPrinter(expressions, "docker.io/nginx:1.19", SarifPolicyReport)
 	err = printer.Print(obj, &out)
 	require.NoError(t, err)
 

@@ -44,7 +44,7 @@ var (
 
 	// JSON Path expressions to use for sarif report generation
 	sarifJSONPathExpressions = map[string]string{
-		printers.RuleJSONPathExpressionKey: gjson.MultiPathExpression(
+		printers.SarifRuleJSONPathExpressionKey: gjson.MultiPathExpression(
 			`@text:{"printKeys":"false","customSeparator":"_"}`,
 			gjson.Expression{
 				Expression: "result.vulnerabilities.#.cveId",
@@ -56,8 +56,8 @@ var (
 				Expression: "result.vulnerabilities.#.componentVersion",
 			},
 		),
-		printers.DescriptionJSONPathExpressionKey: "result.vulnerabilities.#.cveInfo",
-		printers.HelpJSONPathExpressionKey: gjson.MultiPathExpression(
+		printers.SarifDescriptionJSONPathExpressionKey: "result.vulnerabilities.#.cveInfo",
+		printers.SarifHelpJSONPathExpressionKey: gjson.MultiPathExpression(
 			"@text",
 			gjson.Expression{
 				Key:        "Vulnerability",
@@ -84,7 +84,8 @@ var (
 				Expression: "result.vulnerabilities.#.componentFixedVersion",
 			},
 		),
-		printers.SeverityJSONPathExpressionKey: "result.vulnerabilities.#.cveSeverity",
+		printers.SarifSeverityJSONPathExpressionKey: "result.vulnerabilities.#.cveSeverity",
+		printers.SarifHelpLinkJSONPathExpressionKey: "result.vulnerabilities.#.cveInfo",
 	}
 
 	// supported output formats with default values
@@ -100,7 +101,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table",
 		append(supportedObjectPrinters,
-			printer.NewSarifPrinterFactory(printers.VulnerabilityReport, sarifJSONPathExpressions, &imageScanCmd.image))...)
+			printer.NewSarifPrinterFactory(printers.SarifVulnerabilityReport, sarifJSONPathExpressions, &imageScanCmd.image))...)
 	// should not happen when using default values, must be a programming error
 	utils.Must(err)
 	// Set the Output Format to empty, so by default the new output format will not be used and the legacy one will be

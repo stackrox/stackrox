@@ -47,9 +47,9 @@ var (
 	}
 
 	sarifJSONPathExpressions = map[string]string{
-		printers.RuleJSONPathExpressionKey:        "results.#.violatedPolicies.#.name",
-		printers.DescriptionJSONPathExpressionKey: "results.#.violatedPolicies.#.description",
-		printers.HelpJSONPathExpressionKey: gjson.MultiPathExpression(
+		printers.SarifRuleJSONPathExpressionKey:        "results.#.violatedPolicies.#.name",
+		printers.SarifDescriptionJSONPathExpressionKey: "results.#.violatedPolicies.#.description",
+		printers.SarifHelpJSONPathExpressionKey: gjson.MultiPathExpression(
 			"@text",
 			gjson.Expression{
 				Key:        "Policy",
@@ -68,7 +68,7 @@ var (
 				Expression: "results.#.violatedPolicies.#.remediation",
 			},
 		),
-		printers.SeverityJSONPathExpressionKey: "results.#.violatedPolicies.#.severity",
+		printers.SarifSeverityJSONPathExpressionKey: "results.#.violatedPolicies.#.severity",
 	}
 
 	// supported output formats with default values
@@ -84,7 +84,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	deploymentCheckCmd := &deploymentCheckCommand{env: cliEnvironment}
 
 	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", append(supportedObjectPrinters,
-		printer.NewSarifPrinterFactory(printers.PolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.file))...)
+		printer.NewSarifPrinterFactory(printers.SarifPolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.file))...)
 	// this error should never occur, it would only occur if default values are invalid
 	utils.Must(err)
 

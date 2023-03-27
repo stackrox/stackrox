@@ -20,7 +20,7 @@ func TestSarifPrinterFactory_CreatePrinter(t *testing.T) {
 			factory: &SarifPrinterFactory{
 				jsonPathExpressions: map[string]string{},
 				entity:              &entityName,
-				reportType:          printers.VulnerabilityReport,
+				reportType:          printers.SarifVulnerabilityReport,
 			},
 			format: "sarif",
 		},
@@ -28,7 +28,7 @@ func TestSarifPrinterFactory_CreatePrinter(t *testing.T) {
 			factory: &SarifPrinterFactory{
 				jsonPathExpressions: map[string]string{},
 				entity:              &empty,
-				reportType:          printers.VulnerabilityReport,
+				reportType:          printers.SarifVulnerabilityReport,
 			},
 			format: "sarif",
 			err:    errox.InvalidArgs,
@@ -46,7 +46,7 @@ func TestSarifPrinterFactory_CreatePrinter(t *testing.T) {
 			factory: &SarifPrinterFactory{
 				jsonPathExpressions: map[string]string{},
 				entity:              &entityName,
-				reportType:          printers.VulnerabilityReport,
+				reportType:          printers.SarifVulnerabilityReport,
 			},
 			format: "junit",
 			err:    errox.InvalidArgs,
