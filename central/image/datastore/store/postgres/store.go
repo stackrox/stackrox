@@ -490,9 +490,10 @@ func copyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, iTime *protoTyp
 
 	var err error
 	var oldEdgeIDs set.Set[string]
+	var objsToInsert []*storage.ImageCVEEdge
 	deletes := set.NewStringSet()
 
-	// If the operation is not a force add, then collect the existing edges for the image to determine the skip upsert step later.
+	// If the operation is not a force add, then collect the existing edges for the image the skip re-inserting existing edges.
 	var imageIDs []string
 	if !forceAdd {
 		for _, obj := range objs {
@@ -503,18 +504,23 @@ func copyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, iTime *protoTyp
 		if err != nil {
 			return err
 		}
-	}
 
-	for idx, obj := range objs {
-		if forceAdd {
-			// Add the id to be deleted.
-			deletes.Add(obj.GetId())
-		} else {
+		for _, obj := range objs {
 			// Since the edge only maintains states enriched by ACS, if the edge already exists, then skip upsert.
 			if oldEdgeIDs.Remove(obj.GetId()) {
 				continue
 			}
 			obj.FirstImageOccurrence = iTime
+			objsToInsert = append(objsToInsert, obj)
+		}
+	} else {
+		objsToInsert = objs
+	}
+
+	for idx, obj := range objsToInsert {
+		if forceAdd {
+			// Add the id to be deleted.
+			deletes.Add(obj.GetId())
 		}
 
 		serialized, marshalErr := obj.Marshal()
