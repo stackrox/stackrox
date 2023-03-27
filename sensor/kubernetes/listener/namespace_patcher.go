@@ -40,11 +40,11 @@ func (h *namespacePatchHandler) OnAdd(obj interface{}) {
 	h.checkAndPatchNamespace(obj)
 }
 
-func (h *namespacePatchHandler) OnUpdate(oldObj, newObj interface{}) {
+func (h *namespacePatchHandler) OnUpdate(_, newObj interface{}) {
 	h.checkAndPatchNamespace(newObj)
 }
 
-func (h *namespacePatchHandler) OnDelete(obj interface{}) {}
+func (h *namespacePatchHandler) OnDelete(_ interface{}) {}
 
 func (h *namespacePatchHandler) checkAndPatchNamespace(obj interface{}) {
 	ns, ok := obj.(*v1.Namespace)

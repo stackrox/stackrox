@@ -54,7 +54,7 @@ func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
 	central.RegisterSensorServiceServer(server, s)
 }
 
-func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	return nil
 }
 

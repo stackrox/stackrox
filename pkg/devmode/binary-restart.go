@@ -15,12 +15,12 @@ var (
 
 type restartHandler struct{}
 
-func (r *restartHandler) OnChange(dir string) (interface{}, error) {
+func (r *restartHandler) OnChange(_ string) (interface{}, error) {
 	osutils.Restart()
 	return nil, nil
 }
 
-func (r *restartHandler) OnStableUpdate(val interface{}, err error) {}
+func (r *restartHandler) OnStableUpdate(_ interface{}, _ error) {}
 
 func (r *restartHandler) OnWatchError(err error) {
 	log.Error(err)

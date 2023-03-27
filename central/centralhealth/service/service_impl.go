@@ -51,7 +51,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetUpgradeStatus returns the upgrade status for Central.
-func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v1.GetUpgradeStatusResponse, error) {
+func (s *serviceImpl) GetUpgradeStatus(_ context.Context, _ *v1.Empty) (*v1.GetUpgradeStatusResponse, error) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		// Get Postgres config data
 		_, adminConfig, err := pgconfig.GetPostgresConfig()

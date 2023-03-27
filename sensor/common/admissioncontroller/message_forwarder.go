@@ -58,7 +58,7 @@ func (h *admCtrlMsgForwarderImpl) Capabilities() []centralsensor.SensorCapabilit
 	return nil
 }
 
-func (h *admCtrlMsgForwarderImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (h *admCtrlMsgForwarderImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 

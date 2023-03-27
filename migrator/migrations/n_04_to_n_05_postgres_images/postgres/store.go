@@ -372,7 +372,7 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.T
 	return err
 }
 
-func copyFromImageComponentCVEEdges(ctx context.Context, tx *postgres.Tx, os string, objs ...*storage.ComponentCVEEdge) error {
+func copyFromImageComponentCVEEdges(ctx context.Context, tx *postgres.Tx, _ string, objs ...*storage.ComponentCVEEdge) error {
 	inputRows := [][]interface{}{}
 
 	var err error

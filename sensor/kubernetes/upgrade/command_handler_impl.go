@@ -68,7 +68,7 @@ func (h *commandHandler) Start() error {
 	return nil
 }
 
-func (h *commandHandler) Stop(err error) {
+func (h *commandHandler) Stop(_ error) {
 	h.stopSig.Signal()
 }
 

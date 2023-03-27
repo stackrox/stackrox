@@ -24,7 +24,7 @@ type UniqueTypeInitializer interface {
 
 type zeroInitializer struct{}
 
-func (zeroInitializer) Value(ty reflect.Type, fieldPath []reflect.StructField) interface{} {
+func (zeroInitializer) Value(ty reflect.Type, _ []reflect.StructField) interface{} {
 	return reflect.Zero(ty).Interface()
 }
 
@@ -35,7 +35,7 @@ func ZeroInitializer() BasicTypeInitializer {
 
 type simpleInitializer struct{}
 
-func (simpleInitializer) Value(ty reflect.Type, fieldPath []reflect.StructField) interface{} {
+func (simpleInitializer) Value(ty reflect.Type, _ []reflect.StructField) interface{} {
 	switch ty.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return 1
@@ -53,7 +53,7 @@ func (simpleInitializer) Value(ty reflect.Type, fieldPath []reflect.StructField)
 
 type uniqueInitializer struct{}
 
-func (uniqueInitializer) Value(ty reflect.Type, fieldPath []reflect.StructField) interface{} {
+func (uniqueInitializer) Value(ty reflect.Type, _ []reflect.StructField) interface{} {
 	// seed rand
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
@@ -92,7 +92,7 @@ func UniqueInitializer() BasicTypeInitializer {
 type FieldFilter func(field reflect.StructField, ancestors []reflect.StructField) bool
 
 // JSONFieldsFilter is a field filter that includes only JSON fields.
-func JSONFieldsFilter(field reflect.StructField, ancestors []reflect.StructField) bool {
+func JSONFieldsFilter(field reflect.StructField, _ []reflect.StructField) bool {
 	if field.Name != "" && unicode.IsLower([]rune(field.Name)[0]) {
 		return false
 	}

@@ -2,18 +2,18 @@ package postgres
 
 import "github.com/stackrox/rox/generated/storage"
 
-func (b *indexerImpl) AddListAlert(listalert *storage.ListAlert) error {
+func (b *indexerImpl) AddListAlert(_ *storage.ListAlert) error {
 	return nil
 }
 
-func (b *indexerImpl) AddListAlerts(listalerts []*storage.ListAlert) error {
+func (b *indexerImpl) AddListAlerts(_ []*storage.ListAlert) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteListAlert(id string) error {
+func (b *indexerImpl) DeleteListAlert(_ string) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteListAlerts(ids []string) error {
+func (b *indexerImpl) DeleteListAlerts(_ []string) error {
 	return nil
 }

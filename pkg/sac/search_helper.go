@@ -118,7 +118,7 @@ func (h *searchHelper) executeCount(ctx context.Context, q *v1.Query, searcher b
 	return len(results), err
 }
 
-func filterDocs(ctx context.Context, resultsChecker searchResultsChecker, resourceScopeChecker ScopeChecker, results []*bleveSearchLib.DocumentMatch) ([]*bleveSearchLib.DocumentMatch, error) {
+func filterDocs(_ context.Context, resultsChecker searchResultsChecker, resourceScopeChecker ScopeChecker, results []*bleveSearchLib.DocumentMatch) ([]*bleveSearchLib.DocumentMatch, error) {
 	var allowed []*bleveSearchLib.DocumentMatch
 	for _, result := range results {
 		if resultsChecker.TryAllowed(resourceScopeChecker, result.Fields) {
@@ -129,7 +129,7 @@ func filterDocs(ctx context.Context, resultsChecker searchResultsChecker, resour
 	return allowed, nil
 }
 
-func (h *searchHelper) filterResults(ctx context.Context, resourceScopeChecker ScopeChecker, results []search.Result) ([]search.Result, error) {
+func (h *searchHelper) filterResults(_ context.Context, resourceScopeChecker ScopeChecker, results []search.Result) ([]search.Result, error) {
 	var allowed []search.Result
 	for _, result := range results {
 		if h.resultsChecker.TryAllowed(resourceScopeChecker, result.Fields) {
@@ -285,7 +285,7 @@ func (c *linkedFieldResultsChecker) BleveHook(ctx context.Context, resourceCheck
 	return mainHook.SubQueryHooks
 }
 
-func (c *linkedFieldResultsChecker) TryAllowed(resourceSC ScopeChecker, resultFields map[string]interface{}) bool {
+func (c *linkedFieldResultsChecker) TryAllowed(_ ScopeChecker, _ map[string]interface{}) bool {
 	// We allow everything, since the linked field checker is responsible for denying.
 	return true
 }

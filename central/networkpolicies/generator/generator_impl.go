@@ -188,7 +188,7 @@ func (g *generator) populateNode(elevatedCtx context.Context, id string, entityT
 	return n
 }
 
-func generatePolicy(node *node, namespacesByName map[string]*storage.NamespaceMetadata, ingressPolicies, egressPolicies map[string][]*storage.NetworkPolicy) *storage.NetworkPolicy {
+func generatePolicy(node *node, namespacesByName map[string]*storage.NamespaceMetadata, ingressPolicies, _ map[string][]*storage.NetworkPolicy) *storage.NetworkPolicy {
 	if hasMatchingPolicy(node.deployment, ingressPolicies[node.deployment.GetNamespace()]) {
 		return nil
 	}

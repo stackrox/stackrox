@@ -132,7 +132,7 @@ type imageCheckCommand struct {
 }
 
 // Construct will enhance the struct with other values coming either from os.Args, other, global flags or environment variables
-func (i *imageCheckCommand) Construct(args []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
+func (i *imageCheckCommand) Construct(_ []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	i.timeout = flags.Timeout(cmd)
 
 	// TODO: remove this once we have fully deprecated the old output format

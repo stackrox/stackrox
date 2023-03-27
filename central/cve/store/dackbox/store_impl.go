@@ -30,7 +30,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) store.Store {
 	}
 }
 
-func (b *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
+func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return false, err
@@ -45,7 +45,7 @@ func (b *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return exists, nil
 }
 
-func (b *storeImpl) Count(ctx context.Context) (int, error) {
+func (b *storeImpl) Count(_ context.Context) (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "CVE")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -62,7 +62,7 @@ func (b *storeImpl) Count(ctx context.Context) (int, error) {
 	return count, nil
 }
 
-func (b *storeImpl) Get(ctx context.Context, id string) (cve *storage.CVE, exists bool, err error) {
+func (b *storeImpl) Get(_ context.Context, id string) (cve *storage.CVE, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "CVE")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -79,7 +79,7 @@ func (b *storeImpl) Get(ctx context.Context, id string) (cve *storage.CVE, exist
 	return msg.(*storage.CVE), true, err
 }
 
-func (b *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error) {
+func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.CVE, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "CVE")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -110,7 +110,7 @@ func (b *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.CVE, 
 	return ret, missing, nil
 }
 
-func (b *storeImpl) Upsert(ctx context.Context, cves ...*storage.CVE) error {
+func (b *storeImpl) Upsert(_ context.Context, cves ...*storage.CVE) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "CVE")
 
 	keysToUpsert := make([][]byte, 0, len(cves))
@@ -155,7 +155,7 @@ func (b *storeImpl) upsertNoBatch(cves ...*storage.CVE) error {
 	return nil
 }
 
-func (b *storeImpl) Delete(ctx context.Context, ids ...string) error {
+func (b *storeImpl) Delete(_ context.Context, ids ...string) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.RemoveMany, "CVE")
 
 	keysToUpsert := make([][]byte, 0, len(ids))

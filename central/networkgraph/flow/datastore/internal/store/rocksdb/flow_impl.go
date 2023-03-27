@@ -31,7 +31,7 @@ var (
 )
 
 // GetAllFlows returns all the flows in the store.
-func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) (flows []*storage.NetworkFlow, ts *types.Timestamp, err error) {
+func (s *flowStoreImpl) GetAllFlows(_ context.Context, since *types.Timestamp) (flows []*storage.NetworkFlow, ts *types.Timestamp, err error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
 		return nil, nil, err
@@ -42,7 +42,7 @@ func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp)
 	return flows, ts, err
 }
 
-func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) (flows []*storage.NetworkFlow, ts *types.Timestamp, err error) {
+func (s *flowStoreImpl) GetMatchingFlows(_ context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) (flows []*storage.NetworkFlow, ts *types.Timestamp, err error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetMany, "NetworkFlow")
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
 		return nil, nil, err
@@ -54,7 +54,7 @@ func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage
 	return flows, ts, err
 }
 
-func (s *flowStoreImpl) GetFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error) {
+func (s *flowStoreImpl) GetFlowsForDeployment(_ context.Context, deploymentID string) ([]*storage.NetworkFlow, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetMany, "NetworkFlow")
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func (s *flowStoreImpl) GetFlowsForDeployment(ctx context.Context, deploymentID 
 }
 
 // UpsertFlows updates an flow to the store, adding it if not already present.
-func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdatedTS timestamp.MicroTS) error {
+func (s *flowStoreImpl) UpsertFlows(_ context.Context, flows []*storage.NetworkFlow, lastUpdatedTS timestamp.MicroTS) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.UpsertAll, "NetworkFlow")
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
 		return err
@@ -113,7 +113,7 @@ func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.Networ
 }
 
 // RemoveFlow removes an flow from the store if it is present.
-func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFlowProperties) error {
+func (s *flowStoreImpl) RemoveFlow(_ context.Context, props *storage.NetworkFlowProperties) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
 		return err
@@ -125,7 +125,7 @@ func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFl
 	return s.db.Delete(writeOptions, id)
 }
 
-func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
+func (s *flowStoreImpl) RemoveFlowsForDeployment(_ context.Context, id string) error {
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string)
 	return s.db.Write(writeOptions, batch)
 }
 
-func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
+func (s *flowStoreImpl) RemoveMatchingFlows(_ context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkFlow")
 
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
@@ -244,7 +244,7 @@ func (s *flowStoreImpl) readFlows(pred func(*storage.NetworkFlowProperties) bool
 
 // RemoveStaleFlows - remove stale duplicate network flows
 // Only used for Postgres, needed to satisfy the interface for the datastore.
-func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
+func (s *flowStoreImpl) RemoveStaleFlows(_ context.Context) error {
 	return nil
 }
 

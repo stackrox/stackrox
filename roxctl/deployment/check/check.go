@@ -113,7 +113,7 @@ type deploymentCheckCommand struct {
 	standardizedFormat bool
 }
 
-func (d *deploymentCheckCommand) Construct(args []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
+func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	d.timeout = flags.Timeout(cmd)
 
 	// Only create a printer if legacy json output format is not used

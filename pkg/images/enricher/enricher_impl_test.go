@@ -34,11 +34,11 @@ var (
 	emptyCtx = context.Background()
 )
 
-func emptyImageGetter(ctx context.Context, id string) (*storage.Image, bool, error) {
+func emptyImageGetter(_ context.Context, _ string) (*storage.Image, bool, error) {
 	return nil, false, nil
 }
 
-func emptySignatureIntegrationGetter(ctx context.Context) ([]*storage.SignatureIntegration, error) {
+func emptySignatureIntegrationGetter(_ context.Context) ([]*storage.SignatureIntegration, error) {
 	return nil, nil
 }
 
@@ -56,8 +56,8 @@ type fakeSigFetcher struct {
 	retryable bool
 }
 
-func (f *fakeSigFetcher) FetchSignatures(ctx context.Context, image *storage.Image, imageReference string,
-	registry types.Registry) ([]*storage.Signature, error) {
+func (f *fakeSigFetcher) FetchSignatures(_ context.Context, _ *storage.Image, _ string,
+	_ types.Registry) ([]*storage.Signature, error) {
 	if f.fail {
 		err := errors.New("some error")
 		if f.retryable {

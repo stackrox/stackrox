@@ -16,9 +16,9 @@ func newNpgLogger(l logger.Logger) *npgLogger {
 	}
 }
 
-func (nl *npgLogger) Debugf(format string, o ...interface{}) {}
+func (nl *npgLogger) Debugf(_ string, _ ...interface{}) {}
 func (nl *npgLogger) Infof(format string, o ...interface{}) {
 	nl.l.InfofLn(format, o...)
 }
-func (nl *npgLogger) Warnf(format string, o ...interface{})             {}
-func (nl *npgLogger) Errorf(err error, format string, o ...interface{}) {}
+func (nl *npgLogger) Warnf(_ string, _ ...interface{})           {}
+func (nl *npgLogger) Errorf(_ error, _ string, _ ...interface{}) {}

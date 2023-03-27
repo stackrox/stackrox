@@ -33,7 +33,7 @@ func (f *factory) CreateBackend(_ context.Context, id string, _ []string, config
 	return newBackend(audience, loginURL)
 }
 
-func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (string, string, error) {
+func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (string, string, error) {
 	if r.Method != http.MethodGet {
 		return "", "", httputil.Errorf(http.StatusMethodNotAllowed, "invalid method %q, only GET requests are allowed", r.Method)
 	}
@@ -46,7 +46,7 @@ func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (st
 	return providerID, "", nil
 }
 
-func (f *factory) ResolveProvider(state string) (providerID string, err error) {
+func (f *factory) ResolveProvider(_ string) (providerID string, err error) {
 	return "", errors.New("unimplemented")
 }
 
@@ -54,7 +54,7 @@ func (f *factory) RedactConfig(config map[string]string) map[string]string {
 	return config
 }
 
-func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]string {
+func (f *factory) MergeConfig(newCfg, _ map[string]string) map[string]string {
 	return newCfg
 }
 

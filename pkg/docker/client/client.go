@@ -106,7 +106,7 @@ type Client struct {
 // In go 1.8 this 301 will be converted to a GET request, and ends up getting a 404 from the daemon.
 // This behavior change manifests in the client in that before the 301 was not followed and
 // the client did not generate an error, but now results in a message like Error response from daemon: page not found.
-func CheckRedirect(req *http.Request, via []*http.Request) error {
+func CheckRedirect(_ *http.Request, via []*http.Request) error {
 	if via[0].Method == http.MethodGet {
 		return http.ErrUseLastResponse
 	}

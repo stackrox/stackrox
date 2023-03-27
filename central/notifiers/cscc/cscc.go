@@ -152,7 +152,7 @@ func (c *cscc) getCluster(id string, clusterDatastore clusterDatastore.DataStore
 	return cluster, nil
 }
 
-func (c *cscc) Close(ctx context.Context) error {
+func (c *cscc) Close(_ context.Context) error {
 	return nil
 }
 
@@ -179,7 +179,7 @@ func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 }
 
 // initFinding takes in an alert and generates the notification
-func (c *cscc) initFinding(ctx context.Context, alert *storage.Alert, clusterDatastore clusterDatastore.DataStore) (string, *findings.Finding, error) {
+func (c *cscc) initFinding(_ context.Context, alert *storage.Alert, clusterDatastore clusterDatastore.DataStore) (string, *findings.Finding, error) {
 	if alert.GetImage() != nil {
 		return "", nil, errors.New("CSCC integration can only handle alerts for deployments and resources")
 	}

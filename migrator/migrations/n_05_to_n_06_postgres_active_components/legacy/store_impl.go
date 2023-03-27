@@ -70,7 +70,7 @@ func (s *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.ActiveC
 	return ret, missing, nil
 }
 
-func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
+func (s *storeImpl) GetIDs(_ context.Context) ([]string, error) {
 	txn, err := s.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, err

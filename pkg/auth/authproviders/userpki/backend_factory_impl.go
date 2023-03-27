@@ -40,7 +40,7 @@ func (f *factory) CreateBackend(ctx context.Context, id string, _ []string, conf
 	return be, nil
 }
 
-func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (providerID string, clientState string, err error) {
+func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (providerID string, clientState string, err error) {
 	if r.Method != http.MethodGet {
 		return "", "", httputil.Errorf(http.StatusMethodNotAllowed, "invalid method %q, only GET requests are allowed", r.Method)
 	}
@@ -66,7 +66,7 @@ func (f *factory) RedactConfig(config map[string]string) map[string]string {
 	return config
 }
 
-func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]string {
+func (f *factory) MergeConfig(newCfg, _ map[string]string) map[string]string {
 	return newCfg
 }
 

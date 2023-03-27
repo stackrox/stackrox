@@ -29,8 +29,8 @@ type pipelineImpl struct {
 }
 
 func (s *pipelineImpl) Reconcile(
-	ctx context.Context,
-	clusterID string,
+	_ context.Context,
+	_ string,
 	_ *reconciliation.StoreMap,
 ) error {
 
@@ -45,9 +45,9 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) Run(
 	ctx context.Context,
-	clusterID string,
+	_ string,
 	msg *central.MsgFromSensor,
-	injector common.MessageInjector,
+	_ common.MessageInjector,
 ) error {
 	defer countMetrics.IncrementResourceProcessedCounter(
 		pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ProcessListeningOnPort)
@@ -75,4 +75,4 @@ func (s *pipelineImpl) Run(
 	return nil
 }
 
-func (s *pipelineImpl) OnFinish(clusterID string) {}
+func (s *pipelineImpl) OnFinish(_ string) {}

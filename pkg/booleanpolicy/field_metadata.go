@@ -101,7 +101,7 @@ func (f *FieldMetadata) IsAuditLogEventField(fieldName string) bool {
 }
 
 // findFieldMetadata searches for a policy criteria field by name and returns the field metadata
-func (f *FieldMetadata) findFieldMetadata(fieldName string, config *validateConfiguration) (*metadataAndQB, error) {
+func (f *FieldMetadata) findFieldMetadata(fieldName string, _ *validateConfiguration) (*metadataAndQB, error) {
 	field := f.fieldsToQB[fieldName]
 	if field == nil {
 		return nil, errNoSuchField

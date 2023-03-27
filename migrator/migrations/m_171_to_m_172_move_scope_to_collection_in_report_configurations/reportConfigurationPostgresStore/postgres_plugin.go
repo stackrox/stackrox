@@ -65,7 +65,7 @@ func New(db *postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoReportConfigurations(ctx context.Context, batch *pgx.Batch, obj *storage.ReportConfiguration) error {
+func insertIntoReportConfigurations(_ context.Context, batch *pgx.Batch, obj *storage.ReportConfiguration) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -157,7 +157,7 @@ func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx *postgr
 	return err
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*postgres.Conn, func(), error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
