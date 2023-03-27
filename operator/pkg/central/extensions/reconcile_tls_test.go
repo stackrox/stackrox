@@ -263,11 +263,10 @@ func TestCreateCentralTLS(t *testing.T) {
 func gettingSecretFails(secretName string) testutils.InterceptorFns {
 	return testutils.InterceptorFns{
 		Get: func(ctx context.Context, client ctrlClient.WithWatch, key ctrlClient.ObjectKey, obj ctrlClient.Object, opts ...ctrlClient.GetOption) error {
-			_, ok := obj.(*v1.Secret)
-			if !ok || key.Name != secretName {
-				return client.Get(ctx, key, obj, opts...)
+			if _, ok := obj.(*v1.Secret); ok && key.Name == secretName {
+				return k8sErrors.NewServiceUnavailable("failure")
 			}
-			return k8sErrors.NewServiceUnavailable("failure")
+			return client.Get(ctx, key, obj, opts...)
 		},
 	}
 }
@@ -275,11 +274,10 @@ func gettingSecretFails(secretName string) testutils.InterceptorFns {
 func creatingSecretFails(secretName string) testutils.InterceptorFns {
 	return testutils.InterceptorFns{
 		Create: func(ctx context.Context, client ctrlClient.WithWatch, obj ctrlClient.Object, opts ...ctrlClient.CreateOption) error {
-			secret, ok := obj.(*v1.Secret)
-			if !ok || secret.Name != secretName {
-				return client.Create(ctx, obj, opts...)
+			if secret, ok := obj.(*v1.Secret); ok && secret.Name == secretName {
+				return k8sErrors.NewServiceUnavailable("failure")
 			}
-			return k8sErrors.NewServiceUnavailable("failure")
+			return client.Create(ctx, obj, opts...)
 		},
 	}
 }
@@ -287,21 +285,22 @@ func creatingSecretFails(secretName string) testutils.InterceptorFns {
 func deletingSecretFails(secretName string) testutils.InterceptorFns {
 	return testutils.InterceptorFns{
 		Delete: func(ctx context.Context, client ctrlClient.WithWatch, obj ctrlClient.Object, opts ...ctrlClient.DeleteOption) error {
-			secret, ok := obj.(*v1.Secret)
-			if !ok || secret.Name != secretName {
-				return client.Delete(ctx, obj, opts...)
+			if secret, ok := obj.(*v1.Secret); ok && secret.Name == secretName {
+				return k8sErrors.NewServiceUnavailable("failure")
 			}
-			return k8sErrors.NewServiceUnavailable("failure")
+			return client.Delete(ctx, obj, opts...)
 		},
 	}
 }
 func secretIsAlreadyDeleted(secretName string) testutils.InterceptorFns {
 	return testutils.InterceptorFns{
 		Delete: func(ctx context.Context, client ctrlClient.WithWatch, obj ctrlClient.Object, opts ...ctrlClient.DeleteOption) error {
-			secret, ok := obj.(*v1.Secret)
-			shouldReturn404 := ok && secret.Name == secretName
+			// To simulate that the secret was already deleted, this intercepted
+			// call will actually delete the secret by calling the underlying client,
+			// but it will return a 404 error. Useful for testing the cases where
+			// some object was already deleted.
 			err := client.Delete(ctx, obj, opts...)
-			if shouldReturn404 {
+			if secret, ok := obj.(*v1.Secret); ok && secret.Name == secretName {
 				return k8sErrors.NewNotFound(v1.SchemeGroupVersion.WithResource("secrets").GroupResource(), secretName)
 			}
 			return err
@@ -388,7 +387,7 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 			return nil, errors.New("could not generate serial number")
 		}
 		req := csr.CertificateRequest{
-			CN:           "Planet Express",
+			CN:           "SomeCommonNameThatIsNotACS",
 			KeyRequest:   csr.NewKeyRequest(),
 			SerialNumber: serial.String(),
 		}
@@ -565,7 +564,7 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 				assert.NoError(t, err)
 			},
 		},
-		// TODO: Discuss tests around ca/service cert expiration, as well as "NotBefore".
+		// TODO(ROX-16206) Discuss tests around ca/service cert expiration, as well as "NotBefore".
 		// Currently these verifications are only done for the init bundle secret reconciliation,
 		// which has been disabled anyways. We also currently ignore CRLs and OCSPs.
 	}
@@ -705,7 +704,7 @@ func Test_createCentralTLSExtensionRun_validateServiceTLSData(t *testing.T) {
 					},
 				},
 				"should not fail if the ca key is missing from the file map": {
-					// TODO: Confirm that this behavior is correct.
+					// TODO(ROX-16206): Confirm that this behavior is correct.
 					ca: ca1,
 					fileMap: types.SecretDataMap{
 						mtls.CACertFileName:      ca1.CertPEM(),
@@ -728,7 +727,7 @@ func Test_createCentralTLSExtensionRun_validateServiceTLSData(t *testing.T) {
 						assert.NoError(t, err)
 					},
 				},
-				// TODO: Discuss tests around ca/service cert expiration, as well as "NotBefore"
+				// TODO(ROX-16206): Discuss tests around ca/service cert expiration, as well as "NotBefore"
 			}
 
 			for name, tt := range cases {
