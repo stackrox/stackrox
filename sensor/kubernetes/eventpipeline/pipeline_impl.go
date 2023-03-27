@@ -117,7 +117,9 @@ func (p *eventPipeline) processReassessPolicies() error {
 	}
 	if env.ResyncDisabled.BooleanSetting() {
 		message := component.NewEvent()
-		message.AddDeploymentReference(resolver.ResolveAllDeployments(), central.ResourceAction_UPDATE_RESOURCE, true, true)
+		message.AddDeploymentReference(resolver.ResolveAllDeployments(),
+			component.DeploymentRefWithForceDetection(true),
+			component.DeploymentRefWithSkipResolving(true))
 		log.Debugf("Reassess message to the Resolver: %+v", message)
 		p.resolver.Send(message)
 	}
@@ -131,7 +133,9 @@ func (p *eventPipeline) processReprocessDeployments() error {
 	}
 	if env.ResyncDisabled.BooleanSetting() {
 		message := component.NewEvent()
-		message.AddDeploymentReference(resolver.ResolveAllDeployments(), central.ResourceAction_UPDATE_RESOURCE, true, true)
+		message.AddDeploymentReference(resolver.ResolveAllDeployments(),
+			component.DeploymentRefWithForceDetection(true),
+			component.DeploymentRefWithSkipResolving(true))
 		log.Debugf("Reprocess message to the Resolver: %+v", message)
 		p.resolver.Send(message)
 	}
@@ -145,7 +149,9 @@ func (p *eventPipeline) processUpdatedImage(image *storage.Image) error {
 	}
 	if env.ResyncDisabled.BooleanSetting() {
 		message := component.NewEvent()
-		message.AddDeploymentReference(resolver.ResolveDeploymentsByImage(image), central.ResourceAction_UPDATE_RESOURCE, true, true)
+		message.AddDeploymentReference(resolver.ResolveDeploymentsByImage(image),
+			component.DeploymentRefWithForceDetection(true),
+			component.DeploymentRefWithSkipResolving(true))
 		log.Debugf("Updated Image message to the Resolver: %+v", message)
 		p.resolver.Send(message)
 	}

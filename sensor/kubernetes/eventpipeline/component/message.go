@@ -77,14 +77,47 @@ func (e *ResourceEvent) AddDeploymentForReprocessing(ids ...string) *ResourceEve
 	return e
 }
 
-// AddDeploymentReference creates and sets a new deployment reference to this resource event.
-func (e *ResourceEvent) AddDeploymentReference(reference resolver.DeploymentReference, action central.ResourceAction, force bool, skipResolving bool) {
-	e.DeploymentReferences = append(e.DeploymentReferences, DeploymentReference{
+// DeploymentReferenceOption option function for the DeploymentReference struct
+type DeploymentReferenceOption func(*DeploymentReference)
+
+// DeploymentRefWithParentResourceAction sets the ParentResourceAction
+func DeploymentRefWithParentResourceAction(action central.ResourceAction) DeploymentReferenceOption {
+	return func(dr *DeploymentReference) {
+		dr.ParentResourceAction = action
+	}
+}
+
+// DeploymentRefWithForceDetection sets whether the detection should be forced or not
+func DeploymentRefWithForceDetection(force bool) DeploymentReferenceOption {
+	return func(dr *DeploymentReference) {
+		dr.ForceDetection = force
+	}
+}
+
+// DeploymentRefWithSkipResolving sets whether the deployment should be resolved or not
+func DeploymentRefWithSkipResolving(skip bool) DeploymentReferenceOption {
+	return func(dr *DeploymentReference) {
+		dr.SkipResolving = skip
+	}
+}
+
+// newDeploymentReference creates a new deployment reference and applies all the DeploymentReferenceOptions
+func newDeploymentReference(reference resolver.DeploymentReference, options ...DeploymentReferenceOption) DeploymentReference {
+	deploymentReference := DeploymentReference{
 		Reference:            reference,
-		ParentResourceAction: action,
-		ForceDetection:       force,
-		SkipResolving:        skipResolving,
-	})
+		ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
+		ForceDetection:       false,
+		SkipResolving:        false,
+	}
+	for _, o := range options {
+		o(&deploymentReference)
+	}
+	return deploymentReference
+}
+
+// AddDeploymentReference creates and sets a new deployment reference to this resource event.
+func (e *ResourceEvent) AddDeploymentReference(reference resolver.DeploymentReference, options ...DeploymentReferenceOption) {
+	e.DeploymentReferences = append(e.DeploymentReferences, newDeploymentReference(reference, options...))
 }
 
 // MergeResourceEvent appends properties from `ev` into resource event message, without updating resource timing.
