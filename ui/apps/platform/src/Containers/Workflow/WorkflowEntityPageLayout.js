@@ -65,7 +65,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
     const sidePanelPaging = workflowState.paging[pagingParams.sidePanel];
 
     function customCsvExportHandler(fileName) {
-        return exportCvesAsCsv(fileName, workflowState);
+        return exportCvesAsCsv(fileName, workflowState, pageListType);
     }
 
     const [fadeIn, setFadeIn] = useState(false);
