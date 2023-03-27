@@ -198,13 +198,31 @@ func sarifEntriesFromJSONObject(jsonObject interface{}, pathExpressions map[stri
 	return sarifEntries, nil
 }
 
+// All our supported severities. We have different severities for policy violations and CVE violations, and the sarif
+// report printer shall be capable of handling both.
+var (
+	criticalVulnSeverity  = strings.TrimSuffix(storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String(), "_VULNERABILITY_SEVERITY")
+	importantVulnSeverity = strings.TrimSuffix(storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY.String(), "_VULNERABILITY_SEVERITY")
+	moderateVulnSeverity  = strings.TrimSuffix(storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY.String(), "_VULNERABILITY_SEVERITY")
+	lowVulnSeverity       = strings.TrimSuffix(storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY.String(), "_VULNERABILITY_SEVERITY")
+
+	criticalPolicySeverity = strings.TrimSuffix(storage.Severity_CRITICAL_SEVERITY.String(), "_SEVERITY")
+	highPolicySeverity     = strings.TrimSuffix(storage.Severity_HIGH_SEVERITY.String(), "_SEVERITY")
+	mediumPolicySeverity   = strings.TrimSuffix(storage.Severity_MEDIUM_SEVERITY.String(), "_SEVERITY")
+	lowPolicySeverity      = strings.TrimSuffix(storage.Severity_LOW_SEVERITY.String(), "_SEVERITY")
+)
+
 func toSarifLevel(severity string) string {
+	// While this shouldn't be the case, let's be on the safe side and strip the enum suffix.
+	severity = strings.TrimSuffix(severity, "_VULNERABILITY_SEVERITY")
+	severity = strings.TrimSuffix(severity, "_SEVERITY")
+
 	switch severity {
-	case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String():
+	case criticalVulnSeverity, criticalPolicySeverity, importantVulnSeverity, highPolicySeverity:
 		return "error"
-	case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY.String():
+	case moderateVulnSeverity, mediumPolicySeverity:
 		return "warning"
-	case storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY.String(), storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY.String():
+	case lowVulnSeverity, lowPolicySeverity:
 		return "note"
 	default:
 		return "none"

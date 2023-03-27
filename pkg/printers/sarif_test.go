@@ -43,7 +43,7 @@ func TestSarifPrinter_Print_Success(t *testing.T) {
 				ID:          "first-violation",
 				Description: "something about violation one",
 				Reason:      "something about misconfiguration",
-				Severity:    "HIGH",
+				Severity:    "IMPORTANT",
 			},
 			{
 				ID:          "second-violation",

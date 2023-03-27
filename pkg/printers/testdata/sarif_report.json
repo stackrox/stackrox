@@ -56,7 +56,7 @@
         {
           "ruleId": "first-violation",
           "ruleIndex": 0,
-          "level": "none",
+          "level": "error",
           "message": {
             "text": "something about misconfiguration"
           },
@@ -79,7 +79,7 @@
         {
           "ruleId": "second-violation",
           "ruleIndex": 1,
-          "level": "none",
+          "level": "note",
           "message": {
             "text": "something about vulnerabilities"
           },
@@ -102,7 +102,7 @@
         {
           "ruleId": "third-violation",
           "ruleIndex": 2,
-          "level": "none",
+          "level": "error",
           "message": {
             "text": "something about secrets"
           },
