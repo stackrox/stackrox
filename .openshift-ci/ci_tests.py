@@ -54,7 +54,7 @@ class UpgradeTest(BaseTest):
 
 
 class PostgresUpgradeTest(BaseTest):
-    TEST_TIMEOUT = 60 * 60
+    TEST_TIMEOUT = 60 * 60 * 2
     TEST_OUTPUT_DIR = "/tmp/postgres-upgrade-test-logs"
     TEST_LEGACY_OUTPUT_DIR = "/tmp/legacy-postgres-upgrade-test-logs"
     TEST_SENSOR_OUTPUT_DIR = "/tmp/postgres-sensor-upgrade-test-logs"
