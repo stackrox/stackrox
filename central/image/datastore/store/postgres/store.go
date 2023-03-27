@@ -538,7 +538,7 @@ func copyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, iTime *protoTyp
 		})
 
 		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+		if (idx+1)%batchSize == 0 || idx == len(objsToInsert)-1 {
 			if forceAdd {
 				// Copy does not upsert so have to delete first.
 				_, err = tx.Exec(ctx, "DELETE FROM "+imageCVEEdgesTable+" WHERE id = ANY($1::text[])", deletes.AsSlice())
