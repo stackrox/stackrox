@@ -16,6 +16,8 @@ import io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope
 import io.stackrox.proto.storage.RoleOuterClass.Role
 import io.stackrox.proto.storage.TraitsOuterClass.Traits
 
+import util.Env
+
 import services.AuthProviderService
 import services.GroupService
 import services.IntegrationHealthService
