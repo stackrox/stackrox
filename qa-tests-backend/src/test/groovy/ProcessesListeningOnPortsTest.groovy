@@ -253,8 +253,8 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         def endpoint = list.find { it.endpoint.port == 8082 }
 
         assert endpoint
-        assert endpoint2.deploymentId
-        assert endpoint2.podId
+        assert endpoint.deploymentId
+        assert endpoint.podId
         assert endpoint.signal.name == "socat"
         assert endpoint.signal.execFilePath == "/usr/bin/socat"
         assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8082,fork STDOUT"
@@ -296,8 +296,8 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         def endpoint = list.find { it.endpoint.port == 8081 }
 
         assert endpoint
-        assert endpoint2.deploymentId
-        assert endpoint2.podId
+        assert endpoint.deploymentId
+        assert endpoint.podId
         assert endpoint.signal.name == "socat"
         assert endpoint.signal.execFilePath == "/usr/bin/socat"
         assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
