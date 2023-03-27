@@ -55,6 +55,7 @@ func init() {
 		PostgresToastSize,
 		PostgresDBSize,
 		PostgresTotalSize,
+		PostgresRemainingCapacity,
 		PostgresConnected,
 		PostgresTotalConnections,
 		PostgresMaximumConnections,
@@ -199,6 +200,13 @@ var (
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_total_size_bytes",
 		Help:      "bytes being used by Postgres all Databases",
+	})
+
+	PostgresRemainingCapacity = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_available_size_bytes",
+		Help:      "remaining bytes available for Postgres",
 	})
 
 	PostgresConnected = prometheus.NewGauge(prometheus.GaugeOpts{

@@ -7,6 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
@@ -237,6 +238,17 @@ func CollectPostgresDatabaseStats(postgresConfig *postgres.Config) {
 		return
 	}
 	metrics.PostgresTotalSize.Set(float64(totalSize))
+
+	// Check Postgres remaining capacity
+	if !env.ManagedCentral.BooleanSetting() {
+		availableDBBytes, err := pgadmin.GetRemainingCapacity(postgresConfig)
+		if err != nil {
+			log.Errorf("error fetching remaining database storage: %v", err)
+			return
+		}
+
+		metrics.PostgresRemainingCapacity.Set(float64(availableDBBytes))
+	}
 }
 
 // CollectPostgresConnectionStats -- collect connection stats for Postgres
