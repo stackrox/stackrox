@@ -3,7 +3,8 @@ import qs from 'qs';
 import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
-import { ensureExhaustive, ValueOf } from 'utils/type.utils';
+import { searchValueAsArray } from 'utils/searchUtils';
+import { ensureExhaustive } from 'utils/type.utils';
 
 import { CveStatusTab, isValidCveStatusTab, QuerySearchFilter } from './types';
 
@@ -38,23 +39,6 @@ export function getEntityPagePath(workloadCveEntity: EntityTab, id: string): str
         default:
             return ensureExhaustive(workloadCveEntity);
     }
-}
-
-/**
- * Coerces a search filter value obtained from the URL into an array of strings.
- *
- * Array values will be returned unchanged.
- * String values will return an array of length one.
- * undefined values will return an empty array.
- */
-export function searchValueAsArray(searchValue: ValueOf<SearchFilter>): string[] {
-    if (!searchValue) {
-        return [];
-    }
-    if (Array.isArray(searchValue)) {
-        return searchValue;
-    }
-    return [searchValue];
 }
 
 /**
