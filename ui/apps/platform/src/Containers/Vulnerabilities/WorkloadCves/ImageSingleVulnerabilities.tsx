@@ -25,13 +25,15 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import BySeveritySummaryCard from './SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from './SummaryCards/CvesByStatusSummaryCard';
 import SingleEntityVulnerabilitiesTable from './Tables/SingleEntityVulnerabilitiesTable';
 import useImageVulnerabilities from './hooks/useImageVulnerabilities';
 import { DynamicTableLabel } from './DynamicIcon';
-import ErrorSection from './ErrorSection';
 import { parseQuerySearchFilter } from './searchUtils';
 import { QuerySearchFilter, FixableStatus, cveStatusTabValues } from './types';
 
@@ -97,7 +99,18 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
     const vulnerabilityData = data ?? previousData;
 
     if (error) {
-        mainContent = <ErrorSection error={error}>Adjust your filters and try again</ErrorSection>;
+        mainContent = (
+            <Bullseye>
+                <EmptyStateTemplate
+                    headingLevel="h2"
+                    title={getAxiosErrorMessage(error)}
+                    icon={ExclamationCircleIcon}
+                    iconClassName="pf-u-danger-color-100"
+                >
+                    Adjust your filters and try again
+                </EmptyStateTemplate>
+            </Bullseye>
+        );
     } else if (loading && !vulnerabilityData) {
         mainContent = (
             <Bullseye>

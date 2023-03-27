@@ -1,16 +1,25 @@
 import React from 'react';
 import { gql, useQuery } from '@apollo/client';
-import { Breadcrumb, BreadcrumbItem, Divider, PageSection, Skeleton } from '@patternfly/react-core';
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    Bullseye,
+    Divider,
+    PageSection,
+    Skeleton,
+} from '@patternfly/react-core';
 import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import { ExclamationCircleIcon } from '@patternfly/react-icons';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getOverviewCvesPath } from './searchUtils';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import ImageCvePageHeader, {
     ImageCveMetadata,
     imageCveMetadataFragment,
 } from './ImageCvePageHeader';
-import ErrorSection from './ErrorSection';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
@@ -52,9 +61,16 @@ function ImageCvePage() {
             <Divider component="div" />
             <PageSection variant="light">
                 {metadataRequest.error ? (
-                    <ErrorSection error={metadataRequest.error}>
-                        The system was unable to load metadata for this CVE
-                    </ErrorSection>
+                    <Bullseye>
+                        <EmptyStateTemplate
+                            headingLevel="h2"
+                            icon={ExclamationCircleIcon}
+                            iconClassName="pf-u-danger-color-100"
+                            title={getAxiosErrorMessage(metadataRequest.error)}
+                        >
+                            The system was unable to load metadata for this CVE
+                        </EmptyStateTemplate>
+                    </Bullseye>
                 ) : (
                     // Don't check the loading state here, since if the passed `data` is `undefined` we
                     // will implicitly handle the loading state in the component
