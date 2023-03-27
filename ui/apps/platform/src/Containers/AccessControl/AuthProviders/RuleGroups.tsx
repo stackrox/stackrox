@@ -174,7 +174,7 @@ function RuleGroups({
                                     </FlexItem>
                                 ) : (
                                     <FlexItem>
-                                        <Tooltip content="This rule is managed declaratively and cannot be edited.">
+                                        <Tooltip content="This rule is managed declaratively and can only be edited declaratively.">
                                             <Button
                                                 variant="plain"
                                                 aria-label="Information button"
