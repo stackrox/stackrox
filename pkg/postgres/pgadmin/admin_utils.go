@@ -296,7 +296,7 @@ func getAvailablePostgresCapacity(postgresConfig *postgres.Config) (int64, error
 	// Connect to database for admin functions
 	connectPool, err := GetAdminPool(postgresConfig)
 	if err != nil {
-		return pgconfig.GetPostgresCapacity(), nil
+		return 0, err
 	}
 	// Close the admin connection pool
 	defer connectPool.Close()
@@ -401,14 +401,6 @@ func GetRemainingCapacity(postgresConfig *postgres.Config) (int64, error) {
 		// Cannot get managed services capacity via Postgres.  Assume size for now.
 		return pgconfig.GetPostgresCapacity(), nil
 	}
-
-	// Connect to database for admin functions
-	connectPool, err := GetAdminPool(postgresConfig)
-	if err != nil {
-		return pgconfig.GetPostgresCapacity(), nil
-	}
-	// Close the admin connection pool
-	defer connectPool.Close()
 
 	sizeUsed, err := GetTotalPostgresSize(postgresConfig)
 	if err != nil {

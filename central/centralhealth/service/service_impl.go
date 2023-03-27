@@ -92,7 +92,7 @@ func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v
 				// Get a short-lived connection for the purposes of checking the version of the previous clone.
 				pool, err := pgadmin.GetClonePool(adminConfig, migrations.GetPreviousClone())
 				if err != nil {
-					return nil, errors.Wrapf(err, "Failed to retrieve previous database version.  %v", err)
+					return nil, errors.Wrap(err, "Failed to retrieve previous database version.")
 				}
 				defer pool.Close()
 

@@ -189,6 +189,9 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 			exists, err := d.databaseExists(TempClone)
 			if err != nil {
 				log.Errorf("Unable to create temp clone, will use current clone: %v", err)
+				// If we had an issue checking whether "temp" exists we will proceed with the CurrentClone.
+				// Essentially we treat this the same as if we could not create "temp" and proceed with
+				// the migration.
 				return CurrentClone, false, nil
 			}
 			if !exists {
