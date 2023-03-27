@@ -58,13 +58,10 @@ func IsTransientError(err error) bool {
 	if errorhelpers.IsAny(err, pgx.ErrNoRows, pgx.ErrTxClosed, pgx.ErrTxCommitRollback) {
 		return false
 	}
-	if netErr := (*net.OpError)(nil); errors.As(err, &netErr) {
-		if netErr.Temporary() || netErr.Timeout() {
-			return true
-		}
-		return errorhelpers.IsAny(err, syscall.ECONNREFUSED, syscall.ECONNRESET, syscall.ECONNABORTED, syscall.EPIPE)
+	if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+		return true
 	}
-	return errorhelpers.IsAny(err, io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe)
+	return errorhelpers.IsAny(err, io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe, syscall.ECONNREFUSED, syscall.ECONNRESET, syscall.ECONNABORTED, syscall.EPIPE)
 }
 
 const (
