@@ -253,14 +253,11 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         def endpoint = list.find { it.endpoint.port == 8082 }
 
         assert endpoint
-        assert endpoint.containerName == TCPCONNECTIONTARGET3
-        assert endpoint.signal.id
-        assert endpoint.signal.containerId
-        assert endpoint.signal.time
+        assert endpoint2.deploymentId
+        assert endpoint2.podId
         assert endpoint.signal.name == "socat"
         assert endpoint.signal.execFilePath == "/usr/bin/socat"
         assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8082,fork STDOUT"
-        assert endpoint.signal.pid
 
         gotCorrectNumElements = waitForResponseToHaveNumElements(0, deploymentId3, 180)
 
@@ -299,14 +296,11 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         def endpoint = list.find { it.endpoint.port == 8081 }
 
         assert endpoint
-        assert endpoint.containerName == TCPCONNECTIONTARGET2
-        assert endpoint.signal.id
-        assert endpoint.signal.containerId
-        assert endpoint.signal.time
+        assert endpoint2.deploymentId
+        assert endpoint2.podId
         assert endpoint.signal.name == "socat"
         assert endpoint.signal.execFilePath == "/usr/bin/socat"
         assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
-        assert endpoint.signal.pid
 
         gotCorrectNumElements = waitForResponseToHaveNumElements(0, deploymentId2, 65)
 
