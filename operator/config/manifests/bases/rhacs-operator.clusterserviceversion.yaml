@@ -500,10 +500,11 @@ spec:
           collecting process and networking activity at the host level.
         displayName: Collector Settings
         path: perNode.collector
-      - description: The method for system-level data collection. Kernel module is
-          recommended. If you select "NoCollection", you will not be able to see any
-          information about network activity and process executions. The remaining
-          settings in these section will not have any effect.
+      - description: The method for system-level data collection. EBPF is recommended.
+          KernelModule is deprecated and will be removed in the 4.1 release. If you
+          select "NoCollection", you will not be able to see any information about
+          network activity and process executions. The remaining settings in these
+          section will not have any effect.
         displayName: Collection
         path: perNode.collector.collection
       - description: Controls the number of analyzer replicas and autoscaling.
