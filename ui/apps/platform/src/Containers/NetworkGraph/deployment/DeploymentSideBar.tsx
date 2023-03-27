@@ -133,6 +133,7 @@ function DeploymentSideBar({
                                 component={TextVariants.h1}
                                 className="pf-u-font-size-xl pf-u-max-width"
                                 style={sidebarHeadingStyleConstant}
+                                data-testid="drawer-title"
                             >
                                 {deployment?.name}
                             </Text>
@@ -141,6 +142,7 @@ function DeploymentSideBar({
                             <Text
                                 component={TextVariants.h2}
                                 className="pf-u-font-size-sm pf-u-color-200"
+                                data-testid="drawer-subtitle"
                             >
                                 in &quot;{deployment?.clusterName} / {deployment?.namespace}&quot;
                             </Text>
