@@ -9,10 +9,15 @@ import (
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Interceptor is a client that intercepts calls to the underlying client and
+// calls the provided functions instead. If the function is nil, the call is
+// forwarded to the underlying client.
 func Interceptor(client ctrlClient.WithWatch, fns InterceptorFns) ctrlClient.WithWatch {
 	return interceptor{client: client, fns: fns}
 }
 
+// InterceptorFns contains functions that are called instead of the underlying
+// client's methods.
 type InterceptorFns struct {
 	Get         func(ctx context.Context, client ctrlClient.WithWatch, key ctrlClient.ObjectKey, obj ctrlClient.Object, opts ...ctrlClient.GetOption) error
 	List        func(ctx context.Context, client ctrlClient.WithWatch, list ctrlClient.ObjectList, opts ...ctrlClient.ListOption) error

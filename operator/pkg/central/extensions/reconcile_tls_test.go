@@ -161,87 +161,87 @@ func TestCreateCentralTLS(t *testing.T) {
 		},
 		"When creating a new central-tls secret fails, an error should be returned": {
 			Spec:                   basicSpecWithScanner(false),
-			InterceptedK8sApiCalls: creatingSecretFails("central-tls"),
+			InterceptedK8sAPICalls: creatingSecretFails("central-tls"),
 			ExpectedError:          "reconciling central-tls secret",
 		},
 		"When creating a new central-db-tls secret fails, an error should be returned": {
 			Spec:                   basicSpecWithScanner(false),
-			InterceptedK8sApiCalls: creatingSecretFails("central-db-tls"),
+			InterceptedK8sAPICalls: creatingSecretFails("central-db-tls"),
 			ExpectedError:          "reconciling central-db-tls secret",
 		},
 		"When creating a new scanner-tls secret fails, an error should be returned": {
 			Spec:                   basicSpecWithScanner(true),
-			InterceptedK8sApiCalls: creatingSecretFails("scanner-tls"),
+			InterceptedK8sAPICalls: creatingSecretFails("scanner-tls"),
 			ExpectedError:          "reconciling scanner-tls secret",
 		},
 		"When creating a new scanner-db-tls secret fails, an error should be returned": {
 			Spec:                   basicSpecWithScanner(true),
-			InterceptedK8sApiCalls: creatingSecretFails("scanner-db-tls"),
+			InterceptedK8sAPICalls: creatingSecretFails("scanner-db-tls"),
 			ExpectedError:          "reconciling scanner-db-tls secret",
 		},
 		"When getting an existing central-tls secret fails with a non-404 error, an error should be returned": {
 			Spec:                   basicSpecWithScanner(false),
-			InterceptedK8sApiCalls: gettingSecretFails("central-tls"),
+			InterceptedK8sAPICalls: gettingSecretFails("central-tls"),
 			ExpectedError:          "reconciling central-tls secret",
 		},
 		"When getting an existing central-db-tls secret fails with a non-404 error, an error should be returned": {
 			Spec:                   basicSpecWithScanner(false),
-			InterceptedK8sApiCalls: gettingSecretFails("central-db-tls"),
+			InterceptedK8sAPICalls: gettingSecretFails("central-db-tls"),
 			ExpectedError:          "reconciling central-db-tls secret",
 		},
 		"When getting an existing scanner-tls secret fails with a non-404 error, an error should be returned": {
 			Spec:                   basicSpecWithScanner(true),
-			InterceptedK8sApiCalls: gettingSecretFails("scanner-tls"),
+			InterceptedK8sAPICalls: gettingSecretFails("scanner-tls"),
 			ExpectedError:          "reconciling scanner-tls secret",
 		},
 		"When getting an existing scanner-db-tls secret fails with a non-404 error, an error should be returned": {
 			Spec:                   basicSpecWithScanner(true),
-			InterceptedK8sApiCalls: gettingSecretFails("scanner-db-tls"),
+			InterceptedK8sAPICalls: gettingSecretFails("scanner-db-tls"),
 			ExpectedError:          "reconciling scanner-db-tls secret",
 		},
 		"When deleting an existing central-tls secret fails, an error should be returned": {
 			Deleted:                true,
 			ExistingManaged:        []*v1.Secret{existingCentral},
-			InterceptedK8sApiCalls: deletingSecretFails("central-tls"),
+			InterceptedK8sAPICalls: deletingSecretFails("central-tls"),
 			ExpectedError:          "reconciling central-tls secret",
 		},
 		"When deleting an existing central-tls secret fails with a 404, an error should not be returned because the secret is likely to be already deleted": {
 			Deleted:                true,
 			ExistingManaged:        []*v1.Secret{existingCentral},
-			InterceptedK8sApiCalls: secretIsAlreadyDeleted("central-tls"),
+			InterceptedK8sAPICalls: secretIsAlreadyDeleted("central-tls"),
 		},
 		"When deleting an existing central-db-tls secret fails, an error should be returned": {
 			Deleted:                true,
 			ExistingManaged:        []*v1.Secret{existingCentralDB},
-			InterceptedK8sApiCalls: deletingSecretFails("central-db-tls"),
+			InterceptedK8sAPICalls: deletingSecretFails("central-db-tls"),
 			ExpectedError:          "reconciling central-db-tls secret",
 		},
 		"When deleting an existing central-db-tls secret fails with a 404, an error should not be returned because the secret is likely to be already deleted": {
 			Deleted:                true,
 			ExistingManaged:        []*v1.Secret{existingCentralDB},
-			InterceptedK8sApiCalls: secretIsAlreadyDeleted("central-db-tls"),
+			InterceptedK8sAPICalls: secretIsAlreadyDeleted("central-db-tls"),
 		},
 		"When deleting an existing scanner-tls secret fails, an error should be returned": {
 			Deleted:                true,
 			ExistingManaged:        []*v1.Secret{existingScanner},
-			InterceptedK8sApiCalls: deletingSecretFails("scanner-tls"),
+			InterceptedK8sAPICalls: deletingSecretFails("scanner-tls"),
 			ExpectedError:          "reconciling scanner-tls secret",
 		},
 		"When deleting an existing scanner-tls secret fails with a 404, an error should not be returned because the secret is likely to be already deleted": {
 			Deleted:                true,
 			ExistingManaged:        []*v1.Secret{existingScanner},
-			InterceptedK8sApiCalls: secretIsAlreadyDeleted("scanner-tls"),
+			InterceptedK8sAPICalls: secretIsAlreadyDeleted("scanner-tls"),
 		},
 		"When deleting an existing scanner-db-tls secret fails, an error should be returned": {
 			Deleted:                true,
 			ExistingManaged:        []*v1.Secret{existingScannerDB},
-			InterceptedK8sApiCalls: deletingSecretFails("scanner-db-tls"),
+			InterceptedK8sAPICalls: deletingSecretFails("scanner-db-tls"),
 			ExpectedError:          "reconciling scanner-db-tls secret",
 		},
 		"When deleting an existing scanner-db-tls secret fails with a 404, an error should not be returned because the secret is likely to be already deleted": {
 			Deleted:                true,
 			ExistingManaged:        []*v1.Secret{existingScannerDB},
-			InterceptedK8sApiCalls: secretIsAlreadyDeleted("scanner-db-tls"),
+			InterceptedK8sAPICalls: secretIsAlreadyDeleted("scanner-db-tls"),
 		},
 	}
 
@@ -377,7 +377,7 @@ func TestRenewInitBundle(t *testing.T) {
 
 func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testing.T) {
 
-	type validateTlsDataCase struct {
+	type testCase struct {
 		fileMap types.SecretDataMap
 		assert  func(t *testing.T, err error)
 	}
@@ -417,7 +417,7 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 	caNotFromACS, err := randomCA()
 	require.NoError(t, err)
 
-	cases := map[string]validateTlsDataCase{
+	cases := map[string]testCase{
 		"should fail if the CA was not issued by ACS": {
 			fileMap: types.SecretDataMap{
 				mtls.CACertFileName: caNotFromACS.CertPEM(),

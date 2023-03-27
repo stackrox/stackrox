@@ -27,7 +27,7 @@ type secretReconciliationTestCase struct {
 	Existing               []*v1.Secret
 	ExistingManaged        []*v1.Secret
 	Other                  []ctrlClient.Object
-	InterceptedK8sApiCalls testutils.InterceptorFns
+	InterceptedK8sAPICalls testutils.InterceptorFns
 
 	ExpectedCreatedSecrets     map[string]secretVerifyFunc
 	ExpectedError              string
@@ -95,7 +95,7 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 		WithRuntimeObjects(otherExisting...).
 		Build()
 
-	client = testutils.Interceptor(client, c.InterceptedK8sApiCalls)
+	client = testutils.Interceptor(client, c.InterceptedK8sAPICalls)
 
 	// Verify that an initial invocation does not touch any of the existing secrets, and creates
 	// the expected ones.
