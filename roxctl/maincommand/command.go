@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/completion"
+	"github.com/stackrox/rox/roxctl/declarativeconfig"
 	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/generate"
 	"github.com/stackrox/rox/roxctl/helm"
@@ -79,6 +80,9 @@ func Command() *cobra.Command {
 	)
 	if features.RoxctlNetpolGenerate.Enabled() {
 		c.AddCommand(generate.Command(cliEnvironment))
+	}
+	if features.DeclarativeConfiguration.Enabled() {
+		c.AddCommand(declarativeconfig.Command(cliEnvironment))
 	}
 
 	return c
