@@ -66,17 +66,18 @@ func doTestRenderOpenshif(t *testing.T, clusterType storage.ClusterType) {
 		}
 		assert.True(t, found)
 	}
+	assertScannerRemote := func(obj runtime.Object) {
+		ds := obj.(*v1.DaemonSet)
+		assert.Len(t, ds.Spec.Template.Spec.Containers, 3)
+		mainImage := ds.Spec.Template.Spec.Containers[1].Image
+		nodeInvCont := ds.Spec.Template.Spec.Containers[2]
+		expectedScannerParts := strings.Split(strings.ReplaceAll(mainImage, "/main:", "/scanner-slim:"), ":")
+		assert.Truef(t, strings.HasPrefix(nodeInvCont.Image, expectedScannerParts[0]), "scanner-slim image (%q) should be from the same registry as main (%q)", nodeInvCont.Image, mainImage)
+	}
 
 	cases := map[string]func(object runtime.Object){
-		"sensor.yaml": assertEnvVars,
-		"collector.yaml": func(obj runtime.Object) {
-			ds := obj.(*v1.DaemonSet)
-			assert.Len(t, ds.Spec.Template.Spec.Containers, 3)
-			mainImage := ds.Spec.Template.Spec.Containers[1].Image
-			nodeInvCont := ds.Spec.Template.Spec.Containers[2]
-			expectedScannerParts := strings.Split(strings.ReplaceAll(mainImage, "/main:", "/scanner-slim:"), ":")
-			assert.Truef(t, strings.HasPrefix(nodeInvCont.Image, expectedScannerParts[0]), "scanner-slim image (%q) should be from the same registry as main (%q)", nodeInvCont.Image, mainImage)
-		},
+		"sensor.yaml":    assertEnvVars,
+		"collector.yaml": assertScannerRemote,
 	}
 
 	for _, f := range baseFiles {
