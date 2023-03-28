@@ -7,13 +7,10 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
-# Build 3.73.x-608-g4ffbc83042 was chosen as it contains the fixes for issues that
-# caused corruption of RocksDB as well as the removal of destructive acts that would
-# delete RocksDB data and Postgres data based on conditions.  Additionally it contains
-# policy category Postgres changes that are required for the Upgrade tests to succeed
-# in Postgres mode.
-INITIAL_POSTGRES_TAG="3.73.x-608-g4ffbc83042"
-INITIAL_POSTGRES_SHA="4ffbc83042614f9fe4524cbf140323f3372ee6a7"
+# Build 3.74.0-1-gfe924fce30 was chosen as it is the first 3.74 build and
+# also not set to expire
+INITIAL_POSTGRES_TAG="3.74.0-1-gfe924fce30"
+INITIAL_POSTGRES_SHA="fe924fce30bbec4dbd37d731ccd505837a2c2575"
 CURRENT_TAG="$(make --quiet tag)"
 
 source "$TEST_ROOT/scripts/lib.sh"
@@ -268,11 +265,11 @@ helm_upgrade_to_postgres() {
     if is_CI; then
         make cli
         bin/"$TEST_HOST_PLATFORM"/roxctl version
-        bin/"$TEST_HOST_PLATFORM"/roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart
+        MAIN_IMAGE_TAG="${INITIAL_POSTGRES_TAG}" bin/"$TEST_HOST_PLATFORM"/roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart
         sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     else
         make cli
-        roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart --remove
+        MAIN_IMAGE_TAG="${INITIAL_POSTGRES_TAG}" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart --remove
         sed -i "" 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     fi
 
