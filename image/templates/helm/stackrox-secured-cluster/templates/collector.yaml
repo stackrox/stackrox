@@ -143,10 +143,28 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
-        - mountPath: /tmp/
-          name: tmp-volume
-        - mountPath: /cache
-          name: cache-volume
+      - name: node-inventory
+        image: {{ quote ._rox.image.scanner.fullRef }}
+        imagePullPolicy: IfNotPresent
+        command: ["/scanner", "--nodeinventory", "--config=", ""]
+        ports:
+          - containerPort: 8444
+            name: grpc
+        env:
+        - name: ROX_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        {{- include "srox.envVars" (list . "daemonset" "collector" "node-inventory") | nindent 8 }}
+        volumeMounts:
+         - mountPath: /host
+           name: host-root-ro
+           readOnly: true
+         - mountPath: /tmp/
+           name: tmp-volume
+         - mountPath: /cache
+           name: cache-volume
       volumes:
       - hostPath:
           path: /var/run/docker.sock
@@ -191,4 +209,3 @@ spec:
       - name: cache-volume
         emptyDir:
           sizeLimit: 200Mi
-

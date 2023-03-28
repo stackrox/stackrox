@@ -37,8 +37,9 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.Im
 		return nil, err
 	}
 
-	baseValues := getBaseMetaValues(c, imageFlavor.Versions, imageFlavor.ChartRepo, &opts)
+	baseValues := getBaseMetaValues(c, imageFlavor.Versions, imageFlavor.ScannerSlimImageName, imageFlavor.ChartRepo, &opts)
 	setMainOverride(mainImage, baseValues)
+	deriveScannerRemoteFromMain(mainImage, baseValues)
 	baseValues.EnablePodSecurityPolicies = !opts.DisablePodSecurityPolicies
 
 	collectorFull, collectorSlim := determineCollectorImages(mainImage, collectorImage, imageFlavor)
@@ -65,6 +66,12 @@ func MakeClusterImageNames(flavor *defaults.ImageFlavor, c *storage.Cluster) (*s
 	}
 
 	return mainImageName, collectorImageName, nil
+}
+
+// deriveScannerRemoteFromMain sets scanner-slim image remote, so that it comes from the same location as the main image
+func deriveScannerRemoteFromMain(mainImage *storage.ImageName, metaValues *charts.MetaValues) {
+	scannerSlimRemote := strings.Replace(mainImage.Remote, "/main", "/"+metaValues.ScannerSlimImageRemote, 1)
+	metaValues.ScannerSlimImageRemote = scannerSlimRemote
 }
 
 // setMainOverride adds main image values to meta values as defined in secured cluster object.
@@ -126,7 +133,7 @@ func deriveImageWithNewName(baseImage *storage.ImageName, name string) *storage.
 	}
 }
 
-func getBaseMetaValues(c *storage.Cluster, versions version.Versions, chartRepo defaults.ChartRepo, opts *RenderOptions) *charts.MetaValues {
+func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSlimImageRemote string, chartRepo defaults.ChartRepo, opts *RenderOptions) *charts.MetaValues {
 	envVars := make(map[string]string)
 	for _, feature := range features.Flags {
 		envVars[feature.EnvVar()] = strconv.FormatBool(feature.Enabled())
@@ -158,6 +165,9 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, chartRepo 
 		OfflineMode: env.OfflineModeEnv.BooleanSetting(),
 
 		SlimCollector: opts.SlimCollector,
+
+		ScannerImageTag:        versions.ScannerVersion,
+		ScannerSlimImageRemote: scannerSlimImageRemote,
 
 		KubectlOutput: true,
 

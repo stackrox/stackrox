@@ -234,7 +234,8 @@ test_upgrade_paths() {
     kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$CURRENT_TAG"
     kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$CURRENT_TAG"
     kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(make collector-tag)" \
-        "compliance=$REGISTRY/main:$CURRENT_TAG"
+        "compliance=$REGISTRY/main:$CURRENT_TAG" \
+        "node-inventory=$REGISTRY/scanner-slim:$(make scanner-tag)"
 
     sensor_wait
     # Bounce collectors to avoid restarts on initial module pull
