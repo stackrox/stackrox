@@ -2,12 +2,14 @@ package create
 
 import (
 	"os"
+	"sort"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"gopkg.in/yaml.v3"
@@ -193,10 +195,12 @@ func (a *authProviderCmd) RunE() func(cmd *cobra.Command, args []string) error {
 
 func (a *authProviderCmd) Validate(providerType string) error {
 	requiredAttributes := make([]declarativeconfig.RequiredAttribute, 0, len(a.requiredAttributes))
-	for key, value := range a.requiredAttributes {
+	keys := maputil.Keys(a.requiredAttributes)
+	sort.Strings(keys)
+	for _, key := range keys {
 		requiredAttributes = append(requiredAttributes, declarativeconfig.RequiredAttribute{
 			AttributeKey:   key,
-			AttributeValue: value,
+			AttributeValue: a.requiredAttributes[key],
 		})
 	}
 	a.authProvider.RequiredAttributes = requiredAttributes
@@ -228,10 +232,12 @@ func (a *authProviderCmd) Validate(providerType string) error {
 		a.authProvider.OpenshiftConfig = &declarativeconfig.OpenshiftConfig{Enable: true}
 	case "oidc":
 		claimMappings := make([]declarativeconfig.ClaimMapping, 0, len(a.claimMapping))
-		for path, name := range a.claimMapping {
+		paths := maputil.Keys(a.claimMapping)
+		sort.Strings(paths)
+		for _, path := range paths {
 			claimMappings = append(claimMappings, declarativeconfig.ClaimMapping{
 				Path: path,
-				Name: name,
+				Name: a.claimMapping[path],
 			})
 		}
 		a.authProvider.ClaimMappings = claimMappings

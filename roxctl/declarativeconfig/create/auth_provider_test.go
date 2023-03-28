@@ -153,10 +153,10 @@ groups:
       value: example@example.com
       role: Admin
 requiredAttributes:
-    - key: org_id
-      value: "12345"
     - key: name
       value: some_name
+    - key: org_id
+      value: "12345"
 claimMappings:
     - path: org_id
       name: super_cool_claim
@@ -233,10 +233,10 @@ groups:
       value: example@example.com
       role: Admin
 requiredAttributes:
-    - key: org_id
-      value: "12345"
     - key: name
       value: some_name
+    - key: org_id
+      value: "12345"
 saml:
     spIssuer: some-random-issuer
     cert: |
@@ -329,10 +329,10 @@ groups:
       value: example@example.com
       role: Admin
 requiredAttributes:
-    - key: org_id
-      value: "12345"
     - key: name
       value: some_name
+    - key: org_id
+      value: "12345"
 userpki:
     certificateAuthorities: |
         -----BEGIN CERTIFICATE-----
@@ -387,10 +387,10 @@ groups:
       value: example@example.com
       role: Admin
 requiredAttributes:
-    - key: org_id
-      value: "12345"
     - key: name
       value: some_name
+    - key: org_id
+      value: "12345"
 openshift:
     enable: true
 `
@@ -422,10 +422,10 @@ groups:
       value: example@example.com
       role: Admin
 requiredAttributes:
-    - key: org_id
-      value: "12345"
     - key: name
       value: some_name
+    - key: org_id
+      value: "12345"
 iap:
     audience: some-audience
 `
