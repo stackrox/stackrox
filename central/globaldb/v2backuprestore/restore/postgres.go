@@ -84,11 +84,6 @@ func runRestoreStream(fileReader io.Reader, sourceMap map[string]string, config 
 	return nil
 }
 
-// CheckIfRestoreDBExists - checks to see if a restore database exists
-func CheckIfRestoreDBExists(dbConfig *postgres.Config) bool {
-	return pgadmin.CheckIfDBExists(dbConfig, getRestoreDBName())
-}
-
 func getRestoreDBName() string {
 	// Build the active database name for the connection
 	return fmt.Sprintf("%s%s", config.GetConfig().CentralDB.DatabaseName, restoreSuffix)
