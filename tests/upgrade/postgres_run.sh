@@ -261,21 +261,18 @@ helm_upgrade_to_postgres() {
     ci_export ROX_POSTGRES_DATASTORE "true"
     export CLUSTER="remote"
 
-    local roxctl_version
     # Get opensource charts and convert to development_build to support release builds
     if is_CI; then
         make cli
         bin/"$TEST_HOST_PLATFORM"/roxctl version
-        roxctl_version="$(bin/"$TEST_HOST_PLATFORM"/roxctl version)"
         bin/"$TEST_HOST_PLATFORM"/roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart
         sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
         sed -i 's#${roxctl_version}#${INITIAL_POSTGRES_TAG}#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     else
         make cli
-        roxctl_version="$(bin/"$TEST_HOST_PLATFORM"/roxctl version)"
+        bin/"$TEST_HOST_PLATFORM"/roxctl version
         MAIN_IMAGE_TAG="${INITIAL_POSTGRES_TAG}" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart --remove
         sed -i "" 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
-        sed -i "" 's#${roxctl_version}#${INITIAL_POSTGRES_TAG}#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     fi
 
     local root_certificate_path="$(mktemp -d)/root_certs_values.yaml"
@@ -291,6 +288,8 @@ helm_upgrade_to_postgres() {
       --set central.db.password.generate=true \
       --set central.db.serviceTLS.generate=true \
       --set central.db.persistence.persistentVolumeClaim.createClaim=true \
+      --set central.image.tag="${INITIAL_POSTGRES_TAG}" \
+      --set central.db.image.tag="${INITIAL_POSTGRES_TAG}" \
       -f "$TEST_ROOT/tests/upgrade/scale-values-public.yaml" \
       -f "$root_certificate_path" \
       --force
