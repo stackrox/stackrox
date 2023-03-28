@@ -66,7 +66,7 @@ func (s *clusterHealthStatusIDTestSuite) TestMigrationAddsIdToClusterHealthStatu
 	s.validateIDAdded(clusterHealthStatusBucket)
 }
 
-func (s *clusterHealthStatusIDTestSuite) validateIDAdded(bucket []byte) {
+func (s *clusterHealthStatusIDTestSuite) validateIDAdded(_ []byte) {
 	it := s.databases.RocksDB.NewIterator(readOpts)
 	defer it.Close()
 

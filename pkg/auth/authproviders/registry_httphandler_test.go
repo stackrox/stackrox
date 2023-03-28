@@ -488,7 +488,7 @@ func (*tstAuthProviderBackend) Config() map[string]string {
 	return nil
 }
 
-func (b *tstAuthProviderBackend) LoginURL(_ string, r *requestinfo.RequestInfo) (string, error) {
+func (b *tstAuthProviderBackend) LoginURL(_ string, _ *requestinfo.RequestInfo) (string, error) {
 	return b.loginURL, b.err
 }
 
@@ -496,9 +496,9 @@ func (*tstAuthProviderBackend) RefreshURL() string {
 	return "refresh"
 }
 
-func (*tstAuthProviderBackend) OnEnable(provider Provider) {}
+func (*tstAuthProviderBackend) OnEnable(_ Provider) {}
 
-func (*tstAuthProviderBackend) OnDisable(provider Provider) {}
+func (*tstAuthProviderBackend) OnDisable(_ Provider) {}
 
 func (b *tstAuthProviderBackend) ProcessHTTPRequest(_ http.ResponseWriter,
 	_ *http.Request) (*AuthResponse, error) {

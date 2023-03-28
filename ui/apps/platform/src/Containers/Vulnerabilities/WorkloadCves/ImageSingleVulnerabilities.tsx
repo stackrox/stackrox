@@ -2,10 +2,6 @@ import React, { ReactNode } from 'react';
 import {
     Bullseye,
     Divider,
-    EmptyState,
-    EmptyStateBody,
-    EmptyStateIcon,
-    EmptyStateVariant,
     Flex,
     Grid,
     GridItem,
@@ -22,22 +18,40 @@ import {
     Text,
     Title,
 } from '@patternfly/react-core';
-import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
-import { VulnerabilitySeverity } from 'types/cve.proto';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import { getHasSearchApplied } from 'utils/searchUtils';
-import { cveStatusTabValues, FixableStatus } from './types';
+import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import BySeveritySummaryCard from './SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from './SummaryCards/CvesByStatusSummaryCard';
 import SingleEntityVulnerabilitiesTable from './Tables/SingleEntityVulnerabilitiesTable';
 import useImageVulnerabilities from './hooks/useImageVulnerabilities';
 import { DynamicTableLabel } from './DynamicIcon';
+import { getHiddenSeverities, parseQuerySearchFilter } from './searchUtils';
+import { QuerySearchFilter, FixableStatus, cveStatusTabValues } from './types';
+
+function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<FixableStatus> {
+    const hiddenStatuses = new Set<FixableStatus>([]);
+    const fixableFilters = querySearchFilter?.Fixable ?? [];
+
+    if (fixableFilters.length > 0) {
+        if (!fixableFilters.includes('true')) {
+            hiddenStatuses.add('Fixable');
+        }
+
+        if (!fixableFilters.includes('false')) {
+            hiddenStatuses.add('Not fixable');
+        }
+    }
+
+    return hiddenStatuses;
+}
 
 const defaultSortFields = ['CVE', 'Severity', 'Fixable'];
 
@@ -47,6 +61,7 @@ export type ImageSingleVulnerabilitiesProps = {
 
 function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps) {
     const { searchFilter } = useURLSearch();
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const { page, perPage, setPage, setPerPage } = useURLPagination(50);
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
@@ -56,17 +71,21 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
         },
         onSort: () => setPage(1),
     });
-    // TODO Still need to properly integrate search filter with query
+
     const pagination = {
         offset: (page - 1) * perPage,
         limit: perPage,
         sortOption,
     };
-    const { data, previousData, loading, error } = useImageVulnerabilities(imageId, {}, pagination);
+    const { data, previousData, loading, error } = useImageVulnerabilities(
+        imageId,
+        getRequestQueryStringForSearchFilter(querySearchFilter),
+        pagination
+    );
 
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('cveStatus', cveStatusTabValues);
 
-    const isFiltered = getHasSearchApplied(searchFilter);
+    const isFiltered = getHasSearchApplied(querySearchFilter);
 
     let mainContent: ReactNode | null = null;
 
@@ -75,14 +94,14 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
     if (error) {
         mainContent = (
             <Bullseye>
-                <EmptyState variant={EmptyStateVariant.large}>
-                    <EmptyStateIcon
-                        className="pf-u-danger-color-100"
-                        icon={ExclamationCircleIcon}
-                    />
-                    <Title headingLevel="h2">{getAxiosErrorMessage(error)}</Title>
-                    <EmptyStateBody>Adjust your filters and try again</EmptyStateBody>
-                </EmptyState>
+                <EmptyStateTemplate
+                    headingLevel="h2"
+                    title={getAxiosErrorMessage(error)}
+                    icon={ExclamationCircleIcon}
+                    iconClassName="pf-u-danger-color-100"
+                >
+                    Adjust your filters and try again
+                </EmptyStateTemplate>
             </Bullseye>
         );
     } else if (loading && !vulnerabilityData) {
@@ -92,11 +111,11 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
             </Bullseye>
         );
     } else if (vulnerabilityData) {
-        // TODO Integrate these with page search filters
-        const hiddenSeverities = new Set<VulnerabilitySeverity>([]);
-        const hiddenStatuses = new Set<FixableStatus>([]);
-
-        const totalVulnerabilityCount = vulnerabilityData.image.imageVulnerabilityCounter.all.total;
+        const hiddenSeverities = getHiddenSeverities(querySearchFilter);
+        const hiddenStatuses = getHiddenStatuses(querySearchFilter);
+        const vulnCounter = vulnerabilityData.image.imageVulnerabilityCounter;
+        const totalVulnerabilityCount = vulnCounter.all.total;
+        const { critical, important, moderate, low } = vulnCounter;
 
         mainContent = (
             <>
@@ -105,7 +124,12 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
                         <GridItem sm={12} md={6} xl2={4}>
                             <BySeveritySummaryCard
                                 title="CVEs by severity"
-                                severityCounts={vulnerabilityData.image.imageVulnerabilityCounter}
+                                severityCounts={{
+                                    CRITICAL_VULNERABILITY_SEVERITY: critical.total,
+                                    IMPORTANT_VULNERABILITY_SEVERITY: important.total,
+                                    MODERATE_VULNERABILITY_SEVERITY: moderate.total,
+                                    LOW_VULNERABILITY_SEVERITY: low.total,
+                                }}
                                 hiddenSeverities={hiddenSeverities}
                             />
                         </GridItem>

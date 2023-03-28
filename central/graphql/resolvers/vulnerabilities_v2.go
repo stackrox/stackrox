@@ -177,17 +177,17 @@ func sortNamespacedFields(query *v1.Query, cves []*storage.CVE) ([]*storage.CVE,
 	return cves, nil
 }
 
-func (resolver *cVEResolver) Cvss(ctx context.Context) float64 {
+func (resolver *cVEResolver) Cvss(_ context.Context) float64 {
 	value := resolver.data.GetCvss()
 	return float64(value)
 }
 
-func (resolver *cVEResolver) CvssV2(ctx context.Context) (*cVSSV2Resolver, error) {
+func (resolver *cVEResolver) CvssV2(_ context.Context) (*cVSSV2Resolver, error) {
 	value := resolver.data.GetCvssV2()
 	return resolver.root.wrapCVSSV2(value, true, nil)
 }
 
-func (resolver *cVEResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, error) {
+func (resolver *cVEResolver) CvssV3(_ context.Context) (*cVSSV3Resolver, error) {
 	value := resolver.data.GetCvssV3()
 	return resolver.root.wrapCVSSV3(value, true, nil)
 }
@@ -504,12 +504,12 @@ func (resolver *Resolver) openShiftVulnerabilitiesV2(ctx context.Context, q Pagi
 // Implemented Resolver.
 ////////////////////////
 
-func (resolver *cVEResolver) ID(ctx context.Context) graphql.ID {
+func (resolver *cVEResolver) ID(_ context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *cVEResolver) CVE(ctx context.Context) string {
+func (resolver *cVEResolver) CVE(_ context.Context) string {
 	return resolver.data.GetId()
 }
 
@@ -712,7 +712,7 @@ func (resolver *cVEResolver) VulnerabilityTypes() []string {
 }
 
 // Components are the components that contain the CVE/Vulnerability.
-func (resolver *cVEResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
+func (resolver *cVEResolver) Components(_ context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "Components")
 
 	query, err := args.AsV1QueryOrEmpty()
@@ -769,7 +769,7 @@ func (resolver *cVEResolver) NodeComponents(_ context.Context, args PaginatedQue
 }
 
 // NodeComponentCount is the number of node components that contain the CVE/Vulnerability.
-func (resolver *cVEResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
+func (resolver *cVEResolver) NodeComponentCount(_ context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "NodeComponentCount")
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return 0, errors.New("unexpected access to legacy component datastore with postgres enabled")
@@ -910,7 +910,7 @@ func (resolver *cVEResolver) FixedByVersion(ctx context.Context) (string, error)
 }
 
 // UnusedVarSink represents a query sink
-func (resolver *cVEResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+func (resolver *cVEResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
 	return nil
 }
 

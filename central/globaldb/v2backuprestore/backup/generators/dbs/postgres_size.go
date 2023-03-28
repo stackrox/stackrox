@@ -25,7 +25,7 @@ type PostgresSize struct {
 }
 
 // WriteTo writes a backup of Postgres to the writer
-func (ps *PostgresSize) WriteTo(ctx context.Context, out io.Writer) error {
+func (ps *PostgresSize) WriteTo(_ context.Context, out io.Writer) error {
 	_, config, err := pgconfig.GetPostgresConfig()
 	if err != nil {
 		log.Fatalf("Could not parse postgres config: %v", err)

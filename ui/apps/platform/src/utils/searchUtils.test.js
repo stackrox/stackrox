@@ -6,6 +6,7 @@ import {
     convertSortToRestFormat,
     searchOptionsToSearchFilter,
     getListQueryParams,
+    searchValueAsArray,
 } from './searchUtils';
 
 describe('searchUtils', () => {
@@ -375,6 +376,21 @@ describe('searchUtils', () => {
                 const offset = parseInt(offsetParam, 10);
                 expect(offset % page).toBe(0);
             });
+        });
+    });
+
+    describe('searchValueAsArray', () => {
+        it('converts an undefined value to an empty array', () => {
+            expect(searchValueAsArray(undefined)).toEqual([]);
+        });
+
+        it('converts a string value to an array with the string as the only element', () => {
+            expect(searchValueAsArray('cluster')).toEqual(['cluster']);
+        });
+
+        it('converts an array value to an array with the same elements', () => {
+            expect(searchValueAsArray([])).toEqual([]);
+            expect(searchValueAsArray(['cluster', 'namespace'])).toEqual(['cluster', 'namespace']);
         });
     });
 });

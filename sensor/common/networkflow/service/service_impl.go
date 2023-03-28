@@ -45,7 +45,7 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 }
 
 // RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
-func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	// There is no grpc gateway handler for network connection info service
 	return nil
 }

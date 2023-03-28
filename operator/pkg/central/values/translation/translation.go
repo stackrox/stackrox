@@ -32,7 +32,7 @@ type Translator struct {
 }
 
 // Translate translates and enriches helm values
-func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured) (chartutil.Values, error) {
+func (t Translator) Translate(_ context.Context, u *unstructured.Unstructured) (chartutil.Values, error) {
 	baseValues, err := chartutil.ReadValues(baseValuesYAML)
 	utils.CrashOnError(err) // ensured through unit test that this doesn't happen.
 

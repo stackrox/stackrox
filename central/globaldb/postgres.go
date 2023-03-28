@@ -7,6 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
@@ -201,9 +202,13 @@ func CollectPostgresStats(ctx context.Context, db *postgres.DB) *stats.DatabaseS
 
 // CollectPostgresDatabaseSizes -- collect database sizing stats for Postgres
 func CollectPostgresDatabaseSizes(postgresConfig *postgres.Config) []*stats.DatabaseDetailsStats {
-	databases := pgadmin.GetAllDatabases(postgresConfig)
-
 	detailsSlice := make([]*stats.DatabaseDetailsStats, 0)
+
+	databases, err := pgadmin.GetAllDatabases(postgresConfig)
+	if err != nil {
+		log.Errorf("unable to get the databases: %v", err)
+		return detailsSlice
+	}
 
 	for _, database := range databases {
 		dbSize, err := pgadmin.GetDatabaseSize(postgresConfig, database)
@@ -237,6 +242,17 @@ func CollectPostgresDatabaseStats(postgresConfig *postgres.Config) {
 		return
 	}
 	metrics.PostgresTotalSize.Set(float64(totalSize))
+
+	// Check Postgres remaining capacity
+	if !env.ManagedCentral.BooleanSetting() {
+		availableDBBytes, err := pgadmin.GetRemainingCapacity(postgresConfig)
+		if err != nil {
+			log.Errorf("error fetching remaining database storage: %v", err)
+			return
+		}
+
+		metrics.PostgresRemainingCapacity.Set(float64(availableDBBytes))
+	}
 }
 
 // CollectPostgresConnectionStats -- collect connection stats for Postgres

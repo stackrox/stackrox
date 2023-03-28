@@ -1,13 +1,21 @@
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement } from 'react';
 import { FieldArray } from 'formik';
-import { Button, Flex, FlexItem, FormGroup, SelectOption, TextInput } from '@patternfly/react-core';
-import { ArrowRightIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
+import {
+    Button,
+    Flex,
+    FlexItem,
+    FormGroup,
+    SelectOption,
+    TextInput,
+    Tooltip,
+} from '@patternfly/react-core';
+import { ArrowRightIcon, InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
 import { Group } from 'services/AuthService';
 import { Role } from 'services/RolesService';
 import SelectSingle from 'Components/SelectSingle';
-import { isUserResource } from '../traits';
+import { getOriginLabel, isUserResource } from '../traits';
 
 export type RuleGroupErrors = {
     roleName?: string;
@@ -81,6 +89,15 @@ function RuleGroups({
                             <Flex key={`${group.props.authProviderId}_custom_rule_${index}`}>
                                 <FlexItem>
                                     <FormGroup
+                                        label="Origin"
+                                        fieldId={`groups[${index}].props.traits.origin`}
+                                        validated="default"
+                                    >
+                                        {getOriginLabel(group?.props?.traits)}
+                                    </FormGroup>
+                                </FlexItem>
+                                <FlexItem>
+                                    <FormGroup
                                         label="Key"
                                         fieldId={`groups[${index}].props.key`}
                                         helperTextInvalid={errors[index]?.props?.key ?? ''}
@@ -144,7 +161,7 @@ function RuleGroups({
                                         </SelectSingle>
                                     </FormGroup>
                                 </FlexItem>
-                                {!isDisabled(group) && (
+                                {!isDisabled(group) ? (
                                     <FlexItem>
                                         <Button
                                             variant="plain"
@@ -154,6 +171,18 @@ function RuleGroups({
                                         >
                                             <TrashIcon />
                                         </Button>
+                                    </FlexItem>
+                                ) : (
+                                    <FlexItem>
+                                        <Tooltip content="This rule is managed declaratively and can only be edited declaratively.">
+                                            <Button
+                                                variant="plain"
+                                                aria-label="Information button"
+                                                style={{ transform: 'translate(0, 42px)' }}
+                                            >
+                                                <InfoCircleIcon />
+                                            </Button>
+                                        </Tooltip>
                                     </FlexItem>
                                 )}
                             </Flex>

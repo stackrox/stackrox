@@ -41,21 +41,21 @@ type getKernelSupportFn func() (*v1.KernelSupportAvailableResponse, error)
 type postClusterFn func(cluster *storage.Cluster) (*v1.ClusterResponse, error)
 type getDefaultsFn func() (*v1.ClusterDefaultsResponse, error)
 
-func (m *mockClustersServiceServer) GetClusterDefaultValues(ctx context.Context, in *v1.Empty) (*v1.ClusterDefaultsResponse, error) {
+func (m *mockClustersServiceServer) GetClusterDefaultValues(_ context.Context, _ *v1.Empty) (*v1.ClusterDefaultsResponse, error) {
 	return m.getDefaultsInjectedFn()
 }
 
-func (m *mockClustersServiceServer) GetKernelSupportAvailable(ctx context.Context, in *v1.Empty) (*v1.KernelSupportAvailableResponse, error) {
+func (m *mockClustersServiceServer) GetKernelSupportAvailable(_ context.Context, _ *v1.Empty) (*v1.KernelSupportAvailableResponse, error) {
 	m.getKernelSupportAvailableCalled = true
 	return m.getKernelSupportInjectedFn()
 }
 
-func (m *mockClustersServiceServer) PostCluster(ctx context.Context, cluster *storage.Cluster) (*v1.ClusterResponse, error) {
+func (m *mockClustersServiceServer) PostCluster(_ context.Context, cluster *storage.Cluster) (*v1.ClusterResponse, error) {
 	m.clusterSent = append(m.clusterSent, *cluster)
 	return m.postClusterInjectedFn(cluster)
 }
 
-func (m *mockClustersServiceServer) GetClusters(ctx context.Context, in *v1.GetClustersRequest) (*v1.ClustersList, error) {
+func (m *mockClustersServiceServer) GetClusters(_ context.Context, _ *v1.GetClustersRequest) (*v1.ClustersList, error) {
 	m.getClusterCalled = true
 	return &v1.ClustersList{
 		Clusters: []*storage.Cluster{
@@ -166,7 +166,7 @@ func postClusterFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
 }
 
 // postClusterAlreadyExistsFake fake function for service.PostCluster that always returns error codes.AlreadyExists
-func postClusterAlreadyExistsFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
+func postClusterAlreadyExistsFake(_ *storage.Cluster) (*v1.ClusterResponse, error) {
 	return nil, status.Error(codes.AlreadyExists, "Cluster Exists")
 }
 

@@ -26,14 +26,14 @@ type Scorer interface {
 }
 
 // NewDeploymentScorer returns a new scorer that encompasses multipliers for evaluating deployment risk
-func NewDeploymentScorer(alertGetter getters.AlertGetter, roles roleStore.DataStore, bindings bindingStore.DataStore, serviceAccounts saStore.DataStore, allowlistEvaluator evaluator.Evaluator) Scorer {
+func NewDeploymentScorer(alertSearcher getters.AlertSearcher, roles roleStore.DataStore, bindings bindingStore.DataStore, serviceAccounts saStore.DataStore, allowlistEvaluator evaluator.Evaluator) Scorer {
 	scoreImpl := &deploymentScorerImpl{
 		// These multipliers are intentionally ordered based on the order that we want them to be displayed in.
 		// Order aligns with the maximum output multiplier value, which would make sense to correlate
 		// with how important a specific multiplier is.
 		// DO NOT REORDER WITHOUT THOUGHT.
 		ConfiguredMultipliers: []deployment.Multiplier{
-			deployment.NewViolations(alertGetter),
+			deployment.NewViolations(alertSearcher),
 			deployment.NewProcessBaselines(allowlistEvaluator),
 			deployment.NewImageMultiplier(image.VulnerabilitiesHeading),
 			deployment.NewServiceConfig(),

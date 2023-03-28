@@ -75,7 +75,7 @@ func (resolver *Resolver) getAlert(ctx context.Context, id string) *storage.Aler
 	return alert
 }
 
-func (resolver *alertResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+func (resolver *alertResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
 	return nil
 }
 

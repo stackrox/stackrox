@@ -35,7 +35,10 @@ function DeploymentSelector({
                         .map((deployment) => (
                             <SelectOption key={deployment.id} value={deployment.name}>
                                 <span>
-                                    <DeploymentIcon /> {deployment.name}
+                                    <DeploymentIcon />
+                                    <span className="pf-u-mx-xs" data-testid="deployment-name">
+                                        {deployment.name}
+                                    </span>
                                 </span>
                             </SelectOption>
                         ))}

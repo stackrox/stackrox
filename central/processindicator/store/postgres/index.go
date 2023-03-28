@@ -27,13 +27,13 @@ type indexerImpl struct {
 	db *postgres.DB
 }
 
-func (b *indexerImpl) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+func (b *indexerImpl) Count(ctx context.Context, q *v1.Query, _ ...blevesearch.SearchOption) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ProcessIndicator")
 
 	return pgSearch.RunCountRequest(ctx, v1.SearchCategory_PROCESS_INDICATORS, q, b.db)
 }
 
-func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
+func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, _ ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ProcessIndicator")
 
 	return pgSearch.RunSearchRequest(ctx, v1.SearchCategory_PROCESS_INDICATORS, q, b.db)
@@ -41,7 +41,7 @@ func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesear
 
 //// Stubs for satisfying interfaces
 
-func (b *indexerImpl) AddProcessIndicator(deployment *storage.ProcessIndicator) error {
+func (b *indexerImpl) AddProcessIndicator(_ *storage.ProcessIndicator) error {
 	return nil
 }
 
@@ -49,7 +49,7 @@ func (b *indexerImpl) AddProcessIndicators(_ []*storage.ProcessIndicator) error 
 	return nil
 }
 
-func (b *indexerImpl) DeleteProcessIndicator(id string) error {
+func (b *indexerImpl) DeleteProcessIndicator(_ string) error {
 	return nil
 }
 

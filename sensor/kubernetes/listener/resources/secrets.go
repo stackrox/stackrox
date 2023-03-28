@@ -270,6 +270,8 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 				log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
 			}
 		} else if saName == "" {
+			// only send integrations to central that do not have the k8s SA annotation
+			// this will ignore secrets associated with OCP builder, deployer, etc. service accounts
 			ii, err := DockerConfigToImageIntegration(secret, registry, dce)
 			if err != nil {
 				log.Errorf("unable to create docker config for secret %s: %v", secret.GetName(), err)

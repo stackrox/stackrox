@@ -125,11 +125,14 @@ func RenameDB(adminPool *postgres.DB, originalDB, newDB string) error {
 }
 
 // CheckIfDBExists - checks to see if a restore database exists
-func CheckIfDBExists(postgresConfig *postgres.Config, dbName string) bool {
+func CheckIfDBExists(postgresConfig *postgres.Config, dbName string) (bool, error) {
 	log.Debugf("CheckIfDBExists - %q", dbName)
 
 	// Connect to different database for admin functions
-	connectPool := GetAdminPool(postgresConfig)
+	connectPool, err := GetAdminPool(postgresConfig)
+	if err != nil {
+		return false, err
+	}
 	// Close the admin connection pool
 	defer connectPool.Close()
 
@@ -142,19 +145,22 @@ func CheckIfDBExists(postgresConfig *postgres.Config, dbName string) bool {
 	row := connectPool.QueryRow(ctx, existsStmt, dbName)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
-		return false
+		return false, err
 	}
 
 	log.Debugf("%q database exists => %t", dbName, exists)
-	return exists
+	return exists, nil
 }
 
 // GetDatabaseClones - returns list of database clones based off base database
-func GetDatabaseClones(postgresConfig *postgres.Config) []string {
+func GetDatabaseClones(postgresConfig *postgres.Config) ([]string, error) {
 	log.Debug("GetDatabaseClones")
 
 	// Connect to different database for admin functions
-	connectPool := GetAdminPool(postgresConfig)
+	connectPool, err := GetAdminPool(postgresConfig)
+	if err != nil {
+		return nil, err
+	}
 	// Close the admin connection pool
 	defer connectPool.Close()
 
@@ -165,7 +171,7 @@ func GetDatabaseClones(postgresConfig *postgres.Config) []string {
 
 	rows, err := connectPool.Query(ctx, cloneStmt)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -173,7 +179,7 @@ func GetDatabaseClones(postgresConfig *postgres.Config) []string {
 	for rows.Next() {
 		var cloneName string
 		if err := rows.Scan(&cloneName); err != nil {
-			return nil
+			return nil, err
 		}
 
 		clones = append(clones, cloneName)
@@ -181,7 +187,7 @@ func GetDatabaseClones(postgresConfig *postgres.Config) []string {
 
 	log.Debugf("database clones => %s", clones)
 
-	return clones
+	return clones, nil
 }
 
 // AnalyzeDatabase - runs ANALYZE on the database named dbName
@@ -189,13 +195,16 @@ func AnalyzeDatabase(config *postgres.Config, dbName string) error {
 	log.Debugf("Analyze - %q", dbName)
 
 	// Connect to different database for admin functions
-	connectPool := GetClonePool(config, dbName)
+	connectPool, err := GetClonePool(config, dbName)
+	if err != nil {
+		return err
+	}
 	// Close the admin connection pool
 	defer connectPool.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), analyzeTimeout)
 	defer cancel()
-	_, err := connectPool.Exec(ctx, "ANALYZE")
+	_, err = connectPool.Exec(ctx, "ANALYZE")
 
 	log.Debug("Analyze done")
 	return err
@@ -206,11 +215,14 @@ func TerminateConnection(config *postgres.Config, dbName string) error {
 	log.Debugf("TerminateConnection - %q", dbName)
 
 	// Connect to different database for admin functions
-	connectPool := GetAdminPool(config)
+	connectPool, err := GetAdminPool(config)
+	if err != nil {
+		return err
+	}
 	// Close the admin connection pool
 	defer connectPool.Close()
 
-	_, err := connectPool.Exec(context.Background(), terminateConnectionStmt, dbName)
+	_, err = connectPool.Exec(context.Background(), terminateConnectionStmt, dbName)
 
 	log.Debug("TerminateConnection done")
 	return err
@@ -219,22 +231,25 @@ func TerminateConnection(config *postgres.Config, dbName string) error {
 // GetAdminPool - returns a pool to connect to the admin database.
 // This is useful for renaming databases such as a restore to active.
 // THIS POOL SHOULD BE CLOSED ONCE ITS PURPOSE HAS BEEN FULFILLED.
-func GetAdminPool(postgresConfig *postgres.Config) *postgres.DB {
+func GetAdminPool(postgresConfig *postgres.Config) (*postgres.DB, error) {
 	// Clone config to connect to template DB
 	tempConfig := postgresConfig.Copy()
 
 	// Need to connect on a static DB so we can rename the used DBs.
 	tempConfig.ConnConfig.Database = AdminDB
 
-	postgresDB := getPool(tempConfig)
+	postgresDB, err := getPool(tempConfig)
+	if err != nil {
+		return nil, err
+	}
 
 	log.Debugf("Got connection pool for database %q", AdminDB)
-	return postgresDB
+	return postgresDB, nil
 }
 
 // GetClonePool - returns a connection pool for the specified database clone.
 // THIS POOL SHOULD BE CLOSED ONCE ITS PURPOSE HAS BEEN FULFILLED.
-func GetClonePool(postgresConfig *postgres.Config, clone string) *postgres.DB {
+func GetClonePool(postgresConfig *postgres.Config, clone string) (*postgres.DB, error) {
 	log.Debugf("GetClonePool -- %q", clone)
 
 	// Clone config to connect to template DB
@@ -243,14 +258,17 @@ func GetClonePool(postgresConfig *postgres.Config, clone string) *postgres.DB {
 	// Need to connect on a static DB so we can rename the used DBs.
 	tempConfig.ConnConfig.Database = clone
 
-	postgresDB := getPool(tempConfig)
+	postgresDB, err := getPool(tempConfig)
+	if err != nil {
+		return nil, err
+	}
 
 	log.Debugf("Got connection pool for database %q", clone)
 
-	return postgresDB
+	return postgresDB, nil
 }
 
-func getPool(postgresConfig *postgres.Config) *postgres.DB {
+func getPool(postgresConfig *postgres.Config) (*postgres.DB, error) {
 	var err error
 	var postgresDB *postgres.DB
 
@@ -259,10 +277,10 @@ func getPool(postgresConfig *postgres.Config) *postgres.DB {
 		return err
 	})
 	if err != nil {
-		log.Fatalf("Timed out trying to open database: %v", err)
+		return nil, err
 	}
 
-	return postgresDB
+	return postgresDB, nil
 }
 
 // getAvailablePostgresCapacity - retrieves the capacity for Postgres
@@ -276,7 +294,10 @@ func getAvailablePostgresCapacity(postgresConfig *postgres.Config) (int64, error
 	}
 
 	// Connect to database for admin functions
-	connectPool := GetAdminPool(postgresConfig)
+	connectPool, err := GetAdminPool(postgresConfig)
+	if err != nil {
+		return 0, err
+	}
 	// Close the admin connection pool
 	defer connectPool.Close()
 
@@ -381,11 +402,6 @@ func GetRemainingCapacity(postgresConfig *postgres.Config) (int64, error) {
 		return pgconfig.GetPostgresCapacity(), nil
 	}
 
-	// Connect to database for admin functions
-	connectPool := GetAdminPool(postgresConfig)
-	// Close the admin connection pool
-	defer connectPool.Close()
-
 	sizeUsed, err := GetTotalPostgresSize(postgresConfig)
 	if err != nil {
 		return 0, err
@@ -399,7 +415,6 @@ func GetRemainingCapacity(postgresConfig *postgres.Config) (int64, error) {
 		return pgconfig.GetPostgresCapacity() - sizeUsed, err
 	}
 
-	log.Infof("remaining capacity = %d", capacity)
 	return capacity, nil
 }
 
@@ -408,7 +423,10 @@ func GetDatabaseSize(postgresConfig *postgres.Config, dbName string) (int64, err
 	log.Debugf("GetDatabaseSize -- %q", dbName)
 
 	// Connect to different database for admin functions
-	connectPool := GetAdminPool(postgresConfig)
+	connectPool, err := GetAdminPool(postgresConfig)
+	if err != nil {
+		return 0, err
+	}
 	// Close the admin connection pool
 	defer connectPool.Close()
 
@@ -429,7 +447,10 @@ func GetDatabaseSize(postgresConfig *postgres.Config, dbName string) (int64, err
 // GetTotalPostgresSize - retrieves the total size of all Postgres databases
 func GetTotalPostgresSize(postgresConfig *postgres.Config) (int64, error) {
 	// Connect to database for admin functions
-	connectPool := GetAdminPool(postgresConfig)
+	connectPool, err := GetAdminPool(postgresConfig)
+	if err != nil {
+		return 0, err
+	}
 	// Close the admin connection pool
 	defer connectPool.Close()
 
@@ -439,7 +460,7 @@ func GetTotalPostgresSize(postgresConfig *postgres.Config) (int64, error) {
 
 	row := connectPool.QueryRow(ctx, totalSizeStmt)
 	var sizeUsed int64
-	err := row.Scan(&sizeUsed)
+	err = row.Scan(&sizeUsed)
 	if err != nil {
 		return 0, err
 	}
@@ -448,9 +469,12 @@ func GetTotalPostgresSize(postgresConfig *postgres.Config) (int64, error) {
 }
 
 // GetAllDatabases - returns list of databases in Postgres
-func GetAllDatabases(postgresConfig *postgres.Config) []string {
+func GetAllDatabases(postgresConfig *postgres.Config) ([]string, error) {
 	// Connect to different database for admin functions
-	connectPool := GetAdminPool(postgresConfig)
+	connectPool, err := GetAdminPool(postgresConfig)
+	if err != nil {
+		return nil, err
+	}
 	// Close the admin connection pool
 	defer connectPool.Close()
 
@@ -459,7 +483,7 @@ func GetAllDatabases(postgresConfig *postgres.Config) []string {
 
 	rows, err := connectPool.Query(ctx, "SELECT datname FROM pg_catalog.pg_database")
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -467,11 +491,11 @@ func GetAllDatabases(postgresConfig *postgres.Config) []string {
 	for rows.Next() {
 		var cloneName string
 		if err := rows.Scan(&cloneName); err != nil {
-			return nil
+			return nil, err
 		}
 
 		clones = append(clones, cloneName)
 	}
 
-	return clones
+	return clones, nil
 }

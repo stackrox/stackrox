@@ -29,6 +29,7 @@ function DeploymentContainerConfig({ container }: DeploymentContainerConfigProps
             isExpanded={isExpanded}
             displaySize="large"
             isWidthLimited
+            data-testid="deployment-container-config"
         >
             <Stack hasGutter>
                 <StackItem>

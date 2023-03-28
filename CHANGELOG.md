@@ -18,7 +18,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - ROX-14336: product `BuildDate` attribute was removed. It won't be returned by
 `/debug/versions.json` endpoint and `roxctl version --json` command.
-- ROX-12750: As announced in 3.73.0 (ROX-11101), some permissions for permission sets are being grouped for simplification. The deprecation process will remove and replace the deprecated permissions with the replacing permission as listed below. The access level granted to the replacing permission will be the lowest among all access levels of the replaced permissions. 
+- ROX-12750: As announced in 3.73.0 (ROX-11101), some permissions for permission sets are being grouped for simplification. The deprecation process will remove and replace the deprecated permissions with the replacing permission as listed below. The access level granted to the replacing permission will be the lowest among all access levels of the replaced permissions.
   - Permission `Administration` replaces the deprecated permissions `AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, ServiceIdentity`.
   - Permission `Compliance` replaces the deprecated permission `ComplianceRuns`.
 
@@ -28,9 +28,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The `expiration` field in the `Exclusion` proto has been deprecated and will be removed in a future release.
 - The `--offline-mode` flag for the `roxctl scanner generate` command is deprecated, as Scanner's default behavior is
   to fetch vulnerability updates from Central. The flag will be removed as part of the 4.2.0 release.
+- ROX-15925: The KernelModule collection method is deprecated in favor of EBPF. This method will be removed in the 4.1 release.
 
 ### Required Actions
-- The `Analyst` permission set will change behaviour: instead of allowing read to all resources except `DebugLogs`, it will 
+- The `Analyst` permission set will change behaviour: instead of allowing read to all resources except `DebugLogs`, it will
   allow read to all resources except `Administration`.
   If you were using the `Analyst` role or permission set for actions requiring read on `AllComments`, `Config`,
   `NetworkGraphConfig`, `ProbeUpload`, `ScannerBundle`, `ScannerDefinitions`, `SensorUpgradeConfig` or `ServiceIdentity`

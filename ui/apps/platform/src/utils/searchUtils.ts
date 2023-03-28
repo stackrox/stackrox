@@ -1,5 +1,6 @@
 import qs from 'qs';
 import { SearchEntry, ApiSortOption, GraphQLSortOption, SearchFilter } from 'types/search';
+import { ValueOf } from './type.utils';
 
 /**
  *  Checks if the modifier exists in the searchOptions
@@ -215,4 +216,24 @@ export function getListQueryParams(
         },
         { allowDots: true }
     );
+}
+
+/**
+ * Coerces a search filter value obtained from the URL into an array of strings.
+ *
+ * Array values will be returned unchanged.
+ * String values will return an array of length one.
+ * undefined values will return an empty array.
+ *
+ * @param searchValue The value of a single key from a `SearchFilter`
+ * @returns An array of strings
+ */
+export function searchValueAsArray(searchValue: ValueOf<SearchFilter>): string[] {
+    if (!searchValue) {
+        return [];
+    }
+    if (Array.isArray(searchValue)) {
+        return searchValue;
+    }
+    return [searchValue];
 }

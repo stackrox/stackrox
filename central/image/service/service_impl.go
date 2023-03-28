@@ -578,7 +578,7 @@ func (s *serviceImpl) UnwatchImage(ctx context.Context, request *v1.UnwatchImage
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) GetWatchedImages(ctx context.Context, empty *v1.Empty) (*v1.GetWatchedImagesResponse, error) {
+func (s *serviceImpl) GetWatchedImages(ctx context.Context, _ *v1.Empty) (*v1.GetWatchedImagesResponse, error) {
 	watchedImgs, err := s.watchedImages.GetAllWatchedImages(ctx)
 	if err != nil {
 		return nil, err

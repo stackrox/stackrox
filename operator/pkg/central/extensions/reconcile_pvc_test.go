@@ -452,7 +452,7 @@ func makeCentral(p *platform.Persistence) *platform.Central {
 	}
 }
 
-func makePVC(owner *platform.Central, name string, size resource.Quantity, storageClassName string, annotations map[string]string) *corev1.PersistentVolumeClaim {
+func makePVC(owner *platform.Central, name string, size resource.Quantity, storageClassName string, _ map[string]string) *corev1.PersistentVolumeClaim {
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:       "stackrox",

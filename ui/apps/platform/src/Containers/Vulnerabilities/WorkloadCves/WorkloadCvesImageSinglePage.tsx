@@ -4,9 +4,6 @@ import {
     BreadcrumbItem,
     Bullseye,
     Divider,
-    EmptyState,
-    EmptyStateIcon,
-    EmptyStateVariant,
     Flex,
     Label,
     LabelGroup,
@@ -24,8 +21,9 @@ import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLStringUnion from 'hooks/useURLStringUnion';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import ImageSingleVulnerabilities from './ImageSingleVulnerabilities';
 import ImageSingleResources from './ImageSingleResources';
 import { detailsTabValues } from './types';
@@ -103,13 +101,12 @@ function WorkloadCvesImageSinglePage() {
         mainContent = (
             <PageSection variant="light">
                 <Bullseye>
-                    <EmptyState variant={EmptyStateVariant.large}>
-                        <EmptyStateIcon
-                            className="pf-u-danger-color-100"
-                            icon={ExclamationCircleIcon}
-                        />
-                        <Title headingLevel="h2">{getAxiosErrorMessage(error)}</Title>
-                    </EmptyState>
+                    <EmptyStateTemplate
+                        title={getAxiosErrorMessage(error)}
+                        headingLevel="h2"
+                        icon={ExclamationCircleIcon}
+                        iconClassName="pf-u-danger-color-100"
+                    />
                 </Bullseye>
             </PageSection>
         );

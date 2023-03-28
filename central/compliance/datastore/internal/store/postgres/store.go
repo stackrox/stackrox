@@ -236,14 +236,14 @@ func (s *storeImpl) StoreComplianceDomain(ctx context.Context, domain *storage.C
 	return nil
 }
 
-func (s *storeImpl) StoreAggregationResult(ctx context.Context, queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope, results []*storage.ComplianceAggregation_Result, sources []*storage.ComplianceAggregation_Source, domains map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain) error {
+func (s *storeImpl) StoreAggregationResult(_ context.Context, _ string, _ []storage.ComplianceAggregation_Scope, _ storage.ComplianceAggregation_Scope, _ []*storage.ComplianceAggregation_Result, _ []*storage.ComplianceAggregation_Source, _ map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain) error {
 	return nil
 }
 
-func (s *storeImpl) GetAggregationResult(ctx context.Context, queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
+func (s *storeImpl) GetAggregationResult(_ context.Context, _ string, _ []storage.ComplianceAggregation_Scope, _ storage.ComplianceAggregation_Scope) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
 	return nil, nil, nil, nil
 }
 
-func (s *storeImpl) ClearAggregationResults(ctx context.Context) error {
+func (s *storeImpl) ClearAggregationResults(_ context.Context) error {
 	return nil
 }

@@ -26,8 +26,8 @@ type fakeImageServiceClient struct {
 	enrichTriggered bool
 }
 
-func (i *fakeImageServiceClient) EnrichLocalImageInternal(ctx context.Context,
-	req *v1.EnrichLocalImageInternalRequest, _ ...grpc.CallOption) (*v1.ScanImageInternalResponse, error) {
+func (i *fakeImageServiceClient) EnrichLocalImageInternal(_ context.Context,
+	_ *v1.EnrichLocalImageInternalRequest, _ ...grpc.CallOption) (*v1.ScanImageInternalResponse, error) {
 	i.enrichTriggered = true
 	if i.fail {
 		return nil, errors.New("failed enrichment")

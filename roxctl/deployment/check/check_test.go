@@ -216,7 +216,7 @@ type mockDetectionServiceServer struct {
 	ignoredObjRefs []string
 }
 
-func (m *mockDetectionServiceServer) DetectDeployTimeFromYAML(ctx context.Context, req *v1.DeployYAMLDetectionRequest) (*v1.DeployDetectionResponse, error) {
+func (m *mockDetectionServiceServer) DetectDeployTimeFromYAML(_ context.Context, _ *v1.DeployYAMLDetectionRequest) (*v1.DeployDetectionResponse, error) {
 	return &v1.DeployDetectionResponse{
 		Runs: []*v1.DeployDetectionResponse_Run{
 			{

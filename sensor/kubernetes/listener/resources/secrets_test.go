@@ -239,7 +239,7 @@ func TestSAAnnotationImageIntegrationEvents(t *testing.T) {
 	iiEvents = getImageIntegrationEvents(events)
 	assert.Len(t, iiEvents, 0)
 
-	// a secret w/ an empty sa annotation should trigger no imageintegration events
+	// a secret w/ an empty sa annotation should trigger an imageintegration event
 	secret.Annotations[saAnnotation] = ""
 	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
 	iiEvents = getImageIntegrationEvents(events)

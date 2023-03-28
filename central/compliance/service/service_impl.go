@@ -90,7 +90,7 @@ func (s *serviceImpl) GetStandards(context.Context, *v1.Empty) (*v1.GetComplianc
 }
 
 // GetStandard returns details + controls for a given standard
-func (s *serviceImpl) GetStandard(ctx context.Context, req *v1.ResourceByID) (*v1.GetComplianceStandardResponse, error) {
+func (s *serviceImpl) GetStandard(_ context.Context, req *v1.ResourceByID) (*v1.GetComplianceStandardResponse, error) {
 	standard, exists, err := s.standardsRepo.Standard(req.GetId())
 	if err != nil {
 		return nil, err

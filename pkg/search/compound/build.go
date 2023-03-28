@@ -166,7 +166,7 @@ func (tb treeBuilder) docID(q *v1.DocIDQuery) *searchRequestSpec {
 	}
 }
 
-func (tb treeBuilder) matchNone(q *v1.MatchNoneQuery) *searchRequestSpec {
+func (tb treeBuilder) matchNone(_ *v1.MatchNoneQuery) *searchRequestSpec {
 	spec := getDefaultSpec(tb)
 	return &searchRequestSpec{
 		base: &baseRequestSpec{

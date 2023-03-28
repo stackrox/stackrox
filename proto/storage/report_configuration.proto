@@ -21,7 +21,7 @@ message ReportConfiguration {
     oneof                    filter {
         VulnerabilityReportFilters  vuln_report_filters    = 5;
     }
-    string                    scope_id                     = 6;
+    string                    scope_id                     = 6 [(gogoproto.moretags) = 'search:"Embedded Collection ID"'];
     oneof  notifier_config {
         EmailNotifierConfiguration email_config            = 7;
     }

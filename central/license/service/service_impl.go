@@ -24,7 +24,7 @@ func (s *service) RegisterServiceHandler(ctx context.Context, mux *runtime.Serve
 	return v1.RegisterLicenseServiceHandler(ctx, mux, conn)
 }
 
-func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func (s *service) AuthFuncOverride(ctx context.Context, _ string) (context.Context, error) {
 	return ctx, nil
 }
 
@@ -32,16 +32,16 @@ func (s *service) GetActiveLicenseKey(context.Context, *v1.Empty) (*v1.GetActive
 	return &v1.GetActiveLicenseKeyResponse{}, nil
 }
 
-func (s *service) GetLicenses(ctx context.Context, req *v1.GetLicensesRequest) (*v1.GetLicensesResponse, error) {
+func (s *service) GetLicenses(_ context.Context, _ *v1.GetLicensesRequest) (*v1.GetLicensesResponse, error) {
 	return &v1.GetLicensesResponse{}, nil
 }
 
-func (s *service) AddLicense(ctx context.Context, req *v1.AddLicenseRequest) (*v1.AddLicenseResponse, error) {
+func (s *service) AddLicense(_ context.Context, _ *v1.AddLicenseRequest) (*v1.AddLicenseResponse, error) {
 	return &v1.AddLicenseResponse{
 		Accepted: true,
 	}, nil
 }
 
-func (s *service) GetActiveLicenseExpiration(ctx context.Context, _ *v1.Empty) (*v1.GetActiveLicenseExpirationResponse, error) {
+func (s *service) GetActiveLicenseExpiration(_ context.Context, _ *v1.Empty) (*v1.GetActiveLicenseExpirationResponse, error) {
 	return &v1.GetActiveLicenseExpirationResponse{}, nil
 }

@@ -54,7 +54,7 @@ func (j *fakeJira) Handler() http.Handler {
 	})
 }
 
-func (j *fakeJira) handlePriority(w http.ResponseWriter, req *http.Request) {
+func (j *fakeJira) handlePriority(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	require.NoError(j.t, json.NewEncoder(w).Encode(j.priorities))
 }
