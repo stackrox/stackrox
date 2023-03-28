@@ -55,6 +55,18 @@ export function selectNamespace(namespace) {
     }, routeMatcherMapForClusterInNetworkGraph);
 }
 
+export function selectDeployment(deployment) {
+    interactAndWaitForResponses(() => {
+        cy.get(networkGraphSelectors.selector.deploymentSelect).click();
+        cy.get(
+            `${selectSelectors.patternFlySelect.openMenu} .pf-c-select__menu-item [data-testid="deployment-name"]`
+        )
+            .contains(new RegExp(`^${deployment}$`))
+            .click();
+        cy.get(networkGraphSelectors.selector.deploymentSelect).click();
+    }, routeMatcherMapForClusterInNetworkGraph);
+}
+
 // visit helpers
 
 export const notifiersAlias = 'notifiers';
