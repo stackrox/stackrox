@@ -428,8 +428,10 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	}
 
 	img := &storage.Image{
-		Id:             imgID,
-		Name:           request.GetImageName(),
+		Id:   imgID,
+		Name: request.GetImageName(),
+		// 'Names' must be populated to enable cache hits in central AND sensor
+		Names:          []*storage.ImageName{request.GetImageName()},
 		Signature:      request.GetImageSignature(),
 		Metadata:       request.GetMetadata(),
 		Notes:          request.GetImageNotes(),
