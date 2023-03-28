@@ -156,26 +156,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
-        - name: ROX_S_REGISTRY
-          value: {{ quote ._rox.image.scanner.registry }}
-        - name: ROX_S_NAME
-          value: {{ quote ._rox.image.scanner.name }}
-        - name: ROX_S_REPOSITORY
-          value: {{ quote ._rox.image.scanner.repository }}
-        - name: ROX_S_TAG
-          value: {{ quote ._rox.image.scanner.tag }}
-        - name: ROX_S_FULL_REF
-          value: {{ quote ._rox.image.scanner.fullRef }}
-        - name: ROX_M_REGISTRY
-          value: {{ quote ._rox.image.main.registry }}
-        - name: ROX_M_NAME
-          value: {{ quote ._rox.image.main.name }}
-        - name: ROX_M_REPOSITORY
-          value: {{ quote ._rox.image.main.repository }}
-        - name: ROX_M_TAG
-          value: {{ quote ._rox.image.main.tag }}
-        - name: ROX_M_FULL_REF
-          value: {{ quote ._rox.image.main.fullRef }}
         {{- include "srox.envVars" (list . "daemonset" "collector" "node-inventory") | nindent 8 }}
         volumeMounts:
          - mountPath: /host
