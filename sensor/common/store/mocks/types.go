@@ -10,6 +10,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	clusterentities "github.com/stackrox/rox/sensor/common/clusterentities"
+	imagecacheutils "github.com/stackrox/rox/sensor/common/imagecacheutils"
 	rbac "github.com/stackrox/rox/sensor/common/rbac"
 	registry "github.com/stackrox/rox/sensor/common/registry"
 	selector "github.com/stackrox/rox/sensor/common/selector"
@@ -69,18 +70,18 @@ func (mr *MockDeploymentStoreMockRecorder) CountDeploymentsForNamespace(namespac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDeploymentsForNamespace", reflect.TypeOf((*MockDeploymentStore)(nil).CountDeploymentsForNamespace), namespaceName)
 }
 
-// FindDeploymentIDsByImage mocks base method.
-func (m *MockDeploymentStore) FindDeploymentIDsByImage(image *storage.Image) []string {
+// FindDeploymentIDsByImages mocks base method.
+func (m *MockDeploymentStore) FindDeploymentIDsByImages(arg0 []imagecacheutils.CacheKeyProvider) []string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindDeploymentIDsByImage", image)
+	ret := m.ctrl.Call(m, "FindDeploymentIDsByImages", arg0)
 	ret0, _ := ret[0].([]string)
 	return ret0
 }
 
-// FindDeploymentIDsByImage indicates an expected call of FindDeploymentIDsByImage.
-func (mr *MockDeploymentStoreMockRecorder) FindDeploymentIDsByImage(image interface{}) *gomock.Call {
+// FindDeploymentIDsByImages indicates an expected call of FindDeploymentIDsByImages.
+func (mr *MockDeploymentStoreMockRecorder) FindDeploymentIDsByImages(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindDeploymentIDsByImage", reflect.TypeOf((*MockDeploymentStore)(nil).FindDeploymentIDsByImage), image)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindDeploymentIDsByImages", reflect.TypeOf((*MockDeploymentStore)(nil).FindDeploymentIDsByImages), arg0)
 }
 
 // FindDeploymentIDsByLabels mocks base method.
