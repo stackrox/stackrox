@@ -9,6 +9,18 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
+### Removed Features
+
+### Deprecated Fatures
+
+### Technical Changes
+
+## [4.0.0]
+
+
+
+### Added Features
+
 - ROX-15102: new `public_config.telemetry` boolean property of the `/v1/config`
   endpoint request that allows for querying the state, enabling or disabling the
   configured telemetry collection.
