@@ -166,7 +166,7 @@ func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.Resource
 		return nil, errors.Wrap(err, "Failed to check for Report Configuration usages")
 	}
 	if reportConfigCount != 0 {
-		return nil, errors.Wrap(errox.ReferencedByAnotherObject, "Failed to delete collection")
+		return nil, errors.Wrap(errox.ReferencedByAnotherObject, "Collection is in use by one or more report configurations")
 	}
 
 	if err := s.datastore.DeleteCollection(ctx, request.GetId()); err != nil {
