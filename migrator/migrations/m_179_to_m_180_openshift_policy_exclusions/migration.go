@@ -1,4 +1,4 @@
-package m178tom179
+package m179tom180
 
 import (
 	"embed"
@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	postgresHelper "github.com/stackrox/rox/migrator/migrations/m_178_to_m_179_openshift_policy_exclusions/postgres"
+	postgresHelper "github.com/stackrox/rox/migrator/migrations/m_179_to_m_180_openshift_policy_exclusions/postgres"
 	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -14,8 +14,8 @@ import (
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: 178,
-		VersionAfter:   &storage.Version{SeqNum: 179},
+		StartingSeqNum: 179,
+		VersionAfter:   &storage.Version{SeqNum: 180},
 		Run: func(databases *types.Databases) error {
 			err := updatePolicies(databases.PostgresDB)
 			if err != nil {
@@ -36,7 +36,7 @@ var (
 	policyDiffs = []postgresHelper.PolicyDiff{
 		{
 			FieldsToCompare: fieldsToCompare,
-			PolicyFileName:  "containers_should_run_as_a_non-root_user.json",
+			PolicyFileName:  "exec-iptables-root.json",
 		},
 		{
 			FieldsToCompare: fieldsToCompare,

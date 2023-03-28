@@ -1,13 +1,13 @@
 //go:build sql_integration
 
-package m178tom179
+package m179tom180
 
 import (
 	"context"
 	"testing"
 
 	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
-	policyPostgresStore "github.com/stackrox/rox/migrator/migrations/m_178_to_m_179_openshift_policy_exclusions/postgres"
+	policyPostgresStore "github.com/stackrox/rox/migrator/migrations/m_179_to_m_180_openshift_policy_exclusions/postgres"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/fixtures"
