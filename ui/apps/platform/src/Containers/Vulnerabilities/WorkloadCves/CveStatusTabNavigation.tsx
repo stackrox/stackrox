@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     Tabs,
     Tab,
@@ -13,13 +13,7 @@ import {
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import EntityTypeToggleGroup from './EntityTypeToggleGroup';
-import { getOverviewCvesPath } from './searchUtils';
 import { DefaultFilters, cveStatusTabValues } from './types';
-
-const workloadCveOverviewPath = getOverviewCvesPath({
-    cveStatusTab: 'Observed',
-    entityTab: 'CVE',
-});
 
 type CveStatusTabNavigationProps = {
     defaultFilters: DefaultFilters;
