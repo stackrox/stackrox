@@ -328,7 +328,7 @@ func (resolver *policyResolver) LatestViolation(ctx context.Context, args RawQue
 	return getLatestViolationTime(ctx, resolver.root, q)
 }
 
-func (resolver *policyResolver) FullMitreAttackVectors(ctx context.Context) ([]*mitreAttackVectorResolver, error) {
+func (resolver *policyResolver) FullMitreAttackVectors(_ context.Context) ([]*mitreAttackVectorResolver, error) {
 	return resolver.root.wrapMitreAttackVectors(
 		policyUtils.GetFullMitreAttackVectors(resolver.root.mitreStore, resolver.data),
 	)
@@ -342,7 +342,7 @@ func (resolver *policyResolver) getRawPolicyQuery() string {
 	return search.NewQueryBuilder().AddExactMatches(search.PolicyID, resolver.data.GetId()).Query()
 }
 
-func (resolver *policyResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+func (resolver *policyResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
 	return nil
 }
 

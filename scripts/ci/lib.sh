@@ -709,6 +709,16 @@ get_PR_number() {
             echo "$pull_request"
             return 0
         fi
+    elif is_GITHUB_ACTIONS; then
+        local pull_request
+        pull_request=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH") || {
+            echo 2>&1 "ERROR: Could not determine a PR number"
+            return 1
+        }
+        if [[ "$pull_request" =~ ^[0-9]+$ ]]; then
+            echo "$pull_request"
+            return 0
+        fi
     fi
 
     echo 2>&1 "ERROR: Could not determine a PR number"

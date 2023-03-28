@@ -48,7 +48,7 @@ func (s *managementService) RegisterServiceServer(srv *grpc.Server) {
 	sensor.RegisterAdmissionControlManagementServiceServer(srv, s)
 }
 
-func (s *managementService) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, cc *grpc.ClientConn) error {
+func (s *managementService) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	return nil
 }
 

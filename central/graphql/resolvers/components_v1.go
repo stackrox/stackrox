@@ -20,7 +20,7 @@ import (
 // Resolvers on Embedded Scan Object.
 /////////////////////////////////////
 
-func (resolver *imageScanResolver) Components(ctx context.Context, args PaginatedQuery) ([]*EmbeddedImageScanComponentResolver, error) {
+func (resolver *imageScanResolver) Components(_ context.Context, args PaginatedQuery) ([]*EmbeddedImageScanComponentResolver, error) {
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -55,58 +55,58 @@ type EmbeddedImageScanComponentResolver struct {
 }
 
 // PlottedVulns returns the data required by top risky component scatter-plot on vuln mgmt dashboard
-func (eicr *EmbeddedImageScanComponentResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+func (eicr *EmbeddedImageScanComponentResolver) PlottedVulns(_ context.Context, _ RawQuery) (*PlottedVulnerabilitiesResolver, error) {
 	return nil, errors.New("not implemented")
 }
 
 // UnusedVarSink represents a query sink
-func (eicr *EmbeddedImageScanComponentResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+func (eicr *EmbeddedImageScanComponentResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
 	return nil
 }
 
 // License return the license for the image component.
-func (eicr *EmbeddedImageScanComponentResolver) License(ctx context.Context) (*licenseResolver, error) {
+func (eicr *EmbeddedImageScanComponentResolver) License(_ context.Context) (*licenseResolver, error) {
 	value := eicr.data.GetLicense()
 	return eicr.root.wrapLicense(value, true, nil)
 }
 
 // ID returns a unique identifier for the component.
-func (eicr *EmbeddedImageScanComponentResolver) ID(ctx context.Context) graphql.ID {
+func (eicr *EmbeddedImageScanComponentResolver) ID(_ context.Context) graphql.ID {
 	return graphql.ID(scancomponent.ComponentID(eicr.data.GetName(), eicr.data.GetVersion(), eicr.os))
 }
 
 // Name returns the name of the component.
-func (eicr *EmbeddedImageScanComponentResolver) Name(ctx context.Context) string {
+func (eicr *EmbeddedImageScanComponentResolver) Name(_ context.Context) string {
 	return eicr.data.GetName()
 }
 
 // Version gives the version of the image component.
-func (eicr *EmbeddedImageScanComponentResolver) Version(ctx context.Context) string {
+func (eicr *EmbeddedImageScanComponentResolver) Version(_ context.Context) string {
 	return eicr.data.GetVersion()
 }
 
 // Priority returns the priority of the component.
-func (eicr *EmbeddedImageScanComponentResolver) Priority(ctx context.Context) int32 {
+func (eicr *EmbeddedImageScanComponentResolver) Priority(_ context.Context) int32 {
 	return int32(eicr.data.GetPriority())
 }
 
 // Source returns the source of the component.
-func (eicr *EmbeddedImageScanComponentResolver) Source(ctx context.Context) string {
+func (eicr *EmbeddedImageScanComponentResolver) Source(_ context.Context) string {
 	return eicr.data.GetSource().String()
 }
 
 // Location returns the location of the component.
-func (eicr *EmbeddedImageScanComponentResolver) Location(ctx context.Context, _ RawQuery) (string, error) {
+func (eicr *EmbeddedImageScanComponentResolver) Location(_ context.Context, _ RawQuery) (string, error) {
 	return eicr.data.GetLocation(), nil
 }
 
 // FixedIn returns the highest component version in which all the containing vulnerabilities are fixed.
-func (eicr *EmbeddedImageScanComponentResolver) FixedIn(ctx context.Context) string {
+func (eicr *EmbeddedImageScanComponentResolver) FixedIn(_ context.Context) string {
 	return eicr.data.GetFixedBy()
 }
 
 // RiskScore returns the risk score of the component.
-func (eicr *EmbeddedImageScanComponentResolver) RiskScore(ctx context.Context) float64 {
+func (eicr *EmbeddedImageScanComponentResolver) RiskScore(_ context.Context) float64 {
 	return float64(eicr.data.GetRiskScore())
 }
 
@@ -121,12 +121,12 @@ func (eicr *EmbeddedImageScanComponentResolver) LayerIndex() (*int32, error) {
 }
 
 // LastScanned is the last time the component was scanned in an image.
-func (eicr *EmbeddedImageScanComponentResolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
+func (eicr *EmbeddedImageScanComponentResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
 	return timestamp(eicr.lastScanned)
 }
 
 // TopVuln returns the first vulnerability with the top CVSS score.
-func (eicr *EmbeddedImageScanComponentResolver) TopVuln(ctx context.Context) (VulnerabilityResolver, error) {
+func (eicr *EmbeddedImageScanComponentResolver) TopVuln(_ context.Context) (VulnerabilityResolver, error) {
 	var maxCvss *storage.EmbeddedVulnerability
 	for _, vuln := range eicr.data.GetVulns() {
 		if maxCvss == nil || vuln.GetCvss() > maxCvss.GetCvss() {
@@ -140,7 +140,7 @@ func (eicr *EmbeddedImageScanComponentResolver) TopVuln(ctx context.Context) (Vu
 }
 
 // Vulns resolves the vulnerabilities contained in the image component.
-func (eicr *EmbeddedImageScanComponentResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
+func (eicr *EmbeddedImageScanComponentResolver) Vulns(_ context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -177,12 +177,12 @@ func (eicr *EmbeddedImageScanComponentResolver) Vulns(ctx context.Context, args 
 }
 
 // VulnCount resolves the number of vulnerabilities contained in the image component.
-func (eicr *EmbeddedImageScanComponentResolver) VulnCount(ctx context.Context, args RawQuery) (int32, error) {
+func (eicr *EmbeddedImageScanComponentResolver) VulnCount(_ context.Context, _ RawQuery) (int32, error) {
 	return int32(len(eicr.data.GetVulns())), nil
 }
 
 // VulnCounter resolves the number of different types of vulnerabilities contained in an image component.
-func (eicr *EmbeddedImageScanComponentResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+func (eicr *EmbeddedImageScanComponentResolver) VulnCounter(_ context.Context, _ RawQuery) (*VulnerabilityCounterResolver, error) {
 	return mapVulnsToVulnerabilityCounter(eicr.data.GetVulns()), nil
 }
 
@@ -250,7 +250,7 @@ func (eicr *EmbeddedImageScanComponentResolver) DeploymentCount(ctx context.Cont
 }
 
 // ActiveState shows the activeness of a component in a deployment context.
-func (eicr *EmbeddedImageScanComponentResolver) ActiveState(ctx context.Context, args PaginatedQuery) (*activeStateResolver, error) {
+func (eicr *EmbeddedImageScanComponentResolver) ActiveState(ctx context.Context, _ PaginatedQuery) (*activeStateResolver, error) {
 	if !env.ActiveVulnMgmt.BooleanSetting() {
 		return &activeStateResolver{}, nil
 	}

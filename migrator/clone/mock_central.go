@@ -169,7 +169,7 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
 	}
 }
 
-func (m *mockCentral) upgradeDB(path, clone, pgClone string) {
+func (m *mockCentral) upgradeDB(path, _, pgClone string) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		if pgadmin.CheckIfDBExists(m.adminConfig, pgClone) {
 			cloneVer, err := migVer.ReadVersionPostgres(m.ctx, pgClone)

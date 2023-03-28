@@ -148,7 +148,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetLogLevel returns a v1.LogLevelResponse object.
-func (s *serviceImpl) GetLogLevel(ctx context.Context, req *v1.GetLogLevelRequest) (*v1.LogLevelResponse, error) {
+func (s *serviceImpl) GetLogLevel(_ context.Context, req *v1.GetLogLevelRequest) (*v1.LogLevelResponse, error) {
 	resp := &v1.LogLevelResponse{}
 	var unknownModules []string
 	var forEachModule func(name string, m *logging.Module)
@@ -187,7 +187,7 @@ func (s *serviceImpl) GetLogLevel(ctx context.Context, req *v1.GetLogLevelReques
 }
 
 // SetLogLevel implements v1.DebugServiceServer, and it sets the log level for StackRox services.
-func (s *serviceImpl) SetLogLevel(ctx context.Context, req *v1.LogLevelRequest) (*types.Empty, error) {
+func (s *serviceImpl) SetLogLevel(_ context.Context, req *v1.LogLevelRequest) (*types.Empty, error) {
 	levelStr := req.GetLevel()
 	zapLevel, ok := logging.LevelForLabel(levelStr)
 	if !ok {

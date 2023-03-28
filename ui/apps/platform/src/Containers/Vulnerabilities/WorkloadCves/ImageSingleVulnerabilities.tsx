@@ -29,7 +29,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
-import useURLSort, { UseURLSortProps } from 'hooks/useURLSort';
+import useURLSort from 'hooks/useURLSort';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { cveStatusTabValues, FixableStatus } from './types';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
@@ -39,13 +39,7 @@ import SingleEntityVulnerabilitiesTable from './Tables/SingleEntityVulnerabiliti
 import useImageVulnerabilities from './hooks/useImageVulnerabilities';
 import { DynamicTableLabel } from './DynamicIcon';
 
-const defaultSortOptions: UseURLSortProps = {
-    sortFields: ['CVE', 'Severity', 'Fixable'],
-    defaultSortOption: {
-        field: 'Severity',
-        direction: 'desc',
-    },
-};
+const defaultSortFields = ['CVE', 'Severity', 'Fixable'];
 
 export type ImageSingleVulnerabilitiesProps = {
     imageId: string;
@@ -54,8 +48,14 @@ export type ImageSingleVulnerabilitiesProps = {
 function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps) {
     const { searchFilter } = useURLSearch();
     const { page, perPage, setPage, setPerPage } = useURLPagination(50);
-    // TODO Need to reset current page at the same time sorting changes
-    const { sortOption, getSortParams } = useURLSort(defaultSortOptions);
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields: defaultSortFields,
+        defaultSortOption: {
+            field: 'Severity',
+            direction: 'desc',
+        },
+        onSort: () => setPage(1),
+    });
     // TODO Still need to properly integrate search filter with query
     const pagination = {
         offset: (page - 1) * perPage,

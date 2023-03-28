@@ -149,4 +149,4 @@ func (s *pipelineImpl) persistNamespace(ctx context.Context, action central.Reso
 	}
 }
 
-func (s *pipelineImpl) OnFinish(clusterID string) {}
+func (s *pipelineImpl) OnFinish(_ string) {}

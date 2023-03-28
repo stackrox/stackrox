@@ -299,7 +299,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralNotReady() {
 type mockAlwaysHitNodeIDMatcher struct{}
 
 // GetNodeID always finds a hardcoded ID "abc"
-func (c *mockAlwaysHitNodeIDMatcher) GetNodeID(nodename string) (string, error) {
+func (c *mockAlwaysHitNodeIDMatcher) GetNodeID(_ string) (string, error) {
 	return "abc", nil
 }
 
@@ -307,6 +307,6 @@ func (c *mockAlwaysHitNodeIDMatcher) GetNodeID(nodename string) (string, error) 
 type mockNeverHitNodeIDMatcher struct{}
 
 // GetNodeID never finds a node and returns error
-func (c *mockNeverHitNodeIDMatcher) GetNodeID(nodename string) (string, error) {
+func (c *mockNeverHitNodeIDMatcher) GetNodeID(_ string) (string, error) {
 	return "", errors.New("cannot find node")
 }

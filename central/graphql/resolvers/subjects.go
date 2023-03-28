@@ -250,7 +250,7 @@ func (resolver *subjectResolver) getEvaluators(ctx context.Context) (map[string]
 	return evaluators, nil
 }
 
-func (resolver *subjectResolver) getClusterEvaluator(ctx context.Context) k8srbac.EvaluatorForContext {
+func (resolver *subjectResolver) getClusterEvaluator(_ context.Context) k8srbac.EvaluatorForContext {
 	rootResolver := resolver.root
 	return rbacUtils.NewClusterPermissionEvaluator(resolver.data.GetClusterId(),
 		rootResolver.K8sRoleStore, rootResolver.K8sRoleBindingStore)

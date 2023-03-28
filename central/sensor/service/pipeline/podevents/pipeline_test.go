@@ -47,7 +47,7 @@ func (suite *PipelineTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 }
 
-func newSensorEvent(active bool, action central.ResourceAction) *central.SensorEvent {
+func newSensorEvent(_ bool, action central.ResourceAction) *central.SensorEvent {
 	return &central.SensorEvent{
 		Resource: &central.SensorEvent_Pod{
 			Pod: &storage.Pod{

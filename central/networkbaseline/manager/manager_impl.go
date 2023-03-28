@@ -289,7 +289,7 @@ func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 	return modifiedDeploymentIDs, nil
 }
 
-func (m *manager) processDeploymentCreate(deploymentID, clusterID string) error {
+func (m *manager) processDeploymentCreate(deploymentID, _ string) error {
 	// Deployment has already had a baseline created.  Nothing to do in this case.
 	if _, exists := m.baselinesByDeploymentID[deploymentID]; exists {
 		return nil
@@ -311,7 +311,7 @@ func (m *manager) processDeploymentCreate(deploymentID, clusterID string) error 
 	return nil
 }
 
-func (m *manager) ProcessDeploymentCreate(deploymentID, deploymentName, clusterID, namespace string) error {
+func (m *manager) ProcessDeploymentCreate(deploymentID, _, clusterID, _ string) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -556,7 +556,7 @@ func (m *manager) processNetworkPolicyUpdate(
 }
 
 func (m *manager) getDeploymentIDsAffectedByNetworkPolicy(
-	ctx context.Context,
+	_ context.Context,
 	policy *storage.NetworkPolicy,
 ) ([]*storage.Deployment, error) {
 	deploymentQuery :=

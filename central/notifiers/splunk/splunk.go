@@ -122,7 +122,7 @@ func (s *splunk) getSplunkEvent(msg proto.Message, sourceTypeKey string) (*wrapp
 	}, nil
 }
 
-func (*splunk) Close(ctx context.Context) error {
+func (*splunk) Close(_ context.Context) error {
 	return nil
 }
 

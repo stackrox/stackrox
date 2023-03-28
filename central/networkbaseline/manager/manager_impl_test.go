@@ -40,14 +40,14 @@ type fakeDS struct {
 	datastore.DataStore
 }
 
-func (f *fakeDS) UpsertNetworkBaselines(ctx context.Context, baselines []*storage.NetworkBaseline) error {
+func (f *fakeDS) UpsertNetworkBaselines(_ context.Context, baselines []*storage.NetworkBaseline) error {
 	for _, baseline := range baselines {
 		f.baselines[baseline.GetDeploymentId()] = baseline
 	}
 	return nil
 }
 
-func (f *fakeDS) Walk(ctx context.Context, fn func(baseline *storage.NetworkBaseline) error) error {
+func (f *fakeDS) Walk(_ context.Context, fn func(baseline *storage.NetworkBaseline) error) error {
 	for _, baseline := range f.baselines {
 		if err := fn(baseline); err != nil {
 			return err
@@ -56,19 +56,19 @@ func (f *fakeDS) Walk(ctx context.Context, fn func(baseline *storage.NetworkBase
 	return nil
 }
 
-func (f *fakeDS) DeleteNetworkBaseline(ctx context.Context, deploymentID string) error {
+func (f *fakeDS) DeleteNetworkBaseline(_ context.Context, deploymentID string) error {
 	delete(f.baselines, deploymentID)
 	return nil
 }
 
-func (f *fakeDS) DeleteNetworkBaselines(ctx context.Context, deploymentIDs []string) error {
+func (f *fakeDS) DeleteNetworkBaselines(_ context.Context, deploymentIDs []string) error {
 	for _, id := range deploymentIDs {
 		delete(f.baselines, id)
 	}
 	return nil
 }
 
-func (f *fakeDS) GetNetworkBaseline(ctx context.Context, deploymentID string) (*storage.NetworkBaseline, bool, error) {
+func (f *fakeDS) GetNetworkBaseline(_ context.Context, deploymentID string) (*storage.NetworkBaseline, bool, error) {
 	if baseline, ok := f.baselines[deploymentID]; ok {
 		return baseline, true, nil
 	}

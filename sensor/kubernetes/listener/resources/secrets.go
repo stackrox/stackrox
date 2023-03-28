@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/registries/docker"
@@ -23,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/registry"
+	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/core/v1"
 )
@@ -246,11 +248,14 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 
 	sensorEvents := make([]*central.SensorEvent, 0, len(dockerConfig)+1)
 	registries := make([]*storage.ImagePullSecret_Registry, 0, len(dockerConfig))
+
+	saName := secret.GetAnnotations()[saAnnotation]
+
 	// In Kubernetes, the `default` service account always exists in each namespace (it is recreated upon deletion).
 	// The default service account always contains an API token.
 	// In OpenShift, the default service account also contains credentials for the
 	// OpenShift Container Registry, which is an internal image registry.
-	fromDefaultSA := secret.GetAnnotations()[saAnnotation] == defaultSA
+	fromDefaultSA := saName == defaultSA
 
 	newIntegrationSet := set.NewStringSet()
 	for registry, dce := range dockerConfig {
@@ -260,7 +265,9 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			if err != nil {
 				log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
 			}
-		} else {
+		} else if saName == "" {
+			// only send integrations to central that do not have the k8s SA annotation
+			// this will ignore secrets associated with OCP builder, deployer, etc. service accounts
 			ii, err := DockerConfigToImageIntegration(secret, registry, dce)
 			if err != nil {
 				log.Errorf("unable to create docker config for secret %s: %v", secret.GetName(), err)
@@ -315,6 +322,13 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	}}
 	events := component.NewEvent(sensorEvents...)
 	events.AddSensorEvent(secretToSensorEvent(action, protoSecret))
+
+	if env.ResyncDisabled.BooleanSetting() {
+		// When adding new docker config secrets we need to reprocess every deployment in this cluster.
+		// This is because the field `NotPullable` could be updated and hence new image scan results will appear.
+		events.AddDeploymentReference(resolver.ResolveAllDeployments(), central.ResourceAction_UPDATE_RESOURCE, false)
+	}
+
 	return events
 }
 

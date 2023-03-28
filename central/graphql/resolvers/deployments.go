@@ -450,7 +450,7 @@ func (resolver *deploymentResolver) SecretCount(ctx context.Context, args RawQue
 	return int32(len(secrets)), nil
 }
 
-func (resolver *deploymentResolver) getDeploymentSecrets(ctx context.Context, q *v1.Query) ([]*secretResolver, error) {
+func (resolver *deploymentResolver) getDeploymentSecrets(ctx context.Context, _ *v1.Query) ([]*secretResolver, error) {
 	if err := readSecrets(ctx); err != nil {
 		return nil, err
 	}

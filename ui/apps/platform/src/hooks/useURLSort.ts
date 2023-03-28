@@ -9,6 +9,7 @@ export type GetSortParams = (field: string) => ThProps['sort'] | undefined;
 export type UseURLSortProps = {
     sortFields: string[];
     defaultSortOption: SortOption;
+    onSort?: (newSortOption: SortOption) => void;
 };
 
 export type UseURLSortResult = {
@@ -27,7 +28,7 @@ function isDirection(val: unknown): val is 'asc' | 'desc' {
     return val === 'asc' || val === 'desc';
 }
 
-function useURLSort({ sortFields, defaultSortOption }: UseURLSortProps): UseURLSortResult {
+function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps): UseURLSortResult {
     const [sortOption, setSortOption] = useURLParameter('sortOption', defaultSortOption);
 
     // get the parsed sort option values from the URL, if available
@@ -74,6 +75,9 @@ function useURLSort({ sortFields, defaultSortOption }: UseURLSortProps): UseURLS
                     field,
                     direction,
                 };
+                if (onSort) {
+                    onSort(newSortOption);
+                }
                 setSortOption(newSortOption);
             },
             columnIndex: index,

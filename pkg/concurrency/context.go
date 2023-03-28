@@ -54,7 +54,7 @@ func (w *contextWrapper) Err() error {
 	return err
 }
 
-func (w *contextWrapper) Value(key interface{}) interface{} {
+func (w *contextWrapper) Value(_ interface{}) interface{} {
 	return nil
 }
 

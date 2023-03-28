@@ -36,11 +36,11 @@ type mockClustersServiceServer struct {
 	clusters []*storage.Cluster
 }
 
-func (m *mockClustersServiceServer) GetClusters(ctx context.Context, req *v1.GetClustersRequest) (*v1.ClustersList, error) {
+func (m *mockClustersServiceServer) GetClusters(_ context.Context, _ *v1.GetClustersRequest) (*v1.ClustersList, error) {
 	return &v1.ClustersList{Clusters: m.clusters}, nil
 }
 
-func (m *mockClustersServiceServer) DeleteCluster(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
+func (m *mockClustersServiceServer) DeleteCluster(_ context.Context, _ *v1.ResourceByID) (*v1.Empty, error) {
 	return &v1.Empty{}, nil
 }
 

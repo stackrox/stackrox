@@ -36,11 +36,11 @@ func (prv *Persistor) deleteFrom(from []byte) {
 	prv.txn.Delete(prv.prefixKey(from))
 }
 
-func (prv *Persistor) setTo(to []byte, from [][]byte) {
+func (prv *Persistor) setTo(_ []byte, _ [][]byte) {
 	// do nothing, we only store the forward map.
 }
 
-func (prv *Persistor) deleteTo(to []byte) {
+func (prv *Persistor) deleteTo(_ []byte) {
 	// do nothing, we only store the forward map.
 }
 

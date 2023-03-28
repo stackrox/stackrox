@@ -67,7 +67,7 @@ func (c *connectionManager) forEach(fn func(node string, server sensor.Complianc
 }
 
 // GetScrapeConfig returns the scrape configuration for the given node name and scrape ID.
-func (s *serviceImpl) GetScrapeConfig(ctx context.Context, nodeName string) (*sensor.MsgToCompliance_ScrapeConfig, error) {
+func (s *serviceImpl) GetScrapeConfig(_ context.Context, nodeName string) (*sensor.MsgToCompliance_ScrapeConfig, error) {
 	nodeScrapeConfig, err := s.orchestrator.GetNodeScrapeConfig(nodeName)
 	if err != nil {
 		return nil, err

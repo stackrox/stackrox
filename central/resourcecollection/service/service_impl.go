@@ -158,15 +158,15 @@ func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.Resource
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to delete a collection")
 	}
+
 	// error out if collection is in use by a report config
-	err := s.reportConfigDatastore.Walk(ctx, func(reportConfig *storage.ReportConfiguration) error {
-		if reportConfig.GetScopeId() == request.GetId() {
-			return errors.Wrap(errox.ReferencedByAnotherObject, "Collection is in use by one or more report configurations")
-		}
-		return nil
-	})
+	query := search.NewQueryBuilder().AddExactMatches(search.EmbeddedCollectionID, request.GetId()).ProtoQuery()
+	reportConfigCount, err := s.reportConfigDatastore.Count(ctx, query)
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to delete collection")
+		return nil, errors.Wrap(err, "Failed to check for Report Configuration usages")
+	}
+	if reportConfigCount != 0 {
+		return nil, errors.Wrap(errox.ReferencedByAnotherObject, "Collection is in use by one or more report configurations")
 	}
 
 	if err := s.datastore.DeleteCollection(ctx, request.GetId()); err != nil {

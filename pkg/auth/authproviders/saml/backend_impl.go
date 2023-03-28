@@ -40,11 +40,11 @@ type backendImpl struct {
 	config map[string]string
 }
 
-func (p *backendImpl) OnEnable(provider authproviders.Provider) {
+func (p *backendImpl) OnEnable(_ authproviders.Provider) {
 	p.factory.RegisterBackend(p)
 }
 
-func (p *backendImpl) OnDisable(provider authproviders.Provider) {
+func (p *backendImpl) OnDisable(_ authproviders.Provider) {
 	p.factory.UnregisterBackend(p)
 }
 
@@ -134,7 +134,7 @@ func (p *backendImpl) consumeSAMLResponse(samlResponse string) (*authproviders.A
 	}, nil
 }
 
-func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
+func (p *backendImpl) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
 	if r.URL.Path != p.acsURLPath {
 		return nil, httputil.NewError(http.StatusNotFound, "Not Found")
 	}
@@ -150,7 +150,7 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 	return p.consumeSAMLResponse(samlResponse)
 }
 
-func (p *backendImpl) ExchangeToken(ctx context.Context, externalToken, state string) (*authproviders.AuthResponse, string, error) {
+func (p *backendImpl) ExchangeToken(_ context.Context, _, _ string) (*authproviders.AuthResponse, string, error) {
 	return nil, "", errors.New("not implemented")
 }
 
@@ -162,7 +162,7 @@ func (p *backendImpl) LoginURL(clientState string, _ *requestinfo.RequestInfo) (
 	return p.loginURL(clientState)
 }
 
-func (p *backendImpl) Validate(ctx context.Context, claims *tokens.Claims) error {
+func (p *backendImpl) Validate(_ context.Context, _ *tokens.Claims) error {
 	return nil
 }
 

@@ -44,13 +44,13 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) ListMitreAttackVectors(ctx context.Context, _ *v1.Empty) (*v1.ListMitreAttackVectorsResponse, error) {
+func (s *serviceImpl) ListMitreAttackVectors(_ context.Context, _ *v1.Empty) (*v1.ListMitreAttackVectorsResponse, error) {
 	return &v1.ListMitreAttackVectorsResponse{
 		MitreAttackVectors: s.store.GetAll(),
 	}, nil
 }
 
-func (s *serviceImpl) GetMitreAttackVector(ctx context.Context, req *v1.ResourceByID) (*v1.GetMitreVectorResponse, error) {
+func (s *serviceImpl) GetMitreAttackVector(_ context.Context, req *v1.ResourceByID) (*v1.GetMitreVectorResponse, error) {
 	vector, err := s.store.Get(req.GetId())
 	if err != nil {
 		return nil, err

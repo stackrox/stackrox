@@ -110,7 +110,7 @@ type imageScanCommand struct {
 }
 
 // Construct will enhance the struct with other values coming either from os.Args, other, global flags or environment variables
-func (i *imageScanCommand) Construct(args []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
+func (i *imageScanCommand) Construct(_ []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	i.timeout = flags.Timeout(cmd)
 
 	if err := imageUtils.IsValidImageString(i.image); err != nil {

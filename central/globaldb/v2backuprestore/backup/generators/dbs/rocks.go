@@ -30,7 +30,7 @@ type RocksBackup struct {
 }
 
 // WriteDirectory writes a backup of RocksDB to the input path.
-func (rgen *RocksBackup) WriteDirectory(ctx context.Context) (string, error) {
+func (rgen *RocksBackup) WriteDirectory(_ context.Context) (string, error) {
 	if err := rgen.db.IncRocksDBInProgressOps(); err != nil {
 		return "", err
 	}

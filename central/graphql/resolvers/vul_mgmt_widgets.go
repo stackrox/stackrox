@@ -52,22 +52,22 @@ type DeploymentsWithMostSevereViolationsResolver struct {
 }
 
 // ID returns the deployment ID.
-func (r *DeploymentsWithMostSevereViolationsResolver) ID(ctx context.Context) graphql.ID {
+func (r *DeploymentsWithMostSevereViolationsResolver) ID(_ context.Context) graphql.ID {
 	return graphql.ID(r.deployment.GetId())
 }
 
 // Name returns the deployment name.
-func (r *DeploymentsWithMostSevereViolationsResolver) Name(ctx context.Context) string {
+func (r *DeploymentsWithMostSevereViolationsResolver) Name(_ context.Context) string {
 	return r.deployment.GetName()
 }
 
 // Namespace returns the deployment namespace.
-func (r *DeploymentsWithMostSevereViolationsResolver) Namespace(ctx context.Context) string {
+func (r *DeploymentsWithMostSevereViolationsResolver) Namespace(_ context.Context) string {
 	return r.deployment.GetNamespace()
 }
 
 // ClusterName returns the deployment cluster name.
-func (r *DeploymentsWithMostSevereViolationsResolver) ClusterName(ctx context.Context) string {
+func (r *DeploymentsWithMostSevereViolationsResolver) ClusterName(_ context.Context) string {
 	return r.deployment.GetClusterName()
 }
 
@@ -82,12 +82,12 @@ type FailingPolicyResolver struct {
 }
 
 // ID returns the policy id.
-func (r *FailingPolicyResolver) ID(ctx context.Context) graphql.ID {
+func (r *FailingPolicyResolver) ID(_ context.Context) graphql.ID {
 	return graphql.ID(r.policy.GetId())
 }
 
 // Severity returns policy severity.
-func (r *FailingPolicyResolver) Severity(ctx context.Context) string {
+func (r *FailingPolicyResolver) Severity(_ context.Context) string {
 	return r.policy.GetSeverity().String()
 }
 

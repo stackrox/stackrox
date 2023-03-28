@@ -63,7 +63,7 @@ func (w *k8sSettingsWatch) OnAdd(obj interface{}) {
 	w.parseAndSendSettings(cm)
 }
 
-func (w *k8sSettingsWatch) OnUpdate(oldObj, newObj interface{}) {
+func (w *k8sSettingsWatch) OnUpdate(_, newObj interface{}) {
 	cm := getConfigMapFromObj(newObj)
 	if cm == nil {
 		return
@@ -72,7 +72,7 @@ func (w *k8sSettingsWatch) OnUpdate(oldObj, newObj interface{}) {
 	w.parseAndSendSettings(cm)
 }
 
-func (w *k8sSettingsWatch) OnDelete(oldObj interface{}) {
+func (w *k8sSettingsWatch) OnDelete(_ interface{}) {
 	w.sendSettings(nil)
 }
 

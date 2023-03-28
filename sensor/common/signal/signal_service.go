@@ -45,7 +45,7 @@ func (s *serviceImpl) Start() error {
 	return nil
 }
 
-func (s *serviceImpl) Stop(err error) {}
+func (s *serviceImpl) Stop(_ error) {}
 
 func (s *serviceImpl) Notify(common.SensorComponentEvent) {}
 
@@ -53,7 +53,7 @@ func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
@@ -67,7 +67,7 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 }
 
 // RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
-func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	// There is no grpc gateway handler for signal service
 	return nil
 }
