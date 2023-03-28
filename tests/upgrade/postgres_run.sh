@@ -267,11 +267,9 @@ helm_upgrade_to_postgres() {
         bin/"$TEST_HOST_PLATFORM"/roxctl version
         bin/"$TEST_HOST_PLATFORM"/roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart
         sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
-        sed -i 's#${roxctl_version}#${INITIAL_POSTGRES_TAG}#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     else
         make cli
-        bin/"$TEST_HOST_PLATFORM"/roxctl version
-        MAIN_IMAGE_TAG="${INITIAL_POSTGRES_TAG}" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart --remove
+        roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart --remove
         sed -i "" 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     fi
 
