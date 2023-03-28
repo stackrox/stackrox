@@ -1,7 +1,5 @@
 import { gql, useQuery } from '@apollo/client';
 import { Pagination } from 'services/types';
-import { SearchFilter } from 'types/search';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 export type ImageVulnerabilitiesVariables = {
     id: string;
@@ -109,7 +107,7 @@ export const imageVulnerabilitiesQuery = gql`
 
 export default function useImageVulnerabilities(
     imageId: string,
-    searchFilter: SearchFilter,
+    vulnQuery: string,
     pagination: Pagination
 ) {
     return useQuery<ImageVulnerabilitiesResponse, ImageVulnerabilitiesVariables>(
@@ -117,7 +115,7 @@ export default function useImageVulnerabilities(
         {
             variables: {
                 id: imageId,
-                vulnQuery: getRequestQueryStringForSearchFilter(searchFilter),
+                vulnQuery,
                 pagination,
             },
         }

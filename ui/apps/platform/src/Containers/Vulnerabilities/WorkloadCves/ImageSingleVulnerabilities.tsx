@@ -24,20 +24,44 @@ import {
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
-import { VulnerabilitySeverity } from 'types/cve.proto';
+import { vulnerabilitySeverities, VulnerabilitySeverity } from 'types/cve.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import { getHasSearchApplied } from 'utils/searchUtils';
-import { cveStatusTabValues, FixableStatus } from './types';
+import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import BySeveritySummaryCard from './SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from './SummaryCards/CvesByStatusSummaryCard';
 import SingleEntityVulnerabilitiesTable from './Tables/SingleEntityVulnerabilitiesTable';
 import useImageVulnerabilities from './hooks/useImageVulnerabilities';
 import { DynamicTableLabel } from './DynamicIcon';
+import { parseQuerySearchFilter } from './searchUtils';
+import { QuerySearchFilter, FixableStatus, cveStatusTabValues } from './types';
+
+function getHiddenSeverities(querySearchFilter: QuerySearchFilter): Set<VulnerabilitySeverity> {
+    return querySearchFilter.Severity
+        ? new Set(vulnerabilitySeverities.filter((s) => !querySearchFilter.Severity?.includes(s)))
+        : new Set([]);
+}
+
+function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<FixableStatus> {
+    const hiddenStatuses = new Set<FixableStatus>([]);
+    const fixableFilters = querySearchFilter?.Fixable ?? [];
+
+    if (fixableFilters.length > 0) {
+        if (!fixableFilters.includes('true')) {
+            hiddenStatuses.add('Fixable');
+        }
+
+        if (!fixableFilters.includes('false')) {
+            hiddenStatuses.add('Not fixable');
+        }
+    }
+
+    return hiddenStatuses;
+}
 
 const defaultSortFields = ['CVE', 'Severity', 'Fixable'];
 
@@ -47,6 +71,7 @@ export type ImageSingleVulnerabilitiesProps = {
 
 function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps) {
     const { searchFilter } = useURLSearch();
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const { page, perPage, setPage, setPerPage } = useURLPagination(50);
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
@@ -56,17 +81,21 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
         },
         onSort: () => setPage(1),
     });
-    // TODO Still need to properly integrate search filter with query
+
     const pagination = {
         offset: (page - 1) * perPage,
         limit: perPage,
         sortOption,
     };
-    const { data, previousData, loading, error } = useImageVulnerabilities(imageId, {}, pagination);
+    const { data, previousData, loading, error } = useImageVulnerabilities(
+        imageId,
+        getRequestQueryStringForSearchFilter(querySearchFilter),
+        pagination
+    );
 
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('cveStatus', cveStatusTabValues);
 
-    const isFiltered = getHasSearchApplied(searchFilter);
+    const isFiltered = getHasSearchApplied(querySearchFilter);
 
     let mainContent: ReactNode | null = null;
 
@@ -92,10 +121,8 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
             </Bullseye>
         );
     } else if (vulnerabilityData) {
-        // TODO Integrate these with page search filters
-        const hiddenSeverities = new Set<VulnerabilitySeverity>([]);
-        const hiddenStatuses = new Set<FixableStatus>([]);
-
+        const hiddenSeverities = getHiddenSeverities(querySearchFilter);
+        const hiddenStatuses = getHiddenStatuses(querySearchFilter);
         const totalVulnerabilityCount = vulnerabilityData.image.imageVulnerabilityCounter.all.total;
 
         mainContent = (
