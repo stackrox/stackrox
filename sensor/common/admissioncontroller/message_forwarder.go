@@ -60,7 +60,7 @@ func (h *admCtrlMsgForwarderImpl) Capabilities() []centralsensor.SensorCapabilit
 }
 
 func (h *admCtrlMsgForwarderImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	errorList := errorhelpers.NewErrorList("ProcessMessage")
+	errorList := errorhelpers.NewErrorList("ProcessMessage in AdmCtrlMsgForwarder")
 	for _, component := range h.components {
 		if err := component.ProcessMessage(msg); err != nil {
 			errorList.AddError(err)

@@ -214,6 +214,7 @@ func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 func (ds *DeploymentStore) GetBuiltDeployment(id string) *storage.Deployment {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
+	// TODO(ROX-16138): return nil if the deployment is not built yet
 	wrap := ds.getWrapNoLock(id)
 	return wrap.GetDeployment().Clone()
 }

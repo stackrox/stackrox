@@ -127,7 +127,6 @@ func (p *eventPipeline) processReassessPolicies() error {
 		message.AddDeploymentReference(resolver.ResolveAllDeployments(),
 			component.DeploymentRefWithForceDetection(true),
 			component.DeploymentRefWithSkipResolving(true))
-		log.Debugf("Reassess message to the Resolver: %+v", message)
 		p.resolver.Send(message)
 	}
 	return nil
@@ -143,7 +142,6 @@ func (p *eventPipeline) processReprocessDeployments() error {
 		message.AddDeploymentReference(resolver.ResolveAllDeployments(),
 			component.DeploymentRefWithForceDetection(true),
 			component.DeploymentRefWithSkipResolving(true))
-		log.Debugf("Reprocess message to the Resolver: %+v", message)
 		p.resolver.Send(message)
 	}
 	return nil
@@ -159,13 +157,13 @@ func (p *eventPipeline) processUpdatedImage(image *storage.Image) error {
 		message.AddDeploymentReference(resolver.ResolveDeploymentsByImages(image),
 			component.DeploymentRefWithForceDetection(true),
 			component.DeploymentRefWithSkipResolving(true))
-		log.Debugf("Updated Image message to the Resolver: %+v", message)
 		p.resolver.Send(message)
 	}
 	return nil
 }
 
 func (p *eventPipeline) processReprocessDeployment(req *central.ReprocessDeployment) error {
+	log.Debug("ReprocessDeployment message received from central")
 	if err := p.reprocessor.ProcessReprocessDeployments(req); err != nil {
 		return err
 	}
@@ -174,13 +172,13 @@ func (p *eventPipeline) processReprocessDeployment(req *central.ReprocessDeploym
 		message.AddDeploymentReference(resolver.ResolveDeploymentIds(req.GetDeploymentIds()...),
 			component.DeploymentRefWithForceDetection(true),
 			component.DeploymentRefWithSkipResolving(true))
-		log.Debugf("Reprocess message to the Resolver: %+v", message)
 		p.resolver.Send(message)
 	}
 	return nil
 }
 
 func (p *eventPipeline) processInvalidateImageCache(req *central.InvalidateImageCache) error {
+	log.Debug("InvalidateImageCache message received from central")
 	if err := p.reprocessor.ProcessInvalidateImageCache(req); err != nil {
 		return err
 	}
@@ -198,7 +196,6 @@ func (p *eventPipeline) processInvalidateImageCache(req *central.InvalidateImage
 		message.AddDeploymentReference(resolver.ResolveDeploymentsByImages(keys...),
 			component.DeploymentRefWithForceDetection(true),
 			component.DeploymentRefWithSkipResolving(true))
-		log.Debugf("Reprocess message to the Resolver: %+v", message)
 		p.resolver.Send(message)
 	}
 	return nil
