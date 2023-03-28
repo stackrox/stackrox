@@ -67,6 +67,7 @@ export const selectors = {
     selector: scopeSelectors('[data-testid="network-graph-selector-bar"]', {
         clusterSelect: '.cluster-select > button',
         namespaceSelect: '.namespace-select > button',
+        deploymentSelect: '.deployment-select > button',
     }),
     errorOverlay: {
         heading: 'h2:contains("An error has prevented the Network Graph from loading")',

@@ -18,12 +18,12 @@ import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-
 function LegendContent() {
     return (
         <>
-            <Title headingLevel="h3" className="pf-u-screen-reader">
+            <Title headingLevel="h3" className="pf-u-screen-reader" data-testid="legend-title">
                 Legend
             </Title>
             <Flex direction={{ default: 'column' }}>
                 <FlexItem>
-                    <Title headingLevel="h5" className="pf-u-pb-sm">
+                    <Title headingLevel="h4" className="pf-u-pb-sm" data-testid="node-types-title">
                         Node types
                     </Title>
                     <DescriptionListCompact isHorizontal termWidth="20px" className="pf-u-pl-md">
@@ -35,7 +35,11 @@ function LegendContent() {
                     </DescriptionListCompact>
                 </FlexItem>
                 <FlexItem>
-                    <Title headingLevel="h5" className="pf-u-pb-sm">
+                    <Title
+                        headingLevel="h4"
+                        className="pf-u-pb-sm"
+                        data-testid="namespace-types-title"
+                    >
                         Namespace types
                     </Title>
                     <DescriptionListCompact isHorizontal termWidth="20px" className="pf-u-pl-md">
@@ -44,7 +48,11 @@ function LegendContent() {
                     </DescriptionListCompact>
                 </FlexItem>
                 <FlexItem>
-                    <Title headingLevel="h5" className="pf-u-pb-sm">
+                    <Title
+                        headingLevel="h4"
+                        className="pf-u-pb-sm"
+                        data-testid="deployment-badges-title"
+                    >
                         Deployment badges
                     </Title>
                     <DescriptionListCompact isHorizontal termWidth="20px" className="pf-u-pl-md">
