@@ -9,8 +9,11 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -18,6 +21,7 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/random"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -98,6 +102,10 @@ var (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
+
+	cursorBatchSize = 50
+
+	cursorDefaultTimeout = env.PostgresDefaultCursorTimeout.DurationSetting()
 )
 
 // FlowStore stores all of the flows for a single cluster.
@@ -451,29 +459,44 @@ func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage
 }
 
 func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
-	var rows pgx.Rows
-	var err error
-
 	// Default to Now as that is when we are reading them
 	lastUpdateTS := types.TimestampNow()
 
+	var queryString string
+	var queryData []interface{}
+	var flows []*storage.NetworkFlow
+
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
-		partitionWalkStmt := fmt.Sprintf(walkStmt, s.partitionName, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionWalkStmt)
+		queryString = fmt.Sprintf(walkStmt, s.partitionName, s.partitionName)
 	} else {
-		partitionSinceStmt := fmt.Sprintf(getSinceStmt, s.partitionName, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionSinceStmt, pgutils.NilOrTime(since))
+		queryString = fmt.Sprintf(getSinceStmt, s.partitionName, s.partitionName)
+		queryData = append(queryData, pgutils.NilOrTime(since))
 	}
 
+	fetcher, closer, err := s.flowsCursor(ctx, queryString, queryData)
 	if err != nil {
 		return nil, nil, pgutils.ErrNilIfNoRows(err)
 	}
-	defer rows.Close()
-
-	flows, err := s.readRows(rows, pred)
-	if err != nil {
-		return nil, nil, err
+	defer closer()
+	for {
+		cursorData, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return nil, nil, pgutils.ErrNilIfNoRows(err)
+		}
+		if pred == nil {
+			flows = append(flows, cursorData...)
+		} else {
+			for _, data := range cursorData {
+				// Apply the predicate function
+				if pred(data.GetProps()) {
+					flows = append(flows, data)
+				}
+			}
+		}
+		if len(cursorData) != cursorBatchSize {
+			break
+		}
 	}
 
 	return flows, lastUpdateTS, nil
@@ -488,11 +511,8 @@ func (s *flowStoreImpl) GetFlowsForDeployment(ctx context.Context, deploymentID 
 	})
 }
 func (s *flowStoreImpl) retryableGetFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error) {
-	var rows pgx.Rows
-	var err error
-
 	partitionGetByDeploymentStmt := fmt.Sprintf(getByDeploymentStmt, s.partitionName, s.partitionName, s.partitionName, s.partitionName)
-	rows, err = s.db.Query(ctx, partitionGetByDeploymentStmt, deploymentID)
+	rows, err := s.db.Query(ctx, partitionGetByDeploymentStmt, deploymentID)
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
@@ -636,6 +656,43 @@ func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
 	prune := fmt.Sprintf(pruneStaleNetworkFlowsStmt, s.partitionName, s.partitionName)
 	_, err = conn.Exec(ctx, prune)
 	return err
+}
+
+// flowsCursor creates a cursor against the database
+func (s *flowStoreImpl) flowsCursor(ctx context.Context, queryStr string, data []interface{}) (fetcher func(n int) ([]*storage.NetworkFlow, error), closer func(), err error) {
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating transaction")
+	}
+	closer = func() {
+		defer cancel()
+		if err := tx.Commit(ctx); err != nil {
+			log.Errorf("error committing cursor transaction: %v", err)
+		}
+	}
+
+	cursor, err := random.GenerateString(16, random.CaseInsensitiveAlpha)
+	if err != nil {
+		closer()
+		return nil, nil, errors.Wrap(err, "creating cursor name")
+	}
+	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursor, queryStr), data...)
+	if err != nil {
+		closer()
+		return nil, nil, errors.Wrap(err, "creating cursor")
+	}
+
+	return func(n int) ([]*storage.NetworkFlow, error) {
+		rows, err := tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", n, cursor))
+		if err != nil {
+			return nil, errors.Wrap(err, "advancing in cursor")
+		}
+		defer rows.Close()
+
+		return s.readRows(rows, nil)
+	}, closer, nil
 }
 
 //// Used for testing
