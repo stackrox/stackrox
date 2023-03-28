@@ -30,7 +30,7 @@ type EnsurerTestSuite struct {
 	boltDB       *bolt.DB
 	rocksDB      *rocksdb.RocksDB
 	pgStore      pgStore.Store
-	pool         *postgres.DB
+	pool         postgres.DB
 	versionStore store.Store
 }
 

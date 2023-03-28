@@ -12,11 +12,11 @@ import (
 )
 
 type postgresGatherer struct {
-	db          *postgres.DB
+	db          postgres.DB
 	adminConfig *postgres.Config
 }
 
-func newPostgresGatherer(db *postgres.DB, adminConfig *postgres.Config) *postgresGatherer {
+func newPostgresGatherer(db postgres.DB, adminConfig *postgres.Config) *postgresGatherer {
 	return &postgresGatherer{
 		db:          db,
 		adminConfig: adminConfig,

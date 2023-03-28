@@ -80,7 +80,7 @@ type deploymentDatastoreSACSuite struct {
 	indexQ   queue.WaitableQueue
 
 	// Elements for postgres mode
-	pool *postgres.DB
+	pool postgres.DB
 
 	datastore      dDS.DataStore
 	namespaceStore nsDS.DataStore

@@ -45,7 +45,7 @@ func New(graphProvider graph.Provider, storage store.Store, indexer index.Indexe
 
 // NewForTestOnly returns a new instance of DataStore. TO BE USED FOR TESTING PURPOSES ONLY.
 // To make this more explicit, we require passing a testing.T to this version.
-func NewForTestOnly(t *testing.T, db *postgres.DB) (DataStore, error) {
+func NewForTestOnly(t *testing.T, db postgres.DB) (DataStore, error) {
 	testutils.MustBeInTest(t)
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {

@@ -44,7 +44,7 @@ type RiskDataStoreTestSuite struct {
 	storage   store.Store
 	datastore DataStore
 
-	pool *postgres.DB
+	pool postgres.DB
 
 	optionsMap searchPkg.OptionsMap
 

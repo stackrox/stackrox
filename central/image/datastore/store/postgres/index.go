@@ -15,14 +15,14 @@ import (
 )
 
 // NewIndexer returns a new image indexer.
-func NewIndexer(db *postgres.DB) *indexerImpl {
+func NewIndexer(db postgres.DB) *indexerImpl {
 	return &indexerImpl{
 		db: db,
 	}
 }
 
 type indexerImpl struct {
-	db *postgres.DB
+	db postgres.DB
 }
 
 func (b *indexerImpl) Count(ctx context.Context, q *v1.Query, _ ...blevesearch.SearchOption) (int, error) {

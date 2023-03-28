@@ -96,13 +96,13 @@ type FlowStore interface {
 }
 
 type flowStoreImpl struct {
-	db            *postgres.DB
+	db            postgres.DB
 	clusterID     uuid.UUID
 	partitionName string
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB, clusterID string) FlowStore {
+func New(db postgres.DB, clusterID string) FlowStore {
 	clusterUUID, err := uuid.FromString(clusterID)
 	if err != nil {
 		log.Errorf("cluster ID is not valid.  %v", err)
@@ -313,11 +313,11 @@ func (s *flowStoreImpl) GetPartitionName() string {
 
 //// Used for testing
 
-func dropTableNetworkflow(ctx context.Context, db *postgres.DB) {
+func dropTableNetworkflow(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS network_flows_v2 CASCADE")
 }
 
 // Destroy destroys the tables
-func Destroy(ctx context.Context, db *postgres.DB) {
+func Destroy(ctx context.Context, db postgres.DB) {
 	dropTableNetworkflow(ctx, db)
 }

@@ -25,7 +25,7 @@ const (
 )
 
 // NewFullStore augments the generated store with upsert and delete cluster cves functions.
-func NewFullStore(db *postgres.DB) store.Store {
+func NewFullStore(db postgres.DB) store.Store {
 	return &fullStoreImpl{
 		db:    db,
 		Store: New(db),
@@ -33,7 +33,7 @@ func NewFullStore(db *postgres.DB) store.Store {
 }
 
 // NewFullTestStore is used for testing.
-func NewFullTestStore(_ testing.TB, db *postgres.DB, store Store) store.Store {
+func NewFullTestStore(_ testing.TB, db postgres.DB, store Store) store.Store {
 	return &fullStoreImpl{
 		db:    db,
 		Store: store,
@@ -41,7 +41,7 @@ func NewFullTestStore(_ testing.TB, db *postgres.DB, store Store) store.Store {
 }
 
 type fullStoreImpl struct {
-	db *postgres.DB
+	db postgres.DB
 
 	Store
 }

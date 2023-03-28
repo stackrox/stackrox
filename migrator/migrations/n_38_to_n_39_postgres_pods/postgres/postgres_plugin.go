@@ -58,12 +58,12 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *postgres.DB
+	db    postgres.DB
 	mutex sync.Mutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB) Store {
+func New(db postgres.DB) Store {
 	return &storeImpl{
 		db: db,
 	}
@@ -559,18 +559,18 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Pod) error) e
 
 //// Used for testing
 
-func dropTablePods(ctx context.Context, db *postgres.DB) {
+func dropTablePods(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS pods CASCADE")
 	dropTablePodsLiveInstances(ctx, db)
 
 }
 
-func dropTablePodsLiveInstances(ctx context.Context, db *postgres.DB) {
+func dropTablePodsLiveInstances(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS pods_live_instances CASCADE")
 
 }
 
 // Destroy -- delete the table
-func Destroy(ctx context.Context, db *postgres.DB) {
+func Destroy(ctx context.Context, db postgres.DB) {
 	dropTablePods(ctx, db)
 }

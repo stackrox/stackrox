@@ -32,7 +32,7 @@ func initialize() {
 	var dackBox *dackbox.DackBox
 	var keyFence concurrency.KeyFence
 	var bleveIndex, processIndex bleve.Index
-	var pool *postgres.DB
+	var pool postgres.DB
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pool = globaldb.GetPostgres()
 	} else {

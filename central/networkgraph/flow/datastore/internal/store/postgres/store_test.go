@@ -28,7 +28,7 @@ type NetworkflowStoreSuite struct {
 	suite.Suite
 	store  FlowStore
 	ctx    context.Context
-	pool   *postgres.DB
+	pool   postgres.DB
 	gormDB *gorm.DB
 }
 

@@ -222,7 +222,7 @@ func createCollectionsForScope(ctx context.Context, scopeID string,
 	return newScopeID, true
 }
 
-func moveScopesInReportsToCollections(gormDB *gorm.DB, db *postgres.DB) error {
+func moveScopesInReportsToCollections(gormDB *gorm.DB, db postgres.DB) error {
 	ctx := context.Background()
 	pgutils.CreateTableFromModel(ctx, gormDB, frozenSchema.CreateTableCollectionsStmt)
 	reportConfigStore := reportConfigurationPostgres.New(db)

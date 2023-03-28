@@ -59,12 +59,12 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *postgres.DB
+	db    postgres.DB
 	mutex sync.Mutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB) Store {
+func New(db postgres.DB) Store {
 	return &storeImpl{
 		db: db,
 	}
@@ -437,12 +437,12 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.AuthProvider)
 
 //// Used for testing
 
-func dropTableAuthProviders(ctx context.Context, db *postgres.DB) {
+func dropTableAuthProviders(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS auth_providers CASCADE")
 
 }
 
-func Destroy(ctx context.Context, db *postgres.DB) {
+func Destroy(ctx context.Context, db postgres.DB) {
 	dropTableAuthProviders(ctx, db)
 }
 

@@ -45,7 +45,7 @@ type ImagePostgresDataStoreTestSuite struct {
 	suite.Suite
 
 	ctx                context.Context
-	db                 *postgres.DB
+	db                 postgres.DB
 	gormDB             *gorm.DB
 	datastore          DataStore
 	mockRisk           *mockRisks.MockDataStore

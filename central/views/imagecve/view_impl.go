@@ -18,7 +18,7 @@ import (
 
 type imageCVECoreViewImpl struct {
 	schema *walker.Schema
-	db     *postgres.DB
+	db     postgres.DB
 }
 
 func (v *imageCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, error) {

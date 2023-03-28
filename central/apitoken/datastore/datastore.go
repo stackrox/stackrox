@@ -32,7 +32,7 @@ func New(storage store.Store) DataStore {
 }
 
 // NewPostgres returns a ready-to-use DataStore instance plugged to postgres.
-func NewPostgres(pool *postgres.DB) DataStore {
+func NewPostgres(pool postgres.DB) DataStore {
 	return newPostgres(pool)
 }
 
