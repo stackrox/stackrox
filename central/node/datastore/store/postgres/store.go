@@ -2,10 +2,14 @@ package postgres
 
 import (
 	"context"
+	"fmt"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	protoTypes "github.com/gogo/protobuf/types"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
@@ -207,7 +211,6 @@ func insertIntoNodesTaints(ctx context.Context, tx *postgres.Tx, obj *storage.Ta
 }
 
 func copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponent) error {
-	inputRows := [][]interface{}{}
 	var err error
 	var deletes []string
 	copyCols := []string{
@@ -221,13 +224,14 @@ func copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*stora
 		"serialized",
 	}
 
+	batch := &pgx.Batch{}
 	for idx, obj := range objs {
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows := []interface{}{
 			obj.GetId(),
 			obj.GetName(),
 			obj.GetVersion(),
@@ -236,7 +240,8 @@ func copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*stora
 			obj.GetRiskScore(),
 			obj.GetTopCvss(),
 			serialized,
-		})
+		}
+		batchInsert(batch, nodeComponentsTable, copyCols, inputRows)
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())
@@ -252,20 +257,43 @@ func copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*stora
 			// clear the inserts for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{nodeComponentsTable}, copyCols, pgx.CopyFromRows(inputRows))
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
 		}
+	}
+	if err := batchError(ctx, tx, batch); err != nil {
+		return err
 	}
 	return removeOrphanedNodeComponent(ctx, tx)
 }
 
+func vars(num int) string {
+	var s []string
+	for i := 1; i < num+1; i++ {
+		s = append(s, "$"+strconv.Itoa(i))
+	}
+	return strings.Join(s, ", ")
+}
+
+func batchInsert(b *pgx.Batch, table string, cols []string, inputRows []interface{}) {
+	query := fmt.Sprintf("insert into %s (%s) values(%s)", table, strings.Join(cols, ", "), vars(len(inputRows)))
+	b.Queue(query, inputRows...)
+}
+func batchError(ctx context.Context, tx *postgres.Tx, batch *pgx.Batch) error {
+	batchResults := tx.SendBatch(ctx, batch)
+	var result *multierror.Error
+	for i := 0; i < batch.Len(); i++ {
+		_, err := batchResults.Exec()
+		result = multierror.Append(result, err)
+	}
+	if err := batchResults.Close(); err != nil {
+		return err
+	}
+	if err := result.ErrorOrNil(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func copyFromNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID string, objs ...*storage.NodeComponentEdge) error {
-	inputRows := [][]interface{}{}
 	var err error
 	copyCols := []string{
 		"id",
@@ -280,36 +308,24 @@ func copyFromNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID str
 		return err
 	}
 
-	for idx, obj := range objs {
+	batch := &pgx.Batch{}
+	for _, obj := range objs {
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
 			return marshalErr
 		}
-
-		inputRows = append(inputRows, []interface{}{
+		inputRows := []interface{}{
 			obj.GetId(),
 			pgutils.NilOrUUID(obj.GetNodeId()),
 			obj.GetNodeComponentId(),
 			serialized,
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{nodeComponentEdgesTable}, copyCols, pgx.CopyFromRows(inputRows))
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
 		}
+		batchInsert(batch, nodeComponentEdgesTable, copyCols, inputRows)
 	}
-	return nil
+	return batchError(ctx, tx, batch)
 }
 
 func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timestamp, objs ...*storage.NodeCVE) error {
-	inputRows := [][]interface{}{}
-
 	var err error
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -338,6 +354,7 @@ func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Ti
 		return err
 	}
 
+	batch := &pgx.Batch{}
 	for idx, obj := range objs {
 		if storedCVE := existingCVEs[obj.GetId()]; storedCVE != nil {
 			obj.Snoozed = storedCVE.GetSnoozed()
@@ -353,7 +370,7 @@ func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Ti
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows := []interface{}{
 			obj.GetId(),
 			obj.GetCveBaseInfo().GetCve(),
 			pgutils.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
@@ -365,7 +382,9 @@ func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Ti
 			obj.GetSnoozed(),
 			pgutils.NilOrTime(obj.GetSnoozeExpiry()),
 			serialized,
-		})
+		}
+
+		batchInsert(batch, nodeCVEsTable, copyCols, inputRows)
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())
@@ -379,21 +398,15 @@ func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Ti
 			}
 			// Clear the inserts for the next batch.
 			deletes = nil
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{nodeCVEsTable}, copyCols, pgx.CopyFromRows(inputRows))
-			if err != nil {
-				return err
-			}
-
-			// Clear the input rows for the next batch
-			inputRows = inputRows[:0]
 		}
+	}
+	if err := batchError(ctx, tx, batch); err != nil {
+		return err
 	}
 	return removeOrphanedNodeCVEs(ctx, tx)
 }
 
 func copyFromNodeComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponentCVEEdge) error {
-	inputRows := [][]interface{}{}
 	var err error
 	deletes := set.NewStringSet()
 	copyCols := []string{
@@ -405,20 +418,22 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ..
 		"serialized",
 	}
 
+	batch := &pgx.Batch{}
 	for idx, obj := range objs {
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows := []interface{}{
 			obj.GetId(),
 			obj.GetIsFixable(),
 			obj.GetFixedBy(),
 			obj.GetNodeComponentId(),
 			obj.GetNodeCveId(),
 			serialized,
-		})
+		}
+		batchInsert(batch, componentCVEEdgesTable, copyCols, inputRows)
 
 		// Add the id to be deleted.
 		deletes.Add(obj.GetId())
@@ -433,18 +448,9 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ..
 
 			// Clear the inserts for the next batch
 			deletes = nil
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{componentCVEEdgesTable}, copyCols, pgx.CopyFromRows(inputRows))
-			if err != nil {
-				return err
-			}
-
-			// Clear the input rows for the next batch
-			inputRows = inputRows[:0]
 		}
 	}
-	// Due to referential constraint orphaned component-cve edges are removed when orphaned image components are removed.
-	return nil
+	return batchError(ctx, tx, batch)
 }
 
 func removeOrphanedNodeComponent(ctx context.Context, tx *postgres.Tx) error {
@@ -527,46 +533,6 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Node) error {
 	return pgutils.Retry(func() error {
 		return s.upsert(ctx, obj)
 	})
-}
-
-func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx *postgres.Tx, nodeID string, objs ...*storage.Taint) error {
-	inputRows := [][]interface{}{}
-	var err error
-	copyCols := []string{
-		"nodes_id",
-		"idx",
-		"key",
-		"value",
-		"tainteffect",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-			pgutils.NilOrUUID(nodeID),
-			idx,
-			obj.GetKey(),
-			obj.GetValue(),
-			obj.GetTaintEffect(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"nodes_taints"}, copyCols, pgx.CopyFromRows(inputRows))
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-	return err
 }
 
 // Count returns the number of objects in the store

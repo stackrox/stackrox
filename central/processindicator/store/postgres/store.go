@@ -16,6 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -36,7 +37,7 @@ const (
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
+	batchSize = 5000
 
 	cursorBatchSize = 50
 	deleteBatchSize = 5000
@@ -261,6 +262,14 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ProcessIndicato
 	}
 	defer release()
 
+	if len(objs) > batchSize {
+		batch := batcher.New(len(objs), batchSize)
+		for start, end, valid := batch.Next(); valid; start, end, valid = batch.Next() {
+			if err := s.upsert(ctx, objs[start:end]...); err != nil {
+				return err
+			}
+		}
+	}
 	for _, obj := range objs {
 		batch := &pgx.Batch{}
 		if err := insertIntoProcessIndicators(ctx, batch, obj); err != nil {

@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
@@ -155,9 +157,35 @@ func (s *flowStoreImpl) insertIntoNetworkflow(ctx context.Context, tx *postgres.
 	return nil
 }
 
-func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx, objs ...*storage.NetworkFlow) error {
+func vars(num int) string {
+	var s []string
+	for i := 1; i < num+1; i++ {
+		s = append(s, "$"+strconv.Itoa(i))
+	}
+	return strings.Join(s, ", ")
+}
 
-	inputRows := [][]interface{}{}
+func batchInsert(b *pgx.Batch, table string, cols []string, inputRows []interface{}) {
+	query := fmt.Sprintf("insert into %s (%s) values(%s)", table, strings.Join(cols, ", "), vars(len(inputRows)))
+	b.Queue(query, inputRows...)
+}
+func batchError(ctx context.Context, tx *postgres.Tx, batch *pgx.Batch) error {
+	batchResults := tx.SendBatch(ctx, batch)
+	var result *multierror.Error
+	for i := 0; i < batch.Len(); i++ {
+		_, err := batchResults.Exec()
+		result = multierror.Append(result, err)
+	}
+	if err := batchResults.Close(); err != nil {
+		return err
+	}
+	if err := result.ErrorOrNil(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx, objs ...*storage.NetworkFlow) error {
 	var err error
 
 	copyCols := []string{
@@ -171,8 +199,9 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx
 		"clusterid",
 	}
 
+	batch := &pgx.Batch{}
 	for idx, obj := range objs {
-		inputRows = append(inputRows, []interface{}{
+		inputRows := []interface{}{
 			obj.GetProps().GetSrcEntity().GetType(),
 			obj.GetProps().GetSrcEntity().GetId(),
 			obj.GetProps().GetDstEntity().GetType(),
@@ -181,21 +210,18 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx
 			obj.GetProps().GetL4Protocol(),
 			pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
 			s.clusterID,
-		})
+		}
+		batchInsert(batch, s.partitionName, copyCols, inputRows)
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{s.partitionName}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
+			if err := batchError(ctx, tx, batch); err != nil {
 				return err
 			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+			batch = &pgx.Batch{}
 		}
 	}
 

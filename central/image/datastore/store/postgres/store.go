@@ -2,9 +2,13 @@ package postgres
 
 import (
 	"context"
+	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	protoTypes "github.com/gogo/protobuf/types"
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/image/datastore/store"
@@ -59,6 +63,34 @@ type imagePartsAsSlice struct {
 	imageComponentEdges []*storage.ImageComponentEdge
 	componentCVEEdges   []*storage.ComponentCVEEdge
 	imageCVEEdges       []*storage.ImageCVEEdge
+}
+
+func vars(num int) string {
+	var s []string
+	for i := 1; i < num+1; i++ {
+		s = append(s, "$"+strconv.Itoa(i))
+	}
+	return strings.Join(s, ", ")
+}
+
+func batchInsert(b *pgx.Batch, table string, cols []string, inputRows []interface{}) {
+	query := fmt.Sprintf("insert into %s (%s) values(%s)", table, strings.Join(cols, ", "), vars(len(inputRows)))
+	b.Queue(query, inputRows...)
+}
+func batchError(ctx context.Context, tx *postgres.Tx, batch *pgx.Batch) error {
+	batchResults := tx.SendBatch(ctx, batch)
+	var result *multierror.Error
+	for i := 0; i < batch.Len(); i++ {
+		_, err := batchResults.Exec()
+		result = multierror.Append(result, err)
+	}
+	if err := batchResults.Close(); err != nil {
+		return err
+	}
+	if err := result.ErrorOrNil(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -209,8 +241,6 @@ func insertIntoImagesLayers(ctx context.Context, tx *postgres.Tx, obj *storage.I
 }
 
 func copyFromImageComponents(ctx context.Context, tx *postgres.Tx, objs ...*storage.ImageComponent) error {
-	inputRows := [][]interface{}{}
-
 	var err error
 
 	var deletes []string
@@ -227,14 +257,14 @@ func copyFromImageComponents(ctx context.Context, tx *postgres.Tx, objs ...*stor
 		"serialized",
 	}
 
+	batch := &pgx.Batch{}
 	for idx, obj := range objs {
-
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows := []interface{}{
 			obj.GetId(),
 			obj.GetName(),
 			obj.GetVersion(),
@@ -244,7 +274,8 @@ func copyFromImageComponents(ctx context.Context, tx *postgres.Tx, objs ...*stor
 			obj.GetRiskScore(),
 			obj.GetTopCvss(),
 			serialized,
-		})
+		}
+		batchInsert(batch, imageComponentsTable, copyCols, inputRows)
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())
@@ -259,22 +290,15 @@ func copyFromImageComponents(ctx context.Context, tx *postgres.Tx, objs ...*stor
 
 			// clear the inserts for the next batch
 			deletes = nil
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{imageComponentsTable}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
 		}
+	}
+	if err := batchError(ctx, tx, batch); err != nil {
+		return err
 	}
 	return removeOrphanedImageComponent(ctx, tx)
 }
 
 func copyFromImageComponentEdges(ctx context.Context, tx *postgres.Tx, imageID string, objs ...*storage.ImageComponentEdge) error {
-	inputRows := [][]interface{}{}
 	var err error
 
 	copyCols := []string{
@@ -295,38 +319,26 @@ func copyFromImageComponentEdges(ctx context.Context, tx *postgres.Tx, imageID s
 		return nil
 	}
 
-	for idx, obj := range objs {
+	batch := &pgx.Batch{}
+	for _, obj := range objs {
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows := []interface{}{
 			obj.GetId(),
 			obj.GetLocation(),
 			obj.GetImageId(),
 			obj.GetImageComponentId(),
 			serialized,
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{imageComponentEdgesTable}, copyCols, pgx.CopyFromRows(inputRows))
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
 		}
+		batchInsert(batch, imageComponentEdgesTable, copyCols, inputRows)
 	}
-
-	return err
+	return batchError(ctx, tx, batch)
 }
 
 func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timestamp, objs ...*storage.ImageCVE) error {
-	inputRows := [][]interface{}{}
-
 	var err error
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -355,6 +367,7 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.T
 		return err
 	}
 
+	batch := &pgx.Batch{}
 	for idx, obj := range objs {
 		if storedCVE := existingCVEs[obj.GetId()]; storedCVE != nil {
 			obj.CveBaseInfo.CreatedAt = storedCVE.GetCveBaseInfo().GetCreatedAt()
@@ -370,7 +383,7 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.T
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows := []interface{}{
 			obj.GetId(),
 			obj.GetCveBaseInfo().GetCve(),
 			pgutils.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
@@ -382,7 +395,9 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.T
 			obj.GetSnoozed(),
 			pgutils.NilOrTime(obj.GetSnoozeExpiry()),
 			serialized,
-		})
+		}
+
+		batchInsert(batch, imageCVEsTable, copyCols, inputRows)
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())
@@ -396,23 +411,16 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.T
 			}
 			// Clear the inserts for the next batch.
 			deletes = nil
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{imageCVEsTable}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// Clear the input rows for the next batch
-			inputRows = inputRows[:0]
 		}
+	}
+	if err := batchError(ctx, tx, batch); err != nil {
+		return err
 	}
 
 	return removeOrphanedImageCVEs(ctx, tx)
 }
 
 func copyFromImageComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ...*storage.ComponentCVEEdge) error {
-	inputRows := [][]interface{}{}
 	var err error
 	deletes := set.NewStringSet()
 
@@ -425,20 +433,22 @@ func copyFromImageComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs .
 		"serialized",
 	}
 
+	batch := &pgx.Batch{}
 	for idx, obj := range objs {
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows := []interface{}{
 			obj.GetId(),
 			obj.GetIsFixable(),
 			obj.GetFixedBy(),
 			obj.GetImageComponentId(),
 			obj.GetImageCveId(),
 			serialized,
-		})
+		}
+		batchInsert(batch, componentCVEEdgesTable, copyCols, inputRows)
 
 		// Add the id to be deleted.
 		deletes.Add(obj.GetId())
@@ -453,25 +463,14 @@ func copyFromImageComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs .
 
 			// Clear the inserts for the next batch
 			deletes = nil
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{componentCVEEdgesTable}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// Clear the input rows for the next batch
-			inputRows = inputRows[:0]
 		}
 	}
 
 	// Due to referential constraints, orphaned component-cve edges are removed when orphaned image components are removed.
-	return nil
+	return batchError(ctx, tx, batch)
 }
 
 func copyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timestamp, forceAdd bool, objs ...*storage.ImageCVEEdge) error {
-	inputRows := [][]interface{}{}
-
 	copyCols := []string{
 		"id",
 		"firstimageoccurrence",
@@ -498,6 +497,7 @@ func copyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, iTime *protoTyp
 		}
 	}
 
+	batch := &pgx.Batch{}
 	for idx, obj := range objs {
 		if forceAdd {
 			// Add the id to be deleted.
@@ -515,14 +515,15 @@ func copyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, iTime *protoTyp
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows := []interface{}{
 			obj.GetId(),
 			pgutils.NilOrTime(obj.GetFirstImageOccurrence()),
 			obj.GetState(),
 			obj.GetImageId(),
 			obj.GetImageCveId(),
 			serialized,
-		})
+		}
+		batchInsert(batch, imageCVEEdgesTable, copyCols, inputRows)
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
@@ -536,15 +537,10 @@ func copyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, iTime *protoTyp
 				// Clear the inserts for the next batch
 				deletes = nil
 			}
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{imageCVEEdgesTable}, copyCols, pgx.CopyFromRows(inputRows))
-			if err != nil {
-				return err
-			}
-
-			// Clear the input rows for the next batch
-			inputRows = inputRows[:0]
 		}
+	}
+	if err := batchError(ctx, tx, batch); err != nil {
+		return err
 	}
 
 	// Remove orphaned edges.
