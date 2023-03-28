@@ -197,16 +197,18 @@ function DeploymentFlows({
                     <Stack hasGutter>
                         <StackItem>
                             <ExpandableSection
-                                toggleText={`${numAnomalousFlows} anomalous ${pluralize(
-                                    'flow',
-                                    numAnomalousFlows
-                                )}`}
+                                toggleContent={
+                                    <span data-testid="anomalous-flows-header">
+                                        {numAnomalousFlows} anomalous{' '}
+                                        {pluralize('flow', numAnomalousFlows)}
+                                    </span>
+                                }
                                 onToggle={toggleAnomalousFlowsExpandable}
                                 isExpanded={isAnomalousFlowsExpanded}
                             >
                                 {numAnomalousFlows > 0 ? (
                                     <FlowsTable
-                                        label="Deployment flows"
+                                        label="Anomalous flows"
                                         flows={anomalousFlows}
                                         numFlows={numAnomalousFlows}
                                         expandedRows={expandedRows}
@@ -227,16 +229,18 @@ function DeploymentFlows({
                         </StackItem>
                         <StackItem>
                             <ExpandableSection
-                                toggleText={`${numBaselineFlows} baseline ${pluralize(
-                                    'flow',
-                                    numBaselineFlows
-                                )}`}
+                                toggleContent={
+                                    <span data-testid="baseline-flows-header">
+                                        {numBaselineFlows} baseline{' '}
+                                        {pluralize('flow', numBaselineFlows)}
+                                    </span>
+                                }
                                 onToggle={toggleBaselineFlowsExpandable}
                                 isExpanded={isBaselineFlowsExpanded}
                             >
                                 {numBaselineFlows > 0 ? (
                                     <FlowsTable
-                                        label="Deployment flows"
+                                        label="Baseline flows"
                                         flows={baselineFlows}
                                         numFlows={numBaselineFlows}
                                         expandedRows={expandedRows}
