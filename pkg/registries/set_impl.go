@@ -119,17 +119,17 @@ func (e *setImpl) Clear() {
 
 // UpdateImageIntegration updates the integration with the matching id to a new configuration.
 // This does not update a pre-existing registry, instead it replaces it with a new one.
-func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) (types.Registry, error) {
+func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) error {
 	i, err := e.factory.CreateRegistry(integration)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
 	e.integrations[integration.GetId()] = i
-	return i, nil
+	return nil
 }
 
 // RemoveImageIntegration removes the integration with a matching id if one exists.
