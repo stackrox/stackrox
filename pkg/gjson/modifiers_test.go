@@ -137,7 +137,7 @@ func TestTextModifier(t *testing.T) {
 	}{
 		"without custom column names": {
 			expression: "{textTest.#.name,textTest.#.age,textTest.#.address}.@text",
-			result:     "[\"name Harry Potter\\nage 18\\naddress Privet Drive\",\"name Ron Weasley\\nage 18\\naddress The Burrow\",\"name Hermione Granger\\nage 19\\naddress Heathgate\"]",
+			result:     "[\"name:\\tHarry Potter\\nage:\\t18\\naddress:\\tPrivet Drive\",\"name:\\tRon Weasley\\nage:\\t18\\naddress:\\tThe Burrow\",\"name:\\tHermione Granger\\nage:\\t19\\naddress:\\tHeathgate\"]",
 		},
 		"without modifier should not modify the output": {
 			expression: "{textTest.#.name,textTest.#.age,textTest.#.address}",
@@ -145,11 +145,11 @@ func TestTextModifier(t *testing.T) {
 		},
 		"with custom column names": {
 			expression: "{\"Super Cool Name\":textTest.#.name,textTest.#.age,textTest.#.address}.@text",
-			result:     "[\"Super Cool Name Harry Potter\\nage 18\\naddress Privet Drive\",\"Super Cool Name Ron Weasley\\nage 18\\naddress The Burrow\",\"Super Cool Name Hermione Granger\\nage 19\\naddress Heathgate\"]",
+			result:     "[\"Super Cool Name:\\tHarry Potter\\nage:\\t18\\naddress:\\tPrivet Drive\",\"Super Cool Name:\\tRon Weasley\\nage:\\t18\\naddress:\\tThe Burrow\",\"Super Cool Name:\\tHermione Granger\\nage:\\t19\\naddress:\\tHeathgate\"]",
 		},
 		"with singular value": {
 			expression: "{textTest.0.name,textTest.0.age,textTest.0.address}.@text",
-			result:     "[\"name Harry Potter\\nage 18\\naddress Privet Drive\"]",
+			result:     "[\"name:\\tHarry Potter\\nage:\\t18\\naddress:\\tPrivet Drive\"]",
 		},
 		"without printing keys": {
 			expression: `{textTest.#.name,textTest.#.age,textTest.#.address}.@text:{"printKeys": "false"}`,
@@ -157,7 +157,7 @@ func TestTextModifier(t *testing.T) {
 		},
 		"with custom separator": {
 			expression: `{textTest.#.name,textTest.#.age,textTest.#.address}.@text:{"customSeparator": "-"}`,
-			result:     "[\"name Harry Potter-age 18-address Privet Drive\",\"name Ron Weasley-age 18-address The Burrow\",\"name Hermione Granger-age 19-address Heathgate\"]",
+			result:     "[\"name:\\tHarry Potter-age:\\t18-address:\\tPrivet Drive\",\"name:\\tRon Weasley-age:\\t18-address:\\tThe Burrow\",\"name:\\tHermione Granger-age:\\t19-address:\\tHeathgate\"]",
 		},
 		"without printing keys and with custom separator": {
 			expression: `{textTest.#.name,textTest.#.age,textTest.#.address}.@text:{"customSeparator": "-", "printKeys": "false"}`,
@@ -207,7 +207,7 @@ func TestTextModifier_MultipleArrays(t *testing.T) {
 	}{
 		"without custom column names": {
 			expression: "{textTestMultipleArrays.#.textTest.#.name,textTestMultipleArrays.#.textTest.#.age,textTestMultipleArrays.#.textTest.#.address}.@text",
-			result:     "[\"name Harry Potter\\nage 18\\naddress Privet Drive\",\"name Ron Weasley\\nage 18\\naddress The Burrow\",\"name Hermione Granger\\nage 19\\naddress Heathgate\"]",
+			result:     "[\"name:\\tHarry Potter\\nage:\\t18\\naddress:\\tPrivet Drive\",\"name:\\tRon Weasley\\nage:\\t18\\naddress:\\tThe Burrow\",\"name:\\tHermione Granger\\nage:\\t19\\naddress:\\tHeathgate\"]",
 		},
 		"without modifier should not modify the output": {
 			expression: "{textTestMultipleArrays.#.textTest.#.name,textTestMultipleArrays.#.textTest.#.age,textTestMultipleArrays.#.textTest.#.address}",
@@ -215,11 +215,11 @@ func TestTextModifier_MultipleArrays(t *testing.T) {
 		},
 		"with custom column names": {
 			expression: "{\"Super Cool Name\":textTestMultipleArrays.#.textTest.#.name,textTestMultipleArrays.#.textTest.#.age,textTestMultipleArrays.#.textTest.#.address}.@text",
-			result:     "[\"Super Cool Name Harry Potter\\nage 18\\naddress Privet Drive\",\"Super Cool Name Ron Weasley\\nage 18\\naddress The Burrow\",\"Super Cool Name Hermione Granger\\nage 19\\naddress Heathgate\"]",
+			result:     "[\"Super Cool Name:\\tHarry Potter\\nage:\\t18\\naddress:\\tPrivet Drive\",\"Super Cool Name:\\tRon Weasley\\nage:\\t18\\naddress:\\tThe Burrow\",\"Super Cool Name:\\tHermione Granger\\nage:\\t19\\naddress:\\tHeathgate\"]",
 		},
 		"with singular value": {
 			expression: "{textTestMultipleArrays.#.textTest.0.name,textTestMultipleArrays.#.textTest.0.age,textTestMultipleArrays.#.textTest.0.address}.@text",
-			result:     "[\"name Harry Potter\\nage 18\\naddress Privet Drive\"]",
+			result:     "[\"name:\\tHarry Potter\\nage:\\t18\\naddress:\\tPrivet Drive\"]",
 		},
 		"without printing keys": {
 			expression: `{textTestMultipleArrays.#.textTest.#.name,textTestMultipleArrays.#.textTest.#.age,textTestMultipleArrays.#.textTest.#.address}.@text:{"printKeys": "false"}`,
@@ -227,7 +227,7 @@ func TestTextModifier_MultipleArrays(t *testing.T) {
 		},
 		"with custom separator": {
 			expression: `{textTestMultipleArrays.#.textTest.#.name,textTestMultipleArrays.#.textTest.#.age,textTestMultipleArrays.#.textTest.#.address}.@text:{"customSeparator": "-"}`,
-			result:     "[\"name Harry Potter-age 18-address Privet Drive\",\"name Ron Weasley-age 18-address The Burrow\",\"name Hermione Granger-age 19-address Heathgate\"]",
+			result:     "[\"name:\\tHarry Potter-age:\\t18-address:\\tPrivet Drive\",\"name:\\tRon Weasley-age:\\t18-address:\\tThe Burrow\",\"name:\\tHermione Granger-age:\\t19-address:\\tHeathgate\"]",
 		},
 		"without printing keys and with custom separator": {
 			expression: `{textTestMultipleArrays.#.textTest.#.name,textTestMultipleArrays.#.textTest.#.age,textTestMultipleArrays.#.textTest.#.address}.@text:{"customSeparator": "-", "printKeys": "false"}`,

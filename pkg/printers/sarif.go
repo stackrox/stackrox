@@ -148,7 +148,8 @@ func addEntry(run *sarif.Run, entry sarifEntry, entity string, name string) {
 	rule := run.AddRule(entry.ruleID)
 	rule.WithName(name).
 		WithShortDescription(sarif.NewMultiformatMessageString(entry.description)).
-		WithFullDescription(sarif.NewMultiformatMessageString(entry.description)).
+		// Setting the full description is also setting the title displayed in GitHub.
+		WithFullDescription(sarif.NewMultiformatMessageString(entry.ruleID)).
 		WithHelp(sarif.NewMultiformatMessageString(entry.help))
 
 	if entry.helpLink != "" {

@@ -185,8 +185,8 @@ func (r *resultToTextModifier) resultToText(key, value gjson.Result) string {
 
 	if r.opts.PrintKeys {
 		sb.WriteString(key.String())
-		// Add a whitespace between key and value.
-		sb.WriteString(" ")
+		// Add a colon, and tab space between key and value.
+		sb.WriteString(":\t")
 	}
 	sb.WriteString(value.String())
 	sb.WriteString(utils.IfThenElse(r.opts.CustomSeparator != "", r.opts.CustomSeparator, "\n"))
