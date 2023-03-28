@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 	"fmt"
-	"math"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -26,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	searchCommon "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -81,28 +79,6 @@ func (ds *datastoreImpl) SearchRawAlerts(ctx context.Context, q *v1.Query) ([]*s
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchRawAlerts")
 
 	return ds.searcher.SearchRawAlerts(ctx, q)
-}
-
-func (ds *datastoreImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequest) ([]*storage.ListAlert, error) {
-	var q *v1.Query
-	if request.GetQuery() == "" {
-		q = searchCommon.EmptyQuery()
-	} else {
-		var err error
-		q, err = searchCommon.ParseQuery(request.GetQuery())
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	paginated.FillPagination(q, request.GetPagination(), math.MaxInt32)
-	q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
-
-	alerts, err := ds.SearchListAlerts(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	return alerts, nil
 }
 
 // GetAlert returns an alert by id.
