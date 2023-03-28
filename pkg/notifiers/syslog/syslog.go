@@ -192,7 +192,7 @@ func alertToCEF(alert *storage.Alert, notifier *storage.Notifier) string {
 }
 
 func getCEFHeaderWithExtension(deviceEventClassID, name string, severity int, extension string) string {
-	return fmt.Sprintf("CEF:0|StackRox|Kubernetes Security Platform|%s|%s|%d|%s|%s", version.GetMainVersion(), deviceEventClassID, severity, name, extension)
+	return fmt.Sprintf("CEF:0|StackRox|Kubernetes Security Platform|%s|%s|%s|%d|%s", version.GetMainVersion(), deviceEventClassID, name, severity, extension)
 }
 
 func makeExtensionPair(key, value string) string {
