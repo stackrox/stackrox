@@ -144,7 +144,7 @@ func checkIfAlertsHaveViolation(result *central.AlertResults, name string) bool 
 	if len(alerts) == 0 {
 		return false
 	}
-	for _, alert := range result.GetAlerts() {
+	for _, alert := range alerts {
 		if alert.GetPolicy().GetName() == name {
 			return true
 		}
