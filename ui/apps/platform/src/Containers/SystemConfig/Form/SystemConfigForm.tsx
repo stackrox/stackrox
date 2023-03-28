@@ -31,7 +31,7 @@ import { saveSystemConfig } from 'services/SystemConfigService';
 import { PrivateConfig, PublicConfig, SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { selectors } from 'reducers';
-import { initializeSegment } from 'global/initializeAnalytics';
+import { initializeAnalytics } from 'global/initializeAnalytics';
 
 import FormSelect from './FormSelect';
 
@@ -56,7 +56,6 @@ function getCompletePublicConfig(systemConfig: SystemConfig): PublicConfig {
             enabled: systemConfig?.publicConfig?.loginNotice?.enabled || false,
         },
         telemetry: {
-            lastSetTime: systemConfig?.publicConfig?.telemetry?.lastSetTime || new Date(),
             enabled: systemConfig?.publicConfig?.telemetry?.enabled || false,
         },
     };
@@ -82,7 +81,7 @@ const SystemConfigForm = ({
 }: SystemConfigFormProps): ReactElement => {
     const dispatch = useDispatch();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const telemetryConfigEnabled = useSelector(selectors.getIsEnabledTelemetryConfig);
+    const isTelemetryConfigured = useSelector(selectors.getIsTelemetryConfigured);
     const telemetryConfig = useSelector(selectors.getTelemetryConfig);
 
     const { privateConfig } = systemConfig;
@@ -108,8 +107,13 @@ const SystemConfigForm = ({
                             },
                         };
 
-                        if (data.publicConfig?.telemetry?.enabled && telemetryConfig.storageKeyV1) {
-                            initializeSegment(telemetryConfig.storageKeyV1, telemetryConfig.userId);
+                        const isTelemetryEnabledCurr = data.publicConfig?.telemetry?.enabled;
+                        const isTelemetryEnabledPrev = publicConfig.telemetry?.enabled;
+                        if (isTelemetryEnabledCurr && isTelemetryConfigured) {
+                            initializeAnalytics(
+                                telemetryConfig.storageKeyV1,
+                                telemetryConfig.userId
+                            );
                         }
 
                         dispatch(action);
@@ -118,8 +122,6 @@ const SystemConfigForm = ({
                         setSubmitting(false);
                         setIsNotEditing();
 
-                        const isTelemetryEnabledPrev = publicConfig.telemetry?.enabled;
-                        const isTelemetryEnabledCurr = data.publicConfig?.telemetry?.enabled;
                         if (isTelemetryEnabledPrev && !isTelemetryEnabledCurr) {
                             window.location.reload();
                         }
@@ -531,7 +533,7 @@ const SystemConfigForm = ({
                         </CardBody>
                     </Card>
                 </GridItem>
-                {telemetryConfigEnabled && (
+                {isTelemetryConfigured && (
                     <GridItem md={6}>
                         <Card isFlat data-testid="telemetry-config">
                             <CardHeader>

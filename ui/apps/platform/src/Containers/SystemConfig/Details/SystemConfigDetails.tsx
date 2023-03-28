@@ -21,7 +21,7 @@ function SystemConfigDetails({
     isDecommissionedClusterRetentionEnabled,
     systemConfig,
 }: SystemConfigDetailsProps): ReactElement {
-    const telemetryConfigEnabled = useSelector(selectors.getIsEnabledTelemetryConfig);
+    const telemetryConfigEnabled = useSelector(selectors.getIsTelemetryConfigured);
     return (
         <>
             <PageSection data-testid="data-retention-config">

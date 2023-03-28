@@ -1,6 +1,5 @@
 export type Telemetry = {
     enabled: boolean;
-    lastSetTime: Date;
 };
 
 export type LoginNotice = {

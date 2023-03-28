@@ -25,7 +25,7 @@ const PublicConfigTelemetryDetails = ({
         <Card isFlat data-testid="telemetry-config">
             <CardHeader>
                 <CardHeaderMain>
-                    <CardTitle component="h3">Telemetry configuration</CardTitle>
+                    <CardTitle component="h3">Online Telemetry Data Collection</CardTitle>
                 </CardHeaderMain>
                 <CardActions data-testid="telemetry-state">
                     {isEnabled ? <Label color="green">Enabled</Label> : <Label>Disabled</Label>}

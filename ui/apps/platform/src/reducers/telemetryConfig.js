@@ -3,7 +3,7 @@ import { combineReducers } from 'redux';
 import { createFetchingActionTypes } from 'utils/fetchingReduxRoutines';
 import { fetchTelemetryConfig } from 'services/TelemetryConfigService';
 
-import { initializeSegment } from 'global/initializeAnalytics';
+import { initializeAnalytics } from 'global/initializeAnalytics';
 
 // Types
 
@@ -22,7 +22,7 @@ export const fetchTelemetryConfigThunk = () => {
             const { app: appState } = getState();
             const telemetryEnabled = appState?.publicConfig?.publicConfig?.telemetry?.enabled;
             if (telemetryEnabled) {
-                initializeSegment(result.response.storageKeyV1, result.response.userId);
+                initializeAnalytics(result.response.storageKeyV1, result.response.userId);
             }
 
             dispatch({
@@ -72,7 +72,7 @@ const isLoading = (state = true, action) => {
     }
 };
 
-const isEnabled = (state = false, action) => {
+const isConfigured = (state = false, action) => {
     switch (action.type) {
         case types.FETCH_TELEMETRY_CONFIG.SUCCESS:
             return true;
@@ -90,19 +90,19 @@ const reducer = combineReducers({
     telemetryConfig,
     error,
     isLoading,
-    isEnabled,
+    isConfigured,
 });
 
 const getTelemetryConfig = (state) => state.telemetryConfig;
 const getTelemetryConfigError = (state) => state.error;
 const getIsLoadingTelemetryConfig = (state) => state.isLoading;
-const getIsEnabledTelemetryConfig = (state) => state.isEnabled;
+const getIsTelemetryConfigured = (state) => state.isConfigured;
 
 export const selectors = {
     getTelemetryConfig,
     getTelemetryConfigError,
     getIsLoadingTelemetryConfig,
-    getIsEnabledTelemetryConfig,
+    getIsTelemetryConfigured,
 };
 
 export default reducer;
