@@ -27,6 +27,9 @@ type Store struct {
 	// store maps a namespace to the names of registries accessible from within the namespace.
 	store map[string]registries.Set
 
+	// globalRegistries holds registries global to openshift (applies to multiple namespaces)
+	globalRegistries registries.Set
+
 	mutex sync.RWMutex
 
 	checkTLS CheckTLS
@@ -69,15 +72,8 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 	return regs
 }
 
-// UpsertRegistry upserts the given registry with the given credentials in the given namespace into the store.
-func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string, dce config.DockerConfigEntry) (registryTypes.Registry, error) {
-	secure, err := rs.checkTLS(ctx, registry)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to check TLS for registry %q", registry)
-	}
-
-	regs := rs.getRegistries(namespace)
-	reg, err := regs.UpdateImageIntegration(&storage.ImageIntegration{
+func createImageIntegration(registry string, dce config.DockerConfigEntry, secure bool) *storage.ImageIntegration {
+	return &storage.ImageIntegration{
 		Id:         registry,
 		Name:       registry,
 		Type:       "docker",
@@ -90,19 +86,25 @@ func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string,
 				Insecure: !secure,
 			},
 		},
-	})
-	if err != nil {
-		return nil, errors.Wrapf(err, "updating registry store with registry %q", registry)
 	}
-
-	log.Debugf("Upserted registry %q for namespace %q into store", registry, namespace)
-
-	return reg, nil
 }
 
-// UpsertNoAuthRegistry will store a new registry with no user/pass and return the created registry integration
-func (rs *Store) UpsertNoAuthRegistry(ctx context.Context, namespace string, imgName *storage.ImageName) (registryTypes.Registry, error) {
-	return rs.UpsertRegistry(ctx, namespace, imgName.GetRegistry(), config.DockerConfigEntry{})
+// UpsertRegistry upserts the given registry with the given credentials in the given namespace into the store.
+func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string, dce config.DockerConfigEntry) error {
+	secure, err := rs.checkTLS(ctx, registry)
+	if err != nil {
+		return errors.Wrapf(err, "unable to check TLS for registry %q", registry)
+	}
+
+	regs := rs.getRegistries(namespace)
+	err = regs.UpdateImageIntegration(createImageIntegration(registry, dce, secure))
+	if err != nil {
+		return errors.Wrapf(err, "updating registry store with registry %q", registry)
+	}
+
+	log.Debugf("upserted registry %q for namespace %q into store", registry, namespace)
+
+	return nil
 }
 
 // getRegistriesInNamespace returns all the registries within a given namespace.
@@ -147,7 +149,7 @@ func (rs *Store) GetRegistryForImageInNamespace(image *storage.ImageName, namesp
 		}
 	}
 
-	return nil, errors.Errorf("Unknown image registry: %q", reg)
+	return nil, errors.Errorf("unknown image registry: %q", reg)
 }
 
 // HasRegistryForImageInNamespace returns true when a registry is found in the store that matches
@@ -193,4 +195,52 @@ func (rs *Store) GetFirstRegistryForImage(image *storage.ImageName) (registryTyp
 	log.Debugf("found %d registries matching %q, using first from %q ", len(findings), reg, findings[0].namespace)
 
 	return findings[0].reg, nil
+}
+
+// getOrInitGlobalRegistries will return global registries if existing, or create a new set
+// mimics `getRegistries`
+func (rs *Store) getOrInitGlobalRegistries() registries.Set {
+	rs.mutex.Lock()
+	defer rs.mutex.Unlock()
+
+	if rs.globalRegistries == nil {
+		rs.globalRegistries = registries.NewSet(rs.factory)
+	}
+
+	return rs.globalRegistries
+}
+
+// UpsertGlobalRegistry will store a new registry with the given credentials into the global registry store
+func (rs *Store) UpsertGlobalRegistry(ctx context.Context, registry string, dce config.DockerConfigEntry) error {
+	secure, err := rs.checkTLS(ctx, registry)
+	if err != nil {
+		return errors.Wrapf(err, "unable to check TLS for registry %q", registry)
+	}
+
+	regs := rs.getOrInitGlobalRegistries()
+	err = regs.UpdateImageIntegration(createImageIntegration(registry, dce, secure))
+	if err != nil {
+		return errors.Wrapf(err, "updating registry store with registry %q", registry)
+	}
+
+	log.Debugf("upserted global registry %q into store", registry)
+
+	return nil
+}
+
+// GetGlobalRegistryForImage returns the relevant global registry for image
+//
+// An error is returned if the registry is unknown
+func (rs *Store) GetGlobalRegistryForImage(image *storage.ImageName) (registryTypes.Registry, error) {
+	reg := image.GetRegistry()
+	regs := rs.globalRegistries
+	if regs != nil {
+		for _, r := range regs.GetAll() {
+			if r.Name() == reg {
+				return r, nil
+			}
+		}
+	}
+
+	return nil, errors.Errorf("unknown image registry: %q", reg)
 }

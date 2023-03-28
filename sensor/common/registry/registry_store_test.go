@@ -2,6 +2,7 @@ package registry
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -12,10 +13,10 @@ import (
 
 var (
 	fakeImgName = &storage.ImageName{
-		Registry: "quay.io",
+		Registry: "example.com",
 		Remote:   "rhacs-eng/sandbox",
 		Tag:      "noexist",
-		FullName: "quay.io/rhacs-eng/sandbox:noexist",
+		FullName: "example.com/rhacs-eng/sandbox:noexist",
 	}
 )
 
@@ -23,6 +24,10 @@ var (
 // which always says the given address is insecure.
 func alwaysInsecureCheckTLS(_ context.Context, _ string) (bool, error) {
 	return false, nil
+}
+
+func alwaysFailCheckTLS(_ context.Context, _ string) (bool, error) {
+	return false, errors.New("fake tls failure")
 }
 
 func TestRegistryStore_same_namespace(t *testing.T) {
@@ -34,12 +39,9 @@ func TestRegistryStore_same_namespace(t *testing.T) {
 		Username: "username",
 		Password: "password",
 	}
-	_, err := regStore.UpsertRegistry(ctx, "qa", "image-registry.openshift-image-registry.svc:5000", dce)
-	require.NoError(t, err)
-	_, err = regStore.UpsertRegistry(ctx, "qa", "image-registry.openshift-image-registry.svc.local:5000", dce)
-	require.NoError(t, err)
-	_, err = regStore.UpsertRegistry(ctx, "qa", "172.99.12.11:5000", dce)
-	require.NoError(t, err)
+	require.NoError(t, regStore.UpsertRegistry(ctx, "qa", "image-registry.openshift-image-registry.svc:5000", dce))
+	require.NoError(t, regStore.UpsertRegistry(ctx, "qa", "image-registry.openshift-image-registry.svc.local:5000", dce))
+	require.NoError(t, regStore.UpsertRegistry(ctx, "qa", "172.99.12.11:5000", dce))
 
 	img := &storage.ImageName{
 		Registry: "image-registry.openshift-image-registry.svc:5000",
@@ -83,8 +85,7 @@ func TestRegistryStore_SpecificNamespace(t *testing.T) {
 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
 	fakeNamespace := "fake-namespace"
 
-	_, err := regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dce)
-	require.NoError(t, err)
+	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dce))
 	assert.True(t, regStore.HasRegistryForImageInNamespace(fakeImgName, fakeNamespace))
 	reg, err := regStore.GetRegistryForImageInNamespace(fakeImgName, fakeNamespace)
 	require.NoError(t, err)
@@ -106,32 +107,19 @@ func TestRegistryStore_MultipleSecretsSameRegistry(t *testing.T) {
 	dceB := config.DockerConfigEntry{Username: "usernameB", Password: "passwordB"}
 	fakeNamespace := "fake-namespace"
 
-	_, err := regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dceA)
-	require.NoError(t, err)
+	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dceA))
 	reg, err := regStore.GetRegistryForImageInNamespace(fakeImgName, fakeNamespace)
 	require.NoError(t, err)
 	assert.Equal(t, fakeImgName.GetRegistry(), reg.Name())
 	assert.Equal(t, reg.Config().Username, dceA.Username)
 	assert.Equal(t, reg.Config().Password, dceA.Password)
 
-	_, err = regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dceB)
-	require.NoError(t, err)
+	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dceB))
 	reg, err = regStore.GetRegistryForImageInNamespace(fakeImgName, fakeNamespace)
 	require.NoError(t, err)
 	assert.Equal(t, fakeImgName.GetRegistry(), reg.Name())
 	assert.Equal(t, reg.Config().Username, dceB.Username)
 	assert.Equal(t, reg.Config().Password, dceB.Password)
-}
-
-func TestRegistryStore_UpsertNoAuthRegistry(t *testing.T) {
-	ctx := context.Background()
-	regStore := NewRegistryStore(alwaysInsecureCheckTLS)
-
-	reg, err := regStore.UpsertNoAuthRegistry(ctx, "fake-namespace", fakeImgName)
-	require.NoError(t, err)
-	assert.Equal(t, reg.Name(), fakeImgName.GetRegistry())
-	assert.Empty(t, reg.Config().Username)
-	assert.Empty(t, reg.Config().Password)
 }
 
 func TestRegistryStore_GetFirstRegistryForImage(t *testing.T) {
@@ -146,15 +134,46 @@ func TestRegistryStore_GetFirstRegistryForImage(t *testing.T) {
 	fakeNamespace2 := "fake-namespace2"
 	fakeNamespace3 := "fake-namespace3"
 
-	_, err := regStore.UpsertRegistry(ctx, fakeNamespace1, fakeImgName.GetRegistry(), dce1)
-	require.NoError(t, err)
-	_, err = regStore.UpsertRegistry(ctx, fakeNamespace2, fakeImgName.GetRegistry(), dce2)
-	require.NoError(t, err)
-	_, err = regStore.UpsertRegistry(ctx, fakeNamespace3, fakeImgName.GetRegistry(), dce3)
-	require.NoError(t, err)
+	_, err := regStore.GetFirstRegistryForImage(fakeImgName)
+	require.Error(t, err)
+
+	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace1, fakeImgName.GetRegistry(), dce1))
+	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace2, fakeImgName.GetRegistry(), dce2))
+	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace3, fakeImgName.GetRegistry(), dce3))
 
 	reg, err := regStore.GetFirstRegistryForImage(fakeImgName)
 	require.NoError(t, err)
-
 	assert.Equal(t, reg.Config().Username, dce1.Username)
+}
+
+func TestRegistryStore_GlobalStore(t *testing.T) {
+	ctx := context.Background()
+	regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+
+	_, err := regStore.GetGlobalRegistryForImage(fakeImgName)
+	require.Error(t, err, "error is expected on empty store")
+
+	err = regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce)
+	require.NoError(t, err, "should be no error on valid upsert")
+
+	reg, err := regStore.GetGlobalRegistryForImage(fakeImgName)
+	require.NoError(t, err, "should be no error on valid get")
+	assert.NotNil(t, reg)
+	assert.Equal(t, reg.Config().Username, dce.Username)
+
+	// sanity check
+	assert.Zero(t, len(regStore.store), "non-global store should not have been modified")
+}
+
+func TestRegistryStore_GlobalStoreFailUpsertCheckTLS(t *testing.T) {
+	ctx := context.Background()
+	regStore := NewRegistryStore(alwaysFailCheckTLS)
+	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+
+	// upsert that fails TLS check should error out
+	require.Error(t, regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce))
+
+	// sanity check
+	assert.Nil(t, regStore.globalRegistries, "global store should not be populated")
 }
