@@ -264,8 +264,13 @@ jobs:
           name: docs-build
           path: image/docs
 
+      - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
+
       # needed to restore node_modules for ossls-nostice
       - uses: ./.github/actions/cache-ui-dependencies
+
+      - name: Fetch UI deps
+        run: make -C ui deps
 
       - name: Generate OSS notice
         run: make ossls-notice
@@ -376,8 +381,13 @@ jobs:
         name: docs-build
         path: image/docs
 
+    - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
+
     # needed to restore node_modules for ossls-nostice
     - uses: ./.github/actions/cache-ui-dependencies
+
+    - name: Fetch UI deps
+      run: make -C ui deps
 
     - name: Generate OSS notice
       run: make ossls-notice
