@@ -2,6 +2,7 @@ package detector
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
@@ -121,6 +122,13 @@ outer:
 					time.Sleep(eb.NextBackOff())
 					continue outer
 				}
+			}
+
+			// If cluster local scan is rate-limited, backoff and try again
+			if errors.Is(err, scan.ErrTooManyParallelScans) {
+				log.Debugf("local scan rate limited, backing off... %q", req.containerImage.GetName().GetFullName())
+				time.Sleep(eb.NextBackOff())
+				continue outer
 			}
 
 			return nil, err

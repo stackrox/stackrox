@@ -100,7 +100,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 			}
 		}
 
-		img, err = s.localScan.EnrichLocalImageFromRegistry(ctx, s.centralClient, req.GetImage(), reg)
+		img, err = s.localScan.EnrichLocalImageFromRegistry(ctx, s.centralClient, req.GetImage(), []registryTypes.Registry{reg})
 	}
 
 	if err != nil {
