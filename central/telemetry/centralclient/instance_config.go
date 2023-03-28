@@ -35,7 +35,7 @@ var (
 
 func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 	key := env.TelemetryStorageKey.Setting()
-	if key == "" {
+	if key == "" || env.OfflineModeEnv.BooleanSetting() {
 		return nil, nil, nil
 	}
 
