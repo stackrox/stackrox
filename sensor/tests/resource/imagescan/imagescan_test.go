@@ -94,7 +94,7 @@ func (s *ImageScanSuite) Test_AlertsUpdatedOnImageUpdate() {
 			// There should be no violation yet, because there are no components provided for this image
 			tc.LastViolationState("myapp", func(result *central.AlertResults) error {
 				if checkIfAlertsHaveViolation(result, Policies[0].GetName()) {
-					return errors.Errorf("violation found for deployment")
+					return errors.New("violation found for deployment")
 				}
 				return nil
 			}, "Should not have violation")
@@ -127,7 +127,7 @@ func (s *ImageScanSuite) Test_AlertsUpdatedOnImageUpdate() {
 			// Violation should eventually happen for myapp, since the image scanned has rpm installed
 			tc.LastViolationStateWithTimeout("myapp", func(result *central.AlertResults) error {
 				if !checkIfAlertsHaveViolation(result, Policies[0].GetName()) {
-					return errors.Errorf("violation not found for deployment")
+					return errors.New("violation not found for deployment")
 				}
 				return nil
 			}, "Should have violation", 2*time.Minute)
