@@ -11,16 +11,16 @@ import (
 	"github.com/stackrox/rox/pkg/gjson"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 )
 
 // Required JSON path expressions for the sarif printer.
 const (
-	SarifRuleJSONPathExpressionKey        string = "rule-id"
-	SarifDescriptionJSONPathExpressionKey string = "description"
-	SarifHelpJSONPathExpressionKey        string = "help"
-	SarifSeverityJSONPathExpressionKey    string = "severity"
-	SarifHelpLinkJSONPathExpressionKey    string = "help-link"
+	SarifRuleJSONPathExpressionKey     string = "rule-id"
+	SarifHelpJSONPathExpressionKey     string = "help"
+	SarifSeverityJSONPathExpressionKey string = "severity"
+	SarifHelpLinkJSONPathExpressionKey string = "help-link"
 )
 
 // Supported reports for the sarif printer. This will be converted into a rule name, with which you can then query
@@ -32,7 +32,6 @@ const (
 
 var requiredKeys = []string{
 	SarifRuleJSONPathExpressionKey,
-	SarifDescriptionJSONPathExpressionKey,
 	SarifHelpJSONPathExpressionKey,
 	SarifSeverityJSONPathExpressionKey,
 }
@@ -46,11 +45,10 @@ type SarifPrinter struct {
 }
 
 type sarifEntry struct {
-	ruleID      string
-	description string
-	help        string
-	severity    string
-	helpLink    string
+	ruleID   string
+	help     string
+	severity string
+	helpLink string
 }
 
 // NewSarifPrinter creates a printer capable of printing a sarif report.
@@ -67,7 +65,6 @@ type sarifEntry struct {
 //
 // The map of JSON path expressions given MUST contain JSON path expressions for the keys:
 //   - SarifRuleJSONPathExpressionKey, yields the rule ID to use in the sarif report (e.g. CVE-XYZ-component-version).
-//   - SarifDescriptionJSONPathExpressionKey, yields the  description to use in the sarif report.
 //   - SarifHelpJSONPathExpressionKey, yields the help text to use in the sarif report. This should include remediation steps.
 //   - SarifSeverityJSONPathExpressionKey, yields the severity to use in the sarif report.
 //
@@ -94,7 +91,6 @@ type sarifEntry struct {
 //
 //		type violation struct {
 //		      Id          string `json:"id"`
-//	          Description string `json:"description"`
 //	          Reason      string `json:"reason"`
 //	          Severity    string `json:"severity"`
 //		}
@@ -103,7 +99,6 @@ type sarifEntry struct {
 //
 //	 expressions := map[string] {
 //			SarifRuleJSONPathExpressionKey: "violations.#.id",
-//			SarifDescriptionJSONPathExpressionKey: "violations.#.description",
 //		    SarifHelpJSONPathExpressionKey: "violations.#.reason",
 //		    SarifSeverityJSONPathExpressionKey: "violations.#.severity",
 //		}
@@ -137,24 +132,39 @@ func (s *SarifPrinter) Print(object interface{}, out io.Writer) error {
 	}
 
 	for _, entry := range sarifEntries {
-		addEntry(run, entry, s.entity, s.reportType)
+		s.addEntry(run, entry)
 	}
 
 	report.AddRun(run)
 	return report.PrettyWrite(out)
 }
 
-func addEntry(run *sarif.Run, entry sarifEntry, entity string, name string) {
+func (s *SarifPrinter) addEntry(run *sarif.Run, entry sarifEntry) {
 	rule := run.AddRule(entry.ruleID)
-	rule.WithName(name).
-		WithShortDescription(sarif.NewMultiformatMessageString(entry.description)).
-		// Setting the full description is also setting the title displayed in GitHub.
+	rule.WithName(s.reportType).
+		// Setting the description is also setting the title displayed in GitHub.
+		WithShortDescription(sarif.NewMultiformatMessageString(entry.ruleID)).
 		WithFullDescription(sarif.NewMultiformatMessageString(entry.ruleID)).
 		WithHelp(sarif.NewMultiformatMessageString(entry.help))
 
 	if entry.helpLink != "" {
 		rule.WithHelpURI(entry.helpLink)
 	}
+
+	properties := sarif.Properties{
+		// Precision very-high ensures this violation is shown first within GitHub.
+		"precision": "very-high",
+		// Tags allow filtering, which is desirable to have.
+		"tags": []string{
+			utils.IfThenElse(s.reportType == SarifVulnerabilityReport, "security", "policy-violation"),
+			entry.severity,
+		},
+	}
+	// For vulnerability reports, generated the security severity based of the severity reported.
+	if s.reportType == SarifVulnerabilityReport {
+		properties["security-severity"] = toSecuritySeverity(entry.severity)
+	}
+	rule.WithProperties(properties)
 
 	run.AddResult(sarif.NewRuleResult(entry.ruleID).
 		WithLevel(toSarifLevel(entry.severity)).
@@ -163,7 +173,7 @@ func addEntry(run *sarif.Run, entry sarifEntry, entity string, name string) {
 		WithLocations([]*sarif.Location{
 			{
 				PhysicalLocation: &sarif.PhysicalLocation{
-					ArtifactLocation: sarif.NewArtifactLocation().WithUri(entity),
+					ArtifactLocation: sarif.NewArtifactLocation().WithUri(s.entity),
 					Region:           sarif.NewSimpleRegion(1, 1),
 				},
 			},
@@ -196,10 +206,9 @@ func sarifEntriesFromJSONObject(jsonObject interface{}, pathExpressions map[stri
 	sarifEntries := make([]sarifEntry, 0, numberOfValues)
 	for i := 0; i < numberOfValues; i++ {
 		entry := sarifEntry{
-			ruleID:      data[SarifRuleJSONPathExpressionKey][i],
-			description: data[SarifDescriptionJSONPathExpressionKey][i],
-			help:        data[SarifHelpJSONPathExpressionKey][i],
-			severity:    data[SarifSeverityJSONPathExpressionKey][i],
+			ruleID:   data[SarifRuleJSONPathExpressionKey][i],
+			help:     data[SarifHelpJSONPathExpressionKey][i],
+			severity: data[SarifSeverityJSONPathExpressionKey][i],
 		}
 		if len(data[SarifHelpLinkJSONPathExpressionKey]) > 0 {
 			entry.helpLink = data[SarifHelpLinkJSONPathExpressionKey][i]
@@ -237,5 +246,23 @@ func toSarifLevel(severity string) string {
 		return "note"
 	default:
 		return "none"
+	}
+}
+
+func toSecuritySeverity(severity string) string {
+	// While this shouldn't be the case, let's be on the safe side and strip the enum suffix.
+	severity = strings.TrimSuffix(severity, "_VULNERABILITY_SEVERITY")
+	severity = strings.TrimSuffix(severity, "_SEVERITY")
+	switch severity {
+	case criticalVulnSeverity, criticalPolicySeverity:
+		return "9.1"
+	case importantVulnSeverity, highPolicySeverity:
+		return "7.9"
+	case moderateVulnSeverity, mediumPolicySeverity:
+		return "4.8"
+	case lowVulnSeverity, lowPolicySeverity:
+		return "3.3"
+	default:
+		return "0.0"
 	}
 }

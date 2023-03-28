@@ -13,39 +13,60 @@
               "id": "first-violation",
               "name": "PolicyViolations",
               "shortDescription": {
-                "text": "something about violation one"
+                "text": "first-violation"
               },
               "fullDescription": {
-                "text": "something about violation one"
+                "text": "first-violation"
               },
               "help": {
                 "text": "something about misconfiguration"
+              },
+              "properties": {
+                "precision": "very-high",
+                "tags": [
+                  "policy-violation",
+                  "IMPORTANT"
+                ]
               }
             },
             {
               "id": "second-violation",
               "name": "PolicyViolations",
               "shortDescription": {
-                "text": "something about violation two"
+                "text": "second-violation"
               },
               "fullDescription": {
-                "text": "something about violation two"
+                "text": "second-violation"
               },
               "help": {
                 "text": "something about vulnerabilities"
+              },
+              "properties": {
+                "precision": "very-high",
+                "tags": [
+                  "policy-violation",
+                  "LOW"
+                ]
               }
             },
             {
               "id": "third-violation",
               "name": "PolicyViolations",
               "shortDescription": {
-                "text": "something about violation three"
+                "text": "third-violation"
               },
               "fullDescription": {
-                "text": "something about violation three"
+                "text": "third-violation"
               },
               "help": {
                 "text": "something about secrets"
+              },
+              "properties": {
+                "precision": "very-high",
+                "tags": [
+                  "policy-violation",
+                  "CRITICAL"
+                ]
               }
             }
           ],

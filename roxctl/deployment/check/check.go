@@ -47,8 +47,7 @@ var (
 	}
 
 	sarifJSONPathExpressions = map[string]string{
-		printers.SarifRuleJSONPathExpressionKey:        "results.#.violatedPolicies.#.name",
-		printers.SarifDescriptionJSONPathExpressionKey: "results.#.violatedPolicies.#.description",
+		printers.SarifRuleJSONPathExpressionKey: "results.#.violatedPolicies.#.name",
 		printers.SarifHelpJSONPathExpressionKey: gjson.MultiPathExpression(
 			"@text",
 			gjson.Expression{

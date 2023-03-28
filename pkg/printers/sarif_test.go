@@ -25,9 +25,8 @@ type violation struct {
 
 func TestSarifPrinter_Print_InvalidJSONPathExpressions(t *testing.T) {
 	expressions := map[string]string{
-		SarifRuleJSONPathExpressionKey:        "",
-		SarifDescriptionJSONPathExpressionKey: "",
-		SarifHelpJSONPathExpressionKey:        "",
+		SarifRuleJSONPathExpressionKey: "",
+		SarifHelpJSONPathExpressionKey: "",
 	}
 
 	printer := NewSarifPrinter(expressions, "", "")
@@ -61,10 +60,9 @@ func TestSarifPrinter_Print_Success(t *testing.T) {
 	}
 
 	expressions := map[string]string{
-		SarifRuleJSONPathExpressionKey:        "violations.#.id",
-		SarifDescriptionJSONPathExpressionKey: "violations.#.description",
-		SarifHelpJSONPathExpressionKey:        "violations.#.reason",
-		SarifSeverityJSONPathExpressionKey:    "violations.#.severity",
+		SarifRuleJSONPathExpressionKey:     "violations.#.id",
+		SarifHelpJSONPathExpressionKey:     "violations.#.reason",
+		SarifSeverityJSONPathExpressionKey: "violations.#.severity",
 	}
 
 	out := strings.Builder{}

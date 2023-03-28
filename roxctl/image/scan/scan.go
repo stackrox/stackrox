@@ -56,7 +56,6 @@ var (
 				Expression: "result.vulnerabilities.#.componentVersion",
 			},
 		),
-		printers.SarifDescriptionJSONPathExpressionKey: "result.vulnerabilities.#.cveInfo",
 		printers.SarifHelpJSONPathExpressionKey: gjson.MultiPathExpression(
 			"@text",
 			gjson.Expression{
