@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -155,7 +156,7 @@ func (p *eventPipeline) processUpdatedImage(image *storage.Image) error {
 	}
 	if env.ResyncDisabled.BooleanSetting() {
 		message := component.NewEvent()
-		message.AddDeploymentReference(resolver.ResolveDeploymentsByImage(image),
+		message.AddDeploymentReference(resolver.ResolveDeploymentsByImages(image),
 			component.DeploymentRefWithForceDetection(true),
 			component.DeploymentRefWithSkipResolving(true))
 		log.Debugf("Updated Image message to the Resolver: %+v", message)
@@ -184,8 +185,17 @@ func (p *eventPipeline) processInvalidateImageCache(req *central.InvalidateImage
 		return err
 	}
 	if env.ResyncDisabled.BooleanSetting() {
+		keys := make([]imagecacheutils.CacheKeyProvider, len(req.GetImageKeys()))
+		for i, image := range req.GetImageKeys() {
+			keys[i] = &storage.Image{
+				Id: image.GetImageId(),
+				Name: &storage.ImageName{
+					FullName: image.GetImageFullName(),
+				},
+			}
+		}
 		message := component.NewEvent()
-		message.AddDeploymentReference(resolver.ResolveAllDeployments(),
+		message.AddDeploymentReference(resolver.ResolveDeploymentsByImages(keys...),
 			component.DeploymentRefWithForceDetection(true),
 			component.DeploymentRefWithSkipResolving(true))
 		log.Debugf("Reprocess message to the Resolver: %+v", message)

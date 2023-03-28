@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
 )
@@ -167,21 +168,29 @@ func (ds *DeploymentStore) FindDeploymentIDsByLabels(namespace string, sel selec
 	return
 }
 
-// FindDeploymentIDsByImage returns a slice of deployment ids based on matching image ids
-func (ds *DeploymentStore) FindDeploymentIDsByImage(image *storage.Image) []string {
-	ds.lock.RLock()
-	defer ds.lock.RUnlock()
-	var ids []string
+func (ds *DeploymentStore) findDeploymentIDsByImageNoLock(image imagecacheutils.CacheKeyProvider) set.Set[string] {
+	ids := set.NewStringSet()
 	for _, d := range ds.deployments {
 		for _, c := range d.GetContainers() {
-			if c.GetImage().GetId() == image.GetId() {
-				ids = append(ids, d.GetId())
-				// The deployment id is already the slice, we can break here
+			if imagecacheutils.CompareImageCacheKey(c.GetImage(), image) {
+				ids.Add(d.GetId())
+				// The deployment id is already the set, we can break here
 				break
 			}
 		}
 	}
 	return ids
+}
+
+// FindDeploymentIDsByImages returns a slice of deployment ids based on matching images
+func (ds *DeploymentStore) FindDeploymentIDsByImages(images []imagecacheutils.CacheKeyProvider) []string {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+	ids := set.NewStringSet()
+	for _, image := range images {
+		ids = ids.Union(ds.findDeploymentIDsByImageNoLock(image))
+	}
+	return ids.AsSlice()
 }
 
 func (ds *DeploymentStore) getWrap(id string) *deploymentWrap {
