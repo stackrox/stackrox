@@ -2,10 +2,6 @@ import React, { ReactNode } from 'react';
 import {
     Bullseye,
     Divider,
-    EmptyState,
-    EmptyStateBody,
-    EmptyStateIcon,
-    EmptyStateVariant,
     Flex,
     Grid,
     GridItem,
@@ -22,15 +18,16 @@ import {
     Text,
     Title,
 } from '@patternfly/react-core';
-import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import { vulnerabilitySeverities, VulnerabilitySeverity } from 'types/cve.proto';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import BySeveritySummaryCard from './SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from './SummaryCards/CvesByStatusSummaryCard';
@@ -104,14 +101,14 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
     if (error) {
         mainContent = (
             <Bullseye>
-                <EmptyState variant={EmptyStateVariant.large}>
-                    <EmptyStateIcon
-                        className="pf-u-danger-color-100"
-                        icon={ExclamationCircleIcon}
-                    />
-                    <Title headingLevel="h2">{getAxiosErrorMessage(error)}</Title>
-                    <EmptyStateBody>Adjust your filters and try again</EmptyStateBody>
-                </EmptyState>
+                <EmptyStateTemplate
+                    headingLevel="h2"
+                    title={getAxiosErrorMessage(error)}
+                    icon={ExclamationCircleIcon}
+                    iconClassName="pf-u-danger-color-100"
+                >
+                    Adjust your filters and try again
+                </EmptyStateTemplate>
             </Bullseye>
         );
     } else if (loading && !vulnerabilityData) {

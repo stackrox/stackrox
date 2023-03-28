@@ -14,12 +14,12 @@ import {
 import WorkloadCvesDeploymentSinglePage from './WorkloadCvesDeploymentSinglePage';
 import WorkloadCvesImageSinglePage from './WorkloadCvesImageSinglePage';
 import WorkloadCvesOverviewPage from './WorkloadCvesOverviewPage';
-import WorkloadCvesSinglePage from './WorkloadCvesSinglePage';
+import ImageCvePage from './ImageCvePage';
 
 function WorkloadCvesPage() {
     return (
         <Switch>
-            <Route path={vulnerabilitiesWorkloadCveSinglePath} component={WorkloadCvesSinglePage} />
+            <Route path={vulnerabilitiesWorkloadCveSinglePath} component={ImageCvePage} />
             <Route
                 path={vulnerabilitiesWorkloadCveImageSinglePath}
                 component={WorkloadCvesImageSinglePage}

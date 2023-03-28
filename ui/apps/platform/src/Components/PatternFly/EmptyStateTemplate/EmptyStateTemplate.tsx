@@ -13,6 +13,7 @@ type EmptyStateTemplateProps = {
     title: string;
     headingLevel: 'h1' | 'h2' | 'h3' | 'h4';
     icon?: React.ComponentType;
+    iconClassName?: string;
 };
 
 function EmptyStateTemplate({
@@ -20,10 +21,11 @@ function EmptyStateTemplate({
     title,
     headingLevel,
     icon = CubesIcon,
+    iconClassName = '',
 }: EmptyStateTemplateProps): ReactElement {
     return (
         <EmptyState variant={EmptyStateVariant.large}>
-            <EmptyStateIcon icon={icon} />
+            <EmptyStateIcon className={iconClassName} icon={icon} />
             <Title headingLevel={headingLevel} size="lg">
                 {title}
             </Title>
