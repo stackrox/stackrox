@@ -57,6 +57,9 @@ export default function configureApolloClient() {
                         },
                     },
                 },
+                ImageCVECore: {
+                    keyFields: ['cve'],
+                },
             },
         }),
     });
