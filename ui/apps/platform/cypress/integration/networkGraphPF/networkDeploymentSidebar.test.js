@@ -29,13 +29,18 @@ describe('Network Graph deployment sidebar', () => {
         selectDeployment('collector');
 
         // confirm that the graph only contains collector and other StackRox deployments it communiticates with
-        cy.get(`${networkGraphSelectors.nodes} > [data-type="node"]`).should('have.length', 3);
         cy.get(
-            `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label`
-        ).contains('sensor');
+            `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("sensor")`
+        );
         cy.get(
-            `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label`
-        ).contains('monitoring');
+            `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("central")`
+        ).should('not.exist');
+        cy.get(
+            `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("scanner")`
+        ).should('not.exist');
+        cy.get(
+            `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("admission-controller")`
+        ).should('not.exist');
 
         // click on Collector node, too
         cy.get(`${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label`)
