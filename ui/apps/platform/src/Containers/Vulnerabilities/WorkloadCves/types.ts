@@ -1,3 +1,5 @@
+import { VulnerabilitySeverity } from 'types/cve.proto';
+
 export type VulnerabilitySeverityLabel = 'Critical' | 'Important' | 'Moderate' | 'Low';
 export type FixableStatus = 'Fixable' | 'Not fixable';
 
@@ -5,6 +7,18 @@ export type DefaultFilters = {
     Severity: VulnerabilitySeverityLabel[];
     Fixable: FixableStatus[];
 };
+
+// `QuerySearchFilter` is a restricted subset of the `SearchFilter` obtained from the URL that only
+// supports search keys that are valid in the Workload CVE section of the app
+export type QuerySearchFilter = Partial<{
+    Severity: VulnerabilitySeverity[];
+    Fixable: ('true' | 'false')[];
+    CVE: string[];
+    IMAGE: string[];
+    DEPLOYMENT: string[];
+    NAMESPACE: string[];
+    CLUSTER: string[];
+}>;
 
 export type VulnMgmtLocalStorage = {
     preferences: {
