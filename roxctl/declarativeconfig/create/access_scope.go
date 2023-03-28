@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
 	"github.com/stackrox/rox/pkg/maputil"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"gopkg.in/yaml.v3"
 )
@@ -68,6 +69,8 @@ In case only a subset of namespace should be included, specify --included cluste
 
 	cmd.Flags().Var(&requirementFlag{requirements: &accessScopeCmd.namespaceRequirements}, "namespace-label-selector",
 		labelSelectorUsage)
+
+	utils.Must(cmd.MarkFlagRequired("name"))
 
 	return cmd
 }
@@ -187,7 +190,7 @@ func retrieveRequirement(s string) (*declarativeconfig.Requirement, error) {
 	requirement := &declarativeconfig.Requirement{}
 	for _, kvPair := range kvPairs {
 		if strings.Count(kvPair, "=") != 1 {
-			return nil, fmt.Errorf("%s must specify key=value", s)
+			return nil, fmt.Errorf("%s must specify key=value", kvPair)
 		}
 
 		kv := strings.Split(kvPair, "=")

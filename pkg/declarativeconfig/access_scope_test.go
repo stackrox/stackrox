@@ -9,31 +9,41 @@ import (
 )
 
 func TestAccessScopeYAMLTransformation(t *testing.T) {
-	data := []byte(`
-name: test-name
+	data := []byte(`name: test-name
 description: test-description
 rules:
-  included:
-    - cluster: clusterA
-      namespaces:
-      - namespaceA1
-      - namespaceA2
-    - cluster: clusterB
-  clusterLabelSelectors:
-    - requirements:
-      - key: a
-        operator: IN
-        values: [a, b, c]
-      - key: b
-        operator: NOT_IN
-        values: [b, d]
-    - requirements:
-      - key: c
-        operator: IN
-        values: [d, e, f]
-      - key: d
-        operator: NOT_IN
-        values: [x, y, z]
+    included:
+        - cluster: clusterA
+          namespaces:
+            - namespaceA1
+            - namespaceA2
+        - cluster: clusterB
+    clusterLabelSelectors:
+        - requirements:
+            - key: a
+              operator: IN
+              values:
+                - a
+                - b
+                - c
+            - key: b
+              operator: NOT_IN
+              values:
+                - b
+                - d
+        - requirements:
+            - key: c
+              operator: IN
+              values:
+                - d
+                - e
+                - f
+            - key: d
+              operator: NOT_IN
+              values:
+                - x
+                - "y"
+                - z
 `)
 	as := AccessScope{}
 
@@ -70,4 +80,8 @@ rules:
 	assert.Equal(t, as.Rules.ClusterLabelSelectors[1].Requirements[1].Key, "d")
 	assert.Equal(t, as.Rules.ClusterLabelSelectors[1].Requirements[1].Values, []string{"x", "y", "z"})
 	assert.Len(t, as.Rules.NamespaceLabelSelectors, 0)
+
+	bytes, err := yaml.Marshal(&as)
+	assert.NoError(t, err)
+	assert.Equal(t, string(data), string(bytes))
 }

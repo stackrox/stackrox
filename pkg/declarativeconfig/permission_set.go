@@ -28,9 +28,9 @@ type ResourceWithAccess struct {
 }
 
 // MarshalYAML transforms Access to YAML format.
-func (a Access) MarshalYAML() ([]byte, error) {
+func (a Access) MarshalYAML() (interface{}, error) {
 	protoAccess := storage.Access(a)
-	return []byte(protoAccess.String()), nil
+	return protoAccess.String(), nil
 }
 
 // UnmarshalYAML makes transformation from YAML to Access.

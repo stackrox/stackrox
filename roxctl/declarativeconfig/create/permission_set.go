@@ -1,6 +1,7 @@
 package create
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
@@ -33,7 +34,7 @@ func permissionSetCommand(cliEnvironment environment.Environment) *cobra.Command
 		"description of the permission set")
 	cmd.Flags().StringToStringVar(&permSetCmd.resourceWithAccess, "resource-with-access", map[string]string{},
 		`list of resource with the respective access, e.g. --resource-with-access Access=READ_ACCESS,Admin=READ_WRITE_ACCESS
-(Note: Capitalization matters!`)
+Note: Capitalization matters!`)
 
 	cmd.MarkFlagsRequiredTogether("name", "resource-with-access")
 
@@ -51,15 +52,19 @@ func (p *permissionSetCmd) Validate() error {
 
 	resourceWithAccess := make([]declarativeconfig.ResourceWithAccess, 0, len(accessMap))
 
-	var invalidAccessErrors *multierror.Error
+	// Keep an alphabetic order within the resources.
+	resources := maputil.Keys(accessMap)
+	sort.Strings(resources)
+
 	// Resources are currently defined within central/role/resources, and hence cannot be reused here yet.
 	// There are plans to move the resource definition to a shared place however, in which case we can reuse them here.
-	for resource, access := range accessMap {
-		accessVal, ok := storage.Access_value[access]
+	var invalidAccessErrors *multierror.Error
+	for _, resource := range resources {
+		accessVal, ok := storage.Access_value[accessMap[resource]]
 		if !ok {
 			invalidAccessErrors = multierror.Append(invalidAccessErrors, errox.InvalidArgs.
 				Newf("invalid access specified for resource %s: %s. The allowed values for access are: [%s]",
-					resource, access, strings.Join(maputil.Keys(storage.Access_value), ",")))
+					resource, accessMap[resource], strings.Join(maputil.Keys(storage.Access_value), ",")))
 			continue
 		}
 		resourceWithAccess = append(resourceWithAccess, declarativeconfig.ResourceWithAccess{
