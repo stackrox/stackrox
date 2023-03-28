@@ -415,7 +415,6 @@ func GetRemainingCapacity(postgresConfig *postgres.Config) (int64, error) {
 		return pgconfig.GetPostgresCapacity() - sizeUsed, err
 	}
 
-	log.Debugf("remaining capacity = %d", capacity)
 	return capacity, nil
 }
 
