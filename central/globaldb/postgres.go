@@ -201,9 +201,13 @@ func CollectPostgresStats(ctx context.Context, db *postgres.DB) *stats.DatabaseS
 
 // CollectPostgresDatabaseSizes -- collect database sizing stats for Postgres
 func CollectPostgresDatabaseSizes(postgresConfig *postgres.Config) []*stats.DatabaseDetailsStats {
-	databases := pgadmin.GetAllDatabases(postgresConfig)
-
 	detailsSlice := make([]*stats.DatabaseDetailsStats, 0)
+
+	databases, err := pgadmin.GetAllDatabases(postgresConfig)
+	if err != nil {
+		log.Errorf("unable to get the databases: %v", err)
+		return detailsSlice
+	}
 
 	for _, database := range databases {
 		dbSize, err := pgadmin.GetDatabaseSize(postgresConfig, database)

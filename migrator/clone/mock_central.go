@@ -148,17 +148,21 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() && m.runBoth {
 		if version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
-			if pgadmin.CheckIfDBExists(m.adminConfig, pgClone.TempClone) {
+			if exists, _ := pgadmin.CheckIfDBExists(m.adminConfig, pgClone.TempClone); exists {
 				m.verifyClonePostgres(pgClone.TempClone, curVer)
 			}
 		} else {
-			assert.False(m.t, pgadmin.CheckIfDBExists(m.adminConfig, pgClone.TempClone))
+			exists, err := pgadmin.CheckIfDBExists(m.adminConfig, pgClone.TempClone)
+			assert.NoError(m.t, err)
+			assert.False(m.t, exists)
 		}
 	} else if env.PostgresDatastoreEnabled.BooleanSetting() {
 		if version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
 			m.verifyClonePostgres(pgClone.PreviousClone, curVer)
 		} else {
-			assert.False(m.t, pgadmin.CheckIfDBExists(m.adminConfig, pgClone.PreviousClone))
+			exists, err := pgadmin.CheckIfDBExists(m.adminConfig, pgClone.PreviousClone)
+			assert.NoError(m.t, err)
+			assert.False(m.t, exists)
 		}
 	} else {
 		if version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
@@ -171,7 +175,7 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
 
 func (m *mockCentral) upgradeDB(path, _, pgClone string) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		if pgadmin.CheckIfDBExists(m.adminConfig, pgClone) {
+		if exists, _ := pgadmin.CheckIfDBExists(m.adminConfig, pgClone); exists {
 			cloneVer, err := migVer.ReadVersionPostgres(m.ctx, pgClone)
 			require.NoError(m.t, err)
 			require.LessOrEqual(m.t, cloneVer.SeqNum, migrations.CurrentDBVersionSeqNum())
@@ -426,7 +430,8 @@ func (m *mockCentral) runMigratorWithBreaksInPersist(breakpoint string) {
 		}
 
 		// Connect to different database for admin functions
-		connectPool := pgadmin.GetAdminPool(m.adminConfig)
+		connectPool, err := pgadmin.GetAdminPool(m.adminConfig)
+		assert.NoError(m.t, err)
 		// Close the admin connection pool
 		defer connectPool.Close()
 
