@@ -1,7 +1,6 @@
 package resources
 
 import (
-	"fmt"
 	"sort"
 	"testing"
 
@@ -248,15 +247,28 @@ func newImage(id string, fullName string) *storage.Image {
 }
 
 func (s *deploymentStoreSuite) Test_FindDeploymentIDsByImages() {
-	deployments := []*v1.Deployment{
-		withImage(makeDeploymentObject("d-1", "test-ns", "uuid-1"), "nginx:1.2.3"),
-		withImage(makeDeploymentObject("d-2", "test-ns", "uuid-2"), "private-registry.io/nginx:1.2.3"),
+	resources := []struct {
+		deployment *v1.Deployment
+		imageID    string
+	}{
+		{
+			deployment: withImage(makeDeploymentObject("d-1", "test-ns", "uuid-1"), "nginx:1.2.3"),
+			imageID:    "image-uuid-1",
+		},
+		{
+			deployment: withImage(makeDeploymentObject("d-2", "test-ns", "uuid-2"), "private-registry.io/nginx:1.2.3"),
+			imageID:    "image-uuid-1",
+		},
+		{
+			deployment: withImage(makeDeploymentObject("d-3", "test-ns", "uuid-3"), "private-registry.io/main:3.2.1"),
+			imageID:    "image-uuid-2",
+		},
 	}
-	for _, d := range deployments {
-		wrap := s.createDeploymentWrap(d)
+	for _, r := range resources {
+		wrap := s.createDeploymentWrap(r.deployment)
 		// Manually set the ID for testing purposes
-		for i, c := range wrap.GetDeployment().GetContainers() {
-			wrap.GetDeployment().GetContainers()[i].GetImage().Id = fmt.Sprintf("id-%s", c.GetImage().GetName().GetFullName())
+		for i := range wrap.GetDeployment().GetContainers() {
+			wrap.GetDeployment().GetContainers()[i].GetImage().Id = r.imageID
 		}
 		s.deploymentStore.addOrUpdateDeployment(wrap)
 	}
@@ -268,31 +280,31 @@ func (s *deploymentStoreSuite) Test_FindDeploymentIDsByImages() {
 			images:      nil,
 			expectedIDs: nil,
 		},
-		"Match one image": {
+		"Match one deployment against an image": {
 			images: []*storage.Image{
 				newImage("", "docker.io/library/nginx:1.2.3"),
 			},
 			expectedIDs: []string{"uuid-1"},
 		},
-		"Match multiple images": {
+		"Match multiple deployment against multiple images": {
 			images: []*storage.Image{
 				newImage("", "docker.io/library/nginx:1.2.3"),
 				newImage("", "private-registry.io/nginx:1.2.3"),
 			},
 			expectedIDs: []string{"uuid-1", "uuid-2"},
 		},
-		"Match one image by id": {
+		"Match multiple deployments against one image id": {
 			images: []*storage.Image{
-				newImage("id-docker.io/library/nginx:1.2.3", ""),
-			},
-			expectedIDs: []string{"uuid-1"},
-		},
-		"Match multiple images by id": {
-			images: []*storage.Image{
-				newImage("id-docker.io/library/nginx:1.2.3", ""),
-				newImage("id-private-registry.io/nginx:1.2.3", ""),
+				newImage("image-uuid-1", ""),
 			},
 			expectedIDs: []string{"uuid-1", "uuid-2"},
+		},
+		"Match multiple deployments against multiple image ids": {
+			images: []*storage.Image{
+				newImage("image-uuid-1", ""),
+				newImage("image-uuid-2", ""),
+			},
+			expectedIDs: []string{"uuid-1", "uuid-2", "uuid-3"},
 		},
 		"No match": {
 			images: []*storage.Image{
@@ -306,24 +318,30 @@ func (s *deploymentStoreSuite) Test_FindDeploymentIDsByImages() {
 			},
 			expectedIDs: []string{},
 		},
-		"Match one against multiple images": {
+		"Match one deployment against multiple images": {
 			images: []*storage.Image{
 				newImage("", "no-match"),
 				newImage("", "private-registry.io/nginx:1.2.3"),
 			},
 			expectedIDs: []string{"uuid-2"},
 		},
-		"Match one against multiple images by id": {
+		"Match multiple deployments against a valid image id and a no-match": {
 			images: []*storage.Image{
 				newImage("no-match", ""),
-				newImage("id-private-registry.io/nginx:1.2.3", ""),
+				newImage("image-uuid-1", ""),
 			},
-			expectedIDs: []string{"uuid-2"},
+			expectedIDs: []string{"uuid-1", "uuid-2"},
 		},
 		"Match against mixed images": {
 			images: []*storage.Image{
 				newImage("", "docker.io/library/nginx:1.2.3"),
-				newImage("id-private-registry.io/nginx:1.2.3", ""),
+				newImage("image-uuid-2", ""),
+			},
+			expectedIDs: []string{"uuid-1", "uuid-3"},
+		},
+		"Match against same image id with different paths": {
+			images: []*storage.Image{
+				newImage("image-uuid-1", "docker.io/library/nginx:1.2.3"),
 			},
 			expectedIDs: []string{"uuid-1", "uuid-2"},
 		},
