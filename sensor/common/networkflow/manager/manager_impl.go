@@ -39,6 +39,8 @@ var (
 	// these are "canonical" external addresses sent by collector when we don't care about the precise IP address.
 	externalIPv4Addr = net.ParseIP("255.255.255.255")
 	externalIPv6Addr = net.ParseIP("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
+
+	emptyProcessInfo = processInfo{}
 )
 
 type hostConnections struct {
@@ -539,9 +541,7 @@ func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections
 
 	prevSize := len(hostConns.endpoints)
 	for ep, status := range hostConns.endpoints {
-		if ep.processKey.processArgs == "" &&
-			ep.processKey.processName == "" &&
-			ep.processKey.processExec == "" {
+		if ep.processKey == emptyProcessInfo {
 			// No way to update a process if the data isn't there
 			continue
 		}
