@@ -11,7 +11,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "collector",
 		Short: "Commands related to the Collector service.",
-		Long:  "",
 	}
 
 	c.AddCommand(

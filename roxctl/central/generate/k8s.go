@@ -130,7 +130,6 @@ func k8s(cliEnvironment environment.Environment) *cobra.Command {
 	k8sConfig := newK8sConfig()
 	c := k8sBasedOrchestrator(cliEnvironment, k8sConfig, "k8s", "Kubernetes", func() (storage.ClusterType, error) { return storage.ClusterType_KUBERNETES_CLUSTER, nil })
 	c.Short = "Generate the required YAML configuration files to deploy StackRox Central into a Kubernetes cluster."
-	c.Long = "Generate the required YAML configuration files to deploy StackRox Central into a Kubernetes cluster."
 	flagWrap := &flagsWrapper{FlagSet: c.PersistentFlags()}
 
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (lb, np, none)", "central")
@@ -170,7 +169,6 @@ func openshift(cliEnvironment environment.Environment) *cobra.Command {
 		return clusterType, nil
 	})
 	c.Short = "Generate the required YAML configuration files to deploy StackRox Central into an OpenShift cluster."
-	c.Long = "Generate the required YAML configuration files to deploy StackRox Central into an OpenShift cluster."
 
 	flagWrap := &flagsWrapper{FlagSet: c.PersistentFlags()}
 

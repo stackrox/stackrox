@@ -61,7 +61,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "upload-db",
 		Short: "Upload a vulnerability database for the StackRox Scanner.",
-		Long:  "Upload a vulnerability database for the StackRox Scanner.",
 		Args:  cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
 			scannerUploadDbCmd.construct(c)
