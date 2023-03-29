@@ -151,7 +151,7 @@ function NetworkPage({
                     <p>
                         Version 1.0 of Network Graph is being deprecated soon. Please switch to the
                         new 2.0 version for improved functionality and a better user experience.
-                        Contant our support team for assistance
+                        Contact our support team for assistance
                     </p>
                 }
             />
