@@ -63,6 +63,29 @@ func TestValidateCentral(t *testing.T) {
 				),
 			}),
 		}, {
+			name: "additionalCAs: names must be unique",
+			central: v1alpha1.Central{
+				Spec: v1alpha1.CentralSpec{
+					TLS: &v1alpha1.TLSConfig{
+						AdditionalCAs: []v1alpha1.AdditionalCA{
+							{
+								Name:    "name",
+								Content: chain1RootCA,
+							}, {
+								Name:    "name",
+								Content: chain2RootCA,
+							},
+						},
+					},
+				},
+			},
+			assert: errorsEqual(field.ErrorList{
+				field.Duplicate(
+					field.NewPath("spec.tls.additionalCAs[1].name"),
+					"name",
+				),
+			}),
+		}, {
 			name: "additionalCAs: content must be provided",
 			central: v1alpha1.Central{
 				Spec: v1alpha1.CentralSpec{

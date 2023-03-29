@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
@@ -23,7 +24,7 @@ const (
 // each field that does not pass validation, as well as the field path, so the user can easily
 // identify the source of the error.
 //
-// Currently this only validates the TLS.additionalCAs field, but is intended to be
+// Currently, this only validates the TLS.additionalCAs field, but is intended to be
 // expanded to validate the entire CR.
 //
 // See: TODO(ROX-7683)
@@ -50,8 +51,14 @@ func validateCentralTLSConfig(path *field.Path, tlsConfig *v1alpha1.TLSConfig) f
 
 func validateCentralTLSConfigAdditionalCAs(path *field.Path, additionalCAs []v1alpha1.AdditionalCA) field.ErrorList {
 	var errs field.ErrorList
+	var seenAdditionalCANames = sets.NewString()
 	for i, additionalCA := range additionalCAs {
-		errs = append(errs, validateCentralTLSConfigAdditionalCA(path.Index(i), additionalCA)...)
+		itemPath := path.Index(i)
+		if seenAdditionalCANames.Has(additionalCA.Name) {
+			errs = append(errs, field.Duplicate(itemPath.Child("name"), additionalCA.Name))
+		}
+		seenAdditionalCANames.Insert(additionalCA.Name)
+		errs = append(errs, validateCentralTLSConfigAdditionalCA(itemPath, additionalCA)...)
 	}
 	return errs
 }
