@@ -8,8 +8,6 @@ import BySeveritySummaryCard from './SummaryCards/BySeveritySummaryCard';
 
 export type ImageCveSummaryCount = {
     totalImageCount: number;
-    imageCount: number;
-    deploymentCount: number;
 };
 
 export type ImageCveSeveritySummary = {
@@ -41,8 +39,6 @@ export const imageCveSeveritySummaryFragment = gql`
 export const imageCveSummaryCountFragment = gql`
     fragment ImageCVESummaryCounts on Query {
         totalImageCount: imageCount
-        imageCount(query: $query)
-        deploymentCount(query: $query)
     }
 `;
 
