@@ -204,7 +204,7 @@ func (s *LocalScan) enrichImageWithMetadata(errorList *errorhelpers.ErrorList, r
 		// image, the signature will not be attempted to be fetched.
 		// We don't need to do anything on central side, as there the image will correctly have the metadata assigned.
 		image.Metadata = metadata
-		log.Debugf("received metadata for image %q - %v using reg %v", image.GetName(), metadata)
+		log.Debugf("received metadata for image %q: %v", image.GetName(), metadata)
 		return reg
 	}
 
