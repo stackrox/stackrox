@@ -12,65 +12,58 @@
   ],
   "exclusions": [
     {
-      "name": "Don't alert on deployment mdsd in namespace openshift-azure-logging",
+      "name": "Don't alert on deployment auth-openshift in openshift-authentication namespace",
       "deployment": {
-        "name": "mdsd",
         "scope": {
-          "namespace": "openshift-azure-logging"
+          "namespace": "openshift-authentication namespace"
         }
       }
     },
     {
-      "name": "Don't alert on deployment audit-exporter in namespace openshift-security",
+      "name": "Don't alert on deployment cluster-cloud-controller-manager-operato in openshift-cloud-controller-manager-operator namespace",
       "deployment": {
-        "name": "audit-exporter",
         "scope": {
-          "namespace": "openshift-security"
+          "namespace": "openshift-cloud-controller-manager-operator"
         }
       }
     },
     {
-      "name": "Don't alert on deployment cluster-version-operator in namespace openshift-cluster-version",
+      "name": "Don't alert on deployment ovnkube-master in  openshift-ovn-kubernetes namespace",
       "deployment": {
-        "name": "cluster-version-operator",
+        "scope": {
+          "namespace": "openshift-ovn-kubernetes"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment ovnkube-node in openshift-ovn-kubernetes namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-ovn-kubernetes"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment cluster-version-operator in openshift-cluster-version namespace",
+      "deployment": {
         "scope": {
           "namespace": "openshift-cluster-version"
         }
       }
     },
     {
-      "name": "Don't alert on deployment ovnkube-node in namespace openshift-ovn-kubernetes",
+      "name": "Don't alert on deployment audit-exporter in openshift-security namespace",
       "deployment": {
-        "name": "ovnkube-node",
         "scope": {
-          "namespace": "openshift-ovn-kubernetes"
+          "namespace": "openshift-security"
         }
       }
     },
     {
-      "name": "Don't alert on deployment ovnkube-master in namespace openshift-ovn-kubernetes",
+      "name": "Don't alert on deployment mdsd in openshift-azure-logging namespace",
       "deployment": {
-        "name": "ovnkube-master",
         "scope": {
-          "namespace": "openshift-ovn-kubernetes"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment cluster-cloud-controller-manager-operator in namespace openshift-cloud-controller-manager-operator",
-      "deployment": {
-        "name": "cluster-cloud-controller-manager-operator",
-        "scope": {
-          "namespace": "openshift-cloud-controller-manager-operato"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment oauth-openshift in namespace openshift-authentication",
-      "deployment": {
-        "name": "oauth-openshift",
-        "scope": {
-          "namespace": "openshift-authentication"
+          "namespace": "openshift-azure-logging"
         }
       }
     },
