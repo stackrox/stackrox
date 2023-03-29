@@ -45,7 +45,7 @@ func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToS
 	resourcesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	scopes, err := u.roleDS.GetAccessScopesFiltered(ctx, func(accessScope *storage.SimpleAccessScope) bool {
-		return accessScope.GetTraits().GetOrigin() == storage.Traits_DECLARATIVE &&
+		return utils.IsDeclarativeOrigin(accessScope.GetTraits().GetOrigin()) &&
 			!resourcesToSkip.Contains(accessScope.GetId())
 	})
 	if err != nil {
@@ -60,6 +60,12 @@ func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToS
 			scopeIDs = append(scopeIDs, scope.GetId())
 			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(scope, "", err,
 				u.idExtractor, u.nameExtractor))
+			if errors.Is(err, errox.ReferencedByAnotherObject) {
+				scope.Traits.Origin = storage.Traits_DECLARATIVE_ORPHANED
+				if err = u.roleDS.UpsertAccessScope(ctx, scope); err != nil {
+					scopeDeletionErr = multierror.Append(scopeDeletionErr, err)
+				}
+			}
 		}
 	}
 	return scopeIDs, scopeDeletionErr.ErrorOrNil()

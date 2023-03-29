@@ -45,7 +45,7 @@ func (s *groupsWithPostgresTestSuite) SetupSuite() {
 	s.Require().NotNil(s.testPostgres)
 
 	store := postgresGroupStore.New(s.testPostgres.DB)
-	s.groupsDatastore = New(store)
+	s.groupsDatastore = New(store, nil, nil)
 }
 
 func (s *groupsWithPostgresTestSuite) TearDownSuite() {

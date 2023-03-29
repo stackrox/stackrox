@@ -32,7 +32,7 @@ func DefaultResourceUpdaters(registry authproviders.Registry) map[reflect.Type]R
 		types.AuthProviderType: newAuthProviderUpdater(authProviderDatastore.Singleton(), registry,
 			groupDataStore.Singleton(), reporter.Singleton()),
 		types.GroupType:         newGroupUpdater(groupDataStore.Singleton(), reporter.Singleton()),
-		types.RoleType:          newRoleUpdater(roleDatastore.Singleton(), reporter.Singleton()),
+		types.RoleType:          newRoleUpdater(roleDatastore.Singleton(), groupDataStore.Singleton(), reporter.Singleton()),
 		types.PermissionSetType: newPermissionSetUpdater(roleDatastore.Singleton(), reporter.Singleton()),
 		types.AccessScopeType:   newAccessScopeUpdater(roleDatastore.Singleton(), reporter.Singleton()),
 	}

@@ -65,7 +65,7 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 	authProviderIDsToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	authProviders, err := u.authProviderDS.GetAuthProvidersFiltered(ctx, func(authProvider *storage.AuthProvider) bool {
-		return authProvider.GetTraits().GetOrigin() == storage.Traits_DECLARATIVE &&
+		return utils.IsDeclarativeOrigin(authProvider.GetTraits().GetOrigin()) &&
 			!authProviderIDsToSkip.Contains(authProvider.GetId())
 	})
 	if err != nil {
@@ -75,17 +75,30 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 	var authProviderDeletionErr *multierror.Error
 	var authProviderIDs []string
 	for _, authProvider := range authProviders {
+		referencingGroups, err := u.groupDS.GetFiltered(ctx, func(group *storage.Group) bool {
+			return group.GetProps().GetAuthProviderId() == authProvider.GetId()
+		})
+		if err != nil || len(referencingGroups) > 0 {
+			if err == nil {
+				err = errox.ReferencedByAnotherObject.Newf("auth provider is still referenced by groups")
+			}
+			authProviderDeletionErr = multierror.Append(authProviderDeletionErr, err)
+			authProviderIDs = append(authProviderIDs, authProvider.GetId())
+
+			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(authProvider, "", err,
+				u.idExtractor, u.nameExtractor))
+			authProvider.Traits.Origin = storage.Traits_DECLARATIVE_ORPHANED
+			if err = u.authProviderDS.UpdateAuthProvider(ctx, authProvider); err != nil {
+				authProviderDeletionErr = multierror.Append(authProviderDeletionErr, err)
+			}
+			continue
+		}
 		if err := u.authProviderRegistry.DeleteProvider(ctx, authProvider.GetId(), true, true); err != nil {
 			authProviderDeletionErr = multierror.Append(authProviderDeletionErr, err)
 			authProviderIDs = append(authProviderIDs, authProvider.GetId())
 
 			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(authProvider, "", err,
 				u.idExtractor, u.nameExtractor))
-			continue
-		}
-		// TODO(ROX-14700): This currently also deletes imperative groups and should resolve these references instead.
-		if err := u.groupDS.RemoveAllWithAuthProviderID(ctx, authProvider.GetId(), true); err != nil {
-			log.Errorf("Error deleting groups for auth provider id %s: %v", authProvider.GetId(), err)
 		}
 	}
 	return authProviderIDs, authProviderDeletionErr.ErrorOrNil()

@@ -57,7 +57,7 @@ func (s *groupDataStoreTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
-	s.dataStore = New(s.storage)
+	s.dataStore = New(s.storage, nil, nil)
 }
 
 func (s *groupDataStoreTestSuite) TearDownTest() {

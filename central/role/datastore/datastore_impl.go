@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/declarativeconfig/utils"
 	groupDS "github.com/stackrox/rox/central/group/datastore"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
@@ -63,8 +64,7 @@ func (ds *dataStoreImpl) UpsertRole(ctx context.Context, newRole *storage.Role) 
 		return err
 	}
 
-	_, _, err = ds.verifyRoleReferencesExist(ctx, newRole)
-	if err != nil {
+	if err := ds.verifyRoleReferencesExist(ctx, newRole); err != nil {
 		return err
 	}
 
@@ -224,7 +224,7 @@ func (ds *dataStoreImpl) AddRole(ctx context.Context, role *storage.Role) error 
 	if err := ds.verifyRoleNameDoesNotExist(ctx, role.GetName()); err != nil {
 		return err
 	}
-	if _, _, err := ds.verifyRoleReferencesExist(ctx, role); err != nil {
+	if err := ds.verifyRoleReferencesExist(ctx, role); err != nil {
 		return err
 	}
 
@@ -257,7 +257,7 @@ func (ds *dataStoreImpl) UpdateRole(ctx context.Context, role *storage.Role) err
 	if err = verifyRoleOrigin(ctx, role); err != nil {
 		return errors.Wrap(err, "origin didn't match for new role")
 	}
-	if _, _, err = ds.verifyRoleReferencesExist(ctx, role); err != nil {
+	if err := ds.verifyRoleReferencesExist(ctx, role); err != nil {
 		return err
 	}
 
@@ -674,17 +674,25 @@ func verifyAccessScopeOrigin(ctx context.Context, as *storage.SimpleAccessScope)
 // Uniqueness of the 'name' field is expected to be verified by the           //
 // underlying store, see its `--uniq-key-func` flag                           //
 
-func (ds *dataStoreImpl) verifyRoleReferencesExist(ctx context.Context, role *storage.Role) (*storage.PermissionSet, *storage.SimpleAccessScope, error) {
+func (ds *dataStoreImpl) verifyRoleReferencesExist(ctx context.Context, role *storage.Role) error {
 	// Verify storage constraints.
 	permissionSet, err := ds.verifyPermissionSetIDExists(ctx, role.GetPermissionSetId())
 	if err != nil {
-		return nil, nil, errors.Wrapf(errox.InvalidArgs, "referenced permission set %s does not exist", role.GetPermissionSetId())
+		return errors.Wrapf(errox.InvalidArgs, "referenced permission set %s does not exist", role.GetPermissionSetId())
 	}
 	accessScope, err := ds.verifyAccessScopeIDExists(ctx, role.GetAccessScopeId())
 	if err != nil {
-		return nil, nil, errors.Wrapf(errox.InvalidArgs, "referenced access scope %s does not exist", role.GetAccessScopeId())
+		return errors.Wrapf(errox.InvalidArgs, "referenced access scope %s does not exist", role.GetAccessScopeId())
 	}
-	return permissionSet, accessScope, nil
+
+	if err := utils.VerifyReferencedResourceOrigin(role, permissionSet, role.GetName(), permissionSet.GetName()); err != nil {
+		return err
+	}
+	if err := utils.VerifyReferencedResourceOrigin(role, accessScope, role.GetName(), accessScope.GetName()); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Returns errox.InvalidArgs if the given role is a default one.

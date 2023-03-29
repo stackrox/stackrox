@@ -6,9 +6,12 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	declarativeConfigUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
 	"github.com/stackrox/rox/central/group/datastore/internal/store"
+	"github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -18,11 +21,17 @@ import (
 )
 
 var (
-	accessSAC = sac.ForResource(resources.Access)
+	accessSAC           = sac.ForResource(resources.Access)
+	datastoresAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Role, resources.Access)))
 )
 
 type dataStoreImpl struct {
-	storage store.Store
+	storage               store.Store
+	roleDatastore         datastore.DataStore
+	authProviderDatastore authproviders.Store
 
 	lock sync.RWMutex
 }
@@ -299,6 +308,35 @@ func (ds *dataStoreImpl) validateAndPrepGroupForUpsertNoLock(ctx context.Context
 		return errox.AlreadyExists.Newf("cannot update group to default group of auth provider %q as a default group already exists",
 			newGroup.GetProps().GetAuthProviderId())
 	}
+	if err := ds.verifyReferencedRoleAndProvider(newGroup); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ds *dataStoreImpl) verifyReferencedRoleAndProvider(group *storage.Group) error {
+	role, found, err := ds.roleDatastore.GetRole(datastoresAccessCtx, group.GetRoleName())
+	if err != nil {
+		return err
+	}
+	if !found {
+		return errox.InvalidArgs.Newf("Group %q role name %q does not exist", group.GetProps().GetId(), group.GetRoleName())
+	}
+	if err := declarativeConfigUtils.VerifyReferencedResourceOrigin(group.GetProps(), role, group.GetProps().GetId(), role.GetName()); err != nil {
+		return err
+	}
+
+	authProvider, found, err := ds.authProviderDatastore.GetAuthProvider(datastoresAccessCtx, group.GetRoleName())
+	if err != nil {
+		return err
+	}
+	if !found {
+		return errox.InvalidArgs.Newf("Group %q auth provider %q does not exist", group.GetProps().GetId(), group.GetProps().GetAuthProviderId())
+	}
+	if err := declarativeConfigUtils.VerifyReferencedResourceOrigin(group.GetProps(), authProvider, group.GetProps().GetId(), authProvider.GetName()); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -327,6 +365,10 @@ func (ds *dataStoreImpl) validateAndPrepGroupForAddNoLock(ctx context.Context, g
 		return errox.AlreadyExists.Newf("cannot add a default group of auth provider %q as a default group already exists",
 			group.GetProps().GetAuthProviderId())
 	}
+	if err := ds.verifyReferencedRoleAndProvider(group); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -358,6 +400,9 @@ func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context
 	if defaultGroup != nil && defaultGroup.GetProps().GetId() != group.GetProps().Id {
 		return errox.AlreadyExists.Newf("cannot update group to default group of auth provider %q as a default group already exists",
 			group.GetProps().GetAuthProviderId())
+	}
+	if err := ds.verifyReferencedRoleAndProvider(group); err != nil {
+		return err
 	}
 	return nil
 }
