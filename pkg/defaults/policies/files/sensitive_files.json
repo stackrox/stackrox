@@ -14,6 +14,7 @@
     {
       "name": "Don't alert on deployment auth-openshift in openshift-authentication namespace",
       "deployment": {
+        "name": "auth-openshift",
         "scope": {
           "namespace": "openshift-authentication namespace"
         }
@@ -22,6 +23,7 @@
     {
       "name": "Don't alert on deployment cluster-cloud-controller-manager-operato in openshift-cloud-controller-manager-operator namespace",
       "deployment": {
+        "name": "cluster-cloud-controller-manager-operato",
         "scope": {
           "namespace": "openshift-cloud-controller-manager-operator"
         }
@@ -30,6 +32,7 @@
     {
       "name": "Don't alert on deployment ovnkube-master in  openshift-ovn-kubernetes namespace",
       "deployment": {
+        "name": "ovnkube-master",
         "scope": {
           "namespace": "openshift-ovn-kubernetes"
         }
@@ -38,6 +41,7 @@
     {
       "name": "Don't alert on deployment ovnkube-node in openshift-ovn-kubernetes namespace",
       "deployment": {
+        "name": "ovnkube-node",
         "scope": {
           "namespace": "openshift-ovn-kubernetes"
         }
@@ -46,6 +50,7 @@
     {
       "name": "Don't alert on deployment cluster-version-operator in openshift-cluster-version namespace",
       "deployment": {
+        "name": "cluster-version-operator",
         "scope": {
           "namespace": "openshift-cluster-version"
         }
@@ -54,6 +59,7 @@
     {
       "name": "Don't alert on deployment audit-exporter in openshift-security namespace",
       "deployment": {
+        "name": "audit-exporter",
         "scope": {
           "namespace": "openshift-security"
         }
@@ -62,6 +68,7 @@
     {
       "name": "Don't alert on deployment mdsd in openshift-azure-logging namespace",
       "deployment": {
+        "name": "mdsd",
         "scope": {
           "namespace": "openshift-azure-logging"
         }

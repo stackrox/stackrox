@@ -14,6 +14,7 @@
     {
       "name": "Don't alert on deployment tuned in openshift-cluster-node-tuning-operator namespace",
       "deployment": {
+        "name": "tuned",
         "scope": {
           "namespace": "openshift-cluster-node-tuning-operator"
         }

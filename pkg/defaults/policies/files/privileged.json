@@ -15,6 +15,7 @@
     {
       "name": "Don't alert on deployment mdsd in namespace openshift-azure-logging",
       "deployment": {
+        "name": "mdsd",
         "scope": {
           "namespace": "openshift-azure-logging"
         }
@@ -23,6 +24,7 @@
     {
       "name": "Don't alert on deployment audit-exporter in namespace openshift-security",
       "deployment": {
+        "name": "audit-exporter",
         "scope": {
           "namespace": "openshift-security"
         }
@@ -31,6 +33,7 @@
     {
       "name": "Don't alert on deployment apiserver in namespace openshift-oauth-apiserver",
       "deployment": {
+        "name": "apiserver",
         "scope": {
           "namespace": "openshift-oauth-apiserver"
         }
@@ -39,6 +42,7 @@
     {
       "name": "Don't alert on deployment ovnkube-node in namespace openshift-ovn-kubernetes",
       "deployment": {
+        "name": "ovnkube-node",
         "scope": {
           "namespace": "openshift-ovn-kubernetes"
         }
@@ -47,6 +51,7 @@
     {
       "name": "Don't alert on deployment oauth-openshift in namespace openshift-authentication",
       "deployment": {
+        "name": "oauth-openshift",
         "scope": {
           "namespace": "openshift-authentication"
         }
@@ -55,6 +60,7 @@
     {
       "name": "Don't alert on deployment multus-additional-cni-plugins in namespace openshift-multus",
       "deployment": {
+        "name": "multus-additional-cni-plugins",
         "scope": {
           "namespace": "openshift-multus"
         }
@@ -63,6 +69,7 @@
     {
       "name": "Don't alert on deployment multus in namespace openshift-multus",
       "deployment": {
+        "name": "multus",
         "scope": {
           "namespace": "openshift-multus"
         }
@@ -71,6 +78,7 @@
     {
       "name": "Don't alert on deployment node-ca in namespace openshift-image-registry",
       "deployment": {
+        "name": "node-ca",
         "scope": {
           "namespace": "openshift-image-registry"
         }
