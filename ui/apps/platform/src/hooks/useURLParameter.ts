@@ -6,9 +6,12 @@ import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
 export type QueryValue = undefined | string | string[] | qs.ParsedQs | qs.ParsedQs[];
 
 // Note that when we upgrade React Router and 'history' we can probably import a more accurate version of this type
-type Action = 'push' | 'replace';
+export type Action = 'push' | 'replace';
 
-type UseURLParameterResult = [QueryValue, (newValue: QueryValue, historyAction?: Action) => void];
+export type UseURLParameterResult = [
+    QueryValue,
+    (newValue: QueryValue, historyAction?: Action) => void
+];
 
 /**
  * Hook to handle reading and writing of a piece of state in the page's URL query parameters.
