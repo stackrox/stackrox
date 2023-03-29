@@ -84,22 +84,26 @@ func doTestRenderOpenshif(t *testing.T, clusterType storage.ClusterType) {
 	}
 	assertOnCollector := func(obj runtime.Object) {
 		ds := obj.(*v1.DaemonSet)
-		mainCont, foundMain := findContainer(ds.Spec.Template.Spec.Containers, "compliance")
+		complianceCont, foundMain := findContainer(ds.Spec.Template.Spec.Containers, "compliance")
 		assert.True(t, foundMain)
-		assert.Equal(t, "compliance", mainCont.Name)
+		assert.Equal(t, "compliance", complianceCont.Name)
 
 		if clusterType == storage.ClusterType_OPENSHIFT4_CLUSTER {
 			nInvCont, found := findContainer(ds.Spec.Template.Spec.Containers, "node-inventory")
 			assert.True(t, found, "node-inventory container should exist under collector DS")
-			assert.Equal(t, "node-inventory", nInvCont.Name, "node-inventory is expected at the 3rd position in the container list")
+			assert.Equal(t, "node-inventory", nInvCont.Name)
 
-			expectedScannerParts := strings.Split(strings.ReplaceAll(mainCont.Image, "/main:", "/scanner-slim:"), ":")
-			assert.Truef(t, strings.HasPrefix(nInvCont.Image, expectedScannerParts[0]), "scanner-slim image (%q) should be from the same registry as main (%q)", nInvCont.Image, mainCont.Image)
+			expectedScannerParts := strings.Split(strings.ReplaceAll(complianceCont.Image, "/main:", "/scanner-slim:"), ":")
+			assert.Truef(t, strings.HasPrefix(nInvCont.Image, expectedScannerParts[0]), "scanner-slim image (%q) should be from the same registry as main (%q)", nInvCont.Image, complianceCont.Image)
+
+			value, exists := getEnvVarValue(complianceCont.Env, env.NodeInventoryContainerEnabled.EnvVar())
+			assert.True(t, exists)
+			assert.Equal(t, "true", value, "compliance should have %s=true", env.NodeInventoryContainerEnabled.EnvVar())
 		} else {
 			_, foundNInv := findContainer(ds.Spec.Template.Spec.Containers, "node-inventory")
 			assert.False(t, foundNInv, "node-inventory container must not exist under collector DS")
 
-			value, exists := getEnvVarValue(ds.Spec.Template.Spec.Containers[1].Env, env.NodeInventoryContainerEnabled.EnvVar())
+			value, exists := getEnvVarValue(complianceCont.Env, env.NodeInventoryContainerEnabled.EnvVar())
 			assert.True(t, exists)
 			assert.Equalf(t, "false", value, "compliance should have %s=false", env.NodeInventoryContainerEnabled.EnvVar())
 		}
