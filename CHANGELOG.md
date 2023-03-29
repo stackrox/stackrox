@@ -46,6 +46,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   the now deprecated `DebugLogs` permission now has read access to all permissions except `Administration`.
 - The default resources for Sensor have moved to a request of 2 cores, 4GB of RAM and a limit of 4 cores, 8GB of RAM in order to
   support a higher number of clusters without modification.
+- ROX-14280: ACS operator default channel changes from `latest` to `stable`. Users of older versions must follow the upgrade procedure in order to preserve ACS data in case of issues with the upgrade.
 
 ## [3.74.0]
 
