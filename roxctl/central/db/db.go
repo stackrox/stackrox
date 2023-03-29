@@ -14,7 +14,8 @@ import (
 // Command controls all of the functions being applied to a central-db
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "db",
+		Use:   "db",
+		Short: "Commands that control the database operations",
 	}
 	c.AddCommand(backup.Command(cliEnvironment))
 	c.AddCommand(restore.V2Command(cliEnvironment))

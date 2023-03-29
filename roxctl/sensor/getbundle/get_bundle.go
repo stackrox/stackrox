@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/roxctl/common"
@@ -93,13 +92,11 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	var istioVersion string
 
 	c := &cobra.Command{
-		Use: "get-bundle <cluster-name-or-id>",
+		Use:   "get-bundle <cluster-name-or-id>",
+		Args:  cobra.ExactArgs(1),
+		Short: "Download a bundle with the files to deploy StackRox services into a cluster.",
+		Long:  "Download a bundle with the required YAML configuration files to deploy StackRox Sensor, Collector, and Admission controller (optional).",
 		RunE: func(c *cobra.Command, args []string) error {
-			if len(args) != 1 {
-				_ = c.Help()
-				return errox.InvalidArgs.Newf("Expected exactly one argument, but %d were provided", len(args))
-			}
-
 			if err := downloadBundle(outputDir, args[0], flags.Timeout(c), createUpgraderSA, slimCollector, istioVersion, cliEnvironment.Logger()); err != nil {
 				return errors.Wrap(err, "error downloading sensor bundle")
 			}
