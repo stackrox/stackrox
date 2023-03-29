@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"fmt"
 	"sort"
 	"testing"
 
@@ -222,6 +223,114 @@ func (s *deploymentStoreSuite) Test_FindDeploymentIDsByLabels() {
 	for testName, c := range cases {
 		s.Run(testName, func() {
 			ids := s.deploymentStore.FindDeploymentIDsByLabels(c.namespace, selector.CreateSelector(c.labels))
+			s.Equal(len(c.expectedIDs), len(ids))
+			s.ElementsMatch(c.expectedIDs, ids)
+		})
+	}
+}
+
+func withImage(deployment *v1.Deployment, image string) *v1.Deployment {
+	deployment.Spec.Template.Spec.Containers = []corev1.Container{
+		{
+			Image: image,
+		},
+	}
+	return deployment
+}
+
+func newImage(id string, fullName string) *storage.Image {
+	return &storage.Image{
+		Id: id,
+		Name: &storage.ImageName{
+			FullName: fullName,
+		},
+	}
+}
+
+func (s *deploymentStoreSuite) Test_FindDeploymentIDsByImages() {
+	deployments := []*v1.Deployment{
+		withImage(makeDeploymentObject("d-1", "test-ns", "uuid-1"), "nginx:1.2.3"),
+		withImage(makeDeploymentObject("d-2", "test-ns", "uuid-2"), "private-registry.io/nginx:1.2.3"),
+	}
+	for _, d := range deployments {
+		wrap := s.createDeploymentWrap(d)
+		// Manually set the ID for testing purposes
+		for i, c := range wrap.GetDeployment().GetContainers() {
+			wrap.GetDeployment().GetContainers()[i].GetImage().Id = fmt.Sprintf("id-%s", c.GetImage().GetName().GetFullName())
+		}
+		s.deploymentStore.addOrUpdateDeployment(wrap)
+	}
+	cases := map[string]struct {
+		images      []*storage.Image
+		expectedIDs []string
+	}{
+		"No images": {
+			images:      nil,
+			expectedIDs: nil,
+		},
+		"Match one image": {
+			images: []*storage.Image{
+				newImage("", "docker.io/library/nginx:1.2.3"),
+			},
+			expectedIDs: []string{"uuid-1"},
+		},
+		"Match multiple images": {
+			images: []*storage.Image{
+				newImage("", "docker.io/library/nginx:1.2.3"),
+				newImage("", "private-registry.io/nginx:1.2.3"),
+			},
+			expectedIDs: []string{"uuid-1", "uuid-2"},
+		},
+		"Match one image by id": {
+			images: []*storage.Image{
+				newImage("id-docker.io/library/nginx:1.2.3", ""),
+			},
+			expectedIDs: []string{"uuid-1"},
+		},
+		"Match multiple images by id": {
+			images: []*storage.Image{
+				newImage("id-docker.io/library/nginx:1.2.3", ""),
+				newImage("id-private-registry.io/nginx:1.2.3", ""),
+			},
+			expectedIDs: []string{"uuid-1", "uuid-2"},
+		},
+		"No match": {
+			images: []*storage.Image{
+				newImage("", "no-match"),
+			},
+			expectedIDs: []string{},
+		},
+		"No match by id": {
+			images: []*storage.Image{
+				newImage("no-match", ""),
+			},
+			expectedIDs: []string{},
+		},
+		"Match one against multiple images": {
+			images: []*storage.Image{
+				newImage("", "no-match"),
+				newImage("", "private-registry.io/nginx:1.2.3"),
+			},
+			expectedIDs: []string{"uuid-2"},
+		},
+		"Match one against multiple images by id": {
+			images: []*storage.Image{
+				newImage("no-match", ""),
+				newImage("id-private-registry.io/nginx:1.2.3", ""),
+			},
+			expectedIDs: []string{"uuid-2"},
+		},
+		"Match against mixed images": {
+			images: []*storage.Image{
+				newImage("", "docker.io/library/nginx:1.2.3"),
+				newImage("id-private-registry.io/nginx:1.2.3", ""),
+			},
+			expectedIDs: []string{"uuid-1", "uuid-2"},
+		},
+	}
+	for testName, c := range cases {
+		s.Run(testName, func() {
+			ids := s.deploymentStore.FindDeploymentIDsByImages(c.images)
 			s.Equal(len(c.expectedIDs), len(ids))
 			s.ElementsMatch(c.expectedIDs, ids)
 		})
