@@ -85,7 +85,6 @@ jobs:
     uses: ./.github/workflows/variables.yml
     with:
       version: ${{format('{0}{1}', github.event.milestone.title, github.event.inputs.version)}}
-      assert-format: A.B.C[-N]-rc.D
 
   check-jira:
     name: Check Jira tickets for release
