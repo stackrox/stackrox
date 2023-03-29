@@ -15,6 +15,7 @@ import org.junit.Assume
 import spock.lang.Stepwise
 import spock.lang.Tag
 import spock.lang.Unroll
+import util.Env
 
 @Stepwise
 class AuditLogAlertsTest extends BaseSpecification {
@@ -289,13 +290,20 @@ class AuditLogAlertsTest extends BaseSpecification {
         testSecret.data = [
                 "value": Base64.getEncoder().encodeToString("sooper sekret".getBytes()),
         ]
-
+        // some breather needed on few arches
+        if (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x") {
+            sleep(5000)
+        }
         orchestrator.createSecret(testSecret)
         orchestrator.getSecret(name, namespace)
         orchestrator.deleteSecret(name, namespace)
     }
 
     def createGetAndDeleteConfigMap(String name, String namespace) {
+        // some breather needed on few arches
+        if (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x") {
+            sleep(5000)
+        }
         orchestrator.createConfigMap(name, ["value": "map me"], namespace)
         orchestrator.getConfigMap(name, namespace)
         orchestrator.deleteConfigMap(name, namespace)
