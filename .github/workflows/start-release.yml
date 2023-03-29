@@ -188,7 +188,7 @@ jobs:
         env:
           GH_TOKEN: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
         run: |
-          gh repo sync stackrox/openshift-release --source stackrox/openshift-release
+          gh repo sync stackrox/openshift-release --source openshift/release
       - name: Make configuration
         if: steps.check-existing.outputs.branch-exists == 'false'
         env:
