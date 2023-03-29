@@ -407,6 +407,7 @@ jobs:
       if: |
         github.event_name == 'push' || !github.event.pull_request.head.repo.fork
       with:
+        push: true
         context: image/rhel
         build-args: |
           ROX_PRODUCT_BRANDING=${{ env.ROX_PRODUCT_BRANDING }}
@@ -541,6 +542,7 @@ jobs:
       if: |
         github.event_name == 'push' || !github.event.pull_request.head.repo.fork
       with:
+        push: true
         context: integration-tests/mock-grpc-server/image
         tags: |
           quay.io/rhacs-eng/grpc-server:${{ steps.tag.outputs.TAG }}
