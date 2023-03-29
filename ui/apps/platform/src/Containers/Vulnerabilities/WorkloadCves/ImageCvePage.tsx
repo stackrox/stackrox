@@ -14,9 +14,15 @@ import {
     Split,
     SplitItem,
 } from '@patternfly/react-core';
+import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+<<<<<<< HEAD
+=======
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import PageTitle from 'Components/PageTitle';
+>>>>>>> e672d8c32f (Apply page titles to workload cve single pages)
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
@@ -171,6 +177,9 @@ function ImageCvePage() {
 
     return (
         <>
+            <PageTitle
+                title={`Workload CVEs - ImageCVE ${metadataRequest.data?.imageCVE.cve ?? ''}`}
+            />
             <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewImagePath}>CVEs</BreadcrumbItemLink>

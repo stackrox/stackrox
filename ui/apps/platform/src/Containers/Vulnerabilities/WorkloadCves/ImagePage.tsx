@@ -20,6 +20,7 @@ import { CopyIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import PageTitle from 'Components/PageTitle';
 import { getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -167,6 +168,7 @@ function ImagePage() {
 
     return (
         <>
+            <PageTitle title={`Workload CVEs - Image ${imageData ? imageName : ''}`} />
             <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewImagePath}>
