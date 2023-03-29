@@ -205,7 +205,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 	return rows, nil
 }
 
-func insertIntoPolicies(ctx context.Context, batch *pgx.Batch, obj *storage.Policy) error {
+func insertIntoPolicies(_ context.Context, batch *pgx.Batch, obj *storage.Policy) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -235,7 +235,7 @@ func insertIntoPolicies(ctx context.Context, batch *pgx.Batch, obj *storage.Poli
 	return nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*postgres.Conn, func(), error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
