@@ -20,7 +20,7 @@ function ImageComponentsTable({ layers, imageComponents }: ImageComponentsTableP
                     <Th>Location</Th>
                 </Tr>
             </Thead>
-            {imageComponents.map(({ id, name, version, fixedIn, location, layerIndex }) => {
+            {imageComponents.map(({ id, name, version, fixedIn, location, layerIndex }, index) => {
                 let dockerfileText = `* Dockerfile layer information is not available *`;
 
                 if (layerIndex !== null) {
@@ -29,13 +29,15 @@ function ImageComponentsTable({ layers, imageComponents }: ImageComponentsTableP
                         dockerfileText = `${layer.instruction} ${layer.value}`;
                     }
                 }
+
+                // No border on the last row
+                const style =
+                    index !== imageComponents.length - 1
+                        ? { borderBottom: '1px solid var(--pf-c-table--BorderColor)' }
+                        : {};
+
                 return (
-                    <Tbody
-                        key={id}
-                        style={{
-                            borderBottom: '1px solid var(--pf-c-table--BorderColor)',
-                        }}
-                    >
+                    <Tbody key={id} style={style}>
                         <Tr>
                             <Td>{name}</Td>
                             <Td>{version}</Td>
