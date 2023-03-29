@@ -44,7 +44,17 @@ func TestValidateCentral(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			name: "additionalCAs: name must be provided",
+			name: "spec.tls: should not panic if tls is nil",
+			central: v1alpha1.Central{
+				Spec: v1alpha1.CentralSpec{
+					TLS: nil,
+				},
+			},
+			assert: func(t *testing.T, errorList field.ErrorList) {
+				assert.Empty(t, errorList)
+			},
+		}, {
+			name: "spec.tls.additionalCAs: name must be provided",
 			central: v1alpha1.Central{
 				Spec: v1alpha1.CentralSpec{
 					TLS: &v1alpha1.TLSConfig{
@@ -63,7 +73,7 @@ func TestValidateCentral(t *testing.T) {
 				),
 			}),
 		}, {
-			name: "additionalCAs: names must be unique",
+			name: "spec.tls.additionalCAs: names must be unique",
 			central: v1alpha1.Central{
 				Spec: v1alpha1.CentralSpec{
 					TLS: &v1alpha1.TLSConfig{
@@ -86,7 +96,7 @@ func TestValidateCentral(t *testing.T) {
 				),
 			}),
 		}, {
-			name: "additionalCAs: content must be provided",
+			name: "spec.tls.additionalCAs: content must be provided",
 			central: v1alpha1.Central{
 				Spec: v1alpha1.CentralSpec{
 					TLS: &v1alpha1.TLSConfig{
@@ -105,7 +115,7 @@ func TestValidateCentral(t *testing.T) {
 				),
 			}),
 		}, {
-			name: "additionalCAs: content must be valid PEM",
+			name: "spec.tls.additionalCAs: content must be valid PEM",
 			central: v1alpha1.Central{
 				Spec: v1alpha1.CentralSpec{
 					TLS: &v1alpha1.TLSConfig{
@@ -126,7 +136,7 @@ func TestValidateCentral(t *testing.T) {
 				),
 			}),
 		}, {
-			name: "additionalCAs: PEM headers must be of type CERTIFICATE",
+			name: "spec.tls.additionalCAs: PEM headers must be of type CERTIFICATE",
 			central: v1alpha1.Central{
 				Spec: v1alpha1.CentralSpec{
 					TLS: &v1alpha1.TLSConfig{
@@ -153,7 +163,7 @@ func TestValidateCentral(t *testing.T) {
 				),
 			}),
 		}, {
-			name: "additionalCAs: PEM content must be a valid certificate",
+			name: "spec.tls.additionalCAs: PEM content must be a valid certificate",
 			central: v1alpha1.Central{
 				Spec: v1alpha1.CentralSpec{
 					TLS: &v1alpha1.TLSConfig{
@@ -180,7 +190,7 @@ func TestValidateCentral(t *testing.T) {
 				),
 			}),
 		}, {
-			name: "additionalCAs: PEM content must be base64-encoded",
+			name: "spec.tls.additionalCAs: PEM content must be base64-encoded",
 			central: v1alpha1.Central{
 				Spec: v1alpha1.CentralSpec{
 					TLS: &v1alpha1.TLSConfig{
@@ -207,7 +217,7 @@ func TestValidateCentral(t *testing.T) {
 				),
 			}),
 		}, {
-			name: "additionalCAs: the certificate chain must be valid",
+			name: "spec.tls.additionalCAs: the certificate chain must be valid",
 			central: v1alpha1.Central{
 				Spec: v1alpha1.CentralSpec{
 					TLS: &v1alpha1.TLSConfig{
@@ -235,7 +245,7 @@ func TestValidateCentral(t *testing.T) {
 				),
 			}),
 		}, {
-			name: "additionalCAs: the certificate chain must be in order",
+			name: "spec.tls.additionalCAs: the certificate chain must be in order",
 			central: v1alpha1.Central{
 				Spec: v1alpha1.CentralSpec{
 					TLS: &v1alpha1.TLSConfig{
@@ -265,7 +275,7 @@ func TestValidateCentral(t *testing.T) {
 				),
 			}),
 		}, {
-			name: "additionalCAs: using a single certificate is allowed",
+			name: "spec.tls.additionalCAs: using a single certificate is allowed",
 			central: v1alpha1.Central{
 				Spec: v1alpha1.CentralSpec{
 					TLS: &v1alpha1.TLSConfig{
@@ -302,7 +312,7 @@ func TestValidateCentral(t *testing.T) {
 				assert.Empty(t, errorList)
 			},
 		}, {
-			name: "additionalCAs: using multiple certificates is allowed",
+			name: "spec.tls.additionalCAs: using multiple certificates is allowed",
 			central: v1alpha1.Central{
 				Spec: v1alpha1.CentralSpec{
 					TLS: &v1alpha1.TLSConfig{
