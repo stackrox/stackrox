@@ -267,7 +267,7 @@ jobs:
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             create-release \
-            "${{ needs.variables.outputs.named-release-patch }}" \
+            "${{ needs.variables.outputs.milestone }}" \
             "true"
 
       - run: |
@@ -283,7 +283,7 @@ jobs:
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}:
-            *Upstream release candidate <${{steps.pre-release.outputs.url}}|${{needs.variables.outputs.rc}}>
+            *Upstream release candidate <${{steps.pre-release.outputs.url}}|${{needs.variables.outputs.milestone}}>
             of <${{github.server_url}}/${{github.repository}}|${{github.repository}}> has been published on GitHub*" }},
 
             { "type": "divider" },
