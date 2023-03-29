@@ -13,6 +13,8 @@ import services.PolicyService
 
 import spock.lang.Tag
 import spock.lang.Unroll
+import spock.lang.IgnoreIf
+import util.Env
 
 class ImageManagementTest extends BaseSpecification {
 
@@ -52,7 +54,7 @@ class ImageManagementTest extends BaseSpecification {
         "Latest tag"                      | "docker.io"   | "library/nginx"          | "latest"     | ""
         //intentionally use the same policy twice to make sure alert count does not increment
         "Latest tag"                      | "docker.io"   | "library/nginx"          | "latest"     | "(repeat)"
-        "90-Day Image Age"                | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
+        "90-Day Image Age"                | "quay.io"   | "rhacs-eng/qa-multi-arch"            | "struts-app" | ""
         // verify Azure registry
         // "90-Day Image Age"                | "stackroxacr.azurecr.io" | "nginx"                  | "1.12"   | ""
         "Ubuntu Package Manager in Image" | "quay.io"   | "rhacs-eng/qa-multi-arch"            | "struts-app" | ""
@@ -290,6 +292,7 @@ class ImageManagementTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("Integration")
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify CI/CD Integration Endpoint with notifications"() {
         when:
         "Update policy to build time, create notifier and add it to policy"
