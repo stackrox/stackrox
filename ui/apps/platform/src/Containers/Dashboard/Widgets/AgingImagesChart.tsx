@@ -21,7 +21,7 @@ import isResourceScoped from '../utils';
 export type TimeRange = { enabled: boolean; value: number };
 export type TimeRangeTuple = [TimeRange, TimeRange, TimeRange, TimeRange];
 export const timeRangeTupleIndices = [0, 1, 2, 3] as const;
-export type TimeRangeTupleIndex = typeof timeRangeTupleIndices[number];
+export type TimeRangeTupleIndex = (typeof timeRangeTupleIndices)[number];
 export type TimeRangeCounts = Record<`timeRange${TimeRangeTupleIndex}`, number>;
 
 export type ChartData = {

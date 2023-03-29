@@ -6,7 +6,7 @@ export const vulnerabilitySeverities = [
     'CRITICAL_VULNERABILITY_SEVERITY',
 ] as const;
 
-export type VulnerabilitySeverity = typeof vulnerabilitySeverities[number];
+export type VulnerabilitySeverity = (typeof vulnerabilitySeverities)[number];
 
 export type VulnerabilityState = 'OBSERVED' | 'DEFERRED' | 'FALSE_POSITIVE';
 
