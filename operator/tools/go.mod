@@ -6,7 +6,7 @@ require (
 	github.com/kudobuilder/kuttl v0.15.0
 	github.com/operator-framework/operator-sdk v1.24.1
 	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20230131195449-5db173878d6d
-	sigs.k8s.io/controller-tools v0.11.1
+	sigs.k8s.io/controller-tools v0.11.3
 	sigs.k8s.io/kustomize/kustomize/v4 v4.5.7
 )
 
