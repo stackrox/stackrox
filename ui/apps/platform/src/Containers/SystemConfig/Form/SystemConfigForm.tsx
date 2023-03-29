@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import {
     ActionGroup,
     Alert,
@@ -30,6 +30,8 @@ import { PublicConfigAction } from 'reducers/publicConfig';
 import { saveSystemConfig } from 'services/SystemConfigService';
 import { PrivateConfig, PublicConfig, SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { selectors } from 'reducers';
+import { initializeAnalytics } from 'global/initializeAnalytics';
 
 import FormSelect from './FormSelect';
 
@@ -52,6 +54,9 @@ function getCompletePublicConfig(systemConfig: SystemConfig): PublicConfig {
         loginNotice: {
             text: systemConfig?.publicConfig?.loginNotice?.text || '',
             enabled: systemConfig?.publicConfig?.loginNotice?.enabled || false,
+        },
+        telemetry: {
+            enabled: systemConfig?.publicConfig?.telemetry?.enabled || false,
         },
     };
 }
@@ -76,6 +81,8 @@ const SystemConfigForm = ({
 }: SystemConfigFormProps): ReactElement => {
     const dispatch = useDispatch();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const isTelemetryConfigured = useSelector(selectors.getIsTelemetryConfigured);
+    const telemetryConfig = useSelector(selectors.getTelemetryConfig);
 
     const { privateConfig } = systemConfig;
     const publicConfig = getCompletePublicConfig(systemConfig);
@@ -96,13 +103,28 @@ const SystemConfigForm = ({
                                 footer: null,
                                 header: null,
                                 loginNotice: null,
+                                telemetry: null,
                             },
                         };
+
+                        const isTelemetryEnabledCurr = data.publicConfig?.telemetry?.enabled;
+                        const isTelemetryEnabledPrev = publicConfig.telemetry?.enabled;
+                        if (isTelemetryEnabledCurr && isTelemetryConfigured) {
+                            initializeAnalytics(
+                                telemetryConfig.storageKeyV1,
+                                telemetryConfig.userId
+                            );
+                        }
+
                         dispatch(action);
                         setSystemConfig(data);
                         setErrorMessage(null);
                         setSubmitting(false);
                         setIsNotEditing();
+
+                        if (isTelemetryEnabledPrev && !isTelemetryEnabledCurr) {
+                            window.location.reload();
+                        }
                     })
                     .catch((error) => {
                         setSubmitting(false);
@@ -511,6 +533,35 @@ const SystemConfigForm = ({
                         </CardBody>
                     </Card>
                 </GridItem>
+                {isTelemetryConfigured && (
+                    <GridItem md={6}>
+                        <Card isFlat data-testid="telemetry-config">
+                            <CardHeader>
+                                <CardHeaderMain>
+                                    <CardTitle component="h3">
+                                        Online Telemetry Data Collection
+                                    </CardTitle>
+                                </CardHeaderMain>
+                                <CardActions>
+                                    <Switch
+                                        id="publicConfig.telemetry.enabled"
+                                        label="Enabled"
+                                        labelOff="Disabled"
+                                        isChecked={values?.publicConfig?.telemetry?.enabled}
+                                        onChange={onChange}
+                                    />
+                                </CardActions>
+                            </CardHeader>
+                            <Divider component="div" />
+                            <CardBody>
+                                <p className="pf-u-mb-sm">
+                                    Online telemetry data collection allows Red Hat to use
+                                    anonymized information to enhance your user experience.
+                                </p>
+                            </CardBody>
+                        </Card>
+                    </GridItem>
+                )}
             </Grid>
             {typeof errorMessage === 'string' && (
                 <Alert variant="danger" isInline title="Failed to save system configuration">
