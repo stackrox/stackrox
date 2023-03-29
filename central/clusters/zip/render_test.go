@@ -98,6 +98,10 @@ func doTestRenderOpenshif(t *testing.T, clusterType storage.ClusterType) {
 		} else {
 			_, foundNInv := findContainer(ds.Spec.Template.Spec.Containers, "node-inventory")
 			assert.False(t, foundNInv, "node-inventory container must not exist under collector DS")
+
+			value, exists := getEnvVarValue(ds.Spec.Template.Spec.Containers[1].Env, env.NodeInventoryContainerEnabled.EnvVar())
+			assert.True(t, exists)
+			assert.Equalf(t, "false", value, "compliance should have %s=false", env.NodeInventoryContainerEnabled.EnvVar())
 		}
 	}
 
