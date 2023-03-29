@@ -187,7 +187,7 @@ test_upgrade_paths() {
     # Upgrade to current to run any Postgres -> Postgres migrations                        #
     ########################################################################################
     kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
-    kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
+    kubectl -n stackrox set image sts/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
     wait_for_api
 
     # Verify data is still there
@@ -216,7 +216,7 @@ test_upgrade_paths() {
     # Upgrade back to latest to run the smoke tests                                        #
     ########################################################################################
     kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
-    kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
+    kubectl -n stackrox set image sts/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
 
     wait_for_api
 
@@ -315,7 +315,7 @@ force_rollback_to_previous_postgres() {
 
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
-    kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$FORCE_ROLLBACK_VERSION"
+    kubectl -n stackrox set image sts/central-db "*=$REGISTRY/central-db:$FORCE_ROLLBACK_VERSION"
 }
 
 deploy_scaled_workload() {
