@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/apps/v1"
+	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -45,6 +46,15 @@ func TestRenderOpenshiftEnv(t *testing.T) {
 	}
 }
 
+func getEnvVarValue(vars []coreV1.EnvVar, name string) (string, bool) {
+	for _, envVar := range vars {
+		if envVar.Name == name {
+			return envVar.Value, true
+		}
+	}
+	return "", false
+}
+
 func doTestRenderOpenshif(t *testing.T, clusterType storage.ClusterType) {
 	cluster := &storage.Cluster{
 		Name:      "cluster",
@@ -55,18 +65,13 @@ func doTestRenderOpenshif(t *testing.T, clusterType storage.ClusterType) {
 	baseFiles, err := renderBaseFiles(cluster, clusters.RenderOptions{}, dummyCerts)
 	require.NoError(t, err)
 
-	assertEnvVars := func(obj runtime.Object) {
+	assertOnSensor := func(obj runtime.Object) {
 		deployment := obj.(*v1.Deployment)
-		var found bool
-		for _, envVar := range deployment.Spec.Template.Spec.Containers[0].Env {
-			if envVar.Name == env.OpenshiftAPI.EnvVar() {
-				found = true
-				assert.Equal(t, "true", envVar.Value)
-			}
-		}
-		assert.True(t, found)
+		value, exists := getEnvVarValue(deployment.Spec.Template.Spec.Containers[0].Env, env.OpenshiftAPI.EnvVar())
+		assert.True(t, exists)
+		assert.Equal(t, "true", value)
 	}
-	assertScannerRemote := func(obj runtime.Object) {
+	assertOnCollector := func(obj runtime.Object) {
 		ds := obj.(*v1.DaemonSet)
 		if clusterType == storage.ClusterType_OPENSHIFT4_CLUSTER {
 			assert.Len(t, ds.Spec.Template.Spec.Containers, 3)
@@ -80,8 +85,8 @@ func doTestRenderOpenshif(t *testing.T, clusterType storage.ClusterType) {
 	}
 
 	cases := map[string]func(object runtime.Object){
-		"sensor.yaml":    assertEnvVars,
-		"collector.yaml": assertScannerRemote,
+		"sensor.yaml":    assertOnSensor,
+		"collector.yaml": assertOnCollector,
 	}
 
 	for _, f := range baseFiles {
