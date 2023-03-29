@@ -26,18 +26,10 @@ const clusterNamespacesTarget =
 export function selectCluster() {
     cy.intercept('GET', clusterNamespacesTarget);
 
-    interactAndWaitForResponses(
-        () => {
-            cy.get(networkGraphSelectors.selector.clusterSelect).click();
-            cy.get(`${selectSelectors.patternFlySelect.openMenu} span:first`).click();
-        },
-        {
-            getClusterNamespaces: {
-                method: 'GET',
-                url: clusterNamespacesTarget,
-            },
-        }
-    );
+    interactAndWaitForResponses(() => {
+        cy.get(networkGraphSelectors.selector.clusterSelect).click();
+        cy.get(`${selectSelectors.patternFlySelect.openMenu} span:first`).click();
+    });
 }
 
 // Additional calls in a test can select additional namespaces.
