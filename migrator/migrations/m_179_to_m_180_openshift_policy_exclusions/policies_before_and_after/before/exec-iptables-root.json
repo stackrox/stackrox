@@ -4,7 +4,6 @@
   "description": "Alert on privileged pods that execute iptables",
   "rationale": "Processes that are running with UID 0 run as the root user. iptables can be used in privileged containers to modify the node's network routing.",
   "remediation": "Specify the USER instruction in the Docker image or the runAsUser field within the Pod Security Context",
-  "disabled": false,
   "categories": [
     "Network Tools",
     "Security Best Practices"
@@ -17,40 +16,26 @@
     {
       "name": "Don't alert on Kube System Namespace",
       "deployment": {
-        "name": "",
         "scope": {
-          "namespace": "kube-system",
-          "label": null
+          "namespace": "kube-system"
         }
-      },
-      "image": null,
-      "expiration": null
+      }
     },
     {
       "name": "Don't alert on istio-system namespace",
       "deployment": {
-        "name": "",
         "scope": {
-          "cluster": "",
-          "namespace": "istio-system",
-          "label": null
+          "namespace": "istio-system"
         }
-      },
-      "image": null,
-      "expiration": null
+      }
     },
     {
       "name": "Don't alert on openshift-sdn namespace",
       "deployment": {
-        "name": "",
         "scope": {
-          "cluster": "",
-          "namespace": "openshift-sdn",
-          "label": null
+          "namespace": "openshift-sdn"
         }
-      },
-      "image": null,
-      "expiration": null
+      }
     }
   ],
   "severity": "CRITICAL_SEVERITY",

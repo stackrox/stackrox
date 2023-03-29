@@ -4,7 +4,6 @@
   "description": "Containers should run as a non-root user",
   "rationale": "It is good practice to run the container as a non-root user, where possible. This can be done via the USER directive in the Dockerfile.",
   "remediation": "Ensure that the Dockerfile for each container switches from the root user",
-  "disabled": false,
   "categories": [
     "Docker CIS"
   ],
@@ -12,169 +11,95 @@
     "BUILD",
     "DEPLOY"
   ],
-  "eventSource": "NOT_APPLICABLE",
   "exclusions": [
-    {
-      "name": "Don't alert on Openshift namespace",
-      "deployment": {
-        "name": "",
-        "scope": {
-          "cluster": "",
-          "namespace": "openshift",
-          "label": null
-        }
-      },
-      "image": null,
-      "expiration": null
-    },
     {
       "name": "Don't alert on StackRox namespace",
       "deployment": {
-        "name": "",
         "scope": {
-          "cluster": "",
-          "namespace": "stackrox",
-          "label": null
+          "namespace": "stackrox"
         }
-      },
-      "image": null,
-      "expiration": null
+      }
     },
     {
       "name": "Don't alert on kube-system namespace",
       "deployment": {
-        "name": "",
         "scope": {
-          "cluster": "",
-          "namespace": "kube-system",
-          "label": null
+          "namespace": "kube-system"
         }
-      },
-      "image": null,
-      "expiration": null
+      }
     },
     {
       "name": "Don't alert on openshift-sdn namespace",
       "deployment": {
-        "name": "",
         "scope": {
-          "cluster": "",
-          "namespace": "openshift-sdn",
-          "label": null
+          "namespace": "openshift-sdn"
         }
-      },
-      "image": null,
-      "expiration": null
+      }
     },
     {
       "name": "Don't alert on openshift-kube-apiserver namespace",
       "deployment": {
-        "name": "",
         "scope": {
-          "cluster": "",
-          "namespace": "openshift-kube-apiserver",
-          "label": null
+          "namespace": "openshift-kube-apiserver"
         }
-      },
-      "image": null,
-      "expiration": null
+      }
     },
     {
       "name": "Don't alert on openshift-etcd namespace",
       "deployment": {
-        "name": "",
         "scope": {
-          "cluster": "",
-          "namespace": "openshift-etcd",
-          "label": null
+          "namespace": "openshift-etcd"
         }
-      },
-      "image": null,
-      "expiration": null
+      }
     },
     {
       "name": "Don't alert on openshift-apiserver namespace",
       "deployment": {
-        "name": "",
         "scope": {
-          "cluster": "",
-          "namespace": "openshift-apiserver",
-          "label": null
+          "namespace": "openshift-apiserver"
         }
-      },
-      "image": null,
-      "expiration": null
+      }
     },
     {
       "name": "Don't alert on openshift-dns namespace",
       "deployment": {
-        "name": "",
         "scope": {
-          "cluster": "",
-          "namespace": "openshift-dns",
-          "label": null
+          "namespace": "openshift-dns"
         }
-      },
-      "image": null,
-      "expiration": null
+      }
     },
     {
       "name": "Don't alert on openshift-cluster-node-tuning-operator namespace",
       "deployment": {
-        "name": "",
         "scope": {
-          "cluster": "",
-          "namespace": "openshift-cluster-node-tuning-operator",
-          "label": null
+          "namespace": "openshift-cluster-node-tuning-operator"
         }
-      },
-      "image": null,
-      "expiration": null
+      }
     },
     {
       "name": "Don't alert on openshift-cluster-csi-drivers namespace",
       "deployment": {
-        "name": "",
         "scope": {
-          "cluster": "",
-          "namespace": "openshift-cluster-csi-drivers",
-          "label": null
+          "namespace": "openshift-cluster-csi-drivers"
         }
-      },
-      "image": null,
-      "expiration": null
+      }
     },
     {
       "name": "Don't alert on openshift-machine-config-operator namespace",
       "deployment": {
-        "name": "",
         "scope": {
-          "cluster": "",
-          "namespace": "openshift-machine-config-operator",
-          "label": null
+          "namespace": "openshift-machine-config-operator"
         }
-      },
-      "image": null,
-      "expiration": null
+      }
     }
   ],
-  "scope": [],
   "severity": "LOW_SEVERITY",
-  "enforcementActions": [],
-  "notifiers": [],
-  "lastUpdated": null,
-  "SORTName": "",
-  "SORTLifecycleStage": "",
-  "SORTEnforcement": false,
   "policyVersion": "1.1",
   "policySections": [
     {
-      "sectionName": "",
       "policyGroups": [
         {
           "fieldName": "Image User",
-          "booleanOperator": "OR",
-          "negate": false,
           "values": [
             {
               "value": "0"
@@ -187,7 +112,6 @@
       ]
     }
   ],
-  "mitreAttackVectors": [],
   "criteriaLocked": true,
   "mitreVectorsLocked": true,
   "isDefault": true

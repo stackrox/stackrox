@@ -23,7 +23,7 @@
       "name": "Don't alert on deployment ovnkube-node in openshift-ovn-kubernetes namespace",
       "deployment": {
         "scope": {
-          "namespace": ""
+          "namespace": "openshift-ovn-kubernetes "
         }
       }
     },
@@ -31,7 +31,7 @@
       "name": "Don't alert on deployment machine-config-daemon in openshift-machine-config-operator namespace",
       "deployment": {
         "scope": {
-          "namespace": ""
+          "namespace": "openshift-machine-config-operator"
         }
       }
     },

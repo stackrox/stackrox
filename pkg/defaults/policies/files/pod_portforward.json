@@ -10,6 +10,7 @@
   "lifecycleStages": [
     "RUNTIME"
   ],
+  "eventSource": "DEPLOYMENT_EVENT",
   "exclusions": [
     {
       "name": "Don't alert on deployment alertmanager-main in openshift-monitoring namespace",
@@ -20,7 +21,6 @@
       }
     }
   ],
-  "eventSource": "DEPLOYMENT_EVENT",
   "severity": "MEDIUM_SEVERITY",
   "policyVersion": "1.1",
   "policySections": [
