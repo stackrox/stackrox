@@ -10,16 +10,6 @@
   "lifecycleStages": [
     "DEPLOY"
   ],
-  "exclusions": [
-    {
-      "name": "Don't alert on deployment tuned in openshift-cluster-node-tuning-operator namespace",
-      "deployment": {
-        "scope": {
-          "namespace": "openshift-cluster-node-tuning-operator"
-        }
-      }
-    }
-  ],
   "severity": "MEDIUM_SEVERITY",
   "policyVersion": "1.1",
   "policySections": [

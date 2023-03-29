@@ -12,6 +12,30 @@
   ],
   "exclusions": [
     {
+      "name": "Don't alert on deployment tuned in openshift-cluster-node-tuning-operator namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-cluster-node-tuning-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment ovnkube-node in openshift-ovn-kubernetes namespace",
+      "deployment": {
+        "scope": {
+          "namespace": ""
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment machine-config-daemon in openshift-machine-config-operator namespace",
+      "deployment": {
+        "scope": {
+          "namespace": ""
+        }
+      }
+    },
+    {
       "name": "Don't alert on the openshift-sdn namespace",
       "deployment": {
         "scope": {
