@@ -178,8 +178,6 @@ jobs:
           GH_TOKEN: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
         run: |
           gh repo sync stackrox/openshift-release --source openshift/release
-<<<<<<< Updated upstream
-=======
       - name: Check out stackrox/openshift-release
         uses: actions/checkout@v3
         with:
@@ -191,7 +189,6 @@ jobs:
           git config user.name "${{github.event.sender.login}}"
           git config user.email noreply@github.com
           git switch --create "$BRANCH"
->>>>>>> Stashed changes
       - name: Make configuration
         if: steps.check-existing.outputs.branch-exists == 'false'
         env:
