@@ -715,10 +715,7 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 		return 0, err
 	}
 	queryStr := query.AsSQL()
-	if query.Data != nil && len(query.Data) >= 3 && query.Data[2].(string) == "openssl#1.1.1n-0+deb11u3#debian:11" {
-		log.Infof("[Cve->IsFixable] Query is %s and Vars are [fixable = %s, cveID = %s, componentID = %s]",
-			queryStr, query.Data[0].(string), query.Data[1].(string), query.Data[2].(string))
-	}
+	log.Infof("[Cve->IsFixable] Query is %s and Vars are [%v]", queryStr, query.Data)
 
 	return pgutils.Retry2(func() (int, error) {
 		var count int
