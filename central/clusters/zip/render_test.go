@@ -55,6 +55,15 @@ func getEnvVarValue(vars []coreV1.EnvVar, name string) (string, bool) {
 	return "", false
 }
 
+func findContainer(containers []coreV1.Container, name string) (cont coreV1.Container, found bool) {
+	for _, cont := range containers {
+		if cont.Name == name {
+			return cont, true
+		}
+	}
+	return coreV1.Container{}, false
+}
+
 func doTestRenderOpenshif(t *testing.T, clusterType storage.ClusterType) {
 	cluster := &storage.Cluster{
 		Name:      "cluster",
@@ -67,20 +76,28 @@ func doTestRenderOpenshif(t *testing.T, clusterType storage.ClusterType) {
 
 	assertOnSensor := func(obj runtime.Object) {
 		deployment := obj.(*v1.Deployment)
-		value, exists := getEnvVarValue(deployment.Spec.Template.Spec.Containers[0].Env, env.OpenshiftAPI.EnvVar())
+		sensorCont, foundSensor := findContainer(deployment.Spec.Template.Spec.Containers, "sensor")
+		assert.True(t, foundSensor)
+		value, exists := getEnvVarValue(sensorCont.Env, env.OpenshiftAPI.EnvVar())
 		assert.True(t, exists)
 		assert.Equal(t, "true", value)
 	}
 	assertOnCollector := func(obj runtime.Object) {
 		ds := obj.(*v1.DaemonSet)
+		mainCont, foundMain := findContainer(ds.Spec.Template.Spec.Containers, "compliance")
+		assert.True(t, foundMain)
+		assert.Equal(t, "compliance", mainCont.Name)
+
 		if clusterType == storage.ClusterType_OPENSHIFT4_CLUSTER {
-			assert.Len(t, ds.Spec.Template.Spec.Containers, 3)
-			mainImage := ds.Spec.Template.Spec.Containers[1].Image
-			nodeInvCont := ds.Spec.Template.Spec.Containers[2]
-			expectedScannerParts := strings.Split(strings.ReplaceAll(mainImage, "/main:", "/scanner-slim:"), ":")
-			assert.Truef(t, strings.HasPrefix(nodeInvCont.Image, expectedScannerParts[0]), "scanner-slim image (%q) should be from the same registry as main (%q)", nodeInvCont.Image, mainImage)
+			nInvCont, found := findContainer(ds.Spec.Template.Spec.Containers, "node-inventory")
+			assert.True(t, found, "node-inventory container should exist under collector DS")
+			assert.Equal(t, "node-inventory", nInvCont.Name, "node-inventory is expected at the 3rd position in the container list")
+
+			expectedScannerParts := strings.Split(strings.ReplaceAll(mainCont.Image, "/main:", "/scanner-slim:"), ":")
+			assert.Truef(t, strings.HasPrefix(nInvCont.Image, expectedScannerParts[0]), "scanner-slim image (%q) should be from the same registry as main (%q)", nInvCont.Image, mainCont.Image)
 		} else {
-			assert.Len(t, ds.Spec.Template.Spec.Containers, 2)
+			_, foundNInv := findContainer(ds.Spec.Template.Spec.Containers, "node-inventory")
+			assert.False(t, foundNInv, "node-inventory container must not exist under collector DS")
 		}
 	}
 
