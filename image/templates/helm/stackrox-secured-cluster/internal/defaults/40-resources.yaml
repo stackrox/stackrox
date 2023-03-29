@@ -34,3 +34,11 @@ collector:
     limits:
       memory: "2Gi"
       cpu: "1"
+
+  nodeInventoryResources:
+    requests:
+      memory: "10Mi"
+      cpu: "10m"
+    limits:
+      memory: "2Gi"
+      cpu: "1"
