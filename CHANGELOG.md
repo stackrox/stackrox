@@ -28,6 +28,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The `--offline-mode` flag for the `roxctl scanner generate` command is deprecated, as Scanner's default behavior is
   to fetch vulnerability updates from Central. The flag will be removed as part of the 4.2.0 release.
 - ROX-15925: The KernelModule collection method is deprecated in favor of EBPF. This method will be removed in the 4.1 release.
+- Deprecated v1.0 of Network Graph. Please switch to the new 2.0 version for improved functionality and a better user experience.
 
 ### Required Actions
 - The `Analyst` permission set will change behaviour: instead of allowing read to all resources except `DebugLogs`, it will

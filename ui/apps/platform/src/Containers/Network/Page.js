@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { connect, useDispatch, useSelector } from 'react-redux';
 import { useRouteMatch } from 'react-router-dom';
 import { createStructuredSelector } from 'reselect';
+import { Alert } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 import useLocalStorage from 'hooks/useLocalStorage';
@@ -143,6 +144,17 @@ function NetworkPage({
 
     return (
         <>
+            <Alert
+                isInline
+                variant="warning"
+                title={
+                    <p>
+                        Version 1.0 of Network Graph is being deprecated soon. Please switch to the
+                        new 2.0 version for improved functionality and a better user experience.
+                        Contact our support team for assistance
+                    </p>
+                }
+            />
             <Header
                 isGraphDisabled={hasNoSelectedNamespace || hasGraphLoadError}
                 isSimulationOn={isSimulationOn}
