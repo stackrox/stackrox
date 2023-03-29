@@ -150,6 +150,8 @@ spec:
         ports:
           - containerPort: 8444
             name: grpc
+        resources:
+          {{- ._rox.collector._nodeInventoryResources | nindent 10 }}
         env:
         - name: ROX_NODE_NAME
           valueFrom:
