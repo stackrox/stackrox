@@ -42,6 +42,42 @@ var (
 			FieldsToCompare: fieldsToCompare,
 			PolicyFileName:  "exec-iptables.json",
 		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "automount_service_account_token.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "host_ipc.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "host_network.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "host_pids.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "pod_portforward.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "privilege_escalation.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "priviledged.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "secret_env.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "sensitive_files.json",
+		},
 	}
 )
 
