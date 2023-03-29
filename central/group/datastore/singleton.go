@@ -5,8 +5,8 @@ import (
 
 	authProviderDatastore "github.com/stackrox/rox/central/authprovider/datastore"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/group/datastore/internal/store/bolt"
-	pgStore "github.com/stackrox/rox/central/group/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/group/datastore/store/bolt"
+	pgStore "github.com/stackrox/rox/central/group/datastore/store/postgres"
 	roleDatastore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"

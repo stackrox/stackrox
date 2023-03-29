@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/globaldb"
-	groupDS "github.com/stackrox/rox/central/group/datastore"
+	groupFilter "github.com/stackrox/rox/central/group/datastore/filter"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/store"
@@ -48,7 +48,7 @@ func Singleton() DataStore {
 			utils.CrashOnError(err)
 		}
 		// Which role format is used is determined solely by the feature flag.
-		ds = New(roleStorage, permissionSetStorage, accessScopeStorage, groupDS.Singleton())
+		ds = New(roleStorage, permissionSetStorage, accessScopeStorage, groupFilter.GroupStoreSingleton())
 
 		for r, a := range vulnReportingDefaultRoles {
 			defaultRoles[r] = a

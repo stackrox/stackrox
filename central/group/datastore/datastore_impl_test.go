@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	storeMocks "github.com/stackrox/rox/central/group/datastore/internal/store/mocks"
+	storeMocks "github.com/stackrox/rox/central/group/datastore/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"

@@ -7,7 +7,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	declarativeConfigUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
-	"github.com/stackrox/rox/central/group/datastore/internal/store"
+	groupFilter "github.com/stackrox/rox/central/group/datastore/filter"
+	"github.com/stackrox/rox/central/group/datastore/store"
 	"github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -89,21 +90,7 @@ func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.G
 	} else if !ok {
 		return nil, nil
 	}
-
-	var groups []*storage.Group
-	walkFn := func() error {
-		groups = groups[:0]
-		return ds.storage.Walk(ctx, func(g *storage.Group) error {
-			if filter == nil || filter(g) {
-				groups = append(groups, g)
-			}
-			return nil
-		})
-	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
-		return nil, err
-	}
-	return groups, nil
+	return groupFilter.GetFiltered(ctx, filter, ds.storage)
 }
 
 // Walk is an optimization that allows to search through the datastore and find

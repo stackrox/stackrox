@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	postgresGroupStore "github.com/stackrox/rox/central/group/datastore/internal/store/postgres"
+	postgresGroupStore "github.com/stackrox/rox/central/group/datastore/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
