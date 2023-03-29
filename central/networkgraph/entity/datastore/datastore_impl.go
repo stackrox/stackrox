@@ -4,11 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store"
-	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/postgres"
+	pgStore "github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/role/resources"
@@ -20,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -36,11 +36,10 @@ var (
 	// are modifications to network graph.
 	// Since system-generated external sources are immutable (per current implementation) and are the same across all
 	// clusters, we allow them to be accessed if users have network graph permissions to any cluster.
-	networkGraphSAC    = sac.ForResource(resources.NetworkGraph)
-	graphConfigReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+	networkGraphSAC       = sac.ForResource(resources.NetworkGraph)
+	administrationReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			// TODO: ROX-12750 Replace NetworkGraphConfig with Administration.
-			sac.ResourceScopeKeys(resources.NetworkGraphConfig)))
+			sac.ResourceScopeKeys(resources.Administration)))
 )
 
 type dataStoreImpl struct {
@@ -66,8 +65,8 @@ func NewEntityDataStore(storage store.EntityStore, graphConfig graphConfigDS.Dat
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (EntityDataStore, error) {
-	dbstore := postgres.New(pool)
+func GetTestPostgresDataStore(t *testing.T, pool *postgres.DB) (EntityDataStore, error) {
+	dbstore := pgStore.New(pool)
 	graphConfigStore, err := graphConfigDS.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
@@ -169,7 +168,7 @@ func (ds *dataStoreImpl) GetAllEntitiesForCluster(ctx context.Context, clusterID
 		return nil, errors.Wrap(errox.InvalidArgs, "cannot get network entities. Cluster ID not specified")
 	}
 
-	graphConfig, err := ds.graphConfig.GetNetworkGraphConfig(graphConfigReadCtx)
+	graphConfig, err := ds.graphConfig.GetNetworkGraphConfig(administrationReadCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to obtain network graph configuration")
 	}
@@ -186,7 +185,7 @@ func (ds *dataStoreImpl) GetAllEntitiesForCluster(ctx context.Context, clusterID
 }
 
 func (ds *dataStoreImpl) GetAllEntities(ctx context.Context) ([]*storage.NetworkEntity, error) {
-	graphConfig, err := ds.graphConfig.GetNetworkGraphConfig(graphConfigReadCtx)
+	graphConfig, err := ds.graphConfig.GetNetworkGraphConfig(administrationReadCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to obtain network graph configuration")
 	}

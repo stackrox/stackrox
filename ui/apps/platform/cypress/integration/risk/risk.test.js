@@ -145,13 +145,14 @@ describe('Risk page', () => {
     });
 
     describe('with actual API', () => {
-        it('should navigate to network page with selected deployment', () => {
+        // This test is disabled for now as the links from Risk to Network Graph have been changed to navigate to the new version
+        it.skip('should navigate to network page with selected deployment', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
             viewRiskDeploymentInNetworkGraph();
         });
 
-        const searchPlaceholderText = 'Add one or more resource filters';
+        const searchPlaceholderText = 'Filter deployments';
 
         it('should not have anything in search bar when URL has no search params', () => {
             visitRiskDeployments();

@@ -9,7 +9,7 @@ import (
 	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -55,7 +55,7 @@ func (q *queryBuilder) BuildQuery(ctx context.Context) (*ReportQuery, error) {
 	var err error
 	var deploymentsQuery *v1.Query
 	var scopeQueries []string
-	if features.ObjectCollections.Enabled() {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		deploymentsQuery, err = q.collectionQueryResolver.ResolveCollectionQuery(ctx, q.collection)
 	} else {
 		scopeQueries, err = q.buildScopeQueries()

@@ -12,6 +12,7 @@ import (
 	"github.com/NYTimes/gziphandler"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
+	apiTokenExpiration "github.com/stackrox/rox/central/apitoken/expiration"
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
 	"github.com/stackrox/rox/central/audit"
 	authService "github.com/stackrox/rox/central/auth/service"
@@ -45,6 +46,7 @@ import (
 	cveService "github.com/stackrox/rox/central/cve/service"
 	"github.com/stackrox/rox/central/cve/suppress"
 	debugService "github.com/stackrox/rox/central/debug/service"
+	"github.com/stackrox/rox/central/declarativeconfig"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
 	detectionService "github.com/stackrox/rox/central/detection/service"
@@ -98,6 +100,7 @@ import (
 	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineService "github.com/stackrox/rox/central/processbaseline/service"
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
+	processListeningOnPorts "github.com/stackrox/rox/central/processlisteningonport/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	reportConfigurationService "github.com/stackrox/rox/central/reportconfigurations/service"
@@ -166,7 +169,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -253,16 +255,17 @@ func main() {
 	devmode.StartOnDevBuilds("central")
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
-	// TODO: ROX-12750 update with new list of replaced/deprecated resources
 	log.Warn("The following permission resources have been replaced:\n" +
 		"	Access replaces AuthProvider, Group, Licenses, and User\n" +
+		"	Administration replaces AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and ServiceIdentity\n" +
+		"	Cluster also covers ClusterCVE\n" +
+		"	Compliance replaces ComplianceRuns\n" +
 		"	DeploymentExtension replaces Indicator, NetworkBaseline, ProcessWhitelist, and Risk\n" +
 		"	Integration replaces APIToken, BackupPlugins, ImageIntegration, Notifier, and SignatureIntegration\n" +
 		"	Image now also covers ImageComponent\n" +
 		"The following permission resources will be replaced in the upcoming versions:\n" +
-		"	Administration will replace AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and ServiceIdentity\n" +
-		"	Compliance will replace ComplianceRuns\n" +
-		"	Cluster will cover ClusterCVE.")
+		"	Access will replace Role\n" +
+		"	WorkflowAdministration will replace Policy and VulnerabilityReports.")
 	ensureDB(ctx)
 
 	// Need to remove the backup clone and set the current version
@@ -288,7 +291,7 @@ func main() {
 	}
 
 	// Start the prometheus metrics server
-	pkgMetrics.NewDefaultHTTPServer().RunForever()
+	pkgMetrics.NewDefaultHTTPServer(pkgMetrics.CentralSubsystem).RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
 	go startGRPCServer()
@@ -316,7 +319,10 @@ func startServices() {
 	pruning.Singleton().Start()
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
-	centralclient.InstanceConfig().Gatherer().Start()
+
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		apiTokenExpiration.Singleton().Start()
+	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -394,17 +400,11 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, clusterCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
 		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
-
-		if features.ObjectCollections.Enabled() {
-			servicesToRegister = append(servicesToRegister, collectionService.Singleton())
-		}
-
+		servicesToRegister = append(servicesToRegister, collectionService.Singleton())
+		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
+		servicesToRegister = append(servicesToRegister, processListeningOnPorts.Singleton())
 	} else {
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
-	}
-
-	if features.NewPolicyCategories.Enabled() && env.PostgresDatastoreEnabled.BooleanSetting() {
-		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
@@ -427,13 +427,6 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}
 
-	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
-		gs := cfg.Gatherer()
-		gs.AddGatherer(authProviderDS.Gather)
-		gs.AddGatherer(signatureIntegrationDS.Gather)
-		gs.AddGatherer(roleDataStore.Gather)
-		gs.AddGatherer(clusterDataStore.Gather)
-	}
 	return servicesToRegister
 }
 
@@ -485,6 +478,10 @@ func startGRPCServer() {
 	}
 
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
+
+	if features.DeclarativeConfiguration.Enabled() {
+		declarativeconfig.ManagerSingleton(registry).ReconcileDeclarativeConfigurations()
+	}
 
 	clusterInitBackend := backend.Singleton()
 	serviceMTLSExtractor, err := service.NewExtractorWithCertValidation(clusterInitBackend)
@@ -538,19 +535,28 @@ func startGRPCServer() {
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
 
-	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
-		config.HTTPInterceptors = append(config.HTTPInterceptors, cfg.GetHTTPInterceptor())
-		config.UnaryInterceptors = append(config.UnaryInterceptors, cfg.GetGRPCInterceptor())
-		// Central adds itself to the tenant group, with no group properties:
-		cfg.Telemeter().Group(cfg.GroupID, cfg.ClientID, nil)
-		// Add the local admin user as well, with no extra group properties:
-		cfg.Telemeter().Group(cfg.GroupID, cfg.HashUserID(basic.DefaultUsername, basicAuthProvider.ID()), nil)
-	}
-
 	// Before authorization is checked, we want to inject the sac client into the context.
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
+
+	telemetryCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
+
+	if cds, err := configDS.Singleton().GetConfig(telemetryCtx); err == nil || cds == nil {
+		if t := cds.GetPublicConfig().GetTelemetry(); t == nil || t.GetEnabled() {
+			if cfg := centralclient.Enable(); cfg.Enabled() {
+				centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
+				gs := cfg.Gatherer()
+				gs.AddGatherer(authProviderDS.Gather)
+				gs.AddGatherer(signatureIntegrationDS.Gather)
+				gs.AddGatherer(roleDataStore.Gather)
+				gs.AddGatherer(clusterDataStore.Gather)
+			}
+		}
+	}
 
 	server := pkgGRPC.NewAPI(config)
 	server.Register(servicesToRegister(registry, authzTraceSink)...)
@@ -617,16 +623,14 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	customRoutes = []routes.CustomRoute{
 		uiRoute(),
 		{
-			Route: "/api/extensions/clusters/zip",
-			// TODO: ROX-12750 Replace ServiceIdentity with Administration.
-			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity))),
+			Route:         "/api/extensions/clusters/zip",
+			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster), permissions.View(resources.Administration))),
 			ServerHandler: clustersZip.Handler(clusterDataStore.Singleton(), siStore.Singleton()),
 			Compression:   false,
 		},
 		{
-			Route: "/api/extensions/scanner/zip",
-			// TODO: ROX-12750 Replace ScannerBundle with Administration.
-			Authorizer:    user.With(permissions.View(resources.ScannerBundle)),
+			Route:         "/api/extensions/scanner/zip",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: scanner.Handler(),
 			Compression:   false,
 		},
@@ -782,12 +786,10 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
 				or.SensorOrAuthorizer(
 					or.ScannerOr(
-						// TODO: ROX-12750 Replace ScannerDefinitions with Administration.
-						user.With(permissions.View(resources.ScannerDefinitions)))): {
+						user.With(permissions.View(resources.Administration)))): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodGet),
 				},
-				// TODO: ROX-12750 Replace ScannerDefinitions with Administration.
-				user.With(permissions.Modify(resources.ScannerDefinitions)): {
+				user.With(permissions.Modify(resources.Administration)): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodPost),
 				},
 			}),
@@ -843,6 +845,9 @@ func waitForTerminationSignal() {
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
+	}
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		stoppables = append(stoppables, stoppableWithName{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"})
 	}
 
 	var wg sync.WaitGroup

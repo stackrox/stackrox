@@ -57,7 +57,7 @@ export function parseConfigError(err: Error): CollectionConfigError {
         return { type: 'EmptyName', message: 'A name value is required for a collection' };
     }
 
-    if (/failed to compile rule value regex/.test(rawMessage)) {
+    if (/failed to compile regex/.test(rawMessage)) {
         return {
             type: 'InvalidRule',
             message:

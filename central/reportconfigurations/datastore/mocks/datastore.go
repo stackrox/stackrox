@@ -140,3 +140,17 @@ func (mr *MockDataStoreMockRecorder) UpdateReportConfiguration(ctx, reportConfig
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateReportConfiguration", reflect.TypeOf((*MockDataStore)(nil).UpdateReportConfiguration), ctx, reportConfig)
 }
+
+// Walk mocks base method.
+func (m *MockDataStore) Walk(ctx context.Context, fn func(*storage.ReportConfiguration) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Walk", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Walk indicates an expected call of Walk.
+func (mr *MockDataStoreMockRecorder) Walk(ctx, fn interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockDataStore)(nil).Walk), ctx, fn)
+}

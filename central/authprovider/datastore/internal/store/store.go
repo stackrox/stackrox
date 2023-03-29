@@ -7,6 +7,7 @@ import (
 )
 
 // Store stores and retrieves providers from the KV storage mechanism.
+//
 //go:generate mockgen-wrapper
 type Store interface {
 	GetAll(ctx context.Context) ([]*storage.AuthProvider, error)

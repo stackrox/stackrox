@@ -85,7 +85,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
         new Deployment()
             .setName (NGINX_LATEST)
-            .setImage ("nginx")
+            .setImage ("quay.io/rhacs-eng/qa:latest") // this is docker.io/nginx:1.22-alpine but tagged as latest
             .addPort (22)
             .addLabel ("app", "test")
             .setEnv([SECRET: 'true']),
@@ -191,7 +191,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         }
         //TODO ROX-11612 debugging to see if the test fails due to incomplete scan
         if (policyName == "Apache Struts: CVE-2017-5638") {
-            def image = ImageService.scanImage("library/nginx:1.10", true)
+            def image = ImageService.scanImage(STRUTS_DEPLOYMENT.getImage(), true)
             if (!hasApacheStrutsVuln(image)) {
                 log.warn("[ROX-11612] CVE-2017-5638 is absent from image scan")
             }
@@ -201,7 +201,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         "Verify Violation for #policyName is triggered"
         // Some of these policies require scans so extend the timeout as the scan will be done inline
         // with our scanner
-        assert waitForViolation(deploymentName,  policyName, 60)
+        assert waitForViolation(deploymentName,  policyName, 300)
 
         cleanup:
         if (policyEnabled) {
@@ -260,7 +260,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     @Tag("BAT")
     @Retry(count = 0)
-    @IgnoreIf({ Env.CI_TAG == null || !Env.CI_TAG.contains("nightly") })
+    @IgnoreIf({ Env.BUILD_TAG == null || !Env.BUILD_TAG.contains("nightly") })
     def "Notifier for StackRox images with fixable vulns"() {
         when:
         "Verify policies are not violated within the stackrox namespace"
@@ -282,7 +282,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         }
 
         String slackPayload = ":rotating_light: " +
-                "Fixable Vulnerabilities found in StackRox Images (build tag: ${Env.CI_TAG})! " +
+                "Fixable Vulnerabilities found in StackRox Images (build tag: ${Env.BUILD_TAG})! " +
                 ":rotating_light:"
 
         Map<String, Set<String>> deploymentPolicyMap = [:]

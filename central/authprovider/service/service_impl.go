@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/basic"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	userPkg "github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -319,12 +320,16 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 		Test:        testMode,
 	}
 
-	if testMode {
-		// We need all access for retrieving roles.
-		userMetadata, err := authproviders.CreateRoleBasedIdentity(sac.WithAllAccess(ctx), provider, authResponse)
-		if err != nil {
+	userMetadata, err := authproviders.CreateRoleBasedIdentity(sac.WithAllAccess(ctx), provider, authResponse)
+	if err != nil {
+		if testMode {
 			return nil, errors.Wrap(err, "cannot create role based identity")
 		}
+		log.Warnf("Error creating role based identity: %v", err)
+	}
+	userPkg.LogSuccessfulUserLogin(log, userMetadata)
+
+	if testMode {
 		response.User = userMetadata
 		return response, nil
 	}

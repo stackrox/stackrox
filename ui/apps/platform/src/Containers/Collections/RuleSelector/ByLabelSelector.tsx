@@ -1,11 +1,34 @@
 import React from 'react';
-import { Label, Button, Divider, ValidatedOptions, TextInput } from '@patternfly/react-core';
+import {
+    Button,
+    Divider,
+    FormGroup,
+    Label,
+    TextInput,
+    ValidatedOptions,
+} from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import { FormikErrors } from 'formik';
 import cloneDeep from 'lodash/cloneDeep';
 
 import useIndexKey from 'hooks/useIndexKey';
 import { ByLabelResourceSelector, ScopedResourceSelector, SelectorEntityType } from '../types';
+
+function parseInlineRuleError(
+    errors: ByLabelSelectorProps['validationErrors'],
+    ruleIndex: number,
+    valueIndex: number
+): string | undefined {
+    const ruleErrors = errors?.rules?.[ruleIndex];
+    if (typeof ruleErrors === 'string') {
+        return ruleErrors;
+    }
+    const valueErrors = ruleErrors?.values?.[valueIndex];
+    if (typeof valueErrors === 'string') {
+        return valueErrors;
+    }
+    return valueErrors?.value;
+}
 
 export type ByLabelSelectorProps = {
     entityType: SelectorEntityType;
@@ -102,12 +125,15 @@ function ByLabelSelector({
 
                         <div className="rule-selector-list">
                             {rule.values.map(({ value }, valueIndex) => {
-                                const valueValidationError = validationErrors?.rules?.[ruleIndex];
-                                const validated =
-                                    typeof valueValidationError === 'string' ||
-                                    valueValidationError?.values?.[valueIndex]
-                                        ? ValidatedOptions.error
-                                        : ValidatedOptions.default;
+                                const errorMessage = parseInlineRuleError(
+                                    validationErrors,
+                                    ruleIndex,
+                                    valueIndex
+                                );
+                                const inputValidated = errorMessage
+                                    ? ValidatedOptions.error
+                                    : ValidatedOptions.default;
+                                const inputId = `${entityType}-label-value-${ruleIndex}-${valueIndex}`;
                                 const ariaLabel = `Select label value ${valueIndex + 1} of ${
                                     rule.values.length
                                 } for ${lowerCaseEntity} rule ${ruleIndex + 1} of ${
@@ -118,9 +144,14 @@ function ByLabelSelector({
                                         className="rule-selector-list-item"
                                         key={keyFor(valueIndex)}
                                     >
-                                        <div className="rule-selector-name-value-input">
+                                        <FormGroup
+                                            className="rule-selector-name-value-input"
+                                            fieldId={inputId}
+                                            helperTextInvalid={errorMessage}
+                                            validated={inputValidated}
+                                        >
                                             <TextInput
-                                                id={`${entityType}-label-value-${ruleIndex}-${valueIndex}`}
+                                                id={inputId}
                                                 aria-label={ariaLabel}
                                                 className="pf-u-flex-grow-1 pf-u-w-auto"
                                                 onChange={(val) =>
@@ -132,13 +163,14 @@ function ByLabelSelector({
                                                     )
                                                 }
                                                 placeholder={placeholder}
-                                                validated={validated}
+                                                validated={inputValidated}
                                                 value={value}
                                                 isDisabled={isDisabled}
                                             />
-                                        </div>
+                                        </FormGroup>
                                         {!isDisabled && (
                                             <Button
+                                                className="rule-selector-delete-value-button"
                                                 aria-label={`Delete ${value}`}
                                                 variant="plain"
                                                 onClick={() => onDeleteValue(ruleIndex, valueIndex)}

@@ -21,6 +21,9 @@ func TestScore(t *testing.T) {
 	nodeComponent.GetVulns()[0].Severity = storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
 	nodeComponent.GetVulns()[1].ScoreVersion = storage.EmbeddedVulnerability_V3
 	nodeComponent.GetVulns()[1].Severity = storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
+	nodeComponent.GetVulnerabilities()[0].Severity = storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
+	nodeComponent.GetVulnerabilities()[1].CveBaseInfo.ScoreVersion = storage.CVEInfo_V3
+	nodeComponent.GetVulnerabilities()[1].Severity = storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
 	nodeScorer := NewNodeComponentScorer()
 
 	// Without user defined function

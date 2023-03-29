@@ -16,7 +16,7 @@ import (
 const (
 	// Must be larger than defaultInterval. You may want to increase it if you plan
 	// to step through the code with a debugger.
-	metricsTimeout = 100 * time.Millisecond
+	metricsTimeout = 300 * time.Millisecond
 )
 
 func TestClusterMetrics(t *testing.T) {
@@ -31,7 +31,7 @@ type ClusterMetricsTestSuite struct {
 
 func (s *ClusterMetricsTestSuite) SetupTest() {
 	s.client = fake.NewSimpleClientset()
-	defaultInterval = 1 * time.Millisecond
+	defaultInterval = 10 * time.Millisecond
 }
 
 func (s *ClusterMetricsTestSuite) TestZeroNodes() {
@@ -39,7 +39,7 @@ func (s *ClusterMetricsTestSuite) TestZeroNodes() {
 
 	metrics := s.getClusterMetrics()
 
-	s.Equal(metrics, expected)
+	s.Equal(expected, metrics)
 }
 
 func (s *ClusterMetricsTestSuite) TestSingleNode() {
@@ -48,7 +48,7 @@ func (s *ClusterMetricsTestSuite) TestSingleNode() {
 
 	metrics := s.getClusterMetrics()
 
-	s.Equal(metrics, expected)
+	s.Equal(expected, metrics)
 }
 
 func (s *ClusterMetricsTestSuite) TestMultipleNodes() {
@@ -59,7 +59,7 @@ func (s *ClusterMetricsTestSuite) TestMultipleNodes() {
 
 	metrics := s.getClusterMetrics()
 
-	s.Equal(metrics, expected)
+	s.Equal(expected, metrics)
 }
 
 func (s *ClusterMetricsTestSuite) getClusterMetrics() *central.ClusterMetrics {

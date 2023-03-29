@@ -7,18 +7,18 @@ from datetime import datetime, timezone
 from rewrite import rewrite, string_replacer
 
 import yaml
+import logging
 
 
-def rbac_proxy_updater(version_map):
-    def update_rbac_proxy_ref(img):
+def rbac_proxy_replace(updated_img):
+    def update_rbac_proxy_img(img):
         """
         Updates the reference to the kube-rbac-proxy image to match the OpenShift one.
         """
         if not isinstance(img, str) or not img.startswith('gcr.io/kubebuilder/kube-rbac-proxy:'):
             return None
-        tag = img[len('gcr.io/kubebuilder/kube-rbac-proxy:'):]
-        return version_map[tag]
-    return update_rbac_proxy_ref
+        return updated_img
+    return update_rbac_proxy_img
 
 
 def related_image_passthrough(val):
@@ -47,7 +47,8 @@ def must_replace_suffix(str, suffix, replacement):
     return splits[0] + replacement
 
 
-def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches, version_skips, rbac_proxy_replacements):
+def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches, version_skips,
+              rbac_proxy_replacement):
     csv_doc['metadata']['annotations']['createdAt'] = datetime.now(timezone.utc).isoformat()
 
     placeholder_image = csv_doc['metadata']['annotations']['containerImage']
@@ -61,13 +62,13 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     if not no_related_images:
         rewrite(csv_doc, related_image_passthrough)
 
-    if rbac_proxy_replacements:
-        rewrite(csv_doc, rbac_proxy_updater(rbac_proxy_replacements))
+    if rbac_proxy_replacement:
+        rewrite(csv_doc, rbac_proxy_replace(rbac_proxy_replacement))
 
     x, y, z = (int(c) for c in version.split('-', maxsplit=1)[0].split('.'))
     first_x, first_y, first_z = (int(c) for c in first_version.split('-', maxsplit=1)[0].split('.'))
     # An olm.skipRange doesn't hurt if it references non-existing versions.
-    csv_doc["metadata"]["annotations"]["olm.skipRange"] = f'>= {x}.{y-1}.0 < {version}'
+    csv_doc["metadata"]["annotations"]["olm.skipRange"] = f'>= {x}.{y - 1}.0 < {version}'
 
     if version_skips:
         csv_doc["spec"]["skips"] = version_skips
@@ -80,13 +81,14 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
 
     if (x, y, z) > (first_x, first_y, first_z):
         if z == 0:
-            csv_doc["spec"]["replaces"] = f'{raw_name}.v{x}.{y-1}.0'
+            csv_doc["spec"]["replaces"] = f'{raw_name}.v{x}.{y - 1}.0'
         else:
-            csv_doc["spec"]["replaces"] = f'{raw_name}.v{x}.{y}.{z-1}'
+            csv_doc["spec"]["replaces"] = f'{raw_name}.v{x}.{y}.{z - 1}'
 
     # OSBS fills relatedImages therefore we must not provide that ourselves.
     # Ref https://osbs.readthedocs.io/en/latest/users.html?highlight=relatedImages#creating-the-relatedimages-section
     del csv_doc['spec']['relatedImages']
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Patch StackRox Operator ClusterServiceVersion file')
@@ -98,9 +100,8 @@ def parse_args():
                         help='Which operator image to use in the patched CSV')
     parser.add_argument("--no-related-images", action='store_true',
                         help='Disable passthrough of related images')
-    parser.add_argument("--replace-rbac-proxy", required=False, metavar='original-tag:replacement-image',
-                        nargs='+', help='Replacement directives for the RBAC proxy image',
-                        default=[])
+    parser.add_argument("--replace-rbac-proxy", required=False, metavar='replacement-image:tag',
+                        help='Replacement directives for the RBAC proxy image')
     parser.add_argument("--add-supported-arch", action='append', required=False,
                         help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
                         default=[])
@@ -113,6 +114,7 @@ def parse_args():
 
 
 def main():
+    logging.basicConfig(stream=sys.stderr, level=logging.INFO)
     args = parse_args()
     doc = yaml.safe_load(sys.stdin)
     patch_csv(doc,
@@ -122,10 +124,7 @@ def main():
               no_related_images=args.no_related_images,
               extra_supported_arches=args.add_supported_arch,
               version_skips=args.add_version_skips,
-              rbac_proxy_replacements={
-                    tag: img
-                    for tag, img in (spec.split(':', maxsplit=1) for spec in args.replace_rbac_proxy)
-              })
+              rbac_proxy_replacement=args.replace_rbac_proxy)
     print(yaml.safe_dump(doc))
 
 

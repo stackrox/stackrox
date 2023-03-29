@@ -1,3 +1,7 @@
+import static util.Helpers.withRetry
+
+import orchestratormanager.OrchestratorTypes
+
 import io.stackrox.proto.storage.AlertOuterClass.ListAlert
 import io.stackrox.proto.storage.AlertOuterClass.ViolationState
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
@@ -5,7 +9,6 @@ import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 
 import objects.Deployment
-import orchestratormanager.OrchestratorTypes
 import services.AlertService
 import services.ClusterService
 import util.Env
@@ -98,8 +101,6 @@ class AttemptedAlertsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
-    // "ROX-6916: Only run in reliable environments until fixed"
-    @IgnoreIf({ Env.CI_JOBNAME.contains("openshift-rhel") })
     def "Verify attempted alerts on deployment create: #desc"() {
         when:
         "Set 'Latest Tag' policy enforcement to #policyEnforcements"
@@ -174,8 +175,6 @@ class AttemptedAlertsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
-    // "ROX-6916: Only run in reliable environments until fixed"
-    @IgnoreIf({ Env.CI_JOBNAME.contains("openshift-rhel") })
     def "Verify attempted alerts on deployment updates: #desc"() {
         given:
         "Create deployment not violating 'Latest Tag' policy"

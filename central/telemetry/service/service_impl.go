@@ -20,12 +20,10 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		// TODO: ROX-12750 Replace DebugLogs with Administration.
-		user.With(permissions.View(resources.DebugLogs)): {
+		user.With(permissions.View(resources.Administration)): {
 			"/v1.TelemetryService/GetTelemetryConfiguration",
 		},
-		// TODO: ROX-12750 Replace DebugLogs with Administration.
-		user.With(permissions.Modify(resources.DebugLogs)): {
+		user.With(permissions.Modify(resources.Administration)): {
 			"/v1.TelemetryService/ConfigureTelemetry",
 		},
 		user.With(): {
@@ -51,13 +49,18 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) GetTelemetryConfiguration(ctx context.Context, _ *v1.Empty) (*storage.TelemetryConfiguration, error) {
+// GetTelemetryConfiguration used to tell whether periodic telemetry collection
+// (previous implementation) was enabled. Returns false unconditionally.
+// Deprecated: the previous implementation is not used for periodic collection.
+func (s *serviceImpl) GetTelemetryConfiguration(_ context.Context, _ *v1.Empty) (*storage.TelemetryConfiguration, error) {
 	return &storage.TelemetryConfiguration{
 		Enabled: false,
 	}, nil
 }
 
-func (s *serviceImpl) ConfigureTelemetry(ctx context.Context, config *v1.ConfigureTelemetryRequest) (*storage.TelemetryConfiguration, error) {
+// ConfigureTelemetry used to enable or disable periodic telemetry collection.
+// Deprecated: the previous implementation is not used for periodic collection.
+func (s *serviceImpl) ConfigureTelemetry(_ context.Context, _ *v1.ConfigureTelemetryRequest) (*storage.TelemetryConfiguration, error) {
 	return &storage.TelemetryConfiguration{Enabled: false}, nil
 }
 

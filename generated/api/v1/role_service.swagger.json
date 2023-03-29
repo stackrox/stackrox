@@ -14,7 +14,7 @@
     "/v1/computeeffectiveaccessscope": {
       "post": {
         "summary": "ComputeEffectiveAccessScope",
-        "description": "Returns effective access scope based on the rules in the request. Does\nnot persist anything; not idempotent due to possible changes to clusters\nand namespaces. POST is chosen due to potentially large payload.\n\nThere are advantages in both keeping the response slim and detailed. If\nonly IDs of selected clusters and namespaces are included, response\nlatency and processing time are lower but the caller shall overlay the\nresponse with its view of the world which is susceptible to consistency\nissues. Listing all clusters and namespaces with related metadata is\nconvenient for the caller but bloat the message with secondary data.\n\nWe let the caller decide what level of detail they would like to have:\n\n  * Minimal, when only roots of included subtrees are listed by their\n    IDs. Clusters can be either INCLUDED (its namespaces are included but\n    are not listed) or PARTIAL (at least one namespace is explicitly\n    included). Namespaces can only be INCLUDED.\n\n  * Standard [default], when all known clusters and namespaces are listed\n    with their IDs and names. Clusters can be INCLUDED (all its\n    namespaces are explicitly listed as INCLUDED), PARTIAL (all its\n    namespaces are explicitly listed, some as INCLUDED and some as\n    EXCLUDED), and EXCLUDED (all its namespaces are explicitly listed as\n    EXCLUDED). Namespaces can be either INCLUDED or EXCLUDED.\n\n  * High, when every cluster and namespace is augmented with metadata.",
+        "description": "Returns effective access scope based on the rules in the request. Does\nnot persist anything; not idempotent due to possible changes to clusters\nand namespaces. POST is chosen due to potentially large payload.\n\nThere are advantages in both keeping the response slim and detailed. If\nonly IDs of selected clusters and namespaces are included, response\nlatency and processing time are lower but the caller shall overlay the\nresponse with its view of the world which is susceptible to consistency\nissues. Listing all clusters and namespaces with related metadata is\nconvenient for the caller but bloat the message with secondary data.\n\nWe let the caller decide what level of detail they would like to have:\n\n  - Minimal, when only roots of included subtrees are listed by their\n    IDs. Clusters can be either INCLUDED (its namespaces are included but\n    are not listed) or PARTIAL (at least one namespace is explicitly\n    included). Namespaces can only be INCLUDED.\n\n  - Standard [default], when all known clusters and namespaces are listed\n    with their IDs and names. Clusters can be INCLUDED (all its\n    namespaces are explicitly listed as INCLUDED), PARTIAL (all its\n    namespaces are explicitly listed, some as INCLUDED and some as\n    EXCLUDED), and EXCLUDED (all its namespaces are explicitly listed as\n    EXCLUDED). Namespaces can be either INCLUDED or EXCLUDED.\n\n  - High, when every cluster and namespace is augmented with metadata.",
         "operationId": "RoleService_ComputeEffectiveAccessScope",
         "responses": {
           "200": {
@@ -405,6 +405,110 @@
         ]
       }
     },
+    "/v1/sac/clusters": {
+      "get": {
+        "summary": "GetClustersForPermissions",
+        "description": "Returns the list of cluster ID and cluster name pairs that have at least read allowed\nby the scope of the requesting user for the list of requested permissions.\nEffective access scopes are only considered for input permissions that have\ncluster scope or narrower (i.e. global permissions from the input are ignored).\n\nIf the input only contains permissions at global level, the output will be an empty list.\n\nIf no permission is given in input, all clusters allowed by the requester scope for\nany permission with cluster scope or narrower will be part of the response.",
+        "operationId": "RoleService_GetClustersForPermissions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetClustersForPermissionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "permissions",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "RoleService"
+        ]
+      }
+    },
+    "/v1/sac/clusters/{clusterId}/namespaces": {
+      "get": {
+        "summary": "GetNamespacesForClusterAndPermissions",
+        "description": "Returns the list of namespace ID and namespace name pairs that belong to the requested\ncluster and for which the user has at least read access granted for the list of\nrequested permissions that have namespace scope or narrower (i.e. global and cluster\npermissions from the input are ignored).\n\nIf the input only contains permissions at global or cluster level, the output will be\nan empty list.\n\nIf no permission is given in input, all namespaces allowed by the requester scope for\nany permission with namespace scope or narrower will be part of the response.",
+        "operationId": "RoleService_GetNamespacesForClusterAndPermissions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetNamespacesForClusterAndPermissionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "permissions",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "RoleService"
+        ]
+      }
+    },
     "/v1/simpleaccessscopes": {
       "get": {
         "operationId": "RoleService_ListSimpleAccessScopes",
@@ -656,7 +760,7 @@
           "description": "Must be a valid serialized protocol buffer of the above specified type."
         }
       },
-      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n\nExample 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\nExample 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\n\nJSON\n\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\nExample 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\nExample 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
     },
     "runtimeError": {
       "type": "object",
@@ -897,6 +1001,28 @@
     "v1Empty": {
       "type": "object"
     },
+    "v1GetClustersForPermissionsResponse": {
+      "type": "object",
+      "properties": {
+        "clusters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1ScopeObject"
+          }
+        }
+      }
+    },
+    "v1GetNamespacesForClusterAndPermissionsResponse": {
+      "type": "object",
+      "properties": {
+        "namespaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1ScopeObject"
+          }
+        }
+      }
+    },
     "v1GetPermissionsResponse": {
       "type": "object",
       "properties": {
@@ -950,6 +1076,45 @@
           "items": {
             "$ref": "#/definitions/storageSimpleAccessScope"
           }
+        }
+      }
+    },
+    "v1Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v1SortOption"
+        }
+      }
+    },
+    "v1ScopeObject": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "description": "ScopeObject represents an ID, name pair, which can apply to any\nentity that takes part in an access scope (so far Cluster and Namespace)."
+    },
+    "v1SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
         }
       }
     }

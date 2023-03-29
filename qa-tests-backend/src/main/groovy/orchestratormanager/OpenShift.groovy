@@ -1,5 +1,7 @@
 package orchestratormanager
 
+import static util.Helpers.withRetry
+
 import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.openshift.api.model.ProjectRequest
@@ -47,7 +49,7 @@ class OpenShift extends Kubernetes {
 
         try {
             String sccName = "anyuid"
-            if (Env.CI_JOBNAME =~ /^(rosa|aro)-/ || Env.CI_JOBNAME =~ /^osd-/) {
+            if (Env.CI_JOB_NAME =~ /^(rosa|aro)-/ || Env.CI_JOB_NAME =~ /^osd-/) {
                 log.debug "Using a non default SCC"
                 sccName = "qatest-anyuid"
             }
@@ -82,7 +84,7 @@ class OpenShift extends Kubernetes {
     */
 
     @Override
-    def getDeploymentCount(String ns) {
+    List<String> getDeploymentCount(String ns) {
         return oClient.apps().deployments().inNamespace(ns).list().getItems().collect { it.metadata.name } +
                 oClient.deploymentConfigs().inNamespace(ns).list().getItems().collect { it.metadata.name }
     }

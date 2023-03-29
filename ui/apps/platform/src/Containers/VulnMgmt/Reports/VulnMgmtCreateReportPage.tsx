@@ -36,7 +36,7 @@ function VulnMgmtCreateReportPage(): ReactElement {
                 </TextContent>
             </PageSection>
             <Divider component="div" />
-            <VulnMgmtReportForm initialValues={emptyReportValues} />
+            <VulnMgmtReportForm initialValues={emptyReportValues} initialReportScope={null} />
         </>
     );
 }

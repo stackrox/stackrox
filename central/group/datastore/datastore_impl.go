@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/group/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -26,6 +27,22 @@ type dataStoreImpl struct {
 	lock sync.RWMutex
 }
 
+func (ds *dataStoreImpl) Upsert(ctx context.Context, group *storage.Group) error {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
+		return err
+	}
+
+	// Lock to simulate being behind a transaction
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	if err := ds.validateAndPrepGroupForUpsertNoLock(ctx, group); err != nil {
+		return err
+	}
+
+	return wrapAsConflictError(ds.storage.Upsert(ctx, group))
+}
+
 func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
 	if ok, err := accessSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
@@ -37,7 +54,13 @@ func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
-	group, _, err := ds.storage.Get(ctx, props.GetId())
+	group, exists, err := ds.storage.Get(ctx, props.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errox.NotFound.Newf("could not find group %s", props.GetId())
+	}
 	return group, err
 }
 
@@ -51,7 +74,7 @@ func (ds *dataStoreImpl) GetAll(ctx context.Context) ([]*storage.Group, error) {
 	return ds.storage.GetAll(ctx)
 }
 
-func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.GroupProperties) bool) ([]*storage.Group, error) {
+func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error) {
 	if ok, err := accessSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
@@ -62,7 +85,7 @@ func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.G
 	walkFn := func() error {
 		groups = groups[:0]
 		return ds.storage.Walk(ctx, func(g *storage.Group) error {
-			if filter == nil || filter(g.GetProps()) {
+			if filter == nil || filter(g) {
 				groups = append(groups, g)
 			}
 			return nil
@@ -104,10 +127,8 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, authProviderID string, attrib
 }
 
 func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
-	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
 	}
 
 	// Lock to simulate being behind a transaction
@@ -118,14 +139,12 @@ func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
 		return err
 	}
 
-	return ds.storage.Upsert(ctx, group)
+	return wrapAsConflictError(ds.storage.Upsert(ctx, group))
 }
 
 func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group, force bool) error {
-	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
 	}
 
 	// Lock to simulate being behind a transaction
@@ -135,14 +154,12 @@ func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group, force
 	if err := ds.validateAndPrepGroupForUpdateNoLock(ctx, group, force); err != nil {
 		return err
 	}
-	return ds.storage.Upsert(ctx, group)
+	return wrapAsConflictError(ds.storage.Upsert(ctx, group))
 }
 
 func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*storage.Group, force bool) error {
-	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
 	}
 
 	// Lock to ensure that all mutations happen as one
@@ -156,7 +173,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 	}
 	if len(add) > 0 {
 		if err := ds.storage.UpsertMany(ctx, add); err != nil {
-			return err
+			return wrapAsConflictError(err)
 		}
 	}
 
@@ -167,7 +184,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 	}
 	if len(update) > 0 {
 		if err := ds.storage.UpsertMany(ctx, update); err != nil {
-			return err
+			return wrapAsConflictError(err)
 		}
 	}
 
@@ -192,10 +209,8 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 }
 
 func (ds *dataStoreImpl) Remove(ctx context.Context, props *storage.GroupProperties, force bool) error {
-	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
 	}
 
 	// Lock to ensure synchronization between the get and delete
@@ -211,8 +226,8 @@ func (ds *dataStoreImpl) Remove(ctx context.Context, props *storage.GroupPropert
 }
 
 func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, authProviderID string, force bool) error {
-	groups, err := ds.GetFiltered(ctx, func(properties *storage.GroupProperties) bool {
-		return authProviderID == properties.GetAuthProviderId()
+	groups, err := ds.GetFiltered(ctx, func(group *storage.Group) bool {
+		return authProviderID == group.GetProps().GetAuthProviderId()
 	})
 	if err != nil {
 		return errors.Wrap(err, "collecting associated groups")
@@ -222,11 +237,9 @@ func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, authPr
 
 func (ds *dataStoreImpl) RemoveAllWithEmptyProperties(ctx context.Context) error {
 	// Search through all groups and verify whether any group exists with empty properties and attempt to delete them.
-	isEmptyGroupPropertiesF := func(props *storage.GroupProperties) bool {
-		if props.GetAuthProviderId() == "" && props.GetKey() == "" && props.GetValue() == "" {
-			return true
-		}
-		return false
+	isEmptyGroupPropertiesF := func(group *storage.Group) bool {
+		return group.GetProps().GetAuthProviderId() == "" && group.GetProps().GetKey() == "" &&
+			group.GetProps().GetValue() == ""
 	}
 	groups, err := ds.GetFiltered(ctx, isEmptyGroupPropertiesF)
 	if err != nil {
@@ -252,6 +265,42 @@ func (ds *dataStoreImpl) RemoveAllWithEmptyProperties(ctx context.Context) error
 
 // Helpers
 //////////
+
+// Validate if the group is allowed to be upserted and prep the group before it is upserted in db.
+// NOTE: This function assumes that the call to this function is already behind a lock.
+func (ds *dataStoreImpl) validateAndPrepGroupForUpsertNoLock(ctx context.Context, newGroup *storage.Group) error {
+	if err := ValidateGroup(newGroup, false); err != nil {
+		return errox.InvalidArgs.CausedBy(err)
+	}
+
+	// Ignoring error on purpose as error is equivalent to ID being already set in this function.
+	_ = setGroupIDIfEmpty(newGroup)
+
+	oldGroup, exists, err := ds.storage.Get(ctx, newGroup.GetProps().GetId())
+	if err != nil {
+		return err
+	}
+	if exists {
+		if err = verifyGroupOrigin(ctx, oldGroup); err != nil {
+			return err
+		}
+	}
+	if err = verifyGroupOrigin(ctx, newGroup); err != nil {
+		return err
+	}
+
+	defaultGroup, err := ds.getDefaultGroupForProps(ctx, newGroup.GetProps())
+	if err != nil {
+		return err
+	}
+
+	// Only disallow update of a default group if it does not update the existing default group, if there is any.
+	if defaultGroup != nil && defaultGroup.GetProps().GetId() != newGroup.GetProps().GetId() {
+		return errox.AlreadyExists.Newf("cannot update group to default group of auth provider %q as a default group already exists",
+			newGroup.GetProps().GetAuthProviderId())
+	}
+	return nil
+}
 
 // Validate if the group is allowed to be added and prep the group before it is added to the db.
 // NOTE: This function assumes that the call to this function is already behind a lock.
@@ -285,9 +334,15 @@ func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context
 		return errox.InvalidArgs.CausedBy(err)
 	}
 
-	err := ds.validateMutableGroupIDNoLock(ctx, group.GetProps().GetId(), force)
+	existingGroup, err := ds.validateMutableGroupIDNoLock(ctx, group.GetProps().GetId(), force)
 	if err != nil {
 		return err
+	}
+	if err = verifyGroupOrigin(ctx, existingGroup); err != nil {
+		return errors.Wrap(err, "origin didn't match for existing group")
+	}
+	if err = verifyGroupOrigin(ctx, group); err != nil {
+		return errors.Wrap(err, "origin didn't match for new group")
 	}
 
 	defaultGroup, err := ds.getDefaultGroupForProps(ctx, group.GetProps())
@@ -313,7 +368,11 @@ func (ds *dataStoreImpl) validateAndPrepGroupForDeleteNoLock(ctx context.Context
 
 	propsID := props.GetId()
 
-	if err := ds.validateMutableGroupIDNoLock(ctx, propsID, force); err != nil {
+	group, err := ds.validateMutableGroupIDNoLock(ctx, propsID, force)
+	if err != nil {
+		return "", err
+	}
+	if err = verifyGroupOrigin(ctx, group); err != nil {
 		return "", err
 	}
 
@@ -364,8 +423,8 @@ func isDefaultGroup(props *storage.GroupProperties) bool {
 // getByProps returns a group matching the given properties if it exists from the store.
 // If more than one group is found matching the properties, an error will be returned.
 func (ds *dataStoreImpl) getByProps(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
-	groups, err := ds.GetFiltered(ctx, func(p *storage.GroupProperties) bool {
-		return propertiesMatch(p, props)
+	groups, err := ds.GetFiltered(ctx, func(g *storage.Group) bool {
+		return propertiesMatch(g.GetProps(), props)
 	})
 
 	if err != nil {
@@ -401,26 +460,34 @@ func (ds *dataStoreImpl) getDefaultGroupForProps(ctx context.Context, props *sto
 
 // validateMutableGroupIDNoLock validates whether a group allows changes or not based on the mutability mode set.
 // NOTE: This function assumes that the call to this function is already behind a lock.
-func (ds *dataStoreImpl) validateMutableGroupIDNoLock(ctx context.Context, id string, force bool) error {
+func (ds *dataStoreImpl) validateMutableGroupIDNoLock(ctx context.Context, id string, force bool) (*storage.Group, error) {
 	group, err := ds.validateGroupExists(ctx, id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	switch group.GetProps().GetTraits().GetMutabilityMode() {
 	case storage.Traits_ALLOW_MUTATE:
-		return nil
+		return group, nil
 	case storage.Traits_ALLOW_MUTATE_FORCED:
 		if force {
-			return nil
+			return group, nil
 		}
-		return errox.InvalidArgs.Newf("group %q is immutable and can only be removed"+
+		return nil, errox.InvalidArgs.Newf("group %q is immutable and can only be removed"+
 			" via API and specifying the force flag", id)
 	default:
 		utils.Should(errors.Wrapf(errox.InvalidArgs, "unknown mutability mode given: %q",
 			group.GetProps().GetTraits().GetMutabilityMode().String()))
 	}
-	return errox.InvalidArgs.Newf("group %q is immutable", id)
+	return nil, errox.InvalidArgs.Newf("group %q is immutable", id)
+}
+
+func verifyGroupOrigin(ctx context.Context, group *storage.Group) error {
+	if !declarativeconfig.CanModifyResource(ctx, group.GetProps()) {
+		return errors.Wrapf(errox.NotAuthorized, "group %q's origin is %s, cannot be modified or deleted with the current permission",
+			group.GetProps().GetId(), group.GetProps().GetTraits().GetOrigin())
+	}
+	return nil
 }
 
 func (ds *dataStoreImpl) validateGroupExists(ctx context.Context, id string) (*storage.Group, error) {
@@ -432,4 +499,13 @@ func (ds *dataStoreImpl) validateGroupExists(ctx context.Context, id string) (*s
 		return nil, errox.NotFound.Newf("group with id %q was not found", id)
 	}
 	return group, nil
+}
+
+// wrapAsConflictError will wrap the error as errox.AlreadyExists if the error indicates a unique
+// constraint violation. If not, the error will be returned.
+func wrapAsConflictError(err error) error {
+	if pgutils.IsUniqueConstraintError(err) {
+		return errox.AlreadyExists.CausedBy(err)
+	}
+	return err
 }

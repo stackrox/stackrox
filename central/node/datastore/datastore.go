@@ -2,17 +2,17 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	"github.com/stackrox/rox/central/node/datastore/search"
 	"github.com/stackrox/rox/central/node/datastore/store"
 	dackBoxStore "github.com/stackrox/rox/central/node/datastore/store/dackbox"
-	"github.com/stackrox/rox/central/node/datastore/store/postgres"
+	pgStore "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	nodeIndexer "github.com/stackrox/rox/central/node/index"
 	nodeComponentEdgeIndexer "github.com/stackrox/rox/central/nodecomponentedge/index"
 	"github.com/stackrox/rox/central/ranking"
@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/postgres"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
@@ -80,9 +81,9 @@ func NewWithPostgres(storage store.Store, indexer nodeIndexer.Indexer, searcher 
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t testing.TB, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgres.New(pool, false, concurrency.NewKeyFence())
-	indexer := postgres.NewIndexer(pool)
+func GetTestPostgresDataStore(t testing.TB, pool *postgres.DB) (DataStore, error) {
+	dbstore := pgStore.New(pool, false, concurrency.NewKeyFence())
+	indexer := pgStore.NewIndexer(pool)
 	searcher := search.NewV2(dbstore, indexer)
 	riskStore, err := riskDS.GetTestPostgresDataStore(t, pool)
 	if err != nil {
@@ -102,4 +103,9 @@ func GetTestRocksBleveDataStore(t testing.TB, rocksengine *rocksdbBase.RocksDB, 
 	nodeRanker := ranking.NodeRanker()
 	nodeComponentRanker := ranking.NodeComponentRanker()
 	return New(dacky, keyFence, bleveIndex, riskStore, nodeRanker, nodeComponentRanker), nil
+}
+
+// NodeString returns a human-readable string representation of a node.
+func NodeString(node *storage.Node) string {
+	return fmt.Sprintf("%s/%s (id: %s)", node.GetClusterName(), node.GetName(), node.GetId())
 }

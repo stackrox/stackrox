@@ -13,33 +13,34 @@ import (
 // An AugmentedObjMeta represents metadata (ie, type information) about an augmented object.
 // An augmented object is an object that is augmented to look like has certain extra fields that it doesn't.
 // For example, if have something like
-// type A struct {
-//    Bs []B
-// }
 //
-// type B struct {
-//    BVal string
-// }
+//	type A struct {
+//	   Bs []B
+//	}
 //
-// type C struct {
-//   CVal float64
-// }
+//	type B struct {
+//	   BVal string
+//	}
+//
+//	type C struct {
+//	  CVal float64
+//	}
+//
 // Let's say you want to actually have a C inside each B.
 // ie, you want to make it appear that the types are:
 //
+//	type A struct {
+//	   Bs []B
+//	}
 //
-// type A struct {
-//    Bs []B
-// }
+//	type B struct {
+//	   BVal string
+//	   EmbeddedC C
+//	}
 //
-// type B struct {
-//    BVal string
-//    EmbeddedC C
-// }
-//
-// type C struct {
-//   CVal float64
-// }
+//	type C struct {
+//	  CVal float64
+//	}
 //
 // Augmentation allows you to achieve this, by simply adding
 // ("Bs.EmbeddedC", C) as an augment.

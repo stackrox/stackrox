@@ -21,6 +21,16 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// All configuration keys the auth provider exposes within the auth provider config map.
+const (
+	SpIssuerConfigKey        = "sp_issuer"
+	IDPMetadataURLConfigKey  = "idp_metadata_url"
+	IDPIssuerConfigKey       = "idp_issuer"
+	IDPCertPemConfigKey      = "idp_cert_pem"
+	IDPSSOUrlConfigKey       = "idp_sso_url"
+	IDPNameIDFormatConfigKey = "idp_nameid_format"
+)
+
 type backendImpl struct {
 	factory    *factory
 	acsURLPath string
@@ -30,11 +40,11 @@ type backendImpl struct {
 	config map[string]string
 }
 
-func (p *backendImpl) OnEnable(provider authproviders.Provider) {
+func (p *backendImpl) OnEnable(_ authproviders.Provider) {
 	p.factory.RegisterBackend(p)
 }
 
-func (p *backendImpl) OnDisable(provider authproviders.Provider) {
+func (p *backendImpl) OnDisable(_ authproviders.Provider) {
 	p.factory.UnregisterBackend(p)
 }
 
@@ -66,35 +76,35 @@ func newBackend(ctx context.Context, acsURLPath string, id string, uiEndpoints [
 	}
 	p.sp.AssertionConsumerServiceURL = acsURL.String()
 
-	spIssuer := config["sp_issuer"]
+	spIssuer := config[SpIssuerConfigKey]
 	if spIssuer == "" {
 		return nil, errors.New("no ServiceProvider issuer specified")
 	}
 	p.sp.ServiceProviderIssuer = spIssuer
 
 	effectiveConfig := map[string]string{
-		"sp_issuer": spIssuer,
+		SpIssuerConfigKey: spIssuer,
 	}
 
-	if config["idp_metadata_url"] != "" {
-		if !stringutils.AllEmpty(config["idp_issuer"], config["idp_cert_pem"], config["idp_sso_url"], config["idp_nameid_format"]) {
+	if config[IDPMetadataURLConfigKey] != "" {
+		if !stringutils.AllEmpty(config[IDPIssuerConfigKey], config[IDPCertPemConfigKey], config[IDPSSOUrlConfigKey], config[IDPNameIDFormatConfigKey]) {
 			return nil, errors.New("if IdP metadata URL is set, IdP issuer, SSO URL, certificate data and Name/ID format must be left blank")
 		}
-		if err := configureIDPFromMetadataURL(ctx, &p.sp, config["idp_metadata_url"]); err != nil {
+		if err := configureIDPFromMetadataURL(ctx, &p.sp, config[IDPMetadataURLConfigKey]); err != nil {
 			return nil, errors.Wrap(err, "could not configure auth provider from IdP metadata URL")
 		}
-		effectiveConfig["idp_metadata_url"] = config["idp_metadata_url"]
+		effectiveConfig[IDPMetadataURLConfigKey] = config[IDPMetadataURLConfigKey]
 	} else {
-		if !stringutils.AllNotEmpty(config["idp_issuer"], config["idp_sso_url"], config["idp_cert_pem"]) {
+		if !stringutils.AllNotEmpty(config[IDPIssuerConfigKey], config[IDPSSOUrlConfigKey], config[IDPCertPemConfigKey]) {
 			return nil, errors.New("if IdP metadata URL is not set, IdP issuer, SSO URL, and certificate data must be specified")
 		}
-		if err := configureIDPFromSettings(&p.sp, config["idp_issuer"], config["idp_sso_url"], config["idp_cert_pem"], config["idp_nameid_format"]); err != nil {
+		if err := configureIDPFromSettings(&p.sp, config[IDPIssuerConfigKey], config[IDPSSOUrlConfigKey], config[IDPCertPemConfigKey], config[IDPNameIDFormatConfigKey]); err != nil {
 			return nil, errors.Wrap(err, "could not configure auth provider from settings")
 		}
-		effectiveConfig["idp_issuer"] = config["idp_issuer"]
-		effectiveConfig["idp_sso_url"] = config["idp_sso_url"]
-		effectiveConfig["idp_cert_pem"] = config["idp_cert_pem"]
-		effectiveConfig["idp_nameid_format"] = config["idp_nameid_format"]
+		effectiveConfig[IDPIssuerConfigKey] = config[IDPIssuerConfigKey]
+		effectiveConfig[IDPSSOUrlConfigKey] = config[IDPSSOUrlConfigKey]
+		effectiveConfig[IDPCertPemConfigKey] = config[IDPCertPemConfigKey]
+		effectiveConfig[IDPNameIDFormatConfigKey] = config[IDPNameIDFormatConfigKey]
 	}
 
 	p.config = effectiveConfig
@@ -124,7 +134,7 @@ func (p *backendImpl) consumeSAMLResponse(samlResponse string) (*authproviders.A
 	}, nil
 }
 
-func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
+func (p *backendImpl) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
 	if r.URL.Path != p.acsURLPath {
 		return nil, httputil.NewError(http.StatusNotFound, "Not Found")
 	}
@@ -140,7 +150,7 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 	return p.consumeSAMLResponse(samlResponse)
 }
 
-func (p *backendImpl) ExchangeToken(ctx context.Context, externalToken, state string) (*authproviders.AuthResponse, string, error) {
+func (p *backendImpl) ExchangeToken(_ context.Context, _, _ string) (*authproviders.AuthResponse, string, error) {
 	return nil, "", errors.New("not implemented")
 }
 
@@ -152,7 +162,7 @@ func (p *backendImpl) LoginURL(clientState string, _ *requestinfo.RequestInfo) (
 	return p.loginURL(clientState)
 }
 
-func (p *backendImpl) Validate(ctx context.Context, claims *tokens.Claims) error {
+func (p *backendImpl) Validate(_ context.Context, _ *tokens.Claims) error {
 	return nil
 }
 

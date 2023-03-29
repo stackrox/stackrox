@@ -9,4 +9,6 @@ export const entityPriorityField = {
     NAMESPACE: 'Namespace Risk Priority',
     DEPLOYMENT: 'Deployment Risk Priority',
     IMAGE: 'Image Risk Priority',
+    IMAGE_COMPONENT: 'Component Risk Priority',
+    NODE_COMPONENT: 'Component Risk Priority',
 };

@@ -144,6 +144,7 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 		searchers[v1.SearchCategory_NODE_VULNERABILITIES] = resolver.NodeCVEDataStore
 		searchers[v1.SearchCategory_CLUSTER_VULNERABILITIES] = resolver.ClusterCVEDataStore
 		searchers[v1.SearchCategory_NODE_COMPONENTS] = resolver.NodeComponentDataStore
+		searchers[v1.SearchCategory_POLICY_CATEGORIES] = resolver.PolicyCategoryDataStore
 	}
 
 	return searchers
@@ -173,6 +174,7 @@ func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.S
 		searchfuncs[v1.SearchCategory_NODE_VULNERABILITIES] = resolver.NodeCVEDataStore.SearchNodeCVEs
 		searchfuncs[v1.SearchCategory_CLUSTER_VULNERABILITIES] = resolver.ClusterCVEDataStore.SearchClusterCVEs
 		searchfuncs[v1.SearchCategory_NODE_COMPONENTS] = resolver.NodeComponentDataStore.SearchNodeComponents
+		searchfuncs[v1.SearchCategory_POLICY_CATEGORIES] = resolver.PolicyCategoryDataStore.SearchPolicyCategories
 	}
 	return searchfuncs
 }

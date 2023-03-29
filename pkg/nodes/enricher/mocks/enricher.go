@@ -64,6 +64,20 @@ func (mr *MockNodeEnricherMockRecorder) EnrichNode(node interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNode", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNode), node)
 }
 
+// EnrichNodeWithInventory mocks base method.
+func (m *MockNodeEnricher) EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnrichNodeWithInventory", node, nodeInventory)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnrichNodeWithInventory indicates an expected call of EnrichNodeWithInventory.
+func (mr *MockNodeEnricherMockRecorder) EnrichNodeWithInventory(node, nodeInventory interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNodeWithInventory", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNodeWithInventory), node, nodeInventory)
+}
+
 // RemoveNodeIntegration mocks base method.
 func (m *MockNodeEnricher) RemoveNodeIntegration(id string) {
 	m.ctrl.T.Helper()

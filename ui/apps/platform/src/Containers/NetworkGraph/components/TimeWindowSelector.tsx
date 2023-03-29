@@ -7,15 +7,16 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 type TimeWindowSelectorProps = {
     setActiveTimeWindow: (timeWindow) => void;
     activeTimeWindow: string;
-    isDisabled?: boolean;
+    isDisabled: boolean;
 };
 
 function TimeWindowSelector({
     setActiveTimeWindow,
     activeTimeWindow,
-    isDisabled = false,
+    isDisabled,
 }: TimeWindowSelectorProps) {
     const { closeSelect, isOpen, onToggle } = useSelectToggle();
+
     function selectTimeWindow(_event, selection) {
         closeSelect();
         setActiveTimeWindow(selection);

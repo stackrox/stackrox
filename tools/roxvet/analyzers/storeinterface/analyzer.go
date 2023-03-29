@@ -104,8 +104,10 @@ func qualifierAndIdentifierFromExpr(expr ast.Expr) (qualifier, identifier string
 
 // If the interface is returning any values that are imported from the set of passed packageNames, this function returns it.
 // Example, if we have a store:
-// type Store interface {
-//    A() (*v1.Deployment)
+//
+//	type Store interface {
+//	   A() (*v1.Deployment)
+//
 // and packageNames contains `v1`,
 // we would return v1.Deployment since it is from the list of forbidden package names.
 func returnValuesFromForbiddenPackage(forbiddenPackageNames set.StringSet, interfaceType *ast.InterfaceType) string {

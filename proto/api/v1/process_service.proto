@@ -5,6 +5,7 @@ option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
 import "storage/process_indicator.proto";
+import "api/v1/search_service.proto";
 
 package v1;
 
@@ -43,8 +44,19 @@ message GetGroupedProcessesWithContainerResponse {
     repeated ProcessNameAndContainerNameGroup groups = 3;
 }
 
+message CountProcessesResponse {
+    int32 count = 1;
+}
+
 // ProcessService APIs can be used to list processes executed in deployments.
 service ProcessService {
+
+    // CountProcesses returns the count of processes.
+    rpc CountProcesses (RawQuery) returns (CountProcessesResponse) {
+        option (google.api.http) = {
+            get: "/v1/processcount"
+        };
+    }
 
     // GetProcessesByDeployment returns the processes executed in the given deployment.
     rpc GetProcessesByDeployment (GetProcessesByDeploymentRequest) returns (GetProcessesResponse) {

@@ -6,17 +6,76 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/pointers"
+	"github.com/stackrox/rox/pkg/sync"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+var (
+	processPool = newProcessPool()
+)
+
+// ProcessPool stores processes by containerID using a map
+type ProcessPool struct {
+	Processes map[string][]*storage.ProcessSignal
+	Capacity  int
+	Size      int
+	lock      sync.RWMutex
+}
+
+func newProcessPool() *ProcessPool {
+	return &ProcessPool{
+		Processes: make(map[string][]*storage.ProcessSignal),
+		Capacity:  10000,
+		Size:      0,
+	}
+}
+
+func (p *ProcessPool) add(val *storage.ProcessSignal) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	if p.Size < p.Capacity {
+		p.Processes[val.ContainerId] = append(p.Processes[val.ContainerId], val)
+		p.Size++
+	} else {
+		nprocess := len(p.Processes[val.ContainerId])
+		if nprocess > 0 {
+			randIdx := rand.Intn(nprocess)
+			p.Processes[val.ContainerId][randIdx] = val
+		}
+	}
+}
+
+func (p *ProcessPool) remove(containerID string) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	delete(p.Processes, containerID)
+	p.Size -= len(p.Processes[containerID])
+}
+
+func (p *ProcessPool) getRandomProcess(containerID string) *storage.ProcessSignal {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	size := len(p.Processes[containerID])
+	if size > 0 {
+		randIdx := rand.Intn(size)
+		return p.Processes[containerID][randIdx]
+	}
+
+	return nil
+}
 
 type deploymentResourcesToBeManaged struct {
 	workload DeploymentWorkload
@@ -491,13 +550,16 @@ func (w *WorkloadManager) manageProcessesForPod(podSig *concurrency.Signal, podW
 			if processWorkload.ActiveProcesses {
 				for _, process := range getActiveProcesses(containerID) {
 					w.processes.Process(process)
+					processPool.add(process)
 				}
 			} else {
 				// If less than the rate, then it's a bad process
 				if rand.Float32() < processWorkload.AlertRate {
 					w.processes.Process(getBadProcess(containerID))
 				} else {
-					w.processes.Process(getGoodProcess(containerID))
+					goodProcess := getGoodProcess(containerID)
+					w.processes.Process(goodProcess)
+					processPool.add(goodProcess)
 				}
 			}
 		case <-podSig.Done():

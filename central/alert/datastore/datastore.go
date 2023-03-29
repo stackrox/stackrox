@@ -5,11 +5,10 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
-	"github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
+	pgStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/role/resources"
@@ -17,12 +16,19 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/postgres"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
+var (
+	// Override the default mutex pool size to allow for better parallelism
+	mutexPoolSize uint32 = 1024
+)
+
 // DataStore is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert objects.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
@@ -37,7 +43,6 @@ type DataStore interface {
 	CountAlerts(ctx context.Context) (int, error)
 	UpsertAlert(ctx context.Context, alert *storage.Alert) error
 	UpsertAlerts(ctx context.Context, alerts []*storage.Alert) error
-	MarkAlertStale(ctx context.Context, id string) error
 	// MarkAlertStaleBatch marks alerts with specified ids as RESOLVED in batch and returns resolved alerts.
 	MarkAlertStaleBatch(ctx context.Context, id ...string) ([]*storage.Alert, error)
 
@@ -50,7 +55,7 @@ func New(alertStore store.Store, indexer index.Indexer, searcher search.Searcher
 		storage:    alertStore,
 		indexer:    indexer,
 		searcher:   searcher,
-		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		keyedMutex: concurrency.NewKeyedMutex(mutexPoolSize),
 		keyFence:   dackboxConcurrency.NewKeyFence(),
 	}
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
@@ -78,9 +83,9 @@ func NewWithDb(db *rocksdbBase.RocksDB, bIndex bleve.Index) DataStore {
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	alertStore := postgres.New(pool)
-	indexer := postgres.NewIndexer(pool)
+func GetTestPostgresDataStore(_ testing.TB, pool *postgres.DB) (DataStore, error) {
+	alertStore := pgStore.New(pool)
+	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(alertStore, indexer)
 
 	return New(alertStore, indexer, searcher)

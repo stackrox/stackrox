@@ -7,6 +7,7 @@ import (
 )
 
 // Store provides storage functionality for process baselines.
+//
 //go:generate mockgen-wrapper
 type Store interface {
 	Get(ctx context.Context, id string) (*storage.ProcessBaseline, bool, error)

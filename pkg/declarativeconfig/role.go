@@ -7,3 +7,8 @@ type Role struct {
 	AccessScope   string `yaml:"accessScope,omitempty"`
 	PermissionSet string `yaml:"permissionSet,omitempty"`
 }
+
+// Type returns the RoleConfiguration type.
+func (r *Role) Type() ConfigurationType {
+	return RoleConfiguration
+}

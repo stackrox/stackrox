@@ -16,6 +16,10 @@ function DefaultCIDRToggle({ updateNetworkNodes = () => {} }): ReactElement {
             .catch(({ message }) => {
                 setErrorMessage(message);
             });
+        return () => {
+            setShowDefaultExternalSrcs(false);
+            setErrorMessage('');
+        };
     }, [setShowDefaultExternalSrcs]);
 
     function toggleHandler(): void {

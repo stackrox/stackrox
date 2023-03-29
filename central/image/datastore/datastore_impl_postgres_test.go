@@ -10,11 +10,10 @@ import (
 
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
 	imageCVESearch "github.com/stackrox/rox/central/cve/image/datastore/search"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
-	"github.com/stackrox/rox/central/image/datastore/store/postgres"
+	pgStore "github.com/stackrox/rox/central/image/datastore/store/postgres"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
 	imageComponentSearch "github.com/stackrox/rox/central/imagecomponent/search"
@@ -27,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -45,7 +45,7 @@ type ImagePostgresDataStoreTestSuite struct {
 	suite.Suite
 
 	ctx                context.Context
-	db                 *pgxpool.Pool
+	db                 *postgres.DB
 	gormDB             *gorm.DB
 	datastore          DataStore
 	mockRisk           *mockRisks.MockDataStore
@@ -64,20 +64,20 @@ func (s *ImagePostgresDataStoreTestSuite) SetupSuite() {
 	s.ctx = context.Background()
 
 	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := postgres.New(s.ctx, config)
 	s.NoError(err)
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 	s.db = pool
 }
 
 func (s *ImagePostgresDataStoreTestSuite) SetupTest() {
-	postgres.Destroy(s.ctx, s.db)
+	pgStore.Destroy(s.ctx, s.db)
 
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
-	s.datastore = NewWithPostgres(postgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), postgres.NewIndexer(s.db), s.mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	s.datastore = NewWithPostgres(pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), pgStore.NewIndexer(s.db), s.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	componentStorage := imageComponentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	componentIndexer := imageComponentPostgres.NewIndexer(s.db)
@@ -254,12 +254,30 @@ func (s *ImagePostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
 	s.NoError(err)
 	s.Len(results, 0)
 
-	var unsnoozedCVEs []string
+	var snoozedCVEs, unsnoozedCVEs set.Set[string]
 	for _, component := range cloned.GetScan().GetComponents() {
 		s.Require().GreaterOrEqual(len(component.GetVulns()), 2)
-		err := s.datastore.UpdateVulnerabilityState(ctx, component.GetVulns()[0].GetCve(), []string{cloned.GetId()}, storage.VulnerabilityState_DEFERRED)
+
+		snoozedCVE := component.GetVulns()[0].GetCve()
+		err := s.datastore.UpdateVulnerabilityState(ctx, snoozedCVE, []string{cloned.GetId()}, storage.VulnerabilityState_DEFERRED)
 		s.NoError(err)
-		unsnoozedCVEs = append(unsnoozedCVEs, component.GetVulns()[1].GetCve())
+		snoozedCVEs.Add(snoozedCVE)
+		unsnoozedCVEs.Add(component.GetVulns()[1].GetCve())
+	}
+
+	// Test serialized data is in sync.
+	storedImage, found, err := s.datastore.GetImage(ctx, cloned.GetId())
+	s.NoError(err)
+	s.True(found)
+	for _, component := range storedImage.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			if snoozedCVEs.Contains(vuln.GetCve()) {
+				s.Equal(vuln.GetState(), storage.VulnerabilityState_DEFERRED)
+			} else {
+				s.Equal(vuln.GetState(), storage.VulnerabilityState_OBSERVED)
+
+			}
+		}
 	}
 
 	results, err = s.datastore.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery())
@@ -275,14 +293,14 @@ func (s *ImagePostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
 
 	results, err = s.datastore.Search(ctx, pkgSearch.ConjunctionQuery(
 		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery(),
-		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, unsnoozedCVEs...).ProtoQuery(),
+		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, unsnoozedCVEs.AsSlice()...).ProtoQuery(),
 	))
 	s.NoError(err)
 	s.Len(results, 0)
 
 	results, err = s.datastore.Search(ctx, pkgSearch.ConjunctionQuery(
 		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).ProtoQuery(),
-		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, unsnoozedCVEs...).ProtoQuery(),
+		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, unsnoozedCVEs.AsSlice()...).ProtoQuery(),
 	))
 	s.NoError(err)
 	s.Len(results, 2)

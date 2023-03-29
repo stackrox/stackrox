@@ -26,7 +26,7 @@ import { useFormik } from 'formik';
 
 import ColorPicker from 'Components/ColorPicker';
 import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
-import { types } from 'reducers/systemConfig';
+import { PublicConfigAction } from 'reducers/publicConfig';
 import { saveSystemConfig } from 'services/SystemConfigService';
 import { PrivateConfig, PublicConfig, SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -62,14 +62,12 @@ type Values = {
 };
 
 export type SystemConfigFormProps = {
-    isDecommissionedClusterRetentionEnabled: boolean;
     systemConfig: SystemConfig;
     setSystemConfig: (systemConfig: SystemConfig) => void;
     setIsNotEditing: () => void;
 };
 
 const SystemConfigForm = ({
-    isDecommissionedClusterRetentionEnabled,
     systemConfig,
     setSystemConfig,
     setIsNotEditing,
@@ -90,10 +88,15 @@ const SystemConfigForm = ({
                 })
                     .then((data) => {
                         // Simulate fetchPublicConfig response to update Redux state.
-                        dispatch({
-                            type: types.FETCH_PUBLIC_CONFIG.SUCCESS,
-                            response: data.publicConfig,
-                        });
+                        const action: PublicConfigAction = {
+                            type: 'config/FETCH_PUBLIC_CONFIG_SUCCESS',
+                            response: data.publicConfig || {
+                                footer: null,
+                                header: null,
+                                loginNotice: null,
+                            },
+                        };
+                        dispatch(action);
                         setSystemConfig(data);
                         setErrorMessage(null);
                         setSubmitting(false);
@@ -252,48 +255,44 @@ const SystemConfigForm = ({
                     </FormGroup>
                 </GridItem>
             </Grid>
-            {isDecommissionedClusterRetentionEnabled && (
-                <>
-                    <Title headingLevel="h3">Cluster deletion</Title>
-                    <Grid hasGutter md={6}>
-                        <GridItem>
-                            <FormGroup
-                                label="Decommissioned cluster age"
-                                isRequired
-                                fieldId="privateConfig.decommissionedClusterRetention.retentionDurationDays"
-                            >
-                                <TextInput
-                                    isRequired
-                                    type="number"
-                                    id="privateConfig.decommissionedClusterRetention.retentionDurationDays"
-                                    name="privateConfig.decommissionedClusterRetention.retentionDurationDays"
-                                    value={
-                                        values?.privateConfig?.decommissionedClusterRetention
-                                            ?.retentionDurationDays
-                                    }
-                                    onChange={onChange}
-                                />
-                            </FormGroup>
-                        </GridItem>
-                        <GridItem>
-                            <FormGroup
-                                label="Ignore clusters which have the following labels"
-                                fieldId="privateConfig.decommissionedClusterRetention.ignoreClusterLabels"
-                            >
-                                <ClusterLabelsTable
-                                    labels={
-                                        values.privateConfig.decommissionedClusterRetention
-                                            .ignoreClusterLabels
-                                    }
-                                    hasAction
-                                    handleChangeLabels={handleChangeLabels}
-                                    isValueRequired
-                                />
-                            </FormGroup>
-                        </GridItem>
-                    </Grid>
-                </>
-            )}
+            <Title headingLevel="h3">Cluster deletion</Title>
+            <Grid hasGutter md={6}>
+                <GridItem>
+                    <FormGroup
+                        label="Decommissioned cluster age"
+                        isRequired
+                        fieldId="privateConfig.decommissionedClusterRetention.retentionDurationDays"
+                    >
+                        <TextInput
+                            isRequired
+                            type="number"
+                            id="privateConfig.decommissionedClusterRetention.retentionDurationDays"
+                            name="privateConfig.decommissionedClusterRetention.retentionDurationDays"
+                            value={
+                                values?.privateConfig?.decommissionedClusterRetention
+                                    ?.retentionDurationDays
+                            }
+                            onChange={onChange}
+                        />
+                    </FormGroup>
+                </GridItem>
+                <GridItem>
+                    <FormGroup
+                        label="Ignore clusters which have the following labels"
+                        fieldId="privateConfig.decommissionedClusterRetention.ignoreClusterLabels"
+                    >
+                        <ClusterLabelsTable
+                            labels={
+                                values.privateConfig.decommissionedClusterRetention
+                                    .ignoreClusterLabels
+                            }
+                            hasAction
+                            handleChangeLabels={handleChangeLabels}
+                            isValueRequired
+                        />
+                    </FormGroup>
+                </GridItem>
+            </Grid>
             <Title headingLevel="h2">Public configuration</Title>
             <Grid hasGutter>
                 <GridItem sm={12} md={6}>

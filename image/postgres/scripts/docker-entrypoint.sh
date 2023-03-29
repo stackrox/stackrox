@@ -3,6 +3,12 @@
 set -Eeo pipefail
 # TODO swap to -Eeuo pipefail above (after handling all potentially-unset variables)
 
+shutdown() {
+  pg_ctl -D /var/lib/postgresql/data/pgdata stop -m fast
+}
+
+trap shutdown SIGINT SIGTERM
+
 # usage: file_env VAR [DEFAULT]
 #    ie: file_env 'XYZ_DB_PASSWORD' 'example'
 # (will allow for "$XYZ_DB_PASSWORD_FILE" to fill in the value of
@@ -338,7 +344,10 @@ _main() {
 		fi
 	fi
 
-	exec "$@"
+	"$@" &
+	child=$!
+	echo "Waiting for child process $child to exit"
+	wait "$child"
 }
 
 if ! _is_sourced; then

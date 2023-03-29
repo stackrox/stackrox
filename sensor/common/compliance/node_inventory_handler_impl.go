@@ -7,6 +7,8 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/detector/metrics"
 )
 
 var (
@@ -15,9 +17,10 @@ var (
 )
 
 type nodeInventoryHandlerImpl struct {
-	inventories <-chan *storage.NodeInventory
-	toCentral   <-chan *central.MsgFromSensor
-
+	inventories  <-chan *storage.NodeInventory
+	toCentral    <-chan *central.MsgFromSensor
+	nodeMatcher  NodeIDMatcher
+	centralReady concurrency.Signal
 	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
 	lock    *sync.Mutex
 	stopper concurrency.Stopper
@@ -55,6 +58,13 @@ func (c *nodeInventoryHandlerImpl) Stop(_ error) {
 	c.stopper.Client().Stop()
 }
 
+func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		c.centralReady.Signal()
+	}
+}
+
 func (c *nodeInventoryHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	// This component doesn't actually process or handle any messages sent from Central to Sensor (yet).
 	// It uses the sensor component so that the lifecycle (start, stop) can be handled when Sensor starts up.
@@ -77,15 +87,30 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 					c.stopper.Flow().StopWithError(errInputChanClosed)
 					return
 				}
-				// TODO(ROX-12943): Do something with the inventory, e.g., attach NodeID
-				c.sendInventory(toC, inventory)
+				if !c.centralReady.IsDone() {
+					// TODO(ROX-13164): Reply with NACK to compliance
+					log.Warnf("Received NodeInventory but Central is not reachable. Requesting Compliance to resend NodeInventory later")
+					continue
+				}
+				if inventory == nil {
+					log.Warnf("Received nil NodeInventory - not sending node inventory to Central")
+					break
+				}
+				if nodeID, err := c.nodeMatcher.GetNodeID(inventory.GetNodeName()); err != nil {
+					log.Warnf("Node '%s' unknown to sensor - not sending node inventory to Central", inventory.GetNodeName())
+				} else {
+					inventory.NodeId = nodeID
+					metrics.ObserveReceivedNodeInventory(inventory)
+					log.Infof("Mapping NodeInventory name '%s' to Node ID '%s'", inventory.GetNodeName(), nodeID)
+					c.sendNodeInventory(toC, inventory)
+				}
 			}
 		}
 	}()
 	return toC
 }
 
-func (c *nodeInventoryHandlerImpl) sendInventory(toC chan *central.MsgFromSensor, inventory *storage.NodeInventory) {
+func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *central.MsgFromSensor, inventory *storage.NodeInventory) {
 	if inventory == nil {
 		return
 	}
@@ -94,6 +119,8 @@ func (c *nodeInventoryHandlerImpl) sendInventory(toC chan *central.MsgFromSensor
 	case toC <- &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
+				Id:     inventory.GetNodeId(),
+				Action: central.ResourceAction_UNSET_ACTION_RESOURCE, // There is no action required for NodeInventory as this is not a K8s resource
 				Resource: &central.SensorEvent_NodeInventory{
 					NodeInventory: inventory,
 				},

@@ -84,6 +84,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().IntVarP(&deploymentCheckCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
 	c.Flags().StringSliceVarP(&deploymentCheckCmd.policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
 	c.Flags().BoolVar(&deploymentCheckCmd.printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
+	c.Flags().BoolVar(&deploymentCheckCmd.force, "force", false, "bypass Central's cache for images and force a new pull from the Scanner")
 	utils.Must(c.MarkFlagRequired("file"))
 
 	// mark legacy output format specific flags as deprecated
@@ -104,6 +105,7 @@ type deploymentCheckCommand struct {
 	policyCategories   []string
 	printAllViolations bool
 	timeout            time.Duration
+	force              bool
 
 	// injected or constructed values by Construct
 	env                environment.Environment
@@ -111,7 +113,7 @@ type deploymentCheckCommand struct {
 	standardizedFormat bool
 }
 
-func (d *deploymentCheckCommand) Construct(args []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
+func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	d.timeout = flags.Timeout(cmd)
 
 	// Only create a printer if legacy json output format is not used

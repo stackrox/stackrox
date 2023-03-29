@@ -6,9 +6,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -35,9 +35,9 @@ func (s *ImagesStoreSuite) TestStore() {
 	ctx := context.Background()
 
 	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
+	pool, err := postgres.New(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
 

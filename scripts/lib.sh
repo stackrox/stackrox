@@ -60,10 +60,6 @@ is_CI() {
     [[ "${CI:-}" == "true" ]]
 }
 
-is_CIRCLECI() {
-    [[ "${CIRCLECI:-}" == "true" ]]
-}
-
 is_OPENSHIFT_CI() {
     [[ "${OPENSHIFT_CI:-}" == "true" ]]
 }

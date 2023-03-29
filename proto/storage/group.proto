@@ -15,14 +15,14 @@ message Group {
     GroupProperties props = 1;
 
     // This is the name of the role that will apply to users in this group.
-    string role_name = 3;
+    string role_name = 3 [(gogoproto.moretags) = 'search:"Role,hidden"'];
 }
 
 // GroupProperties defines the properties of a group. Groups apply to users when
 // their properties match. For instance:
-//   * If GroupProperties has only an auth_provider_id, then that group applies
+//   - If GroupProperties has only an auth_provider_id, then that group applies
 //     to all users logged in with that auth provider.
-//   * If GroupProperties in addition has a claim key, then it applies to all
+//   - If GroupProperties in addition has a claim key, then it applies to all
 //     users with that auth provider and the claim key, etc.
 // Note: Changes to GroupProperties may require changes to v1.DeleteGroupRequest.
 message GroupProperties {
@@ -30,7 +30,7 @@ message GroupProperties {
     string id               = 4 [(gogoproto.moretags) = 'sql:"pk"'];
     Traits traits           = 5;
 
-    string auth_provider_id = 1;
-    string key              = 2;
-    string value            = 3;
+    string auth_provider_id = 1 [(gogoproto.moretags) = 'search:"Group Auth Provider,hidden"'];
+    string key              = 2 [(gogoproto.moretags) = 'search:"Group Key,hidden"'];
+    string value            = 3 [(gogoproto.moretags) = 'search:"Group Value,hidden"'];
 }

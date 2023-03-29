@@ -2,18 +2,23 @@ import * as api from '../../constants/apiEndpoints';
 import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
 import {
+    interactAndWaitForVulnerabilityManagementEntities,
     interactAndWaitForVulnerabilityManagementEntity,
     interactAndWaitForVulnerabilityManagementSecondaryEntities,
     visitVulnerabilityManagementEntities,
 } from '../../helpers/vulnmanagement/entities';
-import { hasFeatureFlag } from '../../helpers/features';
+import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
 
 describe('Entities single views', () => {
     withAuth();
 
     // Some tests might fail in local deployment.
 
-    it('related entities tile links should unset search params upon navigation', () => {
+    it('related entities tile links should unset search params upon navigation', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         const entitiesKey1 = 'clusters';
         const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
 
@@ -49,7 +54,12 @@ describe('Entities single views', () => {
             });
     });
 
-    it('related entities table header should not say "0 entities" or have "page 0 of 0" if there are rows in the table', () => {
+    // ROX-15888 ROX-15985: skip until decision whether valid to assume high severity violations.
+    it.skip('related entities table header should not say "0 entities" or have "page 0 of 0" if there are rows in the table', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         const entitiesKey1 = 'policies';
         const entitiesKey2 = 'deployments';
         visitVulnerabilityManagementEntities(entitiesKey1);
@@ -83,7 +93,13 @@ describe('Entities single views', () => {
         });
     });
 
-    it('should scope deployment data based on selected policy from table row click', () => {
+    // ROX-15985: skip until decision whether valid to assume high severity violations.
+    // TODO if the test survives, rewrite as described below.
+    it.skip('should scope deployment data based on selected policy from table row click', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         const entitiesKey1 = 'policies';
         const entitiesKey2 = 'deployments';
         // policy -> related deployments list should scope policy status column by the policy x deployment row
@@ -128,7 +144,12 @@ describe('Entities single views', () => {
             });
     });
 
-    it('should scope deployment data based on selected policy from table count link click', () => {
+    // ROX-15889 ROX-15985: skip until decision whether valid to assume high severity violations.
+    it.skip('should scope deployment data based on selected policy from table count link click', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         const entitiesKey1 = 'policies';
         const entitiesKey2 = 'deployments';
         visitVulnerabilityManagementEntities(entitiesKey1);
@@ -148,7 +169,12 @@ describe('Entities single views', () => {
         );
     });
 
-    it('should scope deployment data based on selected policy from entity page tab sublist', () => {
+    // ROX-15934 ROX-15985: skip until decision whether valid to assume high severity violations.
+    it.skip('should scope deployment data based on selected policy from entity page tab sublist', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         const entitiesKey1 = 'policies';
         const entitiesKey2 = 'deployments';
         visitVulnerabilityManagementEntities(entitiesKey1);
@@ -248,9 +274,20 @@ describe('Entities single views', () => {
             });
     });
 
-    it('should not filter cluster entity page regardless of entity context', () => {
+    it('should not filter cluster entity page regardless of entity context', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         const entitiesKey = 'namespaces';
         visitVulnerabilityManagementEntities(entitiesKey);
+
+        // Sort descending by Risk Priority, because on OpenShift,
+        // all namespaces on the first page might have deployments.
+        const thSelector = '.rt-th:contains("Risk Priority")';
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get(thSelector).click();
+        }, entitiesKey);
 
         interactAndWaitForVulnerabilityManagementEntity(() => {
             cy.get(`${selectors.tableRows}:contains("No deployments"):eq(0)`).click();
@@ -267,6 +304,7 @@ describe('Entities single views', () => {
     });
 
     it('should show the active state in Component overview when scoped under a deployment', () => {
+        const activeVulnEnabled = hasFeatureFlag('ROX_ACTIVE_VULN_MGMT');
         const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
         const entitiesKey1 = 'deployments';
         const entitiesKey2 = usingVMUpdates ? 'image-components' : 'components';
@@ -295,14 +333,23 @@ describe('Entities single views', () => {
             cy.get(`[data-testid="side-panel"] ${selectors.tableBodyRows}:eq(0)`).click();
         }, entitiesKey2);
 
-        cy.get(`[data-testid="Active status-value"]`)
-            .invoke('text')
-            .then((activeStatusText) => {
-                expect(activeStatusText).to.be.oneOf(['Active', 'Inactive', 'Undetermined']);
-            });
+        if (activeVulnEnabled) {
+            cy.get(`[data-testid="Active status-value"]`)
+                .invoke('text')
+                .then((activeStatusText) => {
+                    expect(activeStatusText).to.be.oneOf(['Active', 'Inactive', 'Undetermined']);
+                });
+        } else {
+            cy.get('.rt-th')
+                .invoke('text')
+                .then((tableHeaderText) => {
+                    expect(tableHeaderText).not.to.contain('Active');
+                });
+        }
     });
 
     it('should show the active state in the fixable CVES widget for a single deployment', () => {
+        const activeVulnEnabled = hasFeatureFlag('ROX_ACTIVE_VULN_MGMT');
         const entitiesKey = 'deployments';
         const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
 
@@ -322,13 +369,21 @@ describe('Entities single views', () => {
             cy.get(`${selectors.tableRows}`).eq(1).click();
         }, entitiesKey);
 
-        cy.get('button:contains("Fixable CVEs")').click();
         cy.wait('@getFixableCvesForEntity');
-        cy.get(`${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20231")`).contains(
-            'Active'
-        );
-        cy.get(`${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20232")`).contains(
-            'Inactive'
-        );
+
+        if (activeVulnEnabled) {
+            cy.get(
+                `${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20231")`
+            ).contains('Active');
+            cy.get(
+                `${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20232")`
+            ).contains('Inactive');
+        } else {
+            cy.get('.rt-th')
+                .invoke('text')
+                .then((tableHeaderText) => {
+                    expect(tableHeaderText).not.to.contain('Active');
+                });
+        }
     });
 });

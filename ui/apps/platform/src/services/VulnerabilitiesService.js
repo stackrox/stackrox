@@ -93,8 +93,20 @@ export function exportCvesAsCsv(fileName, workflowState, cveType) {
         return { ...{ [key]: fullEntityContext[key] } };
     }, {});
 
+    const currentSearchState = workflowState.getCurrentSearchState();
+
+    // TODO: remove after Postgres is required for all installations
+    // kludge to make Findings sections CSV export of CVEs work until Postgres is on
+    if (cveType === entityTypes.CVE && !currentSearchState['CVE Type']) {
+        if (fullEntityContext.NODE) {
+            currentSearchState['CVE Type'] = 'NODE_CVE';
+        } else {
+            currentSearchState['CVE Type'] = 'IMAGE_CVE';
+        }
+    }
+
     const query = queryService.objectToWhereClause({
-        ...workflowState.getCurrentSearchState(),
+        ...currentSearchState,
         ...queryService.entityContextToQueryObject(lastEntityCtx),
     });
 

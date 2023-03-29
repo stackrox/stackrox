@@ -3,11 +3,10 @@ package postgres
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -32,18 +31,18 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *pgxpool.Pool
+	db    *postgres.DB
 	mutex sync.Mutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
+func New(db *postgres.DB) Store {
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoVersions(ctx context.Context, tx pgx.Tx, obj *storage.Version) error {
+func insertIntoVersions(ctx context.Context, tx *postgres.Tx, obj *storage.Version) error {
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
 		return marshalErr
@@ -133,7 +132,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.Version, bool, e
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*postgres.Conn, func(), error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -169,6 +168,6 @@ func (s *storeImpl) retryableDelete(ctx context.Context) error {
 // Used for Testing
 
 // Destroy is Used for Testing
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
+func Destroy(ctx context.Context, db *postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS versions CASCADE")
 }

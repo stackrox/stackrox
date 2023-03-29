@@ -12,7 +12,6 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { useVisualizationController } from '@patternfly/react-topology';
 
 import { getNodeById } from '../utils/networkGraphUtils';
 import {
@@ -36,17 +35,17 @@ type CidrBlockSideBarProps = {
     id: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
+    onNodeSelect: (id: string) => void;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function CidrBlockSideBar({ id, nodes, edges }: CidrBlockSideBarProps): ReactElement {
-    const controller = useVisualizationController();
+function CidrBlockSideBar({ id, nodes, edges, onNodeSelect }: CidrBlockSideBarProps): ReactElement {
     // component state
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
     const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
         defaultAdvancedFlowsFilters
     );
-    const flows = getNetworkFlows(edges, controller, id);
+    const flows = getNetworkFlows(nodes, edges, id);
     const filteredFlows = filterNetworkFlows(flows, entityNameFilter, advancedFilters);
     const initialExpandedRows = filteredFlows
         .filter((row) => row.children && !!row.children.length)
@@ -58,6 +57,10 @@ function CidrBlockSideBar({ id, nodes, edges }: CidrBlockSideBarProps): ReactEle
     const cidrBlockNode = getNodeById(nodes, id) as CIDRBlockNodeModel;
     const numFlows = getNumFlows(filteredFlows);
     const allUniquePorts = getAllUniquePorts(filteredFlows);
+
+    const onSelectFlow = (entityId: string) => {
+        onNodeSelect(entityId);
+    };
 
     return (
         <Stack>
@@ -83,8 +86,9 @@ function CidrBlockSideBar({ id, nodes, edges }: CidrBlockSideBarProps): ReactEle
                     </FlexItem>
                 </Flex>
             </StackItem>
-            <StackItem isFilled style={{ overflow: 'auto' }} className="pf-u-p-md">
-                <Stack hasGutter>
+            <Divider component="hr" />
+            <StackItem isFilled style={{ overflow: 'auto' }}>
+                <Stack className="pf-u-p-md">
                     <StackItem>
                         <Flex>
                             <FlexItem flex={{ default: 'flex_1' }}>
@@ -102,10 +106,10 @@ function CidrBlockSideBar({ id, nodes, edges }: CidrBlockSideBarProps): ReactEle
                             </FlexItem>
                         </Flex>
                     </StackItem>
-                    <Divider component="hr" />
-                    <StackItem>
-                        <Toolbar>
-                            <ToolbarContent>
+                    <Divider component="hr" className="pf-u-py-md" />
+                    <StackItem className="pf-u-pb-md">
+                        <Toolbar className="pf-u-p-0">
+                            <ToolbarContent className="pf-u-px-0">
                                 <ToolbarItem>
                                     <FlowsTableHeaderText type="active" numFlows={numFlows} />
                                 </ToolbarItem>
@@ -121,6 +125,7 @@ function CidrBlockSideBar({ id, nodes, edges }: CidrBlockSideBarProps): ReactEle
                             setExpandedRows={setExpandedRows}
                             selectedRows={selectedRows}
                             setSelectedRows={setSelectedRows}
+                            onSelectFlow={onSelectFlow}
                         />
                     </StackItem>
                 </Stack>

@@ -8,9 +8,7 @@ import PolicyCategoriesPage from 'Containers/PolicyCategories/PolicyCategoriesPa
 
 function PolicyManagementPage() {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isPolicyCategoriesEnabled =
-        isFeatureFlagEnabled('ROX_NEW_POLICY_CATEGORIES') &&
-        isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
+    const isPolicyCategoriesEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
     return (
         <Switch>
             <Redirect exact from={policyManagementBasePath} to={policiesPath} />

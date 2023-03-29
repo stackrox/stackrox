@@ -52,7 +52,7 @@ export const defaultCveSort = [
     },
 ];
 
-export function getCveTableColumns(workflowState) {
+export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
     // to determine whether to show the counts as links in the table when not in pure CVE state
     const currentEntityType = workflowState.getCurrentEntity().entityType;
     const isCveType = [
@@ -261,7 +261,11 @@ export function getCveTableColumns(workflowState) {
 
     const nonNullTableColumns = tableColumns.filter((col) => col);
 
-    const cveColumnsBasedOnContext = getFilteredCVEColumns(nonNullTableColumns, workflowState);
+    const cveColumnsBasedOnContext = getFilteredCVEColumns(
+        nonNullTableColumns,
+        workflowState,
+        isFeatureFlagEnabled
+    );
 
     return removeEntityContextColumns(cveColumnsBasedOnContext, workflowState);
 }
@@ -471,12 +475,14 @@ const VulnMgmtCves = ({
 
     const renderRowActionButtons = ({ cve }) => (
         <div className="flex border-2 border-r-2 border-base-400 bg-base-100">
-            <RowActionButton
-                text="Add to Policy"
-                onClick={addToPolicy(cve)}
-                date-testid="row-action-add-to-policy"
-                icon={<Icon.Plus className="my-1 h-4 w-4" />}
-            />
+            {(cveType === entityTypes.CVE || cveType === entityTypes.IMAGE_CVE) && (
+                <RowActionButton
+                    text="Add to Policy"
+                    onClick={addToPolicy(cve)}
+                    date-testid="row-action-add-to-policy"
+                    icon={<Icon.Plus className="my-1 h-4 w-4" />}
+                />
+            )}
             {!viewingSuppressed && (
                 <RowActionMenu
                     className="h-full min-w-30"
@@ -504,16 +510,18 @@ const VulnMgmtCves = ({
 
     const tableHeaderComponents = (
         <>
-            <PanelButton
-                icon={<Icon.Plus className="h-4 w-4" />}
-                className="btn-icon btn-tertiary"
-                onClick={addToPolicy()}
-                disabled={selectedCveIds.length === 0}
-                tooltip="Add Selected CVEs to Policy"
-                dataTestId="panel-button-add-cves-to-policy"
-            >
-                Add to Policy
-            </PanelButton>
+            {(cveType === entityTypes.CVE || cveType === entityTypes.IMAGE_CVE) && (
+                <PanelButton
+                    icon={<Icon.Plus className="h-4 w-4" />}
+                    className="btn-icon btn-tertiary"
+                    onClick={addToPolicy()}
+                    disabled={selectedCveIds.length === 0}
+                    tooltip="Add Selected CVEs to Policy"
+                    dataTestId="panel-button-add-cves-to-policy"
+                >
+                    Add to Policy
+                </PanelButton>
+            )}
             {!viewingSuppressed && (
                 <Menu
                     className="h-full min-w-30 ml-2"
@@ -586,6 +594,7 @@ const VulnMgmtCves = ({
                 <CveBulkActionDialogue
                     closeAction={closeDialog}
                     bulkActionCveIds={bulkActionCveIds}
+                    cveType={cveType}
                 />
             )}
         </>

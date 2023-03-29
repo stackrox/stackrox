@@ -44,9 +44,24 @@ export function getFetchingActionInfo(type: string): ActionTypeInfo | null {
     return { prefix, fetchingState: FetchingActionState[fetchingState] };
 }
 
+export type PrefixedAction<Prefix extends string, Response> =
+    | {
+          type: `${Prefix}_FAILURE`;
+          error: Error;
+      }
+    | {
+          type: `${Prefix}_REQUEST`;
+      }
+    | {
+          type: `${Prefix}_SUCCESS`;
+          response: Response;
+      };
+
 export type FetchingAction<T extends Record<string, unknown>> = { type: string } & {
     [prop in keyof T]: T[prop];
 };
+
+// Action creator function types
 
 export type RequestAction = <P>(params?: P) => FetchingAction<{ params: P | undefined }>;
 export type SuccessAction = <R, P>(

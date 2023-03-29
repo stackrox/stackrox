@@ -45,10 +45,10 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
 
 	s.db = pgtest.ForT(s.T())
 
-	ds, err := namespace.GetTestPostgresDataStore(s.T(), s.db.Pool)
+	ds, err := namespace.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.NoError(err)
 	s.nsDatastore = ds
-	clusterDS, err := GetTestPostgresDataStore(s.T(), s.db.Pool)
+	clusterDS, err := GetTestPostgresDataStore(s.T(), s.db.DB)
 
 	s.NoError(err)
 	s.clusterDatastore = clusterDS

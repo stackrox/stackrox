@@ -74,3 +74,20 @@
 .pf-c-tab-content[hidden] {
     display: none !important;
 }
+
+g.pf-topology__edge {
+    cursor: default;
+}
+
+.pf-topology-control-bar .pf-c-toolbar__group {
+    display: flex;
+    align-self: stretch;
+}
+
+.pf-topology-control-bar .pf-c-toolbar__item, .pf-topology-control-bar button {
+    height: 100%;
+}
+
+ul#edge-state-select {
+    width: 270px;
+}

@@ -15,11 +15,67 @@ env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
 
 jobs:
+  check-generated-files:
+    env:
+      ARTIFACT_DIR: junit-reports/
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+
+    - name: Create artifacts dir
+      run: mkdir -p "$ARTIFACT_DIR"
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Check Generated
+      run: scripts/ci/jobs/check-generated.sh
+
+  misc-checks:
+    env:
+      ARTIFACT_DIR: junit-reports/
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Create artifacts dir
+      run: mkdir -p "$ARTIFACT_DIR"
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+
+    - name: Check PR fixes
+      run: scripts/ci/jobs/check-pr-fixes.sh
+
+    - name: Check TODOs
+      run: scripts/ci/jobs/check-todos.sh
+
+    - name: Check Policies
+      run: scripts/ci/jobs/policy-checks.sh
 
   style-check:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -35,6 +91,15 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
+      - name: Cache golangci-lint
+        uses: actions/cache@v3
+        with:
+          path: /github/home/.cache/golangci-lint
+          key: go-lint-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            go-lint-${{ hashFiles('**/go.sum') }}
+            go-lint-
+
       - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
 
       - name: Cache UI dependencies
@@ -48,3 +113,22 @@ jobs:
 
       - name: make style
         run: make style
+
+  slack-on-style-failure:
+    if: github.event_name == 'push' && failure()
+    name: Post failure message to Slack
+    runs-on: ubuntu-latest
+    needs:
+      - check-generated-files
+      - misc-checks
+      - style-check
+    permissions:
+      actions: read
+    steps:
+      - name: Slack Workflow Notification
+        uses: Gamesight/slack-workflow-status@26a36836c887f260477432e4314ec3490a84f309
+        with:
+          include_commit_message: true
+          include_jobs: on-failure
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          slack_webhook_url: ${{secrets.TEST_FAILURES_NOTIFY_WEBHOOK}}

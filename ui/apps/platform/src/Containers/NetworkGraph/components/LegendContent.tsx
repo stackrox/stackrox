@@ -1,6 +1,11 @@
 import React from 'react';
 import { Flex, FlexItem, Title } from '@patternfly/react-core';
-import { PficonNetworkRangeIcon, BuilderImageIcon } from '@patternfly/react-icons';
+import {
+    PficonNetworkRangeIcon,
+    BuilderImageIcon,
+    CodeBranchIcon,
+    FilterIcon,
+} from '@patternfly/react-icons';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
 import DescriptionListCompact from 'Components/DescriptionListCompact';
@@ -31,12 +36,26 @@ function LegendContent() {
                 </FlexItem>
                 <FlexItem>
                     <Title headingLevel="h5" className="pf-u-pb-sm">
+                        Namespace types
+                    </Title>
+                    <DescriptionListCompact isHorizontal termWidth="20px" className="pf-u-pl-md">
+                        <DescriptionListItem term={<CodeBranchIcon />} desc="Derived namespace" />
+                        <DescriptionListItem term={<FilterIcon />} desc="Filtered namespace" />
+                    </DescriptionListCompact>
+                </FlexItem>
+                <FlexItem>
+                    <Title headingLevel="h5" className="pf-u-pb-sm">
                         Deployment badges
                     </Title>
                     <DescriptionListCompact isHorizontal termWidth="20px" className="pf-u-pl-md">
                         <DescriptionListItem
+                            term={<PficonNetworkRangeIcon className="pf-u-ml-xs" />}
+                            desc="Connected to external entities"
+                            groupClassName="pf-u-align-items-center"
+                        />
+                        <DescriptionListItem
                             term={<BothPolicyRules width="22px" height="22px" />}
-                            desc="Isolated by network poilcy rules"
+                            desc="Isolated by network policy rules"
                             groupClassName="pf-u-align-items-center"
                         />
                         <DescriptionListItem

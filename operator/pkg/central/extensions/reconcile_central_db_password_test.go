@@ -70,14 +70,13 @@ func TestReconcileDBPassword(t *testing.T) {
 
 	specWithAutogenPassword := v1alpha1.CentralSpec{
 		Central: &v1alpha1.CentralComponentSpec{
-			DB: &v1alpha1.CentralDBSpec{IsEnabled: v1alpha1.CentralDBEnabledPtr(v1alpha1.CentralDBEnabledTrue)},
+			DB: &v1alpha1.CentralDBSpec{},
 		},
 	}
 
 	specWithUserSpecifiedPassword := v1alpha1.CentralSpec{
 		Central: &v1alpha1.CentralComponentSpec{
 			DB: &v1alpha1.CentralDBSpec{
-				IsEnabled: v1alpha1.CentralDBEnabledPtr(v1alpha1.CentralDBEnabledTrue),
 				PasswordSecret: &v1alpha1.LocalSecretReference{
 					Name: customPWSecretName,
 				},
@@ -88,7 +87,6 @@ func TestReconcileDBPassword(t *testing.T) {
 	specWithCanonicalAsUserSpecifiedPassword := v1alpha1.CentralSpec{
 		Central: &v1alpha1.CentralComponentSpec{
 			DB: &v1alpha1.CentralDBSpec{
-				IsEnabled: v1alpha1.CentralDBEnabledPtr(v1alpha1.CentralDBEnabledTrue),
 				PasswordSecret: &v1alpha1.LocalSecretReference{
 					Name: canonicalCentralDBPasswordSecretName,
 				},
@@ -97,14 +95,7 @@ func TestReconcileDBPassword(t *testing.T) {
 	}
 
 	cases := map[string]secretReconciliationTestCase{
-		"If central db is not used, no central-db-password secret should be created": {
-			ExpectedNotExistingSecrets: []string{canonicalCentralDBPasswordSecretName},
-		},
-		"If central db is not used, and a managed central-db-password secret exists, that secret should be deleted": {
-			ExistingManaged:            []*v1.Secret{canonicalPWSecretWithPW1},
-			ExpectedNotExistingSecrets: []string{canonicalCentralDBPasswordSecretName},
-		},
-		"If central db is not used, and an unmanaged central-db-password secret exists, that secret should be left untouched": {
+		"If unmanaged central-db-password secret exists, that secret should be left untouched": {
 			Existing: []*v1.Secret{canonicalPWSecretWithPW1},
 		},
 		"If no central-db-password secret exists and no custom secret reference was specified, a password should be automatically generated": {
@@ -212,11 +203,23 @@ func TestReconcileDBPassword(t *testing.T) {
 			Existing:      []*v1.Secret{canonicalPWSecretWithNoPassword},
 			ExpectedError: "secret must contain a non-empty",
 		},
+		"When using an external DB with specified password secret, that secret should be left untouched": {
+			Spec: v1alpha1.CentralSpec{
+				Central: &v1alpha1.CentralComponentSpec{
+					DB: &v1alpha1.CentralDBSpec{
+						ConnectionStringOverride: pointers.String("foo"),
+						PasswordSecret: &v1alpha1.LocalSecretReference{
+							Name: customPWSecretName,
+						},
+					},
+				},
+			},
+			Existing: []*v1.Secret{customPWSecretWithPW1, canonicalPWSecretWithPW1},
+		},
 		"When using an external DB, and no password secret is specified, an error should be raised": {
 			Spec: v1alpha1.CentralSpec{
 				Central: &v1alpha1.CentralComponentSpec{
 					DB: &v1alpha1.CentralDBSpec{
-						IsEnabled:                v1alpha1.CentralDBEnabledPtr(v1alpha1.CentralDBEnabledTrue),
 						ConnectionStringOverride: pointers.String("foo"),
 					},
 				},

@@ -179,10 +179,16 @@ function launch_central {
 
     if [[ -n $STORAGE_CLASS ]]; then
         add_storage_args "--storage-class=$STORAGE_CLASS"
+        if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
+            add_storage_args "--db-storage-class=$STORAGE_CLASS"
+        fi
     fi
 
     if [[ "${STORAGE}" == "pvc" && -n "${STORAGE_SIZE}" ]]; then
 	      add_storage_args "--size=${STORAGE_SIZE}"
+        if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
+            add_storage_args "--db-size=${STORAGE_SIZE}"
+        fi
     fi
 
     if [[ -n "${ROXDEPLOY_CONFIG_FILE_MAP}" ]]; then
@@ -191,6 +197,11 @@ function launch_central {
 
     if [[ -n "$POD_SECURITY_POLICIES" ]]; then
       add_args "--enable-pod-security-policies=${POD_SECURITY_POLICIES}"
+    fi
+
+    # TODO(ROX-16008): Once the feature flag is enabled by default, always add the config map mount.
+    if [[ -n "${ROX_DECLARATIVE_CONFIGURATION}" ]]; then
+        add_args "--declarative-config-config-maps=declarative-configurations"
     fi
 
     local unzip_dir="${k8s_dir}/central-deploy/"
@@ -326,8 +337,9 @@ function launch_central {
           if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
             kubectl -n stackrox patch deploy/central-db --patch '{"spec":{"template":{"spec":{"initContainers":[{"name":"init-db","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":1,"memory":"1Gi"}}}],"containers":[{"name":"central-db","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
           fi
+      elif [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
+          ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-patch.yaml")"
       fi
-
       if [[ "${CGO_CHECKS}" == "true" ]]; then
         echo "CGO_CHECKS set to true. Setting GODEBUG=cgocheck=2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
         # Extend mutex watchdog timeout because cgochecks hamper performance
@@ -470,6 +482,10 @@ function launch_sensor {
       extra_config+=("--timeout=$ROXCTL_TIMEOUT")
     fi
 
+    if [[ -n "$POD_SECURITY_POLICIES" ]]; then
+        extra_config+=("--enable-pod-security-policies=${POD_SECURITY_POLICIES}")
+    fi
+
     # Delete path
     rm -rf "$k8s_dir/sensor-deploy"
 
@@ -516,6 +532,20 @@ function launch_sensor {
         helm_args+=(--set "helmManaged=true")
       else
         helm_args+=(--set "helmManaged=false")
+      fi
+
+      if [[ -n "$LOGLEVEL" ]]; then
+        helm_args+=(
+          --set customize.envVars.LOGLEVEL="${LOGLEVEL}"
+        )
+      fi
+
+      # TODO(ROX-14310): Remove this patch when re-sync is disabled unconditionally
+      if [[ -n "$ROX_RESYNC_DISABLED" ]]; then
+        echo "Setting re-sync disabled to $ROX_RESYNC_DISABLED"
+        helm_args+=(
+          --set customize.envVars.ROX_RESYNC_DISABLED="${ROX_RESYNC_DISABLED}"
+        )
       fi
 
       if [[ -n "$CI" ]]; then
@@ -567,6 +597,7 @@ function launch_sensor {
            kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
        fi
     fi
+
     if [[ "$MONITORING_SUPPORT" == "true" || ( "$(local_dev)" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
       "${COMMON_DIR}/monitoring.sh"
     fi

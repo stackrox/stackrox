@@ -7,7 +7,6 @@ import (
 
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/node/datastore/store/common/v2"
@@ -18,13 +17,13 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -72,13 +71,13 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db                 *pgxpool.Pool
+	db                 *postgres.DB
 	noUpdateTimestamps bool
 	keyFence           concurrency.KeyFence
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool, noUpdateTimestamps bool, keyFence concurrency.KeyFence) Store {
+func New(db *postgres.DB, noUpdateTimestamps bool, keyFence concurrency.KeyFence) Store {
 	return &storeImpl{
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
@@ -88,7 +87,7 @@ func New(db *pgxpool.Pool, noUpdateTimestamps bool, keyFence concurrency.KeyFenc
 
 func (s *storeImpl) insertIntoNodes(
 	ctx context.Context,
-	tx pgx.Tx,
+	tx *postgres.Tx,
 	parts *nodePartsAsSlice,
 	scanUpdated bool,
 	iTime *protoTypes.Timestamp,
@@ -187,7 +186,7 @@ func getPartsAsSlice(parts *common.NodeParts) *nodePartsAsSlice {
 	}
 }
 
-func insertIntoNodesTaints(ctx context.Context, tx pgx.Tx, obj *storage.Taint, nodeID string, idx int) error {
+func insertIntoNodesTaints(ctx context.Context, tx *postgres.Tx, obj *storage.Taint, nodeID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -207,7 +206,7 @@ func insertIntoNodesTaints(ctx context.Context, tx pgx.Tx, obj *storage.Taint, n
 	return nil
 }
 
-func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeComponent) error {
+func copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponent) error {
 	inputRows := [][]interface{}{}
 	var err error
 	var deletes []string
@@ -265,7 +264,7 @@ func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Nod
 	return removeOrphanedNodeComponent(ctx, tx)
 }
 
-func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string, objs ...*storage.NodeComponentEdge) error {
+func copyFromNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID string, objs ...*storage.NodeComponentEdge) error {
 	inputRows := [][]interface{}{}
 	var err error
 	copyCols := []string{
@@ -308,7 +307,7 @@ func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string, o
 	return nil
 }
 
-func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, objs ...*storage.NodeCVE) error {
+func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timestamp, objs ...*storage.NodeCVE) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -393,7 +392,7 @@ func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestam
 	return removeOrphanedNodeCVEs(ctx, tx)
 }
 
-func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeComponentCVEEdge) error {
+func copyFromNodeComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponentCVEEdge) error {
 	inputRows := [][]interface{}{}
 	var err error
 	deletes := set.NewStringSet()
@@ -448,7 +447,7 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*stor
 	return nil
 }
 
-func removeOrphanedNodeComponent(ctx context.Context, tx pgx.Tx) error {
+func removeOrphanedNodeComponent(ctx context.Context, tx *postgres.Tx) error {
 	_, err := tx.Exec(ctx, "DELETE FROM "+nodeComponentsTable+" WHERE not exists (select "+nodeComponentEdgesTable+".nodecomponentid from "+nodeComponentEdgesTable+" where "+nodeComponentsTable+".id = "+nodeComponentEdgesTable+".nodecomponentid)")
 	if err != nil {
 		return err
@@ -456,7 +455,7 @@ func removeOrphanedNodeComponent(ctx context.Context, tx pgx.Tx) error {
 	return nil
 }
 
-func removeOrphanedNodeCVEs(ctx context.Context, tx pgx.Tx) error {
+func removeOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error {
 	_, err := tx.Exec(ctx, "DELETE FROM "+nodeCVEsTable+" WHERE not exists (select "+componentCVEEdgesTable+".nodecveid from "+componentCVEEdgesTable+" where "+nodeCVEsTable+".id = "+componentCVEEdgesTable+".nodecveid)")
 	if err != nil {
 		return err
@@ -464,32 +463,25 @@ func removeOrphanedNodeCVEs(ctx context.Context, tx pgx.Tx) error {
 	return nil
 }
 
-func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, bool, error) {
+func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, error) {
 	oldNode, found, err := s.GetNodeMetadata(ctx, node.GetId())
 	if err != nil {
-		return false, false, err
+		return false, err
 	}
 	if !found {
-		return true, true, nil
+		return true, nil
 	}
-
-	scanUpdated := false
-	// We skip rewriting components and cves if scan is not newer, hence we do not need to merge.
-	if oldNode.GetScan().GetScanTime().Compare(node.GetScan().GetScanTime()) > 0 {
-		node.Scan = oldNode.Scan
-	} else {
-		scanUpdated = true
-	}
-
-	// If the node in the DB is latest, then use its risk score and scan stats
+	// We skip rewriting components and vulnerabilities if the node scan is older.
+	scanUpdated := oldNode.GetScan().GetScanTime().Compare(node.GetScan().GetScanTime()) <= 0
 	if !scanUpdated {
+		node.Scan = oldNode.Scan
 		node.RiskScore = oldNode.GetRiskScore()
 		node.SetComponents = oldNode.GetSetComponents()
 		node.SetCves = oldNode.GetSetCves()
 		node.SetFixable = oldNode.GetSetFixable()
 		node.SetTopCvss = oldNode.GetSetTopCvss()
 	}
-	return true, scanUpdated, nil
+	return scanUpdated, nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
@@ -498,29 +490,26 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
 	if !s.noUpdateTimestamps {
 		obj.LastUpdated = iTime
 	}
-	metadataUpdated, scanUpdated, err := s.isUpdated(ctx, obj)
+	scanUpdated, err := s.isUpdated(ctx, obj)
 	if err != nil {
 		return err
-	}
-	if !metadataUpdated && !scanUpdated {
-		return nil
 	}
 
 	nodeParts := getPartsAsSlice(common.Split(obj, scanUpdated))
 	keys := gatherKeys(nodeParts)
 
-	conn, release, err := s.acquireConn(ctx, ops.Upsert, "Node")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
+		conn, release, err := s.acquireConn(ctx, ops.Upsert, "Node")
+		if err != nil {
+			return err
+		}
+		defer release()
+
+		tx, err := conn.Begin(ctx)
+		if err != nil {
+			return err
+		}
+
 		if err := s.insertIntoNodes(ctx, tx, nodeParts, scanUpdated, iTime); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
@@ -540,7 +529,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Node) error {
 	})
 }
 
-func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx pgx.Tx, nodeID string, objs ...*storage.Taint) error {
+func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx *postgres.Tx, nodeID string, objs ...*storage.Taint) error {
 	inputRows := [][]interface{}{}
 	var err error
 	copyCols := []string{
@@ -603,7 +592,7 @@ func (s *storeImpl) retryableCount(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
@@ -632,7 +621,7 @@ func (s *storeImpl) retryableExists(ctx context.Context, id string) (bool, error
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	count, err := postgres.RunCountRequestForSchema(ctx, schema, q, s.db)
+	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
 	return count == 1, err
 }
 
@@ -659,7 +648,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 	return s.getFullNode(ctx, tx, id)
 }
 
-func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (*storage.Node, bool, error) {
+func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID string) (*storage.Node, bool, error) {
 	row := tx.QueryRow(ctx, getNodeMetaStmt, pgutils.NilOrUUID(nodeID))
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -686,10 +675,8 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 	}
 
 	if len(componentEdgeMap) != len(componentMap) {
-		utils.Should(
-			errors.Errorf("Number of node component from edges (%d) is unexpected (%d) for node %s (id=%s)",
-				len(componentEdgeMap), len(componentMap), node.GetName(), node.GetId()),
-		)
+		log.Errorf("Number of node component from edges (%d) is unexpected (%d) for node %s (id=%s)",
+			len(componentEdgeMap), len(componentMap), node.GetName(), node.GetId())
 	}
 	componentCVEEdgeMap, err := getComponentCVEEdges(ctx, tx, componentIDs)
 	if err != nil {
@@ -730,7 +717,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 	return common.Merge(nodeParts), true, nil
 }
 
-func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[string]*storage.NodeComponentEdge, error) {
+func getNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID string) (map[string]*storage.NodeComponentEdge, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponentEdge")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentEdgesTable+" WHERE nodeid = $1", pgutils.NilOrUUID(nodeID))
@@ -750,10 +737,10 @@ func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[s
 		}
 		componentIDToEdgeMap[msg.GetNodeComponentId()] = msg
 	}
-	return componentIDToEdgeMap, nil
+	return componentIDToEdgeMap, rows.Err()
 }
 
-func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string]*storage.NodeComponent, error) {
+func getNodeComponents(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string]*storage.NodeComponent, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponent")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentsTable+" WHERE id = ANY($1::text[])", componentIDs)
@@ -773,10 +760,10 @@ func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (m
 		}
 		idToComponentMap[msg.GetId()] = msg
 	}
-	return idToComponentMap, nil
+	return idToComponentMap, rows.Err()
 }
 
-func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string][]*storage.NodeComponentCVEEdge, error) {
+func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string][]*storage.NodeComponentCVEEdge, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponentCVERelations")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+componentCVEEdgesTable+" WHERE nodecomponentid = ANY($1::text[])", componentIDs)
@@ -796,10 +783,10 @@ func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string)
 		}
 		componentIDToEdgesMap[msg.GetNodeComponentId()] = append(componentIDToEdgesMap[msg.GetNodeComponentId()], msg)
 	}
-	return componentIDToEdgesMap, nil
+	return componentIDToEdgesMap, rows.Err()
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
@@ -831,7 +818,7 @@ func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
 	return s.deleteNodeTree(ctx, tx, id)
 }
 
-func (s *storeImpl) deleteNodeTree(ctx context.Context, tx pgx.Tx, nodeID string) error {
+func (s *storeImpl) deleteNodeTree(ctx context.Context, tx *postgres.Tx, nodeID string) error {
 	// Delete from node table.
 	if _, err := tx.Exec(ctx, "delete from "+nodesTable+" where Id = $1", pgutils.NilOrUUID(nodeID)); err != nil {
 		return err
@@ -956,7 +943,7 @@ func (s *storeImpl) retryableGetManyNodeMetadata(ctx context.Context, ids []stri
 		search.NewQueryBuilder().AddExactMatches(search.NodeID, ids...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema[storage.Node](ctx, schema, q, s.db)
+	rows, err := pgSearch.RunGetManyQueryForSchema[storage.Node](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -988,7 +975,7 @@ func (s *storeImpl) retryableGetManyNodeMetadata(ctx context.Context, ids []stri
 //// Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, _ testing.TB, db *pgxpool.Pool, gormDB *gorm.DB, noUpdateTimestamps bool) Store {
+func CreateTableAndNewStore(ctx context.Context, _ testing.TB, db *postgres.DB, gormDB *gorm.DB, noUpdateTimestamps bool) Store {
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableClustersStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentsStmt)
@@ -998,7 +985,7 @@ func CreateTableAndNewStore(ctx context.Context, _ testing.TB, db *pgxpool.Pool,
 	return New(db, noUpdateTimestamps, concurrency.NewKeyFence())
 }
 
-func dropTableNodes(ctx context.Context, db *pgxpool.Pool) {
+func dropTableNodes(ctx context.Context, db *postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS nodes CASCADE")
 	dropTableNodesTaints(ctx, db)
 	dropTableNodesComponents(ctx, db)
@@ -1007,32 +994,32 @@ func dropTableNodes(ctx context.Context, db *pgxpool.Pool) {
 	dropTableComponentCVEEdges(ctx, db)
 }
 
-func dropTableNodesTaints(ctx context.Context, db *pgxpool.Pool) {
+func dropTableNodesTaints(ctx context.Context, db *postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS nodes_taints CASCADE")
 }
 
-func dropTableNodesComponents(ctx context.Context, db *pgxpool.Pool) {
+func dropTableNodesComponents(ctx context.Context, db *postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeComponentsTable+" CASCADE")
 }
 
-func dropTableNodeCVEs(ctx context.Context, db *pgxpool.Pool) {
+func dropTableNodeCVEs(ctx context.Context, db *postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeCVEsTable+" CASCADE")
 }
 
-func dropTableComponentCVEEdges(ctx context.Context, db *pgxpool.Pool) {
+func dropTableComponentCVEEdges(ctx context.Context, db *postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+componentCVEEdgesTable+" CASCADE")
 }
 
-func dropTableNodeComponentEdges(ctx context.Context, db *pgxpool.Pool) {
+func dropTableNodeComponentEdges(ctx context.Context, db *postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeComponentEdgesTable+" CASCADE")
 }
 
 // Destroy drops all node tree tables.
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
+func Destroy(ctx context.Context, db *postgres.DB) {
 	dropTableNodes(ctx, db)
 }
 
-func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error) {
+func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeCVEs")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeCVEsTable+" WHERE id = ANY($1::text[])", cveIDs)
@@ -1052,7 +1039,7 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 		}
 		idToCVEMap[msg.GetId()] = msg
 	}
-	return idToCVEMap, nil
+	return idToCVEMap, rows.Err()
 }
 
 func gatherKeys(parts *nodePartsAsSlice) [][]byte {

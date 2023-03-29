@@ -8,7 +8,7 @@ be used by your own Go applications to do anything the command-line interface do
 For more information about the Engine API, see the documentation:
 https://docs.docker.com/engine/reference/api/
 
-Usage
+# Usage
 
 You use the library by creating a client object and calling methods on it. The
 client can be created either from environment variables with NewEnvClient, or
@@ -41,7 +41,6 @@ For example, to list running containers (the equivalent of "docker ps"):
 			fmt.Printf("%s %s\n", container.ID[:10], container.Image)
 		}
 	}
-
 */
 package client
 
@@ -107,7 +106,7 @@ type Client struct {
 // In go 1.8 this 301 will be converted to a GET request, and ends up getting a 404 from the daemon.
 // This behavior change manifests in the client in that before the 301 was not followed and
 // the client did not generate an error, but now results in a message like Error response from daemon: page not found.
-func CheckRedirect(req *http.Request, via []*http.Request) error {
+func CheckRedirect(_ *http.Request, via []*http.Request) error {
 	if via[0].Method == http.MethodGet {
 		return http.ErrUseLastResponse
 	}

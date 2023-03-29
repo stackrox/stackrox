@@ -37,8 +37,7 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	// TODO: ROX-12750 Replace ProbeUpload with Administration and rename the variable.
-	probeUploadSAC = sac.ForResource(resources.ProbeUpload)
+	administrationSAC = sac.ForResource(resources.Administration)
 )
 
 type manager struct {
@@ -192,7 +191,7 @@ func (m *manager) getFileInfo(file string) (*v1.ProbeUploadManifest_File, error)
 }
 
 func (m *manager) GetExistingProbeFiles(ctx context.Context, files []string) ([]*v1.ProbeUploadManifest_File, error) {
-	if ok, err := probeUploadSAC.ReadAllowed(ctx); !ok || err != nil {
+	if ok, err := administrationSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err
 	}
 
@@ -210,7 +209,7 @@ func (m *manager) GetExistingProbeFiles(ctx context.Context, files []string) ([]
 }
 
 func (m *manager) StoreFile(ctx context.Context, file string, data io.Reader, size int64, crc32Sum uint32) error {
-	if ok, err := probeUploadSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -296,7 +295,7 @@ func (m *manager) StoreFile(ctx context.Context, file string, data io.Reader, si
 	return nil
 }
 
-func (m *manager) LoadProbe(ctx context.Context, file string) (io.ReadCloser, int64, error) {
+func (m *manager) LoadProbe(_ context.Context, file string) (io.ReadCloser, int64, error) {
 	if !probeupload.IsValidFilePath(file) {
 		return nil, 0, errors.Errorf("%q is not a valid probe file name", file)
 	}
@@ -324,7 +323,7 @@ func (m *manager) LoadProbe(ctx context.Context, file string) (io.ReadCloser, in
 	return dataFile, st.Size(), nil
 }
 
-func (m *manager) IsAvailable(ctx context.Context) (bool, error) {
+func (m *manager) IsAvailable(_ context.Context) (bool, error) {
 	entries, err := os.ReadDir(m.rootDir)
 	if err != nil {
 		return false, err

@@ -18,7 +18,7 @@
   flex: 1;
 }
 
-.rule-selector .rule-selector-name-value-input > * {
+.rule-selector .rule-selector-name-value-input  * {
   width: 100% !important;
 }
 
@@ -31,6 +31,7 @@
   position: relative;
   display: flex;
   padding: var(--rule-selector-spacer) 0 0 var(--rule-selector-spacer);
+  align-items: flex-start;
 }
 
 .rule-selector-list-item:before {
@@ -41,6 +42,10 @@
   height: 1px;
   width: var(--rule-selector-spacer);
   background-color: var(--pf-global--BorderColor--100);
+}
+
+.rule-selector-delete-value-button {
+  margin-top: var(--pf-global--spacer--xs);
 }
 
 .rule-selector-add-value-button {

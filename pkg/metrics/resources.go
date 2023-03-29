@@ -10,6 +10,7 @@ const (
 	Alert Resource = iota
 	Deployment
 	ProcessIndicator
+	ProcessListeningOnPort
 	Image
 	Secret
 	Namespace

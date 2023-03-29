@@ -12,9 +12,14 @@ export type DisplayOption = 'policyStatusBadge' | 'externalBadge' | 'edgeLabel';
 type DisplayOptionsSelectProps = {
     selectedOptions: DisplayOption[];
     setSelectedOptions: (options) => void;
+    isDisabled: boolean;
 };
 
-function DisplayOptionsSelect({ selectedOptions, setSelectedOptions }: DisplayOptionsSelectProps) {
+function DisplayOptionsSelect({
+    selectedOptions,
+    setSelectedOptions,
+    isDisabled,
+}: DisplayOptionsSelectProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     function onToggle() {
@@ -38,6 +43,7 @@ function DisplayOptionsSelect({ selectedOptions, setSelectedOptions }: DisplayOp
             selections={selectedOptions}
             placeholderText="Display options"
             toggleAriaLabel="Select display options"
+            isDisabled={isDisabled}
             isGrouped
             id="display-options-dropdown"
         >

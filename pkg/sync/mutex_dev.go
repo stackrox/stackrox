@@ -56,6 +56,7 @@ func panicOnTimeout(action string, do func(), timeout time.Duration) {
 
 // panicOnTimeoutMarked allows recording the timestamp (in nanoseconds since unix epoch) as a parameter on the
 // stack. The noinline directive is supposed to prevent the optimizer from removing it.
+//
 //go:noinline
 func panicOnTimeoutMarked(action string, do func(), timeout time.Duration, nowNanos int64) {
 	do()

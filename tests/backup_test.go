@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/backup"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/tar"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
@@ -35,12 +36,7 @@ func TestBackup(t *testing.T) {
 }
 
 func doTestBackup(t *testing.T, includeCerts bool) {
-	postgresEnabled := false
-	postgresEnabledVar := os.Getenv("ROX_POSTGRES_DATASTORE")
-
-	if postgresEnabledVar == "true" {
-		postgresEnabled = true
-	}
+	postgresEnabled := env.PostgresDatastoreEnabled.BooleanSetting()
 
 	tmpZipDir := t.TempDir()
 	zipFilePath := filepath.Join(tmpZipDir, "backup.zip")

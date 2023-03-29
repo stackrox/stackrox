@@ -10,4 +10,8 @@ class IntegrationHealthService extends BaseService {
     static getVulnDefinitionsInfo() {
         return getIntegrationHealthClient().getVulnDefinitionsInfo()
     }
+
+    static getDeclarativeConfigHealthInfo() {
+        return getIntegrationHealthClient().getDeclarativeConfigs()
+    }
 }

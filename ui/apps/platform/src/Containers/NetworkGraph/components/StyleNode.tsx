@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-expressions */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import * as React from 'react';
 import {
@@ -51,7 +50,7 @@ type StyleNodeProps = {
     WithDragNodeProps &
     WithSelectionProps;
 
-const getTypeIcon = (type?: NodeDataType): any => {
+const getTypeIcon = (type?: NodeDataType): React.ComponentClass<SVGIconProps> => {
     switch (type) {
         case 'EXTERNAL_ENTITIES':
         case 'CIDR_BLOCK':
@@ -184,16 +183,21 @@ const StyleNode: React.FunctionComponent<StyleNodeProps> = ({
     }, [data]);
 
     React.useEffect(() => {
-        if (detailsLevel === ScaleDetailsLevel.low) {
-            onHideCreateConnector && onHideCreateConnector();
+        if (detailsLevel === ScaleDetailsLevel.low && onHideCreateConnector) {
+            onHideCreateConnector();
         }
     }, [detailsLevel, onHideCreateConnector]);
 
     const LabelIcon = passedData.labelIcon;
+
+    // @TODO: If multiple classes need to be stringed together, then we need a more systematic way to generate those here
+    const className = `${passedData?.isFadedOut ? 'pf-topology-node-faded' : ''}`;
+
     return (
         <Layer id={hover ? TOP_LAYER : DEFAULT_LAYER}>
             <g ref={hoverRef as React.LegacyRef<SVGGElement>}>
                 <DefaultNode
+                    className={className}
                     element={element}
                     scaleLabel={detailsLevel !== ScaleDetailsLevel.high}
                     scaleNode={hover && detailsLevel === ScaleDetailsLevel.low}

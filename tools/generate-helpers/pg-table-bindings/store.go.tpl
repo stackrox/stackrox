@@ -27,7 +27,6 @@ import (
 
     "github.com/hashicorp/go-multierror"
     "github.com/jackc/pgx/v4"
-    "github.com/jackc/pgx/v4/pgxpool"
     "github.com/pkg/errors"
     {{- if not $inMigration}}
     "github.com/stackrox/rox/central/metrics"
@@ -42,9 +41,10 @@ import (
     "github.com/stackrox/rox/pkg/logging"
     ops "github.com/stackrox/rox/pkg/metrics"
     "github.com/stackrox/rox/pkg/postgres/pgutils"
+    "github.com/stackrox/rox/pkg/postgres"
     "github.com/stackrox/rox/pkg/sac"
     "github.com/stackrox/rox/pkg/search"
-    "github.com/stackrox/rox/pkg/search/postgres"
+    pgSearch "github.com/stackrox/rox/pkg/search/postgres"
     "github.com/stackrox/rox/pkg/sync"
     "github.com/stackrox/rox/pkg/utils"
     "github.com/stackrox/rox/pkg/uuid"
@@ -112,8 +112,8 @@ type Store interface {
 }
 
 type storeImpl struct {
-    db *pgxpool.Pool
-    mutex sync.Mutex
+    db *postgres.DB
+    mutex sync.RWMutex
 }
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
@@ -121,7 +121,7 @@ type storeImpl struct {
 {{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
+func New(db *postgres.DB) Store {
     return &storeImpl{
         db: db,
     }
@@ -199,7 +199,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, batch *pgx
 {{- define "copyObject"}}
 {{- $migration := .migration }}
 {{- $schema := .schema }}
-func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, {{ range $index, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
+func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Context, tx *postgres.Tx, {{ range $index, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
 
     inputRows := [][]interface{}{}
 
@@ -310,7 +310,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 {{- end }}
 {{- end }}
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
     {{- if not $inMigration}}
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
     {{- end}}{{/* if not .inMigration */}}
@@ -464,12 +464,15 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
 		// violations
+		if len(objs) < batchAfter {
+		    s.mutex.RLock()
+		    defer s.mutex.RUnlock()
+
+		    return s.upsert(ctx, objs...)
+		}
 		s.mutex.Lock()
 		defer s.mutex.Unlock()
 
-		if len(objs) < batchAfter {
-			return s.upsert(ctx, objs...)
-		}
 		return s.copyFrom(ctx, objs...)
 	})
     {{- end }}
@@ -525,7 +528,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
     {{- end}}
     )
 
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 {{- end}}
 
@@ -572,7 +575,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
         query,
     )
 
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 {{- end}}
 
@@ -633,10 +636,8 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []{{$singlePK.Ty
             search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
         )
 
-        if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
-            err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete - len(identifiers), numRecordsToDelete)
-            log.Error(err)
-            return err
+        if err := pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
+            return errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete - len(identifiers), numRecordsToDelete)
         }
 
         // Move the slice forward to start the next batch
@@ -684,7 +685,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
     {{- end }}
     {{- end}}{{/* if not .inMigration */}}
 
-    return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+    return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the ID exists in the store.
@@ -732,7 +733,7 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
     {{- end}}
     )
 
-	count, err := postgres.RunCountRequestForSchema(ctx, schema, q, s.db)
+	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
 	// returns more than 1, despite the fact that the identifier is unique in the table.
 	return count > 0, err
@@ -783,7 +784,7 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
     {{- end}}
     )
 
-	data, err := postgres.RunGetQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
+	data, err := pgSearch.RunGetQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
@@ -832,12 +833,14 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type
 	}
     {{- end }}
     {{- end}}{{/* if not .inMigration */}}
+    pagination := query.GetPagination()
     q := search.ConjunctionQuery(
         sacQueryFilter,
         query,
     )
+    q.Pagination = pagination
 
-	rows, err := postgres.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
+	rows, err := pgSearch.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 		    return nil, nil
@@ -898,7 +901,7 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []{{$singlePK.Type}
         search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
     )
 
-	rows, err := postgres.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
+	rows, err := pgSearch.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(identifiers))
@@ -962,7 +965,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 	}
     {{- end }}
     {{- end}}{{/* if not .inMigration */}}
-    result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+    result, err := pgSearch.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return nil, err
 	}
@@ -1025,7 +1028,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
     }
 {{- end }}
 {{- end }}{{/* if not $inMigration */}}
-	fetcher, closer, err := postgres.RunCursorQueryForSchema[{{.Type}}](ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[{{.Type}}](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -1079,7 +1082,7 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 {{- if not $inMigration }}
 
 // CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+func CreateTableAndNewStore(ctx context.Context, db *postgres.DB, gormDB *gorm.DB) Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db)
 }
@@ -1089,13 +1092,13 @@ func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.
 
 
 // Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
+func Destroy(ctx context.Context, db *postgres.DB) {
     {{template "dropTableFunctionName" .Schema}}(ctx, db)
 }
 
 {{- define "dropTable"}}
 {{- $schema := . }}
-func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db *pgxpool.Pool) {
+func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db *postgres.DB) {
     _, _ = db.Exec(ctx, "DROP TABLE IF EXISTS {{$schema.Table}} CASCADE")
     {{range $child := $schema.Children}}{{ template "dropTableFunctionName" $child }}(ctx, db)
     {{end}}

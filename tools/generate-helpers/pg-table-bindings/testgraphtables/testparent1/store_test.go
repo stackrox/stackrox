@@ -35,7 +35,7 @@ func (s *TestParent1StoreSuite) SetupSuite() {
 	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.DB)
 }
 
 func (s *TestParent1StoreSuite) SetupTest() {

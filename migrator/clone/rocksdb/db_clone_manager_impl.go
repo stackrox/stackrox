@@ -4,7 +4,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/clone/metadata"
@@ -161,28 +160,33 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, error) {
 		if prevExists && currClone.GetVersion() == prevClone.GetVersion() {
 			return CurrentClone, d.getPath(d.cloneMap[CurrentClone].GetDirName()), nil
 		}
-		if version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0 || currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() {
+		if prevExists && (version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0 || currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum()) {
 			// Force rollback
 			return PreviousClone, d.getPath(d.cloneMap[PreviousClone].GetDirName()), nil
 		}
 
-		d.safeRemove(PreviousClone)
-		if d.hasSpaceForRollback() {
-			tempDir := ".db-" + uuid.NewV4().String()
-			log.Info("Database rollback enabled. Copying database files and migrate it to current version.")
-			// Copy directory: not following link, do not overwrite
-			cmd := exec.Command("cp", "-Rp", d.getPath(d.cloneMap[CurrentClone].GetDirName()), d.getPath(tempDir))
-			if output, err := cmd.CombinedOutput(); err != nil {
-				_ = os.RemoveAll(d.getPath(tempDir))
-				return "", "", errors.Wrapf(err, "failed to copy current db %s", output)
+		if currClone.GetSeqNum() < migrations.LastRocksDBVersionSeqNum() {
+			d.safeRemove(PreviousClone)
+
+			// If the current DB is in the last RocksDB version, then we would not upgrade it further.
+			// We do not need to create a temp clone. The current won't be modified anyway.
+			if d.hasSpaceForRollback() {
+				tempDir := ".db-" + uuid.NewV4().String()
+				log.Info("Database rollback enabled. Copying database files and migrate it to current version.")
+				// Copy directory: not following link, do not overwrite
+				cmd := exec.Command("cp", "-Rp", d.getPath(d.cloneMap[CurrentClone].GetDirName()), d.getPath(tempDir))
+				if output, err := cmd.CombinedOutput(); err != nil {
+					_ = os.RemoveAll(d.getPath(tempDir))
+					return "", "", errors.Wrapf(err, "failed to copy current db %s", output)
+				}
+				ver, err := migrations.Read(d.getPath(tempDir))
+				if err != nil {
+					_ = os.RemoveAll(d.getPath(tempDir))
+					return "", "", err
+				}
+				d.cloneMap[TempClone] = metadata.New(tempDir, ver)
+				return TempClone, d.getPath(d.cloneMap[TempClone].GetDirName()), nil
 			}
-			ver, err := migrations.Read(d.getPath(tempDir))
-			if err != nil {
-				_ = os.RemoveAll(d.getPath(tempDir))
-				return "", "", err
-			}
-			d.cloneMap[TempClone] = metadata.New(tempDir, ver)
-			return TempClone, d.getPath(d.cloneMap[TempClone].GetDirName()), nil
 		}
 
 		// If the space is not enough to make a clone, continue to upgrade with current.
@@ -303,19 +307,6 @@ func (d *dbCloneManagerImpl) GetVersion(cloneName string) *migrations.MigrationV
 		return clone.GetMigVersion()
 	}
 	return nil
-}
-
-// GetCurrentCloneCreationTime - time current clone was created
-func (d *dbCloneManagerImpl) GetCurrentCloneCreationTime() time.Time {
-	path := d.getPath(CurrentClone)
-	fileInfo, err := os.Lstat(path)
-	if err != nil {
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			return time.Time{}
-		}
-		log.Panicf("Unable to find current DB path: %v", err)
-	}
-	return fileInfo.ModTime()
 }
 
 // GetDirName - gets the directory name of the clone

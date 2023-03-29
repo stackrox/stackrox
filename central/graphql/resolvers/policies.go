@@ -13,6 +13,7 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -182,6 +183,8 @@ func (resolver *policyResolver) FailingDeployments(ctx context.Context, args Pag
 func (resolver *policyResolver) failingDeployments(ctx context.Context, q *v1.Query) ([]*deploymentResolver, error) {
 	alertsQuery := search.ConjunctionQuery(resolver.getPolicyQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
+
+	alertsQuery = paginated.FillDefaultSortOption(alertsQuery, paginated.GetViolationTimeSortOption())
 	listAlerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, alertsQuery)
 	if err != nil {
 		return nil, err
@@ -325,7 +328,7 @@ func (resolver *policyResolver) LatestViolation(ctx context.Context, args RawQue
 	return getLatestViolationTime(ctx, resolver.root, q)
 }
 
-func (resolver *policyResolver) FullMitreAttackVectors(ctx context.Context) ([]*mitreAttackVectorResolver, error) {
+func (resolver *policyResolver) FullMitreAttackVectors(_ context.Context) ([]*mitreAttackVectorResolver, error) {
 	return resolver.root.wrapMitreAttackVectors(
 		policyUtils.GetFullMitreAttackVectors(resolver.root.mitreStore, resolver.data),
 	)
@@ -339,7 +342,7 @@ func (resolver *policyResolver) getRawPolicyQuery() string {
 	return search.NewQueryBuilder().AddExactMatches(search.PolicyID, resolver.data.GetId()).Query()
 }
 
-func (resolver *policyResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+func (resolver *policyResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
 	return nil
 }
 

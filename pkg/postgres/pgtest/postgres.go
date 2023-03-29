@@ -6,7 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	pkgEnv "github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/random"
@@ -20,7 +21,7 @@ import (
 
 // TestPostgres is a Postgres instance used in tests
 type TestPostgres struct {
-	*pgxpool.Pool
+	*postgres.DB
 	database string
 }
 
@@ -93,7 +94,7 @@ func ForT(t testing.TB) *TestPostgres {
 	pool := ForTCustomPool(t, database)
 
 	return &TestPostgres{
-		Pool:     pool,
+		DB:       pool,
 		database: database,
 	}
 }
@@ -110,21 +111,27 @@ func ForTCustomDB(t testing.TB, dbName string) *TestPostgres {
 	pool := ForTCustomPool(t, dbName)
 
 	return &TestPostgres{
-		Pool:     pool,
+		DB:       pool,
 		database: database,
 	}
 }
 
 // ForTCustomPool - gets a connection pool to a specific database.
-func ForTCustomPool(t testing.TB, dbName string) *pgxpool.Pool {
+func ForTCustomPool(t testing.TB, dbName string) *postgres.DB {
 	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(t, dbName)
 	ctx := context.Background()
 
 	// initialize pool to be used
-	pool, err := pgxpool.Connect(ctx, sourceWithDatabase)
+	pool, err := postgres.Connect(ctx, sourceWithDatabase)
 	require.NoError(t, err)
 
 	return pool
+}
+
+// GetGormDB opens a Gorm DB to the Postgres DB
+func (tp *TestPostgres) GetGormDB(t testing.TB) *gorm.DB {
+	source := conn.GetConnectionStringWithDatabaseName(t, tp.database)
+	return OpenGormDB(t, source)
 }
 
 // Teardown tears down a Postgres instance used in tests
@@ -150,4 +157,20 @@ func OpenGormDB(t testing.TB, source string) *gorm.DB {
 // CloseGormDB closes connection to a Gorm DB
 func CloseGormDB(t testing.TB, db *gorm.DB) {
 	conn.CloseGormDB(t, db)
+}
+
+// SkipIfPostgresEnabled skips the tests if the Postgres flag is on
+func SkipIfPostgresEnabled(t testing.TB) {
+	if pkgEnv.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip("Skipping test because Postgres is enabled")
+		t.SkipNow()
+	}
+}
+
+// SkipIfPostgresDisabled skips the tests if the Postgres flag is off
+func SkipIfPostgresDisabled(t testing.TB) {
+	if !pkgEnv.PostgresDatastoreEnabled.BooleanSetting() {
+		t.Skip("Skipping test because Postgres is disabled")
+		t.SkipNow()
+	}
 }

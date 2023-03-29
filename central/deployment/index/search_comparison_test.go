@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
@@ -33,6 +34,8 @@ func compareResults(t *testing.T, matches bool, predResult *search.Result, searc
 }
 
 func TestImageSearchResults(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	cases := []struct {
 		image *storage.Image
 		query *v1.Query

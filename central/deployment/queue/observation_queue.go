@@ -14,8 +14,9 @@ type DeploymentObservation struct {
 	ObservationEnd *types.Timestamp
 }
 
-//go:generate mockgen-wrapper
 // DeploymentObservationQueue interface for observation queue
+//
+//go:generate mockgen-wrapper
 type DeploymentObservationQueue interface {
 	InObservation(deploymentID string) bool
 	Pull() *DeploymentObservation

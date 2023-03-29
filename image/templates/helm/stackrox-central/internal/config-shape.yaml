@@ -78,7 +78,6 @@ central:
       secrets: null # [string]
   extraMounts: null # [dict]
   db:
-    enabled: false # bool
     nodeSelector: null # string | dict
     tolerations: null # [dict]
     source:
@@ -86,6 +85,7 @@ central:
       minConns: null # int
       maxConns: null # int
       statementTimeoutMs: null #int
+    configOverride: null # string
     password:
       value: null # string
       generate: null # bool

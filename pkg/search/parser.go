@@ -108,6 +108,10 @@ func parsePair(pair string, allowEmpty bool) (key string, values string, valid b
 }
 
 func queryFromFieldValues(field string, values []string, highlight bool) *v1.Query {
+	// A SQL query can have no more than 65535 parameters.
+	if len(values) > MaxQueryParameters {
+		log.Errorf("UNEXPECTED: too many parameters %d for a query.  No more than %d parameters allowed in single query", len(values), MaxQueryParameters)
+	}
 	queries := make([]*v1.Query, 0, len(values))
 	for _, value := range values {
 		queries = append(queries, MatchFieldQuery(field, value, highlight))
@@ -225,7 +229,7 @@ forloop:
 			trimmedValue = strings.ToLower(trimmedValue[len(RegexPrefix):])
 			queryModifiers = append(queryModifiers, Regex)
 			break forloop // Once we see that it's a regex, we don't check for special-characters in the rest of the string.
-		case strings.HasPrefix(trimmedValue, EqualityPrefixSuffix) && strings.HasSuffix(trimmedValue, EqualityPrefixSuffix) && len(trimmedValue) > 2*len(EqualityPrefixSuffix):
+		case strings.HasPrefix(trimmedValue, EqualityPrefixSuffix) && strings.HasSuffix(trimmedValue, EqualityPrefixSuffix) && len(trimmedValue) >= 2*len(EqualityPrefixSuffix):
 			trimmedValue = trimmedValue[len(EqualityPrefixSuffix) : len(trimmedValue)-len(EqualityPrefixSuffix)]
 			queryModifiers = append(queryModifiers, Equality)
 			break forloop // Once it's within quotes, we take the value inside as is, and don't try to extract modifiers.

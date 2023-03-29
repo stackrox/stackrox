@@ -38,6 +38,11 @@ func TestConfig_HashUserAuthID(t *testing.T) {
 	id.EXPECT().ExternalAuthProvider().Return(provider).Times(1)
 	h = cfg.HashUserAuthID(id)
 	assert.Equal(t, hash("test-client:test-provider:test-id"), h)
+
+	id.EXPECT().UID().Return("sso:test-provider:test-id").Times(1)
+	id.EXPECT().ExternalAuthProvider().Return(provider).Times(1)
+	h = cfg.HashUserAuthID(id)
+	assert.Equal(t, hash("test-client:test-provider:test-id"), h)
 }
 
 func TestConfig_HashAdminUserID(t *testing.T) {

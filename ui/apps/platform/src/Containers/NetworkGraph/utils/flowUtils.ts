@@ -1,4 +1,3 @@
-import { Controller } from '@patternfly/react-topology';
 import { uniq } from 'lodash';
 
 import { EntityType } from 'Containers/Network/networkTypes';
@@ -6,7 +5,13 @@ import { L4Protocol } from 'types/networkFlow.proto';
 import { GroupedDiffFlows } from 'types/networkPolicyService';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import { BaselineSimulationDiffState, Flow, FlowEntityType, Peer } from '../types/flow.type';
-import { CustomEdgeModel, CustomNodeModel, CustomSingleNodeData } from '../types/topology.type';
+import {
+    CustomEdgeModel,
+    CustomNodeModel,
+    CustomSingleNodeData,
+    CustomSingleNodeModel,
+} from '../types/topology.type';
+import { getNodeById } from './networkGraphUtils';
 
 export const protocolLabel = {
     L4_PROTOCOL_UNKNOWN: 'UNKNOWN',
@@ -32,7 +37,7 @@ export function getAllUniquePorts(flows: Flow[]): string[] {
 export function getNumFlows(flows: Flow[]): number {
     const numFlows = flows.reduce((acc, curr) => {
         // if there are no children then it counts as 1 flow
-        return acc + (curr.children && curr.children.length ? curr.children.length : 1);
+        return acc + (curr.children && curr.children.length > 0 ? curr.children.length : 1);
     }, 0);
     return numFlows;
 }
@@ -62,7 +67,7 @@ export function getUniqueIdFromPeer(peer: Peer) {
     const direction = peer.ingress ? 'Ingress' : 'Egress';
     const { port } = peer;
     const { protocol } = peer;
-    const id = createUniqueFlowId({ entityId, direction, port, protocol });
+    const id = createUniqueFlowId({ entityId, direction, port: String(port), protocol });
     return id;
 }
 
@@ -117,18 +122,18 @@ function createFlow({
   side panels
 */
 export function getNetworkFlows(
+    nodes: CustomNodeModel[],
     edges: CustomEdgeModel[],
-    controller: Controller,
     id: string
 ): Flow[] {
     const networkFlows: Flow[] = edges.reduce((acc, edge) => {
         const isSourceNodeSelected = edge.source === id;
 
-        const sourceNode = controller.getNodeById(edge.source);
-        const targetNode = controller.getNodeById(edge.target);
+        const sourceNode = getNodeById(nodes, edge.source) as CustomSingleNodeModel;
+        const targetNode = getNodeById(nodes, edge.target) as CustomSingleNodeModel;
 
-        const sourceNodeData: CustomSingleNodeData = sourceNode?.getData();
-        const targetNodeData: CustomSingleNodeData = targetNode?.getData();
+        const sourceNodeData = sourceNode.data;
+        const targetNodeData = targetNode.data;
 
         const newFlows = edge.data.sourceToTargetProperties.map(({ port, protocol }): Flow => {
             const direction: string = isSourceNodeSelected ? 'Egress' : 'Ingress';
@@ -175,7 +180,6 @@ export function filterNetworkFlows(
 ): Flow[] {
     const filteredFlows = flows.filter((flow) => {
         let matchedEntityName = false;
-        let matchedFlowType = true;
         let matchedDirectionality = true;
         const matchedProtocol = true;
         let matchedPort = true;
@@ -183,15 +187,6 @@ export function filterNetworkFlows(
         // check filtering by entity name
         if (flow.entity.includes(entityNameFilter)) {
             matchedEntityName = true;
-        }
-
-        // check filtering by flow type
-        if (advancedFilters.flows.length) {
-            const isAnomalousFiltered =
-                advancedFilters.flows.includes('anomalous') && flow.isAnomalous;
-            const isBaselineFiltered =
-                advancedFilters.flows.includes('baseline') && !flow.isAnomalous;
-            matchedFlowType = isAnomalousFiltered || isBaselineFiltered;
         }
 
         // check filtering by directionality
@@ -219,13 +214,7 @@ export function filterNetworkFlows(
             matchedPort = false;
         }
 
-        return (
-            matchedEntityName &&
-            matchedFlowType &&
-            matchedDirectionality &&
-            matchedProtocol &&
-            matchedPort
-        );
+        return matchedEntityName && matchedDirectionality && matchedProtocol && matchedPort;
     });
     return filteredFlows;
 }
@@ -252,7 +241,7 @@ export function transformFlowsToPeers(flows: Flow[]): Peer[] {
                 type: backendType,
             },
             ingress: direction === 'Ingress',
-            port,
+            port: Number(port),
             protocol,
         };
         return peer;

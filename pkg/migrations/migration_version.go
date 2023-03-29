@@ -8,6 +8,7 @@ import (
 	"github.com/docker/docker/pkg/ioutils"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"gopkg.in/yaml.v3"
@@ -17,6 +18,7 @@ const (
 	// MigrationVersionFile records the latest central version in databases.
 	MigrationVersionFile     = "migration_version.yaml"
 	migrationVersionFileMode = 0644
+	lastRocksDBVersion       = "3.74.0"
 )
 
 var (
@@ -65,7 +67,26 @@ func SetCurrent(dbPath string) {
 		newVersion := &MigrationVersion{
 			dbPath:      dbPath,
 			MainVersion: version.GetMainVersion(),
-			SeqNum:      LastRocksDBVersionSeqNum(), // Most recent possible RocksDB version
+			SeqNum:      mathutil.MinInt(LastRocksDBVersionSeqNum(), CurrentDBVersionSeqNum()),
+		}
+		err := newVersion.atomicWrite()
+		if err != nil {
+			utils.Should(errors.Wrapf(err, "failed to write migration version to %s", dbPath))
+		}
+	}
+}
+
+// SealLegacyDB update the database migration version of a database directory to:
+// 1) last associated version if it is upgraded from 3.74; or
+// 2) 3.74.0 to be consistent with LastRocksDBVersionSeqNum
+// If the last associated version is 3.74 or later, then we will keep it untouched;
+// otherwise we mark it a fake but possible version for recovery.
+func SealLegacyDB(dbPath string) {
+	if curr, err := Read(dbPath); err == nil && version.CompareVersions(curr.MainVersion, lastRocksDBVersion) < 0 {
+		newVersion := &MigrationVersion{
+			dbPath:      dbPath,
+			MainVersion: lastRocksDBVersion,
+			SeqNum:      LastRocksDBVersionSeqNum(),
 		}
 		err := newVersion.atomicWrite()
 		if err != nil {

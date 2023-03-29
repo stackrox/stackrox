@@ -7,22 +7,6 @@ export const READ_WRITE_ACCESS = 'READ_WRITE_ACCESS';
 
 export type AccessLevel = 'NO_ACCESS' | 'READ_ACCESS' | 'READ_WRITE_ACCESS';
 
-const defaultRoles = {
-    Admin: true,
-    Analyst: true,
-    'Continuous Integration': true,
-    None: true,
-    'Scope Manager': true,
-    'Sensor Creator': true,
-    'Vulnerability Management Approver': true,
-    'Vulnerability Management Requester': true,
-    'Vulnerability Report Creator': true,
-};
-
-export function getIsDefaultRoleName(name: string): boolean {
-    return Boolean(defaultRoles[name]);
-}
-
 export const authProviderLabels = {
     auth0: 'Auth0',
     oidc: 'OpenID Connect',
@@ -60,10 +44,9 @@ export const oidcCallbackValues = {
 };
 
 export const defaultMinimalReadAccessResources = [
+    'Administration',
     'Alert',
     'Cluster',
-    // TODO: ROX-12750 Replace Config with Administration
-    'Config',
     'Deployment',
     'Image',
     'Namespace',
@@ -89,11 +72,22 @@ export const defaultSelectedRole = {
     resourceToAccess: defaultNewRolePermissions,
 };
 
-// TODO: ROX-12750 update with new list of replaced/deprecated resources.
 // TODO: ROX-13888 Remove WorkflowAdministration.
 export const resourceSubstitutions: Record<string, string[]> = {
     Access: ['AuthProvider', 'Group', 'Licenses', 'User'],
+    Administration: [
+        'AllComments',
+        'Config',
+        'DebugLogs',
+        'NetworkGraphConfig',
+        'ProbeUpload',
+        'ScannerBundle',
+        'ScannerDefinitions',
+        'SensorUpgradeConfig',
+        'ServiceIdentity',
+    ],
     Cluster: ['ClusterCVE'],
+    Compliance: ['ComplianceRuns'],
     DeploymentExtension: ['Indicator', 'NetworkBaseline', 'ProcessWhitelist', 'Risk'],
     Integration: [
         'APIToken',
@@ -106,39 +100,19 @@ export const resourceSubstitutions: Record<string, string[]> = {
     WorkflowAdministration: ['Policy', 'VulnerabilityReports'],
 };
 
-// TODO: ROX-12750 update with new list of replaced/deprecated resources.
 // TODO: ROX-13888 Remove Policy, VulnerabilityReports.
-// TODO: ROX-12750 update with new list of replaced/deprecated resources
 export const resourceRemovalReleaseVersions = new Map<ResourceName, string>([
-    ['AllComments', '3.75'],
-    ['ComplianceRuns', '3.75'],
-    ['Config', '3.75'],
-    ['DebugLogs', '3.75'],
-    ['NetworkGraphConfig', '3.75'],
-    ['ProbeUpload', '3.75'],
-    ['ScannerBundle', '3.75'],
-    ['ScannerDefinitions', '3.75'],
-    ['SensorUpgradeConfig', '3.75'],
-    ['ServiceIdentity', '3.75'],
-    ['VulnerabilityReports', '3.76'],
+    ['Policy', '4.1'],
+    ['Role', '4.1'],
+    ['VulnerabilityReports', '4.1'],
 ]);
 
 // TODO(ROX-11453): Remove this mapping once the old resources are fully deprecated.
 export const replacedResourceMapping = new Map<ResourceName, string>([
-    // TODO: ROX-12750 Remove AllComments, ComplianceRunSchedule, ComplianceRuns, Config, DebugLogs,
-    // NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig and ServiceIdentity.
     // TODO: ROX-13888 Remove Policy, VulnerabilityReports.
-    ['AllComments', 'Administration'],
-    ['ComplianceRuns', 'Compliance'],
-    ['Config', 'Administration'],
-    ['DebugLogs', 'Administration'],
-    ['NetworkGraphConfig', 'Administration'],
-    ['ProbeUpload', 'Administration'],
-    ['ScannerBundle', 'Administration'],
-    ['ScannerDefinitions', 'Administration'],
-    ['SensorUpgradeConfig', 'Administration'],
-    ['ServiceIdentity', 'Administration'],
+    ['Policy', 'WorkflowAdministration'],
     ['VulnerabilityReports', 'WorkflowAdministration'],
+    ['Role', 'Access'],
 ]);
 
 export const deprecatedResourceRowStyle = { backgroundColor: 'rgb(255,250,205)' };

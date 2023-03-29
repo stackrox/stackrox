@@ -1,8 +1,9 @@
 import React, { useState, useReducer } from 'react';
 import PropTypes from 'prop-types';
 import useDeepCompareEffect from 'use-deep-compare-effect';
-import { DownloadCloud, Plus, Trash2 } from 'react-feather';
+import { DownloadCloud, Trash2 } from 'react-feather';
 import get from 'lodash/get';
+import { Dropdown, DropdownItem, DropdownPosition, DropdownToggle } from '@patternfly/react-core';
 
 import CheckboxTable from 'Components/CheckboxTable';
 import CloseButton from 'Components/CloseButton';
@@ -11,7 +12,6 @@ import PanelButton from 'Components/PanelButton';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
@@ -24,6 +24,7 @@ import {
 } from 'services/ClustersService';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import { filterAllowedSearch, convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
+import { getVersionedDocs } from 'utils/versioning';
 
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
@@ -33,10 +34,21 @@ import AddClusterPrompt from './AddClusterPrompt';
 function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOptions }) {
     const { hasReadWriteAccess } = usePermissions();
     const hasReadWriteAccessForCluster = hasReadWriteAccess('Cluster');
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isDecommissionedClusterRetentionEnabled = isFeatureFlagEnabled(
-        'ROX_DECOMMISSIONED_CLUSTER_RETENTION'
-    );
+    const [isInstallMenuOpen, setIsInstallMenuOpen] = useState(false);
+
+    function onToggleInstallMenu(newIsInstallMenuOpen) {
+        setIsInstallMenuOpen(newIsInstallMenuOpen);
+    }
+
+    function onFocusInstallMenu() {
+        const element = document.getElementById('toggle-descriptions');
+        element.focus();
+    }
+
+    function onSelectInstallMenuItem() {
+        setIsInstallMenuOpen(false);
+        onFocusInstallMenu();
+    }
 
     const metadata = useMetadata();
 
@@ -84,6 +96,29 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
             />
         </div>
     ));
+
+    const { version } = metadata;
+
+    const installMenuOptions = [
+        version ? (
+            <DropdownItem
+                key="link"
+                description="Cluster installation guides"
+                href={getVersionedDocs(version, 'installing/acs-installation-platforms.html')}
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                View instructions
+            </DropdownItem>
+        ) : (
+            <DropdownItem key="version-missing" isPlainText>
+                Instructions unavailable; version missing
+            </DropdownItem>
+        ),
+        <DropdownItem key="add" onClick={onAddCluster}>
+            New cluster
+        </DropdownItem>,
+    ];
 
     function refreshClusterList(restSearch) {
         setFetchingClusters(true);
@@ -192,21 +227,28 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
             <PanelButton
                 icon={<Trash2 className="h-4 w-4 ml-1" />}
                 tooltip={`Delete (${checkedClusterIds.length})`}
-                className="btn btn-alert ml-2"
+                className="btn btn-alert ml-2 mr-2"
                 onClick={deleteSelectedClusters}
                 disabled={checkedClusterIds.length === 0 || !!selectedClusterId}
             >
                 {`Delete (${checkedClusterIds.length})`}
             </PanelButton>
-            <PanelButton
-                icon={<Plus className="h-4 w-4 ml-1" />}
-                tooltip="New Cluster"
-                className="btn btn-base ml-2 mr-4"
-                onClick={onAddCluster}
-                disabled={!!selectedClusterId}
-            >
-                New Cluster
-            </PanelButton>
+            <Dropdown
+                className="mr-4"
+                onSelect={onSelectInstallMenuItem}
+                toggle={
+                    <DropdownToggle
+                        id="install-toggle"
+                        toggleVariant="secondary"
+                        onToggle={onToggleInstallMenu}
+                    >
+                        Install cluster
+                    </DropdownToggle>
+                }
+                position={DropdownPosition.right}
+                isOpen={isInstallMenuOpen}
+                dropdownItems={installMenuOptions}
+            />
         </>
     );
 
@@ -245,7 +287,6 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     const columnOptions = {
         clusterIdToRetentionInfo,
         hasReadWriteAccessForCluster,
-        isDecommissionedClusterRetentionEnabled,
         metadata,
         rowActions: {
             onDeleteHandler,

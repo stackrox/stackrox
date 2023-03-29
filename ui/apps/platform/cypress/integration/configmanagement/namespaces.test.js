@@ -1,17 +1,18 @@
 import withAuth from '../../helpers/basicAuth';
 
 import {
-    visitConfigurationManagementEntityInSidePanel,
-    navigateToSingleEntityPage,
-    hasCountWidgetsFor,
+    clickEntityTableRowThatHasLinkInColumn,
     clickOnCountWidget,
     clickOnSingularEntityWidgetInSidePanel,
     clickOnSingleEntityInTable,
-    hasTabsFor,
+    entityListCountMatchesTableLinkCount,
+    hasCountWidgetsFor,
     hasRelatedEntityFor,
+    hasTabsFor,
+    navigateToSingleEntityPage,
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows,
-    entityListCountMatchesTableLinkCount,
+    visitConfigurationManagementEntityInSidePanel,
 } from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'namespaces';
@@ -50,7 +51,8 @@ describe('Configuration Management Namespaces', () => {
     });
 
     it('should click on the secrets count widget in the entity page and show the secrets tab', () => {
-        visitConfigurationManagementEntityInSidePanel(entitiesKey, 'stackrox');
+        const columnIndexForSecrets = 5;
+        clickEntityTableRowThatHasLinkInColumn(entitiesKey, columnIndexForSecrets);
         navigateToSingleEntityPage(entitiesKey);
         clickOnCountWidget('secrets', 'entityList');
     });

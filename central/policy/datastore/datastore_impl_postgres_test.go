@@ -8,11 +8,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/policy/search"
-	"github.com/stackrox/rox/central/policy/store/postgres"
+	pgStore "github.com/stackrox/rox/central/policy/store/postgres"
 	policyCategoryDS "github.com/stackrox/rox/central/policycategory/datastore"
 	categorySearch "github.com/stackrox/rox/central/policycategory/search"
 	categoryPostgres "github.com/stackrox/rox/central/policycategory/store/postgres"
@@ -22,8 +21,8 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -39,7 +38,7 @@ type PolicyPostgresDataStoreTestSuite struct {
 	suite.Suite
 
 	ctx            context.Context
-	db             *pgxpool.Pool
+	db             *postgres.DB
 	gormDB         *gorm.DB
 	mockClusterDS  *clusterDSMocks.MockDataStore
 	mockNotifierDS *notifierDSMocks.MockDataStore
@@ -50,10 +49,9 @@ type PolicyPostgresDataStoreTestSuite struct {
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) SetupSuite() {
-	s.T().Setenv(features.NewPolicyCategories.EnvVar(), "true")
 	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() || !features.NewPolicyCategories.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skipping. This test requires postgres and categories flag enabled.")
 		s.T().SkipNow()
 	}
@@ -61,17 +59,17 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupSuite() {
 	s.ctx = context.Background()
 
 	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := postgres.New(s.ctx, config)
 	s.NoError(err)
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 	s.db = pool
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
-	postgres.Destroy(s.ctx, s.db)
+	pgStore.Destroy(s.ctx, s.db)
 	categoryPostgres.Destroy(s.ctx, s.db)
 	edgePostgres.Destroy(s.ctx, s.db)
 
@@ -88,8 +86,8 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
 
 	s.categoryDS = policyCategoryDS.New(categoryStorage, categoryIndex, categorySearcher, policyCategoryEdgeDS.New(edgeStorage, edgeIndex, edgeSearcher))
 
-	policyStore := postgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	policyIndex := postgres.NewIndexer(s.db)
+	policyStore := pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
+	policyIndex := pgStore.NewIndexer(s.db)
 	s.datastore = New(policyStore, policyIndex, search.New(policyStore, policyIndex), s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
 
 }
@@ -187,7 +185,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportPolicy() {
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) TestSearchPolicyCategoryFeatureDisabled() {
-	s.T().Setenv(features.NewPolicyCategories.EnvVar(), "false")
+	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "false")
 
 	// Policy should get upserted with category names stored inside the policy storage proto object
 	// no edges, no separate category objects)
@@ -212,4 +210,22 @@ func (s *PolicyPostgresDataStoreTestSuite) TestSearchPolicyCategoryFeatureDisabl
 	s.NoError(err)
 	s.Len(results, 1)
 	s.Equal(policy.GetId(), results[0].ID)
+}
+
+func (s *PolicyPostgresDataStoreTestSuite) TestSearchRawPolicies() {
+	policy := fixtures.GetPolicy()
+
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		sac.ResourceScopeKeys(resources.Policy, resources.Cluster),
+	))
+
+	// Add policy.
+	_, err := s.datastore.AddPolicy(ctx, policy)
+	s.NoError(err)
+
+	policies, err := s.datastore.SearchRawPolicies(ctx, pkgSearch.EmptyQuery())
+	s.NoError(err)
+	s.Len(policies, 1)
+	s.Len(policies[0].Categories, 3)
 }

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
@@ -35,7 +34,6 @@ func TestDeployerTestSuite(t *testing.T) {
 }
 
 func (s *deployerTestSuite) SetupTest() {
-	testbuildinfo.SetForTest(s.T())
 	testutils.SetExampleVersion(s.T())
 }
 
@@ -318,7 +316,6 @@ func (s *deployerTestSuite) TestFieldsFromClusterAndRenderOpts() {
 }
 
 func TestRequiredFieldsArePresent(t *testing.T) {
-	testbuildinfo.SetForTest(t)
 	testutils.SetExampleVersion(t)
 
 	testFlavor := flavorUtils.MakeImageFlavorForTest(t)

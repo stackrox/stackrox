@@ -1,5 +1,4 @@
 import io.stackrox.proto.api.v1.Common
-import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
@@ -13,6 +12,7 @@ import objects.GCRImageIntegration
 import services.CVEService
 import services.ClusterService
 import services.ImageIntegrationService
+import services.ImageService
 import services.PolicyService
 import util.ChaosMonkey
 import util.Env
@@ -82,14 +82,16 @@ class AdmissionControllerTest extends BaseSpecification {
         ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
         gcrId = GCRImageIntegration.createDefaultIntegration()
         assert gcrId != ""
+
+        // Pre run scan to avoid timeouts with inline scans in the tests below
+        ImageService.scanImage(GCR_NGINX)
     }
 
     def setup() {
         // https://stack-rox.atlassian.net/browse/ROX-7026 - Disable ChaosMonkey
-        // // By default, operate with a chaos monkey that keeps one ready replica alive and deletes with a 10s grace
-        // // period, which should be sufficient for K8s to pick up readiness changes and update endpoints.
+        // By default, operate with a chaos monkey that keeps one ready replica alive and deletes with a 10s grace
+        // period, which should be sufficient for K8s to pick up readiness changes and update endpoints.
         // chaosMonkey = new ChaosMonkey(orchestrator, 1, 10L)
-        // chaosMonkey.waitForEffect()
     }
 
     def cleanup() {
@@ -119,10 +121,20 @@ class AdmissionControllerTest extends BaseSpecification {
         ImageIntegrationService.addStackroxScannerIntegration()
     }
 
+    def prepareChaosMonkey() {
+        // We cannot do this in setup() because we need to make sure chaos monkey
+        // is back up on retries after being stopped in "cleanup:".
+        if (chaosMonkey) {
+            chaosMonkey.start()
+            chaosMonkey.waitForEffect()
+        }
+    }
+
     @Unroll
     @Tag("BAT")
     def "Verify Admission Controller Config (#desc)"() {
         when:
+        prepareChaosMonkey()
 
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
                                 .setEnabled(true)
@@ -141,6 +153,12 @@ class AdmissionControllerTest extends BaseSpecification {
         assert created == launched
 
         cleanup:
+        "Stop ChaosMonkey ASAP to not lose logs"
+        if (chaosMonkey) {
+            chaosMonkey.stop()
+        }
+
+        and:
         "Revert Cluster"
         if (created) {
             deleteDeploymentWithCaution(deployment)
@@ -160,7 +178,14 @@ class AdmissionControllerTest extends BaseSpecification {
     @Tag("BAT")
     def "Verify CVE snoozing applies to images scanned by admission controller #image"() {
         given:
-         "Create policy looking for a specific CVE"
+        "Chaos monkey is prepared"
+        prepareChaosMonkey()
+
+        and:
+        "Scan image"
+        ImageService.scanImage(image)
+
+        "Create policy looking for a specific CVE"
         // We don't want to block on SEVERITY
         Services.updatePolicyEnforcement(
                 SEVERITY,
@@ -183,24 +208,23 @@ class AdmissionControllerTest extends BaseSpecification {
                 .setBooleanOperator(PolicyOuterClass.BooleanOperator.AND)
         policyGroup.addAllValues([PolicyValue.newBuilder().setValue("CVE-2019-3462").build(),])
 
+        String policyName = "Matching CVE (CVE-2019-3462)"
         PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
-                .setName("Matching CVE (CVE-2019-3462)")
+                .setName(policyName)
                 .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
-                .addCategories("Testing")
+                .addCategories("DevOps Best Practices")
                 .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
                 .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
                 .addPolicySections(
                         PolicySection.newBuilder().addPolicyGroups(policyGroup.build()).build())
                 .build()
-        policy = PolicyService.policyClient.postPolicy(
-                PolicyServiceOuterClass.PostPolicyRequest.newBuilder()
-                        .setPolicy(policy)
-                        .build()
-        )
+
+        String policyID = PolicyService.createNewPolicy(policy)
+        assert policyID
 
         log.info("Policy created to scale-to-zero deployments with CVE-2019-3462")
         // Maximum time to wait for propagation to sensor
-        Helpers.sleepWithRetryBackoff(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
+        Helpers.sleepWithRetryBackoff(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
         log.info("Sensor and admission-controller _should_ have the policy update")
 
         def deployment = new Deployment()
@@ -217,7 +241,7 @@ class AdmissionControllerTest extends BaseSpecification {
         "Suppress CVE and check that the deployment can now launch"
 
         def cve = "CVE-2019-3462"
-        if (Env.CI_JOBNAME.contains("postgres")) {
+        if (Env.get("ROX_POSTGRES_DATASTORE", null) == "true") {
             CVEService.suppressImageCVE(cve)
         } else {
             CVEService.suppressCVE(cve)
@@ -235,7 +259,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         and:
         "Unsuppress CVE"
-        if (Env.CI_JOBNAME.contains("postgres")) {
+        if (Env.get("ROX_POSTGRES_DATASTORE", null) == "true") {
             CVEService.unsuppressImageCVE(cve)
         } else {
             CVEService.unsuppressCVE(cve)
@@ -253,16 +277,21 @@ class AdmissionControllerTest extends BaseSpecification {
         assert !created
 
         cleanup:
+        "Stop ChaosMonkey ASAP to not lose logs"
+        if (chaosMonkey) {
+            chaosMonkey.stop()
+        }
+
+        and:
         "Delete policy"
-        PolicyService.policyClient.deletePolicy(Common.ResourceByID.newBuilder().setId(policy.id).build())
+        PolicyService.policyClient.deletePolicy(Common.ResourceByID.newBuilder().setId(policyID).build())
 
         if (created) {
             deleteDeploymentWithCaution(deployment)
         }
 
         // Add back enforcement
-        Services.updatePolicyEnforcement(
-                SEVERITY,
+        Services.updatePolicyEnforcement(SEVERITY,
                 [PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
         )
 
@@ -278,6 +307,8 @@ class AdmissionControllerTest extends BaseSpecification {
     @Tag("BAT")
     def "Verify Admission Controller Enforcement on Updates (#desc)"() {
         when:
+        prepareChaosMonkey()
+
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
                 .setEnabled(true)
                 .setEnforceOnUpdates(true)
@@ -303,6 +334,12 @@ class AdmissionControllerTest extends BaseSpecification {
         assert updated == success
 
         cleanup:
+        "Stop ChaosMonkey ASAP to not lose logs"
+        if (chaosMonkey) {
+            chaosMonkey.stop()
+        }
+
+        and:
         "Revert Cluster"
         if (created) {
             deleteDeploymentWithCaution(deployment)
@@ -322,6 +359,8 @@ class AdmissionControllerTest extends BaseSpecification {
     @Tag("BAT")
     def "Verify Admission Controller Enforcement respects Cluster/Namespace scopes (match: #clusterMatch/#nsMatch)"() {
         when:
+        prepareChaosMonkey()
+
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
                 .setEnabled(true)
                 .setScanInline(false)
@@ -359,6 +398,12 @@ class AdmissionControllerTest extends BaseSpecification {
         assert !created == (clusterMatch && nsMatch)
 
         cleanup:
+        "Stop ChaosMonkey ASAP to not lose logs"
+        if (chaosMonkey) {
+            chaosMonkey.stop()
+        }
+
+        and:
         "Revert Cluster"
         if (created) {
             deleteDeploymentWithCaution(deployment)
@@ -402,6 +447,8 @@ class AdmissionControllerTest extends BaseSpecification {
         and:
         "Start a chaos monkey thread that kills _all_ ready admission control replicas with a short grace period"
         def killAllChaosMonkey = new ChaosMonkey(orchestrator, 0, 1L)
+        killAllChaosMonkey.start()
+        killAllChaosMonkey.waitForEffect()
 
         then:
         "Verify deployment can be created"
@@ -451,6 +498,10 @@ class AdmissionControllerTest extends BaseSpecification {
     @Tag("SensorBounceNext")
     def "Verify admission controller performs image scans if Sensor is Unavailable"() {
         given:
+        "Chaos monkey is prepared"
+        prepareChaosMonkey()
+
+        and:
         "Admission controller is enabled"
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
                 .setEnabled(true)
@@ -489,8 +540,18 @@ class AdmissionControllerTest extends BaseSpecification {
         assert !created
 
         cleanup:
+        "Stop ChaosMonkey ASAP to not lose logs"
+        if (chaosMonkey) {
+            chaosMonkey.stop()
+        }
+
+        and:
+        "Restore sensor"
         orchestrator.scaleDeployment("stackrox", "sensor", 1)
         orchestrator.waitForPodsReady("stackrox", ["app": "sensor"], 1, 30, 1)
+
+        and:
+        "Delete nginx deployment"
         if (created) {
             deleteDeploymentWithCaution(GCR_NGINX_DEPLOYMENT)
         }

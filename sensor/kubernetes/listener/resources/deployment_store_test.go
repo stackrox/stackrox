@@ -43,7 +43,7 @@ func (s *deploymentStoreSuite) SetupTest() {
 func (s *deploymentStoreSuite) createDeploymentWrap(deploymentObj interface{}) *deploymentWrap {
 	action := central.ResourceAction_CREATE_RESOURCE
 	wrap := newDeploymentEventFromResource(deploymentObj, &action,
-		"deployment", "", s.mockPodLister, s.namespaceStore, hierarchyFromPodLister(s.mockPodLister), "", orchestratornamespaces.Singleton(), registry.Singleton())
+		"deployment", "", s.mockPodLister, s.namespaceStore, hierarchyFromPodLister(s.mockPodLister), "", orchestratornamespaces.NewOrchestratorNamespaces(), registry.NewRegistryStore(nil))
 	return wrap
 }
 

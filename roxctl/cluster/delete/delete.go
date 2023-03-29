@@ -46,7 +46,7 @@ type clusterDeleteCommand struct {
 	timeout time.Duration
 }
 
-func (cmd *clusterDeleteCommand) Construct(args []string, cbr *cobra.Command) error {
+func (cmd *clusterDeleteCommand) Construct(_ []string, cbr *cobra.Command) error {
 	cmd.timeout = flags.Timeout(cbr)
 	return nil
 }

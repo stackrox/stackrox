@@ -26,6 +26,9 @@ if [[ -n "${UI_BASE_URL}" ]]; then
   export CYPRESS_BASE_URL="${UI_BASE_URL}"
 fi
 
+# be able to skip tests that are not relevant, for example: openshift
+export CYPRESS_ORCHESTRATOR_FLAVOR="${ORCHESTRATOR_FLAVOR}"
+
 if [ $2 == "--spec" ]; then
     if [ $# -ne 3 ]; then
         echo "usage: yarn cypress-spec <spec-file>"

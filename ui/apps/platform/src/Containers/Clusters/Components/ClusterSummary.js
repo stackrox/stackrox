@@ -9,8 +9,7 @@ import ClusterDeletion from './ClusterDeletion';
 import ClusterStatus from './ClusterStatus';
 import CollectorStatus from './Collector/CollectorStatus';
 import AdmissionControlStatus from './AdmissionControl/AdmissionControlStatus';
-import CredentialExpiration from './CredentialExpiration';
-import CredentialInteraction from './CredentialInteraction';
+import CredentialExpirationWidget from './CredentialExpirationWidget';
 import SensorStatus from './SensorStatus';
 import SensorUpgrade from './SensorUpgrade';
 
@@ -37,7 +36,7 @@ const ClusterSummary = ({
     centralVersion,
     clusterId,
     clusterRetentionInfo,
-    isDecommissionedClusterRetentionEnabled,
+    isManagerTypeNonConfigurable,
 }) => (
     <CollapsibleSection title="Cluster Summary" titleClassName="text-xl">
         <div className="grid grid-columns-1 md:grid-columns-2 xl:grid-columns-4 grid-gap-4 xl:grid-gap-6 mb-4 w-full">
@@ -122,24 +121,18 @@ const ClusterSummary = ({
             </div>
             <div className="s-1">
                 <Widget header="Credential Expiration" bodyClassName="p-2">
-                    {status?.certExpiryStatus?.sensorCertExpiry ? (
-                        <CredentialInteraction
-                            certExpiryStatus={status?.certExpiryStatus}
-                            upgradeStatus={status?.upgradeStatus}
-                            clusterId={clusterId}
-                        />
-                    ) : (
-                        <CredentialExpiration certExpiryStatus={status?.certExpiryStatus} />
-                    )}
+                    <CredentialExpirationWidget
+                        clusterId={clusterId}
+                        status={status}
+                        isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
+                    />
                 </Widget>
             </div>
-            {isDecommissionedClusterRetentionEnabled && (
-                <div className="s-1">
-                    <Widget header="Cluster Deletion" bodyClassName="p-2">
-                        <ClusterDeletion clusterRetentionInfo={clusterRetentionInfo} />
-                    </Widget>
-                </div>
-            )}
+            <div className="s-1">
+                <Widget header="Cluster Deletion" bodyClassName="p-2">
+                    <ClusterDeletion clusterRetentionInfo={clusterRetentionInfo} />
+                </Widget>
+            </div>
         </div>
     </CollapsibleSection>
 );
@@ -189,7 +182,7 @@ ClusterSummary.propTypes = {
     centralVersion: PropTypes.string.isRequired,
     clusterId: PropTypes.string.isRequired,
     clusterRetentionInfo: PropTypes.oneOf([PropTypes.shape({}), PropTypes.null]).isRequired,
-    isDecommissionedClusterRetentionEnabled: PropTypes.bool.isRequired,
+    isManagerTypeNonConfigurable: PropTypes.bool.isRequired,
 };
 
 export default ClusterSummary;

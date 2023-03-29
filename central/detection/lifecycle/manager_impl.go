@@ -180,6 +180,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 	if len(copiedQueue) == 0 {
 		return
 	}
+	defer centralMetrics.ModifyProcessQueueLength(-len(copiedQueue))
 
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "FlushingIndicatorQueue")
 
@@ -197,7 +198,9 @@ func (m *managerImpl) flushIndicatorQueue() {
 		log.Errorf("Error adding process indicators: %v", err)
 	}
 
+	now := time.Now()
 	m.processAggregator.Add(indicatorSlice)
+	centralMetrics.SetFunctionSegmentDuration(now, "AddProcessToAggregator")
 
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "CheckAndUpdateBaseline")
 
@@ -208,11 +211,15 @@ func (m *managerImpl) addToIndicatorQueue(indicator *storage.ProcessIndicator) {
 	m.indicatorQueueLock.Lock()
 	defer m.indicatorQueueLock.Unlock()
 
+	previousSize := len(m.queuedIndicators)
 	m.queuedIndicators[indicator.GetId()] = indicator
+	if len(m.queuedIndicators) != previousSize {
+		centralMetrics.ModifyProcessQueueLength(1)
+	}
 }
 
 func (m *managerImpl) addBaseline(deploymentID string) {
-	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "CheckAndUpdateBaseline")
+	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "AddBaseline")
 
 	// Simply use search to find the process indicators for the deployment
 	indicatorSlice, _ := m.processesDataStore.SearchRawProcessIndicators(

@@ -110,7 +110,7 @@ type imageScanCommand struct {
 }
 
 // Construct will enhance the struct with other values coming either from os.Args, other, global flags or environment variables
-func (i *imageScanCommand) Construct(args []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
+func (i *imageScanCommand) Construct(_ []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	i.timeout = flags.Timeout(cmd)
 
 	if err := imageUtils.IsValidImageString(i.image); err != nil {
@@ -247,7 +247,7 @@ func printCVESummary(image string, cveSummary map[string]int, out logger.Logger)
 // print warning with amount of CVEs found in components
 func printCVEWarning(numOfVulns int, numOfComponents int, out logger.Logger) {
 	if numOfVulns != 0 {
-		out.WarnfLn("A total of %d vulnerabilities were found in %d components",
+		out.WarnfLn("A total of %d unique vulnerabilities were found in %d components",
 			numOfVulns, numOfComponents)
 	}
 }

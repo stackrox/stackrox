@@ -1,6 +1,7 @@
 package metrics
 
 // Resolver represents a graphql resolver that we want to time.
+//
 //go:generate stringer -type=Resolver
 type Resolver int
 

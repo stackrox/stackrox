@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
-	"github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
+	pgStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
@@ -24,8 +24,8 @@ func initialize() {
 	var indexer index.Indexer
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage = postgres.New(globaldb.GetPostgres())
-		indexer = postgres.NewIndexer(globaldb.GetPostgres())
+		storage = pgStore.New(globaldb.GetPostgres())
+		indexer = pgStore.NewIndexer(globaldb.GetPostgres())
 	} else {
 		storage = rocksdb.New(globaldb.GetRocksDB())
 		indexer = index.New(globalindex.GetAlertIndex())

@@ -7,18 +7,35 @@ import (
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
-func trackClusterRegistered(cluster *storage.Cluster) {
+const securedClusterClient = "Secured Cluster"
+
+func trackClusterRegistered(ctx context.Context, cluster *storage.Cluster) {
 	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
+		userID := cfg.ClientID
+		if id, err := authn.IdentityFromContext(ctx); err == nil {
+			userID = cfg.HashUserAuthID(id)
+		}
 		props := map[string]any{
 			"Cluster Type": cluster.GetType().String(),
 			"Cluster ID":   cluster.GetId(),
 			"Managed By":   cluster.GetManagedBy().String(),
 		}
-		cfg.Telemeter().Track("Secured Cluster Registered", cfg.ClientID, props)
+		groups := telemeter.WithGroups(cfg.GroupType, cfg.GroupID)
+
+		cfg.Telemeter().Track("Secured Cluster Registered", props, telemeter.WithUserID(userID), groups)
+
+		// Update the secured cluster identity from its name and add the secured
+		// cluster 'user' to the Tenant group:
+		cfg.Telemeter().Track("Secured Cluster Static Properties", nil,
+			telemeter.WithTraits(makeClusterProperties(cluster)),
+			telemeter.WithClient(cluster.GetId(), securedClusterClient),
+			groups)
 	}
 }
 
@@ -37,11 +54,13 @@ func makeClusterProperties(cluster *storage.Cluster) map[string]any {
 
 func trackClusterInitialized(cluster *storage.Cluster) {
 	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
-		cfg.Telemeter().Group(cfg.GroupID, cluster.GetId(), nil)
-		cfg.Telemeter().Identify(cluster.GetId(), makeClusterProperties(cluster))
-		cfg.Telemeter().Track("Secured Cluster Initialized", cluster.GetId(), map[string]any{
-			"Health": cluster.GetHealthStatus().GetOverallHealthStatus().String(),
-		})
+		// Issue an event that makes the secured cluster identity effective:
+		cfg.Telemeter().
+			Track("Secured Cluster Initialized", map[string]any{
+				"Health": cluster.GetHealthStatus().GetOverallHealthStatus().String(),
+			},
+				telemeter.WithClient(cluster.GetId(), securedClusterClient),
+				telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
 	}
 }
 
@@ -75,7 +94,24 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 		props := makeClusterProperties(cluster)
 		props["Total Nodes"] = metrics.NodeCount
 		props["CPU Capacity"] = metrics.CpuCapacity
-		cfg.Telemeter().Identify(cluster.GetId(), props)
-		cfg.Telemeter().Track("Secured Cluster Identity Update", cluster.GetId(), nil)
+
+		if pmd := cluster.GetStatus().GetProviderMetadata(); pmd.GetProvider() != nil {
+			props["Provider"] = pmd.GetProvider()
+			props["Provider Region"] = pmd.GetRegion()
+			props["Provider Zone"] = pmd.GetZone()
+		}
+
+		omd := cluster.GetStatus().GetOrchestratorMetadata()
+		if omd.GetIsOpenshift() != nil {
+			props["Openshift"] = omd.GetIsOpenshift()
+		}
+		props["Orchestrator Version"] = omd.GetVersion()
+
+		opts := []telemeter.Option{
+			telemeter.WithClient(cluster.GetId(), securedClusterClient),
+			telemeter.WithGroups(cfg.GroupType, cfg.GroupID),
+			telemeter.WithTraits(props),
+		}
+		cfg.Telemeter().Track("Updated Secured Cluster Identity", nil, opts...)
 	}
 }

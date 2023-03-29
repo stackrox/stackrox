@@ -6,7 +6,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stretchr/testify/assert"
@@ -31,17 +30,12 @@ func TestRender(t *testing.T) {
 
 type renderSuite struct {
 	suite.Suite
-	restorer   *testbuildinfo.TestBuildTimestampRestorer
 	testFlavor defaults.ImageFlavor
 }
 
 func (suite *renderSuite) SetupSuite() {
 	suite.T().Setenv("TEST_VERSIONS", "true")
 	suite.testFlavor = flavorUtils.MakeImageFlavorForTest(suite.T())
-}
-
-func (suite *renderSuite) TearDownSuite() {
-	suite.restorer.Restore()
 }
 
 func (suite *renderSuite) testWithHostPath(t *testing.T, c Config) {

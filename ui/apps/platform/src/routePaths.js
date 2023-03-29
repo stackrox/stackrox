@@ -35,9 +35,8 @@ export const riskPath = `${riskBasePath}/:deploymentId?`;
 export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
 export const searchPath = `${mainPath}/search`;
 export const apidocsPath = `${mainPath}/apidocs`;
-export const accessControlPath = `${mainPath}/access`;
-export const accessControlBasePathV2 = `${mainPath}/access-control`;
-export const accessControlPathV2 = `${accessControlBasePathV2}/:entitySegment?/:entityId?`;
+export const accessControlBasePath = `${mainPath}/access-control`;
+export const accessControlPath = `${accessControlBasePath}/:entitySegment?/:entityId?`;
 export const userBasePath = `${mainPath}/user`;
 export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const systemConfigPath = `${mainPath}/systemconfig`;
@@ -90,6 +89,13 @@ export const vulnManagementRiskAcceptancePath = `${vulnManagementPath}/risk-acce
 export const vulnManagementPendingApprovalsPath = `${vulnManagementRiskAcceptancePath}/pending-approvals`;
 export const vulnManagementApprovedDeferralsPath = `${vulnManagementRiskAcceptancePath}/approved-deferrals`;
 export const vulnManagementApprovedFalsePositivesPath = `${vulnManagementRiskAcceptancePath}/approved-false-positives`;
+
+// VM 2.0 "Vulnerabilities" paths
+export const vulnerabilitiesBasePath = `${mainPath}/vulnerabilities`;
+export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
+export const vulnerabilitiesWorkloadCveSinglePath = `${vulnerabilitiesBasePath}/workload-cves/cves/:cveId`;
+export const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesBasePath}/workload-cves/images/:imageId`;
+export const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesBasePath}/workload-cves/deployments/:deploymentId`;
 
 /**
  * New Framwork-related route paths
@@ -145,12 +151,18 @@ const vulnManagementPathToLabelMap = {
     [vulnManagementRiskAcceptancePath]: 'Risk Acceptance',
 };
 
+const vulnerabilitiesPathToLabelMap = {
+    [vulnerabilitiesBasePath]: 'Vulnerabilities',
+    [vulnerabilitiesWorkloadCvesPath]: 'Workload CVEs',
+};
+
 export const basePathToLabelMap = {
     [dashboardPath]: 'Dashboard',
-    [networkBasePath]: 'Network Graph',
-    [networkBasePathPF]: 'Network Graph-Patternfly',
+    [networkBasePath]: 'Network Graph (1.0)',
+    [networkBasePathPF]: 'Network Graph (2.0 preview)',
     [violationsBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
+    ...vulnerabilitiesPathToLabelMap,
     ...vulnManagementPathToLabelMap,
     [configManagementPath]: 'Configuration Management',
     [riskBasePath]: 'Risk',
@@ -162,7 +174,7 @@ export const basePathToLabelMap = {
     [collectionsBasePath]: 'Collections',
     [integrationsPath]: 'Integrations',
     [accessControlPath]: 'Access Control',
-    [accessControlBasePathV2]: 'Access Control',
+    [accessControlBasePath]: 'Access Control',
     [systemConfigPath]: 'System Configuration',
     [systemHealthPath]: 'System Health',
     [loginPath]: 'Log In',

@@ -5,7 +5,7 @@ import Button from 'Components/Button';
 import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
 import { getCveExportName } from 'utils/vulnerabilityUtils';
 
-const FixableCveExportButton = ({ workflowState, entityName, disabled }) => {
+const FixableCveExportButton = ({ workflowState, entityName, disabled, exportType }) => {
     const [isLoading, setIsLoading] = useState(false);
 
     function clickHandler() {
@@ -16,7 +16,7 @@ const FixableCveExportButton = ({ workflowState, entityName, disabled }) => {
         const stateWithFixable = workflowState.setSearch({ Fixable: 'true' });
         setIsLoading(true);
 
-        exportCvesAsCsv(csvName, stateWithFixable).finally(() => {
+        exportCvesAsCsv(csvName, stateWithFixable, exportType).finally(() => {
             setIsLoading(false);
         });
     }

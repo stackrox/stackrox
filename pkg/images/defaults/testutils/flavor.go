@@ -2,7 +2,6 @@ package testutils
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -37,7 +36,6 @@ func MakeImageFlavorForTest(t *testing.T) defaults.ImageFlavor {
 			AllowNone: false,
 		},
 		Versions: version.Versions{
-			BuildDate:        time.Now(),
 			CollectorVersion: "3.2.1",
 			MainVersion:      "1.2.3",
 			ScannerVersion:   "2.2.2",

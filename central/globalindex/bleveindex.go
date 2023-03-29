@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/central/globalindex/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -62,6 +63,8 @@ func optionsMapToSlice(options search.OptionsMap) []search.FieldLabel {
 
 // TempInitializeIndices initializes the index under the tmp system folder in the specified path.
 func TempInitializeIndices(scorchPath string) (bleve.Index, error) {
+	postgres.DeprecatedCall("TempInitializeIndices")
+
 	tmpDir, err := os.MkdirTemp("", "")
 	if err != nil {
 		return nil, err
@@ -84,6 +87,8 @@ func MemOnlyIndex() (bleve.Index, error) {
 
 // InitializeIndices initializes the index in the specified path.
 func InitializeIndices(name, scorchPath string, persisted IndexPersisted, typeString string) (bleve.Index, error) {
+	postgres.DeprecatedCall("InitializeIndices")
+
 	globalIndex, err := initializeIndices(scorchPath, persisted, typeString)
 	if err != nil {
 		return nil, err
@@ -93,6 +98,8 @@ func InitializeIndices(name, scorchPath string, persisted IndexPersisted, typeSt
 }
 
 func initializeIndices(scorchPath string, indexPersisted IndexPersisted, typeString string) (bleve.Index, error) {
+	postgres.DeprecatedCall("initializeIndices")
+
 	kvconfig := map[string]interface{}{
 		// Determines if we should persist the index
 		// false means persisted and true means *not* persisted

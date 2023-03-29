@@ -13,6 +13,7 @@ from typing import List
 class PostTestsConstants:
     API_TIMEOUT = 5 * 60
     COLLECT_TIMEOUT = 10 * 60
+    COLLECT_INFRA_TIMEOUT = 12 * 60
     CHECK_TIMEOUT = 5 * 60
     STORE_TIMEOUT = 5 * 60
     FIXUP_TIMEOUT = 5 * 60
@@ -167,7 +168,7 @@ class PostClusterTest(StoreArtifacts):
                 "scripts/ci/collect-infrastructure-logs.sh",
                 PostTestsConstants.K8S_LOG_DIR,
             ],
-            timeout=PostTestsConstants.COLLECT_TIMEOUT,
+            timeout=PostTestsConstants.COLLECT_INFRA_TIMEOUT,
         )
         self.data_to_store.append(PostTestsConstants.K8S_LOG_DIR)
 

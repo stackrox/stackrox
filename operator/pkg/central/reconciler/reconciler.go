@@ -15,6 +15,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
+const (
+	pauseReconcileAnnotation = "stackrox.io/pause-reconcile"
+)
+
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
 func RegisterNewReconciler(mgr ctrl.Manager) error {
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
@@ -36,7 +40,7 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
 		pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod),
-		pkgReconciler.WithPauseReconcileAnnotation("stackrox.io/pause-reconcile"),
+		pkgReconciler.WithPauseReconcileAnnotation(pauseReconcileAnnotation),
 	}
 	return reconciler.SetupReconcilerWithManager(
 		mgr, platform.CentralGVK, image.CentralServicesChartPrefix,

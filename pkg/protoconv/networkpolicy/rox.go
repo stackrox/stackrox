@@ -1,8 +1,6 @@
 package networkpolicy
 
 import (
-	"strings"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -10,7 +8,6 @@ import (
 	k8sCoreV1 "k8s.io/api/core/v1"
 	k8sV1 "k8s.io/api/networking/v1"
 	k8sMetaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -26,15 +23,8 @@ type RoxNetworkPolicyWrap struct {
 
 // ToYaml produces a string holding a JSON formatted yaml for the network policy.
 func (np RoxNetworkPolicyWrap) ToYaml() (string, error) {
-	k8sNetworkPolicy := np.ToKubernetesNetworkPolicy()
-	encoder := json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil)
-
-	stringBuilder := &strings.Builder{}
-	err := encoder.Encode(k8sNetworkPolicy, stringBuilder)
-	if err != nil {
-		return "", err
-	}
-	return stringBuilder.String(), nil
+	k8sWrap := KubernetesNetworkPolicyWrap{np.ToKubernetesNetworkPolicy()}
+	return k8sWrap.ToYaml()
 }
 
 // ToKubernetesNetworkPolicy converts a proto network policy to a k8s network policy

@@ -45,7 +45,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 )
 
 var (
@@ -116,16 +115,12 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func populateYAML(np *storage.NetworkPolicy) {
-	k8sNetworkPolicy := networkPolicyConversion.RoxNetworkPolicyWrap{NetworkPolicy: np}.ToKubernetesNetworkPolicy()
-	encoder := json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil)
-
-	stringBuilder := &strings.Builder{}
-	err := encoder.Encode(k8sNetworkPolicy, stringBuilder)
+	yaml, err := networkPolicyConversion.RoxNetworkPolicyWrap{NetworkPolicy: np}.ToYaml()
 	if err != nil {
 		np.Yaml = fmt.Sprintf("Could not render Network Policy YAML: %s", err)
 		return
 	}
-	np.Yaml = stringBuilder.String()
+	np.Yaml = yaml
 }
 
 func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.ResourceByID) (*storage.NetworkPolicy, error) {
@@ -954,8 +949,7 @@ func (s *serviceImpl) getDeployments(ctx context.Context, clusterID, rawQ string
 func (s *serviceImpl) getNetworkTree(clusterID string) (tree.ReadOnlyNetworkTree, error) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			// TODO: ROX-12750 Replace NetworkGraphConfig with Administration.
-			sac.ResourceScopeKeys(resources.NetworkGraphConfig)))
+			sac.ResourceScopeKeys(resources.Administration)))
 
 	cfg, err := s.graphConfig.GetNetworkGraphConfig(ctx)
 	if err != nil {

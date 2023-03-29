@@ -7,22 +7,22 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/store"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 // NewClusterStore returns a new ClusterStore instance using the provided rocksdb instance.
-func NewClusterStore(db *pgxpool.Pool) store.ClusterStore {
+func NewClusterStore(db *postgres.DB) store.ClusterStore {
 	return &clusterStoreImpl{
 		db: db,
 	}
 }
 
 type clusterStoreImpl struct {
-	db *pgxpool.Pool
+	db *postgres.DB
 }
 
 // GetFlowStore returns the FlowStore for the cluster ID, or nil if none exists.

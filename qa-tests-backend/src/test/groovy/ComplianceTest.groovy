@@ -3,6 +3,7 @@ import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceSta
 import static io.stackrox.proto.storage.RoleOuterClass.Access.READ_WRITE_ACCESS
 import static io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope.newBuilder
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
+import static util.Helpers.withRetry
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -1324,24 +1325,13 @@ class ComplianceTest extends BaseSpecification {
                 "Compliance Test Automation Role " + UUID.randomUUID(),
                 remoteStackroxAccessScope.id, [
                 "Access"               : READ_WRITE_ACCESS,
-                // TODO: ROX-12750 Remove AllComments, ComplianceRuns, ComplianceRunSchedule, Config, DebugLogs,
-                // ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig and ServiceIdentity permissions.
-                // TODO: ROX-12750 Add Administration permission
-                "AllComments"          : READ_WRITE_ACCESS,
-                "Config"               : READ_WRITE_ACCESS,
-                "DebugLogs"            : READ_WRITE_ACCESS,
+                "Administration"       : READ_WRITE_ACCESS,
                 "Detection"            : READ_WRITE_ACCESS,
                 "Integration"          : READ_WRITE_ACCESS,
                 "Policy"               : READ_WRITE_ACCESS,
-                "ProbeUpload"          : READ_WRITE_ACCESS,
                 "Role"                 : READ_WRITE_ACCESS,
-                "ScannerBundle"        : READ_WRITE_ACCESS,
-                "ScannerDefinitions"   : READ_WRITE_ACCESS,
-                "SensorUpgradeConfig"  : READ_WRITE_ACCESS,
-                "ServiceIdentity"      : READ_WRITE_ACCESS,
                 "Cluster"              : READ_WRITE_ACCESS,
                 "Compliance"           : READ_WRITE_ACCESS,
-                "ComplianceRuns"       : READ_WRITE_ACCESS,
                 "Node"                 : READ_WRITE_ACCESS,
         ]).name
 

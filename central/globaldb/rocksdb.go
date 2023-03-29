@@ -29,7 +29,8 @@ func RegisterBucket(bucketName []byte, objType string) {
 
 // GetRocksDB returns the global rocksdb instance
 func GetRocksDB() *rocksdb.RocksDB {
-	postgres.LogCallerOnPostgres("GetRocksDB")
+	postgres.DeprecatedCall("GetRocksDB")
+
 	rocksInit.Do(func() {
 		rocksDB = rocksdbInstance.GetRocksDB()
 		go startMonitoringRocksDB(rocksDB)

@@ -61,8 +61,8 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling central-tls secret")
 	}
 
-	internalCentralDBEnabled := r.centralObj.Spec.Central.CentralDBEnabled() && !r.centralObj.Spec.Central.DB.IsExternal()
-	if err := r.ReconcileSecret(ctx, "central-db-tls", internalCentralDBEnabled && !shouldDelete, r.validateCentralDBTLSData, r.generateCentralDBTLSData, true); err != nil {
+	isInternalCentralDB := !r.centralObj.Spec.Central.IsExternalDB()
+	if err := r.ReconcileSecret(ctx, "central-db-tls", isInternalCentralDB && !shouldDelete, r.validateCentralDBTLSData, r.generateCentralDBTLSData, true); err != nil {
 		return errors.Wrap(err, "reconciling central-db-tls secret")
 	}
 

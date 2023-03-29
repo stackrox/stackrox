@@ -30,20 +30,36 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
     const hasCategoryColumn = navCategory === 'SEARCH_UNSET';
     const hasViewLinkColumn =
         navCategory === 'SEARCH_UNSET' ||
-        searchResultCategoryMap[navCategory].viewLinks.length !== 0;
+        Boolean(searchResultCategoryMap[navCategory]?.viewLinks?.length);
     const hasFilterLinkColumn =
-        navCategory === 'SEARCH_UNSET' || !!searchResultCategoryMap[navCategory].filterOn;
+        navCategory === 'SEARCH_UNSET' || Boolean(searchResultCategoryMap[navCategory]?.filterOn);
 
     const searchResultsFilteredAndSorted =
         navCategory === 'SEARCH_UNSET'
-            ? [...searchResults].sort((a: SearchResult, b: SearchResult) => {
-                  const byName = a.name.localeCompare(b.name);
-                  if (byName === 0) {
+            ? [...searchResults].sort(
+                  (
+                      { name: namePrev, category: categoryPrev }: SearchResult,
+                      { name: nameNext, category: categoryNext }: SearchResult
+                  ) => {
+                      if (namePrev < nameNext) {
+                          return -1;
+                      }
+                      if (namePrev > nameNext) {
+                          return 1;
+                      }
+
                       // If equal by name, secondary sort by category text.
-                      return searchNavMap[a.category].localeCompare(searchNavMap[b.category]);
+                      const categoryNavPrev = searchNavMap[categoryPrev] ?? categoryPrev;
+                      const categoryNavNext = searchNavMap[categoryNext] ?? categoryNext;
+                      if (categoryNavPrev < categoryNavNext) {
+                          return -1;
+                      }
+                      if (categoryNavPrev > categoryNavNext) {
+                          return 1;
+                      }
+                      return 0;
                   }
-                  return byName;
-              })
+              )
             : searchResults
                   .filter(({ category }) => category === navCategory)
                   .sort((a: SearchResult, b: SearchResult) => a.name.localeCompare(b.name));
@@ -84,7 +100,7 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
                             )}
                             {hasCategoryColumn && (
                                 <Td dataLabel="Category" modifier="nowrap">
-                                    {searchNavMap[category]}
+                                    {searchNavMap[category] ?? category}
                                 </Td>
                             )}
                             {hasViewLinkColumn && (

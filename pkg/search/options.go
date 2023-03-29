@@ -160,6 +160,7 @@ var (
 	TolerationValue               = newFieldLabel("Toleration Value")
 	TolerationEffect              = newFieldLabel("Taint Effect")
 
+	AlertID        = newFieldLabel("Alert ID")
 	Violation      = newFieldLabel("Violation")
 	ViolationState = newFieldLabel("Violation State")
 	ViolationTime  = newFieldLabel("Violation Time")
@@ -178,6 +179,9 @@ var (
 	ProcessArguments = newFieldLabel("Process Arguments")
 	ProcessAncestor  = newFieldLabel("Process Ancestor")
 	ProcessUID       = newFieldLabel("Process UID")
+
+	// ProcessListeningOnPort Search fields
+	Closed = newFieldLabel("Closed")
 
 	// Secret search fields
 	SecretType       = newFieldLabel("Secret Type")
@@ -290,6 +294,15 @@ var (
 	CollectionName       = newFieldLabel("Collection Name")
 	EmbeddedCollectionID = newFieldLabel("Embedded Collection ID")
 
+	// Group fields
+	GroupAuthProvider = newFieldLabel("Group Auth Provider")
+	GroupKey          = newFieldLabel("Group Key")
+	GroupValue        = newFieldLabel("Group Value")
+
+	// API Token fields
+	Expiration = newFieldLabel("Expiration")
+	Revoked    = newFieldLabel("Revoked")
+
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
 	TestKey2              = newFieldLabel("Test Key 2")
@@ -345,9 +358,12 @@ var (
 
 	// Derived test fields
 	TestGrandparentCount    = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)
+	TestParent1ValCount     = newDerivedFieldLabel("Test Parent1 Val Count", TestParent1Val, CountDerivationType)
 	TestParent1Count        = newDerivedFieldLabel("Test Parent1 Count", TestParent1ID, CountDerivationType)
 	TestChild1Count         = newDerivedFieldLabel("Test Child1 Count", TestChild1ID, CountDerivationType)
 	TestGrandParentPriority = newDerivedFieldLabel("Test Grandparent Priority", TestGrandparentRiskScore, SimpleReverseSortDerivationType)
+	TestNestedStringCount   = newDerivedFieldLabel("Test Nested String Count", TestNestedString, CountDerivationType)
+	TestNestedString2Count  = newDerivedFieldLabel("Test Nested String 2 Count", TestNestedString2, CountDerivationType)
 )
 
 func init() {

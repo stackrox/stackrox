@@ -7,6 +7,7 @@ import (
 )
 
 // Store provides storage functionality.
+//
 //go:generate mockgen-wrapper
 type Store interface {
 	GetListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error)

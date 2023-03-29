@@ -1,12 +1,7 @@
 import * as api from '../constants/apiEndpoints';
 import { selectors as networkGraphSelectors } from '../constants/NetworkPage';
 import { visitFromLeftNav } from './nav';
-import {
-    getRouteMatcherMapForGraphQL,
-    interactAndWaitForResponses,
-    interceptRequests,
-    waitForResponses,
-} from './request';
+import { interactAndWaitForResponses, interceptRequests, waitForResponses } from './request';
 import { visit } from './visit';
 import selectSelectors from '../selectors/select';
 import tabSelectors from '../selectors/tab';
@@ -170,9 +165,10 @@ export function selectDeploymentFilter(deploymentName) {
 export function selectNamespaceFilter(namespace) {
     interactAndWaitForResponses(() => {
         cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
-        cy.get(
-            `${selectSelectors.patternFlySelect.openMenu} span:contains("${namespace}")`
-        ).click();
+        // Exact match to distinguish stackrox from stackrox-operator namespaces.
+        cy.get(`${selectSelectors.patternFlySelect.openMenu} span`)
+            .contains(new RegExp(`^${namespace}$`))
+            .click();
         cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
     }, routeMatcherMapForClusterInNetworkGraph);
 }
@@ -185,9 +181,9 @@ export function selectNamespaceFilterWithGraphAndPoliciesFixtures(
     interactAndWaitForResponses(
         () => {
             cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
-            cy.get(
-                `${selectSelectors.patternFlySelect.openMenu} span:contains("${namespace}")`
-            ).click();
+            cy.get(`${selectSelectors.patternFlySelect.openMenu} span`)
+                .contains(new RegExp(`^${namespace}$`))
+                .click();
             cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
         },
         routeMatcherMapForClusterInNetworkGraph,
@@ -205,9 +201,9 @@ export function selectNamespaceFilterWithNetworkGraphResponse(namespace, respons
     interactAndWaitForResponses(
         () => {
             cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
-            cy.get(
-                `${selectSelectors.patternFlySelect.openMenu} span:contains("${namespace}")`
-            ).click();
+            cy.get(`${selectSelectors.patternFlySelect.openMenu} span`)
+                .contains(new RegExp(`^${namespace}$`))
+                .click();
             cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
         },
         routeMatcherMapForClusterInNetworkGraph,
@@ -223,13 +219,7 @@ export const notifiersAlias = 'notifiers';
 export const clustersAlias = 'clusters';
 export const networkPoliciesGraphEpochAlias = 'networkpolicies/graph/epoch';
 export const searchMetadataOptionsAlias = 'search/metadata/options';
-export const getClusterNamespaceNamesOpname = 'getClusterNamespaceNames';
-
-// Network Graph makes the following query on the first visit, but not subsequent visit via browser Back button.
-// Include it because each cypress test has a new connection, therefore behaves as a first visit.
-const routeMatcherMapForSearchFilter = getRouteMatcherMapForGraphQL([
-    getClusterNamespaceNamesOpname,
-]);
+export const namespaceAlias = 'namespaces';
 
 const routeMatcherMapToVisitNetworkGraph = {
     [notifiersAlias]: {
@@ -238,7 +228,7 @@ const routeMatcherMapToVisitNetworkGraph = {
     },
     [clustersAlias]: {
         method: 'GET',
-        url: '/v1/clusters',
+        url: '/v1/sac/clusters?permissions=NetworkGraph&permissions=Deployment',
     },
     [networkPoliciesGraphEpochAlias]: {
         method: 'GET',
@@ -248,7 +238,10 @@ const routeMatcherMapToVisitNetworkGraph = {
         method: 'GET',
         url: api.search.optionsCategories('DEPLOYMENTS'),
     },
-    ...routeMatcherMapForSearchFilter,
+    [namespaceAlias]: {
+        method: 'GET',
+        url: '/v1/sac/clusters/*/namespaces?permissions=NetworkGraph&permissions=Deployment',
+    },
 };
 
 export const deploymentAlias = 'deployments/id';
@@ -287,28 +280,28 @@ export function interactAndVisitNetworkGraphWithDeploymentSelected(
     waitForResponses(routeMatcherMapToVisitNetworkGraphWithDeploymentSelected, staticResponseMap);
 }
 
-export function visitNetworkGraphFromLeftNav() {
-    visitFromLeftNav('Network', routeMatcherMapToVisitNetworkGraph);
+export function visitOldNetworkGraphFromLeftNav() {
+    visitFromLeftNav('Network Graph (1.0)', routeMatcherMapToVisitNetworkGraph);
 
     cy.location('pathname').should('eq', basePath);
     cy.get(`h1:contains("${title}")`);
     cy.get(networkGraphSelectors.emptyStateSubheading);
 }
 
-export function visitNetworkGraph(staticResponseMap) {
+export function visitOldNetworkGraph(staticResponseMap) {
     visit(basePath, routeMatcherMapToVisitNetworkGraph, staticResponseMap);
 
     cy.get(`h1:contains("${title}")`);
     cy.get(networkGraphSelectors.emptyStateSubheading);
 }
 
-export function visitNetworkGraphWithNamespaceFilter(namespace) {
-    visitNetworkGraph();
+export function visitOldNetworkGraphWithNamespaceFilter(namespace) {
+    visitOldNetworkGraph();
     selectNamespaceFilter(namespace);
 }
 
-export function visitNetworkGraphWithMockedData() {
-    visitNetworkGraph();
+export function visitOldNetworkGraphWithMockedData() {
+    visitOldNetworkGraph();
     selectNamespaceFilterWithGraphAndPoliciesFixtures(
         'stackrox',
         'network/networkGraph.json',

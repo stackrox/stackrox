@@ -1,9 +1,12 @@
+//go:build sql_integration
+
 package pruning
 
 import (
 	"testing"
 	"time"
 
+	protoTypes "github.com/gogo/protobuf/types"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/vulnerabilityrequest/cache"
@@ -11,28 +14,35 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+func timestampNowMinus(t time.Duration) *protoTypes.Timestamp {
+	return protoconv.ConvertTimeToTimestamp(time.Now().Add(-t))
+}
+
 func TestExpiredVulnReqsPruning(t *testing.T) {
-	db := rocksdbtest.RocksDBForT(t)
-	defer rocksdbtest.TearDownRocksDB(db)
-
-	bleveIndex, err := globalindex.MemOnlyIndex()
-	require.NoError(t, err)
-
 	var datastore vulnReqDataStore.DataStore
+	var err error
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		testingDB := pgtest.ForT(t)
 		defer testingDB.Teardown(t)
-		datastore, err = vulnReqDataStore.GetTestPostgresDataStore(t, testingDB.Pool, cache.PendingReqsCacheSingleton(), cache.ActiveReqsCacheSingleton())
+		datastore, err = vulnReqDataStore.GetTestPostgresDataStore(t, testingDB.DB, cache.PendingReqsCacheSingleton(), cache.ActiveReqsCacheSingleton())
+		require.NoError(t, err)
 	} else {
+		db := rocksdbtest.RocksDBForT(t)
+		defer rocksdbtest.TearDownRocksDB(db)
+
+		bleveIndex, err := globalindex.MemOnlyIndex()
+		require.NoError(t, err)
+
 		datastore, err = vulnReqDataStore.NewForTestOnly(t, db, bleveIndex, cache.PendingReqsCacheSingleton(), cache.ActiveReqsCacheSingleton())
+		require.NoError(t, err)
 	}
-	require.NoError(t, err)
 
 	oneMonthDayPastRetention := (30 + configDS.DefaultExpiredVulnReqRetention) * 24 * time.Hour
 	oneDayPastRetention := (2 + configDS.DefaultExpiredVulnReqRetention) * 24 * time.Hour

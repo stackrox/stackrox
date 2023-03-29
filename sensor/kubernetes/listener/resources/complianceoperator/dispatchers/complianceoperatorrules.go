@@ -51,5 +51,5 @@ func (c *RulesDispatcher) ProcessEvent(obj, _ interface{}, action central.Resour
 			},
 		},
 	}
-	return component.NewResourceEvent(events, nil, nil)
+	return component.NewEvent(events...)
 }

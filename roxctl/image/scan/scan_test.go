@@ -187,7 +187,7 @@ type mockImageServiceServer struct {
 	components []*storage.EmbeddedImageScanComponent
 }
 
-func (m *mockImageServiceServer) ScanImage(ctx context.Context, in *v1.ScanImageRequest) (*storage.Image, error) {
+func (m *mockImageServiceServer) ScanImage(_ context.Context, _ *v1.ScanImageRequest) (*storage.Image, error) {
 	img := &storage.Image{
 		Scan: &storage.ImageScan{
 			Components: m.components,
@@ -446,8 +446,8 @@ func (s *imageScanTestSuite) TestScan_TableOutput() {
 		"should render default output with merged cells and additional verbose output": {
 			components:                   testComponents,
 			expectedOutput:               "testComponents.txt",
-			expectedErrorOutput:          "WARN:\tA total of 17 vulnerabilities were found in 5 components\n",
-			expectedErrorOutputColorized: "\x1b[95mWARN:\tA total of 17 vulnerabilities were found in 5 components\n\x1b[0m",
+			expectedErrorOutput:          "WARN:\tA total of 11 unique vulnerabilities were found in 5 components\n",
+			expectedErrorOutputColorized: "\x1b[95mWARN:\tA total of 11 unique vulnerabilities were found in 5 components\n\x1b[0m",
 		},
 		"should print only headers with empty components in image scan": {
 			expectedOutput: "empty.txt",

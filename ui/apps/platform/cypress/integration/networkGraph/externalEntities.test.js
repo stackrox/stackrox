@@ -8,7 +8,7 @@ import {
     filterNamespaces,
     filterClusters,
     filterInternet,
-    visitNetworkGraphWithMockedData,
+    visitOldNetworkGraphWithMockedData,
 } from '../../helpers/networkGraph';
 
 describe('External Entities on Network Graph', () => {
@@ -16,7 +16,7 @@ describe('External Entities on Network Graph', () => {
 
     describe('Baseline state', () => {
         it('should group the namespaces into a cluster wrapper', () => {
-            visitNetworkGraphWithMockedData();
+            visitOldNetworkGraphWithMockedData();
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 const clusters = cytoscape.nodes().filter(filterClusters);
                 expect(clusters.size()).to.equal(1);
@@ -30,7 +30,7 @@ describe('External Entities on Network Graph', () => {
         });
 
         it('should group external connections into a node outside the cluster', () => {
-            visitNetworkGraphWithMockedData();
+            visitOldNetworkGraphWithMockedData();
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 const externalEntities = cytoscape.nodes().filter(filterInternet);
                 expect(externalEntities.size()).to.equal(1);

@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -24,6 +25,8 @@ import (
 )
 
 func TestDeploymentIndex(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	suite.Run(t, new(DeploymentIndexTestSuite))
 }
 
@@ -548,7 +551,7 @@ func (suite *DeploymentIndexTestSuite) TestSearchSorting() {
 	}
 }
 
-func TestEnumComparisonSearch(t *testing.T) {
+func (suite *DeploymentIndexTestSuite) TestEnumComparisonSearch(t *testing.T) {
 	bleveIndex, err := globalindex.TempInitializeIndices("")
 	require.NoError(t, err)
 	indexer := New(bleveIndex, bleveIndex)
@@ -599,7 +602,7 @@ func getDeployment(id string, labels map[string]string) *storage.Deployment {
 	return d
 }
 
-func TestMapQueries(t *testing.T) {
+func (suite *DeploymentIndexTestSuite) TestMapQueries(t *testing.T) {
 	indexer, err := globalindex.TempInitializeIndices("")
 	require.NoError(t, err)
 

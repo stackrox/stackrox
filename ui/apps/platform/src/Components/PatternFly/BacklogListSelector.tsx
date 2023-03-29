@@ -24,6 +24,7 @@ type BacklogTableProps<Item> = {
         width?: BaseCellProps['width'];
     }[];
     buttonText: string;
+    searchFilter?: (item: Item) => boolean;
     showBadge: boolean;
 };
 
@@ -35,6 +36,7 @@ function BacklogTable<Item>({
     rowKey,
     cells,
     buttonText,
+    searchFilter = () => true,
     showBadge,
 }: BacklogTableProps<Item>) {
     const actionIcon =
@@ -43,6 +45,9 @@ function BacklogTable<Item>({
         ) : (
             <PlusCircleIcon color="var(--pf-global--primary-color--100)" />
         );
+
+    const itemsToDisplay = items.filter(searchFilter);
+
     return (
         <FormGroup
             label={
@@ -56,10 +61,10 @@ function BacklogTable<Item>({
                 </>
             }
         >
-            {items.length > 0 ? (
+            {itemsToDisplay.length > 0 ? (
                 <TableComposable aria-label={label}>
                     <Tbody>
-                        {items.map((item) => (
+                        {itemsToDisplay.map((item) => (
                             <Tr key={rowKey(item)}>
                                 {cells.map(({ name, width, render }) => (
                                     <Td key={name} dataLabel={name} width={width}>
@@ -107,6 +112,7 @@ export type BacklogListSelectorProps<Item> = {
     deselectedLabel?: string;
     selectButtonText?: string;
     deselectButtonText?: string;
+    searchFilter?: (item: Item) => boolean;
     showBadge?: boolean;
 };
 
@@ -122,6 +128,7 @@ function BacklogListSelector<Item>({
     deselectedLabel = 'Deselected items',
     selectButtonText = 'Add',
     deselectButtonText = 'Remove',
+    searchFilter,
     showBadge = false,
 }: BacklogListSelectorProps<Item>) {
     function onSelect(item: Item) {
@@ -150,6 +157,7 @@ function BacklogListSelector<Item>({
                 buttonText={deselectButtonText}
                 rowKey={rowKey}
                 cells={cells}
+                searchFilter={searchFilter}
                 showBadge={showBadge}
             />
             <BacklogTable
@@ -160,6 +168,7 @@ function BacklogListSelector<Item>({
                 rowKey={rowKey}
                 buttonText={selectButtonText}
                 cells={cells}
+                searchFilter={searchFilter}
                 showBadge={showBadge}
             />
         </Flex>

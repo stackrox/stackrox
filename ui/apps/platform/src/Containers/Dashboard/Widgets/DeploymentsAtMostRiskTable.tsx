@@ -4,9 +4,10 @@ import { Truncate } from '@patternfly/react-core';
 import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 
 import { ListDeployment } from 'types/deployment.proto';
-import { networkBasePath, riskBasePath } from 'routePaths';
+import { riskBasePath } from 'routePaths';
 import { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getURLLinkToDeployment } from 'Containers/NetworkGraph/utils/networkGraphURLUtils';
 
 const columnNames = {
     deployment: 'Deployment',
@@ -43,31 +44,38 @@ function DeploymentsAtMostRiskTable({
                 </Tr>
             </Thead>
             <Tbody>
-                {deployments.map(({ id, name, cluster, namespace, priority }) => (
-                    <Tr key={id}>
-                        <Td className="pf-u-pl-0" dataLabel={columnNames.deployment}>
-                            <Link to={riskPageLinkToDeployment(id, name, searchFilter)}>
-                                <Truncate position="middle" content={name} />
-                            </Link>
-                        </Td>
-                        <Td width={45} dataLabel={columnNames.resourceLocation}>
-                            <span>
-                                in &ldquo;
+                {deployments.map(({ id: deploymentId, name, cluster, namespace, priority }) => {
+                    const networkGraphLink = getURLLinkToDeployment({
+                        cluster,
+                        namespace,
+                        deploymentId,
+                    });
+                    return (
+                        <Tr key={deploymentId}>
+                            <Td className="pf-u-pl-0" dataLabel={columnNames.deployment}>
                                 <Link
-                                    to={`${networkBasePath}/${id}`}
-                                >{`${cluster} / ${namespace}`}</Link>
-                                &rdquo;
-                            </span>
-                        </Td>
-                        <Td
-                            width={20}
-                            className="pf-u-pr-0 pf-u-text-align-center-on-md"
-                            dataLabel={columnNames.riskPriority}
-                        >
-                            {priority}
-                        </Td>
-                    </Tr>
-                ))}
+                                    to={riskPageLinkToDeployment(deploymentId, name, searchFilter)}
+                                >
+                                    <Truncate position="middle" content={name} />
+                                </Link>
+                            </Td>
+                            <Td width={45} dataLabel={columnNames.resourceLocation}>
+                                <span>
+                                    in &ldquo;
+                                    <Link to={networkGraphLink}>{`${cluster} / ${namespace}`}</Link>
+                                    &rdquo;
+                                </span>
+                            </Td>
+                            <Td
+                                width={20}
+                                className="pf-u-pr-0 pf-u-text-align-center-on-md"
+                                dataLabel={columnNames.riskPriority}
+                            >
+                                {priority}
+                            </Td>
+                        </Tr>
+                    );
+                })}
             </Tbody>
         </TableComposable>
     );

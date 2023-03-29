@@ -27,16 +27,17 @@ function NetworkGraph({
     selectedNode,
     edgeState,
 }: NetworkGraphProps) {
-    const controller = useMemo(() => new Visualization(), []);
-    controller.registerLayoutFactory(defaultLayoutFactory);
-    controller.registerComponentFactory(defaultComponentFactory);
-    controller.registerComponentFactory(stylesComponentFactory);
-
-    const { simulator, setNetworkPolicyModification, applyNetworkPolicyModification } =
-        useNetworkPolicySimulator({
-            simulation,
-            clusterId: selectedClusterId,
-        });
+    const controller = useMemo(() => {
+        const newController = new Visualization();
+        newController.registerLayoutFactory(defaultLayoutFactory);
+        newController.registerComponentFactory(defaultComponentFactory);
+        newController.registerComponentFactory(stylesComponentFactory);
+        return newController;
+    }, []);
+    const { simulator, setNetworkPolicyModification } = useNetworkPolicySimulator({
+        simulation,
+        clusterId: selectedClusterId,
+    });
 
     const isSimulating =
         simulator.state === 'GENERATED' ||
@@ -54,7 +55,6 @@ function NetworkGraph({
                     simulator={simulator}
                     selectedNode={selectedNode}
                     setNetworkPolicyModification={setNetworkPolicyModification}
-                    applyNetworkPolicyModification={applyNetworkPolicyModification}
                     edgeState={edgeState}
                 />
             </VisualizationProvider>

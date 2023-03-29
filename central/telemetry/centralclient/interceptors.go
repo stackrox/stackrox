@@ -27,11 +27,11 @@ func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
 // apiCall enables API Call events for the API paths specified in the
 // trackedPaths ("*" value enables all paths) and have no match in the
 // ignoredPaths list.
-func apiCall(rp *phonehome.RequestParams, props map[string]any) bool {
+func apiCall(rp *phonehome.RequestParams, _ map[string]any) bool {
 	return !rp.HasPathIn(ignoredPaths) && rp.HasPathIn(trackedPaths)
 }
 
 // roxctl enables the roxctl event.
-func roxctl(rp *phonehome.RequestParams, props map[string]any) bool {
+func roxctl(rp *phonehome.RequestParams, _ map[string]any) bool {
 	return strings.Contains(rp.UserAgent, "roxctl")
 }

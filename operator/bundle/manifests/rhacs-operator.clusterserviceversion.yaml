@@ -19,7 +19,7 @@ metadata:
       services necessary to secure each of your OpenShift and Kubernetes clusters.
     operatorframework.io/suggested-namespace: rhacs-operator
     operators.openshift.io/infrastructure-features: '["disconnected", "proxy-aware"]'
-    operators.operatorframework.io/builder: operator-sdk-v1.24.1
+    operators.operatorframework.io/builder: operator-sdk-unknown
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     support: Red Hat
   name: rhacs-operator.v0.0.1
@@ -104,9 +104,8 @@ spec:
           and a host path.
         displayName: Persistence
         path: central.persistence
-      - description: 'NOTE: Central DB is in Technology Preview. Settings for Central
-          DB, which is responsible for data persistence.'
-        displayName: Central DB Settings (Technology Preview)
+      - description: Settings for Central DB, which is responsible for data persistence.
+        displayName: Central DB Settings
         path: central.db
       - description: Configures telemetry settings for Central. If enabled, Central
           transmits telemetry and diagnostic data to a remote storage backend.
@@ -148,11 +147,6 @@ spec:
         path: central.adminPasswordSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Specify whether central-db is enabled, Default configures central
-          to use rocksdb. If IsEnabled the operator will provision the Central DB
-          or use an external DB if a connection string is provided.
-        displayName: Is Enabled
-        path: central.db.isEnabled
       - description: Specify a secret that contains the password in the "password"
           data item. If omitted, the operator will auto-generate a DB password and
           store it in the "password" item in the "central-db-password" secret.
@@ -186,6 +180,22 @@ spec:
         path: central.db.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: Config map containing postgresql.conf and pg_hba.conf that will
+          be used if modifications need to be applied.
+        displayName: Config map that will override postgresql.conf and pg_hba.conf
+        path: central.db.configOverride
+      - description: Deprecated field. It is no longer necessary to specify it. This
+          field will be removed in a future release. Central is configured to use
+          PostgreSQL by default.
+        displayName: Is Enabled
+        path: central.db.isEnabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: The name of the referenced config map.
+        displayName: Name
+        path: central.db.configOverride.name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:ConfigMap
       - description: The name of the referenced secret.
         displayName: Name
         path: central.db.passwordSecret.name
@@ -606,10 +616,11 @@ spec:
           please select 'AvoidTaints' here.
         displayName: Taint Toleration
         path: perNode.taintToleration
-      - description: The method for system-level data collection. Kernel module is
-          recommended. If you select "NoCollection", you will not be able to see any
-          information about network activity and process executions. The remaining
-          settings in these section will not have any effect.
+      - description: The method for system-level data collection. EBPF is recommended.
+          KernelModule is deprecated and will be removed in the 4.1 release. If you
+          select "NoCollection", you will not be able to see any information about
+          network activity and process executions. The remaining settings in these
+          section will not have any effect.
         displayName: Collection
         path: perNode.collector.collection
       - description: The image flavor to use for collector. "Regular" images are bigger

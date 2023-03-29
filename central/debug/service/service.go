@@ -43,6 +43,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
@@ -73,13 +74,11 @@ var (
 	log = logging.LoggerForModule()
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		// TODO: ROX-12750 Replace DebugLogs with Administration
-		user.With(permissions.View(resources.DebugLogs)): {
+		user.With(permissions.View(resources.Administration)): {
 			"/v1.DebugService/GetLogLevel",
 			"/v1.DebugService/StreamAuthzTraces",
 		},
-		// TODO: ROX-12750 Replace DebugLogs with Administration
-		user.With(permissions.Modify(resources.DebugLogs)): {
+		user.With(permissions.Modify(resources.Administration)): {
 			"/v1.DebugService/SetLogLevel",
 		},
 	})
@@ -149,7 +148,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetLogLevel returns a v1.LogLevelResponse object.
-func (s *serviceImpl) GetLogLevel(ctx context.Context, req *v1.GetLogLevelRequest) (*v1.LogLevelResponse, error) {
+func (s *serviceImpl) GetLogLevel(_ context.Context, req *v1.GetLogLevelRequest) (*v1.LogLevelResponse, error) {
 	resp := &v1.LogLevelResponse{}
 	var unknownModules []string
 	var forEachModule func(name string, m *logging.Module)
@@ -188,7 +187,7 @@ func (s *serviceImpl) GetLogLevel(ctx context.Context, req *v1.GetLogLevelReques
 }
 
 // SetLogLevel implements v1.DebugServiceServer, and it sets the log level for StackRox services.
-func (s *serviceImpl) SetLogLevel(ctx context.Context, req *v1.LogLevelRequest) (*types.Empty, error) {
+func (s *serviceImpl) SetLogLevel(_ context.Context, req *v1.LogLevelRequest) (*types.Empty, error) {
 	levelStr := req.GetLevel()
 	zapLevel, ok := logging.LevelForLabel(levelStr)
 	if !ok {
@@ -363,6 +362,33 @@ func writeTelemetryData(zipWriter *zip.Writer, telemetryInfo *data.TelemetryData
 	return addJSONToZip(zipWriter, "telemetry-data.json", telemetryInfo)
 }
 
+type dbExtension struct {
+	ExtensionName    string `json:"ExtensionName"`
+	ExtensionVersion string `json:"ExtensionVersion"`
+}
+
+// centralDBDiagnosticData represents a collection of various pieces of central db config information.
+type centralDBDiagnosticData struct {
+	// The Database versioning needs to be added by the caller due to scoping issues of config availabilty
+	Database              string        `json:"Database,omitempty"`
+	DatabaseClientVersion string        `json:"DatabaseClientVersion,omitempty"`
+	DatabaseServerVersion string        `json:"DatabaseServerVersion,omitempty"`
+	DatabaseExtensions    []dbExtension `json:"DatabaseExtensions,omitempty"`
+	DatabaseConnectString string        `json:"DatabaseConnectString,omitempty"`
+}
+
+func getCentralDBData(ctx context.Context, zipWriter *zip.Writer) error {
+	_, dbConfig, err := pgconfig.GetPostgresConfig()
+	if err != nil {
+		log.Warnf("Could not parse postgres config: %v", err)
+		return err
+	}
+
+	dbDiagnosticData := buildDBDiagnosticData(ctx, dbConfig, globaldb.GetPostgres())
+
+	return addJSONToZip(zipWriter, "central-db.json", dbDiagnosticData)
+}
+
 func (s *serviceImpl) getLogImbue(ctx context.Context, zipWriter *zip.Writer) error {
 	w, err := zipWriter.Create("logimbue-data.json")
 	if err != nil {
@@ -406,6 +432,7 @@ func (s *serviceImpl) getRoles(_ context.Context) (interface{}, error) {
 	accessRolesCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			// TODO: ROX-14398 Replace Role with Access
 			sac.ResourceScopeKeys(resources.Role)))
 
 	roles, errGetRoles := s.roleDataStore.GetAllRoles(accessRolesCtx)
@@ -447,8 +474,7 @@ func (s *serviceImpl) getConfig(_ context.Context) (interface{}, error) {
 	accessConfigCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			// TODO: ROX-12750 Replace Config with Administration
-			sac.ResourceScopeKeys(resources.Config)))
+			sac.ResourceScopeKeys(resources.Administration)))
 
 	return s.configDataStore.GetConfig(accessConfigCtx)
 }
@@ -457,21 +483,18 @@ func (s *serviceImpl) getConfig(_ context.Context) (interface{}, error) {
 func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 	customRoutes := []routes.CustomRoute{
 		{
-			Route: "/debug/dump",
-			// TODO: ROX-12750 Replace DebugLogs with Administration
-			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
+			Route:         "/debug/dump",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: http.HandlerFunc(s.getDebugDump),
 		},
 		{
-			Route: "/api/extensions/diagnostics",
-			// TODO: ROX-12750 Replace DebugLogs with Administration
-			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
+			Route:         "/api/extensions/diagnostics",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: http.HandlerFunc(s.getDiagnosticDump),
 		},
 		{
-			Route: "/debug/versions.json",
-			// TODO: ROX-12750 Replace DebugLogs with Administration
-			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
+			Route:         "/debug/versions.json",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: http.HandlerFunc(s.getVersionsJSON),
 		},
 	}
@@ -535,6 +558,12 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 			}
 
 			if err := zipPrometheusMetrics(zipWriter, "metrics-2"); err != nil {
+				log.Error(err)
+			}
+		}
+
+		if env.PostgresDatastoreEnabled.BooleanSetting() {
+			if err := getCentralDBData(ctx, zipWriter); err != nil {
 				log.Error(err)
 			}
 		}

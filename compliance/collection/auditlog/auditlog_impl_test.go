@@ -21,7 +21,7 @@ type mockSender struct {
 	sentC chan *auditEvent
 }
 
-func (c *mockSender) Send(ctx context.Context, event *auditEvent) error {
+func (c *mockSender) Send(_ context.Context, event *auditEvent) error {
 	c.sentC <- event
 	return nil
 }

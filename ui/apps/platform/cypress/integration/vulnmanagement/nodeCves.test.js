@@ -1,6 +1,6 @@
 import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
+import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -46,7 +46,11 @@ describe('Vulnerability Management Node CVEs', () => {
         ]);
     });
 
-    it('should sort the CVSS Score column', () => {
+    it('should sort the CVSS Score column', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         visitVulnerabilityManagementEntities(entitiesKey);
 
         const thSelector = '.rt-th:contains("CVSS Score")';
@@ -78,7 +82,11 @@ describe('Vulnerability Management Node CVEs', () => {
     });
 
     // TODO Investigate whether not yet supported or incorrect field in payload.
-    it.skip('should sort the Severity column', () => {
+    it.skip('should sort the Severity column', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         visitVulnerabilityManagementEntities(entitiesKey);
 
         const thSelector = '.rt-th:contains("Severity")';
@@ -118,7 +126,11 @@ describe('Vulnerability Management Node CVEs', () => {
         });
     });
 
-    it('should display vulnerability descriptions', () => {
+    it('should display vulnerability descriptions', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         visitVulnerabilityManagementEntities(entitiesKey);
 
         // Balance positive and negative assertions.
@@ -133,11 +145,19 @@ describe('Vulnerability Management Node CVEs', () => {
 
     // Some tests might fail in local deployment.
 
-    it('should display links for nodes', () => {
+    it('should display links for nodes', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         verifySecondaryEntities(entitiesKey, 'nodes', 10, /^\d+ nodes?$/);
     });
 
-    it('should display links for node-components', () => {
+    it('should display links for node-components', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         verifySecondaryEntities(entitiesKey, 'node-components', 10, /^\d+ node components?$/);
     });
 });

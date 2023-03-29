@@ -1,18 +1,18 @@
 package common
 
 class Constants {
-    static final ORCHESTRATOR_NAMESPACE = "qa"
-    static final STACKROX_NAMESPACE = "stackrox"
-    static final SCHEDULES_SUPPORTED = false
-    static final CHECK_CVES_IN_COMPLIANCE = false
-    static final RUN_FLAKEY_TESTS = false
-    static final EMAIL_NOTIFER_FROM = "stackrox"
-    static final EMAIL_NOTIFER_SENDER = "${UUID.randomUUID()}@stackrox.com"
-    static final EMAIL_NOTIFER_FULL_FROM = "${EMAIL_NOTIFER_FROM} <${EMAIL_NOTIFER_SENDER}>"
-    static final EMAIL_NOTIFIER_RECIPIENT = "stackrox.qa@gmail.com"
+    static final String ORCHESTRATOR_NAMESPACE = "qa"
+    static final String STACKROX_NAMESPACE = "stackrox"
+    static final boolean SCHEDULES_SUPPORTED = false
+    static final boolean CHECK_CVES_IN_COMPLIANCE = false
+    static final boolean RUN_FLAKEY_TESTS = false
+    static final String EMAIL_NOTIFER_FROM = "stackrox"
+    static final String EMAIL_NOTIFER_SENDER = "${UUID.randomUUID()}@stackrox.com"
+    static final String EMAIL_NOTIFER_FULL_FROM = "${EMAIL_NOTIFER_FROM} <${EMAIL_NOTIFER_SENDER}>"
+    static final String EMAIL_NOTIFIER_RECIPIENT = "stackrox.qa@gmail.com"
     static final FAILURE_DEBUG_LIMIT = 10
-    static final AUTO_REGISTERED_STACKROX_SCANNER_INTEGRATION = "Stackrox Scanner"
-    static final ANY_FIXED_VULN_POLICY = "any-fixed-vulnerabilities"
+    static final String AUTO_REGISTERED_STACKROX_SCANNER_INTEGRATION = "Stackrox Scanner"
+    static final String ANY_FIXED_VULN_POLICY = "any-fixed-vulnerabilities"
     static final Map<String, String> CSV_COLUMN_MAPPING = [
             "Standard" : "standard",
             "Cluster" : "cluster",

@@ -1,5 +1,4 @@
 //go:build sql_integration
-// +build sql_integration
 
 package resolvers
 
@@ -9,13 +8,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/jackc/pgx/v4/pgxpool"
-	componentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
-	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
-	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
-	imageCVEEdgePostgres "github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -23,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/gorm"
 )
 
 func TestGraphQLImageVulnerabilityEndpoints(t *testing.T) {
@@ -48,8 +40,7 @@ type GraphQLImageVulnerabilityTestSuite struct {
 	suite.Suite
 
 	ctx      context.Context
-	db       *pgxpool.Pool
-	gormDB   *gorm.DB
+	testDB   *pgtest.TestPostgres
 	resolver *Resolver
 }
 
@@ -63,13 +54,13 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
-	s.db, s.gormDB = SetupTestPostgresConn(s.T())
+	s.testDB = SetupTestPostgresConn(s.T())
 	resolver, _ := SetupTestResolver(s.T(),
-		CreateTestImageDatastore(s.T(), s.db, s.gormDB, mockCtrl),
-		CreateTestImageComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
-		CreateTestImageCVEDatastore(s.T(), s.db, s.gormDB),
-		CreateTestImageComponentCVEEdgeDatastore(s.T(), s.db, s.gormDB),
-		CreateTestImageCVEEdgeDatastore(s.T(), s.db, s.gormDB),
+		CreateTestImageDatastore(s.T(), s.testDB, mockCtrl),
+		CreateTestImageComponentDatastore(s.T(), s.testDB, mockCtrl),
+		CreateTestImageCVEDatastore(s.T(), s.testDB),
+		CreateTestImageComponentCVEEdgeDatastore(s.T(), s.testDB),
+		CreateTestImageCVEEdgeDatastore(s.T(), s.testDB),
 	)
 	s.resolver = resolver
 
@@ -82,13 +73,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TearDownSuite() {
-	imagePostgres.Destroy(s.ctx, s.db)
-	imageComponentPostgres.Destroy(s.ctx, s.db)
-	imageCVEPostgres.Destroy(s.ctx, s.db)
-	imageCVEEdgePostgres.Destroy(s.ctx, s.db)
-	componentCVEEdgePostgres.Destroy(s.ctx, s.db)
-	pgtest.CloseGormDB(s.T(), s.gormDB)
-	s.db.Close()
+	s.testDB.Teardown(s.T())
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) TestUnauthorizedImageVulnerabilityEndpoint() {

@@ -38,6 +38,12 @@ service IntegrationHealthService {
         };
     }
 
+    rpc GetDeclarativeConfigs(Empty) returns (GetIntegrationHealthResponse) {
+        option (google.api.http) = {
+            get: "/v1/integrationhealth/declarativeconfigs"
+        };
+    }
+
     rpc GetVulnDefinitionsInfo(Empty) returns (VulnDefinitionsInfo) {
         option (google.api.http) = {
             get: "/v1/integrationhealth/vulndefinitions"

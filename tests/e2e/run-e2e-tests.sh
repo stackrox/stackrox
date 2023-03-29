@@ -80,7 +80,7 @@ handle_tag_requirements() {
     if [[ "$tag" =~ -dirty ]]; then
         info "WARN: Dropping -dirty from 'make tag': $tag"
         tag="${tag/-dirty/}"
-        export TAG_OVERRIDE="$tag"
+        export BUILD_TAG="$tag"
     fi
 
     export ROXCTL_FOR_TEST="$ROOT/bin/linux/roxctl-$tag"
@@ -104,7 +104,7 @@ get_initial_options() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -t)
-                export TAG_OVERRIDE="$2"
+                export BUILD_TAG="$2"
                 shift 2
                 ;;
             -h)
@@ -131,13 +131,13 @@ if [[ ! -f "/i-am-rox-ci-image" ]]; then
       -v "${HOME}/.gradle/caches:/root/.gradle/caches:z" \
       -v "${GOPATH}/pkg/mod/cache:/go/pkg/mod/cache:z" \
       -v "${QA_TEST_DEBUG_LOGS}:${QA_TEST_DEBUG_LOGS}:z" \
-      -e "TAG_OVERRIDE=${TAG_OVERRIDE:-}" \
+      -e "BUILD_TAG=${BUILD_TAG:-}" \
       -v "${ROXCTL_FOR_TEST}:/usr/local/bin/roxctl:z" \
       -e VAULT_TOKEN \
       --platform linux/amd64 \
       --rm -it \
       --entrypoint="$0" \
-      quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55 "$@"
+      quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57 "$@"
     exit 0
 fi
 
@@ -209,19 +209,7 @@ get_options() {
             die "flavor $FLAVOR not supported"
             ;;
     esac
-
-    case "$DATABASE" in
-        postgres)
-            export ROX_POSTGRES_DATASTORE="true"
-            ;;
-        rocksdb)
-            export ROX_POSTGRES_DATASTORE="false"
-            ;;
-        *)
-            die "database $DATABASE not supported"
-            ;;
-    esac
-
+    export ROX_POSTGRES_DATASTORE="true"
     export SUITE="${2:-}"
     export CASE="${3:-}"
 
@@ -323,7 +311,7 @@ _EOWARNING_
     export ORCHESTRATOR_FLAVOR="$ORCHESTRATOR"
 
     # required to get a running central
-    export ROX_POSTGRES_DATASTORE="${ROX_POSTGRES_DATASTORE:-false}"
+    export ROX_POSTGRES_DATASTORE="true"
 
     case "$FLAVOR" in
         qa)
@@ -383,7 +371,7 @@ spin() {
 }
 
 export_job_name() {
-    # Emulate CI_JOB_NAME (which sets Env.CI_JOBNAME for .groovy tests) as it is
+    # Emulate CI_JOB_NAME (which sets Env.CI_JOB_NAME for .groovy tests) as it is
     # used to determine some test behavior.
     local job_name=""
 

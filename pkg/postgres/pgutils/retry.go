@@ -1,12 +1,10 @@
 package pgutils
 
 import (
-	"runtime/debug"
 	"time"
 
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/timeutil"
 )
 
 const (
@@ -58,22 +56,21 @@ func Retry3[T any, U any](fn func() (T, U, error)) (T, U, error) {
 	}
 
 	expirationTimer := time.NewTimer(timeout)
-	defer timeutil.StopTimer(expirationTimer)
+	defer expirationTimer.Stop()
 
 	intervalTicker := time.NewTicker(interval)
 	defer intervalTicker.Stop()
 
 	var err error
+	var ret1 T
+	var ret2 U
 	for {
 		select {
 		case <-expirationTimer.C:
-			debug.PrintStack()
-			log.Fatalf("unsuccessful in reconnecting to the database: %v. Exiting...", err)
+			return ret1, ret2, err
 		case <-intervalTicker.C:
 			// Uses err outside the for loop to allow for the expiration to show the last err received
 			// and provide context for the expiration
-			var ret1 T
-			var ret2 U
 			ret1, ret2, err = fn()
 			if err == nil || !IsTransientError(err) {
 				if err != nil && err != pgx.ErrNoRows {

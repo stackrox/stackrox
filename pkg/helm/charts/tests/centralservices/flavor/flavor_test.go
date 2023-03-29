@@ -7,7 +7,6 @@ import (
 	helmTest "github.com/stackrox/helmtest/pkg/framework"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmChartTestUtils "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -41,7 +40,6 @@ func customFlavor(t *testing.T) defaults.ImageFlavor {
 }
 
 func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
-	testbuildinfo.SetForTest(t)
 	testutils.SetVersion(t, testutils.GetExampleVersion(t))
 	helmChartTestUtils.RunHelmTestSuite(t, testDir, image.CentralServicesChartPrefix, helmChartTestUtils.RunHelmTestSuiteOpts{
 		MetaValuesOverridesFunc: func(values *charts.MetaValues) {
@@ -53,7 +51,6 @@ func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
 }
 
 func TestWithDifferentImageFlavors(t *testing.T) {
-	testbuildinfo.SetForTest(t)
 	testutils.SetVersion(t, testutils.GetExampleVersion(t))
 	imageFlavorCases := map[string]defaults.ImageFlavor{
 		"stackrox": defaults.StackRoxIOReleaseImageFlavor(),

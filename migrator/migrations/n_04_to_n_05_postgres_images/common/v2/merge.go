@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	converter "github.com/stackrox/rox/migrator/migrations/cvehelper"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 // Merge merges the images parts into an image.
@@ -23,7 +23,7 @@ func mergeComponents(parts ImageParts, image *storage.Image) {
 
 	// Use the edges to combine into the parent image.
 	for _, cp := range parts.Children {
-		IDParts := postgres.IDToParts(cp.Edge.GetId())
+		IDParts := pgSearch.IDToParts(cp.Edge.GetId())
 		if len(IDParts) == 0 {
 			log.Error("image to component edge does not have primary keys")
 			continue
@@ -48,7 +48,7 @@ func mergeComponents(parts ImageParts, image *storage.Image) {
 	}
 }
 
-func generateEmbeddedComponent(os string, cp ComponentParts, imageCVEEdges map[string]*storage.ImageCVEEdge) *storage.EmbeddedImageScanComponent {
+func generateEmbeddedComponent(_ string, cp ComponentParts, imageCVEEdges map[string]*storage.ImageCVEEdge) *storage.EmbeddedImageScanComponent {
 	if cp.Component == nil || cp.Edge == nil {
 		return nil
 	}

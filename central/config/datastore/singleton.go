@@ -5,12 +5,11 @@ import (
 
 	configStore "github.com/stackrox/rox/central/config/store"
 	"github.com/stackrox/rox/central/config/store/bolt"
-	"github.com/stackrox/rox/central/config/store/postgres"
+	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -58,7 +57,7 @@ var (
 func initialize() {
 	var store configStore.Store
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		store = postgres.New(globaldb.GetPostgres())
+		store = pgStore.New(globaldb.GetPostgres())
 	} else {
 		store = bolt.New(globaldb.GetGlobalDB())
 	}
@@ -68,8 +67,7 @@ func initialize() {
 		context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			// TODO: ROX-12750 Replace Config with Administration.
-			sac.ResourceScopeKeys(resources.Config)))
+			sac.ResourceScopeKeys(resources.Administration)))
 	config, err := d.GetConfig(ctx)
 	if err != nil {
 		panic(err)
@@ -82,7 +80,7 @@ func initialize() {
 		needsUpsert = true
 	}
 
-	if features.DecommissionedClusterRetention.Enabled() && privateConfig.GetDecommissionedClusterRetention() == nil {
+	if privateConfig.GetDecommissionedClusterRetention() == nil {
 		privateConfig.DecommissionedClusterRetention = &storage.DecommissionedClusterRetentionConfig{
 			RetentionDurationDays: DefaultDecommissionedClusterRetentionDays,
 		}

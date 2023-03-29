@@ -1,6 +1,7 @@
 package metrics
 
 // Op represents a bolt operation that we want to time.
+//
 //go:generate stringer -type=Op
 type Op int
 
@@ -23,6 +24,9 @@ const (
 
 	// Special operation currently used only for processes.
 	GetGrouped
+
+	// Special operation used for ProcessListeningOnPort
+	GetProcessListeningOnPort
 
 	List
 

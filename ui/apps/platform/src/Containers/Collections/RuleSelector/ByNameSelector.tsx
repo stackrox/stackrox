@@ -1,5 +1,11 @@
 import React from 'react';
-import { Button, SelectOption, TextInput, ValidatedOptions } from '@patternfly/react-core';
+import {
+    Button,
+    FormGroup,
+    SelectOption,
+    TextInput,
+    ValidatedOptions,
+} from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 
@@ -12,6 +18,17 @@ import {
     SelectorEntityType,
 } from '../types';
 import { NameMatchTypeSelect } from './MatchTypeSelect';
+
+function parseInlineRuleError(
+    errors: ByNameSelectorProps['validationErrors'],
+    valueIndex: number
+): string | undefined {
+    const valueErrors = errors?.rule?.values?.[valueIndex];
+    if (typeof valueErrors === 'string') {
+        return valueErrors;
+    }
+    return valueErrors?.value;
+}
 
 export type ByNameSelectorProps = {
     entityType: SelectorEntityType;
@@ -84,7 +101,8 @@ function ByNameSelector({
                     } for the ${lowerCaseEntity} name`;
                     const inputClassName = 'pf-u-flex-grow-1 pf-u-w-auto';
                     const inputOnChange = onChangeValue(scopedResourceSelector, index);
-                    const inputValidated = validationErrors?.rule?.values?.[index]
+                    const errorMessage = parseInlineRuleError(validationErrors, index);
+                    const inputValidated = errorMessage
                         ? ValidatedOptions.error
                         : ValidatedOptions.default;
 
@@ -101,21 +119,29 @@ function ByNameSelector({
                                 </NameMatchTypeSelect>
                             </div>
                             <div className="rule-selector-name-value-input">
-                                <TextInput
-                                    id={inputId}
-                                    aria-label={inputAriaLabel}
-                                    placeholder={
-                                        matchType === 'REGEX' ? `^${placeholder}$` : placeholder
-                                    }
-                                    className={inputClassName}
-                                    onChange={inputOnChange}
+                                <FormGroup
+                                    className="rule-selector-name-value-input"
+                                    fieldId={inputId}
+                                    helperTextInvalid={errorMessage}
                                     validated={inputValidated}
-                                    value={value}
-                                    isDisabled={isDisabled}
-                                />
+                                >
+                                    <TextInput
+                                        id={inputId}
+                                        aria-label={inputAriaLabel}
+                                        placeholder={
+                                            matchType === 'REGEX' ? `^${placeholder}$` : placeholder
+                                        }
+                                        className={inputClassName}
+                                        onChange={inputOnChange}
+                                        validated={inputValidated}
+                                        value={value}
+                                        isDisabled={isDisabled}
+                                    />
+                                </FormGroup>
                             </div>
                             {!isDisabled && (
                                 <Button
+                                    className="rule-selector-delete-value-button"
                                     aria-label={`Delete ${value}`}
                                     variant="plain"
                                     onClick={() => onDeleteValue(index)}

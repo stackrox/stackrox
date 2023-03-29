@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/nodecomponent/datastore/index"
-	"github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
+	pgStore "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 type searcherImpl struct {
-	storage  postgres.Store
+	storage  pgStore.Store
 	indexer  index.Indexer
 	searcher search.Searcher
 }

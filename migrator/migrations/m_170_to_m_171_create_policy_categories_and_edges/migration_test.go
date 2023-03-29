@@ -6,13 +6,14 @@ import (
 	"context"
 	"testing"
 
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	policyCategoryEdgePostgresStore "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policycategoryedgepostgresstore"
 	policyCategoryPostgresStore "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policycategorypostgresstore"
 	policyPostgresStore "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policypostgresstore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/require"
@@ -34,11 +35,11 @@ func TestMigration(t *testing.T) {
 
 func (s *categoriesMigrationTestSuite) SetupTest() {
 	s.db = pghelper.ForT(s.T(), true)
-	s.policyStore = policyPostgresStore.New(s.db.Pool)
-	s.categoryStore = policyCategoryPostgresStore.New(s.db.Pool)
-	s.edgeStore = policyCategoryEdgePostgresStore.New(s.db.Pool)
-	schema.ApplySchemaForTable(context.Background(), s.db.GetGormDB(), schema.PoliciesTableName)
-	schema.ApplySchemaForTable(context.Background(), s.db.GetGormDB(), schema.PolicyCategoriesTableName)
+	s.policyStore = policyPostgresStore.New(s.db.DB)
+	s.categoryStore = policyCategoryPostgresStore.New(s.db.DB)
+	s.edgeStore = policyCategoryEdgePostgresStore.New(s.db.DB)
+	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), frozenSchema.CreateTablePoliciesStmt)
+	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), frozenSchema.CreateTablePolicyCategoriesStmt)
 
 }
 
@@ -54,7 +55,7 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 	require.NoError(s.T(), s.policyStore.Upsert(ctx, testPolicy))
 
 	dbs := &types.Databases{
-		PostgresDB: s.db.Pool,
+		PostgresDB: s.db.DB,
 		GormDB:     s.db.GetGormDB(),
 	}
 

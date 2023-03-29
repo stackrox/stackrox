@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/enforcer"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/common/updater"
 	"google.golang.org/grpc"
@@ -41,6 +42,7 @@ var (
 )
 
 // Detector is the sensor component that syncs policies from Central and runs detection
+//
 //go:generate mockgen-wrapper
 type Detector interface {
 	common.SensorComponent
@@ -55,7 +57,7 @@ type Detector interface {
 // New returns a new detector
 func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
 	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache expiringcache.Cache, auditLogEvents chan *sensor.AuditEvents,
-	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore) Detector {
+	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store) Detector {
 	return &detectorImpl{
 		unifiedDetector: unified.NewDetector(),
 
@@ -64,7 +66,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		deploymentAlertOutputChan: make(chan outputResult),
 		deploymentProcessingMap:   make(map[string]int64),
 
-		enricher:            newEnricher(cache, serviceAccountStore),
+		enricher:            newEnricher(cache, serviceAccountStore, registryStore),
 		serviceAccountStore: serviceAccountStore,
 		deploymentStore:     deploymentStore,
 		extSrcsStore:        externalsrcs.StoreInstance(),
@@ -192,7 +194,7 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 	}
 }
 
-func (d *detectorImpl) Stop(err error) {
+func (d *detectorImpl) Stop(_ error) {
 	d.detectorStopper.Client().Stop()
 	d.auditStopper.Client().Stop()
 	d.serializerStopper.Client().Stop()
@@ -206,6 +208,8 @@ func (d *detectorImpl) Stop(err error) {
 	_ = d.auditStopper.Client().Stopped().Wait()
 	_ = d.serializerStopper.Client().Stopped().Wait()
 }
+
+func (d *detectorImpl) Notify(common.SensorComponentEvent) {}
 
 func (d *detectorImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.SensorDetectionCap}
@@ -231,6 +235,7 @@ func (d *detectorImpl) processPolicySync(sync *central.PolicySync) error {
 }
 
 func (d *detectorImpl) processReassessPolicies(_ *central.ReassessPolicies) error {
+	log.Debugf("Reassess Policies triggered")
 	// Clear the image caches and make all the deployments flow back through by clearing out the hash
 	d.enricher.imageCache.RemoveAll()
 	if d.admCtrlSettingsMgr != nil {
@@ -261,9 +266,10 @@ func (d *detectorImpl) processNetworkBaselineSync(sync *central.NetworkBaselineS
 
 func (d *detectorImpl) processUpdatedImage(image *storage.Image) error {
 	key := imagecacheutils.GetImageCacheKey(image)
-
+	log.Debugf("Receiving update for image: %s from central. Updating cache", image.GetName().GetFullName())
 	newValue := &cacheValue{
-		image: image,
+		image:     image,
+		localScan: d.enricher.localScan,
 	}
 	d.enricher.imageCache.Add(key, newValue)
 	d.admissionCacheNeedsFlush = true
@@ -271,6 +277,7 @@ func (d *detectorImpl) processUpdatedImage(image *storage.Image) error {
 }
 
 func (d *detectorImpl) processReprocessDeployments() error {
+	log.Debugf("Reprocess deployments triggered. Clearing cache and deduper")
 	if d.admissionCacheNeedsFlush && d.admCtrlSettingsMgr != nil {
 		// Would prefer to do a targeted flush
 		d.admCtrlSettingsMgr.FlushCache()

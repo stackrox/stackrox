@@ -8,7 +8,9 @@ import (
 // bundle. They should be ordered according to the preferred creation order. If there are multiple versions of the
 // same resource kind, they should be in ascending order.
 // IMPORTANT: Any resource type that is part of a sensor bundle deployment (either in a YAML or indirectly via a
-//            `kubectl` command invocation) must be listed here, otherwise the auto-upgrade will fail.
+//
+//	`kubectl` command invocation) must be listed here, otherwise the auto-upgrade will fail.
+//
 // NEVER REMOVE ELEMENTS FROM THIS LIST, OTHERWISE UPGRADES MIGHT FAIL IN UNEXPECTED WAYS. The upgrader logic
 // automatically detects the resources supported by the server, having GroupVersionKinds that are no longer supported
 // hence does not hurt.

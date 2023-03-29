@@ -9,15 +9,15 @@ import (
 	"github.com/gogo/protobuf/proto"
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	"github.com/stackrox/rox/migrator/migrations/n_35_to_n_36_postgres_nodes/common/v2"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -50,19 +50,19 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db                 *pgxpool.Pool
+	db                 *postgres.DB
 	noUpdateTimestamps bool
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool, noUpdateTimestamps bool) Store {
+func New(db *postgres.DB, noUpdateTimestamps bool) Store {
 	return &storeImpl{
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
 	}
 }
 
-func insertIntoNodes(ctx context.Context, tx pgx.Tx, obj *storage.Node, scanUpdated bool, iTime *protoTypes.Timestamp) error {
+func insertIntoNodes(ctx context.Context, tx *postgres.Tx, obj *storage.Node, scanUpdated bool, iTime *protoTypes.Timestamp) error {
 	cloned := obj
 	if cloned.GetScan().GetComponents() != nil {
 		cloned = obj.Clone()
@@ -155,7 +155,7 @@ func getPartsAsSlice(parts *common.NodeParts) ([]*storage.NodeComponent, []*stor
 	return components, vulns, nodeComponentEdges, componentCVEEdges
 }
 
-func insertIntoNodesTaints(ctx context.Context, tx pgx.Tx, obj *storage.Taint, nodeID string, idx int) error {
+func insertIntoNodesTaints(ctx context.Context, tx *postgres.Tx, obj *storage.Taint, nodeID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -180,7 +180,7 @@ func insertIntoNodesTaints(ctx context.Context, tx pgx.Tx, obj *storage.Taint, n
 	return nil
 }
 
-func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeComponent) error {
+func copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponent) error {
 	inputRows := [][]interface{}{}
 	var err error
 	var deletes []string
@@ -238,7 +238,7 @@ func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Nod
 	return err
 }
 
-func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeComponentEdge) error {
+func copyFromNodeComponentEdges(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponentEdge) error {
 	inputRows := [][]interface{}{}
 	var err error
 	copyCols := []string{
@@ -285,7 +285,7 @@ func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, objs ...*storage
 	return err
 }
 
-func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, objs ...*storage.NodeCVE) error {
+func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timestamp, objs ...*storage.NodeCVE) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -367,7 +367,7 @@ func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestam
 	return err
 }
 
-func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeComponentCVEEdge) error {
+func copyFromNodeComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponentCVEEdge) error {
 	inputRows := [][]interface{}{}
 	var err error
 	componentIDsToDelete := set.NewStringSet()
@@ -496,7 +496,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Node) error {
 	})
 }
 
-func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx pgx.Tx, nodeID string, objs ...*storage.Taint) error {
+func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx *postgres.Tx, nodeID string, objs ...*storage.Taint) error {
 	inputRows := [][]interface{}{}
 	var err error
 	copyCols := []string{
@@ -550,7 +550,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 
 func (s *storeImpl) retryableCount(ctx context.Context) (int, error) {
 	var sacQueryFilter *v1.Query
-	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Get returns the object, if it exists from the store
@@ -574,7 +574,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 	return s.getFullNode(ctx, tx, id)
 }
 
-func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (*storage.Node, bool, error) {
+func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID string) (*storage.Node, bool, error) {
 	row := tx.QueryRow(ctx, getNodeMetaStmt, pgutils.NilOrUUID(nodeID))
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -645,7 +645,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 	return common.Merge(nodeParts), true, nil
 }
 
-func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[string]*storage.NodeComponentEdge, error) {
+func getNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID string) (map[string]*storage.NodeComponentEdge, error) {
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentEdgesTable+" WHERE nodeid = $1", pgutils.NilOrUUID(nodeID))
 	if err != nil {
 		return nil, err
@@ -663,10 +663,10 @@ func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[s
 		}
 		componentIDToEdgeMap[msg.GetNodeComponentId()] = msg
 	}
-	return componentIDToEdgeMap, nil
+	return componentIDToEdgeMap, rows.Err()
 }
 
-func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string]*storage.NodeComponent, error) {
+func getNodeComponents(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string]*storage.NodeComponent, error) {
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentsTable+" WHERE id = ANY($1::text[])", componentIDs)
 	if err != nil {
 		return nil, err
@@ -684,10 +684,10 @@ func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (m
 		}
 		idToComponentMap[msg.GetId()] = msg
 	}
-	return idToComponentMap, nil
+	return idToComponentMap, rows.Err()
 }
 
-func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string][]*storage.NodeComponentCVEEdge, error) {
+func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string][]*storage.NodeComponentCVEEdge, error) {
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+componentCVEEdgesTable+" WHERE nodecomponentid = ANY($1::text[])", componentIDs)
 	if err != nil {
 		return nil, err
@@ -705,10 +705,10 @@ func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string)
 		}
 		componentIDToEdgesMap[msg.GetNodeComponentId()] = append(componentIDToEdgesMap[msg.GetNodeComponentId()], msg)
 	}
-	return componentIDToEdgesMap, nil
+	return componentIDToEdgesMap, rows.Err()
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context) (*pgxpool.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context) (*postgres.Conn, func(), error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -737,7 +737,7 @@ func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.No
 	return &msg, true, nil
 }
 
-func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error) {
+func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error) {
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeCVEsTable+" WHERE id = ANY($1::text[])", cveIDs)
 	if err != nil {
 		return nil, err
@@ -755,5 +755,5 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 		}
 		idToCVEMap[msg.GetId()] = msg
 	}
-	return idToCVEMap, nil
+	return idToCVEMap, rows.Err()
 }

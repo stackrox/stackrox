@@ -32,9 +32,11 @@ const (
 	// VulnMgmtRequester is a role that has the minimal privileges required to request vulnerability deferrals or false positives.
 	VulnMgmtRequester = "Vulnerability Management Requester"
 
+	// TODO: ROX-14398 Remove default role VulnReporter
 	// VulnReporter is a role that has the minimal privileges required to create and manage vulnerability reporting configurations.
 	VulnReporter = "Vulnerability Report Creator"
 
+	// TODO: ROX-14398 Remove ScopeManager default role
 	// ScopeManager is a role that has the minimal privileges to view and modify scopes for use in access control, vulnerability reporting etc.
 	ScopeManager = "Scope Manager"
 )
@@ -105,12 +107,9 @@ func IsDefaultAccessScope(scope *storage.SimpleAccessScope) bool {
 func GetAnalystPermissions() []permissions.ResourceWithAccess {
 	resourceToAccess := resources.AllResourcesViewPermissions()
 	for i, resourceWithAccess := range resourceToAccess {
-		// TODO: ROX-12750 Replace DebugLogs with Administration.
-		// TODO: ROX-12750 Announce Analyst permission set change in CHANGELOG.
-		if resourceWithAccess.Resource.GetResource() == resources.DebugLogs.GetResource() {
+		if resourceWithAccess.Resource.GetResource() == resources.Administration.GetResource() {
 			return append(resourceToAccess[:i], resourceToAccess[i+1:]...)
 		}
 	}
-	// TODO: ROX-12750 Replace DebugLogs with Administration.
-	panic("DebugLogs resource was not found amongst all resources.")
+	panic("Administration resource was not found amongst all resources.")
 }

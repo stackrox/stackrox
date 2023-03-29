@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/retry"
@@ -57,12 +58,16 @@ SELECT TABLE_NAME
 ) a;`
 
 	versionQuery = `SHOW server_version;`
+
+	totalConnectionQuery = `SELECT state, COUNT(datid) FROM pg_stat_activity WHERE state IS NOT NULL GROUP BY state;`
+
+	maxConnectionQuery = `SELECT current_setting('max_connections')::int;`
 )
 
 var (
 	postgresOpenRetries        = 10
 	postgresTimeBetweenRetries = 10 * time.Second
-	postgresDB                 *pgxpool.Pool
+	postgresDB                 *postgres.DB
 	pgSync                     sync.Once
 
 	// PostgresQueryTimeout - Postgres query timeout value
@@ -70,18 +75,18 @@ var (
 )
 
 // GetPostgres returns a global database instance. It should be called after InitializePostgres
-func GetPostgres() *pgxpool.Pool {
+func GetPostgres() *postgres.DB {
 	return postgresDB
 }
 
 // GetPostgresTest returns a global database instance. It should be used in tests only.
-func GetPostgresTest(t *testing.T) *pgxpool.Pool {
+func GetPostgresTest(t *testing.T) *postgres.DB {
 	t.Log("Initializing Postgres...")
 	return InitializePostgres(context.Background())
 }
 
 // InitializePostgres creates and returns returns a global database instance.
-func InitializePostgres(ctx context.Context) *pgxpool.Pool {
+func InitializePostgres(ctx context.Context) *postgres.DB {
 	pgSync.Do(func() {
 		_, dbConfig, err := pgconfig.GetPostgresConfig()
 		if err != nil {
@@ -95,7 +100,7 @@ func InitializePostgres(ctx context.Context) *pgxpool.Pool {
 		dbConfig.ConnConfig.Database = activeDB
 
 		if err := retry.WithRetry(func() error {
-			postgresDB, err = pgxpool.ConnectConfig(ctx, dbConfig)
+			postgresDB, err = postgres.New(ctx, dbConfig)
 			return err
 		}, retry.Tries(postgresOpenRetries), retry.BetweenAttempts(func(attempt int) {
 			time.Sleep(postgresTimeBetweenRetries)
@@ -116,7 +121,7 @@ func InitializePostgres(ctx context.Context) *pgxpool.Pool {
 }
 
 // GetPostgresVersion -- return version of the database
-func GetPostgresVersion(ctx context.Context, db *pgxpool.Pool) string {
+func GetPostgresVersion(ctx context.Context, db *postgres.DB) string {
 	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
 	defer cancel()
 
@@ -130,7 +135,7 @@ func GetPostgresVersion(ctx context.Context, db *pgxpool.Pool) string {
 }
 
 // CollectPostgresStats -- collect table level stats for Postgres
-func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) *stats.DatabaseStats {
+func CollectPostgresStats(ctx context.Context, db *postgres.DB) *stats.DatabaseStats {
 	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
 	defer cancel()
 
@@ -146,16 +151,16 @@ func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) *stats.Database
 	metrics.PostgresConnected.Set(float64(1))
 	dbStats.DatabaseAvailable = true
 
-	row, err := db.Query(ctx, tableQuery)
+	rows, err := db.Query(ctx, tableQuery)
 	if err != nil {
 		log.Errorf("error fetching object counts: %v", err)
 		return dbStats
 	}
+	defer rows.Close()
 
 	statsSlice := make([]*stats.TableStats, 0)
 
-	defer row.Close()
-	for row.Next() {
+	for rows.Next() {
 		var (
 			tableName   string
 			rowEstimate int
@@ -164,7 +169,7 @@ func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) *stats.Database
 			toastSize   int
 			tableSize   int
 		)
-		if err := row.Scan(&tableName, &rowEstimate, &totalSize, &indexSize, &toastSize, &tableSize); err != nil {
+		if err := rows.Scan(&tableName, &rowEstimate, &totalSize, &indexSize, &toastSize, &tableSize); err != nil {
 			log.Errorf("error scanning row for table %s: %v", tableName, err)
 			return nil
 		}
@@ -187,15 +192,23 @@ func CollectPostgresStats(ctx context.Context, db *pgxpool.Pool) *stats.Database
 		statsSlice = append(statsSlice, tableStat)
 	}
 
+	if err := rows.Err(); err != nil {
+		log.Errorf("error getting complete table statistic information: %v", err)
+	}
+
 	dbStats.Tables = statsSlice
 	return dbStats
 }
 
 // CollectPostgresDatabaseSizes -- collect database sizing stats for Postgres
-func CollectPostgresDatabaseSizes(postgresConfig *pgxpool.Config) []*stats.DatabaseDetailsStats {
-	databases := pgadmin.GetAllDatabases(postgresConfig)
-
+func CollectPostgresDatabaseSizes(postgresConfig *postgres.Config) []*stats.DatabaseDetailsStats {
 	detailsSlice := make([]*stats.DatabaseDetailsStats, 0)
+
+	databases, err := pgadmin.GetAllDatabases(postgresConfig)
+	if err != nil {
+		log.Errorf("unable to get the databases: %v", err)
+		return detailsSlice
+	}
 
 	for _, database := range databases {
 		dbSize, err := pgadmin.GetDatabaseSize(postgresConfig, database)
@@ -215,7 +228,7 @@ func CollectPostgresDatabaseSizes(postgresConfig *pgxpool.Config) []*stats.Datab
 }
 
 // CollectPostgresDatabaseStats -- collect database level stats for Postgres
-func CollectPostgresDatabaseStats(postgresConfig *pgxpool.Config) {
+func CollectPostgresDatabaseStats(postgresConfig *postgres.Config) {
 	dbStats := CollectPostgresDatabaseSizes(postgresConfig)
 
 	for _, dbStat := range dbStats {
@@ -229,13 +242,93 @@ func CollectPostgresDatabaseStats(postgresConfig *pgxpool.Config) {
 		return
 	}
 	metrics.PostgresTotalSize.Set(float64(totalSize))
+
+	// Check Postgres remaining capacity
+	if !env.ManagedCentral.BooleanSetting() {
+		availableDBBytes, err := pgadmin.GetRemainingCapacity(postgresConfig)
+		if err != nil {
+			log.Errorf("error fetching remaining database storage: %v", err)
+			return
+		}
+
+		metrics.PostgresRemainingCapacity.Set(float64(availableDBBytes))
+	}
 }
 
-func startMonitoringPostgres(ctx context.Context, db *pgxpool.Pool, postgresConfig *pgxpool.Config) {
+// CollectPostgresConnectionStats -- collect connection stats for Postgres
+func CollectPostgresConnectionStats(ctx context.Context, db *postgres.DB) {
+	// Get the total connections by database
+	getTotalConnections(ctx, db)
+
+	// Get the max connections for Postgres
+	getMaxConnections(ctx, db)
+}
+
+// getTotalConnections -- gets the total connections by database
+func getTotalConnections(ctx context.Context, db *postgres.DB) {
+	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
+	defer cancel()
+
+	rows, err := db.Query(ctx, totalConnectionQuery)
+	if err != nil {
+		log.Errorf("error fetching total connection information: %v", err)
+		return
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			state           string
+			connectionCount int
+		)
+		if err := rows.Scan(&state, &connectionCount); err != nil {
+			log.Errorf("error scanning row for connection data: %v", err)
+			return
+		}
+
+		stateLabel := prometheus.Labels{"state": state}
+		metrics.PostgresTotalConnections.With(stateLabel).Set(float64(connectionCount))
+	}
+}
+
+// getMaxConnections -- gets maximum number of connections to Postgres server
+func getMaxConnections(ctx context.Context, db *postgres.DB) {
+	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
+	defer cancel()
+
+	row := db.QueryRow(ctx, maxConnectionQuery)
+	var connectionCount int
+	if err := row.Scan(&connectionCount); err != nil {
+		log.Errorf("error fetching max connection information: %v", err)
+		return
+	}
+
+	metrics.PostgresMaximumConnections.Set(float64(connectionCount))
+}
+
+func processConnectionCountRow(metric *prometheus.GaugeVec, rows *postgres.Rows) {
+	for rows.Next() {
+		var (
+			databaseName    string
+			connectionCount int
+		)
+		if err := rows.Scan(&databaseName, &connectionCount); err != nil {
+			log.Errorf("error scanning row for connection data: %v", err)
+			return
+		}
+
+		databaseLabel := prometheus.Labels{"database": databaseName}
+		metric.With(databaseLabel).Set(float64(connectionCount))
+	}
+}
+
+func startMonitoringPostgres(ctx context.Context, db *postgres.DB, postgresConfig *postgres.Config) {
 	t := time.NewTicker(1 * time.Minute)
 	defer t.Stop()
 	for range t.C {
 		_ = CollectPostgresStats(ctx, db)
 		CollectPostgresDatabaseStats(postgresConfig)
+		CollectPostgresConnectionStats(ctx, db)
 	}
 }

@@ -1,4 +1,7 @@
+import static util.Helpers.withRetry
+
 import com.google.common.base.CaseFormat
+import orchestratormanager.OrchestratorTypes
 
 import io.stackrox.proto.api.v1.RbacServiceOuterClass
 import io.stackrox.proto.api.v1.ServiceAccountServiceOuterClass
@@ -13,7 +16,9 @@ import objects.K8sServiceAccount
 import objects.K8sSubject
 import services.RbacService
 import services.ServiceAccountService
+import util.Env
 
+import spock.lang.IgnoreIf
 import spock.lang.Stepwise
 import spock.lang.Tag
 
@@ -51,6 +56,8 @@ class K8sRbacTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("COMPATIBILITY")
+    // TODO(ROX-14666): This test times out under openshift
+    @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
     def "Verify scraped service accounts"() {
         given:
         List<K8sServiceAccount> orchestratorSAs = null
@@ -124,8 +131,9 @@ class K8sRbacTest extends BaseSpecification {
 
         expect:
         "SR should have the service account and its relationship to the deployment"
+        def query = ServiceAccountService.getServiceAccountQuery(NEW_SA)
         withRetry(45, 2) {
-            def stackroxSAs = ServiceAccountService.getServiceAccounts()
+            def stackroxSAs = ServiceAccountService.getServiceAccounts(query)
             for (ServiceAccountServiceOuterClass.ServiceAccountAndRoles s : stackroxSAs) {
                 def sa = s.serviceAccount
                 if (sa.name == NEW_SA.name && sa.namespace == NEW_SA.namespace) {

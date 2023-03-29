@@ -1,3 +1,5 @@
+import static util.Helpers.withRetry
+
 import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
 
@@ -75,7 +77,7 @@ class BaseSpecification extends Specification {
 
         LOG.info "Performing global setup"
 
-        if (!Env.IN_CI || Env.get("CIRCLE_TAG")) {
+        if (!Env.IN_CI || Env.get("BUILD_TAG")) {
             // Strictly test integration with external services when running in
             // a dev environment or in CI against tagged builds (e.g. nightly builds).
             LOG.info "Will perform strict integration testing (if any is required)"
@@ -393,13 +395,12 @@ class BaseSpecification extends Specification {
     }
 
     static Boolean isPostgresRun() {
-        return Env.CI_JOBNAME.contains("postgres")
+        return Env.get("ROX_POSTGRES_DATASTORE", null) == "true"
     }
 
     static Boolean isRaceBuild() {
-        return Env.get("IS_RACE_BUILD", null) == "true" || Env.CI_JOBNAME == "race-condition-tests"
+        return Env.get("IS_RACE_BUILD", null) == "true" || Env.CI_JOB_NAME == "race-condition-qa-e2e-tests"
     }
-
 }
 
 class TestSpecRuntimeException extends RuntimeException {

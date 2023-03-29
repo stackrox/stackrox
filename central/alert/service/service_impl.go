@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore"
+	mappings "github.com/stackrox/rox/central/alert/mappings"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	baselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/role/resources"
@@ -19,6 +21,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/batcher"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -62,14 +65,18 @@ var (
 		},
 	})
 
-	// groupByFunctions provides a map of functions that group slices of ListAlet objects by category or by cluser.
-	groupByFunctions = map[v1.GetAlertsCountsRequest_RequestGroup]func(*storage.ListAlert) []string{
-		v1.GetAlertsCountsRequest_UNSET: func(*storage.ListAlert) []string { return []string{""} },
-		v1.GetAlertsCountsRequest_CATEGORY: func(a *storage.ListAlert) (output []string) {
-			output = append(output, a.GetPolicy().GetCategories()...)
+	// groupByFunctions provides a map of functions that group slices of result objects by category or by cluster.
+	groupByFunctions = map[v1.GetAlertsCountsRequest_RequestGroup]func(result search.Result) []string{
+		v1.GetAlertsCountsRequest_UNSET: func(result search.Result) []string { return []string{""} },
+		v1.GetAlertsCountsRequest_CATEGORY: func(a search.Result) (output []string) {
+			field := mappings.OptionsMap.MustGet(search.Category.String())
+			output = append(output, a.Matches[field.GetFieldPath()]...)
 			return
 		},
-		v1.GetAlertsCountsRequest_CLUSTER: func(a *storage.ListAlert) []string { return []string{a.GetCommonEntityInfo().GetClusterName()} },
+		v1.GetAlertsCountsRequest_CLUSTER: func(a search.Result) []string {
+			field := mappings.OptionsMap.MustGet(search.Cluster.String())
+			return []string{a.Matches[field.GetFieldPath()][0]}
+		},
 	}
 )
 
@@ -172,8 +179,49 @@ func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlerts
 	if request == nil {
 		request = &v1.GetAlertsCountsRequest{}
 	}
+
 	request.Request = ensureAllAlertsAreFetched(request.GetRequest())
-	alerts, err := s.dataStore.ListAlerts(ctx, request.GetRequest())
+	requestQ, err := search.ParseQuery(request.GetRequest().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, err
+	}
+
+	var hasClusterQ, hasSeverityQ, hasCategoryQ bool
+	search.ApplyFnToAllBaseQueries(requestQ, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.Cluster.String() {
+			hasClusterQ = true
+			matchFieldQuery.MatchFieldQuery.Highlight = true
+		}
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.Category.String() {
+			hasCategoryQ = true
+			matchFieldQuery.MatchFieldQuery.Highlight = true
+		}
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.Severity.String() {
+			hasSeverityQ = true
+			matchFieldQuery.MatchFieldQuery.Highlight = true
+		}
+	})
+
+	var conjuncts []*v1.Query
+	if !hasClusterQ {
+		conjuncts = append(conjuncts, search.NewQueryBuilder().AddStringsHighlighted(search.Cluster, search.WildcardString).ProtoQuery())
+	}
+	if !hasSeverityQ {
+		conjuncts = append(conjuncts, search.NewQueryBuilder().AddStringsHighlighted(search.Severity, search.WildcardString).ProtoQuery())
+	}
+	if !hasCategoryQ {
+		conjuncts = append(conjuncts, search.NewQueryBuilder().AddStringsHighlighted(search.Category, search.WildcardString).ProtoQuery())
+	}
+	for _, conjunct := range conjuncts {
+		requestQ = search.ConjunctionQuery(requestQ, conjunct)
+	}
+
+	alerts, err := s.dataStore.Search(ctx, requestQ)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +240,6 @@ func (s *serviceImpl) GetAlertTimeseries(ctx context.Context, req *v1.ListAlerts
 	if err != nil {
 		return nil, err
 	}
-
 	response := alertTimeseriesResponseFrom(alerts)
 	return response, nil
 }
@@ -445,9 +492,9 @@ func alertsGroupResponseFrom(alerts []*storage.ListAlert) (output *v1.GetAlertsG
 	return
 }
 
-// alertsCountsResponseFrom returns a slice of storage.ListAlert objects translated into a v1.GetAlertsCountsResponse
+// alertsCountsResponseFrom returns a slice of search.Result objects translated into a v1.GetAlertsCountsResponse
 // object. True is returned if the translation was successful; otherwise false when the requested group is unknown.
-func alertsCountsResponseFrom(alerts []*storage.ListAlert, groupBy v1.GetAlertsCountsRequest_RequestGroup) (*v1.GetAlertsCountsResponse, bool) {
+func alertsCountsResponseFrom(alerts []search.Result, groupBy v1.GetAlertsCountsRequest_RequestGroup) (*v1.GetAlertsCountsResponse, bool) {
 	if groupByFunc, ok := groupByFunctions[groupBy]; ok {
 		response := countAlerts(alerts, groupByFunc)
 		return response, true
@@ -477,7 +524,7 @@ func alertTimeseriesResponseFrom(alerts []*storage.ListAlert) *v1.GetAlertTimese
 	return response
 }
 
-func countAlerts(alerts []*storage.ListAlert, groupByFunc func(*storage.ListAlert) []string) (output *v1.GetAlertsCountsResponse) {
+func countAlerts(alerts []search.Result, groupByFunc func(result search.Result) []string) (output *v1.GetAlertsCountsResponse) {
 	groups := getMapOfAlertCounts(alerts, groupByFunc)
 
 	output = new(v1.GetAlertsCountsResponse)
@@ -510,16 +557,28 @@ func countAlerts(alerts []*storage.ListAlert, groupByFunc func(*storage.ListAler
 	return
 }
 
-func getMapOfAlertCounts(alerts []*storage.ListAlert, groupByFunc func(alert *storage.ListAlert) []string) (groups map[string]map[storage.Severity]int) {
+func getMapOfAlertCounts(alerts []search.Result, groupByFunc func(alert search.Result) []string) (groups map[string]map[storage.Severity]int) {
 	groups = make(map[string]map[storage.Severity]int)
+	field := mappings.OptionsMap.MustGet(search.Severity.String())
 
 	for _, a := range alerts {
 		for _, g := range groupByFunc(a) {
 			if groups[g] == nil {
 				groups[g] = make(map[storage.Severity]int)
 			}
+			if len(a.Matches[field.GetFieldPath()]) == 0 {
+				continue
+			}
+			// There is a difference in how enum matches are stored in postgres vs rockdb. In postgres they are
+			// stored as string values, in rocksdb as int values. Courtesy: Mandar.
+			if env.PostgresDatastoreEnabled.BooleanSetting() {
+				severity := storage.Severity_value[a.Matches[field.GetFieldPath()][0]]
+				groups[g][(storage.Severity(severity))]++
+			} else {
+				severity, _ := strconv.Atoi(a.Matches[field.GetFieldPath()][0])
+				groups[g][(storage.Severity(severity))]++
+			}
 
-			groups[g][a.GetPolicy().GetSeverity()]++
 		}
 	}
 

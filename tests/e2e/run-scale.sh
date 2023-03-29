@@ -36,7 +36,7 @@ deploy_stackrox_in_scale_mode() {
     "$ROOT/deploy/k8s/deploy.sh"
     
     DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}" \
-    get_central_basic_auth_creds
+    export_central_basic_auth_creds
 
     "$ROOT/scale/launch_workload.sh" scale-test
 

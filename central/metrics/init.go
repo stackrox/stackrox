@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -11,10 +12,17 @@ var (
 
 func init() {
 	// general
+
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		prometheus.MustRegister(
+			boltOperationHistogramVec,
+			rocksDBOperationHistogramVec,
+			dackboxOperationHistogramVec,
+		)
+	}
+
 	prometheus.MustRegister(
-		boltOperationHistogramVec,
-		rocksDBOperationHistogramVec,
-		dackboxOperationHistogramVec,
+		pipelinePanicCounter,
 		graphQLOperationHistogramVec,
 		graphQLQueryHistogramVec,
 		indexOperationHistogramVec,
@@ -33,5 +41,8 @@ func init() {
 		acquireDBConnHistogramVec,
 		clusterMetricsNodeCountGaugeVec,
 		clusterMetricsCPUCapacityGaugeVec,
+		totalOrphanedPLOPCounter,
+		processQueueLengthGauge,
+		sensorEventsDeduperCounter,
 	)
 }

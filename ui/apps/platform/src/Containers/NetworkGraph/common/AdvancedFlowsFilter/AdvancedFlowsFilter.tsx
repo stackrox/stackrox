@@ -18,7 +18,6 @@ export type AdvancedFlowsFilterProps = {
 };
 
 export const defaultAdvancedFlowsFilters: AdvancedFlowsFilterType = {
-    flows: [],
     directionality: [],
     protocols: [],
     ports: [],
@@ -82,10 +81,6 @@ function AdvancedFlowsFilter({
             isGrouped
             position={SelectPosition.right}
         >
-            <SelectGroup label="Deployment flows">
-                <SelectOption value="anomalous">Anomalous flows</SelectOption>
-                <SelectOption value="baseline">Baselined flows</SelectOption>
-            </SelectGroup>
             <SelectGroup label="Flow directionality">
                 <SelectOption value="ingress">Ingress (inbound)</SelectOption>
                 <SelectOption value="egress">Egress (outbound)</SelectOption>
@@ -107,7 +102,11 @@ function AdvancedFlowsFilter({
                     menuAppendTo="parent"
                 >
                     {allUniquePorts.map((port) => {
-                        return <SelectOption value={port}>{port}</SelectOption>;
+                        return (
+                            <SelectOption value={port} key={port}>
+                                {port}
+                            </SelectOption>
+                        );
                     })}
                 </Select>
             </SelectGroup>

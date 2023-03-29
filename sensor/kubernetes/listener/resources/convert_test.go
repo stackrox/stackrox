@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
-	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	batchv1 "k8s.io/api/batch/v1"
@@ -87,10 +86,11 @@ func TestPopulateNonStaticFieldWithPod(t *testing.T) {
 			expectedAction: central.ResourceAction_REMOVE_RESOURCE,
 		},
 	}
+	storeProvider := InitializeStore()
 	for _, c := range cases {
 		ph := references.NewParentHierarchy()
 		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", testClusterID, nil,
-			mockNamespaceStore, ph, "", orchestratornamespaces.Singleton(), registry.Singleton())
+			mockNamespaceStore, ph, "", storeProvider.orchestratorNamespaces, storeProvider.Registries())
 		assert.Equal(t, c.expectedAction, c.action)
 	}
 }
@@ -1131,11 +1131,12 @@ func TestConvert(t *testing.T) {
 		},
 	}
 
+	storeProvider := InitializeStore()
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID,
 				c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "",
-				orchestratornamespaces.Singleton(), registry.Singleton()).GetDeployment()
+				storeProvider.orchestratorNamespaces, storeProvider.Registries()).GetDeployment()
 			if actual != nil {
 				actual.StateTimestamp = 0
 			}

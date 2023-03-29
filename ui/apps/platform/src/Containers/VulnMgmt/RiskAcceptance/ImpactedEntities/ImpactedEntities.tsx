@@ -4,12 +4,13 @@ import { Button, ButtonVariant, Flex, FlexItem, Label } from '@patternfly/react-
 
 import entityTypes from 'constants/entityTypes';
 import ImpactedEntitiesModal from './ImpactedEntitiesModal';
+import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 
 export type ImpactedEntitiesProps = {
-    deployments: any;
-    deploymentCount: number;
-    images: any;
-    imageCount: number;
+    deployments: VulnerabilityRequest['deployments'];
+    deploymentCount: VulnerabilityRequest['deploymentCount'];
+    images: VulnerabilityRequest['images'];
+    imageCount: VulnerabilityRequest['imageCount'];
 };
 
 function ImpactedEntities({

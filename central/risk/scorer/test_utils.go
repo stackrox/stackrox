@@ -132,6 +132,22 @@ func GetMockNode() *storage.Node {
 							Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 						},
 					},
+					Vulnerabilities: []*storage.NodeVulnerability{
+						{
+							CveBaseInfo: &storage.CVEInfo{
+								Cve: "CVE-2019-0001",
+							},
+							Cvss:     5,
+							Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+						},
+						{
+							CveBaseInfo: &storage.CVEInfo{
+								Cve: "CVE-2019-0002",
+							},
+							Cvss:     5,
+							Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+						},
+					},
 				},
 			},
 		},

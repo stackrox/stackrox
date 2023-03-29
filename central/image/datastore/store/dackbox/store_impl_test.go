@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -21,6 +22,8 @@ import (
 )
 
 func TestImageStore(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	suite.Run(t, new(ImageStoreTestSuite))
 }
 

@@ -26,7 +26,7 @@ describe('Collections table', () => {
     withAuth();
 
     before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_OBJECT_COLLECTIONS')) {
+        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
             this.skip();
         }
     });

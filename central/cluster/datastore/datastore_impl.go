@@ -52,8 +52,6 @@ import (
 )
 
 const (
-	connectionTerminationTimeout = 5 * time.Second
-
 	// clusterMoveGracePeriod determines the amount of time that has to pass before a (logical) StackRox cluster can
 	// be moved to a different (physical) Kubernetes cluster.
 	clusterMoveGracePeriod = 3 * time.Minute
@@ -330,7 +328,7 @@ func (ds *datastoreImpl) addClusterNoLock(ctx context.Context, cluster *storage.
 		return "", err
 	}
 
-	trackClusterRegistered(cluster)
+	trackClusterRegistered(ctx, cluster)
 
 	// Temporarily elevate permissions to create network flow store for the cluster.
 	networkGraphElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
@@ -517,12 +515,7 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage.Cluster, done *concurrency.Signal) {
 	// Terminate the cluster connection to prevent new data from being stored.
 	if ds.cm != nil {
-		if conn := ds.cm.GetConnection(cluster.GetId()); conn != nil {
-			conn.Terminate(errors.New("cluster was deleted"))
-			if !concurrency.WaitWithTimeout(conn.Stopped(), connectionTerminationTimeout) {
-				utils.Should(errors.Errorf("connection to sensor from cluster %s not terminated after %v", cluster.GetId(), connectionTerminationTimeout))
-			}
-		}
+		ds.cm.CloseConnection(cluster.GetId())
 	}
 	ds.removeClusterImageIntegrations(ctx, cluster)
 

@@ -31,6 +31,11 @@ on:
         required: true
         default: true
         type: boolean
+      check-jira-issues:
+        description: Check Jira issues for current release
+        required: true
+        default: true
+        type: boolean
 
 env:
   main_branch: ${{github.event.repository.default_branch}}
@@ -89,6 +94,7 @@ jobs:
 
   check-jira:
     name: Check Jira tickets for release
+    if: github.event.inputs.check-jira-issues == 'true'
     needs: [variables, properties]
     runs-on: ubuntu-latest
     steps:
@@ -446,6 +452,7 @@ jobs:
         run: |
           ./oc -n stackrox set image ds/collector compliance="quay.io/rhacs-eng/main:$TAG"
           ./oc -n stackrox set image ds/collector collector="quay.io/rhacs-eng/collector:$TAG"
+          ./oc -n stackrox set image ds/collector node-inventory="quay.io/rhacs-eng/scanner-slim:$TAG"
           ./oc -n stackrox set image deploy/admission-control admission-control="quay.io/rhacs-eng/main:$TAG"
 
   notify-os4-cluster:
@@ -531,7 +538,7 @@ jobs:
         with:
           ref: ${{needs.variables.outputs.milestone}}
           repository: stackrox/stackrox
-      - uses: 'google-github-actions/auth@v0'
+      - uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: '${{ secrets.GCP_RELEASE_AUTOMATION_SA }}'
       - name: 'Set up Cloud SDK'

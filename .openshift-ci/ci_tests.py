@@ -23,6 +23,9 @@ class BaseTest:
                 if exitstatus != 0:
                     raise RuntimeError(f"Test failed: exit {exitstatus}")
             except subprocess.TimeoutExpired as err:
+                # Kill child processes as we cannot rely on bash scripts to handle signals and stop tests
+                subprocess.run(["/usr/bin/pkill", "-P", str(cmd.pid)], check=True, timeout=5)
+                # Then kill the test command
                 popen_graceful_kill(cmd)
                 raise err
 
@@ -51,8 +54,9 @@ class UpgradeTest(BaseTest):
 
 
 class PostgresUpgradeTest(BaseTest):
-    TEST_TIMEOUT = 60 * 60
+    TEST_TIMEOUT = 60 * 60 * 2
     TEST_OUTPUT_DIR = "/tmp/postgres-upgrade-test-logs"
+    TEST_LEGACY_OUTPUT_DIR = "/tmp/legacy-postgres-upgrade-test-logs"
     TEST_SENSOR_OUTPUT_DIR = "/tmp/postgres-sensor-upgrade-test-logs"
 
     def run(self):
@@ -64,6 +68,12 @@ class PostgresUpgradeTest(BaseTest):
 
         self.run_with_graceful_kill(
             ["tests/upgrade/postgres_sensor_run.sh", PostgresUpgradeTest.TEST_SENSOR_OUTPUT_DIR],
+            PostgresUpgradeTest.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
+        )
+
+        self.run_with_graceful_kill(
+            ["tests/upgrade/legacy_to_postgres_run.sh", PostgresUpgradeTest.TEST_LEGACY_OUTPUT_DIR],
             PostgresUpgradeTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
@@ -105,7 +115,7 @@ class OperatorE2eTest(BaseTest):
         self.run_with_graceful_kill(
             ["operator/hack/junit_wrap.sh", "deploy-previous-operator",
              "Deploy previously released version of the operator.",
-             "See log for error details.",
+             "See log for error details. Reading operator/tests/TROUBLESHOOTING_E2E_TESTS.md may also be helpful.",
              "make", "-C", "operator", "deploy-previous-via-olm"],
             OperatorE2eTest.DEPLOY_TIMEOUT_SEC,
         )
@@ -114,7 +124,8 @@ class OperatorE2eTest(BaseTest):
         self.run_with_graceful_kill(
             ["operator/hack/junit_wrap.sh", "test-upgrade",
              "Test operator upgrade from previously released version to the current one.",
-             "See log and/or kuttl JUnit output for error details.",
+             "See log and/or kuttl JUnit output for error details. "
+             "Reading operator/tests/TROUBLESHOOTING_E2E_TESTS.md may also be helpful.",
              "make", "-C", "operator", "test-upgrade"],
             OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC,
         )
@@ -123,7 +134,8 @@ class OperatorE2eTest(BaseTest):
         self.run_with_graceful_kill(
             ["operator/hack/junit_wrap.sh", "test-e2e",
              "Run operator E2E tests.",
-             "See log and/or kuttl JUnit output for error details.",
+             "See log and/or kuttl JUnit output for error details. "
+             "Reading operator/tests/TROUBLESHOOTING_E2E_TESTS.md may also be helpful.",
              "make", "-C", "operator", "test-e2e-deployed"],
             OperatorE2eTest.E2E_TEST_TIMEOUT_SEC,
         )

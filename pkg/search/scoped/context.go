@@ -3,7 +3,11 @@ package scoped
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // Scope hold an id and scope level for scoping searches.
@@ -80,4 +84,26 @@ func getScopeAtLevel(scope *Scope, level v1.SearchCategory) (Scope, bool) {
 		return *scope, true
 	}
 	return getScopeAtLevel(scope.Parent, level)
+}
+
+// GetQueryForAllScopes constructs a query for scoped context, if available.
+func GetQueryForAllScopes(ctx context.Context) (*v1.Query, error) {
+	scopes, hasScope := GetAllScopes(ctx)
+	if !hasScope {
+		return nil, nil
+	}
+
+	var conjuncts []*v1.Query
+	for _, scope := range scopes {
+		schema := mapping.GetTableFromCategory(scope.Level)
+		if schema == nil {
+			err := errors.Errorf("no schema registered for search category %s", scope.Level)
+			utils.Should(err)
+			return nil, err
+		}
+		idField := schema.ID()
+		conjuncts = append(conjuncts, searchPkg.NewQueryBuilder().
+			AddExactMatches(searchPkg.FieldLabel(idField.Search.FieldName), scope.ID).ProtoQuery())
+	}
+	return searchPkg.ConjunctionQuery(conjuncts...), nil
 }

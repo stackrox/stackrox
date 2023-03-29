@@ -8,7 +8,6 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/resources"
@@ -17,11 +16,12 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
 )
@@ -69,12 +69,12 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *pgxpool.Pool
-	mutex sync.Mutex
+	db    *postgres.DB
+	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
+func New(db *postgres.DB) Store {
 	return &storeImpl{
 		db: db,
 	}
@@ -102,7 +102,7 @@ func insertIntoTestGGrandChild1(ctx context.Context, batch *pgx.Batch, obj *stor
 	return nil
 }
 
-func (s *storeImpl) copyFromTestGGrandChild1(ctx context.Context, tx pgx.Tx, objs ...*storage.TestGGrandChild1) error {
+func (s *storeImpl) copyFromTestGGrandChild1(ctx context.Context, tx *postgres.Tx, objs ...*storage.TestGGrandChild1) error {
 
 	inputRows := [][]interface{}{}
 
@@ -169,7 +169,7 @@ func (s *storeImpl) copyFromTestGGrandChild1(ctx context.Context, tx pgx.Tx, obj
 	return err
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
@@ -261,12 +261,15 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestGGrandCh
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
 		// violations
+		if len(objs) < batchAfter {
+			s.mutex.RLock()
+			defer s.mutex.RUnlock()
+
+			return s.upsert(ctx, objs...)
+		}
 		s.mutex.Lock()
 		defer s.mutex.Unlock()
 
-		if len(objs) < batchAfter {
-			return s.upsert(ctx, objs...)
-		}
 		return s.copyFrom(ctx, objs...)
 	})
 }
@@ -291,7 +294,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // DeleteByQuery removes the objects from the store based on the passed query.
@@ -314,7 +317,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 		query,
 	)
 
-	return postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // DeleteMany removes the objects associated to the specified IDs from the store.
@@ -351,10 +354,8 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 			search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
 		)
 
-		if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
-			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
-			log.Error(err)
-			return err
+		if err := pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
+			return errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
 		}
 
 		// Move the slice forward to start the next batch
@@ -381,7 +382,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the ID exists in the store.
@@ -404,7 +405,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	count, err := postgres.RunCountRequestForSchema(ctx, schema, q, s.db)
+	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
 	// returns more than 1, despite the fact that the identifier is unique in the table.
 	return count > 0, err
@@ -431,7 +432,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.TestGGrandChil
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema[storage.TestGGrandChild1](ctx, schema, q, s.db)
+	data, err := pgSearch.RunGetQueryForSchema[storage.TestGGrandChild1](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
@@ -457,12 +458,14 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 	if err != nil {
 		return nil, err
 	}
+	pagination := query.GetPagination()
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		query,
 	)
+	q.Pagination = pagination
 
-	rows, err := postgres.RunGetManyQueryForSchema[storage.TestGGrandChild1](ctx, schema, q, s.db)
+	rows, err := pgSearch.RunGetManyQueryForSchema[storage.TestGGrandChild1](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -499,7 +502,7 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 		search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
 	)
 
-	rows, err := postgres.RunGetManyQueryForSchema[storage.TestGGrandChild1](ctx, schema, q, s.db)
+	rows, err := pgSearch.RunGetManyQueryForSchema[storage.TestGGrandChild1](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(identifiers))
@@ -542,7 +545,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	result, err := postgres.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	result, err := pgSearch.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return nil, err
 	}
@@ -558,7 +561,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 // Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestGGrandChild1) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.TestGGrandChild1](ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.TestGGrandChild1](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -597,17 +600,17 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 //// Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+func CreateTableAndNewStore(ctx context.Context, db *postgres.DB, gormDB *gorm.DB) Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db)
 }
 
 // Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
+func Destroy(ctx context.Context, db *postgres.DB) {
 	dropTableTestGGrandChild1(ctx, db)
 }
 
-func dropTableTestGGrandChild1(ctx context.Context, db *pgxpool.Pool) {
+func dropTableTestGGrandChild1(ctx context.Context, db *postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_g_grand_child1 CASCADE")
 
 }

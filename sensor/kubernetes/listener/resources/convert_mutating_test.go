@@ -20,6 +20,7 @@ import (
 func TestConvertDifferentContainerNumbers(t *testing.T) {
 	t.Parallel()
 
+	storeProvider := InitializeStore()
 	cases := []struct {
 		name               string
 		inputObj           interface{}
@@ -105,8 +106,8 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 					},
 				},
 			},
-			systemNamespaces: orchestratornamespaces.Singleton(),
-			registryStore:    registry.Singleton(),
+			systemNamespaces: storeProvider.orchestratorNamespaces,
+			registryStore:    storeProvider.Registries(),
 			expectedDeployment: &storage.Deployment{
 				Id:                    "FooID",
 				ClusterId:             testClusterID,
@@ -243,8 +244,8 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 					},
 				},
 			},
-			systemNamespaces: orchestratornamespaces.Singleton(),
-			registryStore:    registry.Singleton(),
+			systemNamespaces: storeProvider.orchestratorNamespaces,
+			registryStore:    storeProvider.Registries(),
 			expectedDeployment: &storage.Deployment{
 				Id:                    "FooID",
 				ClusterId:             testClusterID,

@@ -1,9 +1,12 @@
-export type VulnerabilitySeverity =
-    // | 'UNKNOWN_VULNERABILITY_SEVERITY'
-    | 'LOW_VULNERABILITY_SEVERITY'
-    | 'MODERATE_VULNERABILITY_SEVERITY'
-    | 'IMPORTANT_VULNERABILITY_SEVERITY'
-    | 'CRITICAL_VULNERABILITY_SEVERITY';
+export const vulnerabilitySeverities = [
+    'UNKNOWN_VULNERABILITY_SEVERITY',
+    'LOW_VULNERABILITY_SEVERITY',
+    'MODERATE_VULNERABILITY_SEVERITY',
+    'IMPORTANT_VULNERABILITY_SEVERITY',
+    'CRITICAL_VULNERABILITY_SEVERITY',
+] as const;
+
+export type VulnerabilitySeverity = typeof vulnerabilitySeverities[number];
 
 export type VulnerabilityState = 'OBSERVED' | 'DEFERRED' | 'FALSE_POSITIVE';
 

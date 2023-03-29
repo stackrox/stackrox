@@ -30,7 +30,7 @@ func DefaultPolicyCategories() ([]*storage.PolicyCategory, error) {
 
 	var categories []*storage.PolicyCategory
 
-	errList := errorhelpers.NewErrorList("Default policy validation")
+	errList := errorhelpers.NewErrorList("Default policy category validation")
 	for _, f := range files {
 		c, err := readCategoryFile(filepath.Join(categoriesDir, f.Name()))
 		if err != nil {

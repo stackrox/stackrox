@@ -30,7 +30,7 @@ var (
 )
 
 // GetAllFlows returns all the flows in the store.
-func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) (flows []*storage.NetworkFlow, ts *types.Timestamp, err error) {
+func (s *flowStoreImpl) GetAllFlows(_ context.Context, since *types.Timestamp) (flows []*storage.NetworkFlow, ts *types.Timestamp, err error) {
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
 		return nil, nil, err
 	}
@@ -41,7 +41,7 @@ func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp)
 }
 
 // UpsertFlows updates an flow to the store, adding it if not already present.
-func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdatedTS timestamp.MicroTS) error {
+func (s *flowStoreImpl) UpsertFlows(_ context.Context, flows []*storage.NetworkFlow, lastUpdatedTS timestamp.MicroTS) error {
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
 		return err
 	}

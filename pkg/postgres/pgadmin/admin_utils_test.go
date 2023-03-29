@@ -1,12 +1,14 @@
+//go:build sql_integration
+
 package pgadmin
 
 import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -24,8 +26,8 @@ const (
 
 type PostgresRestoreSuite struct {
 	suite.Suite
-	pool      *pgxpool.Pool
-	config    *pgxpool.Config
+	pool      *postgres.DB
+	config    *postgres.Config
 	sourceMap map[string]string
 	ctx       context.Context
 }
@@ -45,9 +47,9 @@ func (s *PostgresRestoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
+	pool, err := postgres.New(ctx, config)
 	s.Require().NoError(err)
 
 	s.ctx = ctx
@@ -85,7 +87,8 @@ func (s *PostgresRestoreSuite) TestUtilities() {
 	s.True(CheckIfDBExists(s.config, restoreDB))
 
 	// Get a connection to the restore database
-	restorePool := GetClonePool(s.config, restoreDB)
+	restorePool, err := GetClonePool(s.config, restoreDB)
+	s.Nil(err)
 	s.NotNil(restorePool)
 	err = restorePool.Ping(s.ctx)
 	s.Nil(err)
@@ -103,18 +106,22 @@ func (s *PostgresRestoreSuite) TestUtilities() {
 	s.NotNil(err)
 
 	// Get a connection to the active DB
-	activePool := GetClonePool(s.config, activeDB)
+	activePool, err := GetClonePool(s.config, activeDB)
+	s.Nil(err)
 	s.NotNil(activePool)
 
 	// Rename activeDB to a new one
 	err = RenameDB(s.pool, activeDB, tempDB)
 	s.Nil(err)
-	s.True(CheckIfDBExists(s.config, tempDB))
+	exists, err := CheckIfDBExists(s.config, tempDB)
+	s.Nil(err)
+	s.True(exists)
 	// Make sure connection to active database was terminated
 	s.NotNil(activePool.Ping(s.ctx))
 
 	// Reacquire a connection to the restore database
-	restorePool = GetClonePool(s.config, restoreDB)
+	restorePool, err = GetClonePool(s.config, restoreDB)
+	s.Nil(err)
 	s.NotNil(restorePool)
 	s.Nil(restorePool.Ping(s.ctx))
 

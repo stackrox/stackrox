@@ -21,12 +21,14 @@ type NetworkSearchsProps = {
     selectedCluster?: string;
     selectedNamespaces?: string[];
     selectedDeployments?: string[];
+    isDisabled: boolean;
 };
 
 function NetworkSearch({
     selectedCluster = '',
     selectedNamespaces = [],
     selectedDeployments = [],
+    isDisabled,
 }: NetworkSearchsProps) {
     const [searchOptions, setSearchOptions] = useState<string[]>([]);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -59,12 +61,13 @@ function NetworkSearch({
     return (
         <SearchFilterInput
             className="pf-u-w-100 theme-light pf-search-shim"
-            placeholder="Add one or more deployment filters"
+            placeholder="Filter deployments"
             searchFilter={searchFilter}
             searchCategory="DEPLOYMENTS"
             searchOptions={searchOptions}
             autocompleteQueryPrefix={searchOptionsToQuery(prependAutocompleteQuery)}
             handleChangeSearchFilter={onSearch}
+            isDisabled={isDisabled}
         />
     );
 }

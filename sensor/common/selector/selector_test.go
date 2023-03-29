@@ -43,7 +43,7 @@ func (m mockSelector) String() string {
 	return ""
 }
 
-func (m mockSelector) Add(r ...labels.Requirement) labels.Selector {
+func (m mockSelector) Add(_ ...labels.Requirement) labels.Selector {
 	return nil
 }
 
@@ -55,7 +55,7 @@ func (m mockSelector) DeepCopySelector() labels.Selector {
 	return nil
 }
 
-func (m mockSelector) RequiresExactMatch(label string) (value string, found bool) {
+func (m mockSelector) RequiresExactMatch(_ string) (value string, found bool) {
 	return "", false
 }
 

@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package globaldb
 
 import (
@@ -93,14 +95,14 @@ func (s *PostgresUtilitySuite) TestCollectPostgresStats() {
 	ctx := sac.WithAllAccess(context.Background())
 	tp := pgtest.ForT(s.T())
 
-	stats := CollectPostgresStats(ctx, tp.Pool)
+	stats := CollectPostgresStats(ctx, tp.DB)
 	s.NotNil(stats)
 	s.Equal(true, stats.DatabaseAvailable)
 	s.True(len(stats.Tables) > 0)
 
 	tp.Pool.Close()
 
-	stats = CollectPostgresStats(ctx, tp.Pool)
+	stats = CollectPostgresStats(ctx, tp.DB)
 	s.NotNil(stats)
 	s.Equal(false, stats.DatabaseAvailable)
 }

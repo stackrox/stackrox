@@ -13,6 +13,7 @@ type ReadOnlyDataStore interface {
 }
 
 // DataStore stores network baselines for all deployments.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	ReadOnlyDataStore

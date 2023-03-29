@@ -7,11 +7,14 @@ import (
 	bleveMapping "github.com/blevesearch/bleve/mapping"
 	"github.com/stackrox/rox/central/globalindex/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCompareMapping(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	indexMapping := mapping.GetIndexMapping()
 
 	tmpDir := t.TempDir()

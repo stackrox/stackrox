@@ -4,15 +4,19 @@
 package postgres
 
 import (
+	"context"
 	"reflect"
 	"strings"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 	mappings "github.com/stackrox/rox/pkg/search/options/deployments"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -192,6 +196,16 @@ func TestMultiTableQueries(t *testing.T) {
 			expectedError: `uuid: incorrect UUID length 10 in string "not a uuid"
         	            	value "not a uuid" in search query must be valid UUID`,
 		},
+		{
+			desc: "search of child schema mutliple results for base ID",
+			q: search.NewQueryBuilder().AddLinkedFieldsHighlighted(
+				[]search.FieldLabel{search.ImageName, search.EnvironmentKey},
+				[]string{search.WildcardString, search.WildcardString}).
+				ProtoQuery(),
+			expectedFrom:       "deployments",
+			expectedWhere:      "(deployments_containers.Image_Name_FullName is not null and deployments_containers_envs.Key is not null)",
+			expectedJoinTables: []string{"deployments_containers", "deployments_containers_envs"},
+		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
 			actual, err := standardizeQueryAndPopulatePath(c.q, deploymentBaseSchema, SEARCH)
@@ -208,6 +222,184 @@ func TestMultiTableQueries(t *testing.T) {
 				}
 				assert.ElementsMatch(t, c.expectedJoinTables, actualJoins)
 			}
+		})
+	}
+}
+
+func TestSelectQueries(t *testing.T) {
+	t.Parallel()
+
+	for _, c := range []struct {
+		desc          string
+		ctx           context.Context
+		q             *v1.Query
+		expectedError string
+		expectedQuery string
+	}{
+		{
+			desc: "base schema; no select",
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedError: "select portion of the query cannot be empty",
+		},
+		{
+			desc: "base schema; select",
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).ProtoQuery(),
+			expectedQuery: "select deployments.Name as deployment from deployments",
+		},
+		{
+			desc: "base schema; select w/ where",
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "select deployments.Name as deployment from deployments where deployments.Name = $1",
+		},
+		{
+			desc: "child schema; multiple select w/ where",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.Privileged),
+					search.NewQuerySelect(search.ImageName),
+				).
+				AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
+			expectedQuery: "select deployments_containers.SecurityContext_Privileged as privileged, " +
+				"deployments_containers.Image_Name_FullName as image " +
+				"from deployments inner join deployments_containers " +
+				"on deployments.Id = deployments_containers.deployments_Id " +
+				"where deployments_containers.Image_Name_FullName = $1",
+		},
+		{
+			desc: "child schema; multiple select w/ where & group by",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.Privileged),
+					search.NewQuerySelect(search.ImageName),
+				).
+				AddExactMatches(search.ImageName, "stackrox").
+				AddGroupBy(search.Cluster, search.Namespace).ProtoQuery(),
+			expectedQuery: "select jsonb_agg(deployments_containers.SecurityContext_Privileged) as privileged, " +
+				"jsonb_agg(deployments_containers.Image_Name_FullName) as image, " +
+				"deployments.ClusterName as cluster, deployments.Namespace as namespace " +
+				"from deployments inner join deployments_containers " +
+				"on deployments.Id = deployments_containers.deployments_Id " +
+				"where deployments_containers.Image_Name_FullName = $1 " +
+				"group by deployments.ClusterName, deployments.Namespace",
+		},
+		{
+			desc: "base schema and child schema; select",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.DeploymentName),
+					search.NewQuerySelect(search.ImageName),
+				).ProtoQuery(),
+			expectedQuery: "select deployments.Name as deployment, deployments_containers.Image_Name_FullName as image " +
+				"from deployments inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id",
+		},
+		{
+			desc: "base schema and child schema conjunction query; select w/ where",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.DeploymentName),
+					search.NewQuerySelect(search.ImageName),
+				).
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "select deployments.Name as deployment, deployments_containers.Image_Name_FullName as image " +
+				"from deployments inner join deployments_containers " +
+				"on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)",
+		},
+		{
+			desc: "derived field select",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.DeploymentName).AggrFunc(aggregatefunc.Count).Distinct(),
+				).ProtoQuery(),
+			expectedQuery: "select count(distinct(deployments.Name)) as deployment_count from deployments",
+		},
+		{
+			desc: "derived field select w/ where",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.DeploymentName).AggrFunc(aggregatefunc.Count).Distinct(),
+				).
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "select count(distinct(deployments.Name)) as deployment_count " +
+				"from deployments inner join deployments_containers " +
+				"on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)",
+		},
+		{
+			desc: "nil query",
+			q:    nil,
+		},
+		{
+			desc: "base schema; select w/ conjunction",
+			q: func() *v1.Query {
+				q := search.ConjunctionQuery(
+					search.NewQueryBuilder().
+						AddExactMatches(search.DeploymentName, "dep").ProtoQuery(),
+					search.NewQueryBuilder().
+						AddExactMatches(search.Namespace, "ns").ProtoQuery(),
+				)
+				q.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.DeploymentName).Proto()}
+				return q
+			}(),
+			expectedQuery: "select deployments.Name as deployment from deployments where (deployments.Name = $1 and deployments.Namespace = $2)",
+		},
+		{
+			desc: "base schema; select w/ where; image scope",
+			ctx: scoped.Context(context.Background(), scoped.Scope{
+				ID:    "fake-image",
+				Level: v1.SearchCategory_IMAGES,
+			}),
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "select deployments.Name as deployment from deployments " +
+				"inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments.Name = $1 and deployments_containers.Image_Id = $2)",
+		},
+		{
+			desc: "base schema; select w/ multiple scopes",
+			ctx: scoped.Context(context.Background(), scoped.Scope{
+				ID:    uuid.NewV4().String(),
+				Level: v1.SearchCategory_NAMESPACES,
+				Parent: &scoped.Scope{
+					ID:    uuid.NewV4().String(),
+					Level: v1.SearchCategory_CLUSTERS,
+				},
+			}),
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "select deployments.Name as deployment from deployments " +
+				"where (deployments.Name = $1 and (deployments.NamespaceId = $2 and deployments.ClusterId = $3))",
+		},
+	} {
+		t.Run(c.desc, func(t *testing.T) {
+			ctx := c.ctx
+			if c.ctx == nil {
+				ctx = context.Background()
+			}
+
+			actualQ, err := standardizeSelectQueryAndPopulatePath(ctx, c.q, schema.DeploymentsSchema, SELECT)
+			if c.expectedError != "" {
+				assert.Error(t, err, c.expectedError)
+				return
+			}
+
+			assert.NoError(t, err)
+
+			if c.q == nil {
+				assert.Nil(t, actualQ)
+				return
+			}
+
+			actual := actualQ.AsSQL()
+			assert.Equal(t, c.expectedQuery, actual)
 		})
 	}
 }

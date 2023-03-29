@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
@@ -20,10 +19,6 @@ type ContainerNameGroup struct {
 }
 
 func TestContainerInstances(testT *testing.T) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		testT.Skip("Skip for legacy databases")
-	}
-
 	// https://stack-rox.atlassian.net/browse/ROX-6493
 	// - the process events expected in this test are not reliably detected.
 	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {

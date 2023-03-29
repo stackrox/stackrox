@@ -32,7 +32,7 @@ func main() {
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 
 	// Start the prometheus metrics server
-	metrics.NewDefaultHTTPServer().RunForever()
+	metrics.NewDefaultHTTPServer(metrics.SensorSubsystem).RunForever()
 	metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())
 
 	sigs := make(chan os.Signal, 1)
@@ -69,9 +69,8 @@ func main() {
 		case <-s.Stopped().Done():
 			if err := s.Stopped().Err(); err != nil {
 				log.Fatalf("Sensor exited with error: %v", err)
-			} else {
-				log.Info("Sensor exited normally")
 			}
+			log.Info("Sensor exited normally")
 			return
 		}
 	}

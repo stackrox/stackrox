@@ -1,13 +1,13 @@
 import static Services.getSearchResponse
 import static Services.waitForViolation
+import static util.Helpers.withRetry
 
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 
 import objects.Deployment
 import util.Env
-import services.FeatureFlagService
-import org.junit.Assume
 
+import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
@@ -25,7 +25,7 @@ class GlobalSearch extends BaseSpecification {
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 30
 
     def setupSpec() {
-        if (Env.CI_JOBNAME.contains("postgres")) {
+        if (Env.get("ROX_POSTGRES_DATASTORE", null) == "true") {
             EXPECTED_DEPLOYMENT_CATEGORIES.addAll(SearchServiceOuterClass.SearchCategory.CLUSTERS,
                                               SearchServiceOuterClass.SearchCategory.NAMESPACES,
                                               SearchServiceOuterClass.SearchCategory.IMAGES,
@@ -124,6 +124,7 @@ class GlobalSearch extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @IgnoreIf({ !Env.CI_JOB_NAME.contains("postgres") })
     def "Verify Global search on policies (#query, #searchCategories)"(
             String query, List<SearchServiceOuterClass.SearchCategory> searchCategories,
             String expectedResultPrefix,
@@ -140,9 +141,6 @@ class GlobalSearch extends BaseSpecification {
         }
 
         when:
-        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_NEW_POLICY_CATEGORIES"))
-        Assume.assumeTrue(BaseSpecification.isPostgresRun())
-
         "Run a global search request"
         SearchServiceOuterClass.SearchResponse searchResponse = null
         Set<SearchServiceOuterClass.SearchCategory> presentCategories = null

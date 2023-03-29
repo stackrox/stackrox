@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/resourcecollection/datastore/index"
-	"github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
+	pgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -25,7 +25,7 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.
-func New(storage postgres.Store, indexer index.Indexer) Searcher {
+func New(storage pgStore.Store, indexer index.Indexer) Searcher {
 	return &searcherImpl{
 		storage:  storage,
 		indexer:  indexer,

@@ -155,10 +155,6 @@
                         "value": "false"
                     },
                     {
-                        "name": "ROX_DECOMMISSIONED_CLUSTER_RETENTION",
-                        "value": "true"
-                    },
-                    {
                         "name": "ROX_INTEGRATIONS_AS_CONFIG",
                         "value": "false"
                     },
@@ -172,14 +168,6 @@
                     },
                     {
                         "name": "ROX_NETWORK_GRAPH_PATTERNFLY",
-                        "value": "false"
-                    },
-                    {
-                        "name": "ROX_NEW_POLICY_CATEGORIES",
-                        "value": "false"
-                    },
-                    {
-                        "name": "ROX_OBJECT_COLLECTIONS",
                         "value": "false"
                     },
                     {

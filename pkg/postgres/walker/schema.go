@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -40,7 +41,7 @@ func getIdxField(s *Schema) Field {
 		},
 		Type:       reflect.TypeOf(0).String(),
 		ColumnName: "idx",
-		DataType:   Integer,
+		DataType:   postgres.Integer,
 		SQLType:    "integer",
 		ModelType:  reflect.TypeOf(0).String(),
 		Options: PostgresOptions{
@@ -153,7 +154,7 @@ func (s *Schema) SetSearchScope(searchCategories ...v1.SearchCategory) {
 }
 
 // AddFieldWithType adds a field to the schema with the specified data type
-func (s *Schema) AddFieldWithType(field Field, dt DataType, opts PostgresOptions) {
+func (s *Schema) AddFieldWithType(field Field, dt postgres.DataType, opts PostgresOptions) {
 	if !field.Include() {
 		return
 	}
@@ -162,10 +163,10 @@ func (s *Schema) AddFieldWithType(field Field, dt DataType, opts PostgresOptions
 	if opts.ColumnType != "" {
 		field.SQLType = opts.ColumnType
 	} else {
-		field.SQLType = DataTypeToSQLType(dt)
+		field.SQLType = postgres.DataTypeToSQLType(dt)
 	}
 
-	field.ModelType = GetToGormModelType(field.Type, field.DataType)
+	field.ModelType = postgres.GetToGormModelType(field.Type, field.DataType)
 	s.Fields = append(s.Fields, field)
 }
 
@@ -348,7 +349,6 @@ func (s *Schema) ResolveReferences(schemaProvider func(messageTypeName string) *
 		otherTable, columnNameInOtherSchema := referencedSchema.findTableAndColumnName(fieldRef.ProtoBufField)
 		if otherTable == nil || columnNameInOtherSchema == "" {
 			log.Panicf("Couldn't resolve reference in field %+v: no field with protobuf name found", f)
-			continue // This continue will not be hit, it's here because the linter doesn't realize that log.Panic panics.
 		}
 		fieldRef.OtherSchema = otherTable
 		fieldRef.ColumnName = columnNameInOtherSchema
@@ -417,6 +417,10 @@ type PostgresOptions struct {
 	// IgnoreChildFKs is an option used to tell the walker that
 	// foreign keys of children of this field should be ignored.
 	IgnoreChildFKs bool
+
+	// IgnoreChildIndexes is an option used to tell the walker that
+	// index options of children of this field should be ignored.
+	IgnoreChildIndexes bool
 }
 
 type foreignKeyRef struct {
@@ -474,7 +478,7 @@ type Field struct {
 	Type string
 
 	// DataType is the internal type
-	DataType  DataType
+	DataType  postgres.DataType
 	SQLType   string
 	ModelType string
 	Options   PostgresOptions

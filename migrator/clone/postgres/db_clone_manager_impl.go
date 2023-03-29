@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/clone/metadata"
 	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
 	migVer "github.com/stackrox/rox/migrator/version"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
@@ -24,13 +23,13 @@ import (
 type dbCloneManagerImpl struct {
 	cloneMap             map[string]*metadata.DBClone
 	forceRollbackVersion string
-	adminConfig          *pgxpool.Config
+	adminConfig          *postgres.Config
 	sourceMap            map[string]string
 	gc                   migGorm.Config
 }
 
 // New - returns a new ready-to-use store.
-func New(forceVersion string, adminConfig *pgxpool.Config, sourceMap map[string]string) DBCloneManager {
+func New(forceVersion string, adminConfig *postgres.Config, sourceMap map[string]string) DBCloneManager {
 	return &dbCloneManagerImpl{
 		cloneMap:             make(map[string]*metadata.DBClone),
 		forceRollbackVersion: forceVersion,
@@ -42,7 +41,10 @@ func New(forceVersion string, adminConfig *pgxpool.Config, sourceMap map[string]
 // Scan - checks the persistent data of central and gather the clone information
 // from disk.
 func (d *dbCloneManagerImpl) Scan() error {
-	clones := pgadmin.GetDatabaseClones(d.adminConfig)
+	clones, err := pgadmin.GetDatabaseClones(d.adminConfig)
+	if err != nil {
+		return err
+	}
 	ctx := sac.WithAllAccess(context.Background())
 
 	// We use clones to collect all db clones (directory starting with db- or .restore-) matching upgrade or restore pattern.
@@ -68,26 +70,26 @@ func (d *dbCloneManagerImpl) Scan() error {
 	currClone, currExists := d.cloneMap[CurrentClone]
 	if !currExists || currClone.GetMigVersion() == nil {
 		log.Info("Cannot find the current database or it has no version, so we need to let it create and ignore other clones.")
-		return nil
-	}
-	if currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0 {
-		// If there is no previous clone or force rollback is not requested, we cannot downgrade.
-		prevClone, prevExists := d.cloneMap[PreviousClone]
-		if !prevExists && currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() {
-			if version.GetVersionKind(currClone.GetVersion()) == version.ReleaseKind && version.GetVersionKind(version.GetMainVersion()) == version.ReleaseKind {
-				return errors.New(metadata.ErrNoPrevious)
+	} else {
+		if currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0 {
+			// If there is no previous clone or force rollback is not requested, we cannot downgrade.
+			prevClone, prevExists := d.cloneMap[PreviousClone]
+			if !prevExists && currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() {
+				if version.GetVersionKind(currClone.GetVersion()) == version.ReleaseKind && version.GetVersionKind(version.GetMainVersion()) == version.ReleaseKind {
+					return errors.New(metadata.ErrNoPrevious)
+				}
+				return errors.New(metadata.ErrNoPreviousInDevEnv)
 			}
-			return errors.New(metadata.ErrNoPreviousInDevEnv)
-		}
 
-		// Force rollback is not requested.
-		if d.forceRollbackVersion != version.GetMainVersion() {
-			return errors.New(metadata.ErrForceUpgradeDisabled)
-		}
+			// Force rollback is not requested.
+			if d.forceRollbackVersion != version.GetMainVersion() {
+				return errors.New(metadata.ErrForceUpgradeDisabled)
+			}
 
-		// If previous clone does not match
-		if prevExists && prevClone.GetVersion() != version.GetMainVersion() {
-			return errors.Errorf(metadata.ErrPreviousMismatchWithVersions, prevClone.GetVersion(), version.GetMainVersion())
+			// If previous clone does not match
+			if prevExists && prevClone.GetVersion() != version.GetMainVersion() {
+				return errors.Errorf(metadata.ErrPreviousMismatchWithVersions, prevClone.GetVersion(), version.GetMainVersion())
+			}
 		}
 	}
 
@@ -135,7 +137,7 @@ func (d *dbCloneManagerImpl) contains(clone string) bool {
 	return ok
 }
 
-func (d *dbCloneManagerImpl) databaseExists(clone string) bool {
+func (d *dbCloneManagerImpl) databaseExists(clone string) (bool, error) {
 	return pgadmin.CheckIfDBExists(d.adminConfig, clone)
 }
 
@@ -157,29 +159,14 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 
 	// If the current Postgres version is less than Rocks version then we need to migrate rocks to postgres
 	// If the versions are the same, but rocks has a more recent update then we need to migrate rocks to postgres
-	// Otherwise we roll with Postgres->Postgres
-	if d.rocksExists(rocksVersion) {
+	// Otherwise we roll with Postgres->Postgres.  We use central_temp as that will get cleaned up if the migration
+	// of Rocks -> Postgres fails so we can start fresh.
+	if d.versionExists(rocksVersion) {
 		log.Infof("A previously used version of Rocks exists -- %v", rocksVersion)
-		if !currExists || currClone.GetMigVersion() == nil {
-			return CurrentClone, true, nil
+		if !currExists || !d.versionExists(currClone.GetMigVersion()) {
+			d.cloneMap[TempClone] = metadata.NewPostgres(nil, TempClone)
+			return TempClone, true, nil
 		}
-
-		// Rocks more recently updated than Postgres so need to migrate from there.  Otherwise, Postgres is more recent
-		// so just fall through to the rest of the processing.
-		if currClone.GetMigVersion().LastPersisted.Before(rocksVersion.LastPersisted) {
-			// We want to start fresh as we are migrating from Rocks->Postgres.  So any data that exists in
-			// Postgres from a previous upgrade followed by a rollback needs to be ignored.  So just drop current
-			// and let it create anew.
-			log.Infof("To start with a clean Postgres, dropping database %q", CurrentClone)
-			err := pgadmin.DropDB(d.sourceMap, d.adminConfig, CurrentClone)
-			if err != nil {
-				log.Errorf("Unable to drop current clone: %v", err)
-				return "", true, err
-			}
-
-			return CurrentClone, true, nil
-		}
-		log.Info("Postgres is the more recent version so we will process that.")
 	}
 
 	prevClone, prevExists := d.cloneMap[PreviousClone]
@@ -199,7 +186,15 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 		if d.hasSpaceForRollback() {
 			// Create a temp clone for processing of current
 			// If such a clone already exists then we were previously in the middle of processing
-			if !d.databaseExists(TempClone) {
+			exists, err := d.databaseExists(TempClone)
+			if err != nil {
+				log.Errorf("Unable to create temp clone, will use current clone: %v", err)
+				// If we had an issue checking whether "temp" exists we will proceed with the CurrentClone.
+				// Essentially we treat this the same as if we could not create "temp" and proceed with
+				// the migration.
+				return CurrentClone, false, nil
+			}
+			if !exists {
 				err := pgadmin.CreateDB(d.sourceMap, d.adminConfig, CurrentClone, TempClone)
 
 				// If for some reason, we cannot create a temp clone we will need to continue to upgrade
@@ -227,11 +222,10 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 	return CurrentClone, false, nil
 }
 
-func (d *dbCloneManagerImpl) rocksExists(rocksVersion *migrations.MigrationVersion) bool {
-	if rocksVersion != nil &&
-		!rocksVersion.LastPersisted.IsZero() &&
-		rocksVersion.SeqNum != 0 &&
-		rocksVersion.MainVersion != "0" {
+func (d *dbCloneManagerImpl) versionExists(dbVersion *migrations.MigrationVersion) bool {
+	if dbVersion != nil &&
+		dbVersion.SeqNum != 0 &&
+		dbVersion.MainVersion != "0" {
 		return true
 	}
 
@@ -296,12 +290,20 @@ func (d *dbCloneManagerImpl) doPersist(cloneName string, prev string) error {
 		}
 	}
 
+	err = pgadmin.AnalyzeDatabase(d.adminConfig, CurrentClone)
+	if err != nil {
+		log.Warnf("unable to force analyze restore database: %v", err)
+	}
+
 	return nil
 }
 
 func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) error {
 	// Connect to different database for admin functions
-	connectPool := pgadmin.GetAdminPool(d.adminConfig)
+	connectPool, err := pgadmin.GetAdminPool(d.adminConfig)
+	if err != nil {
+		return err
+	}
 	// Close the admin connection pool
 	defer connectPool.Close()
 
@@ -320,10 +322,18 @@ func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) erro
 		return err
 	}
 
-	// Move the current to the previous clone
-	err = d.renameClone(ctx, tx, CurrentClone, previousClone)
+	// Move the current to the previous clone if it exists
+	exists, err := d.databaseExists(CurrentClone)
 	if err != nil {
 		return err
+	}
+	if exists {
+		err = d.renameClone(ctx, tx, CurrentClone, previousClone)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Infof("current clone %q does not exist, must be start up", CurrentClone)
 	}
 
 	// Now flip the clone to be the primary DB
@@ -340,7 +350,7 @@ func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) erro
 	return nil
 }
 
-func (d *dbCloneManagerImpl) renameClone(ctx context.Context, tx pgx.Tx, srcClone, destClone string) error {
+func (d *dbCloneManagerImpl) renameClone(ctx context.Context, tx *postgres.Tx, srcClone, destClone string) error {
 	// Move the current to the previous clone
 	err := pgadmin.TerminateConnection(d.adminConfig, srcClone)
 	if err != nil {

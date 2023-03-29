@@ -1,5 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
+import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -103,7 +103,11 @@ describe('Vulnerability Management Clusters', () => {
         );
     });
 
-    it('should display links for fixable image CVEs', () => {
+    it('should display links for fixable image CVEs', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         verifyFilteredSecondaryEntitiesLink(
             entitiesKey,
             'image-cves',
@@ -113,7 +117,11 @@ describe('Vulnerability Management Clusters', () => {
         );
     });
 
-    it('should display links for all node CVEs', () => {
+    it('should display links for all node CVEs', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         verifySecondaryEntities(
             entitiesKey,
             'node-cves',
@@ -123,7 +131,11 @@ describe('Vulnerability Management Clusters', () => {
         );
     });
 
-    it('should display links for all cluster CVEs', () => {
+    it('should display links for all cluster CVEs', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         verifySecondaryEntities(
             entitiesKey,
             'cluster-cves',

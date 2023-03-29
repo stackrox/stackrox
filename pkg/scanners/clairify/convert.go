@@ -12,14 +12,55 @@ import (
 	v1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
-func convertNodeToVulnRequest(node *storage.Node) *v1.GetNodeVulnerabilitiesRequest {
-	return &v1.GetNodeVulnerabilitiesRequest{
+func convertNodeToVulnRequest(node *storage.Node, inventory *storage.NodeInventory) *v1.GetNodeVulnerabilitiesRequest {
+	req := &v1.GetNodeVulnerabilitiesRequest{
 		OsImage:          node.GetOsImage(),
 		KernelVersion:    node.GetKernelVersion(),
 		KubeletVersion:   node.GetKubeletVersion(),
 		KubeproxyVersion: node.GetKubeProxyVersion(),
 		Runtime:          convertContainerRuntime(node.GetContainerRuntime()),
+		Components:       nil,
 	}
+	if inventory != nil && inventory.GetComponents() != nil {
+		req.Components = convertComponents(inventory.GetComponents())
+	}
+	return req
+}
+
+func convertComponents(c *storage.NodeInventory_Components) *v1.Components {
+	components := &v1.Components{
+		Namespace:          c.GetNamespace(),
+		OsComponents:       nil,
+		LanguageComponents: nil,
+		RhelComponents:     make([]*v1.RHELComponent, len(c.GetRhelComponents())),
+		RhelContentSets:    c.GetRhelContentSets(),
+	}
+	for i, comp := range c.GetRhelComponents() {
+		components.RhelComponents[i] = &v1.RHELComponent{
+			Id:          comp.GetId(),
+			Name:        comp.GetName(),
+			Namespace:   comp.GetNamespace(),
+			Version:     comp.GetVersion(),
+			Arch:        comp.GetArch(),
+			Module:      comp.GetModule(),
+			AddedBy:     comp.GetAddedBy(),
+			Executables: make([]*v1.Executable, len(comp.GetExecutables())),
+		}
+		for i2, exe := range comp.GetExecutables() {
+			components.RhelComponents[i].Executables[i2] = &v1.Executable{
+				Path:             exe.GetPath(),
+				RequiredFeatures: make([]*v1.FeatureNameVersion, len(exe.GetRequiredFeatures())),
+			}
+			for i3, fnv := range exe.GetRequiredFeatures() {
+				components.RhelComponents[i].Executables[i2].RequiredFeatures[i3] = &v1.FeatureNameVersion{
+					Name:    fnv.GetName(),
+					Version: fnv.GetVersion(),
+				}
+			}
+		}
+
+	}
+	return components
 }
 
 func convertContainerRuntime(containerRuntime *storage.ContainerRuntimeInfo) *v1.GetNodeVulnerabilitiesRequest_ContainerRuntime {
@@ -50,7 +91,10 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 	scan := &storage.NodeScan{
 		ScanTime:        gogoProto.TimestampNow(),
 		OperatingSystem: resp.GetOperatingSystem(),
-		Components: []*storage.EmbeddedNodeScanComponent{
+		Notes:           convertNodeNotes(resp.GetNodeNotes()),
+	}
+	if resp.GetFeatures() == nil {
+		scan.Components = []*storage.EmbeddedNodeScanComponent{
 			{
 				Name:    stringutils.OrDefault(resp.GetKernelComponent().GetName(), "kernel"),
 				Version: resp.GetKernelComponent().GetVersion(),
@@ -66,15 +110,22 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 				Version: req.GetKubeproxyVersion(),
 				Vulns:   convertNodeVulns(resp.GetKubeproxyVulnerabilities()),
 			},
-		},
-		Notes: convertNodeNotes(resp.GetNodeNotes()),
-	}
-	if req.GetRuntime().GetName() != "" && req.GetRuntime().GetVersion() != "" {
-		scan.Components = append(scan.Components, &storage.EmbeddedNodeScanComponent{
-			Name:    req.GetRuntime().GetName(),
-			Version: req.GetRuntime().GetVersion(),
-			Vulns:   convertNodeVulns(resp.GetRuntimeVulnerabilities()),
-		})
+		}
+		if req.GetRuntime().GetName() != "" && req.GetRuntime().GetVersion() != "" {
+			scan.Components = append(scan.Components, &storage.EmbeddedNodeScanComponent{
+				Name:    req.GetRuntime().GetName(),
+				Version: req.GetRuntime().GetVersion(),
+				Vulns:   convertNodeVulns(resp.GetRuntimeVulnerabilities()),
+			})
+		}
+	} else {
+		for _, feature := range resp.GetFeatures() {
+			scan.Components = append(scan.Components, &storage.EmbeddedNodeScanComponent{
+				Name:    feature.GetName(),
+				Version: feature.GetVersion(),
+				Vulns:   convertNodeVulns(feature.GetVulnerabilities()),
+			})
+		}
 	}
 	return scan
 }
@@ -87,6 +138,8 @@ func convertNodeNotes(v1Notes []v1.NodeNote) []storage.NodeScan_Note {
 			notes = append(notes, storage.NodeScan_UNSUPPORTED)
 		case v1.NodeNote_NODE_KERNEL_UNSUPPORTED:
 			notes = append(notes, storage.NodeScan_KERNEL_UNSUPPORTED)
+		case v1.NodeNote_NODE_CERTIFIED_RHEL_CVES_UNAVAILABLE:
+			notes = append(notes, storage.NodeScan_CERTIFIED_RHEL_CVES_UNAVAILABLE)
 		default:
 			continue
 		}

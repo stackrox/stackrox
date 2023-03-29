@@ -5,9 +5,8 @@ import (
 	"github.com/stackrox/rox/central/policycategoryedge/index"
 	"github.com/stackrox/rox/central/policycategoryedge/search"
 	"github.com/stackrox/rox/central/policycategoryedge/store"
-	"github.com/stackrox/rox/central/policycategoryedge/store/postgres"
+	pgStore "github.com/stackrox/rox/central/policycategoryedge/store/postgres"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -21,9 +20,9 @@ func initialize() {
 	var storage store.Store
 	var indexer index.Indexer
 
-	if features.NewPolicyCategories.Enabled() && env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage = postgres.New(globaldb.GetPostgres())
-		indexer = postgres.NewIndexer(globaldb.GetPostgres())
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		storage = pgStore.New(globaldb.GetPostgres())
+		indexer = pgStore.NewIndexer(globaldb.GetPostgres())
 		ds = New(storage, indexer, search.New(storage, indexer))
 	}
 }

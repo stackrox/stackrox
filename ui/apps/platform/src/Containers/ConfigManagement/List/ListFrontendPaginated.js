@@ -47,6 +47,7 @@ const ListFrontendPaginated = ({
     }
 
     const categories = [searchCategoryTypes[entityType]];
+    const placeholder = `Filter ${pluralize(entityLabels[entityType])}`;
 
     function getRenderComponents(headerComponents, tableRows) {
         const header = `${tableRows.length} ${pluralize(
@@ -89,6 +90,7 @@ const ListFrontendPaginated = ({
                                     : [];
                             return (
                                 <URLSearchInput
+                                    placeholder={placeholder}
                                     className="w-full"
                                     categoryOptions={searchOptions}
                                     categories={categories}

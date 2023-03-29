@@ -5,7 +5,7 @@ import {
     clickBaselineSettingsTab,
     clickOnDeploymentNodeByName,
     interactAndWaitForChangeToNetworkFlows,
-    visitNetworkGraphWithNamespaceFilter,
+    visitOldNetworkGraphWithNamespaceFilter,
 } from '../../helpers/networkGraph';
 
 const tableStatusHeaders = 'table tr[data-testid="subhead-row"]';
@@ -32,7 +32,7 @@ describe('Network Baseline Flows', () => {
 
     describe('Navigating to Deployment', () => {
         it('should navigate to a different deployment when clicking the "Navigate" button', () => {
-            visitNetworkGraphWithNamespaceFilter('stackrox');
+            visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 const tabbedOverlayHeader = '[data-testid="network-entity-tabbed-overlay-header"]';
@@ -52,7 +52,7 @@ describe('Network Baseline Flows', () => {
 
     describe('Active Network Flows', () => {
         it('should show table column headings', () => {
-            visitNetworkGraphWithNamespaceFilter('stackrox');
+            visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 clickOnDeploymentNodeByName(cytoscape, 'central');
@@ -68,7 +68,7 @@ describe('Network Baseline Flows', () => {
         });
 
         it('should show anomalous flows section above the baseline flows', () => {
-            visitNetworkGraphWithNamespaceFilter('stackrox');
+            visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 clickOnDeploymentNodeByName(cytoscape, 'central');
@@ -81,7 +81,7 @@ describe('Network Baseline Flows', () => {
 
     describe('Toggling Status of Active Baseline Network Flows', () => {
         it('should be able to toggle status of a single flow', () => {
-            visitNetworkGraphWithNamespaceFilter('stackrox');
+            visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 clickOnDeploymentNodeByName(cytoscape, 'central');
@@ -105,7 +105,7 @@ describe('Network Baseline Flows', () => {
         });
 
         it('should be able to toggle status of all flows', () => {
-            visitNetworkGraphWithNamespaceFilter('stackrox');
+            visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 const markAllAsAnomalousButton = 'button:contains("Mark all as anomalous")';
@@ -130,7 +130,7 @@ describe('Network Baseline Flows', () => {
         });
 
         it('should be able to toggle status of selected flows', () => {
-            visitNetworkGraphWithNamespaceFilter('stackrox');
+            visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 const anomalousStatusHeader = `${tableStatusHeaders}:eq(0)`;
@@ -170,7 +170,7 @@ describe('Network Baseline Flows', () => {
 
     describe('Baseline Settings', () => {
         it('should not show the anomalous flows section', () => {
-            visitNetworkGraphWithNamespaceFilter('stackrox');
+            visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 clickOnDeploymentNodeByName(cytoscape, 'central');
@@ -182,7 +182,7 @@ describe('Network Baseline Flows', () => {
         });
 
         it('should be able to toggle status of a single baseline flow', () => {
-            visitNetworkGraphWithNamespaceFilter('stackrox');
+            visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 const baselineStatusHeader = `${tableStatusHeaders}:eq(0)`;
@@ -223,7 +223,7 @@ describe('Network Baseline Flows', () => {
 
         describe('Cluster with Helm management', () => {
             it('should toggle the alert on baseline violations toggle', () => {
-                visitNetworkGraphWithNamespaceFilter('stackrox');
+                visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
                 cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                     clickOnDeploymentNodeByName(cytoscape, 'central');

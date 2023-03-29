@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	"github.com/stretchr/testify/require"
@@ -13,7 +13,7 @@ import (
 
 // TestPostgres is a postgres database for migration testing
 type TestPostgres struct {
-	*pgxpool.Pool
+	*postgres.DB
 	gormDB   *gorm.DB
 	database string
 }
@@ -32,11 +32,11 @@ func ForT(t testing.TB, disableConstraint bool) *TestPostgres {
 	ctx := context.Background()
 
 	// initialize pool to be used
-	pool, err := pgxpool.Connect(ctx, sourceWithDatabase)
+	pool, err := postgres.Connect(ctx, sourceWithDatabase)
 	require.NoError(t, err)
 
 	return &TestPostgres{
-		Pool:     pool,
+		DB:       pool,
 		gormDB:   conn.OpenGormDB(t, sourceWithDatabase, disableConstraint),
 		database: database,
 	}

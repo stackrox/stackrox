@@ -1,5 +1,4 @@
 //go:build sql_integration
-// +build sql_integration
 
 package scheduler
 
@@ -12,22 +11,14 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/jackc/pgx/v4/pgxpool"
-	imageComponentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
-	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
-	deploymentPostgres "github.com/stackrox/rox/central/deployment/store/postgres"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
-	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
-	imageCVEEdgePostgres "github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
 	"github.com/stackrox/rox/central/reports/common"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	types2 "github.com/stackrox/rox/pkg/images/types"
@@ -38,7 +29,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/gorm"
 )
 
 func TestReportingWithCollections(t *testing.T) {
@@ -49,8 +39,7 @@ type ReportingWithCollectionsTestSuite struct {
 	suite.Suite
 
 	ctx             context.Context
-	db              *pgxpool.Pool
-	gormDB          *gorm.DB
+	testDB          *pgtest.TestPostgres
 	reportScheduler *scheduler
 	resolver        *resolvers.Resolver
 	schema          *graphql.Schema
@@ -68,35 +57,28 @@ type vulnReportData struct {
 
 func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	s.T().Setenv(features.ObjectCollections.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
 
-	if !features.ObjectCollections.Enabled() {
-		s.T().Skip("Skip resource collections tests")
-		s.T().SkipNow()
-	}
-
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
-	s.db, s.gormDB = resolvers.SetupTestPostgresConn(s.T())
-	imageDataStore := resolvers.CreateTestImageDatastore(s.T(), s.db, s.gormDB, mockCtrl)
+	s.testDB = resolvers.SetupTestPostgresConn(s.T())
+	imageDataStore := resolvers.CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
 	s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
 		imageDataStore,
-		resolvers.CreateTestImageComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
-		resolvers.CreateTestImageCVEDatastore(s.T(), s.db, s.gormDB),
-		resolvers.CreateTestImageComponentCVEEdgeDatastore(s.T(), s.db, s.gormDB),
-		resolvers.CreateTestImageCVEEdgeDatastore(s.T(), s.db, s.gormDB),
-		resolvers.CreateTestDeploymentDatastore(s.T(), s.db, s.gormDB, mockCtrl, imageDataStore),
+		resolvers.CreateTestImageComponentDatastore(s.T(), s.testDB, mockCtrl),
+		resolvers.CreateTestImageCVEDatastore(s.T(), s.testDB),
+		resolvers.CreateTestImageComponentCVEEdgeDatastore(s.T(), s.testDB),
+		resolvers.CreateTestImageCVEEdgeDatastore(s.T(), s.testDB),
+		resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imageDataStore),
 	)
 
-	collectionPostgres.Destroy(s.ctx, s.db)
 	var err error
-	collectionStore := collectionPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	index := collectionPostgres.NewIndexer(s.db)
+	collectionStore := collectionPostgres.CreateTableAndNewStore(s.ctx, s.testDB.DB, s.testDB.GetGormDB(s.T()))
+	index := collectionPostgres.NewIndexer(s.testDB.DB)
 	s.collectionDatastore, s.collectionQueryResolver, err = collectionDS.New(collectionStore, index, collectionSearch.New(collectionStore, index))
 	s.NoError(err)
 
@@ -106,15 +88,7 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 }
 
 func (s *ReportingWithCollectionsTestSuite) TearDownSuite() {
-	imagePostgres.Destroy(s.ctx, s.db)
-	imageComponentPostgres.Destroy(s.ctx, s.db)
-	imageCVEPostgres.Destroy(s.ctx, s.db)
-	imageCVEEdgePostgres.Destroy(s.ctx, s.db)
-	imageComponentCVEEdgePostgres.Destroy(s.ctx, s.db)
-	deploymentPostgres.Destroy(s.ctx, s.db)
-	collectionPostgres.Destroy(s.ctx, s.db)
-	pgtest.CloseGormDB(s.T(), s.gormDB)
-	s.db.Close()
+	s.testDB.Teardown(s.T())
 }
 
 func (s *ReportingWithCollectionsTestSuite) TearDownTest() {
@@ -219,7 +193,7 @@ func (s *ReportingWithCollectionsTestSuite) TestGetReportData() {
 
 func (s *ReportingWithCollectionsTestSuite) truncateTable(name string) {
 	sql := fmt.Sprintf("TRUNCATE %s CASCADE", name)
-	_, err := s.db.Exec(s.ctx, sql)
+	_, err := s.testDB.Exec(s.ctx, sql)
 	s.NoError(err)
 }
 

@@ -256,7 +256,14 @@ fragment cveFields on ImageVulnerability {
 
         def embeddedImageRes = gqlService.Call(getEmbeddedImageQuery(),
                 [id: imageDigest, query: "CVE:CVE-2017-10684"])
-        assert embeddedImageRes.hasNoErrors()
+
+        // Expanded instead of using hasErrors() for easier debugging if there are errors
+        // as the test framework will actually print out the errors now
+        assert embeddedImageRes.code == 200
+        if (embeddedImageRes.getErrors() != null) {
+            assert embeddedImageRes.getErrors().size() == 0
+        }
+
         def embeddedImageResVuln = embeddedImageRes.value.result.scan.components[0].vulns[0]
 
         def topLevelImageRes = gqlService.Call(getTopLevelImageQuery(),

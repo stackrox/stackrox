@@ -1,5 +1,5 @@
-import React, { ReactElement } from 'react';
-import { Redirect, Route, Switch } from 'react-router-dom';
+import React, { ReactElement, useEffect } from 'react';
+import { Redirect, Route, Switch, useLocation } from 'react-router-dom';
 import { PageSection } from '@patternfly/react-core';
 
 import {
@@ -18,7 +18,7 @@ import {
     riskPath,
     searchPath,
     apidocsPath,
-    accessControlPathV2,
+    accessControlPath,
     userBasePath,
     systemConfigPath,
     systemHealthPath,
@@ -28,6 +28,7 @@ import {
     configManagementPath,
     vulnManagementRiskAcceptancePath,
     collectionsPath,
+    vulnerabilitiesWorkloadCvesPath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
@@ -37,6 +38,7 @@ import PageTitle from 'Components/PageTitle';
 import ErrorBoundary from 'Containers/ErrorBoundary';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import { analyticsPageVisit } from 'utils/analytics';
 
 function NotFoundPage(): ReactElement {
     return (
@@ -77,6 +79,9 @@ const AsyncSystemConfigPage = asyncComponent(
     () => import('Containers/SystemConfig/SystemConfigPage')
 );
 const AsyncConfigManagementPage = asyncComponent(() => import('Containers/ConfigManagement/Page'));
+const AsyncWorkloadCvesPage = asyncComponent(
+    () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
+);
 const AsyncVulnMgmtReports = asyncComponent(
     () => import('Containers/VulnMgmt/Reports/VulnMgmtReports')
 );
@@ -95,12 +100,19 @@ type BodyProps = {
 };
 
 function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement {
+    const location = useLocation();
+    useEffect(() => {
+        analyticsPageVisit('visit', location.pathname);
+    }, [location]);
+
     const { isDarkMode } = useTheme();
 
     const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled('ROX_SYSTEM_HEALTH_PF');
-    const isSearchPageEnabled = isFeatureFlagEnabled('ROX_SEARCH_PAGE_UI');
-    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS');
+    const isPostgresEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
+    const isCollectionsEnabled = isPostgresEnabled;
     const isNetworkGraphPatternflyEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY');
+    const isVulnMgmtWorkloadCvesEnabled =
+        isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES') && isPostgresEnabled;
 
     const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');
     const hasCollectionsPermission = hasReadAccess('WorkflowAdministration');
@@ -130,11 +142,17 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         <Route path={collectionsPath} component={AsyncCollectionsPage} />
                     )}
                     <Route path={riskPath} component={AsyncRiskPage} />
-                    <Route path={accessControlPathV2} component={AsyncAccessControlPageV2} />
-                    {isSearchPageEnabled && <Route path={searchPath} component={AsyncSearchPage} />}
+                    <Route path={accessControlPath} component={AsyncAccessControlPageV2} />
+                    <Route path={searchPath} component={AsyncSearchPage} />
                     <Route path={apidocsPath} component={AsyncApiDocsPage} />
                     <Route path={userBasePath} component={AsyncUserPage} />
                     <Route path={systemConfigPath} component={AsyncSystemConfigPage} />
+                    {isVulnMgmtWorkloadCvesEnabled && (
+                        <Route
+                            path={vulnerabilitiesWorkloadCvesPath}
+                            component={AsyncWorkloadCvesPage}
+                        />
+                    )}
                     {hasVulnerabilityReportsPermission && (
                         <Route path={vulnManagementReportsPath} component={AsyncVulnMgmtReports} />
                     )}

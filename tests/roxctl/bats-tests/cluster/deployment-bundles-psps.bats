@@ -24,7 +24,7 @@ teardown() {
 sensor_bundle_psp_enabled() {
     local cluster_type="$1"
     shift
-    local sensor_name="sensor-test-${RANDOM}"
+    local sensor_name="sensor-test-${RANDOM}-${RANDOM}-${RANDOM}"
     local bundle_dir="${out_dir}/bundle-${sensor_name}"
     roxctl-release -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor generate "${cluster_type}" --name="${sensor_name}" "$@" --output-dir="${bundle_dir}"
     run grep -rq "kind: PodSecurityPolicy" "${bundle_dir}"
@@ -34,7 +34,7 @@ sensor_bundle_psp_enabled() {
 sensor_bundle_psp_disabled() {
     local cluster_type="$1"
     shift
-    local sensor_name="sensor-test-${RANDOM}"
+    local sensor_name="sensor-test-${RANDOM}-${RANDOM}-${RANDOM}"
     local bundle_dir="${out_dir}/bundle-${sensor_name}"
     roxctl-release -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor generate "${cluster_type}" --name="${sensor_name}" "$@" --output-dir="${bundle_dir}"
     run grep -rq "kind: PodSecurityPolicy" "${bundle_dir}"

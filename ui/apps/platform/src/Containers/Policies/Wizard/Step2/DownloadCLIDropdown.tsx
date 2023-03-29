@@ -46,6 +46,12 @@ function DownloadCLIDropdown({ hasBuild }) {
                 <DropdownItem value="linux-amd64" component="button">
                     Linux x86_64
                 </DropdownItem>,
+                <DropdownItem value="linux-ppc64le" component="button">
+                    Linux ppc64le
+                </DropdownItem>,
+                <DropdownItem value="linux-s390x" component="button">
+                    Linux s390x
+                </DropdownItem>,
                 <DropdownItem value="windows-amd64" component="button">
                     Windows x86_64
                 </DropdownItem>,

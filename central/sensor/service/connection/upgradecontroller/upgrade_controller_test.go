@@ -44,7 +44,7 @@ type fakeClusterStorage struct {
 	values map[string]*storage.ClusterUpgradeStatus
 }
 
-func (f *fakeClusterStorage) UpdateClusterUpgradeStatus(ctx context.Context, clusterID string, status *storage.ClusterUpgradeStatus) error {
+func (f *fakeClusterStorage) UpdateClusterUpgradeStatus(_ context.Context, clusterID string, status *storage.ClusterUpgradeStatus) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	if _, ok := f.values[clusterID]; !ok {
@@ -54,7 +54,7 @@ func (f *fakeClusterStorage) UpdateClusterUpgradeStatus(ctx context.Context, clu
 	return nil
 }
 
-func (f *fakeClusterStorage) GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error) {
+func (f *fakeClusterStorage) GetCluster(_ context.Context, id string) (*storage.Cluster, bool, error) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	if value, ok := f.values[id]; ok {
@@ -82,7 +82,7 @@ func (*recordingConn) CheckAutoUpgradeSupport() error {
 	return nil
 }
 
-func (r *recordingConn) InjectMessage(ctx concurrency.Waitable, msg *central.MsgToSensor) error {
+func (r *recordingConn) InjectMessage(_ concurrency.Waitable, msg *central.MsgToSensor) error {
 	if r.returnErr {
 		return errors.New("RETURNING FAKE ERR FROM INJECTMESSAGE ON REQUEST")
 	}
@@ -91,6 +91,8 @@ func (r *recordingConn) InjectMessage(ctx concurrency.Waitable, msg *central.Msg
 	r.triggers = append(r.triggers, msg.GetSensorUpgradeTrigger().Clone())
 	return nil
 }
+
+func (r *recordingConn) InjectMessageIntoQueue(_ *central.MsgFromSensor) {}
 
 func (r *recordingConn) getSentTriggers() []*central.SensorUpgradeTrigger {
 	r.lock.Lock()

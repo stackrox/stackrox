@@ -39,6 +39,7 @@ import {
     getDefaultRoleByAuthProviderId,
 } from './authProviders.utils';
 import { AccessControlQueryAction } from '../accessControlPaths';
+import { TraitsOriginLabel } from '../TraitsOriginLabel';
 
 export type AuthProviderFormProps = {
     isActionable: boolean;
@@ -69,7 +70,12 @@ function getRuleAttributes(type, availableProviderTypes) {
 }
 
 function testModeSupported(provider) {
-    return provider.type === 'auth0' || provider.type === 'oidc' || provider.type === 'saml';
+    return (
+        provider.type === 'auth0' ||
+        provider.type === 'oidc' ||
+        provider.type === 'saml' ||
+        provider.type === 'openshift'
+    );
 }
 
 function AuthProviderForm({
@@ -257,6 +263,11 @@ function AuthProviderForm({
                     <ToolbarItem>
                         <Title headingLevel="h2">{formTitle}</Title>
                     </ToolbarItem>
+                    {action !== 'create' && (
+                        <ToolbarItem>
+                            <TraitsOriginLabel traits={selectedAuthProvider.traits} />
+                        </ToolbarItem>
+                    )}
                     {isActionable && (
                         <ToolbarGroup
                             alignment={{ default: 'alignRight' }}

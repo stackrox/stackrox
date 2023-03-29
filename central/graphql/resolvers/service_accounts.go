@@ -60,8 +60,7 @@ func (resolver *Resolver) ServiceAccounts(ctx context.Context, args PaginatedQue
 		return nil, err
 	}
 
-	serviceAccountResolvers, err := resolver.wrapServiceAccounts(resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query))
-	return paginate(query.GetPagination(), serviceAccountResolvers, err)
+	return resolver.wrapServiceAccounts(resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query))
 }
 
 // ServiceAccountCount returns count of all service accounts across infrastructure
@@ -266,7 +265,7 @@ func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[
 	return evaluators, nil
 }
 
-func (resolver *serviceAccountResolver) getClusterEvaluator(ctx context.Context) k8srbac.EvaluatorForContext {
+func (resolver *serviceAccountResolver) getClusterEvaluator(_ context.Context) k8srbac.EvaluatorForContext {
 	saClusterID := resolver.data.GetClusterId()
 
 	return rbacUtils.NewClusterPermissionEvaluator(saClusterID,

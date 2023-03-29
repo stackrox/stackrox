@@ -24,7 +24,7 @@ type storeImpl struct {
 	mutex sync.Mutex
 }
 
-func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
+func (s *storeImpl) GetIDs(_ context.Context) ([]string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Policy")
 	var policyIDs []string
 	err := s.View(func(tx *bolt.Tx) error {
@@ -37,23 +37,23 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	return policyIDs, err
 }
 
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Policy) error {
+func (s *storeImpl) UpsertMany(_ context.Context, _ []*storage.Policy) error {
 	return errors.New("not implemented")
 }
 
-func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
+func (s *storeImpl) DeleteMany(_ context.Context, _ []string) error {
 	return errors.New("not implemented")
 }
 
 //// Stubs for satisfying legacy interfaces
 
 // AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
+func (s *storeImpl) AckKeysIndexed(_ context.Context, _ ...string) error {
 	return nil
 }
 
 // GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
+func (s *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
 	return nil, nil
 }
 

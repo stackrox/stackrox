@@ -2,7 +2,7 @@ import React from 'react';
 
 import './ResourceIcon.css';
 
-type K8sResourceKind = 'Cluster' | 'Namespace' | 'Deployment';
+type K8sResourceKind = 'Cluster' | 'ConfigMap' | 'Deployment' | 'Namespace' | 'Secret' | 'Unknown';
 
 export type ResourceIconProps = {
     className?: string;
@@ -11,8 +11,11 @@ export type ResourceIconProps = {
 
 const IconAttributes: Record<K8sResourceKind, { text: string; classNameSuffix: string }> = {
     Cluster: { text: 'CL', classNameSuffix: 'cluster' },
-    Namespace: { text: 'NS', classNameSuffix: 'namespace' },
+    ConfigMap: { text: 'CM', classNameSuffix: 'configmap' },
     Deployment: { text: 'D', classNameSuffix: 'deployment' },
+    Namespace: { text: 'NS', classNameSuffix: 'namespace' },
+    Secret: { text: 'S', classNameSuffix: 'secret' },
+    Unknown: { text: '?', classNameSuffix: 'unknown' },
 } as const;
 
 /**

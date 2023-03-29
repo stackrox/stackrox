@@ -10,10 +10,10 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/store"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -68,11 +68,11 @@ var (
 )
 
 type flowStoreImpl struct {
-	db        *pgxpool.Pool
+	db        *postgres.DB
 	clusterID uuid.UUID
 }
 
-func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID uuid.UUID, obj *storage.NetworkFlow) error {
+func insertIntoNetworkflow(ctx context.Context, tx *postgres.Tx, clusterID uuid.UUID, obj *storage.NetworkFlow) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -95,7 +95,7 @@ func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID uuid.UUID, 
 	return nil
 }
 
-func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkFlow) error {
+func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx, objs ...*storage.NetworkFlow) error {
 
 	inputRows := [][]interface{}{}
 	var err error
@@ -143,7 +143,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool, clusterID string) store.FlowStore {
+func New(db *postgres.DB, clusterID string) store.FlowStore {
 	clusterUUID, err := uuid.FromString(clusterID)
 	if err != nil {
 		log.Errorf("cluster ID is not valid.  %v", err)
@@ -214,7 +214,7 @@ func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.Networ
 	})
 }
 
-func (s *flowStoreImpl) retryableUpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
+func (s *flowStoreImpl) retryableUpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, _ timestamp.MicroTS) error {
 	// RocksDB implementation was adding the lastUpdatedTS to a key.  That is not necessary in PG world so that
 	// parameter is not being passed forward and should be removed from the interface once RocksDB is removed.
 	if len(flows) < batchAfter {
@@ -224,7 +224,7 @@ func (s *flowStoreImpl) retryableUpsertFlows(ctx context.Context, flows []*stora
 	return s.copyFrom(ctx, flows...)
 }
 
-func (s *flowStoreImpl) acquireConn(ctx context.Context) (*pgxpool.Conn, func(), error) {
+func (s *flowStoreImpl) acquireConn(ctx context.Context) (*postgres.Conn, func(), error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -343,7 +343,7 @@ func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFl
 			return err
 		}
 	}
-	return nil
+	return rows.Err()
 }
 
 // RemoveFlowsForDeployment removes all flows where the source OR destination match the deployment id
@@ -408,7 +408,7 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 		return nil, nil, pgutils.ErrNilIfNoRows(err)
 	}
 
-	return flows, lastUpdateTS, nil
+	return flows, lastUpdateTS, rows.Err()
 }
 
 // GetMatchingFlows iterates over all of the objects in the store and applies the closure
@@ -438,6 +438,9 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 	defer rows.Close()
 
 	flows, err := s.readRows(rows, pred)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	return flows, lastUpdateTS, err
+	return flows, lastUpdateTS, rows.Err()
 }

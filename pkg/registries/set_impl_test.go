@@ -26,9 +26,9 @@ type fakeRegistry struct {
 	config *types.Config
 }
 
-func (f *fakeRegistry) Match(image *storage.ImageName) bool { return false }
+func (f *fakeRegistry) Match(_ *storage.ImageName) bool { return false }
 
-func (f *fakeRegistry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
+func (f *fakeRegistry) Metadata(_ *storage.Image) (*storage.ImageMetadata, error) {
 	return nil, nil
 }
 

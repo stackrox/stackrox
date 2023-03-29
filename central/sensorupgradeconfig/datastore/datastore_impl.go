@@ -14,8 +14,7 @@ type dataStore struct {
 }
 
 var (
-	// TODO: ROX-12750 Replace SensorUpgradeConfig with Administration.
-	sacHelper = sac.ForResource(resources.SensorUpgradeConfig)
+	sacHelper = sac.ForResource(resources.Administration)
 )
 
 func (d *dataStore) GetSensorUpgradeConfig(ctx context.Context) (*storage.SensorUpgradeConfig, error) {

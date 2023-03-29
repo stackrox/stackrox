@@ -1,5 +1,5 @@
 {{- include "srox.init" . -}}
-{{ if and ._rox.central.db.enabled (not ._rox.central.db.external) -}}
+{{ if not ._rox.central.db.external -}}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

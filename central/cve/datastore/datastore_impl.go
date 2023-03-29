@@ -162,9 +162,7 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start *types.Timestamp, d
 		return nil
 	}
 	missingCVEs := make([]string, 0, len(ids))
-	for idx := range ids {
-		missingCVEs = append(missingCVEs, ids[idx])
-	}
+	missingCVEs = append(missingCVEs, ids...)
 	return errors.Errorf("failed to snooze %d/%d cves. CVEs not found: %s", len(missing), len(ids), strings.Join(missingCVEs, ", "))
 }
 
@@ -201,9 +199,7 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, ids ...string) error {
 		return nil
 	}
 	missingCVEs := make([]string, 0, len(ids))
-	for idx := range ids {
-		missingCVEs = append(missingCVEs, ids[idx])
-	}
+	missingCVEs = append(missingCVEs, ids...)
 	return errors.Errorf("failed to un-snooze %d/%d cves. CVEs not found: %s", len(missing), len(ids), strings.Join(missingCVEs, ", "))
 }
 

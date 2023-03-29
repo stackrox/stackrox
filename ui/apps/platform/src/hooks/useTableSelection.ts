@@ -20,10 +20,12 @@ type Base = {
     id: string;
 };
 
+const defaultPreSelectedFunc = () => false;
+
 function useTableSelection<T extends Base>(
     data: T[],
     // determines whether value should be pre-selected or not
-    preSelectedFunc: (T) => boolean = () => false
+    preSelectedFunc: (T) => boolean = defaultPreSelectedFunc
 ): UseTableSelection {
     const [selected, setSelected] = React.useState(data.map(preSelectedFunc));
     const allRowsSelected = selected.length !== 0 && selected.every((val) => val);
@@ -32,7 +34,7 @@ function useTableSelection<T extends Base>(
 
     React.useEffect(() => {
         setSelected(data.map(preSelectedFunc));
-    }, [data]);
+    }, [data, preSelectedFunc]);
 
     const onClearAll = () => {
         setSelected(data.map(() => false));

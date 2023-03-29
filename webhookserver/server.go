@@ -42,7 +42,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func getHandler(w http.ResponseWriter, r *http.Request) {
+func getHandler(w http.ResponseWriter, _ *http.Request) {
 	lock.Lock()
 	defer lock.Unlock()
 	resp, err := json.Marshal(&dataPosted)

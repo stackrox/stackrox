@@ -7,6 +7,7 @@ import (
 )
 
 // Store updates and utilizes groups, which are attribute to role mappings.
+//
 //go:generate mockgen-wrapper
 type Store interface {
 	Get(ctx context.Context, propsID string) (*storage.Group, bool, error)

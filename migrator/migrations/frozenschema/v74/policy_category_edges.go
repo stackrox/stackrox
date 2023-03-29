@@ -3,7 +3,14 @@
 package schema
 
 import (
+	"fmt"
+	"reflect"
+
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -12,6 +19,25 @@ var (
 		GormModel: (*PolicyCategoryEdges)(nil),
 		Children:  []*postgres.CreateStmts{},
 	}
+
+	// PolicyCategoryEdgesSchema is the go schema for table `policy_category_edges`.
+	PolicyCategoryEdgesSchema = func() *walker.Schema {
+		schema := walker.Walk(reflect.TypeOf((*storage.PolicyCategoryEdge)(nil)), "policy_category_edges")
+		referencedSchemas := map[string]*walker.Schema{
+			"storage.Policy":         PoliciesSchema,
+			"storage.PolicyCategory": PolicyCategoriesSchema,
+		}
+
+		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
+		})
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_POLICY_CATEGORY_EDGE, "policycategoryedge", (*storage.PolicyCategoryEdge)(nil)))
+		schema.SetSearchScope([]v1.SearchCategory{
+			v1.SearchCategory_POLICY_CATEGORY_EDGE,
+			v1.SearchCategory_POLICY_CATEGORIES,
+		}...)
+		return schema
+	}()
 )
 
 const (

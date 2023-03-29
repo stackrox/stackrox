@@ -2,7 +2,7 @@ package singleton
 
 import (
 	"github.com/stackrox/rox/central/clusterinit/store"
-	"github.com/stackrox/rox/central/clusterinit/store/postgres"
+	pgStore "github.com/stackrox/rox/central/clusterinit/store/postgres"
 	"github.com/stackrox/rox/central/clusterinit/store/rocksdb"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/env"
@@ -20,7 +20,7 @@ func Singleton() store.Store {
 	instanceInit.Do(func() {
 		var underlying store.UnderlyingStore
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			underlying = postgres.New(globaldb.GetPostgres())
+			underlying = pgStore.New(globaldb.GetPostgres())
 		} else {
 			var err error
 			underlying, err = rocksdb.New(globaldb.GetRocksDB())

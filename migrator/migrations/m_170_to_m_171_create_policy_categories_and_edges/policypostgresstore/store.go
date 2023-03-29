@@ -5,18 +5,17 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v74"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
-	"gorm.io/gorm"
 )
 
 const (
@@ -29,7 +28,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.PoliciesSchema
+	schema = frozenSchema.PoliciesSchema
 )
 
 // Store is the interface to interact with the storage for storage.Policy
@@ -43,18 +42,18 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *pgxpool.Pool
+	db    *postgres.DB
 	mutex sync.Mutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
+func New(db *postgres.DB) Store {
 	return &storeImpl{
 		db: db,
 	}
 }
 
-//// Helper functions
+// Helper functions
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Policy) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Policy")
 	if err != nil {
@@ -79,7 +78,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Policy) error
 	return nil
 }
 
-func (s *storeImpl) copyFromPolicies(ctx context.Context, tx pgx.Tx, objs ...*storage.Policy) error {
+func (s *storeImpl) copyFromPolicies(ctx context.Context, tx *postgres.Tx, objs ...*storage.Policy) error {
 
 	inputRows := [][]interface{}{}
 
@@ -186,7 +185,7 @@ func (s *storeImpl) copyFromPolicies(ctx context.Context, tx pgx.Tx, objs ...*st
 	return err
 }
 
-func insertIntoPolicies(ctx context.Context, batch *pgx.Batch, obj *storage.Policy) error {
+func insertIntoPolicies(_ context.Context, batch *pgx.Batch, obj *storage.Policy) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -216,7 +215,7 @@ func insertIntoPolicies(ctx context.Context, batch *pgx.Batch, obj *storage.Poli
 	return nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*postgres.Conn, func(), error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -278,7 +277,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 			search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
 		)
 
-		if err := postgres.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
+		if err := pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
 			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
 			log.Error(err)
 			return err
@@ -310,7 +309,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Policy) erro
 // Count returns the number of objects in the store.
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	var sacQueryFilter *v1.Query
-	return postgres.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Upsert saves the current state of an object in storage.
@@ -329,7 +328,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Policy, bool, 
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	data, err := postgres.RunGetQueryForSchema[storage.Policy](ctx, schema, q, s.db)
+	data, err := pgSearch.RunGetQueryForSchema[storage.Policy](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
@@ -340,7 +339,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Policy, bool, 
 // Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Policy) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := postgres.RunCursorQueryForSchema[storage.Policy](ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.Policy](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
@@ -363,13 +362,3 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Policy) error
 }
 
 //// Interface functions - END
-
-//// Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
-//// Used for testing - END

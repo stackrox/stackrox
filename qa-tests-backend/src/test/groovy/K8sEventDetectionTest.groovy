@@ -1,3 +1,5 @@
+import static util.Helpers.withRetry
+
 import orchestratormanager.OrchestratorTypes
 
 import io.stackrox.proto.storage.AlertOuterClass
@@ -100,7 +102,8 @@ class K8sEventDetectionTest extends BaseSpecification {
             def podName = podNames.get(violatingDeploymentName)
             assert k8sSubViolations.size() == expectedK8sViolationsCount
             for (def subViolation: k8sSubViolations) {
-                assert subViolation.message == "Kubernetes API received exec 'ls -l' request into pod '${podName}'"
+                assert subViolation.message == "Kubernetes API received exec 'ls -l' request into pod '${podName}'" +
+                        " container '${violatingDeploymentName}'"
                 def kvAttrs = subViolation.getKeyValueAttrs().getAttrsList()
                 def podAttr = kvAttrs.find { it.key == "pod" }
                 assert podAttr != null && podAttr.value == podName

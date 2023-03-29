@@ -32,7 +32,7 @@ type Translator struct {
 }
 
 // Translate translates and enriches helm values
-func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured) (chartutil.Values, error) {
+func (t Translator) Translate(_ context.Context, u *unstructured.Unstructured) (chartutil.Values, error) {
 	baseValues, err := chartutil.ReadValues(baseValuesYAML)
 	utils.CrashOnError(err) // ensured through unit test that this doesn't happen.
 
@@ -193,10 +193,7 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 		cv.AddChild("exposure", &exposure)
 	}
 
-	if c.CentralDBEnabled() {
-		cv.AddChild("db", getCentralDBComponentValues(c.DB))
-	}
-
+	cv.AddChild("db", getCentralDBComponentValues(c.DB))
 	cv.AddChild("telemetry", getTelemetryValues(c.Telemetry))
 
 	cv.AddChild("declarativeConfiguration", getDeclarativeConfigurationValues(c.DeclarativeConfiguration))
@@ -206,7 +203,13 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 
 func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
-	cv.SetBoolValue("enabled", true)
+	if c == nil {
+		c = &platform.CentralDBSpec{}
+	}
+
+	if c.ConfigOverride.Name != "" {
+		cv.SetStringValue("configOverride", c.ConfigOverride.Name)
+	}
 
 	if c.ConnectionStringOverride != nil {
 		if c.GetPersistence() != nil {

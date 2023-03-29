@@ -1,18 +1,18 @@
 package utils
 
 import (
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	vStore "github.com/stackrox/rox/central/version/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 )
 
 // ReadVersionPostgres - reads the version from the postgres database.
-func ReadVersionPostgres(pool *pgxpool.Pool) (*migrations.MigrationVersion, error) {
+func ReadVersionPostgres(pool *postgres.DB) (*migrations.MigrationVersion, error) {
 	store := vStore.NewPostgres(pool)
 
 	ver, err := store.GetVersion()
@@ -29,7 +29,7 @@ func ReadVersionPostgres(pool *pgxpool.Pool) (*migrations.MigrationVersion, erro
 }
 
 // SetCurrentVersionPostgres - sets the current version in the postgres database
-func SetCurrentVersionPostgres(pool *pgxpool.Pool) {
+func SetCurrentVersionPostgres(pool *postgres.DB) {
 	if curr, err := ReadVersionPostgres(pool); err != nil || curr.MainVersion != version.GetMainVersion() || curr.SeqNum != migrations.CurrentDBVersionSeqNum() {
 		newVersion := &storage.Version{
 			SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
@@ -40,7 +40,7 @@ func SetCurrentVersionPostgres(pool *pgxpool.Pool) {
 	}
 }
 
-func setVersionPostgres(pool *pgxpool.Pool, updatedVersion *storage.Version) {
+func setVersionPostgres(pool *postgres.DB, updatedVersion *storage.Version) {
 	store := vStore.NewPostgres(pool)
 
 	err := store.UpdateVersion(updatedVersion)

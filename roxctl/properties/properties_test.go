@@ -6,7 +6,6 @@ import (
 
 	"github.com/magiconair/properties"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/roxctl/help"
@@ -26,7 +25,6 @@ func TestHelpKeys(t *testing.T) {
 
 func (s *helpKeysTestSuite) SetupTest() {
 	s.T().Setenv(features.RoxctlNetpolGenerate.EnvVar(), "true")
-	testbuildinfo.SetForTest(s.T())
 }
 
 // TestHelpKeysExist tests that the short and long help key values exist for each command in the properties file

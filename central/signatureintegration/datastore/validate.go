@@ -13,7 +13,9 @@ import (
 
 // signatureIntegrationIDPrefix should be prepended to every human-hostile ID of a
 // signature integration for readability, e.g.,
-//     "io.stackrox.signatureintegration.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13".
+//
+//	"io.stackrox.signatureintegration.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13".
+//
 // TODO(ROX-9716): refactor to reference the same constant here and in
 // pkg/booleanpolicy/value_regex.go
 const signatureIntegrationIDPrefix = "io.stackrox.signatureintegration."

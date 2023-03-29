@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
-	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/deployment"
@@ -32,7 +31,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/service"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/common/processsignal"
-	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/sensor"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
@@ -57,7 +55,15 @@ var (
 
 // CreateSensor takes in a client interface and returns a sensor instantiation
 func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
-	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton())
+	if env.ResyncDisabled.BooleanSetting() {
+		log.Infof("Running sensor with Kubernetes re-sync disabled")
+	} else {
+		log.Infof("Running sesnor with Kubernetes re-sync enabled. Re-sync time: %s", cfg.resyncPeriod.String())
+	}
+
+	storeProvider := resources.InitializeStore()
+
+	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(storeProvider.Deployments(), storeProvider.Pods())
 
 	var helmManagedConfig *central.HelmManagedConfigInit
 	if configFP := helmconfig.HelmConfigFingerprint.Setting(); configFP != "" {
@@ -101,23 +107,20 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		return nil, errors.Wrap(err, "creating enforcer")
 	}
 
-	// TODO(ROX-13603): Move other singleton stores into the store provider
-	storeProvider := resources.InitializeStore()
-
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
-	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), resources.ServiceAccountStoreSingleton(), imageCache, auditLogEventsInput, auditLogCollectionManager, resources.NetworkPolicySingleton())
-	pipeline := eventpipeline.New(cfg.k8sClient, configHandler, policyDetector, k8sNodeName.Setting(), cfg.resyncPeriod, cfg.traceWriter, storeProvider)
+	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries())
+	pipeline := eventpipeline.New(cfg.k8sClient, configHandler, policyDetector, k8sNodeName.Setting(), cfg.resyncPeriod, cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize)
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
 
-	imageService := image.NewService(imageCache, registry.Singleton())
+	imageService := image.NewService(imageCache, storeProvider.Registries())
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 
 	// Create Process Pipeline
 	indicators := make(chan *central.MsgFromSensor)
-	processPipeline := processsignal.NewProcessPipeline(indicators, clusterentities.StoreInstance(), processfilter.Singleton(), policyDetector)
+	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
 	processSignals := signalService.New(processPipeline, indicators)
 	networkFlowManager :=
-		manager.NewManager(clusterentities.StoreInstance(), externalsrcs.StoreInstance(), policyDetector)
+		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector)
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,
 		enforcer,
@@ -128,14 +131,15 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		clustermetrics.New(cfg.k8sClient.Kubernetes()),
 		complianceCommandHandler,
 		processSignals,
-		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes()),
+		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes(), storeProvider),
 		externalsrcs.Singleton(),
 		admissioncontroller.AlertHandlerSingleton(),
 		auditLogCollectionManager,
 		reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache),
 	}
 	if features.RHCOSNodeScanning.Enabled() {
-		components = append(components, compliance.NewNodeInventoryHandler(complianceService.NodeInventories()))
+		matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
+		components = append(components, compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher))
 	}
 
 	if !cfg.localSensor {
@@ -188,7 +192,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		processSignals,
 		complianceService,
 		imageService,
-		deployment.NewService(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton()),
+		deployment.NewService(storeProvider.Deployments(), storeProvider.Pods()),
 	}
 
 	if admCtrlSettingsMgr != nil {

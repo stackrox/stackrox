@@ -11,31 +11,32 @@ func _() {
 	_ = x[Alert-0]
 	_ = x[Deployment-1]
 	_ = x[ProcessIndicator-2]
-	_ = x[Image-3]
-	_ = x[Secret-4]
-	_ = x[Namespace-5]
-	_ = x[NetworkPolicy-6]
-	_ = x[Node-7]
-	_ = x[NodeInventory-8]
-	_ = x[ProviderMetadata-9]
-	_ = x[ComplianceReturn-10]
-	_ = x[ImageIntegration-11]
-	_ = x[ServiceAccount-12]
-	_ = x[PermissionSet-13]
-	_ = x[Role-14]
-	_ = x[RoleBinding-15]
-	_ = x[DeploymentReprocess-16]
-	_ = x[Pod-17]
-	_ = x[ComplianceOperatorCheckResult-18]
-	_ = x[ComplianceOperatorProfile-19]
-	_ = x[ComplianceOperatorScanSettingBinding-20]
-	_ = x[ComplianceOperatorRule-21]
-	_ = x[ComplianceOperatorScan-22]
+	_ = x[ProcessListeningOnPort-3]
+	_ = x[Image-4]
+	_ = x[Secret-5]
+	_ = x[Namespace-6]
+	_ = x[NetworkPolicy-7]
+	_ = x[Node-8]
+	_ = x[NodeInventory-9]
+	_ = x[ProviderMetadata-10]
+	_ = x[ComplianceReturn-11]
+	_ = x[ImageIntegration-12]
+	_ = x[ServiceAccount-13]
+	_ = x[PermissionSet-14]
+	_ = x[Role-15]
+	_ = x[RoleBinding-16]
+	_ = x[DeploymentReprocess-17]
+	_ = x[Pod-18]
+	_ = x[ComplianceOperatorCheckResult-19]
+	_ = x[ComplianceOperatorProfile-20]
+	_ = x[ComplianceOperatorScanSettingBinding-21]
+	_ = x[ComplianceOperatorRule-22]
+	_ = x[ComplianceOperatorScan-23]
 }
 
-const _Resource_name = "AlertDeploymentProcessIndicatorImageSecretNamespaceNetworkPolicyNodeNodeInventoryProviderMetadataComplianceReturnImageIntegrationServiceAccountPermissionSetRoleRoleBindingDeploymentReprocessPodComplianceOperatorCheckResultComplianceOperatorProfileComplianceOperatorScanSettingBindingComplianceOperatorRuleComplianceOperatorScan"
+const _Resource_name = "AlertDeploymentProcessIndicatorProcessListeningOnPortImageSecretNamespaceNetworkPolicyNodeNodeInventoryProviderMetadataComplianceReturnImageIntegrationServiceAccountPermissionSetRoleRoleBindingDeploymentReprocessPodComplianceOperatorCheckResultComplianceOperatorProfileComplianceOperatorScanSettingBindingComplianceOperatorRuleComplianceOperatorScan"
 
-var _Resource_index = [...]uint16{0, 5, 15, 31, 36, 42, 51, 64, 68, 81, 97, 113, 129, 143, 156, 160, 171, 190, 193, 222, 247, 283, 305, 327}
+var _Resource_index = [...]uint16{0, 5, 15, 31, 53, 58, 64, 73, 86, 90, 103, 119, 135, 151, 165, 178, 182, 193, 212, 215, 244, 269, 305, 327, 349}
 
 func (i Resource) String() string {
 	if i < 0 || i >= Resource(len(_Resource_index)-1) {

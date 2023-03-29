@@ -5,7 +5,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -42,7 +41,7 @@ func handleCategoryNameQuery(q *v1.Query) {
 		return
 	}
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() || !features.NewPolicyCategories.Enabled() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return
 	}
 

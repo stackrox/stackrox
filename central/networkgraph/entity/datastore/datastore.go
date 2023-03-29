@@ -8,6 +8,7 @@ import (
 
 // EntityDataStore stores network graph entities across all clusters.
 // Note: Currently only external sources are stored i.e. user-created CIDR blocks
+//
 //go:generate mockgen-wrapper
 type EntityDataStore interface {
 	Exists(ctx context.Context, id string) (bool, error)

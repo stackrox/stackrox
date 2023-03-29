@@ -188,14 +188,6 @@ function embeddedCollectionsReducer(
             return ensureExhaustive(payload);
     }
 }
-
-// We need to use `startsWith` instead of `includes` here, since search values sent to the API use
-// a prefix match. If we filter by substring, collections matching the substring will appear in
-// the "attached" list, but not in the "available" list, since the former are cached client side.
-function compareNameLowercase(search: string): (item: { name: string }) => boolean {
-    return ({ name }) => name.toLowerCase().startsWith(search.toLowerCase());
-}
-
 function byNameCaseInsensitive(collection: Collection) {
     return collection.name.toLowerCase();
 }
@@ -302,12 +294,8 @@ export default function useEmbeddedCollections(
     };
 
     return {
-        attached: sortBy(Object.values(attached), byNameCaseInsensitive).filter(
-            compareNameLowercase(search)
-        ),
-        detached: sortBy(Object.values(detached), byNameCaseInsensitive).filter(
-            compareNameLowercase(search)
-        ),
+        attached: sortBy(Object.values(attached), byNameCaseInsensitive),
+        detached: sortBy(Object.values(detached), byNameCaseInsensitive),
         attach: (id: string) => dispatch({ type: 'attachCollection', id }),
         detach: (id: string) => dispatch({ type: 'detachCollection', id }),
         hasMore,

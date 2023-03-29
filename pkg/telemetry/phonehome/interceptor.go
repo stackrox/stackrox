@@ -10,14 +10,20 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	grpcError "github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
 const grpcGatewayUserAgentHeader = runtime.MetadataPrefix + "User-Agent"
 
 func (cfg *Config) track(rp *RequestParams) {
-	id := cfg.HashUserAuthID(rp.UserID)
 	cfg.interceptorsLock.RLock()
 	defer cfg.interceptorsLock.RUnlock()
+	if len(cfg.interceptors) == 0 {
+		return
+	}
+	opts := []telemeter.Option{
+		telemeter.WithUserID(cfg.HashUserAuthID(rp.UserID)),
+		telemeter.WithGroups(cfg.GroupType, cfg.GroupID)}
 	for event, funcs := range cfg.interceptors {
 		props := map[string]any{}
 		ok := true
@@ -27,7 +33,7 @@ func (cfg *Config) track(rp *RequestParams) {
 			}
 		}
 		if ok {
-			cfg.telemeter.Track(event, id, props)
+			cfg.telemeter.Track(event, props, opts...)
 		}
 	}
 }

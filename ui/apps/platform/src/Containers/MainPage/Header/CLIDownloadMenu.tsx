@@ -51,6 +51,20 @@ function CLIDownloadMenu({ addToast, removeToast }: CLIDownloadMenuProps): React
             Linux x86_64
         </ApplicationLauncherItem>,
         <ApplicationLauncherItem
+            key="app-launcher-item-cli-linux-ppc64le"
+            component="button"
+            onClick={handleDownloadCLI('linux-ppc64le')}
+        >
+            Linux ppc64le
+        </ApplicationLauncherItem>,
+        <ApplicationLauncherItem
+            key="app-launcher-item-cli-linux-s390x"
+            component="button"
+            onClick={handleDownloadCLI('linux-s390x')}
+        >
+            Linux s390x
+        </ApplicationLauncherItem>,
+        <ApplicationLauncherItem
             key="app-launcher-item-cli-windows-amd64"
             component="button"
             onClick={handleDownloadCLI('windows-amd64')}
@@ -91,7 +105,6 @@ function CLIDownloadMenu({ addToast, removeToast }: CLIDownloadMenuProps): React
 }
 
 const mapDispatchToProps = {
-    // TODO: type redux props
     addToast: actions.addNotification,
     removeToast: actions.removeOldestNotification,
 };

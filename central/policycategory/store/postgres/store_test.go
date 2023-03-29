@@ -35,7 +35,7 @@ func (s *PolicyCategoriesStoreSuite) SetupSuite() {
 	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.DB)
 }
 
 func (s *PolicyCategoriesStoreSuite) SetupTest() {
@@ -105,6 +105,9 @@ func (s *PolicyCategoriesStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, policyCategorys))
+	allPolicyCategory, err := store.GetAll(ctx)
+	s.NoError(err)
+	s.ElementsMatch(policyCategorys, allPolicyCategory)
 
 	policyCategoryCount, err = store.Count(ctx)
 	s.NoError(err)

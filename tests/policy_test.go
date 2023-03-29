@@ -99,7 +99,7 @@ func exportPolicy(t *testing.T, service v1.PolicyServiceClient, id string) *stor
 	return resp.Policies[0]
 }
 
-func validateExportFails(t *testing.T, service v1.PolicyServiceClient, id string, expectedErrors []*v1.ExportPolicyError) {
+func validateExportFails(t *testing.T, service v1.PolicyServiceClient, _ string, expectedErrors []*v1.ExportPolicyError) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	resp, err := service.ExportPolicies(ctx, &v1.ExportPoliciesRequest{
 		PolicyIds: []string{notAnID},

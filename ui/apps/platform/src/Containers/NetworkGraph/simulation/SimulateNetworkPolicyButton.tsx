@@ -8,9 +8,10 @@ import { Simulation } from '../utils/getSimulation';
 
 type SimulateNetworkPolicyButtonProps = {
     simulation: Simulation;
+    isDisabled: boolean;
 };
 
-function SimulateNetworkPolicyButton({ simulation }: SimulateNetworkPolicyButtonProps) {
+function SimulateNetworkPolicyButton({ simulation, isDisabled }: SimulateNetworkPolicyButtonProps) {
     const history = useHistory();
 
     const [, setSimulationQueryValue] = useURLParameter('simulation', undefined);
@@ -23,7 +24,7 @@ function SimulateNetworkPolicyButton({ simulation }: SimulateNetworkPolicyButton
     return (
         <Button
             variant="secondary"
-            isDisabled={simulation.isOn}
+            isDisabled={isDisabled || simulation.isOn}
             onClick={enableNetworkPolicySimulation}
         >
             Simulate network policy

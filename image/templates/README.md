@@ -3,7 +3,7 @@
 The currently maintained helm charts consists of the `stackrox-central-services`
 and `stackrox-secured-cluster-services` charts.
 
-Helm charts are distributed by `https://charts.stackrox.io` and [stackrox/helm-charts](https://github.com/stackrox/helm-charts).
+Helm charts are distributed by `https://mirror.openshift.com/pub/rhacs/charts/`, `https://charts.stackrox.io` and [stackrox/helm-charts](https://github.com/stackrox/helm-charts).
 The [stackrox/release-artifacts](https://github.com/stackrox/release-artifacts) repository takes care of the publishing automation.
 
 ## StackRox central services

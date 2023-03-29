@@ -1,6 +1,14 @@
 import React, { ReactElement } from 'react';
 import { useLocation, Location } from 'react-router-dom';
-import { Nav, NavList, NavExpandable, PageSidebar } from '@patternfly/react-core';
+import {
+    Nav,
+    NavList,
+    NavExpandable,
+    PageSidebar,
+    Flex,
+    FlexItem,
+    Badge,
+} from '@patternfly/react-core';
 
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
@@ -20,10 +28,11 @@ import {
     clustersBasePath,
     policyManagementBasePath,
     integrationsPath,
-    accessControlBasePathV2,
+    accessControlBasePath,
     systemConfigPath,
     systemHealthPath,
     collectionsBasePath,
+    vulnerabilitiesWorkloadCvesPath,
 } from 'routePaths';
 
 import LeftNavItem from './LeftNavItem';
@@ -54,12 +63,12 @@ function NavigationSidebar({
         clustersBasePath,
         policyManagementBasePath,
         integrationsPath,
-        accessControlBasePathV2,
+        accessControlBasePath,
         systemConfigPath,
         systemHealthPath,
     ];
 
-    if (isFeatureFlagEnabled('ROX_OBJECT_COLLECTIONS') && hasReadAccess('WorkflowAdministration')) {
+    if (isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE') && hasReadAccess('WorkflowAdministration')) {
         // Insert 'Collections' after 'Policy Management'
         platformConfigurationPaths.splice(
             platformConfigurationPaths.indexOf(policyManagementBasePath) + 1,
@@ -68,10 +77,7 @@ function NavigationSidebar({
         );
     }
 
-    // TODO remove this temporary extra config menu item when the PF network graph goes live in the main menu
-    if (isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY')) {
-        platformConfigurationPaths.push(networkBasePathPF);
-    }
+    const vulnerabilitiesPaths = [vulnerabilitiesWorkloadCvesPath];
 
     const Navigation = (
         <Nav id="nav-primary-simple">
@@ -81,6 +87,26 @@ function NavigationSidebar({
                     path={dashboardPath}
                     title={basePathToLabelMap[dashboardPath]}
                 />
+                {isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY') && (
+                    <LeftNavItem
+                        isActive={location.pathname.includes(networkBasePathPF)}
+                        path={networkBasePathPF}
+                        title={
+                            <Flex>
+                                <FlexItem>Network Graph</FlexItem>
+                                <FlexItem>
+                                    <Badge
+                                        style={{
+                                            backgroundColor: 'var(--pf-global--palette--cyan-400)',
+                                        }}
+                                    >
+                                        2.0 preview
+                                    </Badge>
+                                </FlexItem>
+                            </Flex>
+                        }
+                    />
+                )}
                 <LeftNavItem
                     isActive={
                         location.pathname.includes(networkBasePath) &&
@@ -99,6 +125,33 @@ function NavigationSidebar({
                     path={complianceBasePath}
                     title={basePathToLabelMap[complianceBasePath]}
                 />
+
+                {isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES') &&
+                    isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE') && (
+                        // TODO We need to designate this as Tech Preview in a more standard way, based on UX guidance
+                        <NavExpandable
+                            id="Vulnerabilities"
+                            title="Vulnerabilities (preview)"
+                            isActive={vulnerabilitiesPaths.some((path) =>
+                                location.pathname.includes(path)
+                            )}
+                            isExpanded={vulnerabilitiesPaths.some((path) =>
+                                location.pathname.includes(path)
+                            )}
+                        >
+                            {vulnerabilitiesPaths.map((path) => {
+                                const isActive = location.pathname.includes(path);
+                                return (
+                                    <LeftNavItem
+                                        key={path}
+                                        isActive={isActive}
+                                        path={path}
+                                        title={basePathToLabelMap[path]}
+                                    />
+                                );
+                            })}
+                        </NavExpandable>
+                    )}
                 <NavExpandable
                     id="VulnerabilityManagement"
                     title="Vulnerability Management"

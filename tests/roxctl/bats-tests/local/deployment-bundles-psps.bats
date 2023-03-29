@@ -21,7 +21,7 @@ teardown() {
 central_bundle_psp_enabled() {
     local cluster_type="$1"
     shift
-    local bundle_dir="${out_dir}/bundle-central-$RANDOM"
+    local bundle_dir="${out_dir}/bundle-central-${RANDOM}-${RANDOM}-${RANDOM}"
     roxctl-release central generate "${cluster_type}" pvc "$@" --output-dir="${bundle_dir}"
     run grep -rq "kind: PodSecurityPolicy" "${bundle_dir}"
     assert_success
@@ -30,7 +30,7 @@ central_bundle_psp_enabled() {
 central_bundle_psp_disabled() {
     local cluster_type="$1"
     shift
-    local bundle_dir="${out_dir}/bundle-central-$RANDOM"
+    local bundle_dir="${out_dir}/bundle-central-${RANDOM}-${RANDOM}-${RANDOM}"
     roxctl-release central generate "${cluster_type}" pvc "$@" --output-dir="${bundle_dir}"
     run grep -rq "kind: PodSecurityPolicy" "${bundle_dir}"
     assert_failure

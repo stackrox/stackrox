@@ -1,5 +1,4 @@
 //go:build sql_integration
-// +build sql_integration
 
 package resolvers
 
@@ -9,19 +8,13 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/jackc/pgx/v4/pgxpool"
-	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
-	clusterCVEEdgePostgres "github.com/stackrox/rox/central/clustercveedge/datastore/store/postgres"
-	clusterCVEPostgres "github.com/stackrox/rox/central/cve/cluster/datastore/store/postgres"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	namespacePostgres "github.com/stackrox/rox/central/namespace/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/gorm"
 )
 
 func TestGraphQLClusterVulnerabilityEndpoints(t *testing.T) {
@@ -39,8 +32,7 @@ type GraphQLClusterVulnerabilityTestSuite struct {
 	suite.Suite
 
 	ctx      context.Context
-	db       *pgxpool.Pool
-	gormDB   *gorm.DB
+	testDB   *pgtest.TestPostgres
 	resolver *Resolver
 
 	clusterIDs []string
@@ -56,16 +48,16 @@ func (s *GraphQLClusterVulnerabilityTestSuite) SetupSuite() {
 
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
-	s.db, s.gormDB = SetupTestPostgresConn(s.T())
+	s.testDB = SetupTestPostgresConn(s.T())
 
-	clusterCVEDS := CreateTestClusterCVEDatastore(s.T(), s.db, s.gormDB)
-	nodeDatastore := CreateTestNodeDatastore(s.T(), s.db, s.gormDB, mockCtrl)
-	namespaceDS := CreateTestNamespaceDatastore(s.T(), s.db, s.gormDB)
+	clusterCVEDS := CreateTestClusterCVEDatastore(s.T(), s.testDB)
+	nodeDatastore := CreateTestNodeDatastore(s.T(), s.testDB, mockCtrl)
+	namespaceDS := CreateTestNamespaceDatastore(s.T(), s.testDB)
 	resolver, _ := SetupTestResolver(s.T(),
 		clusterCVEDS,
-		CreateTestClusterCVEEdgeDatastore(s.T(), s.db, s.gormDB),
+		CreateTestClusterCVEEdgeDatastore(s.T(), s.testDB),
 		namespaceDS,
-		CreateTestClusterDatastore(s.T(), s.db, s.gormDB, mockCtrl, clusterCVEDS, namespaceDS, nodeDatastore),
+		CreateTestClusterDatastore(s.T(), s.testDB, mockCtrl, clusterCVEDS, namespaceDS, nodeDatastore),
 	)
 	s.resolver = resolver
 
@@ -84,13 +76,7 @@ func (s *GraphQLClusterVulnerabilityTestSuite) SetupSuite() {
 }
 
 func (s *GraphQLClusterVulnerabilityTestSuite) TearDownSuite() {
-
-	clusterCVEPostgres.Destroy(s.ctx, s.db)
-	clusterCVEEdgePostgres.Destroy(s.ctx, s.db)
-	clusterPostgres.Destroy(s.ctx, s.db)
-	namespacePostgres.Destroy(s.ctx, s.db)
-	pgtest.CloseGormDB(s.T(), s.gormDB)
-	s.db.Close()
+	s.testDB.Teardown(s.T())
 }
 
 func (s *GraphQLClusterVulnerabilityTestSuite) TestUnauthorizedClusterVulnerabilityEndpoint() {

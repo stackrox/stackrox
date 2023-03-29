@@ -104,7 +104,7 @@ func (s *postgresMigrationSuite) verify(flowStore store.FlowStore, flows []*stor
 }
 
 func (s *postgresMigrationSuite) TestNetworkFlowMigration() {
-	newStore := pgStore.NewClusterStore(s.postgresDB.Pool)
+	newStore := pgStore.NewClusterStore(s.postgresDB.DB)
 	legacyStore := legacy.NewClusterStore(s.legacyDB)
 
 	// Prepare data and write to legacy DB
@@ -112,7 +112,7 @@ func (s *postgresMigrationSuite) TestNetworkFlowMigration() {
 	_, cluster2Flows := s.populateStore(legacyStore, "a78f0c04-fb07-41ce-908b-1e07e1fb5674")
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
+	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify
 	s.verify(newStore.GetFlowStore("b3bf0acc-f870-4456-8730-f8b39cf59009"), cluster1Flows)

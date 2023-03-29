@@ -5,10 +5,8 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version/internal"
@@ -29,9 +27,6 @@ func getCollectorVersion() string {
 
 // Versions represents a collection of various pieces of version information.
 type Versions struct {
-	// Deprecated: BuildDate will be removed in 3.75. Please do not use it.
-	// TODO(ROX-14336): delete it
-	BuildDate time.Time `json:"BuildDate"`
 	// CollectorVersion is exported for compatibility with users that depend on `roxctl version --json` output.
 	// Please do not depend on it. Rely on internal.CollectorVersion if you need the value from the COLLECTOR_VERSION file,
 	// or rely on defaults.ImageFlavor if you need a default collector image tag.
@@ -53,7 +48,6 @@ type Versions struct {
 // GetAllVersionsDevelopment returns all of the various pieces of version information for development builds of the product.
 func GetAllVersionsDevelopment() Versions {
 	return Versions{
-		BuildDate:        buildinfo.BuildTimestamp(),
 		CollectorVersion: getCollectorVersion(),
 		GitCommit:        internal.GitShortSha,
 		GoVersion:        runtime.Version(),

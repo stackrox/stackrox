@@ -57,7 +57,7 @@ func (ds *DeploymentStore) removeDeployment(wrap *deploymentWrap) {
 	delete(ds.deployments, wrap.GetId())
 }
 
-func (ds *DeploymentStore) getDeploymentsByIDs(namespace string, idSet set.StringSet) []*deploymentWrap {
+func (ds *DeploymentStore) getDeploymentsByIDs(_ string, idSet set.StringSet) []*deploymentWrap {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
@@ -197,6 +197,13 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 	if err := wrap.updateHash(); err != nil {
 		return nil, err
 	}
+
+	// These properties are set when initially parsing a deployment/pod event as a deploymentWrap. Since secrets could
+	// influence its values, we need to call this again with the same pods from the wrap. Inside this function we call
+	// the registry store and update `IsClusterLocal` and `NotPullable` based on it. Meaning that if a pull secret was
+	// updated, the value from this properties might need to be updated.
+	wrap.populateDataFromPods(wrap.pods...)
+
 	ds.addOrUpdateDeploymentNoLock(wrap)
 	return wrap.GetDeployment().Clone(), nil
 }

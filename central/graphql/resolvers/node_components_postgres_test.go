@@ -1,5 +1,4 @@
 //go:build sql_integration
-// +build sql_integration
 
 package resolvers
 
@@ -9,13 +8,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/jackc/pgx/v4/pgxpool"
-	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
-	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	nodePostgres "github.com/stackrox/rox/central/node/datastore/store/postgres"
-	nodeComponentPostgres "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
-	nodeComponentCVEEdgePostgres "github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -25,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/gorm"
 )
 
 func TestGraphQLNodeComponentEndpoints(t *testing.T) {
@@ -36,8 +28,7 @@ type GraphQLNodeComponentTestSuite struct {
 	suite.Suite
 
 	ctx      context.Context
-	db       *pgxpool.Pool
-	gormDB   *gorm.DB
+	testDB   *pgtest.TestPostgres
 	resolver *Resolver
 }
 
@@ -51,15 +42,15 @@ func (s *GraphQLNodeComponentTestSuite) SetupSuite() {
 
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
-	s.db, s.gormDB = SetupTestPostgresConn(s.T())
+	s.testDB = SetupTestPostgresConn(s.T())
 
-	nodeDS := CreateTestNodeDatastore(s.T(), s.db, s.gormDB, mockCtrl)
+	nodeDS := CreateTestNodeDatastore(s.T(), s.testDB, mockCtrl)
 	resolver, _ := SetupTestResolver(s.T(),
-		CreateTestNodeCVEDatastore(s.T(), s.db, s.gormDB),
-		CreateTestNodeComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
+		CreateTestNodeCVEDatastore(s.T(), s.testDB),
+		CreateTestNodeComponentDatastore(s.T(), s.testDB, mockCtrl),
 		nodeDS,
-		CreateTestNodeComponentCveEdgeDatastore(s.T(), s.db, s.gormDB),
-		CreateTestClusterDatastore(s.T(), s.db, s.gormDB, mockCtrl, nil, nil, nodeDS),
+		CreateTestNodeComponentCveEdgeDatastore(s.T(), s.testDB),
+		CreateTestClusterDatastore(s.T(), s.testDB, mockCtrl, nil, nil, nodeDS),
 	)
 	s.resolver = resolver
 
@@ -76,13 +67,7 @@ func (s *GraphQLNodeComponentTestSuite) SetupSuite() {
 }
 
 func (s *GraphQLNodeComponentTestSuite) TearDownSuite() {
-	nodePostgres.Destroy(s.ctx, s.db)
-	nodeComponentPostgres.Destroy(s.ctx, s.db)
-	nodeCVEPostgres.Destroy(s.ctx, s.db)
-	nodeComponentCVEEdgePostgres.Destroy(s.ctx, s.db)
-	clusterPostgres.Destroy(s.ctx, s.db)
-	pgtest.CloseGormDB(s.T(), s.gormDB)
-	s.db.Close()
+	s.testDB.Teardown(s.T())
 }
 
 // permission checks

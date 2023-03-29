@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, CSSProperties } from 'react';
 import {
     Alert,
     AlertVariant,
@@ -30,33 +30,50 @@ import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 import { DeploymentIcon } from '../common/NetworkGraphIcons';
 import DeploymentDetails from './DeploymentDetails';
 import DeploymentFlows from './DeploymentFlows';
-import DeploymentBaselines from './DeploymentBaselines';
+import DeploymentBaselines from './DeploymentBaseline';
 import NetworkPolicies from '../common/NetworkPolicies';
 import useSimulation from '../hooks/useSimulation';
-import DeploymentBaselinesSimulated from './DeploymentBaselinesSimulated';
 import { EdgeState } from '../components/EdgeStateSelect';
+import { deploymentTabs } from '../utils/deploymentUtils';
+
+const sidebarHeadingStyleConstant = {
+    '--pf-u-max-width--MaxWidth': '26ch',
+} as CSSProperties;
 
 type DeploymentSideBarProps = {
     deploymentId: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
     edgeState: EdgeState;
+    onNodeSelect: (id: string) => void;
+    defaultDeploymentTab: string;
 };
 
-function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: DeploymentSideBarProps) {
+function DeploymentSideBar({
+    deploymentId,
+    nodes,
+    edges,
+    edgeState,
+    onNodeSelect,
+    defaultDeploymentTab,
+}: DeploymentSideBarProps) {
     // component state
     const { deployment, isLoading, error } = useFetchDeployment(deploymentId);
     const { activeKeyTab, onSelectTab, setActiveKeyTab } = useTabs({
-        defaultTab: 'Details',
+        defaultTab: defaultDeploymentTab,
     });
     const { simulation } = useSimulation();
     const isBaselineSimulationOn = simulation.isOn && simulation.type === 'baseline';
 
     useEffect(() => {
         if (isBaselineSimulationOn) {
-            setActiveKeyTab('Baselines');
+            setActiveKeyTab(deploymentTabs.BASELINE);
         }
     }, [isBaselineSimulationOn, setActiveKeyTab]);
+
+    useEffect(() => {
+        setActiveKeyTab(defaultDeploymentTab);
+    }, [defaultDeploymentTab, setActiveKeyTab]);
 
     // derived values
     const deploymentNode = getNodeById(nodes, deploymentId);
@@ -65,6 +82,14 @@ function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: Deployment
     const listenPorts = getListenPorts(nodes, deploymentId);
     const deploymentPolicyIds =
         deploymentNode?.data.type === 'DEPLOYMENT' ? deploymentNode?.data?.policyIds : [];
+    const networkPolicyState =
+        deploymentNode?.data.type === 'DEPLOYMENT'
+            ? deploymentNode.data.networkPolicyState
+            : 'none';
+
+    const onDeploymentTabsSelect = (tab: string) => {
+        setActiveKeyTab(tab);
+    };
 
     if (isLoading) {
         return (
@@ -76,7 +101,22 @@ function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: Deployment
 
     if (error) {
         return (
-            <Alert isInline variant={AlertVariant.danger} title={error} className="pf-u-mb-lg" />
+            <Stack>
+                <StackItem>
+                    <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
+                        <FlexItem>
+                            <DeploymentIcon />
+                        </FlexItem>
+                    </Flex>
+                </StackItem>
+                <StackItem>
+                    <Alert
+                        variant={AlertVariant.danger}
+                        title={error.toString()}
+                        className="pf-u-my-lg pf-u-mx-lg"
+                    />
+                </StackItem>
+            </Stack>
         );
     }
 
@@ -89,7 +129,11 @@ function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: Deployment
                     </FlexItem>
                     <FlexItem>
                         <TextContent>
-                            <Text component={TextVariants.h1} className="pf-u-font-size-xl">
+                            <Text
+                                component={TextVariants.h1}
+                                className="pf-u-font-size-xl pf-u-max-width"
+                                style={sidebarHeadingStyleConstant}
+                            >
                                 {deployment?.name}
                             </Text>
                         </TextContent>
@@ -104,45 +148,42 @@ function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: Deployment
                     </FlexItem>
                 </Flex>
             </StackItem>
-            {isBaselineSimulationOn && (
-                <StackItem isFilled style={{ overflow: 'auto' }} className="pf-u-h-100">
-                    <DeploymentBaselinesSimulated deploymentId={deploymentId} />
-                </StackItem>
-            )}
-            {!isBaselineSimulationOn && (
+            {deployment && (
                 <>
                     <StackItem>
                         <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
                             <Tab
-                                eventKey="Details"
-                                tabContentId="Details"
-                                title={<TabTitleText>Details</TabTitleText>}
+                                eventKey={deploymentTabs.DETAILS}
+                                tabContentId={deploymentTabs.DETAILS}
+                                title={<TabTitleText>{deploymentTabs.DETAILS}</TabTitleText>}
                                 disabled={isBaselineSimulationOn}
                             />
                             <Tab
-                                eventKey="Flows"
-                                tabContentId="Flows"
-                                title={<TabTitleText>Flows</TabTitleText>}
+                                eventKey={deploymentTabs.FLOWS}
+                                tabContentId={deploymentTabs.FLOWS}
+                                title={<TabTitleText>{deploymentTabs.FLOWS}</TabTitleText>}
                                 disabled={isBaselineSimulationOn}
                             />
                             <Tab
-                                eventKey="Baselines"
-                                tabContentId="Baselines"
-                                title={<TabTitleText>Baselines</TabTitleText>}
+                                eventKey={deploymentTabs.BASELINE}
+                                tabContentId={deploymentTabs.BASELINE}
+                                title={<TabTitleText>{deploymentTabs.BASELINE}</TabTitleText>}
                             />
                             <Tab
-                                eventKey="Network policies"
-                                tabContentId="Network policies"
-                                title={<TabTitleText>Network policies</TabTitleText>}
+                                eventKey={deploymentTabs.NETWORK_POLICIES}
+                                tabContentId={deploymentTabs.NETWORK_POLICIES}
+                                title={
+                                    <TabTitleText>{deploymentTabs.NETWORK_POLICIES}</TabTitleText>
+                                }
                                 disabled={isBaselineSimulationOn}
                             />
                         </Tabs>
                     </StackItem>
                     <StackItem isFilled style={{ overflow: 'auto' }}>
                         <TabContent
-                            eventKey="Details"
-                            id="Details"
-                            hidden={activeKeyTab !== 'Details'}
+                            eventKey={deploymentTabs.DETAILS}
+                            id={deploymentTabs.DETAILS}
+                            hidden={activeKeyTab !== deploymentTabs.DETAILS}
                         >
                             {deployment && (
                                 <DeploymentDetails
@@ -150,31 +191,49 @@ function DeploymentSideBar({ deploymentId, nodes, edges, edgeState }: Deployment
                                     numExternalFlows={numExternalFlows}
                                     numInternalFlows={numInternalFlows}
                                     listenPorts={listenPorts}
+                                    networkPolicyState={networkPolicyState}
+                                    onDeploymentTabsSelect={onDeploymentTabsSelect}
                                 />
                             )}
                         </TabContent>
-                        <TabContent eventKey="Flows" id="Flows" hidden={activeKeyTab !== 'Flows'}>
-                            <DeploymentFlows
-                                nodes={nodes}
-                                edges={edges}
-                                deploymentId={deploymentId}
-                                edgeState={edgeState}
-                            />
+                        <TabContent
+                            eventKey={deploymentTabs.FLOWS}
+                            id={deploymentTabs.FLOWS}
+                            hidden={activeKeyTab !== deploymentTabs.FLOWS}
+                        >
+                            {activeKeyTab === deploymentTabs.FLOWS && (
+                                <DeploymentFlows
+                                    nodes={nodes}
+                                    edges={edges}
+                                    deploymentId={deploymentId}
+                                    edgeState={edgeState}
+                                    onNodeSelect={onNodeSelect}
+                                />
+                            )}
                         </TabContent>
                         <TabContent
-                            eventKey="Baselines"
-                            id="Baselines"
-                            hidden={activeKeyTab !== 'Baselines'}
+                            eventKey={deploymentTabs.BASELINE}
+                            id={deploymentTabs.BASELINE}
+                            hidden={activeKeyTab !== deploymentTabs.BASELINE}
                             className="pf-u-h-100"
                         >
-                            <DeploymentBaselines deploymentId={deploymentId} />
+                            {activeKeyTab === deploymentTabs.BASELINE && (
+                                <DeploymentBaselines
+                                    deployment={deployment}
+                                    deploymentId={deploymentId}
+                                    onNodeSelect={onNodeSelect}
+                                />
+                            )}
                         </TabContent>
                         <TabContent
-                            eventKey="Network policies"
-                            id="Network policies"
-                            hidden={activeKeyTab !== 'Network policies'}
+                            eventKey={deploymentTabs.NETWORK_POLICIES}
+                            id={deploymentTabs.NETWORK_POLICIES}
+                            hidden={activeKeyTab !== deploymentTabs.NETWORK_POLICIES}
                         >
-                            <NetworkPolicies policyIds={deploymentPolicyIds} />
+                            <NetworkPolicies
+                                entityName={deployment.name}
+                                policyIds={deploymentPolicyIds}
+                            />
                         </TabContent>
                     </StackItem>
                 </>

@@ -7,6 +7,7 @@ import (
 )
 
 // UndoDeploymentStore provides storage functionality for network baselines.
+//
 //go:generate mockgen-wrapper
 type UndoDeploymentStore interface {
 	Get(ctx context.Context, deploymentID string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error)

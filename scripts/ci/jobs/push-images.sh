@@ -22,10 +22,6 @@ push_images() {
     local tag
     tag="$(make --quiet tag)"
 
-    if [[ "$brand" == "STACKROX_BRANDING" ]] && [[ -n "${MAIN_IMAGE}" ]]; then
-        slack_build_notice "$tag"
-    fi
-
     if is_release_version "$tag"; then
         check_scanner_and_collector_versions
     else
@@ -72,52 +68,6 @@ push_images() {
             push_mock_grpc_server_image
         fi
     fi
-}
-
-# TODO: this notification does not seem to belong to pushing images, move it to shared lib.sh and find a better place to call it
-slack_build_notice() {
-    info "Slack a build notice"
-
-    if [[ "$#" -lt 1 ]]; then
-        die "missing arg. usage: slack_build_notice <tag>"
-    fi
-
-    local tag="$1"
-
-    [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || is_nightly_run || {
-        info "Skipping step as this is not a release, RC or nightly build"
-        return 0
-    }
-
-    local build_url
-    local webhook_url
-    if [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]]; then
-        local release
-        release="$(get_release_stream "$tag")"
-        build_url="https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*release-$release*"
-        if is_release_test_stream "$tag"; then
-            # send to #slack-test when testing the release process
-            webhook_url="${SLACK_MAIN_WEBHOOK}"
-        else
-            # send to #eng-release
-            webhook_url="${RELEASE_WORKFLOW_NOTIFY_WEBHOOK}"
-        fi
-    elif is_nightly_run; then
-        build_url="https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*stackrox*night*"
-        # send to #nightly-ci-runs
-        webhook_url="${NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK}"
-    else
-        die "unexpected"
-    fi
-
-    local github_url="https://github.com/stackrox/stackrox/releases/tag/$tag"
-
-    jq -n \
-    --arg build_url "$build_url" \
-    --arg tag "$tag" \
-    --arg github_url "$github_url" \
-    '{"text": ":prow: Prow build for tag <\($github_url)|\($tag)> started! Check the status of the build under the following URL: \($build_url)"}' \
-| curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 
 push_images "$@"

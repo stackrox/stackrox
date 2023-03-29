@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/heimdalr/dag"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/index"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store"
@@ -26,6 +28,7 @@ import (
 
 const (
 	graphInitBatchSize = 200
+	resourceType       = "Collection"
 )
 
 var (
@@ -224,23 +227,28 @@ func (ds *datastoreImpl) deleteCollectionFromGraphNoLock(id string) error {
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "Search")
 	return ds.searcher.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "Count")
 	return ds.searcher.Count(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchCollections(ctx context.Context, q *v1.Query) ([]*storage.ResourceCollection, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "SearchCollections")
 	return ds.searcher.SearchCollections(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "SearchResults")
 	return ds.searcher.SearchResults(ctx, q)
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ResourceCollection, bool, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "Get")
 	collection, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
@@ -250,6 +258,7 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ResourceC
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "Exists")
 	found, err := ds.storage.Exists(ctx, id)
 	if err != nil || !found {
 		return false, err
@@ -258,6 +267,7 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 func (ds *datastoreImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ResourceCollection, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "GetMany")
 	collections, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
@@ -314,10 +324,12 @@ func (ds *datastoreImpl) addCollectionWorkflow(ctx context.Context, collection *
 }
 
 func (ds *datastoreImpl) AddCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "AddCollection")
 	return ds.addCollectionWorkflow(ctx, collection, false)
 }
 
 func (ds *datastoreImpl) DryRunAddCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "DryRunAddCollection")
 	return ds.addCollectionWorkflow(ctx, collection, true)
 }
 
@@ -383,14 +395,17 @@ func (ds *datastoreImpl) updateCollectionWorkflow(ctx context.Context, collectio
 }
 
 func (ds *datastoreImpl) UpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "UpdateCollection")
 	return ds.updateCollectionWorkflow(ctx, collection, false)
 }
 
 func (ds *datastoreImpl) DryRunUpdateCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "DryRunUpdateCollection")
 	return ds.updateCollectionWorkflow(ctx, collection, true)
 }
 
 func (ds *datastoreImpl) DeleteCollection(ctx context.Context, id string) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "DeleteCollection")
 
 	// check for access so we can fast fail before locking
 	if ok, err := workflowSAC.WriteAllowed(ctx); err != nil || !ok {
@@ -433,6 +448,7 @@ func verifyCollectionObjectNotEmpty(obj *storage.ResourceCollection) error {
 }
 
 func (ds *datastoreImpl) ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "ResolveCollectionQuery")
 	var collectionQueue []*storage.ResourceCollection
 	var visitedCollection set.Set[string]
 	var disjunctions []*v1.Query
@@ -593,7 +609,7 @@ func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 				if ruleValue.GetMatchType() == storage.MatchType_REGEX {
 					_, err := regexp.Compile(ruleValue.GetValue())
 					if err != nil {
-						return errors.Wrap(errors.Wrap(err, errox.InvalidArgs.Error()), "failed to compile rule value regex")
+						return errors.Wrapf(err, "failed to compile regex on %q rule", selectorRule.GetFieldName())
 					}
 				}
 

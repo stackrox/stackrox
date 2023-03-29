@@ -89,6 +89,14 @@ spec:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
           env:
+          - name: GOMEMLIMIT
+            valueFrom:
+              resourceFieldRef:
+                resource: limits.memory
+          - name: GOMAXPROCS
+            valueFrom:
+              resourceFieldRef:
+                resource: limits.cpu
           - name: ROX_SENSOR_ENDPOINT
             value: {{ ._rox.sensor.endpoint }}
           {{- include "srox.envVars" (list . "deployment" "admission-controller" "admission-controller") | nindent 10 }}

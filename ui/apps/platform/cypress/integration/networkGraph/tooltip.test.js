@@ -4,7 +4,7 @@ import withAuth from '../../helpers/basicAuth';
 import {
     clickOnNodeByName,
     mouseOverNodeByName,
-    visitNetworkGraphWithMockedData,
+    visitOldNetworkGraphWithMockedData,
 } from '../../helpers/networkGraph';
 import selectors from '../../selectors/index';
 
@@ -30,7 +30,7 @@ describe.skip('Network Graph tooltip', () => {
             cy.intercept('GET', api.network.deployment, {
                 fixture: 'network/sensorDeployment.json',
             }).as('sensorDeployment');
-            visitNetworkGraphWithMockedData();
+            visitOldNetworkGraphWithMockedData();
 
             const name = 'sensor';
 
@@ -68,7 +68,7 @@ describe.skip('Network Graph tooltip', () => {
             cy.intercept('GET', api.network.deployment, {
                 fixture: 'network/centralDeployment.json',
             }).as('centralDeployment');
-            visitNetworkGraphWithMockedData();
+            visitOldNetworkGraphWithMockedData();
 
             const name = 'central';
 
@@ -106,7 +106,7 @@ describe.skip('Network Graph tooltip', () => {
             cy.intercept('GET', api.network.deployment, {
                 fixture: 'network/scannerDbDeployment.json',
             }).as('scannerDbDeployment');
-            visitNetworkGraphWithMockedData();
+            visitOldNetworkGraphWithMockedData();
 
             const name = 'scanner-db';
 
@@ -146,7 +146,7 @@ describe.skip('Network Graph tooltip', () => {
             cy.intercept('GET', api.network.deployment, {
                 fixture: 'network/collectorDeployment.json',
             }).as('collectorDeployment');
-            visitNetworkGraphWithMockedData();
+            visitOldNetworkGraphWithMockedData();
 
             const name = 'collector';
 

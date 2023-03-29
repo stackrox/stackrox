@@ -11,3 +11,6 @@ FATAL:  terminating autovacuum process due to administrator command
 Error: Fetching signature for image .* unexpected status code 500
 # postgres trying to send data on a connection closed by the client (ROX-13258)
 FATAL:  connection to client lost
+# with operator installs, sensor logs contain this error w.r.t. refreshing a cert for local scanning.
+# TODO: check if this is benign and/or if sensor is configured appropriately for test.
+unexpected owner for certificate secrets

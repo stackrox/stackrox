@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search"
@@ -24,6 +25,7 @@ type context struct {
 	ignorePK           bool
 	ignoreUnique       bool
 	ignoreFKs          bool
+	ignoreIndex        bool
 	ignoreSearchLabels set.StringSet
 }
 
@@ -50,6 +52,7 @@ func (c context) childContext(name string, searchDisabled bool, opts PostgresOpt
 		ignorePK:           c.ignorePK || opts.IgnorePrimaryKey,
 		ignoreUnique:       c.ignoreUnique || opts.IgnoreUniqueConstraint,
 		ignoreFKs:          c.ignoreFKs || opts.IgnoreChildFKs,
+		ignoreIndex:        c.ignoreIndex || opts.IgnoreChildIndexes,
 		ignoreSearchLabels: c.ignoreSearchLabels.Union(opts.IgnoreSearchLabels),
 	}
 }
@@ -152,7 +155,7 @@ func Walk(obj reflect.Type, table string) *Schema {
 
 const defaultIndex = "btree"
 
-func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignoreFKs bool) PostgresOptions {
+func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignoreFKs, ignoreIndex bool) PostgresOptions {
 	var opts PostgresOptions
 
 	for _, field := range strings.Split(tag, ",") {
@@ -160,6 +163,9 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 		case field == "-":
 			opts.Ignored = true
 		case strings.HasPrefix(field, "index"):
+			if ignoreIndex {
+				continue
+			}
 			if strings.Contains(field, "=") {
 				opts.Index = stringutils.GetAfter(field, "=")
 			} else {
@@ -231,6 +237,8 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 			opts.Reference.Directional = true
 		case field == "ignore-fks":
 			opts.IgnoreChildFKs = true
+		case field == "ignore-index":
+			opts.IgnoreChildIndexes = true
 		case strings.HasPrefix(field, "type"):
 			typeName := field[strings.Index(field, "(")+1 : strings.Index(field, ")")]
 			opts.ColumnType = typeName
@@ -284,10 +292,10 @@ func getSearchOptions(ctx context, searchTag string) (SearchField, []DerivedSear
 	}, derivedSearchFields
 }
 
-var simpleFieldsMap = map[reflect.Kind]DataType{
-	reflect.Map:    Map,
-	reflect.String: String,
-	reflect.Bool:   Bool,
+var simpleFieldsMap = map[reflect.Kind]postgres.DataType{
+	reflect.Map:    postgres.Map,
+	reflect.String: postgres.String,
+	reflect.Bool:   postgres.Bool,
 }
 
 func tableName(parent, child string) string {
@@ -313,8 +321,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		if strings.HasPrefix(structField.Name, "XXX") {
 			continue
 		}
-		opts := getPostgresOptions(structField.Tag.Get("sql"), schema.Parent == nil, ctx.ignorePK, ctx.ignoreUnique, ctx.ignoreFKs)
-
+		opts := getPostgresOptions(structField.Tag.Get("sql"), schema.Parent == nil, ctx.ignorePK, ctx.ignoreUnique, ctx.ignoreFKs, ctx.ignoreIndex)
 		if opts.Ignored {
 			continue
 		}
@@ -345,26 +352,25 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		switch structField.Type.Kind() {
 		case reflect.Ptr:
 			if structField.Type == timestampType {
-				schema.AddFieldWithType(field, DateTime, opts)
+				schema.AddFieldWithType(field, postgres.DateTime, opts)
 				continue
 			}
-
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts), schema, structField.Type.Elem())
 		case reflect.Slice:
 			elemType := structField.Type.Elem()
 
 			switch elemType.Kind() {
 			case reflect.String:
-				schema.AddFieldWithType(field, StringArray, opts)
+				schema.AddFieldWithType(field, postgres.StringArray, opts)
 				continue
 			case reflect.Uint8:
-				schema.AddFieldWithType(field, Bytes, opts)
+				schema.AddFieldWithType(field, postgres.Bytes, opts)
 				continue
 			case reflect.Int32:
 				if typeIsEnum(elemType) {
-					schema.AddFieldWithType(field, EnumArray, opts)
+					schema.AddFieldWithType(field, postgres.EnumArray, opts)
 				} else {
-					schema.AddFieldWithType(field, IntArray, opts)
+					schema.AddFieldWithType(field, postgres.IntArray, opts)
 				}
 				continue
 			}
@@ -380,25 +386,34 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			// Take all the primary keys of the parent and copy them into the child schema
 			// with references to the parent so we that we can create
 			schema.Children = append(schema.Children, childSchema)
-			handleStruct(context{searchDisabled: ctx.searchDisabled || searchOpts.Ignored, ignorePK: opts.IgnorePrimaryKey, ignoreUnique: opts.IgnoreUniqueConstraint, ignoreFKs: opts.IgnoreChildFKs}, childSchema, structField.Type.Elem().Elem())
+			handleStruct(
+				context{
+					searchDisabled: ctx.searchDisabled || searchOpts.Ignored,
+					ignorePK:       opts.IgnorePrimaryKey,
+					ignoreUnique:   opts.IgnoreUniqueConstraint,
+					ignoreFKs:      opts.IgnoreChildFKs,
+					ignoreIndex:    opts.IgnoreChildIndexes,
+				},
+				childSchema,
+				structField.Type.Elem().Elem())
 		case reflect.Struct:
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts), schema, structField.Type)
 		case reflect.Uint8:
-			schema.AddFieldWithType(field, Bytes, opts)
+			schema.AddFieldWithType(field, postgres.Bytes, opts)
 		case reflect.Int32:
 			if typeIsEnum(structField.Type) {
-				schema.AddFieldWithType(field, Enum, opts)
+				schema.AddFieldWithType(field, postgres.Enum, opts)
 			} else {
-				schema.AddFieldWithType(field, Integer, opts)
+				schema.AddFieldWithType(field, postgres.Integer, opts)
 			}
 		case reflect.Uint32, reflect.Uint64, reflect.Int64:
 			// For Uint64, there may be a need to convert to/from int64 because a
 			// BigInteger may not hold a Uint64.  We could switch this type to a numeric but that comes at a
 			// high performance cost.  As of 3.73 we are not using Uint64 except in test something to be mindful of
 			// if we begin to use this type in the future.
-			schema.AddFieldWithType(field, BigInteger, opts)
+			schema.AddFieldWithType(field, postgres.BigInteger, opts)
 		case reflect.Float32, reflect.Float64:
-			schema.AddFieldWithType(field, Numeric, opts)
+			schema.AddFieldWithType(field, postgres.Numeric, opts)
 		case reflect.Interface:
 			// If it is a oneof then call XXX_OneofWrappers to get the types.
 			// The return values is a slice of interfaces that are nil type pointers

@@ -4,6 +4,12 @@ ROX_PROJECT=apollo
 TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 
+ifeq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
+# Podman DTRT by running processes unprivileged in containers,
+# but it's UID mapping is more nuanced. Only set user for vanilla docker.
+DOCKER_USER=--user "$(shell id -u)"
+endif
+
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
@@ -13,11 +19,7 @@ SILENT ?= @
 UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests"
 
 ifeq ($(TAG),)
-ifeq (,$(wildcard CI_TAG))
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
-else
-TAG=$(shell cat CI_TAG)
-endif
 endif
 
 # Set expiration on Quay.io for non-release tags.
@@ -66,7 +68,7 @@ ifeq ($(UNAME_S),Darwin)
 ifeq ($(UNAME_M),arm64)
 	# TODO(ROX-12064) build these images in the CI pipeline
 	# Currently built on a GCP ARM instance off the rox-ci-image branch "cgorman-custom-arm"
-	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.49-arm64
+	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.56-arm64
 endif
 endif
 
@@ -96,7 +98,7 @@ GOPATH_VOLUME_SRC := $(GOPATH_VOLUME_NAME)
 endif
 
 LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v $(GOCACHE_VOLUME_SRC):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated
-GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go -e GOCACHE=/linux-gocache
+GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go -e GOCACHE=/linux-gocache -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0='/src'
 
 null :=
 space := $(null) $(null)
@@ -127,7 +129,7 @@ $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tool
 style: golangci-lint roxvet blanks newlines check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style shell-style
 
 .PHONY: golangci-lint
-golangci-lint: $(GOLANGCILINT_BIN)
+golangci-lint: $(GOLANGCILINT_BIN) deps
 ifdef CI
 	@echo '+ $@'
 	@echo 'The environment indicates we are in CI; running linters in check mode.'
@@ -164,12 +166,6 @@ update-shellcheck-skip:
 	$(SILENT)rm -f scripts/style/shellcheck_skip.txt
 	$(SILENT)$(BASE_DIR)/scripts/style/shellcheck.sh update_failing_list
 
-.PHONY: ci-config-validate
-ci-config-validate:
-	@echo "+ $@"
-	$(SILENT)circleci diagnostic > /dev/null 2>&1 || (echo "Must first set CIRCLECI_CLI_TOKEN or run circleci setup"; exit 1)
-	circleci config validate --org-slug gh/stackrox
-
 .PHONY: fast-central-build
 fast-central-build: central-build-nodeps
 
@@ -181,7 +177,7 @@ central-build-nodeps:
 .PHONY: fast-central
 fast-central: deps
 	@echo "+ $@"
-	docker run --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-central-build
+	docker run $(DOCKER_USER) --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-central-build
 	$(SILENT)$(BASE_DIR)/scripts/k8s/kill-pod.sh central
 
 # fast is a dev mode options when using local dev
@@ -199,7 +195,7 @@ fast-sensor-kubernetes: sensor-kubernetes-build-dockerized
 .PHONY: fast-migrator
 fast-migrator:
 	@echo "+ $@"
-	docker run --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-migrator-build
+	docker run $(DOCKER_USER) --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-migrator-build
 
 .PHONY: fast-migrator-build
 fast-migrator-build: migrator-build-nodeps
@@ -281,7 +277,7 @@ pkg/complianceoperator/api/v1alpha1/zz_generated.deepcopy.go: $(CONTROLLER_GEN_B
 .PHONY: go-generated-srcs
 go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) pkg/complianceoperator/api/v1alpha1/zz_generated.deepcopy.go
 	@echo "+ $@"
-	PATH="$(PATH):$(BASE_DIR)/tools/generate-helpers" MOCKGEN_BIN="$(MOCKGEN_BIN)" go generate -v -x ./...
+	PATH="$(GOTOOLS_BIN):$(PATH):$(BASE_DIR)/tools/generate-helpers" MOCKGEN_BIN="$(MOCKGEN_BIN)" go generate -v -x ./...
 
 proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS)
 	@echo "+ $@"
@@ -367,8 +363,13 @@ bin/$(HOST_OS)_$(GOARCH)/admission-control: build-prep
 
 .PHONY: build-volumes
 build-volumes:
+	$(SILENT)mkdir -p $(CURDIR)/linux-gocache
 	$(SILENT)docker volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOPATH_VOLUME_NAME)
 	$(SILENT)docker volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOCACHE_VOLUME_NAME)
+ifneq ($(DOCKER_USER),)
+	@echo "Restoring user's ownership of linux-gocache and go directories after previous runs which could set it to root..."
+	$(SILENT)docker run --rm $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) chown -R "$(shell id -u)" /linux-gocache /go
+endif
 
 .PHONY: main-builder-image
 main-builder-image: build-volumes
@@ -384,12 +385,12 @@ main-build: build-prep main-build-dockerized
 .PHONY: sensor-build-dockerized
 sensor-build-dockerized: main-builder-image
 	@echo "+ $@"
-	docker run --rm -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
+	docker run $(DOCKER_USER) --rm -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
 
 .PHONY: sensor-kubernetes-build-dockerized
 sensor-kubernetes-build-dockerized: main-builder-image
 	@echo "+ $@"
-	docker run -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
+	docker run $(DOCKER_USER) -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
 
 .PHONY: sensor-build
 sensor-build:
@@ -403,14 +404,7 @@ sensor-kubernetes-build:
 .PHONY: main-build-dockerized
 main-build-dockerized: main-builder-image
 	@echo "+ $@"
-ifeq ($(CIRCLE_JOB),build-race-condition-debug-image)
-	docker container create -e RACE -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD --name builder $(BUILD_IMAGE) make main-build-nodeps
-	docker cp $(GOPATH) builder:/
-	docker start -i builder
-	docker cp builder:/go/src/github.com/stackrox/rox/bin/linux bin/
-else
-	docker run -i -e RACE -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
-endif
+	docker run $(DOCKER_USER) -i -e RACE -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
 .PHONY: main-build-nodeps
 main-build-nodeps: central-build-nodeps migrator-build-nodeps
@@ -481,7 +475,7 @@ go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' '*clone_test.go' 'migrator/migrations/n_*/migration_test.go' '*pruning_test.go' '*reprocessor_test.go' '*enricher_impl_test.go' '*v2/parts_test.go' '*version/ensure_test.go' '*version/store/store_impl_test.go' '*activecomponent/updater/updater_impl_test.go' '*role/validate_test.go' '*search/service/service_impl_test.go' '*deployment/service/service_impl_test.go' '*metadata/service/service_impl_test.go' '*systeminfo/listener/listener_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' '*clone_test.go' 'migrator/migrations/n_*/migration_test.go' 'migrator/migrations/m_16?_*/migration_test.go' 'migrator/migrations/m_17?_*/migration_test.go' '*pruning_test.go' '*reprocessor_test.go' '*enricher_impl_test.go' '*v2/parts_test.go' '*version/ensure_test.go' '*version/store/store_impl_test.go' '*activecomponent/updater/updater_impl_test.go' '*role/service/service_impl_test.go' '*role/validate_test.go' '*search/service/service_impl_test.go' '*deployment/service/service_impl_test.go' '*metadata/service/service_impl_test.go' '*systeminfo/listener/listener_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: shell-unit-tests
@@ -683,15 +677,7 @@ clean-image:
 
 .PHONY: tag
 tag:
-ifneq (,$(wildcard CI_TAG))
-	@cat CI_TAG
-else
-ifdef COMMIT
-	@git describe $(COMMIT) --tags --abbrev=10 --long --exclude '*-nightly-*'
-else
 	@echo $(TAG)
-endif
-endif
 
 .PHONY: shortcommit
 shortcommit:
@@ -770,7 +756,7 @@ ui-publish-packages:
 
 .PHONY: check-debugger
 check-debugger:
-	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" CIRCLE_TAG="$(CIRCLE_TAG)" TAG="$(TAG)" ./scripts/check-debugger.sh
+	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" BUILD_TAG="$(BUILD_TAG)" TAG="$(TAG)" ./scripts/check-debugger.sh
 ifeq ($(DEBUG_BUILD),yes)
 	$(warning Warning: DEBUG_BUILD is enabled. Don not use this for production builds)
 endif

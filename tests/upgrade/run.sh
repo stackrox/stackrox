@@ -50,7 +50,7 @@ test_upgrade() {
 
     info "Deploying central"
     "$TEST_ROOT/$DEPLOY_DIR/central.sh"
-    get_central_basic_auth_creds
+    export_central_basic_auth_creds
     wait_for_api
     setup_client_TLS_certs
 
@@ -58,6 +58,8 @@ test_upgrade() {
     "$TEST_ROOT/$DEPLOY_DIR/sensor.sh"
     validate_sensor_bundle_via_upgrader "$TEST_ROOT/$DEPLOY_DIR"
     sensor_wait
+
+    wait_for_collectors_to_be_operational
 
     touch "${STATE_DEPLOYED}"
 
@@ -205,7 +207,8 @@ test_upgrade_paths() {
     kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$(make --quiet tag)"
     kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$(make --quiet tag)"
     kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(cat COLLECTOR_VERSION)" \
-        "compliance=$REGISTRY/main:$(make --quiet tag)"
+        "compliance=$REGISTRY/main:$(make --quiet tag)" \
+        "node-inventory=$REGISTRY/scanner-slim:$(cat SCANNER_VERSION)"
 
     sensor_wait
 

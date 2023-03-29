@@ -569,10 +569,10 @@ func (resolver *nodeResolver) nodeScopeContext(ctx context.Context) context.Cont
 
 //// Node scan-related fields pulled as direct sub-resolvers of node.
 
-func (resolver *nodeResolver) ScanNotes(ctx context.Context) []string {
+func (resolver *nodeResolver) ScanNotes(_ context.Context) []string {
 	return stringSlice(resolver.data.GetScan().GetNotes())
 }
 
-func (resolver *nodeResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
+func (resolver *nodeResolver) ScanTime(_ context.Context) (*graphql.Time, error) {
 	return timestamp(resolver.data.GetScan().GetScanTime())
 }

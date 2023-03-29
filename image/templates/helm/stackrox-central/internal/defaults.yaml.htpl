@@ -39,14 +39,12 @@ defaults:
       route:
         enabled: false
     db:
-      enabled: false
-
       external: false
 
       source:
         minConns: 10
         maxConns: 90
-        statementTimeoutMs: 60000
+        statementTimeoutMs: 1200000
 
       postgresConfig: "@config/centraldb/postgresql.conf|config/centraldb/postgresql.conf.default"
       hbaConfig: "@config/centraldb/pg_hba.conf|config/centraldb/pg_hba.conf.default"
@@ -57,11 +55,11 @@ defaults:
 
       resources:
         requests:
-          memory: "4Gi"
-          cpu: "2"
-        limits:
           memory: "8Gi"
           cpu: "4"
+        limits:
+          memory: "16Gi"
+          cpu: "8"
   scanner:
     disable: false
     replicas: 3

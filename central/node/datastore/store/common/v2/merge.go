@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 // Merge merges the node parts into a node.
@@ -23,7 +23,7 @@ func mergeComponents(parts *NodeParts, node *storage.Node) {
 
 	// Use the edges to combine into the parent node.
 	for _, cp := range parts.Children {
-		parts := postgres.IDToParts(cp.Edge.GetId())
+		parts := pgSearch.IDToParts(cp.Edge.GetId())
 		if len(parts) == 0 {
 			log.Error("node to component edge does not have primary keys")
 			continue

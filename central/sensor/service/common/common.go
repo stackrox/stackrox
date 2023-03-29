@@ -36,6 +36,8 @@ func GetMessageType(msg *central.MsgFromSensor) string {
 		return "ClusterMetrics"
 	case *central.MsgFromSensor_AuditLogStatusInfo:
 		return "AuditLogStatusInfo"
+	case *central.MsgFromSensor_ProcessListeningOnPortUpdate:
+		return "ProcessListeningOnPortUpdate"
 	default:
 		utils.Should(errors.Errorf("Unknown message type: %T", t))
 		return "Unknown"

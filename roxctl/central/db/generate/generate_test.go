@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -89,7 +88,6 @@ type centralDBGenerateCliTestSuite struct {
 
 func (s *centralDBGenerateCliTestSuite) SetupTest() {
 	testutils.SetMainVersion(s.T(), "3.74.0.0")
-	testbuildinfo.SetForTest(s.T())
 	s.testOutputDir = s.T().TempDir()
 }
 

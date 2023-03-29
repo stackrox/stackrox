@@ -7,12 +7,12 @@ import (
 
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/cve/cluster/datastore/store"
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/set"
@@ -25,7 +25,7 @@ const (
 )
 
 // NewFullStore augments the generated store with upsert and delete cluster cves functions.
-func NewFullStore(db *pgxpool.Pool) store.Store {
+func NewFullStore(db *postgres.DB) store.Store {
 	return &fullStoreImpl{
 		db:    db,
 		Store: New(db),
@@ -33,7 +33,7 @@ func NewFullStore(db *pgxpool.Pool) store.Store {
 }
 
 // NewFullTestStore is used for testing.
-func NewFullTestStore(_ testing.TB, db *pgxpool.Pool, store Store) store.Store {
+func NewFullTestStore(_ testing.TB, db *postgres.DB, store Store) store.Store {
 	return &fullStoreImpl{
 		db:    db,
 		Store: store,
@@ -41,7 +41,7 @@ func NewFullTestStore(_ testing.TB, db *pgxpool.Pool, store Store) store.Store {
 }
 
 type fullStoreImpl struct {
-	db *pgxpool.Pool
+	db *postgres.DB
 
 	Store
 }
@@ -109,7 +109,7 @@ func (s *fullStoreImpl) ReconcileClusterCVEParts(ctx context.Context, cveType st
 	return tx.Commit(ctx)
 }
 
-func copyFromCVEs(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, objs ...*storage.ClusterCVE) error {
+func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timestamp, objs ...*storage.ClusterCVE) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -194,7 +194,7 @@ func copyFromCVEs(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, o
 	return removeOrphanedClusterCVEs(ctx, tx)
 }
 
-func copyFromClusterCVEEdges(ctx context.Context, tx pgx.Tx, cveType storage.CVE_CVEType, clusters []string, objs ...*storage.ClusterCVEEdge) error {
+func copyFromClusterCVEEdges(ctx context.Context, tx *postgres.Tx, cveType storage.CVE_CVEType, clusters []string, objs ...*storage.ClusterCVEEdge) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -257,7 +257,7 @@ func copyFromClusterCVEEdges(ctx context.Context, tx pgx.Tx, cveType storage.CVE
 	return removeOrphanedImageCVEEdges(ctx, tx, oldEdges.AsSlice())
 }
 
-func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*storage.ClusterCVE, error) {
+func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]*storage.ClusterCVE, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "CVE")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+pkgSchema.ClusterCvesTableName+" WHERE id = ANY($1::text[])", cveIDs)
@@ -278,10 +278,10 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 		}
 		idToCVEMap[msg.GetId()] = msg
 	}
-	return idToCVEMap, nil
+	return idToCVEMap, rows.Err()
 }
 
-func getClusterCVEEdgeIDs(ctx context.Context, tx pgx.Tx, cveType storage.CVE_CVEType, clusterIDs []string) (set.StringSet, error) {
+func getClusterCVEEdgeIDs(ctx context.Context, tx *postgres.Tx, cveType storage.CVE_CVEType, clusterIDs []string) (set.StringSet, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ClusterCVEEdgeIDs")
 
 	rows, err := tx.Query(ctx, "select id FROM "+clusterCVEEdgeTable+" WHERE clusterid = ANY($1::uuid[]) and cveid in (select id from "+clusterCVEsTable+" where type = $2)", clusterIDs, cveType)
@@ -298,24 +298,24 @@ func getClusterCVEEdgeIDs(ctx context.Context, tx pgx.Tx, cveType storage.CVE_CV
 		}
 		ids = append(ids, id)
 	}
-	return set.NewStringSet(ids...), nil
+	return set.NewStringSet(ids...), rows.Err()
 }
 
-func removeOrphanedImageCVEEdges(ctx context.Context, tx pgx.Tx, orphanedEdgeIDs []string) error {
+func removeOrphanedImageCVEEdges(ctx context.Context, tx *postgres.Tx, orphanedEdgeIDs []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ClusterCVEEdges")
 
 	_, err := tx.Exec(ctx, "DELETE FROM "+clusterCVEEdgeTable+" WHERE id = ANY($1::text[])", orphanedEdgeIDs)
 	return err
 }
 
-func removeOrphanedClusterCVEs(ctx context.Context, tx pgx.Tx) error {
+func removeOrphanedClusterCVEs(ctx context.Context, tx *postgres.Tx) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ClusterCVEs")
 
 	_, err := tx.Exec(ctx, "DELETE FROM "+clusterCVEsTable+" WHERE not exists (select "+clusterCVEEdgeTable+".cveid from "+clusterCVEEdgeTable+" where "+clusterCVEsTable+".id = "+clusterCVEEdgeTable+".cveid)")
 	return err
 }
 
-func (s *fullStoreImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
+func (s *fullStoreImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {

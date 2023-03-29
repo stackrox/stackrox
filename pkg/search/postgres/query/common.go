@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -18,8 +19,13 @@ var (
 type SelectQueryField struct {
 	SelectPath string // This goes into the "SELECT" portion of the SQL.
 	Alias      string // Alias for "SelectPath". Primarily used for derived fields.
-	FieldType  walker.DataType
+	FieldType  postgres.DataType
 	FieldPath  string // This is the search.Field.FieldPath for this field.
+
+	// FromGroupBy indicates that the field is present in group by clause.
+	FromGroupBy bool
+	// DerivedField indicates that the field is derived from a proto field(/table column).
+	DerivedField bool
 
 	// PostTransform is a function that will be applied to the returned rows from SQL before
 	// further processing.
@@ -109,20 +115,18 @@ func MatchFieldQuery(dbField *walker.Field, derivedMetadata *walker.DerivedSearc
 	qualifiedColName := dbField.Schema.Table + "." + dbField.ColumnName
 	dataType := dbField.DataType
 	if dbField.SQLType == "uuid" {
-		dataType = walker.UUID
+		dataType = postgres.UUID
 	}
-	var goesIntoHavingClause bool
 	if derivedMetadata != nil {
 		switch derivedMetadata.DerivationType {
 		case search.CountDerivationType:
 			qualifiedColName = fmt.Sprintf("count(%s)", qualifiedColName)
-			dataType = walker.Integer
-			goesIntoHavingClause = true
+			dataType = postgres.Integer
 		default:
 			return nil, errors.Errorf("unsupported derivation type %s", derivedMetadata.DerivationType)
 		}
 	}
-	qe, err := matchFieldQuery(qualifiedColName, dataType, field, value, highlight, now, goesIntoHavingClause)
+	qe, err := matchFieldQuery(qualifiedColName, dataType, field, derivedMetadata, value, highlight, now)
 	if err != nil {
 		return nil, err
 	}

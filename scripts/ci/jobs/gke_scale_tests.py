@@ -17,9 +17,7 @@ os.environ["STORAGE"] = "pvc"
 os.environ["STORAGE_CLASS"] = "faster"
 os.environ["STORAGE_SIZE"] = "100"
 os.environ["STORE_METRICS"] = os.environ["COMPARISON_METRICS"]
-
-# don't use postgres
-os.environ["ROX_POSTGRES_DATASTORE"] = "false"
+os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 
 ClusterTestRunner(
     cluster=GKECluster("scale-test", machine_type="e2-standard-8"),

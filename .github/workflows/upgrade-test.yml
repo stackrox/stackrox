@@ -89,7 +89,7 @@ jobs:
         with:
           ref: ${{ github.ref_name }}
       - uses: stackrox/actions/infra/install-infractl@v1
-      - uses: 'google-github-actions/auth@v0'
+      - uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: '${{ secrets.GCP_RELEASE_AUTOMATION_SA }}'
       - name: 'Set up Cloud SDK'

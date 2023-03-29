@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/migrations/internal"
 )
 
@@ -12,7 +13,7 @@ func CurrentDBVersionSeqNum() int {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return internal.CurrentDBVersionSeqNum
 	}
-	return internal.LastRocksDBVersionSeqNum
+	return mathutil.MinInt(internal.LastRocksDBVersionSeqNum, internal.CurrentDBVersionSeqNum)
 }
 
 // BasePostgresDBVersionSeqNum is the base of DB version number

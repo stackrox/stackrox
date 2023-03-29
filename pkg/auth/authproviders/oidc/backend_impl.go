@@ -26,16 +26,17 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// Specifies the constants used for the auth provider configuration.
 const (
 	fragmentCallbackURLPath = "/auth/response/oidc"
 
-	issuerConfigKey       = "issuer"
-	clientIDConfigKey     = "client_id"
-	clientSecretConfigKey = "client_secret"
+	IssuerConfigKey       = "issuer"
+	ClientIDConfigKey     = "client_id"
+	ClientSecretConfigKey = "client_secret"
 	//#nosec G101 -- This is a false positive
-	dontUseClientSecretConfigKey       = "do_not_use_client_secret"
-	modeConfigKey                      = "mode"
-	disableOfflineAccessScopeConfigKey = "disable_offline_access_scope"
+	DontUseClientSecretConfigKey       = "do_not_use_client_secret"
+	ModeConfigKey                      = "mode"
+	DisableOfflineAccessScopeConfigKey = "disable_offline_access_scope"
 
 	userInfoExpiration = 5 * time.Minute
 
@@ -223,12 +224,12 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		return nil, errors.New("OIDC requires a default UI endpoint")
 	}
 
-	clientID := config[clientIDConfigKey]
+	clientID := config[ClientIDConfigKey]
 	if clientID == "" {
 		return nil, errNoClientIDProvided
 	}
 
-	issuerHelper, err := endpoint.NewHelper(config[issuerConfigKey])
+	issuerHelper, err := endpoint.NewHelper(config[IssuerConfigKey])
 	if err != nil {
 		return nil, err
 	}
@@ -252,9 +253,9 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		Scheme: "https",
 	}
 
-	clientSecret := config[clientSecretConfigKey]
+	clientSecret := config[ClientSecretConfigKey]
 
-	mode := strings.ToLower(config[modeConfigKey])
+	mode := strings.ToLower(config[ModeConfigKey])
 	if mode == "auto" {
 		mode, err = provider.SelectResponseMode(clientSecret != "")
 		if err != nil {
@@ -268,7 +269,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		mode = "fragment" // legacy setting
 	}
 
-	if clientSecret == "" && config[dontUseClientSecretConfigKey] == "false" {
+	if clientSecret == "" && config[DontUseClientSecretConfigKey] == "false" {
 		if mode == "query" {
 			return nil, errQueryWithoutClientSecret
 		}
@@ -306,7 +307,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 
 	b.idTokenVerifier = provider.Verifier(&oidc.Config{ClientID: clientID})
 
-	disableOfflineAccessScope := config[disableOfflineAccessScopeConfigKey] == "true"
+	disableOfflineAccessScope := config[DisableOfflineAccessScopeConfigKey] == "true"
 	b.baseOauthConfig, err = createBaseOAuthConfig(
 		clientID,
 		clientSecret,
@@ -319,13 +320,13 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 	}
 
 	b.config = map[string]string{
-		issuerConfigKey:       issuerHelper.Issuer(),
-		clientIDConfigKey:     clientID,
-		clientSecretConfigKey: clientSecret,
-		modeConfigKey:         mode,
+		IssuerConfigKey:       issuerHelper.Issuer(),
+		ClientIDConfigKey:     clientID,
+		ClientSecretConfigKey: clientSecret,
+		ModeConfigKey:         mode,
 	}
 	if disableOfflineAccessScope {
-		b.config[disableOfflineAccessScopeConfigKey] = "true"
+		b.config[DisableOfflineAccessScopeConfigKey] = "true"
 	}
 
 	return b, nil

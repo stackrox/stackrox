@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {}
+func handler(_ http.ResponseWriter, _ *http.Request) {}
 
 func TestTLS(t *testing.T) {
 	httpServer := httptest.NewServer(http.HandlerFunc(handler))
@@ -31,7 +31,7 @@ func TestTLS(t *testing.T) {
 
 func checkTLSWithRetry(server *httptest.Server) (bool, error) {
 	var tls bool
-	// Retry the test a few times, sometimes in CircleCI this takes longer than the timeout
+	// Retry the test a few times, sometimes in CI this takes longer than the timeout
 	err := retry.WithRetry(
 		func() error {
 			var err error

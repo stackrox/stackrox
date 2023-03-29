@@ -10,12 +10,15 @@ import (
 	"github.com/stackrox/rox/central/risk/multipliers"
 	saMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPermissionScore(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	deployment := multipliers.GetMockDeployment()
 	clusterCases := []struct {
 		name     string

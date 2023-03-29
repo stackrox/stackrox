@@ -89,7 +89,7 @@ func (s *service) RegisterServiceServer(server *grpc.Server) {
 	central.RegisterSensorUpgradeControlServiceServer(server, s)
 }
 
-func (s *service) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+func (s *service) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	return nil
 }
 

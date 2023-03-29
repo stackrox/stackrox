@@ -98,5 +98,5 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 			},
 		},
 	}
-	return component.NewResourceEvent(events, nil, nil)
+	return component.NewEvent(events...)
 }

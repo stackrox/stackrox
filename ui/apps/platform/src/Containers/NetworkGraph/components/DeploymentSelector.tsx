@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Select, SelectGroup, SelectOption, SelectVariant } from '@patternfly/react-core';
+import { Button, Select, SelectGroup, SelectOption, SelectVariant } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
@@ -21,7 +21,7 @@ function DeploymentSelector({
     const {
         isOpen: isDeploymentOpen,
         toggleSelect: toggleIsDeploymentOpen,
-        closeSelect: closeDeploymentSelect,
+        closeSelect,
     } = useSelectToggle();
 
     const onFilterDeployments = useCallback(
@@ -48,14 +48,19 @@ function DeploymentSelector({
     );
 
     const onDeploymentSelect = (_, selected) => {
-        closeDeploymentSelect();
-
         const newSelection = selectedDeployments.find((nsFilter) => nsFilter === selected)
             ? selectedDeployments.filter((nsFilter) => nsFilter !== selected)
             : selectedDeployments.concat(selected);
 
         const modifiedSearchObject = { ...searchFilter };
         modifiedSearchObject.Deployment = newSelection;
+        setSearchFilter(modifiedSearchObject);
+    };
+
+    const onClearSelections = () => {
+        const modifiedSearchObject = { ...searchFilter };
+        delete modifiedSearchObject.Deployment;
+        closeSelect();
         setSearchFilter(modifiedSearchObject);
     };
 
@@ -92,6 +97,11 @@ function DeploymentSelector({
             hasInlineFilter
             isGrouped
             isPlain
+            footer={
+                <Button variant="link" isInline onClick={onClearSelections}>
+                    Clear selections
+                </Button>
+            }
         >
             {deploymentSelectOptions}
         </Select>

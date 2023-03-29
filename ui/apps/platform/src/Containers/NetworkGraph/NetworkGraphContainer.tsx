@@ -14,7 +14,12 @@ import { EdgeState } from './components/EdgeStateSelect';
 import { DisplayOption } from './components/DisplayOptionsSelect';
 import { Simulation } from './utils/getSimulation';
 import { getNodeById } from './utils/networkGraphUtils';
-import { createExtraneousNodes, createExtraneousEdges, graphModel } from './utils/modelUtils';
+import {
+    createExtraneousNodes,
+    createExtraneousEdges,
+    graphModel,
+    getConnectedNodeIds,
+} from './utils/modelUtils';
 
 export type Models = {
     activeModel: CustomModel;
@@ -150,6 +155,54 @@ function getDisplayEdges(edges: CustomEdgeModel[], showEdgeLabels: boolean): Cus
     });
 }
 
+// This function modifies the nodes to add another data attribute to distinguish faded out nodes from normal ones
+function fadeOutUnconnectedNodes(
+    nodes: CustomNodeModel[],
+    edges: CustomEdgeModel[],
+    selectedNodeId: string | undefined
+): CustomNodeModel[] {
+    const selectedNode = getNodeById(nodes, selectedNodeId);
+    // if nothing is selected we don't want to fade anything out
+    if (!selectedNodeId || !selectedNode) {
+        return nodes;
+    }
+    let emphasizedNodeIds: string[] = [];
+    if (selectedNode.children) {
+        // if the selected node is a group, we want to emphasize all connected nodes of the children
+        emphasizedNodeIds =
+            selectedNode.children.reduce((acc, currId) => {
+                const connectedNodeIds = getConnectedNodeIds(edges, currId);
+                return [...acc, ...connectedNodeIds];
+            }, [] as string[]) || [];
+        // we include the child nodes so that they aren't faded out
+        emphasizedNodeIds = [...emphasizedNodeIds, ...selectedNode.children];
+    } else {
+        // if the selected node is not a group, we want to emphasize all connected nodes of the selected node
+        emphasizedNodeIds = getConnectedNodeIds(edges, selectedNodeId);
+        // we include the selected node so that it isn't faded out
+        emphasizedNodeIds = [...emphasizedNodeIds, selectedNodeId];
+    }
+    const modifiedNodes: CustomNodeModel[] = nodes.map((node) => {
+        const { data } = node;
+        let isFadedOut = false;
+        if (node.children) {
+            isFadedOut = !node.children.some((childNodeId) =>
+                emphasizedNodeIds.includes(childNodeId)
+            );
+        } else {
+            isFadedOut = !emphasizedNodeIds.includes(node.id);
+        }
+        return {
+            ...node,
+            data: {
+                ...data,
+                isFadedOut,
+            },
+        } as CustomNodeModel;
+    });
+    return modifiedNodes;
+}
+
 type NetworkGraphContainerProps = {
     models: Models;
     edgeState: EdgeState;
@@ -184,7 +237,8 @@ function NetworkGraphContainer({
 
     // 2. selectedNode/edgeState data model filtering ------------------------------------
     // selected node state is stored in the URL
-    const { detailId } = useParams();
+    const { detailId: encodedDetailId } = useParams();
+    const detailId = decodeURIComponent(encodedDetailId);
     const selectedNode = getNodeById(baseModel?.nodes, detailId);
     // extraneous catch-all in/egress flows nodes to add/remove from extraneous nodes model
     const extraneousNodes = createExtraneousNodes(clusterDeploymentCount);
@@ -192,7 +246,7 @@ function NetworkGraphContainer({
     let filteredNodes: CustomNodeModel[] = [...baseModel.nodes];
     let filteredEdges: CustomEdgeModel[] = [...baseModel.edges];
     // if edgeState is extraneous && there is a selectedNode, add in/egress flows nodes/edges
-    if (edgeState === 'extraneous' && selectedNode?.data.type === 'DEPLOYMENT') {
+    if (edgeState === 'inactive' && selectedNode?.data.type === 'DEPLOYMENT') {
         const extraneousFlowsNodes = getExtraneousNodes(extraneousNodes, selectedNode.data);
         filteredNodes = [...extraneousModel.nodes, ...extraneousFlowsNodes];
         const extraneousFlowsEdges = getExtraneousEdges(selectedNode.data);
@@ -212,6 +266,9 @@ function NetworkGraphContainer({
     modifiedNodes = getDisplayNodes(filteredNodes, showPolicyState, showExternalState);
     // update the display options visually for edges on the graph
     modifiedEdges = getDisplayEdges(filteredEdges, showEdgeLabels);
+
+    // fade out some nodes based on which nodes are connected to the selected node
+    modifiedNodes = fadeOutUnconnectedNodes(modifiedNodes, modifiedEdges, selectedNode?.id);
 
     // this is the resulting model that is passed to the NetworkGraph to render as-is
     const updatedModel: CustomModel = {

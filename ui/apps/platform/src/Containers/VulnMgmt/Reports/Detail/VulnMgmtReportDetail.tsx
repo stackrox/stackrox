@@ -37,12 +37,14 @@ import { vulnManagementReportsPath } from 'routePaths';
 import { deleteReport, runReport } from 'services/ReportsService';
 import { ReportConfiguration } from 'types/report.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { ReportScope } from 'hooks/useFetchReport';
 
 type VulnMgmtReportDetailProps = {
     report: ReportConfiguration;
+    reportScope: ReportScope | null;
 };
 
-function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactElement {
+function VulnMgmtReportDetail({ report, reportScope }: VulnMgmtReportDetailProps): ReactElement {
     const history = useHistory();
 
     const [alert, setAlert] = useState<AlertProps | null>(null);
@@ -238,7 +240,10 @@ function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactEleme
                             <DescriptionListGroup>
                                 <DescriptionListTerm>Report scope</DescriptionListTerm>
                                 <DescriptionListDescription>
-                                    <ScopeName scopeId={report?.scopeId} />
+                                    <ScopeName
+                                        reportScope={reportScope}
+                                        canWriteReports={canWriteReports}
+                                    />
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                             <DescriptionListGroup>

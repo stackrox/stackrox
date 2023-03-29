@@ -160,7 +160,7 @@ func (b *storeImpl) GetImageMetadata(_ context.Context, id string) (image *stora
 	return image, image != nil, err
 }
 
-func (b *storeImpl) GetManyImageMetadata(ctx context.Context, id []string) ([]*storage.Image, []int, error) {
+func (b *storeImpl) GetManyImageMetadata(_ context.Context, _ []string) ([]*storage.Image, []int, error) {
 	utils.Must(errors.New("Unexpected call to GetManyImageMetadata in Dackbox when running on Postgres"))
 	return nil, nil, nil
 }
@@ -660,7 +660,7 @@ func gatherKeysForImage(txn *dackbox.Transaction, imageID string) (*imageKeySet,
 	return ret, nil
 }
 
-func (b *storeImpl) AckKeysIndexed(_ context.Context, keys ...string) error {
+func (b *storeImpl) AckKeysIndexed(_ context.Context, _ ...string) error {
 	return nil
 }
 

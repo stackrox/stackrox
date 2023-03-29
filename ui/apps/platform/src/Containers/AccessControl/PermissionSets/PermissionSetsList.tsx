@@ -15,6 +15,7 @@ import { PermissionSet, Role } from 'services/RolesService';
 
 import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
 import usePermissions from '../../../hooks/usePermissions';
+import { getOriginLabel, isUserResource } from '../traits';
 
 const entityType = 'PERMISSION_SET';
 
@@ -76,14 +77,15 @@ function PermissionSetsList({
                 <TableComposable variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>
-                            <Th width={20}>Name</Th>
-                            <Th width={30}>Description</Th>
-                            <Th width={40}>Roles</Th>
+                            <Th width={15}>Name</Th>
+                            <Th width={15}>Origin</Th>
+                            <Th width={25}>Description</Th>
+                            <Th width={35}>Roles</Th>
                             <Th width={10} aria-label="Row actions" />
                         </Tr>
                     </Thead>
                     <Tbody>
-                        {permissionSets.map(({ id, name, description }) => (
+                        {permissionSets.map(({ id, name, description, traits }) => (
                             <Tr key={id}>
                                 <Td dataLabel="Name">
                                     <AccessControlEntityLink
@@ -92,6 +94,7 @@ function PermissionSetsList({
                                         entityName={name}
                                     />
                                 </Td>
+                                <Td dataLabel="Origin">{getOriginLabel(traits)}</Td>
                                 <Td dataLabel="Description">{description}</Td>
                                 <Td dataLabel="Roles">
                                     <RolesLink
@@ -107,6 +110,7 @@ function PermissionSetsList({
                                         disable:
                                             !hasWriteAccessForPage ||
                                             idDeleting === id ||
+                                            !isUserResource(traits) ||
                                             roles.some(
                                                 ({ permissionSetId }) => permissionSetId === id
                                             ),

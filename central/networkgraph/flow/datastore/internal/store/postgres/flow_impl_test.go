@@ -7,9 +7,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/testcommon"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stretchr/testify/suite"
@@ -25,8 +25,8 @@ func TestFlowStore(t *testing.T) {
 	}
 
 	source := pgtest.GetConnectionString(t)
-	config, _ := pgxpool.ParseConfig(source)
-	pool, _ := pgxpool.ConnectConfig(ctx, config)
+	config, _ := postgres.ParseConfig(source)
+	pool, _ := postgres.New(ctx, config)
 	defer pool.Close()
 
 	gormDB := pgtest.OpenGormDB(t, source)

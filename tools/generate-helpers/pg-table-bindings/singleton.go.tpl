@@ -14,8 +14,7 @@ import (
     "strings"
     "time"
 
-    "github.com/jackc/pgx/v4"
-    "github.com/jackc/pgx/v4/pgxpool"
+    "github.com/stackrox/rox/pkg/postgres"
     "github.com/pkg/errors"
     {{- if not $inMigration}}
     "github.com/stackrox/rox/central/metrics"
@@ -32,7 +31,7 @@ import (
     "github.com/stackrox/rox/pkg/postgres/pgutils"
     "github.com/stackrox/rox/pkg/sac"
     "github.com/stackrox/rox/pkg/search"
-    "github.com/stackrox/rox/pkg/search/postgres"
+    pgSearch "github.com/stackrox/rox/pkg/search/postgres"
     "github.com/stackrox/rox/pkg/sync"
     "github.com/stackrox/rox/pkg/uuid"
 )
@@ -60,14 +59,14 @@ type Store interface {
 }
 
 type storeImpl struct {
-    db *pgxpool.Pool
+    db *postgres.DB
     mutex sync.Mutex
 }
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
+func New(db *postgres.DB) Store {
     return &storeImpl{
         db: db,
     }
@@ -78,7 +77,7 @@ func New(db *pgxpool.Pool) Store {
 
 {{- define "insertObject"}}
 {{- $schema := .schema }}
-func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
+func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx *postgres.Tx, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
     serialized, marshalErr := obj.Marshal()
     if marshalErr != nil {
         return marshalErr
@@ -185,7 +184,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*{{.Type}}, bool, error) 
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
     {{- if not $inMigration}}
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
     {{- end}}
@@ -227,6 +226,6 @@ func (s *storeImpl) retryableDelete(ctx context.Context) error {
 // Used for Testing
 
 // Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
+func Destroy(ctx context.Context, db *postgres.DB) {
     _, _ = db.Exec(ctx, "DROP TABLE IF EXISTS {{.Schema.Table}} CASCADE")
 }

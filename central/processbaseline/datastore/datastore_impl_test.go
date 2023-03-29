@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package datastore
 
 import (
@@ -5,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processbaseline/index"
 	baselineSearch "github.com/stackrox/rox/central/processbaseline/search"
@@ -20,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -27,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -44,7 +47,7 @@ type ProcessBaselineDataStoreTestSuite struct {
 	indicatorMockStore *indicatorMocks.MockDataStore
 
 	db   *rocksdb.RocksDB
-	pool *pgxpool.Pool
+	pool *postgres.DB
 
 	baselineResultsStore *mocks.MockDataStore
 
@@ -63,8 +66,10 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pgtestbase := pgtest.ForT(suite.T())
 		suite.Require().NotNil(pgtestbase)
-		suite.pool = pgtestbase.Pool
-		suite.storage = postgresStore.New(suite.pool)
+		suite.pool = pgtestbase.DB
+		dbStore := postgresStore.New(suite.pool)
+		suite.storage, err = postgresStore.NewWithCache(dbStore)
+		require.NoError(suite.T(), err)
 		suite.indexer = postgresStore.NewIndexer(suite.pool)
 	} else {
 		suite.db, err = rocksdb.NewTemp(suite.T().Name() + ".db")

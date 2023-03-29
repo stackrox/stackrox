@@ -90,13 +90,27 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		node.ClusterName = clusterName
 	}
 
+	if enricher.SupportsNodeScanning(node) {
+		// If supports node scanning, this pipeline should only update the node's
+		// metadata. We call upsert without scan. Upsert will read scan information from
+		// the database before writing. This is safe because NodeInventory and Node
+		// pipelines never run concurrently by the Sensor Event worker queues.
+		node.Scan = nil
+		if err := p.nodeDatastore.UpsertNode(ctx, node); err != nil {
+			err = errors.Wrapf(err, "upserting node %s", nodeDatastore.NodeString(node))
+			log.Error(err)
+			return err
+		}
+		return nil
+	}
+
 	err = p.enricher.EnrichNode(node)
 	if err != nil {
-		log.Warnf("enriching node %s:%s: %v", node.GetClusterName(), node.GetName(), err)
+		log.Warnf("enriching node %s failed (the failure was ignored, vulnerability and "+
+			"risk information will not be updated): %v", nodeDatastore.NodeString(node), err)
 	}
 
 	if err := p.riskManager.CalculateRiskAndUpsertNode(node); err != nil {
-		err = errors.Wrapf(err, "upserting node %s:%s into datastore", node.GetClusterName(), node.GetName())
 		log.Error(err)
 		return err
 	}

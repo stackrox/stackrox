@@ -14,6 +14,7 @@ type BasePipeline interface {
 }
 
 // ClusterPipeline processes a message received from a given cluster.
+//
 //go:generate mockgen-wrapper
 type ClusterPipeline interface {
 	BasePipeline
@@ -30,6 +31,7 @@ type Factory interface {
 // Fragment is a component of a Pipeline that only processes specific messages.
 // Fragments can be either local or global across clusters;
 // they are passed clusterIDs along with every event, which they are free to use.
+//
 //go:generate mockgen-wrapper
 type Fragment interface {
 	BasePipeline

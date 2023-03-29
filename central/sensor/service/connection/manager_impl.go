@@ -19,10 +19,13 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
 	clusterCheckinInterval = 30 * time.Second
+
+	connectionTerminationTimeout = 5 * time.Second
 )
 
 var (
@@ -51,6 +54,9 @@ type connectionAndUpgradeController struct {
 type manager struct {
 	connectionsByClusterID      map[string]connectionAndUpgradeController
 	connectionsByClusterIDMutex sync.RWMutex
+	// The message dedupers must live beyond an individual connection
+	messageDedupers map[string]*deduper
+	deduperMutex    sync.Mutex
 
 	clusters            common.ClusterManager
 	networkEntities     common.NetworkEntityManager
@@ -63,6 +69,7 @@ type manager struct {
 func newManager() *manager {
 	return &manager{
 		connectionsByClusterID: make(map[string]connectionAndUpgradeController),
+		messageDedupers:        make(map[string]*deduper),
 	}
 }
 
@@ -213,7 +220,41 @@ func (m *manager) replaceConnection(ctx context.Context, cluster *storage.Cluste
 	return oldConnection, nil
 }
 
+func (m *manager) getDeduper(clusterID string) *deduper {
+	m.deduperMutex.Lock()
+	defer m.deduperMutex.Unlock()
+
+	if d, ok := m.messageDedupers[clusterID]; ok {
+		return d
+	}
+	msgDeduper := newDeduper()
+	m.messageDedupers[clusterID] = msgDeduper
+	return msgDeduper
+}
+
+func (m *manager) deleteDeduper(clusterID string) {
+	m.deduperMutex.Lock()
+	defer m.deduperMutex.Unlock()
+
+	delete(m.messageDedupers, clusterID)
+}
+
+func (m *manager) CloseConnection(clusterID string) {
+	if conn := m.GetConnection(clusterID); conn != nil {
+		conn.Terminate(errors.New("cluster was deleted"))
+		if !concurrency.WaitWithTimeout(conn.Stopped(), connectionTerminationTimeout) {
+			utils.Should(errors.Errorf("connection to sensor from cluster %s not terminated after %v", clusterID, connectionTerminationTimeout))
+		}
+	}
+
+	m.deleteDeduper(clusterID)
+}
+
 func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.SensorHello, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
+	clusterID := cluster.GetId()
+	clusterName := cluster.GetName()
+
+	msgDeduper := m.getDeduper(clusterID)
 	conn :=
 		newConnection(
 			sensorHello,
@@ -223,11 +264,10 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 			m.networkEntities,
 			m.policies,
 			m.baselines,
-			m.networkBaselines)
+			m.networkBaselines,
+			msgDeduper)
 	ctx = withConnection(ctx, conn)
 
-	clusterID := cluster.GetId()
-	clusterName := cluster.GetName()
 	oldConnection, err := m.replaceConnection(ctx, cluster, conn)
 	if err != nil {
 		log.Errorf("Replacing connection: %v", err)

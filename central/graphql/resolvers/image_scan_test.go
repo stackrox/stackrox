@@ -79,7 +79,7 @@ func (s *ImageScanResolverTestSuite) SetupTest() {
 	s.imageComponentDataStore = imageComponentsDSMocks.NewMockDataStore(s.mockCtrl)
 	s.imageCVEDataStore = imageCVEsDSMocks.NewMockDataStore(s.mockCtrl)
 
-	s.resolver, s.schema = SetupTestResolver(s.T(), s.imageDataStore, s.imageComponentDataStore, s.imageCVEDataStore, nil)
+	s.resolver, s.schema = SetupTestResolver(s.T(), s.imageDataStore, s.imageComponentDataStore, s.imageCVEDataStore)
 }
 
 func (s *ImageScanResolverTestSuite) TearDownTest() {

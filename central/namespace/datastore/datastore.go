@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	cveSAC "github.com/stackrox/rox/central/cve/sac"
 	"github.com/stackrox/rox/central/dackbox"
@@ -17,7 +16,7 @@ import (
 	"github.com/stackrox/rox/central/namespace/index"
 	"github.com/stackrox/rox/central/namespace/index/mappings"
 	"github.com/stackrox/rox/central/namespace/store"
-	"github.com/stackrox/rox/central/namespace/store/postgres"
+	pgStore "github.com/stackrox/rox/central/namespace/store/postgres"
 	"github.com/stackrox/rox/central/namespace/store/rocksdb"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/role/resources"
@@ -29,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/derivedfields/counter"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -83,9 +83,9 @@ func New(nsStore store.Store, graphProvider graph.Provider, indexer index.Indexe
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgres.New(pool)
-	indexer := postgres.NewIndexer(pool)
+func GetTestPostgresDataStore(t *testing.T, pool *postgres.DB) (DataStore, error) {
+	dbstore := pgStore.New(pool)
+	indexer := pgStore.NewIndexer(pool)
 	deploymentStore, err := deploymentDataStore.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
@@ -133,6 +133,9 @@ type datastoreImpl struct {
 }
 
 func (b *datastoreImpl) buildIndex(ctx context.Context) error {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return nil
+	}
 	log.Info("[STARTUP] initializing namespaces")
 	var namespaces []*storage.NamespaceMetadata
 	walkFn := func() error {
@@ -142,16 +145,11 @@ func (b *datastoreImpl) buildIndex(ctx context.Context) error {
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := walkFn(); err != nil {
 		return err
 	}
-
 	if b.idMapStorage != nil {
 		b.idMapStorage.OnNamespaceAdd(namespaces...)
-	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		log.Info("[STARTUP] Successfully initialized namespaces")
-		return nil
 	}
 	if err := b.indexer.AddNamespaceMetadatas(namespaces); err != nil {
 		return err
@@ -226,7 +224,7 @@ func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.Nam
 	if err := b.store.Upsert(ctx, namespace); err != nil {
 		return err
 	}
-	if b.idMapStorage != nil {
+	if b.idMapStorage != nil && !env.PostgresDatastoreEnabled.BooleanSetting() {
 		b.idMapStorage.OnNamespaceAdd(namespace)
 	}
 	return b.indexer.AddNamespaceMetadata(namespace)
@@ -257,7 +255,7 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 	if err := b.store.Delete(ctx, id); err != nil {
 		return err
 	}
-	if b.idMapStorage != nil {
+	if b.idMapStorage != nil && !env.PostgresDatastoreEnabled.BooleanSetting() {
 		b.idMapStorage.OnNamespaceRemove(id)
 	}
 	// Remove ranker record here since removal is not handled in risk store as no entry present for namespace

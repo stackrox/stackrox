@@ -4,46 +4,50 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
 const bucketKey = "Bucket"
 
 func init() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		prometheus.MustRegister(
+			FreePageN,
+			PendingPageN,
+			FreeAlloc,
+			FreelistInuse,
+			TxN,
+			OpenTxN,
+			TxStatsPageCount,
+			TxStatsPageAlloc,
+			TxStatsCursorCount,
+			TxStatsNodeCount,
+			TxStatsNodeDeref,
+			TxStatsRebalance,
+			TxStatsRebalanceSeconds,
+			TxStatsSplit,
+			TxStatsSpill,
+			TxStatsSpillSeconds,
+			TxStatsWrite,
+			TxStatsWriteTime,
+			BranchPageN,
+			BranchOverflowN,
+			LeafPageN,
+			LeafOverflowN,
+			KeyN,
+			Depth,
+			BranchAlloc,
+			BranchInuse,
+			LeafAlloc,
+			LeafInuse,
+			BucketN,
+			InlineBucketN,
+			InlineBucketInuse,
+		)
+	}
+
 	prometheus.MustRegister(
-		FreePageN,
-		PendingPageN,
-		FreeAlloc,
-		FreelistInuse,
-		TxN,
-		OpenTxN,
-		TxStatsPageCount,
-		TxStatsPageAlloc,
-		TxStatsCursorCount,
-		TxStatsNodeCount,
-		TxStatsNodeDeref,
-		TxStatsRebalance,
-		TxStatsRebalanceSeconds,
-		TxStatsSplit,
-		TxStatsSpill,
-		TxStatsSpillSeconds,
-		TxStatsWrite,
-		TxStatsWriteTime,
-		BranchPageN,
-		BranchOverflowN,
-		LeafPageN,
-		LeafOverflowN,
-		KeyN,
-		Depth,
-		BranchAlloc,
-		BranchInuse,
-		LeafAlloc,
-		LeafInuse,
-		BucketN,
-		InlineBucketN,
-		InlineBucketInuse,
-		BoltDBSize,
-		RocksDBSize,
 		PostgresTableCounts,
 		PostgresIndexSize,
 		PostgresTableTotalSize,
@@ -51,7 +55,10 @@ func init() {
 		PostgresToastSize,
 		PostgresDBSize,
 		PostgresTotalSize,
+		PostgresRemainingCapacity,
 		PostgresConnected,
+		PostgresTotalConnections,
+		PostgresMaximumConnections,
 	)
 }
 
@@ -195,16 +202,42 @@ var (
 		Help:      "bytes being used by Postgres all Databases",
 	})
 
+	PostgresRemainingCapacity = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_available_size_bytes",
+		Help:      "remaining bytes available for Postgres",
+	})
+
 	PostgresConnected = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_connected",
 		Help:      "flag indicating if central is connected to the Postgres Database. 0 NOT connected, 1 connected",
 	})
+
+	PostgresTotalConnections = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_total_connections",
+		Help:      "number of total connections to Postgres by state",
+	}, []string{"state"})
+
+	PostgresMaximumConnections = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_maximum_db_connections",
+		Help:      "number of total connections allowed to the Postgres database server",
+	})
 )
 
 // SetGaugeInt sets a value for a gauge from an int
 func SetGaugeInt(gauge prometheus.Gauge, value int) {
+	gauge.Set(float64(value))
+}
+
+// SetGaugeInt64 sets a value for a gauge from an int64
+func SetGaugeInt64(gauge prometheus.Gauge, value int64) {
 	gauge.Set(float64(value))
 }
 

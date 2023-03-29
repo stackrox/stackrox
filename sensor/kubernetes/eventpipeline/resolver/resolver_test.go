@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
 	mocksStore "github.com/stackrox/rox/sensor/common/store/mocks"
@@ -59,7 +61,7 @@ func (s *resolverSuite) SetupTest() {
 		serviceStore:    s.mockServiceStore,
 		rbacStore:       s.mockRBACStore,
 		endpointManager: s.mockEndpointManager,
-	})
+	}, 100)
 }
 
 func (s *resolverSuite) Test_MessageSentToOutput() {
@@ -127,7 +129,12 @@ func (s *resolverSuite) Test_Send_DeploymentWithRBACs() {
 			})
 
 			s.resolver.Send(&component.ResourceEvent{
-				DeploymentReference: resolver.ResolveDeploymentIds(testCase.deploymentID),
+				DeploymentReferences: []component.DeploymentReference{
+					{
+						Reference:            resolver.ResolveDeploymentIds(testCase.deploymentID),
+						ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
+					},
+				},
 			})
 
 			messageReceived.Wait()
@@ -163,7 +170,12 @@ func (s *resolverSuite) Test_Send_DeploymentsWithServiceExposure() {
 	})
 
 	s.resolver.Send(&component.ResourceEvent{
-		DeploymentReference: resolver.ResolveDeploymentIds("1234"),
+		DeploymentReferences: []component.DeploymentReference{
+			{
+				Reference:            resolver.ResolveDeploymentIds("1234"),
+				ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
+			},
+		},
 	})
 
 	messageReceived.Wait()
@@ -178,15 +190,24 @@ func (s *resolverSuite) Test_Send_MultipleDeploymentRefs() {
 
 	s.givenPermissionLevelForDeployment("1234", storage.PermissionLevel_NONE)
 	s.givenPermissionLevelForDeployment("4321", storage.PermissionLevel_ELEVATED_IN_NAMESPACE)
+	s.givenPermissionLevelForDeployment("6543", storage.PermissionLevel_ELEVATED_CLUSTER_WIDE)
 
-	s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: 2}).Times(1).Do(func(arg0 interface{}) {
+	s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: 3}).Times(1).Do(func(arg0 interface{}) {
 		defer messageReceived.Done()
 	})
 
 	s.resolver.Send(&component.ResourceEvent{
-		DeploymentReference: resolver.ResolveDeploymentIds("1234", "4321"),
+		DeploymentReferences: []component.DeploymentReference{
+			{
+				Reference:            resolver.ResolveDeploymentIds("1234", "4321"),
+				ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
+			},
+			{
+				Reference:            resolver.ResolveDeploymentIds("6543"),
+				ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
+			},
+		},
 	})
-
 	messageReceived.Wait()
 }
 
@@ -207,8 +228,12 @@ func (s *resolverSuite) Test_Send_ResourceAction() {
 			})
 
 			s.resolver.Send(&component.ResourceEvent{
-				DeploymentReference:  resolver.ResolveDeploymentIds("1234"),
-				ParentResourceAction: action,
+				DeploymentReferences: []component.DeploymentReference{
+					{
+						Reference:            resolver.ResolveDeploymentIds("1234"),
+						ParentResourceAction: action,
+					},
+				},
 			})
 
 			messageReceived.Wait()
@@ -230,7 +255,12 @@ func (s *resolverSuite) Test_Send_BuildDeploymentWithDependenciesError() {
 	})
 
 	s.resolver.Send(&component.ResourceEvent{
-		DeploymentReference: resolver.ResolveDeploymentIds("1234"),
+		DeploymentReferences: []component.DeploymentReference{
+			{
+				Reference:            resolver.ResolveDeploymentIds("1234"),
+				ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
+			},
+		},
 	})
 
 	messageReceived.Wait()
@@ -254,7 +284,12 @@ func (s *resolverSuite) Test_Send_DeploymentNotFound() {
 	})
 
 	s.resolver.Send(&component.ResourceEvent{
-		DeploymentReference: resolver.ResolveDeploymentIds("1234"),
+		DeploymentReferences: []component.DeploymentReference{
+			{
+				Reference:            resolver.ResolveDeploymentIds("1234"),
+				ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
+			},
+		},
 	})
 
 	messageReceived.Wait()
@@ -267,7 +302,7 @@ func (s *resolverSuite) Test_Send_DetectorReference() {
 	messageReceived := sync.WaitGroup{}
 	messageReceived.Add(1)
 
-	detectionObject := []component.CompatibilityDetectionMessage{
+	detectionObject := []component.DetectorMessage{
 		{
 			Object: &storage.Deployment{Id: "1234"},
 			Action: central.ResourceAction_UPDATE_RESOURCE,
@@ -279,7 +314,7 @@ func (s *resolverSuite) Test_Send_DetectorReference() {
 	})
 
 	s.resolver.Send(&component.ResourceEvent{
-		CompatibilityDetectionDeployment: detectionObject,
+		DetectorMessages: detectionObject,
 	})
 
 	messageReceived.Wait()
@@ -347,8 +382,13 @@ func (s *resolverSuite) Test_Send_ForwardedMessagesAreSent() {
 			})
 
 			s.resolver.Send(&component.ResourceEvent{
-				DeploymentReference: testCase.resolver,
-				ForwardMessages:     testCase.forwardedMessages,
+				ForwardMessages: testCase.forwardedMessages,
+				DeploymentReferences: []component.DeploymentReference{
+					{
+						Reference:            testCase.resolver,
+						ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
+					},
+				},
 			})
 
 			messageReceived.Wait()
@@ -547,7 +587,7 @@ func (m *deploymentMatcher) String() string {
 }
 
 type detectionObjectMatcher struct {
-	expected []component.CompatibilityDetectionMessage
+	expected []component.DetectorMessage
 	error    string
 }
 
@@ -558,8 +598,8 @@ func (m *detectionObjectMatcher) Matches(target interface{}) bool {
 		return false
 	}
 
-	if !cmp.Equal(m.expected, event.CompatibilityDetectionDeployment) {
-		m.error = fmt.Sprintf("received detection deployment doesn't match expected: %s", cmp.Diff(m.expected, event.CompatibilityReprocessDeployments))
+	if !cmp.Equal(m.expected, event.DetectorMessages) {
+		m.error = fmt.Sprintf("received detection deployment doesn't match expected: %s", cmp.Diff(m.expected, event.ReprocessDeployments))
 		return false
 	}
 
@@ -644,4 +684,24 @@ func (p *fakeProvider) RBAC() store.RBACStore {
 
 func (p *fakeProvider) EndpointManager() store.EndpointManager {
 	return p.endpointManager
+}
+
+func (p *fakeProvider) Pods() store.PodStore {
+	return nil
+}
+
+func (p *fakeProvider) Registries() *registry.Store {
+	return nil
+}
+
+func (p *fakeProvider) ServiceAccounts() store.ServiceAccountStore {
+	return nil
+}
+
+func (p *fakeProvider) NetworkPolicies() store.NetworkPolicyStore {
+	return nil
+}
+
+func (p *fakeProvider) Entities() *clusterentities.Store {
+	return nil
 }

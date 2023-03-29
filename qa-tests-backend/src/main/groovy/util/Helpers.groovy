@@ -15,7 +15,7 @@ class Helpers {
     private static final int MAX_RETRY_ATTEMPTS = 2
     private static int retryAttempt = 0
 
-    static <V> V evaluateWithRetry(Object ignored, int retries, int pauseSecs, Closure<V> closure) {
+    static <V> V evaluateWithRetry(int retries, int pauseSecs, Closure<V> closure) {
         for (int i = 0; i < retries; i++) {
             try {
                 return closure()
@@ -27,11 +27,11 @@ class Helpers {
         return closure()
     }
 
-    static <V> void withRetry(Object ignored, int retries, int pauseSecs, Closure<V> closure) {
-        evaluateWithRetry(ignored, retries, pauseSecs, closure)
+    static <V> void withRetry(int retries, int pauseSecs, Closure<V> closure) {
+        evaluateWithRetry(retries, pauseSecs, closure)
     }
 
-    static <V> V evaluateWithK8sClientRetry(Object ignored, int retries, int pauseSecs, Closure<V> closure) {
+    static <V> V evaluateWithK8sClientRetry(int retries, int pauseSecs, Closure<V> closure) {
         for (int i = 0; i < retries; i++) {
             try {
                 return closure()
@@ -43,8 +43,8 @@ class Helpers {
         return closure()
     }
 
-    static <V> void withK8sClientRetry(Object ignored, int retries, int pauseSecs, Closure<V> closure) {
-        evaluateWithK8sClientRetry(ignored, retries, pauseSecs, closure)
+    static <V> void withK8sClientRetry(int retries, int pauseSecs, Closure<V> closure) {
+        evaluateWithK8sClientRetry(retries, pauseSecs, closure)
     }
 
     static boolean determineRetry(Throwable failure) {
@@ -148,6 +148,9 @@ class Helpers {
             if (proc.exitValue() != 0) {
                 log.warn "Failed to scan the image. Exit: ${proc.exitValue()}\nStderr: $serr"
             }
+
+            // closing the FileWriter will ensure internal buffer is flushed to file
+            sout.close()
         }
         catch (Exception e) {
             log.error("Could not collect image details", e)

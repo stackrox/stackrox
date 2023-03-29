@@ -37,3 +37,5 @@ alertmanager:
       group_by: [alertname]
   configmapReload:
     enabled: true
+
+enableMonitoringPSPs: ${MONITORING_ENABLE_PSP}

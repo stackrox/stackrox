@@ -2,7 +2,7 @@ package converter
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 // ClusterCVEParts represents the pieces of data in an cluster CVE.
@@ -33,7 +33,7 @@ func NewClusterCVEParts(cve *storage.ClusterCVE, clusters []*storage.Cluster, fi
 
 func generateClusterCVEEdge(cluster *storage.Cluster, cve *storage.ClusterCVE, fixVersions string) *storage.ClusterCVEEdge {
 	ret := &storage.ClusterCVEEdge{
-		Id:        postgres.IDFromPks([]string{cluster.GetId(), cve.GetId()}),
+		Id:        pgSearch.IDFromPks([]string{cluster.GetId(), cve.GetId()}),
 		IsFixable: len(fixVersions) != 0,
 		ClusterId: cluster.GetId(),
 		CveId:     cve.GetId(),

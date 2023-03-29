@@ -87,7 +87,7 @@ func (*pagerDuty) Close(context.Context) error {
 	return nil
 }
 
-func (p *pagerDuty) AlertNotify(ctx context.Context, alert *storage.Alert) error {
+func (p *pagerDuty) AlertNotify(_ context.Context, alert *storage.Alert) error {
 	return p.postAlert(alert, newAlert)
 }
 
@@ -95,7 +95,7 @@ func (p *pagerDuty) ProtoNotifier() *storage.Notifier {
 	return p.Notifier
 }
 
-func (p *pagerDuty) Test(ctx context.Context) error {
+func (p *pagerDuty) Test(_ context.Context) error {
 	return p.postAlert(&storage.Alert{
 		Id: uuid.NewDummy().String(),
 		Policy: &storage.Policy{
@@ -116,11 +116,11 @@ func (p *pagerDuty) Test(ctx context.Context) error {
 	}, newAlert)
 }
 
-func (p *pagerDuty) AckAlert(ctx context.Context, alert *storage.Alert) error {
+func (p *pagerDuty) AckAlert(_ context.Context, alert *storage.Alert) error {
 	return p.postAlert(alert, ackAlert)
 }
 
-func (p *pagerDuty) ResolveAlert(ctx context.Context, alert *storage.Alert) error {
+func (p *pagerDuty) ResolveAlert(_ context.Context, alert *storage.Alert) error {
 	return p.postAlert(alert, resolveAlert)
 }
 

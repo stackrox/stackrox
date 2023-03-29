@@ -490,13 +490,18 @@ poll_for_system_test_images() {
         *-race-condition-qa-e2e-tests)
             reqd_images=("main-rcd" "roxctl")
             ;;
-        *-postgres-*)
-            reqd_images=("main" "roxctl" "central-db")
-            ;;
         *)
             reqd_images=("main" "roxctl")
             ;;
     esac
+
+    if [[ "${ROX_POSTGRES_DATASTORE:-}" == "true" ]] && [[ ! " ${reqd_images[*]} " =~ " central-db " ]]; then
+        reqd_images+=("central-db")
+    fi
+
+    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" == "true" ]]; then
+        reqd_images+=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index")
+    fi
 
     info "Will poll for: ${reqd_images[*]}"
 
@@ -640,16 +645,27 @@ mark_collector_release() {
 
     # We need to make sure the file ends with a newline so as not to corrupt it when appending.
     [[ ! -f RELEASED_VERSIONS ]] || sed --in-place -e '$a'\\ RELEASED_VERSIONS
-    echo "${collector_version} ${tag}  # Rox release ${tag} by ${username} at $(date)" \
-        >>RELEASED_VERSIONS
-    gitbot add RELEASED_VERSIONS
-    gitbot commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${tag}"
-    gitbot push origin "${branch_name}"
+    if grep -q "${tag}" RELEASED_VERSIONS; then
+        echo "Skip RELEASED_VERSIONS file change, already up to date ..." >> "${GITHUB_STEP_SUMMARY}"
+    else
+        echo "Update RELEASED_VERSIONS file ..." >> "${GITHUB_STEP_SUMMARY}"
+        echo "${collector_version} ${tag}  # Rox release ${tag} by ${username} at $(date)" \
+            >>RELEASED_VERSIONS
+        gitbot add RELEASED_VERSIONS
+        gitbot commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${tag}"
+        gitbot push origin "${branch_name}"
+    fi
 
-    echo "Create a PR for collector to add this release to its RELEASED_VERSIONS file" >> "${GITHUB_STEP_SUMMARY}"
-    gh pr create \
-        --title "Update RELEASED_VERSIONS for StackRox release ${tag}" \
-        --body "Add entry into the RELEASED_VERSIONS file" >> "${GITHUB_STEP_SUMMARY}"
+    PRs=$(gh pr list -s open \
+            --head "${branch_name}" \
+            --json number \
+            --jq length)
+    if [ "$PRs" -eq 0 ]; then
+        echo "Create a PR for collector to add this release to its RELEASED_VERSIONS file" >> "${GITHUB_STEP_SUMMARY}"
+        gh pr create \
+            --title "Update RELEASED_VERSIONS for StackRox release ${tag}" \
+            --body "Add entry into the RELEASED_VERSIONS file" >> "${GITHUB_STEP_SUMMARY}"
+    fi
     popd
 }
 
@@ -660,11 +676,11 @@ is_tagged() {
 }
 
 is_nightly_run() {
-    [[ "${CIRCLE_TAG:-}" =~ -nightly- ]]
+    [[ "${BUILD_TAG:-}" =~ -nightly- ]] || [[ "${GITHUB_REF:-}" =~ nightly- ]]
 }
 
 is_in_PR_context() {
-    if is_CIRCLECI && [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
+    if is_GITHUB_ACTIONS && [[ -n "${GITHUB_BASE_REF:-}" ]]; then
         return 0
     elif is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]]; then
         return 0
@@ -679,16 +695,23 @@ is_in_PR_context() {
 }
 
 get_PR_number() {
-    if is_CIRCLECI && [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
-        echo "${CIRCLE_PULL_REQUEST}"
-        return 0
-    elif is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]]; then
+    if is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]]; then
         echo "${PULL_NUMBER}"
         return 0
     elif is_OPENSHIFT_CI && [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
         # bin, test-bin, images
         local pull_request
         pull_request=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].pulls[0].number' 2>&1) || {
+            echo 2>&1 "ERROR: Could not determine a PR number"
+            return 1
+        }
+        if [[ "$pull_request" =~ ^[0-9]+$ ]]; then
+            echo "$pull_request"
+            return 0
+        fi
+    elif is_GITHUB_ACTIONS; then
+        local pull_request
+        pull_request=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH") || {
             echo 2>&1 "ERROR: Could not determine a PR number"
             return 1
         }
@@ -708,9 +731,7 @@ is_openshift_CI_rehearse_PR() {
 }
 
 get_base_ref() {
-    if is_CIRCLECI; then
-        echo "${CIRCLE_BRANCH}"
-    elif is_OPENSHIFT_CI; then
+    if is_OPENSHIFT_CI; then
         if [[ -n "${PULL_BASE_REF:-}" ]]; then
             # presubmit, postsubmit and batch runs
             # (ref: https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables)
@@ -732,9 +753,9 @@ get_base_ref() {
 }
 
 get_repo_full_name() {
-    if is_CIRCLECI; then
-        # CIRCLE_REPOSITORY_URL=git@github.com:stackrox/stackrox.git
-        echo "${CIRCLE_REPOSITORY_URL:15:-4}"
+    if is_GITHUB_ACTIONS; then
+        [[ -n "${GITHUB_ACTION_REPOSITORY:-}" ]] || die "expect: GITHUB_ACTION_REPOSITORY"
+        echo "${GITHUB_ACTION_REPOSITORY}"
     elif is_OPENSHIFT_CI; then
         if [[ -n "${REPO_OWNER:-}" ]]; then
             # presubmit, postsubmit and batch runs
@@ -791,6 +812,45 @@ pr_has_label_in_body() {
     [[ "$(jq -r '.body' <<<"$pr_details")" =~ \/label:[[:space:]]*$expected_label ]]
 }
 
+# pr_has_pragma() - returns true if a pragma exists. A pragma is a key with
+# value in the description body of a PR that influences how CI behaves.
+# e.g. /pragma gk_release_channel:rapid.
+pr_has_pragma() {
+    if [[ "$#" -ne 1 ]]; then
+        die "usage: pr_has_pragma <key>"
+    fi
+
+    local pr_details
+    if ! pr_details="$(get_pr_details)"; then
+        info "Warning: checking for a pragma in a non PR context"
+        return 0
+    fi
+
+    local key_to_check="$1"
+    [[ "$(jq -r '.body' <<<"$pr_details")" =~ \/pragma:[[:space:]]*$key_to_check: ]]
+}
+
+# pr_get_pragma() - outputs the pragma key value if it exists.
+pr_get_pragma() {
+    if [[ "$#" -ne 1 ]]; then
+        die "usage: pr_get_pragma <key>"
+    fi
+
+    local pr_details
+    if ! pr_details="$(get_pr_details)"; then
+        echo ''
+        return 0
+    fi
+
+    local key_to_check="$1"
+    while IFS= read -r line; do
+        if [[ "$line" =~ \/pragma:[[:space:]]*$key_to_check:[[:space:]]*(.+) ]]; then
+            # shellcheck disable=SC2001
+            echo "${BASH_REMATCH[1]}" | sed -e 's/[[:space:]]*$//'
+        fi
+    done <<< "$(jq -r '.body' <<<"$pr_details")"
+}
+
 # get_pr_details() from GitHub and display the result. Exits 1 if not run in CI in a PR context.
 _PR_DETAILS=""
 _PR_DETAILS_CACHE_FILE="/tmp/PR_DETAILS_CACHE.json"
@@ -814,14 +874,7 @@ get_pr_details() {
         exit 1
     }
 
-    if is_CIRCLECI; then
-        [ -n "${CIRCLE_PULL_REQUEST:-}" ] || _not_a_PR
-        [ -n "${CIRCLE_PROJECT_USERNAME}" ] || { echo "CIRCLE_PROJECT_USERNAME not found" ; exit 2; }
-        [ -n "${CIRCLE_PROJECT_REPONAME}" ] || { echo "CIRCLE_PROJECT_REPONAME not found" ; exit 2; }
-        pull_request="${CIRCLE_PULL_REQUEST##*/}"
-        org="${CIRCLE_PROJECT_USERNAME}"
-        repo="${CIRCLE_PROJECT_REPONAME}"
-    elif is_OPENSHIFT_CI; then
+    if is_OPENSHIFT_CI; then
         if [[ -n "${JOB_SPEC:-}" ]]; then
             pull_request=$(jq -r <<<"$JOB_SPEC" '.refs.pulls[0].number')
             org=$(jq -r <<<"$JOB_SPEC" '.refs.org')
@@ -841,7 +894,7 @@ get_pr_details() {
         org="${GITHUB_REPOSITORY_OWNER}"
         repo="${GITHUB_REPOSITORY#*/}"
     else
-        echo "Expect Circle or OpenShift CI"
+        echo "Unsupported CI"
         exit 2
     fi
 
@@ -918,11 +971,7 @@ gate_pr_job() {
 
     if [[ -n "${run_with_changed_path}" || -n "${changed_path_to_ignore}" ]]; then
         local diff_base
-        if is_CIRCLECI; then
-            diff_base="$(git merge-base HEAD origin/master)"
-            echo "Determined diff-base as ${diff_base}"
-            echo "Master SHA: $(git rev-parse origin/master)"
-        elif is_OPENSHIFT_CI; then
+        if is_OPENSHIFT_CI; then
             if [[ -n "${PULL_BASE_SHA:-}" ]]; then
                 diff_base="${PULL_BASE_SHA:-}"
             else
@@ -993,10 +1042,9 @@ openshift_ci_mods() {
         fi
     fi
 
-    # Provide Circle CI vars that are commonly used
-    export CIRCLE_JOB="${JOB_NAME:-${OPENSHIFT_BUILD_NAME}}"
-    CIRCLE_TAG="$(git tag --sort=creatordate --contains | tail -1)" || echo "Warning: Cannot get tag"
-    export CIRCLE_TAG
+    # Target a tag if HEAD is tagged.
+    BUILD_TAG="$(git tag --sort=creatordate --contains | tail -1)" || echo "Warning: Cannot get tag"
+    export BUILD_TAG
 
     # For gradle
     export GRADLE_USER_HOME="${HOME}"
@@ -1086,7 +1134,7 @@ handle_nightly_runs() {
     local nightly_tag_prefix
     nightly_tag_prefix="$(git describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-"
     if ! is_in_PR_context && [[ "${JOB_NAME_SAFE:-}" =~ ^nightly- ]]; then
-        ci_export CIRCLE_TAG "${nightly_tag_prefix}$(date '+%Y%m%d')"
+        ci_export BUILD_TAG "${nightly_tag_prefix}$(date '+%Y%m%d')"
     fi
 }
 
@@ -1159,7 +1207,7 @@ store_test_results() {
     if ! is_in_PR_context; then
     {
         info "Creating JIRA task for failures found in $from"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.3/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.5/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira -junit-reports-dir "$from" -threshold 5
     } || true
@@ -1364,8 +1412,10 @@ save_junit_success() {
 
     local class="$1"
     local description="$2"
+    local timestamp
+    timestamp="$(date -u +"%s.%N")"
 
-    cat << EOF > "${ARTIFACT_DIR}/junit-${class}.xml"
+    cat << EOF > "${ARTIFACT_DIR}/junit-${class}-${timestamp}.xml"
 <testsuite name="${class}" tests="1" skipped="0" failures="0" errors="0">
     <testcase name="${description}" classname="${class}">
     </testcase>
@@ -1386,11 +1436,13 @@ save_junit_failure() {
     local class="$1"
     local description="$2"
     local details="$3"
+    local timestamp
+    timestamp="$(date -u +"%s.%N")"
 
-    cat << EOF > "${ARTIFACT_DIR}/junit-${class}.xml"
+    cat << EOF > "${ARTIFACT_DIR}/junit-${class}-${timestamp}.xml"
 <testsuite name="${class}" tests="1" skipped="0" failures="1" errors="0">
     <testcase name="${description}" classname="${class}">
-        <failure>${details}</failure>
+        <failure><![CDATA[${details}]]></failure>
     </testcase>
 </testsuite>
 EOF
@@ -1458,10 +1510,97 @@ handle_gha_tagged_build() {
     if [[ "${GITHUB_REF:-}" =~ ^refs/tags/ ]]; then
         tag="${GITHUB_REF#refs/tags/*}"
         echo "This is a tagged build: $tag"
-        echo "CIRCLE_TAG=$tag" >> "$GITHUB_ENV"
+        echo "BUILD_TAG=$tag" >> "$GITHUB_ENV"
     else
         echo "This is not a tagged build"
     fi
+}
+
+slack_prow_notice() {
+    info "Slack a notice that prow tests have started"
+
+    if [[ "$#" -lt 1 ]]; then
+        die "missing arg. usage: slack_prow_notice <tag>"
+    fi
+
+    local tag="$1"
+
+    [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || is_nightly_run || {
+        info "Skipping step as this is not a release, RC or nightly build"
+        return 0
+    }
+
+    local build_url
+    local webhook_url
+    if [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]]; then
+        local release
+        release="$(get_release_stream "$tag")"
+        build_url="https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*release-$release*"
+        if is_release_test_stream "$tag"; then
+            # send to #acs-slack-integration-testing when testing the release process
+            webhook_url="${SLACK_MAIN_WEBHOOK}"
+        else
+            # send to #forum-acs-eng-release
+            webhook_url="${RELEASE_WORKFLOW_NOTIFY_WEBHOOK}"
+        fi
+    elif is_nightly_run; then
+        build_url="https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*stackrox*night*"
+        # send to #acs-nightly-ci-runs
+        webhook_url="${NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK}"
+    else
+        die "unexpected"
+    fi
+
+    local github_url="https://github.com/stackrox/stackrox/releases/tag/$tag"
+
+    jq -n \
+    --arg build_url "$build_url" \
+    --arg tag "$tag" \
+    --arg github_url "$github_url" \
+    '{"text": ":prow: Prow CI for tag <\($github_url)|\($tag)> started! Check the status of the tests under the following URL: \($build_url)"}' \
+| curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+}
+
+highlight_cluster_versions() {
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+        info "No place for artifacts, skipping cluster version dump"
+        return
+    fi
+
+    artifact_file="$ARTIFACT_DIR/cluster-version-summary.html"
+
+    cat > "$artifact_file" <<- HEAD
+<html style="background: #fff">
+    <head>
+        <title><h4>Cluster Versions</h4></title>
+    </head>
+    <body>
+HEAD
+
+    local nodes
+    nodes="$(kubectl get nodes -o wide 2>&1 || true)"
+    local kubectl_version
+    kubectl_version="$(kubectl version -o json 2>&1 || true)"
+    local oc_version
+    oc_version="$(oc version -o json 2>&1 || true)"
+
+    cat >> "$artifact_file" << DETAILS
+      <h3>Nodes:</h3>
+      kubectl get nodes -o wide
+      <pre>$nodes</pre>
+      <h3>Versions:</h3>
+      kubectl version -o json
+      <pre>$kubectl_version</pre>
+      oc version -o json
+      <pre>$oc_version</pre>
+DETAILS
+
+    cat >> "$artifact_file" <<- FOOT
+    <br />
+    <br />
+  </body>
+</html>
+FOOT
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

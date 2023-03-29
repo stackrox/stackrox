@@ -281,6 +281,19 @@ export function clickOnSingularEntityWidgetInSidePanel(entitiesKey1, entitiesKey
     );
 }
 
+// For example, click the first namespace row that has a link for secrets.
+export function clickEntityTableRowThatHasLinkInColumn(entitiesKey, columnIndex) {
+    visitConfigurationManagementEntities(entitiesKey);
+
+    interactAndWaitForConfigurationManagementEntityInSidePanel(() => {
+        // Click the first non-hidden cell (that is, the entity name)
+        // so cypress does not click the row in a cell that has a link.
+        cy.get(
+            `.rt-tbody .rt-tr:has('.rt-td:nth-child(${columnIndex}) a'):eq(0) .rt-td:not(.hidden):eq(0)`
+        ).click();
+    }, entitiesKey);
+}
+
 // For example, namespaces or nodes have link to one cluster.
 export const clickOnSingleEntityInTable = (entitiesKey1, entitiesKey2) => {
     visitConfigurationManagementEntities(entitiesKey1);

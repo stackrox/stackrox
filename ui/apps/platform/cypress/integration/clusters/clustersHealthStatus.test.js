@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 
 import {
     visitClusterByNameWithFixtureMetadataDatetime,
@@ -24,7 +23,7 @@ describe('Clusters Health Status', () => {
         {
             expectedInListAndSide: {
                 clusterName: 'alpha-amsterdam-1',
-                cloudProvider: 'Not applicable',
+                cloudProvider: 'Not available',
                 clusterStatus: 'Uninitialized',
                 sensorUpgrade: 'Not applicable',
                 credentialExpiration: 'Not applicable',
@@ -201,11 +200,7 @@ describe('Clusters Health Status', () => {
         },
     ];
 
-    it('should appear in the list', function () {
-        if (!hasFeatureFlag('ROX_DECOMMISSIONED_CLUSTER_RETENTION')) {
-            this.skip();
-        }
-
+    it('should appear in the list', () => {
         visitClustersWithFixtureMetadataDatetime(fixturePath, metadata, datetimeISOString);
 
         /*

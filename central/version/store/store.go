@@ -1,10 +1,10 @@
 package store
 
 import (
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/version/postgres"
+	pgStore "github.com/stackrox/rox/central/version/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	bolt "go.etcd.io/bbolt"
 )
@@ -29,6 +29,6 @@ func New(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB) Store {
 }
 
 // NewPostgres returns a new postgres-based version store
-func NewPostgres(pg *pgxpool.Pool) Store {
-	return &storeImpl{pgStore: postgres.New(pg)}
+func NewPostgres(pg *postgres.DB) Store {
+	return &storeImpl{pgStore: pgStore.New(pg)}
 }

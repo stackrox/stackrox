@@ -2,6 +2,7 @@ package search
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/conv"
 	"github.com/stackrox/rox/pkg/generic"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -30,6 +32,9 @@ const (
 
 	// EqualityPrefixSuffix is the prefix for an exact match
 	EqualityPrefixSuffix = `"`
+
+	// MaxQueryParameters is the maximum number of query parameters for a single statement
+	MaxQueryParameters = math.MaxUint16
 )
 
 var (
@@ -73,14 +78,68 @@ type fieldValue struct {
 	highlighted bool
 }
 
-// NewPagination create a new pagination object
+// Select defines the select field to be used with the query.
+type Select struct {
+	qs *v1.QuerySelect
+}
+
+// NewQuerySelect creates a new query select.
+func NewQuerySelect(field FieldLabel) *Select {
+	return &Select{
+		qs: &v1.QuerySelect{
+			Field: &v1.QueryField{
+				Name: field.String(),
+			},
+		},
+	}
+}
+
+// AggrFunc sets aggregate function to be applied on the select field.
+func (s *Select) AggrFunc(aggr aggregatefunc.AggrFunc) *Select {
+	s.qs.Field.AggregateFunc = aggr.String()
+	return s
+}
+
+// Distinct sets query select to distinct.
+func (s *Select) Distinct() *Select {
+	s.qs.Field.Distinct = true
+	return s
+}
+
+// Filter sets filter on the select field.
+func (s *Select) Filter(name string, q *v1.Query) *Select {
+	s.qs.Filter = &v1.QuerySelectFilter{
+		Name:  name,
+		Query: q,
+	}
+	return s
+}
+
+// Proto returns the select clause as *v1.QuerySelect.
+func (s *Select) Proto() *v1.QuerySelect {
+	return s.qs
+}
+
+// NewGroupBy creates a new *GroupBy object.
+func NewGroupBy() *GroupBy {
+	return &GroupBy{
+		grpBy: &v1.QueryGroupBy{},
+	}
+}
+
+// GroupBy defines the group by clause to be used with the query.
+type GroupBy struct {
+	grpBy *v1.QueryGroupBy
+}
+
+// NewPagination creates a new *Pagination object.
 func NewPagination() *Pagination {
 	return &Pagination{
 		qp: &v1.QueryPagination{},
 	}
 }
 
-// Pagination defines the pagination to be used with the query
+// Pagination defines the pagination to be used with the query.
 type Pagination struct {
 	qp *v1.QueryPagination
 }
@@ -144,8 +203,11 @@ type QueryBuilder struct {
 	ids            *[]string
 	linkedFields   [][]fieldValue
 
+	selectFields []*Select
+	// TODO(mandar): Deprecate highlighted and replace with selects.
 	highlightedFields map[FieldLabel]struct{}
 
+	groupBy    *GroupBy
 	pagination *Pagination
 }
 
@@ -155,6 +217,34 @@ func NewQueryBuilder() *QueryBuilder {
 		fieldsToValues:    make(map[FieldLabel][]string),
 		highlightedFields: make(map[FieldLabel]struct{}),
 	}
+}
+
+// WithSelectFields sets fields to select.
+func (qb *QueryBuilder) WithSelectFields(selects ...*Select) *QueryBuilder {
+	qb.selectFields = selects
+	return qb
+}
+
+// AddSelectFields adds fields to select.
+func (qb *QueryBuilder) AddSelectFields(selects ...*Select) *QueryBuilder {
+	qb.selectFields = append(qb.selectFields, selects...)
+	return qb
+}
+
+// WithGroupBy sets query group by.
+func (qb *QueryBuilder) WithGroupBy(grpBy *GroupBy) *QueryBuilder {
+	qb.groupBy = grpBy
+	return qb
+}
+
+// AddGroupBy adds fields to groups query results on.
+func (qb *QueryBuilder) AddGroupBy(fields ...FieldLabel) *QueryBuilder {
+	gb := NewGroupBy()
+	for _, field := range fields {
+		gb.grpBy.Fields = append(gb.grpBy.Fields, field.String())
+	}
+	qb.groupBy = gb
+	return qb
 }
 
 // WithPagination applies pagination to the query
@@ -344,6 +434,11 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	// Sort the queries by field value, to ensure consistency of output.
 	fields := qb.getSortedFields()
 
+	var qSelects []*v1.QuerySelect
+	for _, sf := range qb.selectFields {
+		qSelects = append(qSelects, sf.qs)
+	}
+
 	for _, field := range fields {
 		_, highlighted := qb.highlightedFields[field]
 		queries = append(queries, queryFromFieldValues(field.String(), qb.fieldsToValues[field], highlighted))
@@ -354,6 +449,13 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	}
 
 	cq := ConjunctionQuery(queries...)
+	if qSelects != nil {
+		cq.Selects = qSelects
+	}
+
+	if qb.groupBy != nil {
+		cq.GroupBy = qb.groupBy.grpBy
+	}
 	if qb.pagination != nil {
 		cq.Pagination = qb.pagination.qp
 	}

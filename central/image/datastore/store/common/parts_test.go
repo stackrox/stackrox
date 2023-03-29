@@ -6,11 +6,14 @@ import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSplitAndMergeImage(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	ts := timestamp.TimestampNow()
 	image := &storage.Image{
 		Id: "sha",

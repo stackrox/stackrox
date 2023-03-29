@@ -84,7 +84,6 @@ function roxcurl() {
 deploy_earlier_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    mkdir -p "bin/$TEST_HOST_PLATFORM"
     if is_CI; then
         gsutil cp "gs://stackrox-ci/roxctl-$EARLIER_TAG" "bin/$TEST_HOST_PLATFORM/roxctl"
     else
@@ -99,7 +98,7 @@ deploy_earlier_central() {
     SCANNER_DB_IMAGE="$REGISTRY/scanner-db:$(cat SCANNER_VERSION)" \
     ./deploy/k8s/central.sh
 
-    get_central_basic_auth_creds
+    export_central_basic_auth_creds
 }
 
 restore_backup_test() {
@@ -227,7 +226,7 @@ test_upgrader() {
 
     info "Verify resources were patched back by the upgrader"
     resources="$(kubectl -n stackrox get deploy/sensor -o 'jsonpath=cpu={.spec.template.spec.containers[?(@.name=="sensor")].resources.requests.cpu},memory={.spec.template.spec.containers[?(@.name=="sensor")].resources.requests.memory}')"
-    if [[ "$resources" != 'cpu=1,memory=1Gi' ]]; then
+    if [[ "$resources" != 'cpu=2,memory=4Gi' ]]; then
         echo "Resources ($resources) not patched back!"
         kubectl -n stackrox get deploy/sensor -o yaml
         exit 1
@@ -381,3 +380,70 @@ rollback_sensor_via_upgrader() {
     kill "$proxy_pid"
 }
 
+create_certificate_values_file() {
+    if [[ "$#" -ne 1 ]]; then
+        die "wrong args. usage: create_certificate_values_file <path_to_values_file>"
+    fi
+
+    local cert_path="$1"
+    echo "Create root certificates values file"
+
+    # get root ca
+    caKey=$(kubectl -n stackrox get secret central-tls -o go-template='{{ index .data "ca-key.pem" }}' | base64 --decode)
+    caPem=$(kubectl -n stackrox get secret central-tls -o go-template='{{ index .data "ca.pem" }}' | base64 --decode)
+
+    # create root certificates value file
+    yq e -n ".ca.cert = \"${caPem}\" | .ca.key = \"${caKey}\"" > "$cert_path"
+}
+
+preamble() {
+    info "Starting test preamble"
+
+    if is_darwin; then
+        HOST_OS="darwin"
+    elif is_linux; then
+        HOST_OS="linux"
+    else
+        die "Only linux or darwin are supported for this test"
+    fi
+
+    case "$(uname -m)" in
+        x86_64) TEST_HOST_PLATFORM="${HOST_OS}_amd64" ;;
+        aarch64) TEST_HOST_PLATFORM="${HOST_OS}_arm64" ;;
+        arm64) TEST_HOST_PLATFORM="${HOST_OS}_arm64" ;;
+        ppc64le) TEST_HOST_PLATFORM="${HOST_OS}_ppc64le" ;;
+        s390x) TEST_HOST_PLATFORM="${HOST_OS}_s390x" ;;
+        *) die "Unknown architecture" ;;
+    esac
+
+    require_executable "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl"
+
+    info "Will clone or update a clean copy of the rox repo for legacy DB test at $REPO_FOR_TIME_TRAVEL"
+    if [[ -d "$REPO_FOR_TIME_TRAVEL" ]]; then
+        if is_CI; then
+          info "Repo for time travel already exists! Will use it."
+        fi
+        (cd "$REPO_FOR_TIME_TRAVEL" && git checkout master && git reset --hard && git pull)
+    else
+        (cd "$(dirname "$REPO_FOR_TIME_TRAVEL")" && git clone https://github.com/stackrox/stackrox.git "$(basename "$REPO_FOR_TIME_TRAVEL")")
+    fi
+
+    info "Will clone or update a clean copy of the rox repo for Postgres DB test at $REPO_FOR_POSTGRES_TIME_TRAVEL"
+        if [[ -d "$REPO_FOR_POSTGRES_TIME_TRAVEL" ]]; then
+            if is_CI; then
+              info "Repo for time travel already exists! Will use it."
+            fi
+            (cd "$REPO_FOR_POSTGRES_TIME_TRAVEL" && git checkout master && git reset --hard && git pull)
+        else
+            (cd "$(dirname "$REPO_FOR_POSTGRES_TIME_TRAVEL")" && git clone https://github.com/stackrox/stackrox.git "$(basename "$REPO_FOR_POSTGRES_TIME_TRAVEL")")
+        fi
+
+    if is_CI; then
+        if ! command -v yq >/dev/null 2>&1; then
+            sudo wget https://github.com/mikefarah/yq/releases/download/v4.4.1/yq_linux_amd64 -O /usr/bin/yq
+            sudo chmod 0755 /usr/bin/yq
+        fi
+    else
+        require_executable yq
+    fi
+}

@@ -74,6 +74,10 @@ class GraphQLService {
             return this.value
         }
 
+        List<String> getErrors() {
+            return this.errors
+        }
+
         Boolean hasNoErrors() {
             return this.code == 200 && (this.errors == null || this.errors.size() == 0)
         }

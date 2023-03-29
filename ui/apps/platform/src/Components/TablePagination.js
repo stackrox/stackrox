@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import { withRouter } from 'react-router-dom';
@@ -27,10 +27,7 @@ const TablePagination = ({ dataLength, setPage, page, pageSize }) => {
     const [localPage, setLocalPage] = useState(page + 1);
 
     // 2. debounce the setPage callback to delay the setPage call when typing
-    const delayedSetPage = useCallback(
-        debounce((newPage) => setPage(newPage), TYPING_DELAY),
-        []
-    );
+    const delayedSetPage = debounce((newPage) => setPage(newPage), TYPING_DELAY);
 
     useEffect(() => {
         setLocalPage(page + 1);
@@ -96,7 +93,7 @@ const TablePagination = ({ dataLength, setPage, page, pageSize }) => {
                     className="flex items-center rounded-full hover:bg-primary-200 hover:text-primary-600 mr-1 p-1"
                     onClick={previousPage}
                     disabled={page <= 0}
-                    data-testid="prev-page-button"
+                    aria-label="Go to previous page"
                 >
                     <Icon.ChevronLeft className="h-6 w-6" />
                 </button>
@@ -105,7 +102,7 @@ const TablePagination = ({ dataLength, setPage, page, pageSize }) => {
                     className="flex items-center rounded-full text-base-600 hover:bg-primary-200 hover:text-primary-600 p-1"
                     onClick={nextPage}
                     disabled={page >= totalPages - 1}
-                    data-testid="next-page-button"
+                    aria-label="Go to next page"
                 >
                     <Icon.ChevronRight className="h-6 w-6" />
                 </button>

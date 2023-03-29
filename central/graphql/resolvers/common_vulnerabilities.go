@@ -37,7 +37,8 @@ var commonVulnerabilitySubResolvers = []string{
 }
 
 // CommonVulnerabilityResolver represents the supported API on all vulnerabilities
-//  NOTE: This list is and should remain alphabetically ordered
+//
+//	NOTE: This list is and should remain alphabetically ordered
 type CommonVulnerabilityResolver interface {
 	CreatedAt(ctx context.Context) (*graphql.Time, error)
 	CVE(ctx context.Context) string

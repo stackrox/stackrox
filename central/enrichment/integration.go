@@ -9,6 +9,7 @@ import (
 )
 
 // Manager implements a bit of multiplexing logic between ImageIntegrations and NodeIntegrations
+//
 //go:generate mockgen-wrapper
 type Manager interface {
 	Upsert(integration *storage.ImageIntegration) error

@@ -8,14 +8,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/jackc/pgx/v4/pgxpool"
-	componentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
-	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
-	deploymentPostgres "github.com/stackrox/rox/central/deployment/store/postgres"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
-	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
-	imageCVEEdgePostgres "github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -25,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/gorm"
 )
 
 func TestGraphQLImageComponentEndpoints(t *testing.T) {
@@ -48,8 +40,7 @@ type GraphQLImageComponentTestSuite struct {
 	suite.Suite
 
 	ctx      context.Context
-	db       *pgxpool.Pool
-	gormDB   *gorm.DB
+	testDB   *pgtest.TestPostgres
 	resolver *Resolver
 }
 
@@ -63,15 +54,15 @@ func (s *GraphQLImageComponentTestSuite) SetupSuite() {
 
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
-	s.db, s.gormDB = SetupTestPostgresConn(s.T())
-	imageDataStore := CreateTestImageDatastore(s.T(), s.db, s.gormDB, mockCtrl)
+	s.testDB = SetupTestPostgresConn(s.T())
+	imageDataStore := CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
 	resolver, _ := SetupTestResolver(s.T(),
 		imageDataStore,
-		CreateTestImageComponentDatastore(s.T(), s.db, s.gormDB, mockCtrl),
-		CreateTestImageCVEDatastore(s.T(), s.db, s.gormDB),
-		CreateTestImageComponentCVEEdgeDatastore(s.T(), s.db, s.gormDB),
-		CreateTestImageCVEEdgeDatastore(s.T(), s.db, s.gormDB),
-		CreateTestDeploymentDatastore(s.T(), s.db, s.gormDB, mockCtrl, imageDataStore),
+		CreateTestImageComponentDatastore(s.T(), s.testDB, mockCtrl),
+		CreateTestImageCVEDatastore(s.T(), s.testDB),
+		CreateTestImageComponentCVEEdgeDatastore(s.T(), s.testDB),
+		CreateTestImageCVEEdgeDatastore(s.T(), s.testDB),
+		CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imageDataStore),
 	)
 	s.resolver = resolver
 
@@ -90,15 +81,7 @@ func (s *GraphQLImageComponentTestSuite) SetupSuite() {
 }
 
 func (s *GraphQLImageComponentTestSuite) TearDownSuite() {
-
-	imageCVEPostgres.Destroy(s.ctx, s.db)
-	imagePostgres.Destroy(s.ctx, s.db)
-	imageComponentPostgres.Destroy(s.ctx, s.db)
-	imageCVEEdgePostgres.Destroy(s.ctx, s.db)
-	componentCVEEdgePostgres.Destroy(s.ctx, s.db)
-	deploymentPostgres.Destroy(s.ctx, s.db)
-	pgtest.CloseGormDB(s.T(), s.gormDB)
-	s.db.Close()
+	s.testDB.Teardown(s.T())
 }
 
 func (s *GraphQLImageComponentTestSuite) TestUnauthorizedImageComponentEndpoint() {
@@ -277,10 +260,10 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImageVulnerabilities(
 			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 1},
-				critical:  &VulnerabilityFixableCounterResolver{0, 0},
+				critical:  &VulnerabilityFixableCounterResolver{1, 1},
 				important: &VulnerabilityFixableCounterResolver{0, 0},
 				moderate:  &VulnerabilityFixableCounterResolver{0, 0},
-				low:       &VulnerabilityFixableCounterResolver{1, 1},
+				low:       &VulnerabilityFixableCounterResolver{0, 0},
 			},
 		},
 		{
@@ -291,10 +274,10 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImageVulnerabilities(
 			},
 			&VulnerabilityCounterResolver{
 				all:       &VulnerabilityFixableCounterResolver{0, 1},
-				critical:  &VulnerabilityFixableCounterResolver{0, 0},
+				critical:  &VulnerabilityFixableCounterResolver{1, 1},
 				important: &VulnerabilityFixableCounterResolver{0, 0},
 				moderate:  &VulnerabilityFixableCounterResolver{0, 0},
-				low:       &VulnerabilityFixableCounterResolver{1, 1},
+				low:       &VulnerabilityFixableCounterResolver{0, 0},
 			},
 		},
 		{
@@ -308,8 +291,8 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImageVulnerabilities(
 				all:       &VulnerabilityFixableCounterResolver{0, 0},
 				critical:  &VulnerabilityFixableCounterResolver{0, 0},
 				important: &VulnerabilityFixableCounterResolver{0, 0},
-				moderate:  &VulnerabilityFixableCounterResolver{0, 0},
-				low:       &VulnerabilityFixableCounterResolver{2, 0},
+				moderate:  &VulnerabilityFixableCounterResolver{1, 0},
+				low:       &VulnerabilityFixableCounterResolver{1, 0},
 			},
 		},
 		{

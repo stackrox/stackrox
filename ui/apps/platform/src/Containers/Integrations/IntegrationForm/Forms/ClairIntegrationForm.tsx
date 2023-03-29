@@ -1,5 +1,13 @@
 import React, { ReactElement } from 'react';
-import { TextInput, PageSection, Form, Checkbox } from '@patternfly/react-core';
+import {
+    Alert,
+    AlertVariant,
+    Checkbox,
+    Form,
+    PageSection,
+    Text,
+    TextInput,
+} from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import { ImageIntegrationBase } from 'services/ImageIntegrationsService';
@@ -85,6 +93,18 @@ function ClairIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
+                <Alert
+                    title="Deprecation notice"
+                    variant={AlertVariant.warning}
+                    isInline
+                    className="pf-u-mb-lg"
+                >
+                    <Text>
+                        CoreOS Clair v2 integration will be removed in Red Hat Advanced Cluster
+                        Security 4.1 release.
+                    </Text>
+                    <Text>Use Clair v4 integration instead.</Text>
+                </Alert>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup

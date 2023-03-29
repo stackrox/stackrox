@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/segment"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"google.golang.org/grpc"
 )
 
@@ -32,17 +33,20 @@ type Config struct {
 	ClientID string
 	// ClientName tells what kind of client is sending data.
 	ClientName string
-	// GroupID identifies the main group to which the client belongs.
+	// GroupType identifies the main group type to which the client belongs.
+	GroupType string
+	// GroupID identifies the ID of the GroupType group.
 	GroupID string
 
 	StorageKey   string
 	Endpoint     string
 	PushInterval time.Duration
+	BatchSize    int
 
 	// The period of identity gathering. Default is 1 hour.
 	GatherPeriod time.Duration
 
-	telemeter Telemeter
+	telemeter telemeter.Telemeter
 	gatherer  Gatherer
 
 	onceTelemeter sync.Once
@@ -70,7 +74,7 @@ func (cfg *Config) Gatherer() Gatherer {
 			if cfg.GatherPeriod.Nanoseconds() == 0 {
 				period = 1 * time.Hour
 			}
-			cfg.gatherer = newGatherer(cfg.ClientID, cfg.Telemeter(), period)
+			cfg.gatherer = newGatherer(cfg.ClientName, cfg.Telemeter(), period)
 		} else {
 			cfg.gatherer = &nilGatherer{}
 		}
@@ -79,7 +83,7 @@ func (cfg *Config) Gatherer() Gatherer {
 }
 
 // Telemeter returns the instance of the telemeter.
-func (cfg *Config) Telemeter() Telemeter {
+func (cfg *Config) Telemeter() telemeter.Telemeter {
 	if cfg == nil {
 		return &nilTelemeter{}
 	}
@@ -90,7 +94,8 @@ func (cfg *Config) Telemeter() Telemeter {
 				cfg.Endpoint,
 				cfg.ClientID,
 				cfg.ClientName,
-				cfg.PushInterval)
+				cfg.PushInterval,
+				cfg.BatchSize)
 		} else {
 			cfg.telemeter = &nilTelemeter{}
 		}
@@ -107,6 +112,13 @@ func (cfg *Config) AddInterceptorFunc(event string, f Interceptor) {
 		cfg.interceptors = make(map[string][]Interceptor, 1)
 	}
 	cfg.interceptors[event] = append(cfg.interceptors[event], f)
+}
+
+// RemoveInterceptors cleans up the list of telemetry interceptors.
+func (cfg *Config) RemoveInterceptors() {
+	cfg.interceptorsLock.Lock()
+	defer cfg.interceptorsLock.Unlock()
+	cfg.interceptors = nil
 }
 
 // GetGRPCInterceptor returns an API interceptor function for GRPC requests.

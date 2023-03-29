@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
 // GatherFunc returns properties gathered by a data source.
@@ -15,20 +16,20 @@ type GatherFunc func(context.Context) (map[string]any, error)
 
 // Gatherer interface for interacting with telemetry gatherer.
 type Gatherer interface {
-	Start()
+	Start(...telemeter.Option)
 	Stop()
 	AddGatherer(GatherFunc)
 }
 
 type nilGatherer struct{}
 
-func (*nilGatherer) Start()                 {}
-func (*nilGatherer) Stop()                  {}
-func (*nilGatherer) AddGatherer(GatherFunc) {}
+func (*nilGatherer) Start(...telemeter.Option) {}
+func (*nilGatherer) Stop()                     {}
+func (*nilGatherer) AddGatherer(GatherFunc)    {}
 
 type gatherer struct {
-	clientID    string
-	telemeter   Telemeter
+	clientType  string
+	telemeter   telemeter.Telemeter
 	period      time.Duration
 	stopSig     concurrency.Signal
 	ctx         context.Context
@@ -36,13 +37,14 @@ type gatherer struct {
 	gathering   sync.Mutex
 	gatherFuncs []GatherFunc
 	lastData    map[string]any
+	opts        []telemeter.Option
 }
 
-func newGatherer(clientID string, t Telemeter, p time.Duration) *gatherer {
+func newGatherer(clientType string, t telemeter.Telemeter, p time.Duration) *gatherer {
 	return &gatherer{
-		clientID:  clientID,
-		telemeter: t,
-		period:    p,
+		clientType: clientType,
+		telemeter:  t,
+		period:     p,
 	}
 }
 
@@ -74,9 +76,8 @@ func (g *gatherer) identify() {
 	defer g.gathering.Unlock()
 	data := g.gather()
 	if !reflect.DeepEqual(g.lastData, data) {
-		g.telemeter.Identify(g.clientID, data)
 		// Issue an event so that the new data become visible on analytics:
-		g.telemeter.Track("Updated Identity", g.clientID, nil)
+		g.telemeter.Track("Updated "+g.clientType+" Identity", nil, append(g.opts, telemeter.WithTraits(data))...)
 	}
 	g.lastData = data
 }
@@ -96,7 +97,7 @@ func (g *gatherer) loop() {
 	}
 }
 
-func (g *gatherer) Start() {
+func (g *gatherer) Start(opts ...telemeter.Option) {
 	if g == nil {
 		return
 	}
@@ -104,6 +105,11 @@ func (g *gatherer) Start() {
 	defer g.mu.Unlock()
 	if g.stopSig.IsDone() {
 		g.reset()
+		{
+			g.gathering.Lock()
+			g.opts = opts
+			g.gathering.Unlock()
+		}
 		go g.loop()
 	}
 }

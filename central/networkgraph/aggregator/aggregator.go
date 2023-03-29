@@ -8,6 +8,7 @@ import (
 )
 
 // NetworkConnsAggregator provides functionality to aggregate supplied network connections into a new slice.
+//
 //go:generate mockgen-wrapper
 type NetworkConnsAggregator interface {
 	Aggregate(conns []*storage.NetworkFlow) []*storage.NetworkFlow

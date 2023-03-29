@@ -3,7 +3,7 @@ package datastore
 import (
 	acIndexer "github.com/stackrox/rox/central/activecomponent/datastore/index"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store/dackbox"
-	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store/postgres"
+	pgStore "github.com/stackrox/rox/central/activecomponent/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/activecomponent/datastore/search"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
@@ -23,8 +23,8 @@ var (
 
 func initialize() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage := postgres.New(globaldb.GetPostgres())
-		indexer := postgres.NewIndexer(globaldb.GetPostgres())
+		storage := pgStore.New(globaldb.GetPostgres())
+		indexer := pgStore.NewIndexer(globaldb.GetPostgres())
 		searcher := search.NewV2(storage, indexer)
 		ds = New(nil, storage, indexer, searcher)
 		return

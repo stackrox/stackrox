@@ -25,6 +25,7 @@ import '@patternfly/react-styles/css/utilities/Sizing/sizing.css';
 import '@patternfly/react-styles/css/utilities/Spacing/spacing.css';
 import '@patternfly/react-styles/css/utilities/Text/text.css';
 import { configure as mobxConfigure } from 'mobx';
+import { setDiagnosticsOptions } from 'monaco-yaml';
 
 // Advanced Cluster Security extensions to PatternFly styles
 import 'css/acs.css';
@@ -38,8 +39,20 @@ import configureStore from 'store/configureStore';
 import installRaven from 'installRaven';
 import { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import { fetchFeatureFlagsThunk } from './reducers/featureFlags';
-import { fetchPublicConfigThunk } from './reducers/systemConfig';
+import { fetchPublicConfigThunk } from './reducers/publicConfig';
+import { fetchTelemetryConfigThunk } from './reducers/telemetryConfig';
 import configureApollo from './configureApolloClient';
+
+// This enables syntax highlighting for the patternfly code editor
+// Reference: https://github.com/patternfly/patternfly-react/tree/main/packages/react-code-editor#enable-yaml-syntax-highlighting
+setDiagnosticsOptions({
+    enableSchemaRequest: true,
+    hover: true,
+    completion: true,
+    validate: true,
+    format: true,
+    schemas: [],
+});
 
 // We need to call this MobX utility function, to prevent the error
 //   Uncaught Error: [MobX] There are multiple, different versions of MobX active. Make sure MobX is loaded only once or use `configure({ isolateGlobalState: true })`
@@ -61,6 +74,7 @@ const dispatch = (action) =>
 
 dispatch(fetchFeatureFlagsThunk());
 dispatch(fetchPublicConfigThunk());
+dispatch(fetchTelemetryConfigThunk());
 
 ReactDOM.render(
     <Provider store={store}>

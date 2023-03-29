@@ -132,7 +132,6 @@ function PolicyCategoriesPage(): React.ReactElement {
                 onClose={() => setIsCreateModalOpen(false)}
                 refreshPolicyCategories={refreshPolicyCategories}
                 addToast={addToast}
-                setSelectedCategory={setSelectedCategory}
             />
         </>
     );

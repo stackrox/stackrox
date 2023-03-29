@@ -68,9 +68,11 @@ func (h *commandHandler) Start() error {
 	return nil
 }
 
-func (h *commandHandler) Stop(err error) {
+func (h *commandHandler) Stop(_ error) {
 	h.stopSig.Signal()
 }
+
+func (h *commandHandler) Notify(common.SensorComponentEvent) {}
 
 func (h *commandHandler) Capabilities() []centralsensor.SensorCapability {
 	return nil

@@ -9,6 +9,7 @@ import (
 
 // SettingsManager allows managing admission control settings. It allows updating policies and cluster configuration
 // independently, and makes the settings available via a ValueStream.
+//
 //go:generate mockgen-wrapper
 type SettingsManager interface {
 	UpdatePolicies(allPolicies []*storage.Policy)

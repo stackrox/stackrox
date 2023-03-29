@@ -34,7 +34,7 @@ endif
 ##############
 # Set some platform variables for protoc.
 # If the proto version is changed, be sure it is also changed in qa-tests-backend/build.gradle.
-PROTOC_VERSION := 21.4
+PROTOC_VERSION := 22.0
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 PROTOC_OS = linux
@@ -187,6 +187,9 @@ $(GENERATED_DOC_PATH):
 # files change.
 $(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GO_BIN) $(ALL_PROTOS)
 	@echo "+ $@"
+ifeq ($(SCANNER_DIR),)
+	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
+endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
 		-I$(GOGO_DIR) \
@@ -202,6 +205,9 @@ $(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTO
 # .proto files change.
 $(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(GENERATED_BASE_PATH)/%_service.pb.go $(ALL_PROTOS)
 	@echo "+ $@"
+ifeq ($(SCANNER_DIR),)
+	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
+endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
@@ -217,6 +223,9 @@ $(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(
 # .proto files change.
 $(GENERATED_BASE_PATH)/%.swagger.json: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_SWAGGER) $(ALL_PROTOS)
 	@echo "+ $@"
+ifeq ($(SCANNER_DIR),)
+	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
+endif
 	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
 		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
@@ -235,7 +244,7 @@ $(MERGED_API_SWAGGER_SPEC): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SW
 # Generate the docs from the merged swagger specs.
 $(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(PROTOC_GEN_GRPC_GATEWAY)
 	@echo "+ $@"
-	docker run --user $(shell id -u) --rm -v $(CURDIR)/$(GENERATED_DOC_PATH):/tmp/$(GENERATED_DOC_PATH) swaggerapi/swagger-codegen-cli generate -l html2 -i /tmp/$< -o /tmp/$@
+	docker run $(DOCKER_USER) --rm -v $(CURDIR)/$(GENERATED_DOC_PATH):/tmp/$(GENERATED_DOC_PATH) swaggerapi/swagger-codegen-cli generate -l html2 -i /tmp/$< -o /tmp/$@
 
 # Nukes pretty much everything that goes into building protos.
 # You should not have to run this day-to-day, but it occasionally is useful

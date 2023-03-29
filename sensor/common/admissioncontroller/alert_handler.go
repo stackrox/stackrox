@@ -28,11 +28,13 @@ func (h *alertHandlerImpl) Stop(_ error) {
 	h.stopSig.Signal()
 }
 
+func (h *alertHandlerImpl) Notify(common.SensorComponentEvent) {}
+
 func (h *alertHandlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (h *alertHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (h *alertHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 

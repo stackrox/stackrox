@@ -7,6 +7,7 @@ import (
 )
 
 // Store implements a store of all external backups in a cluster.
+//
 //go:generate mockgen-wrapper
 type Store interface {
 	GetAll(ctx context.Context) ([]*storage.ExternalBackup, error)

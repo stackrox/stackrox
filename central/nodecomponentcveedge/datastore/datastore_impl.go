@@ -5,14 +5,14 @@ import (
 
 	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/index"
 	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/search"
-	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
+	pgStore "github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 type datastoreImpl struct {
-	storage  postgres.Store
+	storage  pgStore.Store
 	indexer  index.Indexer
 	searcher search.Searcher
 }

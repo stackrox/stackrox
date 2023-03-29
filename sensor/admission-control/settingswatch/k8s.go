@@ -63,7 +63,7 @@ func (w *k8sSettingsWatch) OnAdd(obj interface{}) {
 	w.parseAndSendSettings(cm)
 }
 
-func (w *k8sSettingsWatch) OnUpdate(oldObj, newObj interface{}) {
+func (w *k8sSettingsWatch) OnUpdate(_, newObj interface{}) {
 	cm := getConfigMapFromObj(newObj)
 	if cm == nil {
 		return
@@ -72,7 +72,7 @@ func (w *k8sSettingsWatch) OnUpdate(oldObj, newObj interface{}) {
 	w.parseAndSendSettings(cm)
 }
 
-func (w *k8sSettingsWatch) OnDelete(oldObj interface{}) {
+func (w *k8sSettingsWatch) OnDelete(_ interface{}) {
 	w.sendSettings(nil)
 }
 
@@ -158,7 +158,9 @@ func (w *k8sSettingsWatch) start() error {
 		informers.WithNamespace(w.namespace),
 		informers.WithTweakListOptions(tweakListOpts))
 
-	sif.Core().V1().ConfigMaps().Informer().AddEventHandler(w)
+	if _, err := sif.Core().V1().ConfigMaps().Informer().AddEventHandler(w); err != nil {
+		return errors.Wrap(err, "could not add event handler")
+	}
 	sif.Start(w.ctx.Done())
 
 	return nil

@@ -60,5 +60,5 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 			},
 		},
 	}
-	return component.NewResourceEvent(events, nil, nil)
+	return component.NewEvent(events...)
 }

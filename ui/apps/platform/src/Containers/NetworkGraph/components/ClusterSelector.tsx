@@ -30,6 +30,8 @@ function ClusterSelector({
         if (value !== selectedClusterName) {
             const modifiedSearchObject = { ...searchFilter };
             modifiedSearchObject.Cluster = value;
+            delete modifiedSearchObject.Namespace;
+            delete modifiedSearchObject.Deployment;
             setSearchFilter(modifiedSearchObject);
         }
     };
@@ -44,6 +46,7 @@ function ClusterSelector({
 
     return (
         <Select
+            className="cluster-select"
             isPlain
             placeholderText={
                 <span>

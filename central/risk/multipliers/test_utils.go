@@ -150,6 +150,15 @@ func GetMockNodes() []*storage.Node {
 								Severity:     storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 							},
 						},
+						Vulnerabilities: []*storage.NodeVulnerability{
+							{
+								CveBaseInfo: &storage.CVEInfo{
+									Cve: "CVE-2020-8558",
+								},
+								Cvss:     5.4,
+								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+							},
+						},
 					},
 					{
 						Name:    "kube-proxy",
@@ -160,6 +169,15 @@ func GetMockNodes() []*storage.Node {
 								Cvss:         5.4,
 								ScoreVersion: storage.EmbeddedVulnerability_V3,
 								Severity:     storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+							},
+						},
+						Vulnerabilities: []*storage.NodeVulnerability{
+							{
+								CveBaseInfo: &storage.CVEInfo{
+									Cve: "CVE-2020-8558",
+								},
+								Cvss:     5.4,
+								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 							},
 						},
 					},

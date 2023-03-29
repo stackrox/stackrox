@@ -91,15 +91,13 @@ function PolicyCategorySidePanel({
                                 />
                             </FormGroup>
                             <ActionGroup>
-                                <Button
-                                    variant="primary"
-                                    isDisabled={!dirty}
-                                    onClick={() => handleSubmit()}
-                                >
-                                    Save
-                                </Button>
+                                {dirty && (
+                                    <Button variant="primary" onClick={() => handleSubmit()}>
+                                        Save
+                                    </Button>
+                                )}
                                 <Button variant="secondary" onClick={clearSelectedCategory}>
-                                    Cancel
+                                    {dirty ? 'Cancel' : 'Close'}
                                 </Button>
                             </ActionGroup>
                         </Form>
