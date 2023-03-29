@@ -418,10 +418,16 @@ bundle-build: bundle.Dockerfile bundle-post-process ## Build the bundle image.
 
 .PHONY: bundle-test
 bundle-test: operator-sdk bundle-post-process ## Run scorecard tests against bundle files.
+	@echo dumping environment
+	env|sort
+	@echo end of environment
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) build/bundle/
 
 .PHONY: bundle-test-image
 bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in the registry. Bundle image must be pushed beforehand.
+	@echo dumping environment
+	env|sort
+	@echo end of environment
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) $(BUNDLE_IMG)
 
 .PHONY: index-build
