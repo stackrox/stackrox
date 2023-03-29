@@ -31,6 +31,9 @@ type FakeService struct {
 	messageCallbackLock sync.RWMutex
 	messageCallback     func(sensor *central.MsgFromSensor)
 
+	// channel to inject messages that are sent from FakeCentral to Sensor
+	centralStubMessagesC chan *central.MsgToSensor
+
 	t *testing.T
 }
 
@@ -56,13 +59,14 @@ func (s *FakeService) ClearReceivedBuffer() {
 // Once communicate is called and the gRPC stream is enabled, this instance will send all `initialMessages` in order.
 func MakeFakeCentralWithInitialMessages(initialMessages ...*central.MsgToSensor) *FakeService {
 	return &FakeService{
-		ConnectionStarted:   concurrency.NewSignal(),
-		KillSwitch:          concurrency.NewSignal(),
-		initialMessages:     initialMessages,
-		receivedMessages:    []*central.MsgFromSensor{},
-		receivedLock:        sync.RWMutex{},
-		messageCallback:     func(_ *central.MsgFromSensor) { /* noop */ },
-		messageCallbackLock: sync.RWMutex{},
+		ConnectionStarted:    concurrency.NewSignal(),
+		KillSwitch:           concurrency.NewSignal(),
+		initialMessages:      initialMessages,
+		receivedMessages:     []*central.MsgFromSensor{},
+		receivedLock:         sync.RWMutex{},
+		messageCallback:      func(_ *central.MsgFromSensor) { /* noop */ },
+		messageCallbackLock:  sync.RWMutex{},
+		centralStubMessagesC: make(chan *central.MsgToSensor, 1),
 	}
 }
 
@@ -73,6 +77,27 @@ func (s *FakeService) ingestMessageWithLock(msg *central.MsgFromSensor) {
 	s.messageCallbackLock.RLock()
 	s.messageCallback(msg)
 	s.messageCallbackLock.RUnlock()
+}
+
+func (s *FakeService) startCentralStub(stream central.SensorService_CommunicateServer) {
+	s.ConnectionStarted.Wait()
+	for {
+		select {
+		case <-s.KillSwitch.Done():
+			return
+		case msg, more := <-s.centralStubMessagesC:
+			if !more {
+				return
+			}
+			err := stream.Send(msg)
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				log.Fatalf("error sending message to sensor: %s", err)
+			}
+		}
+	}
 }
 
 func (s *FakeService) startInputIngestion(stream central.SensorService_CommunicateServer) {
@@ -94,9 +119,20 @@ func (s *FakeService) startInputIngestion(stream central.SensorService_Communica
 
 }
 
+// StubMessage sends a fake message to Sensor through the Central<->Sensor gRPC stream.
+func (s *FakeService) StubMessage(msg *central.MsgToSensor) {
+	if !s.KillSwitch.IsDone() {
+		s.centralStubMessagesC <- msg
+	} else {
+		s.t.Errorf("tried to send MsgToSensor after KillSwitch was called: %v", msg)
+	}
+}
+
 // Communicate fakes the central communicate gRPC service by sending a test only gRPC stream to sensor.
 // This stream can be killed by calling `s.KillSwitch.Signal()`.
 func (s *FakeService) Communicate(stream central.SensorService_CommunicateServer) error {
+	defer close(s.centralStubMessagesC)
+
 	md := metautils.NiceMD{}
 	md.Set(centralsensor.SensorHelloMetadataKey, "true")
 	err := stream.SetHeader(metadata.MD(md))
@@ -113,6 +149,7 @@ func (s *FakeService) Communicate(stream central.SensorService_CommunicateServer
 
 	s.ConnectionStarted.Signal()
 	go s.startInputIngestion(stream)
+	go s.startCentralStub(stream)
 	s.KillSwitch.Wait()
 	return nil
 }
