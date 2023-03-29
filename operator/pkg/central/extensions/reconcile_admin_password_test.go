@@ -119,7 +119,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 					AdminPasswordSecret: &platform.LocalSecretReference{
 						Name: plaintextPasswordSecret.Name,
 					},
-					AdminPasswordGenerationDisabled: pointer.BoolPtr(true),
+					AdminPasswordGenerationDisabled: pointer.Bool(true),
 				},
 			},
 			Existing: []*v1.Secret{plaintextPasswordSecret},
@@ -138,7 +138,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 		"If password generation is disabled no secret should be created": {
 			Spec: platform.CentralSpec{
 				Central: &platform.CentralComponentSpec{
-					AdminPasswordGenerationDisabled: pointer.BoolPtr(true),
+					AdminPasswordGenerationDisabled: pointer.Bool(true),
 				},
 			},
 			ExpectedNotExistingSecrets: []string{"central-htpasswd"},

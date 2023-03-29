@@ -147,7 +147,7 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 		pvcConfig = &platform.PersistentVolumeClaim{}
 	}
 
-	claimName := pointer.StringPtrDerefOr(pvcConfig.ClaimName, r.defaultClaimName)
+	claimName := pointer.StringDeref(pvcConfig.ClaimName, r.defaultClaimName)
 	key := ctrlClient.ObjectKey{Namespace: r.namespace, Name: claimName}
 	pvc := &corev1.PersistentVolumeClaim{}
 	if err := r.client.Get(r.ctx, key, pvc); err != nil {
@@ -170,7 +170,7 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 
 	// The reconciliation loop should fail if a PVC should be reconciled which is not owned by the operator.
 	if pvc != nil && !metav1.IsControlledBy(pvc, r.centralObj) {
-		if pvcConfig.StorageClassName != nil || pointer.StringPtrDerefOr(pvcConfig.Size, "") != "" {
+		if pvcConfig.StorageClassName != nil || pointer.StringDeref(pvcConfig.Size, "") != "" {
 			err := errors.Errorf("Failed reconciling PVC %q. Please remove the storageClassName and size properties from your spec, or change the name to allow the operator to create a new one with a different name.", claimName)
 			r.log.Error(err, "failed reconciling PVC")
 			return err
@@ -239,7 +239,7 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *pla
 func (r *reconcilePVCExtensionRun) handleReconcile(existingPVC *corev1.PersistentVolumeClaim, pvcConfig *platform.PersistentVolumeClaim) error {
 	shouldUpdate := false
 
-	if pvcSize := pointer.StringPtrDerefOr(pvcConfig.Size, ""); pvcSize != "" {
+	if pvcSize := pointer.StringDeref(pvcConfig.Size, ""); pvcSize != "" {
 		quantity, err := resource.ParseQuantity(pvcSize)
 		if err != nil {
 			return errors.Wrapf(err, "invalid PVC size %q", pvcSize)
@@ -250,7 +250,7 @@ func (r *reconcilePVCExtensionRun) handleReconcile(existingPVC *corev1.Persisten
 		shouldUpdate = true
 	}
 
-	if pointer.StringPtrDerefOr(pvcConfig.StorageClassName, "") != "" && pvcConfig.StorageClassName != existingPVC.Spec.StorageClassName {
+	if pointer.StringDeref(pvcConfig.StorageClassName, "") != "" && pvcConfig.StorageClassName != existingPVC.Spec.StorageClassName {
 		existingPVC.Spec.StorageClassName = pvcConfig.StorageClassName
 		shouldUpdate = true
 	}
@@ -264,7 +264,7 @@ func (r *reconcilePVCExtensionRun) handleReconcile(existingPVC *corev1.Persisten
 }
 
 func parseResourceQuantityOr(qStrPtr *string, d resource.Quantity) (resource.Quantity, error) {
-	qStr := pointer.StringPtrDerefOr(qStrPtr, "")
+	qStr := pointer.StringDeref(qStrPtr, "")
 	if qStr == "" {
 		return d, nil
 	}
