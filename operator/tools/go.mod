@@ -10,6 +10,8 @@ require (
 	sigs.k8s.io/kustomize/kustomize/v4 v4.5.7
 )
 
+replace github.com/operator-framework/operator-sdk v1.24.1 => github.com/porridge/operator-sdk v1.5.1-0.20230329122232-413d752ff864
+
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/BurntSushi/toml v1.2.1 // indirect
