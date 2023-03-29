@@ -723,6 +723,7 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 		if err := row.Scan(&count); err != nil {
 			return 0, errors.Wrapf(err, "error executing query %s", queryStr)
 		}
+		log.Infof("[Cve->IsFixable] Count is %d", count)
 		return count, nil
 	})
 }
