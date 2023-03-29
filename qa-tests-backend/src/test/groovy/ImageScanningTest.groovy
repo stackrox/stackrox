@@ -709,11 +709,6 @@ class ImageScanningTest extends BaseSpecification {
 
         when:
         "Scan CentOS image and derivative echo image (centos + touch file)"
-        def existingImages = ImageService.getImages(SearchServiceOuterClass.RawQuery.newBuilder()
-                .setQuery("Image:${CENTOS_IMAGE}").build())
-        for (ImageOuterClass.ListImage image : existingImages) {
-            log.info "ROX-16068 Image ${image.getName()} exists with id ${image.getId()} and ${image.getCves()} cves"
-        }
         ImageService.scanImage(CENTOS_ECHO_IMAGE, false)
         def expectedDetails = ImageService.scanImage(CENTOS_IMAGE, false)
 

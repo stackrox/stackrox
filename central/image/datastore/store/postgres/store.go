@@ -155,13 +155,6 @@ func (s *storeImpl) insertIntoImages(
 	if err := copyFromImageCves(ctx, tx, iTime, parts.vulns...); err != nil {
 		return err
 	}
-	if cloned.GetId() == "sha256:e4ca2ed0202e76be184e75fb26d14bf974193579039d5573fb2348664deef76e" {
-		cveIDs := make([]string, 0)
-		for _, edge := range parts.imageCVEEdges {
-			cveIDs = append(cveIDs, edge.GetImageCveId())
-		}
-		log.Infof("ROX-16068: CVEs added to ImageCVEEdges = %v", cveIDs)
-	}
 	return copyFromImageCVEEdges(ctx, tx, iTime, false, parts.imageCVEEdges...)
 }
 
