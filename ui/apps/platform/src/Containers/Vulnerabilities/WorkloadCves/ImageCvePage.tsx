@@ -66,6 +66,8 @@ export const imageCveSummaryQuery = gql`
     ${imageCveSeveritySummaryFragment}
     query getImageCveSummaryData($cve: String!, $query: String!) {
         ...ImageCVESummaryCounts
+        imageCount(query: $query)
+        deploymentCount(query: $query)
         imageCVE(cve: $cve) {
             cve
             ...ImageCVESeveritySummary
@@ -81,7 +83,6 @@ export const imageCveAffectedImagesQuery = gql`
         $imageListPagination: Pagination
         $imageComponentPagination: Pagination
     ) {
-        imageCount(query: $query)
         images(query: $query, pagination: $imageListPagination) {
             ...ImagesForCVE
         }
@@ -95,6 +96,10 @@ function ImageCvePage() {
     const { cveId } = useParams();
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    const query = getRequestQueryStringForSearchFilter({
+        ...querySearchFilter,
+        CVE: cveId,
+    });
     const { page, perPage, setPage, setPerPage } = useURLPagination(25);
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
@@ -113,14 +118,21 @@ function ImageCvePage() {
     );
 
     const summaryRequest = useQuery<
-        ImageCveSummaryCount & { imageCVE: ImageCveSeveritySummary },
+        ImageCveSummaryCount & {
+            imageCount: number;
+            deploymentCount: number;
+            imageCVE: ImageCveSeveritySummary;
+        },
         { cve: string; query: string }
     >(imageCveSummaryQuery, {
-        variables: { cve: cveId, query: getRequestQueryStringForSearchFilter(querySearchFilter) },
+        variables: {
+            cve: cveId,
+            query,
+        },
     });
 
     const imageDataRequest = useQuery<
-        { imageCount: number; images: ImageForCve[] },
+        { images: ImageForCve[] },
         {
             query: string;
             imageListPagination: PaginationParam;
@@ -129,10 +141,7 @@ function ImageCvePage() {
         }
     >(imageCveAffectedImagesQuery, {
         variables: {
-            query: getRequestQueryStringForSearchFilter({
-                ...querySearchFilter,
-                CVE: cveId,
-            }),
+            query,
             imageListPagination: {
                 offset: (page - 1) * perPage,
                 limit: perPage,
@@ -148,6 +157,8 @@ function ImageCvePage() {
     // We generalize the imageData and deploymentData requests here so that we can use most of
     // the same logic for both tables and components in the return value below
     const imageData = imageDataRequest.data ?? imageDataRequest.previousData;
+    const imageCount = summaryRequest.data?.imageCount ?? 0;
+    const deploymentCount = summaryRequest.data?.deploymentCount ?? 0;
     let tableDataAvailable = false;
     let tableRowCount = 0;
     let tableError: Error | undefined;
@@ -155,7 +166,7 @@ function ImageCvePage() {
 
     if (entityTab === 'Image') {
         tableDataAvailable = !!imageData;
-        tableRowCount = imageDataRequest.data?.imageCount ?? 0;
+        tableRowCount = imageCount;
         tableError = imageDataRequest.error;
         tableLoading = imageDataRequest.loading;
     } else if (entityTab === 'Deployment') {
@@ -240,7 +251,8 @@ function ImageCvePage() {
                         <SplitItem isFilled>
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                 <EntityTypeToggleGroup
-                                    imageCount={imageData?.imageCount ?? 0}
+                                    imageCount={imageCount}
+                                    deploymentCount={deploymentCount}
                                     entityTabs={imageCveEntities}
                                 />
                                 {isFiltered && <DynamicTableLabel />}
