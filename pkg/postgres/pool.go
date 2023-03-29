@@ -8,6 +8,8 @@ import (
 )
 
 // DB is an interface to interact with database.
+//
+//go:generate mockgen-wrapper
 type DB interface {
 	Begin(ctx context.Context) (*Tx, error)
 	Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error)
