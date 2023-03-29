@@ -1,5 +1,6 @@
 import static io.restassured.RestAssured.given
 
+import java.time.Instant
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
@@ -74,6 +75,9 @@ class DiagnosticBundleTest extends BaseSpecification {
 
     @Unroll
     def "Test that diagnostic bundle download #desc"() {
+        given:
+        Instant modifiedAfter = (new Date()).toInstant().minusSeconds(1)
+
         when:
         "Making a request for the diagnostic bundle"
 
@@ -113,7 +117,8 @@ class DiagnosticBundleTest extends BaseSpecification {
             try {
                 ZipEntry entry
                 while ((entry = zis.nextEntry) != null) {
-                    log.info "Found file ${entry.name}"
+                    log.info "Found file ${entry.name} ${entry.lastModifiedTime}"
+                    assert modifiedAfter.isBefore(entry.lastModifiedTime.toInstant())
                     if (entry.name == ("kubernetes/" + ClusterService.DEFAULT_CLUSTER_NAME +
                             "/stackrox/sensor/deployment-sensor.yaml")) {
                         foundK8sInfo = true
