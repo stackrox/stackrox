@@ -161,7 +161,7 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	params := apiparams.ClusterZip{
 		ID:               id,
 		CreateUpgraderSA: &s.createUpgraderSA,
-		SlimCollector:    pointer.BoolPtr(s.cluster.GetSlimCollector()),
+		SlimCollector:    pointer.Bool(s.cluster.GetSlimCollector()),
 		IstioVersion:     s.istioVersion,
 
 		DisablePodSecurityPolicies: !s.enablePodSecurityPolicies,

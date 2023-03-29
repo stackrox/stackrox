@@ -31,7 +31,7 @@ import {
 import { protocolLabel } from './flowUtils';
 
 export const graphModel = {
-    id: 'stackrox-active-graph',
+    id: 'stackrox-graph',
     type: 'graph',
     layout: 'ColaNoForce',
 };
@@ -59,6 +59,7 @@ function getNamespaceNode(
         cluster,
         isFilteredNamespace,
         labelIconClass: isFilteredNamespace ? filteredNamespaceSVG : derivedNamespaceSVG,
+        isFadedOut: false,
     };
     return {
         id: namespace,
@@ -76,6 +77,7 @@ function getExternalGroupNode(): ExternalGroupNodeModel {
         collapsible: true,
         showContextMenu: false,
         type: 'EXTERNAL_GROUP',
+        isFadedOut: false,
     };
     return {
         id: 'External to cluster',

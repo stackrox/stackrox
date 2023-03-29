@@ -51,12 +51,12 @@ class AdmissionControllerTest extends BaseSpecification {
 
     static final private Deployment BUSYBOX_NO_BYPASS_DEPLOYMENT = new Deployment()
             .setName(BUSYBOX_NO_BYPASS)
-            .setImage("busybox:latest")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch-busybox:latest")
             .addLabel("app", "test")
 
     static final private Deployment BUSYBOX_BYPASS_DEPLOYMENT = new Deployment()
             .setName(BUSYBOX_BYPASS)
-            .setImage("busybox:latest")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch-busybox:latest")
             .addLabel("app", "test")
             .addAnnotation("admission.stackrox.io/break-glass", "yay")
 
@@ -389,7 +389,7 @@ class AdmissionControllerTest extends BaseSpecification {
         "Create a deployment with a latest tag"
         def deployment = new Deployment()
                 .setName("scoped-enforcement-${clusterMatch}-${nsMatch}")
-                .setImage("busybox:latest")
+                .setImage("quay.io/rhacs-eng/qa-multi-arch-busybox:latest")
                 .addLabel("app", "test")
         def created = orchestrator.createDeploymentNoWait(deployment)
 

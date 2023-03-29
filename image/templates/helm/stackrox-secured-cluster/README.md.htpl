@@ -59,7 +59,7 @@ roxctl central init-bundles generate <cluster init bundle name> --output cluster
 - Make sure that you store this bundle securely as it contains secrets. You can
   use the same bundle to set up multiple StackRox secured clusters.
 
-### Deploy Secured Cluster Services 
+### Deploy Secured Cluster Services
 
 You can use the following command to deploy secured cluster services by using
 this Helm chart:
@@ -147,7 +147,7 @@ the options which you can configure:
 
   env:
     istio: true  # enable istio support
-  
+
   sensor:
     # Use custom resource overrides for sensor
     resources:
@@ -157,11 +157,11 @@ the options which you can configure:
       limits:
         cpu: "4"
         memory: "8Gi"
-  
+
   admissionControl:
     dynamic:
       disableBypass: true # Disable bypassing of Admission Controller
-  
+
   customize:
     # Apply the important-service=true label for all objects managed by this chart.
     labels:
@@ -282,6 +282,7 @@ non-standard environments:
 |`sensor.resources`|Resource specification for Sensor.|See below.|
 |`collector.resources`|Resource specification for Collector.|See below.|
 |`collector.complianceResources`|Resource specification for Collector's Compliance container.|See below.|
+|`collector.nodeInventoryResources`|Resource specification for Collector's Node Inventory container.|See below.|
 |`collector.nodeSelector` | Node selector for Collector pods placement. | `null` (no placement constraints) |
 |`admissionControl.resources`|Resource specification for Admission Control.|See below.|
 |`sensor.imagePullPolicy`| Kubernetes image pull policy for Sensor. | `IfNotPresent` |
@@ -301,12 +302,13 @@ Each container's default resource settings are defined in the
 `internal/defaults.yaml` file in this chart. The following table lists the YAML
 paths to the respective defaults for each container that this chart deploys:
 
-|Container        |Path in `internal/defaults.yaml`        |
-|:----------------|:---------------------------------------|
-|Sensor           |`defaults.sensor.resources`             |
-|Collector        |`defaults.collector.resources`          |
-|Compliance       |`defaults.collector.complianceResources`|
-|Admission Control|`defaults.admissionControl.resources`   |
+|Container        |Path in `internal/defaults.yaml`           |
+|:----------------|:------------------------------------------|
+|Sensor           |`defaults.sensor.resources`                |
+|Collector        |`defaults.collector.resources`             |
+|Compliance       |`defaults.collector.complianceResources`   |
+|NodeInventory    |`defaults.collector.nodeInventoryResources`|
+|Admission Control|`defaults.admissionControl.resources`      |
 
 ### Customization settings
 

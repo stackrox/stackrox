@@ -1,3 +1,7 @@
+export type Telemetry = {
+    enabled: boolean;
+};
+
 export type LoginNotice = {
     enabled: boolean;
     text: string;
@@ -20,6 +24,7 @@ export type PublicConfig = {
     loginNotice: LoginNotice | null;
     header: BannerConfig | null;
     footer: BannerConfig | null;
+    telemetry: Telemetry | null;
 };
 
 export type AlertRetentionConfig = {

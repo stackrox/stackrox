@@ -121,7 +121,7 @@ func TestTranslate(t *testing.T) {
 							},
 							Persistence: &platform.Persistence{
 								HostPath: &platform.HostPathSpec{
-									Path: pointer.StringPtr("/central/host/path"),
+									Path: pointer.String("/central/host/path"),
 								},
 								PersistentVolumeClaim: &platform.PersistentVolumeClaim{
 									ClaimName: &claimName,
@@ -242,7 +242,7 @@ func TestTranslate(t *testing.T) {
 							},
 						},
 						Misc: &platform.MiscSpec{
-							CreateSCCs: pointer.BoolPtr(true),
+							CreateSCCs: pointer.Bool(true),
 						},
 					},
 				},
@@ -440,9 +440,9 @@ func TestTranslate(t *testing.T) {
 						Central: &platform.CentralComponentSpec{
 							Persistence: &platform.Persistence{
 								PersistentVolumeClaim: &platform.PersistentVolumeClaim{
-									ClaimName:        pointer.StringPtr("stackrox-db-test"),
-									StorageClassName: pointer.StringPtr("storage-class"),
-									Size:             pointer.StringPtr("50Gi"),
+									ClaimName:        pointer.String("stackrox-db-test"),
+									StorageClassName: pointer.String("storage-class"),
+									Size:             pointer.String("50Gi"),
 								},
 							},
 						},
@@ -516,7 +516,7 @@ func TestTranslate(t *testing.T) {
 							Exposure: &platform.Exposure{
 								Route: &platform.ExposureRoute{
 									Enabled: &truth,
-									Host:    pointer.StringPtr("custom-route.stackrox.io"),
+									Host:    pointer.String("custom-route.stackrox.io"),
 								},
 							},
 						},

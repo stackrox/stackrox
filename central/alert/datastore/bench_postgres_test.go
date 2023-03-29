@@ -123,7 +123,7 @@ func runSearch(ctx context.Context, t testing.TB, datastore DataStore, query *v1
 }
 
 func runSearchListAlerts(ctx context.Context, t testing.TB, datastore DataStore, expected []*violationsBySeverity) {
-	results, err := datastore.ListAlerts(ctx, &v1.ListAlertsRequest{})
+	results, err := datastore.SearchListAlerts(ctx, pkgSearch.EmptyQuery())
 	require.NoError(t, err)
 	require.NotNil(t, results)
 

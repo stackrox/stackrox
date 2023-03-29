@@ -16,7 +16,7 @@ function SimulationFrame({ isSimulating, children }: SimulationFrameProps) {
         style = {};
     }
     return (
-        <div className="pf-ri__topology-demo" style={style}>
+        <div className="pf-ri__topology-section" style={style}>
             {children}
             {isSimulating && (
                 <Flex
