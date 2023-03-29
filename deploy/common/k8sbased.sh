@@ -589,13 +589,21 @@ function launch_sensor {
        kubectl -n stackrox set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
     fi
 
-    if [[ -n "${CI}" || $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
-       if [[ "${ROX_HOTRELOAD}" == "true" ]]; then
-         hotload_binary bin/kubernetes-sensor kubernetes sensor
-       fi
-       if [[ -z "${IS_RACE_BUILD}" ]]; then
+    # For local installations (e.g. on Colima): hotload binary and update resource requests
+    if [[ "$(local_dev)" == "true" ]]; then
+        if [[ "${ROX_HOTRELOAD}" == "true" ]]; then
+            hotload_binary bin/kubernetes-sensor kubernetes sensor
+        fi
+        if [[ -z "${IS_RACE_BUILD}" ]]; then
            kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
-       fi
+        fi
+    fi
+
+    # When running CI steps or when SENSOR_DEV_RESOURCES is set to true: only update resource requests
+    if [[ -n "${CI}" || "${SENSOR_DEV_RESOURCES}" == "true" ]]; then
+        if [[ -z "${IS_RACE_BUILD}" ]]; then
+            kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
+        fi
     fi
 
     if [[ "$MONITORING_SUPPORT" == "true" || ( "$(local_dev)" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
