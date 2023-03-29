@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/gjson"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
@@ -44,6 +45,31 @@ var (
 		printers.JUnitSkippedTestCasesExpressionKey:     "results.#.violatedPolicies.#(failingCheck==~false)#.name",
 		printers.JUnitFailedTestCaseErrMsgExpressionKey: "results.#.violatedPolicies.#(failingCheck==~true)#.violation.@list",
 	}
+
+	sarifJSONPathExpressions = map[string]string{
+		printers.SarifRuleJSONPathExpressionKey: "results.#.violatedPolicies.#.name",
+		printers.SarifHelpJSONPathExpressionKey: gjson.MultiPathExpression(
+			"@text",
+			gjson.Expression{
+				Key:        "Policy",
+				Expression: "results.#.violatedPolicies.#.name",
+			},
+			gjson.Expression{
+				Key:        "Severity",
+				Expression: "results.#.violatedPolicies.#.severity",
+			},
+			gjson.Expression{
+				Key:        "Violations",
+				Expression: "results.#.violatedPolicies.#.violation.@list",
+			},
+			gjson.Expression{
+				Key:        "Remediation",
+				Expression: "results.#.violatedPolicies.#.remediation",
+			},
+		),
+		printers.SarifSeverityJSONPathExpressionKey: "results.#.violatedPolicies.#.severity",
+	}
+
 	// supported output formats with default values
 	supportedObjectPrinters = []printer.CustomPrinterFactory{
 		printer.NewTabularPrinterFactory(defaultDeploymentCheckHeaders, defaultDeploymentCheckJSONPathExpression),
@@ -56,7 +82,8 @@ var (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	deploymentCheckCmd := &deploymentCheckCommand{env: cliEnvironment}
 
-	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", supportedObjectPrinters...)
+	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", append(supportedObjectPrinters,
+		printer.NewSarifPrinterFactory(printers.SarifPolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.file))...)
 	// this error should never occur, it would only occur if default values are invalid
 	utils.Must(err)
 
