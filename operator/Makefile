@@ -423,6 +423,9 @@ bundle-test: operator-sdk bundle-post-process ## Run scorecard tests against bun
 	@echo end of environment
 	@tail -n 999999 $$HOME/.kube/config || true
 	@tail -n 999999 $$KUBECONFIG || true
+	kubectl config view --kubeconfig $$KUBECONFIG || true
+	kubectl config view --kubeconfig || true
+	kubectl get sa -o yaml || true
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) build/bundle/
 
 .PHONY: bundle-test-image
@@ -432,6 +435,9 @@ bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in t
 	@echo end of environment
 	@tail -n 999999 $$HOME/.kube/config || true
 	@tail -n 999999 $$KUBECONFIG || true
+	kubectl config view --kubeconfig $$KUBECONFIG || true
+	kubectl config view --kubeconfig || true
+	kubectl get sa -o yaml || true
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) $(BUNDLE_IMG)
 
 .PHONY: index-build
