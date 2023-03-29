@@ -272,7 +272,7 @@ func scanImage(ctx context.Context, image *storage.Image,
 func createNoAuthImageRegistry(imgName *storage.ImageName) (registryTypes.Registry, error) {
 	registry := imgName.GetRegistry()
 	if registry == "" {
-		return nil, fmt.Errorf("no image registry provided, nothing to do")
+		return nil, errors.New("no image registry provided, nothing to do")
 	}
 
 	registryType := docker.GenericDockerRegistryType
