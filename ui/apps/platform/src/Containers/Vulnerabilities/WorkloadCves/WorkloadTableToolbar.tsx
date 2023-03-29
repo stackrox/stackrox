@@ -89,7 +89,7 @@ function WorkloadTableToolbar({
     }, [defaultFilters, searchFilter, setSearchFilter]);
 
     return (
-        <Toolbar id="workload-cves-table-toolbar" clearAllFilters={onDeleteAll}>
+        <Toolbar id="workload-cves-table-toolbar">
             <ToolbarContent>
                 <FilterAutocomplete
                     searchFilter={searchFilter}
@@ -107,6 +107,7 @@ function WorkloadTableToolbar({
                         searchFilter={searchFilter}
                         onDeleteGroup={onDeleteGroup}
                         onDelete={onDelete}
+                        onDeleteAll={onDeleteAll}
                     />
                 </ToolbarGroup>
             </ToolbarContent>
