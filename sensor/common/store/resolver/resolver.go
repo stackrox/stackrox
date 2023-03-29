@@ -1,7 +1,7 @@
 package resolver
 
 import (
-	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
 )
@@ -52,7 +52,7 @@ func ResolveAllDeployments() DeploymentReference {
 }
 
 // ResolveDeploymentsByImages returns a function that returns a list of deployment ids based on a slice of images
-func ResolveDeploymentsByImages(images ...imagecacheutils.CacheKeyProvider) DeploymentReference {
+func ResolveDeploymentsByImages(images ...*storage.Image) DeploymentReference {
 	return func(store store.DeploymentStore) []string {
 		return store.FindDeploymentIDsByImages(images)
 	}

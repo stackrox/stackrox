@@ -8,10 +8,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
-	mocks2 "github.com/stackrox/rox/sensor/common/detector/mocks"
-	mocks3 "github.com/stackrox/rox/sensor/common/reprocessor/mocks"
+	mockDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
+	mockReprocessor "github.com/stackrox/rox/sensor/common/reprocessor/mocks"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
-	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component/mocks"
+	mockComponent "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -20,9 +20,9 @@ type eventPipelineSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
 
-	resolver    *mocks.MockResolver
-	detector    *mocks2.MockDetector
-	reprocessor *mocks3.MockHandler
+	resolver    *mockComponent.MockResolver
+	detector    *mockDetector.MockDetector
+	reprocessor *mockReprocessor.MockHandler
 	pipeline    *eventPipeline
 }
 
@@ -45,13 +45,13 @@ func (m *mockListener) Stop(_ error) {}
 func (s *eventPipelineSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
-	s.resolver = mocks.NewMockResolver(s.mockCtrl)
-	s.detector = mocks2.NewMockDetector(s.mockCtrl)
-	s.reprocessor = mocks3.NewMockHandler(s.mockCtrl)
+	s.resolver = mockComponent.NewMockResolver(s.mockCtrl)
+	s.detector = mockDetector.NewMockDetector(s.mockCtrl)
+	s.reprocessor = mockReprocessor.NewMockHandler(s.mockCtrl)
 	s.pipeline = &eventPipeline{
 		eventsC:     make(chan *central.MsgFromSensor),
 		stopSig:     concurrency.NewSignal(),
-		output:      mocks.NewMockOutputQueue(s.mockCtrl),
+		output:      mockComponent.NewMockOutputQueue(s.mockCtrl),
 		resolver:    s.resolver,
 		detector:    s.detector,
 		reprocessor: s.reprocessor,

@@ -3,7 +3,6 @@ package store
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
-	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/rbac"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/selector"
@@ -19,7 +18,7 @@ type DeploymentStore interface {
 	GetBuiltDeployment(id string) *storage.Deployment
 	FindDeploymentIDsWithServiceAccount(namespace, sa string) []string
 	FindDeploymentIDsByLabels(namespace string, sel selector.Selector) []string
-	FindDeploymentIDsByImages([]imagecacheutils.CacheKeyProvider) []string
+	FindDeploymentIDsByImages([]*storage.Image) []string
 	BuildDeploymentWithDependencies(id string, dependencies Dependencies) (*storage.Deployment, error)
 	CountDeploymentsForNamespace(namespaceName string) int
 }

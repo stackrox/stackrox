@@ -80,24 +80,24 @@ func (e *ResourceEvent) AddDeploymentForReprocessing(ids ...string) *ResourceEve
 // DeploymentReferenceOption option function for the DeploymentReference struct
 type DeploymentReferenceOption func(*DeploymentReference)
 
-// DeploymentRefWithParentResourceAction sets the ParentResourceAction
-func DeploymentRefWithParentResourceAction(action central.ResourceAction) DeploymentReferenceOption {
+// WithParentResourceAction sets the ParentResourceAction
+func WithParentResourceAction(action central.ResourceAction) DeploymentReferenceOption {
 	return func(dr *DeploymentReference) {
 		dr.ParentResourceAction = action
 	}
 }
 
-// DeploymentRefWithForceDetection sets whether the detection should be forced or not
-func DeploymentRefWithForceDetection(force bool) DeploymentReferenceOption {
+// WithForceDetection sets whether the detection should be forced or not
+func WithForceDetection() DeploymentReferenceOption {
 	return func(dr *DeploymentReference) {
-		dr.ForceDetection = force
+		dr.ForceDetection = true
 	}
 }
 
-// DeploymentRefWithSkipResolving sets whether the deployment should be resolved or not
-func DeploymentRefWithSkipResolving(skip bool) DeploymentReferenceOption {
+// WithSkipResolving sets whether the deployment should be resolved or not
+func WithSkipResolving() DeploymentReferenceOption {
 	return func(dr *DeploymentReference) {
-		dr.SkipResolving = skip
+		dr.SkipResolving = true
 	}
 }
 
@@ -109,8 +109,8 @@ func newDeploymentReference(reference resolver.DeploymentReference, options ...D
 		ForceDetection:       false,
 		SkipResolving:        false,
 	}
-	for _, o := range options {
-		o(&deploymentReference)
+	for _, opt := range options {
+		opt(&deploymentReference)
 	}
 	return deploymentReference
 }

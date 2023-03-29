@@ -168,7 +168,7 @@ func (ds *DeploymentStore) FindDeploymentIDsByLabels(namespace string, sel selec
 	return
 }
 
-func (ds *DeploymentStore) findDeploymentIDsByImageNoLock(image imagecacheutils.CacheKeyProvider) set.Set[string] {
+func (ds *DeploymentStore) findDeploymentIDsByImageNoLock(image *storage.Image) set.Set[string] {
 	ids := set.NewStringSet()
 	for _, d := range ds.deployments {
 		for _, c := range d.GetContainers() {
@@ -183,7 +183,7 @@ func (ds *DeploymentStore) findDeploymentIDsByImageNoLock(image imagecacheutils.
 }
 
 // FindDeploymentIDsByImages returns a slice of deployment ids based on matching images
-func (ds *DeploymentStore) FindDeploymentIDsByImages(images []imagecacheutils.CacheKeyProvider) []string {
+func (ds *DeploymentStore) FindDeploymentIDsByImages(images []*storage.Image) []string {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 	ids := set.NewStringSet()

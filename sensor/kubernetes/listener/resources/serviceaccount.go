@@ -86,7 +86,7 @@ func (s *serviceAccountDispatcher) ProcessEvent(obj, _ interface{}, action centr
 		// Service Accounts can influence the `image` on AugmentedObject instance. Meaning the storage.Deployment object
 		// won't be changed based on Service Account properties, but the alerts might. So the detection has to be forced.
 		componentMessage.AddDeploymentReference(deploymentReference,
-			component.DeploymentRefWithForceDetection(true))
+			component.WithForceDetection())
 	}
 
 	return componentMessage

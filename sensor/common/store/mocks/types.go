@@ -10,7 +10,6 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	clusterentities "github.com/stackrox/rox/sensor/common/clusterentities"
-	imagecacheutils "github.com/stackrox/rox/sensor/common/imagecacheutils"
 	rbac "github.com/stackrox/rox/sensor/common/rbac"
 	registry "github.com/stackrox/rox/sensor/common/registry"
 	selector "github.com/stackrox/rox/sensor/common/selector"
@@ -71,7 +70,7 @@ func (mr *MockDeploymentStoreMockRecorder) CountDeploymentsForNamespace(namespac
 }
 
 // FindDeploymentIDsByImages mocks base method.
-func (m *MockDeploymentStore) FindDeploymentIDsByImages(arg0 []imagecacheutils.CacheKeyProvider) []string {
+func (m *MockDeploymentStore) FindDeploymentIDsByImages(arg0 []*storage.Image) []string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindDeploymentIDsByImages", arg0)
 	ret0, _ := ret[0].([]string)

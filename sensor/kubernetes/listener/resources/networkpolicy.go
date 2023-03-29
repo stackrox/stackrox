@@ -48,7 +48,7 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 
 		if env.ResyncDisabled.BooleanSetting() {
 			events.AddDeploymentReference(resolver.ResolveDeploymentLabels(roxNetpol.GetNamespace(), sel),
-				component.DeploymentRefWithForceDetection(true))
+				component.WithForceDetection())
 			events.AddSensorEvent(&central.SensorEvent{
 				Id:     string(np.UID),
 				Action: action,

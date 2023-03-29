@@ -17,7 +17,7 @@ func GetImageCacheKey(provider CacheKeyProvider) string {
 }
 
 // CompareImageCacheKey given two CacheKeyProvider, compares if they're equal
-func CompareImageCacheKey(a CacheKeyProvider, b CacheKeyProvider) bool {
+func CompareImageCacheKey(a, b CacheKeyProvider) bool {
 	if a.GetId() != "" && b.GetId() != "" {
 		return a.GetId() == b.GetId()
 	}

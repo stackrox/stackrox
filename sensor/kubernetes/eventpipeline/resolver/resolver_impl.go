@@ -72,7 +72,7 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 				if deploymentReference.SkipResolving {
 					d := r.storeProvider.Deployments().GetBuiltDeployment(id)
 					if d == nil {
-						log.Warnf("Deployment with id %s not built", id)
+						log.Warnf("Deployment with id %s not found", id)
 						continue
 					}
 					msg.AddDeploymentForDetection(component.DetectorMessage{Object: d, Action: deploymentReference.ParentResourceAction})

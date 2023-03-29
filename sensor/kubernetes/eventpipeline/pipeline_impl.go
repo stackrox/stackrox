@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/detector"
-	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -125,8 +124,8 @@ func (p *eventPipeline) processReassessPolicies() error {
 	if env.ResyncDisabled.BooleanSetting() {
 		message := component.NewEvent()
 		message.AddDeploymentReference(resolver.ResolveAllDeployments(),
-			component.DeploymentRefWithForceDetection(true),
-			component.DeploymentRefWithSkipResolving(true))
+			component.WithForceDetection(),
+			component.WithSkipResolving())
 		p.resolver.Send(message)
 	}
 	return nil
@@ -140,8 +139,8 @@ func (p *eventPipeline) processReprocessDeployments() error {
 	if env.ResyncDisabled.BooleanSetting() {
 		message := component.NewEvent()
 		message.AddDeploymentReference(resolver.ResolveAllDeployments(),
-			component.DeploymentRefWithForceDetection(true),
-			component.DeploymentRefWithSkipResolving(true))
+			component.WithForceDetection(),
+			component.WithSkipResolving())
 		p.resolver.Send(message)
 	}
 	return nil
@@ -155,8 +154,8 @@ func (p *eventPipeline) processUpdatedImage(image *storage.Image) error {
 	if env.ResyncDisabled.BooleanSetting() {
 		message := component.NewEvent()
 		message.AddDeploymentReference(resolver.ResolveDeploymentsByImages(image),
-			component.DeploymentRefWithForceDetection(true),
-			component.DeploymentRefWithSkipResolving(true))
+			component.WithForceDetection(),
+			component.WithSkipResolving())
 		p.resolver.Send(message)
 	}
 	return nil
@@ -170,8 +169,8 @@ func (p *eventPipeline) processReprocessDeployment(req *central.ReprocessDeploym
 	if env.ResyncDisabled.BooleanSetting() {
 		message := component.NewEvent()
 		message.AddDeploymentReference(resolver.ResolveDeploymentIds(req.GetDeploymentIds()...),
-			component.DeploymentRefWithForceDetection(true),
-			component.DeploymentRefWithSkipResolving(true))
+			component.WithForceDetection(),
+			component.WithSkipResolving())
 		p.resolver.Send(message)
 	}
 	return nil
@@ -183,7 +182,7 @@ func (p *eventPipeline) processInvalidateImageCache(req *central.InvalidateImage
 		return err
 	}
 	if env.ResyncDisabled.BooleanSetting() {
-		keys := make([]imagecacheutils.CacheKeyProvider, len(req.GetImageKeys()))
+		keys := make([]*storage.Image, len(req.GetImageKeys()))
 		for i, image := range req.GetImageKeys() {
 			keys[i] = &storage.Image{
 				Id: image.GetImageId(),
@@ -194,8 +193,8 @@ func (p *eventPipeline) processInvalidateImageCache(req *central.InvalidateImage
 		}
 		message := component.NewEvent()
 		message.AddDeploymentReference(resolver.ResolveDeploymentsByImages(keys...),
-			component.DeploymentRefWithForceDetection(true),
-			component.DeploymentRefWithSkipResolving(true))
+			component.WithForceDetection(),
+			component.WithSkipResolving())
 		p.resolver.Send(message)
 	}
 	return nil
