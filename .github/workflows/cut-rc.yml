@@ -452,7 +452,7 @@ jobs:
         run: |
           ./oc -n stackrox set image ds/collector compliance="quay.io/rhacs-eng/main:$TAG"
           ./oc -n stackrox set image ds/collector collector="quay.io/rhacs-eng/collector:$TAG"
-          ./oc -n stackrox set image ds/collector node-inventory="quay.io/rhacs-eng/scanner-slim:$TAG"
+          ./oc -n stackrox set image ds/collector node-inventory="quay.io/rhacs-eng/scanner-slim:$TAG" || echo "node-inventory shall be deployed only on Openshift 4 clusters"
           ./oc -n stackrox set image deploy/admission-control admission-control="quay.io/rhacs-eng/main:$TAG"
 
   notify-os4-cluster:

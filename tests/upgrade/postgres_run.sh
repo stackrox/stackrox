@@ -234,8 +234,14 @@ test_upgrade_paths() {
     kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$CURRENT_TAG"
     kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$CURRENT_TAG"
     kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(make collector-tag)" \
-        "compliance=$REGISTRY/main:$CURRENT_TAG" \
-        "node-inventory=$REGISTRY/scanner-slim:$(make scanner-tag)"
+        "compliance=$REGISTRY/main:$CURRENT_TAG"
+    # Check if collector has 2 or 3 containers - we expect to see 3 only on Openshift 4
+    if kubectl -n stackrox get ds/collector -o=jsonpath='{$.spec.template.spec.containers[2].image}'; then
+        echo "Upgrading node-inventory container"
+        kubectl -n stackrox set image ds/collector "node-inventory=$REGISTRY/scanner-slim:$(make scanner-tag)"
+    else
+        echo "Skipping node-inventory container as this is not Openshift 4"
+    fi
 
     sensor_wait
     # Bounce collectors to avoid restarts on initial module pull
