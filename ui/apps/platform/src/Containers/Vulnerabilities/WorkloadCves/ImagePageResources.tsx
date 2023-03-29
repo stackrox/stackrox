@@ -1,8 +1,8 @@
 import React from 'react';
 import { PageSection } from '@patternfly/react-core';
 
-function ImageSingleResources() {
+function ImagePageResources() {
     return <PageSection>Resources (TODO)</PageSection>;
 }
 
-export default ImageSingleResources;
+export default ImagePageResources;
