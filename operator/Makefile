@@ -426,6 +426,7 @@ bundle-test: operator-sdk bundle-post-process ## Run scorecard tests against bun
 	kubectl config view --kubeconfig $$KUBECONFIG || true
 	kubectl config view || true
 	kubectl get sa -o yaml || true
+	kubectl get secrets -o yaml || true
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) build/bundle/
 
 .PHONY: bundle-test-image
@@ -438,6 +439,7 @@ bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in t
 	kubectl config view --kubeconfig $$KUBECONFIG || true
 	kubectl config view || true
 	kubectl get sa -o yaml || true
+	kubectl get secrets -o yaml || true
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) $(BUNDLE_IMG)
 
 .PHONY: index-build
