@@ -52,10 +52,6 @@ var (
 		},
 		{
 			FieldsToCompare: fieldsToCompare,
-			PolicyFileName:  "host_network.json",
-		},
-		{
-			FieldsToCompare: fieldsToCompare,
 			PolicyFileName:  "host_pids.json",
 		},
 		{
@@ -68,7 +64,7 @@ var (
 		},
 		{
 			FieldsToCompare: fieldsToCompare,
-			PolicyFileName:  "priviledged.json",
+			PolicyFileName:  "privileged.json",
 		},
 		{
 			FieldsToCompare: fieldsToCompare,
