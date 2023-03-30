@@ -17,8 +17,12 @@ var (
 )
 
 // Handler handles request to reprocess deployment (sent by Central).
+//
+//go:generate mockgen-wrapper
 type Handler interface {
 	common.SensorComponent
+	ProcessReprocessDeployments(*central.ReprocessDeployment) error
+	ProcessInvalidateImageCache(*central.InvalidateImageCache) error
 }
 
 // NewHandler returns a new instance of a deployment reprocessor.
@@ -54,17 +58,11 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	switch {
-	case msg.GetReprocessDeployment() != nil:
-		return h.reprocessDeployments(msg.GetReprocessDeployment())
-	case msg.GetInvalidateImageCache() != nil:
-		return h.invalidateImageCache(msg.GetInvalidateImageCache())
-	}
+func (h *handlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
-func (h *handlerImpl) reprocessDeployments(req *central.ReprocessDeployment) error {
+func (h *handlerImpl) ProcessReprocessDeployments(req *central.ReprocessDeployment) error {
 	log.Debug("Received request to reprocess deployments from Central")
 
 	select {
@@ -76,7 +74,7 @@ func (h *handlerImpl) reprocessDeployments(req *central.ReprocessDeployment) err
 	return nil
 }
 
-func (h *handlerImpl) invalidateImageCache(req *central.InvalidateImageCache) error {
+func (h *handlerImpl) ProcessInvalidateImageCache(req *central.InvalidateImageCache) error {
 	log.Debug("Received request to invalidate image caches")
 
 	select {
