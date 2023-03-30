@@ -22,7 +22,6 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
@@ -79,8 +78,7 @@ export const defaultValues: QuayIntegrationFormValues = {
 
 // Given initial values for an existing integration, return form initial values.
 function computeInitialValues(
-    initialValues: QuayImageIntegration | null,
-    isQuayRobotAccountsEnabled: boolean
+    initialValues: QuayImageIntegration | null
 ): QuayIntegrationFormValues {
     if (initialValues) {
         /*
@@ -106,8 +104,7 @@ function computeInitialValues(
          */
         const hasInitialOauthToken = Boolean(initialValues.quay.oauthToken);
         const hasInitialRobotAccount = Boolean(initialValues.quay.registryRobotCredentials);
-        const updatePassword =
-            hasInitialOauthToken || hasInitialRobotAccount || !isQuayRobotAccountsEnabled;
+        const updatePassword = hasInitialOauthToken || hasInitialRobotAccount;
 
         // Edit or view existing integration.
         return { config, updatePassword };
@@ -121,9 +118,6 @@ function QuayIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<QuayImageIntegration>): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isQuayRobotAccountsEnabled = isFeatureFlagEnabled('ROX_QUAY_ROBOT_ACCOUNTS');
-
     // Refer to stored token in placeholder only if it exists initially.
     const hasInitialOauthToken = Boolean(initialValues?.quay?.oauthToken);
 
@@ -142,7 +136,7 @@ function QuayIntegrationForm({
         onCancel,
         message,
     } = useIntegrationForm<QuayIntegrationFormValues>({
-        initialValues: computeInitialValues(initialValues, isQuayRobotAccountsEnabled),
+        initialValues: computeInitialValues(initialValues),
         validationSchema,
     });
     const { isCreating } = usePageState();
@@ -254,7 +248,7 @@ function QuayIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {isEditable && isQuayRobotAccountsEnabled && (
+                    {isEditable && (
                         <Alert variant="info" isInline title="Authentication">
                             <List>
                                 {values.config.categories.includes('SCANNER') ? (
@@ -327,58 +321,56 @@ function QuayIntegrationForm({
                             }
                         />
                     </FormLabelGroup>
-                    {values.config.categories.includes('REGISTRY') &&
-                        isQuayRobotAccountsEnabled && (
-                            <Grid hasGutter>
-                                <GridItem span={12} lg={6}>
-                                    <FormLabelGroup
-                                        label="Robot username"
-                                        fieldId="config.quay.registryRobotCredentials.username"
-                                        touched={touched}
-                                        errors={errors}
-                                    >
-                                        <TextInput
-                                            type="text"
-                                            id="config.quay.registryRobotCredentials.username"
-                                            value={
-                                                values.config.quay.registryRobotCredentials
-                                                    ?.username ?? ''
-                                            }
-                                            onChange={onChangeRobotUsername}
-                                            onBlur={handleBlur}
-                                            isDisabled={!isEditable || !values.updatePassword}
-                                        />
-                                    </FormLabelGroup>
-                                </GridItem>
-                                <GridItem span={12} lg={6}>
-                                    <FormLabelGroup
-                                        label="Robot password"
-                                        fieldId="config.quay.registryRobotCredentials.password"
-                                        touched={touched}
-                                        errors={errors}
-                                    >
-                                        <TextInput
-                                            type="password"
-                                            id="config.quay.registryRobotCredentials.password"
-                                            value={
-                                                values.config.quay.registryRobotCredentials
-                                                    ?.password ?? ''
-                                            }
-                                            onChange={onChangeRobotPassword}
-                                            onBlur={handleBlur}
-                                            isDisabled={!isEditable || !values.updatePassword}
-                                            placeholder={
-                                                values.updatePassword ||
-                                                !values.config.quay.registryRobotCredentials
-                                                    ?.username
-                                                    ? ''
-                                                    : 'Currently-stored password will be used.'
-                                            }
-                                        />
-                                    </FormLabelGroup>
-                                </GridItem>
-                            </Grid>
-                        )}
+                    {values.config.categories.includes('REGISTRY') && (
+                        <Grid hasGutter>
+                            <GridItem span={12} lg={6}>
+                                <FormLabelGroup
+                                    label="Robot username"
+                                    fieldId="config.quay.registryRobotCredentials.username"
+                                    touched={touched}
+                                    errors={errors}
+                                >
+                                    <TextInput
+                                        type="text"
+                                        id="config.quay.registryRobotCredentials.username"
+                                        value={
+                                            values.config.quay.registryRobotCredentials?.username ??
+                                            ''
+                                        }
+                                        onChange={onChangeRobotUsername}
+                                        onBlur={handleBlur}
+                                        isDisabled={!isEditable || !values.updatePassword}
+                                    />
+                                </FormLabelGroup>
+                            </GridItem>
+                            <GridItem span={12} lg={6}>
+                                <FormLabelGroup
+                                    label="Robot password"
+                                    fieldId="config.quay.registryRobotCredentials.password"
+                                    touched={touched}
+                                    errors={errors}
+                                >
+                                    <TextInput
+                                        type="password"
+                                        id="config.quay.registryRobotCredentials.password"
+                                        value={
+                                            values.config.quay.registryRobotCredentials?.password ??
+                                            ''
+                                        }
+                                        onChange={onChangeRobotPassword}
+                                        onBlur={handleBlur}
+                                        isDisabled={!isEditable || !values.updatePassword}
+                                        placeholder={
+                                            values.updatePassword ||
+                                            !values.config.quay.registryRobotCredentials?.username
+                                                ? ''
+                                                : 'Currently-stored password will be used.'
+                                        }
+                                    />
+                                </FormLabelGroup>
+                            </GridItem>
+                        </Grid>
+                    )}
                     <FormLabelGroup
                         fieldId="config.quay.insecure"
                         touched={touched}
