@@ -26,6 +26,7 @@ const clusterNamespacesTarget =
 export function selectCluster() {
     cy.intercept('GET', clusterNamespacesTarget);
 
+    // no longer necessary to await getting NS, because in one-cluster environments, we now pre-select the cluster
     interactAndWaitForResponses(() => {
         cy.get(networkGraphSelectors.selector.clusterSelect).click();
         cy.get(`${selectSelectors.patternFlySelect.openMenu} span:first`).click();
