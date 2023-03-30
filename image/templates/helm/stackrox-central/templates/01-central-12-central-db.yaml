@@ -69,6 +69,15 @@ spec:
               matchExpressions:
               - key: node-role.kubernetes.io/control-plane
                 operator: DoesNotExist
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - central-db
+            topologyKey: kubernetes.io/hostname
       serviceAccountName: central-db
       terminationGracePeriodSeconds: 120
       initContainers:
