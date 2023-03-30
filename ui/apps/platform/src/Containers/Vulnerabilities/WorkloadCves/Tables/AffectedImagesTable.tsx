@@ -21,6 +21,7 @@ import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
 import { DynamicColumnIcon } from '../DynamicIcon';
 import { getEntityPagePath } from '../searchUtils';
+import ImageComponentsTable from './ImageComponentsTable';
 
 export type ImageForCve = {
     id: string;
@@ -46,8 +47,10 @@ export type ImageForCve = {
     } | null;
     imageComponentCount: number;
     imageComponents: {
+        id: string;
         name: string;
         version: string;
+        fixedIn: string;
         location: string;
         layerIndex: number | null;
         imageVulnerabilities: {
@@ -86,8 +89,10 @@ export const imagesForCveFragment = gql`
 
         imageComponentCount(query: $query)
         imageComponents(query: $query, pagination: $imageComponentPagination) {
+            id
             name
             version
+            fixedIn
             location
             layerIndex
             imageVulnerabilities(query: $query) {
@@ -132,7 +137,15 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
             </Thead>
             {images.map(
                 (
-                    { id, name, operatingSystem, scanTime, topImageVulnerability, imageComponents },
+                    {
+                        id,
+                        name,
+                        metadata,
+                        operatingSystem,
+                        scanTime,
+                        topImageVulnerability,
+                        imageComponents,
+                    },
                     rowIndex
                 ) => {
                     const topSeverity =
@@ -208,8 +221,13 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                             </Tr>
                             <Tr isExpanded={isExpanded}>
                                 <Td />
-                                <Td colSpan={5}>
-                                    <ExpandableRowContent>TODO</ExpandableRowContent>
+                                <Td colSpan={6}>
+                                    <ExpandableRowContent>
+                                        <ImageComponentsTable
+                                            layers={metadata?.v1?.layers ?? []}
+                                            imageComponents={imageComponents}
+                                        />
+                                    </ExpandableRowContent>
                                 </Td>
                             </Tr>
                         </Tbody>

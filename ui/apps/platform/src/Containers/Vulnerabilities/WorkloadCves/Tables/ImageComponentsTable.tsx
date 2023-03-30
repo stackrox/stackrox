@@ -1,7 +1,8 @@
 import React from 'react';
-import { CodeBlock, CodeBlockCode } from '@patternfly/react-core';
+import { CodeBlock, CodeBlockCode, Flex } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
+import { NotFixableIcon } from 'Components/PatternFly/FixabilityIcons';
 import { ImageMetadataLayer, ImageVulnerabilityComponent } from '../hooks/useImageVulnerabilities';
 
 export type ImageComponentsTableProps = {
@@ -11,7 +12,13 @@ export type ImageComponentsTableProps = {
 
 function ImageComponentsTable({ layers, imageComponents }: ImageComponentsTableProps) {
     return (
-        <TableComposable borders={false}>
+        <TableComposable
+            className="pf-u-p-md"
+            style={{
+                border: '1px solid var(--pf-c-table--BorderColor)',
+            }}
+            borders={false}
+        >
             <Thead>
                 <Tr>
                     <Th>Component</Th>
@@ -21,12 +28,15 @@ function ImageComponentsTable({ layers, imageComponents }: ImageComponentsTableP
                 </Tr>
             </Thead>
             {imageComponents.map(({ id, name, version, fixedIn, location, layerIndex }) => {
-                let dockerfileText = `* Dockerfile layer information is not available *`;
+                let dockerfileText = `Dockerfile layer information is not available`;
 
                 if (layerIndex !== null) {
                     const layer = layers[layerIndex];
                     if (layer) {
-                        dockerfileText = `${layer.instruction} ${layer.value}`;
+                        // Convert the zero-based layer index to a one-based layer number in the instruction
+                        dockerfileText = `${layerIndex + 1} ${layer.instruction} ${'     '} ${
+                            layer.instruction
+                        } ${layer.value}`;
                     }
                 }
                 return (
@@ -39,8 +49,18 @@ function ImageComponentsTable({ layers, imageComponents }: ImageComponentsTableP
                         <Tr>
                             <Td>{name}</Td>
                             <Td>{version}</Td>
-                            <Td>{fixedIn || 'TODO - why empty'}</Td>
-                            <Td>{location || 'TODO - why empty'}</Td>
+                            <Td>
+                                {fixedIn || (
+                                    <Flex
+                                        alignItems={{ default: 'alignItemsCenter' }}
+                                        spaceItems={{ default: 'spaceItemsSm' }}
+                                    >
+                                        <NotFixableIcon />
+                                        <span>Not fixable</span>
+                                    </Flex>
+                                )}
+                            </Td>
+                            <Td>{location || 'N/A'}</Td>
                         </Tr>
                         <Tr>
                             <Td colSpan={4} className="pf-u-pt-0">

@@ -118,18 +118,11 @@ function SingleEntityVulnerabilitiesTable({
                                 <Td />
                                 <Td colSpan={5}>
                                     <ExpandableRowContent>
-                                        <p>{summary}</p>
-                                        <div
-                                            className="pf-u-p-md pf-u-mt-md"
-                                            style={{
-                                                border: '1px solid var(--pf-c-table--BorderColor)',
-                                            }}
-                                        >
-                                            <ImageComponentsTable
-                                                layers={image.metadata?.v1?.layers ?? []}
-                                                imageComponents={imageComponents}
-                                            />
-                                        </div>
+                                        <p className="pf-u-mb-md">{summary}</p>
+                                        <ImageComponentsTable
+                                            layers={image.metadata?.v1?.layers ?? []}
+                                            imageComponents={imageComponents}
+                                        />
                                     </ExpandableRowContent>
                                 </Td>
                             </Tr>
