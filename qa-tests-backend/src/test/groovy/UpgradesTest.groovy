@@ -255,7 +255,7 @@ class UpgradesTest extends BaseSpecification {
             "93f4b2dd-ef5a-419e-8371-38aed480fb36" : new KnownPolicyDiffs().setPolicyAsDisabled(),
             "ed8c7957-14de-40bc-aeab-d27ceeecfa7b":  new KnownPolicyDiffs()
                 .addExclusionsWithName([
-                        ["ovnkube-node", "", "openshift-ovn-kubernetes", 0]])
+                        ["ovnkube-node", "", "openshift-ovn-kubernetes", 0]]),
         ]
         and:
         "Skip over known differences due to differences in tests"
