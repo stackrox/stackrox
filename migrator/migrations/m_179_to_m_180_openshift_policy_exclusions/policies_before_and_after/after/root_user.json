@@ -13,6 +13,95 @@
   ],
   "exclusions": [
     {
+      "name": "Don't alert on openshift-backplane namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-backplane"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-multus namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-multus"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-ovn-kubernetes namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-ovn-kubernetes"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-image-registry namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-image-registry"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-controller-manager namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-controller-manager"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-machine-api namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-machine-api"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-cluster-storage-operator namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-cluster-storage-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-monitoring namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-monitoring"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-kube-scheduler namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-scheduler"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-kube-controller-manager namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-controller-manager"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment migrator in namespace openshift-kube-storage-version-migrator",
+      "deployment": {
+        "name": "migrator",
+        "scope": {
+          "namespace": "openshift-kube-storage-version-migrator"
+        }
+      }
+    },
+    {
       "name": "Don't alert on deployment insights-operator in namespace openshift-insights",
       "deployment": {
         "name": "insights-operator",

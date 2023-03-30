@@ -12,18 +12,18 @@
   ],
   "exclusions": [
     {
-      "name": "Don't alert on deployment auth-openshift in openshift-authentication namespace",
+      "name": "Don't alert on deployment oauth-openshift in openshift-authentication namespace",
       "deployment": {
-        "name": "auth-openshift",
+        "name": "oauth-openshift",
         "scope": {
           "namespace": "openshift-authentication namespace"
         }
       }
     },
     {
-      "name": "Don't alert on deployment cluster-cloud-controller-manager-operato in openshift-cloud-controller-manager-operator namespace",
+      "name": "Don't alert on deployment cluster-cloud-controller-manager-operator in openshift-cloud-controller-manager-operator namespace",
       "deployment": {
-        "name": "cluster-cloud-controller-manager-operato",
+        "name": "cluster-cloud-controller-manager-operator",
         "scope": {
           "namespace": "openshift-cloud-controller-manager-operator"
         }

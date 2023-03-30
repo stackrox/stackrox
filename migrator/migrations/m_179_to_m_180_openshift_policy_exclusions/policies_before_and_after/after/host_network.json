@@ -48,9 +48,9 @@
       }
     },
     {
-      "name": "Don't alert on deployment node-resolve in namespace openshift-dns",
+      "name": "Don't alert on deployment node-resolver in namespace openshift-dns",
       "deployment": {
-        "name": "node-resolve",
+        "name": "node-resolver",
         "scope": {
           "namespace": "openshift-dns"
         }
@@ -84,9 +84,9 @@
       }
     },
     {
-      "name": "Don't alert on deployment azure-disk-csi-driver-nod in namespace openshift-cluster-csi-drivers",
+      "name": "Don't alert on deployment azure-disk-csi-driver-node in namespace openshift-cluster-csi-drivers",
       "deployment": {
-        "name": "azure-disk-csi-driver-nod",
+        "name": "azure-disk-csi-driver-node",
         "scope": {
           "namespace": "openshift-cluster-csi-drivers"
         }

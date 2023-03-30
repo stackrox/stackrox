@@ -13,9 +13,9 @@
   ],
   "exclusions": [
     {
-      "name": "Don't alert on deployment outer-default in namespace openshift-ingress",
+      "name": "Don't alert on deployment router-default in namespace openshift-ingress",
       "deployment": {
-        "name": "outer-default",
+        "name": "router-default",
         "scope": {
           "namespace": "openshift-ingress"
         }
