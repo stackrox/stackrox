@@ -26,4 +26,7 @@ var (
 
 	// NodeScanningMaxBackoff is the upper boundary of backoff. Defaults to 5m in seconds, being 50% of Kubernetes restart policy stability timer.
 	NodeScanningMaxBackoff = registerDurationSetting("ROX_NODE_SCANNING_MAX_BACKOFF", 300*time.Second)
+
+	// NodeInventoryContainerEnabled is used to tell compliance whether a connection to the node-inventory container should be attempted
+	NodeInventoryContainerEnabled = RegisterBooleanSetting("ROX_CALL_NODE_INVENTORY_ENABLED", true)
 )
