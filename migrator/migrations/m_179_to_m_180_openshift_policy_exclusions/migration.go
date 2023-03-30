@@ -74,6 +74,14 @@ var (
 			FieldsToCompare: fieldsToCompare,
 			PolicyFileName:  "sensitive_files.json",
 		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "host_network.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "root_user.json",
+		},
 	}
 )
 
