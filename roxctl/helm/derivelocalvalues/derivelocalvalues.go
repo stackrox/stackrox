@@ -393,7 +393,7 @@ func retrieveCustomLabels(labels map[string]interface{}) map[string]interface{} 
 }
 
 func retrieveCustomEnvVars(envVars map[string]interface{}) map[string]interface{} {
-	return filterMap(envVars, []string{"ROX_OFFLINE_MODE", "ROX_INIT_TELEMETRY_ENABLED"})
+	return filterMap(envVars, []string{"ROX_OFFLINE_MODE"})
 }
 
 func printWarnings(logger logger.Logger, warnings []string) {
