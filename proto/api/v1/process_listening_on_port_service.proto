@@ -17,7 +17,7 @@ message GetProcessesListeningOnPortsResponse {
 }
 
 // ProcessesListeningOnPortsService API can be used to list listening endpoints and the processes that opened them.
-service ProcessesListeningOnPortsService {
+service ListeningEndpointsService {
 
     // GetProcessesListeningOnPorts returns the listening endpoints and the processes that opened them for a given deployment
     rpc GetProcessesListeningOnPorts(GetProcessesListeningOnPortsRequest) returns (GetProcessesListeningOnPortsResponse) {

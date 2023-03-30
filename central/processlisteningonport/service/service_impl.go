@@ -19,7 +19,7 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.DeploymentExtension)): {
-			"/v1.ProcessesListeningOnPortsService/GetProcessesListeningOnPorts",
+			"/v1.ListeningEndpointsService/GetProcessesListeningOnPorts",
 		},
 	})
 )
@@ -30,12 +30,12 @@ type serviceImpl struct {
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
-	v1.RegisterProcessesListeningOnPortsServiceServer(grpcServer, s)
+	v1.RegisterListeningEndpointsServiceServer(grpcServer, s)
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return v1.RegisterProcessesListeningOnPortsServiceHandler(ctx, mux, conn)
+	return v1.RegisterListeningEndpointsServiceHandler(ctx, mux, conn)
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.

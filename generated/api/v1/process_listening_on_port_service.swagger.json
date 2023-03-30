@@ -14,7 +14,7 @@
     "/v1/listening_endpoints/deployment/{deploymentId}": {
       "get": {
         "summary": "GetProcessesListeningOnPorts returns the listening endpoints and the processes that opened them for a given deployment",
-        "operationId": "ProcessesListeningOnPortsService_GetProcessesListeningOnPorts",
+        "operationId": "ListeningEndpointsService_GetProcessesListeningOnPorts",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -38,7 +38,7 @@
           }
         ],
         "tags": [
-          "ProcessesListeningOnPortsService"
+          "ListeningEndpointsService"
         ]
       }
     }
