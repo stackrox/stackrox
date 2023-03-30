@@ -9,6 +9,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/version"
@@ -110,4 +112,80 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 func getSha256Sum(input string) string {
 	shaHash := sha256.Sum256([]byte(input))
 	return hex.EncodeToString(shaHash[:])
+}
+
+func TestTelemetryConfiguration(t *testing.T) {
+
+	tmpDir := t.TempDir()
+
+	testutils.SetExampleVersion(t)
+
+	flavorName := defaults.ImageFlavorNameDevelopmentBuild
+	if buildinfo.ReleaseBuild {
+		flavorName = defaults.ImageFlavorNameStackRoxIORelease
+	}
+	config := renderer.Config{
+		Version:     version.GetMainVersion(),
+		ClusterType: storage.ClusterType_KUBERNETES_CLUSTER,
+		K8sConfig: &renderer.K8sConfig{
+			AppName:          "someApp",
+			ImageFlavorName:  flavorName,
+			DeploymentFormat: v1.DeploymentFormat_HELM,
+			Telemetry:        renderer.TelemetryConfig{},
+		},
+	}
+
+	type result struct {
+		enabled bool
+		err     error
+		key     interface{}
+	}
+	testCases := []struct {
+		testDir   string
+		offline   bool
+		telemetry bool
+		key       string
+		expected  result
+	}{
+		{testDir: "test1", offline: false, telemetry: false, key: "", expected: result{enabled: false}},
+		{testDir: "test2", offline: true, telemetry: false, key: "", expected: result{enabled: false}},
+		{testDir: "test3", offline: false, telemetry: true, key: "", expected: result{err: errox.InvalidArgs}},
+		{testDir: "test4", offline: false, telemetry: true, key: "test", expected: result{enabled: true, key: "test"}},
+		{testDir: "test5", offline: false, telemetry: false, key: "test", expected: result{enabled: false, key: "test"}},
+		{testDir: "test6", offline: true, telemetry: true, key: "test", expected: result{enabled: true, key: "test"}},
+	}
+
+	io, _, _, _ := io.TestIO()
+	logger := logger.NewLogger(io, printer.DefaultColorPrinter())
+
+	for _, testCase := range testCases {
+		t.Run(testCase.testDir, func(t *testing.T) {
+			if testCase.telemetry {
+				t.Setenv(env.TelemetryStorageKey.EnvVar(), testCase.key)
+			} else {
+				t.Setenv(env.TelemetryStorageKey.EnvVar(), "")
+			}
+
+			config.OutputDir = filepath.Join(tmpDir, testCase.testDir)
+			config.K8sConfig.OfflineMode = testCase.offline
+			config.K8sConfig.Telemetry.Enabled = testCase.telemetry
+
+			// Note: This test is not for parallel run.
+			require.ErrorIs(t, OutputZip(logger, io, &config), testCase.expected.err)
+			if testCase.expected.err != nil {
+				return
+			}
+
+			values, err := chartutil.ReadValuesFile(filepath.Join(config.OutputDir, "values-public.yaml"))
+			require.NoError(t, err)
+
+			enabled, err := values.PathValue("central.telemetry.enabled")
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.expected.enabled, enabled)
+
+			key, err := values.PathValue("central.telemetry.storage.key")
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.expected.key, key)
+		})
+	}
 }
