@@ -69,14 +69,23 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
     const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     let queryToUse = CVES_QUERY;
+    let linkTypeToUse = entityTypes.CVE;
 
     if (showVMUpdates) {
         if (entityContext[entityTypes.CLUSTER]) {
             queryToUse = CLUSTER_CVES_QUERY;
-        } else if (entityContext[entityTypes.NODE] || entityContext[entityTypes.NODE_COMPONENT]) {
+            linkTypeToUse = entityTypes.CLUSTER_CVE;
+        } else if (
+            entityContext[entityTypes.NODE] ||
+            entityContext[entityTypes.NODE_COMPONENT] ||
+            parentContext[entityTypes.NODE] ||
+            parentContext[entityTypes.NODE_COMPONENT]
+        ) {
             queryToUse = NODE_CVES_QUERY;
+            linkTypeToUse = entityTypes.NODE_CVE;
         } else {
             queryToUse = IMAGE_CVES_QUERY;
+            linkTypeToUse = entityTypes.IMAGE_CVE;
         }
     }
 
@@ -92,7 +101,7 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
 
     const workflowState = useContext(workflowStateContext);
     const viewAllURL = workflowState
-        .pushList(entityTypes.CVE)
+        .pushList(linkTypeToUse)
         .setSort([{ id: 'cvss', desc: true }])
         .toUrl();
 
