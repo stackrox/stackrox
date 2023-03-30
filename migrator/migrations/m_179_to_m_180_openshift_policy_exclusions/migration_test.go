@@ -46,19 +46,17 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 	testPolicy.Id = "ed8c7957-14de-40bc-aeab-d27ceeecfa7b"
 	testPolicy.Name = "Iptables Executed in Privileged Container"
 	testPolicy.Description = "Alert on privileged pods that execute iptables"
-
 	require.NoError(s.T(), s.policyStore.Upsert(ctx, testPolicy))
-
 	dbs := &types.Databases{
 		PostgresDB: s.db.DB,
 		GormDB:     s.db.GetGormDB(),
 	}
 
 	s.NoError(migration.Run(dbs))
-
 	q := search.NewQueryBuilder().AddExactMatches(search.PolicyID, testPolicy.GetId()).ProtoQuery()
 	policy, err := s.policyStore.GetByQuery(ctx, q)
 	s.NoError(err)
-	s.Equal(len(policy[0].Exclusions), 1, "exclusion do not match after migration")
+	expectedExclusion := "Don't alert on ovnkube-node deployment in openshift-ovn-kubernetes Namespace"
+	s.Equal(policy[0].Exclusions[0].Name, expectedExclusion, "exclusion do not match after migration")
 
 }
