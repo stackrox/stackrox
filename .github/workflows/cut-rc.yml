@@ -94,11 +94,11 @@ jobs:
 
   check-jira:
     name: Check Jira tickets for release
-    if: github.event.inputs.check-jira-issues == 'true'
     needs: [variables, properties]
     runs-on: ubuntu-latest
     steps:
       - name: Query JIRA
+        if: github.event.inputs.check-jira-issues == 'true'
         env:
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
