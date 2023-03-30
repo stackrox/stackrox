@@ -46,6 +46,7 @@ func NewNodeScanIntervalFromEnv() NodeScanIntervals {
 	if absDeviation > 0 {
 		if absDeviation >= i.base {
 			i.deviation = 1
+			absDeviation = i.base
 		} else {
 			i.deviation = absDeviation.Seconds() / i.base.Seconds()
 		}
