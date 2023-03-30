@@ -223,7 +223,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         "A deployment listening on a port is brought up and it is checked twice that the port is found"
 
         setupSpec()
-        def clusterId = ClusterService.getClusterId()
 
         String deploymentId2 = targetDeployments.find { it.name == TCPCONNECTIONTARGET2 }?.deploymentUid
 
