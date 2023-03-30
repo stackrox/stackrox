@@ -95,6 +95,7 @@ export const imagesForCveFragment = gql`
             fixedIn
             location
             layerIndex
+            # TODO I think we can drop this sub-resolver
             imageVulnerabilities(query: $query) {
                 severity # same for all components in an image
                 fixedByVersion
