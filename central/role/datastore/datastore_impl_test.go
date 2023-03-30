@@ -284,6 +284,9 @@ func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 	err = s.dataStore.RemoveRole(s.hasWriteCtx, goodRole.GetName())
 	s.ErrorIs(err, errox.NotFound, "removing non-existing role yields an error")
 
+	err = s.dataStore.AddRole(s.hasWriteDeclarativeCtx, goodRole)
+	s.ErrorIs(err, errox.NotAuthorized, "attempting to add declaratively imperative role is an error")
+
 	err = s.dataStore.AddRole(s.hasWriteCtx, goodRole)
 	s.NoError(err)
 
@@ -312,7 +315,10 @@ func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 	s.NoError(err, "adding a role with name that used to exist is not an error")
 
 	err = s.dataStore.AddRole(s.hasWriteCtx, declarativeRole)
-	s.NoError(err, "adding a role declaratively is not an error")
+	s.ErrorIs(err, errox.NotAuthorized, "attempting to add imperatively declarative role is an error")
+
+	err = s.dataStore.AddRole(s.hasWriteDeclarativeCtx, declarativeRole)
+	s.NoError(err, "adding a declarative role with declarative context is not an error")
 
 	err = s.dataStore.UpdateRole(s.hasWriteCtx, declarativeRole)
 	s.ErrorIs(err, errox.NotAuthorized, "attempting to modify imperatively declarative role is an error")
@@ -509,6 +515,9 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, goodPermissionSet.GetId())
 	s.ErrorIs(err, errox.NotFound, "removing non-existing permission set yields an error")
 
+	err = s.dataStore.AddPermissionSet(s.hasWriteDeclarativeCtx, goodPermissionSet)
+	s.ErrorIs(err, errox.NotAuthorized, "attempting to add declaratively imperative permission set is an error")
+
 	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, goodPermissionSet)
 	s.NoError(err)
 
@@ -547,7 +556,10 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	s.NoError(err, "adding a permission set with ID and name that used to exist is not an error")
 
 	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, declarativePermissionSet)
-	s.NoError(err, "adding a permission set declaratively is not an error")
+	s.ErrorIs(err, errox.NotAuthorized, "adding a declarative permission set imperatively is an error")
+
+	err = s.dataStore.AddPermissionSet(s.hasWriteDeclarativeCtx, declarativePermissionSet)
+	s.NoError(err, "adding a declarative permission set declaratively is not an error")
 
 	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, declarativePermissionSet)
 	s.ErrorIs(err, errox.NotAuthorized, "attempting to modify imperatively declarative permission set is an error")
@@ -752,6 +764,9 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	err = s.dataStore.RemoveAccessScope(s.hasWriteCtx, goodScope.GetId())
 	s.ErrorIs(err, errox.NotFound, "removing non-existing scope yields an error")
 
+	err = s.dataStore.AddAccessScope(s.hasWriteDeclarativeCtx, goodScope)
+	s.ErrorIs(err, errox.NotAuthorized, "attempting to modify declaratively imperative access scope is an error")
+
 	err = s.dataStore.AddAccessScope(s.hasWriteCtx, goodScope)
 	s.NoError(err)
 
@@ -788,7 +803,10 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	s.NoError(err, "adding a scope with ID and name that used to exist is not an error")
 
 	err = s.dataStore.AddAccessScope(s.hasWriteCtx, declarativeScope)
-	s.NoError(err, "adding an access scope declaratively is not an error")
+	s.ErrorIs(err, errox.NotAuthorized, "attempting to add imperatively declarative access scope is an error")
+
+	err = s.dataStore.AddAccessScope(s.hasWriteDeclarativeCtx, declarativeScope)
+	s.NoError(err, "adding a declarative access scope declaratively is not an error")
 
 	err = s.dataStore.UpdateAccessScope(s.hasWriteCtx, declarativeScope)
 	s.ErrorIs(err, errox.NotAuthorized, "attempting to modify imperatively declarative access scope is an error")

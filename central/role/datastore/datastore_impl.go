@@ -212,6 +212,9 @@ func (ds *dataStoreImpl) AddRole(ctx context.Context, role *storage.Role) error 
 	if err := verifyNotDefaultRole(role); err != nil {
 		return err
 	}
+	if err := verifyRoleOrigin(ctx, role); err != nil {
+		return errors.Wrap(err, "origin didn't match for role")
+	}
 
 	// protect against TOCTOU race condition
 	ds.lock.Lock()
@@ -349,6 +352,10 @@ func (ds *dataStoreImpl) AddPermissionSet(ctx context.Context, permissionSet *st
 	}
 	if err := verifyNotDefaultPermissionSet(permissionSet); err != nil {
 		return err
+	}
+
+	if err := verifyPermissionSetOrigin(ctx, permissionSet); err != nil {
+		return errors.Wrap(err, "origin didn't match for new permission set")
 	}
 
 	ds.lock.Lock()
@@ -520,6 +527,10 @@ func (ds *dataStoreImpl) AddAccessScope(ctx context.Context, scope *storage.Simp
 	}
 	if err := verifyNotDefaultAccessScope(scope); err != nil {
 		return err
+	}
+
+	if err := verifyAccessScopeOrigin(ctx, scope); err != nil {
+		return errors.Wrap(err, "origin didn't match for new access scope")
 	}
 
 	ds.lock.Lock()

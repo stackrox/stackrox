@@ -984,3 +984,29 @@ func (s *groupDataStoreTestSuite) TestUpsertChangeImperativeOrigin() {
 	err := s.dataStore.Upsert(s.hasWriteCtx, updatedGroup)
 	s.ErrorIs(err, errox.NotAuthorized)
 }
+
+func (s *groupDataStoreTestSuite) TestAddImperativeViaConfig() {
+	group := fixtures.GetGroupWithOrigin(storage.Traits_IMPERATIVE)
+	group.Props.Id = ""
+
+	err := s.dataStore.Add(s.hasWriteDeclarativeCtx, group)
+	s.ErrorIs(err, errox.NotAuthorized)
+}
+
+func (s *groupDataStoreTestSuite) TestAddDeclarativeViaAPI() {
+	group := fixtures.GetGroupWithOrigin(storage.Traits_DECLARATIVE)
+	group.Props.Id = ""
+
+	err := s.dataStore.Add(s.hasWriteCtx, group)
+	s.ErrorIs(err, errox.NotAuthorized)
+}
+
+func (s *groupDataStoreTestSuite) TestAddDeclarativeViaConfig() {
+	group := fixtures.GetGroupWithOrigin(storage.Traits_DECLARATIVE)
+	group.Props.Id = ""
+
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+	err := s.dataStore.Add(s.hasWriteDeclarativeCtx, group)
+	s.NoError(err)
+}
