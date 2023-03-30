@@ -21,6 +21,7 @@ func TestCreateAuthProvider_Failures(t *testing.T) {
 	}{
 		"missing name flag": {
 			args: []string{
+				"auth-provider",
 				"openshift-auth",
 				"--ui-endpoint=localhost:8000",
 			},
@@ -29,6 +30,7 @@ func TestCreateAuthProvider_Failures(t *testing.T) {
 		},
 		"missing ui-endpoint flag": {
 			args: []string{
+				"auth-provider",
 				"openshift-auth",
 				"--name=some-name",
 			},
@@ -37,6 +39,7 @@ func TestCreateAuthProvider_Failures(t *testing.T) {
 		},
 		"invalid number of groups keys": {
 			args: []string{
+				"auth-provider",
 				"openshift-auth",
 				"--name=some-name",
 				"--ui-endpoint=localhost:8000",
@@ -49,6 +52,7 @@ func TestCreateAuthProvider_Failures(t *testing.T) {
 		},
 		"invalid number of groups values": {
 			args: []string{
+				"auth-provider",
 				"openshift-auth",
 				"--name=some-name",
 				"--ui-endpoint=localhost:8000",
@@ -61,6 +65,7 @@ func TestCreateAuthProvider_Failures(t *testing.T) {
 		},
 		"invalid number of groups roles": {
 			args: []string{
+				"auth-provider",
 				"openshift-auth",
 				"--name=some-name",
 				"--ui-endpoint=localhost:8000",
@@ -76,7 +81,7 @@ func TestCreateAuthProvider_Failures(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			env, out, errOut := mocks.NewEnvWithConn(nil, t)
-			cmd := authProviderCommand(env)
+			cmd := Command(env)
 			cmd.SetArgs(c.args)
 			cmd.SetErr(errOut)
 			cmd.SetOut(out)
@@ -95,9 +100,10 @@ func TestCreateAuthProvider_Failures(t *testing.T) {
 
 func TestCreateAuthProvider_SAML_Failure(t *testing.T) {
 	env, _, _ := mocks.NewEnvWithConn(nil, t)
-	cmd := authProviderCommand(env)
+	cmd := Command(env)
 
 	args := []string{
+		"auth-provider",
 		"saml",
 		"--sp-issuer=something",
 		"--idp-cert=non-existent/file/path",
@@ -114,9 +120,10 @@ func TestCreateAuthProvider_SAML_Failure(t *testing.T) {
 
 func TestCreateAuthProvider_UserPKI_Failure(t *testing.T) {
 	env, _, _ := mocks.NewEnvWithConn(nil, t)
-	cmd := authProviderCommand(env)
+	cmd := Command(env)
 
 	args := []string{
+		"auth-provider",
 		"userpki",
 		"--ca-file=non-existent/file/path",
 	}
@@ -130,6 +137,7 @@ func TestCreateAuthProvider_UserPKI_Failure(t *testing.T) {
 
 func TestCreateAuthProvider_OIDC_Success(t *testing.T) {
 	args := []string{
+		"auth-provider",
 		"oidc",
 		"--name=some-name",
 		"--ui-endpoint=localhost:8000",
@@ -218,6 +226,7 @@ q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
 	assert.NoError(t, err)
 
 	args := []string{
+		"auth-provider",
 		"saml",
 		"--name=some-name",
 		"--ui-endpoint=localhost:8000",
@@ -326,6 +335,7 @@ q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
 	assert.NoError(t, err)
 
 	args := []string{
+		"auth-provider",
 		"userpki",
 		"--name=some-name",
 		"--ui-endpoint=localhost:8000",
@@ -393,6 +403,7 @@ userpki:
 
 func TestCreateAuthProvider_OpenShiftAuth_Success(t *testing.T) {
 	args := []string{
+		"auth-provider",
 		"openshift-auth",
 		"--name=some-name",
 		"--ui-endpoint=localhost:8000",
@@ -435,6 +446,7 @@ openshift:
 
 func TestCreateAuthProvider_IAP_Success(t *testing.T) {
 	args := []string{
+		"auth-provider",
 		"iap",
 		"--name=some-name",
 		"--ui-endpoint=localhost:8000",
@@ -478,7 +490,7 @@ iap:
 
 func runSuccessfulCommandTest(t *testing.T, args []string, expectedYAML string) {
 	env, out, errOut := mocks.NewEnvWithConn(nil, t)
-	cmd := authProviderCommand(env)
+	cmd := Command(env)
 	cmd.SetArgs(args)
 	cmd.SetOut(out)
 	cmd.SetErr(errOut)

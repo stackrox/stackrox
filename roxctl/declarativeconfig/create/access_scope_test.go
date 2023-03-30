@@ -14,6 +14,7 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 	}{
 		"missing name flag": {
 			args: []string{
+				"access-scope",
 				"--description=some-description",
 			},
 			errOut: `Error: required flag(s) "name" not set
@@ -21,12 +22,14 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 		},
 		"invalid operator in label selector": {
 			args: []string{
+				"access-scope",
 				"--name=some-name",
 				"--cluster-label-selector=key=some-key;operator=WRONG;values=some-value",
 			},
 		},
 		"invalid label selector flag value": {
 			args: []string{
+				"access-scope",
 				"--name=some-name",
 				"--cluster-label-selector=key=some-key,operator=WRONG,values=some-value",
 			},
@@ -35,6 +38,7 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 		},
 		"invalid label selector key value": {
 			args: []string{
+				"access-scope",
 				"--name=some-name",
 				"--cluster-label-selector=key:some-key;operator=IN;values=some-value",
 			},
@@ -43,6 +47,7 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 		},
 		"invalid included objects flag value": {
 			args: []string{
+				"access-scope",
 				"--name=some-name",
 				"--included=cluster=namespace=",
 			},
@@ -62,7 +67,7 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			env, out, errOut := mocks.NewEnvWithConn(nil, t)
-			cmd := accessScopeCommand(env)
+			cmd := Command(env)
 			cmd.SetArgs(c.args)
 			cmd.SetOut(out)
 			cmd.SetErr(errOut)
@@ -78,6 +83,7 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 
 func TestCreateAccessScope_Success(t *testing.T) {
 	args := []string{
+		"access-scope",
 		"--name=some-name",
 		"--description=some-description",
 		"--included=clusterA",
@@ -117,7 +123,7 @@ rules:
 `
 
 	env, out, errOut := mocks.NewEnvWithConn(nil, t)
-	cmd := accessScopeCommand(env)
+	cmd := Command(env)
 	cmd.SetArgs(args)
 	cmd.SetOut(out)
 	cmd.SetErr(errOut)

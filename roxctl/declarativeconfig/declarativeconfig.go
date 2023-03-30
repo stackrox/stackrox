@@ -9,14 +9,14 @@ import (
 
 // Command defines the declarative config command tree.
 func Command(cliEnvironment environment.Environment) *cobra.Command {
-	c := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "declarative-config",
 		Short: "Commands that help manage declarative configuration",
 	}
-
-	c.AddCommand(
+	cmd.AddCommand(
 		create.Command(cliEnvironment),
 		lint.Command(cliEnvironment),
 	)
-	return c
+
+	return cmd
 }

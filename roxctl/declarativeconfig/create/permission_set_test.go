@@ -16,6 +16,7 @@ func TestCreatePermissionSet_Failures(t *testing.T) {
 	}{
 		"missing name flag": {
 			args: []string{
+				"permission-set",
 				`--resource-with-access="Access=READ_ACCESS"`,
 			},
 			errOut: `Error: if any flags in the group [name resource-with-access] are set they must all be set; missing [name]
@@ -23,6 +24,7 @@ func TestCreatePermissionSet_Failures(t *testing.T) {
 		},
 		"missing resource-with-access flag": {
 			args: []string{
+				"permission-set",
 				"--name=some-name",
 			},
 			errOut: `Error: if any flags in the group [name resource-with-access] are set they must all be set; missing [resource-with-access]
@@ -30,6 +32,7 @@ func TestCreatePermissionSet_Failures(t *testing.T) {
 		},
 		"invalid access specified in resource-with-access flag": {
 			args: []string{
+				"permission-set",
 				"--name=some-name",
 				`--resource-with-access=Access=ReadAccess,Admin=READ_WRITE_ACCESS,Policy=none_access`,
 			},
@@ -40,7 +43,7 @@ func TestCreatePermissionSet_Failures(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			env, out, errOut := mocks.NewEnvWithConn(nil, t)
-			cmd := permissionSetCommand(env)
+			cmd := Command(env)
 
 			cmd.SetArgs(c.args)
 			cmd.SetErr(errOut)
@@ -67,6 +70,7 @@ func TestCreatePermissionSet_Success(t *testing.T) {
 	}{
 		"with description set": {
 			args: []string{
+				"permission-set",
 				"--name=some-name",
 				"--description=some-description",
 				`--resource-with-access=Access=READ_ACCESS,Admin=READ_WRITE_ACCESS`,
@@ -82,6 +86,7 @@ resources:
 		},
 		"without description set": {
 			args: []string{
+				"permission-set",
 				"--name=some-name",
 				`--resource-with-access=Access=READ_ACCESS,Admin=READ_WRITE_ACCESS`,
 			},
@@ -112,7 +117,7 @@ resources:
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			env, out, errOut := mocks.NewEnvWithConn(nil, t)
-			cmd := permissionSetCommand(env)
+			cmd := Command(env)
 
 			cmd.SetArgs(c.args)
 			cmd.SetErr(errOut)

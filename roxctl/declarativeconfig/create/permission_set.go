@@ -2,6 +2,8 @@ package create
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -13,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/declarativeconfig/configmap"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"gopkg.in/yaml.v3"
 )
@@ -24,8 +27,11 @@ func permissionSetCommand(cliEnvironment environment.Environment) *cobra.Command
 		Use:  permSetCmd.permissionSet.Type(),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := permSetCmd.Construct(cmd); err != nil {
+				return err
+			}
 			if err := permSetCmd.Validate(); err != nil {
-				return errors.Wrap(err, "validating the permission set")
+				return err
 			}
 			return permSetCmd.PrintYAML()
 		},
@@ -48,6 +54,19 @@ type permissionSetCmd struct {
 	permissionSet      *declarativeconfig.PermissionSet
 	resourceWithAccess map[string]string
 	env                environment.Environment
+
+	configMap string
+	namespace string
+}
+
+func (p *permissionSetCmd) Construct(cmd *cobra.Command) error {
+	configMap, namespace, err := configmap.ReadConfigMapFlags(cmd)
+	if err != nil {
+		return errors.Wrap(err, "reading config map flag values")
+	}
+	p.configMap = configMap
+	p.namespace = namespace
+	return nil
 }
 
 func (p *permissionSetCmd) Validate() error {
@@ -80,14 +99,22 @@ func (p *permissionSetCmd) Validate() error {
 }
 
 func (p *permissionSetCmd) PrintYAML() error {
-	yamlOut := &bytes.Buffer{}
-	enc := yaml.NewEncoder(yamlOut)
+	yamlOutput := &bytes.Buffer{}
+	enc := yaml.NewEncoder(yamlOutput)
 	if err := enc.Encode(p.permissionSet); err != nil {
 		return errors.Wrap(err, "creating the YAML output")
 	}
-	if err := lint.Lint(yamlOut.Bytes()); err != nil {
+	if err := lint.Lint(yamlOutput.Bytes()); err != nil {
 		return errors.Wrap(err, "linting the YAML output")
 	}
-	_, err := p.env.InputOutput().Out().Write(yamlOut.Bytes())
-	return errors.Wrap(err, "writing the YAML output")
+	if p.configMap != "" {
+		return errors.Wrap(configmap.WriteToConfigMap(context.Background(), p.configMap, p.namespace,
+			fmt.Sprintf("%s-%s", p.permissionSet.Type(), p.permissionSet.Name), yamlOutput.Bytes()),
+			"writing the YAML output to config map")
+	}
+
+	if _, err := p.env.InputOutput().Out().Write(yamlOutput.Bytes()); err != nil {
+		return errors.Wrap(err, "writing the YAML output")
+	}
+	return nil
 }

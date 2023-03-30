@@ -19,6 +19,7 @@ func TestCreateRoleCommand_Failures(t *testing.T) {
 		},
 		"missing name flag": {
 			args: []string{
+				"role",
 				"--access-scope=some-access-scope",
 				"--permission-set=some-permission-set",
 			},
@@ -27,6 +28,7 @@ func TestCreateRoleCommand_Failures(t *testing.T) {
 		},
 		"missing access scope flag": {
 			args: []string{
+				"role",
 				"--name=some-name",
 				"--permission-set=some-permission-set",
 			},
@@ -35,6 +37,7 @@ func TestCreateRoleCommand_Failures(t *testing.T) {
 		},
 		"missing permission set flag": {
 			args: []string{
+				"role",
 				"--name=some-name",
 				"--access-scope=some-access-scope",
 			},
@@ -46,7 +49,7 @@ func TestCreateRoleCommand_Failures(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			env, out, errOut := mocks.NewEnvWithConn(nil, t)
-			cmd := roleCommand(env)
+			cmd := Command(env)
 
 			cmd.SetArgs(c.args)
 			cmd.SetErr(errOut)
@@ -66,6 +69,7 @@ func TestCreateRoleCommand_Success(t *testing.T) {
 	}{
 		"with description set": {
 			args: []string{
+				"role",
 				"--name=some-name",
 				"--description=some-description",
 				"--access-scope=some-access-scope",
@@ -79,6 +83,7 @@ permissionSet: some-permission-set
 		},
 		"without description set": {
 			args: []string{
+				"role",
 				"--name=some-name",
 				"--access-scope=some-access-scope",
 				"--permission-set=some-permission-set",
@@ -93,7 +98,7 @@ permissionSet: some-permission-set
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			env, out, errOut := mocks.NewEnvWithConn(nil, t)
-			cmd := roleCommand(env)
+			cmd := Command(env)
 
 			cmd.SetArgs(c.args)
 			cmd.SetErr(errOut)

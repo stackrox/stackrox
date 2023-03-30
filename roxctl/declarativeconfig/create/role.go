@@ -2,12 +2,15 @@ package create
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/declarativeconfig/configmap"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"gopkg.in/yaml.v3"
 )
@@ -19,6 +22,9 @@ func roleCommand(cliEnvironment environment.Environment) *cobra.Command {
 		Use:  roleCmd.role.Type(),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := roleCmd.Construct(cmd); err != nil {
+				return err
+			}
 			return roleCmd.PrintYAML()
 		},
 		Short: "Create a declarative configuration for a role",
@@ -40,8 +46,20 @@ func roleCommand(cliEnvironment environment.Environment) *cobra.Command {
 }
 
 type roleCmd struct {
-	role *declarativeconfig.Role
-	env  environment.Environment
+	role      *declarativeconfig.Role
+	env       environment.Environment
+	configMap string
+	namespace string
+}
+
+func (r *roleCmd) Construct(cmd *cobra.Command) error {
+	configMap, namespace, err := configmap.ReadConfigMapFlags(cmd)
+	if err != nil {
+		return errors.Wrap(err, "reading config map flag values")
+	}
+	r.configMap = configMap
+	r.namespace = namespace
+	return nil
 }
 
 func (r *roleCmd) PrintYAML() error {
@@ -53,6 +71,12 @@ func (r *roleCmd) PrintYAML() error {
 	if err := lint.Lint(yamlOutput.Bytes()); err != nil {
 		return errors.Wrap(err, "linting the YAML output")
 	}
-	_, err := r.env.InputOutput().Out().Write(yamlOutput.Bytes())
-	return errors.Wrap(err, "writing the YAML output")
+	if r.configMap != "" {
+		return errors.Wrap(configmap.WriteToConfigMap(context.Background(), r.configMap, r.namespace, fmt.Sprintf("%s-%s", r.role.Type(), r.role.Name),
+			yamlOutput.Bytes()), "writing the YAML output to config map")
+	}
+	if _, err := r.env.InputOutput().Out().Write(yamlOutput.Bytes()); err != nil {
+		return errors.Wrap(err, "writing the YAML output")
+	}
+	return nil
 }
