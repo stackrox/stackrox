@@ -18,8 +18,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	lintCmd := &lintCmd{env: cliEnvironment}
 
 	cmd := &cobra.Command{
-		Use:  "lint",
-		Args: cobra.NoArgs,
+		Use:   "lint",
+		Short: "Lint an existing declarative configuration YAML file",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := lintCmd.Validate(); err != nil {
 				return err
