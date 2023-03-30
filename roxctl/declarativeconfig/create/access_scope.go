@@ -153,10 +153,10 @@ func (r *requirementFlag) String() string {
 	res := make([]string, 0, len(*r.requirements))
 
 	for _, requirement := range *r.requirements {
-		requirementString := fmt.Sprintf("key=%s;operator=%s", requirement.Key,
+		requirementString := fmt.Sprintf("key=%q;operator=%q", requirement.Key,
 			storage.SetBasedLabelSelector_Operator(requirement.Operator))
 		if len(requirement.Values) != 0 {
-			requirementString = fmt.Sprintf("%s;values=%s",
+			requirementString = fmt.Sprintf("%s;values=%q",
 				requirementString, strings.Join(requirement.Values, ","))
 		}
 		res = append(res, requirementString)

@@ -4,9 +4,12 @@ import (
 	"reflect"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 var _ Transformer = (*accessScopeTransform)(nil)
@@ -22,11 +25,15 @@ func (a *accessScopeTransform) Transform(configuration declarativeconfig.Configu
 	if !ok {
 		return nil, errox.InvalidArgs.Newf("invalid configuration type received for access scope: %T", configuration)
 	}
+	rules, err := rulesFromScopeConfig(scopeConfig)
+	if err != nil {
+		return nil, errox.InvalidArgs.CausedBy(err)
+	}
 	scopeProto := &storage.SimpleAccessScope{
 		Id:          declarativeconfig.NewDeclarativeAccessScopeUUID(scopeConfig.Name).String(),
 		Name:        scopeConfig.Name,
 		Description: scopeConfig.Description,
-		Rules:       rulesFromScopeConfig(scopeConfig),
+		Rules:       rules,
 		Traits: &storage.Traits{
 			Origin: storage.Traits_DECLARATIVE,
 		},
@@ -37,13 +44,22 @@ func (a *accessScopeTransform) Transform(configuration declarativeconfig.Configu
 	}, nil
 }
 
-func rulesFromScopeConfig(scope *declarativeconfig.AccessScope) *storage.SimpleAccessScope_Rules {
+func rulesFromScopeConfig(scope *declarativeconfig.AccessScope) (*storage.SimpleAccessScope_Rules, error) {
+	clusterLabelSelectors, err := labelSelectorsFromScopeConfig(scope.Rules.ClusterLabelSelectors)
+	if err != nil {
+		return nil, err
+	}
+	namespaceLabelSelectors, err := labelSelectorsFromScopeConfig(scope.Rules.NamespaceLabelSelectors)
+	if err != nil {
+		return nil, err
+	}
+
 	return &storage.SimpleAccessScope_Rules{
 		IncludedClusters:        includedClustersFromScopeConfig(scope),
 		IncludedNamespaces:      includedNamespacesFromScopeConfig(scope),
-		ClusterLabelSelectors:   labelSelectorsFromScopeConfig(scope.Rules.ClusterLabelSelectors),
-		NamespaceLabelSelectors: labelSelectorsFromScopeConfig(scope.Rules.NamespaceLabelSelectors),
-	}
+		ClusterLabelSelectors:   clusterLabelSelectors,
+		NamespaceLabelSelectors: namespaceLabelSelectors,
+	}, nil
 }
 
 func includedClustersFromScopeConfig(scope *declarativeconfig.AccessScope) []string {
@@ -72,14 +88,21 @@ func includedNamespacesFromScopeConfig(scope *declarativeconfig.AccessScope) []*
 	return namespaces
 }
 
-func labelSelectorsFromScopeConfig(labelSelectors []declarativeconfig.LabelSelector) []*storage.SetBasedLabelSelector {
+func labelSelectorsFromScopeConfig(labelSelectors []declarativeconfig.LabelSelector) ([]*storage.SetBasedLabelSelector, error) {
 	var setBasedLabelSelectors []*storage.SetBasedLabelSelector
+	var labelSelectorErrs *multierror.Error
 	for _, ls := range labelSelectors {
 		reqs := make([]*storage.SetBasedLabelSelector_Requirement, 0, len(ls.Requirements))
 		for _, req := range ls.Requirements {
+			op := storage.SetBasedLabelSelector_Operator(req.Operator)
+			selectionOperator := effectiveaccessscope.ConvertLabelSelectorOperatorToSelectionOperator(op)
+			if _, err := labels.NewRequirement(req.Key, selectionOperator, req.Values); err != nil {
+				labelSelectorErrs = multierror.Append(labelSelectorErrs, err)
+				continue
+			}
 			reqs = append(reqs, &storage.SetBasedLabelSelector_Requirement{
 				Key:    req.Key,
-				Op:     storage.SetBasedLabelSelector_Operator(req.Operator),
+				Op:     op,
 				Values: req.Values,
 			})
 		}
@@ -87,5 +110,5 @@ func labelSelectorsFromScopeConfig(labelSelectors []declarativeconfig.LabelSelec
 			Requirements: reqs,
 		})
 	}
-	return setBasedLabelSelectors
+	return setBasedLabelSelectors, labelSelectorErrs.ErrorOrNil()
 }

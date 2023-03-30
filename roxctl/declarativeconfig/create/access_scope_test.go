@@ -49,6 +49,14 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 			errOut: `Error: invalid argument "cluster=namespace=" for "--included" flag: cluster=namespace= must be either formatted as key or as key=value pair
 `,
 		},
+		"invalid key value pair in label selector": {
+			args: []string{
+				"--name=some-name",
+				"--cluster-label-selector=something=somewhere;here=there",
+			},
+			errOut: `Error: invalid argument "something=somewhere;here=there" for "--cluster-label-selector" flag: something=somewhere must specify either key, operator, values
+`,
+		},
 	}
 
 	for name, c := range cases {
@@ -74,7 +82,7 @@ func TestCreateAccessScope_Success(t *testing.T) {
 		"--description=some-description",
 		"--included=clusterA",
 		"--included=clusterB=namespaceA,namespaceB",
-		"--cluster-label-selector=key=some-key;operator=IN;values=some-value",
+		"--cluster-label-selector=key=some-key;operator=IN;values=some-value,another-value",
 		"--cluster-label-selector=key=some-key;operator=EXISTS",
 		"--namespace-label-selector=key=some-key;operator=IN;values=some-value",
 		"--namespace-label-selector=key=some-key;operator=EXISTS",
@@ -95,6 +103,7 @@ rules:
               operator: IN
               values:
                 - some-value
+                - another-value
             - key: some-key
               operator: EXISTS
     namespaceLabelSelectors:
@@ -118,4 +127,17 @@ rules:
 
 	assert.Empty(t, errOut)
 	assert.Equal(t, expectedYAML, out.String())
+}
+
+func FuzzRetrieveRequirement(f *testing.F) {
+	args := []string{"key=some-key;operator=IN;values=some-value,another-value", "key=some-key;operator=EXISTS"}
+	for _, arg := range args {
+		f.Add(arg)
+	}
+
+	f.Fuzz(func(t *testing.T, s string) {
+		assert.NotPanics(t, func() {
+			_, _ = retrieveRequirement(s)
+		})
+	})
 }
