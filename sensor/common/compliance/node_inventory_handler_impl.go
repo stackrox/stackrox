@@ -39,7 +39,7 @@ func (c *nodeInventoryHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	if c.toCentral == nil {
-		log.Panic("Start must be called before ResponsesC")
+		log.Panic("Start must be called prior to ResponsesC")
 	}
 	return c.toCentral
 }
@@ -89,11 +89,11 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 				}
 				if !c.centralReady.IsDone() {
 					// TODO(ROX-13164): Reply with NACK to compliance
-					log.Warnf("Received NodeInventory but Central is not reachable. Requesting Compliance to resend NodeInventory later")
+					log.Warnf("Received node inventory but Central is unavailable")
 					continue
 				}
 				if inventory == nil {
-					log.Warnf("Received nil NodeInventory - not sending node inventory to Central")
+					log.Warnf("Received nil node inventory - not sending to Central")
 					break
 				}
 				if nodeID, err := c.nodeMatcher.GetNodeID(inventory.GetNodeName()); err != nil {
@@ -101,7 +101,7 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 				} else {
 					inventory.NodeId = nodeID
 					metrics.ObserveReceivedNodeInventory(inventory)
-					log.Infof("Mapping NodeInventory name '%s' to Node ID '%s'", inventory.GetNodeName(), nodeID)
+					log.Debugf("Mapping node inventory name '%s' to Node ID '%s'", inventory.GetNodeName(), nodeID)
 					c.sendNodeInventory(toC, inventory)
 				}
 			}
