@@ -207,7 +207,6 @@ func createBundle(logger logger.Logger, config renderer.Config) (*zip.Wrapper, e
  StackRox Kubernetes Security Platform collects and transmits aggregated usage and system health information.
   If you want to OPT OUT from this, re-generate the deployment bundle with the '--enable-telemetry=false' flag`)
 		}
-		config.Environment[env.InitialTelemetryEnabledEnv.EnvVar()] = strconv.FormatBool(config.K8sConfig.Telemetry.Enabled)
 	}
 
 	config.SecretsByteMap["htpasswd"] = htpasswd
