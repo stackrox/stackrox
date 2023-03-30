@@ -39,8 +39,9 @@ func accessScopeCommand(cliEnvironment environment.Environment) *cobra.Command {
 	accessScopeCmd := accessScopeCmd{accessScope: &declarativeconfig.AccessScope{}, env: cliEnvironment}
 
 	cmd := &cobra.Command{
-		Use:  accessScopeCmd.accessScope.Type(),
-		Args: cobra.NoArgs,
+		Use:   accessScopeCmd.accessScope.Type(),
+		Short: "Create a declarative configuration for an access scope",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := accessScopeCmd.Validate(); err != nil {
 				return err

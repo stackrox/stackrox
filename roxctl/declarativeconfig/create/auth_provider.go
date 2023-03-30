@@ -19,7 +19,8 @@ func authProviderCommand(cliEnvironment environment.Environment) *cobra.Command 
 	authProviderCmd := &authProviderCmd{authProvider: &declarativeconfig.AuthProvider{}, env: cliEnvironment}
 
 	cmd := &cobra.Command{
-		Use: authProviderCmd.authProvider.Type(),
+		Use:   authProviderCmd.authProvider.Type(),
+		Short: "Commands to create a declarative configuration for an auth provider",
 	}
 
 	cmd.PersistentFlags().StringVar(&authProviderCmd.authProvider.Name, "name", "", "name of the auth provider")
@@ -96,9 +97,10 @@ type authProviderCmd struct {
 
 func (a *authProviderCmd) oidcCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "oidc",
-		Args: cobra.NoArgs,
-		RunE: a.RunE(),
+		Use:   "oidc",
+		Args:  cobra.NoArgs,
+		RunE:  a.RunE(),
+		Short: "Create a declarative configuration for an OIDC auth provider",
 	}
 	a.oidcConfig = &declarativeconfig.OIDCConfig{}
 
@@ -123,9 +125,10 @@ func (a *authProviderCmd) oidcCommand() *cobra.Command {
 
 func (a *authProviderCmd) samlCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "saml",
-		Args: cobra.NoArgs,
-		RunE: a.RunE(),
+		Use:   "saml",
+		Args:  cobra.NoArgs,
+		RunE:  a.RunE(),
+		Short: "Create a declarative configuration for a SAML auth provider",
 	}
 	a.samlConfig = &declarativeconfig.SAMLConfig{}
 
@@ -161,9 +164,10 @@ func (a *authProviderCmd) iapCommand() *cobra.Command {
 
 func (a *authProviderCmd) userPKICommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "user-pki",
-		Args: cobra.NoArgs,
-		RunE: a.RunE(),
+		Use:   "user-pki",
+		Args:  cobra.NoArgs,
+		RunE:  a.RunE(),
+		Short: "Create a declarative configuration for an user PKI auth provider",
 	}
 	a.userPKIConfig = &declarativeconfig.UserpkiConfig{}
 
@@ -177,8 +181,9 @@ func (a *authProviderCmd) userPKICommand() *cobra.Command {
 
 func (a *authProviderCmd) openShiftCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "openshift-auth",
-		RunE: a.RunE(),
+		Use:   "openshift-auth",
+		RunE:  a.RunE(),
+		Short: "Create a declarative configuration for an OpenShift-Auth auth provider",
 	}
 
 	return cmd

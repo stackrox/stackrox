@@ -17,6 +17,7 @@ func roleCommand(cliEnvironment environment.Environment) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return roleCmd.PrintYAML()
 		},
+		Short: "Create a declarative configuration for a role",
 	}
 
 	cmd.Flags().StringVar(&roleCmd.role.Name, "name", "", "name of the role")

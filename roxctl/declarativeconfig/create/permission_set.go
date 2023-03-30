@@ -27,6 +27,7 @@ func permissionSetCommand(cliEnvironment environment.Environment) *cobra.Command
 			}
 			return permSetCmd.PrintYAML()
 		},
+		Short: "Create a declarative configuration for a permission set",
 	}
 
 	cmd.Flags().StringVar(&permSetCmd.permissionSet.Name, "name", "", "name of the permission set")

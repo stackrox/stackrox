@@ -8,7 +8,8 @@ import (
 // Command defines the declarative config create command tree.
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "create",
+		Use:   "create",
+		Short: "Commands related to creating declarative configurations",
 	}
 
 	c.AddCommand(
