@@ -175,21 +175,6 @@ message GetDiffFlowsResponse {
     repeated GetDiffFlowsReconciledFlow reconciled = 3;
 }
 
-message GetIsolationForDeploymentsRequest {
-    repeated string deployment_ids = 1;
-}
-
-message DeploymentIsolation {
-    string deployment_id = 1;
-    bool ingress_isolated = 2;
-    bool egress_isolated = 3;
-    repeated string policy_ids = 4;
-}
-
-message GetIsolationForDeploymentsResponse {
-    repeated DeploymentIsolation deployment_isolation = 1;
-}
-
 service NetworkPolicyService {
 
     rpc GetNetworkPolicy (ResourceByID) returns (storage.NetworkPolicy) {
@@ -287,9 +272,4 @@ service NetworkPolicyService {
         };
     }
 
-    rpc GetIsolationForDeployments (GetIsolationForDeploymentsRequest) returns (GetIsolationForDeploymentsResponse) {
-        option (google.api.http) = {
-            get: "/v1/networkpolicies/deployment"
-        };
-    }
 }
