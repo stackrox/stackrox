@@ -66,8 +66,10 @@ func fetchCACommand(cliEnvironment environment.Environment) *cobra.Command {
 	var outputFile string
 
 	c := &cobra.Command{
-		Use:  "fetch-ca",
-		Args: cobra.NoArgs,
+		Use:   "fetch-ca",
+		Short: "Fetch the StackRox CA Configuration to be used with Helm",
+		Long:  "Fetch the StackRox CA Configuration to be used with Helm (use this if you are pre-creating secrets rather than using an init bundle)",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if outputFile == "" {
 				return common.ErrInvalidCommandOption.New("no output file specified with --output (for stdout, specify '-')")

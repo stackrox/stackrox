@@ -32,7 +32,10 @@ func Command(cliEnvironment environment.Environment, full *bool) *cobra.Command 
 	centralBackupCmd := &centralBackupCommand{env: cliEnvironment}
 
 	c := &cobra.Command{
-		Use:          "backup",
+		Use:   "backup",
+		Short: "Create a backup of the StackRox database and certificates.",
+		Long: `Create a backup of the StackRox database, certificates and keys (.zip file).
+You can use it to restore central service and the database.`,
 		SilenceUsage: true,
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			return centralBackupCmd.backup(flags.Timeout(c), *full)
