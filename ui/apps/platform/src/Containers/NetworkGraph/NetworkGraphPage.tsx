@@ -83,7 +83,7 @@ function NetworkGraphPage() {
     const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
     const [isCIDRBlockFormOpen, setIsCIDRBlockFormOpen] = useState(false);
 
-    const { searchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter } = useURLSearch();
     const [simulationQueryValue] = useURLParameter('simulation', undefined);
     const simulation = getSimulation(simulationQueryValue);
 
@@ -104,6 +104,16 @@ function NetworkGraphPage() {
     const hasClusterNamespaceSelected = Boolean(clusterFromUrl && namespacesFromUrl.length);
 
     const { clusters } = useFetchClustersForPermissions(['NetworkGraph', 'Deployment']);
+
+    // if no cluster is selected, and there is only one cluster available, automatically select it
+    if (clusters.length === 1 && !clusterFromUrl) {
+        const modifiedSearchObject = { ...searchFilter };
+        modifiedSearchObject.Cluster = clusters[0].name;
+        delete modifiedSearchObject.Namespace;
+        delete modifiedSearchObject.Deployment;
+        setSearchFilter(modifiedSearchObject);
+    }
+
     const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
     const selectedCluster = { name: clusterFromUrl, id: selectedClusterId };
     const { deploymentCount } = useFetchDeploymentCount(selectedClusterId || '');
