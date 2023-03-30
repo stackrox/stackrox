@@ -140,11 +140,11 @@ func (c *Client) GetTLSTrustedCerts(ctx context.Context) ([]*x509.Certificate, e
 
 	var certs []*x509.Certificate
 	for _, ca := range trustInfo.GetAdditionalCas() {
-		cert, err := x509.ParseCertificate(ca)
+		certChain, err := x509.ParseCertificates(ca)
 		if err != nil {
 			return nil, errors.Wrap(err, "parsing additional CA")
 		}
-		certs = append(certs, cert)
+		certs = append(certs, certChain...)
 	}
 
 	leafCert := hostCertChain[0]
