@@ -269,6 +269,7 @@ jobs:
       # needed to restore node_modules for ossls-nostice
       - uses: ./.github/actions/cache-ui-dependencies
 
+      # explicitly fetch deps just in case cache was not ready
       - name: Fetch UI deps
         run: make -C ui deps
 
@@ -386,6 +387,7 @@ jobs:
     # needed to restore node_modules for ossls-nostice
     - uses: ./.github/actions/cache-ui-dependencies
 
+    # explicitly fetch deps just in case cache was not ready
     - name: Fetch UI deps
       run: make -C ui deps
 
