@@ -1,8 +1,11 @@
 package generate
 
 import (
+	"archive/zip"
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"io"
 	"path/filepath"
 	"testing"
 
@@ -15,7 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
-	"github.com/stackrox/rox/roxctl/common/io"
+	roxio "github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
@@ -81,7 +84,7 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 		},
 	}
 
-	io, _, _, _ := io.TestIO()
+	io, _, _, _ := roxio.TestIO()
 	logger := logger.NewLogger(io, printer.DefaultColorPrinter())
 
 	for _, testCase := range testCases {
@@ -116,7 +119,8 @@ func getSha256Sum(input string) string {
 
 func TestTelemetryConfiguration(t *testing.T) {
 
-	tmpDir := t.TempDir()
+	// Keep the bundle in memory
+	t.Setenv("ROX_ROXCTL_IN_MAIN_IMAGE", "true")
 
 	testutils.SetExampleVersion(t)
 
@@ -155,8 +159,8 @@ func TestTelemetryConfiguration(t *testing.T) {
 		{testDir: "test6", offline: true, telemetry: true, key: "test", expected: result{enabled: true, key: "test"}},
 	}
 
-	io, _, _, _ := io.TestIO()
-	logger := logger.NewLogger(io, printer.DefaultColorPrinter())
+	logio, _, _, _ := roxio.TestIO()
+	logger := logger.NewLogger(logio, printer.DefaultColorPrinter())
 
 	for _, testCase := range testCases {
 		t.Run(testCase.testDir, func(t *testing.T) {
@@ -166,17 +170,22 @@ func TestTelemetryConfiguration(t *testing.T) {
 				t.Setenv(env.TelemetryStorageKey.EnvVar(), "")
 			}
 
-			config.OutputDir = filepath.Join(tmpDir, testCase.testDir)
 			config.K8sConfig.OfflineMode = testCase.offline
 			config.K8sConfig.Telemetry.Enabled = testCase.telemetry
 
-			// Note: This test is not for parallel run.
-			require.ErrorIs(t, OutputZip(logger, io, &config), testCase.expected.err)
+			bundleio, _, out, _ := roxio.TestIO()
+			require.ErrorIs(t, OutputZip(logger, bundleio, &config), testCase.expected.err)
 			if testCase.expected.err != nil {
 				return
 			}
+			r, err := zip.NewReader(bytes.NewReader(out.Bytes()), int64(len(out.Bytes())))
+			require.NoError(t, err)
+			file, err := r.Open("values-public.yaml")
+			require.NoError(t, err)
+			data, err := io.ReadAll(file)
+			require.NoError(t, err)
 
-			values, err := chartutil.ReadValuesFile(filepath.Join(config.OutputDir, "values-public.yaml"))
+			values, err := chartutil.ReadValues(data)
 			require.NoError(t, err)
 
 			enabled, err := values.PathValue("central.telemetry.enabled")
