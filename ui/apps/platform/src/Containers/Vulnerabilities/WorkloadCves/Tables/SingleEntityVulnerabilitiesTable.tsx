@@ -35,6 +35,8 @@ export const imageVulnerabilitiesFragment = gql`
         isFixable
         cve
         summary
+        cvss
+        scoreVersion
         discoveredAtImage
         imageComponents(query: $query) {
             ...ComponentVulnerabilities
@@ -48,6 +50,8 @@ export type ImageVulnerability = {
     isFixable: boolean;
     cve: string;
     summary: string;
+    cvss: number;
+    scoreVersion: string;
     discoveredAtImage: Date | null;
     imageComponents: ComponentVulnerability[];
 };
@@ -81,7 +85,7 @@ function SingleEntityVulnerabilitiesTable({
                         CVE Status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    {/* TODO Add sorting for these columns once aggregate sorting is available in BE */}
+                    <Th sort={getSortParams('CVSS')}>CVSS</Th>
                     <Th>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
@@ -91,7 +95,16 @@ function SingleEntityVulnerabilitiesTable({
             </Thead>
             {image.imageVulnerabilities.map(
                 (
-                    { cve, severity, summary, isFixable, imageComponents, discoveredAtImage },
+                    {
+                        cve,
+                        severity,
+                        summary,
+                        isFixable,
+                        cvss,
+                        scoreVersion,
+                        imageComponents,
+                        discoveredAtImage,
+                    },
                     rowIndex
                 ) => {
                     const SeverityIcon: React.FC<SVGIconProps> | undefined =
@@ -139,6 +152,9 @@ function SingleEntityVulnerabilitiesTable({
                                         </span>
                                     </span>
                                 </Td>
+                                <Td dataLabel="CVSS">
+                                    {cvss.toFixed(1)} ({scoreVersion})
+                                </Td>
                                 <Td dataLabel="Affected components">
                                     {imageComponents.length === 1
                                         ? imageComponents[0].name
@@ -150,7 +166,7 @@ function SingleEntityVulnerabilitiesTable({
                             </Tr>
                             <Tr isExpanded={isExpanded}>
                                 <Td />
-                                <Td colSpan={5}>
+                                <Td colSpan={6}>
                                     <ExpandableRowContent>
                                         <p className="pf-u-mb-md">{summary}</p>
                                         <ComponentVulnerabilitiesTable
