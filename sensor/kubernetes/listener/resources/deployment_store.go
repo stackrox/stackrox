@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
 )
@@ -167,10 +168,38 @@ func (ds *DeploymentStore) FindDeploymentIDsByLabels(namespace string, sel selec
 	return
 }
 
+func (ds *DeploymentStore) findDeploymentIDsByImageNoLock(image *storage.Image) set.Set[string] {
+	ids := set.NewStringSet()
+	for _, d := range ds.deployments {
+		for _, c := range d.GetContainers() {
+			if imagecacheutils.CompareImageCacheKey(c.GetImage(), image) {
+				ids.Add(d.GetId())
+				// The deployment id is already the set, we can break here
+				break
+			}
+		}
+	}
+	return ids
+}
+
+// FindDeploymentIDsByImages returns a slice of deployment ids based on matching images
+func (ds *DeploymentStore) FindDeploymentIDsByImages(images []*storage.Image) []string {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+	ids := set.NewStringSet()
+	for _, image := range images {
+		ids = ids.Union(ds.findDeploymentIDsByImageNoLock(image))
+	}
+	return ids.AsSlice()
+}
+
 func (ds *DeploymentStore) getWrap(id string) *deploymentWrap {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
+	return ds.getWrapNoLock(id)
+}
 
+func (ds *DeploymentStore) getWrapNoLock(id string) *deploymentWrap {
 	wrap := ds.deployments[id]
 	return wrap
 }
@@ -179,6 +208,15 @@ func (ds *DeploymentStore) getWrap(id string) *deploymentWrap {
 func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 	wrap := ds.getWrap(id)
 	return wrap.GetDeployment()
+}
+
+// GetBuiltDeployment returns a cloned deployment for supplied id
+func (ds *DeploymentStore) GetBuiltDeployment(id string) *storage.Deployment {
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+	// TODO(ROX-16138): return nil if the deployment is not built yet
+	wrap := ds.getWrapNoLock(id)
+	return wrap.GetDeployment().Clone()
 }
 
 // BuildDeploymentWithDependencies creates storage.Deployment object using external object dependencies.

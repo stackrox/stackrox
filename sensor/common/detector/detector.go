@@ -52,6 +52,10 @@ type Detector interface {
 	ReprocessDeployments(deploymentIDs ...string)
 	ProcessIndicator(indicator *storage.ProcessIndicator)
 	ProcessNetworkFlow(flow *storage.NetworkFlow)
+	ProcessPolicySync(sync *central.PolicySync) error
+	ProcessReassessPolicies() error
+	ProcessReprocessDeployments() error
+	ProcessUpdatedImage(image *storage.Image) error
 }
 
 // New returns a new detector
@@ -215,7 +219,8 @@ func (d *detectorImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.SensorDetectionCap}
 }
 
-func (d *detectorImpl) processPolicySync(sync *central.PolicySync) error {
+// ProcessPolicySync reconciles policies and flush all deployments through the detector
+func (d *detectorImpl) ProcessPolicySync(sync *central.PolicySync) error {
 	// Note: Assume the version of the policies received from central is never
 	// older than sensor's version. Convert to latest if this proves wrong.
 	d.unifiedDetector.ReconcilePolicies(sync.GetPolicies())
@@ -234,7 +239,8 @@ func (d *detectorImpl) processPolicySync(sync *central.PolicySync) error {
 	return nil
 }
 
-func (d *detectorImpl) processReassessPolicies(_ *central.ReassessPolicies) error {
+// ProcessReassessPolicies clears the image caches and resets the deduper
+func (d *detectorImpl) ProcessReassessPolicies() error {
 	log.Debugf("Reassess Policies triggered")
 	// Clear the image caches and make all the deployments flow back through by clearing out the hash
 	d.enricher.imageCache.RemoveAll()
@@ -264,7 +270,8 @@ func (d *detectorImpl) processNetworkBaselineSync(sync *central.NetworkBaselineS
 	return errs.ToError()
 }
 
-func (d *detectorImpl) processUpdatedImage(image *storage.Image) error {
+// ProcessUpdatedImage updates the imageCache with a new value
+func (d *detectorImpl) ProcessUpdatedImage(image *storage.Image) error {
 	key := imagecacheutils.GetImageCacheKey(image)
 	log.Debugf("Receiving update for image: %s from central. Updating cache", image.GetName().GetFullName())
 	newValue := &cacheValue{
@@ -276,7 +283,8 @@ func (d *detectorImpl) processUpdatedImage(image *storage.Image) error {
 	return nil
 }
 
-func (d *detectorImpl) processReprocessDeployments() error {
+// ProcessReprocessDeployments marks all deployments to be reprocessed
+func (d *detectorImpl) ProcessReprocessDeployments() error {
 	log.Debugf("Reprocess deployments triggered. Clearing cache and deduper")
 	if d.admissionCacheNeedsFlush && d.admCtrlSettingsMgr != nil {
 		// Would prefer to do a targeted flush
@@ -289,14 +297,6 @@ func (d *detectorImpl) processReprocessDeployments() error {
 
 func (d *detectorImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	switch {
-	case msg.GetPolicySync() != nil:
-		return d.processPolicySync(msg.GetPolicySync())
-	case msg.GetReassessPolicies() != nil:
-		return d.processReassessPolicies(msg.GetReassessPolicies())
-	case msg.GetUpdatedImage() != nil:
-		return d.processUpdatedImage(msg.GetUpdatedImage())
-	case msg.GetReprocessDeployments() != nil:
-		return d.processReprocessDeployments()
 	case msg.GetBaselineSync() != nil:
 		return d.processBaselineSync(msg.GetBaselineSync())
 	case msg.GetNetworkBaselineSync() != nil:

@@ -85,7 +85,8 @@ func (s *serviceAccountDispatcher) ProcessEvent(obj, _ interface{}, action centr
 	if env.ResyncDisabled.BooleanSetting() && deploymentReference != nil {
 		// Service Accounts can influence the `image` on AugmentedObject instance. Meaning the storage.Deployment object
 		// won't be changed based on Service Account properties, but the alerts might. So the detection has to be forced.
-		componentMessage.AddDeploymentReference(deploymentReference, central.ResourceAction_UPDATE_RESOURCE, true)
+		componentMessage.AddDeploymentReference(deploymentReference,
+			component.WithForceDetection())
 	}
 
 	return componentMessage

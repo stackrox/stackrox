@@ -15,8 +15,10 @@ import (
 type DeploymentStore interface {
 	GetAll() []*storage.Deployment
 	Get(id string) *storage.Deployment
+	GetBuiltDeployment(id string) *storage.Deployment
 	FindDeploymentIDsWithServiceAccount(namespace, sa string) []string
 	FindDeploymentIDsByLabels(namespace string, sel selector.Selector) []string
+	FindDeploymentIDsByImages([]*storage.Image) []string
 	BuildDeploymentWithDependencies(id string, dependencies Dependencies) (*storage.Deployment, error)
 	CountDeploymentsForNamespace(namespaceName string) int
 }

@@ -172,7 +172,7 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector.Selector) *component.ResourceEvent {
 	var message component.ResourceEvent
 	if env.ResyncDisabled.BooleanSetting() {
-		message.AddDeploymentReference(resolver.ResolveDeploymentLabels(namespace, sel), central.ResourceAction_UPDATE_RESOURCE, false)
+		message.AddDeploymentReference(resolver.ResolveDeploymentLabels(namespace, sel))
 	} else {
 		message.AddSensorEvent(sh.portExposureReconciler.UpdateExposuresForMatchingDeployments(namespace, sel)...)
 		sh.endpointManager.OnServiceUpdateOrRemove(namespace, sel)
@@ -185,7 +185,7 @@ func (sh *serviceDispatcher) processCreate(svc *v1.Service) *component.ResourceE
 	sh.serviceStore.addOrUpdateService(svcWrap)
 	var message component.ResourceEvent
 	if env.ResyncDisabled.BooleanSetting() {
-		message.AddDeploymentReference(resolver.ResolveDeploymentLabels(svc.GetNamespace(), svcWrap.selector), central.ResourceAction_UPDATE_RESOURCE, false)
+		message.AddDeploymentReference(resolver.ResolveDeploymentLabels(svc.GetNamespace(), svcWrap.selector))
 	} else {
 		events := sh.portExposureReconciler.UpdateExposureOnServiceCreate(serviceWithRoutes{
 			serviceWrap: svcWrap,
