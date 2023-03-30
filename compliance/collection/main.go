@@ -260,8 +260,9 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	var nodeInventoryClient scannerV1.NodeInventoryServiceClient
-
-	if features.RHCOSNodeScanning.Enabled() {
+	if !env.NodeInventoryContainerEnabled.BooleanSetting() {
+		log.Infof("Compliance will not call the node-inventory container, because this is not Openshift 4 cluster")
+	} else if features.RHCOSNodeScanning.Enabled() {
 		// Start the prometheus metrics server
 		metrics.NewDefaultHTTPServer(metrics.ComplianceSubsystem).RunForever()
 		metrics.GatherThrottleMetricsForever(metrics.ComplianceSubsystem.String())
