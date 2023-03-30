@@ -2,7 +2,7 @@
 
 {{ if not ._rox.central.db.external -}}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: central-db
   namespace: {{ .Release.Namespace }}
@@ -12,13 +12,12 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "deployment" "central-db") | nindent 4 }}
 spec:
+  serviceName: central-db
   replicas: 1
   minReadySeconds: 15
   selector:
     matchLabels:
       app: central-db
-  strategy:
-    type: Recreate
   template:
     metadata:
       namespace: {{ .Release.Namespace }}

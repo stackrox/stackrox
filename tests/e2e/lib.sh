@@ -743,7 +743,7 @@ wait_for_central_db() {
     max_seconds=300
 
     while true; do
-        central_db_json="$(kubectl -n stackrox get deploy/central-db -o json)"
+        central_db_json="$(kubectl -n stackrox get sts/central-db -o json)"
         replicas="$(jq '.status.replicas' <<<"$central_db_json")"
         ready_replicas="$(jq '.status.readyReplicas' <<<"$central_db_json")"
         curr_time="$(date '+%s')"
