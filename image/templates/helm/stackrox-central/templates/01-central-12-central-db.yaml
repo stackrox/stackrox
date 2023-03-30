@@ -82,6 +82,8 @@ spec:
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
+        - name: wal-disk
+          mountPath: /var/lib/postgresql/test
         - name: central-db-password
           mountPath: /run/secrets/stackrox.io/secrets
         resources:
@@ -123,6 +125,8 @@ spec:
           mountPath: /etc/stackrox.d/config/
         - mountPath: /var/lib/postgresql/data
           name: disk
+        - mountPath: /var/lib/postgresql/test
+          name: wal-disk
         - name: central-db-tls-volume
           mountPath: /run/secrets/stackrox.io/certs
         - mountPath: /dev/shm
@@ -132,6 +136,9 @@ spec:
       volumes:
       - name: disk
         {{- toYaml ._rox.central.db.persistence._volumeCfg | nindent 8 }}
+      - name: wal-disk
+        persistentVolumeClaim:
+          claimName: central-db-wal
       - name: config-volume
         configMap:
           name: {{ default "central-db-config" ._rox.central.db.configOverride }}
