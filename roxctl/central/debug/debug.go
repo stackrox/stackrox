@@ -34,7 +34,8 @@ type centralDebugLogLevelCommand struct {
 // Command defines the debug command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "debug",
+		Use:   "debug",
+		Short: "Commands for debugging the Central service",
 	}
 	c.AddCommand(logLevelCommand(cliEnvironment))
 	c.AddCommand(dumpCommand(cliEnvironment))

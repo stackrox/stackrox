@@ -42,7 +42,9 @@ var (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	centralUserPkiCreateCmd := &centralUserPkiCreateCommand{env: cliEnvironment}
 	c := &cobra.Command{
-		Use: "create name",
+		Use:   "create name",
+		Short: "Create a new user certificate authentication provider.",
+		Long:  "Create a new user certificate authentication provider by using the provided PEM-encoded root certificate files.",
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := centralUserPkiCreateCmd.validate(args); err != nil {
 				return err

@@ -109,7 +109,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	objectPrinterFactory.OutputFormat = ""
 
 	c := &cobra.Command{
-		Use: "scan",
+		Use:   "scan",
+		Short: "Scan the specified image, and return scan results.",
+		Long:  "Scan the specified image and return the fully enriched image. Optionally, force a rescan of the image. You must have write permissions for the `Image` resource.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if err := imageScanCmd.Construct(nil, c, objectPrinterFactory); err != nil {
 				return err

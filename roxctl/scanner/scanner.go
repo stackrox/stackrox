@@ -13,7 +13,8 @@ import (
 // Command controls all of the functions being applied to a sensor
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "scanner",
+		Use:   "scanner",
+		Short: "Commands related to the Scanner service.",
 	}
 	flags.AddTimeoutWithDefault(c, time.Minute)
 	c.AddCommand(

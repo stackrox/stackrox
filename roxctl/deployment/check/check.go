@@ -88,8 +88,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	utils.Must(err)
 
 	c := &cobra.Command{
-		Use:  "check",
-		Args: cobra.NoArgs,
+		Use:   "check",
+		Short: "Check deployments for deploy time policy violations.",
+		Long:  "Check deployments for deploy time policy violations, and exit with an non-zero code if at least one of the violated policies has deploy time enforcement turned on.",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := deploymentCheckCmd.Construct(args, cmd, objectPrinterFactory); err != nil {
 				return err

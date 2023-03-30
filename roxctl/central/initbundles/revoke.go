@@ -76,8 +76,10 @@ func revokeInitBundles(cliEnvironment environment.Environment, idsOrNames []stri
 // revokeCommand implements the command for revoking init bundles.
 func revokeCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use:  "revoke <init bundle ID or name> [<init bundle ID or name> ...]",
-		Args: cobra.MinimumNArgs(1),
+		Use:   "revoke <init bundle ID or name> [<init bundle ID or name> ...]",
+		Short: "Revoke a cluster init bundle",
+		Long:  "Revoke an init bundle for bootstrapping new StackRox secured clusters",
+		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return revokeInitBundles(cliEnvironment, args)
 		},

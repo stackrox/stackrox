@@ -12,7 +12,8 @@ import (
 // Command defines the image command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "deployment",
+		Use:   "deployment",
+		Short: "Commands related to deployments.",
 	}
 
 	c.AddCommand(check.Command(cliEnvironment))

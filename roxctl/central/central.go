@@ -17,7 +17,8 @@ import (
 // Command defines the central command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "central",
+		Use:   "central",
+		Short: "Commands related to the Central service.",
 	}
 	c.AddCommand(
 		cert.Command(cliEnvironment),

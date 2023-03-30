@@ -90,8 +90,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	pkgUtils.Must(err)
 
 	c := &cobra.Command{
-		Use:  "check",
-		Args: cobra.NoArgs,
+		Use:   "check",
+		Short: "Check images for build time policy violations, and report them.",
+		Args:  cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := imageCheckCmd.Construct(nil, c, objectPrinterFactory); err != nil {
 				return err
