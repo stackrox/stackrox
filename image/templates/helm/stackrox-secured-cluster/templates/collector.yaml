@@ -143,6 +143,7 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
+      {{- if eq ._rox.env.openshift 4 }}
       - name: node-inventory
         image: {{ quote ._rox.image.scanner.fullRef }}
         imagePullPolicy: IfNotPresent
@@ -167,6 +168,7 @@ spec:
            name: tmp-volume
          - mountPath: /cache
            name: cache-volume
+      {{- end }}
       volumes:
       - hostPath:
           path: /var/run/docker.sock
