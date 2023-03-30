@@ -58,6 +58,9 @@ func (b *datastoreImpl) AddAuthProvider(ctx context.Context, authProvider *stora
 	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
+	if err := verifyAuthProviderOrigin(ctx, authProvider); err != nil {
+		return errors.Wrap(err, "origin didn't match for new auth provider")
+	}
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	exists, err := b.storage.Exists(ctx, authProvider.GetId())
