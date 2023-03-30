@@ -96,10 +96,11 @@ func insertIntoProcessListeningOnPorts(ctx context.Context, batch *pgx.Batch, ob
 		obj.GetProtocol(),
 		pgutils.NilOrUUID(obj.GetProcessIndicatorId()),
 		obj.GetClosed(),
+		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO process_listening_on_ports (Id, Port, Protocol, ProcessIndicatorId, Closed, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Port = EXCLUDED.Port, Protocol = EXCLUDED.Protocol, ProcessIndicatorId = EXCLUDED.ProcessIndicatorId, Closed = EXCLUDED.Closed, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO process_listening_on_ports (Id, Port, Protocol, ProcessIndicatorId, Closed, DeploymentId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Port = EXCLUDED.Port, Protocol = EXCLUDED.Protocol, ProcessIndicatorId = EXCLUDED.ProcessIndicatorId, Closed = EXCLUDED.Closed, DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -127,6 +128,8 @@ func (s *storeImpl) copyFromProcessListeningOnPorts(ctx context.Context, tx *pos
 
 		"closed",
 
+		"deploymentid",
+
 		"serialized",
 	}
 
@@ -152,6 +155,8 @@ func (s *storeImpl) copyFromProcessListeningOnPorts(ctx context.Context, tx *pos
 			pgutils.NilOrUUID(obj.GetProcessIndicatorId()),
 
 			obj.GetClosed(),
+
+			pgutils.NilOrUUID(obj.GetDeploymentId()),
 
 			serialized,
 		})

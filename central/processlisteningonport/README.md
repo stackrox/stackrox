@@ -2,19 +2,20 @@
 
 This structure represent what it says, namely observed processes that are
 listening on a certain port. Logically it's implemented as a data structure
-that contain reference to a corresponding ProcessIndicator, what is transformed
-into an FK on the database level. PLOP is being represented via two structures
-throughout the implementation: `ProcessListeningOnPort` for the API (internal
-and user facing) purposes and `ProcessListeningOnPortStorage` for actually
-storing it in the database. The difference between two is that the former
-contains necessary process information embedded into it via
-`ProcessIndicatorUniqueKey`, while the latter has only a foreign key to a
-corresponding record in the `process_indicators` table.
+that contains reference to a corresponding ProcessIndicator, which is transformed
+into an FK on the database level. PLOP is represented via three structures
+throughout the implementation: `ProcessListeningOnPort` for the user facing API
+purposes, `ProcessListeningOnPortFromSensor` for the internal API and
+`ProcessListeningOnPortStorage` for actually storing it in the database.
+The difference between `ProcessListeningOnPortStorage` and
+`ProcessListeningOnPortFromSensor` is that the former contains a foreign key to
+a corresponding record in the `process_indicators`. It may or may not contain
+process information depending upon if the `process_indicators` table contains
+matching id and therefore corresponding process information.
 
-Due to the various requirements the storage behind
-`ProcessListeningOnPortStorage` contains manually written bits to support
-queries with joins. Note that for the efficient use of this structure a
-corresponding index has to be defined on `ProcessIndicator`.
+`ProcessListeningOnPort` contains additional information obtained from the 
+`process_indicators` table by joining on processindicatorsid from the
+process_listening_on_ports with the id from the process_indicators table.
 
 The implementation of data storage for PLOP objects is not very restrictive,
 because there are certain cases where an assumption "one port listener" - "one

@@ -112,6 +112,7 @@ func (i *containerEndpointIndicator) toProto(ts timestamp.MicroTS) *storage.Netw
 type processUniqueKey struct {
 	podID         string
 	containerName string
+	deploymentID  string
 	process       processInfo
 }
 
@@ -132,6 +133,7 @@ func (i *processListeningIndicator) toProto(_ timestamp.MicroTS) *storage.Proces
 			ProcessExecFilePath: i.key.process.processExec,
 			ProcessArgs:         i.key.process.processArgs,
 		},
+		DeploymentId: i.key.deploymentID,
 	}
 
 	return proto
@@ -482,6 +484,7 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 		key: processUniqueKey{
 			podID:         container.PodID,
 			containerName: container.ContainerName,
+			deploymentID:  container.DeploymentID,
 			process:       *ep.processKey,
 		},
 		port:     ep.endpoint.IPAndPort.Port,
