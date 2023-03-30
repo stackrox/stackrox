@@ -2,7 +2,6 @@ package registry
 
 import (
 	"context"
-	"sort"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -14,6 +13,7 @@ import (
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheck"
+	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 var (
@@ -97,6 +97,10 @@ func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string,
 	}
 
 	regs := rs.getRegistries(namespace)
+
+	// remove http/https prefixes from registry, matching may fail otherwise, the created registry.url will have
+	// the appropriate prefix
+	registry = urlfmt.TrimHTTPPrefixes(registry)
 	err = regs.UpdateImageIntegration(createImageIntegration(registry, dce, secure))
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
@@ -150,51 +154,6 @@ func (rs *Store) GetRegistryForImageInNamespace(image *storage.ImageName, namesp
 	}
 
 	return nil, errors.Errorf("unknown image registry: %q", reg)
-}
-
-// HasRegistryForImageInNamespace returns true when a registry is found in the store that matches
-// image.Registry and is associated with namespace
-func (rs *Store) HasRegistryForImageInNamespace(image *storage.ImageName, namespace string) bool {
-	reg, err := rs.GetRegistryForImageInNamespace(image, namespace)
-	return reg != nil && err == nil
-}
-
-// GetFirstRegistryForImage returns the first registry that matches image.Registry based on sorted
-// namespace order, namespaces are sorted to achieve consistent results
-//
-// An error is returned if no registry found
-func (rs *Store) GetFirstRegistryForImage(image *storage.ImageName) (registryTypes.Registry, error) {
-	// TODO: created for handling requests from admission controller where no namespace details are
-	// provided. This function will be deleted in future when registry integrations are used instead of
-	// pull secrets for 'on-prem' registry scanning.
-	rs.mutex.Lock()
-	defer rs.mutex.Unlock()
-
-	type finding struct {
-		namespace string
-		reg       registryTypes.Registry
-	}
-
-	var findings []finding
-	reg := image.GetRegistry()
-	for namespace, registries := range rs.store {
-		for _, registry := range registries.GetAll() {
-			if registry.Name() == reg {
-				findings = append(findings, finding{namespace, registry})
-			}
-		}
-	}
-
-	if len(findings) == 0 {
-		return nil, errors.Errorf("no matching image registry: %q", reg)
-	}
-
-	sort.Slice(findings, func(i, j int) bool {
-		return findings[i].namespace < findings[j].namespace
-	})
-	log.Debugf("found %d registries matching %q, using first from %q ", len(findings), reg, findings[0].namespace)
-
-	return findings[0].reg, nil
 }
 
 // getOrInitGlobalRegistries will return global registries if existing, or create a new set

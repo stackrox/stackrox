@@ -12,13 +12,15 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
-	"github.com/stackrox/rox/pkg/registries/docker"
-	registryTypes "github.com/stackrox/rox/pkg/registries/types"
-	"github.com/stackrox/rox/pkg/tlscheck"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"google.golang.org/grpc"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // Service is an interface to receiving image scan results for the Admission Controller.
@@ -62,6 +64,8 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 		}
 	}
 
+	log.Debugf("scan request from admission control: %+v", req)
+
 	// Note: The Admission Controller does NOT know if the image is cluster-local,
 	// so we determine it here.
 	// If Sensor's registry store has an entry for the given image's registry,
@@ -86,55 +90,19 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 	var img *storage.Image
 	if req.GetImage().GetIsClusterLocal() {
 		img, err = s.localScan.EnrichLocalImage(ctx, s.centralClient, req.GetImage())
-
 	} else {
 		// ForceLocalImageScanning must be true
-		var reg registryTypes.Registry
-		reg, err = s.registryStore.GetFirstRegistryForImage(req.GetImage().GetName())
-
-		if err != nil {
-			// no registry found, create a new one temporarily that requires no auth
-			reg, err = createNoAuthDockerRegistry(ctx, req.GetImage().GetName().Registry)
-			if err != nil {
-				return nil, errors.Wrap(err, "creating no-auth image integration")
-			}
-		}
-
-		img, err = s.localScan.EnrichLocalImageFromRegistry(ctx, s.centralClient, req.GetImage(), []registryTypes.Registry{reg})
+		img, err = s.localScan.EnrichLocalImageInNamespace(ctx, s.centralClient, req.GetImage(), req.GetDeployment().GetNamespace())
 	}
 
 	if err != nil {
-		return nil, errors.Wrap(err, "scanning image via local scanner")
+		err = errors.Wrap(err, "scanning image via local scanner")
+		log.Error(err)
+		return nil, err
 	}
 	return &sensor.GetImageResponse{
 		Image: img,
 	}, nil
-}
-
-// createNoAuthDockerRegistry creates a new registry image integration of type docker that
-// has no credentials
-//
-// TODO: temporary until image integrations from central are used instead
-func createNoAuthDockerRegistry(ctx context.Context, registry string) (registryTypes.Registry, error) {
-	secure, err := tlscheck.CheckTLS(ctx, registry)
-	if err != nil {
-		return nil, err
-	}
-
-	reg, err := docker.NewDockerRegistry(&storage.ImageIntegration{
-		Id:         registry,
-		Name:       registry,
-		Type:       "docker",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-		IntegrationConfig: &storage.ImageIntegration_Docker{
-			Docker: &storage.DockerConfig{
-				Endpoint: registry,
-				Insecure: !secure,
-			},
-		},
-	})
-
-	return reg, err
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

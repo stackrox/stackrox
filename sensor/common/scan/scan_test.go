@@ -203,22 +203,25 @@ func (suite *scanTestSuite) TestEnrichLocalImageInNamespace() {
 	img := types.ToImage(containerImg)
 	imageServiceClient := suite.createMockImageServiceClient(img, false)
 
-	namespace := "fake-namespace"
-	resultImg, err := scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, namespace)
-	suite.Require().NoError(err, "unexpected error when enriching image")
-	suite.Assert().Equal(img, resultImg, "resulting image is not equal to expected one")
-	suite.Assert().True(imageServiceClient.enrichTriggered, "central enrichment method should have been invoked")
-	suite.Assert().True(fakeRegStore.getRegistryForImageInNamespaceInvoked, "method should have been invoked")
-	suite.Assert().False(fakeRegStore.getGlobalRegistryForImageInvoked, "method should have been invoked")
+	// an empty namespace should not trigger regStore methods
+	resultImg, err := scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, "")
+	suite.Require().NoError(err)
+	suite.Assert().Equal(img, resultImg)
+	suite.Assert().True(imageServiceClient.enrichTriggered)
+	suite.Assert().False(fakeRegStore.getRegistryForImageInNamespaceInvoked)
+	suite.Assert().False(fakeRegStore.getGlobalRegistryForImageInvoked)
 
-	// OCP namespaces should also invoke getGlobalRegistryForImage
-	namespace = "openshift-fake"
+	// non-openshift namespaces should not invoke getGlobalRegistryForImage
+	namespace := "fake-namespace"
+	imageServiceClient.enrichTriggered = false
 	fakeRegStore.getRegistryForImageInNamespaceInvoked = false
 	fakeRegStore.getGlobalRegistryForImageInvoked = false
-	_, err = scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, namespace)
-	suite.Require().NoError(err, "unexpected error when enriching image")
-	suite.Assert().True(fakeRegStore.getRegistryForImageInNamespaceInvoked, "method should have been invoked")
-	suite.Assert().True(fakeRegStore.getGlobalRegistryForImageInvoked, "method should have been invoked")
+	resultImg, err = scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, namespace)
+	suite.Require().NoError(err)
+	suite.Assert().Equal(img, resultImg)
+	suite.Assert().True(imageServiceClient.enrichTriggered)
+	suite.Assert().True(fakeRegStore.getRegistryForImageInNamespaceInvoked)
+	suite.Assert().True(fakeRegStore.getGlobalRegistryForImageInvoked)
 }
 
 func (suite *scanTestSuite) TestEnrichErrorNoScanner() {

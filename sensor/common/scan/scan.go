@@ -3,7 +3,6 @@ package scan
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -38,8 +37,7 @@ var (
 	// has been exceeded
 	ErrTooManyParallelScans = errors.New("too many parallel scans to local scanner")
 
-	openShiftNameSpacePrefix = "openshift"
-	redhatRegistryEndpoint   = "registry.redhat.io"
+	redhatRegistryEndpoint = "registry.redhat.io"
 
 	log = logging.LoggerForModule()
 )
@@ -97,23 +95,26 @@ func (s *LocalScan) EnrichLocalImage(ctx context.Context, centralClient v1.Image
 //
 // If no registry credentials are found an empty registry slice is passed to EnrichLocalImageFromRegistry for enriching with 'no auth'
 func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage, namespace string) (*storage.Image, error) {
-	var reg registryTypes.Registry
-	imgName := ci.GetName()
+	if namespace == "" {
+		// If no namespace provided try enrichment with 'no auth'
+		return s.EnrichLocalImageFromRegistry(ctx, centralClient, ci, nil)
+	}
 
 	var regs []registryTypes.Registry
 
+	var reg registryTypes.Registry
+	imgName := ci.GetName()
 	reg, err := s.getRegistryForImageInNamespace(imgName, namespace)
 	if err == nil {
 		regs = append(regs, reg)
 	}
 
-	// Add the appropriate OCP global registry
-	if strings.HasPrefix(namespace, openShiftNameSpacePrefix) {
-		reg, err = s.getGlobalRegistryForImage(imgName)
-		if err == nil {
-			regs = append(regs, reg)
-		}
+	reg, err = s.getGlobalRegistryForImage(imgName)
+	if err == nil {
+		regs = append(regs, reg)
 	}
+
+	log.Debugf("attempting image enrich for %q in namespace %q with %v regs", ci.GetName().GetFullName(), namespace, len(regs))
 
 	return s.EnrichLocalImageFromRegistry(ctx, centralClient, ci, regs)
 }
@@ -140,6 +141,8 @@ func (s *LocalScan) EnrichLocalImageFromRegistry(ctx context.Context, centralCli
 		return nil, ErrTooManyParallelScans
 	}
 	defer s.scanSemaphore.Release(1)
+
+	log.Debugf("enriching image locally %q numRegs %v", ci.GetName().GetFullName(), len(registries))
 
 	if len(registries) == 0 {
 		// no registries provided, try with no auth
