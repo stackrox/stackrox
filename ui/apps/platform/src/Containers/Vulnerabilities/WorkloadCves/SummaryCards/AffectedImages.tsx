@@ -1,20 +1,20 @@
 import React from 'react';
 import { Card, CardTitle, CardBody } from '@patternfly/react-core';
 
-export type EnvironmentalImpactProps = {
+export type AffectedImagesProps = {
     className?: string;
     affectedImageCount: number;
     totalImagesCount: number;
 };
 
-function EnvironmentalImpact({
+function AffectedImages({
     className = '',
     affectedImageCount,
     totalImagesCount,
-}: EnvironmentalImpactProps) {
+}: AffectedImagesProps) {
     return (
         <Card className={className} isCompact>
-            <CardTitle>Environmental impact</CardTitle>
+            <CardTitle>Affected images</CardTitle>
             <CardBody>
                 {affectedImageCount}/{totalImagesCount} images affected
             </CardBody>
@@ -22,4 +22,4 @@ function EnvironmentalImpact({
     );
 }
 
-export default EnvironmentalImpact;
+export default AffectedImages;

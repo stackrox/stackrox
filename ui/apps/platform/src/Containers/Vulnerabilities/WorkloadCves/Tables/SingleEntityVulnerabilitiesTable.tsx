@@ -9,7 +9,6 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
-import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 import { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
@@ -18,6 +17,7 @@ import useSet from 'hooks/useSet';
 import { vulnerabilitySeverityLabels } from 'messages/common';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { UseURLSortResult } from 'hooks/useURLSort';
+import { FixableIcon, NotFixableIcon } from 'Components/PatternFly/FixabilityIcons';
 import { ImageVulnerabilitiesResponse } from '../hooks/useImageVulnerabilities';
 import { getEntityPagePath } from '../searchUtils';
 import ImageComponentsTable from './ImageComponentsTable';
@@ -65,6 +65,8 @@ function SingleEntityVulnerabilitiesTable({
                     const severityLabel: string | undefined = vulnerabilitySeverityLabels[severity];
                     const isExpanded = expandedRowSet.has(cve);
 
+                    const FixabilityIcon = isFixable ? FixableIcon : NotFixableIcon;
+
                     return (
                         <Tbody key={cve} isExpanded={isExpanded}>
                             <Tr>
@@ -96,23 +98,12 @@ function SingleEntityVulnerabilitiesTable({
                                     </span>
                                 </Td>
                                 <Td dataLabel="CVE Status">
-                                    {isFixable ? (
-                                        <span>
-                                            <CheckCircleIcon
-                                                className="pf-u-display-inline"
-                                                color="var(--pf-global--success-color--100)"
-                                            />
-                                            <span className="pf-u-pl-sm">Fixable</span>
+                                    <span>
+                                        <FixabilityIcon className="pf-u-display-inline" />
+                                        <span className="pf-u-pl-sm">
+                                            {isFixable ? 'Fixable' : 'Not fixable'}
                                         </span>
-                                    ) : (
-                                        <span>
-                                            <ExclamationCircleIcon
-                                                className="pf-u-display-inline"
-                                                color="var(--pf-global--danger-color--100)"
-                                            />
-                                            <span className="pf-u-pl-sm">Not fixable</span>
-                                        </span>
-                                    )}
+                                    </span>
                                 </Td>
                                 <Td dataLabel="Affected components">
                                     {imageComponents.length === 1
