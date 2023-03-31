@@ -12,6 +12,15 @@
   ],
   "exclusions": [
     {
+      "name": "Don't alert on deployment splunkforwarder-ds in openshift-security namespace",
+      "deployment": {
+        "name": "splunkforwarder-ds",
+        "scope": {
+          "namespace": "openshift-security"
+        }
+      }
+    },
+    {
       "name": "Don't alert on deployment oauth-openshift in openshift-authentication namespace",
       "deployment": {
         "name": "oauth-openshift",

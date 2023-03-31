@@ -12,6 +12,23 @@
   ],
   "exclusions": [
     {
+      "name": "Don't alert on deployment apiserver-watcher-* in openshift-kube-apiserver namespace",
+      "deployment": {
+        "scope": {
+          "name": "apiserver-watcher-*",
+          "namespace": "openshift-kube-apiserver"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment in openshift-kube-apiserver namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-apiserver"
+        }
+      }
+    },
+    {
       "name": "Don't alert on deployment tuned in openshift-cluster-node-tuning-operator namespace",
       "deployment": {
         "name": "tuned",

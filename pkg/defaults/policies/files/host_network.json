@@ -12,6 +12,24 @@
   ],
   "exclusions": [
     {
+      "name": "Don't alert on deployment gcp-pd-csi-driver-controller in namespace openshift-cluster-csi-drivers",
+      "deployment": {
+        "name": "gcp-pd-csi-driver-controller",
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment gcp-pd-csi-driver-node in namespace openshift-cluster-csi-drivers",
+      "deployment": {
+        "name": "gcp-pd-csi-driver-node",
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
       "name": "Don't alert on deployment machine-approver in namespace openshift-cluster-machine-approver",
       "deployment": {
         "name": "machine-approver",
