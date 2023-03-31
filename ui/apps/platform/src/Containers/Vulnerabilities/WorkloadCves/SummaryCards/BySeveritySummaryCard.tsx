@@ -21,8 +21,7 @@ const severitiesCriticalToLow = [
     'LOW_VULNERABILITY_SEVERITY',
 ] as const;
 
-const disabledColor100 = 'var(--pf-global--disabled-color--100)';
-const disabledColor200 = 'var(--pf-global--disabled-color--200)';
+const fadedTextColor = 'var(--pf-global--Color--200)';
 
 function BySeveritySummaryCard({
     className = '',
@@ -44,10 +43,10 @@ function BySeveritySummaryCard({
                         let text = `${count} ${vulnerabilitySeverityLabels[severity]}`;
 
                         if (isHidden) {
-                            textColor = disabledColor100;
+                            textColor = fadedTextColor;
                             text = 'Results hidden';
                         } else if (hasNoResults) {
-                            textColor = disabledColor200;
+                            textColor = fadedTextColor;
                             text = 'No results';
                         }
 
