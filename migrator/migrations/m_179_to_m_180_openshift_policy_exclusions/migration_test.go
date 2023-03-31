@@ -49,7 +49,7 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 	testPolicy.Name = "Iptables Executed in Privileged Container"
 	testPolicy.Description = "Alert on privileged pods that execute iptables"
 	require.NoError(s.T(), s.policyStore.Upsert(ctx, testPolicy))
-	//insert other policies in db for migration to run successfully
+	// insert other policies in db for migration to run successfully
 	policies := []string{
 		"fb8f8732-c31d-496b-8fb1-d5abe6056e27",
 		"880fd131-46f0-43d2-82c9-547f5aa7e043",

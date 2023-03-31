@@ -282,15 +282,6 @@
       }
     },
     {
-      "name": "Don't alert on deployment m in namespace i",
-      "deployment": {
-        "name": "m",
-        "scope": {
-          "namespace": "i"
-        }
-      }
-    },
-    {
       "name": "Don't alert on deployment kube-storage-version-migrator-operator in namespace openshift-kube-storage-version-migrator-operator",
       "deployment": {
         "name": "kube-storage-version-migrator-operator",
