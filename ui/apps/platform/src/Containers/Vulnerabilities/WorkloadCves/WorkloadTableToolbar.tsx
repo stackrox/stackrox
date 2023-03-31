@@ -79,12 +79,15 @@ function WorkloadTableToolbar({
             const fixableFilter = searchFixable
                 ? uniq([...defaultFixable, ...searchFixable])
                 : defaultFixable;
-            setSearchFilter({
-                ...defaultFilters,
-                ...searchFilter,
-                Severity: severityFilter,
-                Fixable: fixableFilter,
-            });
+            setSearchFilter(
+                {
+                    ...defaultFilters,
+                    ...searchFilter,
+                    Severity: severityFilter,
+                    Fixable: fixableFilter,
+                },
+                'replace'
+            );
         }
     }, [defaultFilters, searchFilter, setSearchFilter]);
 
