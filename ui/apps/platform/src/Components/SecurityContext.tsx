@@ -18,12 +18,10 @@ type SecurityContextProps = {
 };
 
 function SecurityContext({ securityContext }: SecurityContextProps) {
-    // build a map of only those properties that actually have values
-
-    // sort the keys of the prop, so that the map is in alpha order
+    // sort the keys of the security context, so any properties are shown in alpha order
     const sortedKeys = Object.keys(securityContext).sort();
 
-    //
+    // build a map of only those properties that actually have values
     const filteredValues = new Map();
     sortedKeys.forEach((key) => {
         const currentValue = securityContext[key];
