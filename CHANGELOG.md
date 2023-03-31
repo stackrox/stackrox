@@ -30,6 +30,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-15925: The KernelModule collection method is deprecated in favor of EBPF. This method will be removed in the 4.1 release.
 - Deprecated v1.0 of Network Graph. Please switch to the new 2.0 version for improved functionality and a better user experience.
 - ROX-15337: RHACS Operator is not published to Red Hat Operator Catalogs for OpenShift versions 4.9 and earlier.
+- The behavior of the ListServiceAccounts API endpoint is deprecated and will change as part of the 4.2.0 release.
 
 ### Required Actions
 - The `Analyst` permission set will change behaviour: instead of allowing read to all resources except `DebugLogs`, it will
