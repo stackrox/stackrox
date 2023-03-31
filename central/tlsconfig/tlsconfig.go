@@ -30,6 +30,7 @@ func GetAdditionalCAs() ([][]byte, error) {
 	if err != nil {
 		// Ignore error if additional CAs do not exist on filesystem
 		if os.IsNotExist(err) {
+			log.Infof("Additional CA directory %q does not exist, skipping.", additionalCADir)
 			return nil, nil
 		}
 		return nil, errors.Wrap(err, "reading additional CAs directory")
@@ -37,21 +38,27 @@ func GetAdditionalCAs() ([][]byte, error) {
 
 	var certDERs [][]byte
 	for _, certFile := range certFileInfos {
-		if filepath.Ext(certFile.Name()) != ".crt" {
-			log.Infof("Skipping additional-ca file %q, must end with '*.crt'.", certFile.Name())
+		certFileName := certFile.Name()
+		if certFile.IsDir() {
 			continue
 		}
-		content, err := os.ReadFile(path.Join(additionalCADir, certFile.Name()))
-		if err != nil {
-			return nil, errors.Wrap(err, "reading additional CAs cert")
+		if filepath.Ext(certFileName) != ".crt" {
+			log.Infof("Skipping additional-ca file %q, must end with '*.crt'.", certFileName)
+			continue
 		}
-
+		log.Infof("Loading additional CA cert %q.", certFileName)
+		content, err := os.ReadFile(path.Join(additionalCADir, certFileName))
+		if err != nil {
+			return nil, errors.Wrapf(err, "reading additional CA cert %q", certFileName)
+		}
 		certDER, err := x509utils.ConvertPEMToDERs(content)
 		if err != nil {
-			return nil, errors.Wrap(err, "converting additional CA cert to DER")
+			return nil, errors.Wrapf(err, "converting additional CA cert %q to DER", certFileName)
 		}
 		certDERs = append(certDERs, certDER...)
 	}
+
+	log.Infof("Loaded %d additional CA certs.", len(certDERs))
 
 	return certDERs, nil
 }
