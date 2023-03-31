@@ -5,6 +5,8 @@ import java.util.zip.ZipInputStream
 
 import io.restassured.config.RestAssuredConfig
 import io.restassured.config.SSLConfig
+import io.restassured.matcher.RestAssuredMatchers
+import org.hamcrest.Matchers
 
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.storage.RoleOuterClass
@@ -100,6 +102,8 @@ class DiagnosticBundleTest extends BaseSpecification {
                 .config(RestAssuredConfig.newConfig()
                     .sslConfig(SSLConfig.sslConfig().relaxedHTTPSValidation().allowAllHostnames()))
                 .headers(headers)
+                .expect()
+                .body(Matchers.notNullValue())
                 .when()
                 .get("https://${Env.mustGetHostname()}:${Env.mustGetPort()}/api/extensions/diagnostics")
 
