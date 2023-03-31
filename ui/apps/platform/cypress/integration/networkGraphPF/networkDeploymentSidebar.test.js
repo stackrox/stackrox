@@ -77,8 +77,6 @@ describe('Network Graph deployment sidebar', () => {
     });
 
     it('should show anomalous and baseline flows in the sidebar', () => {
-        cy.intercept('POST', '/v1/networkbaseline/*/status').as('networkBaselines');
-
         visitNetworkGraph();
 
         checkNetworkGraphEmptyState();
@@ -95,8 +93,6 @@ describe('Network Graph deployment sidebar', () => {
 
         // check Flows tab
         cy.get(`${networkGraphSelectors.drawerTabs}`).contains('Flows').click();
-
-        cy.wait('@networkBaselines');
 
         cy.get(`${networkGraphSelectors.drawerTabs} .pf-m-current:contains("Flows")`); // now that it is clicked, make sure it is selected
 
