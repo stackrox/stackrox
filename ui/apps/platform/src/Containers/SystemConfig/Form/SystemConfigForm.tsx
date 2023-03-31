@@ -360,6 +360,7 @@ const SystemConfigForm = ({
                                         >
                                             <ColorPicker
                                                 id="publicConfig.header.color"
+                                                label="Text color of header"
                                                 color={values?.publicConfig?.header?.color}
                                                 onChange={onCustomChange}
                                             />
@@ -392,6 +393,7 @@ const SystemConfigForm = ({
                                         >
                                             <ColorPicker
                                                 id="publicConfig.header.backgroundColor"
+                                                label="Background color of header"
                                                 color={
                                                     values?.publicConfig?.header?.backgroundColor
                                                 }
@@ -447,6 +449,7 @@ const SystemConfigForm = ({
                                         >
                                             <ColorPicker
                                                 id="publicConfig.footer.color"
+                                                label="Text color of footer"
                                                 color={values?.publicConfig?.footer?.color}
                                                 onChange={onCustomChange}
                                             />
@@ -479,6 +482,7 @@ const SystemConfigForm = ({
                                         >
                                             <ColorPicker
                                                 id="publicConfig.footer.backgroundColor"
+                                                label="Background color of footer"
                                                 color={
                                                     values?.publicConfig?.footer?.backgroundColor
                                                 }

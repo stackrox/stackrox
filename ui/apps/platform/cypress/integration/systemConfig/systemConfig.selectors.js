@@ -5,7 +5,8 @@ export const selectors = {
         config: {
             toggle: '[data-testid="header-config"] .pf-c-switch input',
             textInput: '[data-testid="header-config"] textarea',
-            colorPickerBtn: '[data-testid="header-config"] [data-testid="color-picker"]',
+            backgroundColorPickerButton: 'button[aria-label="Background color of header"]',
+            colorPickerButton: 'button[aria-label="Text color of header"]',
             colorInput: '[data-testid="header-config"] .chrome-picker input',
             size: {
                 input: '[data-testid="header-config"] .pf-c-select button',
@@ -20,7 +21,8 @@ export const selectors = {
         config: {
             toggle: '[data-testid="footer-config"] .pf-c-switch input',
             textInput: '[data-testid="footer-config"] textarea',
-            colorPickerBtn: '[data-testid="footer-config"] [data-testid="color-picker"]',
+            backgroundColorPickerButton: 'button[aria-label="Background color of footer"]',
+            colorPickerButton: 'button[aria-label="Text color of footer"]',
             colorInput: '[data-testid="footer-config"] .chrome-picker input',
             size: {
                 input: '[data-testid="footer-config"] .pf-c-select button',
