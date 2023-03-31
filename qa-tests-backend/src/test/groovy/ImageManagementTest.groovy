@@ -130,22 +130,18 @@ class ImageManagementTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        policy       | imageRegistry | imageRemote                       | imageTag |
-            excludedscopes                                               | expectedViolation
+        policy       | imageRegistry | imageRemote            | imageTag | excludedscopes | expectedViolation
+        "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" | ["quay.io"]           | false
+        "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" | ["quay.io/rhacs-eng"] | false
         "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" |
-            ["quay.io"]                                                  | false
+                      ["quay.io/rhacs-eng/qa-multi-arch-busybox"]        | false
         "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" |
-            ["quay.io/quay.io/rhacs-eng"]                                | false
+                      ["quay.io/rhacs-eng/qa-multi-arch-busybox:latest"] | false
+        "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" | ["other"]             | true
         "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" |
-            ["quay.io/quay.io/rhacs-eng/qa-multi-arch-busybox"]          | false
+                      ["quay.io/rhacs-eng/qa-multi-arch-busybox:1.30"]   | true
         "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" |
-            ["quay.io/quay.io/rhacs-eng/qa-multi-arch-busybox:latest"]   | false
-        "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" |
-            ["other"]                                                    | true
-        "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" |
-            ["quay.io/quay.io/rhacs-eng/qa-multi-arch-busybox:1.30"]     | true
-        "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" |
-            ["rhacs-eng/qa-multi-arch-busybox:1.30"]                     | true
+                      ["rhacs-eng/qa-multi-arch-busybox:1.30"]           | true
     }
 
     @Tag("Integration")
