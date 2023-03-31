@@ -3,11 +3,11 @@ import isEqual from 'lodash/isEqual';
 
 import { SearchFilter } from 'types/search';
 import { isParsedQs } from 'utils/queryStringUtils';
-import useURLParameter, { QueryValue } from './useURLParameter';
+import useURLParameter, { Action, QueryValue } from './useURLParameter';
 
 type UseUrlSearchReturn = {
     searchFilter: SearchFilter;
-    setSearchFilter: (newFilter: SearchFilter) => void;
+    setSearchFilter: (newFilter: SearchFilter, historyAction?: Action) => void;
 };
 
 function parseFilter(rawFilter: QueryValue): SearchFilter {
