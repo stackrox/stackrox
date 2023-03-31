@@ -50,6 +50,9 @@ var transientPGCodes = set.NewFrozenStringSet(
 
 // IsTransientError specifies if the passed error is transient and should be retried
 func IsTransientError(err error) bool {
+	if err == pgx.ErrNoRows {
+		return false
+	}
 	if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) {
 		return transientPGCodes.Contains(pgErr.Code)
 	}
@@ -65,7 +68,13 @@ func IsTransientError(err error) bool {
 	if errorhelpers.IsAny(err, context.DeadlineExceeded) {
 		return true
 	}
-	return errorhelpers.IsAny(err, io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe, syscall.ECONNREFUSED, syscall.ECONNRESET, syscall.ECONNABORTED, syscall.EPIPE)
+	if errorhelpers.IsAny(err, io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe, syscall.ECONNREFUSED, syscall.ECONNRESET, syscall.ECONNABORTED, syscall.EPIPE) {
+		return true
+	}
+	if err := errors.Unwrap(err); err != nil {
+		return IsTransientError(err)
+	}
+	return false
 }
 
 const (
