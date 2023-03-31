@@ -1,4 +1,5 @@
 import React from 'react';
+import { gql, useQuery } from '@apollo/client';
 import {
     Tabs,
     Tab,
@@ -8,12 +9,20 @@ import {
     Card,
     CardBody,
     Divider,
+    Toolbar,
+    ToolbarContent,
 } from '@patternfly/react-core';
 
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
-import EntityTypeToggleGroup from './EntityTypeToggleGroup';
+import EntityTypeToggleGroup, {
+    imageCountQuery,
+    deploymentCountQuery,
+    cveCountQuery,
+} from './EntityTypeToggleGroup';
 import { DefaultFilters, cveStatusTabValues } from './types';
+import TablePaginationControls from './TablePaginationControls';
+import WorkloadCvesTable from './WorkloadCvesTable';
 
 type CveStatusTabNavigationProps = {
     defaultFilters: DefaultFilters;
@@ -44,8 +53,15 @@ function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps)
                         <CardBody>
                             <WorkloadTableToolbar defaultFilters={defaultFilters} />
                             <Divider component="div" />
-                            <EntityTypeToggleGroup className="pf-u-pl-md pf-u-pt-md" />
-                            cve overview table here
+                            <Toolbar>
+                                <ToolbarContent>
+                                    <EntityTypeToggleGroup />
+                                    <Divider orientation={{ default: 'vertical' }} />
+                                    <TablePaginationControls />
+                                </ToolbarContent>
+                            </Toolbar>
+                            <Divider component="div" />
+                            <WorkloadCvesTable entity="Image" />
                         </CardBody>
                     </Card>
                 </PageSection>
