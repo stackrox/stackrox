@@ -402,6 +402,11 @@ var _ Store = (*tstAuthProviderStore)(nil)
 // Authprovider store (needed for NewStoreBackedRegistry)
 type tstAuthProviderStore struct{}
 
+func (s *tstAuthProviderStore) GetAuthProvider(ctx context.Context, id string) (*storage.AuthProvider, bool, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (*tstAuthProviderStore) GetAllAuthProviders(_ context.Context) ([]*storage.AuthProvider, error) {
 	return []*storage.AuthProvider{mockAuthProvider, mockAuthProviderWithAttributes}, nil
 }
