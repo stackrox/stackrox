@@ -4,8 +4,10 @@ package m179tom180
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/stackrox/rox/generated/storage"
 	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	policyPostgresStore "github.com/stackrox/rox/migrator/migrations/m_179_to_m_180_openshift_policy_exclusions/postgres"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
@@ -47,16 +49,42 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 	testPolicy.Name = "Iptables Executed in Privileged Container"
 	testPolicy.Description = "Alert on privileged pods that execute iptables"
 	require.NoError(s.T(), s.policyStore.Upsert(ctx, testPolicy))
+	//insert other policies in db for migration to run successfully
+	policies := []string{
+		"fb8f8732-c31d-496b-8fb1-d5abe6056e27",
+		"880fd131-46f0-43d2-82c9-547f5aa7e043",
+		"47cb9e0a-879a-417b-9a8f-de644d7c8a77",
+		"6226d4ad-7619-4a0b-a160-46373cfcee66",
+		"436811e7-892f-4da6-a0f5-8cc459f1b954",
+		"742e0361-bddd-4a2d-8758-f2af6197f61d",
+		"16c95922-08c4-41b6-a721-dc4b2a806632",
+		"fe9de18b-86db-44d5-a7c4-74173ccffe2e",
+		"dce17697-1b72-49d2-b18a-05d893cd9368",
+		"f4996314-c3d7-4553-803b-b24ce7febe48",
+		"a9b9ecf7-9707-4e32-8b62-d03018ed454f",
+	}
+
+	policyName := "policy description %d"
+	for i := 0; i < len(policies); i++ {
+		testPolicy := &storage.Policy{
+			Id:   policies[i],
+			Name: fmt.Sprintf(policyName, i),
+		}
+		require.NoError(s.T(), s.policyStore.Upsert(ctx, testPolicy))
+	}
 	dbs := &types.Databases{
 		PostgresDB: s.db.DB,
 		GormDB:     s.db.GetGormDB(),
 	}
 
-	s.NoError(migration.Run(dbs))
 	q := search.NewQueryBuilder().AddExactMatches(search.PolicyID, testPolicy.GetId()).ProtoQuery()
+	policyPremigration, err := s.policyStore.GetByQuery(ctx, q)
+	s.NoError(err)
+	s.Empty(policyPremigration[0].Exclusions)
+	s.NoError(migration.Run(dbs))
+	expectedExclusion := "Don't alert on ovnkube-node deployment in openshift-ovn-kubernetes Namespace"
 	policy, err := s.policyStore.GetByQuery(ctx, q)
 	s.NoError(err)
-	expectedExclusion := "Don't alert on ovnkube-node deployment in openshift-ovn-kubernetes Namespace"
 	s.Equal(policy[0].Exclusions[0].Name, expectedExclusion, "exclusion do not match after migration")
 
 }

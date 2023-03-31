@@ -31,24 +31,7 @@ type PolicyChanges struct {
 // PolicyUpdates lists the possible fields of a policy that can be updated. Any nil fields will not be updated
 // In order to change an item in an array (e.g. exclusions), remove the existing one and add the updated one back in.
 type PolicyUpdates struct {
-	// PolicySections is the new policy sections
-	PolicySections []*storage.PolicySection
-	// MitreVectors is the new MITRE ATT&CK section
-	MitreVectors []*storage.Policy_MitreAttackVectors
-	// ExclusionsToAdd is a list of exclusions to insert (or append) to policy
 	ExclusionsToAdd []*storage.Exclusion
-	// ExclusionsToRemove is a list of exclusions to remove from policy
-	ExclusionsToRemove []*storage.Exclusion
-	// Name is the new name for the policy
-	Name *string
-	// Remediation is the new remediation string
-	Remediation *string
-	// Rationale is the new rationale string
-	Rationale *string
-	// Description is the new description string
-	Description *string
-	// Disable is true if the policy should be disabled, false if it should be enabled and nil for no change
-	Disable *bool
 }
 
 // FieldComparator should compare policies and return true if they match for a defined field
@@ -87,57 +70,6 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 	beforePolicy.Exclusions = nil
 	afterPolicy.Exclusions = nil
 
-	// Policy section
-	if !reflect.DeepEqual(beforePolicy.GetPolicySections(), afterPolicy.GetPolicySections()) {
-		updates.PolicySections = afterPolicy.PolicySections
-	}
-	beforePolicy.PolicySections = nil
-	afterPolicy.PolicySections = nil
-
-	// MITRE section
-	if !reflect.DeepEqual(beforePolicy.GetMitreAttackVectors(), afterPolicy.GetMitreAttackVectors()) {
-		updates.MitreVectors = afterPolicy.MitreAttackVectors
-	}
-	beforePolicy.MitreAttackVectors = nil
-	afterPolicy.MitreAttackVectors = nil
-
-	// Name
-	if beforePolicy.GetName() != afterPolicy.GetName() {
-		updates.Name = strPtr(afterPolicy.Name)
-	}
-	beforePolicy.Name = ""
-	afterPolicy.Name = ""
-
-	// Description
-	if beforePolicy.GetDescription() != afterPolicy.GetDescription() {
-		updates.Description = strPtr(afterPolicy.Description)
-	}
-	beforePolicy.Description = ""
-	afterPolicy.Description = ""
-
-	// Rationale
-	if beforePolicy.GetRationale() != afterPolicy.GetRationale() {
-		updates.Rationale = strPtr(afterPolicy.Rationale)
-	}
-	beforePolicy.Rationale = ""
-	afterPolicy.Rationale = ""
-
-	// Remediation
-	if beforePolicy.GetRemediation() != afterPolicy.GetRemediation() {
-		updates.Remediation = strPtr(afterPolicy.Remediation)
-	}
-	beforePolicy.Remediation = ""
-	afterPolicy.Remediation = ""
-
-	// Enable/Disable
-	if beforePolicy.GetDisabled() != afterPolicy.GetDisabled() {
-		updates.Disable = boolPtr(afterPolicy.GetDisabled())
-	}
-	beforePolicy.Disabled = false
-	afterPolicy.Disabled = false
-
-	// TODO: Add others as needed
-
 	if !reflect.DeepEqual(beforePolicy, afterPolicy) {
 		return PolicyUpdates{}, errors.New("policies have diff after nil-ing out fields we checked, please update this function " +
 			"to be able to diff more fields")
@@ -148,16 +80,11 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 func getExclusionsUpdates(beforePolicy *storage.Policy, afterPolicy *storage.Policy, updates *PolicyUpdates) {
 	matchedAfterExclusionsIdxs := set.NewSet[int]()
 	for _, beforeExclusion := range beforePolicy.GetExclusions() {
-		var found bool
 		for afterExclusionIdx, afterExclusion := range afterPolicy.GetExclusions() {
 			if reflect.DeepEqual(beforeExclusion, afterExclusion) {
-				found = true
 				matchedAfterExclusionsIdxs.Add(afterExclusionIdx)
 				break
 			}
-		}
-		if !found {
-			updates.ExclusionsToRemove = append(updates.ExclusionsToRemove, beforeExclusion)
 		}
 	}
 	for i, exclusion := range afterPolicy.GetExclusions() {
@@ -177,60 +104,10 @@ func (u *PolicyUpdates) applyToPolicy(policy *storage.Policy) {
 	if u == nil {
 		return
 	}
-
-	if u.ExclusionsToRemove != nil {
-		for _, toRemove := range u.ExclusionsToRemove {
-			if !removeExclusion(policy, toRemove) {
-				pglog.WriteToStderrf("policy ID %s has already been altered because exclusion was already removed. Will not update.", policy.Id)
-				continue
-			}
-		}
-	}
-
 	// Add new exclusions as needed
 	if u.ExclusionsToAdd != nil {
 		policy.Exclusions = append(policy.Exclusions, u.ExclusionsToAdd...)
 	}
-
-	// If policy section is to be updated, just clear the old one for the new
-	if u.PolicySections != nil {
-		policy.PolicySections = u.PolicySections
-	}
-
-	// If policy mitre is to be updated, just clear the old one for the new
-	if u.MitreVectors != nil {
-		policy.MitreAttackVectors = u.MitreVectors
-	}
-
-	// Check if policy should be enabled or disabled
-	if u.Disable != nil {
-		policy.Disabled = *u.Disable
-	}
-
-	// Update string fields as needed
-	if u.Name != nil {
-		policy.Name = *u.Name
-	}
-	if u.Rationale != nil {
-		policy.Rationale = *u.Rationale
-	}
-	if u.Remediation != nil {
-		policy.Remediation = *u.Remediation
-	}
-	if u.Description != nil {
-		policy.Description = *u.Description
-	}
-}
-
-func removeExclusion(policy *storage.Policy, exclusionToRemove *storage.Exclusion) bool {
-	exclusions := policy.GetExclusions()
-	for i, exclusion := range exclusions {
-		if reflect.DeepEqual(exclusion, exclusionToRemove) {
-			policy.Exclusions = append(exclusions[:i], exclusions[i+1:]...)
-			return true
-		}
-	}
-	return false
 }
 
 // MigratePoliciesWithDiffs migrates policies with the given diffs.
