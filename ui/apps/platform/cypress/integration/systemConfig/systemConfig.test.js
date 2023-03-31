@@ -19,12 +19,12 @@ function editBaseConfig(type) {
 }
 
 function editBannerConfig(type) {
-    cy.get(selectors[type].config.colorPickerBtn).first().click();
+    cy.get(selectors[type].config.colorPickerButton).click();
     cy.get(selectors[type].config.colorInput).clear().type(text.color);
     cy.get(selectors[type].widget).click();
     cy.get(selectors[type].config.size.input).click();
     cy.get(selectors[type].config.size.options).first().click();
-    cy.get(selectors[type].config.colorPickerBtn).last().click();
+    cy.get(selectors[type].config.backgroundColorPickerButton).click();
     cy.get(selectors[type].config.colorInput).clear().type(text.backgroundColor);
     cy.get(selectors[type].widget).click();
 }
