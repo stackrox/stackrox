@@ -35,10 +35,10 @@ function IntegrationTile({
 
     return (
         <Link to={linkTo} data-testid="integration-tile">
-            <Card isHoverable isCompact isFlat style={styleCard}>
+            <Card isSelectableRaised isCompact isFlat style={styleCard}>
                 <CardHeader className="pf-u-mb-lg">
                     <CardHeaderMain>
-                        <img src={image} alt={label} style={{ height: '100px' }} />
+                        <img src={image} alt="" style={{ height: '100px' }} />
                     </CardHeaderMain>
                     <CardActions>
                         {numIntegrations > 0 && <Badge>{numIntegrations}</Badge>}
