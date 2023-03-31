@@ -562,7 +562,7 @@ function launch_sensor {
     else
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         auth=()
-        if [[ -n $ROX_API_TOKEN ]]; then
+        if [[ -n "${ROX_API_TOKEN}" ]]; then
           echo "Using ROX_API_TOKEN"
           # Do nothing, roxctl will pick it up automatically
         elif [[ -z "${ROX_ADMIN_PASSWORD}" ]]; then
