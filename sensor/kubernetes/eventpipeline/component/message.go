@@ -1,8 +1,12 @@
 package component
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 )
 
@@ -52,6 +56,43 @@ type ResourceEvent struct {
 
 	// DeploymentReferences returns a list of deployment references generated from a Kubernetes Event
 	DeploymentReferences []DeploymentReference
+
+	TesterMsg []*MsgToTester
+}
+
+type MsgToTester struct {
+	MsgToCentral    *central.MsgFromSensor
+	Id              string
+	ResourceVersion string
+	ResyncEvent     bool
+}
+
+func (t *MsgToTester) IsResyncEvent() bool {
+	if t == nil {
+		return false
+	}
+	return t.ResyncEvent
+}
+
+func (t *MsgToTester) GetMsgToCentral() *central.MsgFromSensor {
+	if t == nil {
+		return nil
+	}
+	return t.MsgToCentral
+}
+
+func (t *MsgToTester) GetId() string {
+	if t == nil {
+		return ""
+	}
+	return t.Id
+}
+
+func (t *MsgToTester) GetResourceVersion() string {
+	if t == nil {
+		return ""
+	}
+	return t.ResourceVersion
 }
 
 // NewEvent creates a resource event with preset sensor event messages.
@@ -62,6 +103,66 @@ func NewEvent(msg ...*central.SensorEvent) *ResourceEvent {
 // AddSensorEvent appends central sensor events to be bundled with this resource event.
 func (e *ResourceEvent) AddSensorEvent(event ...*central.SensorEvent) *ResourceEvent {
 	e.ForwardMessages = append(e.ForwardMessages, event...)
+	return e
+}
+
+func getResourceId(event *central.SensorEvent) string {
+	if event == nil || event.GetResource() == nil {
+		return ""
+	}
+	switch event.GetResource().(type) {
+	case *central.SensorEvent_Deployment:
+		return event.GetDeployment().GetId()
+	case *central.SensorEvent_Pod:
+		return event.GetPod().GetId()
+	}
+
+	return ""
+}
+
+func (e *ResourceEvent) UpdateMsgToTester(msgToCentral *central.SensorEvent) {
+	if env.ResyncTester.BooleanSetting() {
+		for _, event := range e.TesterMsg {
+			if event.GetId() == fmt.Sprintf("%s-%s", metrics.GetResourceString(msgToCentral), getResourceId(msgToCentral)) {
+				event.MsgToCentral = &central.MsgFromSensor{
+					Msg: &central.MsgFromSensor_Event{
+						Event: msgToCentral,
+					},
+				}
+			}
+		}
+	}
+}
+
+func (e *ResourceEvent) AddMsgToTester(resourceVersion string, events ...*central.SensorEvent) *ResourceEvent {
+	if env.ResyncTester.BooleanSetting() {
+		for _, event := range events {
+			e.TesterMsg = append(e.TesterMsg, &MsgToTester{
+				Id:              fmt.Sprintf("%s-%s", metrics.GetResourceString(event), getResourceId(event)),
+				ResourceVersion: resourceVersion,
+				MsgToCentral: &central.MsgFromSensor{
+					Msg: &central.MsgFromSensor_Event{
+						Event: event,
+					},
+				},
+			})
+			if metrics.GetResourceString(event) == "Deployment" {
+				e.TesterMsg = append(e.TesterMsg, &MsgToTester{
+					Id:              getResourceId(event),
+					ResourceVersion: resourceVersion,
+					MsgToCentral: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Resource: &central.SensorEvent_AlertResults{
+									AlertResults: &central.AlertResults{},
+								},
+							},
+						},
+					},
+				})
+			}
+		}
+	}
 	return e
 }
 

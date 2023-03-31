@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
@@ -33,6 +34,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/common/updater"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/tester"
 	"google.golang.org/grpc"
 )
 
@@ -188,6 +190,9 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 				if !isMostRecentUpdate {
 					continue
 				}
+			}
+			if env.ResyncTester.BooleanSetting() {
+				tester.GetEventPipelineTester().SendAlerts(result.results.GetDeploymentId(), createAlertResultsMsg(result.action, alertResults))
 			}
 			select {
 			case <-d.serializerStopper.Flow().StopRequested():

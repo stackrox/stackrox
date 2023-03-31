@@ -3,9 +3,11 @@ package resolver
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/tester"
 )
 
 var (
@@ -96,12 +98,16 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 					log.Warnf("Failed to build deployment dependency: %s", err)
 					continue
 				}
-
 				msg.AddSensorEvent(toEvent(deploymentReference.ParentResourceAction, d, msg.DeploymentTiming)).
 					AddDeploymentForDetection(component.DetectorMessage{Object: d, Action: deploymentReference.ParentResourceAction})
+				msg.UpdateMsgToTester(toEvent(deploymentReference.ParentResourceAction, d, msg.DeploymentTiming))
 			}
 		}
-
+	}
+	if env.ResyncTester.BooleanSetting() {
+		for _, toTester := range msg.TesterMsg {
+			tester.GetEventPipelineTester().Send(toTester)
+		}
 	}
 
 	r.outputQueue.Send(msg)

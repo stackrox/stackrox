@@ -166,6 +166,9 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 			removeEvents := d.processPodEvent(owningDeploymentID, objAsPod, action)
 			if removeEvents != nil {
 				events.AddSensorEvent(removeEvents)
+				if objMeta, ok := obj.(metaV1.Object); ok {
+					events.AddMsgToTester(objMeta.GetResourceVersion(), removeEvents)
+				}
 			}
 		}
 
@@ -204,11 +207,17 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 				Object: deploymentWrap.GetDeployment(),
 				Action: action,
 			}).AddSensorEvent(deploymentWrap.toEvent(action)) // if resource is being removed, we can create the remove message here without related resources
+			if objMeta, ok := obj.(metaV1.Object); ok {
+				events.AddMsgToTester(objMeta.GetResourceVersion(), deploymentWrap.toEvent(action))
+			}
 		} else {
 			// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
 			// references up the chain, which will be used to trigger the actual deployment event and detection.
 			events.AddDeploymentReference(resolver.ResolveDeploymentIds(deploymentWrap.GetId()),
 				component.WithParentResourceAction(action))
+			if objMeta, ok := obj.(metaV1.Object); ok {
+				events.AddMsgToTester(objMeta.GetResourceVersion(), deploymentWrap.toEvent(action))
+			}
 		}
 	} else {
 		exposureInfos := d.serviceStore.GetExposureInfos(deploymentWrap.GetNamespace(), deploymentWrap.PodLabels)

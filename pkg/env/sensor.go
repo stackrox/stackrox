@@ -25,4 +25,6 @@ var (
 
 	// ResyncDisabled disables the resync behavior of the kubernetes listeners in sensor
 	ResyncDisabled = RegisterBooleanSetting("ROX_RESYNC_DISABLED", false)
+
+	ResyncTester = RegisterBooleanSetting("ROX_RESYNC_TESTER", true)
 )

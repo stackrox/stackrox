@@ -41,6 +41,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/tester"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/localscanner"
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
@@ -59,6 +60,11 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		log.Infof("Running sensor with Kubernetes re-sync disabled")
 	} else {
 		log.Infof("Running sesnor with Kubernetes re-sync enabled. Re-sync time: %s", cfg.resyncPeriod.String())
+	}
+
+	var eventPipelineTester common.SensorComponent
+	if env.ResyncTester.BooleanSetting() {
+		eventPipelineTester = tester.GetEventPipelineTester()
 	}
 
 	storeProvider := resources.InitializeStore()
@@ -137,6 +143,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		admissioncontroller.AlertHandlerSingleton(),
 		auditLogCollectionManager,
 		reprocessorHandler,
+	}
+	if env.ResyncTester.BooleanSetting() {
+		components = append(components, eventPipelineTester)
 	}
 	if features.RHCOSNodeScanning.Enabled() {
 		matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
