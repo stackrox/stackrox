@@ -11,6 +11,8 @@ metadata:
       services necessary to secure each of your OpenShift and Kubernetes clusters.
     operatorframework.io/suggested-namespace: rhacs-operator
     operators.openshift.io/infrastructure-features: '["disconnected", "proxy-aware"]'
+    operators.openshift.io/valid-subscription: '["OpenShift Platform Plus", "Red Hat
+      Advanced Cluster Security"]'
     support: Red Hat
   name: rhacs-operator.v0.0.0
   namespace: placeholder
