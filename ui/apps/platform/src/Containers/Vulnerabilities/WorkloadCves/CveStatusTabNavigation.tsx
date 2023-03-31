@@ -44,7 +44,7 @@ function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps)
                         <CardBody>
                             <WorkloadTableToolbar defaultFilters={defaultFilters} />
                             <Divider component="div" />
-                            <EntityTypeToggleGroup />
+                            <EntityTypeToggleGroup className="pf-u-pl-md pf-u-pt-md" />
                             cve overview table here
                         </CardBody>
                     </Card>
