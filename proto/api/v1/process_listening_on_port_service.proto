@@ -19,8 +19,8 @@ message GetProcessesListeningOnPortsResponse {
 // ListeningEndpointsService API can be used to list listening endpoints and the processes that opened them.
 service ListeningEndpointsService {
 
-    // GetProcessesListeningOnPorts returns the listening endpoints and the processes that opened them for a given deployment
-    rpc GetProcessesListeningOnPorts(GetProcessesListeningOnPortsRequest) returns (GetProcessesListeningOnPortsResponse) {
+    // GetListeningEndpoints returns the listening endpoints and the processes that opened them for a given deployment
+    rpc GetListeningEndpoints(GetProcessesListeningOnPortsRequest) returns (GetProcessesListeningOnPortsResponse) {
         option (google.api.http) = {
             get: "/v1/listening_endpoints/deployment/{deployment_id}"
         };
