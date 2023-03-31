@@ -70,9 +70,14 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 				}
 				// Skip resolving the deployment dependencies
 				if deploymentReference.SkipResolving {
-					d := r.storeProvider.Deployments().GetBuiltDeployment(id)
+					d, built := r.storeProvider.Deployments().GetBuiltDeployment(id)
 					if d == nil {
 						log.Warnf("Deployment with id %s not found", id)
+						continue
+					}
+
+					if !built {
+						log.Debugf("Deployment with id %s is already in the pipeline, skipping processing", id)
 						continue
 					}
 					msg.AddDeploymentForDetection(component.DetectorMessage{Object: d, Action: deploymentReference.ParentResourceAction})
