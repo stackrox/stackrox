@@ -117,7 +117,7 @@ class DiagnosticBundleTest extends BaseSpecification {
             try {
                 ZipEntry entry
                 while ((entry = zis.nextEntry) != null) {
-                    log.info "Found file ${entry.name} ${entry.lastModifiedTime}"
+                    log.info "Found file ${entry.name} modified at ${entry.lastModifiedTime}"
                     assert modifiedAfter.isBefore(entry.lastModifiedTime.toInstant())
                     if (entry.name == ("kubernetes/" + ClusterService.DEFAULT_CLUSTER_NAME +
                             "/stackrox/sensor/deployment-sensor.yaml")) {

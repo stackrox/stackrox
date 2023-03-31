@@ -6,6 +6,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 )
 
@@ -20,7 +21,7 @@ func writePrefixedFileToZip(zipWriter *zip.Writer, prefix string, file k8sintros
 		return err
 	}
 	if _, err := fileWriter.Write(file.Contents); err != nil {
-		return err
+		return errors.Wrapf(err, "unable to write to %q", fullPath)
 	}
 	return nil
 }
@@ -31,5 +32,9 @@ func zipWriterWithCurrentTimestamp(zipWriter *zip.Writer, fileName string) (io.W
 		Method:   zip.Deflate,
 		Modified: now(),
 	}
-	return zipWriter.CreateHeader(header)
+	writer, err := zipWriter.CreateHeader(header)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to create zip file %q", fileName)
+	}
+	return writer, nil
 }
