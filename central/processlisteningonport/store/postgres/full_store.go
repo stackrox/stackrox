@@ -128,6 +128,10 @@ func (s *fullStoreImpl) readRows(
 			execFilePath = msg.GetProcess().GetProcessExecFilePath()
 		}
 
+		if podID == "" && containerName == "" && name == "" && args == "" && execFilePath == "" {
+			continue
+		}
+
 		plop := &storage.ProcessListeningOnPort{
 			Endpoint: &storage.ProcessListeningOnPort_Endpoint{
 				Port:     msg.GetPort(),
