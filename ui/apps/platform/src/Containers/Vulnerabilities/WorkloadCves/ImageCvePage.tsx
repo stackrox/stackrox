@@ -89,6 +89,7 @@ export const imageCveAffectedImagesQuery = gql`
 `;
 
 const defaultSortFields = ['Image', 'Severity', 'Fixable', 'Operating System'];
+const imageCveEntities = ['Image', 'Deployment'] as const;
 
 function ImageCvePage() {
     const { cveId } = useParams();
@@ -104,8 +105,7 @@ function ImageCvePage() {
         onSort: () => setPage(1),
     });
 
-    // TODO This will need to be updated once https://github.com/stackrox/stackrox/pull/5392 is merged
-    const [entityTab] = useURLStringUnion('entityTab', ['Image', 'Deployment'] as const);
+    const [entityTab] = useURLStringUnion('entityTab', imageCveEntities);
 
     const metadataRequest = useQuery<{ imageCVE: ImageCveMetadata }, { cve: string }>(
         imageCveMetadataQuery,
@@ -236,6 +236,32 @@ function ImageCvePage() {
                 </div>
                 <Divider />
                 <div className="pf-u-background-color-100 pf-u-flex-grow-1">
+                    <Split className="pf-u-px-lg pf-u-py-md pf-u-align-items-baseline">
+                        <SplitItem isFilled>
+                            <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                                <EntityTypeToggleGroup
+                                    imageCount={imageData?.imageCount ?? 0}
+                                    entityTabs={imageCveEntities}
+                                />
+                                {isFiltered && <DynamicTableLabel />}
+                            </Flex>
+                        </SplitItem>
+                        <SplitItem>
+                            <Pagination
+                                isCompact
+                                itemCount={tableRowCount}
+                                page={page}
+                                perPage={perPage}
+                                onSetPage={(_, newPage) => setPage(newPage)}
+                                onPerPageSelect={(_, newPerPage) => {
+                                    if (tableRowCount < (page - 1) * newPerPage) {
+                                        setPage(1);
+                                    }
+                                    setPerPage(newPerPage);
+                                }}
+                            />
+                        </SplitItem>
+                    </Split>
                     {tableError ? (
                         <Bullseye>
                             <EmptyStateTemplate
@@ -256,29 +282,6 @@ function ImageCvePage() {
                             )}
                             {tableDataAvailable && (
                                 <>
-                                    <Split className="pf-u-px-lg pf-u-py-sm pf-u-align-items-baseline">
-                                        <SplitItem isFilled>
-                                            <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                                                <EntityTypeToggleGroup />
-                                                {isFiltered && <DynamicTableLabel />}
-                                            </Flex>
-                                        </SplitItem>
-                                        <SplitItem>
-                                            <Pagination
-                                                isCompact
-                                                itemCount={tableRowCount}
-                                                page={page}
-                                                perPage={perPage}
-                                                onSetPage={(_, newPage) => setPage(newPage)}
-                                                onPerPageSelect={(_, newPerPage) => {
-                                                    if (tableRowCount < (page - 1) * newPerPage) {
-                                                        setPage(1);
-                                                    }
-                                                    setPerPage(newPerPage);
-                                                }}
-                                            />
-                                        </SplitItem>
-                                    </Split>
                                     <Divider />
                                     <div className="pf-u-px-lg">
                                         {entityTab === 'Image' && (
