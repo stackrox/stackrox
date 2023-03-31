@@ -79,6 +79,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             "webhookserver - Kubernetes Actions: Port Forward to Pod",
     ]
 
+    // will you fail on a PR?
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
             .setName(STRUTS)
             .setImage("quay.io/rhacs-eng/qa:struts-app")

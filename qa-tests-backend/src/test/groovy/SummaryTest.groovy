@@ -52,8 +52,8 @@ class SummaryTest extends BaseSpecification {
                 log.info javers.compare(stackroxDeploymentNames, orchestratorResourceNames).prettyPrint()
 
                 log.info "Use the full set of deployments to compare manually if diff isn't helpful"
-                log.info "Stackrox deployments: " + stackroxDeploymentNames.join(",")
-                log.info "Orchestrator deployments: " + orchestratorResourceNames.join(",")
+                log.info "Stackrox deployments: " + stackroxDeploymentNames.sort(false).join(",")
+                log.info "Orchestrator deployments: " + orchestratorResourceNames.sort(false).join(",")
             }
 
             assert stackroxSummaryCounts.numDeployments == orchestratorResourceNames.size()
