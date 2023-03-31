@@ -1,11 +1,11 @@
 import React from 'react';
 import { Card, CardBody, CardTitle, Flex, Grid, GridItem, Text } from '@patternfly/react-core';
+import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import { vulnerabilitySeverityLabels } from 'messages/common';
-import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
 export type BySeveritySummaryCardProps = {
     className?: string;
