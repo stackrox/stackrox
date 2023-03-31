@@ -81,14 +81,14 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
             .setName(STRUTS)
-            .setImage("quay.io/rhacs-eng/qa:struts-app")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:struts-app")
             .addLabel("app", "test")
             .addPort(80)
 
     static final private List<Deployment> DEPLOYMENTS = [
         new Deployment()
             .setName (NGINX_LATEST)
-            .setImage ("quay.io/rhacs-eng/qa:latest") // this is docker.io/nginx:1.22-alpine but tagged as latest
+            .setImage ("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
             .addPort (22)
             .addLabel ("app", "test")
             .setEnv([SECRET: 'true']),
