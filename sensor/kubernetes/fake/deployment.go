@@ -18,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 var (
@@ -108,7 +109,7 @@ func createDeploymentLabels(random bool, numLabels int) map[string]string {
 	return createMap(numLabels)
 }
 
-func (w *WorkloadManager) getDeployment(workload DeploymentWorkload) *deploymentResourcesToBeManaged {
+func (w *WorkloadManager) getDeployment(workload DeploymentWorkload, id string) *deploymentResourcesToBeManaged {
 	var labels map[string]string
 	if workload.NumLabels == 0 {
 		labels = createDeploymentLabels(workload.RandomLabels, 3)
@@ -136,6 +137,10 @@ func (w *WorkloadManager) getDeployment(workload DeploymentWorkload) *deployment
 	} else {
 		serviceAccount = potentialServiceAccounts[rand.Intn(len(potentialServiceAccounts))]
 	}
+	uid := types.UID(id)
+	if id == "" {
+		uid = newUUID()
+	}
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -144,7 +149,7 @@ func (w *WorkloadManager) getDeployment(workload DeploymentWorkload) *deployment
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      randString(),
 			Namespace: namespace,
-			UID:       newUUID(),
+			UID:       uid,
 			CreationTimestamp: metav1.Time{
 				Time: time.Now(),
 			},
