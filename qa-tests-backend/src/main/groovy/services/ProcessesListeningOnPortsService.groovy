@@ -20,7 +20,7 @@ class ProcessesListeningOnPortsService extends BaseService {
                         .build()
 
         def processesListeningOnPorts = getProcessesListeningOnPortsService()
-                        .getProcessesListeningOnPorts(request)
+                        .getListeningEndpoints(request)
 
         return processesListeningOnPorts
     }
