@@ -69,11 +69,13 @@ class ImageManagementTest extends BaseSpecification {
         given:
         // Scan an ubuntu 14:04 image we're pretending is latest
         def img = Services.scanImage(
-            "docker.io/library/ubuntu:latest@sha256:ffc76f71dd8be8c9e222d420dc96901a07b61616689a44c7b3ef6a10b7213de4")
+            "quay.io/rhacs-eng/qa-multi-arch:ubuntu-latest" +
+                "@sha256:64483f3496c1373bfd55348e88694d1c4d0c9b660dee6bfef5e12f43b9933b30") // 14.04
         assert img.scan.componentsList.stream().find { x -> x.name == "eglibc" } != null
 
         img = Services.scanImage(
-             "docker.io/library/ubuntu:latest@sha256:3235326357dfb65f1781dbc4df3b834546d8bf914e82cce58e6e6b676e23ce8f")
+            "quay.io/rhacs-eng/qa-multi-arch:ubuntu-latest" +
+                "@sha256:1f1a2d56de1d604801a9671f301190704c25d604a416f59e03c04f5c6ffee0d6") // 16.04
 
         expect:
         assert img.scan != null
