@@ -13,7 +13,7 @@ import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 import axios from './instance';
 
-const deploymentUrl = '/v1/deployments';
+const deploymentsUrl = '/v1/deployments';
 const deploymentsWithProcessUrl = '/v1/deploymentswithprocessinfo';
 const deploymentWithRiskUrl = '/v1/deploymentswithrisk';
 const deploymentsCountUrl = '/v1/deploymentscount';
@@ -62,7 +62,7 @@ export function listDeployments(
 ): Promise<ListDeployment[]> {
     const params = fillDeploymentSearchQuery(searchFilter, sortOption, page, pageSize);
     return axios
-        .get<{ deployments: ListDeployment[] }>(`${deploymentUrl}?${params}`)
+        .get<{ deployments: ListDeployment[] }>(`${deploymentsUrl}?${params}`)
         .then((response) => response?.data?.deployments ?? []);
 }
 
@@ -83,9 +83,12 @@ export function fetchDeployments(
     const params = fillDeploymentSearchQuery(searchFilter, sortOption, page, pageSize);
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .get<{ deployments: ListDeploymentWithProcessInfo[] }>(`${deploymentsWithProcessUrl}?${params}`, {
-                signal,
-            })
+            .get<{ deployments: ListDeploymentWithProcessInfo[] }>(
+                `${deploymentsWithProcessUrl}?${params}`,
+                {
+                    signal,
+                }
+            )
             .then((response) => response?.data?.deployments ?? [])
     );
 }
@@ -120,7 +123,9 @@ export function fetchDeploymentsLegacy(
     }
     const params = queryString.stringify(queryObject, { arrayFormat: 'repeat', allowDots: true });
     return axios
-        .get<{ deployments: ListDeploymentWithProcessInfo[] }>(`${deploymentsWithProcessUrl}?${params}`)
+        .get<{ deployments: ListDeploymentWithProcessInfo[] }>(
+            `${deploymentsWithProcessUrl}?${params}`
+        )
         .then((response) => response?.data?.deployments ?? []);
 }
 
@@ -157,7 +162,7 @@ export function fetchDeployment(id: string): Promise<Deployment> {
     if (!id) {
         throw new Error('Deployment ID must be specified');
     }
-    return axios.get<Deployment>(`${deploymentUrl}/${id}`).then((response) => response.data);
+    return axios.get<Deployment>(`${deploymentsUrl}/${id}`).then((response) => response.data);
 }
 
 /**

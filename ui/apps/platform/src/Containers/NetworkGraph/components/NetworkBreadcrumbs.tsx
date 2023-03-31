@@ -31,14 +31,7 @@ function NetworkBreadcrumbs({
     const selectedNamespaceIds = namespaces.reduce<string[]>((acc: string[], namespace) => {
         return selectedNamespaces.includes(namespace.name) ? [...acc, namespace.id] : acc;
     }, []);
-    const namespaceNameToIdMap = new Map<string, string>();
-    namespaces.forEach((ns) => {
-        namespaceNameToIdMap.set(ns.name, ns.id);
-    });
-    const { deploymentsByNamespace } = useFetchNamespaceDeployments(
-        selectedNamespaceIds,
-        namespaceNameToIdMap
-    );
+    const { deploymentsByNamespace } = useFetchNamespaceDeployments(selectedNamespaceIds);
 
     return (
         <>
