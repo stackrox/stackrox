@@ -12,6 +12,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-15102: new `public_config.telemetry` boolean property of the `/v1/config`
   endpoint request that allows for querying the state, enabling or disabling the
   configured telemetry collection.
+- ROX-10818: vulnerability scanning of node components installed through RPM on
+  OpenShift cluster nodes running Core OS (RHCOS).
+
 
 ### Removed Features
 
