@@ -15,19 +15,19 @@ import (
 )
 
 var (
-	// CreateTableProcessListeningOnPortsStmt holds the create statement for table `process_listening_on_ports`.
-	CreateTableProcessListeningOnPortsStmt = &postgres.CreateStmts{
-		GormModel: (*ProcessListeningOnPorts)(nil),
+	// CreateTableListeningEndpointsStmt holds the create statement for table `listening_endpoints`.
+	CreateTableListeningEndpointsStmt = &postgres.CreateStmts{
+		GormModel: (*ListeningEndpoints)(nil),
 		Children:  []*postgres.CreateStmts{},
 	}
 
-	// ProcessListeningOnPortsSchema is the go schema for table `process_listening_on_ports`.
-	ProcessListeningOnPortsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("process_listening_on_ports")
+	// ListeningEndpointsSchema is the go schema for table `listening_endpoints`.
+	ListeningEndpointsSchema = func() *walker.Schema {
+		schema := GetSchemaForTable("listening_endpoints")
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ProcessListeningOnPortStorage)(nil)), "process_listening_on_ports")
+		schema = walker.Walk(reflect.TypeOf((*storage.ProcessListeningOnPortStorage)(nil)), "listening_endpoints")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ProcessIndicator": ProcessIndicatorsSchema,
 			"storage.Deployment":       DeploymentsSchema,
@@ -37,23 +37,23 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_LISTENING_ON_PORT, "processlisteningonportstorage", (*storage.ProcessListeningOnPortStorage)(nil)))
-		RegisterTable(schema, CreateTableProcessListeningOnPortsStmt)
+		RegisterTable(schema, CreateTableListeningEndpointsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_LISTENING_ON_PORT, schema)
 		return schema
 	}()
 )
 
 const (
-	ProcessListeningOnPortsTableName = "process_listening_on_ports"
+	ListeningEndpointsTableName = "listening_endpoints"
 )
 
-// ProcessListeningOnPorts holds the Gorm model for Postgres table `process_listening_on_ports`.
-type ProcessListeningOnPorts struct {
+// ListeningEndpoints holds the Gorm model for Postgres table `listening_endpoints`.
+type ListeningEndpoints struct {
 	Id                 string             `gorm:"column:id;type:uuid;primaryKey"`
 	Port               uint32             `gorm:"column:port;type:bigint"`
 	Protocol           storage.L4Protocol `gorm:"column:protocol;type:integer"`
-	ProcessIndicatorId string             `gorm:"column:processindicatorid;type:uuid;index:processlisteningonports_processindicatorid,type:btree"`
-	Closed             bool               `gorm:"column:closed;type:bool;index:processlisteningonports_closed,type:btree"`
-	DeploymentId       string             `gorm:"column:deploymentid;type:uuid;index:processlisteningonports_deploymentid,type:btree"`
+	ProcessIndicatorId string             `gorm:"column:processindicatorid;type:uuid;index:listeningendpoints_processindicatorid,type:btree"`
+	Closed             bool               `gorm:"column:closed;type:bool;index:listeningendpoints_closed,type:btree"`
+	DeploymentId       string             `gorm:"column:deploymentid;type:uuid;index:listeningendpoints_deploymentid,type:btree"`
 	Serialized         []byte             `gorm:"column:serialized;type:bytea"`
 }
