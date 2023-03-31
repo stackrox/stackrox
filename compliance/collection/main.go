@@ -300,7 +300,6 @@ func main() {
 	defer close(sensorC)
 	go manageStream(ctx, cli, &stoppedSig, sensorC)
 
-	// TODO(ROX-13935): Remove FakeNodeInventory and its FF
 	if env.RHCOSNodeScanning.BooleanSetting() && nodeInventoryClient != nil {
 		i := intervals.NewNodeScanIntervalFromEnv()
 		nodeInventoriesC := manageNodeScanLoop(ctx, i, nodeInventoryClient)
