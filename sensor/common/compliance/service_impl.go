@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/sync"
@@ -145,7 +145,7 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			s.auditEvents <- t.AuditEvents
 			s.auditLogCollectionManager.AuditMessagesChan() <- msg
 		case *sensor.MsgFromCompliance_NodeInventory:
-			if features.RHCOSNodeScanning.Enabled() {
+			if env.RHCOSNodeScanning.BooleanSetting() {
 				s.nodeInventories <- t.NodeInventory
 			}
 		}

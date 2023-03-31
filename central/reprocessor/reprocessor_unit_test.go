@@ -9,7 +9,7 @@ import (
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 )
 
@@ -69,7 +69,7 @@ func Test_loopImpl_reprocessNode(t *testing.T) {
 		},
 	}
 	t.Setenv("ROX_RHCOS_NODE_SCANNING", "true")
-	if !features.RHCOSNodeScanning.Enabled() {
+	if !env.RHCOSNodeScanning.BooleanSetting() {
 		t.Log("Assuming this is a release build, so skipping due to ROX_RHCOS_NODE_SCANNING=false")
 		return
 	}
