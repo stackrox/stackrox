@@ -126,8 +126,9 @@ outer:
 
 			// If cluster local scan is rate-limited, backoff and try again
 			if errors.Is(err, scan.ErrTooManyParallelScans) {
-				log.Debugf("local scan rate limited, backing off... %q", req.containerImage.GetName().GetFullName())
-				time.Sleep(eb.NextBackOff())
+				dur := eb.NextBackOff()
+				log.Debugf("local scan rate limited, backing off for %q: %q", dur, req.containerImage.GetName().GetFullName())
+				time.Sleep(dur)
 				continue outer
 			}
 
