@@ -70,6 +70,8 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 	// so we determine it here.
 	// If Sensor's registry store has an entry for the given image's registry,
 	// it is considered cluster-local.
+	// This is used to determine that an image is from an OCP internal registry and
+	// should not be sent to central for scanning
 	req.Image.IsClusterLocal = s.registryStore.HasRegistryForImage(req.GetImage().GetName())
 
 	// Ask Central to scan the image if the image is not internal and local scanning is not forced
@@ -92,7 +94,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 		img, err = s.localScan.EnrichLocalImage(ctx, s.centralClient, req.GetImage())
 	} else {
 		// ForceLocalImageScanning must be true
-		img, err = s.localScan.EnrichLocalImageInNamespace(ctx, s.centralClient, req.GetImage(), req.GetDeployment().GetNamespace())
+		img, err = s.localScan.EnrichLocalImageInNamespace(ctx, s.centralClient, req.GetImage(), req.GetNamespace())
 	}
 
 	if err != nil {

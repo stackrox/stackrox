@@ -336,8 +336,7 @@ func TestPopulateImageMetadata(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			registryStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
 			if c.isClusterLocal {
-				err := registryStore.UpsertRegistry(context.Background(), "testdev", "image-registry.openshift-image-registry.svc:5000", config.DockerConfigEntry{})
-				require.NoError(t, err)
+				require.NoError(t, registryStore.UpsertRegistry(context.Background(), "testdev", "image-registry.openshift-image-registry.svc:5000", config.DockerConfigEntry{}))
 			}
 
 			wrap := deploymentWrap{

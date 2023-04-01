@@ -80,7 +80,7 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 	resp, err := m.client.GetImage(ctx, &sensor.GetImageRequest{
 		Image:      img,
 		ScanInline: s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
-		Deployment: deployment,
+		Namespace:  deployment.GetNamespace(),
 	})
 	if err != nil {
 		return nil, err

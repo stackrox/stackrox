@@ -382,19 +382,23 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	defer s.internalScanSemaphore.Release(1)
 
-	hasErrors := false
+	var hasErrors bool
 	if request.Error != "" {
+		// If errors occurred we continue processing so that the failed image scan may be saved in
+		// the central datastore. Without this users would not have an indication that scans from
+		// secured clusters are failing
 		hasErrors = true
 		log.Infof("received image enrichment request with errors %q: %v", request.GetImageName().GetFullName(), request.GetError())
 	}
 
 	var imgExists bool
+	var existingImg *storage.Image
 	forceSigVerificationUpdate := true
 	forceScanUpdate := true
 	imgID := request.GetImageId()
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the images.
 	if imgID != "" {
-		existingImg, exists, err := s.datastore.GetImage(ctx, imgID)
+		existingImg, imgExists, err = s.datastore.GetImage(ctx, imgID)
 		if err != nil {
 			return nil, err
 		}
@@ -405,7 +409,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		// enrichment pipeline to ensure we do not return stale data. Only do this when the image signature verification
 		// feature is enabled. If no verification result is given, we can assume that the image doesn't have any
 		// signatures associated with it.
-		if exists && len(existingImg.GetSignatureVerificationData().GetResults()) > 0 {
+		if imgExists && len(existingImg.GetSignatureVerificationData().GetResults()) > 0 {
 			// For now, all verification results within the signature verification data will have approximately the same
 			// time, their margin being ns.
 			verificationTime := existingImg.GetSignatureVerificationData().GetResults()[0].GetVerificationTime()
@@ -418,12 +422,8 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 		// If the image exists and scan / signature verification results do not need an update yet, return it.
 		// Otherwise, reprocess the image.
-		if exists && !forceScanUpdate && !forceSigVerificationUpdate {
+		if imgExists && !forceScanUpdate && !forceSigVerificationUpdate {
 			return internalScanRespFromImage(existingImg), nil
-		}
-
-		if exists {
-			imgExists = true
 		}
 	}
 

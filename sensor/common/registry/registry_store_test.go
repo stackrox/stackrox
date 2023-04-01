@@ -7,6 +7,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
+	"github.com/stackrox/rox/pkg/registries/docker"
+	"github.com/stackrox/rox/pkg/registries/rhel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -150,5 +152,13 @@ func TestRegistryStore_GlobalStoreFailUpsertCheckTLS(t *testing.T) {
 	require.Error(t, regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce))
 
 	// sanity check
-	assert.Nil(t, regStore.globalRegistries, "global store should not be populated")
+	assert.True(t, regStore.globalRegistries.IsEmpty(), "global store should not be populated")
+}
+
+func TestRegistryStore_CreateImageIntegrationType(t *testing.T) {
+	ii := createImageIntegration("http://example.com", config.DockerConfigEntry{}, false)
+	assert.Equal(t, ii.Type, docker.GenericDockerRegistryType)
+
+	ii = createImageIntegration("https://registry.redhat.io", config.DockerConfigEntry{}, true)
+	assert.Equal(t, ii.Type, rhel.RedHatRegistryType)
 }

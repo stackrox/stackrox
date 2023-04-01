@@ -30,8 +30,6 @@ import (
 )
 
 const (
-	redhatRegistryEndpoint = "registry.redhat.io"
-
 	saAnnotation = "kubernetes.io/service-account.name"
 	defaultSA    = "default"
 
@@ -155,7 +153,7 @@ func deriveIDFromSecret(secret *v1.Secret, registry string) (string, error) {
 // registry URL and docker config.
 func DockerConfigToImageIntegration(secret *v1.Secret, registry string, dce config.DockerConfigEntry) (*storage.ImageIntegration, error) {
 	registryType := docker.GenericDockerRegistryType
-	if urlfmt.TrimHTTPPrefixes(registry) == redhatRegistryEndpoint {
+	if rhel.RedHatRegistryEndpoints[urlfmt.TrimHTTPPrefixes(registry)] {
 		registryType = rhel.RedHatRegistryType
 	}
 
@@ -253,13 +251,12 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	registries := make([]*storage.ImagePullSecret_Registry, 0, len(dockerConfig))
 
 	saName := secret.GetAnnotations()[saAnnotation]
-	isGlobalPullSecret := secret.GetNamespace() == openshiftConfigNamespace && secret.GetName() == openshiftConfigPullSecret
-
 	// In Kubernetes, the `default` service account always exists in each namespace (it is recreated upon deletion).
 	// The default service account always contains an API token.
 	// In OpenShift, the default service account also contains credentials for the
 	// OpenShift Container Registry, which is an internal image registry.
 	fromDefaultSA := saName == defaultSA
+	isGlobalPullSecret := secret.GetNamespace() == openshiftConfigNamespace && secret.GetName() == openshiftConfigPullSecret
 
 	newIntegrationSet := set.NewStringSet()
 	for registry, dce := range dockerConfig {
@@ -290,11 +287,14 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 
 			if env.ForceLocalImageScanning.BooleanSetting() {
 				// Store registry secrets to enable downstream scanning of all images
-
-				// TODO: a namespace may contain multiple .dockerconfig* secrets for the same registry (not handled
+				//
+				// This is only triggered when saName is empty so that we do not overwrite entries inserted
+				// by the 'if fromDefaultSA' block above, these default, builder, deployer, etc. service account secrets
+				// contain entries for the same registries, and therefore would overwrite each other.
+				//
+				// TODO(ROX-16077): a namespace may contain multiple .dockerconfig* secrets for the same registry (not handled
 				// today). To handle, change upsert to key off of more than just namespace+registry endpoint, such
-				// as namespace + secret name.  This logic is temporary and will be removed in a future release when registry
-				// integrations are used instead of pull secrets, being tracked by ROX-16077
+				// as namespace + secret name + registry.
 				var err error
 				if isGlobalPullSecret {
 					err = s.regStore.UpsertGlobalRegistry(context.Background(), registry, dce)

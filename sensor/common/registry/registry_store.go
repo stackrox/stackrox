@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
 	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
+	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheck"
@@ -27,7 +28,8 @@ type Store struct {
 	// store maps a namespace to the names of registries accessible from within the namespace.
 	store map[string]registries.Set
 
-	// globalRegistries holds registries global to openshift (applies to multiple namespaces)
+	// globalRegistries holds registries that are not bound to a namespace and can be used
+	// for processing images from any namespace, example: the OCP Global Pull Secret
 	globalRegistries registries.Set
 
 	mutex sync.RWMutex
@@ -43,13 +45,18 @@ type CheckTLS func(ctx context.Context, origAddr string) (bool, error)
 // The passed-in CheckTLS is used to check if a registry uses TLS.
 // If checkTLS is nil, tlscheck.CheckTLS is used by default.
 func NewRegistryStore(checkTLS CheckTLS) *Store {
-	store := &Store{
-		factory: registries.NewFactory(registries.FactoryOptions{
-			CreatorFuncs: []registries.CreatorWrapper{dockerFactory.Creator},
-		}),
-		store: make(map[string]registries.Set),
+	factory := registries.NewFactory(registries.FactoryOptions{
+		CreatorFuncs: []registries.CreatorWrapper{
+			dockerFactory.Creator,
+			rhelFactory.Creator,
+		},
+	})
 
-		checkTLS: tlscheck.CheckTLS,
+	store := &Store{
+		factory:          factory,
+		store:            make(map[string]registries.Set),
+		checkTLS:         tlscheck.CheckTLS,
+		globalRegistries: registries.NewSet(factory),
 	}
 
 	if checkTLS != nil {
@@ -73,10 +80,15 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 }
 
 func createImageIntegration(registry string, dce config.DockerConfigEntry, secure bool) *storage.ImageIntegration {
+	registryType := dockerFactory.GenericDockerRegistryType
+	if rhelFactory.RedHatRegistryEndpoints[urlfmt.TrimHTTPPrefixes(registry)] {
+		registryType = rhelFactory.RedHatRegistryType
+	}
+
 	return &storage.ImageIntegration{
 		Id:         registry,
 		Name:       registry,
-		Type:       "docker",
+		Type:       registryType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
@@ -106,7 +118,7 @@ func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string,
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
 	}
 
-	log.Debugf("upserted registry %q for namespace %q into store", registry, namespace)
+	log.Debugf("Upserted registry %q for namespace %q into store", registry, namespace)
 
 	return nil
 }
@@ -156,19 +168,6 @@ func (rs *Store) GetRegistryForImageInNamespace(image *storage.ImageName, namesp
 	return nil, errors.Errorf("unknown image registry: %q", reg)
 }
 
-// getOrInitGlobalRegistries will return global registries if existing, or create a new set
-// mimics `getRegistries`
-func (rs *Store) getOrInitGlobalRegistries() registries.Set {
-	rs.mutex.Lock()
-	defer rs.mutex.Unlock()
-
-	if rs.globalRegistries == nil {
-		rs.globalRegistries = registries.NewSet(rs.factory)
-	}
-
-	return rs.globalRegistries
-}
-
 // UpsertGlobalRegistry will store a new registry with the given credentials into the global registry store
 func (rs *Store) UpsertGlobalRegistry(ctx context.Context, registry string, dce config.DockerConfigEntry) error {
 	secure, err := rs.checkTLS(ctx, registry)
@@ -176,13 +175,12 @@ func (rs *Store) UpsertGlobalRegistry(ctx context.Context, registry string, dce 
 		return errors.Wrapf(err, "unable to check TLS for registry %q", registry)
 	}
 
-	regs := rs.getOrInitGlobalRegistries()
-	err = regs.UpdateImageIntegration(createImageIntegration(registry, dce, secure))
+	err = rs.globalRegistries.UpdateImageIntegration(createImageIntegration(registry, dce, secure))
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
 	}
 
-	log.Debugf("upserted global registry %q into store", registry)
+	log.Debugf("Upserted global registry %q into store", registry)
 
 	return nil
 }
