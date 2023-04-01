@@ -64,6 +64,9 @@ func dial(endpoint string) (*Client, error) {
 func (c *Client) GetImageAnalysis(ctx context.Context, image *storage.Image, cfg *types.Config) (*scannerV1.GetImageComponentsResponse, error) {
 	name := image.GetName().GetFullName()
 
+	// The WaitForReady option will cause invocations to block (until server ready or ctx done/expires)
+	// This was added so that on fresh install of sensor when scanner is not ready yet, local scans will
+	// not all fail and have to wait for next reprocess to succeed
 	resp, err := c.client.GetImageComponents(ctx, &scannerV1.GetImageComponentsRequest{
 		Image: utils.GetFullyQualifiedFullName(image),
 		Registry: &scannerV1.RegistryData{
