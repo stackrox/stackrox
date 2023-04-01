@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/declarativeconfig/utils"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/set"
@@ -45,7 +46,7 @@ func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsT
 	permissionSetsToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	permissionSets, err := u.roleDS.GetPermissionSetsFiltered(ctx, func(permissionSet *storage.PermissionSet) bool {
-		return utils.IsDeclarativeOrigin(permissionSet.GetTraits().GetOrigin()) &&
+		return declarativeconfig.IsDeclarativeOrigin(permissionSet.GetTraits().GetOrigin()) &&
 			!permissionSetsToSkip.Contains(permissionSet.GetId())
 	})
 	if err != nil {

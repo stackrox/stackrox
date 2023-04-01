@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/declarativeconfig/utils"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/set"
@@ -45,7 +46,7 @@ func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToS
 	resourcesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	scopes, err := u.roleDS.GetAccessScopesFiltered(ctx, func(accessScope *storage.SimpleAccessScope) bool {
-		return utils.IsDeclarativeOrigin(accessScope.GetTraits().GetOrigin()) &&
+		return declarativeconfig.IsDeclarativeOrigin(accessScope.GetTraits().GetOrigin()) &&
 			!resourcesToSkip.Contains(accessScope.GetId())
 	})
 	if err != nil {

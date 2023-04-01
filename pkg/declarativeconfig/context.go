@@ -24,7 +24,11 @@ type ResourceWithTraits interface {
 // CanModifyResource returns whether context holder is allowed to modify resource.
 func CanModifyResource(ctx context.Context, resource ResourceWithTraits) bool {
 	if ctx.Value(originCheckerKey{}) == allowOnlyDeclarativeOperations {
-		return resource.GetTraits().GetOrigin() == storage.Traits_DECLARATIVE
+		return IsDeclarativeOrigin(resource.GetTraits().GetOrigin())
 	}
 	return resource.GetTraits().GetOrigin() == storage.Traits_IMPERATIVE
+}
+
+func IsDeclarativeOrigin(origin storage.Traits_Origin) bool {
+	return origin == storage.Traits_DECLARATIVE || origin == storage.Traits_DECLARATIVE_ORPHANED
 }

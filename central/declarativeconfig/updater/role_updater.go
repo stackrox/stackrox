@@ -11,6 +11,7 @@ import (
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/set"
@@ -48,7 +49,7 @@ func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...
 	rolesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	roles, err := u.roleDS.GetRolesFiltered(ctx, func(role *storage.Role) bool {
-		return utils.IsDeclarativeOrigin(role.GetTraits().GetOrigin()) &&
+		return declarativeconfig.IsDeclarativeOrigin(role.GetTraits().GetOrigin()) &&
 			!rolesToSkip.Contains(role.GetName())
 	})
 	if err != nil {

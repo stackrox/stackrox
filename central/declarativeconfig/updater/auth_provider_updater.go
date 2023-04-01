@@ -12,6 +12,7 @@ import (
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
@@ -65,7 +66,7 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 	authProviderIDsToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	authProviders, err := u.authProviderDS.GetAuthProvidersFiltered(ctx, func(authProvider *storage.AuthProvider) bool {
-		return utils.IsDeclarativeOrigin(authProvider.GetTraits().GetOrigin()) &&
+		return declarativeconfig.IsDeclarativeOrigin(authProvider.GetTraits().GetOrigin()) &&
 			!authProviderIDsToSkip.Contains(authProvider.GetId())
 	})
 	if err != nil {
