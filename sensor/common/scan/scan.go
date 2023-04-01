@@ -14,10 +14,8 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/docker"
-	"github.com/stackrox/rox/pkg/registries/rhel"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/signatures"
-	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
@@ -36,8 +34,6 @@ var (
 	// ErrTooManyParallelScans indicates there are too many scans in progress and wait time
 	// has been exceeded
 	ErrTooManyParallelScans = errors.New("too many parallel scans to local scanner")
-
-	redhatRegistryEndpoint = "registry.redhat.io"
 
 	log = logging.LoggerForModule()
 )
@@ -278,15 +274,10 @@ func createNoAuthImageRegistry(imgName *storage.ImageName) (registryTypes.Regist
 		return nil, errors.New("no image registry provided, nothing to do")
 	}
 
-	registryType := docker.GenericDockerRegistryType
-	if urlfmt.TrimHTTPPrefixes(registry) == redhatRegistryEndpoint {
-		registryType = rhel.RedHatRegistryType
-	}
-
 	reg, err := docker.NewDockerRegistry(&storage.ImageIntegration{
 		Id:         registry,
 		Name:       registry,
-		Type:       registryType,
+		Type:       docker.GenericDockerRegistryType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
