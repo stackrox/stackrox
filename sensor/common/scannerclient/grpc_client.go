@@ -72,7 +72,7 @@ func (c *Client) GetImageAnalysis(ctx context.Context, image *storage.Image, cfg
 			Password: cfg.Password,
 			Insecure: cfg.Insecure,
 		},
-	})
+	}, grpc.WaitForReady(true))
 	if err != nil {
 		log.Debugf("Unable to get image components from local Scanner for image %s: %v", name, err)
 		return nil, errors.Wrap(err, "getting image components from scanner")
