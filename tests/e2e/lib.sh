@@ -96,7 +96,7 @@ export_test_environment() {
     ci_export ROX_SYSTEM_HEALTH_PF "${ROX_SYSTEM_HEALTH_PF:-true}"
     ci_export ROX_SYSLOG_EXTRA_FIELDS "${ROX_SYSLOG_EXTRA_FIELDS:-true}"
     ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
-    ci_export ROX_PROCESSES_LISTENING_ON_PORT "${ROX_PROCESSES_LISTENING_ON_PORT:-true}"
+    ci_export ROX_PROCESSES_LISTENING_ON_PORT "${ROX_PROCESSES_LISTENING_ON_PORT:-false}"
 
     if [[ -z "${BUILD_TAG:-}" ]]; then
         # TODO(ROX-16008): Remove this once the declarative config feature flag is enabled by default.
@@ -178,7 +178,7 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_POSTGRES_DATASTORE'
     customize_envVars+=$'\n        value: "'"${ROX_POSTGRES_DATASTORE:-false}"'"'
     customize_envVars+=$'\n      - name: ROX_PROCESSES_LISTENING_ON_PORT'
-    customize_envVars+=$'\n        value: "'"${ROX_PROCESSES_LISTENING_ON_PORT:-true}"'"'
+    customize_envVars+=$'\n        value: "'"${ROX_PROCESSES_LISTENING_ON_PORT:-false}"'"'
     customize_envVars+=$'\n      - name: ROX_DECLARATIVE_CONFIGURATION'
     customize_envVars+=$'\n        value: "'"${ROX_DECLARATIVE_CONFIGURATION:-true}"'"'
 
