@@ -110,7 +110,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 		regs = append(regs, reg)
 	}
 
-	log.Debugf("attempting image enrich for %q in namespace %q with %v regs", ci.GetName().GetFullName(), namespace, len(regs))
+	log.Debugf("Attempting image enrich for %q in namespace %q with %v regs", ci.GetName().GetFullName(), namespace, len(regs))
 
 	return s.EnrichLocalImageFromRegistry(ctx, centralClient, ci, regs)
 }
@@ -138,7 +138,7 @@ func (s *LocalScan) EnrichLocalImageFromRegistry(ctx context.Context, centralCli
 	}
 	defer s.scanSemaphore.Release(1)
 
-	log.Debugf("enriching image locally %q numRegs %v", ci.GetName().GetFullName(), len(registries))
+	log.Debugf("Enriching image locally %q numRegs %v", ci.GetName().GetFullName(), len(registries))
 
 	if len(registries) == 0 {
 		// no registries provided, try with no auth
@@ -176,12 +176,12 @@ func (s *LocalScan) EnrichLocalImageFromRegistry(ctx context.Context, centralCli
 		Error:          errorList.String(),
 	})
 	if err != nil {
-		log.Debugf("unable to enrich image %q: %v", image.GetName(), err)
+		log.Debugf("Unable to enrich image %q: %v", image.GetName().GetFullName(), err)
 		return nil, errors.Wrapf(err, "enriching image %q via central", image.GetName())
 	}
 
 	if errorList.Empty() {
-		log.Debugf("retrieved image enrichment results for %q", image.GetName())
+		log.Debugf("Retrieved image enrichment results for %q with id %q", image.GetName().GetFullName(), image.GetId())
 	}
 
 	return centralResp.GetImage(), errorList.ToError()
@@ -194,7 +194,7 @@ func (s *LocalScan) enrichImageWithMetadata(errorList *errorhelpers.ErrorList, r
 	for _, reg := range registries {
 		metadata, err := reg.Metadata(image)
 		if err != nil {
-			log.Debugf("failed fetching metadata for image %q: %v", image.GetName(), err)
+			log.Debugf("Failed fetching metadata for image %q with id %q: %v", image.GetName().GetFullName(), image.GetId(), err)
 			errs = append(errs, err)
 			continue
 		}
@@ -203,7 +203,7 @@ func (s *LocalScan) enrichImageWithMetadata(errorList *errorhelpers.ErrorList, r
 		// image, the signature will not be attempted to be fetched.
 		// We don't need to do anything on central side, as there the image will correctly have the metadata assigned.
 		image.Metadata = metadata
-		log.Debugf("received metadata for image %q: %v", image.GetName(), metadata)
+		log.Debugf("Received metadata for image %q with id %q: %v", image.GetName().GetFullName(), image.GetId(), metadata)
 		return reg
 	}
 
@@ -222,7 +222,7 @@ func (s *LocalScan) fetchImageAnalysis(ctx context.Context, errorList *errorhelp
 	// Scan the image via local scanner.
 	scannerResp, err := s.scanImg(ctx, image, registry, s.scannerClientSingleton())
 	if err != nil {
-		log.Debugf("Scan for image %q failed: %v", image.GetName(), err)
+		log.Debugf("Scan for image %q with id %v failed: %v", image.GetName().GetFullName(), image.GetId(), err)
 		image.Notes = append(image.Notes, storage.Image_MISSING_SCAN_DATA)
 		errorList.AddError(errors.Wrapf(err, "scanning image %q locally", image.GetName()))
 		return nil
@@ -241,7 +241,7 @@ func (s *LocalScan) fetchSignatures(ctx context.Context, errorList *errorhelpers
 	// Fetch signatures from cluster-local registry.
 	sigs, err := s.fetchSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image, image.GetName().GetFullName(), registry)
 	if err != nil {
-		log.Debugf("Failed fetching signatures for image %q: %v", image.GetName(), err)
+		log.Debugf("Failed fetching signatures for image %q: %v", image.GetName().GetFullName(), err)
 		image.Notes = append(image.Notes, storage.Image_MISSING_SIGNATURE)
 		errorList.AddError(errors.Wrapf(err, "fetching signature for image %q from registry %q", image.GetName(), registry.Name()))
 		return nil
