@@ -62,8 +62,8 @@ div#topology-resize-panel table td {
     fill: #ffffff;
 }
 
-.derived-namespace text, .derived-namespace .pf-topology__node__action-icon svg {
-    fill: #000000;
+.derived-namespace > g > text, .derived-namespace .pf-topology__node__action-icon svg {
+    fill: #000000
 }
 
 .derived-namespace.pf-m-selected text, .derived-namespace.pf-m-selected .pf-topology__node__action-icon svg {
@@ -84,4 +84,8 @@ div#topology-resize-panel table td {
     padding-top: 0;
     padding-bottom: 0;
     min-width: 220px;
+}
+
+.pf-topology__node__label__badge {
+    fill: #ffffff
 }
