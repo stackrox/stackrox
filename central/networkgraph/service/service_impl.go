@@ -348,7 +348,7 @@ func (s *serviceImpl) enhanceWithNetworkPolicyIsolationInfo(ctx context.Context,
 		})
 	}
 
-	matcher, err := deploymentMatcher.BuildMatcher(ctx, s.networkPolicy, clusterNamespaceContext.AsSlice())
+	matcher, err := deploymentMatcher.BuildMatcher(ctx, s.networkPolicy, clusterNamespaceContext)
 	if err != nil {
 		return errors.Wrap(err, "building deployment matcher")
 	}

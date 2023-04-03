@@ -7,6 +7,7 @@ import (
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/labels"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // IsolationDetails represents the isolation level of a deployment.
@@ -46,7 +47,7 @@ type policyMatcherImpl struct {
 }
 
 // BuildMatcher creates a matcher with pre-loaded Network Policies from a set of ClusterNamespace filter.
-func BuildMatcher(ctx context.Context, store networkPolicyDS.DataStore, namespaceFilter []ClusterNamespace) (Matcher, error) {
+func BuildMatcher(ctx context.Context, store networkPolicyDS.DataStore, namespaceFilter set.Set[ClusterNamespace]) (Matcher, error) {
 	netpolMap, err := buildNetworkPolicies(ctx, store, namespaceFilter)
 	if err != nil {
 		return nil, err
@@ -57,9 +58,9 @@ func BuildMatcher(ctx context.Context, store networkPolicyDS.DataStore, namespac
 	}, nil
 }
 
-func buildNetworkPolicies(ctx context.Context, store networkPolicyDS.DataStore, namespace []ClusterNamespace) (map[ClusterNamespace][]selectablePolicy, error) {
+func buildNetworkPolicies(ctx context.Context, store networkPolicyDS.DataStore, namespace set.Set[ClusterNamespace]) (map[ClusterNamespace][]selectablePolicy, error) {
 	result := map[ClusterNamespace][]selectablePolicy{}
-	for _, clusterNs := range namespace {
+	for clusterNs := range namespace {
 		policies, err := store.GetNetworkPolicies(ctx, clusterNs.Cluster, clusterNs.Namespace)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get policies for %v", clusterNs)
