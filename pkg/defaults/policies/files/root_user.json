@@ -13,6 +13,24 @@
   ],
   "exclusions": [
     {
+      "name": "Don't alert on deployment splunk-forwarder-operator in openshift-splunk-forwarder-operator namespace",
+      "deployment": {
+        "name": "splunk-forwarder-operator",
+        "scope": {
+          "namespace": "openshift-splunk-forwarder-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment openshift-controller-manager-operator in openshift-splunk-forwarder-operator namespace",
+      "deployment": {
+        "name": "openshift-controller-manager-operator",
+        "scope": {
+          "namespace": "openshift-splunk-forwarder-operator"
+        }
+      }
+    },
+    {
       "name": "Don't alert on openshift-backplane namespace",
       "deployment": {
         "scope": {

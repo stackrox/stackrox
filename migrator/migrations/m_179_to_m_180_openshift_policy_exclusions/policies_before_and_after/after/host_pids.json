@@ -12,10 +12,19 @@
   ],
   "exclusions": [
     {
+      "name": "Don't alert on deployment apiserver-watcher-* in kube-system namespace",
+      "deployment": {
+        "name": "apiserver-watcher-.*",
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
       "name": "Don't alert on deployment apiserver-watcher-* in openshift-kube-apiserver namespace",
       "deployment": {
+        "name": "apiserver-watcher-.*",
         "scope": {
-          "name": "apiserver-watcher-*",
           "namespace": "openshift-kube-apiserver"
         }
       }
@@ -42,7 +51,7 @@
       "deployment": {
         "name": "ovnkube-node",
         "scope": {
-          "namespace": "openshift-ovn-kubernetes "
+          "namespace": "openshift-ovn-kubernetes"
         }
       }
     },

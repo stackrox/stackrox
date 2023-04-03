@@ -12,6 +12,15 @@
   ],
   "exclusions": [
     {
+      "name": "Don't alert on deployment apiserver-watcher-* in kube-system namespace",
+      "deployment": {
+        "name": "apiserver-watcher-.*",
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
       "name": "Don't alert on deployment apiserver-watcher-* in openshift-kube-apiserver namespace",
       "deployment": {
         "name": "apiserver-watcher-.*",
