@@ -16,31 +16,6 @@ type generalQueryParser struct {
 	ExcludedFieldLabels set.StringSet
 }
 
-func splitQuery(query string) []string {
-	var pairs []string
-	var previousEnd, previousPlusIndex int
-	prevDoubleQuoteCount := 0
-	for i, rune := range query {
-		if rune == ':' && previousPlusIndex != 0 {
-			if previousEnd > previousPlusIndex {
-				continue
-			}
-
-			pairs = append(pairs, query[previousEnd:previousPlusIndex])
-			previousEnd = previousPlusIndex + 1
-			continue
-		}
-		if rune == '"' {
-			prevDoubleQuoteCount++
-		}
-		if rune == '+' && prevDoubleQuoteCount%2 == 0 {
-			previousPlusIndex = i
-		}
-	}
-	pairs = append(pairs, query[previousEnd:])
-	return pairs
-}
-
 func getFieldMap(query string) map[FieldLabel][]string {
 	pairs := splitQuery(query)
 

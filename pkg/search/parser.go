@@ -84,6 +84,31 @@ func GetFieldValueFromQuery(query string, label FieldLabel) (string, bool) {
 	return "", false
 }
 
+func splitQuery(query string) []string {
+	var pairs []string
+	var previousEnd, previousPlusIndex int
+	prevDoubleQuoteCount := 0
+	for i, rune := range query {
+		if rune == ':' && previousPlusIndex != 0 {
+			if previousEnd > previousPlusIndex {
+				continue
+			}
+
+			pairs = append(pairs, query[previousEnd:previousPlusIndex])
+			previousEnd = previousPlusIndex + 1
+			continue
+		}
+		if rune == '"' {
+			prevDoubleQuoteCount++
+		}
+		if rune == '+' && prevDoubleQuoteCount%2 == 0 {
+			previousPlusIndex = i
+		}
+	}
+	pairs = append(pairs, query[previousEnd:])
+	return pairs
+}
+
 // Extracts "key", "value1,value2" from a string in the format key:value1,value2
 func parsePair(pair string, allowEmpty bool) (key string, values string, valid bool) {
 	pair = strings.TrimSpace(pair)
