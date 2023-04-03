@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -69,6 +70,7 @@ func unmarshalDomain(iterator *gorocksdb.Iterator) (*storage.ComplianceDomain, e
 	if err := domain.Unmarshal(bytes); err != nil {
 		return nil, errors.Wrap(err, "unmarshalling compliance domain")
 	}
+	domain.Id = stringutils.GetAfterLast(string(iterator.Key().Data()), ":")
 	return &domain, nil
 }
 

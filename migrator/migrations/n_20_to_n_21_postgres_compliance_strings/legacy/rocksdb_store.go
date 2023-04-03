@@ -72,7 +72,7 @@ func (r *rocksdbStore) Walk(_ context.Context, fn func(obj *storage.ComplianceSt
 	return nil
 }
 
-func (r *rocksdbStore) createKay() []byte {
+func (r *rocksdbStore) createKey() []byte {
 	tsBytes := uuid.NewV4().Bytes()
 	// Invert the bits of each byte of the timestamp in order to have the most recent timestamp first
 	for i, tsByte := range tsBytes {
@@ -91,7 +91,7 @@ func (r *rocksdbStore) UpsertMany(_ context.Context, objs []*storage.ComplianceS
 	defer batch.Destroy()
 
 	for _, obj := range objs {
-		key := r.createKay()
+		key := r.createKey()
 		serialized, err := obj.Marshal()
 		if err != nil {
 			return errors.Wrap(err, "serializing results")
