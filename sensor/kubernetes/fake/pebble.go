@@ -5,6 +5,7 @@ import (
 
 	"github.com/cockroachdb/pebble"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -22,26 +23,50 @@ const (
 	networkPolicyPrefix  = "networkpolicies"
 )
 
-func (w *WorkloadManager) writeID(prefix, id string) error {
-	return w.db.Set([]byte(prefix+idSeparator+id), []byte{}, &pebble.WriteOptions{})
+func idOrNewUID(id string) types.UID {
+	if id != "" {
+		return types.UID(id)
+	}
+	return newUUID()
+}
+
+func getID(ids []string, idx int) string {
+	if len(ids) <= idx {
+		return ""
+	}
+	return ids[idx]
+}
+
+func getPebbleKey(prefix, id string) []byte {
+	return []byte(prefix + idSeparator + id)
+}
+
+func (w *WorkloadManager) writeID(prefix string, uid types.UID) {
+	if err := w.db.Set(getPebbleKey(prefix, string(uid)), []byte{}, pebble.Sync); err != nil {
+		log.Errorf("writing id: %s %s", prefix, uid)
+	}
+}
+
+func (w *WorkloadManager) deleteID(prefix string, uid types.UID) {
+	if err := w.db.Delete(getPebbleKey(prefix, string(uid)), pebble.Sync); err != nil {
+		log.Errorf("deleting id: %s %s", prefix, uid)
+	}
 }
 
 func (w *WorkloadManager) getIDsForPrefix(prefix string) []string {
-	it := w.db.NewIter(&pebble.IterOptions{
-		LowerBound: []byte(prefix),
-	})
+	it := w.db.NewIter(&pebble.IterOptions{})
+
+	prefixKey := getPebbleKey(prefix, "")
 	var ids []string
-	for it.Next() {
-		if err := it.Error(); err != nil {
-			log.Panicf("error iterating: %v", err)
-		}
-		if !bytes.HasPrefix(it.Key(), []byte(prefix)) {
-			break
-		}
+	for it.SeekGE(prefixKey); it.Valid() && bytes.HasPrefix(it.Key(), prefixKey); it.Next() {
 		ids = append(ids, stringutils.GetAfter(string(it.Key()), idSeparator))
 	}
-	if err := it.Close(); err != nil {
-		log.Panicf("could not close iterator: %v", err)
+	if err := it.Error(); err != nil {
+		log.Panicf("error in iterator: %v", err)
 	}
+	if err := it.Close(); err != nil {
+		log.Panicf("error closing iterator: %v", err)
+	}
+	log.Infof("%s: %+v", prefix, len(ids))
 	return ids
 }

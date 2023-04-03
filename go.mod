@@ -361,11 +361,12 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
+require github.com/cockroachdb/pebble v0.0.0-20230330185756-53a50a04c2ef
+
 require (
 	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/cockroachdb/errors v1.8.1 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20190617123548-eb05cc24525f // indirect
-	github.com/cockroachdb/pebble v0.0.0-20230330185756-53a50a04c2ef // indirect
 	github.com/cockroachdb/redact v1.0.8 // indirect
 	github.com/cockroachdb/sentry-go v0.6.1-cockroachdb.2 // indirect
 	github.com/kr/pretty v0.3.1 // indirect

@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/apimachinery/pkg/watch"
 	fakediscovery "k8s.io/client-go/discovery/fake"
@@ -126,7 +125,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 		log.Panicf("could not unmarshal workload from file due to error (%v): %s", err, data)
 	}
 
-	db, err := pebble.Open("/tmp/pebble.db", &pebble.Options{})
+	db, err := pebble.Open("/var/cache/stackrox/pebble.db", &pebble.Options{})
 	if err != nil {
 		log.Panicf("could not open id storage")
 	}
@@ -169,28 +168,27 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		numNamespaces = num
 	}
 	for _, n := range getNamespaces(numNamespaces, w.getIDsForPrefix(namespacePrefix)) {
+		w.writeID(namespacePrefix, n.UID)
 		objects = append(objects, n)
 	}
 
 	nodes := w.getNodes(w.workload.NodeWorkload, w.getIDsForPrefix(nodePrefix))
 	for _, node := range nodes {
+		w.writeID(nodePrefix, node.UID)
 		objects = append(objects, node)
 	}
 
 	labelsPool.matchLabels = w.workload.MatchLabels
 
-	objects = append(objects, getRBAC(w.workload.RBACWorkload, w.getIDsForPrefix(serviceAccountPrefix), w.getIDsForPrefix(rolesPrefix), w.getIDsForPrefix(rolebindingsPrefix))...)
+	objects = append(objects, w.getRBAC(w.workload.RBACWorkload, w.getIDsForPrefix(serviceAccountPrefix), w.getIDsForPrefix(rolesPrefix), w.getIDsForPrefix(rolebindingsPrefix))...)
 	var resources []*deploymentResourcesToBeManaged
 
 	deploymentIDs := w.getIDsForPrefix(deploymentPrefix)
+	replicaSetIDs := w.getIDsForPrefix(replicaSetPrefix)
+	podIDs := w.getIDsForPrefix(podPrefix)
 	for _, deploymentWorkload := range w.workload.DeploymentWorkload {
 		for i := 0; i < deploymentWorkload.NumDeployments; i++ {
-			var resource *deploymentResourcesToBeManaged
-			if len(deploymentIDs) < i {
-				resource = w.getDeployment(deploymentWorkload, deploymentIDs[i])
-			} else {
-				resource = w.getDeployment(deploymentWorkload, "")
-			}
+			resource := w.getDeployment(deploymentWorkload, i, deploymentIDs, replicaSetIDs, podIDs)
 			resources = append(resources, resource)
 
 			objects = append(objects, resource.deployment, resource.replicaSet)
@@ -200,15 +198,13 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		}
 	}
 
-	objects = append(objects, getService(w.workload.ServiceWorkload, w.getIDsForPrefix(servicePrefix))...)
+	objects = append(objects, w.getServices(w.workload.ServiceWorkload, w.getIDsForPrefix(servicePrefix))...)
 	var npResources []*networkPolicyToBeManaged
 	networkPolicyIDs := w.getIDsForPrefix(networkPolicyPrefix)
 	for _, npWorkload := range w.workload.NetworkPolicyWorkload {
 		for i := 0; i < npWorkload.NumNetworkPolicies; i++ {
-			resource := w.getNetworkPolicy(npWorkload)
-			if i < len(networkPolicyIDs) {
-				resource.networkPolicy.UID = types.UID(networkPolicyIDs[i])
-			}
+			resource := w.getNetworkPolicy(npWorkload, getID(networkPolicyIDs, i))
+			w.writeID(networkPolicyPrefix, resource.networkPolicy.UID)
 			npResources = append(npResources, resource)
 
 			objects = append(objects, resource.networkPolicy)
