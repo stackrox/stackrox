@@ -108,6 +108,7 @@ func (e *ErrorList) ErrorStrings() []string {
 	return errors
 }
 
+// Errors returns the underlying errors in the error list
 func (e *ErrorList) Errors() []error {
 	return e.errors
 }
