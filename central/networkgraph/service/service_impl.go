@@ -319,7 +319,7 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 	if request.IncludePolicies {
 		err := s.enhanceWithNetworkPolicyIsolationInfo(ctx, graph)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to enhance graph nodes with Network Policy information")
 		}
 	}
 
@@ -334,9 +334,10 @@ func (s *serviceImpl) enhanceWithNetworkPolicyIsolationInfo(ctx context.Context,
 		}
 	}
 
+	// TODO(ROX-16312): Change this to a custom query once Postgres ships
 	deploymentObjects, err := s.deployments.GetDeployments(ctx, deploymentIds)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "fetching deployment")
 	}
 
 	clusterNamespaceContext := set.NewSet[deploymentMatcher.ClusterNamespace]()
@@ -349,7 +350,7 @@ func (s *serviceImpl) enhanceWithNetworkPolicyIsolationInfo(ctx context.Context,
 
 	matcher, err := deploymentMatcher.BuildMatcher(ctx, s.networkPolicy, clusterNamespaceContext.AsSlice())
 	if err != nil {
-		return err
+		return errors.Wrap(err, "building deployment matcher")
 	}
 
 	isolationDetails := make(map[string]deploymentMatcher.IsolationDetails, len(deploymentObjects))
@@ -362,13 +363,13 @@ func (s *serviceImpl) enhanceWithNetworkPolicyIsolationInfo(ctx context.Context,
 		}
 	}
 
-	for idx, node := range graph.Nodes {
+	for _, node := range graph.Nodes {
 		if node.GetEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
 			deploymentID := node.GetEntity().GetId()
 			if isolationDetail, ok := isolationDetails[deploymentID]; ok {
-				graph.Nodes[idx].NonIsolatedEgress = !isolationDetail.EgressIsolated
-				graph.Nodes[idx].NonIsolatedIngress = !isolationDetail.IngressIsolated
-				graph.Nodes[idx].PolicyIds = isolationDetail.PolicyIDs
+				node.NonIsolatedEgress = !isolationDetail.EgressIsolated
+				node.NonIsolatedIngress = !isolationDetail.IngressIsolated
+				node.PolicyIds = isolationDetail.PolicyIDs
 			}
 		}
 	}

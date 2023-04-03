@@ -65,7 +65,6 @@ func buildNetworkPolicies(ctx context.Context, store networkPolicyDS.DataStore, 
 			return nil, errors.Wrapf(err, "failed to get policies for %v", clusterNs)
 		}
 
-		result[clusterNs] = []selectablePolicy{}
 		for _, policy := range policies {
 			selector, err := labels.CompileSelector(policy.GetSpec().GetPodSelector())
 			if err != nil {
@@ -89,7 +88,6 @@ func (m *policyMatcherImpl) GetIsolationDetails(resource LabeledResource) Isolat
 		Namespace: resource.GetNamespace(),
 		Cluster:   resource.GetClusterId(),
 	}]
-
 	if !ok {
 		// There are no policies registered for this Namespace/Cluster, stop here
 		return IsolationDetails{
