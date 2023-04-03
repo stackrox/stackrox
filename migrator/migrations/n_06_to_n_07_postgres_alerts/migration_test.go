@@ -11,7 +11,6 @@ import (
 	legacy "github.com/stackrox/rox/migrator/migrations/n_06_to_n_07_postgres_alerts/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_06_to_n_07_postgres_alerts/postgres"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
-
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/rocksdb"

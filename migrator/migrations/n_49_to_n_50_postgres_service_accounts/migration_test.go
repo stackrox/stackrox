@@ -11,7 +11,6 @@ import (
 	legacy "github.com/stackrox/rox/migrator/migrations/n_49_to_n_50_postgres_service_accounts/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_49_to_n_50_postgres_service_accounts/postgres"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
-
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
