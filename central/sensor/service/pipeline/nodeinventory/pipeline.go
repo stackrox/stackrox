@@ -2,6 +2,7 @@ package nodeinventory
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -62,10 +63,11 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	if ninv == nil {
 		return errors.Errorf("unexpected resource type %T for node inventory", event.GetResource())
 	}
-	log.Debugf("received inventory (node: %q id: %q) contains %d packages to scan from %d content sets", ninv.GetNodeName(), ninv.GetNodeId(),
+	nodeStr := fmt.Sprintf("(node: %q id: %q)", ninv.GetNodeName(), ninv.GetNodeId())
+	log.Debugf("received inventory %s contains %d packages to scan from %d content sets", nodeStr,
 		len(ninv.GetComponents().GetRhelComponents()), len(ninv.GetComponents().GetRhelContentSets()))
 	if event.GetAction() != central.ResourceAction_UNSET_ACTION_RESOURCE {
-		log.Errorf("inventory for node %q has unsupported action: %q", ninv.GetNodeName(), event.GetAction())
+		log.Errorf("inventory (node: %q id: %q) has unsupported action: %q", ninv.GetNodeName(), ninv.GetNodeId(), event.GetAction())
 		return nil
 	}
 	ninv = ninv.Clone()
@@ -73,11 +75,11 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	// Read the node from the database, if not found we fail.
 	node, found, err := p.nodeDatastore.GetNode(ctx, ninv.GetNodeId())
 	if err != nil {
-		log.Errorf("fetching node (id: %q) from the database: %v", ninv.GetNodeId(), err)
+		log.Errorf("fetching node %s from the database: %v", nodeStr, err)
 		return errors.WithMessagef(err, "fetching node: %s", ninv.GetNodeId())
 	}
 	if !found {
-		log.Errorf("fetching node (id: %q) from the database: node does not exist", ninv.GetNodeId())
+		log.Errorf("fetching node %s from the database: node does not exist", nodeStr)
 		return errors.WithMessagef(err, "node does not exist: %s", ninv.GetNodeId())
 	}
 
@@ -87,7 +89,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		log.Errorf("enriching node %s: %v", nodeDatastore.NodeString(node), err)
 		return errors.WithMessagef(err, "enrinching node %s", nodeDatastore.NodeString(node))
 	}
-	log.Infof("scanned inventory from node %q with %d components", ninv.GetNodeName(),
+	log.Infof("scanned inventory from node %s with %d components", nodeDatastore.NodeString(node),
 		len(node.GetScan().GetComponents()))
 
 	// Update the whole node in the database with the new and previous information.

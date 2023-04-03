@@ -39,7 +39,7 @@ func (c *nodeInventoryHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	if c.toCentral == nil {
-		log.Panic("Start must be called prior to ResponsesC")
+		log.Panic("Start must be called before ResponsesC")
 	}
 	return c.toCentral
 }
@@ -93,11 +93,11 @@ func (c *nodeInventoryHandlerImpl) run() <-chan *central.MsgFromSensor {
 					continue
 				}
 				if inventory == nil {
-					log.Warnf("Received nil node inventory - not sending to Central")
+					log.Warnf("Received nil node inventory: not sending to Central")
 					break
 				}
 				if nodeID, err := c.nodeMatcher.GetNodeID(inventory.GetNodeName()); err != nil {
-					log.Warnf("Node '%s' unknown to sensor - not sending node inventory to Central", inventory.GetNodeName())
+					log.Warnf("Node '%s' unknown to sensor: not sending node inventory to Central", inventory.GetNodeName())
 				} else {
 					inventory.NodeId = nodeID
 					metrics.ObserveReceivedNodeInventory(inventory)
