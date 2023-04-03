@@ -129,7 +129,7 @@ func insertIntoDeployments(ctx context.Context, batch *pgx.Batch, obj *storage.D
 
 func insertIntoDeploymentsContainers(ctx context.Context, batch *pgx.Batch, obj *storage.Container, deploymentID string, idx int) error {
 	if pgutils.NilOrUUID(deploymentID) == nil {
-		utils.Should(errors.Errorf("deploymentID is not a valid uuid -- %q", obj.GetId()))
+		utils.Should(errors.Errorf("deploymentID is not a valid uuid -- %q", deploymentID))
 		return nil
 	}
 
@@ -492,7 +492,7 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx *postg
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		if pgutils.NilOrUUID(deploymentID) == nil {
-			log.Warnf("deploymentID is not a valid uuid -- %q", obj.GetId())
+			log.Warnf("deploymentID is not a valid uuid -- %q", deploymentID)
 			continue
 		}
 
