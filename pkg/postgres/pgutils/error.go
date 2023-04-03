@@ -50,7 +50,7 @@ var transientPGCodes = set.NewFrozenStringSet(
 
 // IsTransientError specifies if the passed error is transient and should be retried
 func IsTransientError(err error) bool {
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return false
 	}
 	if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) {
