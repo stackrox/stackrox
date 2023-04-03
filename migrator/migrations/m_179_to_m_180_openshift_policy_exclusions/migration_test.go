@@ -62,6 +62,8 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 		"dce17697-1b72-49d2-b18a-05d893cd9368",
 		"f4996314-c3d7-4553-803b-b24ce7febe48",
 		"a9b9ecf7-9707-4e32-8b62-d03018ed454f",
+		"32d770b9-c6ba-4398-b48a-0c3e807644ed",
+		"f95ff08d-130a-465a-a27e-32ed1fb05555",
 	}
 
 	policyName := "policy description %d"
@@ -83,8 +85,9 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 	s.Empty(policyPremigration[0].Exclusions)
 	s.NoError(migration.Run(dbs))
 	expectedExclusion := "Don't alert on ovnkube-node deployment in openshift-ovn-kubernetes Namespace"
-	policy, err := s.policyStore.GetByQuery(ctx, q)
+	query := search.NewQueryBuilder().AddExactMatches(search.PolicyID, testPolicy.GetId()).ProtoQuery()
+	policy, err := s.policyStore.GetByQuery(ctx, query)
 	s.NoError(err)
-	s.Equal(policy[0].Exclusions[0].Name, expectedExclusion, "exclusion do not match after migration")
+	s.Equal(policy[0].Exclusions[3].Name, expectedExclusion, "exclusion do not match after migration")
 
 }

@@ -13,6 +13,33 @@
   ],
   "exclusions": [
     {
+      "name": "Don't alert on deployment haproxy-* in openshift-vsphere-infra namespace",
+      "deployment": {
+        "name": "haproxy-.*",
+        "scope": {
+          "namespace": "openshift-vsphere-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment keepalived-* in openshift-vsphere-infra namespace",
+      "deployment": {
+        "name": "keepalived-.*",
+        "scope": {
+          "namespace": "openshift-vsphere-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment coredns-* in openshift-vsphere-infra namespace",
+      "deployment": {
+        "name": "coredns-.*",
+        "scope": {
+          "namespace": "openshift-vsphere-infra"
+        }
+      }
+    },
+    {
       "name": "Don't alert on deployment splunk-forwarder-operator in openshift-splunk-forwarder-operator namespace",
       "deployment": {
         "name": "splunk-forwarder-operator",

@@ -82,6 +82,14 @@ var (
 			FieldsToCompare: fieldsToCompare,
 			PolicyFileName:  "root_user.json",
 		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "mount_propagation.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "dnf.json",
+		},
 	}
 )
 

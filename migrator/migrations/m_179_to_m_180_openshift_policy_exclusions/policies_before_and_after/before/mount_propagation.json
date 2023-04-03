@@ -12,15 +12,6 @@
   ],
   "exclusions": [
     {
-      "name": "Don't alert on deployment csi-azuredisk-node in kube-system namespace",
-      "deployment": {
-        "name": "csi-azuredisk-node",
-        "scope": {
-          "namespace": "kube-system"
-        }
-      }
-    },
-    {
       "name": "Don't alert on openshift-cluster-csi-drivers namespace",
       "deployment": {
         "scope": {
