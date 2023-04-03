@@ -19,7 +19,12 @@ import {
     TextVariants,
     Tooltip,
 } from '@patternfly/react-core';
-import { ExclamationTriangleIcon, MinusIcon, PlusIcon } from '@patternfly/react-icons';
+import {
+    ExclamationCircleIcon,
+    ExclamationTriangleIcon,
+    MinusIcon,
+    PlusIcon,
+} from '@patternfly/react-icons';
 
 import { BaselineSimulationDiffState, Flow, FlowEntityType } from '../types/flow.type';
 import { protocolLabel } from '../utils/flowUtils';
@@ -99,7 +104,7 @@ function AnomalousIcon({ type }: { type: FlowEntityType }) {
     if (type === 'CIDR_BLOCK' || type === 'EXTERNAL_ENTITIES') {
         return (
             <Tooltip content={<div>Anomalous external flow</div>}>
-                <ExclamationTriangleIcon className="pf-u-danger-color-100" />
+                <ExclamationCircleIcon className="pf-u-danger-color-100" />
             </Tooltip>
         );
     }
