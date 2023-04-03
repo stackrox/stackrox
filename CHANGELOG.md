@@ -7,8 +7,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [Next Release]
 
-TBD
-
 ## [4.0.0]
 
 ### Added Features
