@@ -16,7 +16,7 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
-import { TableComposable, Tbody, Th, Thead, Tr } from '@patternfly/react-table';
+import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { LabelSelectorRequirement, LabelSelectorsKey } from 'services/AccessScopesService';
 
@@ -197,7 +197,7 @@ function LabelSelectorCard({
                         <Thead>
                             <Tr>
                                 <Th width={40}>Key</Th>
-                                <Th />
+                                <Td />
                                 <Th width={40}>Values</Th>
                                 {isLabelSelectorActive && <Th modifier="fitContent">Action</Th>}
                             </Tr>

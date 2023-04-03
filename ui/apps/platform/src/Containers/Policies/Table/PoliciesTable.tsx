@@ -370,7 +370,7 @@ function PoliciesTable({
                                     </Th>
                                 );
                             })}
-                            <Th />
+                            <Td />
                         </Tr>
                     </Thead>
                     <Tbody>

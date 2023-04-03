@@ -163,7 +163,7 @@ function FlowsTable({
         <TableComposable aria-label={label} variant="compact">
             <Thead>
                 <Tr>
-                    <Th />
+                    <Td />
                     {isEditable && (
                         <Th
                             select={{
@@ -172,11 +172,11 @@ function FlowsTable({
                             }}
                         />
                     )}
-                    {isBaselineSimulation && <Th />}
+                    {isBaselineSimulation && <Td />}
                     <Th>{columnNames.entity}</Th>
                     <Th modifier="nowrap">{columnNames.direction}</Th>
                     <Th modifier="nowrap">{columnNames.portAndProtocol}</Th>
-                    <Th />
+                    <Td />
                 </Tr>
             </Thead>
             {flows.map((row, rowIndex) => {
