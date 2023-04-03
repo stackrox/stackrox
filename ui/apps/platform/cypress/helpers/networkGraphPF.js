@@ -40,7 +40,7 @@ export function selectNamespace(namespace) {
         cy.get(networkGraphSelectors.selector.namespaceSelect).click();
         // Exact match to distinguish stackrox from stackrox-operator namespaces.
         cy.get(
-            `${selectSelectors.patternFlySelect.openMenu} .pf-c-select__menu-item [data-testid="namespace-name"]`
+            `${selectSelectors.patternFlySelect.openMenu} .pf-c-menu__list-item [data-testid="namespace-name"]`
         )
             .contains(new RegExp(`^${namespace}$`))
             .click();
@@ -52,7 +52,7 @@ export function selectDeployment(deployment) {
     interactAndWaitForResponses(() => {
         cy.get(networkGraphSelectors.selector.deploymentSelect).click();
         cy.get(
-            `${selectSelectors.patternFlySelect.openMenu} .pf-c-select__menu-item [data-testid="deployment-name"]`
+            `${selectSelectors.patternFlySelect.openMenu} .pf-c-menu__list-item [data-testid="deployment-name"]`
         )
             .contains(new RegExp(`^${deployment}$`))
             .click();

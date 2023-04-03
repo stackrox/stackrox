@@ -73,3 +73,15 @@ div#topology-resize-panel table td {
 .derived-namespace path.pf-topology__group__background {
     stroke-dasharray: 5;
 }
+
+.pf-c-check__input {
+    height: 16px;
+    width: 16px;
+}
+
+.namespace-select .pf-c-select__menu,
+.deployment-select .pf-c-select__menu {
+    padding-top: 0;
+    padding-bottom: 0;
+    min-width: 220px;
+}
