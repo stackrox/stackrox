@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/declarativeconfig/configmap"
+	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 )
 
 // Command provides the lint command for declartive configuration.
@@ -32,12 +32,12 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	cmd.Flags().StringVarP(&lintCmd.file, "file", "f", "", "file containing the declarative configuration in YAML format")
 
-	cmd.Flags().String(configmap.ConfigMapFlag, "", `config map from which to read the declarative configuration from.
+	cmd.Flags().String(k8sobject.ConfigMapFlag, "", `config map from which to read the declarative configuration from.
 In case this is not set, the declarative configuration will be read from the YAML file provided via the --file flag.`)
-	cmd.Flags().String(configmap.NamespaceFlag, "", `namespace of the config map from which to read the declarative configuration from.
+	cmd.Flags().String(k8sobject.NamespaceFlag, "", `namespace of the config map from which to read the declarative configuration from.
 In case this is not set, the namespace set within the current kube config context will be used`)
 
-	cmd.MarkFlagsMutuallyExclusive("file", configmap.ConfigMapFlag)
+	cmd.MarkFlagsMutuallyExclusive("file", k8sobject.ConfigMapFlag)
 
 	return cmd
 }
@@ -49,21 +49,23 @@ type lintCmd struct {
 	fileContents [][]byte
 
 	configMap string
+	secret    string
 	namespace string
 }
 
 func (l *lintCmd) Construct(cmd *cobra.Command) error {
-	configMap, namespace, err := configmap.ReadConfigMapFlags(cmd)
+	configMap, secret, namespace, err := k8sobject.ReadK8sObjectFlags(cmd)
 	if err != nil {
 		return errors.Wrap(err, "reading config map flag values")
 	}
 	l.configMap = configMap
+	l.secret = secret
 	l.namespace = namespace
 
 	if l.configMap != "" {
-		contents, err := configmap.ReadFromConfigMap(context.Background(), l.configMap, l.namespace)
+		contents, err := k8sobject.ReadFromK8sObject(context.Background(), l.configMap, l.secret, l.namespace)
 		if err != nil {
-			return errors.Wrapf(err, "reading from config map %s", l.configMap)
+			return errors.Wrap(err, "reading from config map")
 		}
 		l.fileContents = contents
 	}

@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/declarativeconfig/configmap"
+	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"gopkg.in/yaml.v3"
 )
@@ -49,15 +49,17 @@ type roleCmd struct {
 	role      *declarativeconfig.Role
 	env       environment.Environment
 	configMap string
+	secret    string
 	namespace string
 }
 
 func (r *roleCmd) Construct(cmd *cobra.Command) error {
-	configMap, namespace, err := configmap.ReadConfigMapFlags(cmd)
+	configMap, secret, namespace, err := k8sobject.ReadK8sObjectFlags(cmd)
 	if err != nil {
 		return errors.Wrap(err, "reading config map flag values")
 	}
 	r.configMap = configMap
+	r.secret = secret
 	r.namespace = namespace
 	return nil
 }
@@ -72,7 +74,8 @@ func (r *roleCmd) PrintYAML() error {
 		return errors.Wrap(err, "linting the YAML output")
 	}
 	if r.configMap != "" {
-		return errors.Wrap(configmap.WriteToConfigMap(context.Background(), r.configMap, r.namespace, fmt.Sprintf("%s-%s", r.role.Type(), r.role.Name),
+		return errors.Wrap(k8sobject.WriteToK8sObject(context.Background(), r.configMap, r.secret, r.namespace,
+			fmt.Sprintf("%s-%s", r.role.Type(), r.role.Name),
 			yamlOutput.Bytes()), "writing the YAML output to config map")
 	}
 	if _, err := r.env.InputOutput().Out().Write(yamlOutput.Bytes()); err != nil {

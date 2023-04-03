@@ -56,6 +56,7 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 		},
 		"invalid key value pair in label selector": {
 			args: []string{
+				"access-scope",
 				"--name=some-name",
 				"--cluster-label-selector=something=somewhere;here=there",
 			},

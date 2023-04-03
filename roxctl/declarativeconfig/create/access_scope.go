@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/declarativeconfig/configmap"
+	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"gopkg.in/yaml.v3"
 )
@@ -90,16 +90,18 @@ type accessScopeCmd struct {
 	namespaceRequirements []declarativeconfig.Requirement
 
 	configMap string
+	secret    string
 	namespace string
 }
 
 func (a *accessScopeCmd) Construct(cmd *cobra.Command) error {
-	configMap, namespace, err := configmap.ReadConfigMapFlags(cmd)
+	configMap, secret, namespace, err := k8sobject.ReadK8sObjectFlags(cmd)
 	if err != nil {
 		return errors.Wrap(err, "reading config map flag values")
 	}
 	a.configMap = configMap
 	a.namespace = namespace
+	a.secret = secret
 	return nil
 }
 
@@ -127,7 +129,7 @@ func (a *accessScopeCmd) PrintYAML() error {
 		return errors.Wrap(err, "linting the YAML output")
 	}
 	if a.configMap != "" {
-		return errors.Wrap(configmap.WriteToConfigMap(context.Background(), a.configMap, a.namespace,
+		return errors.Wrap(k8sobject.WriteToK8sObject(context.Background(), a.configMap, a.secret, a.namespace,
 			fmt.Sprintf("%s-%s", a.accessScope.Type(), a.accessScope.Name), yamlOut.Bytes()),
 			"writing the YAML output to config map")
 	}

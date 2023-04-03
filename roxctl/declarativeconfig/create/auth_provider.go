@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/declarativeconfig/configmap"
+	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"gopkg.in/yaml.v3"
 )
@@ -99,6 +99,7 @@ type authProviderCmd struct {
 	env environment.Environment
 
 	configMap string
+	secret    string
 	namespace string
 }
 
@@ -216,11 +217,12 @@ func (a *authProviderCmd) RunE() func(cmd *cobra.Command, args []string) error {
 }
 
 func (a *authProviderCmd) Construct(cmd *cobra.Command) error {
-	configMap, namespace, err := configmap.ReadConfigMapFlags(cmd)
+	configMap, secret, namespace, err := k8sobject.ReadK8sObjectFlags(cmd)
 	if err != nil {
 		return errors.Wrap(err, "reading config map flag values")
 	}
 	a.configMap = configMap
+	a.secret = secret
 	a.namespace = namespace
 	return nil
 }
@@ -322,7 +324,7 @@ func (a *authProviderCmd) PrintYAML() error {
 		return errors.Wrap(err, "linting the YAML output")
 	}
 	if a.configMap != "" {
-		return errors.Wrap(configmap.WriteToConfigMap(context.Background(), a.configMap, a.namespace,
+		return errors.Wrap(k8sobject.WriteToK8sObject(context.Background(), a.configMap, a.secret, a.namespace,
 			fmt.Sprintf("%s-%s", a.authProvider.Type(), a.authProvider.Name), yamlOut.Bytes()),
 			"writing the YAML output to config map")
 	}

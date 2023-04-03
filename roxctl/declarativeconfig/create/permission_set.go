@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/declarativeconfig/configmap"
+	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"gopkg.in/yaml.v3"
 )
@@ -56,15 +56,17 @@ type permissionSetCmd struct {
 	env                environment.Environment
 
 	configMap string
+	secret    string
 	namespace string
 }
 
 func (p *permissionSetCmd) Construct(cmd *cobra.Command) error {
-	configMap, namespace, err := configmap.ReadConfigMapFlags(cmd)
+	configMap, secret, namespace, err := k8sobject.ReadK8sObjectFlags(cmd)
 	if err != nil {
 		return errors.Wrap(err, "reading config map flag values")
 	}
 	p.configMap = configMap
+	p.secret = secret
 	p.namespace = namespace
 	return nil
 }
@@ -108,7 +110,7 @@ func (p *permissionSetCmd) PrintYAML() error {
 		return errors.Wrap(err, "linting the YAML output")
 	}
 	if p.configMap != "" {
-		return errors.Wrap(configmap.WriteToConfigMap(context.Background(), p.configMap, p.namespace,
+		return errors.Wrap(k8sobject.WriteToK8sObject(context.Background(), p.configMap, p.secret, p.namespace,
 			fmt.Sprintf("%s-%s", p.permissionSet.Type(), p.permissionSet.Name), yamlOutput.Bytes()),
 			"writing the YAML output to config map")
 	}
