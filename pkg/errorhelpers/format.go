@@ -76,6 +76,9 @@ func (e *ErrorList) AddStrings(errs ...string) {
 
 // ToError returns an error if there were errors added or nil
 func (e *ErrorList) ToError() error {
+	if len(e.errors) == 0 {
+		return nil
+	}
 	return e
 }
 
