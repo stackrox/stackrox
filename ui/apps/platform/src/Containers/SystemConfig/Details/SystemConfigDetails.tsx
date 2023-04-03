@@ -19,7 +19,7 @@ function SystemConfigDetails({
     isClustersRoutePathRendered,
     systemConfig,
 }: SystemConfigDetailsProps): ReactElement {
-    const telemetryConfigEnabled = useSelector(selectors.getIsTelemetryConfigured);
+    const isTelemetryConfigured = useSelector(selectors.getIsTelemetryConfigured);
     return (
         <>
             <PageSection data-testid="data-retention-config">
@@ -51,7 +51,7 @@ function SystemConfigDetails({
                     <GridItem sm={12} md={6}>
                         <PublicConfigLoginDetails publicConfig={systemConfig?.publicConfig} />
                     </GridItem>
-                    {telemetryConfigEnabled && (
+                    {isTelemetryConfigured && (
                         <GridItem sm={12} md={6}>
                             <PublicConfigTelemetryDetails
                                 publicConfig={systemConfig?.publicConfig}

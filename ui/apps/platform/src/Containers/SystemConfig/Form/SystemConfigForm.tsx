@@ -56,7 +56,7 @@ function getCompletePublicConfig(systemConfig: SystemConfig): PublicConfig {
             enabled: systemConfig?.publicConfig?.loginNotice?.enabled || false,
         },
         telemetry: {
-            enabled: systemConfig?.publicConfig?.telemetry?.enabled || false,
+            enabled: systemConfig?.publicConfig?.telemetry?.enabled !== false,
         },
     };
 }
