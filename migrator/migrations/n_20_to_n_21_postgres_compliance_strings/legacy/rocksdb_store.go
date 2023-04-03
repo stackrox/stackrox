@@ -49,9 +49,6 @@ func getPrefix(leftPrefix, rightPrefix string) []byte {
 
 func unmarshalMessageStrings(iterator *gorocksdb.Iterator) (*storage.ComplianceStrings, error) {
 	bytes := iterator.Value().Data()
-	if len(bytes) == 0 {
-		return nil, errors.New("results data empty")
-	}
 	var stringsProto storage.ComplianceStrings
 	if err := stringsProto.Unmarshal(bytes); err != nil {
 		return nil, err
