@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, ButtonVariant } from '@patternfly/react-core';
+import { Button, ButtonVariant, pluralize } from '@patternfly/react-core';
 import {
     ExpandableRowContent,
     TableComposable,
@@ -20,8 +20,8 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import { FixableIcon, NotFixableIcon } from 'Components/PatternFly/FixabilityIcons';
 import { ImageVulnerabilitiesResponse } from '../hooks/useImageVulnerabilities';
 import { getEntityPagePath } from '../searchUtils';
-import ImageComponentsTable from './ImageComponentsTable';
 import { DynamicColumnIcon } from '../DynamicIcon';
+import ImageComponentVulnerabilitiesLoader from '../ImageComponentVulnerabilitiesLoader';
 
 export type SingleEntityVulnerabilitiesTableProps = {
     image: ImageVulnerabilitiesResponse['image'];
@@ -57,7 +57,7 @@ function SingleEntityVulnerabilitiesTable({
             </Thead>
             {image.imageVulnerabilities.map(
                 (
-                    { cve, severity, summary, isFixable, imageComponents, discoveredAtImage },
+                    { cve, severity, summary, isFixable, imageComponentCount, discoveredAtImage },
                     rowIndex
                 ) => {
                     const SeverityIcon: React.FC<SVGIconProps> | undefined =
@@ -106,9 +106,7 @@ function SingleEntityVulnerabilitiesTable({
                                     </span>
                                 </Td>
                                 <Td dataLabel="Affected components">
-                                    {imageComponents.length === 1
-                                        ? imageComponents[0].name
-                                        : `${imageComponents.length} components`}
+                                    {pluralize(imageComponentCount, 'component', 'components')}
                                 </Td>
                                 <Td dataLabel="First discovered">
                                     {getDistanceStrictAsPhrase(discoveredAtImage, new Date())}
@@ -118,18 +116,12 @@ function SingleEntityVulnerabilitiesTable({
                                 <Td />
                                 <Td colSpan={5}>
                                     <ExpandableRowContent>
-                                        <p>{summary}</p>
-                                        <div
-                                            className="pf-u-p-md pf-u-mt-md"
-                                            style={{
-                                                border: '1px solid var(--pf-c-table--BorderColor)',
-                                            }}
-                                        >
-                                            <ImageComponentsTable
-                                                layers={image.metadata?.v1?.layers ?? []}
-                                                imageComponents={imageComponents}
-                                            />
-                                        </div>
+                                        <p className="pf-u-mb-md">{summary}</p>
+                                        <ImageComponentVulnerabilitiesLoader
+                                            isActive={isExpanded}
+                                            cveId={cve}
+                                            image={image}
+                                        />
                                     </ExpandableRowContent>
                                 </Td>
                             </Tr>

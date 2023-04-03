@@ -38,6 +38,11 @@ export type ImageVulnerabilitiesResponse = {
                 layers: ImageMetadataLayer[];
             } | null;
         } | null;
+        name: {
+            registry: string;
+            remote: string;
+            tag: string;
+        } | null;
         imageVulnerabilityCounter: ImageVulnerabilityCounter;
         imageVulnerabilities: {
             id: string;
@@ -46,7 +51,7 @@ export type ImageVulnerabilitiesResponse = {
             cve: string;
             summary: string;
             discoveredAtImage: Date | null;
-            imageComponents: ImageVulnerabilityComponent[];
+            imageComponentCount: number;
         }[];
     };
 };
@@ -62,6 +67,11 @@ export const imageVulnerabilitiesQuery = gql`
                         value
                     }
                 }
+            }
+            name {
+                registry
+                remote
+                tag
             }
             imageVulnerabilityCounter(query: $vulnQuery) {
                 all {
@@ -92,14 +102,7 @@ export const imageVulnerabilitiesQuery = gql`
                 cve
                 summary
                 discoveredAtImage
-                imageComponents {
-                    id
-                    name
-                    version
-                    fixedIn
-                    location
-                    layerIndex
-                }
+                imageComponentCount
             }
         }
     }

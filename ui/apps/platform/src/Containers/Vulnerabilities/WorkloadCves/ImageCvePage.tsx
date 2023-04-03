@@ -286,6 +286,7 @@ function ImageCvePage() {
                                     <div className="pf-u-px-lg">
                                         {entityTab === 'Image' && (
                                             <AffectedImagesTable
+                                                cveId={cveId}
                                                 images={imageData?.images ?? []}
                                                 getSortParams={getSortParams}
                                                 isFiltered={isFiltered}

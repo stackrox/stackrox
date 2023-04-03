@@ -21,6 +21,7 @@ import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
 import { DynamicColumnIcon } from '../DynamicIcon';
 import { getEntityPagePath } from '../searchUtils';
+import ImageComponentVulnerabilitiesLoader from '../ImageComponentVulnerabilitiesLoader';
 
 export type ImageForCve = {
     id: string;
@@ -100,12 +101,18 @@ export const imagesForCveFragment = gql`
 
 export type AffectedImagesTableProps = {
     className?: string;
+    cveId: string;
     images: ImageForCve[];
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
 };
 
-function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImagesTableProps) {
+function AffectedImagesTable({
+    cveId,
+    images,
+    getSortParams,
+    isFiltered,
+}: AffectedImagesTableProps) {
     const expandedRowSet = useSet<string>();
 
     return (
@@ -130,92 +137,101 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                     <Th>First discovered</Th>
                 </Tr>
             </Thead>
-            {images.map(
-                (
-                    { id, name, operatingSystem, scanTime, topImageVulnerability, imageComponents },
-                    rowIndex
-                ) => {
-                    const topSeverity =
-                        topImageVulnerability?.severity ?? 'UNKNOWN_VULNERABILITY_SEVERITY';
+            {images.map((image, rowIndex) => {
+                const {
+                    id,
+                    name,
+                    operatingSystem,
+                    scanTime,
+                    topImageVulnerability,
+                    imageComponents,
+                } = image;
+                const topSeverity =
+                    topImageVulnerability?.severity ?? 'UNKNOWN_VULNERABILITY_SEVERITY';
 
-                    const isFixable = topImageVulnerability?.isFixable ?? false;
-                    const FixabilityIcon = isFixable ? FixableIcon : NotFixableIcon;
+                const isFixable = topImageVulnerability?.isFixable ?? false;
+                const FixabilityIcon = isFixable ? FixableIcon : NotFixableIcon;
 
-                    const SeverityIcon = SeverityIcons[topSeverity];
-                    const severityLabel = vulnerabilitySeverityLabels[topSeverity];
-                    const isExpanded = expandedRowSet.has(id);
+                const SeverityIcon = SeverityIcons[topSeverity];
+                const severityLabel = vulnerabilitySeverityLabels[topSeverity];
+                const isExpanded = expandedRowSet.has(id);
 
-                    return (
-                        <Tbody key={id} isExpanded={isExpanded}>
-                            <Tr>
-                                <Td
-                                    expand={{
-                                        rowIndex,
-                                        isExpanded,
-                                        onToggle: () => expandedRowSet.toggle(id),
-                                    }}
-                                />
-                                <Td dataLabel="Image">
-                                    {name ? (
-                                        <Flex
-                                            direction={{ default: 'column' }}
-                                            spaceItems={{ default: 'spaceItemsNone' }}
+                return (
+                    <Tbody key={id} isExpanded={isExpanded}>
+                        <Tr>
+                            <Td
+                                expand={{
+                                    rowIndex,
+                                    isExpanded,
+                                    onToggle: () => expandedRowSet.toggle(id),
+                                }}
+                            />
+                            <Td dataLabel="Image">
+                                {name ? (
+                                    <Flex
+                                        direction={{ default: 'column' }}
+                                        spaceItems={{ default: 'spaceItemsNone' }}
+                                    >
+                                        <Button
+                                            variant={ButtonVariant.link}
+                                            isInline
+                                            component={LinkShim}
+                                            href={getEntityPagePath('Image', id)}
                                         >
-                                            <Button
-                                                variant={ButtonVariant.link}
-                                                isInline
-                                                component={LinkShim}
-                                                href={getEntityPagePath('Image', id)}
-                                            >
-                                                {name.remote}
-                                            </Button>{' '}
-                                            <span className="pf-u-color-400 pf-u-font-size-sm">
-                                                in {name.registry}
-                                            </span>
-                                        </Flex>
-                                    ) : (
-                                        'Image name not available'
-                                    )}
-                                </Td>
-                                <Td dataLabel="Severity">
-                                    <span>
-                                        {SeverityIcon && (
-                                            <SeverityIcon className="pf-u-display-inline" />
-                                        )}
-                                        {severityLabel && (
-                                            <span className="pf-u-pl-sm">{severityLabel}</span>
-                                        )}
-                                    </span>
-                                </Td>
-                                <Td dataLabel="Fix status">
-                                    <span>
-                                        <FixabilityIcon className="pf-u-display-inline" />
-                                        <span className="pf-u-pl-sm">
-                                            {isFixable ? 'Fixable' : 'Not fixable'}
+                                            {name.remote}
+                                        </Button>{' '}
+                                        <span className="pf-u-color-400 pf-u-font-size-sm">
+                                            in {name.registry}
                                         </span>
+                                    </Flex>
+                                ) : (
+                                    'Image name not available'
+                                )}
+                            </Td>
+                            <Td dataLabel="Severity">
+                                <span>
+                                    {SeverityIcon && (
+                                        <SeverityIcon className="pf-u-display-inline" />
+                                    )}
+                                    {severityLabel && (
+                                        <span className="pf-u-pl-sm">{severityLabel}</span>
+                                    )}
+                                </span>
+                            </Td>
+                            <Td dataLabel="Fix status">
+                                <span>
+                                    <FixabilityIcon className="pf-u-display-inline" />
+                                    <span className="pf-u-pl-sm">
+                                        {isFixable ? 'Fixable' : 'Not fixable'}
                                     </span>
-                                </Td>
-                                <Td dataLabel="Operating system">{operatingSystem}</Td>
-                                <Td dataLabel="Affected components">
-                                    {imageComponents.length === 1
-                                        ? imageComponents[0].name
-                                        : `${imageComponents.length} components`}
-                                </Td>
-                                <Td dataLabel="First discovered">
-                                    {/* TODO Is this the correct field? It differs from the field on the CVE page. */}
-                                    {getDistanceStrictAsPhrase(scanTime, new Date())}
-                                </Td>
-                            </Tr>
-                            <Tr isExpanded={isExpanded}>
-                                <Td />
-                                <Td colSpan={5}>
-                                    <ExpandableRowContent>TODO</ExpandableRowContent>
-                                </Td>
-                            </Tr>
-                        </Tbody>
-                    );
-                }
-            )}
+                                </span>
+                            </Td>
+                            <Td dataLabel="Operating system">{operatingSystem}</Td>
+                            <Td dataLabel="Affected components">
+                                {imageComponents.length === 1
+                                    ? imageComponents[0].name
+                                    : `${imageComponents.length} components`}
+                            </Td>
+                            <Td dataLabel="First discovered">
+                                {/* TODO Is this the correct field? It differs from the field on the CVE page. */}
+                                {getDistanceStrictAsPhrase(scanTime, new Date())}
+                            </Td>
+                        </Tr>
+                        <Tr isExpanded={isExpanded}>
+                            <Td />
+                            <Td colSpan={6}>
+                                <ExpandableRowContent>
+                                    <ImageComponentVulnerabilitiesLoader
+                                        isActive={isExpanded}
+                                        cveId={cveId}
+                                        image={image}
+                                    />
+                                </ExpandableRowContent>
+                            </Td>
+                        </Tr>
+                    </Tbody>
+                );
+            })}
         </TableComposable>
     );
 }

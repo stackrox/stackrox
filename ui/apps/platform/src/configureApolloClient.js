@@ -55,6 +55,9 @@ export default function configureApolloClient() {
                             // the resolver will cause duplicate requests and lost cache data.
                             merge: (existing, incoming) => merge({}, existing, incoming),
                         },
+                        name: {
+                            merge: (existing, incoming) => merge({}, existing, incoming),
+                        },
                     },
                 },
                 ImageCVECore: {
