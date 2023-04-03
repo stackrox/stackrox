@@ -10,7 +10,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
@@ -99,7 +98,6 @@ func (r *rocksdbStore) Walk(_ context.Context, fn func(obj *storage.ComplianceRu
 	for iterator.Seek(resultsKey); iterator.ValidForPrefix(resultsKey); iterator.Next() {
 		result, err := unmarshalResults(iterator)
 		if err != nil {
-			log.WriteToStderrf("error could not parse compliance run results with key: %s", iterator.Key())
 			return err
 		}
 		if err = fn(result); err != nil {
