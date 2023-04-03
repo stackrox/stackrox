@@ -120,7 +120,7 @@ describe('Risk page', () => {
 
             cy.get(RiskPageSelectors.panel).should('have.length', 2); // main panel and side panel
             cy.get(RiskPageSelectors.panelTabs.riskIndicators);
-            cy.get(RiskPageSelectors.cancelButton).click();
+            cy.get(RiskPageSelectors.sidePanel.closeButton).click();
             cy.get(RiskPageSelectors.panel).should('have.length', 1); // main panel
         });
 
@@ -130,7 +130,7 @@ describe('Risk page', () => {
 
             cy.get(RiskPageSelectors.panel).should('have.length', 2); // main panel and side panel
             cy.get(RiskPageSelectors.panelTabs.deploymentDetails);
-            cy.get(RiskPageSelectors.cancelButton).click();
+            cy.get(RiskPageSelectors.sidePanel.closeButton).click();
             cy.get(RiskPageSelectors.panel).should('have.length', 1); // main panel
         });
 

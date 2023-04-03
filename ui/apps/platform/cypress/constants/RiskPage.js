@@ -33,7 +33,7 @@ const sidePanel = scopeSelectors('[data-testid="panel"]:eq(1)', {
     deploymentDetailsTab: 'button[data-testid="tab"]:contains("Deployment Details")',
     processDiscoveryTab: 'button[data-testid="tab"]:contains("Process Discovery")',
 
-    cancelButton: 'button[data-testid="cancel"]',
+    closeButton: 'button[aria-label="Close"]',
 });
 
 const eventSelectors = {
@@ -89,7 +89,6 @@ export const selectors = {
         deploymentDetails: 'button[data-testid="tab"]:contains("Deployment Details")',
         processDiscovery: 'button[data-testid="tab"]:contains("Process Discovery")',
     },
-    cancelButton: 'button[data-testid="cancel"]',
     search: {
         valueContainer: '.react-select__value-container',
         searchLabels: '.react-select__multi-value__label',
