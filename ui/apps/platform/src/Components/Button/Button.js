@@ -20,6 +20,7 @@ const Button = ({
     isLoading,
     loaderSize,
     tabIndex,
+    ...ariaProps
 }) => {
     const content = (
         <div className="flex items-center">
@@ -42,6 +43,7 @@ const Button = ({
             disabled={disabled}
             data-testid={dataTestId}
             tabIndex={tabIndex}
+            {...ariaProps}
         >
             {isLoading ? <Loader size={loaderSize} /> : content}
         </button>
