@@ -19,6 +19,7 @@ type generalQueryParser struct {
 func splitQuery(query string) []string {
 	var pairs []string
 	var previousEnd, previousPlusIndex int
+	prevDoubleQuoteCount := 0
 	for i, rune := range query {
 		if rune == ':' && previousPlusIndex != 0 {
 			if previousEnd > previousPlusIndex {
@@ -29,7 +30,10 @@ func splitQuery(query string) []string {
 			previousEnd = previousPlusIndex + 1
 			continue
 		}
-		if rune == '+' {
+		if rune == '"' {
+			prevDoubleQuoteCount++
+		}
+		if rune == '+' && prevDoubleQuoteCount%2 == 0 {
 			previousPlusIndex = i
 		}
 	}
