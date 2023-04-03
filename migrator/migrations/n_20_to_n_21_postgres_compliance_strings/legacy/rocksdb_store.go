@@ -74,13 +74,13 @@ func (r *rocksdbStore) Walk(_ context.Context, fn func(obj *storage.ComplianceSt
 	return nil
 }
 
-func (r *rocksdbStore) createKey() []byte {
+func (r *rocksdbStore) createKey(id string) []byte {
 	tsBytes := uuid.NewV4().Bytes()
 	// Invert the bits of each byte of the timestamp in order to have the most recent timestamp first
 	for i, tsByte := range tsBytes {
 		tsBytes[i] = -tsByte
 	}
-	separatorAndRunID := []byte(fmt.Sprintf(":%s", "runID"))
+	separatorAndRunID := []byte(fmt.Sprintf(":%s", id))
 	tsAndRunIDPrefix := append(tsBytes, separatorAndRunID...)
 	stringsPrefix := getClusterStandardPrefixes("cluster", "standard")
 	key := append([]byte{}, stringsPrefix...)
@@ -93,7 +93,7 @@ func (r *rocksdbStore) UpsertMany(_ context.Context, objs []*storage.ComplianceS
 	defer batch.Destroy()
 
 	for _, obj := range objs {
-		key := r.createKey()
+		key := r.createKey(obj.GetId())
 		serialized, err := obj.Marshal()
 		if err != nil {
 			return errors.Wrap(err, "serializing results")
