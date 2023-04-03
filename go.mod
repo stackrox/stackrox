@@ -154,6 +154,7 @@ require (
 	github.com/blevesearch/go-porterstemmer v1.0.3 // indirect
 	github.com/blevesearch/mmap-go v1.0.2 // indirect
 	github.com/blevesearch/segment v0.9.0 // indirect
+	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/cloudflare/circl v1.1.0 // indirect
@@ -263,9 +264,11 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/locker v1.0.1 // indirect
+	github.com/moby/patternmatcher v0.5.0 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/moby/sys/mount v0.3.3 // indirect
 	github.com/moby/sys/mountinfo v0.6.2 // indirect
+	github.com/moby/sys/sequential v0.5.0 // indirect
 	github.com/moby/sys/symlink v0.2.0 // indirect
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -288,6 +291,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/rivo/uniseg v0.4.3 // indirect
+	github.com/rootless-containers/rootlesskit v1.1.0 // indirect
 	github.com/rubenv/sql-migrate v1.3.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sassoftware/relic v0.0.0-20210427151427-dfb082b79b74 // indirect
@@ -359,13 +363,6 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
-require (
-	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
-	github.com/moby/patternmatcher v0.5.0 // indirect
-	github.com/moby/sys/sequential v0.5.0 // indirect
-	github.com/rootless-containers/rootlesskit v1.1.0 // indirect
-)
-
 // To bump the version of a replacement package, use:
 //
 //   $ go mod edit -replace <package>=<replacement>@<branch or commit reference>
@@ -399,10 +396,10 @@ replace (
 	github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d
 
 	// The version of github.com/opencontainers/runc needs to be aligned with the version used in
-	// github.com/docker/docker. As of github.com/docker/docker v20.10.18+incompatible,
-	// the version of github.com/opencontainers/runc is v1.0.0-rc92 (https://github.com/moby/moby/blob/v20.10.18/vendor.conf#L95).
+	// github.com/docker/docker. As of github.com/docker/docker v23.10.2+incompatible,
+	// the version of github.com/opencontainers/runc is v1.1.3 (https://github.com/moby/moby/blob/v23.0.2/vendor.mod#L67).
 	// Any time github.com/docker/docker is updated, we should check if github.com/opencontainers/runc should be updated, too.
-	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc92
+	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.3
 
 	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
 	// we currently depend on.
