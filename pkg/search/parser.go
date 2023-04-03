@@ -109,6 +109,25 @@ func splitQuery(query string) []string {
 	return pairs
 }
 
+func splitCommaSeparatedValues(commaSeparatedValues string) []string {
+	var vals []string
+	start := 0
+	prevDoubleQuoteCount := 0
+	for i, char := range commaSeparatedValues {
+		if char == '"' {
+			prevDoubleQuoteCount++
+		}
+		if char == ',' && prevDoubleQuoteCount%2 == 0 {
+			vals = append(vals, commaSeparatedValues[start:i])
+			start = i + 1
+		}
+	}
+	if start <= len(commaSeparatedValues)-1 {
+		vals = append(vals, commaSeparatedValues[start:])
+	}
+	return vals
+}
+
 // Extracts "key", "value1,value2" from a string in the format key:value1,value2
 func parsePair(pair string, allowEmpty bool) (key string, values string, valid bool) {
 	pair = strings.TrimSpace(pair)

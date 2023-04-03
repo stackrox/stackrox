@@ -3,7 +3,6 @@ package search
 import (
 	"errors"
 	"sort"
-	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
@@ -25,7 +24,8 @@ func getFieldMap(query string) map[FieldLabel][]string {
 		if !valid || !IsValidFieldLabel(key) {
 			continue
 		}
-		values := strings.Split(commaSeparatedValues, ",")
+
+		values := splitCommaSeparatedValues(commaSeparatedValues)
 		fieldMap[FieldLabel(key)] = values
 	}
 	return fieldMap

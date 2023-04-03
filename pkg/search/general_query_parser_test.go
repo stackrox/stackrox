@@ -153,6 +153,50 @@ func TestParseRawQuery(t *testing.T) {
 				}},
 			},
 		},
+		{
+			desc:        "Query with plus and comma in double quotes",
+			queryStr:    fmt.Sprintf("%s:field1,\"field12+some,thing\",field13 + %s:\"field2+some,thing\"", DeploymentName, Category),
+			shouldError: false,
+			parser:      generalQueryParser{},
+			expectedQuery: &v1.Query{
+				Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+					Queries: []*v1.Query{
+						{Query: &v1.Query_BaseQuery{
+							BaseQuery: &v1.BaseQuery{
+								Query: &v1.BaseQuery_MatchFieldQuery{
+									MatchFieldQuery: &v1.MatchFieldQuery{Field: Category.String(), Value: "\"field2+some,thing\""},
+								},
+							},
+						}},
+						{Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{
+							Queries: []*v1.Query{
+								{Query: &v1.Query_BaseQuery{
+									BaseQuery: &v1.BaseQuery{
+										Query: &v1.BaseQuery_MatchFieldQuery{
+											MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "field1"},
+										},
+									},
+								}},
+								{Query: &v1.Query_BaseQuery{
+									BaseQuery: &v1.BaseQuery{
+										Query: &v1.BaseQuery_MatchFieldQuery{
+											MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "\"field12+some,thing\""},
+										},
+									},
+								}},
+								{Query: &v1.Query_BaseQuery{
+									BaseQuery: &v1.BaseQuery{
+										Query: &v1.BaseQuery_MatchFieldQuery{
+											MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "field13"},
+										},
+									},
+								}},
+							},
+						}}},
+					},
+				}},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
