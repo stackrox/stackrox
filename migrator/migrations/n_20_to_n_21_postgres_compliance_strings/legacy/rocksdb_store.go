@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/tecbot/gorocksdb"
 )
@@ -53,6 +54,7 @@ func unmarshalMessageStrings(iterator *gorocksdb.Iterator) (*storage.ComplianceS
 	if err := stringsProto.Unmarshal(bytes); err != nil {
 		return nil, err
 	}
+	stringsProto.Id = stringutils.GetAfterLast(string(iterator.Key().Data()), ":")
 	return &stringsProto, nil
 }
 
