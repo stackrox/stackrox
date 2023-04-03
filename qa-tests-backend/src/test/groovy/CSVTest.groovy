@@ -24,7 +24,6 @@ class CSVTest extends BaseSpecification {
 
     private static final IMAGE_SHA = "sha256:a05b0cdd4fc1be3b224ba9662ebdf98fe44c09c0c9215b45f84344c12867002e"
 
-
     private static final CVE_FIELDS_FRAGEMENT = """
     fragment cveFields on EmbeddedVulnerability {
       id: cve
@@ -139,13 +138,13 @@ class CSVTest extends BaseSpecification {
         ${CVE_POSTGRES_FIELDS_FRAGEMENT}
         """
 
-    static final private Map<String, String> queries = [
+    static final private Map<String, String> QUERIES = [
             "FIXABLE_CVES_IN_IMAGE_QUERY"     : FIXABLE_CVES_IN_IMAGE_QUERY,
             "FIXABLE_CVES_IN_COMPONENT_QUERY" : FIXABLE_CVES_IN_COMPONENT_QUERY,
             "FIXABLE_CVES_IN_DEPLOYMENT_QUERY": FIXABLE_CVES_IN_DEPLOYMENT_QUERY,
     ]
 
-    static final private Map<String, String> pgQueries = [
+    static final private Map<String, String> PG_QUERIES = [
             "FIXABLE_CVES_IN_IMAGE_QUERY"     : FIXABLE_CVES_IN_IMAGE_POSTGRES_QUERY,
             "FIXABLE_CVES_IN_COMPONENT_QUERY" : FIXABLE_CVES_IN_COMPONENT_POSTGRES_QUERY,
             "FIXABLE_CVES_IN_DEPLOYMENT_QUERY": FIXABLE_CVES_IN_DEPLOYMENT_POSTGRES_QUERY,
@@ -229,7 +228,7 @@ class CSVTest extends BaseSpecification {
         given:
         def graphQLPayload = payload(id)
         def csvQuery = getCVETypeImageQuery() + query
-        def graphQLQuery = postgresRun ? pgQueries[name] : queries[name]
+        def graphQLQuery = postgresRun ? PG_QUERIES[name] : QUERIES[name]
 
         when:
         "Query fixable CVEs from graphQL"
