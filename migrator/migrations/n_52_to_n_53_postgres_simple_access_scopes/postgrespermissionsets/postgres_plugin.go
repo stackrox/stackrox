@@ -121,6 +121,11 @@ func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx *postgres.Tx,
 			return marshalErr
 		}
 
+		if pgutils.NilOrUUID(obj.GetId()) == nil {
+			log.Warnf("Id is not a valid uuid -- %v", obj)
+			continue
+		}
+
 		inputRows = append(inputRows, []interface{}{
 
 			pgutils.NilOrUUID(obj.GetId()),
@@ -129,10 +134,6 @@ func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx *postgres.Tx,
 
 			serialized,
 		})
-		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
-			continue
-		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())

@@ -511,6 +511,11 @@ func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx *postgres.Tx, no
 		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
+		if pgutils.NilOrUUID(nodeID) == nil {
+			log.WriteToStderrf("id is not a valid uuid -- %v", obj)
+			continue
+		}
+
 		inputRows = append(inputRows, []interface{}{
 			pgutils.NilOrUUID(nodeID),
 			idx,
@@ -518,11 +523,6 @@ func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx *postgres.Tx, no
 			obj.GetValue(),
 			obj.GetTaintEffect(),
 		})
-
-		if pgutils.NilOrUUID(nodeID) == nil {
-			log.WriteToStderrf("id is not a valid uuid -- %v", obj)
-			continue
-		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
