@@ -2,6 +2,7 @@ package declarativeconfig
 
 import (
 	"bytes"
+	"io"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -106,8 +107,12 @@ func parseToConfiguration(contents []byte) ([]Configuration, error) {
 	var unstructuredObjs []interface{}
 	for {
 		var obj interface{}
-		if dec.Decode(&obj) != nil {
+		err := dec.Decode(&obj)
+		if errors.Is(err, io.EOF) {
 			break
+		}
+		if err != nil {
+			return nil, errors.Wrap(err, "decoding YAML file contents")
 		}
 		unstructuredObjs = append(unstructuredObjs, obj)
 	}

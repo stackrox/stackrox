@@ -55,6 +55,14 @@ func (l *lintCmd) Validate() error {
 }
 
 func (l *lintCmd) Lint() error {
+	if err := l.lint(); err != nil {
+		return err
+	}
+	l.env.Logger().InfofLn("Successfully validated declarative configuration within file %s", l.file)
+	return nil
+}
+
+func (l *lintCmd) lint() error {
 	configurations, err := declarativeconfig.ConfigurationFromRawBytes(l.fileContents)
 	if err != nil {
 		return errors.Wrap(err, "unmarshalling raw configuration")
@@ -71,7 +79,11 @@ func (l *lintCmd) Lint() error {
 	if err != nil {
 		return errors.Wrap(err, "validating configuration")
 	}
-
-	l.env.Logger().InfofLn("Successfully validated declarative configuration within file %s", l.file)
 	return nil
+}
+
+// Lint provides a helper utility to lint a YAML input containing declarative configuration.
+func Lint(yaml []byte) error {
+	l := lintCmd{fileContents: yaml}
+	return l.lint()
 }
