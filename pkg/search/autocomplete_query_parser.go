@@ -21,7 +21,7 @@ func (pi autocompleteQueryParser) parse(input string) (*v1.Query, string, error)
 }
 
 func (pi autocompleteQueryParser) parseInternal(query string) (*v1.Query, string, error) {
-	pairs := strings.Split(query, "+")
+	pairs := splitQuery(query)
 
 	queries := make([]*v1.Query, 0, len(pairs))
 	var autocompleteKey string
