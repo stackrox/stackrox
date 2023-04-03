@@ -76,23 +76,24 @@ func (e *ErrorList) AddStrings(errs ...string) {
 
 // ToError returns an error if there were errors added or nil
 func (e *ErrorList) ToError() error {
-	switch len(e.errors) {
-	case 0:
-		return nil
-	case 1:
-		return fmt.Errorf("%s error: %s", e.start, e.errors[0])
-	default:
-		return fmt.Errorf("%s errors: [%s]", e.start, strings.Join(e.ErrorStrings(), ", "))
-	}
+	return e
+}
+
+// Error implements the error interface
+func (e *ErrorList) Error() string {
+	return e.String()
 }
 
 // String converts the list to a string, returning empty if no errors were added.
 func (e *ErrorList) String() string {
-	err := e.ToError()
-	if err == nil {
+	switch len(e.errors) {
+	case 0:
 		return ""
+	case 1:
+		return fmt.Sprintf("%s error: %s", e.start, e.errors[0])
+	default:
+		return fmt.Sprintf("%s errors: [%s]", e.start, strings.Join(e.ErrorStrings(), ", "))
 	}
-	return err.Error()
 }
 
 // ErrorStrings returns all the error strings in this ErrorList as a slice, ignoring the start string.
