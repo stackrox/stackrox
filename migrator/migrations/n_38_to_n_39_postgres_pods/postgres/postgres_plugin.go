@@ -76,6 +76,11 @@ func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) err
 		return marshalErr
 	}
 
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		utils.Should(errors.Errorf("Id is not a valid uuid -- %q", obj.GetId()))
+		return nil
+	}
+
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
@@ -84,10 +89,6 @@ func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) err
 		obj.GetNamespace(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
-	}
-	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
-		return nil
 	}
 
 	finalStr := "INSERT INTO pods (Id, Name, DeploymentId, Namespace, ClusterId, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
@@ -107,16 +108,16 @@ func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) err
 }
 
 func insertIntoPodsLiveInstances(_ context.Context, batch *pgx.Batch, obj *storage.ContainerInstance, podID string, idx int) error {
+	if pgutils.NilOrUUID(podID) == nil {
+		utils.Should(errors.Errorf("podID is not a valid uuid -- %q", podID))
+		return nil
+	}
 
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(podID),
 		idx,
 		obj.GetImageDigest(),
-	}
-	if pgutils.NilOrUUID(podID) == nil {
-		utils.Should(errors.Errorf("podID is not a valid uuid -- %v", obj))
-		return nil
 	}
 
 	finalStr := "INSERT INTO pods_live_instances (pods_Id, idx, ImageDigest) VALUES($1, $2, $3) ON CONFLICT(pods_Id, idx) DO UPDATE SET pods_Id = EXCLUDED.pods_Id, idx = EXCLUDED.idx, ImageDigest = EXCLUDED.ImageDigest"
@@ -160,7 +161,7 @@ func (s *storeImpl) copyFromPods(ctx context.Context, tx *postgres.Tx, objs ...*
 		}
 
 		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			log.Warnf("Id is not a valid uuid -- %v", obj)
+			log.Warnf("Id is not a valid uuid -- %q", obj.GetId())
 			continue
 		}
 
@@ -235,7 +236,7 @@ func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx *postgres.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		if pgutils.NilOrUUID(podID) == nil {
-			log.Warnf("podID is not a valid uuid -- %v", obj)
+			log.Warnf("podID is not a valid uuid -- %q", podID)
 			continue
 		}
 

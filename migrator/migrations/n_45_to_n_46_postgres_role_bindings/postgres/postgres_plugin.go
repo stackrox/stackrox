@@ -76,6 +76,11 @@ func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.
 		return marshalErr
 	}
 
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		utils.Should(errors.Errorf("Id is not a valid uuid -- %q", obj.GetId()))
+		return nil
+	}
+
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
@@ -88,10 +93,6 @@ func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.
 		obj.GetAnnotations(),
 		pgutils.NilOrUUID(obj.GetRoleId()),
 		serialized,
-	}
-	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
-		return nil
 	}
 
 	finalStr := "INSERT INTO role_bindings (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, RoleId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, RoleId = EXCLUDED.RoleId, serialized = EXCLUDED.serialized"
@@ -111,6 +112,10 @@ func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.
 }
 
 func insertIntoRoleBindingsSubjects(_ context.Context, batch *pgx.Batch, obj *storage.Subject, roleBindingsID string, idx int) error {
+	if pgutils.NilOrUUID(roleBindingsID) == nil {
+		utils.Should(errors.Errorf("roleBindingsID is not a valid uuid -- %q", roleBindingsID))
+		return nil
+	}
 
 	values := []interface{}{
 		// parent primary keys start
@@ -118,10 +123,6 @@ func insertIntoRoleBindingsSubjects(_ context.Context, batch *pgx.Batch, obj *st
 		idx,
 		obj.GetKind(),
 		obj.GetName(),
-	}
-	if pgutils.NilOrUUID(roleBindingsID) == nil {
-		utils.Should(errors.Errorf("roleBindingsID is not a valid uuid -- %v", obj))
-		return nil
 	}
 
 	finalStr := "INSERT INTO role_bindings_subjects (role_bindings_Id, idx, Kind, Name) VALUES($1, $2, $3, $4) ON CONFLICT(role_bindings_Id, idx) DO UPDATE SET role_bindings_Id = EXCLUDED.role_bindings_Id, idx = EXCLUDED.idx, Kind = EXCLUDED.Kind, Name = EXCLUDED.Name"
@@ -173,7 +174,7 @@ func (s *storeImpl) copyFromRoleBindings(ctx context.Context, tx *postgres.Tx, o
 		}
 
 		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			log.Warnf("Id is not a valid uuid -- %v", obj)
+			log.Warnf("Id is not a valid uuid -- %q", obj.GetId())
 			continue
 		}
 
@@ -258,7 +259,7 @@ func (s *storeImpl) copyFromRoleBindingsSubjects(ctx context.Context, tx *postgr
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		if pgutils.NilOrUUID(roleBindingsID) == nil {
-			log.Warnf("roleBindingsID is not a valid uuid -- %v", obj)
+			log.Warnf("roleBindingsID is not a valid uuid -- %q", roleBindingsID)
 			continue
 		}
 

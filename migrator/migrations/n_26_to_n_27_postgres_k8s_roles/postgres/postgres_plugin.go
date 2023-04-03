@@ -76,6 +76,11 @@ func insertIntoK8sRoles(_ context.Context, batch *pgx.Batch, obj *storage.K8SRol
 		return marshalErr
 	}
 
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		utils.Should(errors.Errorf("Id is not a valid uuid -- %q", obj.GetId()))
+		return nil
+	}
+
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
@@ -87,10 +92,6 @@ func insertIntoK8sRoles(_ context.Context, batch *pgx.Batch, obj *storage.K8SRol
 		obj.GetLabels(),
 		obj.GetAnnotations(),
 		serialized,
-	}
-	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
-		return nil
 	}
 
 	finalStr := "INSERT INTO k8s_roles (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
@@ -140,7 +141,7 @@ func (s *storeImpl) copyFromK8sRoles(ctx context.Context, tx *postgres.Tx, objs 
 		}
 
 		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			log.Warnf("Id is not a valid uuid -- %v", obj)
+			log.Warnf("Id is not a valid uuid -- %q", obj.GetId())
 			continue
 		}
 

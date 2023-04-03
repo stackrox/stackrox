@@ -76,6 +76,11 @@ func insertIntoProcessIndicators(_ context.Context, batch *pgx.Batch, obj *stora
 		return marshalErr
 	}
 
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		utils.Should(errors.Errorf("Id is not a valid uuid -- %q", obj.GetId()))
+		return nil
+	}
+
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
@@ -91,10 +96,6 @@ func insertIntoProcessIndicators(_ context.Context, batch *pgx.Batch, obj *stora
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetNamespace(),
 		serialized,
-	}
-	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
-		return nil
 	}
 
 	finalStr := "INSERT INTO process_indicators (Id, DeploymentId, ContainerName, PodId, PodUid, Signal_ContainerId, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
@@ -152,7 +153,7 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx *postgres.
 		}
 
 		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			log.Warnf("Id is not a valid uuid -- %v", obj)
+			log.Warnf("Id is not a valid uuid -- %q", obj.GetId())
 			continue
 		}
 

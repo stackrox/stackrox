@@ -77,16 +77,17 @@ func insertIntoImageIntegrations(_ context.Context, batch *pgx.Batch, obj *stora
 		return marshalErr
 	}
 
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		utils.Should(errors.Errorf("Id is not a valid uuid -- %q", obj.GetId()))
+		return nil
+	}
+
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
-	}
-	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
-		return nil
 	}
 
 	finalStr := "INSERT INTO image_integrations (Id, Name, ClusterId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
@@ -126,7 +127,7 @@ func (s *storeImpl) copyFromImageIntegrations(ctx context.Context, tx *postgres.
 		}
 
 		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			log.Warnf("Id is not a valid uuid -- %v", obj)
+			log.Warnf("Id is not a valid uuid -- %q", obj.GetId())
 			continue
 		}
 

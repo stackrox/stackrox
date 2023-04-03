@@ -75,14 +75,15 @@ func insertIntoNetworkpoliciesundodeployments(_ context.Context, batch *pgx.Batc
 		return marshalErr
 	}
 
+	if pgutils.NilOrUUID(obj.GetDeploymentId()) == nil {
+		utils.Should(errors.Errorf("DeploymentId is not a valid uuid -- %q", obj.GetDeploymentId()))
+		return nil
+	}
+
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		serialized,
-	}
-	if pgutils.NilOrUUID(obj.GetDeploymentId()) == nil {
-		utils.Should(errors.Errorf("DeploymentId is not a valid uuid -- %v", obj))
-		return nil
 	}
 
 	finalStr := "INSERT INTO networkpoliciesundodeployments (DeploymentId, serialized) VALUES($1, $2) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
@@ -118,7 +119,7 @@ func (s *storeImpl) copyFromNetworkpoliciesundodeployments(ctx context.Context, 
 		}
 
 		if pgutils.NilOrUUID(obj.GetDeploymentId()) == nil {
-			log.Warnf("DeploymentId is not a valid uuid -- %v", obj)
+			log.Warnf("DeploymentId is not a valid uuid -- %q", obj.GetDeploymentId())
 			continue
 		}
 

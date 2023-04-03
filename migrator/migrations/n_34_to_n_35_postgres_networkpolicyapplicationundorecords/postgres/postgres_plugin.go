@@ -75,14 +75,15 @@ func insertIntoNetworkpolicyapplicationundorecords(_ context.Context, batch *pgx
 		return marshalErr
 	}
 
+	if pgutils.NilOrUUID(obj.GetClusterId()) == nil {
+		utils.Should(errors.Errorf("ClusterId is not a valid uuid -- %q", obj.GetClusterId()))
+		return nil
+	}
+
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
-	}
-	if pgutils.NilOrUUID(obj.GetClusterId()) == nil {
-		utils.Should(errors.Errorf("ClusterId is not a valid uuid -- %v", obj))
-		return nil
 	}
 
 	finalStr := "INSERT INTO networkpolicyapplicationundorecords (ClusterId, serialized) VALUES($1, $2) ON CONFLICT(ClusterId) DO UPDATE SET ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
@@ -118,7 +119,7 @@ func (s *storeImpl) copyFromNetworkpolicyapplicationundorecords(ctx context.Cont
 		}
 
 		if pgutils.NilOrUUID(obj.GetClusterId()) == nil {
-			log.Warnf("ClusterId is not a valid uuid -- %v", obj)
+			log.Warnf("ClusterId is not a valid uuid -- %q", obj.GetClusterId())
 			continue
 		}
 

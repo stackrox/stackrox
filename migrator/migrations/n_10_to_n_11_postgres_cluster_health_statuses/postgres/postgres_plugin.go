@@ -79,6 +79,11 @@ func insertIntoClusterHealthStatuses(_ context.Context, batch *pgx.Batch, obj *s
 		return marshalErr
 	}
 
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		log.Warnf("Id is not a valid uuid -- %v", obj)
+		return nil
+	}
+
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
@@ -89,10 +94,6 @@ func insertIntoClusterHealthStatuses(_ context.Context, batch *pgx.Batch, obj *s
 		obj.GetScannerHealthStatus(),
 		pgutils.NilOrTime(obj.GetLastContact()),
 		serialized,
-	}
-	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		log.Warnf("Id is not a valid uuid -- %v", obj)
-		return nil
 	}
 
 	finalStr := "INSERT INTO cluster_health_statuses (Id, SensorHealthStatus, CollectorHealthStatus, OverallHealthStatus, AdmissionControlHealthStatus, ScannerHealthStatus, LastContact, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, SensorHealthStatus = EXCLUDED.SensorHealthStatus, CollectorHealthStatus = EXCLUDED.CollectorHealthStatus, OverallHealthStatus = EXCLUDED.OverallHealthStatus, AdmissionControlHealthStatus = EXCLUDED.AdmissionControlHealthStatus, ScannerHealthStatus = EXCLUDED.ScannerHealthStatus, LastContact = EXCLUDED.LastContact, serialized = EXCLUDED.serialized"

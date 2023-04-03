@@ -76,16 +76,17 @@ func insertIntoNetworkBaselines(_ context.Context, batch *pgx.Batch, obj *storag
 		return marshalErr
 	}
 
+	if pgutils.NilOrUUID(obj.GetDeploymentId()) == nil {
+		utils.Should(errors.Errorf("DeploymentId is not a valid uuid -- %q", obj.GetDeploymentId()))
+		return nil
+	}
+
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetNamespace(),
 		serialized,
-	}
-	if pgutils.NilOrUUID(obj.GetDeploymentId()) == nil {
-		utils.Should(errors.Errorf("DeploymentId is not a valid uuid -- %v", obj))
-		return nil
 	}
 
 	finalStr := "INSERT INTO network_baselines (DeploymentId, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
@@ -125,7 +126,7 @@ func (s *storeImpl) copyFromNetworkBaselines(ctx context.Context, tx *postgres.T
 		}
 
 		if pgutils.NilOrUUID(obj.GetDeploymentId()) == nil {
-			log.Warnf("DeploymentId is not a valid uuid -- %v", obj)
+			log.Warnf("DeploymentId is not a valid uuid -- %q", obj.GetDeploymentId())
 			continue
 		}
 

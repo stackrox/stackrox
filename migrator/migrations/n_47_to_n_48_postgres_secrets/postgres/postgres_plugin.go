@@ -76,6 +76,11 @@ func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secre
 		return marshalErr
 	}
 
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		utils.Should(errors.Errorf("Id is not a valid uuid -- %q", obj.GetId()))
+		return nil
+	}
+
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
@@ -85,10 +90,6 @@ func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secre
 		obj.GetNamespace(),
 		pgutils.NilOrTime(obj.GetCreatedAt()),
 		serialized,
-	}
-	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
-		return nil
 	}
 
 	finalStr := "INSERT INTO secrets (Id, Name, ClusterId, ClusterName, Namespace, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
@@ -108,6 +109,10 @@ func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secre
 }
 
 func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.SecretDataFile, secretsID string, idx int) error {
+	if pgutils.NilOrUUID(secretsID) == nil {
+		utils.Should(errors.Errorf("secretsID is not a valid uuid -- %q", secretsID))
+		return nil
+	}
 
 	values := []interface{}{
 		// parent primary keys start
@@ -115,10 +120,6 @@ func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.
 		idx,
 		obj.GetType(),
 		pgutils.NilOrTime(obj.GetCert().GetEndDate()),
-	}
-	if pgutils.NilOrUUID(secretsID) == nil {
-		utils.Should(errors.Errorf("secretsID is not a valid uuid -- %v", obj))
-		return nil
 	}
 
 	finalStr := "INSERT INTO secrets_files (secrets_Id, idx, Type, Cert_EndDate) VALUES($1, $2, $3, $4) ON CONFLICT(secrets_Id, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, idx = EXCLUDED.idx, Type = EXCLUDED.Type, Cert_EndDate = EXCLUDED.Cert_EndDate"
@@ -138,6 +139,10 @@ func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.
 }
 
 func insertIntoSecretsFilesRegistries(_ context.Context, batch *pgx.Batch, obj *storage.ImagePullSecret_Registry, secretsID string, secretsFilesIdx int, idx int) error {
+	if pgutils.NilOrUUID(secretsID) == nil {
+		utils.Should(errors.Errorf("secretsID is not a valid uuid -- %q", secretsID))
+		return nil
+	}
 
 	values := []interface{}{
 		// parent primary keys start
@@ -145,10 +150,6 @@ func insertIntoSecretsFilesRegistries(_ context.Context, batch *pgx.Batch, obj *
 		secretsFilesIdx,
 		idx,
 		obj.GetName(),
-	}
-	if pgutils.NilOrUUID(secretsID) == nil {
-		utils.Should(errors.Errorf("secretsID is not a valid uuid -- %v", obj))
-		return nil
 	}
 
 	finalStr := "INSERT INTO secrets_files_registries (secrets_Id, secrets_files_idx, idx, Name) VALUES($1, $2, $3, $4) ON CONFLICT(secrets_Id, secrets_files_idx, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, secrets_files_idx = EXCLUDED.secrets_files_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name"
@@ -194,7 +195,7 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx *postgres.Tx, objs .
 		}
 
 		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			log.Warnf("Id is not a valid uuid -- %v", obj)
+			log.Warnf("Id is not a valid uuid -- %q", obj.GetId())
 			continue
 		}
 
@@ -273,7 +274,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx *postgres.Tx, s
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		if pgutils.NilOrUUID(secretsID) == nil {
-			log.Warnf("secretsID is not a valid uuid -- %v", obj)
+			log.Warnf("secretsID is not a valid uuid -- %q", secretsID)
 			continue
 		}
 
@@ -337,7 +338,7 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx *post
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		if pgutils.NilOrUUID(secretsID) == nil {
-			log.Warnf("secretsID is not a valid uuid -- %v", obj)
+			log.Warnf("secretsID is not a valid uuid -- %q", secretsID)
 			continue
 		}
 
