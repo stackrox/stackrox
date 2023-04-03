@@ -119,7 +119,7 @@ const linkSelectors = {
 const sidePanelSelectors = {
     backButton: '[data-testid="sidepanelBackButton"]',
     entityIcon: '[data-testid="entity-icon"]',
-    sidePanelExpandButton: '[data-testid = "external-link"]',
+    sidePanelExternalLinkButton: '[aria-label="External link"]',
     getSidePanelTabLink: (title) => {
         return `[data-testid="tab"]:contains('${title}')`;
     },

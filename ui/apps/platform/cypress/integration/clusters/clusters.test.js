@@ -89,7 +89,7 @@ describe.skip('Cluster Creation Flow', () => {
             );
 
             cy.intercept('GET', '/v1/clusters').as('getClusters');
-            cy.get('button[data-testid="cancel"]').click();
+            cy.get('[data-testid="panel"] button[aria-label="Close"]').click();
             cy.wait('@getClusters');
 
             // clean up after the test by deleting the cluster
