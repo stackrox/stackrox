@@ -140,7 +140,7 @@ func (s *storeImpl) copyFromClusterHealthStatuses(ctx context.Context, tx *postg
 		}
 
 		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			log.Warnf("Id is not a valid uuid --") // %v", obj)
+			log.Warnf("Id is not a valid uuid -- %v", obj)
 			continue
 		}
 		inputRows = append(inputRows, []interface{}{
