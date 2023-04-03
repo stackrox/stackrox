@@ -98,11 +98,11 @@ func (a *loginAuth) Start(_ *smtp.ServerInfo) (string, []byte, error) {
 
 func (a *loginAuth) Next(fromServer []byte, more bool) ([]byte, error) {
 	if more {
-		serverStr := string(fromServer)
+		serverStr := strings.ToLower(string(fromServer))
 		switch serverStr {
-		case "Username:":
+		case "username:":
 			return []byte(a.username), nil
-		case "Password:":
+		case "password:":
 			return []byte(a.password), nil
 		default:
 			return nil, fmt.Errorf("unknown value request %q from server", serverStr)
