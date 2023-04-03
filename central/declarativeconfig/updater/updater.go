@@ -21,7 +21,6 @@ type ResourceUpdater interface {
 	Upsert(ctx context.Context, m proto.Message) error
 	// DeleteResources will delete all proto resources created within declarative config reconciliation, besides
 	// the given resource IDs. It will return an error, if errors occurred, and a list of IDs which failed deletion.
-	// TODO(ROX-14700): Extend the delete implementation to cover resolving references.
 	DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error)
 }
 
