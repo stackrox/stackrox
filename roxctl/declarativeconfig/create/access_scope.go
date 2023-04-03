@@ -28,8 +28,8 @@ Each tuple represents a requirement, which will be used to construct the label s
 You may specify this flag multiple times, to create a conjunction of requirements which should apply for a label selector
 to match.
 
-Example of a label selector requiring values: --cluster-label-selector "key=kubernetes.io/hostname;operator=IN;values=nodeA,nodeB"
-Example of a label selector not requiring values: --cluster-label-selector "key=custom-label;operator=EXISTS"
+Example of a label selector requiring values: --%s "key=kubernetes.io/hostname;operator=IN;values=nodeA,nodeB"
+Example of a label selector not requiring values: --%s "key=custom-label;operator=EXISTS"
 
 NOTE: The created access scope will only contain a single label selector, where each specified requirement
 will be in conjunction. If you desire to create multiple label selectors, you have to adjust the YAML output manually.
@@ -66,10 +66,10 @@ In case only a subset of namespace should be included, specify --included cluste
 	// if they wish to do so.
 
 	cmd.Flags().Var(&requirementFlag{requirements: &accessScopeCmd.clusterRequirements}, "cluster-label-selector",
-		labelSelectorUsage)
+		fmt.Sprintf(labelSelectorUsage, "cluster-label-selector", "cluster-label-selector"))
 
 	cmd.Flags().Var(&requirementFlag{requirements: &accessScopeCmd.namespaceRequirements}, "namespace-label-selector",
-		labelSelectorUsage)
+		fmt.Sprintf(labelSelectorUsage, "namespace-label-selector", "namespace-label-selector"))
 
 	utils.Must(cmd.MarkFlagRequired("name"))
 

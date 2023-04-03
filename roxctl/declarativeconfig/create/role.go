@@ -4,6 +4,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
+	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"gopkg.in/yaml.v3"
 )
@@ -15,6 +17,9 @@ func roleCommand(cliEnvironment environment.Environment) *cobra.Command {
 		Use:  roleCmd.role.Type(),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := roleCmd.Validate(); err != nil {
+				return err
+			}
 			return roleCmd.PrintYAML()
 		},
 		Short: "Create a declarative configuration for a role",
@@ -29,14 +34,21 @@ func roleCommand(cliEnvironment environment.Environment) *cobra.Command {
 
 	// No additional validation is required for roles, since a role is valid when name, permission set, access
 	// scope are set, which is covered by requiring the flag.
-	cmd.MarkFlagsRequiredTogether("name", "access-scope", "permission-set")
-
+	utils.Must(cmd.MarkFlagRequired("name"))
+	utils.Must(cmd.MarkFlagRequired("access-scope"))
+	utils.Must(cmd.MarkFlagRequired("permission-set"))
 	return cmd
 }
 
 type roleCmd struct {
 	role *declarativeconfig.Role
 	env  environment.Environment
+}
+
+func (r *roleCmd) Validate() error {
+	t := transform.New()
+	_, err := t.Transform(r.role)
+	return errors.Wrap(err, "validate role")
 }
 
 func (r *roleCmd) PrintYAML() error {

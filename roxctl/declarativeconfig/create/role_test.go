@@ -12,12 +12,17 @@ func TestCreateRoleCommand_Failures(t *testing.T) {
 		args   []string
 		errOut string
 	}{
+		"no flag set": {
+			args: []string{},
+			errOut: `Error: required flag(s) "access-scope", "name", "permission-set" not set
+`,
+		},
 		"missing name flag": {
 			args: []string{
 				"--access-scope=some-access-scope",
 				"--permission-set=some-permission-set",
 			},
-			errOut: `Error: if any flags in the group [name access-scope permission-set] are set they must all be set; missing [name]
+			errOut: `Error: required flag(s) "name" not set
 `,
 		},
 		"missing access scope flag": {
@@ -25,7 +30,7 @@ func TestCreateRoleCommand_Failures(t *testing.T) {
 				"--name=some-name",
 				"--permission-set=some-permission-set",
 			},
-			errOut: `Error: if any flags in the group [name access-scope permission-set] are set they must all be set; missing [access-scope]
+			errOut: `Error: required flag(s) "access-scope" not set
 `,
 		},
 		"missing permission set flag": {
@@ -33,7 +38,7 @@ func TestCreateRoleCommand_Failures(t *testing.T) {
 				"--name=some-name",
 				"--access-scope=some-access-scope",
 			},
-			errOut: `Error: if any flags in the group [name access-scope permission-set] are set they must all be set; missing [permission-set]
+			errOut: `Error: required flag(s) "permission-set" not set
 `,
 		},
 	}

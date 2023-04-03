@@ -10,7 +10,7 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "declarative-config",
-		Short: "Commands related to declarative configuration",
+		Short: "Commands that help manage declarative configuration",
 	}
 
 	c.AddCommand(

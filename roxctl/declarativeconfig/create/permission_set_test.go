@@ -93,6 +93,20 @@ resources:
       access: READ_WRITE_ACCESS
 `,
 		},
+		"with lowercase resource": {
+			args: []string{
+				"--name=some-name",
+				"--resource-with-access=Access=read_access",
+				"--resource-with-access=Admin=read_write_access",
+			},
+			expectedYAML: `name: some-name
+resources:
+    - resource: Access
+      access: READ_ACCESS
+    - resource: Admin
+      access: READ_WRITE_ACCESS
+`,
+		},
 	}
 
 	for name, c := range cases {

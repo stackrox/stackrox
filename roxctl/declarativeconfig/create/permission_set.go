@@ -34,7 +34,7 @@ func permissionSetCommand(cliEnvironment environment.Environment) *cobra.Command
 	cmd.Flags().StringVar(&permSetCmd.permissionSet.Description, "description", "",
 		"description of the permission set")
 	cmd.Flags().StringToStringVar(&permSetCmd.resourceWithAccess, "resource-with-access", map[string]string{},
-		`list of resource with the respective access, e.g. --resource-with-access Access=READ_ACCESS,Admin=READ_WRITE_ACCESS
+		`list of resources with the respective access, e.g. --resource-with-access Access=READ_ACCESS,Admin=READ_WRITE_ACCESS
 Note: Capitalization matters!`)
 
 	cmd.MarkFlagsRequiredTogether("name", "resource-with-access")
@@ -57,11 +57,11 @@ func (p *permissionSetCmd) Validate() error {
 	resources := maputil.Keys(accessMap)
 	sort.Strings(resources)
 
-	// Resources are currently defined within central/role/resources, and hence cannot be reused here yet.
+	// TODO(ROX-16330): Resources are currently defined within central/role/resources, and hence cannot be reused here yet.
 	// There are plans to move the resource definition to a shared place however, in which case we can reuse them here.
 	var invalidAccessErrors *multierror.Error
 	for _, resource := range resources {
-		accessVal, ok := storage.Access_value[accessMap[resource]]
+		accessVal, ok := storage.Access_value[strings.ToUpper(accessMap[resource])]
 		if !ok {
 			invalidAccessErrors = multierror.Append(invalidAccessErrors, errox.InvalidArgs.
 				Newf("invalid access specified for resource %s: %s. The allowed values for access are: [%s]",
