@@ -14,6 +14,7 @@ var (
 	bucket = []byte("clusters_health_status")
 )
 
+// Store implements the methods used for migrating cluster health statuses
 type Store interface {
 	UpsertMany(ctx context.Context, objs []*storage.ClusterHealthStatus) error
 	Walk(ctx context.Context, fn func(obj *storage.ClusterHealthStatus) error) error
