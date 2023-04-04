@@ -68,7 +68,6 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 
 	policyName := "policy description %d"
 	for i := 0; i < len(policies); i++ {
-
 		require.NoError(s.T(), s.policyStore.Upsert(ctx, &storage.Policy{
 			Id:   policies[i],
 			Name: fmt.Sprintf(policyName, i),

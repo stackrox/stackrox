@@ -52,7 +52,7 @@
       "deployment": {
         "name": "oauth-openshift",
         "scope": {
-          "namespace": "openshift-authentication namespace"
+          "namespace": "openshift-authentication"
         }
       }
     },
