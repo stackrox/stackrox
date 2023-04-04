@@ -1,7 +1,6 @@
 package zip
 
 import (
-	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -15,7 +14,6 @@ import (
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/sensor"
-	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/zip"
@@ -49,30 +47,27 @@ func getAdditionalCAs(certs *sensor.Certs) ([]*zip.File, error) {
 		certs.Files[fmt.Sprintf("secrets/%s/%s", additionalCAsZipSubdir, fileInfo.Name())] = contents
 	}
 
-	if caFile, err := getDefaultCertCA(); err != nil {
+	if zipForDefaultTLSCertCA, err := maybeCreateZipFileForDefaultTLSCertCA(); err != nil {
 		log.Errorf("Error obtaining default CA cert: %v", err)
-	} else if caFile != nil {
-		files = append(files, caFile)
-		certs.Files[fmt.Sprintf("secrets/%s/%s", additionalCAsZipSubdir, centralCA)] = caFile.Content
+	} else if zipForDefaultTLSCertCA != nil {
+		files = append(files, zipForDefaultTLSCertCA)
+		certs.Files[fmt.Sprintf("secrets/%s/%s", additionalCAsZipSubdir, centralCA)] = zipForDefaultTLSCertCA.Content
 	}
 
 	return files, nil
 }
 
-func getDefaultCertCA() (*zip.File, error) {
-	certFile := filepath.Join(tlsconfig.DefaultCertPath, tlsconfig.TLSCertFileName)
-	keyFile := filepath.Join(tlsconfig.DefaultCertPath, tlsconfig.TLSKeyFileName)
-
-	if filesExist, err := fileutils.AllExist(certFile, keyFile); err != nil || !filesExist {
-		return nil, err
-	}
-
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+// maybeCreateZipFileForDefaultTLSCertCA returns a zip file containing the default CA cert if it is not trusted by the system roots.
+func maybeCreateZipFileForDefaultTLSCertCA() (*zip.File, error) {
+	defaultTLSCertificate, err := tlsconfig.MaybeGetDefaultTLSCertificateFromDefaultDirectory()
 	if err != nil {
 		return nil, err
 	}
+	if defaultTLSCertificate == nil {
+		return nil, nil
+	}
 
-	lastInChain, err := x509.ParseCertificate(cert.Certificate[len(cert.Certificate)-1])
+	lastInChain, err := x509.ParseCertificate(defaultTLSCertificate.Certificate[len(defaultTLSCertificate.Certificate)-1])
 	if err != nil {
 		return nil, err
 	}

@@ -104,9 +104,9 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 	}
 
 	// add default leaf cert to additional CAs
-	defaultCertChain, err := tlsconfig.GetDefaultCertChain()
+	defaultCertChain, err := tlsconfig.MaybeGetDefaultCertChain()
 	if err != nil {
-		return nil, errors.Errorf("could not read default CA cert: %s", err)
+		return nil, errors.Errorf("could not read default cert chain: %s", err)
 	}
 	if len(defaultCertChain) > 0 {
 		additionalCAs = append(additionalCAs, defaultCertChain[0])
