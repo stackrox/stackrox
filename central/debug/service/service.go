@@ -104,7 +104,7 @@ type Service interface {
 func New(clusters datastore.DataStore, sensorConnMgr connection.Manager, telemetryGatherer *gatherers.RoxGatherer,
 	store store.Store, authzTraceSink observe.AuthzTraceSink, authProviderRegistry authproviders.Registry,
 	groupDataStore groupDS.DataStore, roleDataStore roleDS.DataStore, configDataStore configDS.DataStore,
-	notifierDataStore notifierDS.DataStore) Service {
+	notifierDataStore notifierDS.DataStore, alertDataStore alertStore.DataStore) Service {
 	return &serviceImpl{
 		clusters:             clusters,
 		sensorConnMgr:        sensorConnMgr,
@@ -116,8 +116,7 @@ func New(clusters datastore.DataStore, sensorConnMgr connection.Manager, telemet
 		roleDataStore:        roleDataStore,
 		configDataStore:      configDataStore,
 		notifierDataStore:    notifierDataStore,
-		// TODO: Inject dependency
-		alertDataStore: nil,
+		alertDataStore:       alertDataStore,
 	}
 }
 
@@ -643,7 +642,6 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		// to be reprocessed will appear in the new JSON file.
 		time.Sleep(time.Minute)
 		fetchAndAddJSONToZip(debugDumpCtx, zipWriter, "alerts-after.json", s.fetchAlerts)
-
 	}
 
 	// Get logs last to also catch logs made during creation of diag bundle.

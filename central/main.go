@@ -355,6 +355,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 			roleDataStore.Singleton(),
 			configDS.Singleton(),
 			notifierDS.Singleton(),
+			alertDatastore.Singleton(),
 		),
 		deploymentService.Singleton(),
 		detectionService.Singleton(),
