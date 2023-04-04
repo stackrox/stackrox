@@ -100,6 +100,7 @@ resources:
 		},
 		"with lowercase resource": {
 			args: []string{
+				"permission-set",
 				"--name=some-name",
 				"--resource-with-access=Access=read_access",
 				"--resource-with-access=Admin=read_write_access",

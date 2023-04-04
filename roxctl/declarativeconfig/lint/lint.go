@@ -2,6 +2,7 @@ package lint
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/hashicorp/go-multierror"
@@ -13,6 +14,9 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 )
+
+const k8sObjectFlagTemplate = `%s from which to read the declarative configuration from.
+In case this is not set, the declarative configuration will be read from the YAML file provided via the --file flag.`
 
 // Command provides the lint command for declartive configuration.
 func Command(cliEnvironment environment.Environment) *cobra.Command {
@@ -32,12 +36,13 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	cmd.Flags().StringVarP(&lintCmd.file, "file", "f", "", "file containing the declarative configuration in YAML format")
 
-	cmd.Flags().String(k8sobject.ConfigMapFlag, "", `config map from which to read the declarative configuration from.
-In case this is not set, the declarative configuration will be read from the YAML file provided via the --file flag.`)
+	cmd.Flags().String(k8sobject.ConfigMapFlag, "", fmt.Sprintf(k8sObjectFlagTemplate, "config map"))
+	cmd.Flags().String(k8sobject.SecretFlag, "", fmt.Sprintf(k8sObjectFlagTemplate, "secret"))
 	cmd.Flags().String(k8sobject.NamespaceFlag, "", `namespace of the config map from which to read the declarative configuration from.
 In case this is not set, the namespace set within the current kube config context will be used`)
 
 	cmd.MarkFlagsMutuallyExclusive("file", k8sobject.ConfigMapFlag)
+	cmd.MarkFlagsMutuallyExclusive(k8sobject.ConfigMapFlag, k8sobject.SecretFlag)
 
 	return cmd
 }
