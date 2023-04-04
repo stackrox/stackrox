@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/roles"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/secrets"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/serviceaccounts"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 )
 
@@ -67,7 +68,7 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		alerts.GetPipeline(),
 		auditlogstateupdate.GetPipeline(),
 	}
-	if features.RHCOSNodeScanning.Enabled() {
+	if env.RHCOSNodeScanning.BooleanSetting() {
 		pipelines = append(pipelines, nodeinventory.GetPipeline())
 	}
 	if features.ComplianceOperatorCheckResults.Enabled() {

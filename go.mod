@@ -46,7 +46,7 @@ require (
 	github.com/google/go-containerregistry v0.13.0
 	github.com/gorilla/schema v1.2.0
 	github.com/graph-gophers/graphql-go v1.5.0
-	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/go-multierror v1.1.1
