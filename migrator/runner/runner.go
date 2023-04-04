@@ -11,9 +11,10 @@ import (
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/set"
 )
 
-var skipMigrationMap = make(map[int]struct{})
+var skipMigrationMap = set.NewIntSet()
 
 func init() {
 	env := os.Getenv("ROX_SKIP_MIGRATIONS")
@@ -26,7 +27,7 @@ func init() {
 			log.WriteToStderrf("could not parse %v. Not skipping", skipped)
 			continue
 		}
-		skipMigrationMap[migration] = struct{}{}
+		skipMigrationMap.Add(migration)
 	}
 }
 
@@ -69,7 +70,7 @@ func runMigrations(databases *types.Databases, startingSeqNum int) error {
 			return fmt.Errorf("no migration found starting at %d", seqNum)
 		}
 
-		if _, ok := skipMigrationMap[seqNum]; ok {
+		if skipMigrationMap.Contains(seqNum) {
 			log.WriteToStderrf("Skipping migration %d based on environment variable", seqNum)
 		} else {
 			err := migration.Run(databases)
