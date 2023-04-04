@@ -19,7 +19,8 @@ export type PublicConfigTelemetryDetailsProps = {
 const PublicConfigTelemetryDetails = ({
     publicConfig,
 }: PublicConfigTelemetryDetailsProps): ReactElement => {
-    const isEnabled = publicConfig?.telemetry?.enabled || false;
+    // telemetry will be enabled by default which is why we only check for false here. null/undefined/true will all equate to enabled.
+    const isEnabled = publicConfig?.telemetry?.enabled !== false;
 
     return (
         <Card isFlat data-testid="telemetry-config">
