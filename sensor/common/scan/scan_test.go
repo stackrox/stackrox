@@ -229,7 +229,7 @@ func (suite *scanTestSuite) TestEnrichErrorNoScanner() {
 		scannerClientSingleton: func() *scannerclient.Client { return nil },
 	}
 
-	_, err := scan.EnrichLocalImageFromRegistry(context.Background(), nil, nil, nil)
+	_, err := scan.enrichLocalImageFromRegistry(context.Background(), nil, nil, nil)
 	suite.Require().ErrorIs(err, ErrNoLocalScanner)
 }
 
@@ -239,7 +239,7 @@ func (suite *scanTestSuite) TestEnrichErrorNoImage() {
 		scanSemaphore:          semaphore.NewWeighted(10),
 	}
 
-	_, err := scan.EnrichLocalImageFromRegistry(context.Background(), nil, nil, nil)
+	_, err := scan.enrichLocalImageFromRegistry(context.Background(), nil, nil, nil)
 	suite.Require().Error(err)
 	suite.Require().NotErrorIs(err, ErrNoLocalScanner)
 }
@@ -250,7 +250,7 @@ func (suite *scanTestSuite) TestEnrichThrottle() {
 		scanSemaphore:          semaphore.NewWeighted(0),
 	}
 
-	_, err := scan.EnrichLocalImageFromRegistry(context.Background(), nil, nil, nil)
+	_, err := scan.enrichLocalImageFromRegistry(context.Background(), nil, nil, nil)
 	suite.Require().ErrorIs(err, ErrTooManyParallelScans)
 }
 
@@ -278,7 +278,7 @@ func (suite *scanTestSuite) TestEnrichMultipleRegistries() {
 	// reg1 metadata should fail and not be used for scanning
 	// reg2 metadata should succeed and be used for scanning
 	// reg3 metadata should have never been invoked because reg2 succeeded
-	_, err = scan.EnrichLocalImageFromRegistry(context.Background(), imageServiceClient, containerImg, regs)
+	_, err = scan.enrichLocalImageFromRegistry(context.Background(), imageServiceClient, containerImg, regs)
 	suite.Require().NoError(err)
 	suite.Require().True(reg1.metadataInvoked)
 	suite.Require().False(reg1.configInvoked)
@@ -308,7 +308,7 @@ func (suite *scanTestSuite) TestEnrichNoRegistries() {
 	img := types.ToImage(containerImg)
 	imageServiceClient := suite.createMockImageServiceClient(img, false)
 
-	_, err = scan.EnrichLocalImageFromRegistry(context.Background(), imageServiceClient, containerImg, nil)
+	_, err = scan.enrichLocalImageFromRegistry(context.Background(), imageServiceClient, containerImg, nil)
 	suite.Require().NoError(err, "unexpected error enriching image")
 	suite.Require().False(fakeRegStore.getGlobalRegistryForImageInvoked)
 	suite.Require().False(fakeRegStore.getRegistryForImageInNamespaceInvoked)

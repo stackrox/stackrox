@@ -83,7 +83,7 @@ func (s *LocalScan) EnrichLocalImage(ctx context.Context, centralClient v1.Image
 
 	log.Debugf("Received matching registry for image %q: %q", imgName, matchingRegistry.Name())
 
-	return s.EnrichLocalImageFromRegistry(ctx, centralClient, ci, []registryTypes.Registry{matchingRegistry})
+	return s.enrichLocalImageFromRegistry(ctx, centralClient, ci, []registryTypes.Registry{matchingRegistry})
 }
 
 // EnrichLocalImageInNamespace invokes EnrichLocalImageFromRegistry with a slice of credentials from the registryStore based on namespace as well as
@@ -93,7 +93,7 @@ func (s *LocalScan) EnrichLocalImage(ctx context.Context, centralClient v1.Image
 func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage, namespace string) (*storage.Image, error) {
 	if namespace == "" {
 		// If no namespace provided try enrichment with 'no auth'
-		return s.EnrichLocalImageFromRegistry(ctx, centralClient, ci, nil)
+		return s.enrichLocalImageFromRegistry(ctx, centralClient, ci, nil)
 	}
 
 	var regs []registryTypes.Registry
@@ -112,7 +112,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 
 	log.Debugf("Attempting image enrich for %q in namespace %q with %v regs", ci.GetName().GetFullName(), namespace, len(regs))
 
-	return s.EnrichLocalImageFromRegistry(ctx, centralClient, ci, regs)
+	return s.enrichLocalImageFromRegistry(ctx, centralClient, ci, regs)
 }
 
 // EnrichLocalImageFromRegistry will enrich an image with scan results from local scanner as well as signatures
@@ -125,7 +125,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 // assume no auth is required
 //
 // Will return any errors that may occur during scanning, fetching signatures or during reaching out to central.
-func (s *LocalScan) EnrichLocalImageFromRegistry(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage, registries []registryTypes.Registry) (*storage.Image, error) {
+func (s *LocalScan) enrichLocalImageFromRegistry(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage, registries []registryTypes.Registry) (*storage.Image, error) {
 	// Check if there is a local Scanner.
 	// No need to continue if there is no local Scanner.
 	if s.scannerClientSingleton() == nil {
