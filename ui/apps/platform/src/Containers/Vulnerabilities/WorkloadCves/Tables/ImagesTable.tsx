@@ -9,8 +9,8 @@ import { getDistanceStrictAsPhrase, getDateTime } from 'utils/dateUtils';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import ImageNameTd from '../components/ImageNameTd';
 import { getEntityPagePath } from '../searchUtils';
-import SeverityCountLabels from '../SeverityCountLabels';
-import { DynamicColumnIcon } from '../DynamicIcon';
+import SeverityCountLabels from '../components/SeverityCountLabels';
+import { DynamicColumnIcon } from '../components/DynamicIcon';
 
 export const imageListQuery = gql`
     query getImageList($query: String, $pagination: Pagination) {
@@ -74,20 +74,20 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
     return (
         <TableComposable borders={false} variant="compact">
             <Thead>
-                {/* TODO: need to add sorting to columns  */}
+                {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th sort={getSortParams('Image')}>Image</Th>
-                    <Th sort={getSortParams('CVE')}>
+                    <Th sort={getSortParams('CVEs by Severity')}>
                         CVEs by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th sort={getSortParams('Operating System')}>Operating system</Th>
-                    <Th sort={getSortParams('Deployment count')}>
+                    <Th sort={getSortParams('Deployment Count')}>
                         Deployments
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th sort={getSortParams('Age')}>Age</Th>
-                    <Th sort={getSortParams('Scan time')}>Scan time</Th>
+                    <Th sort={getSortParams('Scan Time')}>Scan time</Th>
                 </Tr>
             </Thead>
             {images.map(
@@ -126,6 +126,7 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                                 </Td>
                                 <Td>{operatingSystem}</Td>
                                 <Td>
+                                    {/* TODO: add modal */}
                                     {deploymentCount > 0 ? (
                                         <Button
                                             variant={ButtonVariant.link}
@@ -139,6 +140,7 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                                     ) : (
                                         <Flex>
                                             <div>0 deployments</div>
+                                            {/* TODO: double check on what this links to */}
                                             <span>({`${watchStatus}`} image)</span>
                                         </Flex>
                                     )}

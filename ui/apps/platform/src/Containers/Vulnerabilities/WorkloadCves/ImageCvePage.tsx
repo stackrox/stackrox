@@ -41,9 +41,9 @@ import AffectedImagesTable, {
     ImageForCve,
     imagesForCveFragment,
 } from './Tables/AffectedImagesTable';
-import EntityTypeToggleGroup from './EntityTypeToggleGroup';
+import EntityTypeToggleGroup from './components/EntityTypeToggleGroup';
 import AffectedDeploymentsTable from './Tables/AffectedDeploymentsTable';
-import { DynamicTableLabel } from './DynamicIcon';
+import { DynamicTableLabel } from './components/DynamicIcon';
 import TableErrorComponent from './components/TableErrorComponent';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({

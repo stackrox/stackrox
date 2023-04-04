@@ -1,28 +1,9 @@
 import React from 'react';
-import { gql } from '@apollo/client';
 import { ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import { NonEmptyArray } from 'utils/type.utils';
-import { entityTabValues, EntityTab } from './types';
-
-export const imageCountQuery = gql`
-    query getTotalImageCount($query: String) {
-        imageCount(query: $query)
-    }
-`;
-
-export const deploymentCountQuery = gql`
-    query getTotalDeploymentCount($query: String) {
-        deploymentCount(query: $query)
-    }
-`;
-
-export const cveCountQuery = gql`
-    query getTotalImageCVECount($query: String) {
-        imageCVECount(query: $query)
-    }
-`;
+import { entityTabValues, EntityTab } from '../types';
 
 type EntityTabToggleGroupProps = {
     className?: string;

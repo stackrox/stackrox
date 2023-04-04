@@ -17,7 +17,7 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import { vulnerabilitySeverityLabels } from 'messages/common';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import ImageNameTd from '../components/ImageNameTd';
-import { DynamicColumnIcon } from '../DynamicIcon';
+import { DynamicColumnIcon } from '../components/DynamicIcon';
 
 export type ImageForCve = {
     id: string;
