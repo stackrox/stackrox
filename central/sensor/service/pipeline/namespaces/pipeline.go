@@ -70,6 +70,8 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	namespace := event.GetNamespace()
 	namespace.ClusterId = clusterID
 
+	log.Infof("Action %v, namespace name %v, id %v, cluster id %v", event.GetAction(), namespace.GetName(), namespace.GetId(), namespace.GetClusterId())
+
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(ctx, event.GetAction(), namespace)
