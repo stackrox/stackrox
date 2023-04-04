@@ -4,6 +4,7 @@ package n10ton11
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
@@ -12,6 +13,7 @@ import (
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_10_to_n_11_postgres_cluster_health_statuses/postgres"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/stackrox/rox/pkg/sac"
@@ -62,14 +64,19 @@ func (s *postgresMigrationSuite) TestClusterHealthStatusMigration() {
 	s.NoError(err)
 
 	// Prepare data and write to legacy DB
-	var clusterHealthStatuss []*storage.ClusterHealthStatus
+	var clusterHealthStatuses []*storage.ClusterHealthStatus
+	countBadIDs := 0
 	for i := 0; i < 200; i++ {
 		clusterHealthStatus := &storage.ClusterHealthStatus{}
 		s.NoError(testutils.FullInit(clusterHealthStatus, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		clusterHealthStatuss = append(clusterHealthStatuss, clusterHealthStatus)
+		if i%10 == 0 {
+			clusterHealthStatus.Id = strconv.Itoa(i)
+			countBadIDs = countBadIDs + 1
+		}
+		clusterHealthStatuses = append(clusterHealthStatuses, clusterHealthStatus)
 	}
 
-	s.NoError(legacyStore.UpsertMany(s.ctx, clusterHealthStatuss))
+	s.NoError(legacyStore.UpsertMany(s.ctx, clusterHealthStatuses))
 
 	// Move
 	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
@@ -77,12 +84,14 @@ func (s *postgresMigrationSuite) TestClusterHealthStatusMigration() {
 	// Verify
 	count, err := newStore.Count(s.ctx)
 	s.NoError(err)
-	s.Equal(len(clusterHealthStatuss), count)
-	for _, clusterHealthStatus := range clusterHealthStatuss {
-		fetched, exists, err := newStore.Get(s.ctx, clusterHealthStatus.GetId())
-		s.NoError(err)
-		s.True(exists)
-		s.Equal(clusterHealthStatus, fetched)
+	s.Equal(len(clusterHealthStatuses)-countBadIDs, count)
+	for _, clusterHealthStatus := range clusterHealthStatuses {
+		if pgutils.NilOrUUID(clusterHealthStatus.GetId()) != nil {
+			fetched, exists, err := newStore.Get(s.ctx, clusterHealthStatus.GetId())
+			s.NoError(err)
+			s.True(exists)
+			s.Equal(clusterHealthStatus, fetched)
+		}
 	}
 }
 
