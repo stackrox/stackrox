@@ -16,7 +16,7 @@ export const externalEntitiesBadgeColor = '#000000';
 export function DeploymentIcon(props) {
     return (
         <Badge {...props} style={{ backgroundColor: deploymentBadgeColor }}>
-            {clusterBadgeText}
+            {deploymentBadgeText}
         </Badge>
     );
 }
