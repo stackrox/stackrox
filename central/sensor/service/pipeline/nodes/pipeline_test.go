@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stretchr/testify/assert"
 )
@@ -98,7 +98,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 			},
 		},
 	}
-	if !features.RHCOSNodeScanning.Enabled() {
+	if !env.RHCOSNodeScanning.BooleanSetting() {
 		t.Log("Assuming this is a release build, so skipping due to ROX_RHCOS_NODE_SCANNING=false")
 		return
 	}
