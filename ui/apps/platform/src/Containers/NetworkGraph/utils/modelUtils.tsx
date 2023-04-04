@@ -15,6 +15,14 @@ import {
 } from 'types/networkFlow.proto';
 import { ensureExhaustive } from 'utils/type.utils';
 import {
+    cidrBlockBadgeColor,
+    cidrBlockBadgeText,
+    deploymentBadgeColor,
+    deploymentBadgeText,
+    namespaceBadgeColor,
+    namespaceBadgeText,
+} from '../common/NetworkGraphIcons';
+import {
     CustomModel,
     CustomNodeModel,
     ExternalGroupNodeModel,
@@ -60,6 +68,10 @@ function getNamespaceNode(
         isFilteredNamespace,
         labelIconClass: isFilteredNamespace ? filteredNamespaceSVG : derivedNamespaceSVG,
         isFadedOut: false,
+        badge: namespaceBadgeText,
+        badgeColor: namespaceBadgeColor,
+        badgeTextColor: '#FFFFFF',
+        badgeBorderColor: '#FFFFFF',
     };
     return {
         id: namespace,
@@ -110,6 +122,10 @@ function getDeploymentNodeModel(
             showExternalState: true,
             isFadedOut: false,
             labelIconClass: isFiltered ? filteredNamespaceSVG : '',
+            badge: deploymentBadgeText,
+            badgeColor: deploymentBadgeColor,
+            badgeTextColor: '#FFFFFF',
+            badgeBorderColor: '#FFFFFF',
         },
     };
 }
@@ -132,7 +148,16 @@ function getExternalNodeModel(
                 ...baseNode,
                 shape: NodeShape.rect,
                 label: entity.externalSource.name,
-                data: { ...entity, type: 'CIDR_BLOCK', outEdges, isFadedOut: false },
+                data: {
+                    ...entity,
+                    type: 'CIDR_BLOCK',
+                    outEdges,
+                    isFadedOut: false,
+                    badge: cidrBlockBadgeText,
+                    badgeColor: cidrBlockBadgeColor,
+                    badgeTextColor: '#FFFFFF',
+                    badgeBorderColor: '#FFFFFF',
+                },
             };
         default:
             return ensureExhaustive(entity);
