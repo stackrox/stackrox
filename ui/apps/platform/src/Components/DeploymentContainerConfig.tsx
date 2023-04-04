@@ -8,6 +8,7 @@ import ContainerVolumesInfo from 'Components/ContainerVolumesInfo';
 import ContainerSecretsInfo from 'Components/ContainerSecretsInfo';
 import ContainerArgumentsInfo from 'Components/ContainerArgumentsInfo';
 import ContainerCommandInfo from 'Components/ContainerCommandInfo';
+import SecurityContext from 'Components/SecurityContext';
 
 type DeploymentContainerConfigProps = {
     container: Container;
@@ -49,6 +50,9 @@ function DeploymentContainerConfig({ container }: DeploymentContainerConfigProps
                 </StackItem>
                 <StackItem>
                     <ContainerCommandInfo command={container.config.command} />
+                </StackItem>
+                <StackItem>
+                    <SecurityContext securityContext={container.securityContext} />
                 </StackItem>
             </Stack>
         </ExpandableSection>

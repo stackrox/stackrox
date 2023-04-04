@@ -82,7 +82,7 @@ func (m *manager) evaluateRuntimeAdmissionRequest(s *state, req *admission.Admis
 		return pass(req.UID), nil
 	}
 
-	sendAlerts := enrichedWithDeployment && !pointer.BoolPtrDerefOr(req.DryRun, false)
+	sendAlerts := enrichedWithDeployment && !pointer.BoolDeref(req.DryRun, false)
 
 	if failReviewRequest(alerts...) {
 		if sendAlerts {
@@ -132,7 +132,7 @@ func (m *manager) evaluatePodEvent(s *state, req *admission.AdmissionRequest, ev
 		"Policies with deploy-time fields for kubernetes event %s will be detected in background",
 		event.GetObject().GetNamespace(), event.GetObject().GetName(), kubernetes.EventAsString(event))
 
-	if !pointer.BoolPtrDerefOr(req.DryRun, false) {
+	if !pointer.BoolDeref(req.DryRun, false) {
 		go m.waitForDeploymentAndDetect(s, event)
 	}
 

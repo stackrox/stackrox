@@ -152,7 +152,7 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 		return pass(req.UID), nil
 	}
 
-	if !pointer.BoolPtrDerefOr(req.DryRun, false) {
+	if !pointer.BoolDeref(req.DryRun, false) {
 		go m.filterAndPutAttemptedAlertsOnChan(req.Operation, alerts...)
 	}
 

@@ -335,3 +335,44 @@ func (s *authProviderDataStoreTestSuite) TestUpdateImperativeDeclaratively() {
 	err := s.dataStore.UpdateAuthProvider(s.hasWriteDeclarativeCtx, ap)
 	s.ErrorIs(err, errox.NotAuthorized)
 }
+
+func (s *authProviderDataStoreTestSuite) TestAddDeclarativeViaAPI() {
+	ap := &storage.AuthProvider{
+		Id:   "id",
+		Name: "name",
+		Traits: &storage.Traits{
+			Origin: storage.Traits_DECLARATIVE,
+		},
+	}
+
+	err := s.dataStore.AddAuthProvider(s.hasWriteCtx, ap)
+	s.ErrorIs(err, errox.NotAuthorized)
+}
+
+func (s *authProviderDataStoreTestSuite) TestAddDeclarativeSuccess() {
+	ap := &storage.AuthProvider{
+		Id:   "id",
+		Name: "name",
+		Traits: &storage.Traits{
+			Origin: storage.Traits_DECLARATIVE,
+		},
+	}
+	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+	err := s.dataStore.AddAuthProvider(s.hasWriteDeclarativeCtx, ap)
+	s.NoError(err)
+}
+
+func (s *authProviderDataStoreTestSuite) TestAddImperativeDeclaratively() {
+	ap := &storage.AuthProvider{
+		Id:   "id",
+		Name: "name",
+		Traits: &storage.Traits{
+			Origin: storage.Traits_IMPERATIVE,
+		},
+	}
+
+	err := s.dataStore.AddAuthProvider(s.hasWriteDeclarativeCtx, ap)
+	s.ErrorIs(err, errox.NotAuthorized)
+}

@@ -68,16 +68,13 @@ const TablePagination = ({ dataLength, setPage, page, pageSize }) => {
     // useEffect(resetPage, [searchOptions]);
 
     return (
-        <div
-            data-testid="pagination-header"
-            className="flex items-center justify-end text-base-500 font-500"
-        >
+        <div data-testid="pagination-header" className="flex items-center justify-end">
             <div className="flex items-center pl-5">
-                <div className="mr-4 font-600 min-w-24">
+                <div className="mr-4 min-w-24">
                     Page
                     <input
                         type="number"
-                        className="text-center bg-base-100 text-base-900 border-2 border-base-300 px-1 py-1 mx-2 focus:border-primary-100 outline-none"
+                        className="text-center bg-base-100 text-base-600 border-2 border-base-300 px-1 py-1 mx-2 focus:border-primary-100 outline-none"
                         value={localPage}
                         min={1}
                         max={totalPages}
@@ -90,7 +87,7 @@ const TablePagination = ({ dataLength, setPage, page, pageSize }) => {
                 </div>
                 <button
                     type="button"
-                    className="flex items-center rounded-full hover:bg-primary-200 hover:text-primary-600 mr-1 p-1"
+                    className="flex items-center rounded-full text-base-600 hover:bg-primary-200 hover:text-primary-600 mr-1 p-1"
                     onClick={previousPage}
                     disabled={page <= 0}
                     aria-label="Go to previous page"

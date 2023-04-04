@@ -264,8 +264,14 @@ jobs:
           name: docs-build
           path: image/docs
 
+      - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
+
       # needed to restore node_modules for ossls-nostice
       - uses: ./.github/actions/cache-ui-dependencies
+
+      # explicitly fetch deps just in case cache was not ready
+      - name: Fetch UI deps
+        run: make -C ui deps
 
       - name: Generate OSS notice
         run: make ossls-notice
@@ -376,8 +382,14 @@ jobs:
         name: docs-build
         path: image/docs
 
+    - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
+
     # needed to restore node_modules for ossls-nostice
     - uses: ./.github/actions/cache-ui-dependencies
+
+    # explicitly fetch deps just in case cache was not ready
+    - name: Fetch UI deps
+      run: make -C ui deps
 
     - name: Generate OSS notice
       run: make ossls-notice
@@ -407,6 +419,7 @@ jobs:
       if: |
         github.event_name == 'push' || !github.event.pull_request.head.repo.fork
       with:
+        push: true
         context: image/rhel
         build-args: |
           ROX_PRODUCT_BRANDING=${{ env.ROX_PRODUCT_BRANDING }}
@@ -541,6 +554,7 @@ jobs:
       if: |
         github.event_name == 'push' || !github.event.pull_request.head.repo.fork
       with:
+        push: true
         context: integration-tests/mock-grpc-server/image
         tags: |
           quay.io/rhacs-eng/grpc-server:${{ steps.tag.outputs.TAG }}

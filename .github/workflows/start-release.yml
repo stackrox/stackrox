@@ -163,32 +163,32 @@ jobs:
       RELEASE: "${{needs.variables.outputs.release}}"
       BRANCH: "stackrox-release-${{needs.variables.outputs.release}}"
     steps:
-      - name: Check out stackrox/openshift-release
-        uses: actions/checkout@v3
-        with:
-          repository: stackrox/openshift-release
-          token: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
       - name: Check remote branch exists
         id: check-existing
         run: |
-          if git ls-remote --quiet --exit-code origin "$BRANCH"; then
+          if gh api --silent -H "$ACCEPT_RAW" "/repos/stackrox/openshift-release/branches/${BRANCH}"; then
             echo "branch-exists=true" >> "$GITHUB_OUTPUT"
             echo "::notice::OpenShift CI configuration branch exists. Assuming CI is ready."
           else
             echo "branch-exists=false" >> "$GITHUB_OUTPUT"
-            git switch --create "$BRANCH"
           fi
-      - name: Initialize mandatory git config
-        if: steps.check-existing.outputs.branch-exists == 'false'
-        run: |
-          git config user.name "${{github.event.sender.login}}"
-          git config user.email noreply@github.com
       - name: Synchronize fork from openshift/release
         if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
         env:
           GH_TOKEN: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
         run: |
-          gh repo sync stackrox/openshift-release --source stackrox/openshift-release
+          gh repo sync stackrox/openshift-release --source openshift/release
+      - name: Check out stackrox/openshift-release
+        uses: actions/checkout@v3
+        with:
+          repository: stackrox/openshift-release
+          token: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
+      - name: Initialize git config and create new branch
+        if: steps.check-existing.outputs.branch-exists == 'false'
+        run: |
+          git config user.name "${{github.event.sender.login}}"
+          git config user.email noreply@github.com
+          git switch --create "$BRANCH"
       - name: Make configuration
         if: steps.check-existing.outputs.branch-exists == 'false'
         env:

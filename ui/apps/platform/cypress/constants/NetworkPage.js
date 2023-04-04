@@ -62,7 +62,7 @@ export const selectors = {
     }),
     toolbar: scopeSelectors('[data-testid="network-graph-toolbar"]', {
         namespaceSelect: '.namespace-select > button',
-        filterSelect: search.multiSelectInput,
+        filterSelect: `${search.multiSelectInput}:not([readonly])`, // not input element for placeholder
     }),
     selector: scopeSelectors('[data-testid="network-graph-selector-bar"]', {
         clusterSelect: '.cluster-select > button',

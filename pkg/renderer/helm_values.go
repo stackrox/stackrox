@@ -197,7 +197,6 @@ scanner:
 
 {{- $envVars := deepCopy .EnvironmentMap -}}
 {{- $_ := unset $envVars "ROX_OFFLINE_MODE" -}}
-{{- $_ := unset $envVars "ROX_INIT_TELEMETRY_ENABLED" -}}
 {{- if $envVars }}
 
 customize:

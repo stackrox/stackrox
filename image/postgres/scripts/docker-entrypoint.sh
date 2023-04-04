@@ -344,7 +344,7 @@ _main() {
 		fi
 	fi
 
-	"$@" &
+	flock /var/lib/postgresql/data/pglock "$@" &
 	child=$!
 	echo "Waiting for child process $child to exit"
 	wait "$child"

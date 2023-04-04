@@ -20,8 +20,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	clusterDeleteCmd := &clusterDeleteCommand{env: cliEnvironment}
 
 	cbr := &cobra.Command{
-		Use:  "delete",
-		Args: cobra.NoArgs,
+		Use:   "delete",
+		Short: "Remove a Sensor from Central.",
+		Long:  "Remove a Sensor from Central, without deleting any orchestrator objects.",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := clusterDeleteCmd.Construct(args, cmd); err != nil {
 				return err

@@ -39,6 +39,8 @@ var (
 	// these are "canonical" external addresses sent by collector when we don't care about the precise IP address.
 	externalIPv4Addr = net.ParseIP("255.255.255.255")
 	externalIPv6Addr = net.ParseIP("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
+
+	emptyProcessInfo = processInfo{}
 )
 
 type hostConnections struct {
@@ -60,7 +62,13 @@ type hostConnections struct {
 type connStatus struct {
 	firstSeen timestamp.MicroTS
 	lastSeen  timestamp.MicroTS
-	used      bool
+	// used keeps track of if an endpoint has been used by the the networkgraph path.
+	// usedProcess keeps track of if an endpoint has been used by the processes listening on
+	// ports path. If processes listening on ports is used, both must be true to delete the
+	// endpoint. Otherwise the endpoint will not be available to process listening on ports
+	// and it won't report endpoints that it doesn't have access to.
+	used        bool
+	usedProcess bool
 	// rotten implies we expected to correlate the flow with a container, but were unable to
 	rotten bool
 }
@@ -112,6 +120,7 @@ func (i *containerEndpointIndicator) toProto(ts timestamp.MicroTS) *storage.Netw
 type processUniqueKey struct {
 	podID         string
 	containerName string
+	deploymentID  string
 	process       processInfo
 }
 
@@ -121,7 +130,7 @@ type processListeningIndicator struct {
 	protocol storage.L4Protocol
 }
 
-func (i *processListeningIndicator) toProto(_ timestamp.MicroTS) *storage.ProcessListeningOnPortFromSensor {
+func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.ProcessListeningOnPortFromSensor {
 	proto := &storage.ProcessListeningOnPortFromSensor{
 		Port:     uint32(i.port),
 		Protocol: i.protocol,
@@ -132,6 +141,11 @@ func (i *processListeningIndicator) toProto(_ timestamp.MicroTS) *storage.Proces
 			ProcessExecFilePath: i.key.process.processExec,
 			ProcessArgs:         i.key.process.processArgs,
 		},
+		DeploymentId: i.key.deploymentID,
+	}
+
+	if ts != timestamp.InfiniteFuture {
+		proto.CloseTimestamp = ts.GogoProtobuf()
 	}
 
 	return proto
@@ -168,7 +182,7 @@ func (p *processInfo) String() string {
 type containerEndpoint struct {
 	endpoint    net.NumericEndpoint
 	containerID string
-	processKey  *processInfo
+	processKey  processInfo
 }
 
 func (e *containerEndpoint) String() string {
@@ -461,7 +475,7 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 	if !isFresh {
-		status.used = true
+		status.usedProcess = true
 	}
 
 	container, ok := m.clusterEntities.LookupByContainerID(ep.containerID)
@@ -476,23 +490,20 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 		return
 	}
 
-	status.used = true
+	status.usedProcess = true
 
 	indicator := processListeningIndicator{
 		key: processUniqueKey{
 			podID:         container.PodID,
 			containerName: container.ContainerName,
-			process:       *ep.processKey,
+			deploymentID:  container.DeploymentID,
+			process:       ep.processKey,
 		},
 		port:     ep.endpoint.IPAndPort.Port,
 		protocol: ep.endpoint.L4Proto.ToProtobuf(),
 	}
 
-	// Multiple endpoints from a collector can result in a single enriched endpoint,
-	// hence update the timestamp only if we have a more recent endpoint than the one we have already enriched.
-	if oldTS, found := processesListening[indicator]; !found || oldTS < status.lastSeen {
-		processesListening[indicator] = status.lastSeen
-	}
+	processesListening[indicator] = status.lastSeen
 }
 
 func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
@@ -517,7 +528,9 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 	prevSize := len(hostConns.endpoints)
 	for ep, status := range hostConns.endpoints {
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
-		if status.used && status.lastSeen != timestamp.InfiniteFuture {
+		// If processes listening on ports is enabled, it has to be used there as well before being deleted.
+		used := status.used && (status.usedProcess || !features.ProcessesListeningOnPort.Enabled())
+		if used && status.lastSeen != timestamp.InfiniteFuture {
 			// endpoints that are no longer active and have already been used can be deleted.
 			delete(hostConns.endpoints, ep)
 		}
@@ -531,14 +544,15 @@ func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections
 
 	prevSize := len(hostConns.endpoints)
 	for ep, status := range hostConns.endpoints {
-		if ep.processKey == nil {
+		if ep.processKey == emptyProcessInfo {
 			// No way to update a process if the data isn't there
 			continue
 		}
 
 		m.enrichProcessListening(&ep, status, processesListening)
-		if status.used && status.lastSeen != timestamp.InfiniteFuture {
+		if status.used && status.usedProcess && status.lastSeen != timestamp.InfiniteFuture {
 			// endpoints that are no longer active and have already been used can be deleted.
+			// Before deleting it must be used here and in enrichContainerEndpoints.
 			delete(hostConns.endpoints, ep)
 		}
 	}
@@ -612,13 +626,18 @@ func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.Mic
 
 	for pl, currTS := range current {
 		prevTS, ok := previous[pl]
-		if !ok || currTS > prevTS {
+		if !ok || currTS > prevTS || (prevTS == timestamp.InfiniteFuture && currTS != timestamp.InfiniteFuture) {
 			updates = append(updates, pl.toProto(currTS))
 		}
 	}
 
 	for ep, prevTS := range previous {
 		if _, ok := current[ep]; !ok {
+			// This condition means the deployment was removed before we got the
+			// close timestamp for the endpoint. Use the current timestamp instead.
+			if prevTS == timestamp.InfiniteFuture {
+				prevTS = timestamp.Now()
+			}
 			updates = append(updates, ep.toProto(prevTS))
 		}
 	}
@@ -792,12 +811,12 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 	return nil
 }
 
-func getProcessKey(originator *storage.NetworkProcessUniqueKey) *processInfo {
+func getProcessKey(originator *storage.NetworkProcessUniqueKey) processInfo {
 	if originator == nil {
-		return nil
+		return processInfo{}
 	}
 
-	return &processInfo{
+	return processInfo{
 		processName: originator.ProcessName,
 		processArgs: originator.ProcessArgs,
 		processExec: originator.ProcessExecFilePath,

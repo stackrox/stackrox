@@ -26,8 +26,9 @@ import (
 
 func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use:  "version",
-		Args: cobra.NoArgs,
+		Use:   "version",
+		Short: "Display the current roxctl version.",
+		Args:  cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
 			if useJSON, _ := c.Flags().GetBool("json"); useJSON {
 				enc := json.NewEncoder(cliEnvironment.InputOutput().Out())

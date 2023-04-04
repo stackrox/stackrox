@@ -79,17 +79,20 @@ function WorkloadTableToolbar({
             const fixableFilter = searchFixable
                 ? uniq([...defaultFixable, ...searchFixable])
                 : defaultFixable;
-            setSearchFilter({
-                ...defaultFilters,
-                ...searchFilter,
-                Severity: severityFilter,
-                Fixable: fixableFilter,
-            });
+            setSearchFilter(
+                {
+                    ...defaultFilters,
+                    ...searchFilter,
+                    Severity: severityFilter,
+                    Fixable: fixableFilter,
+                },
+                'replace'
+            );
         }
     }, [defaultFilters, searchFilter, setSearchFilter]);
 
     return (
-        <Toolbar id="workload-cves-table-toolbar" clearAllFilters={onDeleteAll}>
+        <Toolbar id="workload-cves-table-toolbar">
             <ToolbarContent>
                 <FilterAutocomplete
                     searchFilter={searchFilter}
@@ -107,6 +110,7 @@ function WorkloadTableToolbar({
                         searchFilter={searchFilter}
                         onDeleteGroup={onDeleteGroup}
                         onDelete={onDelete}
+                        onDeleteAll={onDeleteAll}
                     />
                 </ToolbarGroup>
             </ToolbarContent>

@@ -153,7 +153,7 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 	if c == nil {
 		return false
 	}
-	return pointer.BoolPtrDerefOr(c.AdminPasswordGenerationDisabled, false)
+	return pointer.BoolDeref(c.AdminPasswordGenerationDisabled, false)
 }
 
 // IsExternalDB returns true if central DB is not managed by the Operator
@@ -285,7 +285,7 @@ func (p *Persistence) GetHostPath() string {
 		return ""
 	}
 
-	return pointer.StringPtrDerefOr(p.HostPath.Path, "")
+	return pointer.StringDeref(p.HostPath.Path, "")
 }
 
 // HostPathSpec defines settings for host path config.
@@ -347,7 +347,7 @@ func (p *DBPersistence) GetHostPath() string {
 		return ""
 	}
 
-	return pointer.StringPtrDerefOr(p.HostPath.Path, "")
+	return pointer.StringDeref(p.HostPath.Path, "")
 }
 
 // DBPersistentVolumeClaim defines PVC-based persistence settings for Central DB.

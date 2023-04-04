@@ -1948,7 +1948,7 @@ class Kubernetes implements OrchestratorMain {
                 log.debug "Told the orchestrator to createOrReplace " + deployment.name + ". " +
                           "Attempt " + att + " of " + maxNumRetries
             }
-            if (deployment.createLoadBalancer) {
+            if (deployment.exposeAsService && deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)
             }
             if (deployment.createRoute) {

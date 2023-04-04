@@ -187,7 +187,7 @@ describe('Entities single views', () => {
             entitiesKey2
         );
 
-        cy.get(selectors.sidePanelExpandButton).click();
+        cy.get(selectors.sidePanelExternalLinkButton).click();
 
         // Entity single page, not side panel.
         cy.get(`${selectors.tableBodyRows} ${selectors.statusChips}:contains('fail')`).should(

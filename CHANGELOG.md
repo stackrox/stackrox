@@ -29,6 +29,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The `--offline-mode` flag for the `roxctl scanner generate` command is deprecated, as Scanner's default behavior is
   to fetch vulnerability updates from Central. The flag will be removed as part of the 4.2.0 release.
 - ROX-15925: The KernelModule collection method is deprecated in favor of EBPF. This method will be removed in the 4.1 release.
+- Deprecated v1.0 of Network Graph. Please switch to the new 2.0 version for improved functionality and a better user experience.
+- ROX-15337: RHACS Operator is not published to Red Hat Operator Catalogs for OpenShift versions 4.9 and earlier.
+- The API endpoint `/v1/serviceaccounts` is deprecated and will be changed as part of the 4.2.0 release.
 
 ### Required Actions
 - The `Analyst` permission set will change behaviour: instead of allowing read to all resources except `DebugLogs`, it will
@@ -47,6 +50,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   the now deprecated `DebugLogs` permission now has read access to all permissions except `Administration`.
 - The default resources for Sensor have moved to a request of 2 cores, 4GB of RAM and a limit of 4 cores, 8GB of RAM in order to
   support a higher number of clusters without modification.
+- ROX-14280: ACS operator default channel changes from `latest` to `stable`. Users of older versions must follow the upgrade procedure in order to preserve ACS data in case of issues with the upgrade.
 
 ## [3.74.0]
 

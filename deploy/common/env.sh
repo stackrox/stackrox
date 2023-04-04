@@ -66,6 +66,9 @@ echo "ROX_HOTRELOAD is set to ${ROX_HOTRELOAD}"
 export ROX_MANAGED_CENTRAL="${ROX_MANAGED_CENTRAL:-false}"
 echo "ROX_MANAGED_CENTRAL is set to ${ROX_MANAGED_CENTRAL}"
 
+export SENSOR_DEV_RESOURCES="${SENSOR_DEV_RESOURCES:-true}"
+echo "SENSOR_DEV_RESOURCES is set to ${SENSOR_DEV_RESOURCES}"
+
 export TRUSTED_CA_FILE="${TRUSTED_CA_FILE:-}"
 if [[ -n "${TRUSTED_CA_FILE}" ]]; then
   [[ -f "${TRUSTED_CA_FILE}" ]] || { echo "Trusted CA file ${TRUSTED_CA_FILE} not found"; return 1; }

@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/apps/v1"
+	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -45,6 +46,24 @@ func TestRenderOpenshiftEnv(t *testing.T) {
 	}
 }
 
+func getEnvVarValue(vars []coreV1.EnvVar, name string) (string, bool) {
+	for _, envVar := range vars {
+		if envVar.Name == name {
+			return envVar.Value, true
+		}
+	}
+	return "", false
+}
+
+func findContainer(containers []coreV1.Container, name string) (cont coreV1.Container, found bool) {
+	for _, cont := range containers {
+		if cont.Name == name {
+			return cont, true
+		}
+	}
+	return coreV1.Container{}, false
+}
+
 func doTestRenderOpenshif(t *testing.T, clusterType storage.ClusterType) {
 	cluster := &storage.Cluster{
 		Name:      "cluster",
@@ -55,29 +74,44 @@ func doTestRenderOpenshif(t *testing.T, clusterType storage.ClusterType) {
 	baseFiles, err := renderBaseFiles(cluster, clusters.RenderOptions{}, dummyCerts)
 	require.NoError(t, err)
 
-	assertEnvVars := func(obj runtime.Object) {
+	assertOnSensor := func(obj runtime.Object) {
 		deployment := obj.(*v1.Deployment)
-		var found bool
-		for _, envVar := range deployment.Spec.Template.Spec.Containers[0].Env {
-			if envVar.Name == env.OpenshiftAPI.EnvVar() {
-				found = true
-				assert.Equal(t, "true", envVar.Value)
-			}
-		}
-		assert.True(t, found)
+		sensorCont, foundSensor := findContainer(deployment.Spec.Template.Spec.Containers, "sensor")
+		assert.True(t, foundSensor)
+		value, exists := getEnvVarValue(sensorCont.Env, env.OpenshiftAPI.EnvVar())
+		assert.True(t, exists)
+		assert.Equal(t, "true", value)
 	}
-	assertScannerRemote := func(obj runtime.Object) {
+	assertOnCollector := func(obj runtime.Object) {
 		ds := obj.(*v1.DaemonSet)
-		assert.Len(t, ds.Spec.Template.Spec.Containers, 3)
-		mainImage := ds.Spec.Template.Spec.Containers[1].Image
-		nodeInvCont := ds.Spec.Template.Spec.Containers[2]
-		expectedScannerParts := strings.Split(strings.ReplaceAll(mainImage, "/main:", "/scanner-slim:"), ":")
-		assert.Truef(t, strings.HasPrefix(nodeInvCont.Image, expectedScannerParts[0]), "scanner-slim image (%q) should be from the same registry as main (%q)", nodeInvCont.Image, mainImage)
+		complianceCont, foundMain := findContainer(ds.Spec.Template.Spec.Containers, "compliance")
+		assert.True(t, foundMain)
+		assert.Equal(t, "compliance", complianceCont.Name)
+
+		if clusterType == storage.ClusterType_OPENSHIFT4_CLUSTER {
+			nInvCont, found := findContainer(ds.Spec.Template.Spec.Containers, "node-inventory")
+			assert.True(t, found, "node-inventory container should exist under collector DS")
+			assert.Equal(t, "node-inventory", nInvCont.Name)
+
+			expectedScannerParts := strings.Split(strings.ReplaceAll(complianceCont.Image, "/main:", "/scanner-slim:"), ":")
+			assert.Truef(t, strings.HasPrefix(nInvCont.Image, expectedScannerParts[0]), "scanner-slim image (%q) should be from the same registry as main (%q)", nInvCont.Image, complianceCont.Image)
+
+			value, exists := getEnvVarValue(complianceCont.Env, env.NodeInventoryContainerEnabled.EnvVar())
+			assert.True(t, exists)
+			assert.Equal(t, "true", value, "compliance should have %s=true", env.NodeInventoryContainerEnabled.EnvVar())
+		} else {
+			_, foundNInv := findContainer(ds.Spec.Template.Spec.Containers, "node-inventory")
+			assert.False(t, foundNInv, "node-inventory container must not exist under collector DS")
+
+			value, exists := getEnvVarValue(complianceCont.Env, env.NodeInventoryContainerEnabled.EnvVar())
+			assert.True(t, exists)
+			assert.Equalf(t, "false", value, "compliance should have %s=false", env.NodeInventoryContainerEnabled.EnvVar())
+		}
 	}
 
 	cases := map[string]func(object runtime.Object){
-		"sensor.yaml":    assertEnvVars,
-		"collector.yaml": assertScannerRemote,
+		"sensor.yaml":    assertOnSensor,
+		"collector.yaml": assertOnCollector,
 	}
 
 	for _, f := range baseFiles {
