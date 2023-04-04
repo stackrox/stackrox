@@ -12,7 +12,7 @@ import (
 type Service interface {
 	grpc.APIService
 
-	v1.ProcessesListeningOnPortsServiceServer
+	v1.ListeningEndpointsServiceServer
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 }
 
