@@ -193,7 +193,7 @@ function ViolationsTablePanel({
                                     </Th>
                                 );
                             })}
-                            <Th />
+                            <Td />
                         </Tr>
                     </Thead>
                     <Tbody>

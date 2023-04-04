@@ -1354,3 +1354,40 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
+
+// TestPLOPNoProcessInformation: PLOP should not appear in the API if there is no process information
+func (suite *PLOPDataStoreTestSuite) TestPLOPNoProcessInformation() {
+	indicators := getIndicators()
+
+	plopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:                 indicators[0].GetId(), // Id doesn't matter here. Just needs to be the right type
+		Port:               1234,
+		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+		CloseTimestamp:     nil,
+		ProcessIndicatorId: indicators[0].GetId(),
+		Closed:             false,
+		Process:            nil,
+		DeploymentId:       fixtureconsts.Deployment1,
+	}
+
+	// It is not possible to add a PLOP from sensor with no process info
+	// so upsert directly to the database. In the tests when a process indicator
+	// is deleted the PLOP is also deleted from the database. This does not seem
+	// to be the case in reality.
+	suite.NoError(suite.store.Upsert(
+		suite.hasWriteCtx, plopStorage))
+
+	// Fetch inserted PLOP back
+	// It doesn't appear in the API, because it has no process info
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	suite.Len(newPlops, 0)
+
+	// Verify that the PLOP is in the database
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	suite.Equal(plopStorage, newPlopsFromDB[0])
+}

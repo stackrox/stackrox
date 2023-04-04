@@ -286,7 +286,7 @@ function ReportingTablePanel({
                                     </Th>
                                 );
                             })}
-                            <Th />
+                            <Td />
                         </Tr>
                     </Thead>
                     <Tbody>

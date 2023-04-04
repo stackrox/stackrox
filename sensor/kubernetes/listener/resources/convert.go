@@ -69,6 +69,14 @@ type deploymentWrap struct {
 	// TODO(ROX-9984): we could have the networkPoliciesApplied stored here. This would require changes in the ProcessDeployment functions of the detector.
 	// networkPoliciesApplied augmentedobjs.NetworkPoliciesApplied
 
+	// isBuilt is a flag that is used to avoid processing a deployment wrap that is stored in the in-memory store
+	// while there is a `Deployment` message in the pipeline. This can happen if we received a deployment event, and
+	// this event stores a new `storage.Deployment` object in in-memory store and enqueues the deployment to the resolver.
+	// If, in the meantime, this deployment is read from the store (e.g. due to a related event or central events) there's
+	// no way to know if the deployment is fully built. This flag is here to avoid processing a deployment that is going
+	// to be processed soon (since we can guarantee that there is a deployment event in the resolver queue).
+	isBuilt bool
+
 	mutex sync.RWMutex
 }
 
@@ -103,6 +111,7 @@ func newWrap(obj interface{}, kind, clusterID, registryOverride string, registry
 		Deployment:       deployment,
 		registryOverride: registryOverride,
 		registryStore:    registryStore,
+		isBuilt:          false,
 	}
 }
 

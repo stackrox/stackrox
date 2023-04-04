@@ -109,8 +109,8 @@ func (s *deploymentStoreSuite) Test_FindDeploymentIDsWithServiceAccount() {
 }
 
 func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies() {
-	uid := uuid.NewV4()
-	wrap := s.createDeploymentWrap(makeDeploymentObject("test-deployment", "test-ns", types.UID(uid.String())))
+	uid := uuid.NewV4().String()
+	wrap := s.createDeploymentWrap(makeDeploymentObject("test-deployment", "test-ns", types.UID(uid)))
 	s.deploymentStore.addOrUpdateDeployment(wrap)
 
 	expectedExposureInfo := storage.PortConfig_ExposureInfo{
@@ -119,7 +119,10 @@ func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies() {
 		ServicePort: 5432,
 	}
 
-	deployment, err := s.deploymentStore.BuildDeploymentWithDependencies(uid.String(), store.Dependencies{
+	_, isBuilt := s.deploymentStore.GetBuiltDeployment(uid)
+	s.Assert().False(isBuilt, "deployment should not be fully built yet")
+
+	deployment, err := s.deploymentStore.BuildDeploymentWithDependencies(uid, store.Dependencies{
 		PermissionLevel: storage.PermissionLevel_CLUSTER_ADMIN,
 		Exposures: []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
 			{
@@ -135,6 +138,9 @@ func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies() {
 
 	s.Equal(expectedExposureInfo, *deployment.GetPorts()[0].GetExposureInfos()[0])
 	s.Equal(storage.PermissionLevel_CLUSTER_ADMIN, deployment.GetServiceAccountPermissionLevel(), "Service account permission level")
+
+	_, isBuilt = s.deploymentStore.GetBuiltDeployment(uid)
+	s.Assert().True(isBuilt, "deployment should be fully built")
 }
 
 func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies_NoDeployment() {
