@@ -4,20 +4,20 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/globaldb"
-	store2 "github.com/stackrox/rox/central/group/datastore/store"
-	"github.com/stackrox/rox/central/group/datastore/store/bolt"
-	"github.com/stackrox/rox/central/group/datastore/store/postgres"
+	store2 "github.com/stackrox/rox/central/group/datastore/internal/store"
+	"github.com/stackrox/rox/central/group/datastore/internal/store/bolt"
+	"github.com/stackrox/rox/central/group/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-func GetFiltered(ctx context.Context, filter func(*storage.Group) bool, store store2.Store) ([]*storage.Group, error) {
+func GetFiltered(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error) {
 	var groups []*storage.Group
 	walkFn := func() error {
 		groups = groups[:0]
-		return store.Walk(ctx, func(g *storage.Group) error {
+		return GroupStoreSingleton().Walk(ctx, func(g *storage.Group) error {
 			if filter == nil || filter(g) {
 				groups = append(groups, g)
 			}

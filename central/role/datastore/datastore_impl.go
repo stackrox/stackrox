@@ -6,8 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/declarativeconfig/utils"
-	groupFilter "github.com/stackrox/rox/central/group/datastore/filter"
-	groupStore "github.com/stackrox/rox/central/group/datastore/store"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	rocksDBStore "github.com/stackrox/rox/central/role/store"
@@ -36,7 +34,7 @@ type dataStoreImpl struct {
 	roleStorage          rocksDBStore.RoleStore
 	permissionSetStorage rocksDBStore.PermissionSetStore
 	accessScopeStorage   rocksDBStore.SimpleAccessScopeStore
-	groupStorage         groupStore.Store
+	groupGetFilteredFunc func(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error)
 
 	lock sync.RWMutex
 }
@@ -818,9 +816,9 @@ func (ds *dataStoreImpl) verifyRoleForDeletion(ctx context.Context, name string)
 
 // Returns errox.ReferencedByAnotherObject if the given role is referenced by a group.
 func (ds *dataStoreImpl) verifyNoGroupReferences(ctx context.Context, role *storage.Role) error {
-	groups, err := groupFilter.GetFiltered(ctx, func(group *storage.Group) bool {
+	groups, err := ds.groupGetFilteredFunc(ctx, func(group *storage.Group) bool {
 		return group.GetRoleName() == role.GetName()
-	}, ds.groupStorage)
+	})
 	if err != nil {
 		return err
 	}

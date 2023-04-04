@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	declarativeConfigUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
 	groupFilter "github.com/stackrox/rox/central/group/datastore/filter"
-	"github.com/stackrox/rox/central/group/datastore/store"
+	"github.com/stackrox/rox/central/group/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -90,7 +90,7 @@ func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.G
 	} else if !ok {
 		return nil, nil
 	}
-	return groupFilter.GetFiltered(ctx, filter, ds.storage)
+	return groupFilter.GetFiltered(ctx, filter)
 }
 
 // Walk is an optimization that allows to search through the datastore and find

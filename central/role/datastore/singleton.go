@@ -48,7 +48,7 @@ func Singleton() DataStore {
 			utils.CrashOnError(err)
 		}
 		// Which role format is used is determined solely by the feature flag.
-		ds = New(roleStorage, permissionSetStorage, accessScopeStorage, groupFilter.GroupStoreSingleton())
+		ds = New(roleStorage, permissionSetStorage, accessScopeStorage, groupFilter.GetFiltered)
 
 		for r, a := range vulnReportingDefaultRoles {
 			defaultRoles[r] = a
