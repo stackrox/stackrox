@@ -30,6 +30,7 @@ var (
 		schema = walker.Walk(reflect.TypeOf((*storage.ProcessListeningOnPortStorage)(nil)), "process_listening_on_ports")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ProcessIndicator": ProcessIndicatorsSchema,
+			"storage.Deployment":       DeploymentsSchema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
