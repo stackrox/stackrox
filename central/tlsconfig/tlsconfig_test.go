@@ -51,7 +51,7 @@ func (s *tlsConfigTestSuite) isCommonNameInCerts(DERs [][]byte, commonName strin
 
 func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldLoadChainWithOneCert() {
 
-	certs, keys, err := createCertChain(1)
+	certs, keys, err := createCertChainWithLengthOf(1)
 	s.Require().NoError(err)
 
 	tmpDir := s.T().TempDir()
@@ -72,7 +72,7 @@ func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldLoadChainWi
 
 func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldLoadChainWithMultipleCerts() {
 
-	certs, keys, err := createCertChain(3)
+	certs, keys, err := createCertChainWithLengthOf(3)
 	s.Require().NoError(err)
 
 	tmpDir := s.T().TempDir()
@@ -101,7 +101,7 @@ func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldLoadChainWi
 }
 
 func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldIgnoreWhenKeyIsMissing() {
-	certs, _, err := createCertChain(3)
+	certs, _, err := createCertChainWithLengthOf(3)
 	s.Require().NoError(err)
 
 	tmpDir := s.T().TempDir()
@@ -115,7 +115,7 @@ func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldIgnoreWhenK
 
 func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldIgnoreWhenCertIsMissing() {
 	tmpDir := s.T().TempDir()
-	_, keys, err := createCertChain(3)
+	_, keys, err := createCertChainWithLengthOf(3)
 	s.Require().NoError(err)
 	s.Require().NoError(writeKey(tmpDir, keys[0]))
 
@@ -135,7 +135,7 @@ func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldIgnoreWhenB
 func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldReturnErrorWhenTheCertIsMalformed() {
 	tmpDir := s.T().TempDir()
 
-	_, keys, err := createCertChain(1)
+	_, keys, err := createCertChainWithLengthOf(1)
 	s.Require().NoError(err)
 	s.Require().NoError(writeKey(tmpDir, keys[0]))
 
@@ -152,7 +152,7 @@ func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldReturnError
 func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldReturnAnErrorWhenKeyIsMalformed() {
 	tmpDir := s.T().TempDir()
 
-	certs, _, err := createCertChain(1)
+	certs, _, err := createCertChainWithLengthOf(1)
 	s.Require().NoError(err)
 	s.Require().NoError(writeCerts(tmpDir, certs...))
 
@@ -169,7 +169,7 @@ func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldReturnAnErr
 func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldReturnErrorAndWarnTheUserWhenCertsAreInWrongOrder() {
 	tmpDir := s.T().TempDir()
 
-	certs, keys, err := createCertChain(3)
+	certs, keys, err := createCertChainWithLengthOf(3)
 	s.Require().NoError(err)
 	s.Require().NoError(writeCerts(tmpDir, certs[1], certs[0], certs[2]))
 	s.Require().NoError(writeKey(tmpDir, keys[0]))
@@ -179,7 +179,7 @@ func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldReturnError
 	s.ErrorContains(err, "ensure that the certificate chain is in the correct order")
 }
 
-func createCertChain(length int) ([]*x509.Certificate, []*ecdsa.PrivateKey, error) {
+func createCertChainWithLengthOf(length int) ([]*x509.Certificate, []*ecdsa.PrivateKey, error) {
 	var certs []*x509.Certificate
 	var privateKeys []*ecdsa.PrivateKey
 	for i := 0; i < length; i++ {
