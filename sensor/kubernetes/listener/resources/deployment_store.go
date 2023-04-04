@@ -218,7 +218,7 @@ func (ds *DeploymentStore) GetBuiltDeployment(id string) (*storage.Deployment, b
 	if wrap == nil {
 		return nil, false
 	}
-	return wrap.GetDeployment().Clone(), wrap.isComplete
+	return wrap.GetDeployment().Clone(), wrap.isBuilt
 }
 
 // BuildDeploymentWithDependencies creates storage.Deployment object using external object dependencies.
@@ -244,7 +244,7 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 	// updated, the value from this properties might need to be updated.
 	wrap.populateDataFromPods(wrap.pods...)
 
-	wrap.isComplete = true
+	wrap.isBuilt = true
 	ds.addOrUpdateDeploymentNoLock(wrap)
 	return wrap.GetDeployment().Clone(), nil
 }
