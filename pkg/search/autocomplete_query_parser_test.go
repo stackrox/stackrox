@@ -69,7 +69,7 @@ func TestParseAutocompleteQuery(t *testing.T) {
 		},
 		{
 			desc:        "Query with plus in double quotes",
-			queryStr:    fmt.Sprintf("%s:field1,\"field12+something\",field13 + %s:\"field2+something\"", DeploymentName, Category),
+			queryStr:    fmt.Sprintf("%s:field1,\"field12+some:thing\",field13 + %s:\"field2+something\"", DeploymentName, Category),
 			shouldError: false,
 			parser:      autocompleteQueryParser{},
 			expectedKey: Category.String(),
@@ -88,7 +88,7 @@ func TestParseAutocompleteQuery(t *testing.T) {
 								{Query: &v1.Query_BaseQuery{
 									BaseQuery: &v1.BaseQuery{
 										Query: &v1.BaseQuery_MatchFieldQuery{
-											MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "\"field12+something\""},
+											MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "\"field12+some:thing\""},
 										},
 									},
 								}},
@@ -114,7 +114,7 @@ func TestParseAutocompleteQuery(t *testing.T) {
 		},
 		{
 			desc:        "Query with plus and comma in double quotes",
-			queryStr:    fmt.Sprintf("%s:field1,\"field12+some,thing\",field13 + %s:\"field2+some,thing\"", DeploymentName, Category),
+			queryStr:    fmt.Sprintf("%s:field1,\"field12+some,thi:ng\",field13 + %s:\"field2+some,thing\"", DeploymentName, Category),
 			shouldError: false,
 			parser:      autocompleteQueryParser{},
 			expectedKey: Category.String(),
@@ -133,7 +133,7 @@ func TestParseAutocompleteQuery(t *testing.T) {
 								{Query: &v1.Query_BaseQuery{
 									BaseQuery: &v1.BaseQuery{
 										Query: &v1.BaseQuery_MatchFieldQuery{
-											MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "\"field12+some,thing\""},
+											MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "\"field12+some,thi:ng\""},
 										},
 									},
 								}},

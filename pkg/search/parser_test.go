@@ -43,11 +43,45 @@ func TestSplitQuery(t *testing.T) {
 			query: "Deployment:attempted-alerts-dep-6+Policy:Kubernetes Actions: Exec into Pod,hello+hi+New Deployment Label:value",
 			pairs: []string{"Deployment:attempted-alerts-dep-6", "Policy:Kubernetes Actions: Exec into Pod,hello+hi", "New Deployment Label:value"},
 		},
+		{
+			query: "Deployment:field1,\"field12+some:thing\",field13+Category:\"field2+something\"",
+			pairs: []string{"Deployment:field1,\"field12+some:thing\",field13", "Category:\"field2+something\""},
+		},
+		{
+			query: "Deployment:field1,\"field12+some,thi:ng\",field13+Category:\"field2+some,thing\"",
+			pairs: []string{"Deployment:field1,\"field12+some,thi:ng\",field13", "Category:\"field2+some,thing\""},
+		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.query, func(t *testing.T) {
 			assert.ElementsMatch(t, c.pairs, splitQuery(c.query))
+		})
+	}
+}
+
+func TestSplitCommaSeparateValues(t *testing.T) {
+	cases := []struct {
+		commaSeparatedVals string
+		splitValues        []string
+	}{
+		{
+			commaSeparatedVals: "val1,val2,val3+val4",
+			splitValues:        []string{"val1", "val2", "val3+val4"},
+		},
+		{
+			commaSeparatedVals: "val1,val2,val3+val:4+val5",
+			splitValues:        []string{"val1", "val2", "val3+val:4+val5"},
+		},
+		{
+			commaSeparatedVals: "val1,val2,\"val3,val:4+val5\",val6",
+			splitValues:        []string{"val1", "val2", "\"val3,val:4+val5\"", "val6"},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.commaSeparatedVals, func(t *testing.T) {
+			assert.ElementsMatch(t, c.splitValues, splitCommaSeparatedValues(c.commaSeparatedVals))
 		})
 	}
 }

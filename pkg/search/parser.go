@@ -87,8 +87,15 @@ func GetFieldValueFromQuery(query string, label FieldLabel) (string, bool) {
 func splitQuery(query string) []string {
 	var pairs []string
 	var previousEnd, previousPlusIndex int
-	prevDoubleQuoteCount := 0
+	insideDoubleQuotes := false
 	for i, rune := range query {
+		if rune == '"' {
+			insideDoubleQuotes = !insideDoubleQuotes
+			continue
+		}
+		if insideDoubleQuotes {
+			continue
+		}
 		if rune == ':' && previousPlusIndex != 0 {
 			if previousEnd > previousPlusIndex {
 				continue
@@ -98,10 +105,7 @@ func splitQuery(query string) []string {
 			previousEnd = previousPlusIndex + 1
 			continue
 		}
-		if rune == '"' {
-			prevDoubleQuoteCount++
-		}
-		if rune == '+' && prevDoubleQuoteCount%2 == 0 {
+		if rune == '+' {
 			previousPlusIndex = i
 		}
 	}
@@ -112,12 +116,13 @@ func splitQuery(query string) []string {
 func splitCommaSeparatedValues(commaSeparatedValues string) []string {
 	var vals []string
 	start := 0
-	prevDoubleQuoteCount := 0
+	insideDoubleQuotes := false
 	for i, char := range commaSeparatedValues {
 		if char == '"' {
-			prevDoubleQuoteCount++
+			insideDoubleQuotes = !insideDoubleQuotes
+			continue
 		}
-		if char == ',' && prevDoubleQuoteCount%2 == 0 {
+		if char == ',' && !insideDoubleQuotes {
 			vals = append(vals, commaSeparatedValues[start:i])
 			start = i + 1
 		}
