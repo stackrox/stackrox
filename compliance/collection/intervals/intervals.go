@@ -42,23 +42,25 @@ func NewNodeScanIntervalFromEnv() NodeScanIntervals {
 	i := NodeScanIntervals{}
 	i.base = env.NodeScanningInterval.DurationSetting()
 	i.deviation = 0.0
-	if d := env.NodeScanningIntervalDeviation.DurationSetting(); d > 0 {
-		if d >= i.base {
+	absDeviation := env.NodeScanningIntervalDeviation.DurationSetting()
+	if absDeviation > 0 {
+		if absDeviation >= i.base {
 			i.deviation = 1
+			absDeviation = i.base
 		} else {
-			i.deviation = d.Seconds() / i.base.Seconds()
+			i.deviation = absDeviation.Seconds() / i.base.Seconds()
 		}
 	}
 	i.initialMax = env.NodeScanningMaxInitialWait.DurationSetting()
-	log.Infof("Scanning intervals: base interval: %s, maximum absolute deviation from base: %.2f%%, maximum first scan interval: %s",
-		i.base, i.deviation*100.0, i.initialMax)
+	log.Infof("Scanning intervals: base interval: %s, maximum absolute deviation from base: %s, first scan starts not later than in: %s",
+		i.base, absDeviation, i.initialMax)
 	return i
 }
 
 // Initial returns the initial node scanning interval.
 func (i *NodeScanIntervals) Initial() time.Duration {
 	interval := multiplyDuration(i.initialMax, randFloat64())
-	log.Infof("initial scanning in %s", interval)
+	log.Infof("Initial scanning in %s", interval)
 	return interval
 }
 
@@ -68,6 +70,6 @@ func (i *NodeScanIntervals) Next() time.Duration {
 	if i.deviation > 0 {
 		interval = deviateDuration(interval, i.deviation)
 	}
-	log.Infof("next node scan in %s", interval)
+	log.Infof("Next node scan in %s", interval)
 	return interval
 }

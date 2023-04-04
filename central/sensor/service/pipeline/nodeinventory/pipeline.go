@@ -63,12 +63,11 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	if ninv == nil {
 		return errors.Errorf("unexpected resource type %T for node inventory", event.GetResource())
 	}
-	invStr := fmt.Sprintf("for node %s (id: %s)", ninv.GetNodeName(), ninv.GetNodeId())
-	log.Infof("received node inventory %s", invStr)
-	log.Debugf("node inventory %s contains %d packages to scan from %d content sets", invStr,
+	nodeStr := fmt.Sprintf("(node name: %q, node id: %q)", ninv.GetNodeName(), ninv.GetNodeId())
+	log.Debugf("received inventory %s contains %d packages to scan from %d content sets", nodeStr,
 		len(ninv.GetComponents().GetRhelComponents()), len(ninv.GetComponents().GetRhelContentSets()))
 	if event.GetAction() != central.ResourceAction_UNSET_ACTION_RESOURCE {
-		log.Errorf("node inventory %s with unsupported action: %s", invStr, event.GetAction())
+		log.Errorf("inventory %s has unsupported action: %q", nodeStr, event.GetAction())
 		return nil
 	}
 	ninv = ninv.Clone()
@@ -76,14 +75,13 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	// Read the node from the database, if not found we fail.
 	node, found, err := p.nodeDatastore.GetNode(ctx, ninv.GetNodeId())
 	if err != nil {
-		log.Errorf("fetching node (id: %q) from the database: %v", ninv.GetNodeId(), err)
+		log.Errorf("fetching node %s from the database: %v", nodeStr, err)
 		return errors.WithMessagef(err, "fetching node: %s", ninv.GetNodeId())
 	}
 	if !found {
-		log.Errorf("fetching node (id: %q) from the database: node does not exist", ninv.GetNodeId())
+		log.Errorf("fetching node %s from the database: node does not exist", nodeStr)
 		return errors.WithMessagef(err, "node does not exist: %s", ninv.GetNodeId())
 	}
-	log.Debugf("node %s found, enriching with node inventory", nodeDatastore.NodeString(node))
 
 	// Call Scanner to enrich the node inventory and attach the results to the node object.
 	err = p.enricher.EnrichNodeWithInventory(node, ninv)
@@ -91,8 +89,8 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		log.Errorf("enriching node %s: %v", nodeDatastore.NodeString(node), err)
 		return errors.WithMessagef(err, "enrinching node %s", nodeDatastore.NodeString(node))
 	}
-	log.Debugf("node inventory for node %s has been scanned and contains %d results",
-		nodeDatastore.NodeString(node), len(node.GetScan().GetComponents()))
+	log.Infof("scanned inventory from node %s with %d components", nodeDatastore.NodeString(node),
+		len(node.GetScan().GetComponents()))
 
 	// Update the whole node in the database with the new and previous information.
 	err = p.riskManager.CalculateRiskAndUpsertNode(node)
