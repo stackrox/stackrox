@@ -63,7 +63,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	if ninv == nil {
 		return errors.Errorf("unexpected resource type %T for node inventory", event.GetResource())
 	}
-	nodeStr := fmt.Sprintf("(node: %q id: %q)", ninv.GetNodeName(), ninv.GetNodeId())
+	nodeStr := fmt.Sprintf("(node name: %q, node id: %q)", ninv.GetNodeName(), ninv.GetNodeId())
 	log.Debugf("received inventory %s contains %d packages to scan from %d content sets", nodeStr,
 		len(ninv.GetComponents().GetRhelComponents()), len(ninv.GetComponents().GetRhelContentSets()))
 	if event.GetAction() != central.ResourceAction_UNSET_ACTION_RESOURCE {
