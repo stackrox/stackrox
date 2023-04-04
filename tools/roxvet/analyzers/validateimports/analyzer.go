@@ -272,6 +272,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/secondarykey",
 			"pkg/set",
 			"pkg/sliceutils",
+			"pkg/stringutils",
 			"pkg/sync",
 			"pkg/testutils",
 			"pkg/timestamp",
