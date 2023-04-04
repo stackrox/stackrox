@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/clusters"
 	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	"github.com/stackrox/rox/central/tlsconfig"
@@ -48,7 +49,7 @@ func getAdditionalCAs(certs *sensor.Certs) ([]*zip.File, error) {
 	}
 
 	if zipForDefaultTLSCertCA, err := maybeCreateZipFileForDefaultTLSCertCA(); err != nil {
-		log.Errorf("Error obtaining default CA cert: %v", err)
+		log.Errorf("Error obtaining default TLS Certificate: %v", err)
 	} else if zipForDefaultTLSCertCA != nil {
 		files = append(files, zipForDefaultTLSCertCA)
 		certs.Files[fmt.Sprintf("secrets/%s/%s", additionalCAsZipSubdir, centralCA)] = zipForDefaultTLSCertCA.Content
@@ -61,15 +62,15 @@ func getAdditionalCAs(certs *sensor.Certs) ([]*zip.File, error) {
 func maybeCreateZipFileForDefaultTLSCertCA() (*zip.File, error) {
 	defaultTLSCertificate, err := tlsconfig.MaybeGetDefaultTLSCertificateFromDefaultDirectory()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error getting default TLS certificate from default directory")
 	}
-	if defaultTLSCertificate == nil {
+	if defaultTLSCertificate == nil || len(defaultTLSCertificate.Certificate) == 0 {
 		return nil, nil
 	}
 
 	lastInChain, err := x509.ParseCertificate(defaultTLSCertificate.Certificate[len(defaultTLSCertificate.Certificate)-1])
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error parsing default TLS certificate")
 	}
 
 	// Only add cert to bundle if it is not trusted by system roots.
