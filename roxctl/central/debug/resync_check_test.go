@@ -46,11 +46,10 @@ func (m *mockAlertService) ListAlerts(_ context.Context, _ *v1.ListAlertsRequest
 		return &v1.ListAlertsResponse{
 			Alerts: m.firstCall,
 		}, nil
-	} else {
-		return &v1.ListAlertsResponse{
-			Alerts: m.secondCall,
-		}, nil
 	}
+	return &v1.ListAlertsResponse{
+		Alerts: m.secondCall,
+	}, nil
 }
 
 type mockPolicyService struct {
