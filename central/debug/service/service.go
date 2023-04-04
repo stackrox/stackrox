@@ -641,7 +641,15 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 
 		// We have to sleep here to make sure that any new alerts that could be generated after requesting all deployments
 		// to be reprocessed will appear in the new JSON file.
-		time.Sleep(opts.withReprocessDelay)
+		select {
+		case <-debugDumpCtx.Done():
+			log.Error("timeout reached trying to create the diagnostic bundle")
+			if err := zipWriter.Close(); err != nil {
+				log.Error(err)
+			}
+			return
+		case <-time.After(opts.withReprocessDelay):
+		}
 		fetchAndAddJSONToZip(debugDumpCtx, zipWriter, "alerts-after.json", s.fetchAlerts)
 	}
 
