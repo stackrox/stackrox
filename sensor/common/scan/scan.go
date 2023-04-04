@@ -67,11 +67,11 @@ func NewLocalScan(registryStore *registry.Store) *LocalScan {
 	}
 }
 
-// EnrichLocalImage invokes EnrichLocalImageFromRegistry with registry credentials from the registryStore based on the remote path
+// EnrichLocalImage invokes enrichLocalImageFromRegistry with registry credentials from the registryStore based on the remote path
 // of the image (primarily used for enriching images from OCP internal registries where the path represents a namespace)
 //
-// Returns an error if no credentials are found prior to invoking EnrichLocalImageFromRegistry. An error is returned
-// instead of passing no registries to EnrichLocalImageFromRegistry (for no auth) because the internal OCP registries require auth (by default)
+// Returns an error if no credentials are found prior to invoking enrichLocalImageFromRegistry. An error is returned
+// instead of passing no registries to enrichLocalImageFromRegistry (for no auth) because the internal OCP registries require auth (by default)
 func (s *LocalScan) EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
 	imgName := ci.GetName().GetFullName()
 
@@ -86,10 +86,10 @@ func (s *LocalScan) EnrichLocalImage(ctx context.Context, centralClient v1.Image
 	return s.enrichLocalImageFromRegistry(ctx, centralClient, ci, []registryTypes.Registry{matchingRegistry})
 }
 
-// EnrichLocalImageInNamespace invokes EnrichLocalImageFromRegistry with a slice of credentials from the registryStore based on namespace as well as
-// the OCP global pull secret if the namespace is an OCP system namespace
+// EnrichLocalImageInNamespace invokes enrichLocalImageFromRegistry with a slice of credentials from the registryStore based on namespace as well as
+// the OCP global pull secret
 //
-// If no registry credentials are found an empty registry slice is passed to EnrichLocalImageFromRegistry for enriching with 'no auth'
+// If no registry credentials are found an empty registry slice is passed to enrichLocalImageFromRegistry for enriching with 'no auth'
 func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage, namespace string) (*storage.Image, error) {
 	if namespace == "" {
 		// If no namespace provided try enrichment with 'no auth'
@@ -115,7 +115,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	return s.enrichLocalImageFromRegistry(ctx, centralClient, ci, regs)
 }
 
-// EnrichLocalImageFromRegistry will enrich an image with scan results from local scanner as well as signatures
+// enrichLocalImageFromRegistry will enrich an image with scan results from local scanner as well as signatures
 // from the local registry. Afterwards, missing enriched data such as signature verification results and image
 // vulnerabilities will be fetched from central, returning the fully enriched image. A request is always sent
 // to central even if errors occur pulling metadata, scanning, or fetching signatures so that the error may be
