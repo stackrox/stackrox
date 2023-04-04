@@ -1,91 +1,179 @@
 package debug
 
 import (
-	"bytes"
-	"io"
-	"net/http"
+	"context"
+	"encoding/json"
 	"os"
+	"path"
+	"sort"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
+	"google.golang.org/grpc"
 )
 
 const (
 	resyncCheckTimeout = 300 * time.Second
 )
 
-// resyncCheckCommand command to debug re-sync-less feature
+// resyncCheckCommand will outputs alert data before and after reassessing ACS policies.
 func resyncCheckCommand(cliEnvironment environment.Environment) *cobra.Command {
 	var outputDir string
-	var clusters []string
+	var waitFor time.Duration
 
 	c := &cobra.Command{
 		Use:   "resync-check",
-		Short: "TODO",
-		Long:  "TODO",
+		Short: "Check alerts before and after reassessing policies",
+		Long:  "Check alerts before and after reassessing policies. This should only be used for testing when Secured Clusters have ROX_RESYNC_DISABLED=true",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			cliEnvironment.Logger().InfofLn("Downloading alerts from central...")
-
-			timeout := flags.Timeout(c)
-			alertsPath := "/v1/alerts"
-			reassessPath := "/v1/policies/reassess"
-
-			err := getFile(alertsPath, timeout, http.MethodGet, "alerts-before.json")
-			if isTimeoutError(err) {
-				cliEnvironment.Logger().ErrfLn("Timeout has been reached while retrieving the alerts")
-				return nil
-			} else if err != nil {
+			cmd, err := commandWithConnection(cliEnvironment, waitFor, outputDir)
+			if err != nil {
+				return err
+			}
+			before, after, err := cmd.run()
+			if err != nil {
 				return err
 			}
 
-			cliEnvironment.Logger().InfofLn("Triggering policy reassess...")
-			var body []byte
-			resp, err := common.DoHTTPRequestAndCheck200(reassessPath, timeout, http.MethodPost, bytes.NewBuffer(body), environment.CLIEnvironment().Logger())
-			if isTimeoutError(err) {
-				cliEnvironment.Logger().ErrfLn("Timeout has been reached while requesting policy reassess")
-				return nil
-			} else if err != nil {
-				return err
-			}
-			utils.IgnoreError(resp.Body.Close)
-
-			cliEnvironment.Logger().InfofLn("Sleeping one minute...")
-			time.Sleep(time.Minute)
-
-			cliEnvironment.Logger().InfofLn("Downloading alerts from central...")
-			err = getFile(alertsPath, timeout, http.MethodGet, "alerts-after.json")
-			if isTimeoutError(err) {
-				cliEnvironment.Logger().ErrfLn("Timeout has been reached while retrieving the alerts")
-			}
-			return err
+			return cmd.storeFiles(before, after)
 		}),
 	}
 	flags.AddTimeoutWithDefault(c, diagnosticBundleDownloadTimeout)
-	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "output directory in which to store bundle")
-	c.PersistentFlags().StringSliceVar(&clusters, "clusters", nil, "comma separated list of sensor clusters from which logs should be collected")
+	c.PersistentFlags().StringVar(&outputDir, "output-dir", "resync-check-output", "output directory in which to store bundle")
+	c.PersistentFlags().DurationVar(&waitFor, "wait-for", time.Minute, "how long to wait between before and after alert check")
 
 	return c
 }
 
-func getFile(path string, timeout time.Duration, method, fileName string) error {
-	var body []byte
-	resp, err := common.DoHTTPRequestAndCheck200(path, timeout, method, bytes.NewBuffer(body), environment.CLIEnvironment().Logger())
+type resyncCheckCmd struct {
+	env       environment.Environment
+	conn      *grpc.ClientConn
+	waitFor   time.Duration
+	outputDir string
+}
+
+func commandWithConnection(env environment.Environment, waitFor time.Duration, outputDir string) (*resyncCheckCmd, error) {
+	conn, err := env.GRPCConnection()
 	if err != nil {
+		return nil, errors.Wrap(err, "could not establish gRPC connection to central")
+	}
+
+	return &resyncCheckCmd{
+		env:       env,
+		conn:      conn,
+		waitFor:   waitFor,
+		outputDir: outputDir,
+	}, nil
+}
+
+func (c *resyncCheckCmd) run() ([]*storage.ListAlert, []*storage.ListAlert, error) {
+	c.env.Logger().InfofLn("Running re-sync check")
+
+	ctx, cancel := context.WithTimeout(context.Background(), resyncCheckTimeout)
+	defer cancel()
+
+	svc := v1.NewAlertServiceClient(c.conn)
+
+	alertsBefore, err := c.fetchAlerts(ctx, svc)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.env.Logger().InfofLn("Found %d alerts before reassessing", len(alertsBefore))
+
+	if err := c.reassessPolicies(ctx); err != nil {
+		return nil, nil, err
+	}
+
+	c.env.Logger().InfofLn("Waiting for %s while reassess policies produces alerts", c.waitFor.String())
+
+	// Roxctl needs to wait here to realistically get the delta between the violation state before and after reassessing
+	// policies. If the timer is too short, there's a higher change that there will be no delta, because the Sensors
+	// still haven't fully reprocessed the deployments.
+	waitForC := time.After(c.waitFor)
+	select {
+	case <-waitForC:
+		break
+	case <-ctx.Done():
+		return nil, nil, errors.Errorf("context finished before second request could be made: `wait-for` value might be too high: %s", c.waitFor.String())
+	}
+
+	alertsAfter, err := c.fetchAlerts(ctx, svc)
+	if err != nil {
+		return nil, nil, err
+	}
+	c.env.Logger().InfofLn("Found %d alerts after reassessing", len(alertsAfter))
+
+	c.assessDelta(alertsBefore, alertsAfter)
+
+	return alertsBefore, alertsAfter, nil
+}
+
+func (c *resyncCheckCmd) fetchAlerts(ctx context.Context, svc v1.AlertServiceClient) ([]*storage.ListAlert, error) {
+	response, err := svc.ListAlerts(ctx, &v1.ListAlertsRequest{})
+	if err != nil {
+		return nil, errors.Wrap(err, "could not make ListAlerts request to gRPC server")
+	}
+	return response.GetAlerts(), nil
+}
+
+func (c *resyncCheckCmd) storeFiles(alertsBefore, alertsAfter []*storage.ListAlert) error {
+	if err := os.Mkdir(c.outputDir, 0755); err != nil {
+		c.env.Logger().WarnfLn("Failed to create directory %s: %s", c.outputDir, err)
+	}
+
+	if err := c.storeFile("alerts-before.json", alertsBefore); err != nil {
 		return err
 	}
-	defer utils.IgnoreError(resp.Body.Close)
-	out, err := os.Create(fileName)
-	if err != nil {
+
+	if err := c.storeFile("alerts-after.json", alertsAfter); err != nil {
 		return err
 	}
-	defer utils.IgnoreError(out.Close)
-	if _, err := io.Copy(out, resp.Body); err != nil {
-		return err
+
+	return nil
+}
+
+func (c *resyncCheckCmd) storeFile(fileName string, alerts []*storage.ListAlert) error {
+	fullPath := path.Join(c.outputDir, fileName)
+	c.env.Logger().InfofLn("Storing alerts %s", fullPath)
+
+	data, err := json.Marshal(alerts)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal ListAlerts as JSON")
+	}
+
+	return os.WriteFile(fullPath, data, 0644)
+}
+
+func (c *resyncCheckCmd) assessDelta(before, after []*storage.ListAlert) {
+	if len(before) != len(after) {
+		c.env.Logger().WarnfLn("Number of alerts differ in before and after! Reach out to Red Hat ACS support and provide output files generated by this command.")
+	}
+
+	sort.SliceStable(before, func(i, j int) bool {
+		return before[i].Id > before[j].Id
+	})
+
+	sort.SliceStable(after, func(i, j int) bool {
+		return after[i].Id > after[j].Id
+	})
+
+	if !cmp.Equal(before, after) {
+		c.env.Logger().WarnfLn("Alerts content differ in before and after! Reach out to Red Hat ACS support and provide output files generated by this command.")
+	}
+}
+
+func (c *resyncCheckCmd) reassessPolicies(ctx context.Context) error {
+	policySvc := v1.NewPolicyServiceClient(c.conn)
+	_, err := policySvc.ReassessPolicies(ctx, &v1.Empty{})
+	if err != nil {
+		return errors.Wrap(err, "couldn't reassess policies")
 	}
 	return nil
 }
