@@ -210,13 +210,15 @@ func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 	return wrap.GetDeployment()
 }
 
-// GetBuiltDeployment returns a cloned deployment for supplied id
-func (ds *DeploymentStore) GetBuiltDeployment(id string) *storage.Deployment {
+// GetBuiltDeployment returns a cloned deployment for supplied id and a flag if it is fully built.
+func (ds *DeploymentStore) GetBuiltDeployment(id string) (*storage.Deployment, bool) {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
-	// TODO(ROX-16138): return nil if the deployment is not built yet
 	wrap := ds.getWrapNoLock(id)
-	return wrap.GetDeployment().Clone()
+	if wrap == nil {
+		return nil, false
+	}
+	return wrap.GetDeployment().Clone(), wrap.isBuilt
 }
 
 // BuildDeploymentWithDependencies creates storage.Deployment object using external object dependencies.
@@ -242,6 +244,7 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 	// updated, the value from this properties might need to be updated.
 	wrap.populateDataFromPods(wrap.pods...)
 
+	wrap.isBuilt = true
 	ds.addOrUpdateDeploymentNoLock(wrap)
 	return wrap.GetDeployment().Clone(), nil
 }
