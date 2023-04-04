@@ -17,8 +17,6 @@ import {
 import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
-import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
@@ -46,6 +44,7 @@ import AffectedImagesTable, {
 import EntityTypeToggleGroup from './EntityTypeToggleGroup';
 import AffectedDeploymentsTable from './Tables/AffectedDeploymentsTable';
 import { DynamicTableLabel } from './DynamicIcon';
+import TableErrorComponent from './components/TableErrorComponent';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
@@ -187,16 +186,10 @@ function ImageCvePage() {
             <Divider component="div" />
             <PageSection variant="light">
                 {metadataRequest.error ? (
-                    <Bullseye>
-                        <EmptyStateTemplate
-                            headingLevel="h2"
-                            icon={ExclamationCircleIcon}
-                            iconClassName="pf-u-danger-color-100"
-                            title={getAxiosErrorMessage(metadataRequest.error)}
-                        >
-                            The system was unable to load metadata for this CVE
-                        </EmptyStateTemplate>
-                    </Bullseye>
+                    <TableErrorComponent
+                        error={metadataRequest.error}
+                        message="The system was unable to load metadata for this CVE"
+                    />
                 ) : (
                     // Don't check the loading state here, since if the passed `data` is `undefined` we
                     // will implicitly handle the loading state in the component
@@ -263,16 +256,10 @@ function ImageCvePage() {
                         </SplitItem>
                     </Split>
                     {tableError ? (
-                        <Bullseye>
-                            <EmptyStateTemplate
-                                headingLevel="h2"
-                                title={getAxiosErrorMessage(tableError)}
-                                icon={ExclamationCircleIcon}
-                                iconClassName="pf-u-danger-color-100"
-                            >
-                                Adjust your filters and try again
-                            </EmptyStateTemplate>
-                        </Bullseye>
+                        <TableErrorComponent
+                            error={tableError}
+                            message="Adjust your filters and try again"
+                        />
                     ) : (
                         <>
                             {tableLoading && !tableDataAvailable && (

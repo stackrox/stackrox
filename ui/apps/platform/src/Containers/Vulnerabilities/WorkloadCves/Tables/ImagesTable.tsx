@@ -1,4 +1,5 @@
 import React from 'react';
+import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Button, ButtonVariant, Flex, Tooltip } from '@patternfly/react-core';
@@ -6,46 +7,85 @@ import { Button, ButtonVariant, Flex, Tooltip } from '@patternfly/react-core';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { getDistanceStrictAsPhrase, getDateTime } from 'utils/dateUtils';
 import { UseURLSortResult } from 'hooks/useURLSort';
+import ImageNameTd from '../components/ImageNameTd';
 import { getEntityPagePath } from '../searchUtils';
 import SeverityCountLabels from '../SeverityCountLabels';
+import { DynamicColumnIcon } from '../DynamicIcon';
 
-type ImagesTableProps = {
-    images: {
-        id: string;
-        name: {
-            registry: string;
-            remote: string;
-            tag: string;
-        };
-        imageCVECountBySeverity: {
-            critical: number;
-            important: number;
-            moderate: number;
-            low: number;
-        };
-        operatingSystem: string;
-        deploymentCount: number;
-        watchStatus: string;
-        metadata?: {
-            v1?: {
-                created?: Date;
-            };
-        };
-        scanTime?: Date;
-    }[];
-    getSortParams: UseURLSortResult['getSortParams'];
+export const imageListQuery = gql`
+    query getImageList($query: String, $pagination: Pagination) {
+        images(query: $query, pagination: $pagination) {
+            id
+            name {
+                registry
+                remote
+                tag
+            }
+            imageCVECountBySeverity(query: $query) {
+                critical
+                important
+                moderate
+                low
+            }
+            operatingSystem
+            deploymentCount(query: $query)
+            watchStatus
+            metadata {
+                v1 {
+                    created
+                }
+            }
+            scanTime
+        }
+    }
+`;
+
+type Image = {
+    id: string;
+    name: {
+        registry: string;
+        remote: string;
+        tag: string;
+    } | null;
+    imageCVECountBySeverity: {
+        critical: number;
+        important: number;
+        moderate: number;
+        low: number;
+    };
+    operatingSystem: string;
+    deploymentCount: number;
+    watchStatus: 'WATCHED' | 'NOT_WATCHED';
+    metadata: {
+        v1: {
+            created: Date | null;
+        } | null;
+    } | null;
+    scanTime: Date | null;
 };
 
-function ImagesTable({ images, getSortParams }: ImagesTableProps) {
+type ImagesTableProps = {
+    images: Image[];
+    getSortParams: UseURLSortResult['getSortParams'];
+    isFiltered: boolean;
+};
+
+function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
     return (
         <TableComposable borders={false} variant="compact">
             <Thead>
                 {/* TODO: need to add sorting to columns  */}
                 <Tr>
-                    <Th sort={getSortParams('Images')}>Image</Th>
-                    <Th sort={getSortParams('CVE')}>CVEs by severity</Th>
-                    <Th sort={getSortParams('Operating system')}>Operating system</Th>
-                    <Th sort={getSortParams('Deployment count')}>Deployments</Th>
+                    <Th sort={getSortParams('Image')}>Image</Th>
+                    <Th sort={getSortParams('CVE')}>
+                        CVEs by severity
+                        {isFiltered && <DynamicColumnIcon />}
+                    </Th>
+                    <Th sort={getSortParams('Operating System')}>Operating system</Th>
+                    <Th sort={getSortParams('Deployment count')}>
+                        Deployments
+                        {isFiltered && <DynamicColumnIcon />}
+                    </Th>
                     <Th sort={getSortParams('Age')}>Age</Th>
                     <Th sort={getSortParams('Scan time')}>Scan time</Th>
                 </Tr>
@@ -69,22 +109,12 @@ function ImagesTable({ images, getSortParams }: ImagesTableProps) {
                             }}
                         >
                             <Tr>
-                                {/* TODO: need to add path */}
                                 <Td>
-                                    <Flex
-                                        direction={{ default: 'column' }}
-                                        spaceItems={{ default: 'spaceItemsXs' }}
-                                    >
-                                        <Button
-                                            variant={ButtonVariant.link}
-                                            isInline
-                                            component={LinkShim}
-                                            href={getEntityPagePath('Image', id)}
-                                        >
-                                            {name.remote}
-                                        </Button>
-                                        <span>in {`"${name.registry || 'unknown'}"`}</span>
-                                    </Flex>
+                                    {name ? (
+                                        <ImageNameTd name={name} id={id} />
+                                    ) : (
+                                        'Image name not available'
+                                    )}
                                 </Td>
                                 <Td>
                                     <SeverityCountLabels
