@@ -68,11 +68,11 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 
 	policyName := "policy description %d"
 	for i := 0; i < len(policies); i++ {
-		testPolicy := &storage.Policy{
+
+		require.NoError(s.T(), s.policyStore.Upsert(ctx, &storage.Policy{
 			Id:   policies[i],
 			Name: fmt.Sprintf(policyName, i),
-		}
-		require.NoError(s.T(), s.policyStore.Upsert(ctx, testPolicy))
+		}))
 	}
 	dbs := &types.Databases{
 		PostgresDB: s.db.DB,
@@ -84,10 +84,17 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 	s.NoError(err)
 	s.Empty(policyPremigration[0].Exclusions)
 	s.NoError(migration.Run(dbs))
-	expectedExclusion := "Don't alert on ovnkube-node deployment in openshift-ovn-kubernetes Namespace"
+	expectedExclusions := []string{"Don't alert on ovnkube-node deployment in openshift-ovn-kubernetes Namespace",
+		"Don't alert on haproxy-* deployment in openshift-vsphere-infra namespace",
+		"Don't alert on keepalived-* deployment in openshift-vsphere-infra namespace",
+		"Don't alert on coredns-* deployment in openshift-vsphere-infra namespace"}
 	query := search.NewQueryBuilder().AddExactMatches(search.PolicyID, testPolicy.GetId()).ProtoQuery()
 	policy, err := s.policyStore.GetByQuery(ctx, query)
 	s.NoError(err)
-	s.Equal(policy[0].Exclusions[3].Name, expectedExclusion, "exclusion do not match after migration")
+	var actualExclusions []string
+	for _, excl := range policy[0].Exclusions {
+		actualExclusions = append(actualExclusions, excl.Name)
+	}
+	s.ElementsMatch(actualExclusions, expectedExclusions, "exclusion do not match after migration")
 
 }
