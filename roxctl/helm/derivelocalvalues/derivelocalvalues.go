@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/set"
@@ -393,7 +394,7 @@ func retrieveCustomLabels(labels map[string]interface{}) map[string]interface{} 
 }
 
 func retrieveCustomEnvVars(envVars map[string]interface{}) map[string]interface{} {
-	return filterMap(envVars, []string{"ROX_OFFLINE_MODE"})
+	return filterMap(envVars, []string{env.OfflineModeEnv.EnvVar()})
 }
 
 func printWarnings(logger logger.Logger, warnings []string) {
