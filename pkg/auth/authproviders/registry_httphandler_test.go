@@ -404,10 +404,10 @@ func generateAuthResponse(user string, userAttr map[string][]string) *AuthRespon
 
 var _ Store = (*tstAuthProviderStore)(nil)
 
-// Authprovider store (needed for NewStoreBackedRegistry)
+// AuthProvider store (needed for NewStoreBackedRegistry)
 type tstAuthProviderStore struct{}
 
-func (s *tstAuthProviderStore) GetAuthProvider(ctx context.Context, id string) (*storage.AuthProvider, bool, error) {
+func (s *tstAuthProviderStore) GetAuthProvider(_ context.Context, id string) (*storage.AuthProvider, bool, error) {
 	for _, ap := range mockedAuthProviders {
 		if ap.GetId() == id {
 			return ap, true, nil

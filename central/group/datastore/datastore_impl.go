@@ -314,7 +314,7 @@ func (ds *dataStoreImpl) verifyReferencedRoleAndProvider(group *storage.Group) e
 		return err
 	}
 
-	authProvider, found, err := ds.authProviderDatastore.GetAuthProvider(datastoresAccessCtx, group.GetRoleName())
+	authProvider, found, err := ds.authProviderDatastore.GetAuthProvider(datastoresAccessCtx, group.GetProps().GetAuthProviderId())
 	if err != nil {
 		return err
 	}

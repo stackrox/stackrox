@@ -7,6 +7,8 @@ import (
 )
 
 // Store provides storage functionality for auth providers.
+//
+//go:generate mockgen-wrapper
 type Store interface {
 	GetAuthProvider(ctx context.Context, id string) (*storage.AuthProvider, bool, error)
 	GetAllAuthProviders(ctx context.Context) ([]*storage.AuthProvider, error)
