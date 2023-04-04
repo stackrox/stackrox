@@ -65,6 +65,7 @@ func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldLoadChainWi
 
 	s.Len(result.Certificate, 1)
 	s.Equal("Cert 0", result.Leaf.Subject.CommonName)
+
 	leaf, err := x509.ParseCertificate(result.Certificate[0])
 	s.Require().NoError(err)
 	s.Equal("Cert 0", leaf.Subject.CommonName)
@@ -86,6 +87,7 @@ func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldLoadChainWi
 
 	s.Len(result.Certificate, 3)
 	s.Equal("Cert 2", result.Leaf.Subject.CommonName)
+
 	leaf, err := x509.ParseCertificate(result.Certificate[0])
 	s.Require().NoError(err)
 	s.Equal("Cert 2", leaf.Subject.CommonName)
@@ -156,11 +158,11 @@ func (s *tlsConfigTestSuite) TestMaybeGetDefaultTLSCertificate_ShouldReturnAnErr
 	s.Require().NoError(err)
 	s.Require().NoError(writeCerts(tmpDir, certs...))
 
-	keyFile, err := os.Create(path.Join(tmpDir, TLSKeyFileName))
+	badKeyFile, err := os.Create(path.Join(tmpDir, TLSKeyFileName))
 	s.Require().NoError(err)
-	_, err = keyFile.WriteString("invalid key")
+	_, err = badKeyFile.WriteString("invalid key")
 	s.Require().NoError(err)
-	s.Require().NoError(keyFile.Close())
+	s.Require().NoError(badKeyFile.Close())
 
 	_, err = MaybeGetDefaultTLSCertificateFromDirectory(tmpDir)
 	s.ErrorContains(err, "failed to find any PEM data in key input")
