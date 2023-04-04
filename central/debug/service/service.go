@@ -691,7 +691,7 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 		withLogImbue:      true,
 		withAccessControl: true,
 		withNotifiers:     true,
-		withAlerts:        true,
+		withAlerts:        false,
 		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
 		telemetryMode:     0,
 	}
@@ -739,7 +739,7 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 		withAccessControl: true,
 		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
 		withNotifiers:     true,
-		withAlerts:        true,
+		withAlerts:        false,
 	}
 
 	err := getOptionalQueryParams(&opts, r.URL)
@@ -769,6 +769,11 @@ func getOptionalQueryParams(opts *debugDumpOptions, u *url.URL) error {
 		opts.since = t
 	} else {
 		opts.since = time.Now().Add(-logWindow)
+	}
+
+	withAlerts := values.Get("alerts")
+	if withAlerts == "true" {
+		opts.withAlerts = true
 	}
 	return nil
 }
