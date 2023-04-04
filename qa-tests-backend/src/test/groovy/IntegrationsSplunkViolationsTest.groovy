@@ -330,6 +330,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         // Lock the baseline so that any different requests from (and to) Splunk pod would make a violation.
         NetworkBaselineService.lockNetworkBaseline(splunkUid)
 
+        log.info("Current network baseline is: ${NetworkBaselineService.getNetworkBaseline(splunkUid)}")
+
         // Make anomalous request from Splunk towards Kube API server. This should trigger a network flow violation.
         assert retryUntilTrue({
             orchestrator.execInContainer(splunkDeployment.deployment,
