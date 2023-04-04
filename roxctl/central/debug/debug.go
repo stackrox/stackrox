@@ -41,6 +41,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.AddCommand(dumpCommand(cliEnvironment))
 	c.AddCommand(downloadDiagnosticsCommand(cliEnvironment))
 	c.AddCommand(authzTraceCommand(cliEnvironment))
+	c.AddCommand(resyncCheckCommand(cliEnvironment))
 	return c
 }
 
