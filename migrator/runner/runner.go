@@ -2,13 +2,34 @@ package runner
 
 import (
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/set"
 )
+
+var skipMigrationMap = set.NewIntSet()
+
+func init() {
+	env := os.Getenv("ROX_SKIP_MIGRATIONS")
+	if env == "" {
+		return
+	}
+	for _, skipped := range strings.Split(env, ",") {
+		migration, err := strconv.Atoi(strings.TrimSpace(skipped))
+		if err != nil {
+			log.WriteToStderrf("could not parse %v. Not skipping", skipped)
+			continue
+		}
+		skipMigrationMap.Add(migration)
+	}
+}
 
 // Run runs the migrator.
 func Run(databases *types.Databases) error {
@@ -49,12 +70,16 @@ func runMigrations(databases *types.Databases, startingSeqNum int) error {
 			return fmt.Errorf("no migration found starting at %d", seqNum)
 		}
 
-		err := migration.Run(databases)
-		if err != nil {
-			return errors.Wrapf(err, "error running migration starting at %d", seqNum)
+		if skipMigrationMap.Contains(seqNum) {
+			log.WriteToStderrf("Skipping migration %d based on environment variable", seqNum)
+		} else {
+			err := migration.Run(databases)
+			if err != nil {
+				return errors.Wrapf(err, "error running migration starting at %d", seqNum)
+			}
 		}
 
-		err = updateVersion(databases, migration.VersionAfter)
+		err := updateVersion(databases, migration.VersionAfter)
 		if err != nil {
 			return errors.Wrapf(err, "failed to update version after migration %d", seqNum)
 		}
