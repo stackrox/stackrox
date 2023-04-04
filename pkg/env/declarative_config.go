@@ -10,4 +10,7 @@ var (
 	// DeclarativeConfigReconcileInterval will set the duration for when to reconcile declarative configurations.
 	DeclarativeConfigReconcileInterval = registerDurationSetting("ROX_DECLARATIVE_CONFIG_RECONCILE_INTERVAL",
 		20*time.Second)
+
+	// DeclarativeConfiguration enables declarative configuration feature as a preview.
+	DeclarativeConfiguration = RegisterBooleanSetting("ROX_DECLARATIVE_CONFIGURATION", false)
 )
