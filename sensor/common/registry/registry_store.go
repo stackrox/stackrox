@@ -81,7 +81,7 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 
 func createImageIntegration(registry string, dce config.DockerConfigEntry, secure bool) *storage.ImageIntegration {
 	registryType := dockerFactory.GenericDockerRegistryType
-	if rhelFactory.RedHatRegistryEndpoints[urlfmt.TrimHTTPPrefixes(registry)] {
+	if rhelFactory.RedHatRegistryEndpoints.Contains(urlfmt.TrimHTTPPrefixes(registry)) {
 		registryType = rhelFactory.RedHatRegistryType
 	}
 

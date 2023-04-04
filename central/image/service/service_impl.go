@@ -388,16 +388,16 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		// the central datastore. Without this users would not have an indication that scans from
 		// secured clusters are failing
 		hasErrors = true
-		log.Infof("received image enrichment request with errors %q: %v", request.GetImageName().GetFullName(), request.GetError())
+		log.Warnf("Received image enrichment request with errors %q: %v", request.GetImageName().GetFullName(), request.GetError())
 	}
 
 	var imgExists bool
-	var existingImg *storage.Image
 	forceSigVerificationUpdate := true
 	forceScanUpdate := true
 	imgID := request.GetImageId()
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the images.
 	if imgID != "" {
+		var existingImg *storage.Image
 		existingImg, imgExists, err = s.datastore.GetImage(ctx, imgID)
 		if err != nil {
 			return nil, err

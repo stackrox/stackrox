@@ -153,7 +153,7 @@ func deriveIDFromSecret(secret *v1.Secret, registry string) (string, error) {
 // registry URL and docker config.
 func DockerConfigToImageIntegration(secret *v1.Secret, registry string, dce config.DockerConfigEntry) (*storage.ImageIntegration, error) {
 	registryType := docker.GenericDockerRegistryType
-	if rhel.RedHatRegistryEndpoints[urlfmt.TrimHTTPPrefixes(registry)] {
+	if rhel.RedHatRegistryEndpoints.Contains(urlfmt.TrimHTTPPrefixes(registry)) {
 		registryType = rhel.RedHatRegistryType
 	}
 
