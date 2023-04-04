@@ -17,6 +17,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	alertStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/globaldb"
@@ -29,6 +30,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/telemetry/gatherers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -114,6 +116,8 @@ func New(clusters datastore.DataStore, sensorConnMgr connection.Manager, telemet
 		roleDataStore:        roleDataStore,
 		configDataStore:      configDataStore,
 		notifierDataStore:    notifierDataStore,
+		// TODO: Inject dependency
+		alertDataStore: nil,
 	}
 }
 
@@ -130,6 +134,7 @@ type serviceImpl struct {
 	roleDataStore        roleDS.DataStore
 	configDataStore      configDS.DataStore
 	notifierDataStore    notifierDS.DataStore
+	alertDataStore       alertStore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -422,6 +427,23 @@ func (s *serviceImpl) getGroups(_ context.Context) (interface{}, error) {
 	return s.groupDataStore.GetAll(accessGroupsCtx)
 }
 
+func (s *serviceImpl) fetchAlerts(_ context.Context) (interface{}, error) {
+	accessAlertCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Alert)))
+
+	var observedAlerts []*storage.ListAlert
+	err := s.alertDataStore.WalkAll(accessAlertCtx, func(alert *storage.ListAlert) error {
+		if alert.GetState() == storage.ViolationState_ACTIVE {
+			observedAlerts = append(observedAlerts, alert)
+		}
+		return nil
+	})
+
+	return observedAlerts, err
+}
+
 type diagResolvedRole struct {
 	Role          *storage.Role              `json:"role,omitempty"`
 	PermissionSet map[string]string          `json:"permission_set,omitempty"`
@@ -514,6 +536,7 @@ type debugDumpOptions struct {
 	withAccessControl bool
 	withNotifiers     bool
 	withCentral       bool
+	withAlerts        bool
 	clusters          []string
 	since             time.Time
 }
@@ -598,6 +621,31 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 
 	fetchAndAddJSONToZip(debugDumpCtx, zipWriter, "system-configuration.json", s.getConfig)
 
+	// Fetch alerts and append to the zip
+	if opts.withAlerts {
+		fetchAndAddJSONToZip(debugDumpCtx, zipWriter, "alerts-before.json", s.fetchAlerts)
+		// clusterSet := set.NewFrozenStringSet(opts.clusters...)
+		for _, conn := range s.sensorConnMgr.GetActiveConnections() {
+			err := conn.InjectMessage(debugDumpCtx, &central.MsgToSensor{
+				Msg: &central.MsgToSensor_ReprocessDeployments{
+					ReprocessDeployments: &central.ReprocessDeployments{},
+				},
+			})
+			if err != nil {
+				log.Warnf("Failed to request reprocess deployment for cluster: %s", conn.ClusterID())
+				continue
+			}
+		}
+
+		log.Info("Requested reprocess clusters. Waiting for a minute before finish writing the diagnostic bundle")
+
+		// We have to sleep here to make sure that any new alerts that could be generated after requesting all deployments
+		// to be reprocessed will appear in the new JSON file.
+		time.Sleep(time.Minute)
+		fetchAndAddJSONToZip(debugDumpCtx, zipWriter, "alerts-after.json", s.fetchAlerts)
+
+	}
+
 	// Get logs last to also catch logs made during creation of diag bundle.
 	if opts.withCentral && opts.logs == localLogs {
 		if err := getLogs(zipWriter); err != nil {
@@ -645,6 +693,7 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 		withLogImbue:      true,
 		withAccessControl: true,
 		withNotifiers:     true,
+		withAlerts:        true,
 		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
 		telemetryMode:     0,
 	}
@@ -692,6 +741,7 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 		withAccessControl: true,
 		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
 		withNotifiers:     true,
+		withAlerts:        true,
 	}
 
 	err := getOptionalQueryParams(&opts, r.URL)
