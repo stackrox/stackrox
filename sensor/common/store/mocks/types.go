@@ -140,11 +140,12 @@ func (mr *MockDeploymentStoreMockRecorder) GetAll() *gomock.Call {
 }
 
 // GetBuiltDeployment mocks base method.
-func (m *MockDeploymentStore) GetBuiltDeployment(id string) *storage.Deployment {
+func (m *MockDeploymentStore) GetBuiltDeployment(id string) (*storage.Deployment, bool) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBuiltDeployment", id)
 	ret0, _ := ret[0].(*storage.Deployment)
-	return ret0
+	ret1, _ := ret[1].(bool)
+	return ret0, ret1
 }
 
 // GetBuiltDeployment indicates an expected call of GetBuiltDeployment.
