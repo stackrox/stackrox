@@ -128,6 +128,13 @@ func (s *fullStoreImpl) readRows(
 			execFilePath = msg.GetProcess().GetProcessExecFilePath()
 		}
 
+		// If we don't have any of this information from either the process indicator side or
+		// processes listening on ports side, the process indicator has been deleted and the
+		// port has been closed. Central just hasn't gotten the message yet.
+		if podID == "" && containerName == "" && name == "" && args == "" && execFilePath == "" {
+			continue
+		}
+
 		plop := &storage.ProcessListeningOnPort{
 			Endpoint: &storage.ProcessListeningOnPort_Endpoint{
 				Port:     msg.GetPort(),
