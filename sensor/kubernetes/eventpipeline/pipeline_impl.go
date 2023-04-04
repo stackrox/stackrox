@@ -139,8 +139,7 @@ func (p *eventPipeline) processReprocessDeployments() error {
 	if env.ResyncDisabled.BooleanSetting() {
 		message := component.NewEvent()
 		message.AddDeploymentReference(resolver.ResolveAllDeployments(),
-			component.WithForceDetection(),
-			component.WithSkipResolving())
+			component.WithForceDetection())
 		p.resolver.Send(message)
 	}
 	return nil
