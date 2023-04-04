@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -262,7 +261,7 @@ func main() {
 	var nodeInventoryClient scannerV1.NodeInventoryServiceClient
 	if !env.NodeInventoryContainerEnabled.BooleanSetting() {
 		log.Infof("Compliance will not call the node-inventory container, because this is not Openshift 4 cluster")
-	} else if features.RHCOSNodeScanning.Enabled() {
+	} else if env.RHCOSNodeScanning.BooleanSetting() {
 		// Start the prometheus metrics server
 		metrics.NewDefaultHTTPServer(metrics.ComplianceSubsystem).RunForever()
 		metrics.GatherThrottleMetricsForever(metrics.ComplianceSubsystem.String())
@@ -301,8 +300,7 @@ func main() {
 	defer close(sensorC)
 	go manageStream(ctx, cli, &stoppedSig, sensorC)
 
-	// TODO(ROX-13935): Remove FakeNodeInventory and its FF
-	if features.RHCOSNodeScanning.Enabled() && nodeInventoryClient != nil {
+	if env.RHCOSNodeScanning.BooleanSetting() && nodeInventoryClient != nil {
 		i := intervals.NewNodeScanIntervalFromEnv()
 		nodeInventoriesC := manageNodeScanLoop(ctx, i, nodeInventoryClient)
 

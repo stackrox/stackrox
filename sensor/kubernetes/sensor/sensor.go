@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/clusterid"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -138,7 +137,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		auditLogCollectionManager,
 		reprocessorHandler,
 	}
-	if features.RHCOSNodeScanning.Enabled() {
+	if env.RHCOSNodeScanning.BooleanSetting() {
 		matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
 		components = append(components, compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher))
 	}
