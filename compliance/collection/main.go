@@ -167,10 +167,10 @@ func manageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals, scan
 			case <-ctx.Done():
 				return
 			case <-t.C:
-				log.Infof("starting a node scan for node %q", nodeName)
+				log.Infof("Scanning node %q", nodeName)
 				msg, err := scanNode(scanner)
 				if err != nil {
-					log.Errorf("error running scanNode: %v", err)
+					log.Errorf("error running node scan: %v", err)
 				} else {
 					nodeInventoriesC <- msg
 				}
@@ -269,10 +269,10 @@ func main() {
 		// Set up Compliance <-> NodeInventory connection
 		niConn, err := clientconn.AuthenticatedGRPCConnection(env.NodeScanningEndpoint.Setting(), mtls.Subject{}, clientconn.UseInsecureNoTLS(true))
 		if err != nil {
-			log.Errorf("Could not initialize connection to NodeInventory service. Node Scanning will be unavailable: %v", err)
+			log.Errorf("Disabling node scanning for this node: could not initialize connection to node-inventory container: %v", err)
 		}
 		if niConn != nil {
-			log.Info("Initialized NodeInventory gRPC connection")
+			log.Info("Initialized gRPC connection to node-inventory container")
 			nodeInventoryClient = scannerV1.NewNodeInventoryServiceClient(niConn)
 		}
 	}
@@ -282,7 +282,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Info("Initialized Sensor gRPC stream connection")
+	log.Info("Initialized gRPC stream connection to Sensor")
 	defer func() {
 		if err := conn.Close(); err != nil {
 			log.Errorf("Failed to close connection: %v", err)
