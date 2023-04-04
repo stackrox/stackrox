@@ -26,6 +26,7 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 	var clusters []string
 	var since string
 	var withAlerts bool
+	var reprocessDelay time.Duration
 
 	c := &cobra.Command{
 		Use:   "download-diagnostics",
@@ -44,6 +45,7 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 			}
 			if withAlerts {
 				values.Add("alerts", "true")
+				values.Add("reprocessDelay", reprocessDelay.String())
 			}
 
 			urlParams := values.Encode()
@@ -74,6 +76,7 @@ To specify timeout, run  'roxctl' command:
 	c.PersistentFlags().StringSliceVar(&clusters, "clusters", nil, "comma separated list of sensor clusters from which logs should be collected")
 	c.PersistentFlags().StringVar(&since, "since", "", "timestamp starting when logs should be collected from sensor clusters")
 	c.PersistentFlags().BoolVar(&withAlerts, "with-alerts", false, "add alert data before/after reassessing policies")
+	c.PersistentFlags().DurationVar(&reprocessDelay, "reprocess-delay", 1*time.Minute, "set the delay duration between the policy reprocessing")
 
 	return c
 }

@@ -529,15 +529,16 @@ type debugDumpOptions struct {
 	// 0 - don't collect any telemetry data
 	// 1 - collect telemetry data for central only
 	// 2 - collect telemetry data from sensors and central
-	telemetryMode     int
-	withCPUProfile    bool
-	withLogImbue      bool
-	withAccessControl bool
-	withNotifiers     bool
-	withCentral       bool
-	withAlerts        bool
-	clusters          []string
-	since             time.Time
+	telemetryMode      int
+	withCPUProfile     bool
+	withLogImbue       bool
+	withAccessControl  bool
+	withNotifiers      bool
+	withCentral        bool
+	withAlerts         bool
+	withReprocessDelay time.Duration
+	clusters           []string
+	since              time.Time
 }
 
 func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseWriter, filename string, opts debugDumpOptions) {
@@ -636,11 +637,11 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 			}
 		}
 
-		log.Info("Requested reprocess clusters. Waiting for a minute before finish writing the diagnostic bundle")
+		log.Infof("Requested reprocess clusters. Waiting for %s before finish writing the diagnostic bundle", opts.withReprocessDelay.String())
 
 		// We have to sleep here to make sure that any new alerts that could be generated after requesting all deployments
 		// to be reprocessed will appear in the new JSON file.
-		time.Sleep(time.Minute)
+		time.Sleep(opts.withReprocessDelay)
 		fetchAndAddJSONToZip(debugDumpCtx, zipWriter, "alerts-after.json", s.fetchAlerts)
 	}
 
@@ -686,14 +687,15 @@ func (s *serviceImpl) getVersionsJSON(w http.ResponseWriter, r *http.Request) {
 // on Central and might not include all we know about secured clusters.
 func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 	opts := debugDumpOptions{
-		logs:              localLogs,
-		withCPUProfile:    true,
-		withLogImbue:      true,
-		withAccessControl: true,
-		withNotifiers:     true,
-		withAlerts:        false,
-		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
-		telemetryMode:     0,
+		logs:               localLogs,
+		withCPUProfile:     true,
+		withLogImbue:       true,
+		withAccessControl:  true,
+		withNotifiers:      true,
+		withAlerts:         false,
+		withReprocessDelay: time.Minute,
+		withCentral:        env.EnableCentralDiagnostics.BooleanSetting(),
+		telemetryMode:      0,
 	}
 
 	query := r.URL.Query()
@@ -732,14 +734,15 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 	filename := time.Now().Format("stackrox_diagnostic_2006_01_02_15_04_05.zip")
 
 	opts := debugDumpOptions{
-		logs:              fullK8sIntrospectionData,
-		telemetryMode:     2,
-		withCPUProfile:    false,
-		withLogImbue:      true,
-		withAccessControl: true,
-		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
-		withNotifiers:     true,
-		withAlerts:        false,
+		logs:               fullK8sIntrospectionData,
+		telemetryMode:      2,
+		withCPUProfile:     false,
+		withLogImbue:       true,
+		withAccessControl:  true,
+		withCentral:        env.EnableCentralDiagnostics.BooleanSetting(),
+		withNotifiers:      true,
+		withAlerts:         false,
+		withReprocessDelay: time.Minute,
 	}
 
 	err := getOptionalQueryParams(&opts, r.URL)
@@ -774,6 +777,11 @@ func getOptionalQueryParams(opts *debugDumpOptions, u *url.URL) error {
 	withAlerts := values.Get("alerts")
 	if withAlerts == "true" {
 		opts.withAlerts = true
+	}
+
+	withReprocessDelay := values.Get("reprocessDelay")
+	if reprocessDelay, err := time.ParseDuration(withReprocessDelay); err == nil {
+		opts.withReprocessDelay = reprocessDelay
 	}
 	return nil
 }
