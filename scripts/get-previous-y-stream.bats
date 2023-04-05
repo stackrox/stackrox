@@ -23,6 +23,9 @@ setup() {
     test_invalid "3.0.62.x"
     test_invalid "3.0.62.1"
     test_invalid " v4.0.0"
+    test_invalid ".."
+    test_invalid "..-1.2.3"
+    test_invalid "1.2.3-"
 }
 
 test_invalid() {
@@ -51,6 +54,7 @@ test_excessive_args() {
     test_major_unknown "5.0.0" "5.0"
     test_major_unknown "5.0.1" "5.0"
     test_major_unknown "v5.0.x-nightly-12345" "5.0"
+    test_major_unknown "199.0.88" "199.0"
 }
 
 test_major_unknown() {
@@ -75,6 +79,7 @@ test_major_unknown() {
     test_happy "4.1.0" "4.0.0"
     test_happy "5.10.2" "5.9.0"
     test_happy "v3.62.7" "3.61.0"
+    test_happy "45.67.89" "45.66.0"
 }
 
 test_happy() {

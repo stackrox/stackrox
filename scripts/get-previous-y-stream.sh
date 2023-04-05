@@ -31,7 +31,7 @@ main() {
         usage
     fi
 
-    if [[ ! "$version" =~ ^v?([0-9]*)\.([0-9]*)\.(x|[0-9]*)(-.*)?$ ]]; then
+    if [[ ! "$version" =~ ^v?([0-9]+)\.([0-9]+)\.(x|[0-9]+)(-.+)?$ ]]; then
         >&2 echo "Error: provided version does not look like a valid one: $version"
         exit 1
     fi
