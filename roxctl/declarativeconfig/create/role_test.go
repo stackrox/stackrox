@@ -13,7 +13,9 @@ func TestCreateRoleCommand_Failures(t *testing.T) {
 		errOut string
 	}{
 		"no flag set": {
-			args: []string{},
+			args: []string{
+				"role",
+			},
 			errOut: `Error: required flag(s) "access-scope", "name", "permission-set" not set
 `,
 		},
