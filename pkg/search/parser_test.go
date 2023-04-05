@@ -77,6 +77,18 @@ func TestSplitCommaSeparateValues(t *testing.T) {
 			commaSeparatedVals: "val1,val2,\"val3,val:4+val5\",val6",
 			splitValues:        []string{"val1", "val2", "\"val3,val:4+val5\"", "val6"},
 		},
+		{
+			commaSeparatedVals: ",val1,val2,val3,",
+			splitValues:        []string{"", "val1", "val2", "val3", ""},
+		},
+		{
+			commaSeparatedVals: ",,",
+			splitValues:        []string{"", "", ""},
+		},
+		{
+			commaSeparatedVals: ",",
+			splitValues:        []string{"", ""},
+		},
 	}
 
 	for _, c := range cases {

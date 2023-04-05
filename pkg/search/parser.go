@@ -129,6 +129,8 @@ func splitCommaSeparatedValues(commaSeparatedValues string) []string {
 	}
 	if start <= len(commaSeparatedValues)-1 {
 		vals = append(vals, commaSeparatedValues[start:])
+	} else if commaSeparatedValues[len(commaSeparatedValues)-1] == ',' {
+		vals = append(vals, "")
 	}
 	return vals
 }
