@@ -59,16 +59,17 @@ func getAdditionalCAs(certs *sensor.Certs) ([]*zip.File, error) {
 }
 
 // maybeCreateZipFileForDefaultTLSCertCA returns a zip file containing the default CA cert if it is not trusted by the system roots.
+// If there is no default CA cert, or if it is already trusted by the system roots, it returns nil.
 func maybeCreateZipFileForDefaultTLSCertCA() (*zip.File, error) {
-	defaultTLSCertificate, err := tlsconfig.MaybeGetDefaultTLSCertificateFromDefaultDirectory()
+	defaultTLSCer, err := tlsconfig.MaybeGetDefaultTLSCertificateFromDefaultDirectory()
 	if err != nil {
 		return nil, errors.Wrap(err, "error getting default TLS certificate from default directory")
 	}
-	if defaultTLSCertificate == nil || len(defaultTLSCertificate.Certificate) == 0 {
+	if defaultTLSCer == nil || len(defaultTLSCer.Certificate) == 0 {
 		return nil, nil
 	}
 
-	lastInChain, err := x509.ParseCertificate(defaultTLSCertificate.Certificate[len(defaultTLSCertificate.Certificate)-1])
+	lastInChain, err := x509.ParseCertificate(defaultTLSCer.Certificate[len(defaultTLSCer.Certificate)-1])
 	if err != nil {
 		return nil, errors.Wrap(err, "error parsing default TLS certificate")
 	}

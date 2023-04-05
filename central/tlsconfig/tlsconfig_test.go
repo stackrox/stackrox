@@ -191,10 +191,7 @@ func createCertChainWithLengthOf(length int) ([]*x509.Certificate, []*ecdsa.Priv
 			parentCert = certs[i-1]
 			parentKey = privateKeys[i-1]
 		}
-		serialNumber, err := generateSerialNumber()
-		if err != nil {
-			return nil, nil, err
-		}
+		serialNumber := big.NewInt(int64(i) + 1)
 		template := &x509.Certificate{
 			SerialNumber: serialNumber,
 			IsCA:         i != length-1,
@@ -260,13 +257,4 @@ func writeKey(dir string, privateKey *ecdsa.PrivateKey) error {
 		return err
 	}
 	return pem.Encode(keyFile, &pem.Block{Type: "EC PRIVATE KEY", Bytes: privateKeyBytes})
-}
-
-func generateSerialNumber() (*big.Int, error) {
-	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
-	if err != nil {
-		return nil, err
-	}
-	return serialNumber, nil
 }

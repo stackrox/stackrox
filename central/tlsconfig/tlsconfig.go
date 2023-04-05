@@ -57,7 +57,7 @@ func GetAdditionalCAs() ([][]byte, error) {
 	return certDERs, nil
 }
 
-// MaybeGetDefaultCertChain reads and parses default cert chain and returns it in DER encoded format
+// MaybeGetDefaultCertChain reads and parses default cert chain and returns it in DER encoded format.
 func MaybeGetDefaultCertChain() ([][]byte, error) {
 	cert, err := MaybeGetDefaultTLSCertificateFromDirectory(DefaultCertPath)
 	if err != nil {
@@ -69,12 +69,12 @@ func MaybeGetDefaultCertChain() ([][]byte, error) {
 	return cert.Certificate, nil
 }
 
-// MaybeGetDefaultTLSCertificateFromDefaultDirectory load the default tls certificate from the default directory.
+// MaybeGetDefaultTLSCertificateFromDefaultDirectory loads the default TLS certificate from the default directory.
 func MaybeGetDefaultTLSCertificateFromDefaultDirectory() (*tls.Certificate, error) {
 	return MaybeGetDefaultTLSCertificateFromDirectory(DefaultCertPath)
 }
 
-// MaybeGetDefaultTLSCertificateFromDirectory load the default tls certificate from the given directory.
+// MaybeGetDefaultTLSCertificateFromDirectory loads the default TLS certificate from the given directory.
 func MaybeGetDefaultTLSCertificateFromDirectory(dir string) (*tls.Certificate, error) {
 	certFile := filepath.Join(dir, TLSCertFileName)
 	keyFile := filepath.Join(dir, TLSKeyFileName)
@@ -100,14 +100,14 @@ func MaybeGetDefaultTLSCertificateFromDirectory(dir string) (*tls.Certificate, e
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		if strings.Contains(err.Error(), "private key does not match public key") {
-			return nil, errors.Wrap(err, "loading default certificate. If the certificate file contains a certificate chain, ensure that the certificate chain is in the correct order (the first certificate should be the server certificate, any following certificates should form the certificate chain).")
+			return nil, errors.Wrap(err, "loading default certificate; if the certificate file contains a certificate chain, ensure that the certificate chain is in the correct order (the first certificate should be the leaf certificate, any following certificates should form the certificate chain)")
 		}
-		return nil, errors.Wrap(err, "loading default certificate")
+		return nil, errors.Wrap(err, "loading default certificate failed")
 	}
 
 	cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing leaf certificate")
+		return nil, errors.Wrap(err, "parsing leaf certificate failed")
 	}
 
 	return &cert, nil
