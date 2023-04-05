@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
@@ -110,7 +109,7 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 	flagWrap.StringVar(&k8sConfig.ScannerDBImage, flags.FlagNameScannerDBImage, "", "scanner-db image to use"+defaultImageHelp, "scanner")
 	flagWrap.BoolVar(&k8sConfig.Telemetry.Enabled, "enable-telemetry", false, "whether to enable telemetry", "central")
 
-	if features.DeclarativeConfiguration.Enabled() {
+	if env.DeclarativeConfiguration.BooleanSetting() {
 		flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfigMounts.ConfigMaps, "declarative-config-config-maps", nil,
 			"list of config maps to add as declarative configuration mounts in central", "central")
 		flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfigMounts.Secrets, "declarative-config-secrets", nil,
