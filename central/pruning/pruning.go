@@ -83,8 +83,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	k8sRoles k8sRoleDataStore.DataStore,
 	k8sRoleBindings roleBindingDataStore.DataStore,
 	logimbueStore logimbueDataStore.Store) GarbageCollector {
-	return &garbageCollectorImpl{
-		postgres:        globaldb.GetPostgres(),
+	gci := &garbageCollectorImpl{
 		alerts:          alerts,
 		clusters:        clusters,
 		nodes:           nodes,
@@ -105,6 +104,10 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		logimbueStore:   logimbueStore,
 		stopper:         concurrency.NewStopper(),
 	}
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		gci.postgres = globaldb.GetPostgres()
+	}
+	return gci
 }
 
 type garbageCollectorImpl struct {
