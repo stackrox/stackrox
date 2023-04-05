@@ -148,17 +148,17 @@ func MigratePolicies(db *postgres.DB, policiesToMigrate map[string]PolicyChanges
 
 	ctx := sac.WithAllAccess(context.Background())
 	policyStore := New(db)
-	for id := range policiesToMigrate {
-		if exists, err := policyStore.Exists(ctx, id); err != nil {
-			return errors.Wrapf(err, "getting policy with id %s", id)
-		} else if !exists {
-			return errors.Errorf("unable to find policy with id %s", id)
-		}
-	}
 
 	for policyID, updateDetails := range policiesToMigrate {
 		policy, _, _ := policyStore.Get(ctx, policyID)
 		comparePolicy := comparisonPolicies[policyID]
+		if exists, err := policyStore.Exists(ctx, policyID); err != nil {
+			pglog.WriteToStderrf("err getting policy with id %s. Will not update.", policyID)
+			continue
+		} else if !exists {
+			pglog.WriteToStderrf("unable to find policy with id %s. Will not update.", policyID)
+			continue
+		}
 		if !checkIfPoliciesMatch(updateDetails.FieldsToCompare, comparePolicy, policy) {
 			pglog.WriteToStderrf("policy ID %s has already been altered. Will not update.", policyID)
 			continue
