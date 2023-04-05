@@ -794,9 +794,11 @@ func RunCursorQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, sche
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating transaction")
 	}
+	stack := debug.Stack()
 	closer = func() {
 		defer cancel()
 		if err := tx.Commit(ctx); err != nil {
+			log.Error(string(stack))
 			log.Errorf("error committing cursor transaction: %v", err)
 		}
 	}
