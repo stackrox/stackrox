@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-this_file="$(basename ${BASH_SOURCE[0]})"
+this_file="$(basename "${BASH_SOURCE[0]}")"
 
 usage() {
     >&2 echo "Usage: $this_file <version>
