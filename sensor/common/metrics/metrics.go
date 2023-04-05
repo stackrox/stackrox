@@ -128,6 +128,20 @@ var (
 		Help:      "Time taken to fully process an event from Kubernetes",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Action", "Resource", "Dispatcher"})
+
+	resolverChannelSize = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "resolver_channel_size",
+		Help:      "A gauge to track the resolver channel size",
+	})
+
+	outputChannelSize = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "output_channel_size",
+		Help:      "A gauge to track the output channel size",
+	})
 )
 
 // IncrementPanicCounter increments the number of panic calls seen in a function
@@ -206,4 +220,24 @@ func IncK8sEventCount(action string, resource string) {
 // SetResourceProcessingDurationForResource sets the duration for how long it takes to process the resource
 func SetResourceProcessingDurationForResource(event *central.SensorEvent) {
 	metrics.SetResourceProcessingDurationForEvent(k8sObjectProcessingDuration, event, "")
+}
+
+// IncResolverChannelSize increases the resolverChannel by 1
+func IncResolverChannelSize() {
+	resolverChannelSize.Inc()
+}
+
+// DecResolverChannelSize decreases the resolverChannel by 1
+func DecResolverChannelSize() {
+	resolverChannelSize.Dec()
+}
+
+// IncOutputChannelSize increases the outputChannel by 1
+func IncOutputChannelSize() {
+	outputChannelSize.Inc()
+}
+
+// DecOutputChannelSize decreases the outputChannel by 1
+func DecOutputChannelSize() {
+	outputChannelSize.Dec()
 }
