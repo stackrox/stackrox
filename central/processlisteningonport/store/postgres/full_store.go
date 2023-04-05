@@ -33,7 +33,7 @@ type fullStoreImpl struct {
 // XXX: Verify the query plan to make sure needed indexes are in use.
 const getByDeploymentStmt = "SELECT plop.id, plop.serialized, " +
 	"proc.serialized as proc_serialized " +
-	"FROM process_listening_on_ports plop " +
+	"FROM listening_endpoints plop " +
 	"LEFT OUTER JOIN process_indicators proc " +
 	"ON plop.processindicatorid = proc.id " +
 	"WHERE plop.deploymentid = $1 AND plop.closed = false"
