@@ -60,7 +60,7 @@ func getOrphanedAlertIDs(ctx context.Context, pool *postgres.DB, orphanWindow ti
 		}
 		ids = append(ids, id)
 	}
-	return ids, nil
+	return ids, rows.Err()
 }
 
 // GetOrphanedAlertIDs returns the alert IDs for alerts that are orphaned so they can be resolved
