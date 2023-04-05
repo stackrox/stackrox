@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -83,6 +84,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	k8sRoleBindings roleBindingDataStore.DataStore,
 	logimbueStore logimbueDataStore.Store) GarbageCollector {
 	return &garbageCollectorImpl{
+		postgres:        globaldb.GetPostgres(),
 		alerts:          alerts,
 		clusters:        clusters,
 		nodes:           nodes,
@@ -106,6 +108,8 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 }
 
 type garbageCollectorImpl struct {
+	postgres *pgPkg.DB
+
 	alerts          alertDatastore.DataStore
 	clusters        clusterDatastore.DataStore
 	nodes           nodeDatastore.DataStore
@@ -150,8 +154,8 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeExpiredVulnRequests()
 	g.collectClusters(pvtConfig)
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		postgres.PruneActiveComponents(pruningCtx, globaldb.GetPostgres())
-		postgres.PruneClusterHealthStatuses(pruningCtx, globaldb.GetPostgres())
+		postgres.PruneActiveComponents(pruningCtx, g.postgres)
+		postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
 
 		g.pruneLogImbues()
 	}
@@ -462,7 +466,7 @@ func (g *garbageCollectorImpl) removeOrphanedPLOP() {
 
 func (g *garbageCollectorImpl) getOrphanedAlerts(ctx context.Context, deployments set.FrozenStringSet) ([]string, error) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return postgres.GetOrphanedAlertIDs(ctx, globaldb.GetPostgres(), orphanWindow)
+		return postgres.GetOrphanedAlertIDs(ctx, g.postgres, orphanWindow)
 	}
 	now := types.TimestampNow()
 	var alertsToResolve []string
