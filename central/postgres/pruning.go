@@ -21,8 +21,8 @@ const (
 		(SELECT 1 FROM clusters parent WHERE
 		child.Id = parent.Id)`
 
-	getAllOrphanedAlerts = `SELECT id from alerts WHERE lifecyclestage = 0 and state = 0 and time < NOW() - INTERVAL '%d MINUTES' and NOT EXISTS
-		"(SELECT 1 FROM deployments WHERE alerts.deployment_id = deployments.Id)`
+	getAllOrphanedAlerts = `SELECT id from alerts WHERE lifecyclestage = 0 and state = 0 and time < now() at time zone 'utc' - INTERVAL '%d MINUTES' and NOT EXISTS
+		(SELECT 1 FROM deployments WHERE alerts.deployment_id = deployments.Id)`
 )
 
 var (

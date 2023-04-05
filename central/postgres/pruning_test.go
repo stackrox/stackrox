@@ -147,94 +147,105 @@ func (s *PostgresPruningSuite) TestGetOrphanedAlertIDs() {
 	deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Nil(err)
 
+	deploymentID := "2c507da1-b882-48cc-8143-b74e14c5cd4f"
+	s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID}))
+
+	orphanWindow := 30 * time.Minute
 	now := types.TimestampNow()
-	old := protoconv.ConvertTimeToTimestamp(time.Now().Add(-30*time.Minute))
+	old := protoconv.ConvertTimeToTimestamp(time.Now().Add(-2 * orphanWindow))
 
 	cases := []struct {
-		name string
-		alert *storage.Alert
-		deploymentIDs []string
-		expected bool
-	} {
+		name           string
+		alert          *storage.Alert
+		shouldBePruned bool
+	}{
 		{
 			name: "base",
 			alert: &storage.Alert{
-				Id: uuid.NewV4().String(),
+				Id:             uuid.NewV4().String(),
 				LifecycleStage: storage.LifecycleStage_DEPLOY,
-				State: storage.ViolationState_ACTIVE,
-				Time: old,
+				State:          storage.ViolationState_ACTIVE,
+				Time:           old,
 				Entity: &storage.Alert_Deployment_{
 					Deployment: &storage.Alert_Deployment{
 						Id: "i-do-not-exist",
 					},
 				},
 			},
-			deploymentIDs: []string{"2c507da1-b882-48cc-8143-b74e14c5cd4f"},
-			expected: true,
+			shouldBePruned: true,
 		},
 		{
+			name: "matches deployment id",
 			alert: &storage.Alert{
-				Id: uuid.NewV4().String(),
+				Id:             uuid.NewV4().String(),
 				LifecycleStage: storage.LifecycleStage_DEPLOY,
-				State: storage.ViolationState_ACTIVE,
-				Time: old,
+				State:          storage.ViolationState_ACTIVE,
+				Time:           old,
 				Entity: &storage.Alert_Deployment_{
 					Deployment: &storage.Alert_Deployment{
-						Id: "2c507da1-b882-48cc-8143-b74e14c5cd4f",
+						Id: deploymentID,
 					},
 				},
 			},
-			deploymentIDs: []string{"2c507da1-b882-48cc-8143-b74e14c5cd4f"},
-			expected: true,
+			shouldBePruned: false,
 		},
-
+		{
+			name: "not in orphan window",
+			alert: &storage.Alert{
+				Id:             uuid.NewV4().String(),
+				LifecycleStage: storage.LifecycleStage_DEPLOY,
+				State:          storage.ViolationState_ACTIVE,
+				Time:           now,
+				Entity: &storage.Alert_Deployment_{
+					Deployment: &storage.Alert_Deployment{
+						Id: "i-do-not-exist",
+					},
+				},
+			},
+			shouldBePruned: false,
+		},
+		{
+			name: "not the right state",
+			alert: &storage.Alert{
+				Id:             uuid.NewV4().String(),
+				LifecycleStage: storage.LifecycleStage_DEPLOY,
+				State:          storage.ViolationState_RESOLVED,
+				Time:           old,
+				Entity: &storage.Alert_Deployment_{
+					Deployment: &storage.Alert_Deployment{
+						Id: "i-do-not-exist",
+					},
+				},
+			},
+			shouldBePruned: false,
+		},
+		{
+			name: "not the right lifecycle",
+			alert: &storage.Alert{
+				Id:             uuid.NewV4().String(),
+				LifecycleStage: storage.LifecycleStage_RUNTIME,
+				State:          storage.ViolationState_RESOLVED,
+				Time:           old,
+				Entity: &storage.Alert_Deployment_{
+					Deployment: &storage.Alert_Deployment{
+						Id: "i-do-not-exist",
+					},
+				},
+			},
+			shouldBePruned: false,
+		},
 	}
-
-	/*
-		getAllOrphanedAlerts = `SELECT id from alerts WHERE lifecyclestage = 0 and state = 0 and time < NOW() - INTERVAL '%d MINUTES' and NOT EXISTS
-		"(SELECT 1 FROM deployments WHERE alerts.deployment_id = deployments.Id)`
-	*/
-
-	var alerts := []*storage.Alert {
-		{
-			Id: uuid.NewV4().String(),
-			LifecycleStage: DEplo
-		},
+	for _, c := range cases {
+		s.Run(c.name, func() {
+			s.NoError(alertDS.UpsertAlert(s.ctx, c.alert))
+			idsToResolve, err := GetOrphanedAlertIDs(s.ctx, s.testDB.DB, orphanWindow)
+			s.NoError(err)
+			if c.shouldBePruned {
+				s.Contains(idsToResolve, c.alert.Id)
+			} else {
+				s.NotContains(idsToResolve, c.alert.Id)
+			}
+			s.NoError(alertDS.DeleteAlerts(s.ctx, c.alert.GetId()))
+		})
 	}
-
-	clusterHealthStore := clusterHealthPostgresStore.New(s.testDB.DB)
-	healthStatuses := []*storage.ClusterHealthStatus{
-		{
-			Id:                 clusterID,
-			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-		},
-		{
-			Id:                    fixtureconsts.Cluster1,
-			SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
-			CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-		},
-		{
-			Id:                 fixtureconsts.Cluster2,
-			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-		},
-	}
-
-	err = clusterHealthStore.UpsertMany(s.ctx, healthStatuses)
-	s.Nil(err)
-
-	count, err := clusterHealthStore.Count(s.ctx)
-	s.Nil(err)
-	s.Equal(count, 3)
-	exists, err := clusterHealthStore.Exists(s.ctx, fixtureconsts.Cluster2)
-	s.Nil(err)
-	s.True(exists)
-
-	PruneClusterHealthStatuses(s.ctx, s.testDB.DB)
-
-	count, err = clusterHealthStore.Count(s.ctx)
-	s.Nil(err)
-	s.Equal(count, 1)
-	exists, err = clusterHealthStore.Exists(s.ctx, fixtureconsts.Cluster2)
-	s.Nil(err)
-	s.False(exists)
 }
