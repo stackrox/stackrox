@@ -26,8 +26,8 @@ const (
 	DefaultCertPath = "/run/secrets/stackrox.io/default-tls-cert"
 )
 
-// GetAdditionalCAs reads all additional CAs in DER format.
-func GetAdditionalCAs() ([][]byte, error) {
+// GetAdditionalCAFilePaths returns the list of file paths containing additional CAs.
+func GetAdditionalCAFilePaths() ([]string, error) {
 	additionalCADir := AdditionalCACertsDirPath()
 	certFileInfos, err := os.ReadDir(additionalCADir)
 	if err != nil {
@@ -38,7 +38,7 @@ func GetAdditionalCAs() ([][]byte, error) {
 		return nil, errors.Wrap(err, "reading additional CAs directory")
 	}
 
-	var certDERs [][]byte
+	var files []string
 	for _, certFile := range certFileInfos {
 		if certFile.IsDir() {
 			continue
@@ -48,6 +48,33 @@ func GetAdditionalCAs() ([][]byte, error) {
 			continue
 		}
 		content, err := os.ReadFile(path.Join(additionalCADir, certFile.Name()))
+		if err != nil {
+			return nil, errors.Wrap(err, "reading additional CAs cert")
+		}
+
+		_, err = x509utils.ConvertPEMToDERs(content)
+		if err != nil {
+			return nil, errors.Wrap(err, "converting additional CA cert to DER")
+		}
+
+		files = append(files, path.Join(additionalCADir, certFile.Name()))
+	}
+
+	return files, nil
+
+}
+
+// GetAdditionalCAs reads all additional CAs in DER format.
+func GetAdditionalCAs() ([][]byte, error) {
+
+	additionalCAFilePaths, err := GetAdditionalCAFilePaths()
+	if err != nil {
+		return nil, err
+	}
+
+	var certDERs [][]byte
+	for _, certFilePath := range additionalCAFilePaths {
+		content, err := os.ReadFile(certFilePath)
 		if err != nil {
 			return nil, errors.Wrap(err, "reading additional CAs cert")
 		}
