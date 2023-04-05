@@ -302,6 +302,7 @@ The following tools are necessary to test code and build image(s):
 * [Bats](https://github.com/sstephenson/bats) is used to run certain shell tests.
   You can obtain it with `brew install bats` or `npm install -g bats`.
 * [oc](https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/) OpenShift cli tool
+* [shellcheck](https://github.com/koalaman/shellcheck#installing) for shell scripts linting.
 
 **Xcode - macOS Only**
 
