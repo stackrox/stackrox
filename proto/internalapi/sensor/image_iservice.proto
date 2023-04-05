@@ -8,8 +8,9 @@ import "storage/image.proto";
 package sensor;
 
 message GetImageRequest {
-    storage.ContainerImage image = 1;
-    bool scan_inline             = 2;
+    storage.ContainerImage image       = 1;
+    string                 namespace   = 3;
+    bool                   scan_inline = 2;
 }
 
 message GetImageResponse {
