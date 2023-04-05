@@ -47,6 +47,8 @@ const (
 	clusterGCFreq      = 24 * time.Hour
 	logImbueGCFreq     = 24 * time.Hour
 	logImbueWindow     = 24 * 7 * time.Hour
+
+	alertQueryTimeout = 10 * time.Minute
 )
 
 var (
@@ -460,7 +462,7 @@ func (g *garbageCollectorImpl) removeOrphanedPLOP() {
 
 func (g *garbageCollectorImpl) getOrphanedAlerts(ctx context.Context, deployments set.FrozenStringSet) ([]string, error) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return postgres.GetOrphanedAlertIDs(ctx, globaldb.GetPostgres())
+		return postgres.GetOrphanedAlertIDs(ctx, globaldb.GetPostgres(), orphanWindow)
 	}
 	now := types.TimestampNow()
 	var alertsToResolve []string
@@ -489,6 +491,7 @@ func (g *garbageCollectorImpl) markOrphanedAlertsAsResolved(deployments set.Froz
 	alertsToResolve, err := g.getOrphanedAlerts(pruningCtx, deployments)
 	if err != nil {
 		log.Errorf("[Alert pruning] error getting orphaned alert ids: %v", err)
+		return
 	}
 
 	log.Infof("[Alert pruning] Found %d orphaned alerts", len(alertsToResolve))
@@ -784,7 +787,10 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 		return
 	}
 
-	alertResults, err := g.alerts.Search(pruningCtx, search.DisjunctionQuery(queries...))
+	ctx, cancel := context.WithTimeout(pruningCtx, alertQueryTimeout)
+	defer cancel()
+
+	alertResults, err := g.alerts.Search(ctx, search.DisjunctionQuery(queries...))
 	if err != nil {
 		log.Error(err)
 		return

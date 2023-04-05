@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
@@ -10,6 +12,8 @@ import (
 )
 
 const (
+	orphanedAlertsTimeout = 5 * time.Minute
+
 	pruneActiveComponentsStmt = `DELETE FROM active_components child WHERE NOT EXISTS
 		(SELECT 1 from deployments parent WHERE child.deploymentid = parent.id)`
 
@@ -17,7 +21,7 @@ const (
 		(SELECT 1 FROM clusters parent WHERE
 		child.Id = parent.Id)`
 
-	getAllOrphanedAlerts = `SELECT id from alerts WHERE lifecyclestage = 0 and state = 0 and time < NOW() - INTERVAL '30 MINUTES' and NOT EXISTS
+	getAllOrphanedAlerts = `SELECT id from alerts WHERE lifecyclestage = 0 and state = 0 and time < NOW() - INTERVAL '%d MINUTES' and NOT EXISTS
 		"(SELECT 1 FROM deployments WHERE alerts.deployment_id = deployments.Id)`
 )
 
@@ -41,9 +45,10 @@ func PruneClusterHealthStatuses(ctx context.Context, pool *postgres.DB) {
 	}
 }
 
-func getOrphanedAlertIDs(ctx context.Context, pool *postgres.DB) ([]string, error) {
+func getOrphanedAlertIDs(ctx context.Context, pool *postgres.DB, orphanWindow time.Duration) ([]string, error) {
 	var ids []string
-	rows, err := pool.Query(ctx, getAllOrphanedAlerts)
+	query := fmt.Sprintf(getAllOrphanedAlerts, int(orphanWindow.Minutes()))
+	rows, err := pool.Query(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get orphaned alerts")
 	}
@@ -59,8 +64,11 @@ func getOrphanedAlertIDs(ctx context.Context, pool *postgres.DB) ([]string, erro
 }
 
 // GetOrphanedAlertIDs returns the alert IDs for alerts that are orphaned so they can be resolved
-func GetOrphanedAlertIDs(ctx context.Context, pool *postgres.DB) ([]string, error) {
+func GetOrphanedAlertIDs(ctx context.Context, pool *postgres.DB, orphanWindow time.Duration) ([]string, error) {
 	return pgutils.Retry2(func() ([]string, error) {
-		return getOrphanedAlertIDs(ctx, pool)
+		ctx, cancel := context.WithTimeout(ctx, orphanedAlertsTimeout)
+		defer cancel()
+
+		return getOrphanedAlertIDs(ctx, pool, orphanWindow)
 	})
 }

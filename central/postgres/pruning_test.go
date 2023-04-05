@@ -5,8 +5,11 @@ package postgres
 import (
 	"context"
 	"testing"
+	"time"
 
+	"github.com/gogo/protobuf/types"
 	activeComponent "github.com/stackrox/rox/central/activecomponent/datastore"
+	alertStore "github.com/stackrox/rox/central/alert/datastore"
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterHealthPostgresStore "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -14,7 +17,9 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -97,6 +102,105 @@ func (s *PostgresPruningSuite) TestPruneClusterHealthStatuses() {
 
 	clusterID, err := clusterDS.AddCluster(s.ctx, &storage.Cluster{Name: "testCluster", MainImage: "docker.io/stackrox/rox:latest"})
 	s.Nil(err)
+
+	clusterHealthStore := clusterHealthPostgresStore.New(s.testDB.DB)
+	healthStatuses := []*storage.ClusterHealthStatus{
+		{
+			Id:                 clusterID,
+			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+		},
+		{
+			Id:                    fixtureconsts.Cluster1,
+			SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
+			CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+		},
+		{
+			Id:                 fixtureconsts.Cluster2,
+			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+		},
+	}
+
+	err = clusterHealthStore.UpsertMany(s.ctx, healthStatuses)
+	s.Nil(err)
+
+	count, err := clusterHealthStore.Count(s.ctx)
+	s.Nil(err)
+	s.Equal(count, 3)
+	exists, err := clusterHealthStore.Exists(s.ctx, fixtureconsts.Cluster2)
+	s.Nil(err)
+	s.True(exists)
+
+	PruneClusterHealthStatuses(s.ctx, s.testDB.DB)
+
+	count, err = clusterHealthStore.Count(s.ctx)
+	s.Nil(err)
+	s.Equal(count, 1)
+	exists, err = clusterHealthStore.Exists(s.ctx, fixtureconsts.Cluster2)
+	s.Nil(err)
+	s.False(exists)
+}
+
+func (s *PostgresPruningSuite) TestGetOrphanedAlertIDs() {
+	alertDS, err := alertStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Nil(err)
+
+	deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Nil(err)
+
+	now := types.TimestampNow()
+	old := protoconv.ConvertTimeToTimestamp(time.Now().Add(-30*time.Minute))
+
+	cases := []struct {
+		name string
+		alert *storage.Alert
+		deploymentIDs []string
+		expected bool
+	} {
+		{
+			name: "base",
+			alert: &storage.Alert{
+				Id: uuid.NewV4().String(),
+				LifecycleStage: storage.LifecycleStage_DEPLOY,
+				State: storage.ViolationState_ACTIVE,
+				Time: old,
+				Entity: &storage.Alert_Deployment_{
+					Deployment: &storage.Alert_Deployment{
+						Id: "i-do-not-exist",
+					},
+				},
+			},
+			deploymentIDs: []string{"2c507da1-b882-48cc-8143-b74e14c5cd4f"},
+			expected: true,
+		},
+		{
+			alert: &storage.Alert{
+				Id: uuid.NewV4().String(),
+				LifecycleStage: storage.LifecycleStage_DEPLOY,
+				State: storage.ViolationState_ACTIVE,
+				Time: old,
+				Entity: &storage.Alert_Deployment_{
+					Deployment: &storage.Alert_Deployment{
+						Id: "2c507da1-b882-48cc-8143-b74e14c5cd4f",
+					},
+				},
+			},
+			deploymentIDs: []string{"2c507da1-b882-48cc-8143-b74e14c5cd4f"},
+			expected: true,
+		},
+
+	}
+
+	/*
+		getAllOrphanedAlerts = `SELECT id from alerts WHERE lifecyclestage = 0 and state = 0 and time < NOW() - INTERVAL '%d MINUTES' and NOT EXISTS
+		"(SELECT 1 FROM deployments WHERE alerts.deployment_id = deployments.Id)`
+	*/
+
+	var alerts := []*storage.Alert {
+		{
+			Id: uuid.NewV4().String(),
+			LifecycleStage: DEplo
+		},
+	}
 
 	clusterHealthStore := clusterHealthPostgresStore.New(s.testDB.DB)
 	healthStatuses := []*storage.ClusterHealthStatus{
