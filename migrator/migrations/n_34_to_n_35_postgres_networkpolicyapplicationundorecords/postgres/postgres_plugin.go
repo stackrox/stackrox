@@ -435,6 +435,7 @@ func dropTableNetworkpolicyapplicationundorecords(ctx context.Context, db *pgxpo
 
 }
 
+// Destroy -- destroys table
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableNetworkpolicyapplicationundorecords(ctx, db)
 }

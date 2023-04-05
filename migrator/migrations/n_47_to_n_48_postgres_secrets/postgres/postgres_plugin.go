@@ -680,6 +680,7 @@ func dropTableSecretsFilesRegistries(ctx context.Context, db *pgxpool.Pool) {
 
 }
 
+// Destroy -- destroys table
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableSecrets(ctx, db)
 }

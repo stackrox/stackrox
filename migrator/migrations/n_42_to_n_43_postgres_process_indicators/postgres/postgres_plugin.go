@@ -511,6 +511,7 @@ func dropTableProcessIndicators(ctx context.Context, db *pgxpool.Pool) {
 
 }
 
+// Destroy -- destroys table
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableProcessIndicators(ctx, db)
 }

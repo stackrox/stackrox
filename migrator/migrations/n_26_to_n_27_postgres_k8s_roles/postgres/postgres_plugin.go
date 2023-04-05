@@ -490,6 +490,7 @@ func dropTableK8sRoles(ctx context.Context, db *pgxpool.Pool) {
 
 }
 
+// Destroy -- destroys table
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableK8sRoles(ctx, db)
 }

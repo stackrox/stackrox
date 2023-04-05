@@ -435,6 +435,7 @@ func dropTableNetworkpoliciesundodeployments(ctx context.Context, db *pgxpool.Po
 
 }
 
+// Destroy -- destroys table
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableNetworkpoliciesundodeployments(ctx, db)
 }

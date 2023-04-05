@@ -1234,6 +1234,7 @@ func dropTableDeploymentsPortsExposureInfos(ctx context.Context, db *pgxpool.Poo
 
 }
 
+// Destroy -- destroys table
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableDeployments(ctx, db)
 }
