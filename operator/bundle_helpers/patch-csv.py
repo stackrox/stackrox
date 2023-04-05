@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 
 import argparse
-import os
-import sys
-from datetime import datetime, timezone
-from rewrite import rewrite, string_replacer
-
-import yaml
 import logging
+import os
+import pathlib
+import subprocess
+from datetime import datetime, timezone
+
+import sys
+import yaml
+
+from rewrite import rewrite, string_replacer
 
 
 def rbac_proxy_replace(updated_img):
@@ -18,6 +21,7 @@ def rbac_proxy_replace(updated_img):
         if not isinstance(img, str) or not img.startswith('gcr.io/kubebuilder/kube-rbac-proxy:'):
             return None
         return updated_img
+
     return update_rbac_proxy_img
 
 
@@ -67,8 +71,10 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
 
     x, y, z = (int(c) for c in version.split('-', maxsplit=1)[0].split('.'))
     first_x, first_y, first_z = (int(c) for c in first_version.split('-', maxsplit=1)[0].split('.'))
+    previous_y_stream = get_previous_y_stream(version)
+
     # An olm.skipRange doesn't hurt if it references non-existing versions.
-    csv_doc["metadata"]["annotations"]["olm.skipRange"] = f'>= {x}.{y - 1}.0 < {version}'
+    csv_doc["metadata"]["annotations"]["olm.skipRange"] = f'>= {previous_y_stream} < {version}'
 
     if version_skips:
         csv_doc["spec"]["skips"] = version_skips
@@ -81,13 +87,21 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
 
     if (x, y, z) > (first_x, first_y, first_z):
         if z == 0:
-            csv_doc["spec"]["replaces"] = f'{raw_name}.v{x}.{y - 1}.0'
+            csv_doc["spec"]["replaces"] = f'{raw_name}.v{previous_y_stream}'
         else:
             csv_doc["spec"]["replaces"] = f'{raw_name}.v{x}.{y}.{z - 1}'
 
     # OSBS fills relatedImages therefore we must not provide that ourselves.
     # Ref https://osbs.readthedocs.io/en/latest/users.html?highlight=relatedImages#creating-the-relatedimages-section
     del csv_doc['spec']['relatedImages']
+
+
+def get_previous_y_stream(version):
+    this_script_dir = pathlib.Path(__file__).parent
+    executable = this_script_dir / "../../scripts/get-previous-y-stream.sh"
+    # subprocess.run()'s  capture_output=True argument first appeared in Python 3.7 which is not available universally
+    # (e.g. in our upstream builder image), therefore we capture stdout with a bit dated check_output() call.
+    return subprocess.check_output([executable, version], encoding='utf-8').strip()
 
 
 def parse_args():
