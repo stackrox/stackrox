@@ -253,7 +253,7 @@ func fetchAndAddJSONToZip(ctx context.Context, zipWriter *zip.Writer, fileName s
 }
 
 func addJSONToZip(zipWriter *zip.Writer, fileName string, jsonObj interface{}) error {
-	w, err := zipWriter.Create(fileName)
+	w, err := zipWriterWithCurrentTimestamp(zipWriter, fileName)
 	if err != nil {
 		return errors.Wrapf(err, "unable to create zip file %q", fileName)
 	}
@@ -265,7 +265,7 @@ func addJSONToZip(zipWriter *zip.Writer, fileName string, jsonObj interface{}) e
 }
 
 func zipPrometheusMetrics(zipWriter *zip.Writer, name string) error {
-	metricsWriter, err := zipWriter.Create(name)
+	metricsWriter, err := zipWriterWithCurrentTimestamp(zipWriter, name)
 	if err != nil {
 		return err
 	}
@@ -273,7 +273,7 @@ func zipPrometheusMetrics(zipWriter *zip.Writer, name string) error {
 }
 
 func getMemory(zipWriter *zip.Writer) error {
-	w, err := zipWriter.Create("heap.tar.gz")
+	w, err := zipWriterWithCurrentTimestamp(zipWriter, "heap.tar.gz")
 	if err != nil {
 		return err
 	}
@@ -281,7 +281,7 @@ func getMemory(zipWriter *zip.Writer) error {
 }
 
 func getCPU(ctx context.Context, zipWriter *zip.Writer, duration time.Duration) error {
-	w, err := zipWriter.Create("cpu.tar.gz")
+	w, err := zipWriterWithCurrentTimestamp(zipWriter, "cpu.tar.gz")
 	if err != nil {
 		return err
 	}
@@ -297,7 +297,7 @@ func getCPU(ctx context.Context, zipWriter *zip.Writer, duration time.Duration) 
 }
 
 func getBlock(zipWriter *zip.Writer) error {
-	w, err := zipWriter.Create("block.tar.gz")
+	w, err := zipWriterWithCurrentTimestamp(zipWriter, "block.tar.gz")
 	if err != nil {
 		return err
 	}
@@ -306,7 +306,7 @@ func getBlock(zipWriter *zip.Writer) error {
 }
 
 func getMutex(zipWriter *zip.Writer) error {
-	w, err := zipWriter.Create("mutex.tar.gz")
+	w, err := zipWriterWithCurrentTimestamp(zipWriter, "mutex.tar.gz")
 	if err != nil {
 		return err
 	}
@@ -315,7 +315,7 @@ func getMutex(zipWriter *zip.Writer) error {
 }
 
 func getGoroutines(zipWriter *zip.Writer) error {
-	w, err := zipWriter.Create("goroutine.txt")
+	w, err := zipWriterWithCurrentTimestamp(zipWriter, "goroutine.txt")
 	if err != nil {
 		return err
 	}
@@ -334,7 +334,7 @@ func getLogs(zipWriter *zip.Writer) error {
 }
 
 func getLogFile(zipWriter *zip.Writer, targetPath string, sourcePath string) error {
-	w, err := zipWriter.Create(targetPath)
+	w, err := zipWriterWithCurrentTimestamp(zipWriter, targetPath)
 	if err != nil {
 		return err
 	}
@@ -390,7 +390,7 @@ func getCentralDBData(ctx context.Context, zipWriter *zip.Writer) error {
 }
 
 func (s *serviceImpl) getLogImbue(ctx context.Context, zipWriter *zip.Writer) error {
-	w, err := zipWriter.Create("logimbue-data.json")
+	w, err := zipWriterWithCurrentTimestamp(zipWriter, "logimbue-data.json")
 	if err != nil {
 		return err
 	}
