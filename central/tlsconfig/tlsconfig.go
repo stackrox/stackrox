@@ -28,7 +28,7 @@ const (
 // GetAdditionalCAFilePaths returns the list of file paths containing additional CAs.
 func GetAdditionalCAFilePaths() ([]string, error) {
 	additionalCADir := AdditionalCACertsDirPath()
-	certFileInfos, err := os.ReadDir(additionalCADir)
+	directoryEntries, err := os.ReadDir(additionalCADir)
 	if err != nil {
 		// Ignore error if additional CAs do not exist on filesystem
 		if os.IsNotExist(err) {
@@ -38,16 +38,39 @@ func GetAdditionalCAFilePaths() ([]string, error) {
 	}
 
 	var files []string
-	for _, certFile := range certFileInfos {
-		if certFile.IsDir() {
-			log.Infof("Skipping additional CA directory %q", certFile.Name())
+	for _, directoryEntry := range directoryEntries {
+		if directoryEntry.IsDir() {
+			log.Infof("Skipping additional CA directory %q", directoryEntry.Name())
 			continue
 		}
-		if !isValidAdditionalCAFileName(certFile.Name()) {
-			log.Infof(skipAdditionalCAFileMsg, certFile.Name())
+
+		fileInfo, err := directoryEntry.Info()
+		if err != nil {
+			log.Warnf("Error reading file info for %s: %v", directoryEntry.Name(), err)
 			continue
 		}
-		content, err := os.ReadFile(path.Join(additionalCADir, certFile.Name()))
+
+		if fileInfo.Mode()&os.ModeSymlink != 0 {
+			symLink, err := filepath.EvalSymlinks(path.Join(additionalCADir, directoryEntry.Name()))
+			if err != nil {
+				log.Warnf("Error reading symlink for %s: %v", directoryEntry.Name(), err)
+				continue
+			}
+			fileInfo, err = os.Stat(symLink)
+			if err != nil {
+				log.Warnf("Error reading file info for %s: %v", directoryEntry.Name(), err)
+				continue
+			}
+			if fileInfo.IsDir() {
+				continue
+			}
+		}
+
+		if !isValidAdditionalCAFileName(directoryEntry.Name()) {
+			log.Infof(skipAdditionalCAFileMsg, directoryEntry.Name())
+			continue
+		}
+		content, err := os.ReadFile(path.Join(additionalCADir, directoryEntry.Name()))
 		if err != nil {
 			return nil, errors.Wrap(err, "reading additional CAs cert")
 		}
@@ -57,7 +80,7 @@ func GetAdditionalCAFilePaths() ([]string, error) {
 			return nil, errors.Wrap(err, "converting additional CA cert to DER")
 		}
 
-		files = append(files, path.Join(additionalCADir, certFile.Name()))
+		files = append(files, path.Join(additionalCADir, directoryEntry.Name()))
 	}
 
 	return files, nil
