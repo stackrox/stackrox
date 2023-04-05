@@ -2,6 +2,7 @@ package detector
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
@@ -10,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -83,7 +85,15 @@ func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanIma
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
-	img, err := localScan.EnrichLocalImage(ctx, svc, req.containerImage)
+	var img *storage.Image
+	var err error
+	if req.containerImage.GetIsClusterLocal() {
+		img, err = localScan.EnrichLocalImage(ctx, svc, req.containerImage)
+	} else {
+		// ForceLocalImageScanning must be enabled
+		img, err = localScan.EnrichLocalImageInNamespace(ctx, svc, req.containerImage, req.namespace)
+	}
+
 	return &v1.ScanImageInternalResponse{
 		Image: img,
 	}, err
@@ -114,6 +124,14 @@ outer:
 				}
 			}
 
+			// If cluster local scan is rate-limited, backoff and try again
+			if errors.Is(err, scan.ErrTooManyParallelScans) {
+				dur := eb.NextBackOff()
+				log.Debugf("local scan rate limited, backing off for %q: %q", dur, req.containerImage.GetName().GetFullName())
+				time.Sleep(dur)
+				continue outer
+			}
+
 			return nil, err
 		}
 
@@ -126,10 +144,10 @@ outer:
 func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
 	defer c.signal.Signal()
 
-	// Ask Central to scan the image if the image is not internal.
+	// Ask Central to scan the image if the image is not internal and local scanning is not forced
 	// Otherwise, attempt to scan locally.
 	scanImageFn := scanImage
-	if req.containerImage.GetIsClusterLocal() {
+	if req.containerImage.GetIsClusterLocal() || env.ForceLocalImageScanning.BooleanSetting() {
 		scanImageFn = scanImageLocal
 	}
 

@@ -60,12 +60,14 @@ message GetImageVulnerabilitiesInternalRequest {
 }
 
 message EnrichLocalImageInternalRequest {
-    string                  image_id         = 1;
-    storage.ImageName       image_name       = 2;
-    storage.ImageMetadata   metadata         = 3;
-    storage.ImageSignature  image_signature  = 4;
-    scannerV1.Components    components       = 5;
-    repeated scannerV1.Note notes            = 6;
+    string                      image_id         = 1;
+    storage.ImageName           image_name       = 2;
+    storage.ImageMetadata       metadata         = 3;
+    storage.ImageSignature      image_signature  = 4;
+    scannerV1.Components        components       = 5;
+    repeated scannerV1.Note     notes            = 6;
+    repeated storage.Image.Note image_notes      = 7;
+    string                      error            = 8;
 }
 
 message DeleteImagesRequest {
