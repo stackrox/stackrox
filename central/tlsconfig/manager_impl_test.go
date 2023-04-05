@@ -57,7 +57,7 @@ func (s *managerTestSuite) TestNoExtraCertIssuedInStackRoxNamespace() {
 	s.Require().NoError(err)
 
 	defaultCert := testutils.IssueSelfSignedCert(s.T(), "my-central.example.org")
-	mgr.UpdateDefaultCert(&defaultCert)
+	mgr.UpdateDefaultTLSCertificate(&defaultCert)
 
 	s.Len(mgr.internalCerts, 1)
 	s.testConnectionWithManager(mgr, []string{"", "central.stackrox", "central.stackrox.svc"}, []string{"not-central.stackrox.svc", "central.alt-ns.svc"})
@@ -68,7 +68,7 @@ func (s *managerTestSuite) TestExtraCertIssuedInStackRoxNamespace() {
 	s.Require().NoError(err)
 
 	defaultCert := testutils.IssueSelfSignedCert(s.T(), "my-central.example.org")
-	mgr.UpdateDefaultCert(&defaultCert)
+	mgr.UpdateDefaultTLSCertificate(&defaultCert)
 
 	s.Len(mgr.internalCerts, 2)
 	s.testConnectionWithManager(mgr, []string{"", "central.stackrox", "central.stackrox.svc", "central.alt-ns", "central.alt-ns.svc"}, []string{"not-central.stackrox.svc", "not-central.alt-ns"})
