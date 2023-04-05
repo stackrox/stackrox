@@ -34,7 +34,7 @@ func permissionSetCommand(cliEnvironment environment.Environment) *cobra.Command
 	cmd.Flags().StringVar(&permSetCmd.permissionSet.Description, "description", "",
 		"description of the permission set")
 	cmd.Flags().StringToStringVar(&permSetCmd.resourceWithAccess, "resource-with-access", map[string]string{},
-		`list of resources with the respective access, e.g. --resource-with-access Access=READ_ACCESS,Admin=READ_WRITE_ACCESS
+		`list of resources with the respective access, e.g. --resource-with-access Access=READ_ACCESS,Administration=READ_WRITE_ACCESS
 Note: Capitalization matters!`)
 
 	cmd.MarkFlagsRequiredTogether("name", "resource-with-access")

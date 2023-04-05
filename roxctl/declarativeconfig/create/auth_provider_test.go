@@ -114,7 +114,7 @@ func TestCreateAuthProvider_UserPKI_Failure(t *testing.T) {
 	cmd := authProviderCommand(env)
 
 	args := []string{
-		"user-pki",
+		"userpki",
 		"--ca-file=non-existent/file/path",
 	}
 	cmd.SetArgs(args)
@@ -133,8 +133,12 @@ func TestCreateAuthProvider_OIDC_Success(t *testing.T) {
 		"--groups-key=email",
 		"--groups-value=example@example.com",
 		"--groups-role=Admin",
+		"--groups-key=userid",
+		"--groups-value=someid",
+		"--groups-role=Analyst",
 		"--minimum-access-role=Analyst",
 		"--extra-ui-endpoints=localhost:9090",
+		"--extra-ui-endpoints=localhost:10010",
 		"--required-attributes=org_id=12345,name=some_name",
 		"--issuer=sample.issuer.com",
 		"--mode=auto",
@@ -148,10 +152,14 @@ minimumRole: Analyst
 uiEndpoint: localhost:8000
 extraUIEndpoints:
     - localhost:9090
+    - localhost:10010
 groups:
     - key: email
       value: example@example.com
       role: Admin
+    - key: userid
+      value: someid
+      role: Analyst
 requiredAttributes:
     - key: name
       value: some_name
@@ -213,8 +221,12 @@ q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
 		"--groups-key=email",
 		"--groups-value=example@example.com",
 		"--groups-role=Admin",
+		"--groups-key=userid",
+		"--groups-value=someid",
+		"--groups-role=Analyst",
 		"--minimum-access-role=Analyst",
 		"--extra-ui-endpoints=localhost:9090",
+		"--extra-ui-endpoints=localhost:10010",
 		"--required-attributes=org_id=12345,name=some_name",
 		"--sp-issuer=some-random-issuer",
 		"--idp-cert=" + filePath,
@@ -228,10 +240,14 @@ minimumRole: Analyst
 uiEndpoint: localhost:8000
 extraUIEndpoints:
     - localhost:9090
+    - localhost:10010
 groups:
     - key: email
       value: example@example.com
       role: Admin
+    - key: userid
+      value: someid
+      role: Analyst
 requiredAttributes:
     - key: name
       value: some_name
@@ -307,14 +323,18 @@ q/I2+0j6dAkOGcK/68z7qQXByeGri3n28a1Kn6o=
 	assert.NoError(t, err)
 
 	args := []string{
-		"user-pki",
+		"userpki",
 		"--name=some-name",
 		"--ui-endpoint=localhost:8000",
 		"--groups-key=email",
 		"--groups-value=example@example.com",
 		"--groups-role=Admin",
+		"--groups-key=userid",
+		"--groups-value=someid",
+		"--groups-role=Analyst",
 		"--minimum-access-role=Analyst",
 		"--extra-ui-endpoints=localhost:9090",
+		"--extra-ui-endpoints=localhost:10010",
 		"--required-attributes=org_id=12345,name=some_name",
 		"--ca-file=" + filePath,
 	}
@@ -324,10 +344,14 @@ minimumRole: Analyst
 uiEndpoint: localhost:8000
 extraUIEndpoints:
     - localhost:9090
+    - localhost:10010
 groups:
     - key: email
       value: example@example.com
       role: Admin
+    - key: userid
+      value: someid
+      role: Analyst
 requiredAttributes:
     - key: name
       value: some_name
@@ -372,8 +396,12 @@ func TestCreateAuthProvider_OpenShiftAuth_Success(t *testing.T) {
 		"--groups-key=email",
 		"--groups-value=example@example.com",
 		"--groups-role=Admin",
+		"--groups-key=userid",
+		"--groups-value=someid",
+		"--groups-role=Analyst",
 		"--minimum-access-role=Analyst",
 		"--extra-ui-endpoints=localhost:9090",
+		"--extra-ui-endpoints=localhost:10010",
 		"--required-attributes=org_id=12345,name=some_name",
 	}
 
@@ -382,10 +410,14 @@ minimumRole: Analyst
 uiEndpoint: localhost:8000
 extraUIEndpoints:
     - localhost:9090
+    - localhost:10010
 groups:
     - key: email
       value: example@example.com
       role: Admin
+    - key: userid
+      value: someid
+      role: Analyst
 requiredAttributes:
     - key: name
       value: some_name
@@ -406,8 +438,12 @@ func TestCreateAuthProvider_IAP_Success(t *testing.T) {
 		"--groups-key=email",
 		"--groups-value=example@example.com",
 		"--groups-role=Admin",
+		"--groups-key=userid",
+		"--groups-value=someid",
+		"--groups-role=Analyst",
 		"--minimum-access-role=Analyst",
 		"--extra-ui-endpoints=localhost:9090",
+		"--extra-ui-endpoints=localhost:10010",
 		"--required-attributes=org_id=12345,name=some_name",
 		"--audience=some-audience",
 	}
@@ -417,10 +453,14 @@ minimumRole: Analyst
 uiEndpoint: localhost:8000
 extraUIEndpoints:
     - localhost:9090
+    - localhost:10010
 groups:
     - key: email
       value: example@example.com
       role: Admin
+    - key: userid
+      value: someid
+      role: Analyst
 requiredAttributes:
     - key: name
       value: some_name

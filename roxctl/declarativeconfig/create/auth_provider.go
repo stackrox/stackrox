@@ -164,7 +164,7 @@ func (a *authProviderCmd) iapCommand() *cobra.Command {
 
 func (a *authProviderCmd) userPKICommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "user-pki",
+		Use:   "userpki",
 		Args:  cobra.NoArgs,
 		RunE:  a.RunE(),
 		Short: "Create a declarative configuration for an user PKI auth provider",
@@ -226,7 +226,7 @@ func (a *authProviderCmd) Validate(providerType string) error {
 			a.samlConfig.Cert = samlCert
 		}
 		a.authProvider.SAMLConfig = a.samlConfig
-	case "user-pki":
+	case "userpki":
 		ca, err := readFileContents(a.userPKICAFile)
 		if err != nil {
 			return errors.Wrap(err, "reading user PKI CA file")
@@ -259,7 +259,7 @@ func (a *authProviderCmd) Validate(providerType string) error {
 func (a *authProviderCmd) validateGroups() ([]declarativeconfig.Group, error) {
 	expectedGroups := len(a.groupsKeys)
 
-	if len(a.groupsKeys) != expectedGroups || len(a.groupsValues) != expectedGroups || len(a.groupsRoles) != expectedGroups {
+	if len(a.groupsValues) != expectedGroups || len(a.groupsRoles) != expectedGroups {
 		return nil, errox.InvalidArgs.Newf("the groups tuple of key, value, role should have the the same "+
 			"number of entries, but found a mismatch [keys %d, values %d, roles %d]",
 			len(a.groupsKeys), len(a.groupsValues), len(a.groupsRoles))
