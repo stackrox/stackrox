@@ -3,7 +3,6 @@ import { gql } from '@apollo/client';
 
 import queryService from 'utils/queryService';
 import DateTimeField from 'Components/DateTimeField';
-import StatusChip from 'Components/StatusChip';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import TableCellLink from 'Components/TableCellLink';
 import TableCountLink from 'Components/workflow/TableCountLink';
@@ -146,43 +145,6 @@ export function getCurriedDeploymentTableColumns(isFeatureFlagEnabled) {
                 id: deploymentSortFields.LATEST_VIOLATION,
                 accessor: 'latestViolation',
                 sortField: deploymentSortFields.LATEST_VIOLATION,
-                sortable: false,
-            },
-            // @TODD, restore the Policy Counts column once its performance is improved,
-            //   or remove the comment if we determine that it cannot be made performant
-            //   (see https://stack-rox.atlassian.net/browse/ROX-4080)
-            // {
-            //     Header: `Policies`,
-            //     entityType: entityTypes.POLICY,
-            //     headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-            //     className: `w-1/10 ${defaultColumnClassName}`,
-            //     Cell: ({ original, pdf }) => (
-            //         <TableCountLink
-            //             entityType={entityTypes.POLICY}
-            //             count={original.policyCount}
-            //             textOnly={inFindingsSection || pdf}
-            //             selectedRowId={original.id}
-            //             entityTypeText="policy"
-            //         />
-            //     ),
-            //     id: deploymentSortFields.POLICY_COUNT,
-            //     accessor: 'policyCount',
-            //     sortField: deploymentSortFields.POLICY_COUNT,
-            //     sortable: false
-            // },
-            {
-                Header: `Policy Status`,
-                headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-                className: `w-1/10 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => {
-                    const { policyStatus } = original;
-                    const policyLabel = <StatusChip status={policyStatus} asString={pdf} />;
-
-                    return policyLabel;
-                },
-                id: deploymentSortFields.POLICY_STATUS,
-                accessor: 'policyStatus',
-                sortField: deploymentSortFields.POLICY_STATUS,
                 sortable: false,
             },
             {

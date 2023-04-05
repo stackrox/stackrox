@@ -4,7 +4,6 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import DateTimeField from 'Components/DateTimeField';
 import Metadata from 'Components/Metadata';
 import RiskScore from 'Components/RiskScore';
-import StatusChip from 'Components/StatusChip';
 import BinderTabs from 'Components/BinderTabs';
 import Tab from 'Components/Tab';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -79,13 +78,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
         },
     ];
 
-    const clusterStats = [
-        <RiskScore key="risk-score" score={priority} />,
-        <React.Fragment key="policy-status">
-            <span className="pb-2">Policy status:</span>
-            <StatusChip status={policyStatus.status} />
-        </React.Fragment>,
-    ];
+    const clusterStats = [<RiskScore key="risk-score" score={priority} />];
 
     const currentEntity = { [entityTypes.CLUSTER]: id };
     const newEntityContext = { ...entityContext, ...currentEntity };

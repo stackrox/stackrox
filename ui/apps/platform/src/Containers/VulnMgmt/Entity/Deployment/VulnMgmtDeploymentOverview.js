@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
 import RiskScore from 'Components/RiskScore';
-import StatusChip from 'Components/StatusChip';
 import entityTypes from 'constants/entityTypes';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import RecentlyDetectedImageVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedImageVulnerabilities';
@@ -46,8 +45,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyDeployment, ...data };
 
-    const { id, cluster, priority, namespace, namespaceId, policyStatus, labels, annotations } =
-        safeData;
+    const { id, cluster, priority, namespace, namespaceId, labels, annotations } = safeData;
 
     const metadataKeyValuePairs = [];
 
@@ -70,13 +68,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         });
     }
 
-    const deploymentStats = [
-        <RiskScore key="risk-score" score={priority} />,
-        <React.Fragment key="policy-status">
-            <span className="pb-2">Policy status:</span>
-            <StatusChip status={policyStatus} />
-        </React.Fragment>,
-    ];
+    const deploymentStats = [<RiskScore key="risk-score" score={priority} />];
     const currentEntity = { [entityTypes.DEPLOYMENT]: id };
     const newEntityContext = { ...entityContext, ...currentEntity };
 

@@ -8,7 +8,6 @@ import {
     defaultColumnClassName,
 } from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
-import StatusChip from 'Components/StatusChip';
 import ClusterTableCountLinks from 'Components/workflow/ClusterTableCountLinks';
 import entityTypes from 'constants/entityTypes';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
@@ -225,45 +224,6 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data, totalResult
                     <ClusterTableCountLinks row={original} textOnly={pdf} />
                 ),
                 accessor: 'entities',
-                sortable: false,
-            },
-            // @TODD, restore the Policy Counts column once its performance is improved,
-            //   or remove the comment if we determine that it cannot be made performant
-            //   (see https://stack-rox.atlassian.net/browse/ROX-4080)
-            // {
-            //     Header: `Policies`,
-            //     entityType: entityTypes.POLICY,
-            //     headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-            //     className: `w-1/10 ${defaultColumnClassName}`,
-            //     // eslint-disable-next-line
-            //     Cell: ({ original, pdf }) => (
-            //         <TableCountLink
-            //             entityType={entityTypes.POLICY}
-            //             count={original.policyCount}
-            //             textOnly={pdf}
-            //             selectedRowId={original.id}
-            //         />
-            //     ),
-            //     id: clusterSortFields.POLICY_COUNT,
-            //     accessor: 'policyCount',
-            //     sortField: clusterSortFields.POLICY_COUNT,
-            //     sortable: false
-            // },
-            {
-                Header: `Policy Status`,
-                headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-                className: `w-1/10 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => {
-                    const { policyStatus } = original;
-                    const policyLabel = (
-                        <StatusChip status={policyStatus && policyStatus.status} asString={pdf} />
-                    );
-
-                    return policyLabel;
-                },
-                id: clusterSortFields.POLICY_STATUS,
-                accessor: 'policyStatus.status',
-                sortField: clusterSortFields.POLICY_STATUS,
                 sortable: false,
             },
             {

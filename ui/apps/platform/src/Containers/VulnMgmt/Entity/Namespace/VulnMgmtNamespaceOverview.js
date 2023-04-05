@@ -2,7 +2,6 @@ import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
-import StatusChip from 'Components/StatusChip';
 import RiskScore from 'Components/RiskScore';
 import Metadata from 'Components/Metadata';
 import entityTypes from 'constants/entityTypes';
@@ -54,7 +53,6 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
     }
 
     const { clusterName, clusterId, priority, labels, id } = metadata;
-    const { status } = policyStatus;
     const metadataKeyValuePairs = [];
 
     if (!entityContext[entityTypes.CLUSTER]) {
@@ -65,13 +63,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
         });
     }
 
-    const namespaceStats = [
-        <RiskScore key="risk-score" score={priority} />,
-        <React.Fragment key="policy-status">
-            <span className="pb-2">Policy status:</span>
-            <StatusChip status={status} size="large" />
-        </React.Fragment>,
-    ];
+    const namespaceStats = [<RiskScore key="risk-score" score={priority} />];
 
     const currentEntity = { [entityTypes.NAMESPACE]: id };
     const newEntityContext = { ...entityContext, ...currentEntity };

@@ -5,7 +5,6 @@ import queryService from 'utils/queryService';
 import TableCellLink from 'Components/TableCellLink';
 import TableCountLink from 'Components/workflow/TableCountLink';
 import CVEStackedPill from 'Components/CVEStackedPill';
-import StatusChip from 'Components/StatusChip';
 import DateTimeField from 'Components/DateTimeField';
 import {
     defaultHeaderClassName,
@@ -173,42 +172,6 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResu
                 accessor: 'imageCount',
                 // TODO: restore sorting on this field, see https://issues.redhat.com/browse/ROX-12548 for context
                 // sortField: componentSortFields.IMAGES,
-                sortable: false,
-            },
-            // @TODD, restore the Policy Counts column once its performance is improved,
-            //   or remove the comment if we determine that it cannot be made performant
-            //   (see https://stack-rox.atlassian.net/browse/ROX-4080)
-            // {
-            //     Header: `Policies`,
-            //     entityType: entityTypes.POLICY,
-            //     headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
-            //     className: `w-1/8 ${defaultColumnClassName}`,
-            //     Cell: ({ original, pdf }) => (
-            //         <TableCountLink
-            //             entityType={entityTypes.POLICY}
-            //             count={original.policyCount}
-            //             textOnly={pdf}
-            //             selectedRowId={original.metadata.id}
-            //         />
-            //     ),
-            //     id: namespaceSortFields.POLICY_COUNT,
-            //     accessor: 'policyCount',
-            //     sortField: namespaceSortFields.POLICY_COUNT,
-            //     sortable: false
-            // },
-            {
-                Header: `Policy Status`,
-                headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-                className: `w-1/10 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => {
-                    const { policyStatusOnly } = original;
-                    const policyLabel = <StatusChip status={policyStatusOnly} asString={pdf} />;
-
-                    return policyLabel;
-                },
-                id: namespaceSortFields.POLICY_STATUS,
-                accessor: 'policyStatusOnly',
-                sortField: namespaceSortFields.POLICY_STATUS,
                 sortable: false,
             },
             {
