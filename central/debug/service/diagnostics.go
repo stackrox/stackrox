@@ -218,12 +218,8 @@ func (s *serviceImpl) pullSensorMetrics(ctx context.Context, zipWriter *zip.Writ
 			if !ok {
 				return nil
 			}
-			fullPath := path.Join("sensor-metrics", file.Path)
-			fileWriter, err := zipWriter.Create(fullPath)
+			err := writePrefixedFileToZip(zipWriter, "sensor-metrics", file)
 			if err != nil {
-				return err
-			}
-			if _, err := fileWriter.Write(file.Contents); err != nil {
 				return err
 			}
 		}
@@ -291,12 +287,8 @@ func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zip.Writ
 			if !ok {
 				return nil
 			}
-			fullPath := path.Join("kubernetes", file.Path)
-			fileWriter, err := zipWriter.Create(fullPath)
+			err := writePrefixedFileToZip(zipWriter, "kubernetes", file)
 			if err != nil {
-				return err
-			}
-			if _, err := fileWriter.Write(file.Contents); err != nil {
 				return err
 			}
 		}
