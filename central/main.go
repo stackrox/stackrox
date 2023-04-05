@@ -157,7 +157,6 @@ import (
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -479,7 +478,7 @@ func startGRPCServer() {
 
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
 
-	if features.DeclarativeConfiguration.Enabled() {
+	if env.DeclarativeConfiguration.BooleanSetting() {
 		declarativeconfig.ManagerSingleton(registry).ReconcileDeclarativeConfigurations()
 	}
 
