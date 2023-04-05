@@ -458,34 +458,39 @@ func (g *garbageCollectorImpl) removeOrphanedPLOP() {
 	}
 }
 
-func (g *garbageCollectorImpl) markOrphanedAlertsAsResolved(deployments set.FrozenStringSet) {
-	var alertsToResolve []string
+func (g *garbageCollectorImpl) getOrphanedAlerts(ctx context.Context, deployments set.FrozenStringSet) ([]string, error) {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return postgres.GetOrphanedAlertIDs(ctx, globaldb.GetPostgres())
+	}
 	now := types.TimestampNow()
-	walkFn := func() error {
-		alertsToResolve = alertsToResolve[:0]
-		return g.alerts.WalkAll(pruningCtx, func(alert *storage.ListAlert) error {
-			// We should only remove orphaned deploy time alerts as they are not cleaned up by retention policies
-			// This will only happen when there is data inconsistency
-			if alert.GetLifecycleStage() != storage.LifecycleStage_DEPLOY {
-				return nil
-			}
-			if alert.GetState() != storage.ViolationState_ACTIVE {
-				return nil
-			}
-			if deployments.Contains(alert.GetDeployment().GetId()) {
-				return nil
-			}
-			if protoutils.Sub(now, alert.GetTime()) < orphanWindow {
-				return nil
-			}
-			alertsToResolve = append(alertsToResolve, alert.GetId())
+	var alertsToResolve []string
+	err := g.alerts.WalkAll(pruningCtx, func(alert *storage.ListAlert) error {
+		// We should only remove orphaned deploy time alerts as they are not cleaned up by retention policies
+		// This will only happen when there is data inconsistency
+		if alert.GetLifecycleStage() != storage.LifecycleStage_DEPLOY {
 			return nil
-		})
+		}
+		if alert.GetState() != storage.ViolationState_ACTIVE {
+			return nil
+		}
+		if deployments.Contains(alert.GetDeployment().GetId()) {
+			return nil
+		}
+		if protoutils.Sub(now, alert.GetTime()) < orphanWindow {
+			return nil
+		}
+		alertsToResolve = append(alertsToResolve, alert.GetId())
+		return nil
+	})
+	return alertsToResolve, err
+}
+
+func (g *garbageCollectorImpl) markOrphanedAlertsAsResolved(deployments set.FrozenStringSet) {
+	alertsToResolve, err := g.getOrphanedAlerts(pruningCtx, deployments)
+	if err != nil {
+		log.Errorf("[Alert pruning] error getting orphaned alert ids: %v", err)
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
-		log.Error(errors.Wrap(err, "unable to walk alerts and mark for pruning"))
-		return
-	}
+
 	log.Infof("[Alert pruning] Found %d orphaned alerts", len(alertsToResolve))
 	if _, err := g.alerts.MarkAlertStaleBatch(pruningCtx, alertsToResolve...); err != nil {
 		log.Error(errors.Wrap(err, "error marking alert as stale"))
