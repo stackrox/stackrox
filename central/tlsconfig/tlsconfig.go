@@ -3,9 +3,11 @@ package tlsconfig
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -38,8 +40,11 @@ func GetAdditionalCAs() ([][]byte, error) {
 
 	var certDERs [][]byte
 	for _, certFile := range certFileInfos {
-		if filepath.Ext(certFile.Name()) != ".crt" {
-			log.Infof("Skipping additional-ca file %q, must end with '*.crt'.", certFile.Name())
+		if certFile.IsDir() {
+			continue
+		}
+		if !isValidAdditionalCAFileName(certFile.Name()) {
+			log.Infof(skipAdditionalCAFileMsg, certFile.Name())
 			continue
 		}
 		content, err := os.ReadFile(path.Join(additionalCADir, certFile.Name()))
@@ -182,4 +187,33 @@ func validForAllDNSNames(cert *x509.Certificate, dnsNames ...string) bool {
 		}
 	}
 	return true
+}
+
+var allowedAdditionalCAExtensions = map[string]bool{
+	".crt": true,
+	".pem": true,
+}
+
+var skipAdditionalCAFileMsg string
+
+func init() {
+	var allowedAdditionalCAExtensionsList = make([]string, 0, len(allowedAdditionalCAExtensions))
+	for ext := range allowedAdditionalCAExtensions {
+		allowedAdditionalCAExtensionsList = append(allowedAdditionalCAExtensionsList, ext)
+	}
+	sort.Strings(allowedAdditionalCAExtensionsList)
+	skipAdditionalCAFileMsg = "skipping additional-ca file %q because it has an invalid extension; allowed file extensions for additional ca certificates are "
+	for i, ext := range allowedAdditionalCAExtensionsList {
+		if i > 0 && i < len(allowedAdditionalCAExtensionsList)-1 {
+			skipAdditionalCAFileMsg += ", "
+		} else if i == len(allowedAdditionalCAExtensionsList)-1 {
+			skipAdditionalCAFileMsg += " and "
+		}
+		skipAdditionalCAFileMsg += fmt.Sprintf("%q", ext)
+	}
+}
+
+func isValidAdditionalCAFileName(fileName string) bool {
+	_, ok := allowedAdditionalCAExtensions[path.Ext(fileName)]
+	return ok
 }

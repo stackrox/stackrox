@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -30,11 +31,11 @@ func (s *tlsConfigTestSuite) TestGetAdditionalCAs() {
 
 	additionalCAs, err := GetAdditionalCAs()
 	s.Require().NoError(err)
-	s.Require().Len(additionalCAs, 3, "Could not decode all certs")
+	s.Require().Len(additionalCAs, 4, "Could not decode all certs")
 	s.True(s.isCommonNameInCerts(additionalCAs, "CENTRAL_SERVICE: Central"), "Could not find cert from multiple crt file")
 
 	// non .crt files should be ignored
-	s.FileExists("testdata/no_ca_cert.pem")
+	s.FileExists("testdata/foo.txt")
 }
 
 func (s *tlsConfigTestSuite) isCommonNameInCerts(DERs [][]byte, commonName string) bool {
@@ -256,4 +257,31 @@ func writeKey(dir string, privateKey *ecdsa.PrivateKey) error {
 		return err
 	}
 	return pem.Encode(keyFile, &pem.Block{Type: "EC PRIVATE KEY", Bytes: privateKeyBytes})
+}
+
+func Test_isValidAdditionalCAFileName(t *testing.T) {
+	tests := []struct {
+		name string
+		want bool
+	}{
+		{"bla.crt", true},
+		{"bla.pem", true},
+		{"bla", false},
+		{"bla.crt.", false},
+		{"bla.pem.", false},
+		{"bla.crt.foo", false},
+		{"", false},
+		{"foo.bar", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isValidAdditionalCAFileName(tt.name); got != tt.want {
+				t.Errorf("isValidAdditionalCAFileName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_skipAdditionalCAFileMsg(t *testing.T) {
+	assert.Equal(t, `skipping additional-ca file %q because it has an invalid extension; allowed file extensions for additional ca certificates are ".crt" and ".pem"`, skipAdditionalCAFileMsg)
 }
