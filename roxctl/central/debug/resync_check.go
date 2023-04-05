@@ -3,16 +3,18 @@ package debug
 import (
 	"context"
 	"encoding/json"
+	"math"
 	"os"
 	"path"
 	"sort"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
@@ -20,7 +22,7 @@ import (
 )
 
 const (
-	resyncCheckTimeout = 300 * time.Second
+	defaultResyncCheckTimeout = 300 * time.Second
 )
 
 // resyncCheckCommand will outputs alert data before and after reassessing ACS policies.
@@ -33,7 +35,7 @@ func resyncCheckCommand(cliEnvironment environment.Environment) *cobra.Command {
 		Short: "Check alerts before and after reassessing policies",
 		Long:  "Check alerts before and after reassessing policies. This should only be used for testing when Secured Clusters have ROX_RESYNC_DISABLED=true",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			cmd, err := commandWithConnection(cliEnvironment, waitFor, outputDir)
+			cmd, err := commandWithConnection(cliEnvironment, waitFor, outputDir, flags.Timeout(c))
 			if err != nil {
 				return err
 			}
@@ -45,7 +47,7 @@ func resyncCheckCommand(cliEnvironment environment.Environment) *cobra.Command {
 			return cmd.storeFiles(before, after)
 		}),
 	}
-	flags.AddTimeoutWithDefault(c, resyncCheckTimeout)
+	flags.AddTimeoutWithDefault(c, defaultResyncCheckTimeout)
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "resync-check-output", "output directory in which to store bundle")
 	c.PersistentFlags().DurationVar(&waitFor, "wait-for", time.Minute, "how long to wait between before and after alert check")
 
@@ -56,10 +58,11 @@ type resyncCheckCmd struct {
 	env       environment.Environment
 	conn      *grpc.ClientConn
 	waitFor   time.Duration
+	timeout   time.Duration
 	outputDir string
 }
 
-func commandWithConnection(env environment.Environment, waitFor time.Duration, outputDir string) (*resyncCheckCmd, error) {
+func commandWithConnection(env environment.Environment, waitFor, timeout time.Duration, outputDir string) (*resyncCheckCmd, error) {
 	conn, err := env.GRPCConnection()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not establish gRPC connection to central")
@@ -69,6 +72,7 @@ func commandWithConnection(env environment.Environment, waitFor time.Duration, o
 		env:       env,
 		conn:      conn,
 		waitFor:   waitFor,
+		timeout:   timeout,
 		outputDir: outputDir,
 	}, nil
 }
@@ -76,7 +80,7 @@ func commandWithConnection(env environment.Environment, waitFor time.Duration, o
 func (c *resyncCheckCmd) run() ([]*storage.ListAlert, []*storage.ListAlert, error) {
 	c.env.Logger().InfofLn("Running re-sync check")
 
-	ctx, cancel := context.WithTimeout(context.Background(), resyncCheckTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 
 	svc := v1.NewAlertServiceClient(c.conn)
@@ -116,7 +120,11 @@ func (c *resyncCheckCmd) run() ([]*storage.ListAlert, []*storage.ListAlert, erro
 }
 
 func (c *resyncCheckCmd) fetchAlerts(ctx context.Context, svc v1.AlertServiceClient) ([]*storage.ListAlert, error) {
-	response, err := svc.ListAlerts(ctx, &v1.ListAlertsRequest{})
+	response, err := svc.ListAlerts(ctx, &v1.ListAlertsRequest{
+		Pagination: &v1.Pagination{
+			Limit: math.MaxInt32,
+		},
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "could not make ListAlerts request to gRPC server")
 	}
@@ -124,7 +132,7 @@ func (c *resyncCheckCmd) fetchAlerts(ctx context.Context, svc v1.AlertServiceCli
 }
 
 func (c *resyncCheckCmd) storeFiles(alertsBefore, alertsAfter []*storage.ListAlert) error {
-	if err := os.Mkdir(c.outputDir, 0755); err != nil && !os.IsExist(err){
+	if err := os.Mkdir(c.outputDir, os.ModePerm); err != nil && !os.IsExist(err) {
 		c.env.Logger().WarnfLn("Failed to create directory %s: %s", c.outputDir, err)
 	}
 
