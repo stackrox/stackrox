@@ -1,5 +1,10 @@
-#!/bin/sh
+#!/usr/bin/env bash
+# shellcheck disable=SC1091
 set -eu
+
+TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+source "$TEST_ROOT/scripts/lib.sh"
+source "$TEST_ROOT/tests/e2e/separate-clusters.sh"
 
 # Collect Service Logs From QA namespaces script
 #
@@ -17,6 +22,12 @@ set -eu
 # - Logs are saved under /tmp/k8s-service-logs/ or DIR if passed
 
 main() {
+    if separate_clusters_test; then
+        # QA test namespaces are created in the sensor cluster
+        target_cluster "sensor"
+        # Avoid checking both clusters in collect-service-logs.sh
+        export TARGET_CLUSTER="sensor"
+    fi
 	set +e
     for ns in $(kubectl get ns -o json | jq -r '.items[].metadata.name' | grep -E '^qa'); do
         echo "Collecting from namespace: ${ns}"

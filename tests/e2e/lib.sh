@@ -9,6 +9,7 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 source "$TEST_ROOT/scripts/ci/test_state.sh"
+source "$TEST_ROOT/tests/e2e/separate-clusters.sh"
 
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 
@@ -28,10 +29,18 @@ deploy_stackrox() {
     echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait
 
-    # Bounce collectors to avoid restarts on initial module pull
+    info Bounce collectors to avoid restarts on initial module pull
     kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     sensor_wait
+
+    # if [[ "${CI_JOB_NAME}" == "gke-scale-tests" ]]; then
+    # touch /tmp/hold
+    # while [[ -e /tmp/hold ]]; do
+    #     info "Holding this job for debug"
+    #     sleep 60
+    # done
+    # fi
 
     wait_for_collectors_to_be_operational
 
@@ -66,7 +75,7 @@ deploy_stackrox_with_custom_sensor() {
     echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait
 
-    # Bounce collectors to avoid restarts on initial module pull
+    info Bounce collectors to avoid restarts on initial module pull
     kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     sensor_wait
@@ -138,9 +147,14 @@ deploy_central() {
                 ci_export OUTPUT_FORMAT helm
             fi
         fi
-
-        DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-        "$ROOT/${DEPLOY_DIR}/central.sh"
+        local deploy_dir
+        if separate_clusters_test; then
+            target_cluster "central"
+            deploy_dir="deploy/${CENTRAL_ORCHESTRATOR_FLAVOR}"
+        else
+            deploy_dir="deploy/${ORCHESTRATOR_FLAVOR}"
+        fi
+        "$ROOT/${deploy_dir}/central.sh"
     fi
 }
 
@@ -240,12 +254,18 @@ deploy_sensor() {
                 ci_export ROXCTL_TIMEOUT "60s"
             fi
         fi
-
-        DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-        "$ROOT/${DEPLOY_DIR}/sensor.sh"
+        local deploy_dir
+        if separate_clusters_test; then
+            target_cluster "sensor"
+            deploy_dir="deploy/${SENSOR_ORCHESTRATOR_FLAVOR}"
+            export CLUSTER_API_ENDPOINT="${API_ENDPOINT}"
+        else
+            deploy_dir="deploy/${ORCHESTRATOR_FLAVOR}"
+        fi
+        "$ROOT/${deploy_dir}/sensor.sh"
     fi
 
-    if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
+    if [[ "${ORCHESTRATOR_FLAVOR:-${SENSOR_ORCHESTRATOR_FLAVOR}}" == "openshift" ]]; then
         # Sensor is CPU starved under OpenShift causing all manner of test failures:
         # https://stack-rox.atlassian.net/browse/ROX-5334
         # https://stack-rox.atlassian.net/browse/ROX-6891
@@ -280,13 +300,15 @@ deploy_sensor_via_operator() {
 }
 
 export_central_basic_auth_creds() {
-    if [[ -f "${DEPLOY_DIR}/central-deploy/password" ]]; then
+    local deploy_dir="deploy/${ORCHESTRATOR_FLAVOR:=${CENTRAL_ORCHESTRATOR_FLAVOR}}"
+
+    if [[ -f "${deploy_dir}/central-deploy/password" ]]; then
         info "Getting central basic auth creds from central-deploy/password"
-        ROX_PASSWORD="$(cat "${DEPLOY_DIR}"/central-deploy/password)"
+        ROX_PASSWORD="$(cat "${deploy_dir}"/central-deploy/password)"
     elif [[ -n "${ROX_PASSWORD:-}" ]]; then
         info "Using existing ROX_PASSWORD env"
     else
-        echo "Expected to find file ${DEPLOY_DIR}/central-deploy/password or ROX_PASSWORD env"
+        echo "Expected to find file ${deploy_dir}/central-deploy/password or ROX_PASSWORD env"
         exit 1
     fi
 
@@ -530,6 +552,15 @@ collect_and_check_stackrox_logs() {
 remove_existing_stackrox_resources() {
     info "Will remove any existing stackrox resources"
 
+    if separate_clusters_test; then
+        if [[ "${1:-}" == "" ]]; then
+            remove_existing_stackrox_resources "central"
+            remove_existing_stackrox_resources "sensor"
+            return
+        fi
+        target_cluster "$1"
+    fi
+
     (
         kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait
         # openshift specific:
@@ -547,6 +578,10 @@ remove_existing_stackrox_resources() {
 
 wait_for_api() {
     info "Waiting for Central to be ready"
+
+    if separate_clusters_test; then
+        target_cluster "central"
+    fi
 
     start_time="$(date '+%s')"
     max_seconds=${MAX_WAIT_SECONDS:-300}

@@ -23,23 +23,37 @@ run_part_1() {
 config_part_1() {
     info "Configuring the cluster to run part 1 of e2e tests"
 
-    require_environment "ORCHESTRATOR_FLAVOR"
-    require_environment "KUBECONFIG"
+    if ! separate_clusters_test; then
+        require_environment "KUBECONFIG"
+    fi
 
-    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+    local certs_dir="$ROOT/deploy/k8s"
 
     export_test_environment
+
+    if separate_clusters_test; then
+        target_cluster "central"
+    fi
 
     setup_gcp
     setup_deployment_env false false
     setup_podsecuritypolicies_config
     remove_existing_stackrox_resources
-    setup_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
+    setup_default_TLS_certs "$certs_dir/default_TLS_certs"
 
-    deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+    deploy_stackrox "$certs_dir/client_TLS_certs"
+
+    if separate_clusters_test; then
+        target_cluster "central"
+    fi
 
     deploy_default_psp
-    deploy_webhook_server "$ROOT/$DEPLOY_DIR/webhook_server_certs"
+    deploy_webhook_server "$certs_dir/webhook_server_certs"
+    if separate_clusters_test; then
+        target_cluster "sensor"
+        deploy_default_psp
+    fi
+
     get_ECR_docker_pull_password
     # TODO(ROX-14759): Re-enable once image pulling is fixed.
     #deploy_clair_v4
@@ -48,15 +62,15 @@ config_part_1() {
 reuse_config_part_1() {
     info "Reusing config from a prior part 1 e2e test"
 
-    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+    local certs_dir="$ROOT/deploy/k8s"
 
     export_test_environment
     setup_deployment_env false false
-    export_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
-    export_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+    export_default_TLS_certs "$certs_dir/default_TLS_certs"
+    export_client_TLS_certs "$certs_dir/client_TLS_certs"
 
     create_webhook_server_port_forward
-    export_webhook_server_certs "$ROOT/$DEPLOY_DIR/webhook_server_certs"
+    export_webhook_server_certs "$certs_dir/webhook_server_certs"
     get_ECR_docker_pull_password
 
     wait_for_api
@@ -67,6 +81,11 @@ reuse_config_part_1() {
 
 test_part_1() {
     info "QA Automation Platform Part 1"
+
+    if separate_clusters_test; then
+        ORCHESTRATOR_FLAVOR="${SENSOR_ORCHESTRATOR_FLAVOR}"
+        target_cluster "sensor"
+    fi
 
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
         oc get scc qatest-anyuid || oc create -f "${ROOT}/qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"

@@ -7,6 +7,7 @@ Clusters used in test
 import os
 import signal
 import subprocess
+import tempfile
 import time
 
 from common import popen_graceful_kill
@@ -136,3 +137,50 @@ class OpenShiftScaleWorkersCluster:
 
     def teardown(self):
         pass
+
+class SeparateClusters:
+    """
+    SeparateClusters - central and sensor are deployed to separate clusters. If
+    either of the two kubeconfig args are not passed a GKE cluster is created.
+    """
+
+    def __init__(self, cluster_id, central_cluster_kubeconfig="", sensor_cluster_kubeconfig=""):
+        self.cluster_id = cluster_id
+        self.central_cluster_kubeconfig = central_cluster_kubeconfig
+        self.sensor_cluster_kubeconfig = sensor_cluster_kubeconfig
+        self.central_cluster = None
+        self.sensor_cluster = None
+
+    def provision(self):
+        if self.central_cluster_kubeconfig == "":
+            with tempfile.NamedTemporaryFile(delete=False) as kubeconfig:
+                kubeconfig.close()
+            os.environ["KUBECONFIG"] = kubeconfig.name
+            self.central_cluster = GKECluster(self.cluster_id + "-central")
+            self.central_cluster.provision()
+            os.environ["CENTRAL_CLUSTER_KUBECONFIG"] = kubeconfig.name
+            self.central_cluster_kubeconfig = kubeconfig.name
+            os.environ["CENTRAL_ORCHESTRATOR_FLAVOR"] = "k8s"
+
+        if self.sensor_cluster_kubeconfig == "":
+            with tempfile.NamedTemporaryFile(delete=False) as kubeconfig:
+                kubeconfig.close()
+            os.environ["KUBECONFIG"] = kubeconfig.name
+            self.sensor_cluster = GKECluster(self.cluster_id + "-sensor")
+            self.sensor_cluster.provision()
+            os.environ["SENSOR_CLUSTER_KUBECONFIG"] = kubeconfig.name
+            self.sensor_cluster_kubeconfig = kubeconfig.name
+            os.environ["SENSOR_ORCHESTRATOR_FLAVOR"] = "k8s"
+
+        return self
+
+    def teardown(self):
+        if self.central_cluster is not None:
+            os.environ["KUBECONFIG"] = self.central_cluster_kubeconfig
+            self.central_cluster.teardown()
+
+        if self.sensor_cluster is not None:
+            os.environ["KUBECONFIG"] = self.sensor_cluster_kubeconfig
+            self.sensor_cluster.teardown()
+
+        return self
