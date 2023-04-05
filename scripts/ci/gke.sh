@@ -299,13 +299,17 @@ refresh_gke_token() {
 }
 
 teardown_gke_cluster() {
-    info "Tearing down the GKE cluster: ${CLUSTER_NAME:-}"
+    local canceled="${1:-false}"
+
+    info "Tearing down the GKE cluster: ${CLUSTER_NAME:-}, canceled: ${canceled}"
 
     require_environment "CLUSTER_NAME"
     require_executable "gcloud"
 
-    # (prefix output to avoid triggering prow log focus)
-    "$SCRIPTS_ROOT/scripts/ci/cleanup-deployment.sh" 2>&1 | sed -e 's/^/out: /' || true
+    if [[ "${canceled}" == "false" ]]; then
+        # (prefix output to avoid triggering prow log focus)
+        "$SCRIPTS_ROOT/scripts/ci/cleanup-deployment.sh" 2>&1 | sed -e 's/^/out: /' || true
+    fi
 
     gcloud container clusters delete "$CLUSTER_NAME" --async
 
