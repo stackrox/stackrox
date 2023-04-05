@@ -326,9 +326,14 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                     .any { it.targetID == centralUid && it.getPort() == 8443 }
         }, 15)
 
-        NetworkBaselineService.getNetworkBaseline(splunkUid)
+        def baseline = NetworkBaselineService.getNetworkBaseline(splunkUid)
+        log.debug("Network baseline before lock call: ${baseline}")
+
         // Lock the baseline so that any different requests from (and to) Splunk pod would make a violation.
         NetworkBaselineService.lockNetworkBaseline(splunkUid)
+
+        baseline = NetworkBaselineService.getNetworkBaseline(splunkUid)
+        log.debug("Network baseline after lock call: ${baseline}")
 
         // Make anomalous request from Splunk towards Kube API server. This should trigger a network flow violation.
         assert retryUntilTrue({
