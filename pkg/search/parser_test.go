@@ -1,6 +1,7 @@
 package search
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -157,6 +158,12 @@ func TestParsePairs(t *testing.T) {
 			query:      "Deployment Label:attempted-alerts-dep-6+Policy:Kubernetes Actions: Exec into Pod",
 			allowEmpty: false,
 			pairs:      []string{"Deployment Label", "attempted-alerts-dep-6+Policy:Kubernetes Actions: Exec into Pod"},
+			valid:      true,
+		},
+		{
+			query:      "Deployment Label:label1,label2,",
+			allowEmpty: true,
+			pairs:      []string{"Deployment Label", fmt.Sprintf("label1,label2,%s", WildcardString)},
 			valid:      true,
 		},
 	}
