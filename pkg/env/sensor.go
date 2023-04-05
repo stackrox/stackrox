@@ -25,7 +25,7 @@ var (
 	ForceLocalImageScanning = RegisterBooleanSetting("ROX_FORCE_LOCAL_IMAGE_SCANNING", false)
 
 	// EventPipelineQueueSize is used to specify the size of the eventPipeline's queues
-	EventPipelineQueueSize = RegisterIntegerSetting("ROX_EVENT_PIPELINE_QUEUE_SIZE", 100)
+	EventPipelineQueueSize = RegisterIntegerSetting("ROX_EVENT_PIPELINE_QUEUE_SIZE", 1000)
 
 	// ResyncDisabled disables the resync behavior of the kubernetes listeners in sensor
 	ResyncDisabled = RegisterBooleanSetting("ROX_RESYNC_DISABLED", false)
