@@ -38,6 +38,17 @@ func (s *tlsConfigTestSuite) TestGetAdditionalCAs() {
 	s.FileExists("testdata/foo.txt")
 }
 
+func (s *tlsConfigTestSuite) TestGetAdditionalCAFilePaths() {
+	s.T().Setenv("ROX_MTLS_ADDITIONAL_CA_DIR", "testdata")
+	filePaths, err := GetAdditionalCAFilePaths()
+	s.NoError(err)
+	s.Len(filePaths, 4)
+	s.Contains(filePaths, "testdata/cert.pem")
+	s.Contains(filePaths, "testdata/crt01.crt")
+	s.Contains(filePaths, "testdata/multiple_certs.crt")
+	s.Contains(filePaths, "testdata/symlinked.pem")
+}
+
 func (s *tlsConfigTestSuite) isCommonNameInCerts(DERs [][]byte, commonName string) bool {
 	var result bool
 	for _, DER := range DERs {
