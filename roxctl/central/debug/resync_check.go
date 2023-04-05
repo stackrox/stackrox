@@ -35,7 +35,7 @@ func resyncCheckCommand(cliEnvironment environment.Environment) *cobra.Command {
 		Short: "Check alerts before and after reassessing policies",
 		Long:  "Check alerts before and after reassessing policies. This should only be used for testing when Secured Clusters have ROX_RESYNC_DISABLED=true",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			cmd, err := commandWithConnection(cliEnvironment, waitFor, outputDir, flags.Timeout(c))
+			cmd, err := commandWithConnection(cliEnvironment, waitFor, flags.Timeout(c), outputDir)
 			if err != nil {
 				return err
 			}

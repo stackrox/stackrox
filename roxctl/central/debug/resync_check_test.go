@@ -118,7 +118,7 @@ func Test_GetAlertsDelta(t *testing.T) {
 			defer closeFn()
 
 			mockEnv, _, errOut := mocks.NewEnvWithConn(conn, t)
-			cmd, err := commandWithConnection(mockEnv, time.Microsecond, "")
+			cmd, err := commandWithConnection(mockEnv, time.Microsecond, time.Minute, "")
 			require.NoError(t, err, "should not fail creating resync command with mock environment")
 
 			_, _, err = cmd.run()
