@@ -123,9 +123,9 @@ func (p *eventPipeline) processReassessPolicies() error {
 	}
 	if env.ResyncDisabled.BooleanSetting() {
 		message := component.NewEvent()
+		// TODO(ROX-14310): Add WithSkipResolving to the DeploymentReference (Revert: https://github.com/stackrox/stackrox/pull/5551)
 		message.AddDeploymentReference(resolver.ResolveAllDeployments(),
-			component.WithForceDetection(),
-			component.WithSkipResolving())
+			component.WithForceDetection())
 		p.resolver.Send(message)
 	}
 	return nil
@@ -138,9 +138,9 @@ func (p *eventPipeline) processReprocessDeployments() error {
 	}
 	if env.ResyncDisabled.BooleanSetting() {
 		message := component.NewEvent()
+		// TODO(ROX-14310): Add WithSkipResolving to the DeploymentReference (Revert: https://github.com/stackrox/stackrox/pull/5551)
 		message.AddDeploymentReference(resolver.ResolveAllDeployments(),
-			component.WithForceDetection(),
-			component.WithSkipResolving())
+			component.WithForceDetection())
 		p.resolver.Send(message)
 	}
 	return nil
