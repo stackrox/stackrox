@@ -21,15 +21,6 @@
       }
     },
     {
-      "name": "Don't alert on deployment apiserver-watcher-* in openshift-kube-apiserver namespace",
-      "deployment": {
-        "name": "apiserver-watcher-.*",
-        "scope": {
-          "namespace": "openshift-kube-apiserver"
-        }
-      }
-    },
-    {
       "name": "Don't alert on deployment in openshift-kube-apiserver namespace",
       "deployment": {
         "scope": {

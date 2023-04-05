@@ -90,6 +90,10 @@ var (
 			FieldsToCompare: fieldsToCompare,
 			PolicyFileName:  "dnf.json",
 		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "latest_tag.json",
+		},
 	}
 )
 

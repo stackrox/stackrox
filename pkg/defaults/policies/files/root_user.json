@@ -49,11 +49,11 @@
       }
     },
     {
-      "name": "Don't alert on deployment openshift-controller-manager-operator in openshift-splunk-forwarder-operator namespace",
+      "name": "Don't alert on deployment openshift-controller-manager-operator in openshift-controller-manager-operator namespace",
       "deployment": {
         "name": "openshift-controller-manager-operator",
         "scope": {
-          "namespace": "openshift-splunk-forwarder-operator"
+          "namespace": "openshift-controller-manager-operator"
         }
       }
     },

@@ -15,8 +15,8 @@
     {
       "name": "Don't alert on deployment alertmanager-main in openshift-monitoring namespace",
       "deployment": {
+        "name": "alertmanager-main",
         "scope": {
-          "name": "alertmanager-main",
           "namespace": "openshift-monitoring"
         }
       }

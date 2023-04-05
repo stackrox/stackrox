@@ -253,12 +253,6 @@ class UpgradesTest extends BaseSpecification {
             "f09f8da1-6111-4ca0-8f49-294a76c65115" : new KnownPolicyDiffs().setPolicyAsDisabled(),
             "a919ccaf-6b43-4160-ac5d-a405e1440a41" : new KnownPolicyDiffs().setPolicyAsEnabled(),
             "93f4b2dd-ef5a-419e-8371-38aed480fb36" : new KnownPolicyDiffs().setPolicyAsDisabled(),
-            "ed8c7957-14de-40bc-aeab-d27ceeecfa7b":  new KnownPolicyDiffs()
-                .addExclusionsWithName([
-                        ["ovnkube-node", "", "openshift-ovn-kubernetes", 0]]),
-            "f95ff08d-130a-465a-a27e-32ed1fb05555" : new KnownPolicyDiffs().addExclusionsWithName([
-                    ["collector", "stackrox", 0],["scanner", "stackrox", 0],["central", "stackrox", 0],
-                    ["admission-control", "stackrox", 0]]),
         ]
         and:
         "Skip over known differences due to differences in tests"
