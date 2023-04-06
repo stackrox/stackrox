@@ -15,7 +15,7 @@ import (
 )
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool *postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool *postgres.DB) (DataStore, error) {
 	permissionStore := permissionSetPostgresStore.New(pool)
 	roleStore := rolePostgresStore.New(pool)
 	scopeStore := accessScopePostgresStore.New(pool)
@@ -24,7 +24,7 @@ func GetTestPostgresDataStore(t *testing.T, pool *postgres.DB) (DataStore, error
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) (DataStore, error) {
+func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB) (DataStore, error) {
 	permissionStore, err := permissionSetRocksDBStore.New(rocksengine)
 	if err != nil {
 		return nil, err

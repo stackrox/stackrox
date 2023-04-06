@@ -13,11 +13,17 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+// GetFiltered returns groups from the store filtered using filter function.
 func GetFiltered(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error) {
+	return GetFilteredWithStore(GroupStoreSingleton(), ctx, filter)
+}
+
+// GetFilteredWithStore returns groups from the specified store filtered using filter function.
+func GetFilteredWithStore(store store2.Store, ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error) {
 	var groups []*storage.Group
 	walkFn := func() error {
 		groups = groups[:0]
-		return GroupStoreSingleton().Walk(ctx, func(g *storage.Group) error {
+		return store.Walk(ctx, func(g *storage.Group) error {
 			if filter == nil || filter(g) {
 				groups = append(groups, g)
 			}

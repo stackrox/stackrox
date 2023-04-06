@@ -10,7 +10,7 @@ var idCounter int
 
 // GetGroup return a mock storage.Group with all possible properties filled out.
 func GetGroup() *storage.Group {
-	idCounter += 1
+	idCounter++
 	return &storage.Group{
 		Props: &storage.GroupProperties{
 			Id:             fmt.Sprintf("abcdef-%d", idCounter),

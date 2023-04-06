@@ -1036,13 +1036,15 @@ func (s *groupDataStoreTestSuite) TestAddDeclarativeViaConfig() {
 	group := fixtures.GetGroupWithOrigin(storage.Traits_DECLARATIVE)
 	group.Props.Id = ""
 
+	s.validRoleAndAuthProvider(group.GetRoleName(), group.GetProps().GetAuthProviderId(), storage.Traits_DECLARATIVE, 1)
+
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	err := s.dataStore.Add(s.hasWriteDeclarativeCtx, group)
 	s.NoError(err)
 }
 
-func (s *groupDataStoreTestSuite) validRoleAndAuthProvider(roleName, authProviderId string, origin storage.Traits_Origin, times int) {
+func (s *groupDataStoreTestSuite) validRoleAndAuthProvider(roleName, authProviderID string, origin storage.Traits_Origin, times int) {
 	mockedRole := &storage.Role{
 		Name: roleName,
 		Traits: &storage.Traits{
@@ -1050,11 +1052,11 @@ func (s *groupDataStoreTestSuite) validRoleAndAuthProvider(roleName, authProvide
 		},
 	}
 	mockedAP := &storage.AuthProvider{
-		Id: authProviderId,
+		Id: authProviderID,
 		Traits: &storage.Traits{
 			Origin: origin,
 		},
 	}
 	s.roleStore.EXPECT().GetRole(gomock.Any(), roleName).Return(mockedRole, true, nil).Times(times)
-	s.authProviderStore.EXPECT().GetAuthProvider(gomock.Any(), authProviderId).Return(mockedAP, true, nil).Times(times)
+	s.authProviderStore.EXPECT().GetAuthProvider(gomock.Any(), authProviderID).Return(mockedAP, true, nil).Times(times)
 }

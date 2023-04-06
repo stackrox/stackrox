@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 )
 
+// VerifyReferencedResourceOrigin returns an error if resource is forbidden from referencing other resource.
 func VerifyReferencedResourceOrigin(referencing, referenced declarativeconfig.ResourceWithTraits, referencingName, referencedName string) error {
 	if !declarativeconfig.IsDeclarativeOrigin(referencing.GetTraits().GetOrigin()) ||
 		referenced.GetTraits().GetOrigin() != storage.Traits_IMPERATIVE {

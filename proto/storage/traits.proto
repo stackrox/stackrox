@@ -48,9 +48,9 @@ message Traits {
   // Objects with this origin will be cleaned up from the system immediately after they will stop be referenced by other resources.
   // They may be referenced by all other objects.
   enum Origin {
-     IMPERATIVE  = 0;
-     DEFAULT     = 1;
-     DECLARATIVE = 2;
+     IMPERATIVE           = 0;
+     DEFAULT              = 1;
+     DECLARATIVE          = 2;
      DECLARATIVE_ORPHANED = 3;
   }
   Origin origin = 3;

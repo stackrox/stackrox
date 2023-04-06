@@ -107,7 +107,7 @@ func (s *roleDataStoreTestSuite) SetupTest() {
 	s.initDataStore()
 }
 
-func (s *roleDataStoreTestSuite) mockGroupGetFiltered(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error) {
+func (s *roleDataStoreTestSuite) mockGroupGetFiltered(_ context.Context, _ func(*storage.Group) bool) ([]*storage.Group, error) {
 	return s.filteredFuncReturnValue, s.filteredFuncReturnError
 }
 
