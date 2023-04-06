@@ -144,7 +144,7 @@ make_artifacts_help() {
     cat > "$help_file" <<- EOH
         <html>
         <head>
-        <title>How to locate other artifacts</title>
+        <title><h4>How to locate other artifacts</h4></title>
         <style>
           body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
           a { color: #ff8caa }
@@ -166,11 +166,14 @@ make_artifacts_help() {
         <h2>Browse using the Google cloud UI</h2>
 
         <p>Make sure to use the URL where <i>authuser</i> corresponds to your @stackrox.com account.<br>
-        You can check this by clicking on the user avatar in the top right corner of Google Cloud Console page.</p>
+        You can check this by clicking on the user avatar in the top right corner of Google Cloud Console page
+        after following the link.</p>
 
         <a href="$browser_job_url?authuser=0">authuser=0</a><br>
         <a href="$browser_job_url?authuser=1">authuser=1</a><br>
         <a href="$browser_job_url?authuser=2">authuser=2</a><br>
+
+        <br><br>
 
         </body>
         </html>
