@@ -82,7 +82,7 @@ func (s *postgresMigrationSuite) TestNetworkGraphConfigMigration() {
 }
 
 func (s *postgresMigrationSuite) TestNetworkGraphConfigMigrationWithEmptyID() {
-	newStore := pgStore.New(s.postgresDB.DB)
+	newStore := pgStore.New(s.postgresDB.Pool)
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
 
@@ -94,7 +94,7 @@ func (s *postgresMigrationSuite) TestNetworkGraphConfigMigrationWithEmptyID() {
 	s.NoError(crud.UpsertWithID(networkGraphConfigKey, networkGraphConfig))
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
+	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)
@@ -109,7 +109,7 @@ func (s *postgresMigrationSuite) TestNetworkGraphConfigMigrationWithEmptyID() {
 }
 
 func (s *postgresMigrationSuite) TestNetworkGraphConfigMigrationMultiple() {
-	newStore := pgStore.New(s.postgresDB.DB)
+	newStore := pgStore.New(s.postgresDB.Pool)
 	legacyStore, err := legacy.New(s.legacyDB)
 	s.NoError(err)
 
@@ -121,7 +121,7 @@ func (s *postgresMigrationSuite) TestNetworkGraphConfigMigrationMultiple() {
 	s.NoError(crud.UpsertWithID("random", networkGraphConfig))
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
+	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.Pool, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)
