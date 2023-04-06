@@ -6,6 +6,7 @@
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 source "$ROOT/scripts/ci/lib.sh"
+source "$ROOT/scripts/ci/metrics.sh"
 source "$ROOT/tests/e2e/lib.sh"
 
 set -euo pipefail
@@ -22,6 +23,7 @@ ci_job="$1"
 shift
 ci_export CI_JOB_NAME "$ci_job"
 
+create_job_record "$ci_job"
 gate_job "$ci_job"
 
 case "$ci_job" in
@@ -67,6 +69,8 @@ job_pid="$!"
 forward_sigint() {
     echo "Dispatch is forwarding SIGINT to job"
     kill -SIGINT "${job_pid}"
+    # Finalize the job record here to differentiate canceled jobs.
+    finalize_job_record "0" "true"
     # Delay the default exit trap execution and process completion to allow job
     # SIGINT handlers to complete before ci-operator terminates.
     sleep 3
