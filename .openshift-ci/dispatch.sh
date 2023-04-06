@@ -5,6 +5,7 @@
 # hands off to the test/build script in *scripts/ci/jobs*.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
+source "$ROOT/scripts/ci/gcp.sh"
 source "$ROOT/scripts/ci/lib.sh"
 source "$ROOT/scripts/ci/metrics.sh"
 source "$ROOT/tests/e2e/lib.sh"
@@ -23,7 +24,6 @@ ci_job="$1"
 shift
 ci_export CI_JOB_NAME "$ci_job"
 
-create_job_record "$ci_job"
 gate_job "$ci_job"
 
 case "$ci_job" in
@@ -60,6 +60,9 @@ elif [[ -f "$ROOT/scripts/ci/jobs/${ci_job//-/_}.py" ]]; then
 else
     die "ERROR: There is no job script for $ci_job"
 fi
+
+setup_gcp
+create_job_record "$ci_job"
 
 "${job_script}" "$@" &
 job_pid="$!"
