@@ -20,7 +20,7 @@ class PostTestsConstants:
     ARTIFACTS_TIMEOUT = 3 * 60
     # QA_TEST_DEBUG_LOGS - where the QA tests store failure logs.
     QA_TEST_DEBUG_LOGS = os.getenv("QA_TEST_DEBUG_LOGS")
-    QA_SPOCK_RESULTS = "qa-tests-backend/build/spock-reports"
+    QA_SPOCK_RESULTS = "qa-tests-backend/build/reports"
     K8S_LOG_DIR = "/tmp/k8s-service-logs"
     COLLECTOR_METRICS_DIR = "/tmp/collector-metrics"
     DEBUG_OUTPUT = "debug-dump"
