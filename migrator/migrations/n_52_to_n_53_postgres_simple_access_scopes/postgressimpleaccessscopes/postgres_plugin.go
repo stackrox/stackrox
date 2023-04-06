@@ -76,15 +76,16 @@ func insertIntoSimpleAccessScopes(ctx context.Context, batch *pgx.Batch, obj *st
 		return marshalErr
 	}
 
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		utils.Should(errors.Errorf("Id is not a valid uuid -- %q", obj.GetId()))
+		return nil
+	}
+
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		serialized,
-	}
-	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
-		return nil
 	}
 
 	finalStr := "INSERT INTO simple_access_scopes (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
@@ -121,6 +122,11 @@ func (s *storeImpl) copyFromSimpleAccessScopes(ctx context.Context, tx pgx.Tx, o
 			return marshalErr
 		}
 
+		if pgutils.NilOrUUID(obj.GetId()) == nil {
+			log.Warnf("Id is not a valid uuid -- %q", obj.GetId())
+			continue
+		}
+
 		inputRows = append(inputRows, []interface{}{
 
 			pgutils.NilOrUUID(obj.GetId()),
@@ -129,10 +135,6 @@ func (s *storeImpl) copyFromSimpleAccessScopes(ctx context.Context, tx pgx.Tx, o
 
 			serialized,
 		})
-		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
-			continue
-		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())
