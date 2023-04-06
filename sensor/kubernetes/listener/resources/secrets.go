@@ -273,7 +273,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			ii, err := DockerConfigToImageIntegration(secret, registry, dce)
 			if err != nil {
 				log.Errorf("unable to create docker config for secret %s: %v", secret.GetName(), err)
-			} else if managedcentral.IsCentralManaged() {
+			} else if !managedcentral.IsCentralManaged() {
 				sensorEvents = append(sensorEvents, &central.SensorEvent{
 					// Only update is supported at this time.
 					Action: action,

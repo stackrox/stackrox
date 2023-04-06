@@ -196,6 +196,10 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 	clusterID := centralHello.GetClusterId()
 	clusterid.Set(clusterID)
 
+	if centralHello.GetManagedCentral() {
+		log.Info("Central is managed")
+	}
+
 	managedcentral.Set(centralHello.GetManagedCentral())
 
 	if hello.HelmManagedConfigInit != nil {
