@@ -73,20 +73,23 @@ class GKECluster:
 
         return self
 
-    def teardown(self):
+    def teardown(self, canceled=False):
         while os.path.exists("/tmp/hold-cluster"):
             print("Pausing teardown because /tmp/hold-cluster exists")
             time.sleep(60)
 
-        if self.refresh_token_cmd is not None:
+        if self.refresh_token_cmd is not None and not canceled:
             print("Terminating GKE token refresh")
             try:
                 popen_graceful_kill(self.refresh_token_cmd)
             except Exception as err:
                 print(f"Could not terminate the token refresh: {err}")
 
+        args = [GKECluster.TEARDOWN_PATH, "teardown_gke_cluster"]
+        if canceled:
+            args.append("true")
         subprocess.run(
-            [GKECluster.TEARDOWN_PATH, "teardown_gke_cluster"],
+            args,
             check=True,
             timeout=GKECluster.TEARDOWN_TIMEOUT,
         )
@@ -95,7 +98,7 @@ class GKECluster:
 
     def sigint_handler(self, signum, frame):
         print("Tearing down the cluster due to SIGINT", signum, frame)
-        self.teardown()
+        self.teardown(canceled=True)
 
 
 class AutomationFlavorsCluster:
