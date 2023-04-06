@@ -44,13 +44,9 @@ func GenerateImageFromStringWithDefaultTag(imageStr, defaultTag string) (*storag
 		image.Id = digest.Digest().String()
 	}
 
-	// Default the image tag to flavor if it wasn't set. Image tag shouldn't be empty
-	if image.GetName().GetTag() == "" && defaultTag != "" {
-		image.Name.Tag = defaultTag
-		// If an image SHA was provided we shouldn't try to update full name with the default tag
-		if image.Id == "" {
-			NormalizeImageFullNameNoSha(image.Name)
-		}
+	// Default the image to latest if and only if there was no tag specific and also no SHA specified
+	if image.GetId() == "" && image.GetName().GetTag() == "" && defaultTag != "" {
+		SetImageTagNoSha(image.Name, defaultTag)
 	}
 
 	return image, nil
