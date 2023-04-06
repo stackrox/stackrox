@@ -56,6 +56,13 @@ func MakeClusterImageNames(flavor *defaults.ImageFlavor, c *storage.Cluster) (*s
 	}
 	mainImageName := mainImage.GetName()
 
+	if mainImageName.GetTag() == "" {
+		// If main image tag wasn't set, it's probably because the container image is using SHA as image reference.
+		// We need to make sure a tag is set in the container in order to render the meta templates. Even if the tag
+		// will be ignored.
+		mainImageName.Tag = flavor.MainImageTag
+	}
+
 	var collectorImageName *storage.ImageName
 	if c.CollectorImage != "" {
 		collectorImage, err := utils.GenerateImageFromString(c.CollectorImage)
