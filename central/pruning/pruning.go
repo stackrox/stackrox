@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -47,6 +48,8 @@ const (
 	clusterGCFreq      = 24 * time.Hour
 	logImbueGCFreq     = 24 * time.Hour
 	logImbueWindow     = 24 * 7 * time.Hour
+
+	alertQueryTimeout = 10 * time.Minute
 )
 
 var (
@@ -80,7 +83,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	k8sRoles k8sRoleDataStore.DataStore,
 	k8sRoleBindings roleBindingDataStore.DataStore,
 	logimbueStore logimbueDataStore.Store) GarbageCollector {
-	return &garbageCollectorImpl{
+	gci := &garbageCollectorImpl{
 		alerts:          alerts,
 		clusters:        clusters,
 		nodes:           nodes,
@@ -101,9 +104,15 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		logimbueStore:   logimbueStore,
 		stopper:         concurrency.NewStopper(),
 	}
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		gci.postgres = globaldb.GetPostgres()
+	}
+	return gci
 }
 
 type garbageCollectorImpl struct {
+	postgres *pgPkg.DB
+
 	alerts          alertDatastore.DataStore
 	clusters        clusterDatastore.DataStore
 	nodes           nodeDatastore.DataStore
@@ -148,8 +157,8 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeExpiredVulnRequests()
 	g.collectClusters(pvtConfig)
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		postgres.PruneActiveComponents(pruningCtx, globaldb.GetPostgres())
-		postgres.PruneClusterHealthStatuses(pruningCtx, globaldb.GetPostgres())
+		postgres.PruneActiveComponents(pruningCtx, g.postgres)
+		postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
 
 		g.pruneLogImbues()
 	}
@@ -458,34 +467,40 @@ func (g *garbageCollectorImpl) removeOrphanedPLOP() {
 	}
 }
 
-func (g *garbageCollectorImpl) markOrphanedAlertsAsResolved(deployments set.FrozenStringSet) {
-	var alertsToResolve []string
-	now := types.TimestampNow()
-	walkFn := func() error {
-		alertsToResolve = alertsToResolve[:0]
-		return g.alerts.WalkAll(pruningCtx, func(alert *storage.ListAlert) error {
-			// We should only remove orphaned deploy time alerts as they are not cleaned up by retention policies
-			// This will only happen when there is data inconsistency
-			if alert.GetLifecycleStage() != storage.LifecycleStage_DEPLOY {
-				return nil
-			}
-			if alert.GetState() != storage.ViolationState_ACTIVE {
-				return nil
-			}
-			if deployments.Contains(alert.GetDeployment().GetId()) {
-				return nil
-			}
-			if protoutils.Sub(now, alert.GetTime()) < orphanWindow {
-				return nil
-			}
-			alertsToResolve = append(alertsToResolve, alert.GetId())
-			return nil
-		})
+func (g *garbageCollectorImpl) getOrphanedAlerts(ctx context.Context, deployments set.FrozenStringSet) ([]string, error) {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return postgres.GetOrphanedAlertIDs(ctx, g.postgres, orphanWindow)
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
-		log.Error(errors.Wrap(err, "unable to walk alerts and mark for pruning"))
+	now := types.TimestampNow()
+	var alertsToResolve []string
+	err := g.alerts.WalkAll(pruningCtx, func(alert *storage.ListAlert) error {
+		// We should only remove orphaned deploy time alerts as they are not cleaned up by retention policies
+		// This will only happen when there is data inconsistency
+		if alert.GetLifecycleStage() != storage.LifecycleStage_DEPLOY {
+			return nil
+		}
+		if alert.GetState() != storage.ViolationState_ACTIVE {
+			return nil
+		}
+		if deployments.Contains(alert.GetDeployment().GetId()) {
+			return nil
+		}
+		if protoutils.Sub(now, alert.GetTime()) < orphanWindow {
+			return nil
+		}
+		alertsToResolve = append(alertsToResolve, alert.GetId())
+		return nil
+	})
+	return alertsToResolve, err
+}
+
+func (g *garbageCollectorImpl) markOrphanedAlertsAsResolved(deployments set.FrozenStringSet) {
+	alertsToResolve, err := g.getOrphanedAlerts(pruningCtx, deployments)
+	if err != nil {
+		log.Errorf("[Alert pruning] error getting orphaned alert ids: %v", err)
 		return
 	}
+
 	log.Infof("[Alert pruning] Found %d orphaned alerts", len(alertsToResolve))
 	if _, err := g.alerts.MarkAlertStaleBatch(pruningCtx, alertsToResolve...); err != nil {
 		log.Error(errors.Wrap(err, "error marking alert as stale"))
@@ -779,7 +794,10 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 		return
 	}
 
-	alertResults, err := g.alerts.Search(pruningCtx, search.DisjunctionQuery(queries...))
+	ctx, cancel := context.WithTimeout(pruningCtx, alertQueryTimeout)
+	defer cancel()
+
+	alertResults, err := g.alerts.Search(ctx, search.DisjunctionQuery(queries...))
 	if err != nil {
 		log.Error(err)
 		return
