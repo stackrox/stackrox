@@ -46,12 +46,11 @@ func roleCommand(cliEnvironment environment.Environment) *cobra.Command {
 }
 
 type roleCmd struct {
-	role             *declarativeconfig.Role
-	env              environment.Environment
-	configMap        string
-	secret           string
-	namespace        string
-	writeToK8sObject bool
+	role      *declarativeconfig.Role
+	env       environment.Environment
+	configMap string
+	secret    string
+	namespace string
 }
 
 func (r *roleCmd) Construct(cmd *cobra.Command) error {
@@ -62,7 +61,6 @@ func (r *roleCmd) Construct(cmd *cobra.Command) error {
 	r.configMap = configMap
 	r.secret = secret
 	r.namespace = namespace
-	r.writeToK8sObject = r.configMap != "" || r.secret != ""
 	return nil
 }
 
@@ -75,7 +73,7 @@ func (r *roleCmd) PrintYAML() error {
 	if err := lint.Lint(yamlOutput.Bytes()); err != nil {
 		return errors.Wrap(err, "linting the YAML output")
 	}
-	if r.writeToK8sObject {
+	if r.configMap != "" || r.secret != "" {
 		return errors.Wrap(k8sobject.WriteToK8sObject(context.Background(), r.configMap, r.secret, r.namespace,
 			fmt.Sprintf("%s-%s", r.role.Type(), r.role.Name),
 			yamlOutput.Bytes()), "writing the YAML output to config map")

@@ -534,7 +534,7 @@ func TestAuthProvider_WriteToK8sObject(t *testing.T) {
 			authProviderCmd := authProviderCmd{}
 			err := authProviderCmd.Construct(cmd)
 			require.NoError(t, err)
-			assert.Equal(t, c.shouldWriteToK8sObject, authProviderCmd.writeToK8sObject)
+			assert.Equal(t, c.shouldWriteToK8sObject, authProviderCmd.configMap != "" || authProviderCmd.secret != "")
 		})
 	}
 }

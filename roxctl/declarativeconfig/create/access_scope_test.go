@@ -169,7 +169,7 @@ func TestAccessScope_WriteToK8sObject(t *testing.T) {
 			accessScopeCmd := accessScopeCmd{}
 			err := accessScopeCmd.Construct(cmd)
 			require.NoError(t, err)
-			assert.Equal(t, c.shouldWriteToK8sObject, accessScopeCmd.writeToK8sObject)
+			assert.Equal(t, c.shouldWriteToK8sObject, accessScopeCmd.configMap != "" || accessScopeCmd.secret != "")
 		})
 	}
 }

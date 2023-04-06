@@ -147,7 +147,7 @@ func TestRole_WriteToK8sObject(t *testing.T) {
 			roleCmd := roleCmd{}
 			err := roleCmd.Construct(cmd)
 			require.NoError(t, err)
-			assert.Equal(t, c.shouldWriteToK8sObject, roleCmd.writeToK8sObject)
+			assert.Equal(t, c.shouldWriteToK8sObject, roleCmd.configMap != "" || roleCmd.secret != "")
 		})
 	}
 }

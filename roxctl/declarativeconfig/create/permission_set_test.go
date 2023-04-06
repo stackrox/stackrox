@@ -166,7 +166,7 @@ func TestPermissionSet_WriteToK8sObject(t *testing.T) {
 			permissionSetCmd := permissionSetCmd{}
 			err := permissionSetCmd.Construct(cmd)
 			require.NoError(t, err)
-			assert.Equal(t, c.shouldWriteToK8sObject, permissionSetCmd.writeToK8sObject)
+			assert.Equal(t, c.shouldWriteToK8sObject, permissionSetCmd.configMap != "" || permissionSetCmd.secret != "")
 		})
 	}
 }

@@ -98,10 +98,9 @@ type authProviderCmd struct {
 
 	env environment.Environment
 
-	configMap        string
-	secret           string
-	namespace        string
-	writeToK8sObject bool
+	configMap string
+	secret    string
+	namespace string
 }
 
 func (a *authProviderCmd) oidcCommand() *cobra.Command {
@@ -225,7 +224,6 @@ func (a *authProviderCmd) Construct(cmd *cobra.Command) error {
 	a.configMap = configMap
 	a.secret = secret
 	a.namespace = namespace
-	a.writeToK8sObject = a.configMap != "" || a.secret != ""
 	return nil
 }
 
@@ -325,7 +323,7 @@ func (a *authProviderCmd) PrintYAML() error {
 	if err := lint.Lint(yamlOut.Bytes()); err != nil {
 		return errors.Wrap(err, "linting the YAML output")
 	}
-	if a.writeToK8sObject {
+	if a.configMap != "" || a.secret != "" {
 		return errors.Wrap(k8sobject.WriteToK8sObject(context.Background(), a.configMap, a.secret, a.namespace,
 			fmt.Sprintf("%s-%s", a.authProvider.Type(), a.authProvider.Name), yamlOut.Bytes()),
 			"writing the YAML output to config map")
