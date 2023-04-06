@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/image/sensor"
 	"github.com/stackrox/rox/pkg/helm/charts"
@@ -35,7 +36,10 @@ func RenderSensorTLSSecretsOnly(values charts.MetaValues, certs *sensor.Certs) (
 	// Currently, we rely on Go to copy the struct as it is passed by value, not by pointer.
 	values.CertsOnly = true
 
-	ch := helmImage.GetSensorChart(&values, certs)
+	ch, err := helmImage.GetSensorChart(&values, certs)
+	if err != nil {
+		return nil, errors.Wrap(err, "pre-rendering sensor chart")
+	}
 
 	m, err := helmUtil.Render(ch, nil, helmUtil.Options{})
 	if err != nil {
@@ -64,7 +68,10 @@ func RenderSensorTLSSecretsOnly(values charts.MetaValues, certs *sensor.Certs) (
 // RenderSensor renders the sensorchart and returns rendered files
 func RenderSensor(values *charts.MetaValues, certs *sensor.Certs, opts helmUtil.Options) ([]*zip.File, error) {
 	helmImage := image.GetDefaultImage()
-	ch := helmImage.GetSensorChart(values, certs)
+	ch, err := helmImage.GetSensorChart(values, certs)
+	if err != nil {
+		return nil, errors.Wrap(err, "pre-rendering sensor chart")
+	}
 
 	m, err := helmUtil.Render(ch, nil, opts)
 	if err != nil {
