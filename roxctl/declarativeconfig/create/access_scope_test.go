@@ -65,6 +65,19 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 			errOut: `Error: invalid argument "something=somewhere;here=there" for "--cluster-label-selector" flag: something=somewhere must specify either key, operator, values
 `,
 		},
+		"invalid access scope": {
+			args: []string{
+				"--name=some-name",
+				"--description=some-description",
+				"--included=clusterA",
+				"--cluster-label-selector=key=some-key;operator=EXISTS;values=some-value",
+			},
+			errOut: `Error: validating access scope: 1 error occurred:
+	* values: Invalid value: []string{"some-value"}: values set must be empty for exists and does not exist
+
+
+`,
+		},
 	}
 
 	for name, c := range cases {
