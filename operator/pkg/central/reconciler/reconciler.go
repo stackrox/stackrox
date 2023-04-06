@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/operator/pkg/reconciler"
 	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -20,7 +21,8 @@ const (
 )
 
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
-func RegisterNewReconciler(mgr ctrl.Manager) error {
+func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
+
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
 	opts := []pkgReconciler.Option{
 		pkgReconciler.WithExtraWatch(
@@ -42,9 +44,28 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 		pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod),
 		pkgReconciler.WithPauseReconcileAnnotation(pauseReconcileAnnotation),
 	}
+
+	opts, err := addSelectorOptionIfNeeded(selector, opts)
+	if err != nil {
+		return err
+	}
+
 	return reconciler.SetupReconcilerWithManager(
 		mgr, platform.CentralGVK, image.CentralServicesChartPrefix,
 		proxy.InjectProxyEnvVars(translation.Translator{}, proxyEnv),
 		opts...,
 	)
+}
+
+func addSelectorOptionIfNeeded(selector string, opts []pkgReconciler.Option) ([]pkgReconciler.Option, error) {
+	if len(selector) != 0 {
+		labelSelector, err := v1.ParseToLabelSelector(selector)
+		if err != nil {
+			return nil, err
+		}
+		if labelSelector != nil {
+			opts = append(opts, pkgReconciler.WithSelector(*labelSelector))
+		}
+	}
+	return opts, nil
 }
