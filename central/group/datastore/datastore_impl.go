@@ -90,7 +90,7 @@ func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.G
 	} else if !ok {
 		return nil, nil
 	}
-	return groupFilter.GetFilteredWithStore(ds.storage, ctx, filter)
+	return groupFilter.GetFilteredWithStore(ctx, filter, ds.storage)
 }
 
 // Walk is an optimization that allows to search through the datastore and find

@@ -15,11 +15,11 @@ import (
 
 // GetFiltered returns groups from the store filtered using filter function.
 func GetFiltered(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error) {
-	return GetFilteredWithStore(GroupStoreSingleton(), ctx, filter)
+	return GetFilteredWithStore(ctx, filter, GroupStoreSingleton())
 }
 
 // GetFilteredWithStore returns groups from the specified store filtered using filter function.
-func GetFilteredWithStore(store store2.Store, ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error) {
+func GetFilteredWithStore(ctx context.Context, filter func(*storage.Group) bool, store store2.Store) ([]*storage.Group, error) {
 	var groups []*storage.Group
 	walkFn := func() error {
 		groups = groups[:0]
