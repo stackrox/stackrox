@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -261,7 +261,7 @@ func (m *networkFlowManager) enrichConnections() {
 		case <-ticker.C:
 			m.enrichAndSend()
 
-			if features.ProcessesListeningOnPort.Enabled() {
+			if env.ProcessesListeningOnPort.BooleanSetting() {
 				m.enrichAndSendProcesses()
 			}
 		}
@@ -529,7 +529,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 	for ep, status := range hostConns.endpoints {
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
 		// If processes listening on ports is enabled, it has to be used there as well before being deleted.
-		used := status.used && (status.usedProcess || !features.ProcessesListeningOnPort.Enabled())
+		used := status.used && (status.usedProcess || !env.ProcessesListeningOnPort.BooleanSetting())
 		if used && status.lastSeen != timestamp.InfiniteFuture {
 			// endpoints that are no longer active and have already been used can be deleted.
 			delete(hostConns.endpoints, ep)
