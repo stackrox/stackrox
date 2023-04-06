@@ -55,9 +55,10 @@ type permissionSetCmd struct {
 	resourceWithAccess map[string]string
 	env                environment.Environment
 
-	configMap string
-	secret    string
-	namespace string
+	configMap        string
+	secret           string
+	namespace        string
+	writeToK8sObject bool
 }
 
 func (p *permissionSetCmd) Construct(cmd *cobra.Command) error {
@@ -68,6 +69,7 @@ func (p *permissionSetCmd) Construct(cmd *cobra.Command) error {
 	p.configMap = configMap
 	p.secret = secret
 	p.namespace = namespace
+	p.writeToK8sObject = p.configMap != "" || p.secret != ""
 	return nil
 }
 
@@ -109,7 +111,7 @@ func (p *permissionSetCmd) PrintYAML() error {
 	if err := lint.Lint(yamlOutput.Bytes()); err != nil {
 		return errors.Wrap(err, "linting the YAML output")
 	}
-	if p.configMap != "" {
+	if p.writeToK8sObject {
 		return errors.Wrap(k8sobject.WriteToK8sObject(context.Background(), p.configMap, p.secret, p.namespace,
 			fmt.Sprintf("%s-%s", p.permissionSet.Type(), p.permissionSet.Name), yamlOutput.Bytes()),
 			"writing the YAML output to config map")

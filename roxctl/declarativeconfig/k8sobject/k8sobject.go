@@ -22,7 +22,7 @@ const (
 
 // WriteToK8sObject writes bytes containing a YAML string to a config map / secret under a specific key.
 // The Kubernetes context will be inferred from either the $KUBECONFIG variable or the $HOME/.kube/config path.
-func WriteToK8sObject(ctx context.Context, configMap, secret, namespace, key string, yaml []byte) error {
+func WriteToK8sObject(ctx context.Context, configMapName, secretName, namespace, key string, yaml []byte) error {
 	k8sCtx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
@@ -31,16 +31,16 @@ func WriteToK8sObject(ctx context.Context, configMap, secret, namespace, key str
 		return err
 	}
 
-	if configMap != "" {
-		return writeConfigMap(k8sCtx, client, configMap, namespaceFromConfig, key, yaml)
+	if configMapName != "" {
+		return writeConfigMap(k8sCtx, client, configMapName, namespaceFromConfig, key, yaml)
 	}
-	return writeSecret(k8sCtx, client, secret, namespaceFromConfig, key, yaml)
+	return writeSecret(k8sCtx, client, secretName, namespaceFromConfig, key, yaml)
 }
 
-func writeConfigMap(ctx context.Context, client kubernetes.Interface, configMap, namespace, key string, yaml []byte) error {
-	cm, err := client.CoreV1().ConfigMaps(namespace).Get(ctx, configMap, metav1.GetOptions{})
+func writeConfigMap(ctx context.Context, client kubernetes.Interface, configMapName, namespace, key string, yaml []byte) error {
+	cm, err := client.CoreV1().ConfigMaps(namespace).Get(ctx, configMapName, metav1.GetOptions{})
 	if err != nil {
-		return errors.Wrapf(err, "retrieving config map %s/%s", namespace, configMap)
+		return errors.Wrapf(err, "retrieving config map %s/%s", namespace, configMapName)
 	}
 
 	if cm.Data == nil {
@@ -49,15 +49,15 @@ func writeConfigMap(ctx context.Context, client kubernetes.Interface, configMap,
 	cm.Data[key] = string(yaml)
 
 	if _, err := client.CoreV1().ConfigMaps(namespace).Update(ctx, cm, metav1.UpdateOptions{}); err != nil {
-		return errors.Wrapf(err, "updating config map %s/%s", namespace, configMap)
+		return errors.Wrapf(err, "updating config map %s/%s", namespace, configMapName)
 	}
 	return nil
 }
 
-func writeSecret(ctx context.Context, client kubernetes.Interface, secret, namespace, key string, yaml []byte) error {
-	s, err := client.CoreV1().Secrets(namespace).Get(ctx, secret, metav1.GetOptions{})
+func writeSecret(ctx context.Context, client kubernetes.Interface, secretName, namespace, key string, yaml []byte) error {
+	s, err := client.CoreV1().Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
 	if err != nil {
-		return errors.Wrapf(err, "retrieving secret %s/%s", namespace, secret)
+		return errors.Wrapf(err, "retrieving secret %s/%s", namespace, secretName)
 	}
 
 	if s.Data == nil {
@@ -65,7 +65,7 @@ func writeSecret(ctx context.Context, client kubernetes.Interface, secret, names
 	}
 	s.Data[key] = []byte(base64.StdEncoding.EncodeToString(yaml))
 	if _, err := client.CoreV1().Secrets(namespace).Update(ctx, s, metav1.UpdateOptions{}); err != nil {
-		return errors.Wrapf(err, "updating secret %s/%s", namespace, secret)
+		return errors.Wrapf(err, "updating secret %s/%s", namespace, secretName)
 	}
 
 	return nil
@@ -74,7 +74,7 @@ func writeSecret(ctx context.Context, client kubernetes.Interface, secret, names
 // ReadFromK8sObject will read all keys from a config map / secret and return them in byte format.
 // The Kubernetes context will be inferred from either the $KUBECONFIG variable or the $HOME/.kube/config path.
 // Note: the binary data within the config map will be skipped, as the output shall be UTF-8 compatible.
-func ReadFromK8sObject(ctx context.Context, configMap, secret, namespace string) ([][]byte, error) {
+func ReadFromK8sObject(ctx context.Context, configMapName, secretName, namespace string) ([][]byte, error) {
 	k8sCtx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
@@ -83,16 +83,16 @@ func ReadFromK8sObject(ctx context.Context, configMap, secret, namespace string)
 		return nil, err
 	}
 
-	if configMap != "" {
-		return readConfigMap(k8sCtx, client, configMap, namespaceFromConfig)
+	if configMapName != "" {
+		return readConfigMap(k8sCtx, client, configMapName, namespaceFromConfig)
 	}
-	return readSecret(k8sCtx, client, secret, namespaceFromConfig)
+	return readSecret(k8sCtx, client, secretName, namespaceFromConfig)
 }
 
-func readConfigMap(ctx context.Context, client kubernetes.Interface, configMap string, namespace string) ([][]byte, error) {
-	cm, err := client.CoreV1().ConfigMaps(namespace).Get(ctx, configMap, metav1.GetOptions{})
+func readConfigMap(ctx context.Context, client kubernetes.Interface, configMapName string, namespace string) ([][]byte, error) {
+	cm, err := client.CoreV1().ConfigMaps(namespace).Get(ctx, configMapName, metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrapf(err, "retrieving config map %s/%s", namespace, configMap)
+		return nil, errors.Wrapf(err, "retrieving config map %s/%s", namespace, configMapName)
 	}
 	contents := make([][]byte, 0, len(cm.Data))
 	for _, data := range cm.Data {
@@ -101,10 +101,10 @@ func readConfigMap(ctx context.Context, client kubernetes.Interface, configMap s
 	return contents, nil
 }
 
-func readSecret(ctx context.Context, client kubernetes.Interface, secret string, namespace string) ([][]byte, error) {
-	s, err := client.CoreV1().Secrets(namespace).Get(ctx, secret, metav1.GetOptions{})
+func readSecret(ctx context.Context, client kubernetes.Interface, secretName string, namespace string) ([][]byte, error) {
+	s, err := client.CoreV1().Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrapf(err, "retrieving secret %s/%s", namespace, secret)
+		return nil, errors.Wrapf(err, "retrieving secret %s/%s", namespace, secretName)
 	}
 	contents := make([][]byte, 0, len(s.Data))
 	for _, data := range s.Data {

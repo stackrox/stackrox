@@ -4,7 +4,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/roxctl/common/mocks"
+	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreateAccessScope_Failures(t *testing.T) {
@@ -134,6 +136,42 @@ rules:
 
 	assert.Empty(t, errOut)
 	assert.Equal(t, expectedYAML, out.String())
+}
+
+func TestAccessScope_WriteToK8sObject(t *testing.T) {
+	cases := map[string]struct {
+		secret                 string
+		configMap              string
+		shouldWriteToK8sObject bool
+	}{
+		"no flag set should not write to k8s object": {},
+		"config map flag set should write to k8s object": {
+			configMap:              "something",
+			shouldWriteToK8sObject: true,
+		},
+		"secret flag set should write to k8s object": {
+			secret:                 "something",
+			shouldWriteToK8sObject: true,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			env, _, _ := mocks.NewEnvWithConn(nil, t)
+			cmd := Command(env)
+			if c.configMap != "" {
+				require.NoError(t, cmd.Flags().Set(k8sobject.ConfigMapFlag, c.configMap))
+			}
+			if c.secret != "" {
+				require.NoError(t, cmd.Flags().Set(k8sobject.SecretFlag, c.secret))
+			}
+
+			accessScopeCmd := accessScopeCmd{}
+			err := accessScopeCmd.Construct(cmd)
+			require.NoError(t, err)
+			assert.Equal(t, c.shouldWriteToK8sObject, accessScopeCmd.writeToK8sObject)
+		})
+	}
 }
 
 func FuzzRetrieveRequirement(f *testing.F) {

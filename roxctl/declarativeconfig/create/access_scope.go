@@ -89,9 +89,10 @@ type accessScopeCmd struct {
 	clusterRequirements   []declarativeconfig.Requirement
 	namespaceRequirements []declarativeconfig.Requirement
 
-	configMap string
-	secret    string
-	namespace string
+	configMap        string
+	secret           string
+	namespace        string
+	writeToK8sObject bool
 }
 
 func (a *accessScopeCmd) Construct(cmd *cobra.Command) error {
@@ -102,6 +103,7 @@ func (a *accessScopeCmd) Construct(cmd *cobra.Command) error {
 	a.configMap = configMap
 	a.namespace = namespace
 	a.secret = secret
+	a.writeToK8sObject = a.configMap != "" || a.secret != ""
 	return nil
 }
 
@@ -128,7 +130,7 @@ func (a *accessScopeCmd) PrintYAML() error {
 	if err := lint.Lint(yamlOut.Bytes()); err != nil {
 		return errors.Wrap(err, "linting the YAML output")
 	}
-	if a.configMap != "" {
+	if a.writeToK8sObject {
 		return errors.Wrap(k8sobject.WriteToK8sObject(context.Background(), a.configMap, a.secret, a.namespace,
 			fmt.Sprintf("%s-%s", a.accessScope.Type(), a.accessScope.Name), yamlOut.Bytes()),
 			"writing the YAML output to config map")

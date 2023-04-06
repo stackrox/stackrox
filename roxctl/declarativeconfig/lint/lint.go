@@ -42,6 +42,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 In case this is not set, the namespace set within the current kube config context will be used`)
 
 	cmd.MarkFlagsMutuallyExclusive("file", k8sobject.ConfigMapFlag)
+	cmd.MarkFlagsMutuallyExclusive("file", k8sobject.SecretFlag)
 	cmd.MarkFlagsMutuallyExclusive(k8sobject.ConfigMapFlag, k8sobject.SecretFlag)
 
 	return cmd
@@ -66,8 +67,9 @@ func (l *lintCmd) Construct(cmd *cobra.Command) error {
 	l.configMap = configMap
 	l.secret = secret
 	l.namespace = namespace
+	readFromK8sObject := l.configMap != "" || l.secret != ""
 
-	if l.configMap != "" {
+	if readFromK8sObject {
 		contents, err := k8sobject.ReadFromK8sObject(context.Background(), l.configMap, l.secret, l.namespace)
 		if err != nil {
 			return errors.Wrap(err, "reading from config map")
