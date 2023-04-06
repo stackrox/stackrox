@@ -120,6 +120,9 @@ func (a *authProviderCmd) oidcCommand() *cobra.Command {
 		`list of non-standard claims from the IdP token that should be available within auth provider rules, e.g.
 --claim-mappings "my_claim_on_the_idp_token=claim_name_on_the_rox_token"`)
 
+	utils.Must(cmd.MarkFlagRequired("issuer"))
+	utils.Must(cmd.MarkFlagRequired("client-id"))
+
 	return cmd
 }
 
@@ -142,6 +145,10 @@ func (a *authProviderCmd) samlCommand() *cobra.Command {
 	cmd.Flags().StringVar(&a.samlConfig.NameIDFormat, "name-id-format", "",
 		"Name ID format")
 	cmd.Flags().StringVar(&a.samlConfig.IDPIssuer, "idp-issuer", "", "issuer of the IdP")
+
+	utils.Must(cmd.MarkFlagRequired("sp-issuer"))
+	cmd.MarkFlagsRequiredTogether("idp-cert", "sso-url", "idp-issuer")
+	cmd.MarkFlagsMutuallyExclusive("metadata-url", "sso-url")
 
 	return cmd
 }

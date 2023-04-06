@@ -99,7 +99,10 @@ func TestCreateAuthProvider_SAML_Failure(t *testing.T) {
 
 	args := []string{
 		"saml",
+		"--sp-issuer=something",
 		"--idp-cert=non-existent/file/path",
+		"--sso-url=something",
+		"--idp-issuer=something",
 	}
 	cmd.SetArgs(args)
 	cmd.SetOut(io.Discard)
