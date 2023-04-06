@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/central"
@@ -81,7 +82,7 @@ func Command() *cobra.Command {
 	if features.RoxctlNetpolGenerate.Enabled() {
 		c.AddCommand(generate.Command(cliEnvironment))
 	}
-	if features.DeclarativeConfiguration.Enabled() {
+	if env.DeclarativeConfiguration.BooleanSetting() {
 		c.AddCommand(declarativeconfig.Command(cliEnvironment))
 	}
 
