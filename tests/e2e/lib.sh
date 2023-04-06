@@ -98,8 +98,6 @@ export_test_environment() {
     ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
 
     if [[ -z "${BUILD_TAG:-}" ]]; then
-        ci_export ROX_PROCESSES_LISTENING_ON_PORT "${ROX_PROCESSES_LISTENING_ON_PORT:-true}"
-
         # TODO(ROX-16008): Remove this once the declarative config feature flag is enabled by default.
         ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     fi
