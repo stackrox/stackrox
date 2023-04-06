@@ -1555,20 +1555,54 @@ func (s *PruningTestSuite) TestMarkOrphanedAlerts() {
 
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			alerts := alertDatastoreMocks.NewMockDataStore(ctrl)
-			gci := &garbageCollectorImpl{
-				alerts: alerts,
+			if !env.PostgresDatastoreEnabled.BooleanSetting() {
+				ctrl := gomock.NewController(t)
+				alerts := alertDatastoreMocks.NewMockDataStore(ctrl)
+				gci := &garbageCollectorImpl{
+					alerts: alerts,
+				}
+				alerts.EXPECT().WalkAll(pruningCtx, gomock.Any()).DoAndReturn(
+					func(ctx context.Context, fn func(la *storage.ListAlert) error) error {
+						for _, a := range c.initialAlerts {
+							assert.NoError(t, fn(a))
+						}
+						return nil
+					})
+				alerts.EXPECT().MarkAlertStaleBatch(pruningCtx, c.expectedDeletions)
+				gci.markOrphanedAlertsAsResolved(c.deployments)
+			} else {
+				ctrl := gomock.NewController(t)
+				alerts := alertDatastoreMocks.NewMockDataStore(ctrl)
+				db := pgtest.ForT(t)
+				gci := &garbageCollectorImpl{
+					postgres: db.DB,
+					alerts:   alerts,
+				}
+				actualAlertsDS, err := alertDatastore.GetTestPostgresDataStore(t, db.DB)
+				assert.NoError(t, err)
+
+				deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(t, db.DB)
+				assert.NoError(t, err)
+
+				for _, depID := range c.deployments.AsSlice() {
+					assert.NoError(t, deploymentDS.UpsertDeployment(pruningCtx, &storage.Deployment{Id: depID}))
+				}
+				for _, la := range c.initialAlerts {
+					assert.NoError(t, actualAlertsDS.UpsertAlert(pruningCtx, &storage.Alert{
+						Id:             la.GetId(),
+						LifecycleStage: la.GetLifecycleStage(),
+						Entity: &storage.Alert_Deployment_{
+							Deployment: &storage.Alert_Deployment{
+								Id: la.GetDeployment().GetId(),
+							},
+						},
+						Time:  la.GetTime(),
+						State: la.GetState(),
+					}))
+				}
+				alerts.EXPECT().MarkAlertStaleBatch(pruningCtx, c.expectedDeletions)
+				gci.markOrphanedAlertsAsResolved(c.deployments)
 			}
-			alerts.EXPECT().WalkAll(pruningCtx, gomock.Any()).DoAndReturn(
-				func(ctx context.Context, fn func(la *storage.ListAlert) error) error {
-					for _, a := range c.initialAlerts {
-						assert.NoError(t, fn(a))
-					}
-					return nil
-				})
-			alerts.EXPECT().MarkAlertStaleBatch(pruningCtx, c.expectedDeletions)
-			gci.markOrphanedAlertsAsResolved(c.deployments)
 		})
 	}
 }
