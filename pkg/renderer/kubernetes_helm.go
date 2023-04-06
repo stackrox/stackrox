@@ -38,7 +38,7 @@ func RenderSensorTLSSecretsOnly(values charts.MetaValues, certs *sensor.Certs) (
 
 	ch, err := helmImage.GetSensorChart(&values, certs)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get sensor charts")
+		return nil, errors.Wrap(err, "pre-rendering sensor chart")
 	}
 
 	m, err := helmUtil.Render(ch, nil, helmUtil.Options{})
@@ -70,7 +70,7 @@ func RenderSensor(values *charts.MetaValues, certs *sensor.Certs, opts helmUtil.
 	helmImage := image.GetDefaultImage()
 	ch, err := helmImage.GetSensorChart(values, certs)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get sensor charts")
+		return nil, errors.Wrap(err, "pre-rendering sensor chart")
 	}
 
 	m, err := helmUtil.Render(ch, nil, opts)
