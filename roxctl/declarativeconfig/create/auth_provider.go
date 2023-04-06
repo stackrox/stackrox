@@ -1,17 +1,18 @@
 package create
 
 import (
+	"bytes"
 	"os"
 	"sort"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
-	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"gopkg.in/yaml.v3"
 )
 
@@ -257,10 +258,7 @@ func (a *authProviderCmd) Validate(providerType string) error {
 	case "iap":
 		a.authProvider.IAPConfig = a.iapConfig
 	}
-
-	t := transform.New()
-	_, err = t.Transform(a.authProvider)
-	return errors.Wrap(err, "validating auth provider")
+	return nil
 }
 
 func (a *authProviderCmd) validateGroups() ([]declarativeconfig.Group, error) {
@@ -296,6 +294,14 @@ func readFileContents(f string) (string, error) {
 }
 
 func (a *authProviderCmd) PrintYAML() error {
-	enc := yaml.NewEncoder(a.env.InputOutput().Out())
-	return errors.Wrap(enc.Encode(a.authProvider), "creating the YAML output")
+	yamlOut := &bytes.Buffer{}
+	enc := yaml.NewEncoder(yamlOut)
+	if err := enc.Encode(a.authProvider); err != nil {
+		return errors.Wrap(err, "creating the YAML output")
+	}
+	if err := lint.Lint(yamlOut.Bytes()); err != nil {
+		return errors.Wrap(err, "linting the YAML output")
+	}
+	_, err := a.env.InputOutput().Out().Write(yamlOut.Bytes())
+	return errors.Wrap(err, "writing the YAML output")
 }

@@ -1,6 +1,7 @@
 package create
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -10,10 +11,10 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
-	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"gopkg.in/yaml.v3"
 )
 
@@ -95,15 +96,20 @@ func (a *accessScopeCmd) Validate() error {
 			{Requirements: a.namespaceRequirements},
 		}
 	}
-
-	t := transform.New()
-	_, err := t.Transform(a.accessScope)
-	return errors.Wrap(err, "validating access scope")
+	return nil
 }
 
 func (a *accessScopeCmd) PrintYAML() error {
-	enc := yaml.NewEncoder(a.env.InputOutput().Out())
-	return errors.Wrap(enc.Encode(a.accessScope), "creating the YAML output")
+	yamlOut := &bytes.Buffer{}
+	enc := yaml.NewEncoder(yamlOut)
+	if err := enc.Encode(a.accessScope); err != nil {
+		return errors.Wrap(err, "creating the YAML output")
+	}
+	if err := lint.Lint(yamlOut.Bytes()); err != nil {
+		return errors.Wrap(err, "linting the YAML output")
+	}
+	_, err := a.env.InputOutput().Out().Write(yamlOut.Bytes())
+	return errors.Wrap(err, "writing the YAML output")
 }
 
 // Implementation of pflag.Value to support complex object declarativeconfig.IncludedObject.
