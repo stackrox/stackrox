@@ -47,7 +47,6 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	event := eventMsg.Event
 	// This filter works around race conditions in which image integrations may be initialized prior to CentralHello being received
 	if managedcentral.IsCentralManaged() && event.GetImageIntegration() != nil {
-		log.Infof("Received image integration I shouldn't have")
 		return nil
 	}
 	key := key{
