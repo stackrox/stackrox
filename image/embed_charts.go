@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/templates"
-	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -114,17 +113,6 @@ func (i *Image) GetChartTemplate(chartPrefixPath ChartPrefix) (*helmTemplate.Cha
 	}
 
 	return chartTpl, nil
-}
-
-func (i *Image) mustGetSensorChart(values *charts.MetaValues, certs *sensor.Certs) *chart.Chart {
-	ch, err := i.getSensorChart(values, certs)
-	utils.CrashOnError(err)
-	return ch
-}
-
-// GetSensorChart returns the Helm chart for sensor
-func (i *Image) GetSensorChart(values *charts.MetaValues, certs *sensor.Certs) *chart.Chart {
-	return i.mustGetSensorChart(values, certs)
 }
 
 // GetCentralServicesChartTemplate retrieves the StackRox Central Services Helm chart template.
@@ -260,7 +248,8 @@ func (i *Image) GetSensorChartTemplate() (*helmTemplate.ChartTemplate, error) {
 	return load, errors.Wrap(err, "could not load chart template")
 }
 
-func (i *Image) getSensorChart(values *charts.MetaValues, certs *sensor.Certs) (*chart.Chart, error) {
+// GetSensorChart returns the Helm chart for sensor
+func (i *Image) GetSensorChart(values *charts.MetaValues, certs *sensor.Certs) (*chart.Chart, error) {
 	chartTpl, err := i.GetSensorChartTemplate()
 	if err != nil {
 		return nil, errors.Wrap(err, "loading sensor chart template")
