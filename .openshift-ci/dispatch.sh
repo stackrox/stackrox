@@ -5,7 +5,6 @@
 # hands off to the test/build script in *scripts/ci/jobs*.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
-source "$ROOT/scripts/ci/gcp.sh"
 source "$ROOT/scripts/ci/lib.sh"
 source "$ROOT/scripts/ci/metrics.sh"
 source "$ROOT/tests/e2e/lib.sh"

@@ -2,6 +2,9 @@
 
 # Create metrics relating to a CI job run. 
 
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+source "$ROOT/scripts/ci/gcp.sh"
+
 set -euo pipefail
 
 _TABLE_NAME="stackrox-ci.ci_metrics.stackrox_jobs"
