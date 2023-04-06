@@ -22,9 +22,9 @@ func (a *AccessScope) Type() ConfigurationType {
 type Operator storage.SetBasedLabelSelector_Operator
 
 // MarshalYAML transforms Operator to YAML format.
-func (a Operator) MarshalYAML() ([]byte, error) {
+func (a Operator) MarshalYAML() (interface{}, error) {
 	protoAccess := storage.SetBasedLabelSelector_Operator(a)
-	return []byte(protoAccess.String()), nil
+	return protoAccess.String(), nil
 }
 
 // UnmarshalYAML makes transformation from YAML to Operator.

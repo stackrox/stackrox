@@ -18,6 +18,44 @@ func TestWrongConfigurationTypeTransformRole(t *testing.T) {
 	assert.ErrorIs(t, err, errox.InvalidArgs)
 }
 
+func TestTransformRole_EmptyValues(t *testing.T) {
+	cases := map[string]struct {
+		role *declarativeconfig.Role
+		err  error
+	}{
+		"empty name": {
+			role: &declarativeconfig.Role{
+				AccessScope:   "and an access scope",
+				PermissionSet: "as well as a permission set",
+			},
+			err: errox.InvalidArgs,
+		},
+		"empty permission set": {
+			role: &declarativeconfig.Role{
+				Name:        "some-role",
+				AccessScope: "and an access scope",
+			},
+			err: errox.InvalidArgs,
+		},
+		"empty access scope": {
+			role: &declarativeconfig.Role{
+				Name:          "some-role",
+				PermissionSet: "as well as a permission set",
+			},
+			err: errox.InvalidArgs,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			rt := newRoleTransform()
+			protos, err := rt.Transform(c.role)
+			assert.Nil(t, protos)
+			assert.ErrorIs(t, err, c.err)
+		})
+	}
+}
+
 func TestTransformRole(t *testing.T) {
 	role := &declarativeconfig.Role{
 		Name:          "some-role",
