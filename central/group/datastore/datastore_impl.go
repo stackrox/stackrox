@@ -6,7 +6,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	declarativeConfigUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
 	groupFilter "github.com/stackrox/rox/central/group/datastore/filter"
 	"github.com/stackrox/rox/central/group/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/datastore"
@@ -310,7 +309,7 @@ func (ds *dataStoreImpl) verifyReferencedRoleAndProvider(group *storage.Group) e
 	if !found {
 		return errox.InvalidArgs.Newf("Group %q role name %q does not exist", group.GetProps().GetId(), group.GetRoleName())
 	}
-	if err := declarativeConfigUtils.VerifyReferencedResourceOrigin(group.GetProps(), role, group.GetProps().GetId(), role.GetName()); err != nil {
+	if err := declarativeconfig.VerifyReferencedResourceOrigin(role, group.GetProps(), role.GetName(), group.GetProps().GetId()); err != nil {
 		return err
 	}
 
@@ -321,7 +320,7 @@ func (ds *dataStoreImpl) verifyReferencedRoleAndProvider(group *storage.Group) e
 	if !found {
 		return errox.InvalidArgs.Newf("Group %q auth provider %q does not exist", group.GetProps().GetId(), group.GetProps().GetAuthProviderId())
 	}
-	if err := declarativeConfigUtils.VerifyReferencedResourceOrigin(group.GetProps(), authProvider, group.GetProps().GetId(), authProvider.GetName()); err != nil {
+	if err := declarativeconfig.VerifyReferencedResourceOrigin(authProvider, group.GetProps(), authProvider.GetName(), group.GetProps().GetId()); err != nil {
 		return err
 	}
 	return nil

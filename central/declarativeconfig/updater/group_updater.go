@@ -46,7 +46,7 @@ func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ..
 	groupsToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	groups, err := u.groupDS.GetFiltered(ctx, func(group *storage.Group) bool {
-		return declarativeconfig.IsDeclarativeOrigin(group.GetProps().GetTraits().GetOrigin()) &&
+		return declarativeconfig.IsDeclarativeOrigin(group.GetProps()) &&
 			!groupsToSkip.Contains(group.GetProps().GetId())
 	})
 	if err != nil {

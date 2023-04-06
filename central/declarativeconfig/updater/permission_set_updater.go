@@ -46,7 +46,7 @@ func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsT
 	permissionSetsToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	permissionSets, err := u.roleDS.GetPermissionSetsFiltered(ctx, func(permissionSet *storage.PermissionSet) bool {
-		return declarativeconfig.IsDeclarativeOrigin(permissionSet.GetTraits().GetOrigin()) &&
+		return declarativeconfig.IsDeclarativeOrigin(permissionSet) &&
 			!permissionSetsToSkip.Contains(permissionSet.GetId())
 	})
 	if err != nil {
@@ -64,7 +64,7 @@ func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsT
 			if errors.Is(err, errox.ReferencedByAnotherObject) {
 				permissionSet.Traits.Origin = storage.Traits_DECLARATIVE_ORPHANED
 				if err = u.roleDS.UpsertPermissionSet(ctx, permissionSet); err != nil {
-					permissionSetDeletionErr = multierror.Append(permissionSetDeletionErr, err)
+					permissionSetDeletionErr = multierror.Append(permissionSetDeletionErr, errors.Wrap(err, "setting origin to orphaned"))
 				}
 			}
 		}

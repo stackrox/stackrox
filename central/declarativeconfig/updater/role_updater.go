@@ -18,22 +18,22 @@ import (
 )
 
 type roleUpdater struct {
-	roleDS         roleDataStore.DataStore
-	reporter       integrationhealth.Reporter
-	idExtractor    types.IDExtractor
-	nameExtractor  types.NameExtractor
-	groupDatastore groupDataStore.DataStore
+	roleDS        roleDataStore.DataStore
+	groupDS       groupDataStore.DataStore
+	reporter      integrationhealth.Reporter
+	idExtractor   types.IDExtractor
+	nameExtractor types.NameExtractor
 }
 
 var _ ResourceUpdater = (*roleUpdater)(nil)
 
-func newRoleUpdater(datastore roleDataStore.DataStore, groupDatastore groupDataStore.DataStore, reporter integrationhealth.Reporter) ResourceUpdater {
+func newRoleUpdater(roleDatastore roleDataStore.DataStore, groupDatastore groupDataStore.DataStore, reporter integrationhealth.Reporter) ResourceUpdater {
 	return &roleUpdater{
-		roleDS:         datastore,
-		groupDatastore: groupDatastore,
-		reporter:       reporter,
-		idExtractor:    types.UniversalIDExtractor(),
-		nameExtractor:  types.UniversalNameExtractor(),
+		roleDS:        roleDatastore,
+		groupDS:       groupDatastore,
+		reporter:      reporter,
+		idExtractor:   types.UniversalIDExtractor(),
+		nameExtractor: types.UniversalNameExtractor(),
 	}
 }
 
@@ -49,7 +49,7 @@ func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...
 	rolesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	roles, err := u.roleDS.GetRolesFiltered(ctx, func(role *storage.Role) bool {
-		return declarativeconfig.IsDeclarativeOrigin(role.GetTraits().GetOrigin()) &&
+		return declarativeconfig.IsDeclarativeOrigin(role) &&
 			!rolesToSkip.Contains(role.GetName())
 	})
 	if err != nil {
@@ -59,29 +59,17 @@ func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...
 	var roleDeletionErr *multierror.Error
 	var roleNames []string
 	for _, role := range roles {
-		referencingGroups, err := u.groupDatastore.GetFiltered(ctx, func(group *storage.Group) bool {
-			return group.GetRoleName() == role.GetName()
-		})
-		if err != nil || len(referencingGroups) > 0 {
-			if err == nil {
-				err = errox.ReferencedByAnotherObject.Newf("role is still referenced by groups")
-			}
-			roleDeletionErr = multierror.Append(roleDeletionErr, err)
-			roleNames = append(roleNames, role.GetName())
-
-			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(role, "", err,
-				u.idExtractor, u.nameExtractor))
-			role.Traits.Origin = storage.Traits_DECLARATIVE_ORPHANED
-			if err = u.roleDS.UpdateRole(ctx, role); err != nil {
-				roleDeletionErr = multierror.Append(roleDeletionErr, err)
-			}
-			continue
-		}
 		if err := u.roleDS.RemoveRole(ctx, role.GetName()); err != nil {
 			roleDeletionErr = multierror.Append(roleDeletionErr, err)
 			roleNames = append(roleNames, role.GetName())
 			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(role, "", err,
 				u.idExtractor, u.nameExtractor))
+			if errors.Is(err, errox.ReferencedByAnotherObject) {
+				role.Traits.Origin = storage.Traits_DECLARATIVE_ORPHANED
+				if err = u.roleDS.UpdateRole(ctx, role); err != nil {
+					roleDeletionErr = multierror.Append(roleDeletionErr, errors.Wrap(err, "setting origin to orphaned"))
+				}
+			}
 		}
 	}
 	return roleNames, roleDeletionErr.ErrorOrNil()

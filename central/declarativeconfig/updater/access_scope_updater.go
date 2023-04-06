@@ -46,7 +46,7 @@ func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToS
 	resourcesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	scopes, err := u.roleDS.GetAccessScopesFiltered(ctx, func(accessScope *storage.SimpleAccessScope) bool {
-		return declarativeconfig.IsDeclarativeOrigin(accessScope.GetTraits().GetOrigin()) &&
+		return declarativeconfig.IsDeclarativeOrigin(accessScope) &&
 			!resourcesToSkip.Contains(accessScope.GetId())
 	})
 	if err != nil {
@@ -64,7 +64,7 @@ func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToS
 			if errors.Is(err, errox.ReferencedByAnotherObject) {
 				scope.Traits.Origin = storage.Traits_DECLARATIVE_ORPHANED
 				if err = u.roleDS.UpsertAccessScope(ctx, scope); err != nil {
-					scopeDeletionErr = multierror.Append(scopeDeletionErr, err)
+					scopeDeletionErr = multierror.Append(scopeDeletionErr, errors.Wrap(err, "setting origin to orphaned"))
 				}
 			}
 		}

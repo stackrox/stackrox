@@ -1,4 +1,4 @@
-package utils
+package declarativeconfig
 
 import (
 	"testing"
@@ -54,7 +54,7 @@ func testError(t *testing.T, referencing *storage.Traits, referenced *storage.Tr
 	referencedResource := &tstResourceWithTraits{
 		traits: referenced,
 	}
-	err := VerifyReferencedResourceOrigin(referencingResource, referencedResource, "", "")
+	err := VerifyReferencedResourceOrigin(referencedResource, referencingResource, "", "")
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, errox.InvalidArgs)
 }
@@ -66,5 +66,5 @@ func testNoError(t *testing.T, referencing *storage.Traits, referenced *storage.
 	referencedResource := &tstResourceWithTraits{
 		traits: referenced,
 	}
-	assert.NoError(t, VerifyReferencedResourceOrigin(referencingResource, referencedResource, "", ""))
+	assert.NoError(t, VerifyReferencedResourceOrigin(referencedResource, referencingResource, "", ""))
 }

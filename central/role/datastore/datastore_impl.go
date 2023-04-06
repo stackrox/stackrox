@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/declarativeconfig/utils"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	rocksDBStore "github.com/stackrox/rox/central/role/store"
@@ -684,10 +683,10 @@ func (ds *dataStoreImpl) verifyRoleReferencesExist(ctx context.Context, role *st
 		return errors.Wrapf(errox.InvalidArgs, "referenced access scope %s does not exist", role.GetAccessScopeId())
 	}
 
-	if err := utils.VerifyReferencedResourceOrigin(role, permissionSet, role.GetName(), permissionSet.GetName()); err != nil {
+	if err := declarativeconfig.VerifyReferencedResourceOrigin(permissionSet, role, permissionSet.GetName(), role.GetName()); err != nil {
 		return err
 	}
-	if err := utils.VerifyReferencedResourceOrigin(role, accessScope, role.GetName(), accessScope.GetName()); err != nil {
+	if err := declarativeconfig.VerifyReferencedResourceOrigin(accessScope, role, accessScope.GetName(), role.GetName()); err != nil {
 		return err
 	}
 

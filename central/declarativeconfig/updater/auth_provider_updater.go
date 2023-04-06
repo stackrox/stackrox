@@ -66,7 +66,7 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 	authProviderIDsToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	authProviders, err := u.authProviderDS.GetAuthProvidersFiltered(ctx, func(authProvider *storage.AuthProvider) bool {
-		return declarativeconfig.IsDeclarativeOrigin(authProvider.GetTraits().GetOrigin()) &&
+		return declarativeconfig.IsDeclarativeOrigin(authProvider) &&
 			!authProviderIDsToSkip.Contains(authProvider.GetId())
 	})
 	if err != nil {
@@ -79,10 +79,10 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 		referencingGroups, err := u.groupDS.GetFiltered(ctx, func(group *storage.Group) bool {
 			return group.GetProps().GetAuthProviderId() == authProvider.GetId()
 		})
-		if err != nil || len(referencingGroups) > 0 {
-			if err == nil {
-				err = errox.ReferencedByAnotherObject.Newf("auth provider is still referenced by groups")
-			}
+		if len(referencingGroups) > 0 {
+			err = errox.ReferencedByAnotherObject.Newf("auth provider %s is still referenced by %d groups", authProvider.GetName(), len(referencingGroups))
+		}
+		if err != nil {
 			authProviderDeletionErr = multierror.Append(authProviderDeletionErr, err)
 			authProviderIDs = append(authProviderIDs, authProvider.GetId())
 
