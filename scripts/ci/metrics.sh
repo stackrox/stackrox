@@ -25,6 +25,10 @@ _create_job_record() {
 
     local id
     if is_OPENSHIFT_CI; then
+        if [[ -z "${BUILD_ID:-}" ]]; then
+            info "Skipping job record for jobs without a BUILD_ID (bin, images)"
+            return
+        fi
         id="${BUILD_ID}"
     elif is_GITHUB_ACTIONS; then
         id="${GITHUB_RUN_ID}"
@@ -75,6 +79,11 @@ _update_job_record() {
         die "missing arg. usage: update_job_record <field name> <value> [... more fields and values ...]"
     fi
 
+    if is_OPENSHIFT_CI && [[ -z "${BUILD_ID:-}" ]]; then
+        info "Skipping job record for jobs without a BUILD_ID (bin, images)"
+        return
+    fi
+
     bq_update_job_record "$@"
 }
 
@@ -120,6 +129,11 @@ _finalize_job_record() {
 
     if [[ "$#" -ne 2 ]]; then
         die "missing arg. usage: finalize_job_record <exit code> <canceled (true|false)"
+    fi
+
+    if is_OPENSHIFT_CI && [[ -z "${BUILD_ID:-}" ]]; then
+        info "Skipping job record for jobs without a BUILD_ID (bin, images)"
+        return
     fi
 
     local outcome
