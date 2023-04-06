@@ -136,15 +136,26 @@ make_artifacts_help() {
     local help_file
     if is_OPENSHIFT_CI; then
         require_environment "ARTIFACT_DIR"
-        help_file="$ARTIFACT_DIR/howto-locate-other-artifacts.html"
+        help_file="$ARTIFACT_DIR/howto-locate-other-artifacts-summary.html"
     else
         die "This is an unsupported environment"
     fi
 
     cat > "$help_file" <<- EOH
+        <html>
+        <head>
+        <title>How to locate other artifacts</title>
+        <style>
+          body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
+          a { color: #ff8caa }
+          a:visited { color: #ff8caa }
+        </style>
+        </head>
+        <body>
+
         Artifacts are stored in a GCS bucket ($GS_URL). There are at least two options for access:
 
-        <h3>gsutil cp</h3>
+        <h2>gsutil cp</h2>
 
         Copy all artifacts for the build/job:
         <pre>gsutil -m cp -r $gs_job_url .</pre>
@@ -152,13 +163,17 @@ make_artifacts_help() {
         Copy all artifacts for the entire workflow:
         <pre>gsutil -m cp -r $gs_workflow_url .</pre>
 
-        <h3>Browse using the google cloud UI</h3>
+        <h2>Browse using the Google cloud UI</h2>
 
-        <p>The URL you use will depend on the <i>authuser</i> value you use for your @stackrox.com account.</p>
+        <p>Make sure to use the URL where <i>authuser</i> corresponds to your @stackrox.com account.<br>
+        You can check this by clicking on the user avatar in the top right corner of Google Cloud Console page.</p>
 
         <a href="$browser_job_url?authuser=0">authuser=0</a><br>
         <a href="$browser_job_url?authuser=1">authuser=1</a><br>
         <a href="$browser_job_url?authuser=2">authuser=2</a><br>
+
+        </body>
+        </html>
 EOH
 
     info "Artifacts are stored in a GCS bucket ($GS_URL)"
