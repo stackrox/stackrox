@@ -1,6 +1,7 @@
 package create
 
 import (
+	"bytes"
 	"sort"
 	"strings"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"gopkg.in/yaml.v3"
 )
 
@@ -78,6 +80,14 @@ func (p *permissionSetCmd) Validate() error {
 }
 
 func (p *permissionSetCmd) PrintYAML() error {
-	enc := yaml.NewEncoder(p.env.InputOutput().Out())
-	return errors.Wrap(enc.Encode(p.permissionSet), "creating the YAML output")
+	yamlOut := &bytes.Buffer{}
+	enc := yaml.NewEncoder(yamlOut)
+	if err := enc.Encode(p.permissionSet); err != nil {
+		return errors.Wrap(err, "creating the YAML output")
+	}
+	if err := lint.Lint(yamlOut.Bytes()); err != nil {
+		return errors.Wrap(err, "linting the YAML output")
+	}
+	_, err := p.env.InputOutput().Out().Write(yamlOut.Bytes())
+	return errors.Wrap(err, "writing the YAML output")
 }

@@ -1,12 +1,14 @@
 package create
 
 import (
+	"bytes"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
-	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"gopkg.in/yaml.v3"
 )
 
@@ -17,9 +19,6 @@ func roleCommand(cliEnvironment environment.Environment) *cobra.Command {
 		Use:  roleCmd.role.Type(),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := roleCmd.Validate(); err != nil {
-				return err
-			}
 			return roleCmd.PrintYAML()
 		},
 		Short: "Create a declarative configuration for a role",
@@ -45,13 +44,15 @@ type roleCmd struct {
 	env  environment.Environment
 }
 
-func (r *roleCmd) Validate() error {
-	t := transform.New()
-	_, err := t.Transform(r.role)
-	return errors.Wrap(err, "validate role")
-}
-
 func (r *roleCmd) PrintYAML() error {
-	enc := yaml.NewEncoder(r.env.InputOutput().Out())
-	return errors.Wrap(enc.Encode(r.role), "creating the YAML output")
+	yamlOutput := &bytes.Buffer{}
+	enc := yaml.NewEncoder(yamlOutput)
+	if err := enc.Encode(r.role); err != nil {
+		return errors.Wrap(err, "creating the YAML output")
+	}
+	if err := lint.Lint(yamlOutput.Bytes()); err != nil {
+		return errors.Wrap(err, "linting the YAML output")
+	}
+	_, err := r.env.InputOutput().Out().Write(yamlOutput.Bytes())
+	return errors.Wrap(err, "writing the YAML output")
 }

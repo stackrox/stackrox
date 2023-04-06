@@ -1,8 +1,11 @@
 package declarativeconfig
 
 import (
-	"github.com/pkg/errors"
+	"strings"
+
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/maputil"
 	"gopkg.in/yaml.v3"
 )
 
@@ -41,7 +44,8 @@ func (a *Access) UnmarshalYAML(value *yaml.Node) error {
 	}
 	i, ok := storage.Access_value[v]
 	if !ok {
-		return errors.New("not found")
+		return errox.InvalidArgs.Newf("access %s is invalid, valid values are: [%s]", v, strings.Join(
+			maputil.Keys(storage.Access_value), ","))
 	}
 	*a = Access(i)
 	return nil
