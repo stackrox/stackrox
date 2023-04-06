@@ -61,7 +61,6 @@ else
     die "ERROR: There is no job script for $ci_job"
 fi
 
-setup_gcp
 create_job_record "$ci_job"
 
 "${job_script}" "$@" &

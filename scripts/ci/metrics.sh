@@ -56,6 +56,8 @@ _create_job_record() {
 }
 
 bq_create_job_record() {
+    setup_gcp
+
     read -r -d '' sql <<- _EO_RECORD_ || true
 INSERT INTO ${_TABLE_NAME}
     (id, name, repo, branch, pr_number, commit_sha, started_at)
