@@ -35,7 +35,6 @@ qa-tests-backend/src/main/**/*.groovy
 qa-tests-backend/src/test/**/*.groovy
 qa-tests-backend/test-images/registry-image/tomcat-files/web.xml
 roxctl/helm/derivelocalvalues/testdata/k8s-resources/*.yaml
-scripts/ci/lib.sh
 scale/image/fixtures/scrape.json
 scale/mocksensor/image_names.go
 scripts/ci/lib.sh
