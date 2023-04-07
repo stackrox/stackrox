@@ -79,7 +79,7 @@ function NetworkGraphPage() {
 
     const [pollEpoch, setPollEpoch] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
-    const [timeWindow, setTimeWindow] = useState<typeof timeWindows[number]>(timeWindows[0]);
+    const [timeWindow, setTimeWindow] = useState<(typeof timeWindows)[number]>(timeWindows[0]);
     const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
     const [isCIDRBlockFormOpen, setIsCIDRBlockFormOpen] = useState(false);
 

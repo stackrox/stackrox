@@ -18,7 +18,7 @@ export const policySeverities = [
     'HIGH_SEVERITY',
     'CRITICAL_SEVERITY',
 ] as const;
-export type PolicySeverity = typeof policySeverities[number];
+export type PolicySeverity = (typeof policySeverities)[number];
 
 // TODO supersedes src/Containers/Violations/PatternFly/types/violationTypes.ts
 export type LifecycleStage = 'DEPLOY' | 'BUILD' | 'RUNTIME';
