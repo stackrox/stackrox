@@ -42,18 +42,27 @@ func getPebbleKey(prefix, id string) []byte {
 }
 
 func (w *WorkloadManager) writeID(prefix string, uid types.UID) {
+	if w.db == nil {
+		return
+	}
 	if err := w.db.Set(getPebbleKey(prefix, string(uid)), []byte{}, pebble.Sync); err != nil {
 		log.Errorf("writing id: %s %s", prefix, uid)
 	}
 }
 
 func (w *WorkloadManager) deleteID(prefix string, uid types.UID) {
+	if w.db == nil {
+		return
+	}
 	if err := w.db.Delete(getPebbleKey(prefix, string(uid)), pebble.Sync); err != nil {
 		log.Errorf("deleting id: %s %s", prefix, uid)
 	}
 }
 
 func (w *WorkloadManager) getIDsForPrefix(prefix string) []string {
+	if w.db == nil {
+		return nil
+	}
 	it := w.db.NewIter(&pebble.IterOptions{})
 
 	prefixKey := getPebbleKey(prefix, "")

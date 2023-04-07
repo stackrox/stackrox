@@ -10,6 +10,7 @@ import (
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
 	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
@@ -125,9 +126,12 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 		log.Panicf("could not unmarshal workload from file due to error (%v): %s", err, data)
 	}
 
-	db, err := pebble.Open("/var/cache/stackrox/pebble.db", &pebble.Options{})
-	if err != nil {
-		log.Panicf("could not open id storage")
+	var db *pebble.DB
+	if storagePath := env.FakeWorkloadStoragePath.Setting(); storagePath != "" {
+		db, err = pebble.Open(storagePath, &pebble.Options{})
+		if err != nil {
+			log.Panicf("could not open id storage")
+		}
 	}
 
 	mgr := &WorkloadManager{
