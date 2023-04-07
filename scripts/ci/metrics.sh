@@ -39,6 +39,7 @@ _create_job_record() {
         die "Support is required for a job id for this CI environment"
     fi
 
+    # exported to handle updates and finalization
     export METRICS_JOB_ID="$id"
 
     local repo
@@ -104,6 +105,7 @@ bq_update_job_record() {
         fi
 
         case "$field" in
+            # All updateable string fields need quotation
             outcome)
                 value="'$value'"
                 ;;
