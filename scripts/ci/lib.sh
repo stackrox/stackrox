@@ -4,6 +4,7 @@
 
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$SCRIPTS_ROOT/scripts/lib.sh"
+source "$SCRIPTS_ROOT/scripts/ci/metrics.sh"
 source "$SCRIPTS_ROOT/scripts/ci/test_state.sh"
 
 set -euo pipefail
@@ -33,6 +34,8 @@ ci_exit_trap() {
     local exit_code="$?"
     info "Executing a general purpose exit trap for CI"
     echo "Exit code is: ${exit_code}"
+
+    finalize_job_record "${exit_code}" "false"
 
     (send_slack_notice_for_failures_on_merge "${exit_code}") || { echo "ERROR: Could not slack a test failure message"; }
 
@@ -775,6 +778,14 @@ get_repo_full_name() {
         else
             die "Expect REPO_OWNER/NAME or CLONEREFS_OPTIONS"
         fi
+    else
+        die "unsupported"
+    fi
+}
+
+get_commit_sha() {
+    if is_OPENSHIFT_CI; then
+        echo "${PULL_PULL_SHA:-${PULL_BASE_SHA}}"
     else
         die "unsupported"
     fi
@@ -1561,6 +1572,11 @@ slack_prow_notice() {
 | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 
+gather_debug_for_cluster_under_test() {
+    highlight_cluster_versions
+    record_cluster_info
+}
+
 highlight_cluster_versions() {
     if [[ -z "${ARTIFACT_DIR:-}" ]]; then
         info "No place for artifacts, skipping cluster version dump"
@@ -1601,6 +1617,70 @@ DETAILS
   </body>
 </html>
 FOOT
+}
+
+record_cluster_info() {
+    _record_cluster_info || {
+        # Failure to gather metrics is not a test failure
+        info "WARNING: Recording cluster info failed"
+    }
+}
+
+_record_cluster_info() {
+    info "Record some cluster info"
+
+    # Assumes (a) there is a single cluster under test (cut_*) and (b) all nodes
+    # in the cluster are homogeneous.
+
+    # Product version. Currently used for OpenShift version. Could cover cloud
+    # provider versions for example.
+    local cut_product_version=""
+    local oc_version
+    oc_version="$(oc version -o json 2>&1 || true)"
+    local openshiftVersion
+    openshiftVersion=$(jq -r <<<"$oc_version" '.openshiftVersion')
+    if [[ "$openshiftVersion" != "null" ]]; then
+        cut_product_version="$openshiftVersion"
+    fi
+
+    # K8s version.
+    local cut_k8s_version=""
+    local kubectl_version
+    kubectl_version="$(kubectl version -o json 2>&1 || true)"
+    local serverGitVersion
+    serverGitVersion=$(jq -r <<<"$kubectl_version" '.serverVersion.gitVersion')
+    if [[ "$serverGitVersion" != "null" ]]; then
+        cut_k8s_version="$serverGitVersion"
+    fi
+
+    # Node info: OS, Kernel & Container Runtime.
+    local nodes
+    nodes="$(kubectl get nodes -o json 2>&1 || true)"
+    local osImage
+    osImage=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.osImage')
+    local cut_os_image=""
+    if [[ "$osImage" != "null" ]]; then
+        cut_os_image="$osImage"
+    fi
+    local kernelVersion
+    kernelVersion=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.kernelVersion')
+    local cut_kernel_version=""
+    if [[ "$kernelVersion" != "null" ]]; then
+        cut_kernel_version="$kernelVersion"
+    fi
+    local containerRuntimeVersion
+    containerRuntimeVersion=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.containerRuntimeVersion')
+    local cut_container_runtime_version=""
+    if [[ "$containerRuntimeVersion" != "null" ]]; then
+        cut_container_runtime_version="$containerRuntimeVersion"
+    fi
+
+    update_job_record \
+      cut_product_version "$cut_product_version" \
+      cut_k8s_version "$cut_k8s_version" \
+      cut_os_image "$cut_os_image" \
+      cut_kernel_version "$cut_kernel_version" \
+      cut_container_runtime_version "$cut_container_runtime_version"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
