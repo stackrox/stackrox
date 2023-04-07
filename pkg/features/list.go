@@ -31,9 +31,6 @@ var (
 	// NetworkGraphPatternFly enables the PatternFly version of NetworkGraph. (used in the front-end app only)
 	NetworkGraphPatternFly = registerFeature("Enable PatternFly version of NetworkGraph", "ROX_NETWORK_GRAPH_PATTERNFLY", true)
 
-	// ProcessesListeningOnPort enables the NetworkFlow code to also update the processes that are listening on ports
-	ProcessesListeningOnPort = registerFeature("Enable Processes Listening on Port", "ROX_PROCESSES_LISTENING_ON_PORT", true)
-
 	// ClairV4Scanner enables Clair v4 as an Image Integration option
 	ClairV4Scanner = registerFeature("Enable Clair v4 as an Image Integration option", "ROX_CLAIR_V4_SCANNING", true)
 
