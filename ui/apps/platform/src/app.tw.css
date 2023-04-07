@@ -369,8 +369,7 @@ h6 {
 /**
   Outline for Simulation Mode
  */
-.simulator-mode.success:before,
-.simulator-mode.error:before {
+.simulator-mode:before {
     content: '';
     position: absolute;
     left: 0;
@@ -381,16 +380,10 @@ h6 {
     pointer-events: none;
 }
 
-.simulator-mode.error:before {
-    -webkit-box-shadow: inset 0px 0px 0px 4px theme('colors.alert-600');
-    -moz-box-shadow: inset 0px 0px 0px 4px theme('colors.alert-600');
-    box-shadow: inset 0px 0px 0px 4px theme('colors.alert-600');
-}
-
-.simulator-mode.success:before {
-    -webkit-box-shadow: inset 0px 0px 0px 4px theme('colors.success-600');
-    -moz-box-shadow: inset 0px 0px 0px 4px theme('colors.success-600');
-    box-shadow: inset 0px 0px 0px 4px theme('colors.success-600');
+.simulator-mode:before {
+    -webkit-box-shadow: inset 0px 0px 0px 4px;
+    -moz-box-shadow: inset 0px 0px 0px 4px;
+    box-shadow: inset 0px 0px 0px 4px;
 }
 
 .top-navigation {
