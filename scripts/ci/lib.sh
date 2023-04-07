@@ -1657,19 +1657,19 @@ _record_cluster_info() {
     local nodes
     nodes="$(kubectl get nodes -o json 2>&1 || true)"
     local osImage
-    osImage=$(jq -r <<<"$kubectl_version" '.items[0].status.nodeInfo.osImage')
+    osImage=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.osImage')
     local cut_os_image=""
     if [[ "$osImage" != "null" ]]; then
         cut_os_image="$osImage"
     fi
     local kernelVersion
-    kernelVersion=$(jq -r <<<"$kubectl_version" '.items[0].status.nodeInfo.kernelVersion')
+    kernelVersion=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.kernelVersion')
     local cut_kernel_version=""
     if [[ "$kernelVersion" != "null" ]]; then
         cut_kernel_version="$kernelVersion"
     fi
     local containerRuntimeVersion
-    containerRuntimeVersion=$(jq -r <<<"$kubectl_version" '.items[0].status.nodeInfo.containerRuntimeVersion')
+    containerRuntimeVersion=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.containerRuntimeVersion')
     local cut_container_runtime_version=""
     if [[ "$containerRuntimeVersion" != "null" ]]; then
         cut_container_runtime_version="$containerRuntimeVersion"
