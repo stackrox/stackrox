@@ -8,8 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
-	"k8s.io/apimachinery/pkg/labels"
 )
 
 var _ Transformer = (*accessScopeTransform)(nil)
@@ -94,15 +92,9 @@ func labelSelectorsFromScopeConfig(labelSelectors []declarativeconfig.LabelSelec
 	for _, ls := range labelSelectors {
 		reqs := make([]*storage.SetBasedLabelSelector_Requirement, 0, len(ls.Requirements))
 		for _, req := range ls.Requirements {
-			op := storage.SetBasedLabelSelector_Operator(req.Operator)
-			selectionOperator := effectiveaccessscope.ConvertLabelSelectorOperatorToSelectionOperator(op)
-			if _, err := labels.NewRequirement(req.Key, selectionOperator, req.Values); err != nil {
-				labelSelectorErrs = multierror.Append(labelSelectorErrs, err)
-				continue
-			}
 			reqs = append(reqs, &storage.SetBasedLabelSelector_Requirement{
 				Key:    req.Key,
-				Op:     op,
+				Op:     storage.SetBasedLabelSelector_Operator(req.Operator),
 				Values: req.Values,
 			})
 		}
