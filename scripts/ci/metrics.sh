@@ -141,10 +141,15 @@ _finalize_job_record() {
         return
     fi
 
+    local sql
+    read -r -d '' sql <<- _EO_CHECK_ || true
+SELECT outcome 
+FROM ${_TABLE_NAME}
+WHERE id='${METRICS_JOB_ID}'
+_EO_CHECK_
+
     local outcome
-    outcome="$(bq --quiet --format=json query --use_legacy_sql=false \
-        'select outcome from stackrox-ci.ci_metrics.stackrox_jobs' \
-        | jq -r '.[0].outcome')"
+    outcome="$(bq --quiet --format=json query --use_legacy_sql=false "$sql" | jq -r '.[0].outcome')"
 
     if [[ "$outcome" != "null" ]]; then
         info "WARNING: This jobs record is already finalized ($outcome), will not overwrite"
