@@ -27,6 +27,7 @@ message SensorHello {
 }
 
 message CentralHello {
-  string              cluster_id  = 1;
-  map<string, string> cert_bundle = 2;
+  string              cluster_id      = 1;
+  map<string, string> cert_bundle     = 2;
+  bool                managed_central = 3;
 }

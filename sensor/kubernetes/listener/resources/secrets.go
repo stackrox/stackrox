@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterid"
+	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -272,7 +273,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			ii, err := DockerConfigToImageIntegration(secret, registry, dce)
 			if err != nil {
 				log.Errorf("unable to create docker config for secret %s: %v", secret.GetName(), err)
-			} else {
+			} else if !managedcentral.IsCentralManaged() {
 				sensorEvents = append(sensorEvents, &central.SensorEvent{
 					// Only update is supported at this time.
 					Action: action,

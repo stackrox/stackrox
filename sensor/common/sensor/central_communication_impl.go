@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -194,6 +195,12 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 
 	clusterID := centralHello.GetClusterId()
 	clusterid.Set(clusterID)
+
+	if centralHello.GetManagedCentral() {
+		log.Info("Central is managed")
+	}
+
+	managedcentral.Set(centralHello.GetManagedCentral())
 
 	if hello.HelmManagedConfigInit != nil {
 		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {

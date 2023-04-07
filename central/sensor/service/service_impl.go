@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -89,7 +90,8 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	if sensorSupportsHello {
 		// Let's be polite and respond with a greeting from our side.
 		centralHello := &central.CentralHello{
-			ClusterId: cluster.GetId(),
+			ClusterId:      cluster.GetId(),
+			ManagedCentral: env.ManagedCentral.BooleanSetting(),
 		}
 
 		if err := safe.RunE(func() error {
