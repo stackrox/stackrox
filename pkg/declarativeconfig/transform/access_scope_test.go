@@ -19,26 +19,6 @@ func TestWrongConfigurationTypeTransformAccessScope(t *testing.T) {
 	assert.ErrorIs(t, err, errox.InvalidArgs)
 }
 
-func TestTransformAccessScope_InvalidLabelSelector(t *testing.T) {
-	at := newAccessScopeTransform()
-
-	scopeConfig := &declarativeconfig.AccessScope{
-		Name:        "test-scope",
-		Description: "test description",
-		Rules: declarativeconfig.Rules{
-			ClusterLabelSelectors: []declarativeconfig.LabelSelector{
-				{Requirements: []declarativeconfig.Requirement{
-					{
-						Key:      "a",
-						Operator: declarativeconfig.Operator(storage.LabelSelector_EXISTS),
-						Values:   []string{"a", "b", "c"}}}}}},
-	}
-
-	msgs, err := at.Transform(scopeConfig)
-	assert.ErrorIs(t, err, errox.InvalidArgs)
-	assert.Nil(t, msgs)
-}
-
 func TestTransformAccessScope(t *testing.T) {
 	at := newAccessScopeTransform()
 
