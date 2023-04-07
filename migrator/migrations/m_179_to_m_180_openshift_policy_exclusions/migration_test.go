@@ -48,6 +48,36 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 	testPolicy.Id = "ed8c7957-14de-40bc-aeab-d27ceeecfa7b"
 	testPolicy.Name = "Iptables Executed in Privileged Container"
 	testPolicy.Description = "Alert on privileged pods that execute iptables"
+	testPolicy.PolicySections = []*storage.PolicySection{
+		{
+			PolicyGroups: []*storage.PolicyGroup{
+				{
+					FieldName: "Privileged Container",
+					Values: []*storage.PolicyValue{
+						{
+							Value: "true",
+						},
+					},
+				},
+				{
+					FieldName: "Process Name",
+					Values: []*storage.PolicyValue{
+						{
+							Value: "iptables",
+						},
+					},
+				},
+				{
+					FieldName: "Process UID",
+					Values: []*storage.PolicyValue{
+						{
+							Value: "0",
+						},
+					},
+				},
+			},
+		},
+	}
 	require.NoError(s.T(), s.policyStore.Upsert(ctx, testPolicy))
 	// insert other policies in db for migration to run successfully
 	policies := []string{
