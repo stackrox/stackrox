@@ -9,8 +9,8 @@ import { timeWindows } from 'constants/timeWindows';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
 type TimeWindowSelectorProps = {
-    setActivityTimeWindow: (timeWindow: typeof timeWindows[number]) => void;
-    activityTimeWindow: typeof timeWindows[number];
+    setActivityTimeWindow: (timeWindow: (typeof timeWindows)[number]) => void;
+    activityTimeWindow: (typeof timeWindows)[number];
     isDisabled?: boolean;
 };
 

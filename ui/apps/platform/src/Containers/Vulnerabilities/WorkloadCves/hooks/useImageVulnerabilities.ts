@@ -23,7 +23,7 @@ export type ImageVulnerabilityComponent = {
 
 export const imageVulnerabilityCounterKeys = ['low', 'moderate', 'important', 'critical'] as const;
 
-export type ImageVulnerabilityCounterKey = typeof imageVulnerabilityCounterKeys[number];
+export type ImageVulnerabilityCounterKey = (typeof imageVulnerabilityCounterKeys)[number];
 
 export type ImageVulnerabilityCounter = Record<
     ImageVulnerabilityCounterKey | 'all',

@@ -28,7 +28,7 @@ export type VulnMgmtLocalStorage = {
 
 export const detailsTabValues = ['Vulnerabilities', 'Resources'] as const;
 
-export type DetailsTab = typeof detailsTabValues[number];
+export type DetailsTab = (typeof detailsTabValues)[number];
 
 export function isDetailsTab(value: unknown): value is DetailsTab {
     return detailsTabValues.some((tab) => tab === value);
@@ -36,7 +36,7 @@ export function isDetailsTab(value: unknown): value is DetailsTab {
 
 export const cveStatusTabValues = ['Observed', 'Deferred', 'False Positive'] as const;
 
-export type CveStatusTab = typeof cveStatusTabValues[number];
+export type CveStatusTab = (typeof cveStatusTabValues)[number];
 
 export function isValidCveStatusTab(value: unknown): value is CveStatusTab {
     return cveStatusTabValues.some((tab) => tab === value);
@@ -44,7 +44,7 @@ export function isValidCveStatusTab(value: unknown): value is CveStatusTab {
 
 export const entityTabValues = ['CVE', 'Image', 'Deployment'] as const;
 
-export type EntityTab = typeof entityTabValues[number];
+export type EntityTab = (typeof entityTabValues)[number];
 
 export function isValidEntityTab(value: unknown): value is EntityTab {
     return entityTabValues.some((tab) => tab === value);
