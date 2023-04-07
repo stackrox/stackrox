@@ -28,9 +28,11 @@ var (
 	//go:embed policies_before_and_after
 	policyDiffFS embed.FS
 
-	// We want to migrate only if the existing policy sections and title haven't changed.
+	// We want to migrate only if the existing policy sections,name and description haven't changed.
 	fieldsToCompare = []postgresHelper.FieldComparator{
 		policymigrationhelper.DescriptionComparator,
+		policymigrationhelper.PolicySectionComparator,
+		policymigrationhelper.NameComparator,
 	}
 
 	policyDiffs = []postgresHelper.PolicyDiff{
