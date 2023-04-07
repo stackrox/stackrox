@@ -28,7 +28,6 @@ function Simulator({
         setModification(null);
     }
 
-    const colorType = modificationState === 'ERROR' ? 'alert' : 'success';
     const isProcessing = modificationState === 'REQUEST' && policyGraphState === 'REQUEST';
     const isError = modificationState === 'ERROR' && policyGraphState === 'ERROR';
     const isSuccess = modificationState === 'SUCCESS' && policyGraphState === 'SUCCESS';
@@ -45,8 +44,8 @@ function Simulator({
                     <PanelHeadEnd>
                         <CloseButton
                             onClose={onCloseHandler}
-                            className={`bg-${colorType}-600 hover:bg-${colorType}-700`}
-                            iconColor="text-base-100"
+                            className="border-base-400 border-l"
+                            iconColor="text-base-600"
                         />
                     </PanelHeadEnd>
                 </PanelHead>
