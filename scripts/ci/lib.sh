@@ -1411,6 +1411,24 @@ __EOM__
     }
 }
 
+junit_wrap() {
+    if [[ "$#" -lt 4 ]]; then
+        die "missing args. usage: junit_wrap <class> <description> <failure_message> <command> [ args ]"
+    fi
+
+    local class="$1"; shift
+    local description="$1"; shift
+    local failure_message="$1"; shift
+
+    if "$@"; then
+        save_junit_success "${class}" "${description}"
+    else
+        local ret_code="$?"
+        save_junit_failure "${class}" "${description}" "${failure_message}"
+        exit ${ret_code}
+    fi
+}
+
 get_junit_misc_dir() {
     echo "${ARTIFACT_DIR}/junit-misc"
 }
