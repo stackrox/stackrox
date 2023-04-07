@@ -11,8 +11,7 @@ _TABLE_NAME="stackrox-ci.ci_metrics.stackrox_jobs"
 
 create_job_record() {
     _create_job_record "$@" || {
-        # ROX-xyz ignore initial job record failures until all environments are
-        # stable (PR, merge, nightly, release, tag, etc)
+        # Failure to gather metrics is not a test failure
         info "WARNING: Job record creation failed"
     }
 }
@@ -74,8 +73,7 @@ _EO_RECORD_
 
 update_job_record() {
     _update_job_record "$@" || {
-        # ROX-xyz ignore initial job record failures until all environments are
-        # stable (PR, merge, nightly, release, tag, etc)
+        # Failure to gather metrics is not a test failure
         info "WARNING: Job record creation failed"
     }
 }
@@ -125,8 +123,7 @@ _EO_UPDATE_
 
 finalize_job_record() {
     _finalize_job_record "$@" || {
-        # ROX-xyz ignore initial job record failures until all environments are
-        # stable (PR, merge, nightly, release, tag, etc)
+        # Failure to gather metrics is not a test failure
         info "WARNING: Job record creation failed"
     }
 }
