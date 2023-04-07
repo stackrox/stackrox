@@ -606,6 +606,11 @@ function launch_sensor {
         fi
     fi
 
+    # If we deployed sensor with manifests then we need to set re-sync flag manually by patching the deployment.
+    if [[ "$ROX_RESYNC_DISABLED" == "true" && "$OUTPUT_FORMAT" == "kubectl" ]]; then
+        kubectl -n stackrox set env deploy/sensor ROX_RESYNC_DISABLED="true"
+    fi
+
     if [[ "$MONITORING_SUPPORT" == "true" || ( "$(local_dev)" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
       "${COMMON_DIR}/monitoring.sh"
     fi
