@@ -6,41 +6,45 @@ import { Alert, Bullseye, Spinner } from '@patternfly/react-core';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import ComponentVulnerabilitiesTable, {
     ComponentVulnerabilities,
-    componentVulnerabilitiesFragment,
     ImageMetadataContext,
+    componentVulnerabilitiesFragment,
+    imageMetadataContextFragment,
 } from './Tables/ComponentVulnerabilitiesTable';
 
-const imageComponentVulnerabilitiesQuery = gql`
-    query getImageComponentVulnerabilities($imageId: ID!, $vulnCveQuery: String!) {
-        image(id: $imageId) {
-            id
-            ...ComponentVulnerabilities
+const deploymentComponentVulnerabilitiesQuery = gql`
+    query getDeploymentComponentVulnerabilities($deploymentId: ID!, $vulnCveQuery: String!) {
+        deployment(id: $deploymentId) {
+            images {
+                ...ImageMetadataContext
+                ...ComponentVulnerabilities
+            }
         }
     }
+    ${imageMetadataContextFragment}
     ${componentVulnerabilitiesFragment}
 `;
 
-export type ImageComponentVulnerabilitiesProps = {
+export type DeploymentComponentVulnerabilitiesProps = {
     /** Whether to load the data or not when rendering, used to lazy load component vulns */
     isActive: boolean;
     cveId: string;
-    image: ImageMetadataContext;
+    deploymentId: string;
 };
 
 function ImageComponentVulnerabilitiesLoader({
     isActive,
     cveId,
-    image,
-}: ImageComponentVulnerabilitiesProps) {
+    deploymentId,
+}: DeploymentComponentVulnerabilitiesProps) {
     const { data, loading, error } = useQuery<
-        { image: ComponentVulnerabilities },
+        { deployment: { images: (ImageMetadataContext & ComponentVulnerabilities)[] } },
         {
-            imageId: string;
+            deploymentId: string;
             vulnCveQuery: string;
         }
-    >(imageComponentVulnerabilitiesQuery, {
+    >(deploymentComponentVulnerabilitiesQuery, {
         variables: {
-            imageId: image.id,
+            deploymentId,
             vulnCveQuery: getRequestQueryStringForSearchFilter({ CVE: [cveId] }),
         },
         skip: !isActive,
@@ -66,16 +70,14 @@ function ImageComponentVulnerabilitiesLoader({
         );
     }
 
-    return (
-        <ComponentVulnerabilitiesTable
-            images={[
-                {
-                    context: image,
-                    componentVulnerabilities: data?.image?.imageComponents ?? [],
-                },
-            ]}
-        />
-    );
+    const images = data?.deployment?.images
+        ? data.deployment.images.map((image) => ({
+              context: image,
+              componentVulnerabilities: image.imageComponents,
+          }))
+        : [];
+
+    return <ComponentVulnerabilitiesTable showImage images={images} />;
 }
 
 export default ImageComponentVulnerabilitiesLoader;

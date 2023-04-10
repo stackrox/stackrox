@@ -44,7 +44,10 @@ import AffectedImagesTable, {
     imagesForCveFragment,
 } from './Tables/AffectedImagesTable';
 import EntityTypeToggleGroup from './EntityTypeToggleGroup';
-import AffectedDeploymentsTable from './Tables/AffectedDeploymentsTable';
+import AffectedDeploymentsTable, {
+    DeploymentForCve,
+    deploymentsForCveFragment,
+} from './Tables/AffectedDeploymentsTable';
 import { DynamicTableLabel } from './DynamicIcon';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
@@ -76,14 +79,21 @@ export const imageCveSummaryQuery = gql`
 export const imageCveAffectedImagesQuery = gql`
     ${imagesForCveFragment}
     # by default, query must include the CVE id
-    query getImagesForCVE(
-        $query: String
-        $imageListPagination: Pagination
-        $imageComponentPagination: Pagination
-    ) {
+    query getImagesForCVE($query: String, $imageListPagination: Pagination) {
         imageCount(query: $query)
         images(query: $query, pagination: $imageListPagination) {
             ...ImagesForCVE
+        }
+    }
+`;
+
+export const imageCveAffectedDeploymentsQuery = gql`
+    ${deploymentsForCveFragment}
+    # by default, query must include the CVE id
+    query getDeploymentsForCVE($query: String, $deploymentListPagination: Pagination) {
+        deploymentCount(query: $query)
+        deployments(query: $query, pagination: $deploymentListPagination) {
+            ...DeploymentsForCVE
         }
     }
 `;
@@ -124,8 +134,6 @@ function ImageCvePage() {
         {
             query: string;
             imageListPagination: PaginationParam;
-            // TODO If required, fix this
-            imageComponentPagination?: PaginationParam;
         }
     >(imageCveAffectedImagesQuery, {
         variables: {
@@ -138,16 +146,35 @@ function ImageCvePage() {
                 limit: perPage,
                 sortOption,
             },
-            // TODO Benchmark whether or not server side pagination is really needed at this
-            // level, and if so, fix the implementation here
-            imageComponentPagination: undefined,
         },
         skip: entityTab !== 'Image',
+    });
+
+    const deploymentDataRequest = useQuery<
+        { deploymentCount: number; deployments: DeploymentForCve[] },
+        {
+            query: string;
+            deploymentListPagination: PaginationParam;
+        }
+    >(imageCveAffectedDeploymentsQuery, {
+        variables: {
+            query: getRequestQueryStringForSearchFilter({
+                ...querySearchFilter,
+                CVE: cveId,
+            }),
+            deploymentListPagination: {
+                offset: (page - 1) * perPage,
+                limit: perPage,
+                sortOption,
+            },
+        },
+        skip: entityTab !== 'Deployment',
     });
 
     // We generalize the imageData and deploymentData requests here so that we can use most of
     // the same logic for both tables and components in the return value below
     const imageData = imageDataRequest.data ?? imageDataRequest.previousData;
+    const deploymentData = deploymentDataRequest.data ?? deploymentDataRequest.previousData;
     let tableDataAvailable = false;
     let tableRowCount = 0;
     let tableError: Error | undefined;
@@ -159,10 +186,10 @@ function ImageCvePage() {
         tableError = imageDataRequest.error;
         tableLoading = imageDataRequest.loading;
     } else if (entityTab === 'Deployment') {
-        tableDataAvailable = false;
-        tableRowCount = 0;
-        tableError = undefined;
-        tableLoading = false;
+        tableDataAvailable = !!deploymentData;
+        tableRowCount = deploymentDataRequest.data?.deploymentCount ?? 0;
+        tableError = deploymentDataRequest.error;
+        tableLoading = deploymentDataRequest.loading;
     }
 
     const cveName = metadataRequest.data?.imageCVE?.cve;
@@ -241,6 +268,7 @@ function ImageCvePage() {
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                 <EntityTypeToggleGroup
                                     imageCount={imageData?.imageCount ?? 0}
+                                    deploymentCount={deploymentData?.deploymentCount ?? 0}
                                     entityTabs={imageCveEntities}
                                 />
                                 {isFiltered && <DynamicTableLabel />}
@@ -292,7 +320,14 @@ function ImageCvePage() {
                                                 isFiltered={isFiltered}
                                             />
                                         )}
-                                        {entityTab === 'Deployment' && <AffectedDeploymentsTable />}
+                                        {entityTab === 'Deployment' && (
+                                            <AffectedDeploymentsTable
+                                                cveId={cveId}
+                                                deployments={deploymentData?.deployments ?? []}
+                                                getSortParams={getSortParams}
+                                                isFiltered={isFiltered}
+                                            />
+                                        )}
                                     </div>
                                 </>
                             )}

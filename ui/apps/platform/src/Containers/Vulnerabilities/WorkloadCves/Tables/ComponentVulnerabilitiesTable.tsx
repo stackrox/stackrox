@@ -164,7 +164,7 @@ const sortFields = ['Image', 'Component'];
 
 export type ImageComponentVulnerabilitiesTableProps = {
     /** Whether to show the image column */
-    showImage: boolean;
+    showImage?: boolean;
     /** The images and associated component vulnerability data to display in the table */
     images: {
         context: ImageMetadataContext;
@@ -173,7 +173,7 @@ export type ImageComponentVulnerabilitiesTableProps = {
 };
 
 function ComponentVulnerabilitiesTable({
-    showImage,
+    showImage = false,
     images,
 }: ImageComponentVulnerabilitiesTableProps) {
     const defaultSortOption = {
@@ -214,7 +214,7 @@ function ComponentVulnerabilitiesTable({
                         }}
                     >
                         <Tr>
-                            {showImage && <Td>TODO - Image cell</Td>}
+                            {showImage && <Td>{image?.name?.remote ?? ''} TODO - Extract</Td>}
                             <Td>{name}</Td>
                             <Td>{version}</Td>
                             <Td>

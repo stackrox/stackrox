@@ -86,7 +86,7 @@ export const imagesForCveFragment = gql`
         }
 
         imageComponentCount(query: $query)
-        imageComponents(query: $query, pagination: $imageComponentPagination) {
+        imageComponents(query: $query) {
             name
             version
             location
