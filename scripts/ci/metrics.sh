@@ -104,7 +104,7 @@ bq_update_job_record() {
 
         case "$field" in
             # All updateable string fields need quotation
-            cut_*|outcome)
+            cut_*|outcome|test_target)
                 value="'$value'"
                 ;;
         esac
