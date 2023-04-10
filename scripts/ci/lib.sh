@@ -1425,7 +1425,7 @@ junit_wrap() {
     else
         local ret_code="$?"
         save_junit_failure "${class}" "${description}" "${failure_message}"
-        exit ${ret_code}
+        return ${ret_code}
     fi
 }
 
