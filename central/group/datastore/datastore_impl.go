@@ -307,7 +307,7 @@ func (ds *dataStoreImpl) verifyReferencedRoleAndProvider(group *storage.Group) e
 		return err
 	}
 	if !found {
-		return errox.InvalidArgs.Newf("Group %q role name %q does not exist", group.GetProps().GetId(), group.GetRoleName())
+		return errox.InvalidArgs.Newf("group %q role name %q does not exist", group.GetProps().GetId(), group.GetRoleName())
 	}
 	if err := declarativeconfig.VerifyReferencedResourceOrigin(role, group.GetProps(), role.GetName(), group.GetProps().GetId()); err != nil {
 		return err
@@ -318,7 +318,7 @@ func (ds *dataStoreImpl) verifyReferencedRoleAndProvider(group *storage.Group) e
 		return err
 	}
 	if !found {
-		return errox.InvalidArgs.Newf("Group %q auth provider %q does not exist", group.GetProps().GetId(), group.GetProps().GetAuthProviderId())
+		return errox.InvalidArgs.Newf("group %q auth provider %q does not exist", group.GetProps().GetId(), group.GetProps().GetAuthProviderId())
 	}
 	if err := declarativeconfig.VerifyReferencedResourceOrigin(authProvider, group.GetProps(), authProvider.GetName(), group.GetProps().GetId()); err != nil {
 		return err

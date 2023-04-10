@@ -11,7 +11,7 @@ func VerifyReferencedResourceOrigin(referenced, referencing ResourceWithTraits, 
 		return nil
 	}
 	// referenced is imperative or default, while referencing is not
-	return errox.InvalidArgs.Newf("imperative %s can't be referenced by non-imperative %s", referencedName, referencingName)
+	return errox.InvalidArgs.Newf("imperative resource %s can't be referenced by non-imperative resource %s", referencedName, referencingName)
 }
 
 // IsDeclarativeOrigin returns whether origin of resource is declarative or not.
