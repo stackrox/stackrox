@@ -181,14 +181,6 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		return events
 	}
 
-	if action != central.ResourceAction_REMOVE_RESOURCE {
-		d.deploymentStore.addOrUpdateDeployment(deploymentWrap)
-	} else {
-		d.deploymentStore.removeDeployment(deploymentWrap)
-		d.podStore.onDeploymentRemove(deploymentWrap)
-		d.processFilter.Delete(deploymentWrap.GetId())
-	}
-
 	events = d.appendIntegrationsOnCredentials(action, deploymentWrap.GetContainers(), events)
 
 	if env.ResyncDisabled.BooleanSetting() {
@@ -230,6 +222,15 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 			Object: deploymentWrap.GetDeployment(),
 			Action: action,
 		})
+	}
+
+	// Upsert/Delete at the end to avoid data race with other dispatchers
+	if action != central.ResourceAction_REMOVE_RESOURCE {
+		d.deploymentStore.addOrUpdateDeployment(deploymentWrap)
+	} else {
+		d.deploymentStore.removeDeployment(deploymentWrap)
+		d.podStore.onDeploymentRemove(deploymentWrap)
+		d.processFilter.Delete(deploymentWrap.GetId())
 	}
 
 	return events
