@@ -2,9 +2,12 @@ import React from 'react';
 import { CodeBlock, CodeBlockCode, Flex } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
+import sortBy from 'lodash/sortBy';
 
 import { isVulnerabilitySeverity } from 'types/cve.proto';
+import { ApiSortOption } from 'types/search';
 import { NotFixableIcon } from 'Components/PatternFly/FixabilityIcons';
+import useTableSort from 'hooks/patternfly/useTableSort';
 
 export type ImageMetadataContext = {
     id: string;
@@ -133,6 +136,26 @@ function flattenImageComponentVulns(
     });
 }
 
+function sortTableData(tableData: TableDataRow[], sortOption: ApiSortOption): TableDataRow[] {
+    const sortedRows = sortBy(tableData, (row) => {
+        switch (sortOption.field) {
+            case 'Image':
+                return row.image.name?.remote ?? '';
+            case 'Component':
+                return row.name;
+            default:
+                return '';
+        }
+    });
+
+    if (sortOption.reversed) {
+        sortedRows.reverse();
+    }
+    return sortedRows;
+}
+
+const sortFields = ['Image', 'Component'];
+
 export type ImageComponentVulnerabilitiesTableProps = {
     /** Whether to show the image column */
     showImage: boolean;
@@ -147,9 +170,21 @@ function ComponentVulnerabilitiesTable({
     showImage,
     images,
 }: ImageComponentVulnerabilitiesTableProps) {
+    const defaultSortOption = {
+        field: showImage ? 'Image' : 'Component',
+        direction: 'asc',
+    } as const;
+
+    // TODO This implementation will maintain a separate sort state for each table on the page. Do we want to
+    //      instead maintain a single sort state for the entire page?
+    const { sortOption, getSortParams } = useTableSort({
+        sortFields,
+        defaultSortOption,
+    });
     const componentVulns = images.flatMap(({ imageMetadataContext, componentVulnerabilities }) =>
         flattenImageComponentVulns(imageMetadataContext, componentVulnerabilities)
     );
+    const sortedComponentVulns = sortTableData(componentVulns, sortOption);
     return (
         <TableComposable
             className="pf-u-p-md"
@@ -160,14 +195,14 @@ function ComponentVulnerabilitiesTable({
         >
             <Thead>
                 <Tr>
-                    {showImage && <Th>Image</Th>}
-                    <Th>Component</Th>
+                    {showImage && <Th sort={getSortParams('Image')}>Image</Th>}
+                    <Th sort={getSortParams('Component')}>Component</Th>
                     <Th>Version</Th>
                     <Th>Fixed in</Th>
                     <Th>Location</Th>
                 </Tr>
             </Thead>
-            {componentVulns.map((componentVuln, index) => {
+            {sortedComponentVulns.map((componentVuln, index) => {
                 const { image, name, version, fixedIn, location, layer } = componentVuln;
                 // No border on the last row
                 const style =
