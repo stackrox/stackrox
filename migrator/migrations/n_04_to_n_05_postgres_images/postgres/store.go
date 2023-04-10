@@ -373,7 +373,7 @@ func copyFromImageComponentCVEEdges(ctx context.Context, tx *postgres.Tx, _ stri
 		})
 
 		// if we hit our batch size we need to push the data
-		if len(inputRows) == 0 || idx == len(objs)-1 {
+		if len(inputRows)%batchSize == 0 || idx == len(objs)-1 {
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{componentCVEEdgesTable}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
