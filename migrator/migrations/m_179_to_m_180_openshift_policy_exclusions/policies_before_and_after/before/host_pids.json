@@ -12,63 +12,10 @@
   ],
   "exclusions": [
     {
-      "name": "Don't alert on deployment apiserver-watcher-* in kube-system namespace",
-      "deployment": {
-        "name": "apiserver-watcher-.*",
-        "scope": {
-          "namespace": "kube-system"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment in openshift-kube-apiserver namespace",
-      "deployment": {
-        "scope": {
-          "namespace": "openshift-kube-apiserver"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment tuned in openshift-cluster-node-tuning-operator namespace",
-      "deployment": {
-        "name": "tuned",
-        "scope": {
-          "namespace": "openshift-cluster-node-tuning-operator"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment ovnkube-node in openshift-ovn-kubernetes namespace",
-      "deployment": {
-        "name": "ovnkube-node",
-        "scope": {
-          "namespace": "openshift-ovn-kubernetes"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment machine-config-daemon in openshift-machine-config-operator namespace",
-      "deployment": {
-        "name": "machine-config-daemon",
-        "scope": {
-          "namespace": "openshift-machine-config-operator"
-        }
-      }
-    },
-    {
       "name": "Don't alert on the openshift-sdn namespace",
       "deployment": {
         "scope": {
           "namespace": "openshift-sdn"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment node-exporter in namespace openshift-monitoring",
-      "deployment": {
-        "name": "node-exporter",
-        "scope": {
-          "namespace": "openshift-monitoring"
         }
       }
     }

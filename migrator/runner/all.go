@@ -135,4 +135,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_176_to_m_177_network_baselines_cidr"
 	_ "github.com/stackrox/rox/migrator/migrations/m_177_to_m_178_group_permissions"
 	_ "github.com/stackrox/rox/migrator/migrations/m_178_to_m_179_embedded_collections_search_label"
+	_ "github.com/stackrox/rox/migrator/migrations/m_179_to_m_180_openshift_policy_exclusions"
 )
