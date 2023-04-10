@@ -649,7 +649,7 @@ h6 {
 
 .ReactTable .rt-tbody .rt-tr.row-active .rt-td,
 .ReactTable .rt-tbody .rt-tr.row-active:hover .rt-td {
-    @apply text-tertiary-700 bg-tertiary-200 !important;
+    @apply bg-tertiary-200 !important;
     box-shadow: 0px -1px 0 0 theme('colors.tertiary-400'),
         inset 0px -1px 0 0 theme('colors.tertiary-400');
     z-index: 4 !important;
