@@ -40,8 +40,9 @@ const (
 )
 
 var (
-	storedComponents = set.NewStringSet()
-	storedCVEs       = set.NewStringSet()
+	storedComponents         = set.NewStringSet()
+	storedComponentsCVEEdges = set.NewStringSet()
+	storedCVEs               = set.NewStringSet()
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -358,6 +359,10 @@ func copyFromImageComponentCVEEdges(ctx context.Context, tx *postgres.Tx, _ stri
 			return marshalErr
 		}
 
+		if !storedComponentsCVEEdges.Add(obj.GetId()) {
+			continue
+		}
+
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
 			obj.GetIsFixable(),
@@ -368,7 +373,7 @@ func copyFromImageComponentCVEEdges(ctx context.Context, tx *postgres.Tx, _ stri
 		})
 
 		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+		if len(inputRows) == 0 || idx == len(objs)-1 {
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{componentCVEEdgesTable}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
@@ -377,6 +382,13 @@ func copyFromImageComponentCVEEdges(ctx context.Context, tx *postgres.Tx, _ stri
 
 			// Clear the input rows for the next batch
 			inputRows = inputRows[:0]
+		}
+	}
+	if len(inputRows) != 0 {
+		_, err = tx.CopyFrom(ctx, pgx.Identifier{componentCVEEdgesTable}, copyCols, pgx.CopyFromRows(inputRows))
+
+		if err != nil {
+			return err
 		}
 	}
 
