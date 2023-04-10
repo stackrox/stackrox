@@ -68,6 +68,7 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
                                 className="mx-2 text-primary-700 hover:text-primary-800 p-1 bg-primary-300 rounded flex"
                                 to={headerUrl}
                                 target="_blank"
+                                aria-label="External link"
                             >
                                 <ExternalLink size="14" />
                             </Link>
