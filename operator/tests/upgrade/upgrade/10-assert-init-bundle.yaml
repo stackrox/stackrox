@@ -8,7 +8,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: collector-tlss
+  name: collector-tls
   annotations:
     init-bundle.stackrox.io/name: testing-cluster
 ---
