@@ -250,7 +250,7 @@ func CollectPostgresDatabaseStats(postgresConfig *postgres.Config) {
 		availableDBBytes, err := pgadmin.GetRemainingCapacity(postgresConfig)
 		if err != nil {
 			if !loggedCapacityCalculationError {
-				log.Errorf("issue fetching remaining database storage: %v", err)
+				log.Errorf("error fetching remaining database storage: %v", err)
 				loggedCapacityCalculationError = true
 			}
 			return
