@@ -65,6 +65,27 @@ func getIndicatorIdsForPlops(plops []*storage.ProcessListeningOnPortFromSensor) 
 	return indicatorIds
 }
 
+func noSecretsPlop(plop *storage.ProcessListeningOnPortFromSensor) string {
+	if plop == nil {
+		return ""
+	}
+
+	var plopProcessString string
+
+	if plop.Process == nil {
+		plopProcessString = ""
+	} else {
+		plopProcessString = fmt.Sprintf("%s_%s_%s_%s",
+			plop.Process.ContainerName,
+			plop.Process.PodId,
+			plop.Process.ProcessName,
+			plop.Process.ProcessExecFilePath,
+		)
+	}
+
+	return fmt.Sprintf("%d_%d_%s", plop.GetProtocol(), plop.GetPort(), plopProcessString)
+}
+
 func (ds *datastoreImpl) AddProcessListeningOnPort(
 	ctx context.Context,
 	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
@@ -129,7 +150,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		// and will not be stored.
 		if _, indicatorExists := indicatorsMap[indicatorID]; !indicatorExists {
 			countMetrics.IncrementOrphanedPLOPCounter(val.GetClusterId())
-			log.Debugf("Found no matching indicators for %+v", val)
+			log.Debugf("Found no matching indicators for %s", noSecretsPlop(val))
 			processInfo = val.GetProcess()
 		}
 
@@ -152,7 +173,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		if !prevExists {
 			if val.CloseTimestamp != nil {
 				// We try to close a not existing Endpoint, something is wrong
-				log.Warnf("Found no matching PLOP to close for %+v", val)
+				log.Warnf("Found no matching PLOP to close for %+v", noSecretsPlop(val))
 			}
 
 			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
@@ -183,7 +204,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		// and will not be stored.
 		if _, indicatorExists := indicatorsMap[indicatorID]; !indicatorExists {
 			countMetrics.IncrementOrphanedPLOPCounter(val.GetClusterId())
-			log.Debugf("Found no matching indicators for %+v", val)
+			log.Debugf("Found no matching indicators for %s", noSecretsPlop(val))
 			processInfo = val.GetProcess()
 		}
 
