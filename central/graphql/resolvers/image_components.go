@@ -244,10 +244,18 @@ func getDeploymentScope(scopeQuery *v1.Query, contexts ...context.Context) strin
 }
 
 func getImageIDFromScope(contexts ...context.Context) string {
+	var scope scoped.Scope
+	var hasScope bool
 	for _, ctx := range contexts {
-		if scope, ok := scoped.GetScope(ctx); ok {
-			if scope.Level == v1.SearchCategory_IMAGES {
+		if features.VulnMgmtWorkloadCVEs.Enabled() {
+			if scope, hasScope = scoped.GetScopeAtLevel(ctx, v1.SearchCategory_IMAGES); !hasScope {
 				return scope.ID
+			}
+		} else {
+			if scope, ok := scoped.GetScope(ctx); ok {
+				if scope.Level == v1.SearchCategory_IMAGES {
+					return scope.ID
+				}
 			}
 		}
 	}
