@@ -129,7 +129,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		// and will not be stored.
 		if _, indicatorExists := indicatorsMap[indicatorID]; !indicatorExists {
 			countMetrics.IncrementOrphanedPLOPCounter(val.GetClusterId())
-			log.Warnf("Found no matching indicators for %+v", val)
+			log.Debugf("Found no matching indicators for %+v", val)
 			processInfo = val.GetProcess()
 		}
 
@@ -183,7 +183,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		// and will not be stored.
 		if _, indicatorExists := indicatorsMap[indicatorID]; !indicatorExists {
 			countMetrics.IncrementOrphanedPLOPCounter(val.GetClusterId())
-			log.Warnf("Found no matching indicators for %+v", val)
+			log.Debugf("Found no matching indicators for %+v", val)
 			processInfo = val.GetProcess()
 		}
 
