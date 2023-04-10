@@ -30,7 +30,7 @@ fi
 kubectl -n "${namespace}" delete deploy/admission-control || true
 kubectl -n "${namespace}" delete daemonset collector || true
 
-kubectl -n "${namespace}" set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
+kubectl -n "${namespace}" set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0 ROX_FAKE_WORKLOAD_STORAGE=/var/cache/stackrox/pebble.db
 kubectl -n "${namespace}" set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0  ROX_SCALE_TEST=true
 kubectl -n "${namespace}" delete configmap scale-workload-config || true
 kubectl -n "${namespace}" create configmap scale-workload-config --from-file=workload.yaml="$file"

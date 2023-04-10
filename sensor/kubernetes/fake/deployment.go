@@ -108,7 +108,7 @@ func createDeploymentLabels(random bool, numLabels int) map[string]string {
 	return createMap(numLabels)
 }
 
-func (w *WorkloadManager) getDeployment(workload DeploymentWorkload) *deploymentResourcesToBeManaged {
+func (w *WorkloadManager) getDeployment(workload DeploymentWorkload, idx int, deploymentIDs, replicaSetIDs, podIDs []string) *deploymentResourcesToBeManaged {
 	var labels map[string]string
 	if workload.NumLabels == 0 {
 		labels = createDeploymentLabels(workload.RandomLabels, 3)
@@ -144,7 +144,7 @@ func (w *WorkloadManager) getDeployment(workload DeploymentWorkload) *deployment
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      randString(),
 			Namespace: namespace,
-			UID:       newUUID(),
+			UID:       idOrNewUID(getID(deploymentIDs, idx)),
 			CreationTimestamp: metav1.Time{
 				Time: time.Now(),
 			},
@@ -207,12 +207,16 @@ func (w *WorkloadManager) getDeployment(workload DeploymentWorkload) *deployment
 			},
 		},
 	}
+	w.writeID(deploymentPrefix, deployment.UID)
 
-	rs := getReplicaSet(deployment)
+	rs := getReplicaSet(deployment, getID(replicaSetIDs, idx))
+	w.writeID(replicaSetPrefix, rs.UID)
 
 	var pods []*corev1.Pod
 	for i := 0; i < workload.PodWorkload.NumPods; i++ {
-		pods = append(pods, getPod(rs))
+		pod := getPod(rs, getID(podIDs, i+idx*workload.PodWorkload.NumPods))
+		w.writeID(podPrefix, pod.UID)
+		pods = append(pods, pod)
 	}
 	return &deploymentResourcesToBeManaged{
 		workload:   workload,
@@ -222,7 +226,7 @@ func (w *WorkloadManager) getDeployment(workload DeploymentWorkload) *deployment
 	}
 }
 
-func getReplicaSet(deployment *appsv1.Deployment) *appsv1.ReplicaSet {
+func getReplicaSet(deployment *appsv1.Deployment, id string) *appsv1.ReplicaSet {
 	return &appsv1.ReplicaSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       kubernetes.ReplicaSet,
@@ -231,7 +235,7 @@ func getReplicaSet(deployment *appsv1.Deployment) *appsv1.ReplicaSet {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      randString(),
 			Namespace: deployment.Namespace,
-			UID:       newUUID(),
+			UID:       idOrNewUID(id),
 			CreationTimestamp: metav1.Time{
 				Time: time.Now(),
 			},
@@ -256,7 +260,7 @@ func getReplicaSet(deployment *appsv1.Deployment) *appsv1.ReplicaSet {
 	}
 }
 
-func getPod(replicaSet *appsv1.ReplicaSet) *corev1.Pod {
+func getPod(replicaSet *appsv1.ReplicaSet, id string) *corev1.Pod {
 	pod := &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Pod",
@@ -265,7 +269,7 @@ func getPod(replicaSet *appsv1.ReplicaSet) *corev1.Pod {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      randString(),
 			Namespace: replicaSet.Namespace,
-			UID:       newUUID(),
+			UID:       idOrNewUID(id),
 			CreationTimestamp: metav1.Time{
 				Time: time.Now(),
 			},
@@ -393,7 +397,7 @@ func (w *WorkloadManager) manageDeployment(ctx context.Context, resources *deplo
 	// The previous function returning means that the deployments, replicaset and pods were all deleted
 	// Now we recreate the objects again
 	for count := 0; resources.workload.NumLifecycles == 0 || count < resources.workload.NumLifecycles; count++ {
-		resources = w.getDeployment(resources.workload)
+		resources = w.getDeployment(resources.workload, 0, nil, nil, nil)
 		deployment, replicaSet, pods := resources.deployment, resources.replicaSet, resources.pods
 		if _, err := w.client.Kubernetes().AppsV1().Deployments(deployment.Namespace).Create(ctx, deployment, metav1.CreateOptions{}); err != nil {
 			log.Errorf("error creating deployment: %v", err)
@@ -434,9 +438,11 @@ func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resourc
 			if err := deploymentClient.Delete(ctx, deployment.Name, metav1.DeleteOptions{}); err != nil {
 				log.Error(err)
 			}
+			w.deleteID(deploymentPrefix, deployment.UID)
 			if err := replicaSetClient.Delete(ctx, replicaset.Name, metav1.DeleteOptions{}); err != nil {
 				log.Error(err)
 			}
+			w.deleteID(replicaSetPrefix, replicaset.UID)
 			return
 		case <-time.After(deploymentNextUpdate):
 			deploymentNextUpdate = calculateDurationWithJitter(resources.workload.UpdateInterval)
@@ -485,6 +491,7 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 		if err := client.Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
 			log.Errorf("error deleting pod: %v", err)
 		}
+		w.deleteID(podPrefix, pod.UID)
 		ipPool.remove(pod.Status.PodIP)
 
 		for _, cs := range pod.Status.ContainerStatuses {
@@ -512,6 +519,7 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 			if _, err := client.Create(ctx, pod, metav1.CreateOptions{}); err != nil {
 				log.Errorf("error creating pod: %v", err)
 			}
+			w.writeID(podPrefix, pod.UID)
 			podSig = concurrency.NewSignal()
 			go w.manageProcessesForPod(&podSig, podWorkload, pod)
 			podDeadline = newTimerWithJitter(podWorkload.LifecycleDuration)
