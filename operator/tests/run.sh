@@ -16,8 +16,8 @@ test_operator_e2e() {
     require_environment "KUBECONFIG"
 
     read -r -d '' kuttl_help <<- _EO_KUTTL_HELP_ || true
-               See log and/or kuttl JUnit output for error details.
-               Reading operator/tests/TROUBLESHOOTING_E2E_TESTS.md may also be helpful.
+See log and/or kuttl JUnit output for error details.
+Reading operator/tests/TROUBLESHOOTING_E2E_TESTS.md may also be helpful.
 _EO_KUTTL_HELP_
 
     rm -f FAIL
