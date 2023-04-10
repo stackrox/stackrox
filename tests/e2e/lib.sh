@@ -661,7 +661,7 @@ _record_build_info() {
     local central_image
     central_image="$(kcsr get deploy central -o json | jq -r '.spec.template.spec.containers[0].image')"
     if [[ "${central_image}" =~ -rcd$ ]]; then
-        build_info="${build_info}+race"
+        build_info="${build_info},-race"
     fi
 
     update_job_record "build" "${build_info}"
