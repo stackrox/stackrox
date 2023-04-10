@@ -13,33 +13,6 @@
   "eventSource": "DEPLOYMENT_EVENT",
   "exclusions": [
     {
-      "name": "Don't alert on haproxy-* deployment in openshift-vsphere-infra namespace",
-      "deployment": {
-        "name": "haproxy-.*",
-        "scope": {
-          "namespace": "openshift-vsphere-infra"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on keepalived-* deployment in openshift-vsphere-infra namespace",
-      "deployment": {
-        "name": "keepalived-.*",
-        "scope": {
-          "namespace": "openshift-vsphere-infra"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on ovnkube-node deployment in openshift-ovn-kubernetes Namespace",
-      "deployment": {
-        "name": "ovnkube-node",
-        "scope": {
-          "namespace": "openshift-ovn-kubernetes"
-        }
-      }
-    },
-    {
       "name": "Don't alert on kube-system namespace",
       "deployment": {
         "scope": {
