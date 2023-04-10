@@ -110,8 +110,7 @@ const DynamicConfigurationSection = ({
                 <div className={wrapperMarginClassName}>
                     <div className={`pl-2 ${justifyBetweenClassName}`}>
                         <label
-                            htmlFor="dynamicConfig.admissionControllerConfig
-                    .timeoutSeconds"
+                            htmlFor="dynamicConfig.admissionControllerConfig.timeoutSeconds"
                             className={labelClassName}
                         >
                             Timeout (seconds)
