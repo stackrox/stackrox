@@ -98,7 +98,8 @@ func (Traits_Visibility) EnumDescriptor() ([]byte, []int) {
 // Objects with the IMPERATIVE origin are allowed to be modified via API, not via declarative configuration.
 // They may reference all other objects.
 // Objects with the DECLARATIVE_ORPHANED origin are not allowed to be modified via either API or declarative configuration.
-// Objects with this origin will be cleaned up from the system immediately after they will stop be referenced by other resources.
+// DECLARATIVE_ORPHANED resource can become DECLARATIVE again if it is redefined in declarative configuration.
+// Objects with this origin will be cleaned up from the system immediately after they are not referenced by other resources anymore.
 // They may be referenced by all other objects.
 type Traits_Origin int32
 

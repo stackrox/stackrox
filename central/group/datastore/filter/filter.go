@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/globaldb"
-	store2 "github.com/stackrox/rox/central/group/datastore/internal/store"
+	"github.com/stackrox/rox/central/group/datastore/internal/store"
 	"github.com/stackrox/rox/central/group/datastore/internal/store/bolt"
 	"github.com/stackrox/rox/central/group/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
@@ -19,7 +19,7 @@ func GetFiltered(ctx context.Context, filter func(*storage.Group) bool) ([]*stor
 }
 
 // GetFilteredWithStore returns groups from the specified store filtered using filter function.
-func GetFilteredWithStore(ctx context.Context, filter func(*storage.Group) bool, store store2.Store) ([]*storage.Group, error) {
+func GetFilteredWithStore(ctx context.Context, filter func(*storage.Group) bool, store store.Store) ([]*storage.Group, error) {
 	var groups []*storage.Group
 	walkFn := func() error {
 		groups = groups[:0]
@@ -37,20 +37,20 @@ func GetFilteredWithStore(ctx context.Context, filter func(*storage.Group) bool,
 }
 
 var (
-	store store2.Store
-	once  sync.Once
+	groupStore store.Store
+	once       sync.Once
 )
 
 func initialize() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		store = postgres.New(globaldb.GetPostgres())
+		groupStore = postgres.New(globaldb.GetPostgres())
 	} else {
-		store = bolt.New(globaldb.GetGlobalDB())
+		groupStore = bolt.New(globaldb.GetGlobalDB())
 	}
 }
 
 // GroupStoreSingleton returns the singleton providing access to the roles store.
-func GroupStoreSingleton() store2.Store {
+func GroupStoreSingleton() store.Store {
 	once.Do(initialize)
-	return store
+	return groupStore
 }
