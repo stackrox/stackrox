@@ -6,9 +6,9 @@ import GenerateButton from 'Containers/Network/SidePanel/Creator/Buttons/Generat
 function GenerateNetworkPoliciesSection(): ReactElement {
     return (
         <div className="bg-base-100 rounded-sm shadow">
-            <div className="flex text-primary-700 p-3 border-b border-base-300 mb-2 items-center">
+            <div className="flex p-3 border-b border-base-300 mb-2 items-center">
                 <img
-                    className="text-primary-700 h-5"
+                    className="h-5"
                     alt=""
                     src={generate}
                     style={{

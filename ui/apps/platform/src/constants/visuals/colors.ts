@@ -1,20 +1,13 @@
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import { PolicySeverity } from 'types/policy.proto';
 
-const colors = [
-    'var(--primary-400)',
-    'var(--secondary-400)',
-    'var(--tertiary-400)',
-    'var(--accent-400)',
-    'var(--secondary-500)',
-];
+const colors = ['var(--primary-400)', 'var(--secondary-400)'];
 
 export const colorTypes = [
     'alert',
     'caution',
     'warning',
     'success',
-    'accent',
     'tertiary',
     'secondary',
     'primary',
