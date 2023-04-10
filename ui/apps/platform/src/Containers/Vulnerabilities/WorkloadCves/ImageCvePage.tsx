@@ -43,9 +43,12 @@ import AffectedImagesTable, {
     imagesForCveFragment,
 } from './Tables/AffectedImagesTable';
 import EntityTypeToggleGroup from './components/EntityTypeToggleGroup';
-import AffectedDeploymentsTable from './Tables/AffectedDeploymentsTable';
 import { DynamicTableLabel } from './components/DynamicIcon';
 import TableErrorComponent from './components/TableErrorComponent';
+import AffectedDeploymentsTable, {
+    DeploymentForCve,
+    deploymentsForCveFragment,
+} from './Tables/AffectedDeploymentsTable';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
@@ -84,22 +87,46 @@ export const imageCveAffectedImagesQuery = gql`
     }
 `;
 
+export const imageCveAffectedDeploymentsQuery = gql`
+    ${deploymentsForCveFragment}
+    # by default, query must include the CVE id
+    query getDeploymentsForCVE($query: String, $pagination: Pagination) {
+        deploymentCount(query: $query)
+        deployments(query: $query, pagination: $pagination) {
+            ...DeploymentsForCVE
+        }
+    }
+`;
+
 const imageSortFields = ['Image', 'Operating System'];
 const imageDefaultSort = { field: 'Image', direction: 'desc' } as const;
+
+const deploymentSortFields = ['Deployment', 'Cluster', 'Namespace'];
+const deploymentDefaultSort = { field: 'Deployment', direction: 'desc' } as const;
+
 const imageCveEntities = ['Image', 'Deployment'] as const;
+
+function getSortFields(entityTab: (typeof imageCveEntities)[number]) {
+    return entityTab === 'Image' ? imageSortFields : deploymentSortFields;
+}
+
+function getDefaultSortOption(entityTab: (typeof imageCveEntities)[number]) {
+    return entityTab === 'Image' ? imageDefaultSort : deploymentDefaultSort;
+}
 
 function ImageCvePage() {
     const { cveId } = useParams();
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const { page, perPage, setPage, setPerPage } = useURLPagination(25);
-    const { sortOption, getSortParams } = useURLSort({
-        sortFields: imageSortFields,
-        defaultSortOption: imageDefaultSort,
-        onSort: () => setPage(1),
-    });
 
     const [entityTab] = useURLStringUnion('entityTab', imageCveEntities);
+
+    const { sortOption, setSortOption, getSortParams } = useURLSort({
+        sortFields: getSortFields(entityTab),
+        defaultSortOption: getDefaultSortOption(entityTab),
+        onSort: () => setPage(1),
+    });
 
     const metadataRequest = useQuery<{ imageCVE: ImageCveMetadata }, { cve: string }>(
         imageCveMetadataQuery,
@@ -134,9 +161,31 @@ function ImageCvePage() {
         skip: entityTab !== 'Image',
     });
 
+    const deploymentDataRequest = useQuery<
+        { deploymentCount: number; deployments: DeploymentForCve[] },
+        {
+            query: string;
+            pagination: PaginationParam;
+        }
+    >(imageCveAffectedDeploymentsQuery, {
+        variables: {
+            query: getRequestQueryStringForSearchFilter({
+                ...querySearchFilter,
+                CVE: cveId,
+            }),
+            pagination: {
+                offset: (page - 1) * perPage,
+                limit: perPage,
+                sortOption,
+            },
+        },
+        skip: entityTab !== 'Deployment',
+    });
+
     // We generalize the imageData and deploymentData requests here so that we can use most of
     // the same logic for both tables and components in the return value below
     const imageData = imageDataRequest.data ?? imageDataRequest.previousData;
+    const deploymentData = deploymentDataRequest.data ?? deploymentDataRequest.previousData;
     let tableDataAvailable = false;
     let tableRowCount = 0;
     let tableError: Error | undefined;
@@ -148,10 +197,10 @@ function ImageCvePage() {
         tableError = imageDataRequest.error;
         tableLoading = imageDataRequest.loading;
     } else if (entityTab === 'Deployment') {
-        tableDataAvailable = false;
-        tableRowCount = 0;
-        tableError = undefined;
-        tableLoading = false;
+        tableDataAvailable = !!deploymentData;
+        tableRowCount = deploymentDataRequest.data?.deploymentCount ?? 0;
+        tableError = deploymentDataRequest.error;
+        tableLoading = deploymentDataRequest.loading;
     }
 
     const cveName = metadataRequest.data?.imageCVE?.cve;
@@ -227,7 +276,16 @@ function ImageCvePage() {
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                 <EntityTypeToggleGroup
                                     imageCount={imageData?.imageCount ?? 0}
+                                    deploymentCount={deploymentData?.deploymentCount ?? 0}
                                     entityTabs={imageCveEntities}
+                                    onChange={(entity) => {
+                                        // Ugly type workaround
+                                        if (entity !== 'CVE') {
+                                            // Set the sort and pagination back to the default when changing between entity tabs
+                                            setSortOption(getDefaultSortOption(entity));
+                                            setPage(1);
+                                        }
+                                    }}
                                 />
                                 {isFiltered && <DynamicTableLabel />}
                             </Flex>
@@ -271,7 +329,13 @@ function ImageCvePage() {
                                                 isFiltered={isFiltered}
                                             />
                                         )}
-                                        {entityTab === 'Deployment' && <AffectedDeploymentsTable />}
+                                        {entityTab === 'Deployment' && (
+                                            <AffectedDeploymentsTable
+                                                deployments={deploymentData?.deployments ?? []}
+                                                getSortParams={getSortParams}
+                                                isFiltered={isFiltered}
+                                            />
+                                        )}
                                     </div>
                                 </>
                             )}
