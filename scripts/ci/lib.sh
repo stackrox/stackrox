@@ -1400,7 +1400,9 @@ __EOM__
     }
 }
 
-JUNIT_DIR="${ARTIFACT_DIR:-}/junit-misc"
+get_junit_misc_dir() {
+    echo "${ARTIFACT_DIR}/junit-misc"
+}
 
 save_junit_success() {
     if [[ "$#" -ne 2 ]]; then
@@ -1417,9 +1419,11 @@ save_junit_success() {
     local timestamp
     timestamp="$(date -u +"%s.%N")"
 
-    mkdir -p "${JUNIT_DIR}"
+    local junit_dir
+    junit_dir="$(get_junit_misc_dir)"
+    mkdir -p "${junit_dir}"
 
-    cat << EOF > "${JUNIT_DIR}/junit-${class}-${timestamp}.xml"
+    cat << EOF > "${junit_dir}/junit-${class}-${timestamp}.xml"
 <testsuite name="${class}" tests="1" skipped="0" failures="0" errors="0">
     <testcase name="${description}" classname="${class}">
     </testcase>
@@ -1443,9 +1447,11 @@ save_junit_failure() {
     local timestamp
     timestamp="$(date -u +"%s.%N")"
 
-    mkdir -p "${JUNIT_DIR}"
+    local junit_dir
+    junit_dir="$(get_junit_misc_dir)"
+    mkdir -p "${junit_dir}"
 
-    cat << EOF > "${JUNIT_DIR}/junit-${class}-${timestamp}.xml"
+    cat << EOF > "${junit_dir}/junit-${class}-${timestamp}.xml"
 <testsuite name="${class}" tests="1" skipped="0" failures="1" errors="0">
     <testcase name="${description}" classname="${class}">
         <failure><![CDATA[${details}]]></failure>
