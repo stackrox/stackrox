@@ -2,9 +2,12 @@ import React from 'react';
 import { CodeBlock, CodeBlockCode, Flex } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
+import sortBy from 'lodash/sortBy';
 
 import { isVulnerabilitySeverity } from 'types/cve.proto';
+import { ApiSortOption } from 'types/search';
 import { NotFixableIcon } from 'Components/PatternFly/FixabilityIcons';
+import useTableSort from 'hooks/patternfly/useTableSort';
 
 export type ImageMetadataContext = {
     id: string;
@@ -135,8 +138,29 @@ function flattenImageComponentVulns(
 
         rows.push({ image, name, severity, version, fixedIn, location, layer });
     });
+
     return rows;
 }
+
+function sortTableData(tableData: TableDataRow[], sortOption: ApiSortOption): TableDataRow[] {
+    const sortedRows = sortBy(tableData, (row) => {
+        switch (sortOption.field) {
+            case 'Image':
+                return row.image.name?.remote ?? '';
+            case 'Component':
+                return row.name;
+            default:
+                return '';
+        }
+    });
+
+    if (sortOption.reversed) {
+        sortedRows.reverse();
+    }
+    return sortedRows;
+}
+
+const sortFields = ['Image', 'Component'];
 
 export type ImageComponentVulnerabilitiesTableProps = {
     /** Whether to show the image column */
@@ -152,9 +176,18 @@ function ComponentVulnerabilitiesTable({
     showImage,
     images,
 }: ImageComponentVulnerabilitiesTableProps) {
+    const defaultSortOption = {
+        field: showImage ? 'Image' : 'Component',
+        direction: 'asc',
+    } as const;
+    const { sortOption, getSortParams } = useTableSort({
+        sortFields,
+        defaultSortOption,
+    });
     const componentVulns = images.flatMap(({ context, componentVulnerabilities }) =>
         flattenImageComponentVulns(context, componentVulnerabilities)
     );
+    const sortedComponentVulns = sortTableData(componentVulns, sortOption);
     return (
         <TableComposable
             className="pf-u-p-md"
@@ -165,14 +198,14 @@ function ComponentVulnerabilitiesTable({
         >
             <Thead>
                 <Tr>
-                    {showImage && <Th>Image</Th>}
-                    <Th>Component</Th>
+                    {showImage && <Th sort={getSortParams('Image')}>Image</Th>}
+                    <Th sort={getSortParams('Component')}>Component</Th>
                     <Th>Version</Th>
                     <Th>Fixed in</Th>
                     <Th>Location</Th>
                 </Tr>
             </Thead>
-            {componentVulns.map(({ image, name, version, fixedIn, location, layer }) => {
+            {sortedComponentVulns.map(({ image, name, version, fixedIn, location, layer }) => {
                 return (
                     <Tbody
                         key={`${image.id}:${name}`}
