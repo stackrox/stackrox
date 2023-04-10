@@ -57,7 +57,6 @@ func (s *pipelineImpl) Run(
 		portProcesses := update.GetProcessesListeningOnPorts()
 
 		if portProcesses != nil {
-			log.Debugf("Store PLOP object: %+v", portProcesses)
 			if err := s.dataStore.AddProcessListeningOnPort(ctx, portProcesses...); err != nil {
 				return err
 			}
