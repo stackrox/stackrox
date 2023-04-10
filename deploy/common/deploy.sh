@@ -55,14 +55,10 @@ echo "StackRox scanner image set to $SCANNER_IMAGE"
 
 function curl_central() {
 	cmd=(curl -k)
-    if [[ -n "${ROX_API_TOKEN}" ]]; then
-        cmd+=(-H "Authorization: Bearer ${ROX_API_TOKEN}")
-    else
-        local admin_user="${ROX_ADMIN_USER:-admin}"
-        if [[ -n "${ROX_ADMIN_PASSWORD:-}" ]]; then
-            cmd+=(-u "${admin_user}:${ROX_ADMIN_PASSWORD}")
-        fi
-    fi
+	local admin_user="${ROX_ADMIN_USER:-admin}"
+	if [[ -n "${ROX_ADMIN_PASSWORD:-}" ]]; then
+		cmd+=(-u "${admin_user}:${ROX_ADMIN_PASSWORD}")
+	fi
 	"${cmd[@]}" "$@"
 }
 
