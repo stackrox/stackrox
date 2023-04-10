@@ -105,7 +105,7 @@ require (
 	golang.org/x/sync v0.1.0
 	golang.org/x/sys v0.7.0
 	golang.org/x/time v0.3.0
-	golang.org/x/tools v0.7.0
+	golang.org/x/tools v0.8.0
 	golang.stackrox.io/grpc-http1 v0.2.6
 	google.golang.org/api v0.116.0
 	google.golang.org/genproto v0.0.0-20230331144136-dcfb400f0633
@@ -336,7 +336,7 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
-	golang.org/x/mod v0.9.0 // indirect
+	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/term v0.7.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
