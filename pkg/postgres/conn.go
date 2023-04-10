@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
@@ -42,7 +41,6 @@ func (c *Conn) Exec(ctx context.Context, sql string, args ...interface{}) (pgcon
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 	defer cancel()
 
-	defer setQueryDuration(time.Now(), "conn", sql)
 	ct, err := c.Conn.Exec(ctx, sql, args...)
 	if err != nil {
 		incQueryErrors(sql, err)
@@ -55,7 +53,6 @@ func (c *Conn) Exec(ctx context.Context, sql string, args ...interface{}) (pgcon
 func (c *Conn) Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
-	defer setQueryDuration(time.Now(), "conn", sql)
 	rows, err := c.Conn.Query(ctx, sql, args...)
 	if err != nil {
 		incQueryErrors(sql, err)
@@ -73,7 +70,6 @@ func (c *Conn) Query(ctx context.Context, sql string, args ...interface{}) (*Row
 func (c *Conn) QueryRow(ctx context.Context, sql string, args ...interface{}) *Row {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
-	defer setQueryDuration(time.Now(), "conn", sql)
 	return &Row{
 		Row:        c.Conn.QueryRow(ctx, sql, args...),
 		query:      sql,

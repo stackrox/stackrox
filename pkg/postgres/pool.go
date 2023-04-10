@@ -72,7 +72,6 @@ func (d *DB) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 	defer cancel()
 
-	defer setQueryDuration(time.Now(), "pool", sql)
 	ct, err := d.Pool.Exec(ctx, sql, args...)
 	if err != nil {
 		incQueryErrors(sql, err)
@@ -85,7 +84,6 @@ func (d *DB) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.
 func (d *DB) Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
-	defer setQueryDuration(time.Now(), "pool", sql)
 	rows, err := d.Pool.Query(ctx, sql, args...)
 	if err != nil {
 		incQueryErrors(sql, err)
@@ -102,7 +100,6 @@ func (d *DB) Query(ctx context.Context, sql string, args ...interface{}) (*Rows,
 func (d *DB) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
-	defer setQueryDuration(time.Now(), "pool", sql)
 	return &Row{
 		Row:        d.Pool.QueryRow(ctx, sql, args...),
 		query:      sql,
