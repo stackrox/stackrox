@@ -45,14 +45,11 @@ const entityTypeCountsQuery = gql`
 function getTableRowCount(countsData: EntityCounts, entityType: EntityTab): number {
     switch (entityType) {
         case 'Image':
-            return countsData.imageCount;
-            break;
+            return countsData?.imageCount;
         case 'Deployment':
-            return countsData.deploymentCount;
-            break;
+            return countsData?.deploymentCount;
         case 'CVE':
-            return countsData.imageCVECount;
-            break;
+            return countsData?.imageCVECount;
         default:
             return 0;
     }
