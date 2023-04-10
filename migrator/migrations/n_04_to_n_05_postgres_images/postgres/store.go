@@ -278,9 +278,6 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.T
 
 	var err error
 
-	// This is a copy so first we must delete the rows and re-add them
-	var deletes []string
-
 	copyCols := []string{
 		"id",
 		"cvebaseinfo_cve",
