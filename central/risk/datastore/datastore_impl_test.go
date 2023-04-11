@@ -8,6 +8,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/risk/datastore/internal/index"
 	"github.com/stackrox/rox/central/risk/datastore/internal/search"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store"
@@ -20,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"

@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	postgresGroupStore "github.com/stackrox/rox/central/group/datastore/internal/store/postgres"
+	postgresSchema "github.com/stackrox/rox/central/postgres/schema"
 	roleDatastoreMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )

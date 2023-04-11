@@ -3,11 +3,11 @@ package search
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/index"
 	pgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"

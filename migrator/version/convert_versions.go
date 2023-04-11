@@ -2,7 +2,7 @@ package version
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres/schema"
+	schema "github.com/stackrox/rox/pkg/postgres/schema/version"
 )
 
 // ConvertVersionFromProto converts a `*storage.Version` to Gorm model

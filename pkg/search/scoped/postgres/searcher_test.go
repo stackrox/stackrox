@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -13,10 +12,10 @@ import (
 
 func TestScoping(t *testing.T) {
 	if mapping.GetTableFromCategory(v1.SearchCategory_CLUSTERS) == nil {
-		mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTERS, schema.ClustersSchema)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTERS, testschema.ClustersSchema)
 	}
 	if mapping.GetTableFromCategory(v1.SearchCategory_NAMESPACES) == nil {
-		mapping.RegisterCategoryToTable(v1.SearchCategory_NAMESPACES, schema.NamespacesSchema)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_NAMESPACES, testschema.NamespacesSchema)
 	}
 	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "dep").ProtoQuery()
 	scopes := []scoped.Scope{

@@ -10,6 +10,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/metrics"
+	centralSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -31,7 +32,7 @@ import (
 // can be handled via query and become much more efficient.  In order to really see the benefits of Postgres for
 // this store, we will need to refactor how it is used.
 const (
-	networkFlowsTable = pkgSchema.NetworkFlowsTableName
+	networkFlowsTable = centralSchema.NetworkFlowsTableName
 
 	// The store now uses a serial primary key id so that the store can quickly insert rows.  As such, in order
 	// to get the most recent row or a count of distinct rows we need to do a self join to match the fields AND

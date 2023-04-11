@@ -8,12 +8,13 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	schema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
 	accessScopePostgres "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/accessScopePostgresStore"
 	collectionPostgres "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/collectionPostgresStore"
 	reportConfigurationPostgres "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/reportConfigurationPostgresStore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/postgres/schema"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
@@ -392,8 +393,8 @@ func (s *reportConfigsMigrationTestSuite) SetupTest() {
 	s.accessScopeStore = accessScopePostgres.New(s.db.DB)
 	s.collectionStore = collectionPostgres.New(s.db.DB)
 
-	schema.ApplySchemaForTable(context.Background(), s.db.GetGormDB(), schema.ReportConfigurationsTableName)
-	schema.ApplySchemaForTable(context.Background(), s.db.GetGormDB(), schema.SimpleAccessScopesTableName)
+	pkgSchema.ApplySchemaForTable(context.Background(), s.db.GetGormDB(), schema.ReportConfigurationsTableName)
+	pkgSchema.ApplySchemaForTable(context.Background(), s.db.GetGormDB(), schema.SimpleAccessScopesTableName)
 }
 
 func (s *reportConfigsMigrationTestSuite) TearDownTest() {

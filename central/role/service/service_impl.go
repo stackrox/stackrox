@@ -8,6 +8,8 @@ import (
 	"github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
+	namespaceMappings "github.com/stackrox/rox/central/namespace/index/mappings"
+	"github.com/stackrox/rox/central/postgres/schema"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
@@ -23,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"google.golang.org/grpc"
 )

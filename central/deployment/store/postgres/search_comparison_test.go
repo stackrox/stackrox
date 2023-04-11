@@ -9,11 +9,11 @@ import (
 
 	"github.com/golang/mock/gomock"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"

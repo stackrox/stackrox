@@ -2,9 +2,9 @@ package imagecve
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
