@@ -31,7 +31,7 @@ var (
 	// NetworkGraphPatternFly enables the PatternFly version of NetworkGraph. (used in the front-end app only)
 	NetworkGraphPatternFly = registerFeature("Enable PatternFly version of NetworkGraph", "ROX_NETWORK_GRAPH_PATTERNFLY", true)
 
-	// CollectUdp is a collector specific feature flag. It is added here so that the environment variable can be easily set in collector
+	// CollectUDP is a collector specific feature flag. It is added here so that the environment variable can be easily set in collector
 	CollectUDP = registerFeature("Enables collector to report UDP listening endpoints", "ROX_COLLECT_UDP", true)
 
 	// ClairV4Scanner enables Clair v4 as an Image Integration option
