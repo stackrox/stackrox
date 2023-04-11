@@ -13,12 +13,19 @@ INITIAL_POSTGRES_TAG="3.74.0-1-gfe924fce30"
 INITIAL_POSTGRES_SHA="fe924fce30bbec4dbd37d731ccd505837a2c2575"
 CURRENT_TAG="$(make --quiet tag)"
 
+# shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
+# shellcheck source=../../scripts/ci/lib.sh
 source "$TEST_ROOT/scripts/ci/lib.sh"
+# shellcheck source=../../scripts/ci/sensor-wait.sh
 source "$TEST_ROOT/scripts/ci/sensor-wait.sh"
+# shellcheck source=../../scripts/setup-certs.sh
 source "$TEST_ROOT/tests/scripts/setup-certs.sh"
+# shellcheck source=../../tests/e2e/lib.sh
 source "$TEST_ROOT/tests/e2e/lib.sh"
+# shellcheck source=../../tests/upgrade/lib.sh
 source "$TEST_ROOT/tests/upgrade/lib.sh"
+# shellcheck source=../../tests/upgrade/validation.sh
 source "$TEST_ROOT/tests/upgrade/validation.sh"
 
 test_upgrade() {

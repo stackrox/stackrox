@@ -2,6 +2,7 @@
 set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+# shellcheck source=./detect.sh
 source "${DIR}/detect.sh"
 
 if is_openshift; then

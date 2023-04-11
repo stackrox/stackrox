@@ -3,12 +3,19 @@
 # Tests part I of qa-tests-backend. Formerly CircleCI gke-api-e2e-tests.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../scripts/ci/gcp.sh
 source "$ROOT/scripts/ci/gcp.sh"
+# shellcheck source=../../scripts/ci/lib.sh
 source "$ROOT/scripts/ci/lib.sh"
+# shellcheck source=../../scripts/ci/sensor-wait.sh
 source "$ROOT/scripts/ci/sensor-wait.sh"
+# shellcheck source=../../scripts/ci/create-webhookserver.sh
 source "$ROOT/scripts/ci/create-webhookserver.sh"
+# shellcheck source=../../tests/e2e/lib.sh
 source "$ROOT/tests/e2e/lib.sh"
+# shellcheck source=../../tests/scripts/setup-certs.sh
 source "$ROOT/tests/scripts/setup-certs.sh"
+# shellcheck source=../../qa-tests-backend/scripts/lib.sh
 source "$ROOT/qa-tests-backend/scripts/lib.sh"
 
 set -euo pipefail

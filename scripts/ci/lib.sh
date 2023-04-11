@@ -3,8 +3,11 @@
 # A library of CI related reusable bash functions
 
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../scripts/lib.sh
 source "$SCRIPTS_ROOT/scripts/lib.sh"
+# shellcheck source=../../scripts/ci/metrics.sh
 source "$SCRIPTS_ROOT/scripts/ci/metrics.sh"
+# shellcheck source=../../scripts/ci/test_state.sh
 source "$SCRIPTS_ROOT/scripts/ci/test_state.sh"
 
 set -euo pipefail

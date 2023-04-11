@@ -3,7 +3,9 @@
 # A collection of GKE related reusable bash functions for CI
 
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../scripts/ci/lib.sh
 source "$SCRIPTS_ROOT/scripts/ci/lib.sh"
+# shellcheck source=../../scripts/ci/gcp.sh
 source "$SCRIPTS_ROOT/scripts/ci/gcp.sh"
 
 set -euo pipefail

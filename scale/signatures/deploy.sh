@@ -6,6 +6,7 @@ set -euo pipefail
 # If no signature integration exists, nothing will be done.
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../tests/e2e/lib.sh
 source "$TEST_ROOT/tests/e2e/lib.sh"
 
 require_environment "ROX_PASSWORD"
