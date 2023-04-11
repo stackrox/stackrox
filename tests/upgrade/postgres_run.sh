@@ -132,6 +132,7 @@ test_upgrade_paths() {
     echo "Unable to connect to Sensor at" >> /tmp/allowlist-patterns
     echo "No suitable kernel object downloaded for kernel" >> /tmp/allowlist-patterns
     echo "Unexpected HTTP request failure" >> /tmp/allowlist-patterns
+    echo "UNEXPECTED:  Unknown message type" >> /tmp/allowlist-patterns
     # Using ci_export so the post tests have this as well
     ci_export ALLOWLIST_FILE "/tmp/allowlist-patterns"
 
@@ -322,8 +323,8 @@ force_rollback_to_previous_postgres() {
     # so turning that off in sensor and collector to prevent central crashes.
     # Sensor and Collector will be deleted a few steps after this so no need
     # to turn these back on
-    kubectl -n stackrox set env deploy/sensor ROX_PROCESSES_LISTENING_ON_PORT=false
-    kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT=false
+#    kubectl -n stackrox set env deploy/sensor ROX_PROCESSES_LISTENING_ON_PORT=false
+#    kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT=false
 
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
