@@ -450,10 +450,8 @@ check_for_stackrox_OOMs() {
             if pod_name=$(jq -ser 'if . == [] then null else .[] | select(.kind=="Pod") | .metadata.name end' "$object"); then
                 info "Checking $pod_name for OOMKilled"
                 if jq -e '. | select(.status.containerStatuses[].lastState.terminated.reason=="OOMKilled")' "$object" >/dev/null 2>&1; then
-                    echo "OOM $object"
                     save_junit_failure "OOMCheck-$pod_name" "OOMCheck" "$pod_name was OOMKilled"
                 else
-                    echo "NOT OOM $object"
                     save_junit_success "OOMCheck-$pod_name" "$pod_name was not OOMKilled"
                 fi
             else
