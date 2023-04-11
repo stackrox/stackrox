@@ -306,7 +306,6 @@ func getAvailablePostgresCapacity(postgresConfig *postgres.Config) (int64, error
 	defer cancel()
 	conn, err := connectPool.Acquire(ctx)
 	if err != nil {
-		log.Error(err)
 		return 0, err
 	}
 	defer conn.Release()
@@ -314,38 +313,34 @@ func getAvailablePostgresCapacity(postgresConfig *postgres.Config) (int64, error
 	// Start a transaction
 	tx, err := conn.Begin(ctx)
 	if err != nil {
-		log.Error(err)
 		return 0, err
 	}
 
 	// COPY needs some place to write the data.  This table will be deleted when the transaction ends.
 	_, err = tx.Exec(ctx, "CREATE TEMP TABLE IF NOT EXISTS tmp_sys_df (content text) ON COMMIT DROP;")
 	if err != nil {
-		log.Errorf("Unable to create tmp table: %v", err)
 		if err := tx.Rollback(ctx); err != nil {
 			return 0, err
 		}
-		return 0, err
+		return 0, errors.Wrap(err, "Unable to create tmp table")
 	}
 
 	// COPY can execute a system level program and stream the results to a table.
 	_, err = tx.Exec(ctx, "COPY tmp_sys_df FROM PROGRAM 'df -kP $PGDATA | tail'")
 	if err != nil {
-		log.Errorf("Unable to copy to tmp table: %v", err)
 		if err := tx.Rollback(ctx); err != nil {
 			return 0, err
 		}
-		return 0, err
+		return 0, errors.Wrap(err, "Unable to copy to tmp table")
 	}
 
 	var rawCapacityInfo []string
 	rows, err := tx.Query(ctx, "SELECT content FROM tmp_sys_df;")
 	if err != nil {
-		log.Errorf("Unable to read tmp table: %v", err)
 		if err := tx.Rollback(ctx); err != nil {
 			return 0, err
 		}
-		return 0, err
+		return 0, errors.Wrap(err, "Unable to read tmp table")
 	}
 	defer rows.Close()
 
@@ -409,7 +404,6 @@ func GetRemainingCapacity(postgresConfig *postgres.Config) (int64, error) {
 
 	capacity, err := getAvailablePostgresCapacity(postgresConfig)
 	if err != nil {
-		log.Error(err)
 		// If we cannot calculate the capacity, assume it based on the recommended starting
 		// capacity
 		return pgconfig.GetPostgresCapacity() - sizeUsed, err
