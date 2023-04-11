@@ -49,7 +49,7 @@ uiEndpoint: "localhost:8000"
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			l := lintCmd{fileContents: c.yaml}
+			l := lintCmd{fileContents: [][]byte{c.yaml}}
 			err := l.Lint()
 			assert.Error(t, err)
 			if c.err != nil {

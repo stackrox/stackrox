@@ -4,7 +4,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/roxctl/common/mocks"
+	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreateAccessScope_Failures(t *testing.T) {
@@ -14,6 +16,7 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 	}{
 		"missing name flag": {
 			args: []string{
+				"access-scope",
 				"--description=some-description",
 			},
 			errOut: `Error: required flag(s) "name" not set
@@ -21,12 +24,14 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 		},
 		"invalid operator in label selector": {
 			args: []string{
+				"access-scope",
 				"--name=some-name",
 				"--cluster-label-selector=key=some-key;operator=WRONG;values=some-value",
 			},
 		},
 		"invalid label selector flag value": {
 			args: []string{
+				"access-scope",
 				"--name=some-name",
 				"--cluster-label-selector=key=some-key,operator=WRONG,values=some-value",
 			},
@@ -35,6 +40,7 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 		},
 		"invalid label selector key value": {
 			args: []string{
+				"access-scope",
 				"--name=some-name",
 				"--cluster-label-selector=key:some-key;operator=IN;values=some-value",
 			},
@@ -43,6 +49,7 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 		},
 		"invalid included objects flag value": {
 			args: []string{
+				"access-scope",
 				"--name=some-name",
 				"--included=cluster=namespace=",
 			},
@@ -51,6 +58,7 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 		},
 		"invalid key value pair in label selector": {
 			args: []string{
+				"access-scope",
 				"--name=some-name",
 				"--cluster-label-selector=something=somewhere;here=there",
 			},
@@ -62,7 +70,7 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			env, out, errOut := mocks.NewEnvWithConn(nil, t)
-			cmd := accessScopeCommand(env)
+			cmd := Command(env)
 			cmd.SetArgs(c.args)
 			cmd.SetOut(out)
 			cmd.SetErr(errOut)
@@ -78,6 +86,7 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 
 func TestCreateAccessScope_Success(t *testing.T) {
 	args := []string{
+		"access-scope",
 		"--name=some-name",
 		"--description=some-description",
 		"--included=clusterA",
@@ -117,7 +126,7 @@ rules:
 `
 
 	env, out, errOut := mocks.NewEnvWithConn(nil, t)
-	cmd := accessScopeCommand(env)
+	cmd := Command(env)
 	cmd.SetArgs(args)
 	cmd.SetOut(out)
 	cmd.SetErr(errOut)
@@ -127,6 +136,42 @@ rules:
 
 	assert.Empty(t, errOut)
 	assert.Equal(t, expectedYAML, out.String())
+}
+
+func TestAccessScope_WriteToK8sObject(t *testing.T) {
+	cases := map[string]struct {
+		secret                 string
+		configMap              string
+		shouldWriteToK8sObject bool
+	}{
+		"no flag set should not write to k8s object": {},
+		"config map flag set should write to k8s object": {
+			configMap:              "something",
+			shouldWriteToK8sObject: true,
+		},
+		"secret flag set should write to k8s object": {
+			secret:                 "something",
+			shouldWriteToK8sObject: true,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			env, _, _ := mocks.NewEnvWithConn(nil, t)
+			cmd := Command(env)
+			if c.configMap != "" {
+				require.NoError(t, cmd.Flags().Set(k8sobject.ConfigMapFlag, c.configMap))
+			}
+			if c.secret != "" {
+				require.NoError(t, cmd.Flags().Set(k8sobject.SecretFlag, c.secret))
+			}
+
+			accessScopeCmd := accessScopeCmd{}
+			err := accessScopeCmd.Construct(cmd)
+			require.NoError(t, err)
+			assert.Equal(t, c.shouldWriteToK8sObject, accessScopeCmd.configMap != "" || accessScopeCmd.secret != "")
+		})
+	}
 }
 
 func FuzzRetrieveRequirement(f *testing.F) {

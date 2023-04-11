@@ -2,6 +2,8 @@ package create
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"os"
 	"sort"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"gopkg.in/yaml.v3"
 )
@@ -94,6 +97,10 @@ type authProviderCmd struct {
 	userPKICAFile string
 
 	env environment.Environment
+
+	configMap string
+	secret    string
+	namespace string
 }
 
 func (a *authProviderCmd) oidcCommand() *cobra.Command {
@@ -199,11 +206,25 @@ func (a *authProviderCmd) openShiftCommand() *cobra.Command {
 
 func (a *authProviderCmd) RunE() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
+		if err := a.Construct(cmd); err != nil {
+			return err
+		}
 		if err := a.Validate(cmd.Use); err != nil {
-			return errors.Wrap(err, "validating auth provider")
+			return err
 		}
 		return a.PrintYAML()
 	}
+}
+
+func (a *authProviderCmd) Construct(cmd *cobra.Command) error {
+	configMap, secret, namespace, err := k8sobject.ReadK8sObjectFlags(cmd)
+	if err != nil {
+		return errors.Wrap(err, "reading config map flag values")
+	}
+	a.configMap = configMap
+	a.secret = secret
+	a.namespace = namespace
+	return nil
 }
 
 func (a *authProviderCmd) Validate(providerType string) error {
@@ -302,6 +323,14 @@ func (a *authProviderCmd) PrintYAML() error {
 	if err := lint.Lint(yamlOut.Bytes()); err != nil {
 		return errors.Wrap(err, "linting the YAML output")
 	}
-	_, err := a.env.InputOutput().Out().Write(yamlOut.Bytes())
-	return errors.Wrap(err, "writing the YAML output")
+	if a.configMap != "" || a.secret != "" {
+		return errors.Wrap(k8sobject.WriteToK8sObject(context.Background(), a.configMap, a.secret, a.namespace,
+			fmt.Sprintf("%s-%s", a.authProvider.Type(), a.authProvider.Name), yamlOut.Bytes()),
+			"writing the YAML output to config map")
+	}
+
+	if _, err := a.env.InputOutput().Out().Write(yamlOut.Bytes()); err != nil {
+		return errors.Wrap(err, "writing the YAML output")
+	}
+	return nil
 }
