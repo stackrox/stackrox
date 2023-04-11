@@ -132,8 +132,8 @@ func (s *ImageCVECoreResolverTestSuite) TestCountImageCVEsWithQuery() {
 
 func (s *ImageCVECoreResolverTestSuite) TestGetImageCVEMalformed() {
 	_, err := s.resolver.ImageCVE(s.ctx, struct {
-		Cve   *string
-		Query *string
+		Cve                *string
+		SubfieldScopeQuery *string
 	}{})
 	s.Error(err)
 }
@@ -148,8 +148,8 @@ func (s *ImageCVECoreResolverTestSuite) TestGetImageCVENonEmpty() {
 	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ, views.ReadOptions{}).Return(expected, nil)
 	response, err := s.resolver.ImageCVE(
 		s.ctx, struct {
-			Cve   *string
-			Query *string
+			Cve                *string
+			SubfieldScopeQuery *string
 		}{
 			Cve: pointers.String("cve-xyz"),
 		},
@@ -168,11 +168,11 @@ func (s *ImageCVECoreResolverTestSuite) TestGetImageCVENonEmpty() {
 
 	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ, views.ReadOptions{}).Return(expected, nil)
 	response, err = s.resolver.ImageCVE(s.ctx, struct {
-		Cve   *string
-		Query *string
+		Cve                *string
+		SubfieldScopeQuery *string
 	}{
-		Cve:   pointers.String("cve-xyz"),
-		Query: pointers.String("Fixable:true"),
+		Cve:                pointers.String("cve-xyz"),
+		SubfieldScopeQuery: pointers.String("Fixable:true"),
 	},
 	)
 	s.NoError(err)
@@ -189,11 +189,11 @@ func (s *ImageCVECoreResolverTestSuite) TestGetImageCVENonEmpty() {
 
 	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ, views.ReadOptions{}).Return(expected, nil)
 	response, err = s.resolver.ImageCVE(s.ctx, struct {
-		Cve   *string
-		Query *string
+		Cve                *string
+		SubfieldScopeQuery *string
 	}{
-		Cve:   pointers.String("cve-xyz"),
-		Query: pointers.String("Namespace:n1"),
+		Cve:                pointers.String("cve-xyz"),
+		SubfieldScopeQuery: pointers.String("Namespace:n1"),
 	},
 	)
 	s.NoError(err)
