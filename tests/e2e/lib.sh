@@ -23,6 +23,7 @@ deploy_stackrox() {
     export_central_basic_auth_creds
     wait_for_api
     setup_client_TLS_certs "${1:-}"
+    record_build_info
 
     deploy_sensor
     echo "Sensor deployed. Waiting for sensor to be up"
@@ -51,6 +52,7 @@ deploy_stackrox_with_custom_sensor() {
     export_central_basic_auth_creds
     wait_for_api
     setup_client_TLS_certs "${2:-}"
+    record_build_info
 
     # generate init bundle
     password_file="$ROOT/deploy/$ORCHESTRATOR_FLAVOR/central-deploy/password"
@@ -626,6 +628,41 @@ wait_for_api() {
     ci_export API_HOSTNAME "${API_HOSTNAME}"
     ci_export API_PORT "${API_PORT}"
     ci_export API_ENDPOINT "${API_ENDPOINT}"
+}
+
+record_build_info() {
+    _record_build_info || {
+        # Failure to gather metrics is not a test failure
+        info "WARNING: Job build info record failed"
+    }
+}
+
+_record_build_info() {
+    if ! is_CI; then
+        return
+    fi
+
+    local build_info
+
+    local metadata_url="https://${API_ENDPOINT}/v1/metadata"
+    local metadata
+    releaseBuild="$(curl -skS "${metadata_url}" | jq -r '.releaseBuild')"
+
+    if [[ "$releaseBuild" == "true" ]]; then
+        build_info="release"
+    else
+        build_info="dev"
+    fi
+
+    # -race debug builds - use the image tag as the most reliable way to
+    # determin the build under test.
+    local central_image
+    central_image="$(kubectl -n stackrox get deploy central -o json | jq -r '.spec.template.spec.containers[0].image')"
+    if [[ "${central_image}" =~ -rcd$ ]]; then
+        build_info="${build_info},-race"
+    fi
+
+    update_job_record "build" "${build_info}"
 }
 
 restore_56_1_backup() {

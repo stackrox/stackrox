@@ -75,29 +75,34 @@ test_part_1() {
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
     rm -f FAIL
+    local test_target
 
     if is_openshift_CI_rehearse_PR; then
         info "On an openshift rehearse PR, running BAT tests only..."
-        make -C qa-tests-backend bat-test || touch FAIL
+        test_target="bat-test"
     elif is_in_PR_context && pr_has_label ci-all-qa-tests; then
         info "ci-all-qa-tests label was specified, so running all QA tests..."
-        make -C qa-tests-backend test || touch FAIL
+        test_target="test"
     elif is_in_PR_context; then
         info "In a PR context without ci-all-qa-tests, running BAT tests only..."
-        make -C qa-tests-backend bat-test || touch FAIL
+        test_target="bat-test"
     elif is_nightly_run; then
         info "Nightly tests, running all QA tests..."
-        make -C qa-tests-backend test || touch FAIL
+        test_target="test"
     elif is_tagged; then
         info "Tagged, running all QA tests..."
-        make -C qa-tests-backend test || touch FAIL
+        test_target="test"
     elif [[ -n "${QA_TEST_TARGET:-}" ]]; then
-        info "Directed to run the '""${QA_TEST_TARGET:-}""' target..."
-        make -C qa-tests-backend "${QA_TEST_TARGET:-}" || touch FAIL
+        info "Directed to run the '""${QA_TEST_TARGET}""' target..."
+        test_target="${QA_TEST_TARGET}"
     else
         info "An unexpected context. Defaulting to BAT tests only..."
-        make -C qa-tests-backend bat-test || touch FAIL
+        test_target="bat-test"
     fi
+
+    update_job_record "test_target" "${test_target}"
+
+    make -C qa-tests-backend "${test_target}" || touch FAIL
 
     store_qa_test_results "part-1-tests"
     [[ ! -f FAIL ]] || die "Part 1 tests failed"
