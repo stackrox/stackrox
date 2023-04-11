@@ -144,7 +144,7 @@ make_artifacts_help() {
     cat > "$help_file" <<- EOH
         <html>
         <head>
-        <title><h4>How to locate other artifacts</h4></title>
+        <title><h4>How to locate additional stackrox e2e artifacts</h4></title>
         <style>
           body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
           a { color: #ff8caa }
@@ -153,7 +153,7 @@ make_artifacts_help() {
         </head>
         <body>
 
-        Artifacts are stored in a GCS bucket ($GS_URL). There are at least two options for access:
+        Additional stackrox e2e artifacts are stored in a GCS bucket ($GS_URL) by the store_artifacts bash function. There are at least two options for access:
 
         <h2>gsutil cp</h2>
 
