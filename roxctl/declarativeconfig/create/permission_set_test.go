@@ -5,7 +5,9 @@ import (
 
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/mocks"
+	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreatePermissionSet_Failures(t *testing.T) {
@@ -16,6 +18,7 @@ func TestCreatePermissionSet_Failures(t *testing.T) {
 	}{
 		"missing name flag": {
 			args: []string{
+				"permission-set",
 				`--resource-with-access="Access=READ_ACCESS"`,
 			},
 			errOut: `Error: if any flags in the group [name resource-with-access] are set they must all be set; missing [name]
@@ -23,6 +26,7 @@ func TestCreatePermissionSet_Failures(t *testing.T) {
 		},
 		"missing resource-with-access flag": {
 			args: []string{
+				"permission-set",
 				"--name=some-name",
 			},
 			errOut: `Error: if any flags in the group [name resource-with-access] are set they must all be set; missing [resource-with-access]
@@ -30,6 +34,7 @@ func TestCreatePermissionSet_Failures(t *testing.T) {
 		},
 		"invalid access specified in resource-with-access flag": {
 			args: []string{
+				"permission-set",
 				"--name=some-name",
 				`--resource-with-access=Access=ReadAccess,Admin=READ_WRITE_ACCESS,Policy=none_access`,
 			},
@@ -40,7 +45,7 @@ func TestCreatePermissionSet_Failures(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			env, out, errOut := mocks.NewEnvWithConn(nil, t)
-			cmd := permissionSetCommand(env)
+			cmd := Command(env)
 
 			cmd.SetArgs(c.args)
 			cmd.SetErr(errOut)
@@ -67,6 +72,7 @@ func TestCreatePermissionSet_Success(t *testing.T) {
 	}{
 		"with description set": {
 			args: []string{
+				"permission-set",
 				"--name=some-name",
 				"--description=some-description",
 				`--resource-with-access=Access=READ_ACCESS,Admin=READ_WRITE_ACCESS`,
@@ -82,6 +88,7 @@ resources:
 		},
 		"without description set": {
 			args: []string{
+				"permission-set",
 				"--name=some-name",
 				`--resource-with-access=Access=READ_ACCESS,Admin=READ_WRITE_ACCESS`,
 			},
@@ -95,6 +102,7 @@ resources:
 		},
 		"with lowercase resource": {
 			args: []string{
+				"permission-set",
 				"--name=some-name",
 				"--resource-with-access=Access=read_access",
 				"--resource-with-access=Admin=read_write_access",
@@ -112,7 +120,7 @@ resources:
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			env, out, errOut := mocks.NewEnvWithConn(nil, t)
-			cmd := permissionSetCommand(env)
+			cmd := Command(env)
 
 			cmd.SetArgs(c.args)
 			cmd.SetErr(errOut)
@@ -123,6 +131,42 @@ resources:
 
 			assert.Empty(t, errOut)
 			assert.Equal(t, c.expectedYAML, out.String())
+		})
+	}
+}
+
+func TestPermissionSet_WriteToK8sObject(t *testing.T) {
+	cases := map[string]struct {
+		secret                 string
+		configMap              string
+		shouldWriteToK8sObject bool
+	}{
+		"no flag set should not write to k8s object": {},
+		"config map flag set should write to k8s object": {
+			configMap:              "something",
+			shouldWriteToK8sObject: true,
+		},
+		"secret flag set should write to k8s object": {
+			secret:                 "something",
+			shouldWriteToK8sObject: true,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			env, _, _ := mocks.NewEnvWithConn(nil, t)
+			cmd := Command(env)
+			if c.configMap != "" {
+				require.NoError(t, cmd.Flags().Set(k8sobject.ConfigMapFlag, c.configMap))
+			}
+			if c.secret != "" {
+				require.NoError(t, cmd.Flags().Set(k8sobject.SecretFlag, c.secret))
+			}
+
+			permissionSetCmd := permissionSetCmd{}
+			err := permissionSetCmd.Construct(cmd)
+			require.NoError(t, err)
+			assert.Equal(t, c.shouldWriteToK8sObject, permissionSetCmd.configMap != "" || permissionSetCmd.secret != "")
 		})
 	}
 }

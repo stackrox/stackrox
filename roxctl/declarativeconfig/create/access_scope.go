@@ -2,6 +2,7 @@ package create
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"gopkg.in/yaml.v3"
 )
@@ -44,6 +46,9 @@ func accessScopeCommand(cliEnvironment environment.Environment) *cobra.Command {
 		Short: "Create a declarative configuration for an access scope",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := accessScopeCmd.Construct(cmd); err != nil {
+				return err
+			}
 			if err := accessScopeCmd.Validate(); err != nil {
 				return err
 			}
@@ -83,6 +88,21 @@ type accessScopeCmd struct {
 
 	clusterRequirements   []declarativeconfig.Requirement
 	namespaceRequirements []declarativeconfig.Requirement
+
+	configMap string
+	secret    string
+	namespace string
+}
+
+func (a *accessScopeCmd) Construct(cmd *cobra.Command) error {
+	configMap, secret, namespace, err := k8sobject.ReadK8sObjectFlags(cmd)
+	if err != nil {
+		return errors.Wrap(err, "reading config map flag values")
+	}
+	a.configMap = configMap
+	a.namespace = namespace
+	a.secret = secret
+	return nil
 }
 
 func (a *accessScopeCmd) Validate() error {
@@ -108,8 +128,16 @@ func (a *accessScopeCmd) PrintYAML() error {
 	if err := lint.Lint(yamlOut.Bytes()); err != nil {
 		return errors.Wrap(err, "linting the YAML output")
 	}
-	_, err := a.env.InputOutput().Out().Write(yamlOut.Bytes())
-	return errors.Wrap(err, "writing the YAML output")
+	if a.configMap != "" || a.secret != "" {
+		return errors.Wrap(k8sobject.WriteToK8sObject(context.Background(), a.configMap, a.secret, a.namespace,
+			fmt.Sprintf("%s-%s", a.accessScope.Type(), a.accessScope.Name), yamlOut.Bytes()),
+			"writing the YAML output to config map")
+	}
+
+	if _, err := a.env.InputOutput().Out().Write(yamlOut.Bytes()); err != nil {
+		return errors.Wrap(err, "writing the YAML output")
+	}
+	return nil
 }
 
 // Implementation of pflag.Value to support complex object declarativeconfig.IncludedObject.
