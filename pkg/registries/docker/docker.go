@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/distribution/manifest/manifestlist"
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
-	"github.com/docker/distribution/manifest/schema2"
+	manifestV2 "github.com/docker/distribution/manifest/schema2"
 	"github.com/heroku/docker-registry-client/registry"
-	ociSpec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -190,16 +190,19 @@ func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error
 		return nil, errors.Wrap(err, "Failed to get the manifest digest ")
 	}
 
+	// Note: Any updates here must be accompanied by updates to registry_without_digest.go.
 	switch manifestType {
 	case manifestV1.MediaTypeManifest:
 		return HandleV1Manifest(r, remote, digest.String())
 	case manifestV1.MediaTypeSignedManifest:
 		return HandleV1SignedManifest(r, remote, digest.String())
-	case registry.MediaTypeManifestList:
+	case manifestlist.MediaTypeManifestList:
 		return HandleV2ManifestList(r, remote, digest.String())
-	case schema2.MediaTypeManifest:
+	case manifestV2.MediaTypeManifest:
 		return HandleV2Manifest(r, remote, digest.String())
-	case ociSpec.MediaTypeImageManifest:
+	case registry.MediaTypeImageIndex:
+		return HandleOCIImageIndex(r, remote, digest.String())
+	case registry.MediaTypeImageManifest:
 		return HandleOCIManifest(r, remote, digest.String())
 	default:
 		return nil, fmt.Errorf("unknown manifest type '%s'", manifestType)

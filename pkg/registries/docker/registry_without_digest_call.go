@@ -7,9 +7,12 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
+// manifestFuncs explicitly lists the container image manifest handlers.
+// Note: Any updates here must be accompanied by updates to docker.go.
 var manifestFuncs = []func(registry *Registry, remote, ref string) (*storage.ImageMetadata, error){
 	HandleV2ManifestList,
 	HandleV2Manifest,
+	HandleOCIImageIndex,
 	HandleOCIManifest,
 	HandleV1SignedManifest,
 	HandleV1Manifest,
