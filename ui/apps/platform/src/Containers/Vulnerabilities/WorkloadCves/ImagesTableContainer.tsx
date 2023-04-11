@@ -6,9 +6,9 @@ import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import ImagesTable, { imageListQuery } from './ImagesTable';
-import TableErrorComponent from '../components/TableErrorComponent';
-import { parseQuerySearchFilter } from '../searchUtils';
+import ImagesTable, { imageListQuery } from './Tables/ImagesTable';
+import TableErrorComponent from './components/TableErrorComponent';
+import { parseQuerySearchFilter } from './searchUtils';
 
 const defaultSortFields = ['Image', 'Operating system', 'Deployment count', 'Age', 'Scan time'];
 
@@ -16,7 +16,7 @@ function ImagesTableContainer() {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
-    const { page, perPage, setPage } = useURLPagination(50);
+    const { page, perPage, setPage } = useURLPagination(25);
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
         defaultSortOption: {
@@ -26,7 +26,6 @@ function ImagesTableContainer() {
         onSort: () => setPage(1),
     });
 
-    // TODO: add filter query and pagination from URL
     const { error, loading, data } = useQuery(imageListQuery, {
         variables: {
             query: getRequestQueryStringForSearchFilter({
@@ -39,7 +38,6 @@ function ImagesTableContainer() {
             },
         },
     });
-    console.log(data);
 
     return (
         <>

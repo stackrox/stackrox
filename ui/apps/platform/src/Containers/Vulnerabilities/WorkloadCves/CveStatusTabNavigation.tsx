@@ -10,6 +10,7 @@ import {
     CardBody,
     Divider,
     Toolbar,
+    ToolbarItem,
     ToolbarContent,
     Pagination,
 } from '@patternfly/react-core';
@@ -18,7 +19,9 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import ImagesTableContainer from './Tables/ImagesTableContainer';
+import ImagesTableContainer from './ImagesTableContainer';
+import DeploymentsTableContainer from './DeploymentsTableContainer';
+import CVEsTableContainer from './CVEsTableContainer';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import EntityTypeToggleGroup from './components/EntityTypeToggleGroup';
 import { DefaultFilters, cveStatusTabValues, entityTabValues, EntityTab } from './types';
@@ -63,7 +66,7 @@ function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps)
         cveStatusTabValues
     );
     const [activeEntityTabKey] = useURLStringUnion('entityTab', entityTabValues);
-    const { page, perPage, setPage, setPerPage } = useURLPagination(50);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(25);
 
     function handleTabClick(e, tab) {
         setActiveCVEStatusKey(tab);
@@ -96,31 +99,37 @@ function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps)
                             <Divider component="div" />
                             <Toolbar>
                                 <ToolbarContent>
-                                    <EntityTypeToggleGroup
-                                        imageCount={countsData?.imageCount}
-                                        cveCount={countsData?.cveCount}
-                                        deploymentCount={countsData?.deploymentCount}
-                                    />
-                                    <Divider orientation={{ default: 'vertical' }} />
-                                    <Pagination
-                                        isCompact
-                                        itemCount={tableRowCount}
-                                        page={page}
-                                        perPage={perPage}
-                                        onSetPage={(_, newPage) => setPage(newPage)}
-                                        onPerPageSelect={(_, newPerPage) => {
-                                            if (tableRowCount < (page - 1) * newPerPage) {
-                                                setPage(1);
-                                            }
-                                            setPerPage(newPerPage);
-                                        }}
-                                    />
+                                    <ToolbarItem>
+                                        <EntityTypeToggleGroup
+                                            imageCount={countsData?.imageCount}
+                                            cveCount={countsData?.cveCount}
+                                            deploymentCount={countsData?.deploymentCount}
+                                        />
+                                    </ToolbarItem>
+                                    <ToolbarItem
+                                        alignment={{ default: 'alignRight' }}
+                                        variant="pagination"
+                                    >
+                                        <Pagination
+                                            isCompact
+                                            itemCount={tableRowCount}
+                                            page={page}
+                                            perPage={perPage}
+                                            onSetPage={(_, newPage) => setPage(newPage)}
+                                            onPerPageSelect={(_, newPerPage) => {
+                                                if (tableRowCount < (page - 1) * newPerPage) {
+                                                    setPage(1);
+                                                }
+                                                setPerPage(newPerPage);
+                                            }}
+                                        />
+                                    </ToolbarItem>
                                 </ToolbarContent>
                             </Toolbar>
                             <Divider component="div" />
                             {activeEntityTabKey === 'Image' && <ImagesTableContainer />}
-                            {activeEntityTabKey === 'CVE' && <ImagesTableContainer />}
-                            {activeEntityTabKey === 'Deployment' && <ImagesTableContainer />}
+                            {activeEntityTabKey === 'CVE' && <CVEsTableContainer />}
+                            {activeEntityTabKey === 'Deployment' && <DeploymentsTableContainer />}
                         </CardBody>
                     </Card>
                 </PageSection>
