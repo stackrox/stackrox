@@ -1623,8 +1623,8 @@ github.com/spf13/viper v1.13.0/go.mod h1:Icm2xNL3/8uyh/wFuB1jI7TiTNKp8632Nwegu+z
 github.com/ssgreg/nlreturn/v2 v2.1.0/go.mod h1:E/iiPB78hV7Szg2YfRgyIrk1AD6JVMTRkkxBiELzh2I=
 github.com/stackrox/bleve v0.0.0-20220907150529-4ecbd2543f9e h1:+gtD6n44cUn+WHL68MPZZvOz4ZObSx/cmk8IZ3a6s+w=
 github.com/stackrox/bleve v0.0.0-20220907150529-4ecbd2543f9e/go.mod h1:iEpZccUqBH5f0BOF0uH78s8+dUaG/OWu4xuYMXBOdGs=
-github.com/stackrox/docker-registry-client v0.0.0-20230410201456-2103ff2644e8 h1:U26HQ/DRWxR0f0hl7s14o+IpVrkVzJHuoKCsxO0QqJU=
-github.com/stackrox/docker-registry-client v0.0.0-20230410201456-2103ff2644e8/go.mod h1:L3hj9CMuaAE4Yh2nhL6wANtbJ8/Y7hbi+8dHA6yDRf4=
+github.com/stackrox/docker-registry-client v0.0.0-20230411213734-d75b95d65d28 h1:o1EYbTl0p/upuWUfFPtthLZDNstw7+uVZSnB9GLKbU4=
+github.com/stackrox/docker-registry-client v0.0.0-20230411213734-d75b95d65d28/go.mod h1:L3hj9CMuaAE4Yh2nhL6wANtbJ8/Y7hbi+8dHA6yDRf4=
 github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd h1:vEjp7Q66zd4W72//Uk3uyVN50Mh/nFLbN9pb7CVK7mE=
 github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd/go.mod h1:HILeV3i/EyJz844GcrC3+oU7oZONhjfujaIYBMJ/bZE=
 github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7 h1:F4Gq3G5G07HQ/ECrg/+EQxFBmCTcq9ZDyLPI5LaDUKI=
@@ -1645,8 +1645,8 @@ github.com/stackrox/oauth2 v0.0.0-20230323154701-8854a69ca091 h1:rQD7/1MwBEkhm9n
 github.com/stackrox/oauth2 v0.0.0-20230323154701-8854a69ca091/go.mod h1:ycmewcwgD4Rpr3eZJLSB4Kyyljb3qDh40vJ8STE5HKw=
 github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179 h1:5wzvROh+LGgeIeOpMuEpIkRIALDFU/ltFB8cY3916c4=
 github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179/go.mod h1:zwEXo3PEZZb6QQZBrBORMX0Hvnnwst3PduSaTQZMFYc=
-github.com/stackrox/scanner v0.0.0-20230410235649-2bc2de7f14ad h1:F/d5QHX8Js+WNV1t1fxrjPPFxUj1AyB9+RHDHCnYxBA=
-github.com/stackrox/scanner v0.0.0-20230410235649-2bc2de7f14ad/go.mod h1:NUgXWclTGKoM2F2yxx/r2lVVbWsIzi71JxxO9hHlE/Y=
+github.com/stackrox/scanner v0.0.0-20230411230651-f2265de65ce4 h1:GfGtz9MCBj9L36d7KGaV6HCEoQY+PAy2fXWvozK0GLs=
+github.com/stackrox/scanner v0.0.0-20230411230651-f2265de65ce4/go.mod h1:4SRyOkdm9xp3Bca85Hp3636r7FvnA610Laxn3nbQBzc=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d h1:jeM6QMtwE9BU0rfDYcmkI/aOChOUfIO18LDp/DSnZpI=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/stackrox/yaml/v2 v2.4.1 h1:09ux+QFfvp+Lk73pwGlMTAHeZoS2pqs6CCngYaJ6EQo=

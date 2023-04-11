@@ -87,7 +87,7 @@ require (
 	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
 	github.com/stackrox/helmtest v0.0.0-20230216104233-de5e6193716a
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5
-	github.com/stackrox/scanner v0.0.0-20230410235649-2bc2de7f14ad
+	github.com/stackrox/scanner v0.0.0-20230411230651-f2265de65ce4
 	github.com/stretchr/testify v1.8.2
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
 	github.com/tidwall/gjson v1.14.1
@@ -394,7 +394,7 @@ replace (
 	github.com/fullsailor/pkcs7 => github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
 
-	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20230410201456-2103ff2644e8
+	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20230411213734-d75b95d65d28
 
 	// github.com/mikefarah/yaml/v2 is a clone of github.com/go-yaml/yaml/v2.
 	// Both github.com/go-yaml/yaml/v2 and github.com/go-yaml/yaml/v3 do not provide go.sum
