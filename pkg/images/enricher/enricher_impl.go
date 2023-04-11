@@ -215,6 +215,9 @@ func setImageNotes(image *storage.Image, imageNoteSet map[storage.Image_Note]str
 // depending on whether the values exist and the given FetchOption allows using existing values.
 // It will return a bool indicating whether existing values from database will be used for the signature.
 func (e *enricherImpl) updateImageFromDatabase(ctx context.Context, img *storage.Image, option FetchOption) bool {
+	if option == IgnoreExistingImages {
+		return false
+	}
 	existingImg, exists := e.fetchFromDatabase(ctx, img, option)
 	// Short-circuit if no image exists or the FetchOption specifies to not use existing values.
 	if !exists {
