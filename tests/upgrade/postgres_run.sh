@@ -322,9 +322,11 @@ force_rollback_to_previous_postgres() {
     # downgrading to a version that does not undersatnd process listening on ports
     # so turning that off in sensor and collector to prevent central crashes.
     # Sensor and Collector will be deleted a few steps after this so no need
-    # to turn these back on
-#    kubectl -n stackrox set env deploy/sensor ROX_PROCESSES_LISTENING_ON_PORT=false
-#    kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT=false
+    # to turn these back on.  Going forward unexpected messages will result in
+    # an `UNEXPECTED` log instead of crashing central.  However that change is
+    # not present in the initial 3.74 version.
+    kubectl -n stackrox set env deploy/sensor ROX_PROCESSES_LISTENING_ON_PORT=false
+    kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT=false
 
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
