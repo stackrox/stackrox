@@ -471,17 +471,9 @@ func copyFromImageComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs .
 
 func copyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timestamp, vulnStateUpdate bool,
 	objs ...*storage.ImageCVEEdge) error {
-	copyCols := []string{
-		"id",
-		"firstimageoccurrence",
-		"state",
-		"imageid",
-		"imagecveid",
-		"serialized",
-	}
 
 	if vulnStateUpdate {
-		return copyFromImageCVEEdgesWithVulnStateUpdates(ctx, tx, copyCols, objs)
+		return copyFromImageCVEEdgesWithVulnStateUpdates(ctx, tx, objs)
 	}
 
 	var err error
@@ -498,18 +490,14 @@ func copyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, iTime *protoTyp
 		return err
 	}
 
-	var edgesToInsert []*storage.ImageCVEEdge
-	for _, obj := range objs {
+	inputRows := [][]interface{}{}
+	for _, edge := range objs {
 		// Since the edge only maintains states enriched by ACS, if the edge already exists, then it should skip copy from.
-		if oldEdgeIDs.Remove(obj.GetId()) {
+		if oldEdgeIDs.Remove(edge.GetId()) {
 			continue
 		}
-		obj.FirstImageOccurrence = iTime
-		edgesToInsert = append(edgesToInsert, obj)
-	}
+		edge.FirstImageOccurrence = iTime
 
-	inputRows := [][]interface{}{}
-	for idx, edge := range edgesToInsert {
 		inputRow, err := getImageCVEEdgeRowToInsert(edge)
 		if err != nil {
 			return err
@@ -517,8 +505,8 @@ func copyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, iTime *protoTyp
 		inputRows = append(inputRows, inputRow)
 
 		// if we hit our batch size or end of slice, push the edges
-		if (idx+1)%batchSize == 0 || idx == len(edgesToInsert)-1 {
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{imageCVEEdgesTable}, copyCols, pgx.CopyFromRows(inputRows))
+		if len(inputRows) > 0 && len(inputRows)%batchSize == 0 {
+			err = execCopyFromImageCVEEdges(ctx, tx, inputRows)
 			if err != nil {
 				return err
 			}
@@ -528,16 +516,22 @@ func copyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, iTime *protoTyp
 		}
 	}
 
+	if len(inputRows) > 0 {
+		err = execCopyFromImageCVEEdges(ctx, tx, inputRows)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Remove orphaned edges.
 	return removeOrphanedImageCVEEdges(ctx, tx, oldEdgeIDs.AsSlice())
 }
 
-func copyFromImageCVEEdgesWithVulnStateUpdates(ctx context.Context, tx *postgres.Tx, copyCols []string,
-	edges []*storage.ImageCVEEdge) error {
+func copyFromImageCVEEdgesWithVulnStateUpdates(ctx context.Context, tx *postgres.Tx, edges []*storage.ImageCVEEdge) error {
 	inputRows := [][]interface{}{}
 	deletes := set.NewStringSet()
 
-	for idx, edge := range edges {
+	for _, edge := range edges {
 		// Add the id to be deleted.
 		deletes.Add(edge.GetId())
 
@@ -548,9 +542,9 @@ func copyFromImageCVEEdgesWithVulnStateUpdates(ctx context.Context, tx *postgres
 		inputRows = append(inputRows, inputRow)
 
 		// if we hit our batch size or end of slice, delete old edges and push new ones
-		if (idx+1)%batchSize == 0 || idx == len(edges)-1 {
+		if len(inputRows) > 0 && len(inputRows)%batchSize == 0 {
 			// Copy does not upsert so have to delete first.
-			_, err = tx.Exec(ctx, "DELETE FROM "+imageCVEEdgesTable+" WHERE id = ANY($1::text[])", deletes.AsSlice())
+			err = execDeleteFromImageCVEEdges(ctx, tx, deletes)
 			if err != nil {
 				return err
 			}
@@ -558,7 +552,7 @@ func copyFromImageCVEEdgesWithVulnStateUpdates(ctx context.Context, tx *postgres
 			// Clear the inserts for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{imageCVEEdgesTable}, copyCols, pgx.CopyFromRows(inputRows))
+			err = execCopyFromImageCVEEdges(ctx, tx, inputRows)
 			if err != nil {
 				return err
 			}
@@ -568,6 +562,17 @@ func copyFromImageCVEEdgesWithVulnStateUpdates(ctx context.Context, tx *postgres
 		}
 	}
 
+	if len(inputRows) > 0 {
+		err := execDeleteFromImageCVEEdges(ctx, tx, deletes)
+		if err != nil {
+			return err
+		}
+
+		err = execCopyFromImageCVEEdges(ctx, tx, inputRows)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -585,6 +590,31 @@ func getImageCVEEdgeRowToInsert(edge *storage.ImageCVEEdge) ([]interface{}, erro
 		edge.GetImageCveId(),
 		serialized,
 	}, nil
+}
+
+func execCopyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, inputRows [][]interface{}) error {
+	copyCols := []string{
+		"id",
+		"firstimageoccurrence",
+		"state",
+		"imageid",
+		"imagecveid",
+		"serialized",
+	}
+
+	_, err := tx.CopyFrom(ctx, pgx.Identifier{imageCVEEdgesTable}, copyCols, pgx.CopyFromRows(inputRows))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func execDeleteFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, deletes set.Set[string]) error {
+	_, err := tx.Exec(ctx, "DELETE FROM "+imageCVEEdgesTable+" WHERE id = ANY($1::text[])", deletes.AsSlice())
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func removeOrphanedImageComponent(ctx context.Context, tx *postgres.Tx) error {
