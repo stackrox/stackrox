@@ -13,7 +13,7 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import SeverityLabel from 'Components/SeverityLabel';
-import LifecycleStageLabel from 'Components/LifecycleStageLabel';
+import { formatLifecycleStages } from 'Containers/Policies/policies.utils';
 import TableWidget from './TableWidget';
 
 const QUERY = gql`
@@ -123,13 +123,7 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
                         className: `w-1/8 ${defaultColumnClassName}`,
                         Cell: ({ original }) => {
                             const { lifecycleStages } = original;
-                            return lifecycleStages.map((lifecycleStage) => (
-                                <LifecycleStageLabel
-                                    key={lifecycleStage}
-                                    className="mr-2"
-                                    lifecycleStage={lifecycleStage}
-                                />
-                            ));
+                            return formatLifecycleStages(lifecycleStages);
                         },
                         accessor: 'lifecycleStages',
                     },
