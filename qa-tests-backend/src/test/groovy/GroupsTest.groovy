@@ -32,17 +32,17 @@ class GroupsTest extends BaseSpecification {
 
     private static final Map<Group, String> GROUPS_TO_AUTH_PROVIDER = [
             (Group.newBuilder()
-                    .setRoleName("QAGroupTest-Group1")
+                    .setRoleName("Analyst")
                     .build()): PROVIDERS[0].getName(),
             (Group.newBuilder()
-                    .setRoleName("QAGroupTest-Group2")
+                    .setRoleName("Admin")
                     .setProps(GroupProperties.newBuilder()
                             .setKey("foo")
                             .setValue("bar")
                             .build())
                     .build()): PROVIDERS[0].getName(),
             (Group.newBuilder()
-                    .setRoleName("QAGroupTest-Group3")
+                    .setRoleName("Scope Manager")
                     .setProps(GroupProperties.newBuilder()
                             .setKey("foo")
                             .setValue("bar")
