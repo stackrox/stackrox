@@ -177,4 +177,25 @@ func (s *ImageCVECoreResolverTestSuite) TestGetImageCVENonEmpty() {
 	)
 	s.NoError(err)
 	s.NotNil(response.data)
+
+	// with filter
+	expectedQ = search.NewQueryBuilder().
+		AddExactMatches(search.CVE, "cve-xyz").
+		AddStrings(search.Namespace, "n1").
+		ProtoQuery()
+	expected = []imagecve.CveCore{
+		imageCVEViewMock.NewMockCveCore(s.mockCtrl),
+	}
+
+	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ, views.ReadOptions{}).Return(expected, nil)
+	response, err = s.resolver.ImageCVE(s.ctx, struct {
+		Cve   *string
+		Query *string
+	}{
+		Cve:   pointers.String("cve-xyz"),
+		Query: pointers.String("Namespace:n1"),
+	},
+	)
+	s.NoError(err)
+	s.NotNil(response.data)
 }
