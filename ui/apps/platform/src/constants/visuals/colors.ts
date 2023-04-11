@@ -16,7 +16,6 @@ export const colorTypes = [
     'success',
     'accent',
     'tertiary',
-    'secondary',
     'primary',
     'base',
 ];
