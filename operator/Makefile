@@ -426,7 +426,7 @@ bundle-test: operator-sdk bundle-post-process ## Run scorecard tests against bun
 
 .PHONY: bundle-test-image
 bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in the registry. Bundle image must be pushed beforehand.
-	$(OPERATOR_SDK) scorecar $(SCORECARD_ARGS) $(BUNDLE_IMG)
+	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) $(BUNDLE_IMG)
 
 .PHONY: index-build
 index-build: bundle-post-process ## Build Index (a.k.a. Catalog) image with the bundles. Bundle image must be pushed beforehand.
