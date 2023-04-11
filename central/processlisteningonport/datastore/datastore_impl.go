@@ -67,14 +67,14 @@ func getIndicatorIdsForPlops(plops []*storage.ProcessListeningOnPortFromSensor) 
 func processToNoSecretsString(process *storage.ProcessIndicatorUniqueKey) string {
 	if process == nil {
 		return ""
-	} else {
-		return fmt.Sprintf("%s_%s_%s_%s",
-			process.GetContainerName(),
-			process.GetPodId(),
-			process.GetProcessName(),
-			process.GetProcessExecFilePath(),
-		)
 	}
+
+	return fmt.Sprintf("%s_%s_%s_%s",
+		process.GetContainerName(),
+		process.GetPodId(),
+		process.GetProcessName(),
+		process.GetProcessExecFilePath(),
+	)
 }
 
 func plopToNoSecretsString(plop *storage.ProcessListeningOnPortFromSensor) string {
