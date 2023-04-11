@@ -5,7 +5,7 @@ go 1.18
 require (
 	cloud.google.com/go/compute/metadata v0.2.3
 	cloud.google.com/go/containeranalysis v0.9.0
-	cloud.google.com/go/storage v1.29.0
+	cloud.google.com/go/storage v1.30.1
 	github.com/BurntSushi/toml v1.2.1
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.3
@@ -67,7 +67,7 @@ require (
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/image-spec v1.1.0-rc2
+	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
 	github.com/openshift/api v3.9.1-0.20191201231411-9f834e337466+incompatible
 	github.com/openshift/client-go v0.0.0-20200623090625-83993cebb5ae
 	github.com/operator-framework/helm-operator-plugins v0.0.7
@@ -87,7 +87,7 @@ require (
 	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
 	github.com/stackrox/helmtest v0.0.0-20230216104233-de5e6193716a
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5
-	github.com/stackrox/scanner v0.0.0-20230322091704-5cc0f02a7865
+	github.com/stackrox/scanner v0.0.0-20230410235649-2bc2de7f14ad
 	github.com/stretchr/testify v1.8.2
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
 	github.com/tidwall/gjson v1.14.1
@@ -142,9 +142,9 @@ require (
 	github.com/Masterminds/squirrel v1.5.3 // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/Microsoft/hcsshim v0.9.6 // indirect
-	github.com/ProtonMail/go-crypto v0.0.0-20221026131551-cf6655e29de4 // indirect
+	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
-	github.com/acomagu/bufpipe v1.0.3 // indirect
+	github.com/acomagu/bufpipe v1.0.4 // indirect
 	github.com/andybalholm/brotli v1.0.3 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/beevik/etree v1.1.0 // indirect
@@ -189,7 +189,7 @@ require (
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/go-git/go-billy/v5 v5.4.1 // indirect
-	github.com/go-git/go-git/v5 v5.6.0 // indirect
+	github.com/go-git/go-git/v5 v5.6.1 // indirect
 	github.com/go-gorp/gorp/v3 v3.0.5 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
 	github.com/go-logr/zapr v1.2.3 // indirect
