@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	centralSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -41,7 +42,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ServiceIdentitiesSchema
+	schema         = centralSchema.ServiceIdentitiesSchema
 	targetResource = resources.Administration
 )
 

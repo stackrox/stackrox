@@ -1,4 +1,4 @@
-{{define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema{{end}}
+{{define "schemaVar"}}centralSchema.{{.Table|upperCamelCase}}Schema{{end}}
 {{define "paramList"}}{{range $index, $pk := .}}{{if $index}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
 {{define "argList"}}{{range $index, $pk := .}}{{if $index}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
 {{define "whereMatch"}}{{range $index, $pk := .}}{{if $index}} AND {{end}}{{$pk.ColumnName}} = ${{add $index 1}}{{end}}{{end}}
@@ -30,6 +30,7 @@ import (
     "github.com/pkg/errors"
     {{- if not $inMigration}}
     "github.com/stackrox/rox/central/metrics"
+    centralSchema "github.com/stackrox/rox/central/postgres/schema"
     "github.com/stackrox/rox/central/role/resources"
     pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
     {{- else }}
@@ -118,7 +119,7 @@ type storeImpl struct {
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
-{{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
+{{define "createTableStmtVar"}}centralSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
