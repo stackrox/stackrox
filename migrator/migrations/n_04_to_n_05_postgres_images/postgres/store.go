@@ -274,7 +274,7 @@ func copyFromImageComponentEdges(ctx context.Context, tx *postgres.Tx, objs ...*
 	return err
 }
 
-func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timestamp, objs ...*storage.ImageCVE) error {
+func copyFromImageCves(ctx context.Context, tx *postgres.Tx, _ *protoTypes.Timestamp, objs ...*storage.ImageCVE) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -418,16 +418,7 @@ func copyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, iTime *protoTyp
 		ids.Add(obj.GetId())
 	}
 
-	exisitingEdgeIDs, err := getImageCVEEdgeIDs(ctx, tx, objs[0].GetImageId())
-	if err != nil {
-		return err
-	}
-
 	for idx, obj := range objs {
-		if exisitingEdgeIDs.Contains(obj.GetId()) {
-			continue
-		}
-
 		obj.FirstImageOccurrence = iTime
 		serialized, marshalErr := obj.Marshal()
 		if marshalErr != nil {
