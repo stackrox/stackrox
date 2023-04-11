@@ -59,7 +59,7 @@ else
     die "ERROR: There is no job script for $ci_job"
 fi
 
-create_job_record "$ci_job"
+create_job_record "${JOB_NAME:-missing}"
 
 "${job_script}" "$@" &
 job_pid="$!"

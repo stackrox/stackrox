@@ -1411,6 +1411,10 @@ __EOM__
     }
 }
 
+get_junit_misc_dir() {
+    echo "${ARTIFACT_DIR}/junit-misc"
+}
+
 save_junit_success() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: save_junit_success <class> <description>"
@@ -1426,7 +1430,11 @@ save_junit_success() {
     local timestamp
     timestamp="$(date -u +"%s.%N")"
 
-    cat << EOF > "${ARTIFACT_DIR}/junit-${class}-${timestamp}.xml"
+    local junit_dir
+    junit_dir="$(get_junit_misc_dir)"
+    mkdir -p "${junit_dir}"
+
+    cat << EOF > "${junit_dir}/junit-${class}-${timestamp}.xml"
 <testsuite name="${class}" tests="1" skipped="0" failures="0" errors="0">
     <testcase name="${description}" classname="${class}">
     </testcase>
@@ -1450,7 +1458,11 @@ save_junit_failure() {
     local timestamp
     timestamp="$(date -u +"%s.%N")"
 
-    cat << EOF > "${ARTIFACT_DIR}/junit-${class}-${timestamp}.xml"
+    local junit_dir
+    junit_dir="$(get_junit_misc_dir)"
+    mkdir -p "${junit_dir}"
+
+    cat << EOF > "${junit_dir}/junit-${class}-${timestamp}.xml"
 <testsuite name="${class}" tests="1" skipped="0" failures="1" errors="0">
     <testcase name="${description}" classname="${class}">
         <failure><![CDATA[${details}]]></failure>
