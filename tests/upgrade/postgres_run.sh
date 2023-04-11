@@ -202,9 +202,12 @@ test_upgrade_paths() {
     force_rollback_to_previous_postgres
     wait_for_api
 
-    # Verify data is still there as these were populated before we upgraded
-    checkForRocksAccessScopes
-    checkForPostgresAccessScopes
+    validate_upgrade "04_postgres_postgres_rollback" "Rollback Postgres backed central" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+
+    collect_and_check_stackrox_logs "$log_output_dir" "04_postgres_postgres_rollback"
+
+    # Ensure central is ready for requests after any previous tests
+    wait_for_api
 
     ########################################################################################
     # Upgrade back to latest to run the smoke tests                                        #
@@ -317,6 +320,7 @@ force_rollback_to_previous_postgres() {
 
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
+    kubectl -n stackrox set env deploy/central ROX_PROCESSES_LISTENING_ON_PORT=true
     kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$FORCE_ROLLBACK_VERSION"
 }
 
