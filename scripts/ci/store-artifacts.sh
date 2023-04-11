@@ -144,7 +144,7 @@ make_artifacts_help() {
     cat > "$help_file" <<- EOH
         <html>
         <head>
-        <title><h4>How to locate additional StackRox e2e artifacts</h4></title>
+        <title><h4>Additional StackRox e2e artifacts</h4></title>
         <style>
           body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
           a { color: #ff8caa }
@@ -153,10 +153,12 @@ make_artifacts_help() {
         </head>
         <body>
 
-        Additional StackRox e2e artifacts are stored in a GCS bucket ($GS_URL) by the <code>store_artifacts</code>
-        bash function. There are at least two options for access:
+        Additional StackRox e2e artifacts are stored in a GCS bucket (<code>$GS_URL</code>) by the
+        <code>store_artifacts</code> bash function.<br>
 
-        <h2>gsutil cp</h2>
+        There are at least two options for access:
+
+        <h2>Option 1: gsutil cp</h2>
 
         Copy all artifacts for the build/job:
         <pre>gsutil -m cp -r $gs_job_url .</pre>
@@ -164,9 +166,9 @@ make_artifacts_help() {
         Copy all artifacts for the entire workflow:
         <pre>gsutil -m cp -r $gs_workflow_url .</pre>
 
-        <h2>Browse using the Google cloud UI</h2>
+        <h2>Option 2: Browse using the Google cloud UI</h2>
 
-        <p>Make sure to use the URL where <i>authuser</i> corresponds to your @stackrox.com account.<br>
+        <p>Make sure to use the URL where <code>authuser</code> corresponds to your @stackrox.com account.<br>
         You can check this by clicking on the user avatar in the top right corner of Google Cloud Console page
         after following the link.</p>
 
