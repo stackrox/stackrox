@@ -318,9 +318,15 @@ force_rollback_to_previous_postgres() {
     config_patch=$(yq e ".data[\"central-config.yaml\"] |= \"$central_config\"" /tmp/force_rollback_patch)
     echo "config patch: $config_patch"
 
+    # downgrading to a version that does not undersatnd process listening on ports
+    # so turning that off in sensor and collector to prevent central crashes.
+    # Sensor and Collector will be deleted a few steps after this so no need
+    # to turn these back on
+    kubectl -n stackrox set env deploy/sensor ROX_PROCESSES_LISTENING_ON_PORT=false
+    kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT=false
+
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
-    kubectl -n stackrox set env deploy/central ROX_PROCESSES_LISTENING_ON_PORT=true
     kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$FORCE_ROLLBACK_VERSION"
 }
 
