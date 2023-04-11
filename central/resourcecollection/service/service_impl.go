@@ -113,12 +113,12 @@ func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollecti
 		return nil, errors.Wrap(errox.InvalidArgs, "Id should be set when requesting a collection")
 	}
 
-	collection, ok, err := s.datastore.Get(ctx, request.GetId())
+	collection, exists, err := s.datastore.Get(ctx, request.GetId())
 	if err != nil {
 		return nil, errors.Errorf("Could not get collection: %s", err)
 	}
-	if !ok {
-		return nil, errors.Wrap(errox.NotFound, "Not found")
+	if !exists {
+		return nil, errors.Wrapf(errox.NotFound, "collection with id %q does not exist", request.GetId())
 	}
 
 	deployments, err := s.tryDeploymentMatching(ctx, collection, request.GetOptions())
