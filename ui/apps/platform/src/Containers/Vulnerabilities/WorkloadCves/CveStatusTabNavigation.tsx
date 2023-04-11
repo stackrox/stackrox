@@ -18,12 +18,13 @@ import {
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import ImagesTableContainer from './ImagesTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
 import CVEsTableContainer from './CVEsTableContainer';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import EntityTypeToggleGroup from './components/EntityTypeToggleGroup';
+import { DynamicTableLabel } from './components/DynamicIcon';
 import { DefaultFilters, cveStatusTabValues, entityTabValues, EntityTab } from './types';
 import { parseQuerySearchFilter } from './searchUtils';
 
@@ -67,6 +68,7 @@ function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps)
     );
     const [activeEntityTabKey] = useURLStringUnion('entityTab', entityTabValues);
     const { page, perPage, setPage, setPerPage } = useURLPagination(25);
+    const isFiltered = getHasSearchApplied(querySearchFilter);
 
     function handleTabClick(e, tab) {
         setActiveCVEStatusKey(tab);
@@ -106,6 +108,11 @@ function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps)
                                             deploymentCount={countsData?.deploymentCount}
                                         />
                                     </ToolbarItem>
+                                    {isFiltered && (
+                                        <ToolbarItem>
+                                            <DynamicTableLabel />
+                                        </ToolbarItem>
+                                    )}
                                     <ToolbarItem
                                         alignment={{ default: 'alignRight' }}
                                         variant="pagination"
