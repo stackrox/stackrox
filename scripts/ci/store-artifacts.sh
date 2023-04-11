@@ -163,8 +163,10 @@ make_artifacts_help() {
         Copy all artifacts for the build/job:
         <pre>gsutil -m cp -r $gs_job_url .</pre>
 
-        Copy all artifacts for the entire workflow:
+        or copy all artifacts for the entire workflow:
         <pre>gsutil -m cp -r $gs_workflow_url .</pre>
+
+        Then browse files locally.
 
         <h2>Option 2: Browse using the Google cloud UI</h2>
 
