@@ -23,7 +23,7 @@ function ImageNameTd({ name, id }: ImageNameTdProps) {
             >
                 {name.remote}
             </Button>{' '}
-            <span className="pf-u-color-400 pf-u-font-size-sm">in {name.registry}</span>
+            <span className="pf-u-color-200 pf-u-font-size-sm">in {name.registry}</span>
         </Flex>
     );
 }
