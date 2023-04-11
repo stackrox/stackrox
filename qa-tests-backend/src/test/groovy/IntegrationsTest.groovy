@@ -218,7 +218,7 @@ class IntegrationsTest extends BaseSpecification {
         Deployment nginxdeployment =
                 new Deployment()
                         .setName(nginxName)
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
                         .addLabel("app", nginxName)
         orchestrator.createDeployment(nginxdeployment)
         assert Services.waitForViolation(nginxName, policy.name, 60)
