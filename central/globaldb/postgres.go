@@ -72,6 +72,8 @@ var (
 
 	// PostgresQueryTimeout - Postgres query timeout value
 	PostgresQueryTimeout = 10 * time.Second
+
+	loggedCapacityCalculationError = false
 )
 
 // GetPostgres returns a global database instance. It should be called after InitializePostgres
@@ -247,7 +249,10 @@ func CollectPostgresDatabaseStats(postgresConfig *postgres.Config) {
 	if !env.ManagedCentral.BooleanSetting() {
 		availableDBBytes, err := pgadmin.GetRemainingCapacity(postgresConfig)
 		if err != nil {
-			log.Errorf("error fetching remaining database storage: %v", err)
+			if !loggedCapacityCalculationError {
+				log.Errorf("error fetching remaining database storage: %v", err)
+				loggedCapacityCalculationError = true
+			}
 			return
 		}
 
