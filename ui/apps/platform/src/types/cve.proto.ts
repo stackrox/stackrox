@@ -8,6 +8,10 @@ export const vulnerabilitySeverities = [
 
 export type VulnerabilitySeverity = (typeof vulnerabilitySeverities)[number];
 
+export function isVulnerabilitySeverity(value: unknown): value is VulnerabilitySeverity {
+    return vulnerabilitySeverities.some((severity) => severity === value);
+}
+
 export type VulnerabilityState = 'OBSERVED' | 'DEFERRED' | 'FALSE_POSITIVE';
 
 export type CVSSV2 = {
