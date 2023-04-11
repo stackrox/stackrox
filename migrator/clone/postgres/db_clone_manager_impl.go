@@ -149,6 +149,12 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 	// If a restore clone exists, our focus is to try to restore that database.
 	if _, ok := d.cloneMap[RestoreClone]; ok || restoreFromRocks {
 		if restoreFromRocks {
+			// We are restoring from Rocks, so we need to start with fresh Postgres each time
+			err := pgadmin.DropDB(d.sourceMap, d.adminConfig, RestoreClone)
+			if err != nil {
+				log.Errorf("Unable to drop clone - %q", RestoreClone)
+				return "", false, err
+			}
 			d.cloneMap[RestoreClone] = metadata.NewPostgres(rocksVersion, RestoreClone)
 			return RestoreClone, true, nil
 		}
