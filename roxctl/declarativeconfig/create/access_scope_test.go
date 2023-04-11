@@ -67,6 +67,7 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 		},
 		"invalid access scope": {
 			args: []string{
+				"access-scope",
 				"--name=some-name",
 				"--description=some-description",
 				"--included=clusterA",
