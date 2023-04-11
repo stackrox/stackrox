@@ -415,6 +415,7 @@ jobs:
       - name: Patch central
         run: |
           ./oc -n stackrox set image deploy/central central="quay.io/rhacs-eng/main:$TAG"
+          ./oc -n stackrox set image deploy/central-db central-db="quay.io/rhacs-eng/central-db:$TAG"
       - name: Patch scanner
         run: |
           ./oc -n stackrox patch hpa/scanner -p '{"spec":{"minReplicas":2}}'
