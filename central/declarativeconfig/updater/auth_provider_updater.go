@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	authProviderDatastore "github.com/stackrox/rox/central/authprovider/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
-	"github.com/stackrox/rox/central/declarativeconfig/utils"
+	declarativeCfgUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -19,7 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
-	utils2 "github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 type authProviderUpdater struct {
@@ -81,7 +81,7 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 	}
 
 	var authProviderDeletionErr *multierror.Error
-	var authProviderIDs []string
+	authProviderIDs := set.NewStringSet()
 	for _, authProvider := range authProviders {
 		referencingGroups, err := u.groupDS.GetFiltered(ctx, func(group *storage.Group) bool {
 			return group.GetProps().GetAuthProviderId() == authProvider.GetId()
@@ -90,30 +90,31 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 			authProviderDeletionErr, authProviderIDs = u.processDeletionError(authProviderDeletionErr, err, authProviderIDs, authProvider)
 			continue
 		}
+		var hasErrorDeletingGroups bool
 		for _, group := range referencingGroups {
-			ctxToUse := utils2.IfThenElse(declarativeconfig.IsDeclarativeOrigin(group.GetProps()), ctx, deleteImperativeGroupsCtx)
+			ctxToUse := utils.IfThenElse(declarativeconfig.IsDeclarativeOrigin(group.GetProps()), ctx, deleteImperativeGroupsCtx)
 			if err = u.groupDS.Remove(ctxToUse, group.GetProps(), true); err != nil {
 				authProviderDeletionErr, authProviderIDs = u.processDeletionError(authProviderDeletionErr, err, authProviderIDs, authProvider)
+				hasErrorDeletingGroups = true
 			}
 		}
-		// If err != nil, that means that one of the groups was not deleted.
 		// Since group is valid only if it references existing auth provider, we can't delete auth provider
 		// until all referencing groups are successfully deleted.
-		if err != nil {
+		if hasErrorDeletingGroups {
 			continue
 		}
 		if err := u.authProviderRegistry.DeleteProvider(ctx, authProvider.GetId(), true, true); err != nil {
 			authProviderDeletionErr, authProviderIDs = u.processDeletionError(authProviderDeletionErr, err, authProviderIDs, authProvider)
 		}
 	}
-	return authProviderIDs, authProviderDeletionErr.ErrorOrNil()
+	return authProviderIDs.AsSlice(), authProviderDeletionErr.ErrorOrNil()
 }
 
-func (u *authProviderUpdater) processDeletionError(authProviderDeletionErr *multierror.Error, err error, authProviderIDs []string, authProvider *storage.AuthProvider) (*multierror.Error, []string) {
+func (u *authProviderUpdater) processDeletionError(authProviderDeletionErr *multierror.Error, err error, authProviderIDs set.Set[string], authProvider *storage.AuthProvider) (*multierror.Error, set.Set[string]) {
 	authProviderDeletionErr = multierror.Append(authProviderDeletionErr, err)
-	authProviderIDs = append(authProviderIDs, authProvider.GetId())
+	authProviderIDs.Add(authProvider.GetId())
 
-	u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(authProvider, "", err,
+	u.reporter.UpdateIntegrationHealthAsync(declarativeCfgUtils.IntegrationHealthForProtoMessage(authProvider, "", err,
 		u.idExtractor, u.nameExtractor))
 	return authProviderDeletionErr, authProviderIDs
 }
