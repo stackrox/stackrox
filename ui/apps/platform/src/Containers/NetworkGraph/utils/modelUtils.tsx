@@ -26,6 +26,7 @@ import {
     CustomEdgeModel,
     DeploymentData,
     CIDRBlockData,
+    EdgeData,
 } from '../types/topology.type';
 import { protocolLabel } from './flowUtils';
 
@@ -385,6 +386,7 @@ export function transformPolicyData(nodes: Node[]): {
     const policyEdgeMap: Record<string, CustomEdgeModel> = {};
     nodes.forEach((policyNode) => {
         const { entity, policyIds, outEdges, nonIsolatedEgress, nonIsolatedIngress } = policyNode;
+
         const networkPolicyState = getNetworkPolicyState(nonIsolatedEgress, nonIsolatedIngress);
         const node = getNodeModel(
             entity,
@@ -393,9 +395,11 @@ export function transformPolicyData(nodes: Node[]): {
             POLICY_NODE_EXTERNALLY_CONNECTED_VALUE,
             outEdges
         );
+
         if (!policyNodeMap[node.id]) {
             policyNodeMap[node.id] = node as DeploymentNodeModel;
         }
+
         policyDataModel.nodes.push(node);
 
         // creating edges based off of outEdges per node and adding to data model
@@ -647,4 +651,58 @@ export function getConnectedNodeIds(edges: CustomEdgeModel[], selectedNodeId: st
         return acc;
     }, [] as string[]);
     return connectedNodeIds;
+}
+
+function filterDNSFlows(properties) {
+    return !(
+        (properties.port === 53 || properties.port === 5353) &&
+        properties.protocol === 'L4_PROTOCOL_UDP'
+    );
+}
+
+export function removeDNSFlows(edges: CustomEdgeModel[]): CustomEdgeModel[] {
+    const modifiedEdges: CustomEdgeModel[] = [];
+    edges.forEach((edge) => {
+        const filteredSourceToTargetProperties =
+            edge.data.sourceToTargetProperties.filter(filterDNSFlows);
+        const filteredTargetToSourceProperties =
+            edge.data?.targetToSourceProperties?.filter(filterDNSFlows) || [];
+        const combinedProperties = [
+            ...filteredSourceToTargetProperties,
+            ...filteredTargetToSourceProperties,
+        ];
+
+        if (combinedProperties.length !== 0) {
+            const portProtocolLabel = getPortProtocolEdgeLabel([
+                ...filteredSourceToTargetProperties,
+                ...filteredTargetToSourceProperties,
+            ]);
+            const modifiedData: EdgeData = {
+                sourceToTargetProperties: filteredSourceToTargetProperties,
+                targetToSourceProperties: filteredTargetToSourceProperties,
+                isBidirectional:
+                    filteredTargetToSourceProperties.length !== 0 &&
+                    filteredSourceToTargetProperties.length !== 0,
+                portProtocolLabel,
+                tag: portProtocolLabel,
+            };
+            if (filteredSourceToTargetProperties.length !== 0) {
+                modifiedData.endTerminalType = EdgeTerminalType.directional;
+            } else {
+                modifiedData.endTerminalType = EdgeTerminalType.none;
+            }
+            if (filteredTargetToSourceProperties.length !== 0) {
+                modifiedData.startTerminalType = EdgeTerminalType.directional;
+            } else {
+                modifiedData.startTerminalType = EdgeTerminalType.none;
+            }
+            const modifiedEdge = {
+                ...edge,
+                data: modifiedData,
+            };
+
+            modifiedEdges.push(modifiedEdge);
+        }
+    });
+    return modifiedEdges;
 }

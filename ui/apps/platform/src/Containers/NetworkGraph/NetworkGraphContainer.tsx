@@ -24,6 +24,7 @@ import {
     createExtraneousEdges,
     graphModel,
     getConnectedNodeIds,
+    removeDNSFlows,
 } from './utils/modelUtils';
 import {
     cidrBlockBadgeColor,
@@ -312,15 +313,22 @@ function NetworkGraphContainer({
     // this is the current filtered model that has not been modified yet
     let filteredNodes: CustomNodeModel[] = [...baseModel.nodes];
     let filteredEdges: CustomEdgeModel[] = [...baseModel.edges];
-    // if edgeState is extraneous && there is a selectedNode, add in/egress flows nodes/edges
-    if (edgeState === 'inactive' && selectedNode?.data.type === 'DEPLOYMENT') {
-        const extraneousFlowsNodes = getExtraneousNodes(extraneousNodes, selectedNode.data);
-        filteredNodes = [...extraneousModel.nodes, ...extraneousFlowsNodes];
-        const extraneousFlowsEdges = getExtraneousEdges(selectedNode.data);
-        filteredEdges = [...extraneousModel.edges, ...extraneousFlowsEdges];
-    }
+
     // filtering nodes/edges based on selection, edges will be [] by default
     filteredEdges = selectedNode ? getFilteredEdges(filteredEdges, selectedNode) : [];
+
+    // we want to filter out the DNS flows when viewing "inactive" flows (without DNS flows)
+    if (edgeState === 'inactive') {
+        filteredEdges = removeDNSFlows(filteredEdges);
+    }
+
+    // if edgeState is extraneous && there is a selectedNode, add in/egress flows nodes/edges
+    if (edgeState !== 'active' && selectedNode?.data.type === 'DEPLOYMENT') {
+        const extraneousFlowsNodes = getExtraneousNodes(extraneousNodes, selectedNode.data);
+        filteredNodes = [...filteredNodes, ...extraneousFlowsNodes];
+        const extraneousFlowsEdges = getExtraneousEdges(selectedNode.data);
+        filteredEdges = [...filteredEdges, ...extraneousFlowsEdges];
+    }
 
     // 3. displayOptions data model modifying --------------------------------------------
     const showPolicyState = !!displayOptions.includes('policyStatusBadge');
