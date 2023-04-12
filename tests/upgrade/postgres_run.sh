@@ -133,6 +133,8 @@ test_upgrade_paths() {
     echo "No suitable kernel object downloaded for kernel" >> /tmp/allowlist-patterns
     echo "Unexpected HTTP request failure" >> /tmp/allowlist-patterns
     echo "UNEXPECTED:  Unknown message type" >> /tmp/allowlist-patterns
+    # bouncing the database can result in this error
+    echo "FATAL: the database system is shutting down" >> /tmp/allowlist-patterns
     # Using ci_export so the post tests have this as well
     ci_export ALLOWLIST_FILE "/tmp/allowlist-patterns"
 
