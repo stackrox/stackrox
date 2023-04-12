@@ -16,6 +16,8 @@ import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { vulnerabilitySeverityLabels } from 'messages/common';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
+import { severityRankings } from 'constants/vulnerabilities';
+import { VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
 import ImageNameTd from '../components/ImageNameTd';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 
@@ -43,10 +45,6 @@ export type ImageForCve = {
     operatingSystem: string;
     watchStatus: 'WATCHED' | 'NOT_WATCHED';
     scanTime: Date | null;
-    topImageVulnerability: {
-        severity: string;
-        isFixable: boolean;
-    } | null;
     imageComponents: ComponentVulnerability[];
 };
 
@@ -60,16 +58,40 @@ export const imagesForCveFragment = gql`
         watchStatus
         scanTime
 
-        topImageVulnerability {
-            severity
-            isFixable
-        }
-
         imageComponents(query: $query) {
             ...ComponentVulnerabilities
         }
     }
 `;
+
+/**
+ * Get the highest severity of any vulnerability in the image.
+ */
+function getVulnerabilitySeverity(
+    imageComponents: ComponentVulnerability[]
+): VulnerabilitySeverity {
+    let topSeverity: VulnerabilitySeverity = 'UNKNOWN_VULNERABILITY_SEVERITY';
+    imageComponents.forEach((component) => {
+        component.imageVulnerabilities.forEach(({ severity }) => {
+            if (
+                isVulnerabilitySeverity(severity) &&
+                severityRankings[severity] > severityRankings[topSeverity]
+            ) {
+                topSeverity = severity;
+            }
+        });
+    });
+    return topSeverity;
+}
+
+/**
+ * Get whether or not the image has any fixable vulnerabilities.
+ */
+function getIsFixable(imageComponents: ComponentVulnerability[]) {
+    return imageComponents.find((component) =>
+        component.imageVulnerabilities.find(({ fixedByVersion }) => fixedByVersion !== '')
+    );
+}
 
 export type AffectedImagesTableProps = {
     className?: string;
@@ -95,7 +117,6 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th sort={getSortParams('Operating System')}>Operating system</Th>
-                    {/* TODO Add sorting for these columns once aggregate sorting is available in BE */}
                     <Th>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
@@ -104,18 +125,9 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                 </Tr>
             </Thead>
             {images.map((image, rowIndex) => {
-                const {
-                    id,
-                    name,
-                    operatingSystem,
-                    scanTime,
-                    topImageVulnerability,
-                    imageComponents,
-                } = image;
-                const topSeverity =
-                    topImageVulnerability?.severity ?? 'UNKNOWN_VULNERABILITY_SEVERITY';
-
-                const isFixable = topImageVulnerability?.isFixable ?? false;
+                const { id, name, operatingSystem, scanTime, imageComponents } = image;
+                const topSeverity = getVulnerabilitySeverity(imageComponents);
+                const isFixable = getIsFixable(imageComponents);
                 const FixabilityIcon = isFixable ? FixableIcon : NotFixableIcon;
 
                 const SeverityIcon = SeverityIcons[topSeverity];
