@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -41,6 +40,7 @@ func GetAdditionalCAFilePaths() ([]string, error) {
 	var files []string
 	for _, certFile := range certFileInfos {
 		if certFile.IsDir() {
+			log.Infof("Skipping additional CA directory %q", certFile.Name())
 			continue
 		}
 		if !isValidAdditionalCAFileName(certFile.Name()) {
@@ -216,31 +216,18 @@ func validForAllDNSNames(cert *x509.Certificate, dnsNames ...string) bool {
 	return true
 }
 
-var allowedAdditionalCAExtensions = map[string]bool{
-	".crt": true,
-	".pem": true,
-}
-
-var skipAdditionalCAFileMsg string
+var allowedAdditionalCAExtensionList = []string{".crt", ".pem"}
+var allowedAdditionalCAExtensionMap = map[string]struct{}{}
 
 func init() {
-	var allowedAdditionalCAExtensionsList = make([]string, 0, len(allowedAdditionalCAExtensions))
-	for ext := range allowedAdditionalCAExtensions {
-		allowedAdditionalCAExtensionsList = append(allowedAdditionalCAExtensionsList, ext)
-	}
-	sort.Strings(allowedAdditionalCAExtensionsList)
-	skipAdditionalCAFileMsg = "skipping additional-ca file %q because it has an invalid extension; allowed file extensions for additional ca certificates are "
-	for i, ext := range allowedAdditionalCAExtensionsList {
-		if i > 0 && i < len(allowedAdditionalCAExtensionsList)-1 {
-			skipAdditionalCAFileMsg += ", "
-		} else if i == len(allowedAdditionalCAExtensionsList)-1 {
-			skipAdditionalCAFileMsg += " and "
-		}
-		skipAdditionalCAFileMsg += fmt.Sprintf("%q", ext)
+	for _, ext := range allowedAdditionalCAExtensionList {
+		allowedAdditionalCAExtensionMap[ext] = struct{}{}
 	}
 }
 
+var skipAdditionalCAFileMsg = fmt.Sprintf("skipping additional-ca file %%q because it has an invalid extension; allowed file extensions for additional ca certificates are %v", allowedAdditionalCAExtensionList)
+
 func isValidAdditionalCAFileName(fileName string) bool {
-	_, ok := allowedAdditionalCAExtensions[path.Ext(fileName)]
+	_, ok := allowedAdditionalCAExtensionMap[path.Ext(fileName)]
 	return ok
 }

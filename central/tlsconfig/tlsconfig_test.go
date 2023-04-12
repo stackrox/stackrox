@@ -275,13 +275,11 @@ func Test_isValidAdditionalCAFileName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isValidAdditionalCAFileName(tt.name); got != tt.want {
-				t.Errorf("isValidAdditionalCAFileName() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, isValidAdditionalCAFileName(tt.name))
 		})
 	}
 }
 
 func Test_skipAdditionalCAFileMsg(t *testing.T) {
-	assert.Equal(t, `skipping additional-ca file %q because it has an invalid extension; allowed file extensions for additional ca certificates are ".crt" and ".pem"`, skipAdditionalCAFileMsg)
+	assert.Equal(t, `skipping additional-ca file %q because it has an invalid extension; allowed file extensions for additional ca certificates are [.crt .pem]`, skipAdditionalCAFileMsg)
 }
