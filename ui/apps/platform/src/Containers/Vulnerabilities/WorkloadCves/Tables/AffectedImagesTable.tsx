@@ -108,7 +108,7 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
     return (
         // TODO UX question - Collapse to cards, or allow headers to overflow?
         // <TableComposable gridBreakPoint="grid-xl">
-        <TableComposable>
+        <TableComposable variant="compact">
             <Thead>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>

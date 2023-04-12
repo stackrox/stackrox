@@ -17,6 +17,7 @@ import {
 import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import PageTitle from 'Components/PageTitle';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
@@ -171,6 +172,9 @@ function ImageCvePage() {
 
     return (
         <>
+            <PageTitle
+                title={`Workload CVEs - ImageCVE ${metadataRequest.data?.imageCVE.cve ?? ''}`}
+            />
             <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewImagePath}>CVEs</BreadcrumbItemLink>
