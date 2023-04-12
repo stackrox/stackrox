@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -32,59 +33,70 @@ func GetAdditionalCAFilePaths() ([]string, error) {
 	if err != nil {
 		// Ignore error if additional CAs do not exist on filesystem
 		if os.IsNotExist(err) {
+			log.Infof("Additional CA directory %q does not exist: skipping", additionalCADir)
 			return nil, nil
 		}
-		return nil, errors.Wrap(err, "reading additional CAs directory")
+		return nil, errors.Wrap(err, fmt.Sprintf("Failed to read additional CAs directory %q", additionalCADir))
 	}
 
 	var files []string
 	for _, directoryEntry := range directoryEntries {
+
+		entryName := directoryEntry.Name()
+		filePath := path.Join(additionalCADir, entryName)
+
 		if directoryEntry.IsDir() {
-			log.Infof("Skipping additional CA directory %q", directoryEntry.Name())
+			log.Infof("Skipping additional CA directory entry %q because it is a directory", entryName)
 			continue
 		}
 
 		fileInfo, err := directoryEntry.Info()
 		if err != nil {
-			log.Warnf("Error reading file info for %s: %v", directoryEntry.Name(), err)
+			log.Warnf("Failed to read additional CA file info for %q: %s", entryName, err)
 			continue
 		}
 
-		if fileInfo.Mode()&os.ModeSymlink != 0 {
-			symLink, err := filepath.EvalSymlinks(path.Join(additionalCADir, directoryEntry.Name()))
+		if isSymlink(fileInfo) {
+			resolvedPathForSymlink, err := filepath.EvalSymlinks(filePath)
 			if err != nil {
-				log.Warnf("Error reading symlink for %s: %v", directoryEntry.Name(), err)
+				log.Warnf("Failed to evaluate additional CA file symlinks for file %q: %s", filePath, err)
 				continue
 			}
-			fileInfo, err = os.Stat(symLink)
+			fileInfo, err = os.Stat(resolvedPathForSymlink)
 			if err != nil {
-				log.Warnf("Error reading file info for %s: %v", directoryEntry.Name(), err)
+				log.Warnf("Error reading additional CA file info for symlink %q that resolved to %q: %s", filePath, resolvedPathForSymlink, err)
 				continue
 			}
 			if fileInfo.IsDir() {
+				log.Infof("Skipping additional CA file %q because it is a symlink that resolved to a directory", filePath)
 				continue
 			}
 		}
 
-		if !isValidAdditionalCAFileName(directoryEntry.Name()) {
-			log.Infof(skipAdditionalCAFileMsg, directoryEntry.Name())
+		if !isValidAdditionalCAFileName(entryName) {
+			log.Infof(skipAdditionalCAFileMsg, entryName)
 			continue
 		}
-		content, err := os.ReadFile(path.Join(additionalCADir, directoryEntry.Name()))
+
+		content, err := os.ReadFile(filePath)
 		if err != nil {
-			return nil, errors.Wrap(err, "reading additional CAs cert")
+			return nil, errors.Wrap(err, fmt.Sprintf("Failed to read additional CAs cert file %q", filePath))
 		}
 
 		_, err = x509utils.ConvertPEMToDERs(content)
 		if err != nil {
-			return nil, errors.Wrap(err, "converting additional CA cert to DER")
+			return nil, errors.Wrap(err, fmt.Sprintf("Failed to convert additional CA cert file %q from PEM to DER format", filePath))
 		}
 
-		files = append(files, path.Join(additionalCADir, directoryEntry.Name()))
+		files = append(files, filePath)
 	}
 
 	return files, nil
 
+}
+
+func isSymlink(fileInfo fs.FileInfo) bool {
+	return fileInfo.Mode()&os.ModeSymlink != 0
 }
 
 // GetAdditionalCAs reads all additional CAs in DER format.
@@ -98,12 +110,12 @@ func GetAdditionalCAs() ([][]byte, error) {
 	for _, certFilePath := range additionalCAFilePaths {
 		content, err := os.ReadFile(certFilePath)
 		if err != nil {
-			return nil, errors.Wrap(err, "reading additional CAs cert")
+			return nil, errors.Wrap(err, fmt.Sprintf("Failed to read additional CAs cert file %q", certFilePath))
 		}
 
 		certDER, err := x509utils.ConvertPEMToDERs(content)
 		if err != nil {
-			return nil, errors.Wrap(err, "converting additional CA cert to DER")
+			return nil, errors.Wrap(err, fmt.Sprintf("Failed to convert additional CA cert file %q from PEM to DER format", certFilePath))
 		}
 		certDERs = append(certDERs, certDER...)
 	}
