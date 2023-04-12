@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_addSelectorOptionIfNeeded(t *testing.T) {
+func TestAddSelectorOptionIfNeeded(t *testing.T) {
 	tests := []struct {
 		name     string
 		selector string

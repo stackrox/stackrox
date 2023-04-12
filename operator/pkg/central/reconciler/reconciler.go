@@ -2,6 +2,7 @@ package reconciler
 
 import (
 	pkgReconciler "github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/central/extensions"
@@ -61,9 +62,10 @@ func addSelectorOptionIfNeeded(selector string, opts []pkgReconciler.Option) ([]
 	if len(selector) != 0 {
 		labelSelector, err := v1.ParseToLabelSelector(selector)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to parse central label selector")
 		}
 		if labelSelector != nil {
+			ctrl.Log.Info("Using central label selector", "selector", selector)
 			opts = append(opts, pkgReconciler.WithSelector(*labelSelector))
 		}
 	}
