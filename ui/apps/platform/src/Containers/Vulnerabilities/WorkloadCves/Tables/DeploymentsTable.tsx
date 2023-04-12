@@ -7,99 +7,79 @@ import { Button, ButtonVariant, Flex, Tooltip } from '@patternfly/react-core';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { getDistanceStrictAsPhrase, getDateTime } from 'utils/dateUtils';
 import { UseURLSortResult } from 'hooks/useURLSort';
-import ImageNameTd from '../components/ImageNameTd';
 import { getEntityPagePath } from '../searchUtils';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 
-export const imageListQuery = gql`
-    query getImageList($query: String, $pagination: Pagination) {
-        images(query: $query, pagination: $pagination) {
+export const deploymentListQuery = gql`
+    query getDeploymentList($query: String, $pagination: Pagination) {
+        deployments(query: $query, pagination: $pagination) {
             id
-            name {
-                registry
-                remote
-                tag
-            }
-            imageCVECountBySeverity(query: $query) {
+            name
+            imageCVECountBySeverity {
                 critical
                 important
                 moderate
                 low
             }
-            operatingSystem
-            deploymentCount(query: $query)
-            watchStatus
-            metadata {
-                v1 {
-                    created
-                }
-            }
-            scanTime
+            clusterName
+            namespace
+            imageCount
+            created
         }
     }
 `;
 
-type Image = {
+type Deployment = {
     id: string;
-    name: {
-        registry: string;
-        remote: string;
-        tag: string;
-    } | null;
+    name: string;
     imageCVECountBySeverity: {
         critical: number;
         important: number;
         moderate: number;
         low: number;
     };
-    operatingSystem: string;
-    deploymentCount: number;
-    watchStatus: 'WATCHED' | 'NOT_WATCHED';
-    metadata: {
-        v1: {
-            created: Date | null;
-        } | null;
-    } | null;
-    scanTime: Date | null;
+    clusterName: string;
+    namespace: string;
+    imageCount: number;
+    created: Date | null;
 };
 
-type ImagesTableProps = {
-    images: Image[];
+type DeploymentsTableProps = {
+    deployments: Deployment[];
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
 };
 
-function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
+function DeploymentsTable({ deployments, getSortParams, isFiltered }: DeploymentsTableProps) {
     return (
         <TableComposable borders={false} variant="compact">
             <Thead>
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
-                    <Th sort={getSortParams('Image')}>Image</Th>
-                    <Th tooltip="CVEs by severity across this image">
+                    <Th sort={getSortParams('Deployment')}>Deployment</Th>
+                    <Th tooltip="CVEs by severity across this deployment">
                         CVEs by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th sort={getSortParams('Operating System')}>Operating system</Th>
-                    <Th sort={getSortParams('Deployment Count')}>
-                        Deployments
+                    <Th sort={getSortParams('Cluster')}>Cluster</Th>
+                    <Th sort={getSortParams('Namespace')}>Namespace</Th>
+                    <Th>
+                        Images
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th sort={getSortParams('Age')}>Age</Th>
-                    <Th sort={getSortParams('Scan Time')}>Scan time</Th>
+                    <Th>First discovered</Th>
                 </Tr>
             </Thead>
-            {images.map(
+            {deployments.map(
                 ({
                     id,
                     name,
                     imageCVECountBySeverity,
-                    operatingSystem,
-                    deploymentCount,
-                    metadata,
-                    watchStatus,
-                    scanTime,
+                    clusterName,
+                    namespace,
+                    imageCount,
+                    created,
                 }) => {
                     return (
                         <Tbody
@@ -110,11 +90,14 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                         >
                             <Tr>
                                 <Td>
-                                    {name ? (
-                                        <ImageNameTd name={name} id={id} />
-                                    ) : (
-                                        'Image name not available'
-                                    )}
+                                    <Button
+                                        variant={ButtonVariant.link}
+                                        isInline
+                                        component={LinkShim}
+                                        href={getEntityPagePath('Deployment', id)}
+                                    >
+                                        {name}
+                                    </Button>
                                 </Td>
                                 <Td>
                                     <SeverityCountLabels
@@ -124,40 +107,26 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                                         low={imageCVECountBySeverity.low}
                                     />
                                 </Td>
-                                <Td>{operatingSystem}</Td>
+                                <Td>{clusterName}</Td>
+                                <Td>{namespace}</Td>
                                 <Td>
                                     {/* TODO: add modal */}
-                                    {deploymentCount > 0 ? (
+                                    {imageCount > 0 ? (
                                         <Button
                                             variant={ButtonVariant.link}
                                             isInline
                                             component={LinkShim}
                                             href={getEntityPagePath('Deployment', id)}
                                         >
-                                            {deploymentCount}{' '}
-                                            {pluralize('deployment', deploymentCount)}
+                                            {imageCount} {pluralize('image', imageCount)}
                                         </Button>
                                     ) : (
-                                        <Flex>
-                                            <div>0 deployments</div>
-                                            {/* TODO: double check on what this links to */}
-                                            <span>({`${watchStatus}`} image)</span>
-                                        </Flex>
+                                        <Flex>0 images</Flex>
                                     )}
                                 </Td>
                                 <Td>
-                                    <Tooltip content={getDateTime(metadata?.v1?.created)}>
-                                        <div>
-                                            {getDistanceStrictAsPhrase(
-                                                metadata?.v1?.created,
-                                                new Date()
-                                            )}
-                                        </div>
-                                    </Tooltip>
-                                </Td>
-                                <Td>
-                                    <Tooltip content={getDateTime(scanTime)}>
-                                        <div>{getDistanceStrictAsPhrase(scanTime, new Date())}</div>
+                                    <Tooltip content={getDateTime(created)}>
+                                        <div>{getDistanceStrictAsPhrase(created, new Date())}</div>
                                     </Tooltip>
                                 </Td>
                             </Tr>
@@ -169,4 +138,4 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
     );
 }
 
-export default ImagesTable;
+export default DeploymentsTable;

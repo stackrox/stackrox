@@ -13,7 +13,7 @@ import {
 } from 'routePaths';
 import DeploymentPage from './DeploymentPage';
 import ImagePage from './ImagePage';
-import WorkloadCvesOverviewPage from './WorkloadCvesOverviewPage';
+import WorkloadCvesOverviewPage from './Overview/WorkloadCvesOverviewPage';
 import ImageCvePage from './ImageCvePage';
 
 function WorkloadCvesPage() {
