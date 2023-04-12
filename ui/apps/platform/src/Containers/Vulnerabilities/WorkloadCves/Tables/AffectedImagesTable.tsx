@@ -1,6 +1,5 @@
 import React from 'react';
 import { gql } from '@apollo/client';
-import { Button, ButtonVariant, Flex } from '@patternfly/react-core';
 import {
     ExpandableRowContent,
     TableComposable,
@@ -12,15 +11,13 @@ import {
 } from '@patternfly/react-table';
 
 import { FixableIcon, NotFixableIcon } from 'Components/PatternFly/FixabilityIcons';
-import LinkShim from 'Components/PatternFly/LinkShim';
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { vulnerabilitySeverityLabels } from 'messages/common';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
-
-import { DynamicColumnIcon } from '../DynamicIcon';
-import { getEntityPagePath } from '../searchUtils';
+import ImageNameTd from '../components/ImageNameTd';
+import { DynamicColumnIcon } from '../components/DynamicIcon';
 
 export type ImageForCve = {
     id: string;
@@ -157,22 +154,7 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                                 />
                                 <Td dataLabel="Image">
                                     {name ? (
-                                        <Flex
-                                            direction={{ default: 'column' }}
-                                            spaceItems={{ default: 'spaceItemsNone' }}
-                                        >
-                                            <Button
-                                                variant={ButtonVariant.link}
-                                                isInline
-                                                component={LinkShim}
-                                                href={getEntityPagePath('Image', id)}
-                                            >
-                                                {name.remote}
-                                            </Button>{' '}
-                                            <span className="pf-u-color-400 pf-u-font-size-sm">
-                                                in {name.registry}
-                                            </span>
-                                        </Flex>
+                                        <ImageNameTd name={name} id={id} />
                                     ) : (
                                         'Image name not available'
                                     )}

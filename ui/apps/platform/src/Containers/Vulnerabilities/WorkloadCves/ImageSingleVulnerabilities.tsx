@@ -32,7 +32,7 @@ import BySeveritySummaryCard from './SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from './SummaryCards/CvesByStatusSummaryCard';
 import SingleEntityVulnerabilitiesTable from './Tables/SingleEntityVulnerabilitiesTable';
 import useImageVulnerabilities from './hooks/useImageVulnerabilities';
-import { DynamicTableLabel } from './DynamicIcon';
+import { DynamicTableLabel } from './components/DynamicIcon';
 import { getHiddenSeverities, parseQuerySearchFilter } from './searchUtils';
 import { QuerySearchFilter, FixableStatus, cveStatusTabValues } from './types';
 

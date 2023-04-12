@@ -8,7 +8,7 @@ import { Resource } from './FilterResourceDropdown';
 import FilterAutocomplete from './FilterAutocomplete';
 import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
-import FilterChips from './FilterChips';
+import FilterChips from './components/FilterChips';
 
 const emptyDefaultFilters = {
     Severity: [],

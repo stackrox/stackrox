@@ -1,4 +1,5 @@
 import React from 'react';
+import { gql, useQuery } from '@apollo/client';
 import {
     Tabs,
     Tab,
@@ -8,26 +9,80 @@ import {
     Card,
     CardBody,
     Divider,
+    Toolbar,
+    ToolbarItem,
+    ToolbarContent,
+    Pagination,
 } from '@patternfly/react-core';
 
 import useURLStringUnion from 'hooks/useURLStringUnion';
+import useURLSearch from 'hooks/useURLSearch';
+import useURLPagination from 'hooks/useURLPagination';
+import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import ImagesTableContainer from './ImagesTableContainer';
+import DeploymentsTableContainer from './DeploymentsTableContainer';
+import CVEsTableContainer from './CVEsTableContainer';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
-import EntityTypeToggleGroup from './EntityTypeToggleGroup';
-import { DefaultFilters, cveStatusTabValues } from './types';
+import EntityTypeToggleGroup from './components/EntityTypeToggleGroup';
+import { DynamicTableLabel } from './components/DynamicIcon';
+import { DefaultFilters, cveStatusTabValues, entityTabValues, EntityTab } from './types';
+import { parseQuerySearchFilter } from './searchUtils';
 
 type CveStatusTabNavigationProps = {
     defaultFilters: DefaultFilters;
 };
 
+type EntityCounts = {
+    imageCount: number;
+    deploymentCount: number;
+    imageCVECount: number;
+};
+
+const entityTypeCountsQuery = gql`
+    query getEntityTypeCounts($query: String) {
+        imageCount(query: $query)
+        deploymentCount(query: $query)
+        imageCVECount(query: $query)
+    }
+`;
+
+function getTableRowCount(countsData: EntityCounts, entityType: EntityTab): number {
+    switch (entityType) {
+        case 'Image':
+            return countsData?.imageCount;
+        case 'Deployment':
+            return countsData?.deploymentCount;
+        case 'CVE':
+            return countsData?.imageCVECount;
+        default:
+            return 0;
+    }
+}
+
 function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps) {
+    const { searchFilter } = useURLSearch();
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const [activeCVEStatusKey, setActiveCVEStatusKey] = useURLStringUnion(
         'cveStatus',
         cveStatusTabValues
     );
+    const [activeEntityTabKey] = useURLStringUnion('entityTab', entityTabValues);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(25);
+    const isFiltered = getHasSearchApplied(querySearchFilter);
 
     function handleTabClick(e, tab) {
         setActiveCVEStatusKey(tab);
     }
+
+    const { data: countsData } = useQuery(entityTypeCountsQuery, {
+        variables: {
+            query: getRequestQueryStringForSearchFilter({
+                ...querySearchFilter,
+            }),
+        },
+    });
+
+    const tableRowCount = getTableRowCount(countsData, activeEntityTabKey);
 
     return (
         <Tabs
@@ -44,8 +99,44 @@ function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps)
                         <CardBody>
                             <WorkloadTableToolbar defaultFilters={defaultFilters} />
                             <Divider component="div" />
-                            <EntityTypeToggleGroup className="pf-u-pl-md pf-u-pt-md" />
-                            cve overview table here
+                            <Toolbar>
+                                <ToolbarContent>
+                                    <ToolbarItem>
+                                        <EntityTypeToggleGroup
+                                            imageCount={countsData?.imageCount}
+                                            cveCount={countsData?.cveCount}
+                                            deploymentCount={countsData?.deploymentCount}
+                                        />
+                                    </ToolbarItem>
+                                    {isFiltered && (
+                                        <ToolbarItem>
+                                            <DynamicTableLabel />
+                                        </ToolbarItem>
+                                    )}
+                                    <ToolbarItem
+                                        alignment={{ default: 'alignRight' }}
+                                        variant="pagination"
+                                    >
+                                        <Pagination
+                                            isCompact
+                                            itemCount={tableRowCount}
+                                            page={page}
+                                            perPage={perPage}
+                                            onSetPage={(_, newPage) => setPage(newPage)}
+                                            onPerPageSelect={(_, newPerPage) => {
+                                                if (tableRowCount < (page - 1) * newPerPage) {
+                                                    setPage(1);
+                                                }
+                                                setPerPage(newPerPage);
+                                            }}
+                                        />
+                                    </ToolbarItem>
+                                </ToolbarContent>
+                            </Toolbar>
+                            <Divider component="div" />
+                            {activeEntityTabKey === 'Image' && <ImagesTableContainer />}
+                            {activeEntityTabKey === 'CVE' && <CVEsTableContainer />}
+                            {activeEntityTabKey === 'Deployment' && <DeploymentsTableContainer />}
                         </CardBody>
                     </Card>
                 </PageSection>
