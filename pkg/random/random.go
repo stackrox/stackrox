@@ -11,6 +11,9 @@ const (
 
 	// CaseInsensitiveAlpha is for use cases when the case is ignored
 	CaseInsensitiveAlpha = `abcdefghijklmnopqrstuvwxyz`
+
+	// HexValues is for use cases when you need a valid hex string like in image digests
+	HexValues = `0123456789abcdef`
 )
 
 // GenerateString generates a random string based on the passed number of characters and the character set
