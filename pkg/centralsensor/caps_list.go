@@ -34,6 +34,6 @@ const (
 	// NodeScanningCap identifies the capability to scan nodes and provide node components for vulnerability analysis.
 	NodeScanningCap SensorCapability = "NodeScanning"
 
-	// ListeningEndpointsCap identifies the capability for sensor to process and send information about listening endpoints and their processes, AKA processes listening on ports
-	ListeningEndpointsCap SensorCapability = "ListeningEndpoints"
+	// ListeningEndpointsWithProcessesCap identifies the capability for sensor to process and send information about listening endpoints and their processes, AKA processes listening on ports
+	ListeningEndpointsWithProcessesCap SensorCapability = "ListeningEndpoints"
 )
