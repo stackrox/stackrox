@@ -144,6 +144,20 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 			expected := compileExpected(s.testImages, tc.matchFilter, tc.readOptions)
 			assert.Equal(t, len(expected), len(actual))
 			assert.ElementsMatch(t, expected, actual)
+
+			if tc.readOptions.SkipGetAffectedImages || tc.readOptions.SkipGetImagesBySeverity {
+				return
+			}
+
+			for _, record := range actual {
+				assert.Equal(t,
+					record.GetImagesBySeverity().GetLowSeverityCount()+
+						record.GetImagesBySeverity().GetModerateSeverityCount()+
+						record.GetImagesBySeverity().GetImportantSeverityCount()+
+						record.GetImagesBySeverity().GetCriticalSeverityCount(),
+					record.GetAffectedImages(),
+				)
+			}
 		})
 	}
 }
@@ -229,6 +243,41 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 			matchFilter: matchAllFilter().
 				withVulnFiler(func(vuln *storage.EmbeddedVulnerability) bool {
 					return vuln.GetSeverity() == storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
+				}),
+		},
+		{
+			desc: "search fixable",
+			ctx:  context.Background(),
+			q: search.NewQueryBuilder().
+				AddBools(search.Fixable, true).
+				ProtoQuery(),
+			matchFilter: matchAllFilter().
+				withVulnFiler(func(vuln *storage.EmbeddedVulnerability) bool {
+					return vuln.GetFixedBy() != ""
+				}),
+		},
+		{
+			desc: "search one cve + fixable",
+			ctx:  context.Background(),
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.CVE, "CVE-2015-8704").
+				AddBools(search.Fixable, true).
+				ProtoQuery(),
+			matchFilter: matchAllFilter().
+				withVulnFiler(func(vuln *storage.EmbeddedVulnerability) bool {
+					return vuln.GetCve() == "CVE-2015-8704" && vuln.GetFixedBy() != ""
+				}),
+		},
+		{
+			desc: "search one cve + not fixable",
+			ctx:  context.Background(),
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.CVE, "CVE-2015-8704").
+				AddBools(search.Fixable, false).
+				ProtoQuery(),
+			matchFilter: matchAllFilter().
+				withVulnFiler(func(vuln *storage.EmbeddedVulnerability) bool {
+					return vuln.GetCve() == "CVE-2015-8704" && vuln.GetFixedBy() == ""
 				}),
 		},
 		{
