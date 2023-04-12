@@ -23,7 +23,7 @@ run_shellcheck() {
     rm -f "${output}/*" "${flag_failure}"
 
     for shell in $(git ls-files | grep -E '.sh$' | grep -v -x -f "${known_failures_file}"); do
-        if ! shellcheck -i SC1091 -P SCRIPTDIR -x "$shell"; then
+        if ! shellcheck -P SCRIPTDIR -x "$shell"; then
             if [[ "${CI:-}" == "true" ]]; then
                 mkdir -p "${output}"
                 local xmlout="${shell//.sh/.xml}"
