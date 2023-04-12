@@ -3,7 +3,7 @@ import { Globe } from 'react-feather';
 import { Flex, FlexItem, ChipGroup, Chip, Button } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
-import { VulnerabilitySeverityLabel, FixableStatus, DefaultFilters } from './types';
+import { VulnerabilitySeverityLabel, FixableStatus, DefaultFilters } from '../types';
 
 import './FilterChips.css';
 
