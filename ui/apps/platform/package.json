@@ -95,7 +95,6 @@
         "redux-saga": "^0.16.0",
         "redux-thunk": "^2.4.1",
         "reselect": "^4.1.2",
-        "slick-carousel": "^1.8.1",
         "store": "^2.0.12",
         "styled-components": "^5.3.1",
         "tippy.js": "^6.3.7",
