@@ -94,7 +94,6 @@ function getIsFixable(imageComponents: ComponentVulnerability[]) {
 }
 
 export type AffectedImagesTableProps = {
-    className?: string;
     images: ImageForCve[];
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
@@ -111,8 +110,8 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('Image')}>Image</Th>
-                    <Th sort={getSortParams('Severity')}>Severity</Th>
-                    <Th sort={getSortParams('Fixable')}>
+                    <Th>Severity</Th>
+                    <Th>
                         Fix status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>

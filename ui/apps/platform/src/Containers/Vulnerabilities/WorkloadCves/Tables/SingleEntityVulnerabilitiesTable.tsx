@@ -42,8 +42,8 @@ function SingleEntityVulnerabilitiesTable({
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('CVE')}>CVE</Th>
-                    <Th sort={getSortParams('Severity')}>Severity</Th>
-                    <Th sort={getSortParams('Fixable')}>
+                    <Th>Severity</Th>
+                    <Th>
                         CVE Status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>

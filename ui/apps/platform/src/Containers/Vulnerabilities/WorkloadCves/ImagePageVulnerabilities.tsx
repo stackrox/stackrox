@@ -53,7 +53,7 @@ function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<FixableSta
     return hiddenStatuses;
 }
 
-const defaultSortFields = ['CVE', 'Severity', 'Fixable'];
+const defaultSortFields = ['CVE'];
 
 export type ImagePageVulnerabilitiesProps = {
     imageId: string;
@@ -66,7 +66,7 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
         defaultSortOption: {
-            field: 'Severity',
+            field: 'CVE',
             direction: 'desc',
         },
         onSort: () => setPage(1),
