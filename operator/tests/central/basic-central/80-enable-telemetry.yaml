@@ -5,7 +5,7 @@ metadata:
 spec:
   central:
     telemetry:
-      enabled: false
+      enabled: true
       storage:
         endpoint: https://telemetry.endpoint
         key: my-api-key
