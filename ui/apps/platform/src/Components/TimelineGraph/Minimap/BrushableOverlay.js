@@ -65,8 +65,8 @@ const BrushableOverlay = ({
             .call(brush)
             .call(brush.move, [xScale(minTimeRange), xScale(maxTimeRange)])
             .select('rect.selection')
-            .style('fill', 'var(--base-100)')
-            .style('stroke', 'var(--base-100)');
+            .style('fill', 'var(--accent-500)')
+            .style('stroke', 'var(--accent-500)');
     }
 
     return (
