@@ -37,7 +37,7 @@ function SingleEntityVulnerabilitiesTable({
     const expandedRowSet = useSet<string>();
 
     return (
-        <TableComposable>
+        <TableComposable variant="compact">
             <Thead>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>

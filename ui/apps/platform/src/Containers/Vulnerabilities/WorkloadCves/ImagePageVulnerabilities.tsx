@@ -55,11 +55,11 @@ function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<FixableSta
 
 const defaultSortFields = ['CVE', 'Severity', 'Fixable'];
 
-export type ImageSingleVulnerabilitiesProps = {
+export type ImagePageVulnerabilitiesProps = {
     imageId: string;
 };
 
-function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps) {
+function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const { page, perPage, setPage, setPerPage } = useURLPagination(50);
@@ -226,4 +226,4 @@ function ImageSingleVulnerabilities({ imageId }: ImageSingleVulnerabilitiesProps
     );
 }
 
-export default ImageSingleVulnerabilities;
+export default ImagePageVulnerabilities;

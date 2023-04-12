@@ -20,12 +20,13 @@ import { CopyIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import PageTitle from 'Components/PageTitle';
 import { getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import ImageSingleVulnerabilities from './ImageSingleVulnerabilities';
-import ImageSingleResources from './ImageSingleResources';
+import ImagePageVulnerabilities from './ImagePageVulnerabilities';
+import ImagePageResources from './ImagePageResources';
 import { detailsTabValues } from './types';
 import { getOverviewCvesPath } from './searchUtils';
 import useImageDetails, { ImageDetailsResponse } from './hooks/useImageDetails';
@@ -87,7 +88,7 @@ function ImageDetailBadges({ imageData }: { imageData: ImageDetailsResponse['ima
     );
 }
 
-function WorkloadCvesImageSinglePage() {
+function ImagePage() {
     const { imageId } = useParams();
     const { data, error } = useImageDetails(imageId);
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
@@ -149,7 +150,7 @@ function WorkloadCvesImageSinglePage() {
                             eventKey="Vulnerabilities"
                             title={<TabTitleText>Vulnerabilities</TabTitleText>}
                         >
-                            <ImageSingleVulnerabilities imageId={imageId} />
+                            <ImagePageVulnerabilities imageId={imageId} />
                         </Tab>
                         <Tab
                             className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
@@ -157,7 +158,7 @@ function WorkloadCvesImageSinglePage() {
                             title={<TabTitleText>Resources</TabTitleText>}
                             isDisabled
                         >
-                            <ImageSingleResources />
+                            <ImagePageResources />
                         </Tab>
                     </Tabs>
                 </PageSection>
@@ -167,6 +168,7 @@ function WorkloadCvesImageSinglePage() {
 
     return (
         <>
+            <PageTitle title={`Workload CVEs - Image ${imageData ? imageName : ''}`} />
             <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewImagePath}>
@@ -189,4 +191,4 @@ function WorkloadCvesImageSinglePage() {
     );
 }
 
-export default WorkloadCvesImageSinglePage;
+export default ImagePage;
