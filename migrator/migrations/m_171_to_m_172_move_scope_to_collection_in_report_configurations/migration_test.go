@@ -14,7 +14,7 @@ import (
 	reportConfigurationPostgres "github.com/stackrox/rox/migrator/migrations/m_171_to_m_172_move_scope_to_collection_in_report_configurations/reportConfigurationPostgresStore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
@@ -393,8 +393,8 @@ func (s *reportConfigsMigrationTestSuite) SetupTest() {
 	s.accessScopeStore = accessScopePostgres.New(s.db.DB)
 	s.collectionStore = collectionPostgres.New(s.db.DB)
 
-	pkgSchema.ApplySchemaForTable(context.Background(), s.db.GetGormDB(), schema.ReportConfigurationsTableName)
-	pkgSchema.ApplySchemaForTable(context.Background(), s.db.GetGormDB(), schema.SimpleAccessScopesTableName)
+	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), schema.CreateTableReportConfigurationsStmt)
+	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), schema.CreateTableSimpleAccessScopesStmt)
 }
 
 func (s *reportConfigsMigrationTestSuite) TearDownTest() {
