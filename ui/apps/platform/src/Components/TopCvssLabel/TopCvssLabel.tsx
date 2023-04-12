@@ -1,5 +1,11 @@
 import React, { ReactNode } from 'react';
 
+export type TopCvssLabelProps = {
+    cvss: number;
+    version: string;
+    expanded?: boolean;
+};
+
 function TopCvssLabel({ cvss, version, expanded }: TopCvssLabelProps): ReactNode {
     if (!cvss && cvss !== 0) {
         return 'N/A';
@@ -29,11 +35,5 @@ function TopCvssLabel({ cvss, version, expanded }: TopCvssLabelProps): ReactNode
         </div>
     );
 }
-
-type TopCvssLabelProps = {
-    cvss: number;
-    version: string;
-    expanded?: boolean;
-};
 
 export default TopCvssLabel;
