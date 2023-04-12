@@ -20,10 +20,30 @@ var (
 	registeredTables = make(map[string]*registeredTable)
 )
 
+// RegisteredSchemaTable is an interface to access registered schema information
+type RegisteredSchemaTable interface {
+	GetSchema() *walker.Schema
+	GetCreateStatement() *postgres.CreateStmts
+}
+
 type registeredTable struct {
 	Schema             *walker.Schema
 	CreateStmt         *postgres.CreateStmts
 	FeatureEnabledFunc func() bool
+}
+
+func (r *registeredTable) GetSchema() *walker.Schema {
+	if r == nil {
+		return nil
+	}
+	return r.Schema
+}
+
+func (r *registeredTable) GetCreateStatement() *postgres.CreateStmts {
+	if r == nil {
+		return nil
+	}
+	return r.CreateStmt
 }
 
 // RegisterTable maps a table to an object type for the purposes of metrics gathering
@@ -47,7 +67,8 @@ func GetSchemaForTable(tableName string) *walker.Schema {
 	return nil
 }
 
-func getAllTables() []*registeredTable {
+// GetAllTables provides the list of registered tables.
+func GetAllTables() []*RegisteredSchemaTable {
 	tables := make([]*registeredTable, 0, len(registeredTables))
 	for _, v := range registeredTables {
 		tables = append(tables, v)
@@ -55,7 +76,8 @@ func getAllTables() []*registeredTable {
 	return tables
 }
 
-func getAllRegisteredTablesInOrder() []*registeredTable {
+// GetAllRegisteredTablesInOrder provides the list of registered tables and associated schemas.
+func GetAllRegisteredTablesInOrder() []RegisteredSchemaTable {
 	visited := set.NewStringSet()
 
 	tables := make([]string, 0, len(registeredTables))
@@ -64,18 +86,18 @@ func getAllRegisteredTablesInOrder() []*registeredTable {
 	}
 	sort.Strings(tables)
 
-	var rts []*registeredTable
+	var rts []RegisteredSchemaTable
 	for _, table := range tables {
 		rts = append(rts, getRegisteredTablesFor(visited, table)...)
 	}
 	return rts
 }
 
-func getRegisteredTablesFor(visited set.StringSet, table string) []*registeredTable {
+func getRegisteredTablesFor(visited set.StringSet, table string) []RegisteredSchemaTable {
 	if visited.Contains(table) {
 		return nil
 	}
-	var rts []*registeredTable
+	var rts []RegisteredSchemaTable
 	rt := registeredTables[table]
 	if !rt.FeatureEnabledFunc() {
 		return nil
@@ -90,21 +112,21 @@ func getRegisteredTablesFor(visited set.StringSet, table string) []*registeredTa
 
 // ApplyAllSchemas creates or auto migrate according to the current schema
 func ApplyAllSchemas(ctx context.Context, gormDB *gorm.DB) {
-	for _, rt := range getAllRegisteredTablesInOrder() {
+	for _, rt := range GetAllRegisteredTablesInOrder() {
 		// Exclude tests
-		if strings.HasPrefix(rt.Schema.Table, "test_") {
+		if strings.HasPrefix(rt.GetSchema().Table, "test_") {
 			continue
 		}
-		log.Debugf("Applying schema for table %s", rt.Schema.Table)
-		pgutils.CreateTableFromModel(ctx, gormDB, rt.CreateStmt)
+		log.Debugf("Applying schema for table %s", rt.GetSchema().Table)
+		pgutils.CreateTableFromModel(ctx, gormDB, rt.GetCreateStatement())
 	}
 }
 
 // ApplyAllSchemasIncludingTests creates or auto migrate according to the current schema including test schemas
 func ApplyAllSchemasIncludingTests(ctx context.Context, gormDB *gorm.DB, _ testing.TB) {
-	for _, rt := range getAllRegisteredTablesInOrder() {
-		log.Debugf("Applying schema for table %s", rt.Schema.Table)
-		pgutils.CreateTableFromModel(ctx, gormDB, rt.CreateStmt)
+	for _, rt := range GetAllRegisteredTablesInOrder() {
+		log.Debugf("Applying schema for table %s", rt.GetSchema().Table)
+		pgutils.CreateTableFromModel(ctx, gormDB, rt.GetCreateStatement())
 	}
 }
 
@@ -112,6 +134,6 @@ func ApplyAllSchemasIncludingTests(ctx context.Context, gormDB *gorm.DB, _ testi
 func ApplySchemaForTable(ctx context.Context, gormDB *gorm.DB, table string) {
 	rts := getRegisteredTablesFor(set.NewStringSet(), table)
 	for _, rt := range rts {
-		pgutils.CreateTableFromModel(ctx, gormDB, rt.CreateStmt)
+		pgutils.CreateTableFromModel(ctx, gormDB, rt.GetCreateStatement())
 	}
 }

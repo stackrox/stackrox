@@ -11,7 +11,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres/testschema"
+	pkgTestSchema "github.com/stackrox/rox/pkg/postgres/testschema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 	mappings "github.com/stackrox/rox/pkg/search/options/deployments"
@@ -385,7 +385,7 @@ func TestSelectQueries(t *testing.T) {
 				ctx = context.Background()
 			}
 
-			actualQ, err := standardizeSelectQueryAndPopulatePath(ctx, c.q, testschema.DeploymentsSchema, SELECT)
+			actualQ, err := standardizeSelectQueryAndPopulatePath(ctx, c.q, pkgTestSchema.DeploymentsSchema, SELECT)
 			if c.expectedError != "" {
 				assert.Error(t, err, c.expectedError)
 				return

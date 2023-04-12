@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	pkgTestSchema "github.com/stackrox/rox/pkg/postgres/testschema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -211,7 +212,7 @@ func (s *SingleUUIDIndexSuite) TestAutocomplete() {
 	}
 	s.NoError(s.store.Upsert(ctx, obj))
 
-	optionsMap := testschema.TestSingleUuidKeyStructsSchema.OptionsMap
+	optionsMap := pkgTestSchema.TestSingleUuidKeyStructsSchema.OptionsMap
 	for _, testCase := range []struct {
 		field       search.FieldLabel
 		queryString string

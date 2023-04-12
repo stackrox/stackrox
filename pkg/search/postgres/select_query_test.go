@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	pkgTestSchema "github.com/stackrox/rox/pkg/postgres/testschema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -799,7 +800,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
-			pgSearch.AssertSQLQueryString(t, c.q, testschema.TestMultiKeyStructsSchema, c.expectedQuery)
+			pgSearch.AssertSQLQueryString(t, c.q, pkgTestSchema.TestMultiKeyStructsSchema, c.expectedQuery)
 			runTest(ctx, t, testDB, c)
 		})
 	}
@@ -865,37 +866,37 @@ func runTest(ctx context.Context, t *testing.T, testDB *pgtest.TestPostgres, tc 
 	var err error
 	switch tc.resultStruct.(type) {
 	case Struct1:
-		results, err = pgSearch.RunSelectRequestForSchema[Struct1](ctx, testDB.DB, testschema.TestMultiKeyStructsSchema, tc.q)
+		results, err = pgSearch.RunSelectRequestForSchema[Struct1](ctx, testDB.DB, pkgTestSchema.TestMultiKeyStructsSchema, tc.q)
 	case Struct2:
-		results, err = pgSearch.RunSelectRequestForSchema[Struct2](ctx, testDB.DB, testschema.TestMultiKeyStructsSchema, tc.q)
+		results, err = pgSearch.RunSelectRequestForSchema[Struct2](ctx, testDB.DB, pkgTestSchema.TestMultiKeyStructsSchema, tc.q)
 	case Struct2GrpBy1:
-		results, err = pgSearch.RunSelectRequestForSchema[Struct2GrpBy1](ctx, testDB.DB, testschema.TestMultiKeyStructsSchema, tc.q)
+		results, err = pgSearch.RunSelectRequestForSchema[Struct2GrpBy1](ctx, testDB.DB, pkgTestSchema.TestMultiKeyStructsSchema, tc.q)
 	case Struct2GrpBy2:
-		results, err = pgSearch.RunSelectRequestForSchema[Struct2GrpBy2](ctx, testDB.DB, testschema.TestMultiKeyStructsSchema, tc.q)
+		results, err = pgSearch.RunSelectRequestForSchema[Struct2GrpBy2](ctx, testDB.DB, pkgTestSchema.TestMultiKeyStructsSchema, tc.q)
 	case Struct3:
-		results, err = pgSearch.RunSelectRequestForSchema[Struct3](ctx, testDB.DB, testschema.TestMultiKeyStructsSchema, tc.q)
+		results, err = pgSearch.RunSelectRequestForSchema[Struct3](ctx, testDB.DB, pkgTestSchema.TestMultiKeyStructsSchema, tc.q)
 	case Struct4:
-		results, err = pgSearch.RunSelectRequestForSchema[Struct4](ctx, testDB.DB, testschema.TestMultiKeyStructsSchema, tc.q)
+		results, err = pgSearch.RunSelectRequestForSchema[Struct4](ctx, testDB.DB, pkgTestSchema.TestMultiKeyStructsSchema, tc.q)
 	case DerivedStruct1:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct1](ctx, testDB.DB, testschema.TestMultiKeyStructsSchema, tc.q)
+		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct1](ctx, testDB.DB, pkgTestSchema.TestMultiKeyStructsSchema, tc.q)
 	case DerivedStruct2:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct2](ctx, testDB.DB, testschema.TestMultiKeyStructsSchema, tc.q)
+		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct2](ctx, testDB.DB, pkgTestSchema.TestMultiKeyStructsSchema, tc.q)
 	case DerivedStruct22:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct22](ctx, testDB.DB, testschema.TestMultiKeyStructsSchema, tc.q)
+		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct22](ctx, testDB.DB, pkgTestSchema.TestMultiKeyStructsSchema, tc.q)
 	case DerivedStruct3:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct3](ctx, testDB.DB, testschema.TestMultiKeyStructsSchema, tc.q)
+		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct3](ctx, testDB.DB, pkgTestSchema.TestMultiKeyStructsSchema, tc.q)
 	case DerivedStruct4:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct4](ctx, testDB.DB, testschema.TestMultiKeyStructsSchema, tc.q)
+		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct4](ctx, testDB.DB, pkgTestSchema.TestMultiKeyStructsSchema, tc.q)
 	case DerivedStruct5:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct5](ctx, testDB.DB, testschema.TestMultiKeyStructsSchema, tc.q)
+		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct5](ctx, testDB.DB, pkgTestSchema.TestMultiKeyStructsSchema, tc.q)
 	case DerivedStruct6:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct6](ctx, testDB.DB, testschema.TestMultiKeyStructsSchema, tc.q)
+		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct6](ctx, testDB.DB, pkgTestSchema.TestMultiKeyStructsSchema, tc.q)
 	case DerivedStruct7:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct7](ctx, testDB.DB, testschema.TestMultiKeyStructsSchema, tc.q)
+		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct7](ctx, testDB.DB, pkgTestSchema.TestMultiKeyStructsSchema, tc.q)
 	case DerivedStruct8:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct8](ctx, testDB.DB, testschema.TestMultiKeyStructsSchema, tc.q)
+		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct8](ctx, testDB.DB, pkgTestSchema.TestMultiKeyStructsSchema, tc.q)
 	case DerivedStruct9:
-		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct9](ctx, testDB.DB, testschema.TestMultiKeyStructsSchema, tc.q)
+		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct9](ctx, testDB.DB, pkgTestSchema.TestMultiKeyStructsSchema, tc.q)
 	}
 	if tc.expectedError != "" {
 		assert.Error(t, err, tc.expectedError)
