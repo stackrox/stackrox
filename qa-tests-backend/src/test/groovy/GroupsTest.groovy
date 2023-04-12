@@ -1,7 +1,6 @@
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 
-import io.stackrox.proto.api.v1.GroupServiceOuterClass
 import io.stackrox.proto.api.v1.GroupServiceOuterClass.GetGroupsRequest
 import io.stackrox.proto.storage.AuthProviderOuterClass
 import io.stackrox.proto.storage.GroupOuterClass.Group
@@ -26,7 +25,7 @@ class GroupsTest extends BaseSpecification {
                     .setName("groups-test-provider-2")
                     .setType("iap")
                     .putConfig("audience", "test-audience")
-                    .build()
+                    .build(),
     ]
 
     private static final Map<String, String> PROVIDER_IDS_BY_NAME = [:]
@@ -70,9 +69,6 @@ class GroupsTest extends BaseSpecification {
                     .toBuilder()
                     .setProps(props)
                     .build())
-
-            def list = GroupService.getGroups(GetGroupsRequest.newBuilder().build()).groupsList
-            log.warn "Current groups list: ${list}"
             def groupWithId = GroupService.getGroups(GetGroupsRequest.newBuilder()
                     .setAuthProviderId(props.getAuthProviderId())
                     .setValue(props.getValue())
