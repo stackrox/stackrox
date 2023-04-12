@@ -10,7 +10,8 @@ function TopCvssLabel({ cvss, version, expanded }: TopCvssLabelProps): ReactNode
     if (!expanded) {
         return (
             <span>
-                <span>{cvss1}</span> <span className="text-xs">({version})</span>
+                <span data-testid="label-chip">{cvss1}</span>{' '}
+                <span className="text-xs">({version})</span>
             </span>
         );
     }
