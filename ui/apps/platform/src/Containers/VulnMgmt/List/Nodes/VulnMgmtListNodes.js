@@ -99,16 +99,12 @@ export function getNodeTableColumns(showVMUpdates) {
             },
             {
                 Header: `Top CVSS`,
-                headerClassName: `w-1/12 text-center ${defaultHeaderClassName}`,
+                headerClassName: `w-1/12 ${defaultHeaderClassName}`,
                 className: `w-1/12 ${defaultColumnClassName}`,
                 Cell: ({ original }) => {
                     const { topVuln } = original;
                     if (!topVuln) {
-                        return (
-                            <div className="mx-auto flex flex-col">
-                                <span>–</span>
-                            </div>
-                        );
+                        return 'N/A';
                     }
                     const { cvss, scoreVersion } = topVuln;
                     return <TopCvssLabel cvss={cvss} version={scoreVersion} />;

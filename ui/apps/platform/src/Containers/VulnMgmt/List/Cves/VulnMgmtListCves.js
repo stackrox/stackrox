@@ -166,7 +166,7 @@ export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
         },
         {
             Header: `CVSS Score`,
-            headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { cvss, scoreVersion } = original;
