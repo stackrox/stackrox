@@ -11,6 +11,7 @@ import {
     EdgeProperties,
 } from 'types/networkFlow.proto';
 import { ensureExhaustive } from 'utils/type.utils';
+import { mapValues } from 'lodash';
 import {
     CustomModel,
     CustomNodeModel,
@@ -28,12 +29,25 @@ import {
     CIDRBlockData,
 } from '../types/topology.type';
 import { protocolLabel } from './flowUtils';
+import { EdgeState } from '../components/EdgeStateSelect';
 
 export const graphModel = {
     id: 'stackrox-graph',
     type: 'graph',
     layout: 'ColaNoForce',
 };
+
+function removeDNSFlows(outEdges: OutEdges): OutEdges {
+    const outEdgesWithoutDNSFlows: OutEdges = mapValues(outEdges, (value) => {
+        return {
+            ...value,
+            properties: value.properties.filter((obj) => {
+                return obj.port === 53 && obj.protocol === 'L4_PROTOCOL_UDP';
+            }),
+        };
+    });
+    return outEdgesWithoutDNSFlows;
+}
 
 function getBaseNode(id: string): CustomNodeModel {
     return {
@@ -370,7 +384,10 @@ function getNetworkPolicyState(
 // external connections can only be active, so this is hard coded to false
 const POLICY_NODE_EXTERNALLY_CONNECTED_VALUE = false;
 
-export function transformPolicyData(nodes: Node[]): {
+export function transformPolicyData(
+    nodes: Node[],
+    edgeState: EdgeState
+): {
     policyDataModel: CustomModel;
     policyNodeMap: Record<string, DeploymentNodeModel>;
 } {
@@ -384,7 +401,16 @@ export function transformPolicyData(nodes: Node[]): {
     // to reference edges so we don't double merge bidirectional edges
     const policyEdgeMap: Record<string, CustomEdgeModel> = {};
     nodes.forEach((policyNode) => {
-        const { entity, policyIds, outEdges, nonIsolatedEgress, nonIsolatedIngress } = policyNode;
+        const {
+            entity,
+            policyIds,
+            outEdges: unfilteredOutEdges,
+            nonIsolatedEgress,
+            nonIsolatedIngress,
+        } = policyNode;
+
+        const outEdges =
+            edgeState === 'inactive' ? removeDNSFlows(unfilteredOutEdges) : unfilteredOutEdges;
         const networkPolicyState = getNetworkPolicyState(nonIsolatedEgress, nonIsolatedIngress);
         const node = getNodeModel(
             entity,
@@ -393,9 +419,11 @@ export function transformPolicyData(nodes: Node[]): {
             POLICY_NODE_EXTERNALLY_CONNECTED_VALUE,
             outEdges
         );
+
         if (!policyNodeMap[node.id]) {
             policyNodeMap[node.id] = node as DeploymentNodeModel;
         }
+
         policyDataModel.nodes.push(node);
 
         // creating edges based off of outEdges per node and adding to data model

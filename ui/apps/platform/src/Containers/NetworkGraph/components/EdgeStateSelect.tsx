@@ -3,7 +3,7 @@ import { Select, SelectOption } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
-export type EdgeState = 'active' | 'inactive';
+export type EdgeState = 'active' | 'inactive' | 'inactive with dns';
 
 type EdgeStateSelectProps = {
     edgeState: EdgeState;
@@ -41,6 +41,7 @@ function EdgeStateSelect({ edgeState, setEdgeState, isDisabled }: EdgeStateSelec
             >
                 Inactive flows
             </SelectOption>
+            <SelectOption value="inactive with dns">Inactive flows with DNS flows</SelectOption>
         </Select>
     );
 }

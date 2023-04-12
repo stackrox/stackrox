@@ -181,7 +181,10 @@ function NetworkGraphPage() {
                         // get policy nodes, and the starting epoch, from policy graph API response
                         const { nodes: policyNodes, epoch } = values[1].response;
                         // transform policy data to DataModel
-                        const { policyDataModel, policyNodeMap } = transformPolicyData(policyNodes);
+                        const { policyDataModel, policyNodeMap } = transformPolicyData(
+                            policyNodes,
+                            edgeState
+                        );
                         // get active nodes from network flow graph API response
                         const { nodes: activeNodes } = values[0].response;
                         // transform active data to DataModel
