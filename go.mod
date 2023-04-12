@@ -374,6 +374,8 @@ require (
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 )
 
+require gopkg.in/mcuadros/go-syslog.v2 v2.3.0
+
 // To bump the version of a replacement package, use:
 //
 //   $ go mod edit -replace <package>=<replacement>@<branch or commit reference>
