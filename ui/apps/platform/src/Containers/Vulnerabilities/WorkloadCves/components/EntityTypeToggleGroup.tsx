@@ -3,7 +3,7 @@ import { ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import { NonEmptyArray } from 'utils/type.utils';
-import { entityTabValues, EntityTab } from './types';
+import { entityTabValues, EntityTab } from '../types';
 
 type EntityTabToggleGroupProps = {
     className?: string;

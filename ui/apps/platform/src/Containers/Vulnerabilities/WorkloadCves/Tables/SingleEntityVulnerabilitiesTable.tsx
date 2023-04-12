@@ -21,7 +21,7 @@ import { FixableIcon, NotFixableIcon } from 'Components/PatternFly/FixabilityIco
 import { ImageVulnerabilitiesResponse } from '../hooks/useImageVulnerabilities';
 import { getEntityPagePath } from '../searchUtils';
 import ImageComponentsTable from './ImageComponentsTable';
-import { DynamicColumnIcon } from '../DynamicIcon';
+import { DynamicColumnIcon } from '../components/DynamicIcon';
 
 export type SingleEntityVulnerabilitiesTableProps = {
     image: ImageVulnerabilitiesResponse['image'];
