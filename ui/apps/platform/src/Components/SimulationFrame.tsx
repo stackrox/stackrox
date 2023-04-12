@@ -10,12 +10,15 @@ function SimulationLabel({ isError, onStop }: SimulationLabelProps): ReactElemen
     // Note: border-4 corresponds to box shadow width in app.tw.css file.
     const borderClass = isError ? 'border-alert-700' : 'border-success-700';
     const bgClass = isError ? 'bg-alert-700' : 'bg-success-700';
+    const bgStopButtonClasses = isError
+        ? 'bg-alert-300 hover:bg-alert-400'
+        : 'bg-success-300 hover:bg-success-400';
     return (
         <div className={`absolute top-0 left-0 z-1 flex border-4 ${borderClass}`}>
             <div className={`${bgClass} text-base-100 font-600 uppercase p-2`}>Simulated View</div>
             <button
                 type="button"
-                className="flex items-center bg-base-100 hover:bg-base-200 text-base-600 font-600 uppercase p-2"
+                className={`flex items-center ${bgStopButtonClasses} text-base-600 font-600 uppercase p-2`}
                 onClick={onStop}
             >
                 <StopCircle className="mr-2 w-4 h-4" />
