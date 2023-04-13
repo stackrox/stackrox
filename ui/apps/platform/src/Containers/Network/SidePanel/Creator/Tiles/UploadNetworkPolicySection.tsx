@@ -73,7 +73,7 @@ function UploadNetworkPolicySection({
 
     return (
         <div className="flex flex-col bg-base-100 rounded-sm shadow flex-grow flex-shrink-0 mb-4">
-            <div className="flex text-accent-700 p-3 border-b border-base-300 mb-2 items-center flex-shrink-0">
+            <div className="flex p-3 border-b border-base-300 mb-2 items-center flex-shrink-0">
                 <Icon.Upload size="20px" strokeWidth="1.5px" />
 
                 <div className="pl-3 font-700 text-lg">Upload a network policy YAML</div>
