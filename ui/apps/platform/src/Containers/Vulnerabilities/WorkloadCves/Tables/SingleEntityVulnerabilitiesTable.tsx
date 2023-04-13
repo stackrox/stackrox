@@ -18,17 +18,51 @@ import { vulnerabilitySeverityLabels } from 'messages/common';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { FixableIcon, NotFixableIcon } from 'Components/PatternFly/FixabilityIcons';
-import { ImageVulnerabilitiesResponse } from '../hooks/useImageVulnerabilities';
+import { gql } from '@apollo/client';
 import { getEntityPagePath } from '../searchUtils';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
-import ComponentVulnerabilitiesTable from './ComponentVulnerabilitiesTable';
+import ComponentVulnerabilitiesTable, {
+    ComponentVulnerability,
+    ImageMetadataContext,
+    componentVulnerabilitiesFragment,
+} from './ComponentVulnerabilitiesTable';
+
+export const imageVulnerabilitiesFragment = gql`
+    ${componentVulnerabilitiesFragment}
+    fragment ImageVulnerabilityFields on ImageVulnerability {
+        id
+        severity
+        isFixable
+        cve
+        summary
+        discoveredAtImage
+        imageComponents(query: $query) {
+            ...ComponentVulnerabilities
+        }
+    }
+`;
+
+export type ImageVulnerability = {
+    id: string;
+    severity: string;
+    isFixable: boolean;
+    cve: string;
+    summary: string;
+    discoveredAtImage: Date | null;
+    imageComponents: ComponentVulnerability[];
+};
 
 export type SingleEntityVulnerabilitiesTableProps = {
-    image: ImageVulnerabilitiesResponse['image'];
+    image: ImageMetadataContext & {
+        imageVulnerabilities: ImageVulnerability[];
+    };
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
 };
 
+// TODO Although the structure of this table is identical for both the Image and Deployment single page
+// tables, the data format coming in will be quite different. We will need a layer in between the parent
+// component and the table to normalize the data into a common format.
 function SingleEntityVulnerabilitiesTable({
     image,
     getSortParams,
