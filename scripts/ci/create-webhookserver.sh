@@ -48,6 +48,8 @@ restart_webhook_server_port_forward() {
         echo "INFO: $(date): Starting webhook server port-forward: ${pod} 8080"
         kubectl -n stackrox port-forward "${pod}" 8080:8080 || {
             echo "WARNING: $(date): The webhook server port-forward exited with: $?"
+            echo "Will restart in 5 seconds..."
+            sleep 5
         }
     done
 }
