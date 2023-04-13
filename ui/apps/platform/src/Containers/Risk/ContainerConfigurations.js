@@ -80,9 +80,9 @@ const ContainerVolumes = ({ volumes }) => {
             {Object.keys(volume).map(
                 (key) =>
                     volume[key] && (
-                        <div key={key} className="py-1 font-600">
-                            <span className=" pr-1">{capitalize(lowerCase(key))}:</span>
-                            <span className="text-accent-800 italic">{volume[key].toString()}</span>
+                        <div key={key} className="py-1">
+                            <span className="font-700 pr-1">{capitalize(lowerCase(key))}:</span>
+                            <span className="font-600">{volume[key].toString()}</span>
                         </div>
                     )
             )}
@@ -96,13 +96,13 @@ const ContainerSecrets = ({ secrets }) => {
     }
     return secrets.map(({ name, path }) => (
         <div key={name} className="py-2">
-            <div className="py-1 font-600">
-                <span className="pr-1">Name:</span>
-                <span className="text-accent-800 italic">{name}</span>
+            <div className="py-1">
+                <span className="font-700 pr-1">Name:</span>
+                <span className="font-600">{name}</span>
             </div>
-            <div className="py-1 font-600">
-                <span className="pr-1">Container Path:</span>
-                <span className="text-accent-800 italic">{path}</span>
+            <div className="py-1">
+                <span className="font-700 pr-1">Container Path:</span>
+                <span className="font-600">{path}</span>
             </div>
         </div>
     ));
