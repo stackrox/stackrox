@@ -45,6 +45,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-15337: RHACS Operator is not published to Red Hat Operator Catalogs for OpenShift versions 4.9 and earlier.
 - The API endpoint `/v1/serviceaccounts` is deprecated and will be changed as part of the 4.2.0 release.
 - PDF export in current version of the Vulnerability Management UI is deprecated and will be removed in the 4.2.0 release. Use the vuln reporting feature instead, for more comprehensive CSV data.
+- The API endpoints starting with `/v1/report/configurations` for report configurations are deprecated and will be replaced with different `/v2` endpoints in 4.2.0 release.
+- The API endpoint for running vulnerability reports `/v1/report/run/{id}` is deprecated and will be replaced with a `/v2` endpoint in 4.2.0 release.
 
 ### Required Actions
 - The `Analyst` permission set will change behaviour: instead of allowing read to all resources except `DebugLogs`, it will
