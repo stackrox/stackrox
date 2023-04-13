@@ -17,6 +17,7 @@ import {
 import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -71,7 +72,7 @@ export const imageCveSummaryQuery = gql`
         ...ImageCVESummaryCounts
         imageCount(query: $query)
         deploymentCount(query: $query)
-        imageCVE(cve: $cve) {
+        imageCVE(cve: $cve, subfieldScopeQuery: $query) {
             cve
             ...ImageCVESeveritySummary
         }
@@ -115,7 +116,8 @@ function getDefaultSortOption(entityTab: (typeof imageCveEntities)[number]) {
 }
 
 function ImageCvePage() {
-    const { cveId } = useParams();
+    const urlParams = useParams();
+    const cveId: string = urlParams.cveId ?? '';
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const query = getRequestQueryStringForSearchFilter({
@@ -132,7 +134,7 @@ function ImageCvePage() {
         onSort: () => setPage(1),
     });
 
-    const metadataRequest = useQuery<{ imageCVE: ImageCveMetadata }, { cve: string }>(
+    const metadataRequest = useQuery<{ imageCVE: ImageCveMetadata | null }, { cve: string }>(
         imageCveMetadataQuery,
         { variables: { cve: cveId } }
     );
@@ -141,7 +143,7 @@ function ImageCvePage() {
         ImageCveSummaryCount & {
             imageCount: number;
             deploymentCount: number;
-            imageCVE: ImageCveSeveritySummary;
+            imageCVE: ImageCveSeveritySummary | null;
         },
         { cve: string; query: string }
     >(imageCveSummaryQuery, {
@@ -214,6 +216,16 @@ function ImageCvePage() {
         tableLoading = deploymentDataRequest.loading;
     }
 
+    // If the `imageCVE` field is null, then the CVE ID passed via URL does not exist
+    if (metadataRequest.data && metadataRequest.data.imageCVE === null) {
+        return (
+            <NotFoundMessage
+                title="404: We couldn't find that page"
+                message={`A CVE with ID ${cveId} could not be found.`}
+            />
+        );
+    }
+
     const cveName = metadataRequest.data?.imageCVE?.cve;
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
@@ -222,7 +234,7 @@ function ImageCvePage() {
     return (
         <>
             <PageTitle
-                title={`Workload CVEs - ImageCVE ${metadataRequest.data?.imageCVE.cve ?? ''}`}
+                title={`Workload CVEs - ImageCVE ${metadataRequest.data?.imageCVE?.cve ?? ''}`}
             />
             <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
@@ -246,7 +258,7 @@ function ImageCvePage() {
                 ) : (
                     // Don't check the loading state here, since if the passed `data` is `undefined` we
                     // will implicitly handle the loading state in the component
-                    <ImageCvePageHeader data={metadataRequest.data?.imageCVE} />
+                    <ImageCvePageHeader data={metadataRequest.data?.imageCVE ?? undefined} />
                 )}
             </PageSection>
             <Divider component="div" />
