@@ -1,6 +1,7 @@
 package imagescan
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -61,6 +62,7 @@ func Test_ImageScan(t *testing.T) {
 }
 
 func (s *ImageScanSuite) SetupSuite() {
+	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
 	testContext, err := resource.NewContextWithConfig(s.T(), resource.CentralConfig{
 		InitialSystemPolicies: Policies,
 	})
@@ -78,6 +80,7 @@ func (s *ImageScanSuite) Test_AlertsUpdatedOnImageUpdate() {
 		resource.WithTestCase(func(t *testing.T, tc *resource.TestContext, resource map[string]k8s.Object) {
 			var image *storage.ContainerImage
 			// Image should be received by central
+			fmt.Println("lvm: waiting for pod")
 			tc.LastDeploymentStateWithTimeout("myapp", func(dp *storage.Deployment, _ central.ResourceAction) error {
 				if len(dp.GetContainers()) != 1 {
 					return errors.Errorf("expected 1 container found %d", len(dp.GetContainers()))
