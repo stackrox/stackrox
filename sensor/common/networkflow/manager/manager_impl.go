@@ -736,6 +736,7 @@ func (m *networkFlowManager) UnregisterCollector(hostname string, sequenceID int
 }
 
 func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error {
+	log.Infof("Process NetworkConnectionInfo: %+v", networkInfo)
 	updatedConnections := getUpdatedConnections(h.hostname, networkInfo)
 	updatedEndpoints := getUpdatedContainerEndpoints(h.hostname, networkInfo)
 
