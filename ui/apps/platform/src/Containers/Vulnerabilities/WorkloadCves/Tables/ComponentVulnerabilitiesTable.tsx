@@ -52,6 +52,7 @@ export type ComponentVulnerability = {
     location: string;
     layerIndex: number | null;
     imageVulnerabilities: {
+        id: string;
         severity: string;
         fixedByVersion: string;
     }[];
@@ -64,6 +65,7 @@ export const componentVulnerabilitiesFragment = gql`
         location
         layerIndex
         imageVulnerabilities(query: $query) {
+            id
             severity
             fixedByVersion
         }
@@ -79,6 +81,7 @@ type TableDataRow = {
         } | null;
     };
     name: string;
+    vulnerabilityId: string;
     severity: string;
     version: string;
     fixedIn: string;
@@ -126,6 +129,7 @@ function flattenImageComponentVulns(
         // This imageVulnerabilities array should always only have one element
         // because we are filtering by CVE ID to get the data
         const vulnerability = component.imageVulnerabilities[0];
+        const vulnerabilityId = vulnerability?.id ?? '';
         const severity =
             vulnerability && isVulnerabilitySeverity(vulnerability.severity)
                 ? vulnerability.severity
@@ -133,7 +137,7 @@ function flattenImageComponentVulns(
 
         const fixedIn = vulnerability?.fixedByVersion ?? 'N/A';
 
-        return { image, name, severity, version, fixedIn, location, layer };
+        return { image, vulnerabilityId, name, severity, version, fixedIn, location, layer };
     });
 }
 
@@ -204,7 +208,8 @@ function ComponentVulnerabilitiesTable({
                 </Tr>
             </Thead>
             {sortedComponentVulns.map((componentVuln, index) => {
-                const { image, name, version, fixedIn, location, layer } = componentVuln;
+                const { image, name, vulnerabilityId, version, fixedIn, location, layer } =
+                    componentVuln;
                 // No border on the last row
                 const style =
                     index !== componentVulns.length - 1
@@ -212,7 +217,7 @@ function ComponentVulnerabilitiesTable({
                         : {};
 
                 return (
-                    <Tbody key={`${image.id}:${name}`} style={style}>
+                    <Tbody key={`${image.id}:${name}:${version}:${vulnerabilityId}`} style={style}>
                         <Tr>
                             {showImage && (
                                 <Td>
