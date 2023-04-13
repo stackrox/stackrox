@@ -1,12 +1,10 @@
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode } from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
     Divider,
     Flex,
-    Label,
-    LabelGroup,
     PageSection,
     Skeleton,
     Tab,
@@ -14,87 +12,70 @@ import {
     TabsComponent,
     TabTitleText,
     Title,
-    Tooltip,
 } from '@patternfly/react-core';
-import { CopyIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
+import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
-import { getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { gql, useQuery } from '@apollo/client';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
 import { detailsTabValues } from './types';
 import { getOverviewCvesPath } from './searchUtils';
-import useImageDetails, { ImageDetailsResponse } from './hooks/useImageDetails';
+import ImageDetailBadges, {
+    ImageDetails,
+    imageDetailsFragment,
+} from './components/ImageDetailBadges';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
     entityTab: 'Image',
 });
 
-function ImageDetailBadges({ imageData }: { imageData: ImageDetailsResponse['image'] }) {
-    const [hasSuccessfulCopy, setHasSuccessfulCopy] = useState(false);
-
-    const { deploymentCount, operatingSystem, metadata, dataSource, scanTime } = imageData;
-    const created = metadata?.v1?.created;
-    const sha = metadata?.v1?.digest;
-    const isActive = deploymentCount > 0;
-
-    function copyToClipboard(imageSha: string) {
-        navigator.clipboard
-            .writeText(imageSha)
-            .then(() => setHasSuccessfulCopy(true))
-            .catch(() => {
-                // Permission is not required to write to the clipboard in secure contexts when initiated
-                // via a user event so this Promise should not reject
-            })
-            .finally(() => {
-                setTimeout(() => setHasSuccessfulCopy(false), 2000);
-            });
+export const imageDetailsQuery = gql`
+    ${imageDetailsFragment}
+    query getImageDetails($id: ID!) {
+        image(id: $id) {
+            id
+            name {
+                registry
+                remote
+                tag
+            }
+            ...ImageDetails
+        }
     }
-
-    return (
-        <LabelGroup numLabels={Infinity}>
-            <Label isCompact color={isActive ? 'green' : 'gold'}>
-                {isActive ? 'Active' : 'Inactive'}
-            </Label>
-            {operatingSystem && <Label isCompact>OS: {operatingSystem}</Label>}
-            {created && (
-                <Label isCompact>Age: {getDistanceStrictAsPhrase(created, new Date())}</Label>
-            )}
-            {scanTime && (
-                <Label isCompact>
-                    Scan time: {getDateTime(scanTime)} by {dataSource?.name ?? 'Unknown Scanner'}
-                </Label>
-            )}
-            {sha && (
-                <Tooltip content="Copy image SHA to clipboard">
-                    <Label
-                        style={{ cursor: 'pointer' }}
-                        icon={<CopyIcon />}
-                        isCompact
-                        color={hasSuccessfulCopy ? 'green' : 'grey'}
-                        onClick={() => copyToClipboard(sha)}
-                    >
-                        {hasSuccessfulCopy ? 'Copied!' : 'SHA'}
-                    </Label>
-                </Tooltip>
-            )}
-        </LabelGroup>
-    );
-}
+`;
 
 function ImagePage() {
     const { imageId } = useParams();
-    const { data, error } = useImageDetails(imageId);
+    const { data, error } = useQuery<
+        {
+            image: {
+                id: string;
+                name: {
+                    registry: string;
+                    remote: string;
+                    tag: string;
+                } | null;
+            } & ImageDetails;
+        },
+        {
+            id: string;
+        }
+    >(imageDetailsQuery, {
+        variables: { id: imageId },
+    });
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
     const imageData = data && data.image;
-    const imageName = imageData?.name?.fullName ?? 'NAME UNKNOWN';
+    const imageName = imageData?.name
+        ? `${imageData.name.registry}/${imageData.name.remote}:${imageData.name.tag}`
+        : 'NAME UNKNOWN';
 
     let mainContent: ReactNode | null = null;
 
