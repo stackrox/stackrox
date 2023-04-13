@@ -3,6 +3,7 @@
 # A collection of OpenShift related reusable bash functions for CI
 
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../scripts/lib.sh
 source "$SCRIPTS_ROOT/scripts/lib.sh"
 
 set -euo pipefail

@@ -3,6 +3,7 @@
 # Create metrics relating to a CI job run. 
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../scripts/ci/gcp.sh
 source "$ROOT/scripts/ci/gcp.sh"
 
 set -euo pipefail
