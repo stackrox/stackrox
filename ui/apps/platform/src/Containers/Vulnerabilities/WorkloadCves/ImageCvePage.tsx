@@ -76,19 +76,16 @@ export const imageCveSummaryQuery = gql`
 export const imageCveAffectedImagesQuery = gql`
     ${imagesForCveFragment}
     # by default, query must include the CVE id
-    query getImagesForCVE(
-        $query: String
-        $imageListPagination: Pagination
-        $imageComponentPagination: Pagination
-    ) {
+    query getImagesForCVE($query: String, $pagination: Pagination) {
         imageCount(query: $query)
-        images(query: $query, pagination: $imageListPagination) {
+        images(query: $query, pagination: $pagination) {
             ...ImagesForCVE
         }
     }
 `;
 
-const defaultSortFields = ['Image', 'Severity', 'Fixable', 'Operating System'];
+const imageSortFields = ['Image', 'Operating System'];
+const imageDefaultSort = { field: 'Image', direction: 'desc' } as const;
 const imageCveEntities = ['Image', 'Deployment'] as const;
 
 function ImageCvePage() {
@@ -97,11 +94,8 @@ function ImageCvePage() {
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const { page, perPage, setPage, setPerPage } = useURLPagination(25);
     const { sortOption, getSortParams } = useURLSort({
-        sortFields: defaultSortFields,
-        defaultSortOption: {
-            field: 'Severity',
-            direction: 'desc',
-        },
+        sortFields: imageSortFields,
+        defaultSortOption: imageDefaultSort,
         onSort: () => setPage(1),
     });
 
@@ -123,9 +117,7 @@ function ImageCvePage() {
         { imageCount: number; images: ImageForCve[] },
         {
             query: string;
-            imageListPagination: PaginationParam;
-            // TODO If required, fix this
-            imageComponentPagination?: PaginationParam;
+            pagination: PaginationParam;
         }
     >(imageCveAffectedImagesQuery, {
         variables: {
@@ -133,14 +125,11 @@ function ImageCvePage() {
                 ...querySearchFilter,
                 CVE: cveId,
             }),
-            imageListPagination: {
+            pagination: {
                 offset: (page - 1) * perPage,
                 limit: perPage,
                 sortOption,
             },
-            // TODO Benchmark whether or not server side pagination is really needed at this
-            // level, and if so, fix the implementation here
-            imageComponentPagination: undefined,
         },
         skip: entityTab !== 'Image',
     });

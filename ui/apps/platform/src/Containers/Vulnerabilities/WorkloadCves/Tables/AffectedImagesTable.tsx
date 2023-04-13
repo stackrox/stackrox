@@ -19,6 +19,11 @@ import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import ImageNameTd from '../components/ImageNameTd';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 
+import ComponentVulnerabilitiesTable, {
+    ComponentVulnerabilities,
+    componentVulnerabilitiesFragment,
+} from './ComponentVulnerabilitiesTable';
+
 export type ImageForCve = {
     id: string;
     name: {
@@ -41,20 +46,11 @@ export type ImageForCve = {
         severity: string;
         isFixable: boolean;
     } | null;
-    imageComponentCount: number;
-    imageComponents: {
-        name: string;
-        version: string;
-        location: string;
-        layerIndex: number | null;
-        imageVulnerabilities: {
-            severity: string;
-            fixedByVersion: string;
-        }[];
-    }[];
+    imageComponents: ComponentVulnerabilities[];
 };
 
 export const imagesForCveFragment = gql`
+    ${componentVulnerabilitiesFragment}
     fragment ImagesForCVE on Image {
         id
         name {
@@ -81,16 +77,8 @@ export const imagesForCveFragment = gql`
             isFixable
         }
 
-        imageComponentCount(query: $query)
-        imageComponents(query: $query, pagination: $imageComponentPagination) {
-            name
-            version
-            location
-            layerIndex
-            imageVulnerabilities(query: $query) {
-                severity # same for all components in an image
-                fixedByVersion
-            }
+        imageComponents(query: $query) {
+            ...ComponentVulnerabilities
         }
     }
 `;
@@ -127,77 +115,90 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                     <Th>First discovered</Th>
                 </Tr>
             </Thead>
-            {images.map(
-                (
-                    { id, name, operatingSystem, scanTime, topImageVulnerability, imageComponents },
-                    rowIndex
-                ) => {
-                    const topSeverity =
-                        topImageVulnerability?.severity ?? 'UNKNOWN_VULNERABILITY_SEVERITY';
+            {images.map((image, rowIndex) => {
+                const {
+                    id,
+                    name,
+                    operatingSystem,
+                    scanTime,
+                    topImageVulnerability,
+                    imageComponents,
+                } = image;
+                const topSeverity =
+                    topImageVulnerability?.severity ?? 'UNKNOWN_VULNERABILITY_SEVERITY';
 
-                    const isFixable = topImageVulnerability?.isFixable ?? false;
-                    const FixabilityIcon = isFixable ? FixableIcon : NotFixableIcon;
+                const isFixable = topImageVulnerability?.isFixable ?? false;
+                const FixabilityIcon = isFixable ? FixableIcon : NotFixableIcon;
 
-                    const SeverityIcon = SeverityIcons[topSeverity];
-                    const severityLabel = vulnerabilitySeverityLabels[topSeverity];
-                    const isExpanded = expandedRowSet.has(id);
+                const SeverityIcon = SeverityIcons[topSeverity];
+                const severityLabel = vulnerabilitySeverityLabels[topSeverity];
+                const isExpanded = expandedRowSet.has(id);
 
-                    return (
-                        <Tbody key={id} isExpanded={isExpanded}>
-                            <Tr>
-                                <Td
-                                    expand={{
-                                        rowIndex,
-                                        isExpanded,
-                                        onToggle: () => expandedRowSet.toggle(id),
-                                    }}
-                                />
-                                <Td dataLabel="Image">
-                                    {name ? (
-                                        <ImageNameTd name={name} id={id} />
-                                    ) : (
-                                        'Image name not available'
+                return (
+                    <Tbody key={id} isExpanded={isExpanded}>
+                        <Tr>
+                            <Td
+                                expand={{
+                                    rowIndex,
+                                    isExpanded,
+                                    onToggle: () => expandedRowSet.toggle(id),
+                                }}
+                            />
+                            <Td dataLabel="Image">
+                                {name ? (
+                                    <ImageNameTd name={name} id={id} />
+                                ) : (
+                                    'Image name not available'
+                                )}
+                            </Td>
+                            <Td dataLabel="Severity">
+                                <span>
+                                    {SeverityIcon && (
+                                        <SeverityIcon className="pf-u-display-inline" />
                                     )}
-                                </Td>
-                                <Td dataLabel="Severity">
-                                    <span>
-                                        {SeverityIcon && (
-                                            <SeverityIcon className="pf-u-display-inline" />
-                                        )}
-                                        {severityLabel && (
-                                            <span className="pf-u-pl-sm">{severityLabel}</span>
-                                        )}
+                                    {severityLabel && (
+                                        <span className="pf-u-pl-sm">{severityLabel}</span>
+                                    )}
+                                </span>
+                            </Td>
+                            <Td dataLabel="Fix status">
+                                <span>
+                                    <FixabilityIcon className="pf-u-display-inline" />
+                                    <span className="pf-u-pl-sm">
+                                        {isFixable ? 'Fixable' : 'Not fixable'}
                                     </span>
-                                </Td>
-                                <Td dataLabel="Fix status">
-                                    <span>
-                                        <FixabilityIcon className="pf-u-display-inline" />
-                                        <span className="pf-u-pl-sm">
-                                            {isFixable ? 'Fixable' : 'Not fixable'}
-                                        </span>
-                                    </span>
-                                </Td>
-                                <Td dataLabel="Operating system">{operatingSystem}</Td>
-                                <Td dataLabel="Affected components">
-                                    {imageComponents.length === 1
-                                        ? imageComponents[0].name
-                                        : `${imageComponents.length} components`}
-                                </Td>
-                                <Td dataLabel="First discovered">
-                                    {/* TODO Is this the correct field? It differs from the field on the CVE page. */}
-                                    {getDistanceStrictAsPhrase(scanTime, new Date())}
-                                </Td>
-                            </Tr>
-                            <Tr isExpanded={isExpanded}>
-                                <Td />
-                                <Td colSpan={5}>
-                                    <ExpandableRowContent>TODO</ExpandableRowContent>
-                                </Td>
-                            </Tr>
-                        </Tbody>
-                    );
-                }
-            )}
+                                </span>
+                            </Td>
+                            <Td dataLabel="Operating system">{operatingSystem}</Td>
+                            <Td dataLabel="Affected components">
+                                {imageComponents.length === 1
+                                    ? imageComponents[0].name
+                                    : `${imageComponents.length} components`}
+                            </Td>
+                            <Td dataLabel="First discovered">
+                                {/* TODO Is this the correct field? It differs from the field on the CVE page. */}
+                                {getDistanceStrictAsPhrase(scanTime, new Date())}
+                            </Td>
+                        </Tr>
+                        <Tr isExpanded={isExpanded}>
+                            <Td />
+                            <Td colSpan={6}>
+                                <ExpandableRowContent>
+                                    <ComponentVulnerabilitiesTable
+                                        showImage={false}
+                                        images={[
+                                            {
+                                                imageMetadataContext: image,
+                                                componentVulnerabilities: image.imageComponents,
+                                            },
+                                        ]}
+                                    />
+                                </ExpandableRowContent>
+                            </Td>
+                        </Tr>
+                    </Tbody>
+                );
+            })}
         </TableComposable>
     );
 }
