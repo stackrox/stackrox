@@ -34,7 +34,7 @@ func (s *tlsConfigTestSuite) TestGetAdditionalCAs() {
 	s.Require().Len(additionalCAs, 4, "Could not decode all certs")
 	s.True(s.isCommonNameInCerts(additionalCAs, "CENTRAL_SERVICE: Central"), "Could not find cert from multiple crt file")
 
-	// non .crt files should be ignored
+	// non .crt or .pem files should be ignored
 	s.FileExists("testdata/foo.txt")
 }
 
