@@ -50,8 +50,9 @@ spec:
         displayName: Administrator Password
         path: central.adminPasswordSecret
       - description: Specify a secret that contains the password in the "password"
-          data item. If omitted, the operator will auto-generate a DB password and
-          store it in the "password" item in the "central-db-password" secret.
+          data item. This is only required if setting the connection string manually.
+          If omitted, the operator will auto-generate a DB password and store it in
+          the "password" item in the "central-db-password" secret.
         displayName: Administrator Password
         path: central.db.passwordSecret
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
@@ -124,11 +125,12 @@ spec:
           settings in this section will have no effect.
         displayName: Scanner Component
         path: scanner.scannerComponent
-      - description: Specify a connection string that corresponds to an existing database.
-          If set, the operator will not manage Central DB. When using this option,
-          you must explicitly set a password secret; automatically generating a password
-          will not be supported.
-        displayName: Connection String Override
+      - description: 'NOTE: Connecting to an existing database is in Technology Preview.
+          Specify a connection string that corresponds to an existing database. If
+          set, the operator will not manage Central DB. When using this option, you
+          must explicitly set a password secret; automatically generating a password
+          will not be supported.'
+        displayName: Connection String (Technology Preview)
         path: central.db.connectionString
       - description: The size of the persistent volume when created through the claim.
           If a claim was automatically created, this can be used after the initial

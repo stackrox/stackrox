@@ -74,11 +74,12 @@ spec:
                         - name
                         type: object
                       connectionString:
-                        description: Specify a connection string that corresponds
-                          to an existing database. If set, the operator will not manage
-                          Central DB. When using this option, you must explicitly
-                          set a password secret; automatically generating a password
-                          will not be supported.
+                        description: 'NOTE: Connecting to an existing database is
+                          in Technology Preview. Specify a connection string that
+                          corresponds to an existing database. If set, the operator
+                          will not manage Central DB. When using this option, you
+                          must explicitly set a password secret; automatically generating
+                          a password will not be supported.'
                         type: string
                       isEnabled:
                         default: Default
@@ -97,8 +98,9 @@ spec:
                         type: object
                       passwordSecret:
                         description: Specify a secret that contains the password in
-                          the "password" data item. If omitted, the operator will
-                          auto-generate a DB password and store it in the "password"
+                          the "password" data item. This is only required if setting
+                          the connection string manually. If omitted, the operator
+                          will auto-generate a DB password and store it in the "password"
                           item in the "central-db-password" secret.
                         properties:
                           name:
