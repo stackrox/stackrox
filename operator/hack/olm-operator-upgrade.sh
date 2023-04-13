@@ -3,6 +3,7 @@
 # Assumes a previous version is already installed via OLM using olm-operator-install.sh.
 set -eu -o pipefail
 
+# shellcheck source=./common.sh
 source "$(dirname "$0")/common.sh"
 
 declare allow_dirty_tag=false

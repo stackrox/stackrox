@@ -4,6 +4,7 @@ set -euo pipefail
 # Creates signature integrations required for signature verification.
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../tests/e2e/lib.sh
 source "$TEST_ROOT/tests/e2e/lib.sh"
 
 # Wait for central API to be reachable.

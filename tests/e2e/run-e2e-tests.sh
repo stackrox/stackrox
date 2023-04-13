@@ -7,9 +7,13 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../scripts/lib.sh
 source "$ROOT/scripts/lib.sh"
+# shellcheck source=../../scripts/ci/lib.sh
 source "$ROOT/scripts/ci/lib.sh"
+# shellcheck source=../../scripts/ci/gcp.sh
 source "$ROOT/scripts/ci/gcp.sh"
+# shellcheck source=../../tests/e2e/lib.sh
 source "$ROOT/tests/e2e/lib.sh"
 
 require_environment "QA_TEST_DEBUG_LOGS"

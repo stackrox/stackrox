@@ -3,8 +3,10 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../scripts/lib.sh
 source "$ROOT/scripts/lib.sh"
 if [[ "${CI:-}" == "true" ]]; then
+    # shellcheck source=../../scripts/ci/lib.sh
     source "$ROOT/scripts/ci/lib.sh"
 fi
 
@@ -21,7 +23,7 @@ run_shellcheck() {
     rm -f "${output}/*" "${flag_failure}"
 
     for shell in $(git ls-files | grep -E '.sh$' | grep -v -x -f "${known_failures_file}"); do
-        if ! shellcheck -x "$shell"; then
+        if ! shellcheck -P SCRIPTDIR -x "$shell"; then
             if [[ "${CI:-}" == "true" ]]; then
                 mkdir -p "${output}"
                 local xmlout="${shell//.sh/.xml}"

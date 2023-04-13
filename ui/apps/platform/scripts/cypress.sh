@@ -5,6 +5,7 @@ api_endpoint="${UI_BASE_URL:-https://localhost:8000}"
 
 if [[ -z "$ROX_USERNAME" || -z "$ROX_PASSWORD" ]]; then
   # basic auth creds weren't set (e.g. by CI), assume local k8s deployment
+  # shellcheck source=../../../../scripts/k8s/export-basic-auth-creds.sh
   source ../../../scripts/k8s/export-basic-auth-creds.sh ../../../deploy/k8s
 fi
 
