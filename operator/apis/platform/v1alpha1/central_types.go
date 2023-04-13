@@ -185,9 +185,9 @@ type CentralDBSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	IsEnabled *CentralDBEnabled `json:"isEnabled,omitempty"`
 
-	// Specify a secret that contains the password in the "password" data item. This should only be used when
+	// Specify a secret that contains the password in the "password" data item. This can only be used when
 	// specifying a connection string manually.
-	// If omitted, the operator will auto-generate a DB password and store it in the "password" item
+	// When omitted, the operator will auto-generate a DB password and store it in the "password" item
 	// in the "central-db-password" secret.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=1
 	PasswordSecret *LocalSecretReference `json:"passwordSecret,omitempty"`

@@ -97,10 +97,10 @@ spec:
                         type: object
                       passwordSecret:
                         description: Specify a secret that contains the password in
-                          the "password" data item. This should only be used when
-                          specifying a connection string manually. If omitted, the
-                          operator will auto-generate a DB password and store it in
-                          the "password" item in the "central-db-password" secret.
+                          the "password" data item. This can only be used when specifying
+                          a connection string manually. When omitted, the operator
+                          will auto-generate a DB password and store it in the "password"
+                          item in the "central-db-password" secret.
                         properties:
                           name:
                             description: The name of the referenced secret.

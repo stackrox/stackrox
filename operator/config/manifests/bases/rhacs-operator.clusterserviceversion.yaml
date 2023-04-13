@@ -50,9 +50,9 @@ spec:
         displayName: Administrator Password
         path: central.adminPasswordSecret
       - description: Specify a secret that contains the password in the "password"
-          data item. This should only be used when specifying a connection string
-          manually. If omitted, the operator will auto-generate a DB password and
-          store it in the "password" item in the "central-db-password" secret.
+          data item. This can only be used when specifying a connection string manually.
+          When omitted, the operator will auto-generate a DB password and store it
+          in the "password" item in the "central-db-password" secret.
         displayName: Administrator Password
         path: central.db.passwordSecret
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
