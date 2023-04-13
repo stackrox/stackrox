@@ -59,6 +59,13 @@ jobs:
       with:
         paths: 'junit-reports/report.xml'
 
+    - name: Report junit failures in jira
+      if: always() && github.event_name == 'push'
+      uses: ./.github/actions/junit2jira
+      with:
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        directory: 'junit-reports'
+
   go-postgres:
     strategy:
       matrix:
@@ -101,6 +108,13 @@ jobs:
       with:
         paths: 'junit-reports/report.xml'
 
+    - name: Report junit failures in jira
+      if: always() && github.event_name == 'push'
+      uses: ./.github/actions/junit2jira
+      with:
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        directory: 'junit-reports'
+
   ui:
     runs-on: ubuntu-latest
     container:
@@ -128,6 +142,13 @@ jobs:
       if: always()
       with:
         paths: 'ui/test-results/reports/*.xml'
+
+    - name: Report junit failures in jira
+      if: always() && github.event_name == 'push'
+      uses: ./.github/actions/junit2jira
+      with:
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        directory: 'ui/test-results/reports'
 
   local-roxctl-tests:
     runs-on: ubuntu-latest
@@ -158,6 +179,13 @@ jobs:
       if: always()
       with:
         paths: 'roxctl-test-output/*.xml'
+
+    - name: Report junit failures in jira
+      if: always() && github.event_name == 'push'
+      uses: ./.github/actions/junit2jira
+      with:
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        directory: 'roxctl-test-output'
 
   slack-on-unit-tests-failure:
     if: github.event_name == 'push' && failure()
