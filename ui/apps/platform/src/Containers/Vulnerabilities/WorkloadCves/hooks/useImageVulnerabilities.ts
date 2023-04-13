@@ -1,9 +1,13 @@
 import { gql, useQuery } from '@apollo/client';
 import { Pagination } from 'services/types';
+import {
+    ComponentVulnerabilities,
+    componentVulnerabilitiesFragment,
+} from '../Tables/ComponentVulnerabilitiesTable';
 
 export type ImageVulnerabilitiesVariables = {
     id: string;
-    vulnQuery: string;
+    query: string;
     pagination: Pagination;
 };
 
@@ -38,6 +42,11 @@ export type ImageVulnerabilitiesResponse = {
                 layers: ImageMetadataLayer[];
             } | null;
         } | null;
+        name: {
+            registry: string;
+            remote: string;
+            tag: string;
+        } | null;
         imageVulnerabilityCounter: ImageVulnerabilityCounter;
         imageVulnerabilities: {
             id: string;
@@ -46,13 +55,14 @@ export type ImageVulnerabilitiesResponse = {
             cve: string;
             summary: string;
             discoveredAtImage: Date | null;
-            imageComponents: ImageVulnerabilityComponent[];
+            imageComponents: ComponentVulnerabilities[];
         }[];
     };
 };
 
 export const imageVulnerabilitiesQuery = gql`
-    query getImageVulnerabilities($id: ID!, $vulnQuery: String!, $pagination: Pagination!) {
+    ${componentVulnerabilitiesFragment}
+    query getImageCoreVulnerabilities($id: ID!, $query: String!, $pagination: Pagination!) {
         image(id: $id) {
             id
             metadata {
@@ -63,7 +73,12 @@ export const imageVulnerabilitiesQuery = gql`
                     }
                 }
             }
-            imageVulnerabilityCounter(query: $vulnQuery) {
+            name {
+                registry
+                remote
+                tag
+            }
+            imageVulnerabilityCounter(query: $query) {
                 all {
                     total
                     fixable
@@ -85,20 +100,15 @@ export const imageVulnerabilitiesQuery = gql`
                     fixable
                 }
             }
-            imageVulnerabilities(query: $vulnQuery, pagination: $pagination) {
+            imageVulnerabilities(query: $query, pagination: $pagination) {
                 id
                 severity
                 isFixable
                 cve
                 summary
                 discoveredAtImage
-                imageComponents {
-                    id
-                    name
-                    version
-                    fixedIn
-                    location
-                    layerIndex
+                imageComponents(query: $query) {
+                    ...ComponentVulnerabilities
                 }
             }
         }
@@ -107,7 +117,7 @@ export const imageVulnerabilitiesQuery = gql`
 
 export default function useImageVulnerabilities(
     imageId: string,
-    vulnQuery: string,
+    query: string,
     pagination: Pagination
 ) {
     return useQuery<ImageVulnerabilitiesResponse, ImageVulnerabilitiesVariables>(
@@ -115,7 +125,7 @@ export default function useImageVulnerabilities(
         {
             variables: {
                 id: imageId,
-                vulnQuery,
+                query,
                 pagination,
             },
         }

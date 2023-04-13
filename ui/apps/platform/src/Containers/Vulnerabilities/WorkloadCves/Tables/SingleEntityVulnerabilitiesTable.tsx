@@ -20,8 +20,8 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import { FixableIcon, NotFixableIcon } from 'Components/PatternFly/FixabilityIcons';
 import { ImageVulnerabilitiesResponse } from '../hooks/useImageVulnerabilities';
 import { getEntityPagePath } from '../searchUtils';
-import ImageComponentsTable from './ImageComponentsTable';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
+import ComponentVulnerabilitiesTable from './ComponentVulnerabilitiesTable';
 
 export type SingleEntityVulnerabilitiesTableProps = {
     image: ImageVulnerabilitiesResponse['image'];
@@ -118,18 +118,16 @@ function SingleEntityVulnerabilitiesTable({
                                 <Td />
                                 <Td colSpan={5}>
                                     <ExpandableRowContent>
-                                        <p>{summary}</p>
-                                        <div
-                                            className="pf-u-p-md pf-u-mt-md"
-                                            style={{
-                                                border: '1px solid var(--pf-c-table--BorderColor)',
-                                            }}
-                                        >
-                                            <ImageComponentsTable
-                                                layers={image.metadata?.v1?.layers ?? []}
-                                                imageComponents={imageComponents}
-                                            />
-                                        </div>
+                                        <p className="pf-u-mb-md">{summary}</p>
+                                        <ComponentVulnerabilitiesTable
+                                            showImage={false}
+                                            images={[
+                                                {
+                                                    imageMetadataContext: image,
+                                                    componentVulnerabilities: imageComponents,
+                                                },
+                                            ]}
+                                        />
                                     </ExpandableRowContent>
                                 </Td>
                             </Tr>
