@@ -108,7 +108,7 @@ class PostClusterTest(StoreArtifacts):
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
         self._check_stackrox_logs = check_stackrox_logs
-        self.k8s_namespaces = ["stackrox", "stackrox-operator", "proxies", "squid"]
+        self.k8s_namespaces = ["stackrox", "stackrox-operator", "proxies", "squid", "kube-system"]
         self.openshift_namespaces = [
             "openshift-dns",
             "openshift-apiserver",

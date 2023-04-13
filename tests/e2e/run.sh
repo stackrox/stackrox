@@ -44,6 +44,10 @@ test_e2e() {
     wait_for_api
 
     info "E2E API tests"
+    if pr_has_label "ci-release-build"; then
+        echo "Running e2e tests in release mode"
+        export GOTAGS=release
+    fi
     make -C tests || touch FAIL
     store_test_results "tests/all-tests-results" "all-tests-results"
     [[ ! -f FAIL ]] || die "e2e API tests failed"

@@ -1,10 +1,13 @@
 package util
 
 import common.Constants
+
 import groovy.util.logging.Slf4j
+
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
+
 import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
 import org.junit.AssumptionViolatedException
 import org.spockframework.runtime.SpockAssertionError
@@ -117,6 +120,7 @@ class Helpers {
             log.debug "${sdf.format(date)} Will collect various stackrox logs for this failure under ${collectionDir}/"
 
             shellCmd("./scripts/ci/collect-service-logs.sh stackrox ${collectionDir}/stackrox-k8s-logs")
+            shellCmd("./scripts/ci/collect-service-logs.sh kube-system ${collectionDir}/kube-system-k8s-logs")
             shellCmd("./scripts/ci/collect-qa-service-logs.sh ${collectionDir}/qa-k8s-logs")
             shellCmd("./scripts/grab-data-from-central.sh ${collectionDir}/central-data")
         }
