@@ -15,7 +15,10 @@ function NetworkGraphNavItems({ isFeatureFlagEnabled }: NetworkGraphNavItemsProp
     const location: Location = useLocation();
     const isNetworkGraphPFEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY');
 
-    const networkGraphTitle = isNetworkGraphPFEnabled ? (
+    const networkGraphTitle = isNetworkGraphPFEnabled
+        ? 'Network Graph (1.0 deprecated)'
+        : 'Network Graph';
+    const networkGraphPFTitle = (
         <Flex>
             <FlexItem>Network Graph</FlexItem>
             <FlexItem>
@@ -24,19 +27,9 @@ function NetworkGraphNavItems({ isFeatureFlagEnabled }: NetworkGraphNavItemsProp
                         backgroundColor: 'var(--pf-global--palette--cyan-400)',
                     }}
                 >
-                    1.0 deprecated
+                    2.0
                 </Badge>
             </FlexItem>
-        </Flex>
-    ) : (
-        <Flex>
-            <FlexItem>Network Graph</FlexItem>
-        </Flex>
-    );
-    const networkGraphPFTitle = (
-        <Flex>
-            <FlexItem>Network Graph</FlexItem>
-            <FlexItem>(2.0)</FlexItem>
         </Flex>
     );
 
