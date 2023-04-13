@@ -26,6 +26,14 @@ const (
 	// SensorCreator is a role that has the minimal privileges required to create a sensor.
 	SensorCreator = "Sensor Creator"
 
+	// VulnerabilityManager is a role that has the necessary privileges required to view and manage system vulnerabilities and its insights.
+	// This includes privileges to:
+	// - view cluster, node, namespace, deployments, images (along with its scan data), and vulnerability requests.
+	// - view and create requests to watch images for vulnerability insights.
+	// - view and request vulnerability deferrals or false positives. This does include permissions to approve vulnerability requests.
+	// - view and create vulnerability reports.
+	VulnerabilityManager = "Vulnerability Manager"
+
 	// VulnMgmtApprover is a role that has the minimal privileges required to approve vulnerability deferrals or false positive requests.
 	VulnMgmtApprover = "Vulnerability Management Approver"
 
@@ -43,7 +51,7 @@ const (
 
 var (
 	// DefaultRoleNames is a string set containing the names of all default (built-in) Roles.
-	DefaultRoleNames = set.NewStringSet(Admin, Analyst, None, ContinuousIntegration, ScopeManager, SensorCreator, VulnMgmtApprover, VulnMgmtRequester, VulnReporter)
+	DefaultRoleNames = set.NewStringSet(Admin, Analyst, None, ContinuousIntegration, ScopeManager, SensorCreator, VulnerabilityManager, VulnMgmtApprover, VulnMgmtRequester, VulnReporter)
 
 	// defaultScopesIDs is a string set containing the names of all default (built-in) scopes.
 	defaultScopesIDs = set.NewFrozenStringSet(AccessScopeIncludeAll.Id, AccessScopeExcludeAll.Id)
