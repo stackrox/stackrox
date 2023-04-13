@@ -10,7 +10,6 @@ import services.AuthProviderService
 import services.GroupService
 
 import spock.lang.Tag
-import spock.lang.Unroll
 
 @Tag("BAT")
 class GroupsTest extends BaseSpecification {
@@ -95,15 +94,14 @@ class GroupsTest extends BaseSpecification {
         }
     }
 
-    @Unroll
     def "Test that GetGroup and GetGroups work correctly with query args (#authProviderId, #key, #value)"() {
         when:
         "A query is made for GetGroup and GetGroups with the given params"
         def propsBuilder = GroupProperties.newBuilder()
         def reqBuilder = GetGroupsRequest.newBuilder()
-        if (authProviderId != null) {
-            propsBuilder.setAuthProviderId(authProviderId)
-            reqBuilder.setAuthProviderId(authProviderId)
+        if (authProviderName != null) {
+            propsBuilder.setAuthProviderId(PROVIDER_IDS_BY_NAME[authProviderName])
+            reqBuilder.setAuthProviderId(PROVIDER_IDS_BY_NAME[authProviderName])
         }
         if (key != null) {
             propsBuilder.setKey(key)
@@ -125,7 +123,7 @@ class GroupsTest extends BaseSpecification {
             }
         } catch (StatusRuntimeException ex) {
             if (ex.status.code != Status.Code.NOT_FOUND &&
-                    (authProviderId == null && ex.status.code != Status.Code.INVALID_ARGUMENT)) {
+                    (authProviderName == null && ex.status.code != Status.Code.INVALID_ARGUMENT)) {
                 throw ex
             }
         }
@@ -140,7 +138,7 @@ class GroupsTest extends BaseSpecification {
 
         where:
         "Data inputs are"
-        authProviderId           | key   | id                                                  | value |
+        authProviderName | key | id | value |
                 expectGroup | expectGroups
         "groups-test-provider-1" | null  | GROUPS_WITH_IDS["QAGroupTest-Group1"].props.getId() | null  |
                 "Group1"    | ["Group1", "Group2"]
