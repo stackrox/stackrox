@@ -140,15 +140,15 @@ class GroupsTest extends BaseSpecification {
         "Data inputs are"
         authProviderName | key | id | value |
                 expectGroup | expectGroups
-        "groups-test-provider-1" | null  | GROUPS_WITH_IDS["QAGroupTest-Group1"].props.getId() | null  |
+        "groups-test-provider-1" | null  | GROUPS_WITH_IDS["Analyst"].props.getId() | null  |
                 "Group1"    | ["Group1", "Group2"]
         null                     | "foo" | "some-id"                                           | "bar" |
                 null        | ["Group2", "Group3"]
-        "groups-test-provider-1" | "foo" | GROUPS_WITH_IDS["QAGroupTest-Group2"].props.getId() | "bar" |
+        "groups-test-provider-1" | "foo" | GROUPS_WITH_IDS["Admin"].props.getId() | "bar" |
                 "Group2"    | ["Group2"]
         "groups-test-provider-2" | null  | "some-id"                                           | null  |
                 null        | ["Group3"]
-        "groups-test-provider-2" | "foo" | GROUPS_WITH_IDS["QAGroupTest-Group3"].props.getId() | "bar" |
+        "groups-test-provider-2" | "foo" | GROUPS_WITH_IDS["Scope Manager"].props.getId() | "bar" |
                 "Group3"    | ["Group3"]
     }
 }
