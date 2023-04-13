@@ -94,7 +94,7 @@ class GroupsTest extends BaseSpecification {
         }
     }
 
-    def "Test that GetGroup and GetGroups work correctly with query args (#authProviderId, #key, #value)"() {
+    def "Test that GetGroup and GetGroups work correctly with query args (#authProviderName, #key, #value)"() {
         when:
         "A query is made for GetGroup and GetGroups with the given params"
         def propsBuilder = GroupProperties.newBuilder()
