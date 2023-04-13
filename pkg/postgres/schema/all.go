@@ -117,7 +117,7 @@ func ApplyAllSchemas(ctx context.Context, gormDB *gorm.DB) {
 		if strings.HasPrefix(rt.GetSchema().Table, "test_") {
 			continue
 		}
-		log.Debugf("Applying schema for table %s", rt.GetSchema().Table)
+		log.Infof("Applying schema for table %s", rt.GetSchema().Table)
 		pgutils.CreateTableFromModel(ctx, gormDB, rt.GetCreateStatement())
 	}
 }
