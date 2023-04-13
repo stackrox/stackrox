@@ -23,6 +23,9 @@ const (
 	// ContinuousIntegration is for CI pipelines.
 	ContinuousIntegration = "Continuous Integration"
 
+	// NetworkGraphViewer is a role that has the minimal privileges required to display network graphs.
+	NetworkGraphViewer = "Network Graph Viewer"
+
 	// SensorCreator is a role that has the minimal privileges required to create a sensor.
 	SensorCreator = "Sensor Creator"
 
