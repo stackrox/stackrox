@@ -41,7 +41,7 @@ func (s *tlsConfigTestSuite) TestGetAdditionalCAs() {
 func (s *tlsConfigTestSuite) TestGetAdditionalCAFilePaths() {
 	s.T().Setenv("ROX_MTLS_ADDITIONAL_CA_DIR", "testdata")
 	filePaths, err := GetAdditionalCAFilePaths()
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Len(filePaths, 4)
 	s.Contains(filePaths, "testdata/cert.pem")
 	s.Contains(filePaths, "testdata/crt01.crt")
