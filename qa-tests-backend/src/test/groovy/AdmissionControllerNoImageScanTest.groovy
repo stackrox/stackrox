@@ -102,7 +102,7 @@ OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==
         and:
         "Enable registry integration"
         gcrId = GCRImageIntegration.createDefaultIntegration()
-        assert gcrId != ""
+        assert gcrId == ""
 
         and:
         "Disable image signature policy"

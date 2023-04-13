@@ -19,7 +19,7 @@ import spock.lang.Unroll
 
 @Retry(count = 0)
 @Unroll
-@Tag("BAT")
+@Tag("BAT1")
 class CSVTest extends BaseSpecification {
     private static final CVE_FIELDS_FRAGEMENT = """
     fragment cveFields on EmbeddedVulnerability {
@@ -197,7 +197,7 @@ class CSVTest extends BaseSpecification {
         return "CVE Type:IMAGE_CVE+"
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify CVE CSV data scoped by entity is correct #testLabel"() {
         when:
         "Query fixable CVEs from graphQL"

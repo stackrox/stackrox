@@ -6,7 +6,7 @@ import util.Cert
 import spock.lang.Stepwise
 import spock.lang.Tag
 
-@Tag("BAT")
+@Tag("BAT1")
 @Stepwise
 class ClustersTest extends BaseSpecification {
 

@@ -207,7 +207,7 @@ oidc:
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Check successful creation, update, and deletion of declarative resources"() {
         when:
 
@@ -389,7 +389,7 @@ oidc:
                 .getGroupsCount() == 0
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Check creating invalid configuration will not work"() {
         when:
         orchestrator.createConfigMap(CONFIGMAP_NAME,

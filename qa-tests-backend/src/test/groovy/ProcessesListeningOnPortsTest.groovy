@@ -109,7 +109,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         destroyDeployments()
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify networking endpoints with processes appear in API at the deployment level"() {
         given:
         "Two deployments that listen on ports are started up"
@@ -182,7 +182,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         destroyDeployments()
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify networking endpoints disappear when process is terminated"() {
         given:
         "When a deployment listening on a port is created and then the process is terminated"
@@ -217,7 +217,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         destroyDeployments()
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify networking endpoint doesn't disappear when port stays open"() {
         given:
         "A deployment listening on a port is brought up and it is checked twice that the port is found"

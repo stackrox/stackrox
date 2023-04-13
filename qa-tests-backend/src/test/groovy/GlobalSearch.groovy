@@ -59,7 +59,7 @@ class GlobalSearch extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify Global search (no policies)(#query, #searchCategories)"(
         String query, List<SearchServiceOuterClass.SearchCategory> searchCategories,
         String expectedResultPrefix,
@@ -123,7 +123,7 @@ class GlobalSearch extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     @IgnoreIf({ !Env.CI_JOB_NAME.contains("postgres") })
     def "Verify Global search on policies (#query, #searchCategories)"(
             String query, List<SearchServiceOuterClass.SearchCategory> searchCategories,

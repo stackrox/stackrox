@@ -73,7 +73,7 @@ class IntegrationsTest extends BaseSpecification {
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify create Email Integration (disableTLS=#disableTLS, startTLS=#startTLS, authenticated=#authenticated, sendCreds=#sendCreds)"() {
         given:
         "mailserver is running"
@@ -153,7 +153,7 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify create Generic Integration Test Endpoint (#tlsOptsDesc, audit=#auditLoggingEnabled)"() {
         when:
         "the integration is tested"
@@ -246,7 +246,7 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Notifiers")
     // slack notifications are not supported on P/Z
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
@@ -306,7 +306,7 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Notifiers")
     def "Verify Policy Violation Notifications: #type"() {
         when:
@@ -391,7 +391,7 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Notifiers")
     def "Verify Attempted Policy Violation Notifications: #type"() {
         when:
@@ -533,7 +533,7 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Notifiers")
     // slack notifications are not supported on P/Z
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })

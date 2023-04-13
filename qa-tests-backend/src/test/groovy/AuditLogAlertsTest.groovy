@@ -20,7 +20,7 @@ import util.Env
 @Stepwise
 class AuditLogAlertsTest extends BaseSpecification {
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("RUNTIME")
     def "Verify Audit Log Event Source Policies Trigger: #verb - #resourceType"() {
         given:
@@ -79,7 +79,7 @@ class AuditLogAlertsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("RUNTIME")
     def "Verify collection continues even after ACS components restarts: #component"() {
         given:
@@ -150,7 +150,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         // the port forward and fails the rest of the test suite.
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("RUNTIME")
     def "Verify collection continues when it is disabled and then re-enabled"() {
         given:
@@ -214,7 +214,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         assert ClusterService.updateAuditLogDynamicConfig(previouslyDisabled)
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("RUNTIME")
     def "Verify collection stops when feature is is disabled"() {
         given:

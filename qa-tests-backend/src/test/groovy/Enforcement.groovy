@@ -265,7 +265,7 @@ class Enforcement extends BaseSpecification {
         }
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Integration")
     @Tag("PolicyEnforcement")
     def "Test Kill Enforcement - Integration"() {
@@ -299,7 +299,7 @@ class Enforcement extends BaseSpecification {
         assert Services.getAlertEnforcementCount(KILL_ENFORCEMENT, KILL_ENFORCEMENT) > 0
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Integration")
     @Tag("PolicyEnforcement")
     def "Test Scale-down Enforcement - Integration"() {
@@ -336,7 +336,7 @@ class Enforcement extends BaseSpecification {
                 SCALE_DOWN_ENFORCEMENT) == 1
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Integration")
     @Tag("PolicyEnforcement")
     def "Test Scale-down Enforcement - Integration (build,deploy - image tag)"() {
@@ -374,7 +374,7 @@ class Enforcement extends BaseSpecification {
                 SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE) == 1
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Integration")
     @Tag("PolicyEnforcement")
     def "Test Scale-down Enforcement - Integration (build,deploy - SEVERITY)"() {
@@ -412,7 +412,7 @@ class Enforcement extends BaseSpecification {
                 SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY) == 1
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Integration")
     @Tag("PolicyEnforcement")
     def "Test Node Constraint Enforcement - Integration"() {
@@ -452,7 +452,7 @@ class Enforcement extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Integration")
     @Tag("PolicyEnforcement")
     def "Test Fail Build Enforcement - #policyName - Integration (build,deploy)"() {
@@ -681,7 +681,7 @@ class Enforcement extends BaseSpecification {
                 APT_GET_POLICY
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("PolicyEnforcement")
     def "Test Alert and Kill Pod Enforcement - Baseline Process"() {
         // This test verifies enforcement of kill pod after triggering a policy violation of
@@ -731,7 +731,7 @@ class Enforcement extends BaseSpecification {
         }
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Integration")
     @Tag("PolicyEnforcement")
     def "Test Enforcement not done on updated - Integration"() {
@@ -780,7 +780,7 @@ class Enforcement extends BaseSpecification {
         }
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Integration")
     @Tag("PolicyEnforcement")
     def "Test Scale-down Enforcement Ignored due to Bypass Annotation - Integration"() {

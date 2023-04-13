@@ -114,7 +114,7 @@ spec:
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify RBAC with Role/Token combinations: #resourceAccess"() {
         when:
         "Create a test role"

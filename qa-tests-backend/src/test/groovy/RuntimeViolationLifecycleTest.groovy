@@ -64,7 +64,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
 /*
     TODO(ROX-3101)
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify runtime resolution lifecycle"() {
         setup:
         "Create the deployment, verify that policy exists"
@@ -111,7 +111,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
     }
 */
 
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("COMPATIBILITY")
     def "Verify runtime excluded scope lifecycle"() {
         setup:
@@ -182,7 +182,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         }
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("COMPATIBILITY")
     def "Verify runtime alert remains after deletion"() {
         setup:

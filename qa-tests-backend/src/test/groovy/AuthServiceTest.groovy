@@ -7,7 +7,7 @@ import services.BaseService
 import org.junit.Assume
 import spock.lang.Tag
 
-@Tag("BAT")
+@Tag("BAT1")
 @Tag("COMPATIBILITY")
 class AuthServiceTest extends BaseSpecification {
 

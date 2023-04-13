@@ -10,7 +10,7 @@ import services.GraphQLService
 import spock.lang.Tag
 import util.Env
 
-@Tag("BAT")
+@Tag("BAT1")
 @Tag("GraphQL")
 class DeploymentEventGraphQLTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "eventnginx"

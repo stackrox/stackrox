@@ -164,7 +164,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("SMOKE")
     def "Verify policy #policyName is triggered" (String policyName, String deploymentName,
                                                   String testId) {
@@ -246,7 +246,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         return strutsComponent.getVulnsList().find { it.cve == "CVE-2017-5638" } != null
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("SMOKE")
     def "Verify that Kubernetes Dashboard violation is generated"() {
         given:
@@ -258,7 +258,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         waitForViolation(K8S_DASHBOARD,  "Kubernetes Dashboard Deployed", 30)
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     @Retry(count = 0)
     @IgnoreIf({ Env.BUILD_TAG == null || !Env.BUILD_TAG.contains("nightly") })
     def "Notifier for StackRox images with fixable vulns"() {
@@ -379,7 +379,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify risk factors on struts deployment: #riskFactor"() {
         given:
         "Check Feature Flags"
@@ -444,7 +444,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 //                 []
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify that built-in services don't trigger unexpected alerts"() {
         expect:
         "Verify unexpected policies are not violated within the kube-system namespace"
@@ -540,7 +540,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         return total
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify that alert counts API is consistent with alerts"()  {
         given:
         def alertReq = queryForDeployments()
@@ -574,7 +574,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         return m
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify that alert groups API is consistent with alerts"()  {
         given:
         def alertReq = queryForDeployments()

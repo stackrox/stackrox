@@ -28,7 +28,7 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("RUNTIME")
     def "Verify Vulnerability Requests can transition between states - #requestType - approve?(#approve)"() {
         when:

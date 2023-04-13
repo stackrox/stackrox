@@ -1218,12 +1218,13 @@ store_test_results() {
     local from="$1"
     local to="$2"
 
-    if ! is_in_PR_context; then
+    if is_in_PR_context; then
     {
         info "Creating JIRA task for failures found in $from"
         curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.6/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
+            -dry-run \
             -base-link $(echo "$JOB_SPEC" | jq ".refs.base_link" -r) \
             -build-id "$BUILD_ID" \
             -build-link "https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/$JOB_NAME/$BUILD_ID" \

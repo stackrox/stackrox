@@ -187,7 +187,7 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Integration")
     def "Verify Image Registry+Scanner Integrations: #testName"() {
         cleanupSetupForRetry()
@@ -377,7 +377,7 @@ class ImageScanningTest extends BaseSpecification {
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Integration")
     def "Verify Image Scan Results - #scanner.name() - #component:#version - #image - #cve - #idx"() {
         Assume.assumeTrue(scanner.isTestable())
@@ -439,7 +439,7 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Integration")
     def "Verify Scan Results from Registries - #registry.name() - #component:#version - #image - #cve - #idx"() {
         cleanupSetupForRetry()
@@ -533,7 +533,7 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Integration")
     def "Image metadata from registry test - #testName"() {
         Assume.assumeTrue(testName != "ecr-iam" || ClusterService.isEKS())
@@ -730,7 +730,7 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Integration")
     def "Quay registry and scanner supports token and/or robot credentials - #testName"() {
         cleanupSetupForRetry()

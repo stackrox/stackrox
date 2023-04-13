@@ -21,7 +21,7 @@ class ImageManagementTest extends BaseSpecification {
     private static final String FEDORA_28 = "fedora-6fb84ba634fe68572a2ac99741062695db24b921d0aa72e61ee669902f88c187"
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Integration")
     def "Verify CI/CD Integration Endpoint - #policy - #imageRegistry #note"() {
         when:
@@ -64,7 +64,7 @@ class ImageManagementTest extends BaseSpecification {
         "Apache Struts: CVE-2017-5638"    | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify two consecutive latest tag image have different scans"() {
         given:
         // Scan an ubuntu 14:04 image we're pretending is latest
@@ -83,7 +83,7 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify image scan finds correct base OS - #qaImageTag"() {
         when:
         def img = Services.scanImage("quay.io/rhacs-eng/qa:$qaImageTag")
@@ -106,7 +106,7 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Integration")
     def "Verify CI/CD Integration Endpoint excluded scopes - #policy - #excludedscopes"() {
         when:
@@ -159,7 +159,7 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify CVE snoozing applies to build time detection"() {
         given:
         "Create policy looking for a specific CVE applying to build time"
@@ -206,7 +206,7 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify risk is properly being attributed to scanned images"() {
         when:
         "Scan an image and then grab the image data"
@@ -223,7 +223,7 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify risk is properly being attributed to run images"() {
         when:
         "Create deployment that runs an image and verify that image has a non-zero riskScore"
@@ -255,7 +255,7 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BAT1")
     def "Verify image scan results when CVEs are suppressed: "() {
         given:
         "Scan image"
@@ -296,7 +296,7 @@ class ImageManagementTest extends BaseSpecification {
         CVEService.unsuppressImageCVE(cve)
     }
 
-    @Tag("BAT")
+    @Tag("BAT1")
     @Tag("Integration")
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify CI/CD Integration Endpoint with notifications"() {
