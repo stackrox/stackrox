@@ -128,8 +128,9 @@ func (h *sacHelperImpl) GetNamespacesForClusterAndPermissions(
 	requestedPermissions []string,
 ) ([]*v1.ScopeObject, error) {
 	resourcesWithAccess := listReadPermissions(requestedPermissions, permissions.NamespaceScope)
+	allNsResourcesWithAccess := listReadPermissions([]string{}, permissions.NamespaceScope)
 
-	clusterVisible, err := h.IsClusterVisibleForPermissions(ctx, clusterID, resourcesWithAccess)
+	clusterVisible, err := h.IsClusterVisibleForPermissions(ctx, clusterID, allNsResourcesWithAccess)
 	if err != nil {
 		return nil, err
 	}
