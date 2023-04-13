@@ -29,7 +29,7 @@ case "$ci_job" in
     eks-qa-e2e-tests|osd*qa-e2e-tests)
         openshift_ci_e2e_mods
         ;;
-    openshift-*-operator-e2e-tests)
+    *-operator-e2e-tests)
         operator_e2e_test_setup
         ;;
 esac
