@@ -168,7 +168,7 @@ var defaultRoles = map[string]roleAttributes{
 	rolePkg.VulnerabilityManager: {
 		idSuffix:    "vulnmgmt",
 		postgresID:  vulnMgmtPermissionSetID,
-		description: "For users: use it to provide access to view and manage system vulnerabilities and its insights",
+		description: "For users: use it to provide access to analyze and manage system vulnerabilities",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Cluster),
 			permissions.View(resources.Node),
@@ -178,7 +178,7 @@ var defaultRoles = map[string]roleAttributes{
 			permissions.View(resources.Integration),
 			permissions.Modify(resources.WatchedImage),
 			permissions.Modify(resources.VulnerabilityManagementRequests),
-			permissions.Modify(resources.WorkflowAdministration),
+			permissions.Modify(resources.VulnerabilityReports),
 		},
 	},
 }
