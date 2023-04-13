@@ -59,15 +59,16 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 }
 
 func addSelectorOptionIfNeeded(selector string, opts []pkgReconciler.Option) ([]pkgReconciler.Option, error) {
-	if len(selector) != 0 {
-		labelSelector, err := v1.ParseToLabelSelector(selector)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse central label selector")
-		}
-		if labelSelector != nil {
-			ctrl.Log.Info("Using central label selector", "selector", selector)
-			opts = append(opts, pkgReconciler.WithSelector(*labelSelector))
-		}
+	if len(selector) == 0 {
+		return opts, nil
+	}
+	labelSelector, err := v1.ParseToLabelSelector(selector)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse central label selector")
+	}
+	if labelSelector != nil {
+		ctrl.Log.Info("Using central label selector", "selector", selector)
+		opts = append(opts, pkgReconciler.WithSelector(*labelSelector))
 	}
 	return opts, nil
 }
