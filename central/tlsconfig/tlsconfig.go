@@ -66,7 +66,6 @@ func GetAdditionalCAFilePaths() ([]string, error) {
 
 // GetAdditionalCAs reads all additional CAs in DER format.
 func GetAdditionalCAs() ([][]byte, error) {
-
 	additionalCAFilePaths, err := GetAdditionalCAFilePaths()
 	if err != nil {
 		return nil, err
@@ -216,8 +215,10 @@ func validForAllDNSNames(cert *x509.Certificate, dnsNames ...string) bool {
 	return true
 }
 
-var allowedAdditionalCAExtensionList = []string{".crt", ".pem"}
-var allowedAdditionalCAExtensionMap = map[string]struct{}{}
+var (
+	allowedAdditionalCAExtensionList = []string{".crt", ".pem"}
+	allowedAdditionalCAExtensionMap  = map[string]struct{}{}
+)
 
 func init() {
 	for _, ext := range allowedAdditionalCAExtensionList {
