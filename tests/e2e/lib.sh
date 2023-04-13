@@ -103,6 +103,10 @@ export_test_environment() {
         # TODO(ROX-16008): Remove this once the declarative config feature flag is enabled by default.
         ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     fi
+
+    if is_in_PR_context && pr_has_label ci-fail-fast; then
+        ci_export FAIL_FAST "true"
+    fi
 }
 
 deploy_stackrox_operator() {
