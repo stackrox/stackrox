@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -62,13 +63,13 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 	if err != nil {
 		return nil, errors.Wrap(err, "could not load central CA")
 	}
-
-	cert, err := mtls.IssueNewCert(mtls.ScannerSubject)
+	namespace := env.Namespace.Setting()
+	cert, err := mtls.IssueNewCert(mtls.ScannerSubject, mtls.WithNamespace(namespace))
 	if err != nil {
 		return nil, errors.Wrap(err, "could not issue scanner cert")
 	}
 
-	scannerDBCert, err := mtls.IssueNewCert(mtls.ScannerDBSubject)
+	scannerDBCert, err := mtls.IssueNewCert(mtls.ScannerDBSubject, mtls.WithNamespace(namespace))
 	if err != nil {
 		return nil, errors.Wrap(err, "could not issue scanner db cert")
 	}
