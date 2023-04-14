@@ -18,12 +18,11 @@ import (
 	"github.com/stackrox/rox/roxctl/common/download"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/sensor/util"
 )
 
-func downloadCerts(log logger.Logger, outputDir, clusterIDOrName string, timeout time.Duration) error {
-	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout, log)
+func downloadCerts(env environment.Environment, outputDir, clusterIDOrName string, timeout time.Duration) error {
+	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout, env)
 	if err != nil {
 		return err
 	}
@@ -33,7 +32,11 @@ func downloadCerts(log logger.Logger, outputDir, clusterIDOrName string, timeout
 		return err
 	}
 
-	resp, err := common.DoHTTPRequestAndCheck200("/api/extensions/certgen/cluster", timeout, http.MethodPost, bytes.NewReader(body), log)
+	client, err := env.HTTPClient(timeout)
+	if err != nil {
+		return err
+	}
+	resp, err := client.DoReqAndVerifyStatusCode("/api/extensions/certgen/cluster", http.MethodPost, http.StatusOK, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -42,7 +45,7 @@ func downloadCerts(log logger.Logger, outputDir, clusterIDOrName string, timeout
 	fileName, err := download.ParseFilenameFromHeader(resp.Header)
 	if err != nil {
 		fileName = fmt.Sprintf("cluster-%s-certs.yaml", clusterIDOrName)
-		log.WarnfLn("could not obtain output file name from HTTP Response: %v. Defaulting to %q", err, fileName)
+		env.Logger().WarnfLn("could not obtain output file name from HTTP Response: %v. Defaulting to %q", err, fileName)
 	}
 
 	outputFileNameWithDir := filepath.Join(outputDir, fileName)
@@ -67,7 +70,7 @@ func downloadCerts(log logger.Logger, outputDir, clusterIDOrName string, timeout
 	if err != nil {
 		return errors.Wrapf(err, "failed to close file at %s", outputFileNameWithDir)
 	}
-	log.InfofLn("Successfully downloaded new certs. Use kubectl apply -f %s to apply them.", outputFileNameWithDir)
+	env.Logger().InfofLn("Successfully downloaded new certs. Use kubectl apply -f %s to apply them.", outputFileNameWithDir)
 	return nil
 }
 
@@ -80,7 +83,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		Short: "Download a YAML file with renewed certificates for StackRox Sensor, Collector, and Admission controller (if deployed).",
 		Args:  common.ExactArgsWithCustomErrMessage(1, "No cluster name or ID specified"),
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := downloadCerts(cliEnvironment.Logger(), outputDir, args[0], flags.Timeout(c)); err != nil {
+			if err := downloadCerts(cliEnvironment, outputDir, args[0], flags.Timeout(c)); err != nil {
 				return errors.Wrap(err, "error downloading regenerated certs")
 			}
 			return nil
