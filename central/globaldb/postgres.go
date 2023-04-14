@@ -111,7 +111,9 @@ func InitializePostgres(ctx context.Context) *postgres.DB {
 		})); err != nil {
 			log.Fatalf("Timed out trying to open database: %v", err)
 		}
-
+		if _, err := postgresDB.Exec(context.Background(), "alter database central_active set synchronous_commit = on"); err != nil {
+			log.Errorf("error setting synchronous commit to off: %v", err)
+		}
 		_, err = postgresDB.Exec(ctx, "create extension if not exists pg_stat_statements")
 		if err != nil {
 			log.Errorf("Could not create pg_stat_statements extension: %v", err)

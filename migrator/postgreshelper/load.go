@@ -1,6 +1,9 @@
 package postgreshelper
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/stackrox/rox/migrator/log"
 	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -50,6 +53,9 @@ func Load(databaseName string) (*postgres.DB, *gorm.DB, error) {
 	if err != nil {
 		log.WriteToStderrf("timed out connecting to database: %v", err)
 		return nil, nil, err
+	}
+	if _, err := postgresDB.Exec(context.Background(), fmt.Sprintf("alter database %s set synchronous_commit = off", databaseName)); err != nil {
+		log.WriteToStderrf("error setting synchronous commit to off: %v", err)
 	}
 	gormDB, err = gc.ConnectWithRetries(databaseName)
 	if err != nil {
