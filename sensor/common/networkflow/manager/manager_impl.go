@@ -530,7 +530,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
 		// If processes listening on ports is enabled, it has to be used there as well before being deleted.
 		used := status.used && (status.usedProcess || !env.ProcessesListeningOnPort.BooleanSetting())
-		if used && status.lastSeen != timestamp.InfiniteFuture {
+		if status.rotten || (used && status.lastSeen != timestamp.InfiniteFuture) {
 			// endpoints that are no longer active and have already been used can be deleted.
 			delete(hostConns.endpoints, ep)
 		}
@@ -550,7 +550,7 @@ func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections
 		}
 
 		m.enrichProcessListening(&ep, status, processesListening)
-		if status.used && status.usedProcess && status.lastSeen != timestamp.InfiniteFuture {
+		if status.rotten || (status.used && status.usedProcess && status.lastSeen != timestamp.InfiniteFuture) {
 			// endpoints that are no longer active and have already been used can be deleted.
 			// Before deleting it must be used here and in enrichContainerEndpoints.
 			delete(hostConns.endpoints, ep)
