@@ -12,12 +12,13 @@ import {
 } from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
 import Dialog from 'Components/Dialog';
+import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
+import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import IconWithState from 'Components/IconWithState';
 import PanelButton from 'Components/PanelButton';
 import RowActionButton from 'Components/RowActionButton';
-import StatusChip from 'Components/StatusChip';
-import SeverityLabel from 'Components/SeverityLabel';
 import TableCountLink from 'Components/workflow/TableCountLink';
+import { formatLifecycleStages } from 'Containers/Policies/policies.utils';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
@@ -93,9 +94,7 @@ export function getPolicyTableColumns(workflowState) {
             headerClassName: `w-24 text-center ${nonSortableHeaderClassName}`,
             className: `w-24 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => (
-                <div className="flex justify-center w-full">
-                    <StatusChip status={original.policyStatus} asString={pdf} />
-                </div>
+                <PolicyStatusIconText isPass={original.policyStatus === 'pass'} isTextOnly={pdf} />
             ),
             id: policySortFields.POLICY_STATUS,
             accessor: 'policyStatus',
@@ -131,7 +130,9 @@ export function getPolicyTableColumns(workflowState) {
             Header: `Severity`,
             headerClassName: `w-1/10 text-left ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => <SeverityLabel severity={original.severity} />,
+            Cell: ({ original, pdf }) => (
+                <PolicySeverityIconText policySeverity={original.severity} isTextOnly={pdf} />
+            ),
             id: policySortFields.SEVERITY,
             accessor: 'severity',
             sortField: policySortFields.SEVERITY,
@@ -168,11 +169,8 @@ export function getPolicyTableColumns(workflowState) {
                 if (!lifecycleStages || !lifecycleStages.length) {
                     return 'No lifecycle stages';
                 }
-                const lowercasedLifecycles = lifecycleStages
-                    .map((stage) => stage.toLowerCase())
-                    .join(', ');
 
-                return <span>{lowercasedLifecycles}</span>;
+                return <span>{formatLifecycleStages(lifecycleStages)}</span>;
             },
             id: policySortFields.LIFECYCLE_STAGE,
             accessor: 'lifecycleStages',
