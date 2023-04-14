@@ -211,6 +211,7 @@ func makeNetworkConnection(src string, dst string, containerID string, closeTS *
 func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload) *sensor.NetworkConnectionInfo {
 	conns := make([]*sensor.NetworkConnection, 0, workload.BatchSize)
 	networkEndpoints := make([]*sensor.NetworkEndpoint, 0, workload.BatchSize)
+	log.Infof("Before adding len(networkEndpoints)= %d", len(networkEndpoints))
 	log.Infof("Before adding endpointPool.Size= %d", endpointPool.Size)
 	for i := 0; i < workload.BatchSize; i++ {
 		src, ok := ipPool.randomElem()
@@ -245,6 +246,8 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 		if endpointPool.Size <= endpointPool.Capacity {
 			endpointPool.add(networkEndpoint)
 			networkEndpoints = append(networkEndpoints, networkEndpoint)
+			log.Infof("endpointPool.Size= %d endpointPool.Capacity= %d", endpointPool.Size, endpointPool.Capacity)
+			log.Infof("len(networkEndpoints)= %d", len(networkEndpoints))
 		}
 	}
 
