@@ -160,7 +160,7 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
                 className: `w-1/10 ${defaultColumnClassName} content-center`,
                 Cell: ({ original, pdf }) => {
                     const { deploymentCount, watchStatus } = original;
-                    const isActive = deploymentCount === 0 ? 'inactive' : 'active';
+                    const isActive = deploymentCount !== 0;
                     const isWatched = watchStatus === imageWatchStatuses.WATCHED;
                     return (
                         <div className="flex-col justify-center items-center w-full">
