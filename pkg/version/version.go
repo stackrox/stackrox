@@ -134,10 +134,13 @@ func parseMainVersion(mainVersion string) (parsedMainVersion, error) {
 
 // GetChartVersion derives a Chart Version string from the provided Main Version string.
 func GetChartVersion() string {
-	return DeriveChartVersion(GetMainVersion())
+	chartVersion, err := deriveChartVersion(GetMainVersion())
+	utils.Should(err)
+	return chartVersion
 }
 
-func doDeriveChartVersion(mainVersion string) (string, error) {
+// deriveChartVersion derives a Chart Version string from the provided Main Version string.
+func deriveChartVersion(mainVersion string) (string, error) {
 	parsedMainVersion, err := parseMainVersion(mainVersion)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to parse main version %q", mainVersion)
@@ -198,13 +201,6 @@ func doDeriveChartVersion(mainVersion string) (string, error) {
 
 	chartVersion := fmt.Sprintf("%d.%d.%s", chartMajor, chartMinor, chartPatchAndSuffix)
 	return chartVersion, nil
-}
-
-// DeriveChartVersion derives a Chart Version string from the provided Main Version string.
-func DeriveChartVersion(mainVersion string) string {
-	chartVersion, err := doDeriveChartVersion(mainVersion)
-	utils.Should(err)
-	return chartVersion
 }
 
 // GetMajorMinor returns first two parts of the provided version.

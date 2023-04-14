@@ -101,7 +101,7 @@ func TestChartVersionGeneration(t *testing.T) {
 	for _, testCase := range testCases {
 		description := fmt.Sprintf("Checking if DeriveChartVersion(%s) = %s", testCase.mainVersion, testCase.chartVersion)
 		t.Run(description, func(t *testing.T) {
-			generatedChartVersion, err := doDeriveChartVersion(testCase.mainVersion)
+			generatedChartVersion, err := deriveChartVersion(testCase.mainVersion)
 			if testCase.expectedError != "" {
 				assert.ErrorContains(t, err, testCase.expectedError)
 			} else {
