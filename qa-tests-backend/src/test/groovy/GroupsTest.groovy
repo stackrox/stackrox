@@ -5,9 +5,11 @@ import io.stackrox.proto.api.v1.GroupServiceOuterClass.GetGroupsRequest
 import io.stackrox.proto.storage.AuthProviderOuterClass
 import io.stackrox.proto.storage.GroupOuterClass.Group
 import io.stackrox.proto.storage.GroupOuterClass.GroupProperties
+import io.stackrox.proto.storage.RoleOuterClass
 
 import services.AuthProviderService
 import services.GroupService
+import services.RoleService
 
 import spock.lang.Tag
 
@@ -31,17 +33,17 @@ class GroupsTest extends BaseSpecification {
 
     private static final Map<Group, String> GROUPS_TO_AUTH_PROVIDER = [
             (Group.newBuilder()
-                    .setRoleName("Analyst")
+                    .setRoleName("QAGroupTest-Group1")
                     .build()): PROVIDERS[0].getName(),
             (Group.newBuilder()
-                    .setRoleName("Admin")
+                    .setRoleName("QAGroupTest-Group2")
                     .setProps(GroupProperties.newBuilder()
                             .setKey("foo")
                             .setValue("bar")
                             .build())
                     .build()): PROVIDERS[0].getName(),
             (Group.newBuilder()
-                    .setRoleName("Scope Manager")
+                    .setRoleName("QAGroupTest-Group3")
                     .setProps(GroupProperties.newBuilder()
                             .setKey("foo")
                             .setValue("bar")
@@ -49,9 +51,30 @@ class GroupsTest extends BaseSpecification {
                     .build()): PROVIDERS[1].getName(),
     ]
 
+    private static final ROLES = [
+            RoleOuterClass.Role.newBuilder()
+                    .setName("QAGroupTest-Group1")
+                    .setAccessScopeId("ffffffff-ffff-fff4-f5ff-ffffffffffff")
+                    .setPermissionSetId("ffffffff-ffff-fff4-f5ff-ffffffffffff")
+                    .build(),
+            RoleOuterClass.Role.newBuilder()
+                    .setName("QAGroupTest-Group2")
+                    .setAccessScopeId("ffffffff-ffff-fff4-f5ff-ffffffffffff")
+                    .setPermissionSetId("ffffffff-ffff-fff4-f5ff-ffffffffffff")
+                    .build(),
+            RoleOuterClass.Role.newBuilder()
+                    .setName("QAGroupTest-Group3")
+                    .setAccessScopeId("ffffffff-ffff-fff4-f5ff-ffffffffffff")
+                    .setPermissionSetId("ffffffff-ffff-fff4-f5ff-ffffffffffff")
+                    .build(),
+    ]
+
     private static final Map<String, Group> GROUPS_WITH_IDS = [:]
 
     def setupSpec() {
+        for (def role : ROLES) {
+            RoleService.createRole(role)
+        }
         for (def provider : PROVIDERS) {
             def authProviderId = AuthProviderService.createAuthProvider(provider.getName(), provider.getType(),
                     provider.getConfigMap())
@@ -140,15 +163,15 @@ class GroupsTest extends BaseSpecification {
         "Data inputs are"
         authProviderName | key | id | value |
                 expectGroup | expectGroups
-        "groups-test-provider-1" | null  | GROUPS_WITH_IDS["Analyst"].props.getId() | null  |
+        "groups-test-provider-1" | null  | GROUPS_WITH_IDS["QAGroupTest-Group1"].props.getId() | null  |
                 "Group1"    | ["Group1", "Group2"]
         null                     | "foo" | "some-id"                                           | "bar" |
                 null        | ["Group2", "Group3"]
-        "groups-test-provider-1" | "foo" | GROUPS_WITH_IDS["Admin"].props.getId() | "bar" |
+        "groups-test-provider-1" | "foo" | GROUPS_WITH_IDS["QAGroupTest-Group2"].props.getId() | "bar" |
                 "Group2"    | ["Group2"]
         "groups-test-provider-2" | null  | "some-id"                                           | null  |
                 null        | ["Group3"]
-        "groups-test-provider-2" | "foo" | GROUPS_WITH_IDS["Scope Manager"].props.getId() | "bar" |
+        "groups-test-provider-2" | "foo" | GROUPS_WITH_IDS["QAGroupTest-Group3"].props.getId() | "bar" |
                 "Group3"    | ["Group3"]
     }
 }
