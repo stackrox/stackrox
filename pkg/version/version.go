@@ -155,51 +155,28 @@ func deriveChartVersion(mainVersion string) (string, error) {
 		}
 	}
 
-	var chartMajor int
-	var chartMinor int
-	var chartPatchAndSuffix string
-
-	if parsedMainVersion.MarketingMajor > 3 {
-		if parsedMainVersion.MarketingMinor != nil {
-			return "", errors.Errorf(
-				"unexpected main version %s: minor marketing version component is not supported after the product version 3",
-				mainVersion)
-		}
-
-		// In 3[.0].y.z era Y/Minor versions got up to 74 and occupied Helm chart versions 74.something.something.
-		// Because of that, we have to assign even bigger Major Helm chart version. Otherwise, if we simply take Main
-		// Major (e.g. 4) and assign it to Helm Major, it will be recognized as old according to SemVer (4.0.0<74.0.0).
-		// Therefore, we pad Main Major with two trailing zeroes making such chart appear newer than charts from
-		// 3[.0].y.z era, as it should.
-		chartMajor = parsedMainVersion.MarketingMajor * 100
-
-		chartMinor = parsedMainVersion.EngRelease
-
-		if parsedMainVersion.PatchSuffix == "" {
-			chartPatchAndSuffix = strconv.Itoa(patchLevelInteger)
-		} else {
-			chartPatchAndSuffix = fmt.Sprintf("%d-%s", patchLevelInteger, parsedMainVersion.PatchSuffix)
-		}
-	} else {
-		// For some reason that was not recorded and got lost in time, Helm charts in 3[.0].y.z era were versioned by
-		// taking Main Minor as Helm Major and Main Patch as Helm Minor. Thus, Main Major was simply ignored.
-		chartMajor = parsedMainVersion.EngRelease
-		chartMinor = patchLevelInteger
-
-		// This converts Main Suffix to Helm Patch+Suffix. If Main Suffix begins with a number, this number is used as
-		// Helm Patch and the rest goes to Helm Suffix. Otherwise, Helm Patch is assigned to zero and Suffix is copied
-		// (if present).
-		chartPatchAndSuffix = parsedMainVersion.PatchSuffix
-		if chartPatchAndSuffix == "" {
-			// For release versions.
-			chartPatchAndSuffix = "0"
-		} else if c := chartPatchAndSuffix[0]; !(c >= '0' && c <= '9') {
-			// Prefix with "0-".
-			chartPatchAndSuffix = fmt.Sprintf("0-%s", chartPatchAndSuffix)
-		}
+	if parsedMainVersion.MarketingMajor != 3 && parsedMainVersion.MarketingMinor != nil {
+		return "", errors.Errorf(
+			"unexpected main version %s: minor marketing version component is not supported after the product version 3",
+			mainVersion)
 	}
 
-	chartVersion := fmt.Sprintf("%d.%d.%s", chartMajor, chartMinor, chartPatchAndSuffix)
+	// In 3[.0].y.z era Y/Minor versions were used as Helm Major (Main Major, 3, was ignored). Main Minor versions got
+	// up to 74 and occupied Helm chart versions 74.something.something. Because of that, we have to assign even bigger
+	// Major Helm chart version for release 4.0.0 and later. Otherwise, if we simply take Main Major (e.g. 4) and assign
+	// it to Helm Major, it will be recognized as old according to SemVer (4.0.0<74.0.0). Therefore, we pad Main Major
+	// with two trailing zeroes making such chart appear newer than charts from 3[.0].y.z era, as it should.
+	chartMajor := parsedMainVersion.MarketingMajor * 100
+
+	chartMinor := parsedMainVersion.EngRelease
+	chartPatch := patchLevelInteger
+
+	chartSuffix := ""
+	if parsedMainVersion.PatchSuffix != "" {
+		chartSuffix = "-" + parsedMainVersion.PatchSuffix
+	}
+
+	chartVersion := fmt.Sprintf("%d.%d.%d%s", chartMajor, chartMinor, chartPatch, chartSuffix)
 	return chartVersion, nil
 }
 

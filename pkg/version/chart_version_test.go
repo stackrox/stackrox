@@ -16,15 +16,15 @@ func TestChartVersionGeneration(t *testing.T) {
 	}{
 		{
 			mainVersion:  "3.0.49.x-1-ga0897a21ee-dirty",
-			chartVersion: "49.0.1-ga0897a21ee-dirty",
+			chartVersion: "300.49.0-1-ga0897a21ee-dirty",
 		},
 		{
 			mainVersion:  "3.0.49.0-1-ga0897a21ee",
-			chartVersion: "49.0.1-ga0897a21ee",
+			chartVersion: "300.49.0-1-ga0897a21ee",
 		},
 		{
 			mainVersion:  "3.0.49.1-22-ga0897a21ee",
-			chartVersion: "49.1.22-ga0897a21ee",
+			chartVersion: "300.49.1-22-ga0897a21ee",
 		},
 		{
 			mainVersion:   "99.0.101.42-212-ga0897a21ee",
@@ -32,31 +32,27 @@ func TestChartVersionGeneration(t *testing.T) {
 		},
 		{
 			mainVersion:  "3.0.48.0-rc.1",
-			chartVersion: "48.0.0-rc.1",
+			chartVersion: "300.48.0-rc.1",
 		},
 		{
 			mainVersion:  "3.0.48.5-nightly-20200910",
-			chartVersion: "48.5.0-nightly-20200910",
+			chartVersion: "300.48.5-nightly-20200910",
 		},
 		{
 			mainVersion:  "3.0.48.5",
-			chartVersion: "48.5.0",
-		},
-		{
-			mainVersion:   "3.62",
-			expectedError: "failed to parse main version",
+			chartVersion: "300.48.5",
 		},
 		{
 			mainVersion:  "3.62.x-1-ga0897a21ee-dirty",
-			chartVersion: "62.0.1-ga0897a21ee-dirty",
+			chartVersion: "300.62.0-1-ga0897a21ee-dirty",
 		},
 		{
 			mainVersion:  "3.62.0-1-ga0897a21ee",
-			chartVersion: "62.0.1-ga0897a21ee",
+			chartVersion: "300.62.0-1-ga0897a21ee",
 		},
 		{
 			mainVersion:  "3.62.1-22-ga0897a21ee",
-			chartVersion: "62.1.22-ga0897a21ee",
+			chartVersion: "300.62.1-22-ga0897a21ee",
 		},
 		{
 			mainVersion:  "99.101.42-212-ga0897a21ee",
@@ -64,15 +60,15 @@ func TestChartVersionGeneration(t *testing.T) {
 		},
 		{
 			mainVersion:  "3.62.0-rc.1",
-			chartVersion: "62.0.0-rc.1",
+			chartVersion: "300.62.0-rc.1",
 		},
 		{
 			mainVersion:  "3.62.5-nightly-20200910",
-			chartVersion: "62.5.0-nightly-20200910",
+			chartVersion: "300.62.5-nightly-20200910",
 		},
 		{
 			mainVersion:  "3.62.5",
-			chartVersion: "62.5.0",
+			chartVersion: "300.62.5",
 		},
 		{
 			mainVersion:   "3.62",
@@ -94,7 +90,7 @@ func TestChartVersionGeneration(t *testing.T) {
 			// Downstream trunk builds will identify themselves as such.
 			// This case checks there's no error.
 			mainVersion:  "1.0.0",
-			chartVersion: "0.0.0",
+			chartVersion: "100.0.0",
 		},
 	}
 
