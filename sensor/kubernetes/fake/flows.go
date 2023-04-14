@@ -74,19 +74,19 @@ func (p *pool) mustGetRandomElem() string {
 
 // EndpointPool stores endpoints by containerID using a map
 type EndpointPool struct {
-	Endpoints		map[string][]*sensor.NetworkEndpoint
-	EndpointsToBeClosed	[]*sensor.NetworkEndpoint
-	Capacity		int
-	Size			int
-	lock			sync.RWMutex
+	Endpoints           map[string][]*sensor.NetworkEndpoint
+	EndpointsToBeClosed []*sensor.NetworkEndpoint
+	Capacity            int
+	Size                int
+	lock                sync.RWMutex
 }
 
 func newEndpointPool() *EndpointPool {
 	return &EndpointPool{
-		Endpoints:		make(map[string][]*sensor.NetworkEndpoint),
-		EndpointsToBeClosed:	make([]*sensor.NetworkEndpoint, 0),
-		Capacity:		10000,
-		Size:			0,
+		Endpoints:           make(map[string][]*sensor.NetworkEndpoint),
+		EndpointsToBeClosed: make([]*sensor.NetworkEndpoint, 0),
+		Capacity:            10000,
+		Size:                0,
 	}
 }
 
