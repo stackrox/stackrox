@@ -10,8 +10,9 @@ import (
 
 func TestChartVersionGeneration(t *testing.T) {
 	testCases := []struct {
-		mainVersion  string
-		chartVersion string
+		mainVersion   string
+		chartVersion  string
+		expectedError string
 	}{
 		{
 			mainVersion:  "3.0.49.x-1-ga0897a21ee-dirty",
@@ -26,8 +27,8 @@ func TestChartVersionGeneration(t *testing.T) {
 			chartVersion: "49.1.22-ga0897a21ee",
 		},
 		{
-			mainVersion:  "99.0.101.42-212-ga0897a21ee",
-			chartVersion: "101.42.212-ga0897a21ee",
+			mainVersion:   "99.0.101.42-212-ga0897a21ee",
+			expectedError: "unexpected main version",
 		},
 		{
 			mainVersion:  "3.0.48.0-rc.1",
@@ -42,8 +43,8 @@ func TestChartVersionGeneration(t *testing.T) {
 			chartVersion: "48.5.0",
 		},
 		{
-			mainVersion:  "3.62",
-			chartVersion: "",
+			mainVersion:   "3.62",
+			expectedError: "failed to parse main version",
 		},
 		{
 			mainVersion:  "3.62.x-1-ga0897a21ee-dirty",
@@ -59,7 +60,7 @@ func TestChartVersionGeneration(t *testing.T) {
 		},
 		{
 			mainVersion:  "99.101.42-212-ga0897a21ee",
-			chartVersion: "101.42.212-ga0897a21ee",
+			chartVersion: "9900.101.42-212-ga0897a21ee",
 		},
 		{
 			mainVersion:  "3.62.0-rc.1",
@@ -74,8 +75,26 @@ func TestChartVersionGeneration(t *testing.T) {
 			chartVersion: "62.5.0",
 		},
 		{
-			mainVersion:  "3.62",
-			chartVersion: "",
+			mainVersion:   "3.62",
+			expectedError: "failed to parse main version",
+		},
+		{
+			mainVersion:  "4.0.0-rc.2",
+			chartVersion: "400.0.0-rc.2",
+		},
+		{
+			mainVersion:  "4.1.3",
+			chartVersion: "400.1.3",
+		},
+		{
+			mainVersion:  "4.0.x-79-g9abecf2368-dirty",
+			chartVersion: "400.0.0-79-g9abecf2368-dirty",
+		},
+		{
+			// Downstream trunk builds will identify themselves as such.
+			// This case checks there's no error.
+			mainVersion:  "1.0.0",
+			chartVersion: "0.0.0",
 		},
 	}
 
@@ -83,8 +102,8 @@ func TestChartVersionGeneration(t *testing.T) {
 		description := fmt.Sprintf("Checking if DeriveChartVersion(%s) = %s", testCase.mainVersion, testCase.chartVersion)
 		t.Run(description, func(t *testing.T) {
 			generatedChartVersion, err := doDeriveChartVersion(testCase.mainVersion)
-			if testCase.chartVersion == "" {
-				assert.ErrorContains(t, err, "failed to parse main version")
+			if testCase.expectedError != "" {
+				assert.ErrorContains(t, err, testCase.expectedError)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, testCase.chartVersion, generatedChartVersion)
