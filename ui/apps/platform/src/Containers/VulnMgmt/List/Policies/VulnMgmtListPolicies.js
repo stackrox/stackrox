@@ -91,7 +91,7 @@ export function getPolicyTableColumns(workflowState) {
         },
         {
             Header: `Policy Status`,
-            headerClassName: `w-24 text-center ${nonSortableHeaderClassName}`,
+            headerClassName: `w-24 ${nonSortableHeaderClassName}`,
             className: `w-24 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => (
                 <PolicyStatusIconText isPass={original.policyStatus === 'pass'} isTextOnly={pdf} />
@@ -128,7 +128,7 @@ export function getPolicyTableColumns(workflowState) {
         },
         {
             Header: `Severity`,
-            headerClassName: `w-1/10 text-left ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => (
                 <PolicySeverityIconText policySeverity={original.severity} isTextOnly={pdf} />
