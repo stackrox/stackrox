@@ -85,7 +85,7 @@ func newEndpointPool() *EndpointPool {
 	return &EndpointPool{
 		Endpoints:           make(map[string][]*sensor.NetworkEndpoint),
 		EndpointsToBeClosed: make([]*sensor.NetworkEndpoint, 0),
-		Capacity:            10000,
+		Capacity:            100,
 		Size:                0,
 	}
 }
@@ -211,6 +211,7 @@ func makeNetworkConnection(src string, dst string, containerID string, closeTS *
 func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload) *sensor.NetworkConnectionInfo {
 	conns := make([]*sensor.NetworkConnection, 0, workload.BatchSize)
 	networkEndpoints := make([]*sensor.NetworkEndpoint, 0, workload.BatchSize)
+	log.Infof("Before adding endpointPool.Size= %d", endpointPool.Size)
 	for i := 0; i < workload.BatchSize; i++ {
 		src, ok := ipPool.randomElem()
 		if !ok {
@@ -247,6 +248,10 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 		}
 	}
 
+	log.Infof("After adding endpointPool.Size= %d", endpointPool.Size)
+	log.Infof("After adding len(networkEndpoints)= %d", len(networkEndpoints))
+	log.Infof("Before closing len(endpointPool.EndpointsToBeClosed)= %d", len(endpointPool.EndpointsToBeClosed))
+
 	for _, endpoint := range endpointPool.EndpointsToBeClosed {
 		networkEndpoint := endpoint
 		closeTS, err := types.TimestampProto(time.Now().Add(-5 * time.Second))
@@ -259,6 +264,8 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 	}
 
 	endpointPool.clearEndpointsToBeClosed()
+	log.Infof("After closing len(networkEndpoints)= %d", len(networkEndpoints))
+	log.Infof("After closing len(endpointPool.EndpointsToBeClosed)= %d", len(endpointPool.EndpointsToBeClosed))
 
 	return &sensor.NetworkConnectionInfo{
 		UpdatedConnections: conns,
