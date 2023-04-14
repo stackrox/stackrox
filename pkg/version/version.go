@@ -96,6 +96,10 @@ func parseMainVersion(mainVersion string) (parsedMainVersion, error) {
 	var marketingMinorOpt *int
 	engReleaseOfs := 1
 	if len(components) == 4 {
+		// It's highly unlikely we're going to ever use non-SemVer product versions that include four components.
+		// However, there's a lot of test code that was written when this was the way of versioning. Therefore this
+		// parsing still exists.
+		// TODO: clean up all versioning and test code that deals with "marketing minor".
 		marketingMinor, err := strconv.Atoi(components[1])
 		if err != nil {
 			return parsedMainVersion{}, errors.Wrapf(err, "invalid marketing minor major version (%q)", components[1])
