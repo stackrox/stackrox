@@ -1026,9 +1026,12 @@ openshift_ci_mods() {
     info "Git log:"
     git log --oneline --decorate -n 20 || true
 
+    info "Fetch tags"
+    git fetch --tags
+
     info "Recent git refs:"
     git for-each-ref --format='%(creatordate) %(refname)' --sort=creatordate | tail -20
-
+    
     info "Current Status:"
     "$ROOT/status.sh" || true
 
