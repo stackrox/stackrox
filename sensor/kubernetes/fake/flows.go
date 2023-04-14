@@ -243,7 +243,7 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 		networkEndpoint := getNetworkEndpointFromConnectionAndOriginator(conn, originator)
 
 		conns = append(conns, conn)
-		if endpointPool.Size <= endpointPool.Capacity {
+		if endpointPool.Size < endpointPool.Capacity {
 			endpointPool.add(networkEndpoint)
 			networkEndpoints = append(networkEndpoints, networkEndpoint)
 			log.Infof("endpointPool.Size= %d endpointPool.Capacity= %d", endpointPool.Size, endpointPool.Capacity)
