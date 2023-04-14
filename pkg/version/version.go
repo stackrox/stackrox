@@ -183,12 +183,3 @@ func deriveChartVersion(mainVersion string) (string, error) {
 	chartVersion := fmt.Sprintf("%d.%d.%d%s", chartMajor, chartMinor, chartPatch, chartSuffix)
 	return chartVersion, nil
 }
-
-// GetMajorMinor returns first two parts of the provided version.
-func GetMajorMinor(version string) string {
-	components := strings.SplitN(version, ".", 3)
-	if len(components) >= 2 {
-		return fmt.Sprintf("%s.%s", components[0], components[1])
-	}
-	return version
-}
