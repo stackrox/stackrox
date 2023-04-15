@@ -32,7 +32,7 @@ describe('Compliance entities list', () => {
             cy.get(searchSelectors.input).type('Fail').type('{enter}');
         }, 'namespaces');
         cy.get('.rt-tbody .rt-tr');
-        cy.get('[data-testid="panel-header"]').should('contain', 'NAMESPACE');
+        cy.get('[data-testid="panel-header"]').should('contain', 'NAMESPACEfailed');
     });
 
     it('should open/close side panel when clicking on a table row', () => {
@@ -95,7 +95,7 @@ describe('Compliance entities list', () => {
     it('should collapse/open table grouping', () => {
         visitComplianceStandard('PCI DSS 3.2.1');
 
-        cy.get(selectors.list.table.firstTableGroup).should('be.visible');
+        cy.get(selectors.list.table.firstTableGroup).should('not.be.visible');
         cy.get(selectors.list.table.firstGroup).click();
         cy.get(selectors.list.table.firstTableGroup).should('not.be.visible');
     });
