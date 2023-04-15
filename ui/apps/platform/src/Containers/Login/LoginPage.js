@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { ClipLoader } from 'react-spinners';
-import { reduxForm, formValueSelector, propTypes as reduxFormPropTypes } from 'redux-form';
+import { formValueSelector, propTypes as reduxFormPropTypes, reduxForm } from 'redux-form';
 import { Alert, Button, Title, TitleSizes } from '@patternfly/react-core';
 
 import { AUTH_STATUS } from 'reducers/auth';
@@ -22,6 +22,7 @@ import ServerStatusBanner from '../MainPage/Banners/ServerStatusBanner';
 import LoginNotice from './LoginNotice';
 
 import { loginWithBasicAuth } from '../../services/AuthService';
+import { parseFragment } from '../../utils/getFragment';
 
 const unknownErrorResponse = {
     error: 'Unknown error',
@@ -48,10 +49,15 @@ class LoginPage extends Component {
             username: PropTypes.string,
             password: PropTypes.string,
         }).isRequired,
+        authorizeRoxctlMode: PropTypes.bool,
         ...reduxFormPropTypes,
     };
 
     static contextType = ThemeContext;
+
+    static defaultProps = {
+        authorizeRoxctlMode: false,
+    };
 
     constructor(props) {
         super(props);
@@ -70,6 +76,31 @@ class LoginPage extends Component {
     login = (formValues) => {
         const authProvider = this.getSelectedAuthProvider(formValues);
         if (!authProvider) {
+            return;
+        }
+        const { authorizeRoxctlMode } = this.props;
+        if (authorizeRoxctlMode) {
+            if (authProvider.type === 'basic') {
+                this.setState({
+                    authProviderResponse: {
+                        error: 'Cannot use username / password login to authorize roxctl',
+                    },
+                });
+                return;
+            }
+            const { authorizeCallback } = parseFragment(window.location);
+            if (!authorizeCallback) {
+                this.setState({
+                    authProviderResponse: {
+                        error: 'No authorize callback specified. Make sure you reach this page via the roxctl login command',
+                    },
+                });
+                return;
+            }
+            this.setState({ loggingIn: true });
+            window.location.assign(
+                `${authProvider.loginUrl}?authorizeCallback=${authorizeCallback}`
+            );
             return;
         }
         if (authProvider.type === 'basic') {
@@ -126,20 +157,28 @@ class LoginPage extends Component {
     };
 
     renderFields = () => {
-        const { authStatus, authProviders } = this.props;
+        const { authStatus, authorizeRoxctlMode } = this.props;
+        let { authProviders } = this.props;
         if (
-            authStatus === AUTH_STATUS.LOADING ||
-            authStatus === AUTH_STATUS.LOGGED_IN ||
-            authStatus === AUTH_STATUS.ANONYMOUS_ACCESS
+            !authorizeRoxctlMode &&
+            (authStatus === AUTH_STATUS.LOADING ||
+                authStatus === AUTH_STATUS.LOGGED_IN ||
+                authStatus === AUTH_STATUS.ANONYMOUS_ACCESS)
         ) {
             return null;
+        }
+
+        let title = 'Log in to your account';
+        if (authorizeRoxctlMode) {
+            authProviders = authProviders.filter((provider) => provider.type !== 'basic');
+            title = 'Authorize roxctl';
         }
 
         const options = authProvidersToSelectOptions(authProviders);
         return (
             <div>
                 <Title headingLevel="h2" size={TitleSizes['3xl']} className="pb-12">
-                    Log in to your account
+                    {title}
                 </Title>
                 <Labeled label="Select an auth provider">
                     <ReduxSelectField
@@ -162,7 +201,7 @@ class LoginPage extends Component {
     };
 
     renderLoginButton = () => {
-        const { authStatus } = this.props;
+        const { authStatus, authorizeRoxctlMode } = this.props;
         if (authStatus === AUTH_STATUS.LOADING) {
             return (
                 <div className="p-6 w-full text-center">
@@ -175,7 +214,10 @@ class LoginPage extends Component {
                 </div>
             );
         }
-        if (authStatus === AUTH_STATUS.LOGGED_IN || authStatus === AUTH_STATUS.ANONYMOUS_ACCESS) {
+        if (
+            !authorizeRoxctlMode &&
+            (authStatus === AUTH_STATUS.LOGGED_IN || authStatus === AUTH_STATUS.ANONYMOUS_ACCESS)
+        ) {
             return (
                 <div className="p-8 w-full text-center">
                     <Link
@@ -202,7 +244,7 @@ class LoginPage extends Component {
                 isBlock
                 onClick={this.props.handleSubmit(this.login)}
             >
-                Log in
+                {authorizeRoxctlMode ? 'Authorize' : 'Log in'}
             </Button>
         );
     };
@@ -251,14 +293,19 @@ const Form = reduxForm({
 // which are based on the Redux state. Yet because initialValues matter only when
 // component is mounted, we cannot mount a component until we have everything to populate
 // initial values (in this case the list of auth providers)
-const LoadingOrForm = ({ authProviders }) => {
+const LoadingOrForm = ({ authProviders, authorizeRoxctlMode = false }) => {
     if (!authProviders.length) {
         return <LoadingSection message="Loading..." />;
     }
 
-    const options = authProvidersToSelectOptions(authProviders);
+    let availableAuthProviders = authProviders;
+    if (authorizeRoxctlMode) {
+        availableAuthProviders = authProviders.filter((provider) => provider.type !== 'basic');
+    }
+
+    const options = authProvidersToSelectOptions(availableAuthProviders);
     const initialValues = { authProvider: options[0].value };
-    return <Form initialValues={initialValues} />;
+    return <Form initialValues={initialValues} authorizeRoxctlMode={authorizeRoxctlMode} />;
 };
 
 // yep, it's connect again, because we need to initialize form values from the state

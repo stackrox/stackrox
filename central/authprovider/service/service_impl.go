@@ -314,22 +314,22 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 		return nil, err
 	}
 
-	clientState, testMode := idputil.ParseClientState(clientState)
+	clientState, mode := idputil.ParseClientState(clientState)
 	response := &v1.ExchangeTokenResponse{
 		ClientState: clientState,
-		Test:        testMode,
+		Test:        mode == idputil.TestAuthMode,
 	}
 
 	userMetadata, err := authproviders.CreateRoleBasedIdentity(sac.WithAllAccess(ctx), provider, authResponse)
 	if err != nil {
-		if testMode {
+		if mode == idputil.TestAuthMode {
 			return nil, errors.Wrap(err, "cannot create role based identity")
 		}
 		log.Warnf("Error creating role based identity: %v", err)
 	}
 	userPkg.LogSuccessfulUserLogin(log, userMetadata)
 
-	if testMode {
+	if mode == idputil.TestAuthMode {
 		response.User = userMetadata
 		return response, nil
 	}

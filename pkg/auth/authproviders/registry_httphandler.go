@@ -32,6 +32,14 @@ const (
 	logoutPath       = "logout"
 )
 
+// Query parameters for roxctl authorization.
+const (
+	TokenQueryParameter             = "token"
+	RefreshTokenQueryParameter      = "refreshToken"
+	ExpiresAtQueryParameter         = "expiresAt"
+	AuthorizeCallbackQueryParameter = "authorizeCallback"
+)
+
 func (r *registryImpl) URLPathPrefix() string {
 	return r.urlPathPrefix
 }
@@ -127,7 +135,22 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 	providerID := req.URL.Path[len(prefix):]
 	clientState := req.URL.Query().Get("clientState")
 	testMode, _ := strconv.ParseBool(req.URL.Query().Get("test"))
-	clientState = idputil.AttachTestStateOrEmpty(clientState, testMode)
+	authorizeRoxctlCallbackURL := req.URL.Query().Get(AuthorizeCallbackQueryParameter)
+	if authorizeRoxctlCallbackURL != "" {
+		if testMode {
+			http.Error(w, "Cannot use test mode in conjunction with roxctl authorization", http.StatusBadRequest)
+			return
+		}
+		state, err := idputil.AttachAuthorizeState(authorizeRoxctlCallbackURL)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Attaching state for roxctl authorization: %v", err), http.StatusBadRequest)
+			return
+		}
+		clientState = state
+		log.Infof("Client state for auth provider %q in roxctl authorize: %s", providerID, clientState)
+	} else {
+		clientState = idputil.AttachTestStateOrEmpty(clientState, testMode)
+	}
 
 	provider := r.getAuthProvider(providerID)
 	if provider == nil {
@@ -158,7 +181,8 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 	w.WriteHeader(http.StatusSeeOther)
 }
 
-type tokenRefreshResponse struct {
+// TokenRefreshResponse holds the HTTP response from the token refresh endpoint.
+type TokenRefreshResponse struct {
 	Token  string    `json:"token,omitempty"`
 	Expiry time.Time `json:"expiry,omitempty"`
 }
@@ -202,7 +226,7 @@ func (r *registryImpl) tokenRefreshEndpoint(req *http.Request) (interface{}, err
 		httputil.SetCookie(httputil.ResponseHeaderFromContext(req.Context()), newRefreshCookie)
 	}
 
-	return &tokenRefreshResponse{
+	return &TokenRefreshResponse{
 		Token:  token.Token,
 		Expiry: token.Expiry(),
 	}, nil
@@ -233,7 +257,9 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	}
 
 	providerID, clientState, err := factory.ProcessHTTPRequest(w, req)
-	clientState, testMode := idputil.ParseClientState(clientState)
+	log.Infof("In providers HTTP handler for provider %q", providerID)
+	clientState, mode := idputil.ParseClientState(clientState)
+	log.Infof("Client state for auth provider %q: %s", providerID, clientState)
 
 	var provider Provider
 	if err == nil {
@@ -245,13 +271,13 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 		}
 	}
 	if err != nil {
-		r.error(w, err, typ, "", testMode)
+		r.error(w, err, typ, "", mode == idputil.TestAuthMode)
 		return
 	}
 
 	backend, err := provider.GetOrCreateBackend(req.Context())
 	if err != nil {
-		r.error(w, err, typ, "", testMode)
+		r.error(w, err, typ, "", mode == idputil.TestAuthMode)
 		return
 	}
 
@@ -259,18 +285,18 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	if err != nil {
 		log.Errorf(fmt.Sprintf("error processing HTTP request for provider %s of type %s: %v",
 			provider.Name(), provider.Type(), err))
-		r.error(w, err, typ, clientState, testMode)
+		r.error(w, err, typ, clientState, mode == idputil.TestAuthMode)
 		return
 	}
 
 	if authResp == nil || authResp.Claims == nil {
-		r.error(w, errox.NoCredentials.CausedBy("authentication response is empty"), typ, clientState, testMode)
+		r.error(w, errox.NoCredentials.CausedBy("authentication response is empty"), typ, clientState, mode == idputil.TestAuthMode)
 		return
 	}
 
 	if provider.AttributeVerifier() != nil {
 		if err := provider.AttributeVerifier().Verify(authResp.Claims.Attributes); err != nil {
-			r.error(w, errox.NoCredentials.CausedBy(err), typ, clientState, testMode)
+			r.error(w, errox.NoCredentials.CausedBy(err), typ, clientState, mode == idputil.TestAuthMode)
 			return
 		}
 	}
@@ -278,12 +304,12 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	// We need all access for retrieving roles.
 	user, err := CreateRoleBasedIdentity(sac.WithAllAccess(req.Context()), provider, authResp)
 	if err != nil {
-		r.error(w, errors.Wrap(err, "cannot create role based identity"), typ, clientState, testMode)
+		r.error(w, errors.Wrap(err, "cannot create role based identity"), typ, clientState, mode == idputil.TestAuthMode)
 		return
 	}
 
-	if testMode {
-		w.Header().Set("Location", r.userMetadataURL(user, typ, clientState, testMode).String())
+	if mode == idputil.TestAuthMode {
+		w.Header().Set("Location", r.userMetadataURL(user, typ, clientState, mode == idputil.TestAuthMode).String())
 		w.WriteHeader(http.StatusSeeOther)
 		return
 	}
@@ -291,13 +317,13 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	userInfo := user.GetUserInfo()
 	if userInfo == nil {
 		err := errox.NotAuthorized.CausedBy("failed to get user info")
-		r.error(w, err, typ, clientState, testMode)
+		r.error(w, err, typ, clientState, mode == idputil.TestAuthMode)
 		return
 	}
 
 	userRoles := userInfo.GetRoles()
 	if len(userRoles) == 0 {
-		r.error(w, auth.ErrNoValidRole, typ, clientState, testMode)
+		r.error(w, auth.ErrNoValidRole, typ, clientState, mode == idputil.TestAuthMode)
 		return
 	}
 
@@ -305,7 +331,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	var refreshCookie *http.Cookie
 	tokenInfo, refreshCookie, err = r.issueTokenForResponse(req.Context(), provider, authResp)
 	if err != nil {
-		r.error(w, err, typ, clientState, testMode)
+		r.error(w, err, typ, clientState, mode == idputil.TestAuthMode)
 		return
 	}
 
@@ -313,6 +339,31 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 
 	if tokenInfo == nil {
 		// Assume the ProcessHTTPRequest already took care of writing a response.
+		return
+	}
+
+	if mode == idputil.AuthorizeRoxctlMode {
+		callbackURL, err := url.Parse(clientState)
+		if err != nil {
+			r.error(w, errox.InvalidArgs.New("invalid callback URL for roxctl authorization"), typ,
+				clientState, false)
+			return
+		}
+		if callbackURL.Hostname() != "localhost" && callbackURL.Hostname() != "127.0.0.1" {
+			r.error(w, errox.InvalidArgs.New("roxctl authorization has to specify localhost / "+
+				"127.0.0.1 as callback URL"), typ, clientState, false)
+		}
+		qp := callbackURL.Query()
+		qp.Set(TokenQueryParameter, tokenInfo.Token)
+		qp.Set(ExpiresAtQueryParameter, tokenInfo.Expiry().Format(time.RFC3339))
+		cookieData := &refreshTokenCookieData{}
+		if err := cookieData.Decode(refreshCookie.Value); err != nil && cookieData.RefreshToken != "" {
+			qp.Set(RefreshTokenQueryParameter, cookieData.RefreshToken)
+		}
+
+		callbackURL.RawQuery = qp.Encode()
+		w.Header().Set("Location", callbackURL.String())
+		w.WriteHeader(http.StatusSeeOther)
 		return
 	}
 
