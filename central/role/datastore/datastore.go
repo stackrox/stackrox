@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	groupDS "github.com/stackrox/rox/central/group/datastore"
 	rocksDBStore "github.com/stackrox/rox/central/role/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -45,11 +44,12 @@ type DataStore interface {
 
 // New returns a new DataStore instance.
 func New(roleStorage rocksDBStore.RoleStore, permissionSetStore rocksDBStore.PermissionSetStore,
-	accessScopeStore rocksDBStore.SimpleAccessScopeStore, groupStore groupDS.DataStore) DataStore {
+	accessScopeStore rocksDBStore.SimpleAccessScopeStore,
+	groupGetFilteredFunc func(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error)) DataStore {
 	return &dataStoreImpl{
 		roleStorage:          roleStorage,
 		permissionSetStorage: permissionSetStore,
 		accessScopeStorage:   accessScopeStore,
-		groupStorage:         groupStore,
+		groupGetFilteredFunc: groupGetFilteredFunc,
 	}
 }

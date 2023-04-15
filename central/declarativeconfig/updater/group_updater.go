@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/declarativeconfig/utils"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/set"
@@ -45,7 +46,7 @@ func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ..
 	groupsToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	groups, err := u.groupDS.GetFiltered(ctx, func(group *storage.Group) bool {
-		return group.GetProps().GetTraits().GetOrigin() == storage.Traits_DECLARATIVE &&
+		return declarativeconfig.IsDeclarativeOrigin(group.GetProps()) &&
 			!groupsToSkip.Contains(group.GetProps().GetId())
 	})
 	if err != nil {

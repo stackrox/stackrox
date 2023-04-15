@@ -48,6 +48,16 @@ class RoleService extends BaseService {
         role
     }
 
+    static Role createRole(Role role) {
+        getRoleService().createRole(RoleServiceOuterClass.CreateRoleRequest
+                .newBuilder()
+                .setName(role.name)
+                .setRole(role)
+                .build()
+        )
+        role
+    }
+
     static deleteRole(String name) {
         try {
             def role = getRole(name)

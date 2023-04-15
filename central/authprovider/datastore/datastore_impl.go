@@ -32,6 +32,14 @@ func (b *datastoreImpl) GetAllAuthProviders(ctx context.Context) ([]*storage.Aut
 	return b.storage.GetAll(ctx)
 }
 
+func (b *datastoreImpl) GetAuthProvider(ctx context.Context, id string) (*storage.AuthProvider, bool, error) {
+	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
+		return nil, false, err
+	}
+
+	return b.storage.Get(ctx, id)
+}
+
 func (b *datastoreImpl) GetAuthProvidersFiltered(ctx context.Context,
 	filter func(provider *storage.AuthProvider) bool) ([]*storage.AuthProvider, error) {
 	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {

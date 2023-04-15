@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/declarativeconfig/utils"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/set"
@@ -45,7 +46,7 @@ func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsT
 	permissionSetsToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	permissionSets, err := u.roleDS.GetPermissionSetsFiltered(ctx, func(permissionSet *storage.PermissionSet) bool {
-		return permissionSet.GetTraits().GetOrigin() == storage.Traits_DECLARATIVE &&
+		return declarativeconfig.IsDeclarativeOrigin(permissionSet) &&
 			!permissionSetsToSkip.Contains(permissionSet.GetId())
 	})
 	if err != nil {
@@ -60,6 +61,12 @@ func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsT
 			permissionSetIDs = append(permissionSetIDs, permissionSet.GetId())
 			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(permissionSet, "", err,
 				u.idExtractor, u.nameExtractor))
+			if errors.Is(err, errox.ReferencedByAnotherObject) {
+				permissionSet.Traits.Origin = storage.Traits_DECLARATIVE_ORPHANED
+				if err = u.roleDS.UpsertPermissionSet(ctx, permissionSet); err != nil {
+					permissionSetDeletionErr = multierror.Append(permissionSetDeletionErr, errors.Wrap(err, "setting origin to orphaned"))
+				}
+			}
 		}
 	}
 	return permissionSetIDs, permissionSetDeletionErr.ErrorOrNil()

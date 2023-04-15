@@ -8,14 +8,18 @@ import (
 	"github.com/pkg/errors"
 	authProviderDatastore "github.com/stackrox/rox/central/authprovider/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
-	"github.com/stackrox/rox/central/declarativeconfig/utils"
+	declarativeCfgUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 type authProviderUpdater struct {
@@ -30,7 +34,11 @@ type authProviderUpdater struct {
 var _ ResourceUpdater = (*authProviderUpdater)(nil)
 
 var (
-	log = logging.LoggerForModule()
+	log                       = logging.LoggerForModule()
+	deleteImperativeGroupsCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Access)))
 )
 
 func newAuthProviderUpdater(authProvidersDS authproviders.Store, registry authproviders.Registry,
@@ -65,7 +73,7 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 	authProviderIDsToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	authProviders, err := u.authProviderDS.GetAuthProvidersFiltered(ctx, func(authProvider *storage.AuthProvider) bool {
-		return authProvider.GetTraits().GetOrigin() == storage.Traits_DECLARATIVE &&
+		return declarativeconfig.IsDeclarativeOrigin(authProvider) &&
 			!authProviderIDsToSkip.Contains(authProvider.GetId())
 	})
 	if err != nil {
@@ -73,20 +81,40 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 	}
 
 	var authProviderDeletionErr *multierror.Error
-	var authProviderIDs []string
+	authProviderIDs := set.NewStringSet()
 	for _, authProvider := range authProviders {
-		if err := u.authProviderRegistry.DeleteProvider(ctx, authProvider.GetId(), true, true); err != nil {
-			authProviderDeletionErr = multierror.Append(authProviderDeletionErr, err)
-			authProviderIDs = append(authProviderIDs, authProvider.GetId())
-
-			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(authProvider, "", err,
-				u.idExtractor, u.nameExtractor))
+		referencingGroups, err := u.groupDS.GetFiltered(ctx, func(group *storage.Group) bool {
+			return group.GetProps().GetAuthProviderId() == authProvider.GetId()
+		})
+		if err != nil {
+			authProviderDeletionErr, authProviderIDs = u.processDeletionError(authProviderDeletionErr, err, authProviderIDs, authProvider)
 			continue
 		}
-		// TODO(ROX-14700): This currently also deletes imperative groups and should resolve these references instead.
-		if err := u.groupDS.RemoveAllWithAuthProviderID(ctx, authProvider.GetId(), true); err != nil {
-			log.Errorf("Error deleting groups for auth provider id %s: %v", authProvider.GetId(), err)
+		var hasErrorDeletingGroups bool
+		for _, group := range referencingGroups {
+			ctxToUse := utils.IfThenElse(declarativeconfig.IsDeclarativeOrigin(group.GetProps()), ctx, deleteImperativeGroupsCtx)
+			if err = u.groupDS.Remove(ctxToUse, group.GetProps(), true); err != nil {
+				authProviderDeletionErr, authProviderIDs = u.processDeletionError(authProviderDeletionErr, err, authProviderIDs, authProvider)
+				hasErrorDeletingGroups = true
+			}
+		}
+		// Since group is valid only if it references existing auth provider, we can't delete auth provider
+		// until all referencing groups are successfully deleted.
+		if hasErrorDeletingGroups {
+			continue
+		}
+		if err := u.authProviderRegistry.DeleteProvider(ctx, authProvider.GetId(), true, true); err != nil {
+			authProviderDeletionErr, authProviderIDs = u.processDeletionError(authProviderDeletionErr, err, authProviderIDs, authProvider)
 		}
 	}
-	return authProviderIDs, authProviderDeletionErr.ErrorOrNil()
+	return authProviderIDs.AsSlice(), authProviderDeletionErr.ErrorOrNil()
+}
+
+func (u *authProviderUpdater) processDeletionError(authProviderDeletionErr *multierror.Error, err error, authProviderIDs set.Set[string], authProvider *storage.AuthProvider) (*multierror.Error, set.Set[string]) {
+	authProviderDeletionErr = multierror.Append(authProviderDeletionErr, err)
+	authProviderIDs.Add(authProvider.GetId())
+
+	u.reporter.UpdateIntegrationHealthAsync(declarativeCfgUtils.IntegrationHealthForProtoMessage(authProvider, "", err,
+		u.idExtractor, u.nameExtractor))
+	return authProviderDeletionErr, authProviderIDs
 }

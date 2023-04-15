@@ -407,9 +407,8 @@ oidc:
             assert response.integrationHealthCount == CREATED_RESOURCES + 1
 
             for (integrationHealth in response.getIntegrationHealthList()) {
-                // Groups / config map health will be healthy and do not indicate an error.
-                if (integrationHealth.getName().contains("Config Map") ||
-                        integrationHealth.getName().contains("group") ) {
+                // Config map health will be healthy and do not indicate an error.
+                if (integrationHealth.getName().contains("Config Map")) {
                     assert integrationHealth
                     assert integrationHealth.hasLastTimestamp()
                     assert integrationHealth.getErrorMessage() == ""
