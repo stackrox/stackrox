@@ -151,6 +151,28 @@ func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.Proce
 	return proto
 }
 
+func (h *hostConnections) getLocalEndpointMapFromConnections() map[containerEndpoint]bool {
+    h.mutex.Lock()
+    defer h.mutex.Unlock()
+
+    localEndpoints := make(map[containerEndpoint]bool)
+
+    for conn := range h.connections {
+        endpoint := net.NumericEndpoint{
+		IPAndPort:	conn.local,
+		L4Proto:	conn.remote.L4Proto,
+	}
+        containerID := conn.containerID
+        localEndpoint := containerEndpoint{
+            endpoint:    endpoint,
+            containerID: containerID,
+        }
+        localEndpoints[localEndpoint] = true
+    }
+
+    return localEndpoints
+}
+
 // connection is an instance of a connection as reported by collector
 type connection struct {
 	local       net.NetworkPeerID
@@ -525,14 +547,22 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnect
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
 
+	localEndpointsFromConnections := hostConns.getLocalEndpointMapFromConnections()
+
 	prevSize := len(hostConns.endpoints)
 	for ep, status := range hostConns.endpoints {
-		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
-		// If processes listening on ports is enabled, it has to be used there as well before being deleted.
-		used := status.used && (status.usedProcess || !env.ProcessesListeningOnPort.BooleanSetting())
-		if status.rotten || (used && status.lastSeen != timestamp.InfiniteFuture) {
-			// endpoints that are no longer active and have already been used can be deleted.
-			delete(hostConns.endpoints, ep)
+		endpointNoProcess := containerEndpoint{
+			endpoint:	ep.endpoint,
+			containerID:	ep.containerID,
+		}
+		if _, ok := localEndpointsFromConnections[endpointNoProcess]; !ok {
+			m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
+			// If processes listening on ports is enabled, it has to be used there as well before being deleted.
+			used := status.used && (status.usedProcess || !env.ProcessesListeningOnPort.BooleanSetting())
+			if status.rotten || (used && status.lastSeen != timestamp.InfiniteFuture) {
+				// endpoints that are no longer active and have already been used can be deleted.
+				delete(hostConns.endpoints, ep)
+			}
 		}
 	}
 	flowMetrics.HostEndpointsRemoved.Add(float64(prevSize - len(hostConns.endpoints)))
