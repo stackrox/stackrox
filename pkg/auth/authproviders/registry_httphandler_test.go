@@ -385,6 +385,11 @@ var mockAuthProvider = &storage.AuthProvider{
 	Active:           true,
 }
 
+var mockedAuthProviders = []*storage.AuthProvider{
+	mockAuthProvider,
+	mockAuthProviderWithAttributes,
+}
+
 func generateAuthResponse(user string, userAttr map[string][]string) *AuthResponse {
 	return &AuthResponse{
 		Claims: &tokens.ExternalUserClaim{
@@ -399,8 +404,17 @@ func generateAuthResponse(user string, userAttr map[string][]string) *AuthRespon
 
 var _ Store = (*tstAuthProviderStore)(nil)
 
-// Authprovider store (needed for NewStoreBackedRegistry)
+// AuthProvider store (needed for NewStoreBackedRegistry)
 type tstAuthProviderStore struct{}
+
+func (s *tstAuthProviderStore) GetAuthProvider(_ context.Context, id string) (*storage.AuthProvider, bool, error) {
+	for _, ap := range mockedAuthProviders {
+		if ap.GetId() == id {
+			return ap, true, nil
+		}
+	}
+	return nil, false, nil
+}
 
 func (*tstAuthProviderStore) GetAllAuthProviders(_ context.Context) ([]*storage.AuthProvider, error) {
 	return []*storage.AuthProvider{mockAuthProvider, mockAuthProviderWithAttributes}, nil

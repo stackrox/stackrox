@@ -6,8 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	groupMock "github.com/stackrox/rox/central/group/datastore/mocks"
 	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/store"
@@ -82,13 +80,16 @@ type roleDataStoreTestSuite struct {
 	boltDB    *bolt.DB
 	rocksie   *rocksdb.RocksDB
 
-	groupsDataStore *groupMock.MockDataStore
-
 	postgresTest *pgtest.TestPostgres
 
-	existingRole          *storage.Role
-	existingPermissionSet *storage.PermissionSet
-	existingScope         *storage.SimpleAccessScope
+	existingRole                     *storage.Role
+	existingPermissionSet            *storage.PermissionSet
+	existingScope                    *storage.SimpleAccessScope
+	existingDeclarativePermissionSet *storage.PermissionSet
+	existingDeclarativeScope         *storage.SimpleAccessScope
+
+	filteredFuncReturnValue []*storage.Group
+	filteredFuncReturnError error
 }
 
 func (s *roleDataStoreTestSuite) SetupTest() {
@@ -106,6 +107,10 @@ func (s *roleDataStoreTestSuite) SetupTest() {
 	s.hasWriteDeclarativeCtx = declarativeconfig.WithModifyDeclarativeResource(s.hasWriteCtx)
 
 	s.initDataStore()
+}
+
+func (s *roleDataStoreTestSuite) mockGroupGetFiltered(_ context.Context, _ func(*storage.Group) bool) ([]*storage.Group, error) {
+	return s.filteredFuncReturnValue, s.filteredFuncReturnError
 }
 
 func (s *roleDataStoreTestSuite) initDataStore() {
@@ -132,8 +137,7 @@ func (s *roleDataStoreTestSuite) initDataStore() {
 		s.Require().NoError(err)
 	}
 
-	s.groupsDataStore = groupMock.NewMockDataStore(gomock.NewController(s.T()))
-	s.dataStore = New(roleStorage, permissionSetStorage, accessScopeStorage, s.groupsDataStore)
+	s.dataStore = New(roleStorage, permissionSetStorage, accessScopeStorage, s.mockGroupGetFiltered)
 
 	// Insert a permission set, access scope, and role into the test DB.
 	s.existingPermissionSet = getValidPermissionSet("permissionset.existing", "existing permissionset")
@@ -142,6 +146,19 @@ func (s *roleDataStoreTestSuite) initDataStore() {
 	s.Require().NoError(accessScopeStorage.Upsert(s.hasWriteCtx, s.existingScope))
 	s.existingRole = getValidRole("existing role", s.existingPermissionSet.GetId(), s.existingScope.GetId())
 	s.Require().NoError(roleStorage.Upsert(s.hasWriteCtx, s.existingRole))
+
+	// Insert declarative permission set and access scope to reference by declarative roles.
+	s.existingDeclarativePermissionSet = getValidPermissionSet("permissionset.existing.declarative", "existing declarative permissionset")
+	s.existingDeclarativePermissionSet.Traits = &storage.Traits{
+		Origin: storage.Traits_DECLARATIVE,
+	}
+	s.Require().NoError(permissionSetStorage.Upsert(s.hasWriteDeclarativeCtx, s.existingDeclarativePermissionSet))
+	s.existingDeclarativeScope = getValidAccessScope("scope.existing.declarative", "existing declarative scope")
+	s.existingDeclarativeScope.Traits = &storage.Traits{
+		Origin: storage.Traits_DECLARATIVE,
+	}
+	s.Require().NoError(accessScopeStorage.Upsert(s.hasWriteDeclarativeCtx, s.existingDeclarativeScope))
+
 }
 
 func (s *roleDataStoreTestSuite) TearDownTest() {
@@ -256,7 +273,7 @@ func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 	badRole := &storage.Role{Name: "invalid role"}
 	cloneRole := getValidRole(s.existingRole.GetName(), s.existingPermissionSet.GetId(), s.existingScope.GetId())
 	updatedAdminRole := getValidRole(role.Admin, s.existingPermissionSet.GetId(), s.existingScope.GetId())
-	declarativeRole := getValidRole("declarative role", s.existingPermissionSet.GetId(), s.existingScope.GetId())
+	declarativeRole := getValidRole("declarative role", s.existingDeclarativePermissionSet.GetId(), s.existingDeclarativeScope.GetId())
 	declarativeRole.Traits = &storage.Traits{
 		Origin: storage.Traits_DECLARATIVE,
 	}
@@ -264,7 +281,7 @@ func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 	badDeclarativeRole.Traits = &storage.Traits{
 		Origin: storage.Traits_DECLARATIVE,
 	}
-	s.groupsDataStore.EXPECT().GetFiltered(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	s.setupGetFilteredReturnValues([]*storage.Group{}, nil)
 
 	err := s.dataStore.AddPermissionSet(s.hasWriteCtx, secondExistingPermissionSet)
 	s.NoError(err, "failed to add second permission set needed for test")
@@ -369,6 +386,11 @@ func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 	s.ErrorIs(err, errox.InvalidArgs, "invalid scope for Upsert*() yields an error(declarative resource)")
 }
 
+func (s *roleDataStoreTestSuite) setupGetFilteredReturnValues(groups []*storage.Group, err error) {
+	s.filteredFuncReturnValue = groups
+	s.filteredFuncReturnError = err
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Permission sets                                                            //
 //                                                                            //
@@ -451,7 +473,7 @@ func (s *roleDataStoreTestSuite) TestPermissionSetReadOperations() {
 
 	permissionSets, err := s.dataStore.GetAllPermissionSets(s.hasReadCtx)
 	s.NoError(err)
-	s.Len(permissionSets, 1, "with READ access all objects are returned")
+	s.Len(permissionSets, 2, "with READ access all objects are returned")
 
 	permissionSets, err = s.dataStore.GetPermissionSetsFiltered(s.hasReadCtx, func(permissionSet *storage.PermissionSet) bool {
 		return permissionSet.GetId() == s.existingPermissionSet.GetId()
@@ -522,7 +544,7 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	s.NoError(err)
 
 	permissionSets, _ := s.dataStore.GetAllPermissionSets(s.hasReadCtx)
-	s.Len(permissionSets, 2, "added permission set should be visible in the subsequent Get*()")
+	s.Len(permissionSets, 3, "added permission set should be visible in the subsequent Get*()")
 
 	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, badPermissionSet)
 	s.ErrorIs(err, errox.InvalidArgs, "invalid permission set for Update*() yields an error")
@@ -550,7 +572,7 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	s.NoError(err)
 
 	permissionSets, _ = s.dataStore.GetAllPermissionSets(s.hasReadCtx)
-	s.Len(permissionSets, 1, "removed permission set should be absent in the subsequent Get*()")
+	s.Len(permissionSets, 2, "removed permission set should be absent in the subsequent Get*()")
 
 	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, goodPermissionSet)
 	s.NoError(err, "adding a permission set with ID and name that used to exist is not an error")
@@ -579,7 +601,7 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	err = s.dataStore.RemovePermissionSet(s.hasWriteDeclarativeCtx, declarativePermissionSet.GetId())
 	s.NoError(err, "attempting to delete declaratively declarative permission set is not an error")
 
-	s.Len(permissionSets, 1, "removed permission set should be absent in the subsequent Get*()")
+	s.Len(permissionSets, 2, "removed permission set should be absent in the subsequent Get*()")
 
 	err = s.dataStore.UpsertPermissionSet(s.hasWriteCtx, declarativePermissionSet)
 	s.ErrorIs(err, errox.NotAuthorized, "upserting imperatively declarative role is an error")
@@ -698,7 +720,7 @@ func (s *roleDataStoreTestSuite) TestAccessScopeReadOperations() {
 
 	scopes, err := s.dataStore.GetAllAccessScopes(s.hasReadCtx)
 	s.NoError(err)
-	s.Len(scopes, 1, "with READ access all objects are returned")
+	s.Len(scopes, 2, "with READ access all objects are returned")
 
 	scopes, err = s.dataStore.GetAccessScopesFiltered(s.hasReadCtx, func(accessScope *storage.SimpleAccessScope) bool {
 		return accessScope.GetId() == s.existingScope.GetId()
@@ -771,7 +793,7 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	s.NoError(err)
 
 	scopes, _ := s.dataStore.GetAllAccessScopes(s.hasReadCtx)
-	s.Len(scopes, 2, "added scope should be visible in the subsequent Get*()")
+	s.Len(scopes, 3, "added scope should be visible in the subsequent Get*()")
 
 	err = s.dataStore.UpdateAccessScope(s.hasWriteCtx, badScope)
 	s.ErrorIs(err, errox.InvalidArgs, "invalid scope for Update*() yields an error")
@@ -797,7 +819,7 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	s.NoError(err)
 
 	scopes, _ = s.dataStore.GetAllAccessScopes(s.hasReadCtx)
-	s.Len(scopes, 1, "removed scope should be absent in the subsequent Get*()")
+	s.Len(scopes, 2, "removed scope should be absent in the subsequent Get*()")
 
 	err = s.dataStore.AddAccessScope(s.hasWriteCtx, goodScope)
 	s.NoError(err, "adding a scope with ID and name that used to exist is not an error")
@@ -884,13 +906,15 @@ func (s *roleDataStoreTestSuite) TestForeignKeyConstraints() {
 	err = s.dataStore.RemoveAccessScope(s.hasWriteCtx, scope.GetId())
 	s.ErrorIs(err, errox.ReferencedByAnotherObject, "cannot delete an Access Scope referred to by a Role")
 
-	s.groupsDataStore.EXPECT().GetFiltered(gomock.Any(), gomock.Any()).Return([]*storage.Group{{
-		RoleName: role.GetName(),
-	}}, nil)
+	s.setupGetFilteredReturnValues([]*storage.Group{
+		{
+			RoleName: role.GetName(),
+		},
+	}, nil)
 	err = s.dataStore.RemoveRole(s.hasWriteCtx, role.GetName())
 	s.ErrorIs(err, errox.ReferencedByAnotherObject)
 
-	s.groupsDataStore.EXPECT().GetFiltered(gomock.Any(), gomock.Any()).Return(nil, nil)
+	s.setupGetFilteredReturnValues([]*storage.Group{}, nil)
 	err = s.dataStore.RemoveRole(s.hasWriteCtx, role.GetName())
 	s.NoError(err)
 

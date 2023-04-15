@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/group/datastore/internal/store"
+	"github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 )
 
 // DataStore is the datastore for groups.
@@ -27,8 +29,10 @@ type DataStore interface {
 }
 
 // New returns a new DataStore instance.
-func New(storage store.Store) DataStore {
+func New(storage store.Store, roleDatastore datastore.DataStore, authProviderDatastore authproviders.Store) DataStore {
 	return &dataStoreImpl{
-		storage: storage,
+		storage:               storage,
+		roleDatastore:         roleDatastore,
+		authProviderDatastore: authProviderDatastore,
 	}
 }

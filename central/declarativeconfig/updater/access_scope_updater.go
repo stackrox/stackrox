@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/declarativeconfig/utils"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/set"
@@ -45,7 +46,7 @@ func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToS
 	resourcesToSkip := set.NewFrozenStringSet(resourceIDsToSkip...)
 
 	scopes, err := u.roleDS.GetAccessScopesFiltered(ctx, func(accessScope *storage.SimpleAccessScope) bool {
-		return accessScope.GetTraits().GetOrigin() == storage.Traits_DECLARATIVE &&
+		return declarativeconfig.IsDeclarativeOrigin(accessScope) &&
 			!resourcesToSkip.Contains(accessScope.GetId())
 	})
 	if err != nil {
@@ -60,6 +61,12 @@ func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToS
 			scopeIDs = append(scopeIDs, scope.GetId())
 			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(scope, "", err,
 				u.idExtractor, u.nameExtractor))
+			if errors.Is(err, errox.ReferencedByAnotherObject) {
+				scope.Traits.Origin = storage.Traits_DECLARATIVE_ORPHANED
+				if err = u.roleDS.UpsertAccessScope(ctx, scope); err != nil {
+					scopeDeletionErr = multierror.Append(scopeDeletionErr, errors.Wrap(err, "setting origin to orphaned"))
+				}
+			}
 		}
 	}
 	return scopeIDs, scopeDeletionErr.ErrorOrNil()

@@ -3,8 +3,7 @@ package datastore
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	groupMock "github.com/stackrox/rox/central/group/datastore/mocks"
+	groupFilter "github.com/stackrox/rox/central/group/datastore/filter"
 	permissionSetPostgresStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
 	permissionSetRocksDBStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
 	rolePostgresStore "github.com/stackrox/rox/central/role/store/role/postgres"
@@ -16,17 +15,16 @@ import (
 )
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool *postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool *postgres.DB) (DataStore, error) {
 	permissionStore := permissionSetPostgresStore.New(pool)
 	roleStore := rolePostgresStore.New(pool)
 	scopeStore := accessScopePostgresStore.New(pool)
-	groupsDataStore := groupMock.NewMockDataStore(gomock.NewController(t))
 
-	return New(roleStore, permissionStore, scopeStore, groupsDataStore), nil
+	return New(roleStore, permissionStore, scopeStore, groupFilter.GetFiltered), nil
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) (DataStore, error) {
+func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB) (DataStore, error) {
 	permissionStore, err := permissionSetRocksDBStore.New(rocksengine)
 	if err != nil {
 		return nil, err
@@ -39,7 +37,6 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) 
 	if err != nil {
 		return nil, err
 	}
-	groupsDataStore := groupMock.NewMockDataStore(gomock.NewController(t))
 
-	return New(roleStore, permissionStore, scopeStore, groupsDataStore), nil
+	return New(roleStore, permissionStore, scopeStore, groupFilter.GetFiltered), nil
 }

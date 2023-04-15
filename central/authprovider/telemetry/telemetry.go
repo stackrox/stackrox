@@ -1,9 +1,10 @@
-package datastore
+package telemetry
 
 import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/authprovider/datastore"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,7 +21,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 			sac.ResourceScopeKeys(resources.Access)))
 	props := make(map[string]any)
 
-	providers, err := Singleton().GetAllAuthProviders(ctx)
+	providers, err := datastore.Singleton().GetAllAuthProviders(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get AuthProviders")
 	}
