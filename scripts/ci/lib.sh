@@ -1237,7 +1237,7 @@ store_test_results() {
 send_slack_notice_for_failures_on_merge() {
     local exitstatus="${1:-}"
 
-    if ! is_OPENSHIFT_CI || [[ "$exitstatus" == "0" ]] || is_nightly_run; then
+    if ! is_OPENSHIFT_CI || is_nightly_run; then
         return 0
     fi
 
