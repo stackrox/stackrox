@@ -18,20 +18,7 @@ function NetworkGraphNavItems({ isFeatureFlagEnabled }: NetworkGraphNavItemsProp
     const networkGraphTitle = isNetworkGraphPFEnabled
         ? 'Network Graph (1.0 deprecated)'
         : 'Network Graph';
-    const networkGraphPFTitle = (
-        <Flex>
-            <FlexItem>Network Graph</FlexItem>
-            <FlexItem>
-                <Badge
-                    style={{
-                        backgroundColor: 'var(--pf-global--palette--cyan-400)',
-                    }}
-                >
-                    2.0
-                </Badge>
-            </FlexItem>
-        </Flex>
-    );
+    const networkGraphPFTitle = 'Network Graph (2.0)';
 
     return (
         <>
