@@ -26,6 +26,7 @@ import ComponentVulnerabilitiesTable, {
     componentVulnerabilitiesFragment,
     imageMetadataContextFragment,
 } from './ComponentVulnerabilitiesTable';
+import EmptyTableResults from '../components/EmptyTableResults';
 
 export type ImageForCve = {
     id: string;
@@ -123,6 +124,7 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                     <Th>First discovered</Th>
                 </Tr>
             </Thead>
+            {images.length === 0 && <EmptyTableResults colSpan={7} />}
             {images.map((image, rowIndex) => {
                 const { id, name, operatingSystem, scanTime, imageComponents } = image;
                 const topSeverity = getVulnerabilitySeverity(imageComponents);

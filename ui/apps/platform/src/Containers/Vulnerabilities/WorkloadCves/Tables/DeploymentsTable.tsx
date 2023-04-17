@@ -10,6 +10,7 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import { getEntityPagePath } from '../searchUtils';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
+import EmptyTableResults from '../components/EmptyTableResults';
 
 export const deploymentListQuery = gql`
     query getDeploymentList($query: String, $pagination: Pagination) {
@@ -71,6 +72,7 @@ function DeploymentsTable({ deployments, getSortParams, isFiltered }: Deployment
                     <Th>First discovered</Th>
                 </Tr>
             </Thead>
+            {deployments.length === 0 && <EmptyTableResults colSpan={6} />}
             {deployments.map(
                 ({
                     id,

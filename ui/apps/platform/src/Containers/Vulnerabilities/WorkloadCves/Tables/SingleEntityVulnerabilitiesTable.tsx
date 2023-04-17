@@ -10,6 +10,7 @@ import {
     Tr,
 } from '@patternfly/react-table';
 import { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
+import { gql } from '@apollo/client';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
@@ -18,7 +19,6 @@ import { vulnerabilitySeverityLabels } from 'messages/common';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { FixableIcon, NotFixableIcon } from 'Components/PatternFly/FixabilityIcons';
-import { gql } from '@apollo/client';
 import { getEntityPagePath } from '../searchUtils';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import ComponentVulnerabilitiesTable, {
@@ -26,6 +26,8 @@ import ComponentVulnerabilitiesTable, {
     ImageMetadataContext,
     componentVulnerabilitiesFragment,
 } from './ComponentVulnerabilitiesTable';
+
+import EmptyTableResults from '../components/EmptyTableResults';
 
 export const imageVulnerabilitiesFragment = gql`
     ${componentVulnerabilitiesFragment}
@@ -93,6 +95,7 @@ function SingleEntityVulnerabilitiesTable({
                     <Th>First discovered</Th>
                 </Tr>
             </Thead>
+            {image.imageVulnerabilities.length === 0 && <EmptyTableResults colSpan={7} />}
             {image.imageVulnerabilities.map(
                 (
                     {

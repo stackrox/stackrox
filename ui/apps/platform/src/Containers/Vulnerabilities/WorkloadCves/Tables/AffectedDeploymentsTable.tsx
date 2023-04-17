@@ -23,6 +23,7 @@ import ComponentVulnerabilitiesTable, {
     imageMetadataContextFragment,
 } from './ComponentVulnerabilitiesTable';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
+import EmptyTableResults from '../components/EmptyTableResults';
 
 export type DeploymentForCve = {
     id: string;
@@ -86,6 +87,7 @@ function AffectedDeploymentsTable({
                     <Th>First discovered</Th>
                 </Tr>
             </Thead>
+            {deployments.length === 0 && <EmptyTableResults colSpan={7} />}
             {deployments.map((deployment, rowIndex) => {
                 const { id, name, namespace, clusterName, imageCount, created, images } =
                     deployment;
