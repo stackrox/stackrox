@@ -55,6 +55,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The default resources for Sensor have moved to a request of 2 cores, 4GB of RAM and a limit of 4 cores, 8GB of RAM in order to
   support a higher number of clusters without modification.
 - ROX-14280: ACS operator default channel changes from `latest` to `stable`. Users of older versions must follow the upgrade procedure in order to preserve ACS data in case of issues with the upgrade.
+- ROX-14917: Helm charts versioning scheme changed. Previously the product version (Major).(Minor).(Patch) was rendered to the Helm chart version (Minor).(Patch).0, e.g. 3.74.2 -> 74.2.0. The new versioning scheme maps product version (Major).(Minor).(Patch) to the Helm chart version as (Major*100).(Minor).(Patch), e.g. 4.0.2 -> 400.0.2.
 
 ## [3.74.0]
 
