@@ -11,6 +11,8 @@ metadata:
       services necessary to secure each of your OpenShift and Kubernetes clusters.
     operatorframework.io/suggested-namespace: rhacs-operator
     operators.openshift.io/infrastructure-features: '["disconnected", "proxy-aware"]'
+    operators.openshift.io/valid-subscription: '["OpenShift Platform Plus", "Red Hat
+      Advanced Cluster Security"]'
     support: Red Hat
   name: rhacs-operator.v0.0.0
   namespace: placeholder
@@ -48,8 +50,9 @@ spec:
         displayName: Administrator Password
         path: central.adminPasswordSecret
       - description: Specify a secret that contains the password in the "password"
-          data item. If omitted, the operator will auto-generate a DB password and
-          store it in the "password" item in the "central-db-password" secret.
+          data item. This can only be used when specifying a connection string manually.
+          When omitted, the operator will auto-generate a DB password and store it
+          in the "password" item in the "central-db-password" secret.
         displayName: Administrator Password
         path: central.db.passwordSecret
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
@@ -122,11 +125,12 @@ spec:
           settings in this section will have no effect.
         displayName: Scanner Component
         path: scanner.scannerComponent
-      - description: Specify a connection string that corresponds to an existing database.
-          If set, the operator will not manage Central DB. When using this option,
-          you must explicitly set a password secret; automatically generating a password
-          will not be supported.
-        displayName: Connection String Override
+      - description: 'NOTE: Connecting to an external database is in Technology Preview.
+          Specify a connection string that corresponds to an external database. If
+          set, the operator will not manage Central DB. When using this option, you
+          must explicitly set a password secret; automatically generating a password
+          will not be supported.'
+        displayName: Connection String (Technology Preview)
         path: central.db.connectionString
       - description: The size of the persistent volume when created through the claim.
           If a claim was automatically created, this can be used after the initial
@@ -390,6 +394,15 @@ spec:
         path: central.adminPasswordSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Config map containing postgresql.conf and pg_hba.conf that will
+          be used if modifications need to be applied.
+        displayName: Config map that will override postgresql.conf and pg_hba.conf
+        path: central.db.configOverride
+      - description: The name of the referenced config map.
+        displayName: Name
+        path: central.db.configOverride.name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:ConfigMap
       - description: Deprecated field. It is no longer necessary to specify it. This
           field will be removed in a future release. Central is configured to use
           PostgreSQL by default.
@@ -491,10 +504,11 @@ spec:
           collecting process and networking activity at the host level.
         displayName: Collector Settings
         path: perNode.collector
-      - description: The method for system-level data collection. Kernel module is
-          recommended. If you select "NoCollection", you will not be able to see any
-          information about network activity and process executions. The remaining
-          settings in these section will not have any effect.
+      - description: The method for system-level data collection. EBPF is recommended.
+          KernelModule is deprecated and will be removed in the 4.1 release. If you
+          select "NoCollection", you will not be able to see any information about
+          network activity and process executions. The remaining settings in these
+          section will not have any effect.
         displayName: Collection
         path: perNode.collector.collection
       - description: Controls the number of analyzer replicas and autoscaling.
@@ -740,6 +754,16 @@ spec:
 
     ## Using the RHACS Operator
 
+    **RHACS Operator channels:**
+
+    Red Hat provides the RHACS Operator by using the following update channels in the Red Hat Operator catalog:
+
+    * `stable`: Provides the most recent version and patches to the most recent version.
+      Using the `stable` channel and configuring automatic operator upgrades ensures that the most recent RHACS version is deployed.
+    * `rhacs-x.yy` (for example, `rhacs-3.74`): Channels follow a specific RHACS version and include all patches to that version (e.g. `3.74.0`, `3.74.1`, ...).
+
+    Note that the `latest` channel is deprecated and is not updated after RHACS version 3.74. Newer versions are published to the `stable` channel.
+
     **RHACS comes with two custom resources:**
 
     1. **Central Services** - Central is a deployment required on only one cluster in your environment. Users interact with RHACS via the user interface or APIs on Central. Central also sends notifications for violations and interacts with integrations. Users may select exposures for Central that best meet their environment.
@@ -751,6 +775,7 @@ spec:
     | Service                          | Deployment Type | Description     |
     | :------------------------------- | :-------------- | :-------------- |
     | Central                          | Deployment      | Users interact with Red Hat Advanced Cluster Security through the user interface or APIs on Central. Central also sends notifications for violations and interacts with integrations. |
+    | Central DB                       | Deployment      | Central DB is a PostgreSQL-based persistent storage for the data collected and managed by Central. |
     | Scanner                          | Deployment      | Scanner is a Red Hat developed and certified image scanner. Scanner analyzes and reports vulnerabilities for images. Scanner uses HPA to scale the number of replicas based on workload. |
     | Scanner DB                       | Deployment      | Scanner DB is a cache for vulnerability definitions to serve vulnerability scanning use cases throughout the software development life cycle. |
 

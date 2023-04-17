@@ -322,6 +322,9 @@ describe('Access Control Auth providers', () => {
             [authProvidersAliasForPOST]: {
                 body: mockUserCertResponse,
             },
+            [groupsBatchAliasForPOST]: {
+                body: {},
+            },
         };
         saveCreatedAuthProvider(staticResponseMapForCreatedAuthProvider);
 

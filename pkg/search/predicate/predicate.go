@@ -200,11 +200,11 @@ func (tb Factory) base(q *v1.BaseQuery) (internalPredicate, error) {
 	}
 }
 
-func (tb Factory) docID(q *v1.DocIDQuery) (internalPredicate, error) {
+func (tb Factory) docID(_ *v1.DocIDQuery) (internalPredicate, error) {
 	return nil, errors.New("query predicates do not support DocID query types as DocIDs only exist in the index")
 }
 
-func (tb Factory) matchNone(q *v1.MatchNoneQuery) (internalPredicate, error) {
+func (tb Factory) matchNone(_ *v1.MatchNoneQuery) (internalPredicate, error) {
 	return alwaysFalse, nil
 }
 

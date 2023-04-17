@@ -11,11 +11,11 @@ class K8sRole {
 }
 
 class K8sPolicyRule {
-    def verbs
-    def apiGroups
-    def resources
-    def nonResourceUrls
-    def resourceNames
+    List<String> verbs
+    List<String> apiGroups
+    List<String> resources
+    List<String> nonResourceUrls
+    List<String> resourceNames
 }
 
 class K8sRoleBinding  {

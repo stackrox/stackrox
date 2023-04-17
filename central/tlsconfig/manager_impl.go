@@ -56,12 +56,12 @@ func newManager(namespace string) (*managerImpl, error) {
 		internalCerts:            internalCerts,
 	}
 
-	certwatch.WatchCertDir(DefaultCertPath, loadDefaultCertificate, mgr.UpdateDefaultCert)
+	certwatch.WatchCertDir(DefaultCertPath, MaybeGetDefaultTLSCertificateFromDirectory, mgr.UpdateDefaultTLSCertificate)
 
 	return mgr, nil
 }
 
-func (m *managerImpl) UpdateDefaultCert(defaultCert *tls.Certificate) {
+func (m *managerImpl) UpdateDefaultTLSCertificate(defaultCert *tls.Certificate) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 

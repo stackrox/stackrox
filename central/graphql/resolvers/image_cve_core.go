@@ -29,7 +29,9 @@ func init() {
 			}),
 		schema.AddQuery("imageCVECount(query: String): Int!"),
 		schema.AddQuery("imageCVEs(query: String, pagination: Pagination): [ImageCVECore!]!"),
-		schema.AddQuery("imageCVE(cve: String): ImageCVECore"),
+		// `subfieldScopeQuery` applies the scope query to all the subfields of the ImageCVE resolver.
+		// This eliminates the need to pass queries to individual resolvers.
+		schema.AddQuery("imageCVE(cve: String, subfieldScopeQuery: String): ImageCVECore"),
 	)
 }
 
@@ -124,7 +126,8 @@ func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {
 
 // ImageCVE returns graphQL resolver for specified image cve.
 func (resolver *Resolver) ImageCVE(ctx context.Context, args struct {
-	Cve *string
+	Cve                *string
+	SubfieldScopeQuery *string
 }) (*imageCVECoreResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEMetadata")
 
@@ -139,6 +142,17 @@ func (resolver *Resolver) ImageCVE(ctx context.Context, args struct {
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.CVE, *args.Cve).ProtoQuery()
+	if args.SubfieldScopeQuery != nil {
+		rQuery := RawQuery{
+			Query: args.SubfieldScopeQuery,
+		}
+		filterQuery, err := rQuery.AsV1QueryOrEmpty()
+		if err != nil {
+			return nil, err
+		}
+		query = search.ConjunctionQuery(query, filterQuery)
+	}
+
 	cves, err := resolver.ImageCVEView.Get(ctx, query, views.ReadOptions{})
 	if len(cves) == 0 {
 		return nil, nil

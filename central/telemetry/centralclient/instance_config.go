@@ -35,7 +35,7 @@ var (
 
 func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 	key := env.TelemetryStorageKey.Setting()
-	if key == "" {
+	if key == "" || env.OfflineModeEnv.BooleanSetting() {
 		return nil, nil, nil
 	}
 
@@ -93,7 +93,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 // InstanceConfig collects the central instance telemetry configuration from
 // central Deployment labels and environment variables, installation store and
 // orchestrator properties. The collected data is used for configuring the
-// telemetry client.
+// telemetry client. Returns nil if data collection is disabled.
 func InstanceConfig() *phonehome.Config {
 	once.Do(func() {
 		var err error
@@ -122,6 +122,14 @@ func InstanceConfig() *phonehome.Config {
 		// keeping the config configured for eventual Start().
 		return nil
 	}
+	return config
+}
+
+// GetConfig returns the client configuration, whether the collection is enabled
+// or not. Returns nil if the client is not configured and therefore the data
+// collection cannot be enabled.
+func GetConfig() *phonehome.Config {
+	InstanceConfig()
 	return config
 }
 

@@ -41,7 +41,10 @@ func New(forceVersion string, adminConfig *postgres.Config, sourceMap map[string
 // Scan - checks the persistent data of central and gather the clone information
 // from disk.
 func (d *dbCloneManagerImpl) Scan() error {
-	clones := pgadmin.GetDatabaseClones(d.adminConfig)
+	clones, err := pgadmin.GetDatabaseClones(d.adminConfig)
+	if err != nil {
+		return err
+	}
 	ctx := sac.WithAllAccess(context.Background())
 
 	// We use clones to collect all db clones (directory starting with db- or .restore-) matching upgrade or restore pattern.
@@ -134,7 +137,7 @@ func (d *dbCloneManagerImpl) contains(clone string) bool {
 	return ok
 }
 
-func (d *dbCloneManagerImpl) databaseExists(clone string) bool {
+func (d *dbCloneManagerImpl) databaseExists(clone string) (bool, error) {
 	return pgadmin.CheckIfDBExists(d.adminConfig, clone)
 }
 
@@ -146,6 +149,12 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 	// If a restore clone exists, our focus is to try to restore that database.
 	if _, ok := d.cloneMap[RestoreClone]; ok || restoreFromRocks {
 		if restoreFromRocks {
+			// We are restoring from Rocks, so we need to start with fresh Postgres each time
+			err := pgadmin.DropDB(d.sourceMap, d.adminConfig, RestoreClone)
+			if err != nil {
+				log.Errorf("Unable to drop clone - %q", RestoreClone)
+				return "", false, err
+			}
 			d.cloneMap[RestoreClone] = metadata.NewPostgres(rocksVersion, RestoreClone)
 			return RestoreClone, true, nil
 		}
@@ -183,7 +192,15 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 		if d.hasSpaceForRollback() {
 			// Create a temp clone for processing of current
 			// If such a clone already exists then we were previously in the middle of processing
-			if !d.databaseExists(TempClone) {
+			exists, err := d.databaseExists(TempClone)
+			if err != nil {
+				log.Errorf("Unable to create temp clone, will use current clone: %v", err)
+				// If we had an issue checking whether "temp" exists we will proceed with the CurrentClone.
+				// Essentially we treat this the same as if we could not create "temp" and proceed with
+				// the migration.
+				return CurrentClone, false, nil
+			}
+			if !exists {
 				err := pgadmin.CreateDB(d.sourceMap, d.adminConfig, CurrentClone, TempClone)
 
 				// If for some reason, we cannot create a temp clone we will need to continue to upgrade
@@ -279,12 +296,20 @@ func (d *dbCloneManagerImpl) doPersist(cloneName string, prev string) error {
 		}
 	}
 
+	err = pgadmin.AnalyzeDatabase(d.adminConfig, CurrentClone)
+	if err != nil {
+		log.Warnf("unable to force analyze restore database: %v", err)
+	}
+
 	return nil
 }
 
 func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) error {
 	// Connect to different database for admin functions
-	connectPool := pgadmin.GetAdminPool(d.adminConfig)
+	connectPool, err := pgadmin.GetAdminPool(d.adminConfig)
+	if err != nil {
+		return err
+	}
 	// Close the admin connection pool
 	defer connectPool.Close()
 
@@ -304,7 +329,11 @@ func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) erro
 	}
 
 	// Move the current to the previous clone if it exists
-	if d.databaseExists(CurrentClone) {
+	exists, err := d.databaseExists(CurrentClone)
+	if err != nil {
+		return err
+	}
+	if exists {
 		err = d.renameClone(ctx, tx, CurrentClone, previousClone)
 		if err != nil {
 			return err

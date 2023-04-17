@@ -103,15 +103,15 @@ export const selectors = scopeSelectors('main', {
             resourceCount: 'th:contains("Resource") .pf-c-badge',
             readCount: 'th:contains("Read") .pf-c-badge',
             writeCount: 'th:contains("Write") .pf-c-badge',
-            tdResource: 'td[data-label="Resource"]',
+            tdResource: 'td[data-label="Resource"] p:first-child',
 
             // Zero-based index for Image instead of ImageComponent, ImageIntegration, WatchedImage.
             getReadAccessIconForResource: (resource, index = 0) =>
-                `td[data-label="Resource"]:contains("${resource}"):eq(${index}) ~ td[data-label="Read"] svg`,
+                `td[data-label="Resource"]:has('p:first-child:contains("${resource}")'):eq(${index}) ~ td[data-label="Read"] svg`,
             getWriteAccessIconForResource: (resource, index = 0) =>
-                `td[data-label="Resource"]:contains("${resource}"):eq(${index}) ~ td[data-label="Write"] svg`,
+                `td[data-label="Resource"]:has('p:first-child:contains("${resource}")'):eq(${index}) ~ td[data-label="Write"] svg`,
             getAccessLevelSelectForResource: (resource, index = 0) =>
-                `td[data-label="Resource"]:contains("${resource}"):eq(${index}) ~ td[data-label="Access level"] .pf-c-select__toggle`,
+                `td[data-label="Resource"]:has('p:first-child:contains("${resource}")'):eq(${index}) ~ td[data-label="Access level"] .pf-c-select__toggle`,
         }),
 
         accessScope: scopeSelectors('#access-scope-form', {}),

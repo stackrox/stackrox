@@ -46,7 +46,7 @@ type generic struct {
 	extraFieldsJSONPrefix  string
 }
 
-func (*generic) Close(ctx context.Context) error {
+func (*generic) Close(_ context.Context) error {
 	return nil
 }
 

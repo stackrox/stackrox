@@ -119,6 +119,26 @@ func (s *serviceImpl) GetAlert(ctx context.Context, request *v1.ResourceByID) (*
 	return alert, nil
 }
 
+// listAlertsRequestToQuery converts a v1.ListAlertsRequest to a search query
+func listAlertsRequestToQuery(request *v1.ListAlertsRequest, sort bool) (*v1.Query, error) {
+	var q *v1.Query
+	if request.GetQuery() == "" {
+		q = search.EmptyQuery()
+	} else {
+		var err error
+		q, err = search.ParseQuery(request.GetQuery())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	paginated.FillPagination(q, request.GetPagination(), math.MaxInt32)
+	if sort {
+		q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
+	}
+	return q, nil
+}
+
 // ListAlerts returns ListAlerts according to the request.
 func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequest) (*v1.ListAlertsResponse, error) {
 	if request.GetPagination() == nil {
@@ -126,7 +146,11 @@ func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequ
 			Limit: maxListAlertsReturned,
 		}
 	}
-	alerts, err := s.dataStore.ListAlerts(ctx, request)
+	q, err := listAlertsRequestToQuery(request, true)
+	if err != nil {
+		return nil, err
+	}
+	alerts, err := s.dataStore.SearchListAlerts(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +187,11 @@ func ensureAllAlertsAreFetched(req *v1.ListAlertsRequest) *v1.ListAlertsRequest 
 // GetAlertsGroup returns alerts according to the request, grouped by category and policy.
 func (s *serviceImpl) GetAlertsGroup(ctx context.Context, request *v1.ListAlertsRequest) (*v1.GetAlertsGroupResponse, error) {
 	request = ensureAllAlertsAreFetched(request)
-	alerts, err := s.dataStore.ListAlerts(ctx, request)
+	q, err := listAlertsRequestToQuery(request, false)
+	if err != nil {
+		return nil, err
+	}
+	alerts, err := s.dataStore.SearchListAlerts(ctx, q)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -236,7 +264,13 @@ func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlerts
 // GetAlertTimeseries returns the timeseries format of the events based on the request parameters
 func (s *serviceImpl) GetAlertTimeseries(ctx context.Context, req *v1.ListAlertsRequest) (*v1.GetAlertTimeseriesResponse, error) {
 	ensureAllAlertsAreFetched(req)
-	alerts, err := s.dataStore.ListAlerts(ctx, req)
+
+	q, err := listAlertsRequestToQuery(req, false)
+	if err != nil {
+		return nil, err
+	}
+
+	alerts, err := s.dataStore.SearchListAlerts(ctx, q)
 	if err != nil {
 		return nil, err
 	}

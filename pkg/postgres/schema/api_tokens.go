@@ -4,10 +4,14 @@ package schema
 
 import (
 	"reflect"
+	"time"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -24,7 +28,9 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TokenMetadata)(nil)), "api_tokens")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_API_TOKEN, "tokenmetadata", (*storage.TokenMetadata)(nil)))
 		RegisterTable(schema, CreateTableApiTokensStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_API_TOKEN, schema)
 		return schema
 	}()
 )
@@ -35,6 +41,8 @@ const (
 
 // ApiTokens holds the Gorm model for Postgres table `api_tokens`.
 type ApiTokens struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	Id         string     `gorm:"column:id;type:varchar;primaryKey"`
+	Expiration *time.Time `gorm:"column:expiration;type:timestamp"`
+	Revoked    bool       `gorm:"column:revoked;type:bool"`
+	Serialized []byte     `gorm:"column:serialized;type:bytea"`
 }

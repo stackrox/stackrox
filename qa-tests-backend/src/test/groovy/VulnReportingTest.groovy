@@ -1,3 +1,5 @@
+import static util.Helpers.withRetry
+
 import io.stackrox.proto.storage.NotifierOuterClass
 
 import common.Constants
@@ -10,7 +12,11 @@ import util.MailServer
 import org.junit.Assume
 import spock.lang.Shared
 import spock.lang.Tag
+import spock.lang.IgnoreIf
+import util.Env
 
+// slack notifications are not supported on P/Z
+@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
 class VulnReportingTest extends BaseSpecification {
 
     static final private String SECONDARY_NAMESPACE = "vulnreport-2nd-namespace"

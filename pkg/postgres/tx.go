@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
@@ -16,8 +15,6 @@ type Tx struct {
 
 // Exec wraps pgx.Tx Exec
 func (t *Tx) Exec(ctx context.Context, sql string, args ...interface{}) (commandTag pgconn.CommandTag, err error) {
-	defer setQueryDuration(time.Now(), "tx", sql)
-
 	ct, err := t.Tx.Exec(ctx, sql, args...)
 	if err != nil {
 		incQueryErrors(sql, err)
@@ -28,8 +25,6 @@ func (t *Tx) Exec(ctx context.Context, sql string, args ...interface{}) (command
 
 // Query wraps pgx.Tx Query
 func (t *Tx) Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error) {
-	defer setQueryDuration(time.Now(), "tx", sql)
-
 	rows, err := t.Tx.Query(ctx, sql, args...)
 	if err != nil {
 		incQueryErrors(sql, err)
@@ -44,8 +39,6 @@ func (t *Tx) Query(ctx context.Context, sql string, args ...interface{}) (*Rows,
 
 // QueryRow wraps pgx.Tx QueryRow
 func (t *Tx) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
-	defer setQueryDuration(time.Now(), "tx", sql)
-
 	return t.Tx.QueryRow(ctx, sql, args...)
 }
 

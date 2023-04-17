@@ -258,6 +258,7 @@ func (in *CentralDBSpec) DeepCopyInto(out *CentralDBSpec) {
 		*out = new(DBPersistence)
 		(*in).DeepCopyInto(*out)
 	}
+	out.ConfigOverride = in.ConfigOverride
 	in.DeploymentSpec.DeepCopyInto(&out.DeploymentSpec)
 }
 

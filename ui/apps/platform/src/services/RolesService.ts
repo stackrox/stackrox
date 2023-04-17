@@ -1,4 +1,5 @@
 import { Traits } from 'types/traits.proto';
+import qs from 'qs';
 import axios from './instance';
 import { Empty } from './types';
 
@@ -118,4 +119,51 @@ export function updatePermissionSet(entity: PermissionSet): Promise<Empty> {
  */
 export function deletePermissionSet(id: string): Promise<Empty> {
     return axios.delete(`${permissionSetsUrl}/${id}`);
+}
+
+const clustersForPermissionsUrl = '/v1/sac/clusters';
+
+type ClustersForPermissionRequest = {
+    permissions: string[];
+};
+
+// ScopeObject represents the (ID, name) pair identifying elements that belong to
+// the access scope of a user.
+export type ScopeObject = {
+    id: string;
+    name: string;
+};
+
+export type ClustersForPermissionsResponse = {
+    clusters: ScopeObject[];
+};
+
+export function getClustersForPermissions(
+    permissions: string[]
+): Promise<ClustersForPermissionsResponse> {
+    const request: ClustersForPermissionRequest = { permissions };
+    const params = qs.stringify(request, { arrayFormat: 'repeat' });
+    return axios
+        .get<ClustersForPermissionsResponse>(`${clustersForPermissionsUrl}?${params}`)
+        .then((response) => response.data);
+}
+
+type NamespacesForClusterAndPermissionsRequest = {
+    permissions: string[];
+};
+
+export type NamespacesForClusterAndPermissionsResponse = {
+    namespaces: ScopeObject[];
+};
+
+export function getNamespacesForClusterAndPermissions(
+    clusterID: string,
+    permissions: string[]
+): Promise<NamespacesForClusterAndPermissionsResponse> {
+    const request: NamespacesForClusterAndPermissionsRequest = { permissions };
+    const params = qs.stringify(request, { arrayFormat: 'repeat' });
+    const targetUrl = `${clustersForPermissionsUrl}/${clusterID}/namespaces?${params}`;
+    return axios
+        .get<NamespacesForClusterAndPermissionsResponse>(targetUrl)
+        .then((response) => response.data);
 }

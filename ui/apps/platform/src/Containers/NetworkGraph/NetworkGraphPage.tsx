@@ -14,7 +14,7 @@ import {
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import { timeWindows } from 'constants/timeWindows';
-import useFetchClusters from 'hooks/useFetchClusters';
+import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import useURLSearch from 'hooks/useURLSearch';
 import {
@@ -79,11 +79,11 @@ function NetworkGraphPage() {
 
     const [pollEpoch, setPollEpoch] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
-    const [timeWindow, setTimeWindow] = useState<typeof timeWindows[number]>(timeWindows[0]);
+    const [timeWindow, setTimeWindow] = useState<(typeof timeWindows)[number]>(timeWindows[0]);
     const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
     const [isCIDRBlockFormOpen, setIsCIDRBlockFormOpen] = useState(false);
 
-    const { searchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter } = useURLSearch();
     const [simulationQueryValue] = useURLParameter('simulation', undefined);
     const simulation = getSimulation(simulationQueryValue);
 
@@ -103,7 +103,17 @@ function NetworkGraphPage() {
 
     const hasClusterNamespaceSelected = Boolean(clusterFromUrl && namespacesFromUrl.length);
 
-    const { clusters } = useFetchClusters();
+    const { clusters } = useFetchClustersForPermissions(['NetworkGraph', 'Deployment']);
+
+    // if no cluster is selected, and there is only one cluster available, automatically select it
+    if (clusters.length === 1 && !clusterFromUrl) {
+        const modifiedSearchObject = { ...searchFilter };
+        modifiedSearchObject.Cluster = clusters[0].name;
+        delete modifiedSearchObject.Namespace;
+        delete modifiedSearchObject.Deployment;
+        setSearchFilter(modifiedSearchObject);
+    }
+
     const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
     const selectedCluster = { name: clusterFromUrl, id: selectedClusterId };
     const { deploymentCount } = useFetchDeploymentCount(selectedClusterId || '');
@@ -169,18 +179,27 @@ function NetworkGraphPage() {
                         // get policy nodes, and the starting epoch, from policy graph API response
                         const { nodes: policyNodes, epoch } = values[1].response;
                         // transform policy data to DataModel
-                        const { policyDataModel, policyNodeMap } = transformPolicyData(policyNodes);
+                        const { policyDataModel, policyNodeMap } = transformPolicyData(
+                            policyNodes,
+                            deploymentsFromUrl
+                        );
                         // get active nodes from network flow graph API response
                         const { nodes: activeNodes } = values[0].response;
                         // transform active data to DataModel
                         const { activeDataModel, activeEdgeMap, activeNodeMap } =
-                            transformActiveData(activeNodes, policyNodeMap);
+                            transformActiveData(
+                                activeNodes,
+                                policyNodeMap,
+                                namespacesFromUrl,
+                                deploymentsFromUrl
+                            );
 
                         // create extraneous flows graph
                         const extraneousFlowsDataModel = createExtraneousFlowsModel(
                             policyDataModel,
                             activeNodeMap,
-                            activeEdgeMap
+                            activeEdgeMap,
+                            namespacesFromUrl
                         );
 
                         const newUpdatedTimestamp = new Date();

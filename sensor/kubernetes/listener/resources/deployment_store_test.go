@@ -43,7 +43,7 @@ func (s *deploymentStoreSuite) SetupTest() {
 func (s *deploymentStoreSuite) createDeploymentWrap(deploymentObj interface{}) *deploymentWrap {
 	action := central.ResourceAction_CREATE_RESOURCE
 	wrap := newDeploymentEventFromResource(deploymentObj, &action,
-		"deployment", "", s.mockPodLister, s.namespaceStore, hierarchyFromPodLister(s.mockPodLister), "", orchestratornamespaces.Singleton(), registry.Singleton())
+		"deployment", "", s.mockPodLister, s.namespaceStore, hierarchyFromPodLister(s.mockPodLister), "", orchestratornamespaces.NewOrchestratorNamespaces(), registry.NewRegistryStore(nil))
 	return wrap
 }
 
@@ -109,8 +109,8 @@ func (s *deploymentStoreSuite) Test_FindDeploymentIDsWithServiceAccount() {
 }
 
 func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies() {
-	uid := uuid.NewV4()
-	wrap := s.createDeploymentWrap(makeDeploymentObject("test-deployment", "test-ns", types.UID(uid.String())))
+	uid := uuid.NewV4().String()
+	wrap := s.createDeploymentWrap(makeDeploymentObject("test-deployment", "test-ns", types.UID(uid)))
 	s.deploymentStore.addOrUpdateDeployment(wrap)
 
 	expectedExposureInfo := storage.PortConfig_ExposureInfo{
@@ -119,7 +119,10 @@ func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies() {
 		ServicePort: 5432,
 	}
 
-	deployment, err := s.deploymentStore.BuildDeploymentWithDependencies(uid.String(), store.Dependencies{
+	_, isBuilt := s.deploymentStore.GetBuiltDeployment(uid)
+	s.Assert().False(isBuilt, "deployment should not be fully built yet")
+
+	deployment, err := s.deploymentStore.BuildDeploymentWithDependencies(uid, store.Dependencies{
 		PermissionLevel: storage.PermissionLevel_CLUSTER_ADMIN,
 		Exposures: []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
 			{
@@ -135,6 +138,9 @@ func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies() {
 
 	s.Equal(expectedExposureInfo, *deployment.GetPorts()[0].GetExposureInfos()[0])
 	s.Equal(storage.PermissionLevel_CLUSTER_ADMIN, deployment.GetServiceAccountPermissionLevel(), "Service account permission level")
+
+	_, isBuilt = s.deploymentStore.GetBuiltDeployment(uid)
+	s.Assert().True(isBuilt, "deployment should be fully built")
 }
 
 func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies_NoDeployment() {
@@ -222,6 +228,133 @@ func (s *deploymentStoreSuite) Test_FindDeploymentIDsByLabels() {
 	for testName, c := range cases {
 		s.Run(testName, func() {
 			ids := s.deploymentStore.FindDeploymentIDsByLabels(c.namespace, selector.CreateSelector(c.labels))
+			s.Equal(len(c.expectedIDs), len(ids))
+			s.ElementsMatch(c.expectedIDs, ids)
+		})
+	}
+}
+
+func withImage(deployment *v1.Deployment, image string) *v1.Deployment {
+	deployment.Spec.Template.Spec.Containers = []corev1.Container{
+		{
+			Image: image,
+		},
+	}
+	return deployment
+}
+
+func newImage(id string, fullName string) *storage.Image {
+	return &storage.Image{
+		Id: id,
+		Name: &storage.ImageName{
+			FullName: fullName,
+		},
+	}
+}
+
+func (s *deploymentStoreSuite) Test_FindDeploymentIDsByImages() {
+	resources := []struct {
+		deployment *v1.Deployment
+		imageID    string
+	}{
+		{
+			deployment: withImage(makeDeploymentObject("d-1", "test-ns", "uuid-1"), "nginx:1.2.3"),
+			imageID:    "image-uuid-1",
+		},
+		{
+			deployment: withImage(makeDeploymentObject("d-2", "test-ns", "uuid-2"), "private-registry.io/nginx:1.2.3"),
+			imageID:    "image-uuid-1",
+		},
+		{
+			deployment: withImage(makeDeploymentObject("d-3", "test-ns", "uuid-3"), "private-registry.io/main:3.2.1"),
+			imageID:    "image-uuid-2",
+		},
+	}
+	for _, r := range resources {
+		wrap := s.createDeploymentWrap(r.deployment)
+		// Manually set the ID for testing purposes
+		for i := range wrap.GetDeployment().GetContainers() {
+			wrap.GetDeployment().GetContainers()[i].GetImage().Id = r.imageID
+		}
+		s.deploymentStore.addOrUpdateDeployment(wrap)
+	}
+	cases := map[string]struct {
+		images      []*storage.Image
+		expectedIDs []string
+	}{
+		"No images": {
+			images:      nil,
+			expectedIDs: nil,
+		},
+		"Match one deployment against an image": {
+			images: []*storage.Image{
+				newImage("", "docker.io/library/nginx:1.2.3"),
+			},
+			expectedIDs: []string{"uuid-1"},
+		},
+		"Match multiple deployment against multiple images": {
+			images: []*storage.Image{
+				newImage("", "docker.io/library/nginx:1.2.3"),
+				newImage("", "private-registry.io/nginx:1.2.3"),
+			},
+			expectedIDs: []string{"uuid-1", "uuid-2"},
+		},
+		"Match multiple deployments against one image id": {
+			images: []*storage.Image{
+				newImage("image-uuid-1", ""),
+			},
+			expectedIDs: []string{"uuid-1", "uuid-2"},
+		},
+		"Match multiple deployments against multiple image ids": {
+			images: []*storage.Image{
+				newImage("image-uuid-1", ""),
+				newImage("image-uuid-2", ""),
+			},
+			expectedIDs: []string{"uuid-1", "uuid-2", "uuid-3"},
+		},
+		"No match": {
+			images: []*storage.Image{
+				newImage("", "no-match"),
+			},
+			expectedIDs: []string{},
+		},
+		"No match by id": {
+			images: []*storage.Image{
+				newImage("no-match", ""),
+			},
+			expectedIDs: []string{},
+		},
+		"Match one deployment against multiple images": {
+			images: []*storage.Image{
+				newImage("", "no-match"),
+				newImage("", "private-registry.io/nginx:1.2.3"),
+			},
+			expectedIDs: []string{"uuid-2"},
+		},
+		"Match multiple deployments against a valid image id and a no-match": {
+			images: []*storage.Image{
+				newImage("no-match", ""),
+				newImage("image-uuid-1", ""),
+			},
+			expectedIDs: []string{"uuid-1", "uuid-2"},
+		},
+		"Match against mixed images": {
+			images: []*storage.Image{
+				newImage("", "docker.io/library/nginx:1.2.3"),
+				newImage("image-uuid-2", ""),
+			},
+			expectedIDs: []string{"uuid-1", "uuid-3"},
+		},
+		"Match against same image id with different paths": {
+			images: []*storage.Image{
+				newImage("image-uuid-1", "docker.io/library/nginx:1.2.3"),
+			},
+			expectedIDs: []string{"uuid-1", "uuid-2"},
+		},
+	}
+	for testName, c := range cases {
+		s.Run(testName, func() {
+			ids := s.deploymentStore.FindDeploymentIDsByImages(c.images)
 			s.Equal(len(c.expectedIDs), len(ids))
 			s.ElementsMatch(c.expectedIDs, ids)
 		})

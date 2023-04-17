@@ -13,7 +13,7 @@ import (
 
 var (
 	// standardizedFormats holds all output formats that follow either an RFC standard or a de-facto standard
-	standardizedFormats = set.NewFrozenStringSet("json", "csv", "junit")
+	standardizedFormats = set.NewFrozenStringSet("json", "csv", "junit", "sarif")
 )
 
 func unsupportedOutputFormatError(format string, supportedFormats []string) error {

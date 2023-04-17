@@ -69,11 +69,16 @@ func New(db *postgres.DB) Store {
 	}
 }
 
-func insertIntoPermissionSets(ctx context.Context, batch *pgx.Batch, obj *storage.PermissionSet) error {
+func insertIntoPermissionSets(_ context.Context, batch *pgx.Batch, obj *storage.PermissionSet) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
 		return marshalErr
+	}
+
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		utils.Should(errors.Errorf("Id is not a valid uuid -- %q", obj.GetId()))
+		return nil
 	}
 
 	values := []interface{}{
@@ -81,10 +86,6 @@ func insertIntoPermissionSets(ctx context.Context, batch *pgx.Batch, obj *storag
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		serialized,
-	}
-	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
-		return nil
 	}
 
 	finalStr := "INSERT INTO permission_sets (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
@@ -121,6 +122,11 @@ func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx *postgres.Tx,
 			return marshalErr
 		}
 
+		if pgutils.NilOrUUID(obj.GetId()) == nil {
+			log.Warnf("Id is not a valid uuid -- %q", obj.GetId())
+			continue
+		}
+
 		inputRows = append(inputRows, []interface{}{
 
 			pgutils.NilOrUUID(obj.GetId()),
@@ -129,10 +135,6 @@ func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx *postgres.Tx,
 
 			serialized,
 		})
-		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			utils.Should(errors.Errorf("Id is not a valid uuid -- %v", obj))
-			continue
-		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())
@@ -279,7 +281,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.PermissionSet,
 	return data, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*postgres.Conn, func(), error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -447,11 +449,11 @@ func Destroy(ctx context.Context, db *postgres.DB) {
 //// Stubs for satisfying legacy interfaces
 
 // AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
+func (s *storeImpl) AckKeysIndexed(_ context.Context, _ ...string) error {
 	return nil
 }
 
 // GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
+func (s *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
 	return nil, nil
 }

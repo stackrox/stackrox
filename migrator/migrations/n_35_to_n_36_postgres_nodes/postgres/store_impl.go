@@ -73,6 +73,11 @@ func insertIntoNodes(ctx context.Context, tx *postgres.Tx, obj *storage.Node, sc
 		return marshalErr
 	}
 
+	if pgutils.NilOrUUID(cloned.GetId()) == nil {
+		log.WriteToStderrf("id is not a valid uuid -- %q", cloned.GetId())
+		return nil
+	}
+
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(cloned.GetId()),
@@ -92,11 +97,6 @@ func insertIntoNodes(ctx context.Context, tx *postgres.Tx, obj *storage.Node, sc
 		cloned.GetRiskScore(),
 		cloned.GetTopCvss(),
 		serialized,
-	}
-
-	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		log.WriteToStderrf("id is not a valid uuid -- %v", obj)
-		return nil
 	}
 
 	finalStr := "INSERT INTO nodes (Id, Name, ClusterId, ClusterName, Labels, Annotations, JoinedAt, ContainerRuntime_Version, OsImage, LastUpdated, Scan_ScanTime, Components, Cves, FixableCves, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, JoinedAt = EXCLUDED.JoinedAt, ContainerRuntime_Version = EXCLUDED.ContainerRuntime_Version, OsImage = EXCLUDED.OsImage, LastUpdated = EXCLUDED.LastUpdated, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Components = EXCLUDED.Components, Cves = EXCLUDED.Cves, FixableCves = EXCLUDED.FixableCves, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
@@ -156,6 +156,10 @@ func getPartsAsSlice(parts *common.NodeParts) ([]*storage.NodeComponent, []*stor
 }
 
 func insertIntoNodesTaints(ctx context.Context, tx *postgres.Tx, obj *storage.Taint, nodeID string, idx int) error {
+	if pgutils.NilOrUUID(nodeID) == nil {
+		log.WriteToStderrf("id is not a valid uuid -- %q", nodeID)
+		return nil
+	}
 
 	values := []interface{}{
 		// parent primary keys start
@@ -164,11 +168,6 @@ func insertIntoNodesTaints(ctx context.Context, tx *postgres.Tx, obj *storage.Ta
 		obj.GetKey(),
 		obj.GetValue(),
 		obj.GetTaintEffect(),
-	}
-
-	if pgutils.NilOrUUID(nodeID) == nil {
-		log.WriteToStderrf("id is not a valid uuid -- %v", obj)
-		return nil
 	}
 
 	finalStr := "INSERT INTO nodes_taints (nodes_Id, idx, Key, Value, TaintEffect) VALUES($1, $2, $3, $4, $5) ON CONFLICT(nodes_Id, idx) DO UPDATE SET nodes_Id = EXCLUDED.nodes_Id, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value, TaintEffect = EXCLUDED.TaintEffect"
@@ -511,6 +510,11 @@ func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx *postgres.Tx, no
 		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
+		if pgutils.NilOrUUID(nodeID) == nil {
+			log.WriteToStderrf("id is not a valid uuid -- %q", nodeID)
+			continue
+		}
+
 		inputRows = append(inputRows, []interface{}{
 			pgutils.NilOrUUID(nodeID),
 			idx,
@@ -518,11 +522,6 @@ func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx *postgres.Tx, no
 			obj.GetValue(),
 			obj.GetTaintEffect(),
 		})
-
-		if pgutils.NilOrUUID(nodeID) == nil {
-			log.WriteToStderrf("id is not a valid uuid -- %v", obj)
-			continue
-		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {

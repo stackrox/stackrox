@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import { Tooltip } from '@patternfly/react-core';
+
 import { addDeleteProcesses } from 'services/ProcessesService';
 import { getDeploymentAndProcessIdFromProcessGroup } from 'utils/processUtils';
 
@@ -50,7 +51,7 @@ function ProcessesDiscoveryCardHeader({
             <div className="flex content-center">
                 {suspicious && (
                     <div className="border-l border-r flex items-center justify-center w-16 border-alert-300">
-                        <Tooltip content={<TooltipOverlay>Add to baseline</TooltipOverlay>}>
+                        <Tooltip content="Add to baseline">
                             <button
                                 type="button"
                                 onClick={addBaseline}

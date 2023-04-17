@@ -14,10 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/gorm"
 )
 
 type NodesStoreSuite struct {
 	suite.Suite
+	ctx    context.Context
+	pool   *postgres.DB
+	gormDB *gorm.DB
 }
 
 func TestNodesStore(t *testing.T) {
@@ -31,23 +35,30 @@ func (s *NodesStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
+
+	s.ctx = sac.WithAllAccess(context.Background())
+	source := pgtest.GetConnectionString(s.T())
+
+	config, err := postgres.ParseConfig(source)
+	s.Require().NoError(err)
+	s.pool, err = postgres.New(s.ctx, config)
+	s.NoError(err)
+	Destroy(s.ctx, s.pool)
+
+	s.gormDB = pgtest.OpenGormDB(s.T(), source)
+}
+
+func (s *NodesStoreSuite) TearDownTest() {
+	if s.pool != nil {
+		s.pool.Close()
+	}
+	if s.gormDB != nil {
+		pgtest.CloseGormDB(s.T(), s.gormDB)
+	}
 }
 
 func (s *NodesStoreSuite) TestStore() {
-	ctx := sac.WithAllAccess(context.Background())
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := postgres.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := postgres.New(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
-
-	Destroy(ctx, pool)
-
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	store := CreateTableAndNewStore(ctx, s.T(), pool, gormDB, false)
+	store := CreateTableAndNewStore(s.ctx, s.T(), s.pool, s.gormDB, false)
 
 	node := &storage.Node{}
 	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
@@ -55,13 +66,13 @@ func (s *NodesStoreSuite) TestStore() {
 		comp.Vulns = nil
 	}
 
-	foundNode, exists, err := store.Get(ctx, node.GetId())
+	foundNode, exists, err := store.Get(s.ctx, node.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNode)
 
-	s.NoError(store.Upsert(ctx, node))
-	foundNode, exists, err = store.Get(ctx, node.GetId())
+	s.NoError(store.Upsert(s.ctx, node))
+	foundNode, exists, err = store.Get(s.ctx, node.GetId())
 	s.NoError(err)
 	s.True(exists)
 	cloned := node.Clone()
@@ -73,16 +84,16 @@ func (s *NodesStoreSuite) TestStore() {
 	}
 	s.Equal(cloned, foundNode)
 
-	nodeCount, err := store.Count(ctx)
+	nodeCount, err := store.Count(s.ctx)
 	s.NoError(err)
 	s.Equal(nodeCount, 1)
 
-	nodeExists, err := store.Exists(ctx, node.GetId())
+	nodeExists, err := store.Exists(s.ctx, node.GetId())
 	s.NoError(err)
 	s.True(nodeExists)
-	s.NoError(store.Upsert(ctx, node))
+	s.NoError(store.Upsert(s.ctx, node))
 
-	foundNode, exists, err = store.Get(ctx, node.GetId())
+	foundNode, exists, err = store.Get(s.ctx, node.GetId())
 	s.NoError(err)
 	s.True(exists)
 
@@ -90,9 +101,40 @@ func (s *NodesStoreSuite) TestStore() {
 	cloned.LastUpdated = foundNode.LastUpdated
 	s.Equal(cloned, foundNode)
 
-	s.NoError(store.Delete(ctx, node.GetId()))
-	foundNode, exists, err = store.Get(ctx, node.GetId())
+	s.NoError(store.Delete(s.ctx, node.GetId()))
+	foundNode, exists, err = store.Get(s.ctx, node.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNode)
+}
+
+func (s *NodesStoreSuite) TestStore_UpsertWithoutScan() {
+	store := CreateTableAndNewStore(s.ctx, s.T(), s.pool, s.gormDB, false)
+
+	node := &storage.Node{}
+	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	foundNode, exists, err := store.Get(s.ctx, node.GetId())
+	s.NoError(err)
+	s.False(exists)
+	s.Nil(foundNode)
+
+	s.NoError(store.Upsert(s.ctx, node))
+
+	foundNode, exists, err = store.Get(s.ctx, node.GetId())
+	s.NoError(err)
+	s.True(exists)
+	s.NotNil(foundNode.GetScan())
+
+	node = foundNode.Clone()
+	node.Scan = nil
+	s.NoError(store.Upsert(s.ctx, node))
+
+	newNode, exists, err := store.Get(s.ctx, node.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	// We expect only LastUpdated to have changed.
+	foundNode.LastUpdated = newNode.GetLastUpdated()
+	s.Equal(foundNode, newNode)
 }

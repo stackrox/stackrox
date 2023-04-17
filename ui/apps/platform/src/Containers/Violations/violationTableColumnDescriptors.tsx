@@ -34,7 +34,7 @@ function EntityTableCell({ original }: EntityTableCellProps): ReactElement {
     return (
         <Flex direction={{ default: 'column' }}>
             <FlexItem className="pf-u-mb-0">{name}</FlexItem>
-            <FlexItem className="pf-u-color-400 pf-u-font-size-xs">
+            <FlexItem className="pf-u-color-200 pf-u-font-size-xs">
                 {`in "${clusterName}/${namespace}"`}
             </FlexItem>
         </Flex>

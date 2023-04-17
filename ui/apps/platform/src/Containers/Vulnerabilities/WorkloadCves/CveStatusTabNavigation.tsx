@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { gql, useQuery } from '@apollo/client';
 import {
     Tabs,
     Tab,
@@ -7,57 +8,147 @@ import {
     PageSection,
     Card,
     CardBody,
+    Divider,
+    Toolbar,
+    ToolbarItem,
+    ToolbarContent,
+    Pagination,
 } from '@patternfly/react-core';
 
-import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
-import { getQueryString } from 'utils/queryStringUtils';
+import useURLStringUnion from 'hooks/useURLStringUnion';
+import useURLSearch from 'hooks/useURLSearch';
+import useURLPagination from 'hooks/useURLPagination';
+import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import ImagesTableContainer from './ImagesTableContainer';
+import DeploymentsTableContainer from './DeploymentsTableContainer';
+import CVEsTableContainer from './CVEsTableContainer';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
-import EntityTypeToggleGroup from './EntityTypeToggleGroup';
-import { WorkloadCvesSearch } from './searchUtils';
-import { DefaultFilters } from './types';
-
-const observedCvesQueryString = getQueryString<WorkloadCvesSearch>({ cveStatusTab: 'Observed' });
-const observedCvesPath = `${vulnerabilitiesWorkloadCvesPath}${observedCvesQueryString}`;
+import EntityTypeToggleGroup from './components/EntityTypeToggleGroup';
+import { DynamicTableLabel } from './components/DynamicIcon';
+import { DefaultFilters, cveStatusTabValues, entityTabValues, EntityTab } from './types';
+import { parseQuerySearchFilter } from './searchUtils';
 
 type CveStatusTabNavigationProps = {
     defaultFilters: DefaultFilters;
 };
 
-function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps) {
-    const [activeTabKey, setActiveTabKey] = useState(0);
+type EntityCounts = {
+    imageCount: number;
+    deploymentCount: number;
+    imageCVECount: number;
+};
 
-    function handleTabClick(e, tabIndex) {
-        setActiveTabKey(tabIndex);
+const entityTypeCountsQuery = gql`
+    query getEntityTypeCounts($query: String) {
+        imageCount(query: $query)
+        deploymentCount(query: $query)
+        imageCVECount(query: $query)
     }
+`;
+
+function getTableRowCount(countsData: EntityCounts, entityType: EntityTab): number {
+    switch (entityType) {
+        case 'Image':
+            return countsData?.imageCount;
+        case 'Deployment':
+            return countsData?.deploymentCount;
+        case 'CVE':
+            return countsData?.imageCVECount;
+        default:
+            return 0;
+    }
+}
+
+function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps) {
+    const { searchFilter } = useURLSearch();
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    const [activeCVEStatusKey, setActiveCVEStatusKey] = useURLStringUnion(
+        'cveStatus',
+        cveStatusTabValues
+    );
+    const [activeEntityTabKey] = useURLStringUnion('entityTab', entityTabValues);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(25);
+    const isFiltered = getHasSearchApplied(querySearchFilter);
+
+    function handleTabClick(e, tab) {
+        setActiveCVEStatusKey(tab);
+    }
+
+    const { data: countsData } = useQuery(entityTypeCountsQuery, {
+        variables: {
+            query: getRequestQueryStringForSearchFilter({
+                ...querySearchFilter,
+            }),
+        },
+    });
+
+    const tableRowCount = getTableRowCount(countsData, activeEntityTabKey);
 
     return (
         <Tabs
-            activeKey={activeTabKey}
+            activeKey={activeCVEStatusKey}
             onSelect={handleTabClick}
             component={TabsComponent.nav}
             className="pf-u-pl-lg pf-u-background-color-100"
             mountOnEnter
             unmountOnExit
         >
-            <Tab
-                eventKey={0}
-                title={<TabTitleText>Observed CVEs</TabTitleText>}
-                href={observedCvesPath}
-            >
+            <Tab eventKey="Observed" title={<TabTitleText>Observed CVEs</TabTitleText>}>
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody>
                             <WorkloadTableToolbar defaultFilters={defaultFilters} />
-                            <EntityTypeToggleGroup />
-                            cve overview table here
+                            <Divider component="div" />
+                            <Toolbar>
+                                <ToolbarContent>
+                                    <ToolbarItem>
+                                        <EntityTypeToggleGroup
+                                            imageCount={countsData?.imageCount}
+                                            cveCount={countsData?.cveCount}
+                                            deploymentCount={countsData?.deploymentCount}
+                                        />
+                                    </ToolbarItem>
+                                    {isFiltered && (
+                                        <ToolbarItem>
+                                            <DynamicTableLabel />
+                                        </ToolbarItem>
+                                    )}
+                                    <ToolbarItem
+                                        alignment={{ default: 'alignRight' }}
+                                        variant="pagination"
+                                    >
+                                        <Pagination
+                                            isCompact
+                                            itemCount={tableRowCount}
+                                            page={page}
+                                            perPage={perPage}
+                                            onSetPage={(_, newPage) => setPage(newPage)}
+                                            onPerPageSelect={(_, newPerPage) => {
+                                                if (tableRowCount < (page - 1) * newPerPage) {
+                                                    setPage(1);
+                                                }
+                                                setPerPage(newPerPage);
+                                            }}
+                                        />
+                                    </ToolbarItem>
+                                </ToolbarContent>
+                            </Toolbar>
+                            <Divider component="div" />
+                            {activeEntityTabKey === 'Image' && <ImagesTableContainer />}
+                            {activeEntityTabKey === 'CVE' && <CVEsTableContainer />}
+                            {activeEntityTabKey === 'Deployment' && <DeploymentsTableContainer />}
                         </CardBody>
                     </Card>
                 </PageSection>
             </Tab>
-            <Tab eventKey={1} title={<TabTitleText>Deferrals</TabTitleText>} isDisabled>
+            <Tab eventKey="Deferred" title={<TabTitleText>Deferrals</TabTitleText>} isDisabled>
                 deferrals tbd
             </Tab>
-            <Tab eventKey={2} title={<TabTitleText>False Positives</TabTitleText>} isDisabled>
+            <Tab
+                eventKey="False Positive"
+                title={<TabTitleText>False Positives</TabTitleText>}
+                isDisabled
+            >
                 False-positives tbd
             </Tab>
         </Tabs>

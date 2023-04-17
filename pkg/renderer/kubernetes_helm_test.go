@@ -54,6 +54,9 @@ func getDefaultMetaValues(t *testing.T) *charts.MetaValues {
 		CollectorFullImageTag:    "3.0.11-latest",
 		CollectorSlimImageTag:    "3.0.11-slim",
 
+		ScannerSlimImageRemote: "scanner",
+		ScannerImageTag:        "3.0.11-slim",
+
 		CollectionMethod: "EBPF",
 
 		ClusterType: "KUBERNETES_CLUSTER",
@@ -181,9 +184,8 @@ func TestRenderSensorTLSSecretsOnly(t *testing.T) {
 		err := d.Decode(spec)
 		if errors.Is(err, io.EOF) {
 			break
-		} else {
-			require.NoError(t, err)
 		}
+		require.NoError(t, err)
 
 		secret := &corev1.Secret{}
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(spec, secret)

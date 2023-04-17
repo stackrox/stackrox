@@ -28,6 +28,7 @@ function CVESeverityDropdown({ searchFilter, onSelect }: CVESeverityDropdownProp
             selections={searchFilter.Severity}
             isOpen={cveSeverityIsOpen}
             placeholderText="CVE severity"
+            className="cve-severity-select"
         >
             <SelectOption key="Critical" value="Critical" />
             <SelectOption key="Important" value="Important" />

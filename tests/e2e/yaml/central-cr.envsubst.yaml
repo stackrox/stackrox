@@ -14,6 +14,17 @@ spec:
         enabled: $central_exposure_loadBalancer_enabled
       route:
         enabled: $central_exposure_route_enabled
+    declarativeConfiguration:
+      configMaps:
+      - name: "declarative-configurations"
+    db:
+      resources:
+        limits:
+          cpu: 8
+          memory: 16Gi
+        requests:
+          cpu: 1
+          memory: 1Gi
   customize:
     envVars:$customize_envVars
   scanner:

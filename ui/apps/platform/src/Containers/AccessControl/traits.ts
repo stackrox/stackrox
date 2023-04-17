@@ -8,10 +8,18 @@ export const traitsOriginLabels = {
     DEFAULT: 'System',
     IMPERATIVE: 'User',
     DECLARATIVE: 'Declarative',
+    DECLARATIVE_ORPHANED: 'Declarative, Orphaned',
 };
 
 export const originLabelColours = {
     System: 'grey',
     User: 'green',
     Declarative: 'blue',
+    'Declarative, Orphaned': 'red',
 };
+
+export function getOriginLabel(traits?: Traits): string {
+    return traits && traits.origin && traitsOriginLabels[traits.origin]
+        ? traitsOriginLabels[traits.origin]
+        : 'User';
+}

@@ -4,4 +4,4 @@ export type Traits = {
 };
 
 export type TraitsMutabilityMode = 'ALLOW_MUTATE' | 'ALLOW_MUTATE_FORCED';
-export type TraitsOrigin = 'IMPERATIVE' | 'DECLARATIVE' | 'DEFAULT';
+export type TraitsOrigin = 'IMPERATIVE' | 'DECLARATIVE' | 'DEFAULT' | 'DECLARATIVE_ORPHANED';

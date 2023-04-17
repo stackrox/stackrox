@@ -1,5 +1,6 @@
 import static Services.checkForNoViolations
 import static Services.waitForViolation
+import static util.Helpers.withRetry
 
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass.DryRunResponse
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
@@ -781,10 +782,10 @@ class PolicyConfigurationTest extends BaseSpecification {
                 [new Deployment()
                          .setName("label-scope-violation")
                          .addLabel("app", "qa-test")
-                         .setImage("nginx:latest"),]                |
+                         .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),]                |
                 [new Deployment()
                          .setName("label-scope-non-violation")
-                         .setImage("nginx:latest"),]
+                         .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),]
         "NamespaceScope"             |
                 Policy.newBuilder()
                         .setName("Test Namespace Scope")
@@ -807,11 +808,11 @@ class PolicyConfigurationTest extends BaseSpecification {
                         ).build()             |
                 [new Deployment()
                          .setName("namespace-scope-violation")
-                         .setImage("nginx:latest"),]                |
+                         .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),]                |
                 [new Deployment()
                          .setName("namespace-scope-non-violation")
                          .setNamespace("default")
-                         .setImage("nginx:latest"),]
+                         .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),]
         "ClusterNamespaceLabelScope" |
                 Policy.newBuilder()
                         .setName("Test All Scopes in One")
@@ -840,12 +841,12 @@ class PolicyConfigurationTest extends BaseSpecification {
                 [new Deployment()
                          .setName("all-scope-violation")
                          .addLabel("app", "qa-test")
-                         .setImage("nginx:latest"),]                |
+                         .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),]                |
                 [new Deployment()
                          .setName("all-scope-non-violation")
                          .setNamespace("default")
                          .addLabel("app", "qa-test")
-                         .setImage("nginx:latest"),]
+                         .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),]
         "MultipleScopes"             |
                 Policy.newBuilder()
                         .setName("Test Multiple Scopes")
@@ -874,16 +875,16 @@ class PolicyConfigurationTest extends BaseSpecification {
                         ).build()             |
                 [new Deployment()
                          .setName("multiple-scope-violation")
-                         .setImage("nginx:latest"),
+                         .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),
                  new Deployment()
                          .setName("multiple-scope-violation2")
                          .setNamespace("default")
                          .addLabel("app", "qa-test")
-                         .setImage("nginx:latest"),]                |
+                         .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),]                |
                 [new Deployment()
                          .setName("multiple-scope-non-violation")
                          .setNamespace("default")
-                         .setImage("nginx:latest"),]
+                         .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),]
     }
 
     @Unroll

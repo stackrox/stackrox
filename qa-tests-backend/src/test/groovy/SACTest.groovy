@@ -4,6 +4,7 @@ import static io.stackrox.proto.storage.RoleOuterClass.Access.READ_ACCESS
 import static io.stackrox.proto.storage.RoleOuterClass.Access.READ_WRITE_ACCESS
 import static io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope.newBuilder
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
+import static util.Helpers.withRetry
 
 import orchestratormanager.OrchestratorTypes
 

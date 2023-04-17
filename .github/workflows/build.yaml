@@ -21,7 +21,7 @@ jobs:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -56,7 +56,7 @@ jobs:
   pre-build-cli:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -84,11 +84,10 @@ jobs:
         with:
           name: cli-build
           path: cli-build.tgz
-
   pre-build-go-binaries:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -123,11 +122,10 @@ jobs:
         with:
           name: go-binaries-build
           path: go-binaries-build.tgz
-
   pre-build-go-binaries-rcd:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -165,11 +163,10 @@ jobs:
       with:
         name: go-binaries-build-rcd
         path: go-binaries-build-rcd.tgz
-
   pre-build-docs:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -215,7 +212,7 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -267,16 +264,17 @@ jobs:
           name: docs-build
           path: image/docs
 
+      - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
+
       # needed to restore node_modules for ossls-nostice
       - uses: ./.github/actions/cache-ui-dependencies
 
+      # explicitly fetch deps just in case cache was not ready
+      - name: Fetch UI deps
+        run: make -C ui deps
+
       - name: Generate OSS notice
         run: make ossls-notice
-
-      # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
-      - name: Docker login
-        run: |
-            docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RO_PASSWORD}"
 
       - name: Build main images
         run: make docker-build-main-image
@@ -287,7 +285,18 @@ jobs:
       - name: Build roxctl image
         run: make docker-build-roxctl-image
 
+      # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
+      - name: Docker login
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        run: |
+          docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RO_PASSWORD}"
+
       - name: Push images
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
             source ./scripts/ci/lib.sh
             echo "Will determin context from: ${{ github.event_name }} & ${{ github.ref_name }}"
@@ -298,11 +307,17 @@ jobs:
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}"
 
       - name: Push matching collector and scanner images
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
             source ./scripts/ci/lib.sh
             push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}"
 
       - name: Comment on the PR
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         env:
           GITHUB_TOKEN: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
         run: |
@@ -322,7 +337,7 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -367,8 +382,14 @@ jobs:
         name: docs-build
         path: image/docs
 
+    - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
+
     # needed to restore node_modules for ossls-nostice
     - uses: ./.github/actions/cache-ui-dependencies
+
+    # explicitly fetch deps just in case cache was not ready
+    - name: Fetch UI deps
+      run: make -C ui deps
 
     - name: Generate OSS notice
       run: make ossls-notice
@@ -380,21 +401,26 @@ jobs:
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
+
+    - name: Build main images
+      run: make docker-build-main-image
+
     - name: Login to quay.io/rhacs-eng
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
       uses: docker/login-action@v2
       with:
         registry: quay.io
         username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
-    - name: Build main images
-      run: make docker-build-main-image
-
     - name: Push to quay.io/rhacs-eng
       uses: docker/build-push-action@v4
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
       with:
-        context: image/rhel
         push: true
+        context: image/rhel
         build-args: |
           ROX_PRODUCT_BRANDING=${{ env.ROX_PRODUCT_BRANDING }}
         file: image/rhel/Dockerfile.gen
@@ -403,7 +429,7 @@ jobs:
   build-and-push-operator:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -440,6 +466,9 @@ jobs:
         run: echo "GOTAGS=release" >> "$GITHUB_ENV"
 
       - name: Docker login
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
             docker login -u "${QUAY_RHACS_ENG_RW_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RW_PASSWORD}"
 
@@ -454,22 +483,31 @@ jobs:
         run: docker run --rm "quay.io/rhacs-eng/stackrox-operator:$(make --quiet -C operator tag)" --help
 
       - name: Push images
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           make -C operator/ docker-push docker-push-bundle | cat
 
       # Index image can only be built once bundle was pushed
       - name: Build index
+        # Skip for external contributions as the build relies on the previous image to be pushed.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           make -C operator/ index-build
 
       - name: Push index image
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           make -C operator/ docker-push-index | cat
 
   build-and-push-mock-grpc-server:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -496,9 +534,15 @@ jobs:
       run: make mock-grpc-server-image
 
     - name: Set up Docker Buildx
+      # Skip for external contributions.
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
       uses: docker/setup-buildx-action@v2
 
     - name: Login to quay.io/rhacs-eng
+      # Skip for external contributions.
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
       uses: docker/login-action@v2
       with:
         registry: quay.io
@@ -507,9 +551,11 @@ jobs:
 
     - name: Push to quay.io/rhacs-eng
       uses: docker/build-push-action@v4
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
       with:
-        context: integration-tests/mock-grpc-server/image
         push: true
+        context: integration-tests/mock-grpc-server/image
         tags: |
           quay.io/rhacs-eng/grpc-server:${{ steps.tag.outputs.TAG }}
 
@@ -519,7 +565,7 @@ jobs:
     needs:
       - build-and-push-main
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.56
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
       env:
         STACKROX_CI_INSTANCE_API_KEY: ${{ secrets.STACKROX_CI_INSTANCE_API_KEY }}
         STACKROX_CI_INSTANCE_CENTRAL_HOST: ${{ secrets.STACKROX_CI_INSTANCE_CENTRAL_HOST }}

@@ -39,6 +39,9 @@ echo "StackRox roxctl image set to $ROXCTL_IMAGE"
 export ROXCTL_ROX_IMAGE_FLAVOR="${ROXCTL_ROX_IMAGE_FLAVOR:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" image-flavor)}"
 echo "Image flavor for roxctl set to $ROXCTL_ROX_IMAGE_FLAVOR"
 
+export ROX_RESYNC_DISABLED="${ROX_RESYNC_DISABLED:-true}"
+echo "Re-sync disabled for secured cluster set to $ROX_RESYNC_DISABLED"
+
 export SCANNER_IMAGE="${SCANNER_IMAGE:-}"
 if [[ -z "${SCANNER_IMAGE}" ]]; then
   SCANNER_IMAGE="$DEFAULT_IMAGE_REGISTRY/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"

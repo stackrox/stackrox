@@ -16,6 +16,7 @@ message BuildDetectionRequest {
     }
     bool no_external_metadata         = 2;
     bool send_notifications           = 4;
+    bool force                        = 6;
     repeated string policy_categories = 5;
 }
 
@@ -36,6 +37,7 @@ message DeployYAMLDetectionRequest {
     string yaml                       = 1;
     bool no_external_metadata         = 2;
     bool enforcement_only             = 3;
+    bool force                        = 5;
     repeated string policy_categories = 4;
 }
 

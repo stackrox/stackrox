@@ -55,7 +55,7 @@ func (a *auditLogCollectionManagerImpl) Capabilities() []centralsensor.SensorCap
 	return []centralsensor.SensorCapability{centralsensor.AuditLogEventsCap}
 }
 
-func (a *auditLogCollectionManagerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (a *auditLogCollectionManagerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	// This component doesn't actually process or handle any messages sent to Sensor. It uses the sensor component
 	// so that the lifecycle (start, stop) can be handled when Sensor starts up. The actual messages from central to
 	// enable/disable audit log collection is handled as part of the dynamic config in config.Handler which then calls

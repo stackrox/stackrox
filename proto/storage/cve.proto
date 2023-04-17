@@ -103,7 +103,7 @@ message CVEInfo {
         V3      = 1;
         UNKNOWN = 2;
     }
-    string                    cve                   = 1 [(gogoproto.moretags) = 'search:"CVE,store"'];
+    string                    cve                   = 1 [(gogoproto.moretags) = 'search:"CVE,store" sql:"index=hash"'];
     string                    summary               = 2;
     string                    link                  = 3;
     // This indicates the timestamp when the cve was first published in the cve feeds.

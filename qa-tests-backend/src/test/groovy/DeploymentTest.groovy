@@ -17,12 +17,12 @@ class DeploymentTest extends BaseSpecification {
     // The image name in quay.io includes the SHA from the original image
     // imported from docker.io which is somewhat confusingly different.
     private static final String DEPLOYMENT_IMAGE_NAME =
-        "quay.io/rhacs-eng/qa:nginx-204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad"
+        "quay.io/rhacs-eng/qa-multi-arch:nginx-204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad"
     private static final String DEPLOYMENT_IMAGE_SHA =
-        "7413e4ab770f308c01659dd1015e61dcc1dead3923d4347dbf3c59206594332f"
+        "b73f527d86e3461fd652f62cf47e7b375196063bbbd503e853af5be16597cb2e"
     private static final String GKE_ORCHESTRATOR_DEPLOYMENT_NAME = "kube-dns"
     private static final String OPENSHIFT_ORCHESTRATOR_DEPLOYMENT_NAME = "apiserver"
-    private static final String STACKROX_DEPLOYMENT_NAME = "central"
+    private static final String STACKROX_DEPLOYMENT_NAME = "sensor"
 
     private static final Deployment DEPLOYMENT = new Deployment()
             .setName(DEPLOYMENT_NAME)
@@ -38,10 +38,12 @@ class DeploymentTest extends BaseSpecification {
 
     def setupSpec() {
         orchestrator.createDeployment(DEPLOYMENT)
+        ImageService.scanImage(DEPLOYMENT_IMAGE_NAME)
     }
 
     def cleanupSpec() {
         orchestrator.deleteDeployment(DEPLOYMENT)
+        ImageService.deleteImages(RawQuery.newBuilder().setQuery("Image:${DEPLOYMENT_IMAGE_NAME}").build(), true)
     }
 
     @Unroll
@@ -83,12 +85,13 @@ class DeploymentTest extends BaseSpecification {
         query                                                            | _
         "Image:"+DEPLOYMENT_IMAGE_NAME                                   | _
         "Image Sha:sha256:"+DEPLOYMENT_IMAGE_SHA                         | _
+        "CVE:CVE-2018-18314"                                             | _
         "CVE:CVE-2018-18314+Fixable:true"                                | _
         "Deployment:${DEPLOYMENT_NAME}+Image:r/quay.io.*"                | _
         "Image:r/quay.io.*"                                              | _
         "Image:!stackrox.io"                                             | _
         "Deployment:${DEPLOYMENT_NAME}+Image:!stackrox.io"               | _
-        "Image Remote:rhacs-eng/qa+Image Registry:quay.io"               | _
+        "Image Remote:rhacs-eng/qa-multi-arch+Image Registry:quay.io"               | _
     }
 
     @Unroll

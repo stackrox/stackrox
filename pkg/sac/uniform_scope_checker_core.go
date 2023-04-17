@@ -22,7 +22,7 @@ func AllowAllAccessScopeChecker() ScopeCheckerCore {
 	return allowAllScopeCheckerCore
 }
 
-func (s uniformScopeCheckerCore) SubScopeChecker(key ScopeKey) ScopeCheckerCore {
+func (s uniformScopeCheckerCore) SubScopeChecker(_ ScopeKey) ScopeCheckerCore {
 	return s
 }
 
@@ -30,7 +30,7 @@ func (s uniformScopeCheckerCore) Allowed() bool {
 	return bool(s)
 }
 
-func (s uniformScopeCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
+func (s uniformScopeCheckerCore) EffectiveAccessScope(_ permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
 	if s {
 		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}

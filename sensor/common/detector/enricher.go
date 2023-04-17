@@ -2,6 +2,7 @@ package detector
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
@@ -10,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -18,6 +20,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/store"
 	"google.golang.org/grpc/status"
@@ -44,13 +47,15 @@ type enricher struct {
 	scanResultChan chan scanResult
 
 	serviceAccountStore store.ServiceAccountStore
+	localScan           *scan.LocalScan
 	imageCache          expiringcache.Cache
 	stopSig             concurrency.Signal
 }
 
 type cacheValue struct {
-	signal concurrency.Signal
-	image  *storage.Image
+	signal    concurrency.Signal
+	image     *storage.Image
+	localScan *scan.LocalScan
 }
 
 func (c *cacheValue) waitAndGet() *storage.Image {
@@ -58,7 +63,7 @@ func (c *cacheValue) waitAndGet() *storage.Image {
 	return c.image
 }
 
-func scanImage(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) (*v1.ScanImageInternalResponse, error) {
+func scanImage(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, _ *scan.LocalScan) (*v1.ScanImageInternalResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
@@ -76,19 +81,27 @@ func scanImage(ctx context.Context, svc v1.ImageServiceClient, req *scanImageReq
 	return svc.ScanImageInternal(ctx, internalReq)
 }
 
-func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) (*v1.ScanImageInternalResponse, error) {
+func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, localScan *scan.LocalScan) (*v1.ScanImageInternalResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
-	img, err := scan.EnrichLocalImage(ctx, svc, req.containerImage)
+	var img *storage.Image
+	var err error
+	if req.containerImage.GetIsClusterLocal() {
+		img, err = localScan.EnrichLocalImage(ctx, svc, req.containerImage)
+	} else {
+		// ForceLocalImageScanning must be enabled
+		img, err = localScan.EnrichLocalImageInNamespace(ctx, svc, req.containerImage, req.namespace)
+	}
+
 	return &v1.ScanImageInternalResponse{
 		Image: img,
 	}, err
 }
 
-type scanFunc func(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) (*v1.ScanImageInternalResponse, error)
+type scanFunc func(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, localScan *scan.LocalScan) (*v1.ScanImageInternalResponse, error)
 
-func scanWithRetries(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, scan scanFunc) (*v1.ScanImageInternalResponse, error) {
+func (c *cacheValue) scanWithRetries(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, scanFn scanFunc) (*v1.ScanImageInternalResponse, error) {
 	eb := backoff.NewExponentialBackOff()
 	eb.InitialInterval = 5 * time.Second
 	eb.Multiplier = 2
@@ -101,7 +114,7 @@ outer:
 	for {
 		// We want to get the time spent in backoff without including the time it took to scan the image.
 		timeSpentInBackoffSoFar := eb.GetElapsedTime()
-		scannedImage, err := scan(ctx, svc, req)
+		scannedImage, err := scanFn(ctx, svc, req, c.localScan)
 		if err != nil {
 			for _, detail := range status.Convert(err).Details() {
 				// If the client is effectively rate-limited, backoff and try again.
@@ -109,6 +122,14 @@ outer:
 					time.Sleep(eb.NextBackOff())
 					continue outer
 				}
+			}
+
+			// If cluster local scan is rate-limited, backoff and try again
+			if errors.Is(err, scan.ErrTooManyParallelScans) {
+				dur := eb.NextBackOff()
+				log.Debugf("local scan rate limited, backing off for %q: %q", dur, req.containerImage.GetName().GetFullName())
+				time.Sleep(dur)
+				continue outer
 			}
 
 			return nil, err
@@ -123,30 +144,33 @@ outer:
 func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
 	defer c.signal.Signal()
 
-	// Ask Central to scan the image if the image is not internal.
+	// Ask Central to scan the image if the image is not internal and local scanning is not forced
 	// Otherwise, attempt to scan locally.
 	scanImageFn := scanImage
-	if req.containerImage.GetIsClusterLocal() {
+	if req.containerImage.GetIsClusterLocal() || env.ForceLocalImageScanning.BooleanSetting() {
 		scanImageFn = scanImageLocal
 	}
 
-	scannedImage, err := scanWithRetries(ctx, svc, req, scanImageFn)
+	scannedImage, err := c.scanWithRetries(ctx, svc, req, scanImageFn)
 	if err != nil {
 		// Ignore the error and set the image to something basic,
 		// so alerting can progress.
+		log.Errorf("Scan request failed for image %s: %s", req.containerImage.GetName().GetFullName(), err)
 		c.image = types.ToImage(req.containerImage)
 		return
 	}
 
+	log.Debugf("Successful image scan for image %s: %d components returned by scanner", req.containerImage.GetName().GetFullName(), len(scannedImage.GetImage().GetScan().GetComponents()))
 	c.image = scannedImage.GetImage()
 }
 
-func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAccountStore) *enricher {
+func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store) *enricher {
 	return &enricher{
 		scanResultChan:      make(chan scanResult),
 		serviceAccountStore: serviceAccountStore,
 		imageCache:          cache,
 		stopSig:             concurrency.NewSignal(),
+		localScan:           scan.NewLocalScan(registryStore),
 	}
 }
 
@@ -166,6 +190,7 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 
 	// If the container image says that the image is not pullable, don't even bother trying to scan
 	if req.containerImage.GetNotPullable() {
+		log.Warnf("Skipping image scan for image: %s. Not pullable", req.containerImage.GetName().GetFullName())
 		return imageChanResult{
 			image:        types.ToImage(req.containerImage),
 			containerIdx: req.containerIdx,
@@ -182,6 +207,7 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	if ok {
 		// If the container image name is already within the cached images names, we can short-circuit.
 		if protoutils.SliceContains(req.containerImage.GetName(), img.GetNames()) {
+			log.Debugf("Image scan loaded from cache: %s: Components: (%d)", req.containerImage.GetName().GetFullName(), len(img.GetScan().GetComponents()))
 			return imageChanResult{
 				image:        img,
 				containerIdx: req.containerIdx,
@@ -194,7 +220,8 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	}
 
 	newValue := &cacheValue{
-		signal: concurrency.NewSignal(),
+		signal:    concurrency.NewSignal(),
+		localScan: e.localScan,
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if forceEnrichImageWithSignatures || newValue == value {

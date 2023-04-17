@@ -1,4 +1,7 @@
+import static util.Helpers.withRetry
+
 import com.google.common.base.CaseFormat
+import orchestratormanager.OrchestratorTypes
 
 import io.stackrox.proto.api.v1.RbacServiceOuterClass
 import io.stackrox.proto.api.v1.ServiceAccountServiceOuterClass
@@ -11,7 +14,6 @@ import objects.K8sRole
 import objects.K8sRoleBinding
 import objects.K8sServiceAccount
 import objects.K8sSubject
-import orchestratormanager.OrchestratorTypes
 import services.RbacService
 import services.ServiceAccountService
 import util.Env

@@ -27,6 +27,16 @@ func (r *roleTransform) Transform(configuration declarativeconfig.Configuration)
 		return nil, errox.InvalidArgs.Newf("invalid configuration type received for role: %T", configuration)
 	}
 
+	if roleConfig.Name == "" {
+		return nil, errox.InvalidArgs.CausedBy("name must be non-empty")
+	}
+	if roleConfig.AccessScope == "" {
+		return nil, errox.InvalidArgs.CausedBy("access scope must be non-empty")
+	}
+	if roleConfig.PermissionSet == "" {
+		return nil, errox.InvalidArgs.CausedBy("permission set must be non-empty")
+	}
+
 	roleProto := &storage.Role{
 		Name:            roleConfig.Name,
 		Description:     roleConfig.Description,

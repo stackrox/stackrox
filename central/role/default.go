@@ -107,12 +107,9 @@ func IsDefaultAccessScope(scope *storage.SimpleAccessScope) bool {
 func GetAnalystPermissions() []permissions.ResourceWithAccess {
 	resourceToAccess := resources.AllResourcesViewPermissions()
 	for i, resourceWithAccess := range resourceToAccess {
-		// TODO: ROX-12750 Replace DebugLogs with Administration.
-		// TODO: ROX-12750 Announce Analyst permission set change in CHANGELOG.
-		if resourceWithAccess.Resource.GetResource() == resources.DebugLogs.GetResource() {
+		if resourceWithAccess.Resource.GetResource() == resources.Administration.GetResource() {
 			return append(resourceToAccess[:i], resourceToAccess[i+1:]...)
 		}
 	}
-	// TODO: ROX-12750 Replace DebugLogs with Administration.
-	panic("DebugLogs resource was not found amongst all resources.")
+	panic("Administration resource was not found amongst all resources.")
 }

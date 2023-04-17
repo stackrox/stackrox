@@ -42,7 +42,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.NetworkGraphConfigsSchema
-	targetResource = resources.NetworkGraphConfig
+	targetResource = resources.Administration
 )
 
 // Store is the interface to interact with the storage for storage.NetworkGraphConfig

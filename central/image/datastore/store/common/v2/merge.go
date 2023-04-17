@@ -48,7 +48,7 @@ func mergeComponents(parts ImageParts, image *storage.Image) {
 	}
 }
 
-func generateEmbeddedComponent(os string, cp ComponentParts, imageCVEEdges map[string]*storage.ImageCVEEdge) *storage.EmbeddedImageScanComponent {
+func generateEmbeddedComponent(_ string, cp ComponentParts, imageCVEEdges map[string]*storage.ImageCVEEdge) *storage.EmbeddedImageScanComponent {
 	if cp.Component == nil || cp.Edge == nil {
 		return nil
 	}

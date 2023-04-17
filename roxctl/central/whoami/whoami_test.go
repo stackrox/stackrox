@@ -38,7 +38,7 @@ type mockAuthServiceServer struct {
 	roles            []*storage.Role
 }
 
-func (m *mockAuthServiceServer) GetAuthStatus(ctx context.Context, req *v1.Empty) (*v1.AuthStatus, error) {
+func (m *mockAuthServiceServer) GetAuthStatus(_ context.Context, _ *v1.Empty) (*v1.AuthStatus, error) {
 	return &v1.AuthStatus{
 		Id: &v1.AuthStatus_UserId{
 			UserId: m.userInfo.Username,
@@ -47,11 +47,11 @@ func (m *mockAuthServiceServer) GetAuthStatus(ctx context.Context, req *v1.Empty
 	}, nil
 }
 
-func (m *mockAuthServiceServer) GetMyPermissions(ctx context.Context, req *v1.Empty) (*v1.GetPermissionsResponse, error) {
+func (m *mockAuthServiceServer) GetMyPermissions(_ context.Context, _ *v1.Empty) (*v1.GetPermissionsResponse, error) {
 	return &v1.GetPermissionsResponse{ResourceToAccess: m.resourceToAccess}, nil
 }
 
-func (m *mockAuthServiceServer) GetRoles(ctx context.Context, req *v1.Empty) (*v1.GetRolesResponse, error) {
+func (m *mockAuthServiceServer) GetRoles(_ context.Context, _ *v1.Empty) (*v1.GetRolesResponse, error) {
 	return &v1.GetRolesResponse{Roles: m.roles}, nil
 }
 

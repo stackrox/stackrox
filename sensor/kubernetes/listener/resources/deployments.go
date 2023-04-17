@@ -181,14 +181,6 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		return events
 	}
 
-	if action != central.ResourceAction_REMOVE_RESOURCE {
-		d.deploymentStore.addOrUpdateDeployment(deploymentWrap)
-	} else {
-		d.deploymentStore.removeDeployment(deploymentWrap)
-		d.podStore.onDeploymentRemove(deploymentWrap)
-		d.processFilter.Delete(deploymentWrap.GetId())
-	}
-
 	events = d.appendIntegrationsOnCredentials(action, deploymentWrap.GetContainers(), events)
 
 	if env.ResyncDisabled.BooleanSetting() {
@@ -207,7 +199,8 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		} else {
 			// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
 			// references up the chain, which will be used to trigger the actual deployment event and detection.
-			events.AddDeploymentReference(resolver.ResolveDeploymentIds(deploymentWrap.GetId()), action, false)
+			events.AddDeploymentReference(resolver.ResolveDeploymentIds(deploymentWrap.GetId()),
+				component.WithParentResourceAction(action))
 		}
 	} else {
 		exposureInfos := d.serviceStore.GetExposureInfos(deploymentWrap.GetNamespace(), deploymentWrap.PodLabels)
@@ -229,6 +222,15 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 			Object: deploymentWrap.GetDeployment(),
 			Action: action,
 		})
+	}
+
+	// Upsert/Delete at the end to avoid data race with other dispatchers
+	if action != central.ResourceAction_REMOVE_RESOURCE {
+		d.deploymentStore.addOrUpdateDeployment(deploymentWrap)
+	} else {
+		d.deploymentStore.removeDeployment(deploymentWrap)
+		d.podStore.onDeploymentRemove(deploymentWrap)
+		d.processFilter.Delete(deploymentWrap.GetId())
 	}
 
 	return events

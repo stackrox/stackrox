@@ -1,12 +1,19 @@
 package fixtures
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"fmt"
+
+	"github.com/stackrox/rox/generated/storage"
+)
+
+var idCounter int
 
 // GetGroup return a mock storage.Group with all possible properties filled out.
 func GetGroup() *storage.Group {
+	idCounter++
 	return &storage.Group{
 		Props: &storage.GroupProperties{
-			Id:             "abcdef-123",
+			Id:             fmt.Sprintf("abcdef-%d", idCounter),
 			AuthProviderId: "authProviderA",
 			Key:            "AttributeA",
 			Value:          "ValueUno",

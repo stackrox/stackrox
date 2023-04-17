@@ -1,8 +1,10 @@
 import React, { ReactElement } from 'react';
 import { Redirect, Route, Switch } from 'react-router-dom';
-
 import { Alert, List, ListItem } from '@patternfly/react-core';
-import { accessControlBasePath, accessControlPath, getEntityPath } from './accessControlPaths';
+
+import { accessControlBasePath, accessControlPath } from 'routePaths';
+
+import { getEntityPath } from './accessControlPaths';
 
 import AccessControlRouteNotFound from './AccessControlRouteNotFound';
 import AccessScopes from './AccessScopes/AccessScopes';
@@ -25,6 +27,17 @@ function AccessControl(): ReactElement {
                             <ListItem>
                                 <b>Access</b> replaces{' '}
                                 <b>AuthProvider, Group, Licenses, and User</b>
+                            </ListItem>
+                            <ListItem>
+                                <b>Administration</b> replaces{' '}
+                                <b>
+                                    AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload,
+                                    ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and
+                                    ServiceIdentity
+                                </b>
+                            </ListItem>
+                            <ListItem>
+                                <b>Compliance</b> replaces <b>ComplianceRuns</b>
                             </ListItem>
                             <ListItem>
                                 <b>DeploymentExtension</b> replaces{' '}
@@ -52,20 +65,6 @@ function AccessControl(): ReactElement {
                         <List>
                             <ListItem>
                                 <b>Access</b> will replace <b>Role</b>
-                            </ListItem>
-                            <ListItem>
-                                <b>Administration</b> will replace{' '}
-                                <b>
-                                    AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload,
-                                    ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and
-                                    ServiceIdentity
-                                </b>
-                            </ListItem>
-                            <ListItem>
-                                <b>Compliance</b> will replace <b>ComplianceRuns</b>
-                            </ListItem>
-                            <ListItem>
-                                <b>Cluster</b> will cover <b>ClusterCVE</b>
                             </ListItem>
                             <ListItem>
                                 <b>WorkflowAdministration</b> will replace{' '}

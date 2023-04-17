@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/sensor/common"
 )
 
@@ -59,7 +60,13 @@ func (h *admCtrlMsgForwarderImpl) Capabilities() []centralsensor.SensorCapabilit
 }
 
 func (h *admCtrlMsgForwarderImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	return nil
+	errorList := errorhelpers.NewErrorList("ProcessMessage in AdmCtrlMsgForwarder")
+	for _, component := range h.components {
+		if err := component.ProcessMessage(msg); err != nil {
+			errorList.AddError(err)
+		}
+	}
+	return errorList.ToError()
 }
 
 func (h *admCtrlMsgForwarderImpl) ResponsesC() <-chan *central.MsgFromSensor {

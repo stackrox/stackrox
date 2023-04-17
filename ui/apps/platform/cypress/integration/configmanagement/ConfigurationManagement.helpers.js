@@ -241,7 +241,7 @@ export function interactAndWaitForConfigurationManagementScan(interactionCallbac
 
 export function navigateToSingleEntityPage(entitiesKey) {
     interactAndWaitForConfigurationManagementEntityPage(() => {
-        cy.get('[data-testid="side-panel"] [data-testid="external-link"]').click();
+        cy.get('[data-testid="side-panel"] [aria-label="External link"]').click();
     }, entitiesKey);
 }
 

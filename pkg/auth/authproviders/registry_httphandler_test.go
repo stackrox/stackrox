@@ -385,6 +385,11 @@ var mockAuthProvider = &storage.AuthProvider{
 	Active:           true,
 }
 
+var mockedAuthProviders = []*storage.AuthProvider{
+	mockAuthProvider,
+	mockAuthProviderWithAttributes,
+}
+
 func generateAuthResponse(user string, userAttr map[string][]string) *AuthResponse {
 	return &AuthResponse{
 		Claims: &tokens.ExternalUserClaim{
@@ -399,11 +404,24 @@ func generateAuthResponse(user string, userAttr map[string][]string) *AuthRespon
 
 var _ Store = (*tstAuthProviderStore)(nil)
 
-// Authprovider store (needed for NewStoreBackedRegistry)
+// AuthProvider store (needed for NewStoreBackedRegistry)
 type tstAuthProviderStore struct{}
+
+func (s *tstAuthProviderStore) GetAuthProvider(_ context.Context, id string) (*storage.AuthProvider, bool, error) {
+	for _, ap := range mockedAuthProviders {
+		if ap.GetId() == id {
+			return ap, true, nil
+		}
+	}
+	return nil, false, nil
+}
 
 func (*tstAuthProviderStore) GetAllAuthProviders(_ context.Context) ([]*storage.AuthProvider, error) {
 	return []*storage.AuthProvider{mockAuthProvider, mockAuthProviderWithAttributes}, nil
+}
+
+func (*tstAuthProviderStore) GetAuthProvidersFiltered(_ context.Context, _ func(provider *storage.AuthProvider) bool) ([]*storage.AuthProvider, error) {
+	return nil, nil
 }
 
 func (*tstAuthProviderStore) AddAuthProvider(_ context.Context, _ *storage.AuthProvider) error {
@@ -484,7 +502,7 @@ func (*tstAuthProviderBackend) Config() map[string]string {
 	return nil
 }
 
-func (b *tstAuthProviderBackend) LoginURL(_ string, r *requestinfo.RequestInfo) (string, error) {
+func (b *tstAuthProviderBackend) LoginURL(_ string, _ *requestinfo.RequestInfo) (string, error) {
 	return b.loginURL, b.err
 }
 
@@ -492,9 +510,9 @@ func (*tstAuthProviderBackend) RefreshURL() string {
 	return "refresh"
 }
 
-func (*tstAuthProviderBackend) OnEnable(provider Provider) {}
+func (*tstAuthProviderBackend) OnEnable(_ Provider) {}
 
-func (*tstAuthProviderBackend) OnDisable(provider Provider) {}
+func (*tstAuthProviderBackend) OnDisable(_ Provider) {}
 
 func (b *tstAuthProviderBackend) ProcessHTTPRequest(_ http.ResponseWriter,
 	_ *http.Request) (*AuthResponse, error) {

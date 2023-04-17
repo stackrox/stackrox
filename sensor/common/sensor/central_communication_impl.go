@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -195,6 +196,12 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 	clusterID := centralHello.GetClusterId()
 	clusterid.Set(clusterID)
 
+	if centralHello.GetManagedCentral() {
+		log.Info("Central is managed")
+	}
+
+	managedcentral.Set(centralHello.GetManagedCentral())
+
 	if hello.HelmManagedConfigInit != nil {
 		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {
 			log.Warnf("Could not cache cluster ID: %v", err)
@@ -239,7 +246,7 @@ func (s *centralCommunicationImpl) initialPolicySync(stream central.SensorServic
 	if msg.GetPolicySync() == nil {
 		return errors.Errorf("second message received from Sensor was not a policy sync: %T", msg.Msg)
 	}
-	if err := detector.ProcessMessage(msg); err != nil {
+	if err := detector.ProcessPolicySync(msg.GetPolicySync()); err != nil {
 		return errors.Wrap(err, "policy sync could not be successfully processed")
 	}
 

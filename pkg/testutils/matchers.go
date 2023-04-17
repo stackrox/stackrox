@@ -100,7 +100,7 @@ func (m stringTestMatcher) Matches(x interface{}) bool {
 
 type failureRecorder bool
 
-func (r *failureRecorder) Errorf(format string, args ...interface{}) {
+func (r *failureRecorder) Errorf(_ string, _ ...interface{}) {
 	*r = true
 }
 

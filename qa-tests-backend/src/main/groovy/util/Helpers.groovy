@@ -1,10 +1,13 @@
 package util
 
 import common.Constants
+
 import groovy.util.logging.Slf4j
+
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
+
 import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
 import org.junit.AssumptionViolatedException
 import org.spockframework.runtime.SpockAssertionError
@@ -15,7 +18,7 @@ class Helpers {
     private static final int MAX_RETRY_ATTEMPTS = 2
     private static int retryAttempt = 0
 
-    static <V> V evaluateWithRetry(Object ignored, int retries, int pauseSecs, Closure<V> closure) {
+    static <V> V evaluateWithRetry(int retries, int pauseSecs, Closure<V> closure) {
         for (int i = 0; i < retries; i++) {
             try {
                 return closure()
@@ -27,11 +30,11 @@ class Helpers {
         return closure()
     }
 
-    static <V> void withRetry(Object ignored, int retries, int pauseSecs, Closure<V> closure) {
-        evaluateWithRetry(ignored, retries, pauseSecs, closure)
+    static <V> void withRetry(int retries, int pauseSecs, Closure<V> closure) {
+        evaluateWithRetry(retries, pauseSecs, closure)
     }
 
-    static <V> V evaluateWithK8sClientRetry(Object ignored, int retries, int pauseSecs, Closure<V> closure) {
+    static <V> V evaluateWithK8sClientRetry(int retries, int pauseSecs, Closure<V> closure) {
         for (int i = 0; i < retries; i++) {
             try {
                 return closure()
@@ -43,8 +46,8 @@ class Helpers {
         return closure()
     }
 
-    static <V> void withK8sClientRetry(Object ignored, int retries, int pauseSecs, Closure<V> closure) {
-        evaluateWithK8sClientRetry(ignored, retries, pauseSecs, closure)
+    static <V> void withK8sClientRetry(int retries, int pauseSecs, Closure<V> closure) {
+        evaluateWithK8sClientRetry(retries, pauseSecs, closure)
     }
 
     static boolean determineRetry(Throwable failure) {
@@ -117,6 +120,7 @@ class Helpers {
             log.debug "${sdf.format(date)} Will collect various stackrox logs for this failure under ${collectionDir}/"
 
             shellCmd("./scripts/ci/collect-service-logs.sh stackrox ${collectionDir}/stackrox-k8s-logs")
+            shellCmd("./scripts/ci/collect-service-logs.sh kube-system ${collectionDir}/kube-system-k8s-logs")
             shellCmd("./scripts/ci/collect-qa-service-logs.sh ${collectionDir}/qa-k8s-logs")
             shellCmd("./scripts/grab-data-from-central.sh ${collectionDir}/central-data")
         }

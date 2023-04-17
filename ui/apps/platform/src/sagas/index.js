@@ -10,7 +10,6 @@ import searchAutoComplete from './searchAutocompleteSagas';
 import network from './networkSagas';
 import metadata from './metadataSagas';
 import groups from './groupSagas';
-import attributes from './attributesSagas';
 
 export default function* root() {
     yield all([
@@ -24,6 +23,5 @@ export default function* root() {
         fork(network),
         fork(metadata),
         fork(groups),
-        fork(attributes),
     ]);
 }

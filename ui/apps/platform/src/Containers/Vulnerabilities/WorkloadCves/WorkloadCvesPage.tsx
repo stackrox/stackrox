@@ -11,22 +11,19 @@ import {
     vulnerabilitiesWorkloadCveSinglePath,
     vulnerabilitiesWorkloadCvesPath,
 } from 'routePaths';
-import WorkloadCvesDeploymentSinglePage from './WorkloadCvesDeploymentSinglePage';
-import WorkloadCvesImageSinglePage from './WorkloadCvesImageSinglePage';
+import DeploymentPage from './DeploymentPage';
+import ImagePage from './ImagePage';
 import WorkloadCvesOverviewPage from './WorkloadCvesOverviewPage';
-import WorkloadCvesSinglePage from './WorkloadCvesSinglePage';
+import ImageCvePage from './ImageCvePage';
 
 function WorkloadCvesPage() {
     return (
         <Switch>
-            <Route path={vulnerabilitiesWorkloadCveSinglePath} component={WorkloadCvesSinglePage} />
-            <Route
-                path={vulnerabilitiesWorkloadCveImageSinglePath}
-                component={WorkloadCvesImageSinglePage}
-            />
+            <Route path={vulnerabilitiesWorkloadCveSinglePath} component={ImageCvePage} />
+            <Route path={vulnerabilitiesWorkloadCveImageSinglePath} component={ImagePage} />
             <Route
                 path={vulnerabilitiesWorkloadCveDeploymentSinglePath}
-                component={WorkloadCvesDeploymentSinglePage}
+                component={DeploymentPage}
             />
             <Route
                 exact

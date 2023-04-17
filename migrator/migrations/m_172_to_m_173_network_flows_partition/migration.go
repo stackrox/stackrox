@@ -3,7 +3,6 @@ package m172tom173
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -39,8 +38,15 @@ var (
 
 // MigrateToPartitions updates the btree network flow indexes to be hash
 func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
+	ctx := context.Background()
+
+	err := analyzeOldTable(ctx, db)
+	if err != nil {
+		log.WriteToStderrf("unable to analyze network_flows.  Will continue processing though it may be slow. %v", err)
+	}
+
 	// First get the distinct clusters in the network_flows table
-	clusters, err := getClusters(db)
+	clusters, err := getClusters(ctx, db)
 	if err != nil {
 		log.WriteToStderrf("unable to retrieve clusters from network_flows, %v", err)
 		return err
@@ -48,28 +54,28 @@ func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
 
 	// Now apply the updated schema to create a partition table with updated index types.  The
 	// individual partitions will be created on a per cluster basis as the store is created.
-	pgutils.CreateTableFromModel(context.Background(), gormDB, updatedSchema.CreateTableNetworkFlowsStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, updatedSchema.CreateTableNetworkFlowsStmt)
 
 	// Create the partition and move the data
 	for _, cluster := range clusters {
 		sourceStore := previous.New(db, cluster)
 
-		previousCount, err := sourceStore.Count(context.Background())
+		previousCount, err := getPreviousCount(ctx, sourceStore)
 		if err != nil {
 			return err
 		}
 		log.WriteToStderrf("Found %d total network flows to consider for migration.", previousCount)
 
-		// Create the updated store which will create the partiion
+		// Create the updated store which will create the partition
 		destinationStore := updated.New(db, cluster)
 
-		err = migrateData(db, cluster)
+		err = migrateData(ctx, db, destinationStore.GetPartitionName(), cluster)
 		if err != nil {
 			log.WriteToStderrf("unable to move data for cluster %q, %v", cluster, err)
 			return err
 		}
 
-		migratedCount, err := destinationStore.Count(context.Background())
+		migratedCount, err := getDestinationCount(ctx, destinationStore)
 		if err != nil {
 			return err
 		}
@@ -80,13 +86,13 @@ func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
 
 		// Ideally this would have been done on the source.  However, the reason we are implementing
 		// this change is because removing the stale flows was becoming problematic with large amounts of data.
-		// So we will copy it all over and then remove the stale data once it is migrated.
-		err = destinationStore.RemoveStaleFlows(context.Background())
+		// So we will copy it all over and then remove the stale data from the partition once it is migrated.
+		err = cleanupDestinationPartition(ctx, destinationStore)
 		if err != nil {
 			return err
 		}
 
-		migratedCount, err = destinationStore.Count(context.Background())
+		migratedCount, err = getDestinationCount(ctx, destinationStore)
 		if err != nil {
 			return err
 		}
@@ -103,11 +109,49 @@ func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
 	return nil
 }
 
-func getClusters(db *postgres.DB) ([]string, error) {
+func getPreviousCount(ctx context.Context, store previous.FlowStore) (int, error) {
+	// Due to heavy load with network flows, each call to the store could take a long time so we will
+	// pass a context with the migration timeout to them.
+	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
+	defer cancel()
+
+	return store.Count(ctx)
+}
+
+func getDestinationCount(ctx context.Context, store updated.FlowStore) (int, error) {
+	// Due to heavy load with network flows, each call to the store could take a long time so we will
+	// pass a context with the migration timeout to them.
+	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
+	defer cancel()
+
+	return store.Count(ctx)
+}
+
+func cleanupDestinationPartition(ctx context.Context, store updated.FlowStore) error {
+	// Due to heavy load with network flows, each call to the store could take a long time so we will
+	// pass a context with the migration timeout to them.
+	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
+	defer cancel()
+
+	return store.RemoveStaleFlows(ctx)
+}
+
+func analyzeOldTable(ctx context.Context, db *postgres.DB) error {
+	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
+	defer cancel()
+
+	_, err := db.Exec(ctx, "ANALYZE network_flows;")
+	return err
+}
+
+func getClusters(ctx context.Context, db *postgres.DB) ([]string, error) {
+	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
+	defer cancel()
+
 	var clusters []string
 	getClustersStmt := "select distinct id from clusters;"
 
-	rows, err := db.Query(context.Background(), getClustersStmt)
+	rows, err := db.Query(ctx, getClustersStmt)
 	if err != nil {
 		return nil, err
 	}
@@ -125,17 +169,19 @@ func getClusters(db *postgres.DB) ([]string, error) {
 	return clusters, rows.Err()
 }
 
-func migrateData(db *postgres.DB, cluster string) error {
+func migrateData(ctx context.Context, db *postgres.DB, partitionName string, cluster string) error {
 	clusterUUID, err := uuid.FromString(cluster)
 	if err != nil {
 		return err
 	}
 
-	partitionPostFix := strings.ReplaceAll(cluster, "-", "_")
-	// Skip the serial ID
-	moveDataStmt := fmt.Sprintf("INSERT INTO network_flows_v2_%s (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM network_flows WHERE ClusterId = $1", partitionPostFix)
+	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
+	defer cancel()
 
-	_, err = db.Exec(context.Background(), moveDataStmt, clusterUUID)
+	// Skip the serial ID
+	moveDataStmt := fmt.Sprintf("INSERT INTO %s (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM network_flows WHERE ClusterId = $1", partitionName)
+
+	_, err = db.Exec(ctx, moveDataStmt, clusterUUID)
 	if err != nil {
 		return err
 	}

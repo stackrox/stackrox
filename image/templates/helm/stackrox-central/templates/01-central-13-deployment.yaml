@@ -105,10 +105,14 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         {{- if ._rox.central.telemetry.enabled }}
+        {{- if ._rox.central.telemetry.storage.endpoint }}
         - name: ROX_TELEMETRY_ENDPOINT
           value: {{ ._rox.central.telemetry.storage.endpoint | quote }}
+        {{- end }}
+        {{- if ._rox.central.telemetry.storage.key }}
         - name: ROX_TELEMETRY_STORAGE_KEY_V1
           value: {{ ._rox.central.telemetry.storage.key | quote }}
+        {{- end }}
         {{- end }}
         - name: ROX_OFFLINE_MODE
           value: {{ ._rox.env.offlineMode | quote }}

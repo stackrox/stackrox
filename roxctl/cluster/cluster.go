@@ -12,7 +12,8 @@ import (
 // Command controls all of the functions being applied to a sensor
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "cluster",
+		Use:   "cluster",
+		Short: "Commands related to a cluster.",
 	}
 
 	c.AddCommand(delete.Command(cliEnvironment))

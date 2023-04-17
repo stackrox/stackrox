@@ -63,7 +63,7 @@ func unencryptedPlainAuth(identity, username, password, host string) smtp.Auth {
 	}
 }
 
-func (a *plainAuthUnencrypted) Start(server *smtp.ServerInfo) (string, []byte, error) {
+func (a *plainAuthUnencrypted) Start(_ *smtp.ServerInfo) (string, []byte, error) {
 	// This is modified from smtp.plainAuth.Start()
 	// to remove the check that passwords can only be sent unencrypted
 	// to localhost.
@@ -74,7 +74,7 @@ func (a *plainAuthUnencrypted) Start(server *smtp.ServerInfo) (string, []byte, e
 	return "PLAIN", resp, nil
 }
 
-func (a *plainAuthUnencrypted) Next(fromServer []byte, more bool) ([]byte, error) {
+func (a *plainAuthUnencrypted) Next(_ []byte, more bool) ([]byte, error) {
 	// This is copied from smtp.plainAuth.Next().
 	// See Start() for reasons why we have copied this type.
 	if more {
@@ -92,7 +92,7 @@ func loginAuthMethod(username, password string) smtp.Auth {
 	return &loginAuth{username, password}
 }
 
-func (a *loginAuth) Start(server *smtp.ServerInfo) (string, []byte, error) {
+func (a *loginAuth) Start(_ *smtp.ServerInfo) (string, []byte, error) {
 	return "LOGIN", []byte(a.username), nil
 }
 

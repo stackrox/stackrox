@@ -1,12 +1,7 @@
 import * as api from '../constants/apiEndpoints';
 import { selectors as networkGraphSelectors } from '../constants/NetworkPage';
 import { visitFromLeftNav } from './nav';
-import {
-    getRouteMatcherMapForGraphQL,
-    interactAndWaitForResponses,
-    interceptRequests,
-    waitForResponses,
-} from './request';
+import { interactAndWaitForResponses, interceptRequests, waitForResponses } from './request';
 import { visit } from './visit';
 import selectSelectors from '../selectors/select';
 import tabSelectors from '../selectors/tab';
@@ -224,13 +219,7 @@ export const notifiersAlias = 'notifiers';
 export const clustersAlias = 'clusters';
 export const networkPoliciesGraphEpochAlias = 'networkpolicies/graph/epoch';
 export const searchMetadataOptionsAlias = 'search/metadata/options';
-export const getClusterNamespaceNamesOpname = 'getClusterNamespaceNames';
-
-// Network Graph makes the following query on the first visit, but not subsequent visit via browser Back button.
-// Include it because each cypress test has a new connection, therefore behaves as a first visit.
-const routeMatcherMapForSearchFilter = getRouteMatcherMapForGraphQL([
-    getClusterNamespaceNamesOpname,
-]);
+export const namespaceAlias = 'namespaces';
 
 const routeMatcherMapToVisitNetworkGraph = {
     [notifiersAlias]: {
@@ -239,7 +228,7 @@ const routeMatcherMapToVisitNetworkGraph = {
     },
     [clustersAlias]: {
         method: 'GET',
-        url: '/v1/clusters',
+        url: '/v1/sac/clusters?permissions=NetworkGraph&permissions=Deployment',
     },
     [networkPoliciesGraphEpochAlias]: {
         method: 'GET',
@@ -249,7 +238,10 @@ const routeMatcherMapToVisitNetworkGraph = {
         method: 'GET',
         url: api.search.optionsCategories('DEPLOYMENTS'),
     },
-    ...routeMatcherMapForSearchFilter,
+    [namespaceAlias]: {
+        method: 'GET',
+        url: '/v1/sac/clusters/*/namespaces?permissions=NetworkGraph&permissions=Deployment',
+    },
 };
 
 export const deploymentAlias = 'deployments/id';

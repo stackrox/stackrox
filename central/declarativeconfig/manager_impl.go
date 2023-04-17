@@ -6,24 +6,29 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/hashicorp/go-multierror"
+	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	"github.com/stackrox/rox/central/declarativeconfig/updater"
+	declarativeConfigUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -32,7 +37,9 @@ const (
 	declarativeConfigDir = "/run/stackrox.io/declarative-configuration"
 
 	// The number of consecutive errors for a declarative configuration that causes its health status to be UNHEALTHY.
-	consecutiveReconciliationErrorThreshold = 5
+	consecutiveReconciliationErrorThreshold = 3
+
+	handlerIntegrationHealthStatusPrefix = "Config Map"
 )
 
 type protoMessagesByType = map[reflect.Type][]proto.Message
@@ -45,6 +52,10 @@ type managerImpl struct {
 	transformedMessagesByHandler map[string]protoMessagesByType
 	transformedMessagesMutex     sync.RWMutex
 
+	lastReconciliationHash uint64
+	lastUpsertFailed       concurrency.Flag
+	lastDeletionFailed     concurrency.Flag
+
 	reconciliationTickerDuration time.Duration
 	watchIntervalDuration        time.Duration
 
@@ -53,7 +64,6 @@ type managerImpl struct {
 
 	reconciliationTicker *time.Ticker
 	shortCircuitSignal   concurrency.Signal
-	stopSignal           concurrency.Signal
 
 	reconciliationCtx context.Context
 
@@ -94,12 +104,17 @@ func New(reconciliationTickerDuration, watchIntervalDuration time.Duration, upda
 		idExtractor:                    idExtractor,
 		nameExtractor:                  nameExtractor,
 		shortCircuitSignal:             concurrency.NewSignal(),
-		stopSignal:                     concurrency.NewSignal(),
 	}
 }
 
 func (m *managerImpl) ReconcileDeclarativeConfigurations() {
 	m.once.Do(func() {
+		if err := m.verifyUpdaters(); err != nil {
+			utils.Should(err)
+			log.Error("Received an error during verification of updaters. No reconciliation will be done.")
+			return
+		}
+
 		// For each directory within the declarative configuration path, create a watch handler.
 		// The reason we need multiple watch handlers and cannot simply watch the root directory is that
 		// changes to directories are ignored within the watch handler.
@@ -208,9 +223,6 @@ func (m *managerImpl) reconciliationLoop() {
 		case <-m.reconciliationTicker.C:
 			log.Debug("Received a ticker signal, running the reconciliation")
 			m.runReconciliation()
-		case <-m.stopSignal.Done():
-			log.Debug("Received a stop signal, stopping the reconciliation")
-			return
 		}
 	}
 }
@@ -219,41 +231,88 @@ func (m *managerImpl) runReconciliation() {
 	m.transformedMessagesMutex.RLock()
 	transformedMessagesByHandler := maputil.ShallowClone(m.transformedMessagesByHandler)
 	m.transformedMessagesMutex.RUnlock()
+
 	m.reconcileTransformedMessages(transformedMessagesByHandler)
 }
 
 func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler map[string]protoMessagesByType) {
 	log.Debugf("Run reconciliation for the next handlers: %v", maputil.Keys(transformedMessagesByHandler))
+
+	hasChanges := m.calculateHashAndIndicateChanges(transformedMessagesByHandler)
+
+	// If no changes are indicated within the message we reconcile, and no previous reconciliation failed, do not
+	// run the reconciliation.
+	if !hasChanges && !m.lastUpsertFailed.Get() && !m.lastDeletionFailed.Get() {
+		log.Debug("No changes found compared to the previous reconciliation, and no errors have occurred." +
+			" The reconciliation will be skipped.")
+		return
+	}
+
+	// Only upsert resources if either the messages we reconcile on changed or the last upsert failed, as it might
+	// have been a transient error or successfully remediated by now.
+	if hasChanges || m.lastUpsertFailed.Get() {
+		m.doUpsert(transformedMessagesByHandler)
+	}
+
+	// Only delete resources if either the messages we reconcile on changed or the last deletion failed, as it might
+	// have been a transient error or successfully remediated by now.
+	if hasChanges || m.lastDeletionFailed.Get() {
+		m.doDeletion(transformedMessagesByHandler)
+	}
+}
+
+func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMessagesByType) {
+	var failureInUpsert bool
 	for _, protoType := range protoTypesOrder {
 		for handler, protoMessagesByType := range transformedMessagesByHandler {
 			messages, hasMessages := protoMessagesByType[protoType]
 			if !hasMessages {
 				continue
 			}
-			typeUpdater, hasUpdater := m.updaters[protoType]
-			if !hasUpdater {
-				m.handleMissingTypeUpdater(handler, protoType, messages)
-				return
-			}
+			typeUpdater := m.updaters[protoType]
 			for _, message := range messages {
 				err := typeUpdater.Upsert(m.reconciliationCtx, message)
 				m.updateHealthForMessage(handler, message, err, consecutiveReconciliationErrorThreshold)
+				if err != nil {
+					failureInUpsert = true
+				}
 			}
 		}
 	}
-	// TODO(ROX-14694): Add deletion of resources.
-	log.Debugf("Deleting all proto messages that have traits.Origin==DECLARATIVE but are not contained"+
-		" within the current list of transformed messages: %+v", transformedMessagesByHandler)
+	m.lastUpsertFailed.Set(failureInUpsert)
 }
 
-func (m *managerImpl) handleMissingTypeUpdater(handler string, protoType reflect.Type, messages []proto.Message) {
-	err := fmt.Errorf("manager does not have updater for type %v", protoType)
-	for _, message := range messages {
-		// Set the threshold to 0, meaning we will _always_ update the integration health status to unhealthy.
-		m.updateHealthForMessage(handler, message, err, 0)
+func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMessagesByType) {
+	reversedProtoTypes := sliceutils.Reversed(protoTypesOrder)
+	var failureInDeletion bool
+	var allProtoIDsToSkip []string
+	for _, protoType := range reversedProtoTypes {
+		var idsToSkip []string
+		for _, protoMessageByType := range transformedMessagesByHandler {
+			messages := protoMessageByType[protoType]
+			for _, message := range messages {
+				idsToSkip = append(idsToSkip, m.idExtractor(message))
+			}
+		}
+		allProtoIDsToSkip = append(allProtoIDsToSkip, idsToSkip...)
+		typeUpdater := m.updaters[protoType]
+		log.Debugf("Running deletion with resource updater %T, skipping IDs %+v", typeUpdater, idsToSkip)
+		failedDeletionIDs, err := typeUpdater.DeleteResources(m.reconciliationCtx, idsToSkip...)
+		log.Debugf("Finished deletion, return value: %+v", err)
+		// In case of an error, ensure we do not delete the integration health status for resources we failed to delete.
+		// Otherwise, the reason why the deletion failed will not be visible to users while the resource may still
+		// exist.
+		if err != nil {
+			log.Debugf("The following IDs failed deletion: [%s]", strings.Join(failedDeletionIDs, ","))
+			allProtoIDsToSkip = append(allProtoIDsToSkip, failedDeletionIDs...)
+			failureInDeletion = true
+		}
 	}
-	utils.Should(err)
-	m.stopSignal.Signal()
+
+	if err := m.removeStaleHealthStatuses(allProtoIDsToSkip); err != nil {
+		log.Errorf("Failed to delete stale health status entries for declarative config: %v", err)
+	}
+	m.lastDeletionFailed.Set(failureInDeletion)
 }
 
 // updateHealthForMessage will update the health status of a message using the integrationhealth.Reporter.
@@ -262,33 +321,17 @@ func (m *managerImpl) handleMissingTypeUpdater(handler string, protoType reflect
 // status will be set to unhealthy.
 func (m *managerImpl) updateHealthForMessage(handler string, message proto.Message, err error, threshold int32) {
 	messageID := m.idExtractor(message)
-	messageName := m.messageNameForIntegrationHealth(handler, message)
+	integrationHealth := declarativeConfigUtils.IntegrationHealthForProtoMessage(message, handler, err, m.idExtractor, m.nameExtractor)
 
 	if err != nil {
-		currentDeclarativeConfigErrors := m.errorsPerDeclarativeConfig[messageID] + 1
-		m.errorsPerDeclarativeConfig[messageID] = currentDeclarativeConfigErrors
-
-		if currentDeclarativeConfigErrors >= threshold {
-			m.declarativeConfigErrorReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-				Id:            messageID,
-				Name:          messageName,
-				Type:          storage.IntegrationHealth_DECLARATIVE_CONFIG,
-				Status:        storage.IntegrationHealth_UNHEALTHY,
-				ErrorMessage:  err.Error(),
-				LastTimestamp: timestamp.TimestampNow(),
-			})
+		m.errorsPerDeclarativeConfig[messageID]++
+		if m.errorsPerDeclarativeConfig[messageID] >= threshold {
+			m.declarativeConfigErrorReporter.UpdateIntegrationHealthAsync(integrationHealth)
 		}
 		log.Debugf("Error within reconciliation for %+v: %v", message, err)
 	} else {
 		m.errorsPerDeclarativeConfig[messageID] = 0
-		m.declarativeConfigErrorReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-			Id:            messageID,
-			Name:          messageName,
-			Type:          storage.IntegrationHealth_DECLARATIVE_CONFIG,
-			Status:        storage.IntegrationHealth_HEALTHY,
-			ErrorMessage:  "",
-			LastTimestamp: timestamp.TimestampNow(),
-		})
+		m.declarativeConfigErrorReporter.UpdateIntegrationHealthAsync(integrationHealth)
 		log.Debugf("Message %+v marked as healthy", message)
 	}
 }
@@ -313,7 +356,7 @@ func (m *managerImpl) updateHandlerHealth(handlerID string, err error) {
 func (m *managerImpl) registerHealthForMessage(handler string, messages ...proto.Message) {
 	for _, message := range messages {
 		messageID := m.idExtractor(message)
-		messageName := m.messageNameForIntegrationHealth(handler, message)
+		messageName := declarativeConfigUtils.NameForIntegrationHealthFromProtoMessage(message, handler, m.nameExtractor, m.idExtractor)
 
 		if err := m.declarativeConfigErrorReporter.Register(messageID, messageName,
 			storage.IntegrationHealth_DECLARATIVE_CONFIG); err != nil {
@@ -322,11 +365,70 @@ func (m *managerImpl) registerHealthForMessage(handler string, messages ...proto
 	}
 }
 
-func (m *managerImpl) messageNameForIntegrationHealth(handler string, message proto.Message) string {
-	return fmt.Sprintf("%s in config map %s",
-		stringutils.FirstNonEmpty(m.nameExtractor(message), m.idExtractor(message)), path.Base(handler))
+// removeStaleHealthStatuses is expected to run after reconciliation has deleted declarative proto messages.
+// It deletes health status entries for deleted proto messages, as well as entries for which the first creation
+// of a resource failed.
+func (m *managerImpl) removeStaleHealthStatuses(idsToSkip []string) error {
+	healths, err := m.declarativeConfigErrorReporter.
+		RetrieveIntegrationHealths(storage.IntegrationHealth_DECLARATIVE_CONFIG)
+	if err != nil {
+		return errors.Wrap(err, "retrieving integration health statuses for declarative config")
+	}
+
+	idsToSkipSet := set.NewFrozenStringSet(idsToSkip...)
+
+	var removingIntegrationHealthsErr *multierror.Error
+	for _, health := range healths {
+		if idsToSkipSet.Contains(health.GetId()) {
+			continue
+		}
+
+		if strings.Contains(health.GetName(), handlerIntegrationHealthStatusPrefix) {
+			continue
+		}
+
+		if err := m.declarativeConfigErrorReporter.RemoveIntegrationHealth(health.GetId()); err != nil {
+			removingIntegrationHealthsErr = multierror.Append(removingIntegrationHealthsErr, err)
+		}
+	}
+
+	return removingIntegrationHealthsErr.ErrorOrNil()
+}
+
+func (m *managerImpl) verifyUpdaters() error {
+	for _, protoType := range protoTypesOrder {
+		if updater, ok := m.updaters[protoType]; !ok {
+			return errox.InvariantViolation.Newf("found no updater for proto type %v", protoType)
+		} else if updater == nil {
+			return errox.InvariantViolation.Newf("updater for proto type %v was nil", protoType)
+		}
+	}
+	return nil
+}
+
+func (m *managerImpl) calculateHashAndIndicateChanges(transformedMessagesByHandler map[string]protoMessagesByType) bool {
+	// Create a hash from the transformed messages by handler map.
+	// Setting the option ZeroNil will ensure empty byte arrays will be treated as a zero value instead of using
+	// the pointer's value.
+	hash, err := hashstructure.Hash(transformedMessagesByHandler, hashstructure.FormatV2,
+		&hashstructure.HashOptions{ZeroNil: true})
+
+	// If we received an error for hash generation, log it and _always_ run the deletion. This way we ensure
+	// we don't mistakenly skip reconciliation runs where we shouldn't (e.g. consecutive errors).
+	if err != nil {
+		log.Errorf("Failed to create hash for transformed messages by handler %+v, "+
+			"reconciliation will be executed: %v",
+			transformedMessagesByHandler, err)
+		return true
+	}
+
+	if m.lastReconciliationHash != hash {
+		m.lastReconciliationHash = hash
+		return true
+	}
+	return false
 }
 
 func handlerNameForIntegrationHealth(handlerID string) string {
-	return fmt.Sprintf("Config Map %s", path.Base(handlerID))
+	return fmt.Sprintf("%s %s", handlerIntegrationHealthStatusPrefix, path.Base(handlerID))
 }

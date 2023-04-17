@@ -53,7 +53,7 @@ func NewServiceCertInjectingRoundTripper(cert *tls.Certificate, rt http.RoundTri
 	})
 }
 
-func (i *serviceCertClientCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+func (i *serviceCertClientCreds) GetRequestMetadata(_ context.Context, _ ...string) (map[string]string, error) {
 	// There is no way to derived from the TLS connection state whether a client certificate is in use, so just inject
 	// the authorization header in any case to be on the safe side.
 	token, err := servicecerttoken.CreateToken(i.cert, time.Now())

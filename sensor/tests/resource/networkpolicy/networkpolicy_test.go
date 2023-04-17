@@ -28,6 +28,7 @@ var _ suite.SetupAllSuite = &NetworkPolicySuite{}
 var _ suite.TearDownTestSuite = &NetworkPolicySuite{}
 
 func (s *NetworkPolicySuite) SetupSuite() {
+	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
 	if testContext, err := resource.NewContext(s.T()); err != nil {
 		s.Fail("failed to setup test context: %s", err)
 	} else {

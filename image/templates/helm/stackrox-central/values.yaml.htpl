@@ -138,7 +138,7 @@
 #  image:
 #    registry: null
 #    name: main
-#    tag: 3.0.48.x-121-g337915cd3d
+#    tag: 4.0.0
 #    fullRef: null
 #
 #  adminPassword:
@@ -201,49 +201,54 @@
 #      maxConns: 90
 #      statementTimeoutMs: 1200000
 #
-#  # The admin password setting for communication with Central's DB.
-#  # When a value is set explicitly, this is always used, even on upgrade.
-#  # Otherwise, a password will be automatically generated if `generate` is set to true,
-#  # or left unset (null) and the Helm chart is being installed (as opposed to upgraded).
-#  # Should only be used when utilizing Postgres as central's DB
-#  password:
-#    value: null
-#    generate: null
+#    # The admin password setting for communication with Central's DB.
+#    # When a value is set explicitly, this is always used, even on upgrade.
+#    # Otherwise, a password will be automatically generated if `generate` is set to true,
+#    # or left unset (null) and the Helm chart is being installed (as opposed to upgraded).
+#    # Should only be used when utilizing Postgres as central's DB
+#    password:
+#      value: null
+#      generate: null
 #
-#  postgresConfig: "@config/centraldb/postgresql.conf|config/centraldb/postgresql.conf.default"
-#  hbaConfig: "@config/centraldb/pg_hba.conf|config/centraldb/pg_hba.conf.default"
+#    postgresConfig: "@config/centraldb/postgresql.conf|config/centraldb/postgresql.conf.default"
+#    hbaConfig: "@config/centraldb/pg_hba.conf|config/centraldb/pg_hba.conf.default"
 #
-#  nodeSelector: null
+#    # Specifying configOverride mounts the specified config map in the same namespace which must contain
+#    # both pg_hba.conf and postgresql.conf. This should only be used when the default settings are not
+#    # sufficient and manual override is required.
+#    configOverride: null
 #
-#  # Settings for the internal service-to-service TLS certificate used by central.
-#  # See the documentation for `ca` at the top level for an explanation.
-#  serviceTLS:
-#    cert: null
-#    key: null
-#    generate: null
+#    nodeSelector: null
 #
-#  image:
-#    registry: null
-#    name: central-db
-#    tag: 3.0.48.x-121-g337915cd3d
-#    fullRef: null
+#    # Settings for the internal service-to-service TLS certificate used by central.
+#    # See the documentation for `ca` at the top level for an explanation.
+#    serviceTLS:
+#      cert: null
+#      key: null
+#      generate: null
 #
-#  resources:
-#    requests:
-#      memory: "4Gi"
-#      cpu: "2"
-#    limits:
-#      memory: "8Gi"
-#      cpu: "4"
+#    image:
+#      registry: null
+#      name: central-db
+#      tag: 4.0.0
+#      fullRef: null
 #
-#  persistence:
-#    hostPath: null
-#    persistentVolumeClaim:
-#      claimName: null
-#      createClaim: null
-#      storageClass: null
-#      size: null
-#    none: null
+#    resources:
+#      requests:
+#        memory: "8Gi"
+#        cpu: "4"
+#      limits:
+#        memory: "16Gi"
+#        cpu: "8"
+#
+#    persistence:
+#      hostPath: null
+#      persistentVolumeClaim:
+#        claimName: null
+#        createClaim: null
+#        storageClass: null
+#        size: null
+#      none: null
 #
 ## Configuration options relating to StackRox Scanner.
 #scanner:

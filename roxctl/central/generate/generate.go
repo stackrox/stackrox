@@ -151,20 +151,19 @@ func populateMTLSFiles(fileMap map[string][]byte, backupBundle string) error {
 	return nil
 }
 
-func createBundle(logger logger.Logger, config renderer.Config) (*zip.Wrapper, error) {
-	wrapper := zip.NewWrapper()
+func updateConfig(config *renderer.Config) error {
 
 	if config.ClusterType == storage.ClusterType_GENERIC_CLUSTER {
-		return nil, errox.InvalidArgs.Newf("invalid cluster type: %s", config.ClusterType)
+		return errox.InvalidArgs.Newf("invalid cluster type: %s", config.ClusterType)
 	}
 
 	config.SecretsByteMap = make(map[string][]byte)
 	if config.BackupBundle == "" {
 		if err := generateJWTSigningKey(config.SecretsByteMap); err != nil {
-			return nil, err
+			return err
 		}
 	} else if err := restoreJWTSigningKey(config.SecretsByteMap, config.BackupBundle); err != nil {
-		return nil, err
+		return err
 	}
 
 	if len(config.LicenseData) > 0 {
@@ -189,9 +188,9 @@ func createBundle(logger logger.Logger, config renderer.Config) (*zip.Wrapper, e
 		}
 	}
 
-	htpasswd, err := renderer.GenerateHtpasswd(&config)
+	htpasswd, err := renderer.GenerateHtpasswd(config)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for _, setting := range env.Settings {
@@ -203,14 +202,23 @@ func createBundle(logger logger.Logger, config renderer.Config) (*zip.Wrapper, e
 		config.Environment[env.OfflineModeEnv.EnvVar()] = strconv.FormatBool(config.K8sConfig.OfflineMode)
 
 		if config.K8sConfig.Telemetry.Enabled {
-			logger.InfofLn(`Unless run in offline mode,
- StackRox Kubernetes Security Platform collects and transmits aggregated usage and system health information.
-  If you want to OPT OUT from this, re-generate the deployment bundle with the '--enable-telemetry=false' flag`)
+			// TODO(ROX-13889): (when enabled for on-prem)
+			// if env.TelemetryStorageKey.Setting() == "" {
+			//   return errox.InvalidArgs.Newf("telemetry storage key is not set")
+			// }
+			config.K8sConfig.Telemetry.StorageKey = env.TelemetryStorageKey.Setting()
+			config.K8sConfig.Telemetry.StorageEndpoint = env.TelemetryEndpoint.Setting()
 		}
-		config.Environment[env.InitialTelemetryEnabledEnv.EnvVar()] = strconv.FormatBool(config.K8sConfig.Telemetry.Enabled)
 	}
 
 	config.SecretsByteMap["htpasswd"] = htpasswd
+	return nil
+}
+
+func createBundle(config *renderer.Config) (*zip.Wrapper, error) {
+
+	wrapper := zip.NewWrapper()
+
 	wrapper.AddFiles(zip.NewFile("password", []byte(config.Password+"\n"), zip.Sensitive))
 
 	if err := populateMTLSFiles(config.SecretsByteMap, config.BackupBundle); err != nil {
@@ -222,7 +230,7 @@ func createBundle(logger logger.Logger, config renderer.Config) (*zip.Wrapper, e
 		return nil, common.ErrInvalidCommandOption.CausedByf("'--%s': %v", flags.ImageDefaultsFlagName, err)
 	}
 
-	files, err := renderer.Render(config, flavor)
+	files, err := renderer.Render(*config, flavor)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not render files")
 	}
@@ -238,7 +246,26 @@ func OutputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
 
 	common.LogInfoPsp(logger, config.EnablePodSecurityPolicies)
 
-	wrapper, err := createBundle(logger, config)
+	err := updateConfig(&config)
+	if err != nil {
+		return err
+	}
+	if config.K8sConfig.Telemetry.Enabled {
+		if config.K8sConfig.Telemetry.StorageKey == "" {
+			// TODO(ROX-13889): won't be reachable
+			logger.WarnfLn("No telemetry storage key has been provided. " +
+				"Telemetry collection will not be enabled.")
+			config.K8sConfig.Telemetry.Enabled = false
+		} else {
+			logger.InfofLn("StackRox Kubernetes Security Platform collects " +
+				"and transmits anonymous usage and system configuration " +
+				"information. If you want to OPT OUT from this, re-generate " +
+				"the deployment bundle with the '--enable-telemetry=false' " +
+				"flag.")
+		}
+	}
+
+	wrapper, err := createBundle(&config)
 	if err != nil {
 		return err
 	}
@@ -264,7 +291,7 @@ func OutputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
 	logger.InfofLn("Done!")
 
 	if outputPath != "" {
-		logger.InfofLn("Wrote central bundle to %q", outputPath)
+		logger.InfofLn("Wrote central bundle to %q.", outputPath)
 	}
 
 	if err := config.WriteInstructions(io.ErrOut()); err != nil {
@@ -275,7 +302,9 @@ func OutputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
 
 func (cmd *centralGenerateCommand) interactive() *cobra.Command {
 	return &cobra.Command{
-		Use: "interactive",
+		Use:   "interactive",
+		Short: "Run the command in interactive mode where it prompts you to provide additional information.",
+		Long:  "Run the command in interactive mode where it prompts you to provide additional information. You can press `Enter` to accept the default value for the prompts.",
 		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			c := Command(cmd.env)
 			c.SilenceUsage = true
@@ -299,7 +328,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	centralGenerateCmd := &centralGenerateCommand{rendererConfig: &cfg, env: cliEnvironment}
 
 	c := &cobra.Command{
-		Use: "generate",
+		Use:   "generate",
+		Short: "Generate the required YAML configuration files containing the orchestrator objects to deploy StackRox Central.",
 	}
 	c.PersistentFlags().StringVarP(&centralGenerateCmd.rendererConfig.Password, "password", "p", "", "administrator password (default: autogenerated)")
 	utils.Must(c.PersistentFlags().SetAnnotation("password", flags.PasswordKey, []string{"true"}))

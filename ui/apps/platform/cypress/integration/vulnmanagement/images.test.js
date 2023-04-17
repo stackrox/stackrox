@@ -1,6 +1,6 @@
 import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
+import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -130,7 +130,11 @@ describe('Vulnerability Management Images', () => {
         );
     });
 
-    it('should display links for fixable image CVEs and also Risk Acceptance tabs', () => {
+    it('should display links for fixable image CVEs and also Risk Acceptance tabs', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         verifyFixableCVEsLinkAndRiskAcceptanceTabs(
             entitiesKey,
             'image-cves',

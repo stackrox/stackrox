@@ -87,7 +87,8 @@ func (s *PostgresRestoreSuite) TestUtilities() {
 	s.True(CheckIfDBExists(s.config, restoreDB))
 
 	// Get a connection to the restore database
-	restorePool := GetClonePool(s.config, restoreDB)
+	restorePool, err := GetClonePool(s.config, restoreDB)
+	s.Nil(err)
 	s.NotNil(restorePool)
 	err = restorePool.Ping(s.ctx)
 	s.Nil(err)
@@ -105,18 +106,22 @@ func (s *PostgresRestoreSuite) TestUtilities() {
 	s.NotNil(err)
 
 	// Get a connection to the active DB
-	activePool := GetClonePool(s.config, activeDB)
+	activePool, err := GetClonePool(s.config, activeDB)
+	s.Nil(err)
 	s.NotNil(activePool)
 
 	// Rename activeDB to a new one
 	err = RenameDB(s.pool, activeDB, tempDB)
 	s.Nil(err)
-	s.True(CheckIfDBExists(s.config, tempDB))
+	exists, err := CheckIfDBExists(s.config, tempDB)
+	s.Nil(err)
+	s.True(exists)
 	// Make sure connection to active database was terminated
 	s.NotNil(activePool.Ping(s.ctx))
 
 	// Reacquire a connection to the restore database
-	restorePool = GetClonePool(s.config, restoreDB)
+	restorePool, err = GetClonePool(s.config, restoreDB)
+	s.Nil(err)
 	s.NotNil(restorePool)
 	s.Nil(restorePool.Ping(s.ctx))
 

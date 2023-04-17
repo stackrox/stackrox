@@ -17,13 +17,13 @@ const CollapsibleSection = ({
     dataTestId,
     defaultOpen,
 }) => {
-    const [open, setOpen] = useState(defaultOpen);
+    const [isOpen, setIsOpen] = useState(defaultOpen);
 
     function toggleOpen() {
-        setOpen(!open);
+        setIsOpen(!isOpen);
     }
 
-    const Icon = open ? (
+    const Icon = isOpen ? (
         <ChevronDown className={iconClass} />
     ) : (
         <ChevronRight className={iconClass} />
@@ -36,13 +36,18 @@ const CollapsibleSection = ({
                     <div
                         className={`flex py-1 text-base-600 rounded-r-sm font-700 items-center ${titleClassName}`}
                     >
-                        <Button icon={Icon} onClick={toggleOpen} dataTestId="collapsible-btn" />
+                        <Button
+                            icon={Icon}
+                            onClick={toggleOpen}
+                            aria-label={isOpen ? 'Collapse' : 'Expand'}
+                            aria-expanded={isOpen}
+                        />
                         <span className="ml-2">{title}</span>
                     </div>
                 </div>
                 {headerComponents}
             </header>
-            <CollapsibleAnimatedDiv defaultOpen isOpen={open} dataTestId="collapsible-content">
+            <CollapsibleAnimatedDiv defaultOpen isOpen={isOpen} dataTestId="collapsible-content">
                 {children}
             </CollapsibleAnimatedDiv>
         </div>

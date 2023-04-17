@@ -6,8 +6,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 	storeMocks "github.com/stackrox/rox/central/group/datastore/internal/store/mocks"
+	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	authProvidersMocks "github.com/stackrox/rox/pkg/auth/authproviders/mocks"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -39,8 +41,10 @@ type groupDataStoreTestSuite struct {
 	hasWriteCtx context.Context
 	dataStore   DataStore
 
-	storage  *storeMocks.MockStore
-	mockCtrl *gomock.Controller
+	storage           *storeMocks.MockStore
+	mockCtrl          *gomock.Controller
+	roleStore         *roleMocks.MockDataStore
+	authProviderStore *authProvidersMocks.MockStore
 }
 
 func (s *groupDataStoreTestSuite) SetupTest() {
@@ -57,7 +61,9 @@ func (s *groupDataStoreTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
-	s.dataStore = New(s.storage)
+	s.roleStore = roleMocks.NewMockDataStore(s.mockCtrl)
+	s.authProviderStore = authProvidersMocks.NewMockStore(s.mockCtrl)
+	s.dataStore = New(s.storage, s.roleStore, s.authProviderStore)
 }
 
 func (s *groupDataStoreTestSuite) TearDownTest() {
@@ -84,12 +90,12 @@ func (s *groupDataStoreTestSuite) TestEnforcesGet() {
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsGet() {
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil)
 
 	_, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: "1", AuthProviderId: "something"})
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(1)
 
 	_, err = s.dataStore.Get(s.hasWriteCtx, &storage.GroupProperties{Id: "1", AuthProviderId: "something"})
 	s.NoError(err, "expected no error trying to read with permissions")
@@ -97,13 +103,19 @@ func (s *groupDataStoreTestSuite) TestAllowsGet() {
 
 func (s *groupDataStoreTestSuite) TestGet() {
 	group := fixtures.GetGroup()
-	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(group, true, nil)
+	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(group, true, nil).Times(1)
 
 	// Test that can fetch by id
 	g, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: group.GetProps().GetId(),
 		AuthProviderId: group.GetProps().GetAuthProviderId()})
 	s.NoError(err)
 	s.Equal(group, g)
+
+	// Test that a non-existing group will yield errox.NotFound.
+	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(nil, false, nil).Times(1)
+	g, err = s.dataStore.Get(s.hasReadCtx, group.GetProps())
+	s.Nil(g)
+	s.ErrorIs(err, errox.NotFound)
 }
 
 func (s *groupDataStoreTestSuite) TestGetWithoutID() {
@@ -145,7 +157,7 @@ func (s *groupDataStoreTestSuite) TestAllowsGetAll() {
 func (s *groupDataStoreTestSuite) TestEnforcesGetFiltered() {
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
 
-	groups, err := s.dataStore.GetFiltered(s.hasNoneCtx, func(_ *storage.GroupProperties) bool { return true })
+	groups, err := s.dataStore.GetFiltered(s.hasNoneCtx, func(_ *storage.Group) bool { return true })
 	s.NoError(err, "expected no error, should return nil without access")
 	s.Nil(groups, "expected return value to be nil")
 }
@@ -153,12 +165,12 @@ func (s *groupDataStoreTestSuite) TestEnforcesGetFiltered() {
 func (s *groupDataStoreTestSuite) TestAllowsGetFiltered() {
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
 
-	_, err := s.dataStore.GetFiltered(s.hasReadCtx, func(_ *storage.GroupProperties) bool { return true })
+	_, err := s.dataStore.GetFiltered(s.hasReadCtx, func(_ *storage.Group) bool { return true })
 	s.NoError(err, "expected no error trying to read with permissions")
 
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	_, err = s.dataStore.GetFiltered(s.hasWriteCtx, func(_ *storage.GroupProperties) bool { return true })
+	_, err = s.dataStore.GetFiltered(s.hasWriteCtx, func(_ *storage.Group) bool { return true })
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 
@@ -166,13 +178,13 @@ func (s *groupDataStoreTestSuite) TestGetFiltered() {
 	groups := fixtures.GetGroups()
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(2).DoAndReturn(walkMockFunc(groups))
 
-	actualGroups, err := s.dataStore.GetFiltered(s.hasWriteCtx, func(*storage.GroupProperties) bool { return false })
+	actualGroups, err := s.dataStore.GetFiltered(s.hasWriteCtx, func(*storage.Group) bool { return false })
 	s.NoError(err)
 	s.Empty(actualGroups)
 
 	// Test with a selective filter
-	actualGroups, err = s.dataStore.GetFiltered(s.hasWriteCtx, func(props *storage.GroupProperties) bool {
-		return props.GetAuthProviderId() == "authProvider1" || props.GetKey() == "Attribute2"
+	actualGroups, err = s.dataStore.GetFiltered(s.hasWriteCtx, func(group *storage.Group) bool {
+		return group.GetProps().GetAuthProviderId() == "authProvider1" || group.GetProps().GetKey() == "Attribute2"
 	})
 	expectedGroups := []*storage.Group{
 		groups[1], groups[2], groups[3], groups[4], groups[6],
@@ -247,6 +259,7 @@ func (s *groupDataStoreTestSuite) TestEnforcesAdd() {
 
 func (s *groupDataStoreTestSuite) TestAllowsAdd() {
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	s.validRoleAndAuthProvider("123", "123", storage.Traits_IMPERATIVE, 1)
 
 	grp := &storage.Group{Props: &storage.GroupProperties{
 		AuthProviderId: "123",
@@ -280,6 +293,7 @@ func (s *groupDataStoreTestSuite) TestEnforcesUpdate() {
 func (s *groupDataStoreTestSuite) TestAllowsUpdate() {
 	s.expectGet(1, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	s.validRoleAndAuthProvider("123", "123", storage.Traits_IMPERATIVE, 1)
 
 	grp := &storage.Group{Props: &storage.GroupProperties{
 		Id:             "1",
@@ -318,6 +332,7 @@ func (s *groupDataStoreTestSuite) TestAllowsMutate() {
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil).Times(2) // two calls * two operations (add, update)
 	s.storage.EXPECT().DeleteMany(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE), true, nil).Times(2)
+	s.validRoleAndAuthProvider("123", "123", storage.Traits_IMPERATIVE, 2)
 
 	grp := &storage.Group{Props: &storage.GroupProperties{
 		AuthProviderId: "123",
@@ -342,6 +357,8 @@ func (s *groupDataStoreTestSuite) TestMutate() {
 			RoleName: "notcaptain",
 		},
 	}
+	s.validRoleAndAuthProvider(toUpdate.GetRoleName(), toUpdate.GetProps().GetAuthProviderId(), storage.Traits_IMPERATIVE, 1)
+	s.validRoleAndAuthProvider(toAdd[0].GetRoleName(), toAdd[0].GetProps().GetAuthProviderId(), storage.Traits_DECLARATIVE, 1)
 	s.expectGet(2, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
 	gomock.InOrder(
 		s.storage.EXPECT().UpsertMany(gomock.Any(), toAdd),
@@ -428,6 +445,7 @@ func (s *groupDataStoreTestSuite) TestCannotAddDefaultGroupIfOneAlreadyExists() 
 				s.Error(err)
 				s.ErrorIs(err, errox.AlreadyExists)
 			} else {
+				s.validRoleAndAuthProvider(c.groupToAdd.GetRoleName(), c.groupToAdd.GetProps().GetAuthProviderId(), storage.Traits_IMPERATIVE, 2)
 				// Validate Add doesn't error if it's a new default
 				s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 				s.NoError(s.dataStore.Add(s.hasWriteCtx, c.groupToAdd.Clone()))
@@ -495,6 +513,8 @@ func (s *groupDataStoreTestSuite) TestCanUpdateExistingDefaultGroup() {
 			Id:             "some-id-3",
 		},
 	}
+	s.validRoleAndAuthProvider("admin", "defaultGroup1", storage.Traits_IMPERATIVE, 2)
+	s.validRoleAndAuthProvider("non-admin", "defaultGroup1", storage.Traits_IMPERATIVE, 4)
 
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc([]*storage.Group{initialGroup, defaultGroup})).AnyTimes()
 
@@ -615,8 +635,10 @@ func (s *groupDataStoreTestSuite) TestUpdateMutableToImmutable() {
 				MutabilityMode: storage.Traits_ALLOW_MUTATE,
 			},
 		},
+		RoleName: "Admin",
 	}, true, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	s.validRoleAndAuthProvider("Admin", "apid", storage.Traits_IMPERATIVE, 1)
 
 	err := s.dataStore.Update(s.hasWriteCtx, &storage.Group{
 		Props: &storage.GroupProperties{
@@ -651,6 +673,7 @@ func (s *groupDataStoreTestSuite) TestUpdateImmutableForce() {
 
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(expectedGroup, true, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	s.validRoleAndAuthProvider(expectedGroup.GetRoleName(), expectedGroup.GetProps().GetAuthProviderId(), storage.Traits_IMPERATIVE, 1)
 
 	updatedGroup := expectedGroup.Clone()
 	updatedGroup.GetProps().Key = "something"
@@ -699,6 +722,7 @@ func (s *groupDataStoreTestSuite) TestMutateGroupNoForce() {
 	mutableGroup := fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE)
 	immutableGroup := fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE_FORCED)
 
+	s.validRoleAndAuthProvider(mutableGroup.GetRoleName(), mutableGroup.GetProps().GetAuthProviderId(), storage.Traits_IMPERATIVE, 1)
 	// 1. Try and remove an immutable group via mutate without force. This should fail.
 	gomock.InOrder(
 		s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(mutableGroup, true, nil),
@@ -722,6 +746,8 @@ func (s *groupDataStoreTestSuite) TestMutateGroupNoForce() {
 func (s *groupDataStoreTestSuite) TestMutateGroupForce() {
 	mutableGroup := fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE)
 	immutableGroup := fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE_FORCED)
+
+	s.validRoleAndAuthProvider(mutableGroup.GetRoleName(), mutableGroup.GetProps().GetAuthProviderId(), storage.Traits_IMPERATIVE, 2)
 
 	// 1. Try and remove an immutable group via mutate with force.
 	gomock.InOrder(
@@ -818,6 +844,7 @@ func (s *groupDataStoreTestSuite) TestUpdateDeclarativeViaConfig() {
 
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(expectedGroup, true, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	s.validRoleAndAuthProvider(expectedGroup.GetRoleName(), expectedGroup.GetProps().GetAuthProviderId(), storage.Traits_DECLARATIVE, 1)
 
 	updatedGroup := expectedGroup.Clone()
 	updatedGroup.GetProps().Key = "something"
@@ -849,6 +876,10 @@ func (s *groupDataStoreTestSuite) TestDeleteDeclarativeViaConfig() {
 func (s *groupDataStoreTestSuite) TestMutateGroupViaAPI() {
 	imperativeGroup := fixtures.GetGroupWithOrigin(storage.Traits_IMPERATIVE)
 	declarativeGroup := fixtures.GetGroupWithOrigin(storage.Traits_DECLARATIVE)
+	declarativeGroup.RoleName = "test-role-2"
+	declarativeGroup.Props.AuthProviderId = "authProviderId2"
+
+	s.validRoleAndAuthProvider(imperativeGroup.GetRoleName(), imperativeGroup.GetProps().GetAuthProviderId(), storage.Traits_IMPERATIVE, 1)
 
 	// 1. Try and remove a declarative group via API. This should fail.
 	gomock.InOrder(
@@ -873,6 +904,10 @@ func (s *groupDataStoreTestSuite) TestMutateGroupViaAPI() {
 func (s *groupDataStoreTestSuite) TestMutateGroupViaConfig() {
 	imperativeGroup := fixtures.GetGroupWithOrigin(storage.Traits_IMPERATIVE)
 	declarativeGroup := fixtures.GetGroupWithOrigin(storage.Traits_DECLARATIVE)
+	declarativeGroup.RoleName = "test-role-2"
+	declarativeGroup.Props.AuthProviderId = "authProviderId2"
+
+	s.validRoleAndAuthProvider(declarativeGroup.GetRoleName(), declarativeGroup.GetProps().GetAuthProviderId(), storage.Traits_DECLARATIVE, 2)
 
 	// 1. Try mutate(remove declarative, update imperative) groups via config. This should fail.
 	gomock.InOrder(
@@ -923,6 +958,7 @@ func (s *groupDataStoreTestSuite) TestUpsertImperativeViaAPI() {
 
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	s.validRoleAndAuthProvider(group.GetRoleName(), group.GetProps().GetAuthProviderId(), storage.Traits_IMPERATIVE, 1)
 
 	err := s.dataStore.Upsert(s.hasWriteCtx, group)
 	s.NoError(err)
@@ -942,6 +978,7 @@ func (s *groupDataStoreTestSuite) TestUpsertDeclarativeViaConfig() {
 
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	s.validRoleAndAuthProvider(group.GetRoleName(), group.GetProps().GetAuthProviderId(), storage.Traits_DECLARATIVE, 1)
 
 	err := s.dataStore.Upsert(s.hasWriteDeclarativeCtx, group)
 	s.NoError(err)
@@ -977,4 +1014,49 @@ func (s *groupDataStoreTestSuite) TestUpsertChangeImperativeOrigin() {
 
 	err := s.dataStore.Upsert(s.hasWriteCtx, updatedGroup)
 	s.ErrorIs(err, errox.NotAuthorized)
+}
+
+func (s *groupDataStoreTestSuite) TestAddImperativeViaConfig() {
+	group := fixtures.GetGroupWithOrigin(storage.Traits_IMPERATIVE)
+	group.Props.Id = ""
+
+	err := s.dataStore.Add(s.hasWriteDeclarativeCtx, group)
+	s.ErrorIs(err, errox.NotAuthorized)
+}
+
+func (s *groupDataStoreTestSuite) TestAddDeclarativeViaAPI() {
+	group := fixtures.GetGroupWithOrigin(storage.Traits_DECLARATIVE)
+	group.Props.Id = ""
+
+	err := s.dataStore.Add(s.hasWriteCtx, group)
+	s.ErrorIs(err, errox.NotAuthorized)
+}
+
+func (s *groupDataStoreTestSuite) TestAddDeclarativeViaConfig() {
+	group := fixtures.GetGroupWithOrigin(storage.Traits_DECLARATIVE)
+	group.Props.Id = ""
+
+	s.validRoleAndAuthProvider(group.GetRoleName(), group.GetProps().GetAuthProviderId(), storage.Traits_DECLARATIVE, 1)
+
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+	err := s.dataStore.Add(s.hasWriteDeclarativeCtx, group)
+	s.NoError(err)
+}
+
+func (s *groupDataStoreTestSuite) validRoleAndAuthProvider(roleName, authProviderID string, origin storage.Traits_Origin, times int) {
+	mockedRole := &storage.Role{
+		Name: roleName,
+		Traits: &storage.Traits{
+			Origin: origin,
+		},
+	}
+	mockedAP := &storage.AuthProvider{
+		Id: authProviderID,
+		Traits: &storage.Traits{
+			Origin: origin,
+		},
+	}
+	s.roleStore.EXPECT().GetRole(gomock.Any(), roleName).Return(mockedRole, true, nil).Times(times)
+	s.authProviderStore.EXPECT().GetAuthProvider(gomock.Any(), authProviderID).Return(mockedAP, true, nil).Times(times)
 }

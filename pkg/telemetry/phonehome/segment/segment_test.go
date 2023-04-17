@@ -1,7 +1,11 @@
 package segment
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	segment "github.com/segmentio/analytics-go/v3"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
@@ -95,4 +99,43 @@ func Test_getIDs(t *testing.T) {
 		assert.Equal(t, c.expected.userID, st.getUserID(opts))
 		assert.Equal(t, c.expected.anonymousID, st.getAnonymousID(opts))
 	}
+}
+
+func Test_Group(t *testing.T) {
+	var i int32
+
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&i, 1)
+	}))
+
+	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
+
+	tt.Group(nil, telemeter.WithGroups("Test", "test-group-id"))
+	tt.Stop()
+	s.Close()
+	assert.Equal(t, int32(1), i, "Group call had to issue 1 message")
+}
+
+func Test_GroupWithProps(t *testing.T) {
+	var i int32
+
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&i, 1)
+	}))
+
+	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
+
+	ch := make(chan time.Time, 2)
+	ch <- time.Time{}
+	ch <- time.Time{}
+
+	ti := &time.Ticker{C: ch}
+	options := telemeter.ApplyOptions(
+		[]telemeter.Option{telemeter.WithGroups("Test", "test-group-id")},
+	)
+	tt.group(map[string]any{"key": "value"}, options)
+	tt.groupFix(options, ti)
+	tt.Stop()
+	s.Close()
+	assert.Equal(t, int32(4), i, "Group call had to issue 4 messages")
 }

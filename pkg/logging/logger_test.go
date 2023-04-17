@@ -2,7 +2,7 @@ package logging
 
 import "testing"
 
-func TestLogging(t *testing.T) {
+func TestLogging(_ *testing.T) {
 	for _, logger := range []*Logger{rootLogger, CurrentModule().Logger()} {
 		// Log at all non-destructive levels
 		for _, level := range sortedLevels[:len(sortedLevels)-2] {

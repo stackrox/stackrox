@@ -59,7 +59,7 @@ roxctl central init-bundles generate <cluster init bundle name> --output cluster
 - Make sure that you store this bundle securely as it contains secrets. You can
   use the same bundle to set up multiple StackRox secured clusters.
 
-### Deploy Secured Cluster Services 
+### Deploy Secured Cluster Services
 
 You can use the following command to deploy secured cluster services by using
 this Helm chart:
@@ -147,21 +147,21 @@ the options which you can configure:
 
   env:
     istio: true  # enable istio support
-  
+
   sensor:
     # Use custom resource overrides for sensor
     resources:
       requests:
-        cpu: "1"
-        memory: "1Gi"
-      limits:
         cpu: "2"
         memory: "4Gi"
-  
+      limits:
+        cpu: "4"
+        memory: "8Gi"
+
   admissionControl:
     dynamic:
       disableBypass: true # Disable bypassing of Admission Controller
-  
+
   customize:
     # Apply the important-service=true label for all objects managed by this chart.
     labels:
@@ -249,7 +249,7 @@ chart and their default values:
 |`image.main.registry`| Address of the registry you are using for main image.|`[< required "" .MainRegistry >]` |
 |`image.collector.registry`| Address of the registry you are using for collector image.|`[< required "" .CollectorRegistry >]` |
 |`sensor.endpoint`| Address of the Sensor endpoint including port number. No trailing slash.|`sensor.stackrox.svc:443` |
-|`collector.collectionMethod`|Either `EBPF`, `KERNEL_MODULE`, or `NO_COLLECTION`. |`EBPF` |
+|`collector.collectionMethod`|Either `EBPF`, `KERNEL_MODULE`, or `NO_COLLECTION`. `KERNEL_MODULE` collection is deprecated and will be removed in release 4.1 |`EBPF` |
 |`collector.disableTaintTolerations`|If you specify `false`, tolerations are applied to collector, and the collector pods can schedule onto all nodes with taints. If you specify it as `true`, no tolerations are applied, and the collector pods won't scheduled onto nodes with taints. |`false` |
 |`collector.slimMode`| Specify `true` if you want to use a slim Collector image for deploying Collector. Using slim Collector images requires Central to provide the matching kernel module or eBPF probe. If you are running the StackRox Kubernetes Security Platform in offline mode, you must download a kernel support package from [stackrox.io](https://install.stackrox.io/collector/support-packages/index.html) and upload it to Central for slim Collectors to function. Otherwise, you must ensure that Central can access the online probe repository hosted at https://collector-modules.stackrox.io/.|`false` |
 |`admissionControl.listenOnCreates`| This setting controls whether the cluster is configured to contact the StackRox Kubernetes Security Platform with `AdmissionReview` requests for `create` events on Kubernetes objects. |`false` |
@@ -282,6 +282,7 @@ non-standard environments:
 |`sensor.resources`|Resource specification for Sensor.|See below.|
 |`collector.resources`|Resource specification for Collector.|See below.|
 |`collector.complianceResources`|Resource specification for Collector's Compliance container.|See below.|
+|`collector.nodeInventoryResources`|Resource specification for Collector's Node Inventory container.|See below.|
 |`collector.nodeSelector` | Node selector for Collector pods placement. | `null` (no placement constraints) |
 |`admissionControl.resources`|Resource specification for Admission Control.|See below.|
 |`sensor.imagePullPolicy`| Kubernetes image pull policy for Sensor. | `IfNotPresent` |
@@ -301,12 +302,13 @@ Each container's default resource settings are defined in the
 `internal/defaults.yaml` file in this chart. The following table lists the YAML
 paths to the respective defaults for each container that this chart deploys:
 
-|Container        |Path in `internal/defaults.yaml`        |
-|:----------------|:---------------------------------------|
-|Sensor           |`defaults.sensor.resources`             |
-|Collector        |`defaults.collector.resources`          |
-|Compliance       |`defaults.collector.complianceResources`|
-|Admission Control|`defaults.admissionControl.resources`   |
+|Container        |Path in `internal/defaults.yaml`           |
+|:----------------|:------------------------------------------|
+|Sensor           |`defaults.sensor.resources`                |
+|Collector        |`defaults.collector.resources`             |
+|Compliance       |`defaults.collector.complianceResources`   |
+|NodeInventory    |`defaults.collector.nodeInventoryResources`|
+|Admission Control|`defaults.admissionControl.resources`      |
 
 ### Customization settings
 

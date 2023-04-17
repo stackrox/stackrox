@@ -66,13 +66,13 @@ fi
 # Get postgres RPMs directly
 postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_major}-${arch}"
 
-curl -sS --fail -o "${bundle_root}/postgres.rpm" \
+curl --retry 3 -sS --fail -o "${bundle_root}/postgres.rpm" \
     "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
-curl -sS --fail -o "${bundle_root}/postgres-server.rpm" \
+curl --retry 3 -sS --fail -o "${bundle_root}/postgres-server.rpm" \
     "${postgres_url}/postgresql${postgres_major}-server-${postgres_minor}.rpm"
-curl -sS --fail -o "${bundle_root}/postgres-libs.rpm" \
+curl --retry 3 -sS --fail -o "${bundle_root}/postgres-libs.rpm" \
     "${postgres_url}/postgresql${postgres_major}-libs-${postgres_minor}.rpm"
-curl -sS --fail -o "${bundle_root}/postgres-contrib.rpm" \
+curl --retry 3 -sS --fail -o "${bundle_root}/postgres-contrib.rpm" \
     "${postgres_url}/postgresql${postgres_major}-contrib-${postgres_minor}.rpm"
 
 # =============================================================================

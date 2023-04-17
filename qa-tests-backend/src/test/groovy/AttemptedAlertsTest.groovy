@@ -1,3 +1,7 @@
+import static util.Helpers.withRetry
+
+import orchestratormanager.OrchestratorTypes
+
 import io.stackrox.proto.storage.AlertOuterClass.ListAlert
 import io.stackrox.proto.storage.AlertOuterClass.ViolationState
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
@@ -5,7 +9,6 @@ import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 
 import objects.Deployment
-import orchestratormanager.OrchestratorTypes
 import services.AlertService
 import services.ClusterService
 import util.Env
@@ -22,10 +25,10 @@ class AttemptedAlertsTest extends BaseSpecification {
     static final private String DEP_PREFIX = "attempted-alerts-dep"
     static final private String[] DEP_NAMES = getDeploymentNames()
     private final static Map<String, Deployment> DEPLOYMENTS = [
-            (DEP_NAMES[0]): createDeployment(DEP_NAMES[0], "nginx:latest"),
-            (DEP_NAMES[1]): createDeployment(DEP_NAMES[1], "nginx:latest"),
-            (DEP_NAMES[2]): createDeployment(DEP_NAMES[2], "nginx:latest"),
-            (DEP_NAMES[3]): createDeployment(DEP_NAMES[3], "nginx:latest"),
+            (DEP_NAMES[0]): createDeployment(DEP_NAMES[0], "quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),
+            (DEP_NAMES[1]): createDeployment(DEP_NAMES[1], "quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),
+            (DEP_NAMES[2]): createDeployment(DEP_NAMES[2], "quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),
+            (DEP_NAMES[3]): createDeployment(DEP_NAMES[3], "quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),
             (DEP_NAMES[4]): createDeployment(DEP_NAMES[4], "quay.io/rhacs-eng/qa-multi-arch:nginx-1-14-alpine"),
             (DEP_NAMES[5]): createDeployment(DEP_NAMES[5], "quay.io/rhacs-eng/qa-multi-arch:nginx-1-14-alpine"),
     ]
@@ -199,7 +202,7 @@ class AttemptedAlertsTest extends BaseSpecification {
         and:
         "Trigger update deployment with latest tag"
         def cloned = DEPLOYMENTS.get(DEP_NAMES[4]).clone()
-        cloned.setImage("nginx:latest")
+        cloned.setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         def updated = orchestrator.updateDeploymentNoWait(cloned)
 
         then:

@@ -1,6 +1,7 @@
 import { selectors } from '../../constants/VulnManagementPage';
 import { selectors as policySelectors } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
+import { hasOrchestratorFlavor } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingPolicySeverityValuesFromElements,
@@ -83,7 +84,12 @@ describe('Vulnerability Management Policies', () => {
 
     // Some tests might fail in local deployment.
 
-    it('should display links for failing deployments', () => {
+    // ROX-15891 ROX-15985: skip until decision whether valid to assume high severity violations.
+    it.skip('should display links for failing deployments', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         verifyFilteredSecondaryEntitiesLink(
             entitiesKey,
             'deployments',

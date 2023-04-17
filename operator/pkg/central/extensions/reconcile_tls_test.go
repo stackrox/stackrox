@@ -1,11 +1,15 @@
 package extensions
 
 import (
+	"context"
 	"crypto/x509"
+	"errors"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/cloudflare/cfssl/csr"
+	"github.com/cloudflare/cfssl/initca"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/types"
@@ -16,6 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -154,7 +159,90 @@ func TestCreateCentralTLS(t *testing.T) {
 			Spec:     basicSpecWithScanner(true),
 			Existing: []*v1.Secret{existingCentral, existingCentralDB, existingScanner, existingScannerDB},
 		},
-		// TODO(ROX-7416): Test error cases
+		"When creating a new central-tls secret fails, an error should be returned": {
+			Spec:                   basicSpecWithScanner(false),
+			InterceptedK8sAPICalls: creatingSecretFails("central-tls"),
+			ExpectedError:          "reconciling central-tls secret",
+		},
+		"When creating a new central-db-tls secret fails, an error should be returned": {
+			Spec:                   basicSpecWithScanner(false),
+			InterceptedK8sAPICalls: creatingSecretFails("central-db-tls"),
+			ExpectedError:          "reconciling central-db-tls secret",
+		},
+		"When creating a new scanner-tls secret fails, an error should be returned": {
+			Spec:                   basicSpecWithScanner(true),
+			InterceptedK8sAPICalls: creatingSecretFails("scanner-tls"),
+			ExpectedError:          "reconciling scanner-tls secret",
+		},
+		"When creating a new scanner-db-tls secret fails, an error should be returned": {
+			Spec:                   basicSpecWithScanner(true),
+			InterceptedK8sAPICalls: creatingSecretFails("scanner-db-tls"),
+			ExpectedError:          "reconciling scanner-db-tls secret",
+		},
+		"When getting an existing central-tls secret fails with a non-404 error, an error should be returned": {
+			Spec:                   basicSpecWithScanner(false),
+			InterceptedK8sAPICalls: gettingSecretFails("central-tls"),
+			ExpectedError:          "reconciling central-tls secret",
+		},
+		"When getting an existing central-db-tls secret fails with a non-404 error, an error should be returned": {
+			Spec:                   basicSpecWithScanner(false),
+			InterceptedK8sAPICalls: gettingSecretFails("central-db-tls"),
+			ExpectedError:          "reconciling central-db-tls secret",
+		},
+		"When getting an existing scanner-tls secret fails with a non-404 error, an error should be returned": {
+			Spec:                   basicSpecWithScanner(true),
+			InterceptedK8sAPICalls: gettingSecretFails("scanner-tls"),
+			ExpectedError:          "reconciling scanner-tls secret",
+		},
+		"When getting an existing scanner-db-tls secret fails with a non-404 error, an error should be returned": {
+			Spec:                   basicSpecWithScanner(true),
+			InterceptedK8sAPICalls: gettingSecretFails("scanner-db-tls"),
+			ExpectedError:          "reconciling scanner-db-tls secret",
+		},
+		"When deleting an existing central-tls secret fails, an error should be returned": {
+			Deleted:                true,
+			ExistingManaged:        []*v1.Secret{existingCentral},
+			InterceptedK8sAPICalls: deletingSecretFails("central-tls"),
+			ExpectedError:          "reconciling central-tls secret",
+		},
+		"When deleting an existing central-tls secret fails with a 404, an error should not be returned because the secret is likely to be already deleted": {
+			Deleted:                true,
+			ExistingManaged:        []*v1.Secret{existingCentral},
+			InterceptedK8sAPICalls: secretIsAlreadyDeleted("central-tls"),
+		},
+		"When deleting an existing central-db-tls secret fails, an error should be returned": {
+			Deleted:                true,
+			ExistingManaged:        []*v1.Secret{existingCentralDB},
+			InterceptedK8sAPICalls: deletingSecretFails("central-db-tls"),
+			ExpectedError:          "reconciling central-db-tls secret",
+		},
+		"When deleting an existing central-db-tls secret fails with a 404, an error should not be returned because the secret is likely to be already deleted": {
+			Deleted:                true,
+			ExistingManaged:        []*v1.Secret{existingCentralDB},
+			InterceptedK8sAPICalls: secretIsAlreadyDeleted("central-db-tls"),
+		},
+		"When deleting an existing scanner-tls secret fails, an error should be returned": {
+			Deleted:                true,
+			ExistingManaged:        []*v1.Secret{existingScanner},
+			InterceptedK8sAPICalls: deletingSecretFails("scanner-tls"),
+			ExpectedError:          "reconciling scanner-tls secret",
+		},
+		"When deleting an existing scanner-tls secret fails with a 404, an error should not be returned because the secret is likely to be already deleted": {
+			Deleted:                true,
+			ExistingManaged:        []*v1.Secret{existingScanner},
+			InterceptedK8sAPICalls: secretIsAlreadyDeleted("scanner-tls"),
+		},
+		"When deleting an existing scanner-db-tls secret fails, an error should be returned": {
+			Deleted:                true,
+			ExistingManaged:        []*v1.Secret{existingScannerDB},
+			InterceptedK8sAPICalls: deletingSecretFails("scanner-db-tls"),
+			ExpectedError:          "reconciling scanner-db-tls secret",
+		},
+		"When deleting an existing scanner-db-tls secret fails with a 404, an error should not be returned because the secret is likely to be already deleted": {
+			Deleted:                true,
+			ExistingManaged:        []*v1.Secret{existingScannerDB},
+			InterceptedK8sAPICalls: secretIsAlreadyDeleted("scanner-db-tls"),
+		},
 	}
 
 	for name, c := range cases {
@@ -169,6 +257,54 @@ func TestCreateCentralTLS(t *testing.T) {
 
 			testSecretReconciliation(t, reconcileCentralTLS, c)
 		})
+	}
+}
+
+func gettingSecretFails(secretName string) testutils.InterceptorFns {
+	return testutils.InterceptorFns{
+		Get: func(ctx context.Context, client ctrlClient.WithWatch, key ctrlClient.ObjectKey, obj ctrlClient.Object, opts ...ctrlClient.GetOption) error {
+			if _, ok := obj.(*v1.Secret); ok && key.Name == secretName {
+				return k8sErrors.NewServiceUnavailable("failure")
+			}
+			return client.Get(ctx, key, obj, opts...)
+		},
+	}
+}
+
+func creatingSecretFails(secretName string) testutils.InterceptorFns {
+	return testutils.InterceptorFns{
+		Create: func(ctx context.Context, client ctrlClient.WithWatch, obj ctrlClient.Object, opts ...ctrlClient.CreateOption) error {
+			if secret, ok := obj.(*v1.Secret); ok && secret.Name == secretName {
+				return k8sErrors.NewServiceUnavailable("failure")
+			}
+			return client.Create(ctx, obj, opts...)
+		},
+	}
+}
+
+func deletingSecretFails(secretName string) testutils.InterceptorFns {
+	return testutils.InterceptorFns{
+		Delete: func(ctx context.Context, client ctrlClient.WithWatch, obj ctrlClient.Object, opts ...ctrlClient.DeleteOption) error {
+			if secret, ok := obj.(*v1.Secret); ok && secret.Name == secretName {
+				return k8sErrors.NewServiceUnavailable("failure")
+			}
+			return client.Delete(ctx, obj, opts...)
+		},
+	}
+}
+func secretIsAlreadyDeleted(secretName string) testutils.InterceptorFns {
+	return testutils.InterceptorFns{
+		Delete: func(ctx context.Context, client ctrlClient.WithWatch, obj ctrlClient.Object, opts ...ctrlClient.DeleteOption) error {
+			// To simulate that the secret was already deleted, this intercepted
+			// call will actually delete the secret by calling the underlying client,
+			// but it will return a 404 error. Useful for testing the cases where
+			// some object was already deleted.
+			err := client.Delete(ctx, obj, opts...)
+			if secret, ok := obj.(*v1.Secret); ok && secret.Name == secretName {
+				return k8sErrors.NewNotFound(v1.SchemeGroupVersion.WithResource("secrets").GroupResource(), secretName)
+			}
+			return err
+		},
 	}
 }
 
@@ -235,5 +371,381 @@ func TestRenewInitBundle(t *testing.T) {
 				assert.NoError(t, checkInitBundleCertRenewal(cert, now))
 			}
 		})
+	}
+}
+
+func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testing.T) {
+
+	type testCase struct {
+		fileMap types.SecretDataMap
+		assert  func(t *testing.T, err error)
+	}
+
+	randomCA := func() (mtls.CA, error) {
+		serial, err := mtls.RandomSerial()
+		if err != nil {
+			return nil, errors.New("could not generate serial number")
+		}
+		req := csr.CertificateRequest{
+			CN:           "SomeCommonNameThatIsNotACS",
+			KeyRequest:   csr.NewKeyRequest(),
+			SerialNumber: serial.String(),
+		}
+		caCert, _, caKey, err := initca.New(&req)
+		if err != nil {
+			return nil, errors.New("could not generate CA")
+		}
+		return mtls.LoadCAForSigning(caCert, caKey)
+	}
+
+	ca1, err := certgen.GenerateCA()
+	require.NoError(t, err)
+
+	centralCertFromCA1, err := ca1.IssueCertForSubject(mtls.CentralSubject)
+	require.NoError(t, err)
+
+	unexpectedSubjectCertFromCA1, err := ca1.IssueCertForSubject(mtls.AdmissionControlSubject)
+	require.NoError(t, err)
+
+	ca2, err := certgen.GenerateCA()
+	require.NoError(t, err)
+
+	centralCertFromCA2, err := ca2.IssueCertForSubject(mtls.CentralSubject)
+	require.NoError(t, err)
+
+	caNotFromACS, err := randomCA()
+	require.NoError(t, err)
+
+	cases := map[string]testCase{
+		"should fail if the CA was not issued by ACS": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName: caNotFromACS.CertPEM(),
+				mtls.CAKeyFileName:  caNotFromACS.KeyPEM(),
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "invalid certificate common name")
+			},
+		},
+		"should fail if the CA is not... a CA": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName: centralCertFromCA1.CertPEM,
+				mtls.CAKeyFileName:  centralCertFromCA1.KeyPEM,
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "certificate is not valid as CA")
+			},
+		},
+		"should fail when the ca cert and key do not match": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName: ca1.CertPEM(),
+				mtls.CAKeyFileName:  ca2.KeyPEM(),
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "private key does not match public key")
+			},
+		},
+		"should fail when the ca cert is missing": {
+			fileMap: types.SecretDataMap{
+				mtls.CAKeyFileName: ca1.KeyPEM(),
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "no CA certificate in file map")
+			},
+		},
+		"should fail when the ca key is missing": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName: ca1.CertPEM(),
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "no CA key in file map")
+			},
+		},
+		"should fail when the ca cert is invalid": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName: []byte("invalid"),
+				mtls.CAKeyFileName:  ca1.KeyPEM(),
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "failed to find any PEM data in certificate input")
+			},
+		},
+		"should fail when the ca key is invalid": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName: ca1.CertPEM(),
+				mtls.CAKeyFileName:  []byte("invalid"),
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "failed to find any PEM data in key input")
+			},
+		},
+		"should fail when the service cert is missing": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName:     ca1.CertPEM(),
+				mtls.CAKeyFileName:      ca1.KeyPEM(),
+				mtls.ServiceKeyFileName: centralCertFromCA1.KeyPEM,
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "no service certificate in file map")
+			},
+		},
+		"should fail when the service key is missing": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName:      ca1.CertPEM(),
+				mtls.CAKeyFileName:       ca1.KeyPEM(),
+				mtls.ServiceCertFileName: centralCertFromCA1.CertPEM,
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "no service private key in file map")
+			},
+		},
+		"should fail when the service cert does not match the service key": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName:      ca1.CertPEM(),
+				mtls.CAKeyFileName:       ca1.KeyPEM(),
+				mtls.ServiceCertFileName: centralCertFromCA1.CertPEM,
+				mtls.ServiceKeyFileName:  centralCertFromCA2.KeyPEM,
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "mismatched certificate and private key")
+			},
+		},
+		"should fail when the service cert is invalid": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName:      ca1.CertPEM(),
+				mtls.CAKeyFileName:       ca1.KeyPEM(),
+				mtls.ServiceCertFileName: []byte("invalid"),
+				mtls.ServiceKeyFileName:  centralCertFromCA1.KeyPEM,
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "unparseable certificate in file map")
+			},
+		},
+		"should fail when the service key is invalid": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName:      ca1.CertPEM(),
+				mtls.CAKeyFileName:       ca1.KeyPEM(),
+				mtls.ServiceCertFileName: centralCertFromCA1.CertPEM,
+				mtls.ServiceKeyFileName:  []byte("invalid"),
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "invalid private key")
+			},
+		},
+		"should fail when the service cert is not signed by the ca cert": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName:      ca1.CertPEM(),
+				mtls.CAKeyFileName:       ca1.KeyPEM(),
+				mtls.ServiceCertFileName: centralCertFromCA2.CertPEM,
+				mtls.ServiceKeyFileName:  centralCertFromCA2.KeyPEM,
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "certificate signed by unknown authority")
+			},
+		},
+		"should fail when the service cert subject is not the expected service name": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName:      ca1.CertPEM(),
+				mtls.CAKeyFileName:       ca1.KeyPEM(),
+				mtls.ServiceCertFileName: unexpectedSubjectCertFromCA1.CertPEM,
+				mtls.ServiceKeyFileName:  unexpectedSubjectCertFromCA1.KeyPEM,
+			},
+			assert: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "unexpected certificate service type")
+			},
+		},
+		"should succeed when the ca cert and key are valid": {
+			fileMap: types.SecretDataMap{
+				mtls.CACertFileName:      ca1.CertPEM(),
+				mtls.CAKeyFileName:       ca1.KeyPEM(),
+				mtls.ServiceCertFileName: centralCertFromCA1.CertPEM,
+				mtls.ServiceKeyFileName:  centralCertFromCA1.KeyPEM,
+			},
+			assert: func(t *testing.T, err error) {
+				assert.NoError(t, err)
+			},
+		},
+		// TODO(ROX-16206) Discuss tests around ca/service cert expiration, as well as "NotBefore".
+		// Currently these verifications are only done for the init bundle secret reconciliation,
+		// which has been disabled anyways. We also currently ignore CRLs and OCSPs.
+	}
+
+	for name, tt := range cases {
+		t.Run(name, func(t *testing.T) {
+			r := &createCentralTLSExtensionRun{}
+			err := r.validateAndConsumeCentralTLSData(tt.fileMap, true)
+			tt.assert(t, err)
+		})
+	}
+}
+
+func Test_createCentralTLSExtensionRun_validateServiceTLSData(t *testing.T) {
+	type testCase struct {
+		ca      mtls.CA
+		fileMap types.SecretDataMap
+		assert  func(t *testing.T, err error)
+	}
+
+	subjects := []mtls.Subject{
+		mtls.ScannerSubject,
+		mtls.ScannerDBSubject,
+		mtls.CentralDBSubject,
+	}
+
+	ca1, err := certgen.GenerateCA()
+	require.NoError(t, err)
+
+	unexpectedSubjectCertFromCA1, err := ca1.IssueCertForSubject(mtls.AdmissionControlSubject)
+	require.NoError(t, err)
+
+	ca2, err := certgen.GenerateCA()
+	require.NoError(t, err)
+
+	for _, subject := range subjects {
+		t.Run(subject.Identifier, func(t *testing.T) {
+
+			certForServiceFromCA1, err := ca1.IssueCertForSubject(subject)
+			require.NoError(t, err)
+
+			certForServiceFromCA2, err := ca2.IssueCertForSubject(subject)
+			require.NoError(t, err)
+
+			cases := map[string]testCase{
+				"should fail when the certificate does not match the ca": {
+					ca: ca1,
+					fileMap: types.SecretDataMap{
+						mtls.CACertFileName:      ca1.CertPEM(),
+						mtls.CAKeyFileName:       ca1.KeyPEM(),
+						mtls.ServiceKeyFileName:  certForServiceFromCA2.KeyPEM,
+						mtls.ServiceCertFileName: certForServiceFromCA2.CertPEM,
+					},
+					assert: func(t *testing.T, err error) {
+						assert.ErrorContains(t, err, "certificate signed by unknown authority")
+					},
+				},
+				"should fail when the key is missing": {
+					ca: ca1,
+					fileMap: types.SecretDataMap{
+						mtls.CACertFileName:      ca1.CertPEM(),
+						mtls.CAKeyFileName:       ca1.KeyPEM(),
+						mtls.ServiceCertFileName: certForServiceFromCA1.CertPEM,
+					},
+					assert: func(t *testing.T, err error) {
+						assert.ErrorContains(t, err, "no service private key")
+					},
+				},
+				"should fail when the certificate is missing": {
+					ca: ca1,
+					fileMap: types.SecretDataMap{
+						mtls.CACertFileName:     ca1.CertPEM(),
+						mtls.CAKeyFileName:      ca1.KeyPEM(),
+						mtls.ServiceKeyFileName: certForServiceFromCA1.KeyPEM,
+					},
+					assert: func(t *testing.T, err error) {
+						assert.ErrorContains(t, err, "no service certificate")
+					},
+				},
+				"should fail when the key is invalid": {
+					ca: ca1,
+					fileMap: types.SecretDataMap{
+						mtls.CACertFileName:      ca1.CertPEM(),
+						mtls.CAKeyFileName:       ca1.KeyPEM(),
+						mtls.ServiceCertFileName: certForServiceFromCA1.CertPEM,
+						mtls.ServiceKeyFileName:  []byte("invalid key"),
+					},
+					assert: func(t *testing.T, err error) {
+						assert.ErrorContains(t, err, "invalid private key")
+					},
+				},
+				"should fail when the certificate is invalid": {
+					ca: ca1,
+					fileMap: types.SecretDataMap{
+						mtls.CACertFileName:      ca1.CertPEM(),
+						mtls.CAKeyFileName:       ca1.KeyPEM(),
+						mtls.ServiceKeyFileName:  certForServiceFromCA1.KeyPEM,
+						mtls.ServiceCertFileName: []byte("invalid cert"),
+					},
+					assert: func(t *testing.T, err error) {
+						assert.ErrorContains(t, err, "unparseable certificate")
+					},
+				},
+				"should fail when the key does not match the cert": {
+					ca: ca1,
+					fileMap: types.SecretDataMap{
+						mtls.CACertFileName:      ca1.CertPEM(),
+						mtls.CAKeyFileName:       ca1.KeyPEM(),
+						mtls.ServiceKeyFileName:  certForServiceFromCA2.KeyPEM,
+						mtls.ServiceCertFileName: certForServiceFromCA1.CertPEM,
+					},
+					assert: func(t *testing.T, err error) {
+						assert.ErrorContains(t, err, "mismatched certificate and private key")
+					},
+				},
+				"should fail when the subject is unexpected": {
+					ca: ca1,
+					fileMap: types.SecretDataMap{
+						mtls.CACertFileName:      ca1.CertPEM(),
+						mtls.CAKeyFileName:       ca1.KeyPEM(),
+						mtls.ServiceKeyFileName:  unexpectedSubjectCertFromCA1.KeyPEM,
+						mtls.ServiceCertFileName: unexpectedSubjectCertFromCA1.CertPEM,
+					},
+					assert: func(t *testing.T, err error) {
+						assert.ErrorContains(t, err, "unexpected certificate service type")
+					},
+				},
+				"should fail, if for some reason, the ca cert is missing from the file map": {
+					ca: ca1,
+					fileMap: types.SecretDataMap{
+						mtls.CAKeyFileName:       ca1.KeyPEM(),
+						mtls.ServiceKeyFileName:  certForServiceFromCA1.KeyPEM,
+						mtls.ServiceCertFileName: certForServiceFromCA1.CertPEM,
+					},
+					assert: func(t *testing.T, err error) {
+						assert.ErrorContains(t, err, "no CA certificate in file map")
+					},
+				},
+				"should not fail if the ca key is missing from the file map": {
+					// TODO(ROX-16206): Confirm that this behavior is correct.
+					ca: ca1,
+					fileMap: types.SecretDataMap{
+						mtls.CACertFileName:      ca1.CertPEM(),
+						mtls.ServiceKeyFileName:  certForServiceFromCA1.KeyPEM,
+						mtls.ServiceCertFileName: certForServiceFromCA1.CertPEM,
+					},
+					assert: func(t *testing.T, err error) {
+						assert.NoError(t, err)
+					},
+				},
+				"should succeed when the certificate matches the ca": {
+					ca: ca1,
+					fileMap: types.SecretDataMap{
+						mtls.CACertFileName:      ca1.CertPEM(),
+						mtls.CAKeyFileName:       ca1.KeyPEM(),
+						mtls.ServiceKeyFileName:  certForServiceFromCA1.KeyPEM,
+						mtls.ServiceCertFileName: certForServiceFromCA1.CertPEM,
+					},
+					assert: func(t *testing.T, err error) {
+						assert.NoError(t, err)
+					},
+				},
+				// TODO(ROX-16206): Discuss tests around ca/service cert expiration, as well as "NotBefore"
+			}
+
+			for name, tt := range cases {
+				t.Run(name, func(t *testing.T) {
+					r := &createCentralTLSExtensionRun{
+						ca: tt.ca,
+					}
+					switch subject {
+					case mtls.ScannerSubject:
+						tt.assert(t, r.validateScannerTLSData(tt.fileMap, true))
+					case mtls.ScannerDBSubject:
+						tt.assert(t, r.validateScannerDBTLSData(tt.fileMap, true))
+					case mtls.CentralDBSubject:
+						tt.assert(t, r.validateCentralDBTLSData(tt.fileMap, true))
+					}
+				})
+			}
+		})
+
 	}
 }

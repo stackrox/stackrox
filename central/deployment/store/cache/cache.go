@@ -31,7 +31,7 @@ type cacheImpl struct {
 	lock  sync.RWMutex
 }
 
-func (c *cacheImpl) GetListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error) {
+func (c *cacheImpl) GetListDeployment(_ context.Context, id string) (*storage.ListDeployment, bool, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -42,7 +42,7 @@ func (c *cacheImpl) GetListDeployment(ctx context.Context, id string) (*storage.
 	return types.ConvertDeploymentToDeploymentList(deployment), true, nil
 }
 
-func (c *cacheImpl) GetManyListDeployments(ctx context.Context, ids ...string) ([]*storage.ListDeployment, []int, error) {
+func (c *cacheImpl) GetManyListDeployments(_ context.Context, ids ...string) ([]*storage.ListDeployment, []int, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 

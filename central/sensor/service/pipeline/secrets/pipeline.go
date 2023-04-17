@@ -142,4 +142,4 @@ func (s *pipelineImpl) persistSecret(ctx context.Context, action central.Resourc
 	}
 }
 
-func (s *pipelineImpl) OnFinish(clusterID string) {}
+func (s *pipelineImpl) OnFinish(_ string) {}

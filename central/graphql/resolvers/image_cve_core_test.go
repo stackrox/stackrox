@@ -131,18 +131,71 @@ func (s *ImageCVECoreResolverTestSuite) TestCountImageCVEsWithQuery() {
 }
 
 func (s *ImageCVECoreResolverTestSuite) TestGetImageCVEMalformed() {
-	_, err := s.resolver.ImageCVE(s.ctx, struct{ Cve *string }{})
+	_, err := s.resolver.ImageCVE(s.ctx, struct {
+		Cve                *string
+		SubfieldScopeQuery *string
+	}{})
 	s.Error(err)
 }
 
 func (s *ImageCVECoreResolverTestSuite) TestGetImageCVENonEmpty() {
+	// without filter
 	expectedQ := search.NewQueryBuilder().AddExactMatches(search.CVE, "cve-xyz").ProtoQuery()
 	expected := []imagecve.CveCore{
 		imageCVEViewMock.NewMockCveCore(s.mockCtrl),
 	}
 
 	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ, views.ReadOptions{}).Return(expected, nil)
-	response, err := s.resolver.ImageCVE(s.ctx, struct{ Cve *string }{Cve: pointers.String("cve-xyz")})
+	response, err := s.resolver.ImageCVE(
+		s.ctx, struct {
+			Cve                *string
+			SubfieldScopeQuery *string
+		}{
+			Cve: pointers.String("cve-xyz"),
+		},
+	)
+	s.NoError(err)
+	s.NotNil(response.data)
+
+	// with filter
+	expectedQ = search.NewQueryBuilder().
+		AddExactMatches(search.CVE, "cve-xyz").
+		AddStrings(search.Fixable, "true").
+		ProtoQuery()
+	expected = []imagecve.CveCore{
+		imageCVEViewMock.NewMockCveCore(s.mockCtrl),
+	}
+
+	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ, views.ReadOptions{}).Return(expected, nil)
+	response, err = s.resolver.ImageCVE(s.ctx, struct {
+		Cve                *string
+		SubfieldScopeQuery *string
+	}{
+		Cve:                pointers.String("cve-xyz"),
+		SubfieldScopeQuery: pointers.String("Fixable:true"),
+	},
+	)
+	s.NoError(err)
+	s.NotNil(response.data)
+
+	// with filter
+	expectedQ = search.NewQueryBuilder().
+		AddExactMatches(search.CVE, "cve-xyz").
+		AddStrings(search.Namespace, "n1").
+		ProtoQuery()
+	expected = []imagecve.CveCore{
+		imageCVEViewMock.NewMockCveCore(s.mockCtrl),
+	}
+
+	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ, views.ReadOptions{}).Return(expected, nil)
+	response, err = s.resolver.ImageCVE(s.ctx, struct {
+		Cve                *string
+		SubfieldScopeQuery *string
+	}{
+		Cve:                pointers.String("cve-xyz"),
+		SubfieldScopeQuery: pointers.String("Namespace:n1"),
+	},
+	)
 	s.NoError(err)
 	s.NotNil(response.data)
 }

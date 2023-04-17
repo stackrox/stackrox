@@ -4,8 +4,10 @@ import objects.Deployment
 import services.DeploymentService
 import services.ProcessService
 import util.Timer
+import util.Env
 
 import org.junit.Assume
+import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
@@ -85,6 +87,8 @@ class ProcessVisualizationTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("RUNTIME")
+    // TODO(ROX-16461): Fails under AKS
+    @IgnoreIf({ Env.CI_JOB_NAME.contains("aks-qa-e2e") })
     def "Verify process visualization on kube-proxy"() {
         when:
         "Check if kube-proxy is running"

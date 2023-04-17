@@ -71,7 +71,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -629,9 +628,8 @@ func (s *PruningTestSuite) TestImagePruning() {
 
 	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(s.T(),
 		[]permissions.ResourceWithAccess{
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Administration),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),
-			// TODO: ROX-12750 Replace Config with Administration.
-			resourceWithAccess(storage.Access_READ_ACCESS, resources.Config),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Deployment),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Image),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.DeploymentExtension),
@@ -704,12 +702,6 @@ func (s *PruningTestSuite) TestImagePruning() {
 }
 
 func (s *PruningTestSuite) TestClusterPruning() {
-	s.T().Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
-	if !features.DecommissionedClusterRetention.Enabled() {
-		// if it's still not enabled, we're probably in release tests so skip
-		s.T().Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
-	}
-
 	s.T().Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameRHACSRelease)
 
 	versionUtils.SetExampleVersion(s.T())
@@ -939,12 +931,6 @@ func (s *PruningTestSuite) TestClusterPruning() {
 }
 
 func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
-	s.T().Setenv(features.DecommissionedClusterRetention.EnvVar(), "true")
-	if !features.DecommissionedClusterRetention.Enabled() {
-		// if it's still not enabled, we're probably in release tests so skip
-		s.T().Skip("Skipping because ROX_DECOMMISSIONED_CLUSTER_RETENTION feature flag isn't set.")
-	}
-
 	s.T().Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameRHACSRelease)
 
 	versionUtils.SetExampleVersion(s.T())
@@ -1212,9 +1198,8 @@ func (s *PruningTestSuite) TestAlertPruning() {
 	}
 	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(s.T(),
 		[]permissions.ResourceWithAccess{
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Administration),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),
-			// TODO: ROX-12750 Replace Config with Administration.
-			resourceWithAccess(storage.Access_READ_ACCESS, resources.Config),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Deployment),
 			resourceWithAccess(storage.Access_READ_ACCESS, resources.Image),
 			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Alert),
@@ -1570,20 +1555,54 @@ func (s *PruningTestSuite) TestMarkOrphanedAlerts() {
 
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			alerts := alertDatastoreMocks.NewMockDataStore(ctrl)
-			gci := &garbageCollectorImpl{
-				alerts: alerts,
+			if !env.PostgresDatastoreEnabled.BooleanSetting() {
+				ctrl := gomock.NewController(t)
+				alerts := alertDatastoreMocks.NewMockDataStore(ctrl)
+				gci := &garbageCollectorImpl{
+					alerts: alerts,
+				}
+				alerts.EXPECT().WalkAll(pruningCtx, gomock.Any()).DoAndReturn(
+					func(ctx context.Context, fn func(la *storage.ListAlert) error) error {
+						for _, a := range c.initialAlerts {
+							assert.NoError(t, fn(a))
+						}
+						return nil
+					})
+				alerts.EXPECT().MarkAlertStaleBatch(pruningCtx, c.expectedDeletions)
+				gci.markOrphanedAlertsAsResolved(c.deployments)
+			} else {
+				ctrl := gomock.NewController(t)
+				alerts := alertDatastoreMocks.NewMockDataStore(ctrl)
+				db := pgtest.ForT(t)
+				gci := &garbageCollectorImpl{
+					postgres: db.DB,
+					alerts:   alerts,
+				}
+				actualAlertsDS, err := alertDatastore.GetTestPostgresDataStore(t, db.DB)
+				assert.NoError(t, err)
+
+				deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(t, db.DB)
+				assert.NoError(t, err)
+
+				for _, depID := range c.deployments.AsSlice() {
+					assert.NoError(t, deploymentDS.UpsertDeployment(pruningCtx, &storage.Deployment{Id: depID}))
+				}
+				for _, la := range c.initialAlerts {
+					assert.NoError(t, actualAlertsDS.UpsertAlert(pruningCtx, &storage.Alert{
+						Id:             la.GetId(),
+						LifecycleStage: la.GetLifecycleStage(),
+						Entity: &storage.Alert_Deployment_{
+							Deployment: &storage.Alert_Deployment{
+								Id: la.GetDeployment().GetId(),
+							},
+						},
+						Time:  la.GetTime(),
+						State: la.GetState(),
+					}))
+				}
+				alerts.EXPECT().MarkAlertStaleBatch(pruningCtx, c.expectedDeletions)
+				gci.markOrphanedAlertsAsResolved(c.deployments)
 			}
-			alerts.EXPECT().WalkAll(pruningCtx, gomock.Any()).DoAndReturn(
-				func(ctx context.Context, fn func(la *storage.ListAlert) error) error {
-					for _, a := range c.initialAlerts {
-						assert.NoError(t, fn(a))
-					}
-					return nil
-				})
-			alerts.EXPECT().MarkAlertStaleBatch(pruningCtx, c.expectedDeletions)
-			gci.markOrphanedAlertsAsResolved(c.deployments)
 		})
 	}
 }

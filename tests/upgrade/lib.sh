@@ -226,7 +226,7 @@ test_upgrader() {
 
     info "Verify resources were patched back by the upgrader"
     resources="$(kubectl -n stackrox get deploy/sensor -o 'jsonpath=cpu={.spec.template.spec.containers[?(@.name=="sensor")].resources.requests.cpu},memory={.spec.template.spec.containers[?(@.name=="sensor")].resources.requests.memory}')"
-    if [[ "$resources" != 'cpu=1,memory=1Gi' ]]; then
+    if [[ "$resources" != 'cpu=2,memory=4Gi' ]]; then
         echo "Resources ($resources) not patched back!"
         kubectl -n stackrox get deploy/sensor -o yaml
         exit 1
@@ -380,20 +380,20 @@ rollback_sensor_via_upgrader() {
     kill "$proxy_pid"
 }
 
-create_db_tls_secret() {
-    echo "Create certificates for central db"
+create_certificate_values_file() {
+    if [[ "$#" -ne 1 ]]; then
+        die "wrong args. usage: create_certificate_values_file <path_to_values_file>"
+    fi
 
-    cert_dir="$(mktemp -d)"
+    local cert_path="$1"
+    echo "Create root certificates values file"
+
     # get root ca
-    kubectl -n stackrox exec -i deployment/central -- cat /run/secrets/stackrox.io/certs/ca.pem > $cert_dir/ca.pem
-    kubectl -n stackrox exec -i deployment/central -- cat /run/secrets/stackrox.io/certs/ca-key.pem > $cert_dir/ca.key
-    # generate central-db certs
-    openssl genrsa -out $cert_dir/key.pem 4096
-    openssl req -new -key $cert_dir/key.pem -subj "/CN=CENTRAL_DB_SERVICE: Central DB" > $cert_dir/newreq
-    echo subjectAltName = DNS:central-db.stackrox.svc > $cert_dir/extfile.cnf
-    openssl x509 -sha256 -req -CA $cert_dir/ca.pem -CAkey $cert_dir/ca.key -CAcreateserial -out $cert_dir/cert.pem -in $cert_dir/newreq -extfile $cert_dir/extfile.cnf
-    # create secret
-    kubectl -n stackrox create secret generic central-db-tls --save-config --dry-run=client --from-file=$cert_dir/ca.pem --from-file=$cert_dir/cert.pem --from-file=$cert_dir/key.pem -o yaml | kubectl apply -f -
+    caKey=$(kubectl -n stackrox get secret central-tls -o go-template='{{ index .data "ca-key.pem" }}' | base64 --decode)
+    caPem=$(kubectl -n stackrox get secret central-tls -o go-template='{{ index .data "ca.pem" }}' | base64 --decode)
+
+    # create root certificates value file
+    yq e -n ".ca.cert = \"${caPem}\" | .ca.key = \"${caKey}\"" > "$cert_path"
 }
 
 preamble() {

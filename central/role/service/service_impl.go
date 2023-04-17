@@ -2,18 +2,22 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
+	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
+	namespaceMappings "github.com/stackrox/rox/central/namespace/index/mappings"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -21,7 +25,12 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"google.golang.org/grpc"
 )
 
@@ -52,6 +61,10 @@ var (
 			"/v1.RoleService/PostSimpleAccessScope",
 			"/v1.RoleService/PutSimpleAccessScope",
 			"/v1.RoleService/DeleteSimpleAccessScope",
+		},
+		user.With(): {
+			"/v1.RoleService/GetClustersForPermissions",
+			"/v1.RoleService/GetNamespacesForClusterAndPermissions",
 		},
 		allow.Anonymous(): {
 			"/v1.RoleService/GetResources",
@@ -346,6 +359,117 @@ func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.C
 	return response, nil
 }
 
+func (s *serviceImpl) GetClustersForPermissions(ctx context.Context, req *v1.GetClustersForPermissionsRequest) (*v1.GetClustersForPermissionsResponse, error) {
+	requestedPermissions := req.GetPermissions()
+
+	resourcesWithAccess := listReadPermissions(requestedPermissions, permissions.ClusterScope)
+	clusterIDsInScope, hasFullAccess, err := listClusterIDsInScope(ctx, resourcesWithAccess)
+	if err != nil {
+		return nil, err
+	}
+
+	// Use an elevated context to fetch cluster names associated with the listed IDs.
+	// This context must not be propagated.
+	// The search is restricted to the cluster name field, and to the clusters allowed
+	// by the extended scope.
+	var clusterLookupCtx context.Context
+	if hasFullAccess {
+		clusterLookupCtx = sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Cluster),
+			),
+		)
+	} else {
+		clusterLookupCtx = sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Cluster),
+				sac.ClusterScopeKeys(clusterIDsInScope.AsSlice()...),
+			),
+		)
+	}
+	query := search.NewQueryBuilder().
+		AddStringsHighlighted(search.Cluster, search.WildcardString).
+		ProtoQuery()
+	allowedSortFields := set.NewStringSet(search.ClusterID.String(), search.Cluster.String())
+	query.Pagination = getSanitizedPagination(req.GetPagination(), allowedSortFields)
+	results, err := s.clusterDataStore.Search(clusterLookupCtx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	optionsMap := getClustersOptionsMap()
+	clusters := extractScopeElements(results, optionsMap, search.Cluster.String())
+	response := &v1.GetClustersForPermissionsResponse{
+		Clusters: clusters,
+	}
+	return response, nil
+}
+
+func (s *serviceImpl) GetNamespacesForClusterAndPermissions(ctx context.Context, req *v1.GetNamespaceForClusterAndPermissionsRequest) (*v1.GetNamespacesForClusterAndPermissionsResponse, error) {
+	requestedPermissions := req.GetPermissions()
+	clusterID := req.GetClusterId()
+
+	resourcesWithAccess := listReadPermissions(requestedPermissions, permissions.NamespaceScope)
+
+	clusterVisible, err := s.isClusterVisibleForRequester(ctx, clusterID)
+	if err != nil {
+		return nil, err
+	}
+	if !clusterVisible {
+		return nil, errox.NotFound
+	}
+
+	namespacesInScope, hasFullAccess, err := listNamespaceNamesInScope(ctx, clusterID, resourcesWithAccess)
+	if err != nil {
+		return nil, err
+	}
+
+	// Use an elevated context to fetch namespace IDs and names associated with the listed namespace names.
+	// This context must not be propagated.
+	// The search is restricted to the namespace name field, and to the namespaces allowed
+	// by the extended scope.
+	var namespaceLookupCtx context.Context
+	if hasFullAccess {
+		namespaceLookupCtx = sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Namespace),
+				sac.ClusterScopeKeys(clusterID),
+			),
+		)
+	} else {
+		namespaceLookupCtx = sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Namespace),
+				sac.ClusterScopeKeys(clusterID),
+				sac.NamespaceScopeKeys(namespacesInScope.AsSlice()...),
+			),
+		)
+	}
+	query := search.NewQueryBuilder().
+		AddStringsHighlighted(search.Namespace, search.WildcardString).
+		ProtoQuery()
+	/*
+		// Currently, the namespace search overrides pagination information. As a consequence, pagination is disabled here.
+		allowedSortFields := set.NewStringSet(search.NamespaceID.String(), search.Namespace.String())
+		query.Pagination = getSanitizedPagination(req.GetPagination(), allowedSortFields)
+	*/
+	results, err := s.namespaceDataStore.Search(namespaceLookupCtx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	optionsMap := getNamespacesOptionsMap()
+	namespaces := extractScopeElements(results, optionsMap, search.Namespace.String())
+	response := &v1.GetNamespacesForClusterAndPermissionsResponse{
+		Namespaces: namespaces,
+	}
+	return response, nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Helpers                                                                    //
 //                                                                            //
@@ -364,4 +488,209 @@ func effectiveAccessScopeForSimpleAccessScope(scopeRules *storage.SimpleAccessSc
 	}
 
 	return response, nil
+}
+
+const (
+	hasFullAccess    = true
+	hasPartialAccess = false
+)
+
+func listReadPermissions(
+	requestedPermissions []string,
+	scope permissions.ResourceScope,
+) []permissions.ResourceWithAccess {
+	readPermissions := resources.AllResourcesViewPermissions()
+	indexedScopeReadPermissions := make(map[string]permissions.ResourceWithAccess, 0)
+	scopeReadPermissions := make([]permissions.ResourceWithAccess, 0, len(readPermissions))
+	for _, permission := range readPermissions {
+		if permission.Resource.GetScope() >= scope {
+			scopeReadPermissions = append(scopeReadPermissions, permission)
+			indexedScopeReadPermissions[permission.Resource.String()] = permission
+		}
+	}
+	if len(requestedPermissions) == 0 {
+		return scopeReadPermissions
+	}
+	scopeRequestedReadPermissions := make([]permissions.ResourceWithAccess, 0, len(scopeReadPermissions))
+	for _, permission := range sliceutils.Unique(requestedPermissions) {
+		if resourceWithAccess, found := indexedScopeReadPermissions[permission]; found {
+			scopeRequestedReadPermissions = append(scopeRequestedReadPermissions, resourceWithAccess)
+		}
+	}
+	return scopeRequestedReadPermissions
+}
+
+func getRequesterScopeForReadPermission(
+	ctx context.Context,
+	resourceWithAccess permissions.ResourceWithAccess,
+) (*effectiveaccessscope.ScopeTree, error) {
+	scopeChecker := sac.ForResource(resourceWithAccess.Resource).ScopeChecker(ctx, storage.Access_READ_ACCESS)
+	return scopeChecker.EffectiveAccessScope(resourceWithAccess)
+}
+
+// listClusterIDsInScope consolidates the list of cluster IDs in the user scopes associated
+// with the requested resources and access level.
+// - If one of the allowed scopes is unrestricted, then the string set is returned empty
+// and the returned boolean is true.
+// - If no allowed scope is unrestricted, the string set contains the cluster IDs allowed by
+// the user scopes associated with the requested resources, and the returned boolean is false.
+func listClusterIDsInScope(
+	ctx context.Context,
+	resourcesWithAccess []permissions.ResourceWithAccess,
+) (set.StringSet, bool, error) {
+	clusterIDsInScope := set.NewStringSet()
+	for _, r := range resourcesWithAccess {
+		scope, err := getRequesterScopeForReadPermission(ctx, r)
+		if err != nil {
+			return set.NewStringSet(), hasPartialAccess, err
+		}
+		if scope == nil || scope.State == effectiveaccessscope.Excluded {
+			continue
+		}
+		if scope.State == effectiveaccessscope.Included {
+			return set.NewStringSet(), hasFullAccess, nil
+		}
+		clusterIDs := scope.GetClusterIDs()
+		for _, clusterID := range clusterIDs {
+			if clusterNode := scope.GetClusterByID(clusterID); clusterNode != nil &&
+				clusterNode.State != effectiveaccessscope.Excluded {
+				clusterIDsInScope.Add(clusterID)
+			}
+		}
+	}
+	return clusterIDsInScope, hasPartialAccess, nil
+}
+
+func getClustersOptionsMap() search.OptionsMap {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return schema.ClustersSchema.OptionsMap
+	}
+	return clusterMappings.OptionsMap
+}
+
+func (s *serviceImpl) isClusterVisibleForRequester(
+	ctx context.Context,
+	clusterID string,
+) (bool, error) {
+	resourcesWithAccess := listReadPermissions([]string{}, permissions.ClusterScope)
+	clusterIDsInScope, isFullAccess, err := listClusterIDsInScope(ctx, resourcesWithAccess)
+	if err != nil {
+		return false, err
+	}
+	if !isFullAccess && clusterIDsInScope.Contains(clusterID) {
+		return true, nil
+	}
+	if isFullAccess {
+		clusterLookupElevatedAccess := sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Cluster),
+			),
+		)
+		exists, err := s.clusterDataStore.Exists(clusterLookupElevatedAccess, clusterID)
+		if err != nil {
+			return false, err
+		}
+		return exists, nil
+	}
+	return false, nil
+}
+
+// listNamespaceNamesInScope consolidates the list of names of namespaces in the cluster matching
+// the requested ID and allowed by user scopes associated with the requested resources
+// and access level.
+// - If one of the allowed scopes is unrestricted for the requested cluster, then the string set
+// is returned empty and the returned boolean is true.
+// - If no allowed scope is unrestricted for the requested cluster, the string set contains
+// the names of the namespaces allowed by the user scopes associated with the requested resources,
+// and the returned boolean is false.
+func listNamespaceNamesInScope(
+	ctx context.Context,
+	clusterID string,
+	resourcesWithAccess []permissions.ResourceWithAccess,
+) (set.StringSet, bool, error) {
+	noNamespaces := set.NewStringSet()
+	namespacesInScope := set.NewStringSet()
+	for _, r := range resourcesWithAccess {
+		scope, err := getRequesterScopeForReadPermission(ctx, r)
+		if err != nil {
+			return noNamespaces, hasPartialAccess, err
+		}
+		if scope == nil || scope.State == effectiveaccessscope.Excluded {
+			continue
+		}
+		if scope.State == effectiveaccessscope.Included {
+			return noNamespaces, hasFullAccess, nil
+		}
+		clusterScope := scope.GetClusterByID(clusterID)
+		if clusterScope == nil || clusterScope.State == effectiveaccessscope.Excluded {
+			continue
+		}
+		if clusterScope.State == effectiveaccessscope.Included {
+			return noNamespaces, hasFullAccess, nil
+		}
+		for namespace, namespaceScope := range clusterScope.Namespaces {
+			if namespaceScope == nil || namespaceScope.State == effectiveaccessscope.Excluded {
+				continue
+			}
+			namespacesInScope.Add(namespace)
+		}
+	}
+	return namespacesInScope, hasPartialAccess, nil
+}
+
+func getSanitizedPagination(requested *v1.Pagination, allowedSortFields set.StringSet) *v1.QueryPagination {
+	if requested == nil {
+		return nil
+	}
+	sanitized := &v1.QueryPagination{
+		Limit:       requested.GetLimit(),
+		Offset:      requested.GetOffset(),
+		SortOptions: nil,
+	}
+	if requested.GetSortOption() != nil {
+		sortField := requested.GetSortOption().GetField()
+		if allowedSortFields.Contains(sortField) {
+			sanitizedSortOption := &v1.QuerySortOption{
+				Field:          sortField,
+				Reversed:       requested.GetSortOption().GetReversed(),
+				SearchAfterOpt: nil,
+			}
+			sanitized.SortOptions = append(sanitized.SortOptions, sanitizedSortOption)
+		}
+	}
+	return sanitized
+}
+
+func getNamespacesOptionsMap() search.OptionsMap {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		return schema.NamespacesSchema.OptionsMap
+	}
+	return namespaceMappings.OptionsMap
+}
+
+func extractScopeElements(results []search.Result, optionsMap search.OptionsMap, searchedField string) []*v1.ScopeObject {
+	scopeElements := make([]*v1.ScopeObject, 0, len(results))
+	targetField, fieldFound := optionsMap.Get(searchedField)
+	for _, r := range results {
+		objID := r.ID
+		objName := ""
+		if fieldFound {
+			for _, v := range r.Matches[targetField.GetFieldPath()] {
+				if len(v) > 0 {
+					objName = v
+					break
+				}
+			}
+		}
+		if len(objName) == 0 {
+			objName = fmt.Sprintf("%s with ID %s", searchedField, objID)
+		}
+		element := &v1.ScopeObject{
+			Id:   objID,
+			Name: objName,
+		}
+		scopeElements = append(scopeElements, element)
+	}
+	return scopeElements
 }

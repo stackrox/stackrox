@@ -66,7 +66,7 @@ func (p *configMapPersister) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (p *configMapPersister) ProcessMessage(msg *central.MsgToSensor) error {
+func (p *configMapPersister) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 

@@ -5,13 +5,13 @@ import {
     defaultColumnClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
-import LifecycleStageLabel from 'Components/LifecycleStageLabel';
 import SeverityLabel from 'Components/SeverityLabel';
 import StatusChip from 'Components/StatusChip';
 import entityTypes from 'constants/entityTypes';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 import { policySortFields } from 'constants/sortFields';
+import { formatLifecycleStages } from 'Containers/Policies/policies.utils';
 import { POLICIES_QUERY } from 'queries/policy';
 import { sortSeverity } from 'sorters/sorters';
 import queryService from 'utils/queryService';
@@ -109,13 +109,7 @@ const tableColumns = [
         className: `w-1/8 ${defaultColumnClassName}`,
         Cell: ({ original }) => {
             const { lifecycleStages } = original;
-            return lifecycleStages.map((lifecycleStage) => (
-                <LifecycleStageLabel
-                    key={lifecycleStage}
-                    className="mr-2"
-                    lifecycleStage={lifecycleStage}
-                />
-            ));
+            return formatLifecycleStages(lifecycleStages);
         },
         accessor: 'lifecycleStages',
         id: policySortFields.LIFECYCLE_STAGE,

@@ -3,9 +3,11 @@ package datastore
 import (
 	"context"
 
+	authProviderDatastore "github.com/stackrox/rox/central/authprovider/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/group/datastore/internal/store/bolt"
 	pgStore "github.com/stackrox/rox/central/group/datastore/internal/store/postgres"
+	roleDatastore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -21,9 +23,9 @@ var (
 
 func initialize() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		ds = New(pgStore.New(globaldb.GetPostgres()))
+		ds = New(pgStore.New(globaldb.GetPostgres()), roleDatastore.Singleton(), authProviderDatastore.Singleton())
 	} else {
-		ds = New(bolt.New(globaldb.GetGlobalDB()))
+		ds = New(bolt.New(globaldb.GetGlobalDB()), roleDatastore.Singleton(), authProviderDatastore.Singleton())
 	}
 
 	// Give datastore access to groups so that it can delete any groups with empty props on startup

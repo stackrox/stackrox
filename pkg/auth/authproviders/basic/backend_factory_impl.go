@@ -47,7 +47,7 @@ func (f *factory) CreateBackend(ctx context.Context, id string, _ []string, _ ma
 	return be, nil
 }
 
-func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (string, string, error) {
+func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (string, string, error) {
 	restPath := strings.TrimPrefix(r.URL.Path, f.urlPathPrefix)
 	if len(restPath) == len(r.URL.Path) {
 		return "", "", httputil.NewError(http.StatusNotFound, "Not Found")
@@ -63,7 +63,7 @@ func (f *factory) RedactConfig(config map[string]string) map[string]string {
 	return config
 }
 
-func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]string {
+func (f *factory) MergeConfig(newCfg, _ map[string]string) map[string]string {
 	return newCfg
 }
 

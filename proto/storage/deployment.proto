@@ -59,7 +59,7 @@ message ContainerImage {
     // These tags maintain backwards compatibility with the previously embedded storage.Image
     // Tags after 10 may be used as needed
     reserved 2, 3, 5, 6, 7, 8, 9;
-    string    id               = 4 [(gogoproto.moretags) = 'search:"Image Sha,store,hidden" sql:"fk(Image:id),no-fk-constraint"'];
+    string    id               = 4 [(gogoproto.moretags) = 'search:"Image Sha,store,hidden" sql:"fk(Image:id),no-fk-constraint,index=hash"'];
     ImageName name             = 1;
     bool      not_pullable     = 10;
 

@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -243,10 +244,18 @@ func getDeploymentScope(scopeQuery *v1.Query, contexts ...context.Context) strin
 }
 
 func getImageIDFromScope(contexts ...context.Context) string {
+	var scope scoped.Scope
+	var hasScope bool
 	for _, ctx := range contexts {
-		if scope, ok := scoped.GetScope(ctx); ok {
-			if scope.Level == v1.SearchCategory_IMAGES {
+		if features.VulnMgmtWorkloadCVEs.Enabled() {
+			if scope, hasScope = scoped.GetScopeAtLevel(ctx, v1.SearchCategory_IMAGES); !hasScope {
 				return scope.ID
+			}
+		} else {
+			if scope, ok := scoped.GetScope(ctx); ok {
+				if scope.Level == v1.SearchCategory_IMAGES {
+					return scope.ID
+				}
 			}
 		}
 	}
@@ -305,6 +314,9 @@ Sub Resolver Functions
 */
 
 func (resolver *imageComponentResolver) ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error) {
+	if !env.ActiveVulnMgmt.BooleanSetting() {
+		return &activeStateResolver{}, nil
+	}
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ActiveState")
 	scopeQuery, err := args.AsV1QueryOrEmpty()
 	if err != nil {
@@ -530,10 +542,18 @@ func (resolver *imageComponentResolver) LayerIndex() (*int32, error) {
 		return &v, nil
 	}
 
-	scope, hasScope := scoped.GetScope(resolver.ctx)
-	if !hasScope || scope.Level != v1.SearchCategory_IMAGES {
-		return nil, nil
+	var scope scoped.Scope
+	var hasScope bool
+	if features.VulnMgmtWorkloadCVEs.Enabled() {
+		if scope, hasScope = scoped.GetScopeAtLevel(resolver.ctx, v1.SearchCategory_IMAGES); !hasScope {
+			return nil, nil
+		}
+	} else {
+		if scope, hasScope = scoped.GetScope(resolver.ctx); !hasScope || scope.Level != v1.SearchCategory_IMAGES {
+			return nil, nil
+		}
 	}
+
 	edges, err := resolver.root.ImageComponentEdgeDataStore.SearchRawEdges(resolver.ctx, resolver.componentQuery())
 	if err != nil {
 		return nil, err

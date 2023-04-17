@@ -31,5 +31,5 @@ while true; do
 done
 echo
 
-nohup ${KUBE_COMMAND} port-forward -n 'stackrox' svc/central "$1:443" 1>/dev/null 2>&1 &
+nohup ${KUBE_COMMAND} port-forward -n 'stackrox' svc/central "$1:443" --address='0.0.0.0' 1>/dev/null 2>&1 &
 echo "Access central on https://localhost:$1"

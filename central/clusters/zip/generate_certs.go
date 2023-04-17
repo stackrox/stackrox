@@ -1,7 +1,6 @@
 package zip
 
 import (
-	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -10,12 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/clusters"
 	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/sensor"
-	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/zip"
@@ -27,54 +26,47 @@ const (
 )
 
 func getAdditionalCAs(certs *sensor.Certs) ([]*zip.File, error) {
-	certFileInfos, err := os.ReadDir(tlsconfig.AdditionalCACertsDirPath())
+
+	additionalCAFilePaths, err := tlsconfig.GetAdditionalCAFilePaths()
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
 		return nil, err
 	}
 
 	var files []*zip.File
-	for _, fileInfo := range certFileInfos {
-		if fileInfo.IsDir() || filepath.Ext(fileInfo.Name()) != ".crt" {
-			continue
-		}
-		fullPath := path.Join(tlsconfig.AdditionalCACertsDirPath(), fileInfo.Name())
-		contents, err := os.ReadFile(fullPath)
+	for _, additionalCAFilePath := range additionalCAFilePaths {
+		contents, err := os.ReadFile(additionalCAFilePath)
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, zip.NewFile(path.Join(additionalCAsZipSubdir, fileInfo.Name()), contents, 0))
-		certs.Files[fmt.Sprintf("secrets/%s/%s", additionalCAsZipSubdir, fileInfo.Name())] = contents
+		fileName := filepath.Base(additionalCAFilePath)
+		files = append(files, zip.NewFile(path.Join(additionalCAsZipSubdir, fileName), contents, 0))
+		certs.Files[fmt.Sprintf("secrets/%s/%s", additionalCAsZipSubdir, fileName)] = contents
 	}
 
-	if caFile, err := getDefaultCertCA(); err != nil {
-		log.Errorf("Error obtaining default CA cert: %v", err)
-	} else if caFile != nil {
-		files = append(files, caFile)
-		certs.Files[fmt.Sprintf("secrets/%s/%s", additionalCAsZipSubdir, centralCA)] = caFile.Content
+	if zipForDefaultTLSCertCA, err := maybeCreateZipFileForDefaultTLSCertCA(); err != nil {
+		log.Errorf("Error obtaining default TLS Certificate: %v", err)
+	} else if zipForDefaultTLSCertCA != nil {
+		files = append(files, zipForDefaultTLSCertCA)
+		certs.Files[fmt.Sprintf("secrets/%s/%s", additionalCAsZipSubdir, centralCA)] = zipForDefaultTLSCertCA.Content
 	}
 
 	return files, nil
 }
 
-func getDefaultCertCA() (*zip.File, error) {
-	certFile := filepath.Join(tlsconfig.DefaultCertPath, tlsconfig.TLSCertFileName)
-	keyFile := filepath.Join(tlsconfig.DefaultCertPath, tlsconfig.TLSKeyFileName)
-
-	if filesExist, err := fileutils.AllExist(certFile, keyFile); err != nil || !filesExist {
-		return nil, err
+// maybeCreateZipFileForDefaultTLSCertCA returns a zip file containing the default CA cert if it is not trusted by the system roots.
+// If there is no default CA cert, or if it is already trusted by the system roots, it returns nil.
+func maybeCreateZipFileForDefaultTLSCertCA() (*zip.File, error) {
+	defaultTLSCer, err := tlsconfig.MaybeGetDefaultTLSCertificateFromDefaultDirectory()
+	if err != nil {
+		return nil, errors.Wrap(err, "error getting default TLS certificate from default directory")
+	}
+	if defaultTLSCer == nil || len(defaultTLSCer.Certificate) == 0 {
+		return nil, nil
 	}
 
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	lastInChain, err := x509.ParseCertificate(defaultTLSCer.Certificate[len(defaultTLSCer.Certificate)-1])
 	if err != nil {
-		return nil, err
-	}
-
-	lastInChain, err := x509.ParseCertificate(cert.Certificate[len(cert.Certificate)-1])
-	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error parsing default TLS certificate")
 	}
 
 	// Only add cert to bundle if it is not trusted by system roots.

@@ -58,6 +58,10 @@ if [[ "$SMALL_INSTALL" == "true" ]]; then
     installflags+=('--set' 'central.resources.requests.cpu=1')
     installflags+=('--set' 'central.resources.limits.memory=4Gi')
     installflags+=('--set' 'central.resources.limits.cpu=1')
+    installflags+=('--set' 'central.db.resources.requests.memory=1Gi')
+    installflags+=('--set' 'central.db.resources.requests.cpu=500m')
+    installflags+=('--set' 'central.db.resources.limits.memory=4Gi')
+    installflags+=('--set' 'central.db.resources.limits.cpu=1')
     installflags+=('--set' 'scanner.autoscaling.disable=true')
     installflags+=('--set' 'scanner.replicas=1')
     installflags+=('--set' 'scanner.resources.requests.memory=500Mi')
@@ -106,8 +110,8 @@ echo -e "
 You may access the dashboard via https://localhost:8000/main/dashboard, the user is admin.
 
 Consult these documents for additional information on customizing your Helm installation:
-https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html
-https://docs.openshift.com/acs/installing/installing_helm/install-helm-customization.html
+https://docs.openshift.com/acs/installing/installing_other/install-central-other.html#install-using-helm-customizations-other
+https://docs.openshift.com/acs/installing/installing_other/install-secured-cluster-other.html#configure-secured-cluster-services-helm-chart-customizations-other
 
 STACKROX_ADMIN_PASSWORD='$STACKROX_ADMIN_PASSWORD'
 Above is your automatically generated stackrox admin password. Please store it securely, as you will need it during further configuration.

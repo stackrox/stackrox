@@ -124,11 +124,11 @@
 #  # Resource configuration for the sensor container.
 #  resources:
 #    requests:
-#      memory: "1Gi"
-#      cpu: "1"
-#    limits:
 #      memory: "4Gi"
 #      cpu: "2"
+#    limits:
+#      memory: "8Gi"
+#      cpu: "4"
 #
 #  # Settings for the internal service-to-service TLS certificate used by Sensor.
 #  serviceTLS:
@@ -265,6 +265,15 @@
 #
 #  # Resource configuration for the Compliance container.
 #  complianceResources:
+#    requests:
+#      memory: "10Mi"
+#      cpu: "10m"
+#    limits:
+#      memory: "2Gi"
+#      cpu: "1"
+#
+#  # Resource configuration for the Node Inventory container.
+#  nodeInventoryResources:
 #    requests:
 #      memory: "10Mi"
 #      cpu: "10m"

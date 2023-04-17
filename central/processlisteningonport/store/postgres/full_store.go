@@ -33,10 +33,10 @@ type fullStoreImpl struct {
 // XXX: Verify the query plan to make sure needed indexes are in use.
 const getByDeploymentStmt = "SELECT plop.id, plop.serialized, " +
 	"proc.serialized as proc_serialized " +
-	"FROM process_listening_on_ports plop " +
-	"JOIN process_indicators proc " +
+	"FROM listening_endpoints plop " +
+	"LEFT OUTER JOIN process_indicators proc " +
 	"ON plop.processindicatorid = proc.id " +
-	"WHERE proc.deploymentid = $1 AND plop.closed = false"
+	"WHERE plop.deploymentid = $1 AND plop.closed = false"
 
 // Manually written function to get PLOP joined with ProcessIndicators
 func (s *fullStoreImpl) GetProcessListeningOnPort(
@@ -92,6 +92,11 @@ func (s *fullStoreImpl) readRows(
 		var id string
 		var serialized []byte
 		var procSerialized []byte
+		var podID string
+		var containerName string
+		var name string
+		var args string
+		var execFilePath string
 
 		// We're getting ProcessIndicator directly from the SQL query, PLOP
 		// parts have to be extra deserialized.
@@ -109,22 +114,43 @@ func (s *fullStoreImpl) readRows(
 			return nil, err
 		}
 
+		if procMsg.GetPodId() != "" {
+			podID = procMsg.GetPodId()
+			containerName = procMsg.GetContainerName()
+			name = procMsg.GetSignal().GetName()
+			args = procMsg.GetSignal().GetArgs()
+			execFilePath = procMsg.GetSignal().GetExecFilePath()
+		} else {
+			podID = msg.GetProcess().GetPodId()
+			containerName = msg.GetProcess().GetContainerName()
+			name = msg.GetProcess().GetProcessName()
+			args = msg.GetProcess().GetProcessArgs()
+			execFilePath = msg.GetProcess().GetProcessExecFilePath()
+		}
+
+		// If we don't have any of this information from either the process indicator side or
+		// processes listening on ports side, the process indicator has been deleted and the
+		// port has been closed. Central just hasn't gotten the message yet.
+		if podID == "" && containerName == "" && name == "" && args == "" && execFilePath == "" {
+			continue
+		}
+
 		plop := &storage.ProcessListeningOnPort{
 			Endpoint: &storage.ProcessListeningOnPort_Endpoint{
 				Port:     msg.GetPort(),
 				Protocol: msg.GetProtocol(),
 			},
-			DeploymentId:  procMsg.GetDeploymentId(),
-			PodId:         procMsg.GetPodId(),
+			DeploymentId:  msg.GetDeploymentId(),
+			PodId:         podID,
 			PodUid:        procMsg.GetPodUid(),
-			ContainerName: procMsg.GetContainerName(),
+			ContainerName: containerName,
 			Signal: &storage.ProcessSignal{
 				Id:           procMsg.GetSignal().GetId(),
 				ContainerId:  procMsg.GetSignal().GetContainerId(),
 				Time:         procMsg.GetSignal().GetTime(),
-				Name:         procMsg.GetSignal().GetName(),
-				Args:         procMsg.GetSignal().GetArgs(),
-				ExecFilePath: procMsg.GetSignal().GetExecFilePath(),
+				Name:         name,
+				Args:         args,
+				ExecFilePath: execFilePath,
 				Pid:          procMsg.GetSignal().GetPid(),
 				Uid:          procMsg.GetSignal().GetUid(),
 				Gid:          procMsg.GetSignal().GetGid(),

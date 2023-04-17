@@ -317,7 +317,7 @@ export function verifySecondaryEntities(
             cy.get(relatedEntitiesSelector);
 
             // 4. Visit single page for primary entity.
-            cy.get(selectors.sidePanelExpandButton).click(); // does not make requests
+            cy.get(selectors.sidePanelExternalLinkButton).click(); // does not make requests
 
             // 5. Visit list page for secondary entities.
             cy.get(relatedEntitiesSelector).click(); // might make some requests

@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: securedclusters.platform.stackrox.io
 spec:
@@ -93,7 +93,8 @@ spec:
                         description: "Claims lists the names of resources, defined
                           in spec.resourceClaims, that are used by this container.
                           \n This is an alpha field and requires enabling the DynamicResourceAllocation
-                          feature gate. \n This field is immutable."
+                          feature gate. \n This field is immutable. It can only be
+                          set for containers."
                         items:
                           description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                           properties:
@@ -388,7 +389,8 @@ spec:
                       collection:
                         default: EBPF
                         description: The method for system-level data collection.
-                          Kernel module is recommended. If you select "NoCollection",
+                          EBPF is recommended. KernelModule is deprecated and will
+                          be removed in the 4.1 release. If you select "NoCollection",
                           you will not be able to see any information about network
                           activity and process executions. The remaining settings
                           in these section will not have any effect.
@@ -420,7 +422,7 @@ spec:
                               in spec.resourceClaims, that are used by this container.
                               \n This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate. \n This field
-                              is immutable."
+                              is immutable. It can only be set for containers."
                             items:
                               description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                               properties:
@@ -477,7 +479,7 @@ spec:
                               in spec.resourceClaims, that are used by this container.
                               \n This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate. \n This field
-                              is immutable."
+                              is immutable. It can only be set for containers."
                             items:
                               description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                               properties:
@@ -557,7 +559,7 @@ spec:
                               in spec.resourceClaims, that are used by this container.
                               \n This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate. \n This field
-                              is immutable."
+                              is immutable. It can only be set for containers."
                             items:
                               description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                               properties:
@@ -695,7 +697,7 @@ spec:
                               in spec.resourceClaims, that are used by this container.
                               \n This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate. \n This field
-                              is immutable."
+                              is immutable. It can only be set for containers."
                             items:
                               description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                               properties:
@@ -809,7 +811,8 @@ spec:
                         description: "Claims lists the names of resources, defined
                           in spec.resourceClaims, that are used by this container.
                           \n This is an alpha field and requires enabling the DynamicResourceAllocation
-                          feature gate. \n This field is immutable."
+                          feature gate. \n This field is immutable. It can only be
+                          set for containers."
                         items:
                           description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                           properties:

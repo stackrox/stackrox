@@ -424,6 +424,11 @@ webhookserver-build: build-prep
 	@echo "+ $@"
 	CGO_ENABLED=0 $(GOBUILD) webhookserver
 
+.PHONY: syslog-build
+syslog-build:build-prep
+	@echo "+ $@"
+	CGO_ENABLED=0 $(GOBUILD) qa-tests-backend/test-images/syslog
+
 .PHONY: mock-grpc-server-build
 mock-grpc-server-build: build-prep
 	@echo "+ $@"
@@ -475,7 +480,7 @@ go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' '*clone_test.go' 'migrator/migrations/n_*/migration_test.go' '*pruning_test.go' '*reprocessor_test.go' '*enricher_impl_test.go' '*v2/parts_test.go' '*version/ensure_test.go' '*version/store/store_impl_test.go' '*activecomponent/updater/updater_impl_test.go' '*role/validate_test.go' '*search/service/service_impl_test.go' '*deployment/service/service_impl_test.go' '*metadata/service/service_impl_test.go' '*systeminfo/listener/listener_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' '*clone_test.go' 'migrator/migrations/n_*/migration_test.go' 'migrator/migrations/m_16?_*/migration_test.go' 'migrator/migrations/m_17?_*/migration_test.go' '*pruning_test.go' '*reprocessor_test.go' '*enricher_impl_test.go' '*v2/parts_test.go' '*version/ensure_test.go' '*version/store/store_impl_test.go' '*activecomponent/updater/updater_impl_test.go' '*role/service/service_impl_test.go' '*role/validate_test.go' '*search/service/service_impl_test.go' '*deployment/service/service_impl_test.go' '*metadata/service/service_impl_test.go' '*systeminfo/listener/listener_test.go' '*processlisteningonport/datastore/datastore_impl_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: shell-unit-tests
@@ -631,6 +636,15 @@ webhookserver-image: webhookserver-build
 		-t stackrox/webhookserver:1.2 \
 		-t quay.io/rhacs-eng/webhookserver:1.2 \
 		-f webhookserver/Dockerfile webhookserver
+
+syslog-image: syslog-build
+	-mkdir qa-tests-backend/test-images/syslog/bin
+	cp bin/linux_$(GOARCH)/syslog qa-tests-backend/test-images/syslog/bin/syslog
+	chmod +w qa-tests-backend/test-images/syslog/bin/syslog
+	docker build \
+		-t stackrox/qa:syslog_server_1_0 \
+		-t quay.io/rhacs-eng/qa:syslog_server_1_0 \
+		-f syslog/Dockerfile syslog
 
 .PHONY: mock-grpc-server-image
 mock-grpc-server-image: mock-grpc-server-build clean-image

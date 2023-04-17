@@ -7,6 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
@@ -57,6 +58,10 @@ SELECT TABLE_NAME
 ) a;`
 
 	versionQuery = `SHOW server_version;`
+
+	totalConnectionQuery = `SELECT state, COUNT(datid) FROM pg_stat_activity WHERE state IS NOT NULL GROUP BY state;`
+
+	maxConnectionQuery = `SELECT current_setting('max_connections')::int;`
 )
 
 var (
@@ -67,6 +72,8 @@ var (
 
 	// PostgresQueryTimeout - Postgres query timeout value
 	PostgresQueryTimeout = 10 * time.Second
+
+	loggedCapacityCalculationError = false
 )
 
 // GetPostgres returns a global database instance. It should be called after InitializePostgres
@@ -197,9 +204,13 @@ func CollectPostgresStats(ctx context.Context, db *postgres.DB) *stats.DatabaseS
 
 // CollectPostgresDatabaseSizes -- collect database sizing stats for Postgres
 func CollectPostgresDatabaseSizes(postgresConfig *postgres.Config) []*stats.DatabaseDetailsStats {
-	databases := pgadmin.GetAllDatabases(postgresConfig)
-
 	detailsSlice := make([]*stats.DatabaseDetailsStats, 0)
+
+	databases, err := pgadmin.GetAllDatabases(postgresConfig)
+	if err != nil {
+		log.Errorf("unable to get the databases: %v", err)
+		return detailsSlice
+	}
 
 	for _, database := range databases {
 		dbSize, err := pgadmin.GetDatabaseSize(postgresConfig, database)
@@ -233,6 +244,88 @@ func CollectPostgresDatabaseStats(postgresConfig *postgres.Config) {
 		return
 	}
 	metrics.PostgresTotalSize.Set(float64(totalSize))
+
+	// Check Postgres remaining capacity
+	if !env.ManagedCentral.BooleanSetting() {
+		availableDBBytes, err := pgadmin.GetRemainingCapacity(postgresConfig)
+		if err != nil {
+			if !loggedCapacityCalculationError {
+				log.Errorf("error fetching remaining database storage: %v", err)
+				loggedCapacityCalculationError = true
+			}
+			return
+		}
+
+		metrics.PostgresRemainingCapacity.Set(float64(availableDBBytes))
+	}
+}
+
+// CollectPostgresConnectionStats -- collect connection stats for Postgres
+func CollectPostgresConnectionStats(ctx context.Context, db *postgres.DB) {
+	// Get the total connections by database
+	getTotalConnections(ctx, db)
+
+	// Get the max connections for Postgres
+	getMaxConnections(ctx, db)
+}
+
+// getTotalConnections -- gets the total connections by database
+func getTotalConnections(ctx context.Context, db *postgres.DB) {
+	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
+	defer cancel()
+
+	rows, err := db.Query(ctx, totalConnectionQuery)
+	if err != nil {
+		log.Errorf("error fetching total connection information: %v", err)
+		return
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			state           string
+			connectionCount int
+		)
+		if err := rows.Scan(&state, &connectionCount); err != nil {
+			log.Errorf("error scanning row for connection data: %v", err)
+			return
+		}
+
+		stateLabel := prometheus.Labels{"state": state}
+		metrics.PostgresTotalConnections.With(stateLabel).Set(float64(connectionCount))
+	}
+}
+
+// getMaxConnections -- gets maximum number of connections to Postgres server
+func getMaxConnections(ctx context.Context, db *postgres.DB) {
+	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
+	defer cancel()
+
+	row := db.QueryRow(ctx, maxConnectionQuery)
+	var connectionCount int
+	if err := row.Scan(&connectionCount); err != nil {
+		log.Errorf("error fetching max connection information: %v", err)
+		return
+	}
+
+	metrics.PostgresMaximumConnections.Set(float64(connectionCount))
+}
+
+func processConnectionCountRow(metric *prometheus.GaugeVec, rows *postgres.Rows) {
+	for rows.Next() {
+		var (
+			databaseName    string
+			connectionCount int
+		)
+		if err := rows.Scan(&databaseName, &connectionCount); err != nil {
+			log.Errorf("error scanning row for connection data: %v", err)
+			return
+		}
+
+		databaseLabel := prometheus.Labels{"database": databaseName}
+		metric.With(databaseLabel).Set(float64(connectionCount))
+	}
 }
 
 func startMonitoringPostgres(ctx context.Context, db *postgres.DB, postgresConfig *postgres.Config) {
@@ -241,5 +334,6 @@ func startMonitoringPostgres(ctx context.Context, db *postgres.DB, postgresConfi
 	for range t.C {
 		_ = CollectPostgresStats(ctx, db)
 		CollectPostgresDatabaseStats(postgresConfig)
+		CollectPostgresConnectionStats(ctx, db)
 	}
 }

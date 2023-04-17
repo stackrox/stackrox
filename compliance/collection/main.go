@@ -12,14 +12,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
 	"github.com/stackrox/rox/compliance/collection/intervals"
+	"github.com/stackrox/rox/compliance/collection/inventory"
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
-	"github.com/stackrox/rox/compliance/collection/nodeinventorizer"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -29,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
+	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -156,23 +156,23 @@ func manageSendToSensor(ctx context.Context, cli sensor.ComplianceService_Commun
 	}
 }
 
-func manageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals, scanner nodeinventorizer.NodeInventorizer) <-chan *sensor.MsgFromCompliance {
-	sensorC := make(chan *sensor.MsgFromCompliance)
+func manageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals, scanner scannerV1.NodeInventoryServiceClient) <-chan *sensor.MsgFromCompliance {
+	nodeInventoriesC := make(chan *sensor.MsgFromCompliance)
 	nodeName := getNode()
 	go func() {
-		defer close(sensorC)
+		defer close(nodeInventoriesC)
 		t := time.NewTicker(i.Initial())
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-t.C:
-				log.Infof("starting a node scan for node %q", nodeName)
-				msg, err := scanNode(nodeName, scanner)
+				log.Infof("Scanning node %q", nodeName)
+				msg, err := scanNode(scanner)
 				if err != nil {
-					log.Errorf("error running scanNode: %v", err)
+					log.Errorf("error running node scan: %v", err)
 				} else {
-					sensorC <- msg
+					nodeInventoriesC <- msg
 				}
 				interval := i.Next()
 				cmetrics.ObserveRescanInterval(interval, getNode())
@@ -180,17 +180,18 @@ func manageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals, scan
 			}
 		}
 	}()
-	return sensorC
+	return nodeInventoriesC
 }
 
-func scanNode(nodeName string, scanner nodeinventorizer.NodeInventorizer) (*sensor.MsgFromCompliance, error) {
-	result, err := scanner.Scan(nodeName)
+func scanNode(scanner scannerV1.NodeInventoryServiceClient) (*sensor.MsgFromCompliance, error) {
+	result, err := scanner.GetNodeInventory(context.Background(), &scannerV1.GetNodeInventoryRequest{})
 	if err != nil {
 		return nil, err
 	}
+	inv := inventory.ToNodeInventory(result)
 	msg := &sensor.MsgFromCompliance{
-		Node: nodeName,
-		Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: result},
+		Node: result.GetNodeName(),
+		Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: inv},
 	}
 	cmetrics.ObserveInventoryProtobufMessage(msg)
 	return msg, nil
@@ -252,23 +253,36 @@ func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (
 
 func main() {
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
+	clientconn.SetUserAgent(clientconn.Compliance)
 
 	// Set the random seed based on the current time.
 	rand.Seed(time.Now().UnixNano())
 
-	if features.RHCOSNodeScanning.Enabled() {
+	var nodeInventoryClient scannerV1.NodeInventoryServiceClient
+	if !env.NodeInventoryContainerEnabled.BooleanSetting() {
+		log.Infof("Compliance will not call the node-inventory container, because this is not Openshift 4 cluster")
+	} else if env.RHCOSNodeScanning.BooleanSetting() {
 		// Start the prometheus metrics server
-		metrics.NewDefaultHTTPServer().RunForever()
+		metrics.NewDefaultHTTPServer(metrics.ComplianceSubsystem).RunForever()
 		metrics.GatherThrottleMetricsForever(metrics.ComplianceSubsystem.String())
+
+		// Set up Compliance <-> NodeInventory connection
+		niConn, err := clientconn.AuthenticatedGRPCConnection(env.NodeScanningEndpoint.Setting(), mtls.Subject{}, clientconn.UseInsecureNoTLS(true))
+		if err != nil {
+			log.Errorf("Disabling node scanning for this node: could not initialize connection to node-inventory container: %v", err)
+		}
+		if niConn != nil {
+			log.Info("Initialized gRPC connection to node-inventory container")
+			nodeInventoryClient = scannerV1.NewNodeInventoryServiceClient(niConn)
+		}
 	}
 
-	clientconn.SetUserAgent(clientconn.Compliance)
-
+	// Set up Compliance <-> Sensor connection
 	conn, err := clientconn.AuthenticatedGRPCConnection(env.AdvertisedEndpoint.Setting(), mtls.SensorSubject)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Info("Initialized Sensor gRPC stream connection")
+	log.Info("Initialized gRPC stream connection to Sensor")
 	defer func() {
 		if err := conn.Close(); err != nil {
 			log.Errorf("Failed to close connection: %v", err)
@@ -286,18 +300,9 @@ func main() {
 	defer close(sensorC)
 	go manageStream(ctx, cli, &stoppedSig, sensorC)
 
-	if features.RHCOSNodeScanning.Enabled() {
-		var scanner nodeinventorizer.NodeInventorizer
-		if features.UseFakeNodeInventory.Enabled() {
-			log.Infof("Using FakeNodeInventorizer")
-			scanner = &nodeinventorizer.FakeNodeInventorizer{}
-		} else {
-			log.Infof("Using NodeInventoryCollector")
-			scanner = &nodeinventorizer.NodeInventoryCollector{}
-		}
-
+	if env.RHCOSNodeScanning.BooleanSetting() && nodeInventoryClient != nil {
 		i := intervals.NewNodeScanIntervalFromEnv()
-		nodeInventoriesC := manageNodeScanLoop(ctx, i, scanner)
+		nodeInventoriesC := manageNodeScanLoop(ctx, i, nodeInventoryClient)
 
 		// multiplex producers (nodeInventoriesC) into the output channel (sensorC)
 		go func() {
@@ -305,7 +310,11 @@ func main() {
 				select {
 				case <-ctx.Done():
 					return
-				case sensorC <- <-nodeInventoriesC:
+				case msg, more := <-nodeInventoriesC:
+					if !more {
+						return
+					}
+					sensorC <- msg
 				}
 			}
 		}()

@@ -58,7 +58,9 @@ func listInitBundles(cliEnvironment environment.Environment) error {
 // listCommand implements the command for listing init bundles.
 func listCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "list",
+		Use:   "list",
+		Short: "List cluster init bundles",
+		Long:  "List all previously generated init bundles for bootstrapping new StackRox secured clusters",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			return listInitBundles(cliEnvironment)
 		}),

@@ -1,5 +1,7 @@
 package services
 
+import static util.Helpers.withRetry
+
 import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.EmptyOuterClass
 import io.stackrox.proto.api.v1.ImageServiceGrpc

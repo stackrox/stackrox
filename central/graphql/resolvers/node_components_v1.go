@@ -37,7 +37,7 @@ func init() {
 	)
 }
 
-func (resolver *nodeScanResolver) Components(ctx context.Context, args PaginatedQuery) ([]*EmbeddedNodeScanComponentResolver, error) {
+func (resolver *nodeScanResolver) Components(_ context.Context, args PaginatedQuery) ([]*EmbeddedNodeScanComponentResolver, error) {
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -72,47 +72,47 @@ type EmbeddedNodeScanComponentResolver struct {
 }
 
 // PlottedVulns returns the data required by top risky component scatter-plot on vuln mgmt dashboard
-func (encr *EmbeddedNodeScanComponentResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+func (encr *EmbeddedNodeScanComponentResolver) PlottedVulns(_ context.Context, _ RawQuery) (*PlottedVulnerabilitiesResolver, error) {
 	return nil, errors.New("not implemented")
 }
 
 // UnusedVarSink represents a query sink
-func (encr *EmbeddedNodeScanComponentResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+func (encr *EmbeddedNodeScanComponentResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
 	return nil
 }
 
 // ID returns a unique identifier for the component.
-func (encr *EmbeddedNodeScanComponentResolver) ID(ctx context.Context) graphql.ID {
+func (encr *EmbeddedNodeScanComponentResolver) ID(_ context.Context) graphql.ID {
 	return graphql.ID(scancomponent.ComponentID(encr.data.GetName(), encr.data.GetVersion(), encr.os))
 }
 
 // Name returns the name of the component.
-func (encr *EmbeddedNodeScanComponentResolver) Name(ctx context.Context) string {
+func (encr *EmbeddedNodeScanComponentResolver) Name(_ context.Context) string {
 	return encr.data.GetName()
 }
 
 // Version gives the version of the node component.
-func (encr *EmbeddedNodeScanComponentResolver) Version(ctx context.Context) string {
+func (encr *EmbeddedNodeScanComponentResolver) Version(_ context.Context) string {
 	return encr.data.GetVersion()
 }
 
 // Priority returns the priority of the component.
-func (encr *EmbeddedNodeScanComponentResolver) Priority(ctx context.Context) int32 {
+func (encr *EmbeddedNodeScanComponentResolver) Priority(_ context.Context) int32 {
 	return int32(encr.data.GetPriority())
 }
 
 // RiskScore returns the risk score of the component.
-func (encr *EmbeddedNodeScanComponentResolver) RiskScore(ctx context.Context) float64 {
+func (encr *EmbeddedNodeScanComponentResolver) RiskScore(_ context.Context) float64 {
 	return float64(encr.data.GetRiskScore())
 }
 
 // LastScanned is the last time the component was scanned in an node.
-func (encr *EmbeddedNodeScanComponentResolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
+func (encr *EmbeddedNodeScanComponentResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
 	return timestamp(encr.lastScanned)
 }
 
 // TopVuln returns the first vulnerability with the top CVSS score.
-func (encr *EmbeddedNodeScanComponentResolver) TopVuln(ctx context.Context) (VulnerabilityResolver, error) {
+func (encr *EmbeddedNodeScanComponentResolver) TopVuln(_ context.Context) (VulnerabilityResolver, error) {
 	var maxCvss *storage.EmbeddedVulnerability
 	for _, vuln := range encr.data.GetVulns() {
 		if maxCvss == nil || vuln.GetCvss() > maxCvss.GetCvss() {
@@ -126,7 +126,7 @@ func (encr *EmbeddedNodeScanComponentResolver) TopVuln(ctx context.Context) (Vul
 }
 
 // Vulns resolves the vulnerabilities contained in the node component.
-func (encr *EmbeddedNodeScanComponentResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
+func (encr *EmbeddedNodeScanComponentResolver) Vulns(_ context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -164,12 +164,12 @@ func (encr *EmbeddedNodeScanComponentResolver) Vulns(ctx context.Context, args P
 }
 
 // VulnCount resolves the number of vulnerabilities contained in the node component.
-func (encr *EmbeddedNodeScanComponentResolver) VulnCount(ctx context.Context, args RawQuery) (int32, error) {
+func (encr *EmbeddedNodeScanComponentResolver) VulnCount(_ context.Context, _ RawQuery) (int32, error) {
 	return int32(len(encr.data.GetVulns())), nil
 }
 
 // VulnCounter resolves the number of different types of vulnerabilities contained in an node component.
-func (encr *EmbeddedNodeScanComponentResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+func (encr *EmbeddedNodeScanComponentResolver) VulnCounter(_ context.Context, _ RawQuery) (*VulnerabilityCounterResolver, error) {
 	return mapVulnsToVulnerabilityCounter(encr.data.GetVulns()), nil
 }
 

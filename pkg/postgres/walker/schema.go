@@ -349,7 +349,6 @@ func (s *Schema) ResolveReferences(schemaProvider func(messageTypeName string) *
 		otherTable, columnNameInOtherSchema := referencedSchema.findTableAndColumnName(fieldRef.ProtoBufField)
 		if otherTable == nil || columnNameInOtherSchema == "" {
 			log.Panicf("Couldn't resolve reference in field %+v: no field with protobuf name found", f)
-			continue // This continue will not be hit, it's here because the linter doesn't realize that log.Panic panics.
 		}
 		fieldRef.OtherSchema = otherTable
 		fieldRef.ColumnName = columnNameInOtherSchema
@@ -418,6 +417,10 @@ type PostgresOptions struct {
 	// IgnoreChildFKs is an option used to tell the walker that
 	// foreign keys of children of this field should be ignored.
 	IgnoreChildFKs bool
+
+	// IgnoreChildIndexes is an option used to tell the walker that
+	// index options of children of this field should be ignored.
+	IgnoreChildIndexes bool
 }
 
 type foreignKeyRef struct {

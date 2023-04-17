@@ -2,53 +2,95 @@ import io.grpc.Status
 import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.api.v1.GroupServiceOuterClass.GetGroupsRequest
+import io.stackrox.proto.storage.AuthProviderOuterClass
 import io.stackrox.proto.storage.GroupOuterClass.Group
 import io.stackrox.proto.storage.GroupOuterClass.GroupProperties
+import io.stackrox.proto.storage.RoleOuterClass
 
+import services.AuthProviderService
 import services.GroupService
+import services.RoleService
 
 import spock.lang.Tag
-import spock.lang.Unroll
 
 @Tag("BAT")
 class GroupsTest extends BaseSpecification {
 
     private static final PROVIDERS = [
-            UUID.randomUUID().toString(),
-            UUID.randomUUID().toString(),
+            AuthProviderOuterClass.AuthProvider.newBuilder()
+                    .setName("groups-test-provider-1")
+                    .setType("iap")
+                    .putConfig("audience", "test-audience")
+                    .build(),
+            AuthProviderOuterClass.AuthProvider.newBuilder()
+                    .setName("groups-test-provider-2")
+                    .setType("iap")
+                    .putConfig("audience", "test-audience")
+                    .build(),
     ]
 
-    private static final GROUPS = [
-            Group.newBuilder()
+    private static final Map<String, String> PROVIDER_IDS_BY_NAME = [:]
+
+    private static final Map<Group, String> GROUPS_TO_AUTH_PROVIDER = [
+            (Group.newBuilder()
                     .setRoleName("QAGroupTest-Group1")
-                    .setProps(GroupProperties.newBuilder()
-                        .setAuthProviderId(PROVIDERS[0])
-                        .build())
-                    .build(),
-            Group.newBuilder()
+                    .build()): PROVIDERS[0].getName(),
+            (Group.newBuilder()
                     .setRoleName("QAGroupTest-Group2")
                     .setProps(GroupProperties.newBuilder()
-                        .setAuthProviderId(PROVIDERS[0])
-                        .setKey("foo")
-                        .setValue("bar")
-                        .build())
-                    .build(),
-            Group.newBuilder()
+                            .setKey("foo")
+                            .setValue("bar")
+                            .build())
+                    .build()): PROVIDERS[0].getName(),
+            (Group.newBuilder()
                     .setRoleName("QAGroupTest-Group3")
                     .setProps(GroupProperties.newBuilder()
-                        .setAuthProviderId(PROVIDERS[1])
-                        .setKey("foo")
-                        .setValue("bar")
-                        .build())
+                            .setKey("foo")
+                            .setValue("bar")
+                            .build())
+                    .build()): PROVIDERS[1].getName(),
+    ]
+
+    private static final ROLES = [
+            RoleOuterClass.Role.newBuilder()
+                    .setName("QAGroupTest-Group1")
+                    .setAccessScopeId("ffffffff-ffff-fff4-f5ff-ffffffffffff")
+                    .setPermissionSetId("ffffffff-ffff-fff4-f5ff-ffffffffffff")
+                    .build(),
+            RoleOuterClass.Role.newBuilder()
+                    .setName("QAGroupTest-Group2")
+                    .setAccessScopeId("ffffffff-ffff-fff4-f5ff-ffffffffffff")
+                    .setPermissionSetId("ffffffff-ffff-fff4-f5ff-ffffffffffff")
+                    .build(),
+            RoleOuterClass.Role.newBuilder()
+                    .setName("QAGroupTest-Group3")
+                    .setAccessScopeId("ffffffff-ffff-fff4-f5ff-ffffffffffff")
+                    .setPermissionSetId("ffffffff-ffff-fff4-f5ff-ffffffffffff")
                     .build(),
     ]
 
     private static final Map<String, Group> GROUPS_WITH_IDS = [:]
 
     def setupSpec() {
-        for (def group : GROUPS) {
-            GroupService.createGroup(group)
-            def props = group.getProps()
+        for (def role : ROLES) {
+            RoleService.createRole(role)
+        }
+        for (def provider : PROVIDERS) {
+            def authProviderId = AuthProviderService.createAuthProvider(provider.getName(), provider.getType(),
+                    provider.getConfigMap())
+            PROVIDER_IDS_BY_NAME[provider.getName()] = authProviderId
+        }
+        GROUPS_TO_AUTH_PROVIDER.each { group, authProviderName ->
+            def props = group.toBuilder()
+                .getPropsBuilder()
+                .setKey(group.getProps().getKey())
+                .setValue(group.getProps().getValue())
+                .setAuthProviderId(PROVIDER_IDS_BY_NAME[authProviderName])
+                .build()
+            GroupService.createGroup(group
+                    .toBuilder()
+                    .setProps(props)
+                    .build())
             def groupWithId = GroupService.getGroups(GetGroupsRequest.newBuilder()
                     .setAuthProviderId(props.getAuthProviderId())
                     .setValue(props.getValue())
@@ -66,17 +108,23 @@ class GroupsTest extends BaseSpecification {
                 log.warn("Failed to delete group", ex)
             }
         }
+        PROVIDER_IDS_BY_NAME.values().flatten().each { authProviderId ->
+            try {
+                AuthProviderService.deleteAuthProvider(authProviderId)
+            } catch (Exception ex) {
+                log.warn("Failed to delete auth provider", ex)
+            }
+        }
     }
 
-    @Unroll
-    def "Test that GetGroup and GetGroups work correctly with query args (#authProviderId, #key, #value)"() {
+    def "Test that GetGroup and GetGroups work correctly with query args (#authProviderName, #key, #value)"() {
         when:
         "A query is made for GetGroup and GetGroups with the given params"
         def propsBuilder = GroupProperties.newBuilder()
         def reqBuilder = GetGroupsRequest.newBuilder()
-        if (authProviderId != null) {
-            propsBuilder.setAuthProviderId(PROVIDERS[authProviderId])
-            reqBuilder.setAuthProviderId(PROVIDERS[authProviderId])
+        if (authProviderName != null) {
+            propsBuilder.setAuthProviderId(PROVIDER_IDS_BY_NAME[authProviderName])
+            reqBuilder.setAuthProviderId(PROVIDER_IDS_BY_NAME[authProviderName])
         }
         if (key != null) {
             propsBuilder.setKey(key)
@@ -98,7 +146,7 @@ class GroupsTest extends BaseSpecification {
             }
         } catch (StatusRuntimeException ex) {
             if (ex.status.code != Status.Code.NOT_FOUND &&
-                (authProviderId == null && ex.status.code != Status.Code.INVALID_ARGUMENT)) {
+                    (authProviderName == null && ex.status.code != Status.Code.INVALID_ARGUMENT)) {
                 throw ex
             }
         }
@@ -113,17 +161,17 @@ class GroupsTest extends BaseSpecification {
 
         where:
         "Data inputs are"
-        authProviderId | key   | id                                                  | value |
-          expectGroup    | expectGroups
-        0              | null  | GROUPS_WITH_IDS["QAGroupTest-Group1"].props.getId() | null  |
-          "Group1"       | ["Group1", "Group2"]
-        null           | "foo" | "some-id"                                           | "bar" |
-          null           | ["Group2", "Group3"]
-        0              | "foo" | GROUPS_WITH_IDS["QAGroupTest-Group2"].props.getId() | "bar" |
-          "Group2"       | ["Group2"]
-        1              | null  | "some-id"                                           | null  |
-          null           | ["Group3"]
-        1              | "foo" | GROUPS_WITH_IDS["QAGroupTest-Group3"].props.getId() | "bar" |
-          "Group3"       | ["Group3"]
+        authProviderName | key | id | value |
+                expectGroup | expectGroups
+        "groups-test-provider-1" | null  | GROUPS_WITH_IDS["QAGroupTest-Group1"].props.getId() | null  |
+                "Group1"    | ["Group1", "Group2"]
+        null                     | "foo" | "some-id"                                           | "bar" |
+                null        | ["Group2", "Group3"]
+        "groups-test-provider-1" | "foo" | GROUPS_WITH_IDS["QAGroupTest-Group2"].props.getId() | "bar" |
+                "Group2"    | ["Group2"]
+        "groups-test-provider-2" | null  | "some-id"                                           | null  |
+                null        | ["Group3"]
+        "groups-test-provider-2" | "foo" | GROUPS_WITH_IDS["QAGroupTest-Group3"].props.getId() | "bar" |
+                "Group3"    | ["Group3"]
     }
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
 )
@@ -57,7 +58,7 @@ func (ds *DeploymentStore) removeDeployment(wrap *deploymentWrap) {
 	delete(ds.deployments, wrap.GetId())
 }
 
-func (ds *DeploymentStore) getDeploymentsByIDs(namespace string, idSet set.StringSet) []*deploymentWrap {
+func (ds *DeploymentStore) getDeploymentsByIDs(_ string, idSet set.StringSet) []*deploymentWrap {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
@@ -167,10 +168,38 @@ func (ds *DeploymentStore) FindDeploymentIDsByLabels(namespace string, sel selec
 	return
 }
 
+func (ds *DeploymentStore) findDeploymentIDsByImageNoLock(image *storage.Image) set.Set[string] {
+	ids := set.NewStringSet()
+	for _, d := range ds.deployments {
+		for _, c := range d.GetContainers() {
+			if imagecacheutils.CompareImageCacheKey(c.GetImage(), image) {
+				ids.Add(d.GetId())
+				// The deployment id is already the set, we can break here
+				break
+			}
+		}
+	}
+	return ids
+}
+
+// FindDeploymentIDsByImages returns a slice of deployment ids based on matching images
+func (ds *DeploymentStore) FindDeploymentIDsByImages(images []*storage.Image) []string {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+	ids := set.NewStringSet()
+	for _, image := range images {
+		ids = ids.Union(ds.findDeploymentIDsByImageNoLock(image))
+	}
+	return ids.AsSlice()
+}
+
 func (ds *DeploymentStore) getWrap(id string) *deploymentWrap {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
+	return ds.getWrapNoLock(id)
+}
 
+func (ds *DeploymentStore) getWrapNoLock(id string) *deploymentWrap {
 	wrap := ds.deployments[id]
 	return wrap
 }
@@ -179,6 +208,17 @@ func (ds *DeploymentStore) getWrap(id string) *deploymentWrap {
 func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 	wrap := ds.getWrap(id)
 	return wrap.GetDeployment()
+}
+
+// GetBuiltDeployment returns a cloned deployment for supplied id and a flag if it is fully built.
+func (ds *DeploymentStore) GetBuiltDeployment(id string) (*storage.Deployment, bool) {
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+	wrap := ds.getWrapNoLock(id)
+	if wrap == nil {
+		return nil, false
+	}
+	return wrap.GetDeployment().Clone(), wrap.isBuilt
 }
 
 // BuildDeploymentWithDependencies creates storage.Deployment object using external object dependencies.
@@ -197,6 +237,14 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 	if err := wrap.updateHash(); err != nil {
 		return nil, err
 	}
+
+	// These properties are set when initially parsing a deployment/pod event as a deploymentWrap. Since secrets could
+	// influence its values, we need to call this again with the same pods from the wrap. Inside this function we call
+	// the registry store and update `IsClusterLocal` and `NotPullable` based on it. Meaning that if a pull secret was
+	// updated, the value from this properties might need to be updated.
+	wrap.populateDataFromPods(wrap.pods...)
+
+	wrap.isBuilt = true
 	ds.addOrUpdateDeploymentNoLock(wrap)
 	return wrap.GetDeployment().Clone(), nil
 }

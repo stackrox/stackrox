@@ -134,7 +134,7 @@ spec:
         {{- toYaml ._rox.central.db.persistence._volumeCfg | nindent 8 }}
       - name: config-volume
         configMap:
-          name: central-db-config
+          name: {{ default "central-db-config" ._rox.central.db.configOverride }}
       - name: central-db-password
         secret:
           secretName: central-db-password

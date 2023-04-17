@@ -52,7 +52,7 @@ export const defaultCveSort = [
     },
 ];
 
-export function getCveTableColumns(workflowState) {
+export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
     // to determine whether to show the counts as links in the table when not in pure CVE state
     const currentEntityType = workflowState.getCurrentEntity().entityType;
     const isCveType = [
@@ -261,7 +261,11 @@ export function getCveTableColumns(workflowState) {
 
     const nonNullTableColumns = tableColumns.filter((col) => col);
 
-    const cveColumnsBasedOnContext = getFilteredCVEColumns(nonNullTableColumns, workflowState);
+    const cveColumnsBasedOnContext = getFilteredCVEColumns(
+        nonNullTableColumns,
+        workflowState,
+        isFeatureFlagEnabled
+    );
 
     return removeEntityContextColumns(cveColumnsBasedOnContext, workflowState);
 }

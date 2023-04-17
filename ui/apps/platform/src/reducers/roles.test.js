@@ -31,8 +31,7 @@ describe('userRolePermissions selector', () => {
             name: '',
             userRolePermissions: {
                 Deployment: 'READ_ACCESS',
-                // TODO: ROX-12750 Replace ServiceIdentity with Administration
-                ServiceIdentity: 'NO_ACCESS',
+                Administration: 'NO_ACCESS',
             },
         };
         const state = {

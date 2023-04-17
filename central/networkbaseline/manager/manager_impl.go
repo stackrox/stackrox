@@ -202,7 +202,12 @@ func (m *manager) sendNetworkBaselinesToSensor(baselines []*storage.NetworkBasel
 	}
 }
 
-func (m *manager) lookUpPeerName(entity networkgraph.Entity) string {
+type peerInfo struct {
+	name      string
+	cidrBlock string
+}
+
+func (m *manager) lookUpPeerInfo(entity networkgraph.Entity) peerInfo {
 	switch entity.Type {
 	case storage.NetworkEntityInfo_DEPLOYMENT:
 		// If the peer is a deployment, just look it up from the baselines
@@ -215,28 +220,32 @@ func (m *manager) lookUpPeerName(entity networkgraph.Entity) string {
 			// - created baseline for B
 			// Returning an empty string with a log
 			log.Warnf("baseline for deployment peer does not exist: %q", entity.ID)
-			return ""
+			return peerInfo{}
 		}
-		return peerBaseline.DeploymentName
+		return peerInfo{name: peerBaseline.DeploymentName}
 	case storage.NetworkEntityInfo_EXTERNAL_SOURCE:
 		// Look it up from datastore since as of now the external source name can change without ID changing.
 		networkEntity, found, err := m.networkEntities.GetEntity(managerCtx, entity.ID)
 		if err != nil {
 			log.Warnf("failed to get network entity for its name: %v", err)
-			return ""
+			return peerInfo{}
 		}
 		if !found {
 			// Unexpected. Network entity can only be captured in a flow when it is in the DS
 			log.Warnf("network entity peer %q not found", entity.ID)
-			return ""
+			return peerInfo{}
 		}
-		return networkEntity.GetInfo().GetExternalSource().GetName()
+		externalSource := networkEntity.GetInfo().GetExternalSource()
+		return peerInfo{
+			name:      externalSource.GetName(),
+			cidrBlock: externalSource.GetCidr(),
+		}
 	case storage.NetworkEntityInfo_INTERNET:
-		return networkgraph.InternetExternalSourceName
+		return peerInfo{name: networkgraph.InternetExternalSourceName}
 	default:
 		// Unsupported type.
 		log.Warnf("unsupported entity type in network baseline: %v", entity)
-		return ""
+		return peerInfo{}
 	}
 }
 
@@ -247,24 +256,25 @@ func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 			continue
 		}
 		if conn.SrcEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-			peerName := m.lookUpPeerName(conn.DstEntity)
-			if peerName != "" {
+			peer := m.lookUpPeerInfo(conn.DstEntity)
+			if peer.name != "" {
 				m.maybeAddPeer(conn.SrcEntity.ID, &networkbaseline.Peer{
 					IsIngress: false,
 					Entity:    conn.DstEntity,
-					Name:      peerName,
+					Name:      peer.name,
 					DstPort:   conn.DstPort,
 					Protocol:  conn.Protocol,
+					CidrBlock: peer.cidrBlock,
 				}, modifiedDeploymentIDs)
 			}
 		}
 		if conn.DstEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-			peerName := m.lookUpPeerName(conn.SrcEntity)
-			if peerName != "" {
+			peer := m.lookUpPeerInfo(conn.SrcEntity)
+			if peer.name != "" {
 				m.maybeAddPeer(conn.DstEntity.ID, &networkbaseline.Peer{
 					IsIngress: true,
 					Entity:    conn.SrcEntity,
-					Name:      peerName,
+					Name:      peer.name,
 					DstPort:   conn.DstPort,
 					Protocol:  conn.Protocol,
 				}, modifiedDeploymentIDs)
@@ -279,7 +289,7 @@ func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 	return modifiedDeploymentIDs, nil
 }
 
-func (m *manager) processDeploymentCreate(deploymentID, clusterID string) error {
+func (m *manager) processDeploymentCreate(deploymentID, _ string) error {
 	// Deployment has already had a baseline created.  Nothing to do in this case.
 	if _, exists := m.baselinesByDeploymentID[deploymentID]; exists {
 		return nil
@@ -301,7 +311,7 @@ func (m *manager) processDeploymentCreate(deploymentID, clusterID string) error 
 	return nil
 }
 
-func (m *manager) ProcessDeploymentCreate(deploymentID, deploymentName, clusterID, namespace string) error {
+func (m *manager) ProcessDeploymentCreate(deploymentID, _, clusterID, _ string) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -430,12 +440,12 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 	modifiedDeploymentIDs := set.NewStringSet()
 	for _, peerAndStatus := range modifyRequest.GetPeers() {
 		v1Peer := peerAndStatus.GetPeer()
-		peerName := m.lookUpPeerName(
+		info := m.lookUpPeerInfo(
 			networkgraph.Entity{
 				Type: v1Peer.GetEntity().GetType(),
 				ID:   v1Peer.GetEntity().GetId(),
 			})
-		peer := networkbaseline.PeerFromV1Peer(v1Peer, peerName)
+		peer := networkbaseline.PeerFromV1Peer(v1Peer, info.name, info.cidrBlock)
 		_, inBaseline := baseline.BaselinePeers[peer]
 		_, inForbidden := baseline.ForbiddenPeers[peer]
 		switch peerAndStatus.GetStatus() {
@@ -546,7 +556,7 @@ func (m *manager) processNetworkPolicyUpdate(
 }
 
 func (m *manager) getDeploymentIDsAffectedByNetworkPolicy(
-	ctx context.Context,
+	_ context.Context,
 	policy *storage.NetworkPolicy,
 ) ([]*storage.Deployment, error) {
 	deploymentQuery :=

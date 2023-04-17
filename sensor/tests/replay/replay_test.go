@@ -126,6 +126,7 @@ func (tw *TraceWriterWithChannel) Write(_ []byte) (nb int, retErr error) {
 }
 
 func (suite *ReplayEventsSuite) Test_ReplayEvents() {
+	suite.T().Setenv("ROX_RESYNC_DISABLED", "true")
 	conn, spyCentral, _ := createConnectionAndStartServer(suite.fakeCentral)
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 

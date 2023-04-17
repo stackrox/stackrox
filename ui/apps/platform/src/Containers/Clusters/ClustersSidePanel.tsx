@@ -21,7 +21,7 @@ import {
 } from 'services/ClustersService';
 import { Cluster } from 'types/cluster.proto';
 import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
-import { analyticsTrack, clusterCreated } from 'utils/analytics';
+import useAnalytics, { clusterCreated } from 'hooks/useAnalytics';
 
 import ClusterEditForm from './ClusterEditForm';
 import ClusterDeployment from './ClusterDeployment';
@@ -56,6 +56,7 @@ type MessageState = {
 
 function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     const metadata = useMetadata();
+    const { analyticsTrack } = useAnalytics();
 
     const defaultCluster = cloneDeep(newClusterDefault) as unknown as Cluster;
 

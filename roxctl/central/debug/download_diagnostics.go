@@ -27,7 +27,9 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 	var since string
 
 	c := &cobra.Command{
-		Use: "download-diagnostics",
+		Use:   "download-diagnostics",
+		Short: "Download a bundle containing a snapshot of diagnostic information about the platform.",
+		Long:  "Download a bundle containing a snapshot of diagnostic information such as logs from Central and Secured Clusters and other non-sensitive configuration data about the platform.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			cliEnvironment.Logger().InfofLn("Downloading diagnostic bundle...")
 			path := "/api/extensions/diagnostics"

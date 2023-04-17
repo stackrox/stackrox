@@ -62,7 +62,7 @@ func (b *StoreImpl) GetIDs(_ context.Context) ([]string, error) {
 }
 
 // GetListDeployment returns ListDeployment with given id.
-func (b *StoreImpl) GetListDeployment(ctx context.Context, id string) (deployment *storage.ListDeployment, exists bool, err error) {
+func (b *StoreImpl) GetListDeployment(_ context.Context, id string) (deployment *storage.ListDeployment, exists bool, err error) {
 	txn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, false, err

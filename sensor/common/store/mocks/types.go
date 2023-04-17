@@ -9,7 +9,9 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	clusterentities "github.com/stackrox/rox/sensor/common/clusterentities"
 	rbac "github.com/stackrox/rox/sensor/common/rbac"
+	registry "github.com/stackrox/rox/sensor/common/registry"
 	selector "github.com/stackrox/rox/sensor/common/selector"
 	service "github.com/stackrox/rox/sensor/common/service"
 	store "github.com/stackrox/rox/sensor/common/store"
@@ -51,6 +53,34 @@ func (m *MockDeploymentStore) BuildDeploymentWithDependencies(id string, depende
 func (mr *MockDeploymentStoreMockRecorder) BuildDeploymentWithDependencies(id, dependencies interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildDeploymentWithDependencies", reflect.TypeOf((*MockDeploymentStore)(nil).BuildDeploymentWithDependencies), id, dependencies)
+}
+
+// CountDeploymentsForNamespace mocks base method.
+func (m *MockDeploymentStore) CountDeploymentsForNamespace(namespaceName string) int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountDeploymentsForNamespace", namespaceName)
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// CountDeploymentsForNamespace indicates an expected call of CountDeploymentsForNamespace.
+func (mr *MockDeploymentStoreMockRecorder) CountDeploymentsForNamespace(namespaceName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDeploymentsForNamespace", reflect.TypeOf((*MockDeploymentStore)(nil).CountDeploymentsForNamespace), namespaceName)
+}
+
+// FindDeploymentIDsByImages mocks base method.
+func (m *MockDeploymentStore) FindDeploymentIDsByImages(arg0 []*storage.Image) []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindDeploymentIDsByImages", arg0)
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// FindDeploymentIDsByImages indicates an expected call of FindDeploymentIDsByImages.
+func (mr *MockDeploymentStoreMockRecorder) FindDeploymentIDsByImages(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindDeploymentIDsByImages", reflect.TypeOf((*MockDeploymentStore)(nil).FindDeploymentIDsByImages), arg0)
 }
 
 // FindDeploymentIDsByLabels mocks base method.
@@ -107,6 +137,21 @@ func (m *MockDeploymentStore) GetAll() []*storage.Deployment {
 func (mr *MockDeploymentStoreMockRecorder) GetAll() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockDeploymentStore)(nil).GetAll))
+}
+
+// GetBuiltDeployment mocks base method.
+func (m *MockDeploymentStore) GetBuiltDeployment(id string) (*storage.Deployment, bool) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBuiltDeployment", id)
+	ret0, _ := ret[0].(*storage.Deployment)
+	ret1, _ := ret[1].(bool)
+	return ret0, ret1
+}
+
+// GetBuiltDeployment indicates an expected call of GetBuiltDeployment.
+func (mr *MockDeploymentStoreMockRecorder) GetBuiltDeployment(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBuiltDeployment", reflect.TypeOf((*MockDeploymentStore)(nil).GetBuiltDeployment), id)
 }
 
 // MockPodStore is a mock of PodStore interface.
@@ -449,6 +494,48 @@ func (mr *MockProviderMockRecorder) EndpointManager() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndpointManager", reflect.TypeOf((*MockProvider)(nil).EndpointManager))
 }
 
+// Entities mocks base method.
+func (m *MockProvider) Entities() *clusterentities.Store {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Entities")
+	ret0, _ := ret[0].(*clusterentities.Store)
+	return ret0
+}
+
+// Entities indicates an expected call of Entities.
+func (mr *MockProviderMockRecorder) Entities() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Entities", reflect.TypeOf((*MockProvider)(nil).Entities))
+}
+
+// NetworkPolicies mocks base method.
+func (m *MockProvider) NetworkPolicies() store.NetworkPolicyStore {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NetworkPolicies")
+	ret0, _ := ret[0].(store.NetworkPolicyStore)
+	return ret0
+}
+
+// NetworkPolicies indicates an expected call of NetworkPolicies.
+func (mr *MockProviderMockRecorder) NetworkPolicies() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkPolicies", reflect.TypeOf((*MockProvider)(nil).NetworkPolicies))
+}
+
+// Pods mocks base method.
+func (m *MockProvider) Pods() store.PodStore {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Pods")
+	ret0, _ := ret[0].(store.PodStore)
+	return ret0
+}
+
+// Pods indicates an expected call of Pods.
+func (mr *MockProviderMockRecorder) Pods() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Pods", reflect.TypeOf((*MockProvider)(nil).Pods))
+}
+
 // RBAC mocks base method.
 func (m *MockProvider) RBAC() store.RBACStore {
 	m.ctrl.T.Helper()
@@ -461,6 +548,34 @@ func (m *MockProvider) RBAC() store.RBACStore {
 func (mr *MockProviderMockRecorder) RBAC() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RBAC", reflect.TypeOf((*MockProvider)(nil).RBAC))
+}
+
+// Registries mocks base method.
+func (m *MockProvider) Registries() *registry.Store {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Registries")
+	ret0, _ := ret[0].(*registry.Store)
+	return ret0
+}
+
+// Registries indicates an expected call of Registries.
+func (mr *MockProviderMockRecorder) Registries() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Registries", reflect.TypeOf((*MockProvider)(nil).Registries))
+}
+
+// ServiceAccounts mocks base method.
+func (m *MockProvider) ServiceAccounts() store.ServiceAccountStore {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServiceAccounts")
+	ret0, _ := ret[0].(store.ServiceAccountStore)
+	return ret0
+}
+
+// ServiceAccounts indicates an expected call of ServiceAccounts.
+func (mr *MockProviderMockRecorder) ServiceAccounts() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServiceAccounts", reflect.TypeOf((*MockProvider)(nil).ServiceAccounts))
 }
 
 // Services mocks base method.

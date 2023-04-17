@@ -31,7 +31,7 @@ export const defaultComponentSort = [
 ];
 
 export function getComponentTableColumns(showVMUpdates) {
-    return function getTableColumns(workflowState) {
+    return function getTableColumns(workflowState, isFeatureFlagEnabled) {
         const tableColumns = [
             {
                 Header: 'Id',
@@ -184,7 +184,8 @@ export function getComponentTableColumns(showVMUpdates) {
 
         const componentColumnsBasedOnContext = getFilteredComponentColumns(
             tableColumns,
-            workflowState
+            workflowState,
+            isFeatureFlagEnabled
         );
 
         return removeEntityContextColumns(componentColumnsBasedOnContext, workflowState);

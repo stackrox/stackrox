@@ -18,8 +18,7 @@ import { PermissionSet, Role } from 'services/RolesService';
 import { AccessControlEntityLink } from '../AccessControlLinks';
 import { AccessControlQueryFilter } from '../accessControlPaths';
 import usePermissions from '../../../hooks/usePermissions';
-import { TraitsOriginLabel } from '../TraitsOriginLabel';
-import { isUserResource } from '../traits';
+import { getOriginLabel, isUserResource } from '../traits';
 
 // Return whether an auth provider rule refers to a role name,
 // therefore need to disable the delete action for the role.
@@ -125,9 +124,7 @@ function RolesList({
                                             entityName={name}
                                         />
                                     </Td>
-                                    <Td dataLabel="Origin">
-                                        <TraitsOriginLabel traits={traits} />
-                                    </Td>
+                                    <Td dataLabel="Origin">{getOriginLabel(traits)}</Td>
                                     <Td dataLabel="Description">{description}</Td>
                                     <Td dataLabel="Permission set">
                                         <AccessControlEntityLink

@@ -382,12 +382,23 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	defer s.internalScanSemaphore.Release(1)
 
+	var hasErrors bool
+	if request.Error != "" {
+		// If errors occurred we continue processing so that the failed image scan may be saved in
+		// the central datastore. Without this users would not have an indication that scans from
+		// secured clusters are failing
+		hasErrors = true
+		log.Warnf("Received image enrichment request with errors %q: %v", request.GetImageName().GetFullName(), request.GetError())
+	}
+
+	var imgExists bool
 	forceSigVerificationUpdate := true
 	forceScanUpdate := true
 	imgID := request.GetImageId()
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the images.
 	if imgID != "" {
-		existingImg, exists, err := s.datastore.GetImage(ctx, imgID)
+		var existingImg *storage.Image
+		existingImg, imgExists, err = s.datastore.GetImage(ctx, imgID)
 		if err != nil {
 			return nil, err
 		}
@@ -398,7 +409,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		// enrichment pipeline to ensure we do not return stale data. Only do this when the image signature verification
 		// feature is enabled. If no verification result is given, we can assume that the image doesn't have any
 		// signatures associated with it.
-		if exists && len(existingImg.GetSignatureVerificationData().GetResults()) > 0 {
+		if imgExists && len(existingImg.GetSignatureVerificationData().GetResults()) > 0 {
 			// For now, all verification results within the signature verification data will have approximately the same
 			// time, their margin being ns.
 			verificationTime := existingImg.GetSignatureVerificationData().GetResults()[0].GetVerificationTime()
@@ -411,34 +422,42 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 		// If the image exists and scan / signature verification results do not need an update yet, return it.
 		// Otherwise, reprocess the image.
-		if exists && !forceScanUpdate && !forceSigVerificationUpdate {
+		if imgExists && !forceScanUpdate && !forceSigVerificationUpdate {
 			return internalScanRespFromImage(existingImg), nil
 		}
 	}
 
 	img := &storage.Image{
-		Id:             imgID,
-		Name:           request.GetImageName(),
+		Id:   imgID,
+		Name: request.GetImageName(),
+		// 'Names' must be populated to enable cache hits in central AND sensor
+		Names:          []*storage.ImageName{request.GetImageName()},
 		Signature:      request.GetImageSignature(),
 		Metadata:       request.GetMetadata(),
+		Notes:          request.GetImageNotes(),
 		IsClusterLocal: true,
 	}
 
-	if forceScanUpdate {
-		if _, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes()); err != nil {
-			return nil, err
+	if !hasErrors {
+		if forceScanUpdate {
+			if _, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes()); err != nil && imgExists {
+				// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
+				// central, since it could lead to us overriding an enriched image with a non-enriched image.
+				return nil, err
+			}
 		}
-	}
 
-	if forceSigVerificationUpdate {
-		if _, err := s.enricher.EnrichWithSignatureVerificationData(ctx, img); err != nil {
-			return nil, err
+		if forceSigVerificationUpdate {
+			if _, err := s.enricher.EnrichWithSignatureVerificationData(ctx, img); err != nil && imgExists {
+				return nil, err
+			}
 		}
 	}
 
 	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
-	// contained a digest
-	if imgID != "" {
+	// contained a digest. Do not upsert if a previous scan exists and there were errors with this scan
+	// since it could lead to us overriding an enriched image with a non-enriched image.
+	if imgID != "" && !(hasErrors && imgExists) {
 		_ = s.saveImage(img)
 	}
 
@@ -559,7 +578,7 @@ func (s *serviceImpl) UnwatchImage(ctx context.Context, request *v1.UnwatchImage
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) GetWatchedImages(ctx context.Context, empty *v1.Empty) (*v1.GetWatchedImagesResponse, error) {
+func (s *serviceImpl) GetWatchedImages(ctx context.Context, _ *v1.Empty) (*v1.GetWatchedImagesResponse, error) {
 	watchedImgs, err := s.watchedImages.GetAllWatchedImages(ctx)
 	if err != nil {
 		return nil, err

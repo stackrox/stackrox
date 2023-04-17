@@ -94,7 +94,6 @@ function EnableDisableNotificationModal({
                                 }}
                             />
                             <Th modifier="wrap">Select notifers</Th>
-                            <Th />
                         </Tr>
                     </Thead>
                     <Tbody>

@@ -91,7 +91,10 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 	scan := &storage.NodeScan{
 		ScanTime:        gogoProto.TimestampNow(),
 		OperatingSystem: resp.GetOperatingSystem(),
-		Components: []*storage.EmbeddedNodeScanComponent{
+		Notes:           convertNodeNotes(resp.GetNodeNotes()),
+	}
+	if resp.GetFeatures() == nil {
+		scan.Components = []*storage.EmbeddedNodeScanComponent{
 			{
 				Name:    stringutils.OrDefault(resp.GetKernelComponent().GetName(), "kernel"),
 				Version: resp.GetKernelComponent().GetVersion(),
@@ -107,10 +110,15 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 				Version: req.GetKubeproxyVersion(),
 				Vulns:   convertNodeVulns(resp.GetKubeproxyVulnerabilities()),
 			},
-		},
-		Notes: convertNodeNotes(resp.GetNodeNotes()),
-	}
-	if resp.GetFeatures() != nil {
+		}
+		if req.GetRuntime().GetName() != "" && req.GetRuntime().GetVersion() != "" {
+			scan.Components = append(scan.Components, &storage.EmbeddedNodeScanComponent{
+				Name:    req.GetRuntime().GetName(),
+				Version: req.GetRuntime().GetVersion(),
+				Vulns:   convertNodeVulns(resp.GetRuntimeVulnerabilities()),
+			})
+		}
+	} else {
 		for _, feature := range resp.GetFeatures() {
 			scan.Components = append(scan.Components, &storage.EmbeddedNodeScanComponent{
 				Name:    feature.GetName(),
@@ -118,13 +126,6 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 				Vulns:   convertNodeVulns(feature.GetVulnerabilities()),
 			})
 		}
-	}
-	if req.GetRuntime().GetName() != "" && req.GetRuntime().GetVersion() != "" {
-		scan.Components = append(scan.Components, &storage.EmbeddedNodeScanComponent{
-			Name:    req.GetRuntime().GetName(),
-			Version: req.GetRuntime().GetVersion(),
-			Vulns:   convertNodeVulns(resp.GetRuntimeVulnerabilities()),
-		})
 	}
 	return scan
 }
@@ -137,6 +138,8 @@ func convertNodeNotes(v1Notes []v1.NodeNote) []storage.NodeScan_Note {
 			notes = append(notes, storage.NodeScan_UNSUPPORTED)
 		case v1.NodeNote_NODE_KERNEL_UNSUPPORTED:
 			notes = append(notes, storage.NodeScan_KERNEL_UNSUPPORTED)
+		case v1.NodeNote_NODE_CERTIFIED_RHEL_CVES_UNAVAILABLE:
+			notes = append(notes, storage.NodeScan_CERTIFIED_RHEL_CVES_UNAVAILABLE)
 		default:
 			continue
 		}

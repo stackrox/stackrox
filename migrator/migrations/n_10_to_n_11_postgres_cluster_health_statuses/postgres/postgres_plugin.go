@@ -72,11 +72,16 @@ func New(db *postgres.DB) Store {
 	}
 }
 
-func insertIntoClusterHealthStatuses(ctx context.Context, batch *pgx.Batch, obj *storage.ClusterHealthStatus) error {
+func insertIntoClusterHealthStatuses(_ context.Context, batch *pgx.Batch, obj *storage.ClusterHealthStatus) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
 		return marshalErr
+	}
+
+	if pgutils.NilOrUUID(obj.GetId()) == nil {
+		log.Warnf("Id is not a valid uuid -- %v", obj)
+		return nil
 	}
 
 	values := []interface{}{
@@ -89,10 +94,6 @@ func insertIntoClusterHealthStatuses(ctx context.Context, batch *pgx.Batch, obj 
 		obj.GetScannerHealthStatus(),
 		pgutils.NilOrTime(obj.GetLastContact()),
 		serialized,
-	}
-	if pgutils.NilOrUUID(obj.GetId()) == nil {
-		log.Warnf("Id is not a valid uuid -- %v", obj)
-		return nil
 	}
 
 	finalStr := "INSERT INTO cluster_health_statuses (Id, SensorHealthStatus, CollectorHealthStatus, OverallHealthStatus, AdmissionControlHealthStatus, ScannerHealthStatus, LastContact, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, SensorHealthStatus = EXCLUDED.SensorHealthStatus, CollectorHealthStatus = EXCLUDED.CollectorHealthStatus, OverallHealthStatus = EXCLUDED.OverallHealthStatus, AdmissionControlHealthStatus = EXCLUDED.AdmissionControlHealthStatus, ScannerHealthStatus = EXCLUDED.ScannerHealthStatus, LastContact = EXCLUDED.LastContact, serialized = EXCLUDED.serialized"
@@ -139,6 +140,10 @@ func (s *storeImpl) copyFromClusterHealthStatuses(ctx context.Context, tx *postg
 			return marshalErr
 		}
 
+		if pgutils.NilOrUUID(obj.GetId()) == nil {
+			log.Warnf("Id is not a valid uuid -- %v", obj)
+			continue
+		}
 		inputRows = append(inputRows, []interface{}{
 
 			pgutils.NilOrUUID(obj.GetId()),
@@ -157,10 +162,6 @@ func (s *storeImpl) copyFromClusterHealthStatuses(ctx context.Context, tx *postg
 
 			serialized,
 		})
-		if pgutils.NilOrUUID(obj.GetId()) == nil {
-			log.Warnf("Id is not a valid uuid -- %v", obj)
-			continue
-		}
 
 		// Add the id to be deleted.
 		deletes = append(deletes, obj.GetId())
@@ -308,7 +309,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ClusterHealthS
 	return data, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*postgres.Conn, func(), error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -495,11 +496,11 @@ func Destroy(ctx context.Context, db *postgres.DB) {
 //// Stubs for satisfying legacy interfaces
 
 // AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
+func (s *storeImpl) AckKeysIndexed(_ context.Context, _ ...string) error {
 	return nil
 }
 
 // GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
+func (s *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
 	return nil, nil
 }

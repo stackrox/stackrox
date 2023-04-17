@@ -13,7 +13,7 @@
 
 /* simple solution to prevent user from making sidebar too narrow */
 .pf-c-drawer__panel.pf-m-resizable {
-    min-width: 420px !important;
+    min-width: 430px !important;
 }
 
 /* minimize the space used by the kabob menu as much as possible so that other columns do not become squished / truncated */
@@ -52,4 +52,40 @@ div#topology-resize-panel table td {
 
 .pf-topology-node-faded {
     opacity: 30%;
+}
+
+[data-id="External to cluster"] .pf-topology__group__label .pf-topology__node__label__background {
+    fill: #6853ae;
+}
+
+.derived-namespace .pf-topology__node__label__background {
+    fill: #ffffff;
+}
+
+.derived-namespace > g > text, .derived-namespace .pf-topology__node__action-icon svg {
+    fill: #000000;
+}
+
+.derived-namespace.pf-m-selected text, .derived-namespace.pf-m-selected .pf-topology__node__action-icon svg {
+    fill: #ffffff;
+}
+
+.derived-namespace path.pf-topology__group__background {
+    stroke-dasharray: 5;
+}
+
+.pf-c-check__input {
+    height: 16px;
+    width: 16px;
+}
+
+.namespace-select .pf-c-select__menu,
+.deployment-select .pf-c-select__menu {
+    padding-top: 0;
+    padding-bottom: 0;
+    min-width: 220px;
+}
+
+.pf-topology__node__label__badge {
+    fill: #ffffff;
 }

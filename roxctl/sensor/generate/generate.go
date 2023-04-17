@@ -161,7 +161,7 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	params := apiparams.ClusterZip{
 		ID:               id,
 		CreateUpgraderSA: &s.createUpgraderSA,
-		SlimCollector:    pointer.BoolPtr(s.cluster.GetSlimCollector()),
+		SlimCollector:    pointer.Bool(s.cluster.GetSlimCollector()),
 		IstioVersion:     s.istioVersion,
 
 		DisablePodSecurityPolicies: !s.enablePodSecurityPolicies,
@@ -199,7 +199,8 @@ func (s *sensorGenerateCommand) createCluster(ctx context.Context, svc v1.Cluste
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	generateCmd := &sensorGenerateCommand{env: cliEnvironment, cluster: defaultCluster()}
 	c := &cobra.Command{
-		Use: "generate",
+		Use:   "generate",
+		Short: "Commands that generate files to deploy StackRox services into secured clusters.",
 		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
 			return generateCmd.Construct(c)
 		},

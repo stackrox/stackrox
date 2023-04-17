@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	baseTable = "process_listening_on_ports"
+	baseTable = "listening_endpoints"
 
 	batchAfter = 100
 
@@ -42,7 +42,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ProcessListeningOnPortsSchema
+	schema         = pkgSchema.ListeningEndpointsSchema
 	targetResource = resources.DeploymentExtension
 )
 
@@ -82,7 +82,7 @@ func New(db *postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoProcessListeningOnPorts(ctx context.Context, batch *pgx.Batch, obj *storage.ProcessListeningOnPortStorage) error {
+func insertIntoListeningEndpoints(ctx context.Context, batch *pgx.Batch, obj *storage.ProcessListeningOnPortStorage) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -96,16 +96,17 @@ func insertIntoProcessListeningOnPorts(ctx context.Context, batch *pgx.Batch, ob
 		obj.GetProtocol(),
 		pgutils.NilOrUUID(obj.GetProcessIndicatorId()),
 		obj.GetClosed(),
+		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO process_listening_on_ports (Id, Port, Protocol, ProcessIndicatorId, Closed, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Port = EXCLUDED.Port, Protocol = EXCLUDED.Protocol, ProcessIndicatorId = EXCLUDED.ProcessIndicatorId, Closed = EXCLUDED.Closed, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO listening_endpoints (Id, Port, Protocol, ProcessIndicatorId, Closed, DeploymentId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Port = EXCLUDED.Port, Protocol = EXCLUDED.Protocol, ProcessIndicatorId = EXCLUDED.ProcessIndicatorId, Closed = EXCLUDED.Closed, DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func (s *storeImpl) copyFromProcessListeningOnPorts(ctx context.Context, tx *postgres.Tx, objs ...*storage.ProcessListeningOnPortStorage) error {
+func (s *storeImpl) copyFromListeningEndpoints(ctx context.Context, tx *postgres.Tx, objs ...*storage.ProcessListeningOnPortStorage) error {
 
 	inputRows := [][]interface{}{}
 
@@ -126,6 +127,8 @@ func (s *storeImpl) copyFromProcessListeningOnPorts(ctx context.Context, tx *pos
 		"processindicatorid",
 
 		"closed",
+
+		"deploymentid",
 
 		"serialized",
 	}
@@ -153,6 +156,8 @@ func (s *storeImpl) copyFromProcessListeningOnPorts(ctx context.Context, tx *pos
 
 			obj.GetClosed(),
 
+			pgutils.NilOrUUID(obj.GetDeploymentId()),
+
 			serialized,
 		})
 
@@ -170,7 +175,7 @@ func (s *storeImpl) copyFromProcessListeningOnPorts(ctx context.Context, tx *pos
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"process_listening_on_ports"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"listening_endpoints"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -205,7 +210,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessListen
 		return err
 	}
 
-	if err := s.copyFromProcessListeningOnPorts(ctx, tx, objs...); err != nil {
+	if err := s.copyFromListeningEndpoints(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -226,7 +231,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ProcessListenin
 
 	for _, obj := range objs {
 		batch := &pgx.Batch{}
-		if err := insertIntoProcessListeningOnPorts(ctx, batch, obj); err != nil {
+		if err := insertIntoListeningEndpoints(ctx, batch, obj); err != nil {
 			return err
 		}
 		batchResults := conn.SendBatch(ctx, batch)
@@ -622,11 +627,11 @@ func CreateTableAndNewStore(ctx context.Context, db *postgres.DB, gormDB *gorm.D
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db *postgres.DB) {
-	dropTableProcessListeningOnPorts(ctx, db)
+	dropTableListeningEndpoints(ctx, db)
 }
 
-func dropTableProcessListeningOnPorts(ctx context.Context, db *postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS process_listening_on_ports CASCADE")
+func dropTableListeningEndpoints(ctx context.Context, db *postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS listening_endpoints CASCADE")
 
 }
 
