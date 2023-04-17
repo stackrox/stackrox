@@ -10,11 +10,7 @@ import spock.lang.Tag
 
 class NodeInventoryTest extends BaseSpecification {
     @Shared
-    private static final Map<String, ComplianceRunResults> BASE_RESULTS = [:]
-    @Shared
     private String clusterId
-    @Shared
-    private Map<String, String> standardsByName = [:]
 
     def setupSpec() {
         BaseService.useBasicAuth()
@@ -38,7 +34,8 @@ class NodeInventoryTest extends BaseSpecification {
             log.info("Node {} scan contains {} components", node.getName(), node.getScan().getComponentsList().size())
             if (!ClusterService.isOpenShift4()) {
                 // No RHCOS node scanning on this cluster
-                assert node.getScan().getComponentsList().size() == 4, "Expected to find exactly 4 components on non-RHCOS node"
+                assert node.getScan().getComponentsList().size() == 4,
+                    "Expected to find exactly 4 components on non-RHCOS node"
                 return
             }
             // count total number of vulnerabilities
