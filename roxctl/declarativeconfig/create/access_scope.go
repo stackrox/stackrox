@@ -12,11 +12,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/accessscope"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/maputil"
-	"github.com/stackrox/rox/pkg/role"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
@@ -132,7 +132,7 @@ func (a *accessScopeCmd) Validate() error {
 			len(protos[accessScopeType]))
 	}
 	accessScope := protos[accessScopeType][0].(*storage.SimpleAccessScope)
-	if err := role.ValidateSimpleAccessScopeRules(accessScope.GetRules()); err != nil {
+	if err := accessscope.ValidateSimpleAccessScopeProto(accessScope); err != nil {
 		return errors.Wrap(err, "validating access scope")
 	}
 	return nil

@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/accessscope"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
@@ -26,7 +27,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	roleValidation "github.com/stackrox/rox/pkg/role"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
@@ -329,7 +329,7 @@ func (s *serviceImpl) DeleteSimpleAccessScope(ctx context.Context, id *v1.Resour
 func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.ComputeEffectiveAccessScopeRequest) (*storage.EffectiveAccessScope, error) {
 	// If we're here, service-level authz has already verified that the caller
 	// has at least READ permission on the Role resource.
-	err := roleValidation.ValidateSimpleAccessScopeRules(req.GetAccessScope().GetSimpleRules())
+	err := accessscope.ValidateSimpleAccessScopeRules(req.GetAccessScope().GetSimpleRules())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to compute effective access scope")
 	}

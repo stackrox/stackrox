@@ -7,9 +7,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/accessscope"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/role"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -147,11 +147,8 @@ func ValidateSimpleAccessScope(scope *storage.SimpleAccessScope) error {
 	if err := ValidateAccessScopeID(scope); err != nil {
 		multiErr = multierror.Append(multiErr, err)
 	}
-	if scope.GetName() == "" {
-		multiErr = multierror.Append(multiErr, errors.New("name field must be set"))
-	}
 
-	err := role.ValidateSimpleAccessScopeRules(scope.GetRules())
+	err := accessscope.ValidateSimpleAccessScopeProto(scope)
 	if err != nil {
 		multiErr = multierror.Append(multiErr, err)
 	}
