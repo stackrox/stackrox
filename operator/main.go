@@ -47,6 +47,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
+const (
+	keyCentralLabelSelector = "CENTRAL_LABEL_SELECTOR"
+)
+
 var (
 	setupLog                   = ctrl.Log.WithName("setup")
 	scheme                     = runtime.NewScheme()
@@ -61,6 +65,10 @@ var (
 	// see https://github.com/kubernetes-sigs/controller-runtime/blob/v0.8.3/pkg/webhook/server.go#L96-L104
 	defaultCertDir  = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
 	defaultTLSPaths = []string{filepath.Join(defaultCertDir, "tls.crt"), filepath.Join(defaultCertDir, "tls.key")}
+	// centralLabelSelector is a kubernetes label selector that is used to filter out Central instances
+	// to be managed by this operator. If the selector is empty, all Central instances are managed.
+	// see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
+	centralLabelSelector = env.RegisterSetting(keyCentralLabelSelector, env.WithDefault(""))
 )
 
 func init() {
@@ -127,10 +135,15 @@ func run() error {
 		defer cancelProfiler()
 	}
 
+	centralLabelSelector := centralLabelSelector.Setting()
+	if len(centralLabelSelector) > 0 {
+		setupLog.Info("using Central label selector from environment variable "+keyCentralLabelSelector, "selector", centralLabelSelector)
+	}
+
 	// The following comment marks the place where `operator-sdk` inserts new scaffolded code.
 	//+kubebuilder:scaffold:builder
 
-	if err = centralReconciler.RegisterNewReconciler(mgr); err != nil {
+	if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector); err != nil {
 		return errors.Wrap(err, "unable to set up Central reconciler")
 	}
 
