@@ -14,6 +14,7 @@ export type UseURLSortProps = {
 
 export type UseURLSortResult = {
     sortOption: ApiSortOption;
+    setSortOption: (newSortOption: SortOption) => void;
     getSortParams: GetSortParams;
 };
 
@@ -93,6 +94,9 @@ function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps):
 
     return {
         sortOption: internalSortResultOption.current,
+        setSortOption: (newSortOption: SortOption) => {
+            setSortOption(newSortOption);
+        },
         getSortParams,
     };
 }

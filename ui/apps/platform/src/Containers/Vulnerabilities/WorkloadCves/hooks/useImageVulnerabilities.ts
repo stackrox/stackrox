@@ -1,7 +1,7 @@
 import { gql, useQuery } from '@apollo/client';
 import { Pagination } from 'services/types';
 import {
-    ComponentVulnerabilities,
+    ComponentVulnerability,
     componentVulnerabilitiesFragment,
 } from '../Tables/ComponentVulnerabilitiesTable';
 
@@ -55,7 +55,7 @@ export type ImageVulnerabilitiesResponse = {
             cve: string;
             summary: string;
             discoveredAtImage: Date | null;
-            imageComponents: ComponentVulnerabilities[];
+            imageComponents: ComponentVulnerability[];
         }[];
     };
 };

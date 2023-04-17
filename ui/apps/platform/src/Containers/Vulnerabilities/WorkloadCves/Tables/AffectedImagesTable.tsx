@@ -20,8 +20,9 @@ import ImageNameTd from '../components/ImageNameTd';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 
 import ComponentVulnerabilitiesTable, {
-    ComponentVulnerabilities,
+    ComponentVulnerability,
     componentVulnerabilitiesFragment,
+    imageMetadataContextFragment,
 } from './ComponentVulnerabilitiesTable';
 
 export type ImageForCve = {
@@ -46,27 +47,14 @@ export type ImageForCve = {
         severity: string;
         isFixable: boolean;
     } | null;
-    imageComponents: ComponentVulnerabilities[];
+    imageComponents: ComponentVulnerability[];
 };
 
 export const imagesForCveFragment = gql`
+    ${imageMetadataContextFragment}
     ${componentVulnerabilitiesFragment}
     fragment ImagesForCVE on Image {
-        id
-        name {
-            registry
-            remote
-            tag
-        }
-        metadata {
-            v1 {
-                layers {
-                    instruction
-                    value
-                }
-                created
-            }
-        }
+        ...ImageMetadataContext
 
         operatingSystem
         watchStatus
