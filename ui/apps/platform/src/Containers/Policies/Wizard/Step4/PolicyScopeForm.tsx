@@ -20,9 +20,7 @@ import { ListDeployment } from 'types/deployment.proto';
 import { Cluster } from 'types/cluster.proto';
 import { fetchClustersAsArray } from 'services/ClustersService';
 import { getImages } from 'services/imageService';
-import {
-    fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo,
-} from 'services/DeploymentsService';
+import { fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo } from 'services/DeploymentsService';
 import PolicyScopeCard from './PolicyScopeCard';
 
 function PolicyScopeForm() {
