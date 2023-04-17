@@ -74,10 +74,6 @@ The script adds the StackRox helm repository, generates an admin password, insta
 
 Finally, the script will automatically open the browser and log you into StackRox. A certificate warning may be displayed since the certificate is self-signed. See the [Accessing the StackRox User Interface (UI)](#accessing-the-stackrox-user-interface-ui) section to read more about the warnings. After authenticating you can access the dashboard using <https://localhost:8000/main/dashboard>.
 
-To further customize your Helm installation, consult these documents:
-* <https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html>
-* <https://docs.openshift.com/acs/installing/installing_helm/install-helm-customization.html>
-
 </details>
 
 ### Manual Installation using Helm
