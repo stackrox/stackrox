@@ -74,10 +74,6 @@ The script adds the StackRox helm repository, generates an admin password, insta
 
 Finally, the script will automatically open the browser and log you into StackRox. A certificate warning may be displayed since the certificate is self-signed. See the [Accessing the StackRox User Interface (UI)](#accessing-the-stackrox-user-interface-ui) section to read more about the warnings. After authenticating you can access the dashboard using <https://localhost:8000/main/dashboard>.
 
-To further customize your Helm installation, consult these documents:
-* <https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html>
-* <https://docs.openshift.com/acs/installing/installing_helm/install-helm-customization.html>
-
 </details>
 
 ### Manual Installation using Helm
@@ -103,13 +99,15 @@ To see all available Helm charts in the repo run (you may add the option `--deve
 ```sh
 helm search repo stackrox
 ```
-To install stackrox-central-services, you will need a secure password. This password will be needed later when creating an init bundle.
+To install stackrox-central-services, you will need a secure password. This password will be needed later for UI login and when creating an init bundle.
 ```sh
 STACKROX_ADMIN_PASSWORD="$(openssl rand -base64 20 | tr -d '/=+')"
 ```
 From here, you can install stackrox-central-services to get Central and Scanner components deployed on your cluster. Note that you need only one deployed instance of stackrox-central-services even if you plan to secure multiple clusters.
 ```sh
-helm upgrade --install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --set central.adminPassword.value="${STACKROX_ADMIN_PASSWORD}"
+helm upgrade --install -n stackrox --create-namespace stackrox-central-services \
+  stackrox/stackrox-central-services \
+  --set central.adminPassword.value="${STACKROX_ADMIN_PASSWORD}"
 ```
 
 #### Install Central in Clusters With Limited Resources
@@ -122,6 +120,10 @@ helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-ser
   --set central.resources.requests.cpu=1 \
   --set central.resources.limits.memory=4Gi \
   --set central.resources.limits.cpu=1 \
+  --set central.db.resources.requests.memory=1Gi \
+  --set central.db.resources.requests.cpu=500m \
+  --set central.db.resources.limits.memory=4Gi \
+  --set central.db.resources.limits.cpu=1 \
   --set scanner.autoscaling.disable=true \
   --set scanner.replicas=1 \
   --set scanner.resources.requests.memory=500Mi \
@@ -167,10 +169,15 @@ helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-sec
   --set sensor.resources.limits.memory=500Mi \
   --set sensor.resources.limits.cpu=500m
 ```
+</details>
+
+<details>
+<summary>Additional information about Helm charts</summary>
 
 To further customize your Helm installation consult these documents:
-* <https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html>
-* <https://docs.openshift.com/acs/installing/installing_helm/install-helm-customization.html>
+
+* <https://docs.openshift.com/acs/installing/installing_other/install-central-other.html#install-using-helm-customizations-other>
+* <https://docs.openshift.com/acs/installing/installing_other/install-secured-cluster-other.html#configure-secured-cluster-services-helm-chart-customizations-other>
 
 </details>
 
