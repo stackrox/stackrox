@@ -3,6 +3,7 @@ package tlsconfig
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -24,8 +25,8 @@ const (
 	DefaultCertPath = "/run/secrets/stackrox.io/default-tls-cert"
 )
 
-// GetAdditionalCAs reads all additional CAs in DER format.
-func GetAdditionalCAs() ([][]byte, error) {
+// GetAdditionalCAFilePaths returns the list of file paths containing additional CAs.
+func GetAdditionalCAFilePaths() ([]string, error) {
 	additionalCADir := AdditionalCACertsDirPath()
 	certFileInfos, err := os.ReadDir(additionalCADir)
 	if err != nil {
@@ -36,13 +37,43 @@ func GetAdditionalCAs() ([][]byte, error) {
 		return nil, errors.Wrap(err, "reading additional CAs directory")
 	}
 
-	var certDERs [][]byte
+	var files []string
 	for _, certFile := range certFileInfos {
-		if filepath.Ext(certFile.Name()) != ".crt" {
-			log.Infof("Skipping additional-ca file %q, must end with '*.crt'.", certFile.Name())
+		if certFile.IsDir() {
+			log.Infof("Skipping additional CA directory %q", certFile.Name())
+			continue
+		}
+		if !isValidAdditionalCAFileName(certFile.Name()) {
+			log.Infof(skipAdditionalCAFileMsg, certFile.Name())
 			continue
 		}
 		content, err := os.ReadFile(path.Join(additionalCADir, certFile.Name()))
+		if err != nil {
+			return nil, errors.Wrap(err, "reading additional CAs cert")
+		}
+
+		_, err = x509utils.ConvertPEMToDERs(content)
+		if err != nil {
+			return nil, errors.Wrap(err, "converting additional CA cert to DER")
+		}
+
+		files = append(files, path.Join(additionalCADir, certFile.Name()))
+	}
+
+	return files, nil
+
+}
+
+// GetAdditionalCAs reads all additional CAs in DER format.
+func GetAdditionalCAs() ([][]byte, error) {
+	additionalCAFilePaths, err := GetAdditionalCAFilePaths()
+	if err != nil {
+		return nil, err
+	}
+
+	var certDERs [][]byte
+	for _, certFilePath := range additionalCAFilePaths {
+		content, err := os.ReadFile(certFilePath)
 		if err != nil {
 			return nil, errors.Wrap(err, "reading additional CAs cert")
 		}
@@ -182,4 +213,22 @@ func validForAllDNSNames(cert *x509.Certificate, dnsNames ...string) bool {
 		}
 	}
 	return true
+}
+
+var (
+	allowedAdditionalCAExtensionList = []string{".crt", ".pem"}
+	allowedAdditionalCAExtensionMap  = map[string]struct{}{}
+)
+
+func init() {
+	for _, ext := range allowedAdditionalCAExtensionList {
+		allowedAdditionalCAExtensionMap[ext] = struct{}{}
+	}
+}
+
+var skipAdditionalCAFileMsg = fmt.Sprintf("skipping additional-ca file %%q because it has an invalid extension; allowed file extensions for additional ca certificates are %v", allowedAdditionalCAExtensionList)
+
+func isValidAdditionalCAFileName(fileName string) bool {
+	_, ok := allowedAdditionalCAExtensionMap[path.Ext(fileName)]
+	return ok
 }

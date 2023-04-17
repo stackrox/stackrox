@@ -26,26 +26,21 @@ const (
 )
 
 func getAdditionalCAs(certs *sensor.Certs) ([]*zip.File, error) {
-	certFileInfos, err := os.ReadDir(tlsconfig.AdditionalCACertsDirPath())
+
+	additionalCAFilePaths, err := tlsconfig.GetAdditionalCAFilePaths()
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
 		return nil, err
 	}
 
 	var files []*zip.File
-	for _, fileInfo := range certFileInfos {
-		if fileInfo.IsDir() || filepath.Ext(fileInfo.Name()) != ".crt" {
-			continue
-		}
-		fullPath := path.Join(tlsconfig.AdditionalCACertsDirPath(), fileInfo.Name())
-		contents, err := os.ReadFile(fullPath)
+	for _, additionalCAFilePath := range additionalCAFilePaths {
+		contents, err := os.ReadFile(additionalCAFilePath)
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, zip.NewFile(path.Join(additionalCAsZipSubdir, fileInfo.Name()), contents, 0))
-		certs.Files[fmt.Sprintf("secrets/%s/%s", additionalCAsZipSubdir, fileInfo.Name())] = contents
+		fileName := filepath.Base(additionalCAFilePath)
+		files = append(files, zip.NewFile(path.Join(additionalCAsZipSubdir, fileName), contents, 0))
+		certs.Files[fmt.Sprintf("secrets/%s/%s", additionalCAsZipSubdir, fileName)] = contents
 	}
 
 	if zipForDefaultTLSCertCA, err := maybeCreateZipFileForDefaultTLSCertCA(); err != nil {
