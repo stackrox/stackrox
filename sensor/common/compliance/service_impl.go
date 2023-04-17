@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 	"google.golang.org/grpc"
 )
@@ -25,13 +26,13 @@ type serviceImpl struct {
 	auditEvents     chan *sensor.AuditEvents
 	nodeInventories chan *storage.NodeInventory
 
-	complianceC <-chan *MessageToComplianceWithAddress
+	complianceC <-chan *common.MessageToComplianceWithAddress
 
 	auditLogCollectionManager AuditLogCollectionManager
 
 	orchestrator orchestrator.Orchestrator
 
-	multiplexer       *Multiplexer[MessageToComplianceWithAddress]
+	multiplexer       *Multiplexer
 	connectionManager *connectionManager
 }
 
@@ -52,19 +53,19 @@ func (s *serviceImpl) GetScrapeConfig(_ context.Context, nodeName string) (*sens
 
 func (s *serviceImpl) startSendingLoop() {
 	for msg := range s.complianceC {
-		if msg.broadcast {
+		if msg.Broadcast {
 			s.connectionManager.forEach(func(node string, server sensor.ComplianceService_CommunicateServer) {
-				err := server.Send(msg.msg)
+				err := server.Send(msg.Msg)
 				if err != nil {
 					log.Errorf("error sending broadcast MessageToComplianceWithAddress to node %q: %v", node, err)
 					return
 				}
 			})
 		} else {
-			con := s.connectionManager.connectionMap[msg.hostname]
-			err := con.Send(msg.msg)
+			con := s.connectionManager.connectionMap[msg.Hostname]
+			err := con.Send(msg.Msg)
 			if err != nil {
-				log.Errorf("error sending MessageToComplianceWithAddress to node %q: %v", msg.hostname, err)
+				log.Errorf("error sending MessageToComplianceWithAddress to node %q: %v", msg.Hostname, err)
 				return
 			}
 		}

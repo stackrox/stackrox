@@ -98,7 +98,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	auditLogCollectionManager := compliance.NewAuditLogCollectionManager()
 
 	o := orchestrator.New(cfg.k8sClient.Kubernetes())
-	complianceMultiplexer := compliance.NewMultiplexer[compliance.MessageToComplianceWithAddress]()
+	complianceMultiplexer := compliance.NewMultiplexer()
 	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager, complianceMultiplexer.GetCommandsC())
 
 	configHandler := config.NewCommandHandler(admCtrlSettingsMgr, deploymentIdentification, helmManagedConfig, auditLogCollectionManager)
@@ -141,7 +141,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if env.RHCOSNodeScanning.BooleanSetting() {
 		matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
 		nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher)
-		complianceMultiplexer.AddChannel(nodeInventoryHandler.ComplianceC())
+		complianceMultiplexer.AddComponentWithComplianceC(nodeInventoryHandler)
+		// complianceMultiplexer must start after all components that implement common.ComplianceComponent
+		// i.e., after nodeInventoryHandler
 		components = append(components, nodeInventoryHandler, complianceMultiplexer)
 	}
 

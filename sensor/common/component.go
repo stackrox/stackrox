@@ -2,7 +2,9 @@ package common
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"google.golang.org/grpc"
 )
 
@@ -24,6 +26,21 @@ type SensorComponent interface {
 
 	ProcessMessage(msg *central.MsgToSensor) error
 	ResponsesC() <-chan *central.MsgFromSensor
+}
+
+// MessageToComplianceWithAddress adds the Hostname to sensor.MsgToCompliance so we know where to send it to.
+type MessageToComplianceWithAddress struct {
+	Msg       *sensor.MsgToCompliance
+	Hostname  string
+	Broadcast bool
+}
+
+// ComplianceComponent is responsible for handling arriving NodeInventory messages, processing them, and sending them to central
+type ComplianceComponent interface {
+	SensorComponent
+	Stopped() concurrency.ReadOnlyErrorSignal
+
+	ComplianceC() <-chan *MessageToComplianceWithAddress
 }
 
 // CentralGRPCConnAware allows to set gRPC connections in sensor components.

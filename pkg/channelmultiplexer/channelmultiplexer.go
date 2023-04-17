@@ -32,7 +32,7 @@ func NewMultiplexer[T any]() *ChannelMultiplexer[T] {
 // for ALL channels before calling Run()
 func (c *ChannelMultiplexer[T]) AddChannel(channel <-chan *T) {
 	if c.started.IsDone() {
-		panic("Cannot AddChannel after component is started")
+		panic("Cannot addChannel after component is started")
 	}
 	c.inputChannels = append(c.inputChannels, channel)
 }
