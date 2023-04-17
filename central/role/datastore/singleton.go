@@ -179,6 +179,7 @@ var defaultRoles = map[string]roleAttributes{
 			permissions.Modify(resources.WatchedImage),
 			permissions.Modify(resources.VulnerabilityManagementRequests),
 			permissions.Modify(resources.VulnerabilityReports),
+			permissions.Modify(resources.WorkflowAdministration),
 		},
 	},
 }
