@@ -50,7 +50,7 @@ func getNode() string {
 	return node
 }
 
-func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig, fromSensorC chan<- *sensor.MsgFromCompliance, scanner scannerV1.NodeInventoryServiceClient) error {
+func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig, scanner scannerV1.NodeInventoryServiceClient) error {
 	var auditReader auditlog.Reader
 	defer func() {
 		if auditReader != nil {
@@ -96,7 +96,10 @@ func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateCli
 				if err != nil {
 					log.Errorf("error running scanNode: %v", err)
 				} else {
-					fromSensorC <- msg
+					err := client.Send(msg)
+					if err != nil {
+						log.Errorf("error sending to sensor: %v", err)
+					}
 				}
 			}()
 		default:
@@ -125,7 +128,7 @@ func startAuditLogCollection(ctx context.Context, client sensor.ComplianceServic
 	return auditReader
 }
 
-func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, fromSensorC chan<- *sensor.MsgFromCompliance, toSensorC <-chan *sensor.MsgFromCompliance, scanner scannerV1.NodeInventoryServiceClient) {
+func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, toSensorC <-chan *sensor.MsgFromCompliance, scanner scannerV1.NodeInventoryServiceClient) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -149,7 +152,7 @@ func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *
 			if toSensorC != nil {
 				go manageSendToSensor(ctx2, client, toSensorC)
 			}
-			if err := runRecv(ctx, client, config, fromSensorC, scanner); err != nil {
+			if err := runRecv(ctx, client, config, scanner); err != nil {
 				log.Errorf("error running recv: %v", err)
 			}
 			cancelFn() // runRecv is blocking, so the context is safely cancelled before the next  call to initializeStream
@@ -314,13 +317,11 @@ func main() {
 
 	stoppedSig := concurrency.NewSignal()
 
-	fromSensorC := make(chan *sensor.MsgFromCompliance)
 	toSensorC := make(chan *sensor.MsgFromCompliance)
 	defer close(toSensorC)
 	// the anonymous go func will read from toSensorC and write to fromSensorC
 	go func() {
-		defer close(fromSensorC)
-		manageStream(ctx, cli, &stoppedSig, fromSensorC, toSensorC, nodeInventoryClient)
+		manageStream(ctx, cli, &stoppedSig, toSensorC, nodeInventoryClient)
 	}()
 
 	if env.RHCOSNodeScanning.BooleanSetting() && nodeInventoryClient != nil {
@@ -328,7 +329,7 @@ func main() {
 		nodeInventoriesC := manageNodeScanLoop(ctx, i, nodeInventoryClient)
 
 		// merging sources fromSensorC and sensorC into output toSensorC
-		output := channelmultiplexer.FanIn[sensor.MsgFromCompliance](ctx, fromSensorC, nodeInventoriesC)
+		output := channelmultiplexer.FanIn[sensor.MsgFromCompliance](ctx, nodeInventoriesC)
 		for o := range output {
 			toSensorC <- o
 		}
