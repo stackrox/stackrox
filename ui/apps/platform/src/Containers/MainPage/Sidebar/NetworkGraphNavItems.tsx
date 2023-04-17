@@ -1,7 +1,6 @@
 import React from 'react';
 import { useLocation, Location } from 'react-router-dom';
 import { networkBasePath, networkBasePathPF } from 'routePaths';
-import { Badge, Flex, FlexItem } from '@patternfly/react-core';
 
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 
