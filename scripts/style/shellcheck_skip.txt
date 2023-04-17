@@ -1,7 +1,6 @@
 .github/workflows/scripts/local-env.sh
 .openshift-ci/build/build-central-db-bundle.sh
 .openshift-ci/build/build-main-and-bundle.sh
-.openshift-ci/build/build-operator-artifacts.sh
 .openshift-ci/dispatch.sh
 deploy/central.sh
 deploy/common/docker-auth.sh
