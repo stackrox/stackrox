@@ -328,7 +328,7 @@ jobs:
         token: ${{ secrets.INFRA_TOKEN }}
         flavor: qa-demo
         name: qa-k8s-${{ needs.variables.outputs.milestone }}
-        args: main-image=quay.io/rhacs-eng/main:${{ needs.variables.outputs.milestone }}
+        args: main-image=quay.io/rhacs-eng/main:${{ needs.variables.outputs.milestone }},central-db-image:${{ needs.variables.outputs.milestone }}
         lifespan: 48h
 
   notify-k8s-cluster:
@@ -384,81 +384,12 @@ jobs:
         token: ${{ secrets.INFRA_TOKEN }}
         flavor: openshift-4-demo
         name: openshift-4-demo-${{ needs.variables.outputs.milestone }}
-        args: openshift-version=ocp/stable-4.10
+        args: central-services-helm-chart-version=${{ needs.variables.outputs.milestone }},secured-cluster-services-helm-chart-version=${{ needs.variables.outputs.milestone }},
         lifespan: 48h
-        wait: true
-
-  patch-os4-cluster:
-    name: Patch OS4 cluster
-    needs: [variables, create-os4-cluster]
-    runs-on: ubuntu-latest
-    env:
-      NAME: openshift-4-demo-${{needs.variables.outputs.milestone}}
-      TAG: ${{needs.variables.outputs.milestone}}
-      KUBECONFIG: artifacts/kubeconfig
-      INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
-    steps:
-      - uses: stackrox/actions/infra/install-infractl@v1
-      - name: Test readiness
-        run: |
-          STATUS=$(infractl get "${NAME//./-}" --json | jq -r .Status)
-          if [ "$STATUS" != "READY" ]; then
-            exit 1
-          fi
-      - name: Download artifacts
-        id: artifacts
-        run: |
-          infractl artifacts "${NAME//./-}" -d artifacts >> "$GITHUB_STEP_SUMMARY"
-      - name: Download Openshift CLI
-        run: |
-          URL=$(sed "s/console-/downloads-/" artifacts/url-openshift)
-          curl --fail -o oc.tar -k -L "$URL/amd64/linux/oc.tar"
-          tar xf oc.tar
-      - name: Patch central
-        run: |
-          ./oc -n stackrox set image deploy/central central="quay.io/rhacs-eng/main:$TAG"
-      - name: Patch scanner
-        run: |
-          ./oc -n stackrox patch hpa/scanner -p '{"spec":{"minReplicas":2}}'
-          ./oc -n stackrox set image deploy/scanner scanner="quay.io/rhacs-eng/scanner:$TAG"
-          ./oc -n stackrox set image deploy/scanner-db db="quay.io/rhacs-eng/scanner-db:$TAG"
-          ./oc -n stackrox set image deploy/scanner-db init-db="quay.io/rhacs-eng/scanner-db:$TAG"
-      - name: Patch sensor
-        env:
-          PATCH: >-
-            {
-              "spec": {
-                "template": {
-                  "spec": {
-                    "containers": [ {
-                      "name":"sensor",
-                      "env": [ {
-                        "name": "POD_NAMESPACE",
-                        "valueFrom": { "fieldRef": { "fieldPath": "metadata.namespace"}}
-                      } ],
-                      "volumeMounts": [
-                        { "name": "cache", "mountPath": "/var/cache/stackrox" }
-                      ]
-                    } ],
-                    "volumes": [ {
-                      "name": "cache","emptyDir": {}
-                    } ]
-                  }
-                }
-              }
-            }
-        run: |
-          ./oc -n stackrox patch deploy/sensor -p '${{env.PATCH}}'
-          ./oc -n stackrox set image deploy/sensor sensor="quay.io/rhacs-eng/main:$TAG"
-      - name: Patch collector
-        run: |
-          ./oc -n stackrox set image ds/collector compliance="quay.io/rhacs-eng/main:$TAG"
-          ./oc -n stackrox set image ds/collector collector="quay.io/rhacs-eng/collector:$TAG"
-          ./oc -n stackrox set image deploy/admission-control admission-control="quay.io/rhacs-eng/main:$TAG"
 
   notify-os4-cluster:
     name: Notify about Openshift cluster creation
-    needs: [variables, properties, patch-os4-cluster]
+    needs: [variables, properties, create-os4-cluster]
     runs-on: ubuntu-latest
     env:
       NAME: openshift-4-demo-${{ needs.variables.outputs.milestone }}
@@ -481,7 +412,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": ":tada: *<https://infra.rox.systems/cluster/${{ steps.get_demo_artifacts.outputs.cluster-name }}|Openshift 4 Demo cluster> `${{ steps.get_demo_artifacts.outputs.cluster-name }}` was created for ${{ needs.variables.outputs.milestone }} milestone of <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}>.*"
+                    "text": ":tada: *<https://infra.rox.systems/cluster/${{ steps.get_demo_artifacts.outputs.cluster-name }}|Openshift 4 Demo cluster> `${{ steps.get_demo_artifacts.outputs.cluster-name }}` is creating for ${{ needs.variables.outputs.milestone }} milestone of <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}>.*"
                   }
                 },
                 {
@@ -491,7 +422,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": ":arrow_right: The cluster is accessible at ${{ steps.get_demo_artifacts.outputs.url }}. You can find the admin password and kubeconfig with `infractl artifacts ${{ steps.get_demo_artifacts.outputs.cluster-name }}`."
+                    "text": ":arrow_right: The cluster will be accessible at ${{ steps.get_demo_artifacts.outputs.url }} in ~40 minutes. You can find the admin password and kubeconfig with `infractl artifacts ${{ steps.get_demo_artifacts.outputs.cluster-name }}`."
                   }
                 }
               ]
