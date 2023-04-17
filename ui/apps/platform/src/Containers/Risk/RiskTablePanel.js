@@ -12,7 +12,7 @@ import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import workflowStateContext from 'Containers/workflowStateContext';
 import {
-    fetchDeploymentsLegacy as fetchDeployments,
+    fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo,
     fetchDeploymentsCount,
 } from 'services/DeploymentsService';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
@@ -65,7 +65,7 @@ function RiskTablePanel({
     const restSort = convertSortToRestFormat(sortOption);
 
     useDeepCompareEffect(() => {
-        fetchDeployments(restSearch, restSort, currentPage, DEFAULT_PAGE_SIZE)
+        fetchDeploymentsWithProcessInfo(restSearch, restSort, currentPage, DEFAULT_PAGE_SIZE)
             .then(setCurrentDeployments)
             .catch((error) => {
                 setCurrentDeployments([]);

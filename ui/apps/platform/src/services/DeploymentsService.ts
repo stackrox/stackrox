@@ -74,7 +74,7 @@ export function listDeployments(
  * - uses the new `SearchFilter` type instead of `RestSearchOption`
  * - Does not implicitly read the value of "shouldHideOrchestratorComponents"
  */
-export function fetchDeployments(
+export function fetchDeploymentsWithProcessInfo(
     searchFilter: SearchFilter,
     sortOption: Record<string, string>,
     page: number,
@@ -96,7 +96,7 @@ export function fetchDeployments(
 /**
  * Fetches list of registered deployments.
  */
-export function fetchDeploymentsLegacy(
+export function fetchDeploymentsWithProcessInfoLegacy(
     options: RestSearchOption[] = [],
     sortOption: Record<string, string>,
     page: number,

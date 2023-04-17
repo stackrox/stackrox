@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import { listDeployments } from 'services/DeploymentsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -26,17 +27,15 @@ function useFetchNamespaceDeployments(selectedNamespaceIds: string[]) {
         error: '',
         deploymentsByNamespace: [],
     });
-    const selectedNamespaceIdsAsString = JSON.stringify(selectedNamespaceIds);
-    useEffect(() => {
-        const namespaceIds = JSON.parse(selectedNamespaceIdsAsString);
-        if (namespaceIds.length > 0) {
+    useDeepCompareEffect(() => {
+        if (selectedNamespaceIds.length > 0) {
             setDeploymentResponse({
                 loading: true,
                 error: '',
                 deploymentsByNamespace: [],
             });
             const searchQuery: Record<string, string[]> = {
-                'Namespace ID': namespaceIds,
+                'Namespace ID': selectedNamespaceIds,
             };
             const sortOption = { field: 'Deployment', reversed: 'false' };
             listDeployments(searchQuery, sortOption, 0, 0)
@@ -81,7 +80,7 @@ function useFetchNamespaceDeployments(selectedNamespaceIds: string[]) {
                     });
                 });
         }
-    }, [selectedNamespaceIdsAsString]);
+    }, [selectedNamespaceIds]);
     return deploymentResponse;
 }
 

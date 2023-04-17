@@ -20,7 +20,9 @@ import { ListDeployment } from 'types/deployment.proto';
 import { Cluster } from 'types/cluster.proto';
 import { fetchClustersAsArray } from 'services/ClustersService';
 import { getImages } from 'services/imageService';
-import { fetchDeploymentsLegacy as fetchDeployments } from 'services/DeploymentsService';
+import {
+    fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo,
+} from 'services/DeploymentsService';
 import PolicyScopeCard from './PolicyScopeCard';
 
 function PolicyScopeForm() {
@@ -87,7 +89,7 @@ function PolicyScopeForm() {
         // Move request to exclusion card to add restSearch for cluster or namespace if specified in exclusion scope.
         // Search element to support creatable deployment names.
         const restSort = { field: 'Deployment' }; // ascending by name
-        fetchDeployments([], restSort, 0, 0)
+        fetchDeploymentsWithProcessInfo([], restSort, 0, 0)
             .then((response) => {
                 const deploymentList = response
                     .map(({ deployment }) => deployment)
