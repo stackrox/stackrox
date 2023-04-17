@@ -17,16 +17,13 @@ const policyToVulnerabilitySeverity: Record<PolicySeverity, VulnerabilitySeverit
 };
 
 export type PolicySeverityIconTextProps = {
-    policySeverity: PolicySeverity;
+    severity: PolicySeverity;
     isTextOnly?: boolean;
 };
 
-function PolicySeverityIconText({
-    policySeverity,
-    isTextOnly,
-}: PolicySeverityIconTextProps): ReactNode {
-    const Icon = SeverityIcons[policyToVulnerabilitySeverity[policySeverity]];
-    const text = severityLabels[policySeverity];
+function PolicySeverityIconText({ severity, isTextOnly }: PolicySeverityIconTextProps): ReactNode {
+    const Icon = SeverityIcons[policyToVulnerabilitySeverity[severity]];
+    const text = severityLabels[severity];
 
     return <IconText Icon={<Icon />} text={text} isTextOnly={isTextOnly} />;
 }

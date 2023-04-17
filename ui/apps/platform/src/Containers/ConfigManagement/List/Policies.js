@@ -89,7 +89,7 @@ const tableColumns = [
         className: `w-1/8 ${defaultColumnClassName}`,
         Cell: ({ original }) => {
             const { severity, pdf } = original;
-            return <PolicySeverityIconText policySeverity={severity} isTextOnly={pdf} />;
+            return <PolicySeverityIconText severity={severity} isTextOnly={pdf} />;
         },
         accessor: 'severity',
         sortMethod: sortSeverity,

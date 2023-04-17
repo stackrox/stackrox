@@ -131,7 +131,7 @@ export function getPolicyTableColumns(workflowState) {
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => (
-                <PolicySeverityIconText policySeverity={original.severity} isTextOnly={pdf} />
+                <PolicySeverityIconText severity={original.severity} isTextOnly={pdf} />
             ),
             id: policySortFields.SEVERITY,
             accessor: 'severity',
