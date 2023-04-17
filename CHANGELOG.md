@@ -8,6 +8,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [NEXT RELEASE]
 
 ### Added Features
+- A default role `Vulnerability Manager` has been added that provides sufficient privileges to analyze and manage system vulnerabilities.
 
 ### Removed Features
 

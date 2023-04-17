@@ -50,10 +50,6 @@ func Singleton() DataStore {
 		// Which role format is used is determined solely by the feature flag.
 		ds = New(roleStorage, permissionSetStorage, accessScopeStorage, groupFilter.GetFiltered)
 
-		for r, a := range vulnReportingDefaultRoles {
-			defaultRoles[r] = a
-		}
-
 		ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -148,11 +144,7 @@ var defaultRoles = map[string]roleAttributes{
 			permissions.Modify(resources.VulnerabilityManagementRequests),
 		},
 	},
-}
-
-// TODO ROX-13888 when we migrate to WorkflowAdministration we can remove VulnerabilityReports and Role resources
-var vulnReportingDefaultRoles = map[string]roleAttributes{
-	// TODO: ROX-14398 Remove Role permission from default role VulnReporter
+	// TODO ROX-13888 when we migrate to WorkflowAdministration we can remove VulnerabilityReports and Role resources
 	rolePkg.VulnReporter: {
 		idSuffix:    "vulnreporter",
 		postgresID:  vulnReporterPermissionSetID,
@@ -172,6 +164,22 @@ var vulnReportingDefaultRoles = map[string]roleAttributes{
 				permissions.View(resources.Integration),              // required for vuln report configurations
 			}
 		}(),
+	},
+	rolePkg.VulnerabilityManager: {
+		idSuffix:    "vulnmgmt",
+		postgresID:  vulnMgmtPermissionSetID,
+		description: "For users: use it to provide access to analyze and manage system vulnerabilities",
+		resourceWithAccess: []permissions.ResourceWithAccess{
+			permissions.View(resources.Cluster),
+			permissions.View(resources.Node),
+			permissions.View(resources.Namespace),
+			permissions.View(resources.Deployment),
+			permissions.View(resources.Image),
+			permissions.View(resources.Integration),
+			permissions.Modify(resources.WatchedImage),
+			permissions.Modify(resources.VulnerabilityManagementRequests),
+			permissions.Modify(resources.VulnerabilityReports),
+		},
 	},
 }
 
