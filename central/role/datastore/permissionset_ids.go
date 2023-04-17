@@ -2,7 +2,7 @@ package datastore
 
 // Postgres IDs for permission sets
 // The values are UUIDs taken in descending order from ffffffff-ffff-fff4-f5ff-ffffffffffff
-// Next ID: ffffffff-ffff-fff4-f5ff-fffffffffff6
+// Next ID: ffffffff-ffff-fff4-f5ff-fffffffffff5
 const (
 	adminPermissionSetID                 = "ffffffff-ffff-fff4-f5ff-ffffffffffff"
 	analystPermissionSetID               = "ffffffff-ffff-fff4-f5ff-fffffffffffe"
@@ -14,4 +14,5 @@ const (
 	vulnMgmtApproverPermissionSetID  = "ffffffff-ffff-fff4-f5ff-fffffffffff9"
 	vulnMgmtRequesterPermissionSetID = "ffffffff-ffff-fff4-f5ff-fffffffffff8"
 	vulnReporterPermissionSetID      = "ffffffff-ffff-fff4-f5ff-fffffffffff7"
+	vulnMgmtPermissionSetID          = "ffffffff-ffff-fff4-f5ff-fffffffffff6"
 )
