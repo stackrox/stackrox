@@ -8,6 +8,7 @@ import { isVulnerabilitySeverity } from 'types/cve.proto';
 import { ApiSortOption } from 'types/search';
 import { NotFixableIcon } from 'Components/PatternFly/FixabilityIcons';
 import useTableSort from 'hooks/patternfly/useTableSort';
+import ImageNameTd from '../components/ImageNameTd';
 
 export type ImageMetadataContext = {
     id: string;
@@ -45,7 +46,7 @@ export const imageMetadataContextFragment = gql`
     }
 `;
 
-export type ComponentVulnerabilities = {
+export type ComponentVulnerability = {
     name: string;
     version: string;
     location: string;
@@ -101,7 +102,7 @@ type TableDataRow = {
  */
 function flattenImageComponentVulns(
     imageMetadataContext: ImageMetadataContext,
-    componentVulnerabilities: ComponentVulnerabilities[]
+    componentVulnerabilities: ComponentVulnerability[]
 ): TableDataRow[] {
     const image = imageMetadataContext;
     const layers = imageMetadataContext.metadata?.v1?.layers ?? [];
@@ -162,7 +163,7 @@ export type ImageComponentVulnerabilitiesTableProps = {
     /** The images and associated component vulnerability data to display in the table */
     images: {
         imageMetadataContext: ImageMetadataContext;
-        componentVulnerabilities: ComponentVulnerabilities[];
+        componentVulnerabilities: ComponentVulnerability[];
     }[];
 };
 
@@ -213,7 +214,15 @@ function ComponentVulnerabilitiesTable({
                 return (
                     <Tbody key={`${image.id}:${name}`} style={style}>
                         <Tr>
-                            {showImage && <Td>TODO - Image cell</Td>}
+                            {showImage && (
+                                <Td>
+                                    {image.name ? (
+                                        <ImageNameTd name={image.name} id={image.id} />
+                                    ) : (
+                                        'Image name not available'
+                                    )}
+                                </Td>
+                            )}
                             <Td>{name}</Td>
                             <Td>{version}</Td>
                             <Td>

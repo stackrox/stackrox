@@ -11,6 +11,7 @@ type EntityTabToggleGroupProps = {
     cveCount?: number;
     imageCount?: number;
     deploymentCount?: number;
+    onChange?: (entityTab: EntityTab) => void;
 };
 
 function EntityTabToggleGroup({
@@ -19,8 +20,14 @@ function EntityTabToggleGroup({
     cveCount = 0,
     imageCount = 0,
     deploymentCount = 0,
+    onChange,
 }: EntityTabToggleGroupProps) {
     const [activeEntityTabKey, setActiveEntityTabKey] = useURLStringUnion('entityTab', entityTabs);
+
+    function handleEntityTabChange(entityTab: EntityTab) {
+        setActiveEntityTabKey(entityTab);
+        onChange?.(entityTab);
+    }
 
     return (
         <ToggleGroup className={className}>
@@ -29,7 +36,7 @@ function EntityTabToggleGroup({
                     text={`${cveCount} CVEs`}
                     buttonId="cves"
                     isSelected={activeEntityTabKey === 'CVE'}
-                    onChange={() => setActiveEntityTabKey('CVE')}
+                    onChange={() => handleEntityTabChange('CVE')}
                 />
             ) : (
                 <></>
@@ -39,7 +46,7 @@ function EntityTabToggleGroup({
                     text={`${imageCount} Images`}
                     buttonId="images"
                     isSelected={activeEntityTabKey === 'Image'}
-                    onChange={() => setActiveEntityTabKey('Image')}
+                    onChange={() => handleEntityTabChange('Image')}
                 />
             ) : (
                 <></>
@@ -49,7 +56,7 @@ function EntityTabToggleGroup({
                     text={`${deploymentCount} Deployments`}
                     buttonId="deployments"
                     isSelected={activeEntityTabKey === 'Deployment'}
-                    onChange={() => setActiveEntityTabKey('Deployment')}
+                    onChange={() => handleEntityTabChange('Deployment')}
                 />
             ) : (
                 <></>
