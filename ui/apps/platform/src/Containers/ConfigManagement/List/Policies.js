@@ -48,7 +48,7 @@ const tableColumns = [
         className: `w-1/8 ${defaultColumnClassName}`,
         Cell: ({ original }) => {
             const { disabled, pdf } = original;
-            return <PolicyDisabledIconText disabled={disabled} isTextOnly={pdf} />;
+            return <PolicyDisabledIconText isDisabled={disabled} isTextOnly={pdf} />;
         },
         accessor: 'disabled',
         sortable: false, // not performant as of 2020-06-11
