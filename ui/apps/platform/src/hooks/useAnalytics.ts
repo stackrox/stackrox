@@ -10,7 +10,7 @@ const useAnalytics = () => {
 
     const analyticsPageVisit = useCallback(
         (type: string, name: string, additionalProperties = {}): void => {
-            if (isTelemetryEnabled) {
+            if (isTelemetryEnabled !== false) {
                 window.analytics?.page(type, name, additionalProperties);
             }
         },
@@ -19,7 +19,7 @@ const useAnalytics = () => {
 
     const analyticsTrack = useCallback(
         (event: string, additionalProperties = {}): void => {
-            if (isTelemetryEnabled) {
+            if (isTelemetryEnabled !== false) {
                 window.analytics?.track(event, additionalProperties);
             }
         },
@@ -31,4 +31,4 @@ const useAnalytics = () => {
 
 export default useAnalytics;
 
-export const clusterCreated = 'Cluster Created';
+export const CLUSTER_CREATED = 'Cluster Created';
