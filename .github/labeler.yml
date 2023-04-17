@@ -4,6 +4,7 @@
 area/ci:
 - .github/**/*
 - .openshift-ci/**/*
+- scripts/ci/**/
 area/roxctl:
 - roxctl/**/*
 area/auth:
