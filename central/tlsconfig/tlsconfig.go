@@ -109,42 +109,17 @@ func GetAdditionalCAs() ([][]byte, error) {
 
 	var certDERs [][]byte
 	for _, certFilePath := range additionalCAFilePaths {
-		content, err := os.ReadFile(certFilePath)
+		pemBytes, err := os.ReadFile(certFilePath)
 		if err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintf("Failed to read additional CAs cert file %q", certFilePath))
 		}
 
-		_, err = x509utils.ConvertPEMToDERs(content)
-		if err != nil {
-			return nil, errors.Wrap(err, "converting additional CA cert to DER")
-		}
-
-		files = append(files, path.Join(additionalCADir, certFile.Name()))
-	}
-
-	return files, nil
-
-}
-
-// GetAdditionalCAs reads all additional CAs in DER format.
-func GetAdditionalCAs() ([][]byte, error) {
-	additionalCAFilePaths, err := GetAdditionalCAFilePaths()
-	if err != nil {
-		return nil, err
-	}
-
-	var certDERs [][]byte
-	for _, certFilePath := range additionalCAFilePaths {
-		content, err := os.ReadFile(certFilePath)
-		if err != nil {
-			return nil, errors.Wrap(err, "reading additional CAs cert")
-		}
-
-		certDER, err := x509utils.ConvertPEMToDERs(content)
+		ders, err := x509utils.ConvertPEMToDERs(pemBytes)
 		if err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintf("Failed to convert additional CA cert file %q from PEM to DER format", certFilePath))
 		}
-		certDERs = append(certDERs, certDER...)
+
+		certDERs = append(certDERs, ders...)
 	}
 
 	return certDERs, nil
