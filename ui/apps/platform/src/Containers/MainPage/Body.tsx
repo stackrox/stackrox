@@ -103,7 +103,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const location = useLocation();
     const { analyticsPageVisit } = useAnalytics();
     useEffect(() => {
-        analyticsPageVisit('visit', location.pathname);
+        analyticsPageVisit('Page Viewed', '', { path: location.pathname });
     }, [location, analyticsPageVisit]);
 
     const { isDarkMode } = useTheme();
