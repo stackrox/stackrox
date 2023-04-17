@@ -10,7 +10,7 @@ import services.GroupService
 import spock.lang.Tag
 import spock.lang.Unroll
 
-@Tag("BAT1")
+@Tag("BAT")
 class GroupsTest extends BaseSpecification {
 
     private static final PROVIDERS = [

@@ -16,7 +16,7 @@ import spock.lang.Stepwise
 import spock.lang.Tag
 import spock.lang.Unroll
 
-@Tag("BAT1")
+@Tag("BAT")
 @Stepwise
 class ClientCertAuthTest extends BaseSpecification {
 

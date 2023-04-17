@@ -5,7 +5,7 @@ import spock.lang.Tag
 import spock.lang.IgnoreIf
 import util.Env
 
-@Tag("BAT1")
+@Tag("BAT")
 @Tag("COMPATIBILITY")
 // ROX-14228 skipping tests for 1st release on power & z
 @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })

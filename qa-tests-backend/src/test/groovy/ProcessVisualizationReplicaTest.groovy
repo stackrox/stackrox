@@ -53,7 +53,7 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
         return counts
     }
 
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("RUNTIME")
     @Unroll
     def "Verify process visualization with replicas on #depName"()  {

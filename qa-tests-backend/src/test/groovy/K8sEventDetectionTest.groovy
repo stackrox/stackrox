@@ -132,7 +132,7 @@ class K8sEventDetectionTest extends BaseSpecification {
 
     @Retry(count = 0)
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("RUNTIME")
     @Tag("K8sEvents")
     // K8s event detection is currently not supported on OpenShift.

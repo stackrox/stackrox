@@ -21,7 +21,7 @@ import spock.lang.Tag
 
 class SummaryTest extends BaseSpecification {
 
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("COMPATIBILITY")
     @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
     def "Verify TopNav counts for Nodes, Deployments, and Secrets"() {
@@ -62,7 +62,7 @@ class SummaryTest extends BaseSpecification {
         }
     }
 
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify node details"() {
         given:
         "fetch the list of nodes"
@@ -109,7 +109,7 @@ class SummaryTest extends BaseSpecification {
         assert !diff, "See diff(s) above"
     }
 
-    @Tag("BAT1")
+    @Tag("BAT")
     @IgnoreIf({ System.getenv("OPENSHIFT_CI_CLUSTER_CLAIM") == "openshift-4" })
     def "Verify namespace details"() {
         // https://issues.redhat.com/browse/ROX-6844

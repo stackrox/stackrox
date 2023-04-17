@@ -10,7 +10,7 @@ import org.junit.Assume
 import spock.lang.Shared
 import spock.lang.Tag
 
-@Tag("BAT1")
+@Tag("BAT")
 class ClusterInitBundleTest extends BaseSpecification {
 
     @Shared

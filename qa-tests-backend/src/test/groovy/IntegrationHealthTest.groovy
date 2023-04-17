@@ -9,7 +9,7 @@ class IntegrationHealthTest extends BaseSpecification {
     def cleanupSpec() { }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify vulnerability definitions information is available"() {
         when:
         "Vulnerability definition is requested"

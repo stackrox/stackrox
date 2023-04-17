@@ -65,7 +65,7 @@ class VulnReportingTest extends BaseSpecification {
         orchestrator.deleteNamespace(SECONDARY_NAMESPACE)
     }
 
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify vulnerability generated using a collection sends an email with a valid report attachment"() {
         given:
         "Central is using postgres"

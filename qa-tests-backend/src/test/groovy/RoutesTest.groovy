@@ -21,7 +21,7 @@ class RoutesTest extends BaseSpecification {
         port.getExposureInfosList().findAll { it.getLevel() == DeploymentOuterClass.PortConfig.ExposureLevel.ROUTE }
     }
 
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify that routes are detected correctly"() {
         given:
         Assume.assumeTrue(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)

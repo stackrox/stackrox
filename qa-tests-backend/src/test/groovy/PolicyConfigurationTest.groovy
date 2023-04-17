@@ -152,7 +152,7 @@ class PolicyConfigurationTest extends BaseSpecification {
         orchestrator.deleteServiceAccount(NEW_SA)
     }
 
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify name violations with same ID as existing image are still triggered"() {
         given:
         "Create a busybox deployment has same ID as latest"
@@ -184,7 +184,7 @@ class PolicyConfigurationTest extends BaseSpecification {
         orchestrator.deleteDeployment(NGINX_LATEST)
     }
 
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify lastUpdated field is updated correctly for policy - ROX-3971 production bug"() {
         given:
         "Create a copy of a Latest Tag"
@@ -217,7 +217,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("SMOKE")
     def "Verify policy configuration #policyName can be triggered"() {
         Assume.assumeTrue(canRun == null || canRun())
@@ -686,7 +686,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("SMOKE")
     def "Verify env var policy configuration for source #envVarSource fails validation"() {
         expect:
@@ -717,7 +717,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify policy scopes are triggered appropriately: #policyName"() {
         when:
         "Create a Policy"
@@ -888,7 +888,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify dryRun on a disabled policy generates violations for matching deployments"() {
         when:
         "Initialize a new disabled policy that will match an existing deployment"

@@ -85,7 +85,7 @@ class ProcessVisualizationTest extends BaseSpecification {
         }
     }
 
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("RUNTIME")
     // TODO(ROX-16461): Fails under AKS
     @IgnoreIf({ Env.CI_JOB_NAME.contains("aks-qa-e2e") })
@@ -112,7 +112,7 @@ class ProcessVisualizationTest extends BaseSpecification {
         assert receivedProcessPaths.size() > 0
     }
 
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("RUNTIME")
     @Unroll
     def "Verify process visualization on default: #depName"()  {
@@ -172,7 +172,7 @@ class ProcessVisualizationTest extends BaseSpecification {
         ["/qa/exec.sh", "/bin/sleep"] as Set | ROX4979DEPLOYMENT
     }
 
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("RUNTIME")
     @Unroll
     def "Verify process paths, UIDs, and GIDs on #depName"()  {
@@ -269,7 +269,7 @@ class ProcessVisualizationTest extends BaseSpecification {
         */
     }
 
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("RUNTIME")
     @Unroll
     def "Verify process arguments on #depName"() {

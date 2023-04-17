@@ -105,7 +105,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify policy '#policyName' is triggered"(String policyName, String deploymentName) {
         when:
         "An existing policy"

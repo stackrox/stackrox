@@ -99,7 +99,7 @@ class AttemptedAlertsTest extends BaseSpecification {
 
     @Retry(count = 0)
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("RUNTIME")
     def "Verify attempted alerts on deployment create: #desc"() {
         when:
@@ -173,7 +173,7 @@ class AttemptedAlertsTest extends BaseSpecification {
 
     @Retry(count = 0)
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("RUNTIME")
     def "Verify attempted alerts on deployment updates: #desc"() {
         given:
@@ -249,7 +249,7 @@ class AttemptedAlertsTest extends BaseSpecification {
 
     @Retry(count = 0)
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("RUNTIME")
     // K8s event detection is currently not supported on OpenShift.
     @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })

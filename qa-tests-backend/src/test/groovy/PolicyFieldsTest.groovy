@@ -885,7 +885,7 @@ class PolicyFieldsTest extends BaseSpecification {
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Expect violation for policy field '#fieldName' - #testName"() {
         expect:
         "Verify expected violations are triggered"
@@ -971,7 +971,7 @@ class PolicyFieldsTest extends BaseSpecification {
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Expect no violation for policy field '#fieldName' - #testName"() {
         expect:
         "Verify unexpected violations are not triggered"
@@ -1069,7 +1069,7 @@ class PolicyFieldsTest extends BaseSpecification {
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Route exposure works as expected - #shouldMatch"() {
         given:
         "Running on an OpenShift 4 cluster"

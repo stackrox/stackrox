@@ -19,7 +19,7 @@ import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
 
-@Tag("BAT1")
+@Tag("BAT")
 @Tag("COMPATIBILITY")
 class DiagnosticBundleTest extends BaseSpecification {
 

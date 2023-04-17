@@ -100,7 +100,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify processes risk indicators for the given key after lock on #deploymentName"() {
         when:
         "exec into the container and run a process and wait for lock to kick in"
@@ -160,7 +160,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
     /* TODO(ROX-3108)
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify baseline processes for the given key before and after locking "() {
         when:
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
@@ -197,7 +197,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     */
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("COMPATIBILITY")
     def "Verify baseline process violation after resolve baseline on #deploymentName"() {
                /*
@@ -298,7 +298,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         DEPLOYMENTNGINX_RESOLVE_AND_BASELINE_VIOLATION | "/usr/sbin/nginx" | true          | 0
      }
 
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify baselines are deleted when their deployment is deleted"() {
         /*
                 a)get all baselines
@@ -334,7 +334,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify removed baseline process not getting added back to baseline after rerun on #deploymentName"() {
         /*
                 1.run a process and verify if it exists in the baseline
@@ -398,7 +398,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         DEPLOYMENTNGINX_REMOVEPROCESS           |   "nginx"
     }
 
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Delete process baselines via API"() {
         given:
         "a baseline is deleted"
@@ -429,7 +429,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Processes come in after baseline deleted by API for #deploymentName"() {
         when:
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }

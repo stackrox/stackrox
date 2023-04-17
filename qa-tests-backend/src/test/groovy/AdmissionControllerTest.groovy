@@ -131,7 +131,7 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify Admission Controller Config (#desc)"() {
         when:
         prepareChaosMonkey()
@@ -175,7 +175,7 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify CVE snoozing applies to images scanned by admission controller #image"() {
         given:
         "Chaos monkey is prepared"
@@ -304,7 +304,7 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify Admission Controller Enforcement on Updates (#desc)"() {
         when:
         prepareChaosMonkey()
@@ -356,7 +356,7 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify Admission Controller Enforcement respects Cluster/Namespace scopes (match: #clusterMatch/#nsMatch)"() {
         when:
         prepareChaosMonkey()

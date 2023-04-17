@@ -15,7 +15,7 @@ class AutocompleteTest extends BaseSpecification {
 
     private static final String GROUP_AUTOCOMPLETE = isPostgresRun() ? "GROUP" : "group"
 
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("COMPATIBILITY")
     def "Verify Autocomplete: #query #category #contains"() {
         when:
@@ -41,7 +41,7 @@ class AutocompleteTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("COMPATIBILITY")
     def "Verify #category search options contains #options"() {
         when:

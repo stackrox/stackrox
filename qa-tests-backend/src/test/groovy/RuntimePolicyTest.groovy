@@ -52,7 +52,7 @@ class RuntimePolicyTest extends BaseSpecification  {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("SMOKE")
     def "Verify runtime policy : #policyName can be triggered - #depName"() {
         when:
@@ -76,7 +76,7 @@ class RuntimePolicyTest extends BaseSpecification  {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify runtime alert violations are resolved once policy is removed"() {
         given:
         "Create runtime alert"

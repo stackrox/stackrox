@@ -279,7 +279,7 @@ class NetworkFlowTest extends BaseSpecification {
         assert waitForEdgeToBeClosed(edges.get(0), 65)
     }
 
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("RUNTIME")
     @Tag("NetworkFlowVisualization")
     // TODO: additional handling may be needed for P/Z, skipping for 1st release
@@ -310,7 +310,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("RUNTIME")
     @Tag("NetworkFlowVisualization")
     def "Verify connections can be detected: #protocol"() {
@@ -341,7 +341,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("RUNTIME")
     @Tag("NetworkFlowVisualization")
     def "Verify listen port availability matches feature flag: #targetDeployment"() {
@@ -390,7 +390,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("RUNTIME")
     @Tag("NetworkFlowVisualization")
     def "Verify network graph when filtered on \"#filter\" and scoped to \"#scope\" #desc"() {
@@ -433,7 +433,7 @@ class NetworkFlowTest extends BaseSpecification {
                 true | "contains stackrox deployments only"
     }
 
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("NetworkFlowVisualization")
     def "Verify network flows with graph filtering"() {
         given:
@@ -652,7 +652,7 @@ class NetworkFlowTest extends BaseSpecification {
         }
     }
 
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify generated network policies"() {
         // TODO(RS-178): EKS cannot NetworkPolicy
         Assume.assumeFalse(ClusterService.isEKS())
@@ -741,7 +741,7 @@ class NetworkFlowTest extends BaseSpecification {
     // standalone test runner.
     @IgnoreIf({ !Env.IN_CI })
     @Unroll
-    @Tag("BAT1")
+    @Tag("BAT")
     def "Verify network policy generator apply/undo with delete modes: #deleteMode #note"() {
         given:
         "apply network policies to the system"
@@ -845,7 +845,7 @@ class NetworkFlowTest extends BaseSpecification {
         DeleteExistingPoliciesMode.ALL | ""
     }
 
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("NetworkFlowVisualization")
     @Ignore("Skip this test until we can determine a more reliable way to test")
     def "Apply a generated network policy and verify connection states"() {

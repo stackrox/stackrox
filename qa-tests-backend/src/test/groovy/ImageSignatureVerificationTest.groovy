@@ -249,7 +249,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
 
     @Unroll
     @SuppressWarnings('LineLength')
-    @Tag("BAT1")
+    @Tag("BAT")
     @Tag("Integration")
     def "Check violations of policy '#policyName' for deployment '#deployment.name'"() {
         expect:
