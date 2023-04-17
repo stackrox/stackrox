@@ -164,7 +164,6 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                                     : `${imageComponents.length} components`}
                             </Td>
                             <Td dataLabel="First discovered">
-                                {/* TODO Is this the correct field? It differs from the field on the CVE page. */}
                                 {getDistanceStrictAsPhrase(scanTime, new Date())}
                             </Td>
                         </Tr>
