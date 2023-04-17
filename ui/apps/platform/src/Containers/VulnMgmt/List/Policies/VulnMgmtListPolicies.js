@@ -12,6 +12,7 @@ import {
 } from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
 import Dialog from 'Components/Dialog';
+import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisabledIconText';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import IconWithState from 'Components/IconWithState';
@@ -93,9 +94,14 @@ export function getPolicyTableColumns(workflowState) {
             Header: `Policy Status`,
             headerClassName: `w-24 ${nonSortableHeaderClassName}`,
             className: `w-24 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => (
-                <PolicyStatusIconText isPass={original.policyStatus === 'pass'} isTextOnly={pdf} />
-            ),
+            Cell: ({ original, pdf }) => {
+                const { disabled, policyStatus } = original;
+                return disabled ? (
+                    <PolicyDisabledIconText isDisabled={disabled} isTextOnly={pdf} />
+                ) : (
+                    <PolicyStatusIconText isPass={policyStatus === 'pass'} isTextOnly={pdf} />
+                );
+            },
             id: policySortFields.POLICY_STATUS,
             accessor: 'policyStatus',
             sortField: policySortFields.POLICY_STATUS,
