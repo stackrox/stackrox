@@ -69,6 +69,8 @@ export const imageCveSummaryQuery = gql`
     ${imageCveSeveritySummaryFragment}
     query getImageCveSummaryData($cve: String!, $query: String!) {
         ...ImageCVESummaryCounts
+        imageCount(query: $query)
+        deploymentCount(query: $query)
         imageCVE(cve: $cve) {
             cve
             ...ImageCVESeveritySummary
@@ -80,7 +82,6 @@ export const imageCveAffectedImagesQuery = gql`
     ${imagesForCveFragment}
     # by default, query must include the CVE id
     query getImagesForCVE($query: String, $pagination: Pagination) {
-        imageCount(query: $query)
         images(query: $query, pagination: $pagination) {
             ...ImagesForCVE
         }
@@ -91,7 +92,6 @@ export const imageCveAffectedDeploymentsQuery = gql`
     ${deploymentsForCveFragment}
     # by default, query must include the CVE id
     query getDeploymentsForCVE($query: String, $pagination: Pagination) {
-        deploymentCount(query: $query)
         deployments(query: $query, pagination: $pagination) {
             ...DeploymentsForCVE
         }
@@ -118,6 +118,10 @@ function ImageCvePage() {
     const { cveId } = useParams();
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    const query = getRequestQueryStringForSearchFilter({
+        ...querySearchFilter,
+        CVE: cveId,
+    });
     const { page, perPage, setPage, setPerPage } = useURLPagination(25);
 
     const [entityTab] = useURLStringUnion('entityTab', imageCveEntities);
@@ -134,24 +138,28 @@ function ImageCvePage() {
     );
 
     const summaryRequest = useQuery<
-        ImageCveSummaryCount & { imageCVE: ImageCveSeveritySummary },
+        ImageCveSummaryCount & {
+            imageCount: number;
+            deploymentCount: number;
+            imageCVE: ImageCveSeveritySummary;
+        },
         { cve: string; query: string }
     >(imageCveSummaryQuery, {
-        variables: { cve: cveId, query: getRequestQueryStringForSearchFilter(querySearchFilter) },
+        variables: {
+            cve: cveId,
+            query,
+        },
     });
 
     const imageDataRequest = useQuery<
-        { imageCount: number; images: ImageForCve[] },
+        { images: ImageForCve[] },
         {
             query: string;
             pagination: PaginationParam;
         }
     >(imageCveAffectedImagesQuery, {
         variables: {
-            query: getRequestQueryStringForSearchFilter({
-                ...querySearchFilter,
-                CVE: cveId,
-            }),
+            query,
             pagination: {
                 offset: (page - 1) * perPage,
                 limit: perPage,
@@ -186,6 +194,9 @@ function ImageCvePage() {
     // the same logic for both tables and components in the return value below
     const imageData = imageDataRequest.data ?? imageDataRequest.previousData;
     const deploymentData = deploymentDataRequest.data ?? deploymentDataRequest.previousData;
+    const imageCount = summaryRequest.data?.imageCount ?? 0;
+    const deploymentCount = summaryRequest.data?.deploymentCount ?? 0;
+
     let tableDataAvailable = false;
     let tableRowCount = 0;
     let tableError: Error | undefined;
@@ -193,12 +204,12 @@ function ImageCvePage() {
 
     if (entityTab === 'Image') {
         tableDataAvailable = !!imageData;
-        tableRowCount = imageDataRequest.data?.imageCount ?? 0;
+        tableRowCount = imageCount;
         tableError = imageDataRequest.error;
         tableLoading = imageDataRequest.loading;
     } else if (entityTab === 'Deployment') {
         tableDataAvailable = !!deploymentData;
-        tableRowCount = deploymentDataRequest.data?.deploymentCount ?? 0;
+        tableRowCount = deploymentCount;
         tableError = deploymentDataRequest.error;
         tableLoading = deploymentDataRequest.loading;
     }
@@ -275,8 +286,8 @@ function ImageCvePage() {
                         <SplitItem isFilled>
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                 <EntityTypeToggleGroup
-                                    imageCount={imageData?.imageCount ?? 0}
-                                    deploymentCount={deploymentData?.deploymentCount ?? 0}
+                                    imageCount={imageCount}
+                                    deploymentCount={deploymentCount}
                                     entityTabs={imageCveEntities}
                                     onChange={(entity) => {
                                         // Ugly type workaround
