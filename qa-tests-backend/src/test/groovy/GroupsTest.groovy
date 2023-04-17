@@ -115,6 +115,9 @@ class GroupsTest extends BaseSpecification {
                 log.warn("Failed to delete auth provider", ex)
             }
         }
+        for (def role : ROLES) {
+            RoleService.deleteRole(role.getName())
+        }
     }
 
     def "Test that GetGroup and GetGroups work correctly with query args (#authProviderName, #key, #value)"() {
