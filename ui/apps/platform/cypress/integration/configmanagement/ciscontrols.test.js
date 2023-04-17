@@ -76,7 +76,7 @@ describe('Configuration Management Controls', () => {
         visitConfigurationManagementEntitiesWithSearch(entitiesKey, '?s[Compliance%20State]=Pass');
 
         // Click first row which has pass in Control Status column to open control in side panel.
-        cy.get(`.rt-td:nth-child(4):contains("pass"):nth(0)`).click();
+        cy.get(`.rt-td:nth-child(4):contains("Pass"):nth(0)`).click();
         // Control Findings
         cy.get('[data-testid="widget"] .rt-tbody .rt-tr').should('have.length', 0);
     });
@@ -85,7 +85,7 @@ describe('Configuration Management Controls', () => {
         visitConfigurationManagementEntitiesWithSearch(entitiesKey, '?s[Compliance%20State]=Fail');
 
         // Click first row which has fail in Control Status column to open control in side panel.
-        cy.get(`.rt-td:nth-child(4):contains("fail"):nth(0)`).click();
+        cy.get(`.rt-td:nth-child(4):contains("Fail"):nth(0)`).click();
         // Control Findings
         cy.get('[data-testid="widget"] .rt-tbody .rt-tr').should('not.have.length', 0);
     });
