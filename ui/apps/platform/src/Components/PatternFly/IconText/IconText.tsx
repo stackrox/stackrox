@@ -17,7 +17,7 @@ function IconText({ Icon, text, isTextOnly }: IconTextProps): ReactElement {
     // Display flex because classic styles have display block for svg element.
     // Align center because PatternFly guideline.
     return (
-        <span className="pf-u-display-flex pf-u-align-items-center">
+        <span className="pf-u-display-inline-flex pf-u-align-items-center">
             {Icon}
             <span className="pf-u-pl-sm">{text}</span>
         </span>
