@@ -53,7 +53,7 @@ func (s *{{$namePrefix}}StoreSuite) SetupSuite() {
 	{{- end }}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = CreateTableAndNewStore(context.Background(), s.testDB.DB, s.testDB.GetGormDB(s.T()))
+	s.store = New(s.testDB.DB)
 }
 
 func (s *{{$namePrefix}}StoreSuite) SetupTest() {
