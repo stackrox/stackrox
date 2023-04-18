@@ -17,7 +17,6 @@ export const colorTypes = [
     'warning',
     'success',
     'tertiary',
-    'secondary',
     'primary',
     'base',
 ];

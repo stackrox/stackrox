@@ -163,8 +163,8 @@ export const healthStatusStyles = {
     UNINITIALIZED: styleUninitialized,
     UNAVAILABLE: {
         Icon: ResourcesEmptyIcon,
-        bgColor: 'bg-secondary-200',
-        fgColor: 'text-secondary-700',
+        bgColor: 'bg-base-200',
+        fgColor: 'text-base-700',
     },
     UNHEALTHY: styleUnhealthy,
     DEGRADED: styleDegraded,

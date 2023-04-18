@@ -1,22 +1,15 @@
 import React from 'react';
 
-const colors = ['primary', 'secondary', 'tertiary'];
-
 const getLabelColor = (key) => {
-    let color = '';
     switch (key) {
         case 'create':
         case 'update':
-            color = 'success';
-            break;
+            return 'success';
         case 'delete':
-            color = 'alert';
-            break;
+            return 'alert';
         default:
-            color = colors[Math.floor(Math.random() * colors.length)];
-            break;
+            return 'primary';
     }
-    return color;
 };
 
 const ScopedPermissions = ({ permissions }) => {
