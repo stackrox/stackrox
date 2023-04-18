@@ -72,8 +72,10 @@ class NetworkBaselineTest extends BaseSpecification {
             .addLabel("app", ANOMALOUS_CLIENT_DEP_NAME)
             .setCommand(["/bin/sh", "-c",])
             .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
-                              "echo sleeping; sleep ${EXPECTED_BASELINE_DURATION_SECONDS + 30}; echo sleep done; ${DATE_CMD};" +
-                              "for i in \$(seq 1 10); do wget --timeout=10 -S http://${SERVER_DEP_NAME}; sleep 1; done;" +
+                              "echo sleeping; sleep ${EXPECTED_BASELINE_DURATION_SECONDS + 30}; echo sleep done;" +
+                              "${DATE_CMD};" +
+                              "for i in \$(seq 1 10); do wget --timeout=10 -S http://${SERVER_DEP_NAME}; " +
+                              "sleep 1; done;" +
                               "sleep 1000" as String,])
 
     private static final DEFERRED_BASELINED_CLIENT_DEP = createAndRegisterDeployment()
