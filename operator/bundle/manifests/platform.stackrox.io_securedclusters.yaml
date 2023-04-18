@@ -395,7 +395,7 @@ spec:
                           in these section will not have any effect.
                         enum:
                         - EBPF
-                        - core_bpf
+                        - CoreBpf
                         - KernelModule
                         - NoCollection
                         type: string
