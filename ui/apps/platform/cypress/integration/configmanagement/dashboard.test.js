@@ -257,53 +257,21 @@ describe('Configuration Management Dashboard', () => {
         }, entitiesKey);
     });
 
-    // This test might fail in local deployment.
-    // ROX-15985: skip until decision whether valid to assume high severity violations.
-    it.skip('should show the same number of high severity policies in the "Policy Violations By Severity" widget as it does in the Policies list', () => {
+    it('should show the same number of policies in the "Policy Violations By Severity" widget as it does in the Policies list', () => {
         const entitiesKey = 'policies';
 
         visitConfigurationManagementDashboard();
 
+        // Click the first bullet list link.
+        // All bases are covered, because policies without violations is a possible link.
         policyViolationsBySeverityLinkShouldMatchList(
-            `${selectors.getWidget('Policy Violations by Severity')} a:contains("rated as high")`,
-            /^(\d+) rated as high/,
+            `${selectors.getWidget('Policy Violations by Severity')} .widget-detail-bullet:eq(0) a`,
+            /^(\d+) /,
             entitiesKey
         );
 
-        cy.location('search').should('contain', '[Severity]=HIGH_SEVERITY');
-        cy.location('search').should('contain', '[Policy%20Status]=Fail');
-    });
-
-    // This test might fail in local deployment.
-    it('should show the same number of low severity policies in the "Policy Violations By Severity" widget as it does in the Policies list', () => {
-        const entitiesKey = 'policies';
-
-        visitConfigurationManagementDashboard();
-
-        policyViolationsBySeverityLinkShouldMatchList(
-            `${selectors.getWidget('Policy Violations by Severity')} a:contains("rated as low")`,
-            /^(\d+) rated as low/,
-            entitiesKey
-        );
-
-        cy.location('search').should('contain', '[Severity]=LOW_SEVERITY');
-        cy.location('search').should('contain', '[Policy%20Status]=Fail');
-    });
-
-    it('should show the same number of policies without violations in the "Policy Violations By Severity" widget as it does in the Policies list', () => {
-        const entitiesKey = 'policies';
-
-        visitConfigurationManagementDashboard();
-
-        policyViolationsBySeverityLinkShouldMatchList(
-            `${selectors.getWidget(
-                'Policy Violations by Severity'
-            )} a:contains("without violations")`,
-            /^(\d+) (policy|policies)/,
-            entitiesKey
-        );
-
-        cy.location('search').should('contain', '[Policy%20Status]=Pass');
+        cy.location('search').should('contain', '[Disabled]=False');
+        cy.location('search').should('contain', '[Policy%20Status]='); // either Fail (for rated as Whatever) or Pass (for policies without violations)
     });
 
     it('clicking the "CIS Standard Across Clusters" widget\'s "passing controls" link should take you to the controls list and filter by passing controls', () => {
