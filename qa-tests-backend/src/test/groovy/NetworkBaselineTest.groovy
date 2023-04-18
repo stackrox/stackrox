@@ -23,7 +23,7 @@ class NetworkBaselineTest extends BaseSpecification {
     private static final String ANOMALOUS_CLIENT_DEP_NAME = "net-bl-client-anomalous"
     private static final String DEFERRED_BASELINED_CLIENT_DEP_NAME = "net-bl-client-deferred-baselined"
     private static final String DEFERRED_POST_LOCK_DEP_NAME = "net-bl-client-post-lock"
-
+    private static final String DATE_CMD = "date -Iseconds"
 
     private static final String NGINX_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine"
 
@@ -46,7 +46,9 @@ class NetworkBaselineTest extends BaseSpecification {
             .setImage(NGINX_IMAGE)
             .addLabel("app", BASELINED_CLIENT_DEP_NAME)
             .setCommand(["/bin/sh", "-c",])
-            .setArgs(["for i in \$(seq 1 10); do wget -S http://${SERVER_DEP_NAME}; sleep 1; done; sleep 1000" as String])
+            .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
+                              "for i in \$(seq 1 10); do wget -S http://${SERVER_DEP_NAME};" +
+                              "sleep 1; done; sleep 1000" as String])
 
     private static final USER_DEP = createAndRegisterDeployment()
             .setName(USER_DEP_NAME)
@@ -60,7 +62,8 @@ class NetworkBaselineTest extends BaseSpecification {
             .setImage(NGINX_IMAGE)
             .addLabel("app", BASELINED_USER_CLIENT_DEP_NAME)
             .setCommand(["/bin/sh", "-c",])
-            .setArgs(["for i in \$(seq 1 10); do wget -S http://${USER_DEP_NAME};" +
+            .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
+                              "for i in \$(seq 1 10); do wget -S http://${USER_DEP_NAME};" +
                               "sleep 1; done; sleep 1000" as String])
 
     private static final ANOMALOUS_CLIENT_DEP = createAndRegisterDeployment()
@@ -68,7 +71,8 @@ class NetworkBaselineTest extends BaseSpecification {
             .setImage(NGINX_IMAGE)
             .addLabel("app", ANOMALOUS_CLIENT_DEP_NAME)
             .setCommand(["/bin/sh", "-c",])
-            .setArgs(["echo sleeping; date; sleep ${EXPECTED_BASELINE_DURATION_SECONDS + 30}; echo sleep done; date;" +
+            .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
+                              "echo sleeping; sleep ${EXPECTED_BASELINE_DURATION_SECONDS + 30}; echo sleep done; ${DATE_CMD};" +
                               "for i in \$(seq 1 10); do wget -S http://${SERVER_DEP_NAME}; sleep 1; done;" +
                               "sleep 1000" as String,])
 
@@ -77,7 +81,8 @@ class NetworkBaselineTest extends BaseSpecification {
             .setImage(NGINX_IMAGE)
             .addLabel("app", DEFERRED_BASELINED_CLIENT_DEP_NAME)
             .setCommand(["/bin/sh", "-c",])
-            .setArgs(["while sleep 1; " +
+            .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
+                              "while sleep 1; " +
                               "do wget -S http://${SERVER_DEP_NAME}; " +
                               "done" as String,])
 
@@ -86,7 +91,8 @@ class NetworkBaselineTest extends BaseSpecification {
             .setImage(NGINX_IMAGE)
             .addLabel("app", DEFERRED_POST_LOCK_DEP_NAME)
             .setCommand(["/bin/sh", "-c",])
-            .setArgs(["while sleep 1; " +
+            .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
+                              "while sleep 1; " +
                               "do wget -S http://${SERVER_DEP_NAME}; " +
                               "done" as String,])
 
