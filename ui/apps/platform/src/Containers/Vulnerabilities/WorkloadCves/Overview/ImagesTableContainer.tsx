@@ -6,9 +6,9 @@ import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import ImagesTable, { imageListQuery } from './Tables/ImagesTable';
-import TableErrorComponent from './components/TableErrorComponent';
-import { parseQuerySearchFilter } from './searchUtils';
+import ImagesTable, { imageListQuery } from '../Tables/ImagesTable';
+import TableErrorComponent from '../components/TableErrorComponent';
+import { parseQuerySearchFilter } from '../searchUtils';
 
 const defaultSortFields = ['Image', 'Operating system', 'Deployment count', 'Age', 'Scan time'];
 

@@ -77,7 +77,7 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th sort={getSortParams('Image')}>Image</Th>
-                    <Th sort={getSortParams('CVEs by Severity')}>
+                    <Th tooltip="CVEs by severity across this image">
                         CVEs by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
