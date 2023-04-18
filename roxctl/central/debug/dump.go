@@ -37,7 +37,7 @@ func dumpCommand(cliEnvironment environment.Environment) *cobra.Command {
 				BundleType: "debug",
 				ExpandZip:  false,
 				OutputDir:  outputDir,
-			}, cliEnvironment.Logger())
+			}, cliEnvironment)
 		}),
 	}
 	flags.AddTimeoutWithDefault(c, dumpTimeout)
