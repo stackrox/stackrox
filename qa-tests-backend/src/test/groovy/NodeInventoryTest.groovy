@@ -40,7 +40,7 @@ class NodeInventoryTest extends BaseSpecification {
             }
 
             // assume that there must be at least one vulnerability within all the components
-            assert node.getScan().getComponentsList().sum {it.getVulnerabilitiesList().size() }
+            assert node.getScan().getComponentsList().sum { it.getVulnerabilitiesList().size() }
                 > 0, "Expected to find at least one vulnerability among the components"
         }
     }
