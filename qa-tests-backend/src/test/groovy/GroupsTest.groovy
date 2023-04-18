@@ -1,6 +1,7 @@
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 
+import io.stackrox.proto.api.v1.GroupServiceOuterClass
 import io.stackrox.proto.api.v1.GroupServiceOuterClass.GetGroupsRequest
 import io.stackrox.proto.storage.AuthProviderOuterClass
 import io.stackrox.proto.storage.GroupOuterClass.Group
@@ -12,6 +13,7 @@ import services.GroupService
 import services.RoleService
 
 import spock.lang.Tag
+import spock.lang.Unroll
 
 @Tag("BAT")
 class GroupsTest extends BaseSpecification {
@@ -120,6 +122,72 @@ class GroupsTest extends BaseSpecification {
         }
     }
 
+    def "Test that creating group with invalid role name returns an error"() {
+        when:
+        def props = GroupProperties.newBuilder()
+                .setAuthProviderId(PROVIDER_IDS_BY_NAME["groups-test-provider-1"])
+                .setKey("this is so that group")
+                .setValue("will be non-default and we get invalid arguments error")
+                .build()
+        GroupService.getGroupService().createGroup(Group.newBuilder()
+                .setProps(props)
+                .setRoleName("non-existent")
+                .build())
+        then:
+        def error = thrown(StatusRuntimeException)
+        assert error.getStatus().getCode() == Status.Code.INVALID_ARGUMENT
+    }
+
+    def "Test that creating group with invalid auth provider id returns an error"() {
+        when:
+        def props = GroupProperties.newBuilder()
+                .setAuthProviderId("non-existent-provider-id")
+                .build()
+        GroupService.getGroupService().createGroup(Group.newBuilder()
+                .setProps(props)
+                .setRoleName("Admin")
+                .build())
+        then:
+        def error = thrown(StatusRuntimeException)
+        assert error.getStatus().getCode() == Status.Code.INVALID_ARGUMENT
+    }
+
+    def "Test that updating group with invalid role name returns an error"() {
+        when:
+        def group = GROUPS_WITH_IDS["QAGroupTest-Group2"]
+        def updatedGroup = group.toBuilder()
+                .setRoleName("non-existent")
+                .build()
+        GroupService.getGroupService().updateGroup(
+                GroupServiceOuterClass.UpdateGroupRequest.newBuilder()
+                        .setGroup(updatedGroup)
+                        .build()
+        )
+        then:
+        def error = thrown(StatusRuntimeException)
+        assert error.getStatus().getCode() == Status.Code.INVALID_ARGUMENT
+    }
+
+    def "Test that updating group with invalid auth provider id returns an error"() {
+        when:
+        def group = GROUPS_WITH_IDS["QAGroupTest-Group2"]
+        def updatedGroup = group.toBuilder()
+            .setProps(group.getProps().toBuilder()
+                    .setAuthProviderId("non-existent")
+                    .build())
+            .build()
+        GroupService.getGroupService().updateGroup(
+                GroupServiceOuterClass.UpdateGroupRequest.newBuilder()
+                        .setGroup(updatedGroup)
+                        .build()
+        )
+        then:
+        def error = thrown(StatusRuntimeException)
+        assert error.getStatus().getCode() == Status.Code.INVALID_ARGUMENT
+    }
+
+    @Unroll
+    @SuppressWarnings('LineLength')
     def "Test that GetGroup and GetGroups work correctly with query args (#authProviderName, #key, #value)"() {
         when:
         "A query is made for GetGroup and GetGroups with the given params"
@@ -164,17 +232,11 @@ class GroupsTest extends BaseSpecification {
 
         where:
         "Data inputs are"
-        authProviderName | key | id | value |
-                expectGroup | expectGroups
-        "groups-test-provider-1" | null  | GROUPS_WITH_IDS["QAGroupTest-Group1"].props.getId() | null  |
-                "Group1"    | ["Group1", "Group2"]
-        null                     | "foo" | "some-id"                                           | "bar" |
-                null        | ["Group2", "Group3"]
-        "groups-test-provider-1" | "foo" | GROUPS_WITH_IDS["QAGroupTest-Group2"].props.getId() | "bar" |
-                "Group2"    | ["Group2"]
-        "groups-test-provider-2" | null  | "some-id"                                           | null  |
-                null        | ["Group3"]
-        "groups-test-provider-2" | "foo" | GROUPS_WITH_IDS["QAGroupTest-Group3"].props.getId() | "bar" |
-                "Group3"    | ["Group3"]
+        authProviderName | key | id | value | expectGroup | expectGroups
+        "groups-test-provider-1" | null  | GROUPS_WITH_IDS["QAGroupTest-Group1"].props.getId() | null  | "Group1"    | ["Group1", "Group2"]
+        null                     | "foo" | "some-id"                                           | "bar" | null        | ["Group2", "Group3"]
+        "groups-test-provider-1" | "foo" | GROUPS_WITH_IDS["QAGroupTest-Group2"].props.getId() | "bar" | "Group2"    | ["Group2"]
+        "groups-test-provider-2" | null  | "some-id"                                           | null  | null        | ["Group3"]
+        "groups-test-provider-2" | "foo" | GROUPS_WITH_IDS["QAGroupTest-Group3"].props.getId() | "bar" | "Group3"    | ["Group3"]
     }
 }
