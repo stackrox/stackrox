@@ -1,5 +1,6 @@
 import React, { ReactElement, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import {
     ApplicationLauncher,
     ApplicationLauncherGroup,
@@ -9,12 +10,14 @@ import {
 import { QuestionCircleIcon } from '@patternfly/react-icons';
 
 import useMetadata from 'hooks/useMetadata';
+import { actions } from 'reducers/feedback';
 import { apidocsPath } from 'routePaths';
 import { getVersionedDocs } from 'utils/versioning';
 
 function HelpMenu(): ReactElement {
     const { releaseBuild, version } = useMetadata();
     const [isHelpMenuOpen, setIsHelpMenuOpen] = useState(false);
+    const dispatch = useDispatch();
 
     function onToggleHelpMenu() {
         setIsHelpMenuOpen(!isHelpMenuOpen);
@@ -30,6 +33,14 @@ function HelpMenu(): ReactElement {
                     </Link>
                 }
             />
+            <ApplicationLauncherItem
+                component="button"
+                onClick={() => {
+                    dispatch(actions.setFeedbackModalVisibility(true));
+                }}
+            >
+                Feedback
+            </ApplicationLauncherItem>
             {version && (
                 <>
                     <ApplicationLauncherItem
@@ -56,6 +67,7 @@ function HelpMenu(): ReactElement {
             isOpen={isHelpMenuOpen}
             items={appLauncherItems}
             onToggle={onToggleHelpMenu}
+            onSelect={onToggleHelpMenu}
             position="right"
             toggleIcon={<QuestionCircleIcon alt="" />}
             className="co-app-launcher"
