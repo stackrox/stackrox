@@ -1,8 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import LabelChip from 'Components/LabelChip';
-
 const cveTypes = ['IMAGE_CVE', 'K8S_CVE', 'ISTIO_CVE', 'NODE_CVE', 'OPENSHIFT_CVE'];
 const cveTypeMap = {
     IMAGE_CVE: 'Image CVE',
@@ -12,12 +10,10 @@ const cveTypeMap = {
     OPENSHIFT_CVE: 'OpenShift CVE',
 };
 
-const CveType = ({ types, context }) => {
+const CveType = ({ types }) => {
     const sortedTypes = types.map((x) => cveTypeMap[x] || 'Unknown').sort();
 
-    return context === 'callout' ? (
-        <LabelChip type="base" text={`Type: ${sortedTypes.join(', ')}`} />
-    ) : (
+    return (
         <span>
             <div className="flex flex-col">
                 {sortedTypes.map((cveType) => (
@@ -32,12 +28,10 @@ const CveType = ({ types, context }) => {
 
 CveType.propTypes = {
     types: PropTypes.arrayOf(PropTypes.oneOf(cveTypes)),
-    context: PropTypes.oneOf(['callout', 'bare']),
 };
 
 CveType.defaultProps = {
     types: [],
-    context: 'bare',
 };
 
 export default CveType;
