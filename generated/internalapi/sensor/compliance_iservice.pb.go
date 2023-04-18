@@ -166,6 +166,7 @@ func (m *AuditEvents) Clone() *AuditEvents {
 type MsgFromCompliance struct {
 	Node string `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
 	// Types that are valid to be assigned to Msg:
+	//
 	//	*MsgFromCompliance_Return
 	//	*MsgFromCompliance_AuditEvents
 	//	*MsgFromCompliance_NodeInventory

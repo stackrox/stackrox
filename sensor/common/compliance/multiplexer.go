@@ -24,7 +24,7 @@ func NewMultiplexer() *Multiplexer {
 }
 
 // Notify is unimplemented, part of the component interface
-func (c *Multiplexer) Notify(e common.SensorComponentEvent) {
+func (c *Multiplexer) Notify(_ common.SensorComponentEvent) {
 	// unimplemented
 }
 
@@ -44,7 +44,7 @@ func (c *Multiplexer) run() error {
 }
 
 // Stop is unimplemented, part of the component interface
-func (c *Multiplexer) Stop(err error) {
+func (c *Multiplexer) Stop(_ error) {
 }
 
 // Capabilities is unimplemented, part of the component interface
@@ -53,7 +53,7 @@ func (c *Multiplexer) Capabilities() []centralsensor.SensorCapability {
 }
 
 // ProcessMessage is unimplemented, part of the component interface
-func (c *Multiplexer) ProcessMessage(msg *central.MsgToSensor) error {
+func (c *Multiplexer) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
