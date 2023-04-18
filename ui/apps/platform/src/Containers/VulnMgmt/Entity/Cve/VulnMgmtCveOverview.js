@@ -8,7 +8,6 @@ import Metadata from 'Components/Metadata';
 import LabelChip from 'Components/LabelChip';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
-import { getSeverityChipType } from 'utils/vulnerabilityUtils';
 import { isValidURL } from 'utils/urlUtils';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 
@@ -106,7 +105,6 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         },
     ];
 
-    const severityStyle = getSeverityChipType(cvss);
     const newEntityContext = { ...entityContext, [entityTypes.CVE]: cve };
 
     // TODO: change the CveType to handle one of the new split types: IMAGE_CVE, NODE_CVE, or CLUSTER_CVE
@@ -132,7 +130,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         },
         {
             key: 'CVSS Score',
-            value: <LabelChip text={`CVSS ${cvss && cvss.toFixed(1)}`} type={severityStyle} />,
+            value: cvss && cvss.toFixed(1),
         },
         {
             key: 'Fixability',
