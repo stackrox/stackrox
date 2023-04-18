@@ -2269,7 +2269,6 @@ func (m *ClusterHealthStatus) Clone() *ClusterHealthStatus {
 // first reports CollectorHealthInfo (sensor).
 type CollectorHealthInfo struct {
 	// This is the version of the collector deamonset as returned by k8s API
-	//
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 	// Types that are valid to be assigned to TotalDesiredPodsOpt:
 	//
