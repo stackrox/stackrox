@@ -16,7 +16,7 @@ export const deploymentListQuery = gql`
         deployments(query: $query, pagination: $pagination) {
             id
             name
-            imageCVECountBySeverity {
+            imageCVECountBySeverity(query: $query) {
                 critical
                 important
                 moderate
@@ -24,7 +24,7 @@ export const deploymentListQuery = gql`
             }
             clusterName
             namespace
-            imageCount
+            imageCount(query: $query)
             created
         }
     }
@@ -111,18 +111,14 @@ function DeploymentsTable({ deployments, getSortParams, isFiltered }: Deployment
                                 <Td>{namespace}</Td>
                                 <Td>
                                     {/* TODO: add modal */}
-                                    {imageCount > 0 ? (
-                                        <Button
-                                            variant={ButtonVariant.link}
-                                            isInline
-                                            component={LinkShim}
-                                            href={getEntityPagePath('Deployment', id)}
-                                        >
-                                            {imageCount} {pluralize('image', imageCount)}
-                                        </Button>
-                                    ) : (
-                                        <Flex>0 images</Flex>
-                                    )}
+                                    <Button
+                                        variant={ButtonVariant.link}
+                                        isInline
+                                        component={LinkShim}
+                                        href={getEntityPagePath('Deployment', id)}
+                                    >
+                                        {imageCount} {pluralize('image', imageCount)}
+                                    </Button>
                                 </Td>
                                 <Td>
                                     <Tooltip content={getDateTime(created)}>

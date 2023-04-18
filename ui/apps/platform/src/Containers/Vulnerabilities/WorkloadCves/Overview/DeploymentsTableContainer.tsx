@@ -26,7 +26,7 @@ function DeploymentsTableContainer() {
         onSort: () => setPage(1),
     });
 
-    const { error, loading, data } = useQuery(deploymentListQuery, {
+    const { error, loading, data, previousData } = useQuery(deploymentListQuery, {
         variables: {
             query: getRequestQueryStringForSearchFilter({
                 ...querySearchFilter,
@@ -39,9 +39,10 @@ function DeploymentsTableContainer() {
         },
     });
 
+    const tableData = data ?? previousData;
     return (
         <>
-            {loading && (
+            {loading && !tableData && (
                 <Bullseye>
                     <Spinner isSVG />
                 </Bullseye>
@@ -49,7 +50,7 @@ function DeploymentsTableContainer() {
             {error && (
                 <TableErrorComponent error={error} message="Adjust your filters and try again" />
             )}
-            {data && (
+            {tableData && (
                 <DeploymentsTable
                     deployments={data.deployments}
                     getSortParams={getSortParams}
