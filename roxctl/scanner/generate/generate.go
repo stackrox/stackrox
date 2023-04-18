@@ -81,7 +81,7 @@ func (cmd *scannerGenerateCommand) generate(logger logger.Logger) error {
 		BundleType: "scanner",
 		ExpandZip:  true,
 		OutputDir:  cmd.outputDir,
-	}, cmd.env)
+	}, cmd.env.Logger())
 
 	return errors.Wrap(err, "could not get scanner bundle")
 }
