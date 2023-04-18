@@ -72,8 +72,8 @@ func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.
 		return db.Transaction(func(tx *gorm.DB) error {
 			// Gorm broke Save, so we have to do delete/insert:  https://github.com/go-gorm/gorm/pull/6149/files
 			result := tx.Exec("DELETE FROM versions")
-			if result.Error != nil {
-				return result.Error
+			if err := result.Error; err != nil {
+				return err
 			}
 
 			serialized, marshalErr := updatedVersion.Marshal()
