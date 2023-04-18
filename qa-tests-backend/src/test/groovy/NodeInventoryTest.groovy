@@ -28,22 +28,20 @@ class NodeInventoryTest extends BaseSpecification {
         expect:
         "confirm the number of components in the inventory and their scan"
         assert nodes.size() > 0, "Expected to find at least one node"
-        for (def node : nodes) {
+        nodes.each { node ->
             assert node.getScan(), "Expected to find a nodeScan on the node"
-            log.info("Node {} scan contains {} components", node.getName(), node.getScan().getComponentsList().size())
+            log.info("Node ${node.getName()} scan contains ${node.getScan().getComponentsList().size()} components")
+
             if (!ClusterService.isOpenShift4()) {
                 // No RHCOS node scanning on this cluster
                 assert node.getScan().getComponentsList().size() == 4,
                     "Expected to find exactly 4 components on non-RHCOS node"
                 return
             }
-            // count total number of vulnerabilities
-            int totalVulns = 0
-            for (def comp : node.getScan().getComponentsList()) {
-                totalVulns += comp.getVulnerabilitiesList().size()
-            }
+
             // assume that there must be at least one vulnerability within all the components
-            assert totalVulns > 0, "Expected to find at least one vulnerability among the components"
+            assert node.getScan().getComponentsList().sum {it.getVulnerabilitiesList().size() }
+                > 0, "Expected to find at least one vulnerability among the components"
         }
     }
 }
