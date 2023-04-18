@@ -1,14 +1,6 @@
 import React, { ReactElement } from 'react';
 import { useLocation, Location } from 'react-router-dom';
-import {
-    Nav,
-    NavList,
-    NavExpandable,
-    PageSidebar,
-    Flex,
-    FlexItem,
-    Badge,
-} from '@patternfly/react-core';
+import { Nav, NavList, NavExpandable, PageSidebar } from '@patternfly/react-core';
 
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
@@ -16,8 +8,6 @@ import { HasReadAccess } from 'hooks/usePermissions';
 import {
     basePathToLabelMap,
     dashboardPath,
-    networkBasePath,
-    networkBasePathPF,
     violationsBasePath,
     complianceBasePath,
     vulnManagementPath,
@@ -36,6 +26,7 @@ import {
 } from 'routePaths';
 
 import LeftNavItem from './LeftNavItem';
+import NetworkGraphNavItems from './NetworkGraphNavItems';
 
 type NavigationSidebarProps = {
     hasReadAccess: HasReadAccess;
@@ -87,34 +78,7 @@ function NavigationSidebar({
                     path={dashboardPath}
                     title={basePathToLabelMap[dashboardPath]}
                 />
-                {isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY') && (
-                    <LeftNavItem
-                        isActive={location.pathname.includes(networkBasePathPF)}
-                        path={networkBasePathPF}
-                        title={
-                            <Flex>
-                                <FlexItem>Network Graph</FlexItem>
-                                <FlexItem>
-                                    <Badge
-                                        style={{
-                                            backgroundColor: 'var(--pf-global--palette--cyan-400)',
-                                        }}
-                                    >
-                                        2.0 preview
-                                    </Badge>
-                                </FlexItem>
-                            </Flex>
-                        }
-                    />
-                )}
-                <LeftNavItem
-                    isActive={
-                        location.pathname.includes(networkBasePath) &&
-                        !location.pathname.includes(networkBasePathPF)
-                    }
-                    path={networkBasePath}
-                    title={basePathToLabelMap[networkBasePath]}
-                />
+                <NetworkGraphNavItems isFeatureFlagEnabled={isFeatureFlagEnabled} />
                 <LeftNavItem
                     isActive={location.pathname.includes(violationsBasePath)}
                     path={violationsBasePath}

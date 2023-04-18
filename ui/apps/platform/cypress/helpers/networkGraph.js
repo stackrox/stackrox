@@ -5,6 +5,7 @@ import { interactAndWaitForResponses, interceptRequests, waitForResponses } from
 import { visit } from './visit';
 import selectSelectors from '../selectors/select';
 import tabSelectors from '../selectors/tab';
+import { hasFeatureFlag } from './features';
 
 const getNodeErrorMessage = (node) => `Could not find node "${node.name}" of type "${node.type}"`;
 
@@ -281,7 +282,10 @@ export function interactAndVisitNetworkGraphWithDeploymentSelected(
 }
 
 export function visitOldNetworkGraphFromLeftNav() {
-    visitFromLeftNav('Network Graph (1.0)', routeMatcherMapToVisitNetworkGraph);
+    const oldNetworkGraphNavItemText = hasFeatureFlag('ROX_NETWORK_GRAPH_PATTERNFLY')
+        ? 'Network Graph (1.0 deprecated)'
+        : 'Network Graph';
+    visitFromLeftNav(oldNetworkGraphNavItemText, routeMatcherMapToVisitNetworkGraph);
 
     cy.location('pathname').should('eq', basePath);
     cy.get(`h1:contains("${title}")`);
