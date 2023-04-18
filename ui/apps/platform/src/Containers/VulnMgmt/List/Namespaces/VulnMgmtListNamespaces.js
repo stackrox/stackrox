@@ -5,8 +5,8 @@ import queryService from 'utils/queryService';
 import TableCellLink from 'Components/TableCellLink';
 import TableCountLink from 'Components/workflow/TableCountLink';
 import CVEStackedPill from 'Components/CVEStackedPill';
-import StatusChip from 'Components/StatusChip';
 import DateTimeField from 'Components/DateTimeField';
+import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import {
     defaultHeaderClassName,
     nonSortableHeaderClassName,
@@ -202,9 +202,12 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResu
                 className: `w-1/10 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
                     const { policyStatusOnly } = original;
-                    const policyLabel = <StatusChip status={policyStatusOnly} asString={pdf} />;
-
-                    return policyLabel;
+                    return (
+                        <PolicyStatusIconText
+                            isPass={policyStatusOnly === 'pass'}
+                            isTextOnly={pdf}
+                        />
+                    );
                 },
                 id: namespaceSortFields.POLICY_STATUS,
                 accessor: 'policyStatusOnly',

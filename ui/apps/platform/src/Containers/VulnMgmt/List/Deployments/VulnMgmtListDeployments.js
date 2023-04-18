@@ -3,8 +3,8 @@ import { gql } from '@apollo/client';
 
 import queryService from 'utils/queryService';
 import DateTimeField from 'Components/DateTimeField';
-import StatusChip from 'Components/StatusChip';
 import CVEStackedPill from 'Components/CVEStackedPill';
+import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import TableCellLink from 'Components/TableCellLink';
 import TableCountLink from 'Components/workflow/TableCountLink';
 import {
@@ -176,9 +176,9 @@ export function getCurriedDeploymentTableColumns(isFeatureFlagEnabled) {
                 className: `w-1/10 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
                     const { policyStatus } = original;
-                    const policyLabel = <StatusChip status={policyStatus} asString={pdf} />;
-
-                    return policyLabel;
+                    return (
+                        <PolicyStatusIconText isPass={policyStatus === 'pass'} isTextOnly={pdf} />
+                    );
                 },
                 id: deploymentSortFields.POLICY_STATUS,
                 accessor: 'policyStatus',

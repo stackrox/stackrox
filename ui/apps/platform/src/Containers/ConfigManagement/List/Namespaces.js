@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import pluralize from 'pluralize';
 
-import StatusChip from 'Components/StatusChip';
+import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import {
     defaultHeaderClassName,
     defaultColumnClassName,
@@ -74,8 +74,10 @@ const buildTableColumns = (match, location, entityContext) => {
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
-                const { policyStatus } = original;
-                return <StatusChip status={policyStatus.status} asString={pdf} />;
+                const {
+                    policyStatus: { status },
+                } = original;
+                return <PolicyStatusIconText isPass={status === 'pass'} isTextOnly={pdf} />;
             },
             id: 'status',
             accessor: (d) => d.policyStatus.status,

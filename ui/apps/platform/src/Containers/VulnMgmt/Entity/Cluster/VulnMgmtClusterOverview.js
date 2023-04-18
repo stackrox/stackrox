@@ -3,8 +3,8 @@ import React, { useContext } from 'react';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import DateTimeField from 'Components/DateTimeField';
 import Metadata from 'Components/Metadata';
+import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import RiskScore from 'Components/RiskScore';
-import StatusChip from 'Components/StatusChip';
 import BinderTabs from 'Components/BinderTabs';
 import Tab from 'Components/Tab';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -83,7 +83,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
         <RiskScore key="risk-score" score={priority} />,
         <React.Fragment key="policy-status">
             <span className="pb-2">Policy status:</span>
-            <StatusChip status={policyStatus.status} />
+            <PolicyStatusIconText isPass={policyStatus.status === 'pass'} isTextOnly={false} />
         </React.Fragment>,
     ];
 
