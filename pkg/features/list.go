@@ -42,4 +42,7 @@ var (
 
 	// VulnMgmtWorkloadCVEs enables APIs and UI pages for the VM Workload CVE enhancements
 	VulnMgmtWorkloadCVEs = registerFeature("Vuln Mgmt Workload CVEs", "ROX_VULN_MGMT_WORKLOAD_CVES", false)
+
+	// PostgresBlobStore enables the creation of the Postgres Blob Store
+	PostgresBlobStore = registerFeature("Postgres Blob Store", "ROX_POSTGRES_BLOB_STORE", false)
 )
