@@ -31,11 +31,22 @@ func (s *tlsConfigTestSuite) TestGetAdditionalCAs() {
 
 	additionalCAs, err := GetAdditionalCAs()
 	s.Require().NoError(err)
-	s.Require().Len(additionalCAs, 4, "Could not decode all certs")
+	s.Require().Len(additionalCAs, 5, "Could not decode all certs")
 	s.True(s.isCommonNameInCerts(additionalCAs, "CENTRAL_SERVICE: Central"), "Could not find cert from multiple crt file")
 
 	// non .crt or .pem files should be ignored
 	s.FileExists("testdata/foo.txt")
+}
+
+func (s *tlsConfigTestSuite) TestGetAdditionalCAFilePaths() {
+	s.T().Setenv("ROX_MTLS_ADDITIONAL_CA_DIR", "testdata")
+	filePaths, err := GetAdditionalCAFilePaths()
+	s.Require().NoError(err)
+	s.Len(filePaths, 4)
+	s.Contains(filePaths, "testdata/cert.pem")
+	s.Contains(filePaths, "testdata/crt01.crt")
+	s.Contains(filePaths, "testdata/multiple_certs.crt")
+	s.Contains(filePaths, "testdata/symlinked.pem")
 }
 
 func (s *tlsConfigTestSuite) isCommonNameInCerts(DERs [][]byte, commonName string) bool {
