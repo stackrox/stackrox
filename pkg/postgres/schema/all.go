@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/set"
-	"gorm.io/gorm"
+        "gorm.io/gorm"
 )
 
 var (
@@ -21,9 +21,9 @@ var (
 )
 
 type registeredTable struct {
-	Schema          *walker.Schema
-	CreateStmt      *postgres.CreateStmts
-	FeatureFlagFunc func() bool
+	Schema             *walker.Schema
+	CreateStmt         *postgres.CreateStmts
+	FeatureEnabledFunc func() bool
 }
 
 // RegisterTable maps a table to an object type for the purposes of metrics gathering
@@ -36,7 +36,7 @@ func RegisterTable(schema *walker.Schema, stmt *postgres.CreateStmts, featureFla
 	if len(featureFlagFuncs) != 0 {
 		featureFlagFunc = featureFlagFuncs[0]
 	}
-	registeredTables[schema.Table] = &registeredTable{Schema: schema, CreateStmt: stmt, FeatureFlagFunc: featureFlagFunc}
+	registeredTables[schema.Table] = &registeredTable{Schema: schema, CreateStmt: stmt, FeatureEnabledFunc: featureFlagFunc}
 }
 
 // GetSchemaForTable return the schema registered for specified table name.
@@ -69,7 +69,7 @@ func getRegisteredTablesFor(visited set.StringSet, table string) []*registeredTa
 	}
 	var rts []*registeredTable
 	rt := registeredTables[table]
-	if !rt.FeatureFlagFunc() {
+	if !rt.FeatureEnabledFunc() {
 		return nil
 	}
 	for _, ref := range rt.Schema.References {
