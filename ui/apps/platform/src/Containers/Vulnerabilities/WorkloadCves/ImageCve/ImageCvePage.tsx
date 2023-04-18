@@ -27,8 +27,8 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { Pagination as PaginationParam } from 'services/types';
 
-import { getHiddenSeverities, getOverviewCvesPath, parseQuerySearchFilter } from './searchUtils';
-import WorkloadTableToolbar from './WorkloadTableToolbar';
+import { getHiddenSeverities, getOverviewCvesPath, parseQuerySearchFilter } from '../searchUtils';
+import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import ImageCvePageHeader, {
     ImageCveMetadata,
     imageCveMetadataFragment,
@@ -42,14 +42,14 @@ import ImageCveSummaryCards, {
 import AffectedImagesTable, {
     ImageForCve,
     imagesForCveFragment,
-} from './Tables/AffectedImagesTable';
-import EntityTypeToggleGroup from './components/EntityTypeToggleGroup';
-import { DynamicTableLabel } from './components/DynamicIcon';
-import TableErrorComponent from './components/TableErrorComponent';
+} from '../Tables/AffectedImagesTable';
+import EntityTypeToggleGroup from '../components/EntityTypeToggleGroup';
+import { DynamicTableLabel } from '../components/DynamicIcon';
+import TableErrorComponent from '../components/TableErrorComponent';
 import AffectedDeploymentsTable, {
     DeploymentForCve,
     deploymentsForCveFragment,
-} from './Tables/AffectedDeploymentsTable';
+} from '../Tables/AffectedDeploymentsTable';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',

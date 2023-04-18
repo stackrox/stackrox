@@ -4,7 +4,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import { useFormik, FormikProvider } from 'formik';
 import { Globe } from 'react-feather';
 
-import { DefaultFilters, FixableStatus, VulnerabilitySeverityLabel } from './types';
+import { DefaultFilters, FixableStatus, VulnerabilitySeverityLabel } from '../types';
 
 type DefaultFilterModalProps = {
     defaultFilters: DefaultFilters;

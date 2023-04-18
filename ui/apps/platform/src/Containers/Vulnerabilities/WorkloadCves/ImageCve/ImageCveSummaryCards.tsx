@@ -2,9 +2,9 @@ import React from 'react';
 import { gql } from '@apollo/client';
 import { Flex } from '@patternfly/react-core';
 import { VulnerabilitySeverity } from 'types/cve.proto';
-import AffectedImages from './SummaryCards/AffectedImages';
-import TopCvssScoreBreakdown from './SummaryCards/TopCvssScoreBreakdown';
-import BySeveritySummaryCard from './SummaryCards/BySeveritySummaryCard';
+import AffectedImages from '../SummaryCards/AffectedImages';
+import TopCvssScoreBreakdown from '../SummaryCards/TopCvssScoreBreakdown';
+import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 
 export type ImageCveSummaryCount = {
     totalImageCount: number;
