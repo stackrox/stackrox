@@ -95,8 +95,13 @@ echo "Creating sensor network policies..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-netpol.yaml" || exit 1
 
 if [[ -f "$DIR/sensor-pod-security.yaml" ]]; then
-  echo "Creating sensor pod security policies..."
-  ${KUBE_COMMAND} apply -f "$DIR/sensor-pod-security.yaml"
+  # Checking if the cluster supports pod security policies
+  if ! ${KUBE_COMMAND} api-resources | grep "podsecuritypolicies" &>/dev/null; then
+    echo "Pod security policies are not supported on this cluster. Skipping..."
+  else
+    echo "Creating sensor pod security policies..."
+    ${KUBE_COMMAND} apply -f "$DIR/sensor-pod-security.yaml"
+  fi
 fi
 
 {{ if .CreateUpgraderSA }}
