@@ -277,6 +277,7 @@ func (resolver *imageCVEResolver) imageVulnerabilityScopeContext(ctx context.Con
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
+
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		ID:    resolver.data.GetId(),
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES,

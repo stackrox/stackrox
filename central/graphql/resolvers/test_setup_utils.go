@@ -33,6 +33,7 @@ import (
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
 	imageComponentSearch "github.com/stackrox/rox/central/imagecomponent/search"
+	imageComponentEdgeDS "github.com/stackrox/rox/central/imagecomponentedge/datastore"
 	imageCVEEdgeDS "github.com/stackrox/rox/central/imagecveedge/datastore"
 	imageCVEEdgePostgres "github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
 	imageCVEEdgeSearch "github.com/stackrox/rox/central/imagecveedge/search"
@@ -104,6 +105,8 @@ func SetupTestResolver(t testing.TB, datastores ...interface{}) (*Resolver, *gra
 			resolver.ClusterCVEEdgeDataStore = ds
 		case imageComponentCVEEdgeDS.DataStore:
 			resolver.ComponentCVEEdgeDataStore = ds
+		case imageComponentEdgeDS.DataStore:
+			resolver.ImageComponentEdgeDataStore = ds
 		case nodeComponentCVEEdgeDataStore.DataStore:
 			resolver.NodeComponentCVEEdgeDataStore = ds
 		case k8srolebindingStore.DataStore:
@@ -173,6 +176,13 @@ func CreateTestImageComponentCVEEdgeDatastore(t testing.TB, testDB *pgtest.TestP
 	searcher := imageComponentCVEEdgeSearch.NewV2(storage, indexer)
 
 	return imageComponentCVEEdgeDS.New(nil, storage, indexer, searcher)
+}
+
+// CreateTestImageComponentEdgeDatastore creates edge datastore for edge table between image and imageComponent
+func CreateTestImageComponentEdgeDatastore(t testing.TB, testDB *pgtest.TestPostgres) imageComponentEdgeDS.DataStore {
+	ds, err := imageComponentEdgeDS.GetTestPostgresDataStore(t, testDB.DB)
+	assert.NoError(t, err)
+	return ds
 }
 
 // CreateTestImageCVEEdgeDatastore creates edge datastore for edge table between image and imageCVE

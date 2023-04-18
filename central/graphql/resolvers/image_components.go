@@ -248,7 +248,7 @@ func getImageIDFromScope(contexts ...context.Context) string {
 	var hasScope bool
 	for _, ctx := range contexts {
 		if features.VulnMgmtWorkloadCVEs.Enabled() {
-			if scope, hasScope = scoped.GetScopeAtLevel(ctx, v1.SearchCategory_IMAGES); !hasScope {
+			if scope, hasScope = scoped.GetScopeAtLevel(ctx, v1.SearchCategory_IMAGES); hasScope {
 				return scope.ID
 			}
 		} else {
