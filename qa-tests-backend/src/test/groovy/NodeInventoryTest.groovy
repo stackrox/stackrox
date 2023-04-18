@@ -1,4 +1,3 @@
-import io.stackrox.proto.storage.Compliance.ComplianceRunResults
 import io.stackrox.proto.storage.NodeOuterClass.Node
 
 import services.BaseService
