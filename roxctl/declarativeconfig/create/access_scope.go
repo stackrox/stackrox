@@ -5,13 +5,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/accessscope"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
+	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -115,6 +119,21 @@ func (a *accessScopeCmd) Validate() error {
 		a.accessScope.Rules.NamespaceLabelSelectors = []declarativeconfig.LabelSelector{
 			{Requirements: a.namespaceRequirements},
 		}
+	}
+
+	t := transform.New()
+	protos, err := t.Transform(a.accessScope)
+	if err != nil {
+		return errors.Wrap(err, "transforming access scope")
+	}
+	accessScopeType := reflect.TypeOf((*storage.SimpleAccessScope)(nil))
+	if len(protos[accessScopeType]) != 1 {
+		return errox.InvalidArgs.Newf("expected a single access scope after transformation, but was %d",
+			len(protos[accessScopeType]))
+	}
+	accessScope := protos[accessScopeType][0].(*storage.SimpleAccessScope)
+	if err := accessscope.ValidateSimpleAccessScopeProto(accessScope); err != nil {
+		return errors.Wrap(err, "validating access scope")
 	}
 	return nil
 }
