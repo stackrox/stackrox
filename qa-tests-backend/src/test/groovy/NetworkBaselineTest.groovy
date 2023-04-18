@@ -34,62 +34,60 @@ class NetworkBaselineTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = []
 
     static final private SERVER_DEP = createAndRegisterDeployment()
-                    .setName(SERVER_DEP_NAME)
-                    .setImage(NGINX_IMAGE)
-                    .addLabel("app", SERVER_DEP_NAME)
-                    .addPort(80)
-                    .setExposeAsService(true)
+            .setName(SERVER_DEP_NAME)
+            .setImage(NGINX_IMAGE)
+            .addLabel("app", SERVER_DEP_NAME)
+            .addPort(80)
+            .setExposeAsService(true)
 
     static final private BASELINED_CLIENT_DEP = createAndRegisterDeployment()
-                .setName(BASELINED_CLIENT_DEP_NAME)
-                .setImage(NGINX_IMAGE)
-                .addLabel("app", BASELINED_CLIENT_DEP_NAME)
-                .setCommand(["/bin/sh", "-c",])
-                .setArgs(
-                    ["for i in \$(seq 1 10); do wget -S http://${SERVER_DEP_NAME}; sleep 1; done; sleep 1000" as String]
-                )
+            .setName(BASELINED_CLIENT_DEP_NAME)
+            .setImage(NGINX_IMAGE)
+            .addLabel("app", BASELINED_CLIENT_DEP_NAME)
+            .setCommand(["/bin/sh", "-c",])
+            .setArgs(["for i in \$(seq 1 10); do wget -S http://${SERVER_DEP_NAME}; sleep 1; done; sleep 1000" as String])
 
     static final private USER_DEP = createAndRegisterDeployment()
-                    .setName(USER_DEP_NAME)
-                    .setImage(NGINX_IMAGE)
-                    .addLabel("app", USER_DEP_NAME)
-                    .addPort(80)
-                    .setExposeAsService(true)
+            .setName(USER_DEP_NAME)
+            .setImage(NGINX_IMAGE)
+            .addLabel("app", USER_DEP_NAME)
+            .addPort(80)
+            .setExposeAsService(true)
 
     static final private BASELINED_USER_CLIENT_DEP = createAndRegisterDeployment()
-                .setName(BASELINED_USER_CLIENT_DEP_NAME)
-                .setImage(NGINX_IMAGE)
-                .addLabel("app", BASELINED_USER_CLIENT_DEP_NAME)
-                .setCommand(["/bin/sh", "-c",])
-                .setArgs(["for i in \$(seq 1 10); do wget -S http://${USER_DEP_NAME};" +
-                    "sleep 1; done; sleep 1000" as String])
+            .setName(BASELINED_USER_CLIENT_DEP_NAME)
+            .setImage(NGINX_IMAGE)
+            .addLabel("app", BASELINED_USER_CLIENT_DEP_NAME)
+            .setCommand(["/bin/sh", "-c",])
+            .setArgs(["for i in \$(seq 1 10); do wget -S http://${USER_DEP_NAME};" +
+                              "sleep 1; done; sleep 1000" as String])
 
     static final private ANOMALOUS_CLIENT_DEP = createAndRegisterDeployment()
-        .setName(ANOMALOUS_CLIENT_DEP_NAME)
-        .setImage(NGINX_IMAGE)
-        .addLabel("app", ANOMALOUS_CLIENT_DEP_NAME)
-        .setCommand(["/bin/sh", "-c",])
-        .setArgs(["echo sleeping; date; sleep ${EXPECTED_BASELINE_DURATION_SECONDS+30}; echo sleep done; date;" +
-                      "for i in \$(seq 1 10); do wget -S http://${SERVER_DEP_NAME}; sleep 1; done;" +
-                      "sleep 1000" as String,])
+            .setName(ANOMALOUS_CLIENT_DEP_NAME)
+            .setImage(NGINX_IMAGE)
+            .addLabel("app", ANOMALOUS_CLIENT_DEP_NAME)
+            .setCommand(["/bin/sh", "-c",])
+            .setArgs(["echo sleeping; date; sleep ${EXPECTED_BASELINE_DURATION_SECONDS + 30}; echo sleep done; date;" +
+                              "for i in \$(seq 1 10); do wget -S http://${SERVER_DEP_NAME}; sleep 1; done;" +
+                              "sleep 1000" as String,])
 
     static final private DEFERRED_BASELINED_CLIENT_DEP = createAndRegisterDeployment()
-        .setName(DEFERRED_BASELINED_CLIENT_DEP_NAME)
-        .setImage(NGINX_IMAGE)
-        .addLabel("app", DEFERRED_BASELINED_CLIENT_DEP_NAME)
-        .setCommand(["/bin/sh", "-c",])
-        .setArgs(["while sleep 1; " +
-                      "do wget -S http://${SERVER_DEP_NAME}; " +
-                      "done" as String,])
+            .setName(DEFERRED_BASELINED_CLIENT_DEP_NAME)
+            .setImage(NGINX_IMAGE)
+            .addLabel("app", DEFERRED_BASELINED_CLIENT_DEP_NAME)
+            .setCommand(["/bin/sh", "-c",])
+            .setArgs(["while sleep 1; " +
+                              "do wget -S http://${SERVER_DEP_NAME}; " +
+                              "done" as String,])
 
     static final private DEFERRED_POST_LOCK_CLIENT_DEP = createAndRegisterDeployment()
-        .setName(DEFERRED_POST_LOCK_DEP_NAME)
-        .setImage(NGINX_IMAGE)
-        .addLabel("app", DEFERRED_POST_LOCK_DEP_NAME)
-        .setCommand(["/bin/sh", "-c",])
-        .setArgs(["while sleep 1; " +
-                      "do wget -S http://${SERVER_DEP_NAME}; " +
-                      "done" as String,])
+            .setName(DEFERRED_POST_LOCK_DEP_NAME)
+            .setImage(NGINX_IMAGE)
+            .addLabel("app", DEFERRED_POST_LOCK_DEP_NAME)
+            .setCommand(["/bin/sh", "-c",])
+            .setArgs(["while sleep 1; " +
+                              "do wget -S http://${SERVER_DEP_NAME}; " +
+                              "done" as String,])
 
     private static createAndRegisterDeployment() {
         Deployment deployment = new Deployment()
