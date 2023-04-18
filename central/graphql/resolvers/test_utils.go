@@ -124,8 +124,13 @@ func testImages() []*storage.Image {
 						},
 					},
 					{
-						Name:    "comp3",
-						Version: "1.0",
+						Name:     "comp3",
+						Version:  "1.0",
+						Source:   storage.SourceType_JAVA,
+						Location: "p/q/r",
+						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+							LayerIndex: 10,
+						},
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
 								Cve:      "cve-2019-1",
@@ -170,8 +175,13 @@ func testImages() []*storage.Image {
 						},
 					},
 					{
-						Name:    "comp3",
-						Version: "1.0",
+						Name:     "comp3",
+						Version:  "1.0",
+						Source:   storage.SourceType_JAVA,
+						Location: "p/q/r",
+						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+							LayerIndex: 10,
+						},
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
 								Cve:      "cve-2019-1",
@@ -186,8 +196,13 @@ func testImages() []*storage.Image {
 						},
 					},
 					{
-						Name:    "comp4",
-						Version: "1.0",
+						Name:     "comp4",
+						Version:  "1.0",
+						Source:   storage.SourceType_PYTHON,
+						Location: "a/b/c",
+						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+							LayerIndex: 10,
+						},
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
 								Cve:      "cve-2017-1",
