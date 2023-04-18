@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/x509utils"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -25,14 +26,12 @@ func (s *issueScannerCertTestSuite) SetupTest() {
 }
 
 func (s *issueScannerCertTestSuite) TestIssueScannerCertsSAN() {
-	type testCase struct {
+	cases := []struct {
 		name          string
 		namespace     string
 		scannerSANs   []string
 		scannerDBSANs []string
-	}
-
-	cases := []testCase{
+	}{
 		{
 			name:          "no namespace",
 			scannerSANs:   []string{"scanner.stackrox", "scanner.stackrox.svc"},
@@ -76,7 +75,5 @@ func (s *issueScannerCertTestSuite) TestIssueScannerCertsSAN() {
 func assertSANs(t *testing.T, cert tls.Certificate, sans []string) {
 	chain, err := x509utils.ParseCertificateChain(cert.Certificate)
 	require.NoError(t, err)
-	for _, san := range sans {
-		require.Contains(t, chain[0].DNSNames, san)
-	}
+	assert.ElementsMatch(t, sans, chain[0].DNSNames)
 }
