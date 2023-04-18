@@ -159,7 +159,7 @@ const vulnerabilitiesPathToLabelMap = {
 export const basePathToLabelMap = {
     [dashboardPath]: 'Dashboard',
     [networkBasePath]: 'Network Graph (1.0)',
-    [networkBasePathPF]: 'Network Graph (2.0 preview)',
+    [networkBasePathPF]: 'Network Graph (2.0)',
     [violationsBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
     ...vulnerabilitiesPathToLabelMap,
