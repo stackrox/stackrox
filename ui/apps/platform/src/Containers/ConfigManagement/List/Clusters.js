@@ -9,7 +9,7 @@ import {
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
 import LabelChip from 'Components/LabelChip';
-import StatusChip from 'Components/StatusChip';
+import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
@@ -84,8 +84,10 @@ const buildTableColumns = (match, location) => {
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
-                const { policyStatus } = original;
-                return <StatusChip status={policyStatus.status} asString={pdf} />;
+                const {
+                    policyStatus: { status },
+                } = original;
+                return <PolicyStatusIconText isPass={status === 'pass'} isTextOnly={pdf} />;
             },
             id: 'status',
             accessor: (d) => d.policyStatus.status,

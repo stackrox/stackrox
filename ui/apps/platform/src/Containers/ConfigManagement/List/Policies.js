@@ -5,8 +5,9 @@ import {
     defaultColumnClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
-import SeverityLabel from 'Components/SeverityLabel';
-import StatusChip from 'Components/StatusChip';
+import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisabledIconText';
+import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
+import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import entityTypes from 'constants/entityTypes';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
@@ -46,8 +47,8 @@ const tableColumns = [
         headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
         Cell: ({ original }) => {
-            const { disabled } = original;
-            return disabled ? 'No' : 'Yes';
+            const { disabled, pdf } = original;
+            return <PolicyDisabledIconText isDisabled={disabled} isTextOnly={pdf} />;
         },
         accessor: 'disabled',
         sortable: false, // not performant as of 2020-06-11
@@ -72,8 +73,12 @@ const tableColumns = [
         headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
         Cell: ({ original, pdf }) => {
-            const { policyStatus } = original;
-            return <StatusChip status={policyStatus} asString={pdf} />;
+            const { disabled, policyStatus } = original;
+            return disabled ? (
+                <PolicyDisabledIconText isDisabled={disabled} isTextOnly={pdf} />
+            ) : (
+                <PolicyStatusIconText isPass={policyStatus === 'pass'} isTextOnly={pdf} />
+            );
         },
         accessor: 'policyStatus',
         sortable: false, // not performant as of 2020-06-11
@@ -83,8 +88,8 @@ const tableColumns = [
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
         Cell: ({ original }) => {
-            const { severity } = original;
-            return <SeverityLabel severity={severity} />;
+            const { severity, pdf } = original;
+            return <PolicySeverityIconText severity={severity} isTextOnly={pdf} />;
         },
         accessor: 'severity',
         sortMethod: sortSeverity,

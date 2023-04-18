@@ -11,8 +11,9 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import Loader from 'Components/Loader';
 import Metadata from 'Components/Metadata';
 import PanelButton from 'Components/PanelButton';
-import SeverityLabel from 'Components/SeverityLabel';
-import StatusChip from 'Components/StatusChip';
+import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisabledIconText';
+import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
+import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import ToggleSwitch from 'Components/ToggleSwitch';
 import Widget from 'Components/Widget';
 import dateTimeFormat from 'constants/dateTimeFormat';
@@ -303,22 +304,35 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                                         className="bg-base-100 min-h-48 w-full h-full pdf-page pdf-stretch"
                                     >
                                         <div className="flex flex-col w-full">
-                                            <div className="w-full bg-primary-200 text-2xl text-base-500 flex flex-col md:flex-row items-start md:items-center justify-between mb-2">
+                                            <div className="w-full text-2xl border-base-300 border-b flex flex-col md:flex-row items-start md:items-center justify-between mb-2">
                                                 <div className="w-full flex-grow p-4">
                                                     <span>{name}</span>
                                                 </div>
                                                 <div className="w-full flex border-t border-base-400 md:border-t-0 justify-end items-center">
-                                                    <span className="flex flex-col items-center text-center px-4 py-4 border-base-400 border-l">
+                                                    <span className="flex flex-col items-center text-center px-4 py-4 border-base-300 border-l">
                                                         <span className="mb-2 text-xl">
                                                             Severity:
                                                         </span>
-                                                        <SeverityLabel severity={severity} />
+                                                        <PolicySeverityIconText
+                                                            severity={severity}
+                                                            isTextOnly={false}
+                                                        />
                                                     </span>
-                                                    <span className="flex flex-col items-center text-center px-4 py-4 border-base-400 border-l">
+                                                    <span className="flex flex-col items-center text-center px-4 py-4 border-base-300 border-l">
                                                         <span className="mb-2 text-xl">
                                                             Status:
                                                         </span>
-                                                        <StatusChip status={policyStatus} />
+                                                        {disabled ? (
+                                                            <PolicyDisabledIconText
+                                                                isDisabled={disabled}
+                                                                isTextOnly={false}
+                                                            />
+                                                        ) : (
+                                                            <PolicyStatusIconText
+                                                                isPass={policyStatus === 'pass'}
+                                                                isTextOnly={false}
+                                                            />
+                                                        )}
                                                     </span>
                                                 </div>
                                             </div>

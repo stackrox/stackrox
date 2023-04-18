@@ -12,7 +12,7 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
-import SeverityLabel from 'Components/SeverityLabel';
+import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import { formatLifecycleStages } from 'Containers/Policies/policies.utils';
 import TableWidget from './TableWidget';
 
@@ -100,9 +100,9 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
                         Header: `Severity`,
                         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                         className: `w-1/8 ${defaultColumnClassName}`,
-                        Cell: ({ original }) => {
+                        Cell: ({ original, pdf }) => {
                             const { severity } = original;
-                            return <SeverityLabel severity={severity} />;
+                            return <PolicySeverityIconText severity={severity} isTextOnly={pdf} />;
                         },
                         accessor: 'severity',
                         sortMethod: sortSeverity,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { defaultHeaderClassName, defaultColumnClassName, wrapClassName } from 'Components/Table';
 import entityTypes, { resourceTypes } from 'constants/entityTypes';
-import LabelChip from 'Components/LabelChip';
+import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import { format } from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 
@@ -28,8 +28,8 @@ const nodesAcrossControlsColumns = [
         Header: `Control Status`,
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
-        Cell: ({ original }) => {
-            return !original.passing ? <LabelChip text="Fail" type="alert" /> : 'Pass';
+        Cell: ({ original, pdf }) => {
+            return <PolicyStatusIconText isPass={original.passing} isTextOnly={pdf} />;
         },
     },
 ];
@@ -116,7 +116,7 @@ const getDeploymentViolationsColumns = (entityContext) => {
             Header: `Policy Status`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: () => <LabelChip text="Fail" type="alert" />,
+            Cell: ({ pdf }) => <PolicyStatusIconText isPass={false} isTextOnly={pdf} />,
         },
         {
             Header: `Violation Time`,

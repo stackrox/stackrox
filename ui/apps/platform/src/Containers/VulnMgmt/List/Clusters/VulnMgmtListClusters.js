@@ -8,7 +8,7 @@ import {
     defaultColumnClassName,
 } from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
-import StatusChip from 'Components/StatusChip';
+import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import ClusterTableCountLinks from 'Components/workflow/ClusterTableCountLinks';
 import entityTypes from 'constants/entityTypes';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
@@ -255,11 +255,12 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data, totalResult
                 className: `w-1/10 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
                     const { policyStatus } = original;
-                    const policyLabel = (
-                        <StatusChip status={policyStatus && policyStatus.status} asString={pdf} />
+                    return (
+                        <PolicyStatusIconText
+                            isPass={policyStatus?.status === 'pass'}
+                            isTextOnly={pdf}
+                        />
                     );
-
-                    return policyLabel;
                 },
                 id: clusterSortFields.POLICY_STATUS,
                 accessor: 'policyStatus.status',
