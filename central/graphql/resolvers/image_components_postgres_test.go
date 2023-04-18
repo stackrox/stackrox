@@ -544,7 +544,7 @@ func (s *GraphQLImageComponentTestSuite) getImageComponentResolver(ctx context.C
 }
 
 func verifyLocationAndLayerIndex(ctx context.Context, t *testing.T, component ImageComponentResolver, assertEmpty bool) {
-	if strings.ToLower(component.Source(ctx)) == strings.ToLower(storage.SourceType_OS.String()) {
+	if strings.EqualFold(component.Source(ctx), storage.SourceType_OS.String()) {
 		return
 	}
 
