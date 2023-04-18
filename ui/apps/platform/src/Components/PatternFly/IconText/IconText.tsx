@@ -1,12 +1,12 @@
 import React, { ReactElement } from 'react';
 
 export type IconTextProps = {
-    Icon: ReactElement;
+    icon: ReactElement;
     text: string;
     isTextOnly?: boolean;
 };
 
-function IconText({ Icon, text, isTextOnly }: IconTextProps): ReactElement {
+function IconText({ icon, text, isTextOnly }: IconTextProps): ReactElement {
     if (isTextOnly) {
         // Wrap text in fragment so function returns ReactElement,
         // because return ReactNode can cause error in caller:
@@ -18,7 +18,7 @@ function IconText({ Icon, text, isTextOnly }: IconTextProps): ReactElement {
     // Align center because PatternFly guideline.
     return (
         <span className="pf-u-display-inline-flex pf-u-align-items-center">
-            {Icon}
+            {icon}
             <span className="pf-u-pl-sm">{text}</span>
         </span>
     );

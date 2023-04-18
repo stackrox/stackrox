@@ -25,7 +25,7 @@ function PolicySeverityIconText({ severity, isTextOnly }: PolicySeverityIconText
     const Icon = SeverityIcons[policyToVulnerabilitySeverity[severity]];
     const text = severityLabels[severity];
 
-    return <IconText Icon={<Icon />} text={text} isTextOnly={isTextOnly} />;
+    return <IconText icon={<Icon />} text={text} isTextOnly={isTextOnly} />;
 }
 
 export default PolicySeverityIconText;

@@ -8,10 +8,10 @@ export type NotApplicableIconTextProps = {
 };
 
 function NotApplicableIconText({ isTextOnly }: NotApplicableIconTextProps): ReactElement {
-    const Icon = <Minus className="h-4 w-4" />;
+    const icon = <Minus className="h-4 w-4" />;
     const text = 'N/A';
 
-    return <IconText Icon={Icon} text={text} isTextOnly={isTextOnly} />;
+    return <IconText icon={icon} text={text} isTextOnly={isTextOnly} />;
 }
 
 export default NotApplicableIconText;

@@ -9,14 +9,14 @@ export type PolicyStatusIconTextProps = {
 };
 
 function PolicyStatusIconText({ isPass, isTextOnly }: PolicyStatusIconTextProps): ReactElement {
-    const Icon = isPass ? (
+    const icon = isPass ? (
         <ThumbsUp className="h-4 w-4 pf-u-success-color-100" />
     ) : (
         <ThumbsDown className="h-4 w-4 pf-u-danger-color-100" />
     );
     const text = isPass ? 'Pass' : 'Fail';
 
-    return <IconText Icon={Icon} text={text} isTextOnly={isTextOnly} />;
+    return <IconText icon={icon} text={text} isTextOnly={isTextOnly} />;
 }
 
 export default PolicyStatusIconText;

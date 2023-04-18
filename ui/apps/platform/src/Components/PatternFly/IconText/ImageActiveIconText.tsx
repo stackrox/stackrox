@@ -9,14 +9,14 @@ export type ImageActiveIconTextProps = {
 };
 
 function ImageActiveIconText({ isActive, isTextOnly }: ImageActiveIconTextProps): ReactNode {
-    const Icon = isActive ? (
+    const icon = isActive ? (
         <CheckIcon color="var(--pf-global--success-color--100)" />
     ) : (
         <TimesIcon />
     );
     const text = isActive ? 'Active' : 'Inactive';
 
-    return <IconText Icon={Icon} text={text} isTextOnly={isTextOnly} />;
+    return <IconText icon={icon} text={text} isTextOnly={isTextOnly} />;
 }
 
 export default ImageActiveIconText;

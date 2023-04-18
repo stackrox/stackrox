@@ -12,14 +12,14 @@ function PolicyDisabledIconText({
     isDisabled,
     isTextOnly,
 }: PolicyDisabledIconTextProps): ReactNode {
-    const Icon = isDisabled ? (
+    const icon = isDisabled ? (
         <BanIcon />
     ) : (
         <CheckIcon color="var(--pf-global--success-color--100)" />
     );
     const text = isDisabled ? 'Disabled' : 'Enabled';
 
-    return <IconText Icon={Icon} text={text} isTextOnly={isTextOnly} />;
+    return <IconText icon={icon} text={text} isTextOnly={isTextOnly} />;
 }
 
 export default PolicyDisabledIconText;
