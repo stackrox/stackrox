@@ -2,7 +2,7 @@ import React from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Button, ButtonVariant, Flex, Tooltip } from '@patternfly/react-core';
+import { Button, ButtonVariant, Tooltip } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { getDistanceStrictAsPhrase, getDateTime } from 'utils/dateUtils';
