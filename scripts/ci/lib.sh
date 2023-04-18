@@ -1221,9 +1221,17 @@ store_test_results() {
     if ! is_in_PR_context; then
     {
         info "Creating JIRA task for failures found in $from"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.5/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.6/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
-        ./junit2jira -junit-reports-dir "$from" -threshold 5
+        ./junit2jira \
+            -base-link "$(echo "$JOB_SPEC" | jq ".refs.base_link" -r)" \
+            -build-id "$BUILD_ID" \
+            -build-link "https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/$JOB_NAME/$BUILD_ID" \
+            -build-tag "$STACKROX_BUILD_TAG" \
+            -job-name "$JOB_NAME" \
+            -junit-reports-dir "$from" \
+            -orchestrator "$ORCHESTRATOR_FLAVOR" \
+            -threshold 5
     } || true
     fi
 
