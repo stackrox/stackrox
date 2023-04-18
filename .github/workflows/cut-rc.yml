@@ -328,7 +328,7 @@ jobs:
         token: ${{ secrets.INFRA_TOKEN }}
         flavor: qa-demo
         name: qa-k8s-${{ needs.variables.outputs.milestone }}
-        args: main-image=quay.io/rhacs-eng/main:${{ needs.variables.outputs.milestone }},central-db-image:${{ needs.variables.outputs.milestone }}
+        args: main-image=quay.io/rhacs-eng/main:${{ needs.variables.outputs.milestone }},central-db-image=quay.io/rhacs-eng/central-db:${{ needs.variables.outputs.milestone }}
         lifespan: 48h
 
   notify-k8s-cluster:
@@ -384,7 +384,7 @@ jobs:
         token: ${{ secrets.INFRA_TOKEN }}
         flavor: openshift-4-demo
         name: openshift-4-demo-${{ needs.variables.outputs.milestone }}
-        args: central-services-helm-chart-version=${{ needs.variables.outputs.milestone }},secured-cluster-services-helm-chart-version=${{ needs.variables.outputs.milestone }},
+        args: central-services-helm-chart-version=${{ needs.variables.outputs.milestone }},secured-cluster-services-helm-chart-version=${{ needs.variables.outputs.milestone }}
         lifespan: 48h
 
   notify-os4-cluster:
