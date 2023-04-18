@@ -12,7 +12,7 @@ import {
 import useLocalStorage from 'hooks/useLocalStorage';
 import PageTitle from 'Components/PageTitle';
 import CveStatusTabNavigation from './CveStatusTabNavigation';
-import DefaultFilterModal from '../DefaultFilterModal';
+import DefaultFilterModal from '../components/DefaultFilterModal';
 import { VulnMgmtLocalStorage } from '../types';
 
 const emptyStorage: VulnMgmtLocalStorage = {

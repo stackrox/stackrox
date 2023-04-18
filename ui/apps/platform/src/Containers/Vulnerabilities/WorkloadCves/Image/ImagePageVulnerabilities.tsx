@@ -29,23 +29,23 @@ import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import WorkloadTableToolbar from './WorkloadTableToolbar';
-import BySeveritySummaryCard from './SummaryCards/BySeveritySummaryCard';
+import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
+import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {
     ImageVulnerabilityCounter,
     imageVulnerabilityCounterFragment,
-} from './SummaryCards/CvesByStatusSummaryCard';
+} from '../SummaryCards/CvesByStatusSummaryCard';
 import SingleEntityVulnerabilitiesTable, {
     ImageVulnerability,
     imageVulnerabilitiesFragment,
-} from './Tables/SingleEntityVulnerabilitiesTable';
-import { DynamicTableLabel } from './components/DynamicIcon';
-import { getHiddenSeverities, parseQuerySearchFilter } from './searchUtils';
-import { QuerySearchFilter, FixableStatus, cveStatusTabValues } from './types';
+} from '../Tables/SingleEntityVulnerabilitiesTable';
+import { DynamicTableLabel } from '../components/DynamicIcon';
+import { getHiddenSeverities, parseQuerySearchFilter } from '../searchUtils';
+import { QuerySearchFilter, FixableStatus, cveStatusTabValues } from '../types';
 import {
     ImageMetadataContext,
     imageMetadataContextFragment,
-} from './Tables/ComponentVulnerabilitiesTable';
+} from '../Tables/ComponentVulnerabilitiesTable';
 
 const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
