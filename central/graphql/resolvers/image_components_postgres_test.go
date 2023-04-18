@@ -4,19 +4,23 @@ package resolvers
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -59,6 +63,7 @@ func (s *GraphQLImageComponentTestSuite) SetupSuite() {
 	resolver, _ := SetupTestResolver(s.T(),
 		imageDataStore,
 		CreateTestImageComponentDatastore(s.T(), s.testDB, mockCtrl),
+		CreateTestImageComponentEdgeDatastore(s.T(), s.testDB),
 		CreateTestImageCVEDatastore(s.T(), s.testDB),
 		CreateTestImageComponentCVEEdgeDatastore(s.T(), s.testDB),
 		CreateTestImageCVEEdgeDatastore(s.T(), s.testDB),
@@ -117,6 +122,10 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponents() {
 	assert.Equal(s.T(), expectedCount, int32(len(comps)))
 	assert.ElementsMatch(s.T(), expectedIDs, getIDList(ctx, comps))
 
+	for _, component := range comps {
+		verifyLocationAndLayerIndex(ctx, s.T(), component, true)
+	}
+
 	count, err := s.resolver.ImageComponentCount(ctx, RawQuery{})
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), expectedCount, count)
@@ -155,14 +164,98 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentsScoped() {
 			image := s.getImageResolver(ctx, test.id)
 			expectedCount := int32(len(test.expectedIDs))
 
-			comps, err := image.ImageComponents(ctx, PaginatedQuery{})
+			components, err := image.ImageComponents(ctx, PaginatedQuery{})
 			assert.NoError(t, err)
-			assert.Equal(t, expectedCount, int32(len(comps)))
-			assert.ElementsMatch(t, test.expectedIDs, getIDList(ctx, comps))
+			assert.Equal(t, expectedCount, int32(len(components)))
+			assert.ElementsMatch(t, test.expectedIDs, getIDList(ctx, components))
+
+			for _, component := range components {
+				verifyLocationAndLayerIndex(ctx, s.T(), component, false)
+			}
 
 			count, err := image.ImageComponentCount(ctx, RawQuery{})
 			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, count)
+		})
+	}
+}
+
+func (s *GraphQLImageComponentTestSuite) TestImageComponentsScopeTree() {
+	if !features.VulnMgmtWorkloadCVEs.Enabled() {
+		s.T().Skipf("Skipping because %s=false", features.VulnMgmtWorkloadCVEs.EnvVar())
+		s.T().SkipNow()
+	}
+
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+
+	imageCompTests := []struct {
+		name        string
+		id          string
+		expectedIDs map[string][]string
+	}{
+		{
+			"sha1",
+			"sha1",
+			map[string][]string{
+				"cve-2018-1": {
+					scancomponent.ComponentID("comp1", "0.9", "os1"),
+					scancomponent.ComponentID("comp2", "1.1", "os1"),
+				},
+				"cve-2019-1": {
+					scancomponent.ComponentID("comp3", "1.0", "os1"),
+				},
+				"cve-2019-2": {
+					scancomponent.ComponentID("comp3", "1.0", "os1"),
+				},
+			},
+		},
+		{
+			"sha2",
+			"sha2",
+			map[string][]string{
+				"cve-2018-1": {
+					scancomponent.ComponentID("comp1", "0.9", "os2"),
+				},
+				"cve-2019-1": {
+					scancomponent.ComponentID("comp3", "1.0", "os2"),
+				},
+				"cve-2019-2": {
+					scancomponent.ComponentID("comp3", "1.0", "os2"),
+				},
+				"cve-2017-1": {
+					scancomponent.ComponentID("comp4", "1.0", "os2"),
+				},
+				"cve-2017-2": {
+					scancomponent.ComponentID("comp4", "1.0", "os2"),
+				},
+			},
+		},
+	}
+
+	for _, test := range imageCompTests {
+		s.T().Run(test.name, func(t *testing.T) {
+			image := s.getImageResolver(ctx, test.id)
+
+			vulns, err := image.ImageVulnerabilities(ctx, PaginatedQuery{})
+			assert.NoError(t, err)
+			for _, vuln := range vulns {
+				components, err := vuln.ImageComponents(ctx, PaginatedQuery{})
+				assert.NoError(t, err)
+				expectedComponents := test.expectedIDs[vuln.CVE(ctx)]
+				require.NotNil(t, expectedComponents)
+
+				expectedCount := int32(len(expectedComponents))
+				assert.Equal(t, expectedCount, int32(len(components)))
+				assert.ElementsMatch(t, expectedComponents, getIDList(ctx, components))
+
+				for _, component := range components {
+					verifyLocationAndLayerIndex(ctx, t, component, false)
+				}
+
+				count, err := vuln.ImageComponentCount(ctx, RawQuery{})
+				assert.NoError(t, err)
+				assert.Equal(t, expectedCount, count)
+			}
 		})
 	}
 }
@@ -448,4 +541,29 @@ func (s *GraphQLImageComponentTestSuite) getImageComponentResolver(ctx context.C
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), vulnID, vuln.Id(ctx))
 	return vuln
+}
+
+func verifyLocationAndLayerIndex(ctx context.Context, t *testing.T, component ImageComponentResolver, assertEmpty bool) {
+	if strings.ToLower(component.Source(ctx)) == strings.ToLower(storage.SourceType_OS.String()) {
+		return
+	}
+
+	if assertEmpty {
+		loc, err := component.Location(ctx, RawQuery{})
+		assert.NoError(t, err)
+		assert.Empty(t, loc)
+
+		layerIdx, err := component.LayerIndex()
+		assert.NoError(t, err)
+		assert.Zero(t, layerIdx)
+		return
+	}
+
+	loc, err := component.Location(ctx, RawQuery{})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, loc)
+
+	layerIdx, err := component.LayerIndex()
+	assert.NoError(t, err)
+	assert.NotZero(t, layerIdx)
 }
