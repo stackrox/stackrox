@@ -38,11 +38,7 @@ function NamespaceSelector({
     searchFilter,
     setSearchFilter,
 }: NamespaceSelectorProps) {
-    const {
-        isOpen: isNamespaceOpen,
-        toggleSelect: toggleIsNamespaceOpen,
-        closeSelect,
-    } = useSelectToggle();
+    const { isOpen: isNamespaceOpen, toggleSelect: toggleIsNamespaceOpen } = useSelectToggle();
     const [input, setInput] = React.useState('');
 
     const handleTextInputChange = (value: string) => {
@@ -104,7 +100,6 @@ function NamespaceSelector({
         const modifiedSearchObject = { ...searchFilter };
         delete modifiedSearchObject.Namespace;
         delete modifiedSearchObject.Deployment;
-        closeSelect();
         setSearchFilter(modifiedSearchObject);
     };
 
@@ -131,7 +126,12 @@ function NamespaceSelector({
                 </MenuList>
             </MenuContent>
             <MenuFooter>
-                <Button variant="link" isInline onClick={onClearSelections}>
+                <Button
+                    variant="link"
+                    isInline
+                    onClick={onClearSelections}
+                    isDisabled={selectedNamespaces.length === 0}
+                >
                     Clear selections
                 </Button>
             </MenuFooter>
