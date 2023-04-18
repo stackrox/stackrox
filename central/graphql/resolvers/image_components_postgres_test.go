@@ -135,9 +135,9 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentsScoped() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	imageCompTests := []struct {
-		name        string
-		id          string
-		expectedIDs []string
+		name                 string
+		id                   string
+		expectedComponentIDs []string
 	}{
 		{
 			"sha1",
@@ -162,12 +162,12 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentsScoped() {
 	for _, test := range imageCompTests {
 		s.T().Run(test.name, func(t *testing.T) {
 			image := s.getImageResolver(ctx, test.id)
-			expectedCount := int32(len(test.expectedIDs))
+			expectedCount := int32(len(test.expectedComponentIDs))
 
 			components, err := image.ImageComponents(ctx, PaginatedQuery{})
 			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, int32(len(components)))
-			assert.ElementsMatch(t, test.expectedIDs, getIDList(ctx, components))
+			assert.ElementsMatch(t, test.expectedComponentIDs, getIDList(ctx, components))
 
 			for _, component := range components {
 				verifyLocationAndLayerIndex(ctx, s.T(), component, false)
@@ -189,9 +189,9 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentsScopeTree() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	imageCompTests := []struct {
-		name        string
-		id          string
-		expectedIDs map[string][]string
+		name                      string
+		id                        string
+		cveToExpectedComponentIDs map[string][]string
 	}{
 		{
 			"sha1",
@@ -241,7 +241,7 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentsScopeTree() {
 			for _, vuln := range vulns {
 				components, err := vuln.ImageComponents(ctx, PaginatedQuery{})
 				assert.NoError(t, err)
-				expectedComponents := test.expectedIDs[vuln.CVE(ctx)]
+				expectedComponents := test.cveToExpectedComponentIDs[vuln.CVE(ctx)]
 				require.NotNil(t, expectedComponents)
 
 				expectedCount := int32(len(expectedComponents))
@@ -283,9 +283,9 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImages() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	imageCompTests := []struct {
-		name        string
-		id          string
-		expectedIDs []string
+		name                 string
+		id                   string
+		expectedComponentIDs []string
 	}{
 		{
 			"comp1os1",
@@ -322,12 +322,12 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImages() {
 	for _, test := range imageCompTests {
 		s.T().Run(test.name, func(t *testing.T) {
 			comp := s.getImageComponentResolver(ctx, test.id)
-			expectedCount := int32(len(test.expectedIDs))
+			expectedCount := int32(len(test.expectedComponentIDs))
 
 			images, err := comp.Images(ctx, PaginatedQuery{})
 			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, int32(len(images)))
-			assert.ElementsMatch(t, test.expectedIDs, getIDList(ctx, images))
+			assert.ElementsMatch(t, test.expectedComponentIDs, getIDList(ctx, images))
 
 			count, err := comp.ImageCount(ctx, RawQuery{})
 			assert.NoError(t, err)
@@ -340,10 +340,10 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImageVulnerabilities(
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	imageCompTests := []struct {
-		name            string
-		id              string
-		expectedIDs     []string
-		expectedCounter *VulnerabilityCounterResolver
+		name                 string
+		id                   string
+		expectedComponentIDs []string
+		expectedCounter      *VulnerabilityCounterResolver
 	}{
 		{
 			"comp1os1",
@@ -437,13 +437,13 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentImageVulnerabilities(
 	for _, test := range imageCompTests {
 		s.T().Run(test.name, func(t *testing.T) {
 			comp := s.getImageComponentResolver(ctx, test.id)
-			expectedCount := int32(len(test.expectedIDs))
+			expectedCount := int32(len(test.expectedComponentIDs))
 			test.expectedCounter.all.total = expectedCount
 
 			vulns, err := comp.ImageVulnerabilities(ctx, PaginatedQuery{})
 			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, int32(len(vulns)))
-			assert.ElementsMatch(t, test.expectedIDs, getIDList(ctx, vulns))
+			assert.ElementsMatch(t, test.expectedComponentIDs, getIDList(ctx, vulns))
 
 			count, err := comp.ImageVulnerabilityCount(ctx, RawQuery{})
 			assert.NoError(t, err)
@@ -460,9 +460,9 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentDeployments() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
 	imageCompTests := []struct {
-		name        string
-		id          string
-		expectedIDs []string
+		name                 string
+		id                   string
+		expectedComponentIDs []string
 	}{
 		{
 			"comp1os1",
@@ -499,12 +499,12 @@ func (s *GraphQLImageComponentTestSuite) TestImageComponentDeployments() {
 	for _, test := range imageCompTests {
 		s.T().Run(test.name, func(t *testing.T) {
 			comp := s.getImageComponentResolver(ctx, test.id)
-			expectedCount := int32(len(test.expectedIDs))
+			expectedCount := int32(len(test.expectedComponentIDs))
 
 			deps, err := comp.Deployments(ctx, PaginatedQuery{})
 			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, int32(len(deps)))
-			assert.ElementsMatch(t, test.expectedIDs, getIDList(ctx, deps))
+			assert.ElementsMatch(t, test.expectedComponentIDs, getIDList(ctx, deps))
 
 			count, err := comp.DeploymentCount(ctx, RawQuery{})
 			assert.NoError(t, err)
