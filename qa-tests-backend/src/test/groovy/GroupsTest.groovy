@@ -4,7 +4,6 @@ import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.GroupServiceOuterClass
 import io.stackrox.proto.api.v1.GroupServiceOuterClass.GetGroupsRequest
 import io.stackrox.proto.storage.AuthProviderOuterClass
-import io.stackrox.proto.storage.GroupOuterClass
 import io.stackrox.proto.storage.GroupOuterClass.Group
 import io.stackrox.proto.storage.GroupOuterClass.GroupProperties
 import io.stackrox.proto.storage.RoleOuterClass
@@ -120,7 +119,6 @@ class GroupsTest extends BaseSpecification {
         }
     }
 
-    @Unroll
     def "Test that creating group with invalid role name returns an error"() {
         when:
         def props = GroupProperties.newBuilder()
@@ -133,11 +131,10 @@ class GroupsTest extends BaseSpecification {
                 .setRoleName("non-existent")
                 .build())
         then:
-        def error = thrown(StatusRuntimeException.class)
+        def error = thrown(StatusRuntimeException)
         assert error.getStatus().getCode() == Status.Code.INVALID_ARGUMENT
     }
 
-    @Unroll
     def "Test that creating group with invalid auth provider id returns an error"() {
         when:
         def props = GroupProperties.newBuilder()
@@ -148,11 +145,10 @@ class GroupsTest extends BaseSpecification {
                 .setRoleName("Admin")
                 .build())
         then:
-        def error = thrown(StatusRuntimeException.class)
+        def error = thrown(StatusRuntimeException)
         assert error.getStatus().getCode() == Status.Code.INVALID_ARGUMENT
     }
 
-    @Unroll
     def "Test that updating group with invalid role name returns an error"() {
         when:
         def group = GROUPS_WITH_IDS["QAGroupTest-Group2"]
@@ -165,11 +161,10 @@ class GroupsTest extends BaseSpecification {
                         .build()
         )
         then:
-        def error = thrown(StatusRuntimeException.class)
+        def error = thrown(StatusRuntimeException)
         assert error.getStatus().getCode() == Status.Code.INVALID_ARGUMENT
     }
 
-    @Unroll
     def "Test that updating group with invalid auth provider id returns an error"() {
         when:
         def group = GROUPS_WITH_IDS["QAGroupTest-Group2"]
@@ -184,11 +179,12 @@ class GroupsTest extends BaseSpecification {
                         .build()
         )
         then:
-        def error = thrown(StatusRuntimeException.class)
+        def error = thrown(StatusRuntimeException)
         assert error.getStatus().getCode() == Status.Code.INVALID_ARGUMENT
     }
 
     @Unroll
+    @SuppressWarnings('LineLength')
     def "Test that GetGroup and GetGroups work correctly with query args (#authProviderName, #key, #value)"() {
         when:
         "A query is made for GetGroup and GetGroups with the given params"
