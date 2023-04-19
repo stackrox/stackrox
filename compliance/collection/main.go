@@ -186,10 +186,12 @@ func manageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals, scan
 func scanNode(ctx context.Context, scanner scannerV1.NodeInventoryServiceClient) (*sensor.MsgFromCompliance, error) {
 	ctx, cancel := context.WithTimeout(ctx, env.NodeAnalysisDeadline.DurationSetting())
 	defer cancel()
+	startCall := time.Now()
 	result, err := scanner.GetNodeInventory(ctx, &scannerV1.GetNodeInventoryRequest{})
 	if err != nil {
 		return nil, err
 	}
+	cmetrics.ObserveNodeInventoryCallDuration(time.Since(startCall), result.GetNodeName(), err)
 	inv := inventory.ToNodeInventory(result)
 	msg := &sensor.MsgFromCompliance{
 		Node: result.GetNodeName(),
