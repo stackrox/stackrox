@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
+	"github.com/stackrox/rox/roxctl/common/config"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	cliIO "github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -63,7 +64,7 @@ func CLIEnvironment() Environment {
 
 // HTTPClient returns the common.RoxctlHTTPClient associated with the CLI Environment
 func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration) (common.RoxctlHTTPClient, error) {
-	am, err := determineAuthMethod(c.logger)
+	am, err := determineAuthMethod(c)
 	if err != nil {
 		return nil, errors.Wrap(err, "determining auth method")
 	}
@@ -73,7 +74,7 @@ func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration) (common.RoxctlHTT
 
 // GRPCConnection returns the common.GetGRPCConnection
 func (c *cliEnvironmentImpl) GRPCConnection() (*grpc.ClientConn, error) {
-	am, err := determineAuthMethod(c.logger)
+	am, err := determineAuthMethod(c)
 	if err != nil {
 		return nil, errors.Wrap(err, "determining auth method")
 	}
@@ -103,6 +104,15 @@ func (c *cliEnvironmentImpl) ConnectNames() (string, string, error) {
 	return names, s, errors.Wrap(err, "could not get endpoint")
 }
 
+// Config returns a config.Store capable of reading / writing configuration for roxctl.
+func (c *cliEnvironmentImpl) Config() (config.Store, error) {
+	cfgStore, err := config.NewConfigStore()
+	if err != nil {
+		return nil, errors.Wrap(err, "creating config store")
+	}
+	return cfgStore, nil
+}
+
 type colorWriter struct {
 	colorfulPrinter printer.ColorfulPrinter
 	out             io.Writer
@@ -116,7 +126,7 @@ func (w colorWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func determineAuthMethod(l logger.Logger) (auth.Method, error) {
+func determineAuthMethod(cliEnv Environment) (auth.Method, error) {
 	if flags.APITokenFile() != "" && flags.Password() != "" {
 		return nil, errox.InvalidArgs.New("cannot use basic and token-based authentication at the same time")
 	}
@@ -126,9 +136,6 @@ func determineAuthMethod(l logger.Logger) (auth.Method, error) {
 	case flags.APITokenFile() != "" || env.TokenEnv.Setting() != "":
 		return auth.TokenAuth(), nil
 	default:
-		l.WarnfLn(`No authentication method was provided, defaulting to anonymous auth.
-In case you want to choose a different authentication method, either use the password flag / environment variable or
-the API token file flag / environment variable.`)
-		return auth.AnonymousAuth(), nil
+		return ConfigMethod(cliEnv), nil
 	}
 }

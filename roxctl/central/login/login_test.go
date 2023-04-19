@@ -6,10 +6,13 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/roxctl/common/mocks"
+	"github.com/stackrox/rox/roxctl/common/config"
+	cfgMock "github.com/stackrox/rox/roxctl/common/config/mocks"
+	"github.com/stackrox/rox/roxctl/common/environment/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -98,10 +101,17 @@ func TestCallbackHandle_Failures(t *testing.T) {
 }
 
 func TestCallbackHandle_Success(t *testing.T) {
-	env, _, errOut := mocks.NewEnvWithConn(nil, t)
+	mockStore := cfgMock.NewMockStore(gomock.NewController(t))
+	mockStore.EXPECT().Read().AnyTimes().Return(&config.RoxctlConfig{CentralConfigs: map[string]*config.CentralConfig{}}, nil)
+	mockStore.EXPECT().Write(gomock.Any()).AnyTimes().Return(nil)
+	env, _, errOut := mocks.NewEnv(nil, mockStore, t)
+
+	centralURL, err := url.Parse("http://localhost:8080")
+	require.NoError(t, err)
 	loginCmd := loginCommand{
 		env:         env,
 		loginSignal: concurrency.NewErrorSignal(),
+		centralURL:  centralURL,
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(loginCmd.callbackHandle))
@@ -119,7 +129,11 @@ func TestCallbackHandle_Success(t *testing.T) {
 	expectedOutput := `INFO:	Received the following after the authorization flow from Central:
 INFO:	Access token: my-token
 INFO:	Refresh token: my-refresh-token
-INFO:	Storing these values under $HOME/.roxctl/login ...
+INFO:	Successfully persisted the authentication information for central http://localhost:8080.
+
+You can now use the retrieved access token for all other roxctl commands!
+
+In case the access token is expired and cannot be refreshed, you have to run "roxctl central login" again.
 `
 	assert.Equal(t, expectedOutput, errOut.String())
 }

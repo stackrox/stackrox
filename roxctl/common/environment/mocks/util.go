@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/roxctl/common/config"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/printer"
@@ -23,6 +24,21 @@ func NewEnvWithConn(conn *grpc.ClientConn, t *testing.T) (environment.Environmen
 	envMock.EXPECT().Logger().AnyTimes().Return(env.Logger())
 	envMock.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
 	envMock.EXPECT().ColorWriter().AnyTimes().Return(env.ColorWriter())
+
+	return envMock, out, errOut
+}
+
+func NewEnv(conn *grpc.ClientConn, store config.Store, t *testing.T) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
+	envMock := NewMockEnvironment(gomock.NewController(t))
+
+	testIO, _, out, errOut := io.TestIO()
+	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
+
+	envMock.EXPECT().InputOutput().AnyTimes().Return(env.InputOutput())
+	envMock.EXPECT().Logger().AnyTimes().Return(env.Logger())
+	envMock.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
+	envMock.EXPECT().ColorWriter().AnyTimes().Return(env.ColorWriter())
+	envMock.EXPECT().Config().AnyTimes().Return(store, nil)
 
 	return envMock, out, errOut
 }

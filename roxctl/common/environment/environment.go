@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/config"
 	io2 "github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"google.golang.org/grpc"
@@ -31,4 +32,7 @@ type Environment interface {
 
 	// ConnectNames returns the endpoint and (SNI) server name
 	ConnectNames() (string, string, error)
+
+	// Config returns a config.Store which will handle reading / writing configuration from a configuration file.
+	Config() (config.Store, error)
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common/config"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
@@ -188,6 +189,14 @@ func (l *loginCommand) callbackHandle(w http.ResponseWriter, req *http.Request) 
 You may now close this window.
 `)
 
+	if err := l.storeConfiguration(token, expiresAt, refreshToken); err != nil {
+		l.loginSignal.SignalWithError(err)
+		return
+	}
+	l.loginSignal.Signal()
+}
+
+func (l *loginCommand) storeConfiguration(token string, expiresAt time.Time, refreshToken string) error {
 	l.env.Logger().InfofLn("Received the following after the authorization flow from Central:")
 	l.env.Logger().InfofLn("Access token: %s", token)
 	if !expiresAt.IsZero() {
@@ -196,7 +205,38 @@ You may now close this window.
 	if refreshToken != "" {
 		l.env.Logger().InfofLn("Refresh token: %s", refreshToken)
 	}
-	l.env.Logger().InfofLn("Storing these values under $HOME/.roxctl/login ...")
-	// TODO: Persisting the login information will be done in a follow-up PR.
-	l.loginSignal.Signal()
+
+	cfgStore, err := l.env.Config()
+	if err != nil {
+		return errors.Wrap(err, "retrieving config store")
+	}
+
+	cfg, err := cfgStore.Read()
+	if err != nil {
+		return errors.Wrap(err, "reading configuration")
+	}
+
+	centralCfg := cfg.GetCentralConfigs().GetCentralConfig(l.centralURL.String())
+	if centralCfg == nil {
+		centralCfg = &config.CentralConfig{}
+		cfg.CentralConfigs[l.centralURL.String()] = centralCfg
+	}
+	now := time.Now()
+	centralCfg.AccessConfig = &config.CentralAccessConfig{
+		AccessToken:  token,
+		IssuedAt:     &now,
+		ExpiresAt:    utils.IfThenElse(expiresAt.IsZero(), nil, &expiresAt),
+		RefreshToken: refreshToken,
+	}
+
+	if err := cfgStore.Write(cfg); err != nil {
+		return errors.Wrap(err, "writing configuration")
+	}
+
+	l.env.Logger().InfofLn(`Successfully persisted the authentication information for central %s.
+
+You can now use the retrieved access token for all other roxctl commands!
+
+In case the access token is expired and cannot be refreshed, you have to run "roxctl central login" again.`, l.centralURL.String())
+	return nil
 }

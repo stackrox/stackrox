@@ -11,6 +11,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/stackrox/rox/roxctl/common"
+	config "github.com/stackrox/rox/roxctl/common/config"
 	io "github.com/stackrox/rox/roxctl/common/io"
 	logger "github.com/stackrox/rox/roxctl/common/logger"
 	grpc "google.golang.org/grpc"
@@ -51,6 +52,21 @@ func (m *MockEnvironment) ColorWriter() io0.Writer {
 func (mr *MockEnvironmentMockRecorder) ColorWriter() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ColorWriter", reflect.TypeOf((*MockEnvironment)(nil).ColorWriter))
+}
+
+// Config mocks base method.
+func (m *MockEnvironment) Config() (config.Store, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Config")
+	ret0, _ := ret[0].(config.Store)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Config indicates an expected call of Config.
+func (mr *MockEnvironmentMockRecorder) Config() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Config", reflect.TypeOf((*MockEnvironment)(nil).Config))
 }
 
 // ConnectNames mocks base method.
