@@ -40,7 +40,7 @@ For more information about the support scope of Red Hat Technology Preview featu
 		Args: cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
 			analyzeNetpolCmd.env.Logger().WarnfLn("This is a Technology Preview feature. Red Hat does not recommend using Technology Preview features in production.")
-			analyzer, err := analyzeNetpolCmd.construct(args, c)
+			analyzer, err := analyzeNetpolCmd.construct(args)
 			if err != nil {
 				return err
 			}
@@ -58,7 +58,7 @@ For more information about the support scope of Red Hat Technology Preview featu
 	c.Flags().StringVarP(&analyzeNetpolCmd.focusWorkload, "focus-workload", "", "", "focus connections of specified workload name in the output")
 	return c
 }
-func (cmd *analyzeNetpolCommand) construct(args []string, c *cobra.Command) (netpolAnalyzer, error) {
+func (cmd *analyzeNetpolCommand) construct(args []string) (netpolAnalyzer, error) {
 	cmd.inputFolderPath = args[0]
 	var opts []npguard.ConnlistAnalyzerOption
 	if cmd.env != nil && cmd.env.Logger() != nil {

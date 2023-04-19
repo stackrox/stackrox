@@ -108,7 +108,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 				d.Assert().NoError(testCmd.Flags().Set("output-file", tt.outFile))
 			}
 
-			analyzer, err := analyzeNetpolCmd.construct([]string{tt.inputFolderPath}, testCmd)
+			analyzer, err := analyzeNetpolCmd.construct([]string{tt.inputFolderPath})
 			d.Assert().NoError(err)
 
 			err = analyzeNetpolCmd.validate()
