@@ -61,6 +61,20 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregation",
+            "description": "This field is under development. It is not supported on any REST APIs.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
           }
         ],
         "tags": [
@@ -228,6 +242,16 @@
         }
       }
     },
+    "v1Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
+    },
     "v1Empty": {
       "type": "object"
     },
@@ -291,6 +315,10 @@
         },
         "reversed": {
           "type": "boolean"
+        },
+        "aggregation": {
+          "$ref": "#/definitions/v1Aggregation",
+          "description": "This field is under development. It is not supported on any REST APIs."
         }
       }
     }

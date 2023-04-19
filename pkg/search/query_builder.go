@@ -159,6 +159,7 @@ func (p *Pagination) Offset(offset int32) *Pagination {
 // SortOption describes the way to sort the query
 type SortOption struct {
 	field       FieldLabel
+	aggregation aggregatefunc.AggrFunc
 	reversed    bool
 	searchAfter string
 }
@@ -182,11 +183,20 @@ func (s *SortOption) SearchAfter(searchAfter string) *SortOption {
 	return s
 }
 
+// Aggregation describes the aggregation that should be applied to base sort option. When aggregation is set,
+// the sorting happens on the aggregation of base field not directly on the base field. For example, sort by count(x)
+func (s *SortOption) Aggregation(aggrFunc aggregatefunc.AggrFunc) *SortOption {
+	fmt.Printf("aggr %s %v\n", aggrFunc.String(), aggrFunc.Proto())
+	s.aggregation = aggrFunc
+	return s
+}
+
 // AddSortOption adds the sort option to the pagination object
 func (p *Pagination) AddSortOption(so *SortOption) *Pagination {
 	opt := &v1.QuerySortOption{
-		Field:    string(so.field),
-		Reversed: so.reversed,
+		Field:       string(so.field),
+		Aggregation: so.aggregation.Proto(),
+		Reversed:    so.reversed,
 	}
 	if so.searchAfter != "" {
 		opt.SearchAfterOpt = &v1.QuerySortOption_SearchAfter{

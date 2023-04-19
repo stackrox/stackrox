@@ -99,6 +99,7 @@ message QuerySortOption {
         // of field+search_after values in specified sorting order will be returned.
         string search_after = 3;
     }
+    Aggregation aggregation = 4;
 }
 
 message QueryField {

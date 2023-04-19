@@ -5,9 +5,18 @@ option java_package = "io.stackrox.proto.api.v1";
 
 package v1;
 
+enum Aggregation {
+    UNSET = 0;
+    COUNT = 1;
+    MIN   = 2;
+    MAX   = 3;
+}
+
 message SortOption {
-    string field    = 1;
-    bool   reversed = 2;
+    string      field       = 1;
+    bool        reversed    = 2;
+    // This field is under development. It is not supported on any REST APIs.
+    Aggregation aggregation = 3;
 }
 
 message Pagination {
