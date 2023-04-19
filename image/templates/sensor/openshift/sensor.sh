@@ -20,6 +20,8 @@ else
     fi
 fi
 
+SUPPORTS_PSP=$(${KUBE_COMMAND} api-resources | grep "podsecuritypolicies" -c || true)
+
 ${KUBE_COMMAND} get namespace stackrox &>/dev/null || ${KUBE_COMMAND} create namespace stackrox
 ${KUBE_COMMAND} -n stackrox annotate namespace/stackrox --overwrite openshift.io/node-selector=""
 
@@ -35,8 +37,13 @@ echo "Creating sensor network policies..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-netpol.yaml"
 
 if [[ -f "$DIR/sensor-pod-security.yaml" ]]; then
-  echo "Creating sensor pod security policies..."
-  ${KUBE_COMMAND} apply -f "$DIR/sensor-pod-security.yaml"
+  # Checking if the cluster supports pod security policies
+  if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
+    echo "Pod security policies are not supported on this cluster. Skipping..."
+  else
+    echo "Creating sensor pod security policies..."
+    ${KUBE_COMMAND} apply -f "$DIR/sensor-pod-security.yaml"
+  fi
 fi
 
 # OpenShift roles can be delayed to be added
@@ -85,8 +92,12 @@ ${KUBE_COMMAND} apply -f "$DIR/admission-controller-rbac.yaml"
 echo "Creating admission controller network policies..."
 ${KUBE_COMMAND} apply -f "$DIR/admission-controller-netpol.yaml"
 if [[ -f "$DIR/admission-controller-pod-security.yaml" ]]; then
-  echo "Creating admission controller pod security policies..."
-  ${KUBE_COMMAND} apply -f "$DIR/admission-controller-pod-security.yaml"
+  if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
+    echo "Pod security policies are not supported on this cluster. Skipping..."
+  else
+    echo "Creating admission controller pod security policies..."
+    ${KUBE_COMMAND} apply -f "$DIR/admission-controller-pod-security.yaml"
+  fi
 fi
 echo "Creating admission controller deployment..."
 ${KUBE_COMMAND} apply -f "$DIR/admission-controller.yaml"
@@ -100,8 +111,13 @@ ${KUBE_COMMAND} apply -f "$DIR/collector-rbac.yaml"
 echo "Creating collector network policies..."
 ${KUBE_COMMAND} apply -f "$DIR/collector-netpol.yaml"
 if [[ -f "$DIR/collector-pod-security.yaml" ]]; then
-  echo "Creating collector pod security policies..."
   ${KUBE_COMMAND} apply -f "$DIR/collector-pod-security.yaml"
+  if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
+    echo "Pod security policies are not supported on this cluster. Skipping..."
+  else
+    echo "Creating collector pod security policies..."
+    ${KUBE_COMMAND} apply -f "$DIR/collector-pod-security.yaml"
+  fi
 fi
 echo "Creating collector daemon set..."
 ${KUBE_COMMAND} apply -f "$DIR/collector.yaml"
