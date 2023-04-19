@@ -502,7 +502,7 @@ oidc:
                 it.getName().contains(PERMISSION_SET_KEY)
             }
             assert permissionSetHealth
-            assert permissionSetHealth.getErrorMessage()
+            assert permissionSetHealth.getErrorMessage().contains("referenced by another object")
             assert permissionSetHealth.getStatus() == Status.UNHEALTHY
         }
 
@@ -537,7 +537,7 @@ oidc:
                 it.getName().contains(ACCESS_SCOPE_KEY)
             }
             assert accessScopeHealth
-            assert accessScopeHealth.getErrorMessage()
+            assert accessScopeHealth.getErrorMessage().contains("referenced by another object")
             assert accessScopeHealth.getStatus() == Status.UNHEALTHY
         }
 
@@ -591,7 +591,7 @@ oidc:
                 it.getName().contains(ROLE_KEY)
             }
             assert roleHealth
-            assert roleHealth.getErrorMessage()
+            assert roleHealth.getErrorMessage().contains("is referenced by groups")
             assert roleHealth.getStatus() == Status.UNHEALTHY
         }
 
