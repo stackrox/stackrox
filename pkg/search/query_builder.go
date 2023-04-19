@@ -186,7 +186,6 @@ func (s *SortOption) SearchAfter(searchAfter string) *SortOption {
 // Aggregation describes the aggregation that should be applied to base sort option. When aggregation is set,
 // the sorting happens on the aggregation of base field not directly on the base field. For example, sort by count(x)
 func (s *SortOption) Aggregation(aggrFunc aggregatefunc.AggrFunc) *SortOption {
-	fmt.Printf("aggr %s %v\n", aggrFunc.String(), aggrFunc.Proto())
 	s.aggregation = aggrFunc
 	return s
 }
