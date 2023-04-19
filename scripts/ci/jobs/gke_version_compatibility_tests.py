@@ -8,6 +8,9 @@ from get_latest_release_versions import update_helm_repo, get_latest_release_ver
 from compatibility_test import make_compatibility_test_runner
 from clusters import GKECluster
 
+class SensorVersionsFailure(Exception):
+    pass
+
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
@@ -29,5 +32,3 @@ for version in chart_versions:
 if len(failing_sensor_versions) > 0:
     raise SensorVersionsFailure(f"Compatibility tests failed for Sensor versions " + ', '.join(failing_sensor_versions))
 
-class SensorVersionsFailure(Exception):
-    pass
