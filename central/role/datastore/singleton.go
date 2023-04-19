@@ -54,7 +54,7 @@ func Singleton() DataStore {
 		ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.Role)))
+				sac.ResourceScopeKeys(resources.Access)))
 		roles, permissionSets, accessScopes := getDefaultObjects()
 		utils.Must(roleStorage.UpsertMany(ctx, roles))
 		utils.Must(permissionSetStorage.UpsertMany(ctx, permissionSets))
@@ -123,8 +123,8 @@ var defaultRoles = map[string]roleAttributes{
 			permissions.View(resources.Access),
 			permissions.View(resources.Cluster),
 			permissions.View(resources.Namespace),
-			permissions.View(resources.Role),
-			permissions.Modify(resources.Role),
+			permissions.View(resources.Access),
+			permissions.Modify(resources.Access),
 		},
 	},
 	accesscontrol.SensorCreator: {
@@ -163,7 +163,7 @@ var defaultRoles = map[string]roleAttributes{
 		resourceWithAccess: func() []permissions.ResourceWithAccess {
 			if !env.PostgresDatastoreEnabled.BooleanSetting() {
 				return []permissions.ResourceWithAccess{
-					permissions.View(resources.Role),                   // required for scopes
+					permissions.View(resources.Access),                 // required for scopes
 					permissions.View(resources.Integration),            // required for vuln report configurations
 					permissions.View(resources.VulnerabilityReports),   // required for vuln report configurations prior to collections
 					permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations prior to collections
