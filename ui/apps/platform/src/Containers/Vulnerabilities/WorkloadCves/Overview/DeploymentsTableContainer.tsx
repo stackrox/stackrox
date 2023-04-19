@@ -6,7 +6,7 @@ import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import DeploymentsTable, { deploymentListQuery } from '../Tables/DeploymentsTable';
+import DeploymentsTable, { Deployment, deploymentListQuery } from '../Tables/DeploymentsTable';
 import TableErrorComponent from '../components/TableErrorComponent';
 import { parseQuerySearchFilter } from '../searchUtils';
 
@@ -26,7 +26,9 @@ function DeploymentsTableContainer() {
         onSort: () => setPage(1),
     });
 
-    const { error, loading, data, previousData } = useQuery(deploymentListQuery, {
+    const { error, loading, data, previousData } = useQuery<{
+        deployments: Deployment[];
+    }>(deploymentListQuery, {
         variables: {
             query: getRequestQueryStringForSearchFilter({
                 ...querySearchFilter,
@@ -52,7 +54,7 @@ function DeploymentsTableContainer() {
             )}
             {tableData && (
                 <DeploymentsTable
-                    deployments={data.deployments}
+                    deployments={tableData.deployments}
                     getSortParams={getSortParams}
                     isFiltered={isFiltered}
                 />
