@@ -476,16 +476,6 @@ class DefaultPoliciesTest extends BaseSpecification {
                 // See https://issues.redhat.com/browse/ROX-10018
                 def noKubectlViolation = true
                 if (alert.policy.getName() == "OpenShift: Kubeadmin Secret Accessed") {
-                    // Debug - show the violation list attributes
-                    log.debug "The attribute list for this alert:"
-                    AlertService.getViolation(alert.id).getViolationsList().forEach {
-                        v -> {
-                            v.getKeyValueAttrs().getAttrsList().forEach {
-                                a -> log.debug "\t${a.getKey()}: ${a.getValue()}"
-                            }
-                        }
-                    }
-                    // End debug
                     noKubectlViolation = !AlertService.getViolation(alert.id).getViolationsList().
                         stream().allMatch { v ->
                             def user = v.getKeyValueAttrs().getAttrsList().find { a ->
@@ -507,6 +497,12 @@ class DefaultPoliciesTest extends BaseSpecification {
                 log.info violation.toString()
                 log.info "The policy details:"
                 log.info Services.getPolicy(violation.policy.id).toString()
+                log.debug "The attribute list:"
+                AlertService.getViolation(violation.id).getViolationsList().forEach { v ->
+                    v.getKeyValueAttrs().getAttrsList().forEach { a ->
+                        log.debug "\t${a.getKey()}: ${a.getValue()}"
+                    }
+                }
             }
         }
 
