@@ -11,17 +11,12 @@ import {
     Spinner,
     Split,
     SplitItem,
-    Tab,
-    TabTitleText,
-    Tabs,
-    TabsComponent,
     Text,
     Title,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { gql, useQuery } from '@apollo/client';
 
-import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
@@ -41,11 +36,16 @@ import SingleEntityVulnerabilitiesTable, {
 } from '../Tables/SingleEntityVulnerabilitiesTable';
 import { DynamicTableLabel } from '../components/DynamicIcon';
 import { getHiddenSeverities, parseQuerySearchFilter } from '../searchUtils';
-import { QuerySearchFilter, FixableStatus, cveStatusTabValues } from '../types';
+import { QuerySearchFilter, FixableStatus } from '../types';
 import {
     ImageMetadataContext,
     imageMetadataContextFragment,
 } from '../Tables/ComponentVulnerabilitiesTable';
+import CveStatusTabs, {
+    DeferredCvesTab,
+    FalsePositiveCvesTab,
+    ObservedCvesTab,
+} from '../components/CveStatusTabs';
 
 const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
@@ -125,8 +125,6 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
             pagination,
         },
     });
-
-    const [activeTabKey, setActiveTabKey] = useURLStringUnion('cveStatus', cveStatusTabValues);
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
@@ -231,39 +229,18 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                 className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                 component="div"
             >
-                <Tabs
-                    activeKey={activeTabKey}
-                    onSelect={(e, key) => setActiveTabKey(key)}
-                    component={TabsComponent.nav}
-                    mountOnEnter
-                    unmountOnExit
-                    isBox
-                >
-                    <Tab
-                        className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
-                        eventKey="Observed"
-                        title={<TabTitleText>Observed CVEs</TabTitleText>}
-                    >
+                <CveStatusTabs isBox>
+                    <ObservedCvesTab>
                         <div className="pf-u-px-sm pf-u-background-color-100">
                             <WorkloadTableToolbar />
                         </div>
                         <div className="pf-u-flex-grow-1 pf-u-background-color-100">
                             {mainContent}
                         </div>
-                    </Tab>
-                    <Tab
-                        className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
-                        eventKey="Deferred"
-                        title={<TabTitleText>Deferrals</TabTitleText>}
-                        isDisabled
-                    />
-                    <Tab
-                        className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
-                        eventKey="False Positive"
-                        title={<TabTitleText>False positives</TabTitleText>}
-                        isDisabled
-                    />
-                </Tabs>
+                    </ObservedCvesTab>
+                    <DeferredCvesTab isDisabled />
+                    <FalsePositiveCvesTab isDisabled />
+                </CveStatusTabs>
             </PageSection>
         </>
     );

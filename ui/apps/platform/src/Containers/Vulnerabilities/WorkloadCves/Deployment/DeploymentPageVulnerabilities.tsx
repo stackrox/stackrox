@@ -7,25 +7,22 @@ import {
     pluralize,
     Split,
     SplitItem,
-    Tab,
-    Tabs,
-    TabsComponent,
-    TabTitleText,
     Text,
     Title,
 } from '@patternfly/react-core';
 
 import useURLPagination from 'hooks/useURLPagination';
-import useURLStringUnion from 'hooks/useURLStringUnion';
 import { DynamicTableLabel } from '../components/DynamicIcon';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
-import { cveStatusTabValues } from '../types';
+import CveStatusTabs, {
+    DeferredCvesTab,
+    FalsePositiveCvesTab,
+    ObservedCvesTab,
+} from '../components/CveStatusTabs';
 
 export type DeploymentPageVulnerabilitiesProps = Record<string, never>;
 
 function DeploymentPageVulnerabilities() {
-    const [activeTabKey, setActiveTabKey] = useURLStringUnion('cveStatus', cveStatusTabValues);
-
     const { page, setPage, perPage, setPerPage } = useURLPagination(20);
 
     const totalVulnerabilityCount = 0;
@@ -43,19 +40,8 @@ function DeploymentPageVulnerabilities() {
                 className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                 component="div"
             >
-                <Tabs
-                    activeKey={activeTabKey}
-                    onSelect={(e, key) => setActiveTabKey(key)}
-                    component={TabsComponent.nav}
-                    mountOnEnter
-                    unmountOnExit
-                    isBox
-                >
-                    <Tab
-                        className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
-                        eventKey="Observed"
-                        title={<TabTitleText>Observed CVEs</TabTitleText>}
-                    >
+                <CveStatusTabs isBox>
+                    <ObservedCvesTab>
                         <div className="pf-u-px-sm pf-u-background-color-100">
                             <WorkloadTableToolbar />
                         </div>
@@ -99,20 +85,10 @@ function DeploymentPageVulnerabilities() {
                                 TODO Table
                             </div>
                         </div>
-                    </Tab>
-                    <Tab
-                        className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
-                        eventKey="Deferred"
-                        title={<TabTitleText>Deferrals</TabTitleText>}
-                        isDisabled
-                    />
-                    <Tab
-                        className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
-                        eventKey="False Positive"
-                        title={<TabTitleText>False positives</TabTitleText>}
-                        isDisabled
-                    />
-                </Tabs>
+                    </ObservedCvesTab>
+                    <DeferredCvesTab isDisabled />
+                    <FalsePositiveCvesTab isDisabled />
+                </CveStatusTabs>
             </PageSection>
         </>
     );

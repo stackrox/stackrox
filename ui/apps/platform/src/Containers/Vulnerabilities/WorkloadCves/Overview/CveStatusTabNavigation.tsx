@@ -1,10 +1,6 @@
 import React from 'react';
 import { gql, useQuery } from '@apollo/client';
 import {
-    Tabs,
-    Tab,
-    TabTitleText,
-    TabsComponent,
     PageSection,
     Card,
     CardBody,
@@ -13,6 +9,7 @@ import {
     ToolbarItem,
     ToolbarContent,
     Pagination,
+    TabsComponent,
 } from '@patternfly/react-core';
 
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -25,8 +22,13 @@ import CVEsTableContainer from './CVEsTableContainer';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import EntityTypeToggleGroup from '../components/EntityTypeToggleGroup';
 import { DynamicTableLabel } from '../components/DynamicIcon';
-import { DefaultFilters, cveStatusTabValues, entityTabValues, EntityTab } from '../types';
+import { DefaultFilters, entityTabValues, EntityTab } from '../types';
 import { parseQuerySearchFilter } from '../searchUtils';
+import CveStatusTabs, {
+    DeferredCvesTab,
+    FalsePositiveCvesTab,
+    ObservedCvesTab,
+} from '../components/CveStatusTabs';
 
 type CveStatusTabNavigationProps = {
     defaultFilters: DefaultFilters;
@@ -62,17 +64,9 @@ function getTableRowCount(countsData: EntityCounts, entityType: EntityTab): numb
 function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    const [activeCVEStatusKey, setActiveCVEStatusKey] = useURLStringUnion(
-        'cveStatus',
-        cveStatusTabValues
-    );
     const [activeEntityTabKey] = useURLStringUnion('entityTab', entityTabValues);
     const { page, perPage, setPage, setPerPage } = useURLPagination(25);
     const isFiltered = getHasSearchApplied(querySearchFilter);
-
-    function handleTabClick(e, tab) {
-        setActiveCVEStatusKey(tab);
-    }
 
     const { data: countsData } = useQuery(entityTypeCountsQuery, {
         variables: {
@@ -85,15 +79,11 @@ function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps)
     const tableRowCount = getTableRowCount(countsData, activeEntityTabKey);
 
     return (
-        <Tabs
-            activeKey={activeCVEStatusKey}
-            onSelect={handleTabClick}
+        <CveStatusTabs
             component={TabsComponent.nav}
             className="pf-u-pl-lg pf-u-background-color-100"
-            mountOnEnter
-            unmountOnExit
         >
-            <Tab eventKey="Observed" title={<TabTitleText>Observed CVEs</TabTitleText>}>
+            <ObservedCvesTab>
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody>
@@ -140,18 +130,10 @@ function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps)
                         </CardBody>
                     </Card>
                 </PageSection>
-            </Tab>
-            <Tab eventKey="Deferred" title={<TabTitleText>Deferrals</TabTitleText>} isDisabled>
-                deferrals tbd
-            </Tab>
-            <Tab
-                eventKey="False Positive"
-                title={<TabTitleText>False Positives</TabTitleText>}
-                isDisabled
-            >
-                False-positives tbd
-            </Tab>
-        </Tabs>
+            </ObservedCvesTab>
+            <DeferredCvesTab isDisabled>deferrals tbd</DeferredCvesTab>
+            <FalsePositiveCvesTab isDisabled>False-positives tbd</FalsePositiveCvesTab>
+        </CveStatusTabs>
     );
 }
 
