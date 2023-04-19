@@ -1285,6 +1285,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 	}))
 	utils.Must(builder.AddInput("SortOption", []string{
+		"aggregation: String",
 		"field: String",
 		"reversed: Boolean",
 	}))
