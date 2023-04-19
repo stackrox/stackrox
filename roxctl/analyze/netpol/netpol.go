@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/npg"
 )
 
 type analyzeNetpolCommand struct {
@@ -62,7 +63,7 @@ func (cmd *analyzeNetpolCommand) construct(args []string) (netpolAnalyzer, error
 	cmd.inputFolderPath = args[0]
 	var opts []npguard.ConnlistAnalyzerOption
 	if cmd.env != nil && cmd.env.Logger() != nil {
-		opts = append(opts, npguard.WithLogger(newNpgLogger(cmd.env.Logger())))
+		opts = append(opts, npguard.WithLogger(npg.NewLogger(cmd.env.Logger())))
 	}
 	if cmd.stopOnFirstError {
 		opts = append(opts, npguard.WithStopOnError())
