@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/roxctl/common"
@@ -62,7 +63,7 @@ func CLIEnvironment() Environment {
 
 // HTTPClient returns the common.RoxctlHTTPClient associated with the CLI Environment
 func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration) (common.RoxctlHTTPClient, error) {
-	am, err := determineAuthMethod()
+	am, err := determineAuthMethod(c.logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "determining auth method")
 	}
@@ -72,7 +73,7 @@ func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration) (common.RoxctlHTT
 
 // GRPCConnection returns the common.GetGRPCConnection
 func (c *cliEnvironmentImpl) GRPCConnection() (*grpc.ClientConn, error) {
-	am, err := determineAuthMethod()
+	am, err := determineAuthMethod(c.logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "determining auth method")
 	}
@@ -115,18 +116,19 @@ func (w colorWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func determineAuthMethod() (auth.Method, error) {
+func determineAuthMethod(l logger.Logger) (auth.Method, error) {
 	if flags.APITokenFile() != "" && flags.Password() != "" {
 		return nil, errox.InvalidArgs.New("cannot use basic and token-based authentication at the same time")
 	}
 	switch {
 	case flags.Password() != "":
 		return auth.BasicAuth(), nil
-	case flags.APITokenFile() != "":
+	case flags.APITokenFile() != "" || env.TokenEnv.Setting() != "":
 		return auth.TokenAuth(), nil
 	default:
-		return nil, errox.InvalidArgs.New(`No authentication information is set.
-Either set a token within the token file provided in the --token-file flag, or the environment variable ROX_API_TOKEN.
-Alternatively, you can pass the admin password via the --password/-p flag, or the environment variable ROX_ADMIN_PASSWORD.`)
+		l.WarnfLn(`No authentication method was provided, defaulting to anonymous auth.
+In case you want to choose a different authentication method, either use the password flag / environment variable or
+the API token file flag / environment variable.`)
+		return auth.AnonymousAuth(), nil
 	}
 }
