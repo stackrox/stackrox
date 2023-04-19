@@ -9,6 +9,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const defaultOutputFileName = "connlist.txt"
+
 var (
 	errNPGErrorsIndicator   = errors.New("there were errors during execution")
 	errNPGWarningsIndicator = errors.New("there were warnings during execution")
@@ -48,7 +50,7 @@ func (cmd *analyzeNetpolCommand) ouputConnList(connsStr string) error {
 	if cmd.outputToFile {
 		dirpath, filename := filepath.Split(cmd.outputFilePath)
 		if filename == "" {
-			filename = "connlist.txt"
+			filename = defaultOutputFileName
 		}
 
 		if err := writeFile(filename, dirpath, connsStr); err != nil {
