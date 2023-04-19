@@ -479,7 +479,7 @@ class DefaultPoliciesTest extends BaseSpecification {
                     noKubectlViolation = !AlertService.getViolation(alert.id).getViolationsList().
                         stream().allMatch { v ->
                             def user = v.getKeyValueAttrs().getAttrsList().find { a ->
-                                a.getKey() == "Username" && a.getValue() == "kube:admin"
+                                a.getKey() == "Username" && a.getValue() =~ /(kube|system)\:admin/
                             }
                             def ua = v.getKeyValueAttrs().getAttrsList().find { a ->
                                 a.getKey() == "User Agent" && a.getValue().startsWith("kubectl/")
