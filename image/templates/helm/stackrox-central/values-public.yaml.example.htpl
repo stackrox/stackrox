@@ -18,7 +18,6 @@
 #   without TLS) in Central.
 # - `central.resources`: if the default resource configuration for Central is not adequate
 #   for your environment.
-# - `central.persistence`: for configuring where Central stores its legacy persistent data.
 # - `db.persistence`: for configuring where Central DB stores its postgres database volume.
 
 # # BEGIN CONFIGURATION VALUES SECTION
@@ -171,38 +170,6 @@
 #     limits:
 #       memory: "8Gi"
 #       cpu: "4000m"
-#
-#   # Persistence configuration for the StackRox database volume.
-#   # Exactly ONE of the nested values should be specified. If none is specified,
-#   # the StackRox deployment will be configured with the default PVC-based persistence.
-#   persistence:
-#     # The path on the node where to store the StackRox database volume
-#     # when using host path persistence.
-#     hostPath: /var/lib/stackrox
-#
-#     # The persistent volume claim details when storing the StackRox database
-#     # on a persistent volume managed by a Kubernetes persistent volume claim (PVC).
-#     persistentVolumeClaim:
-#       # The name of the claim. This defaults to stackrox-db if not set.
-#       claimName: stackrox-db
-#
-#       # Whether to create the claim upon deployment. The default is true; set this to false
-#       # if you have a pre-existing persistent volume claim that you want to use.
-#       createClaim: true
-#
-#       # The size of the persistent volume managed by the claim, in Gigabytes (or with an
-#       # explicit unit, such as "1Ti"). Defaults to 100Gi.
-#       size: 100
-#
-#       # If you want to bind a preexisting persistent volume, you can specify it here.
-#       volume:
-#         volumeSpec:
-#           # The section includes volume type specific config, the volume type can be:
-#           # gcePersistentDisk, hostpath, filestore(nfs) etc.
-#           gcePersistentDisk:
-#             # Type specific parameters. The specified persistent volume should have
-#             # been created.
-#             pdName: gke-pv
 #
 #   # Configuration for exposing the StackRox Central deployment for external access.
 #   # Generally, only ONE of the nested values should be specified. If none is specified,
