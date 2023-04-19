@@ -38,6 +38,8 @@ class NodeInventoryTest extends BaseSpecification {
                     "Expected to find exactly 4 components on non-RHCOS node"
                 return
             }
+            assert node.getScan().getComponentsList().size() > 4,
+                "Expected to find more than 4 components on RHCOS node"
 
             // assume that there must be at least one vulnerability within all the components
             assert node.getScan().getComponentsList().sum { it.getVulnerabilitiesList().size() }
