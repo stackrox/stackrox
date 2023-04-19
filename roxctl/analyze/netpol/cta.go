@@ -7,14 +7,10 @@ import (
 
 	npguard "github.com/np-guard/netpol-analyzer/pkg/netpol/connlist"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/roxctl/common/npg"
 )
 
 const defaultOutputFileName = "connlist.txt"
-
-var (
-	errNPGErrorsIndicator   = errors.New("there were errors during execution")
-	errNPGWarningsIndicator = errors.New("there were warnings during execution")
-)
 
 type netpolAnalyzer interface {
 	ConnlistFromDirPath(dirPath string) ([]npguard.Peer2PeerConnection, error)
@@ -35,11 +31,11 @@ func (cmd *analyzeNetpolCommand) analyzeNetpols(analyzer netpolAnalyzer) error {
 	for _, e := range analyzer.Errors() {
 		if e.IsSevere() {
 			cmd.env.Logger().ErrfLn("%s %s", e.Error(), e.Location())
-			roxerr = errNPGErrorsIndicator
+			roxerr = npg.ErrErrors
 		} else {
 			cmd.env.Logger().WarnfLn("%s %s", e.Error(), e.Location())
 			if cmd.treatWarningsAsErrors && roxerr == nil {
-				roxerr = errNPGWarningsIndicator
+				roxerr = npg.ErrWarnings
 			}
 		}
 	}

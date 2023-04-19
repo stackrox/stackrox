@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/mocks"
+	"github.com/stackrox/rox/roxctl/common/npg"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -44,12 +45,12 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 		{
 			name:                  "errors with no resources found",
 			inputFolderPath:       "testdata/empty-yamls",
-			expectedAnalysisError: errNPGErrorsIndicator,
+			expectedAnalysisError: npg.ErrErrors,
 		},
 		{
 			name:                  "treating warnings as errors",
 			inputFolderPath:       "testdata/minimal-with-invalid-doc",
-			expectedAnalysisError: errNPGWarningsIndicator,
+			expectedAnalysisError: npg.ErrWarnings,
 			strict:                true,
 		},
 		{
@@ -60,7 +61,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 		{
 			name:                  "stopOnFistError",
 			inputFolderPath:       "testdata/dirty", // yaml document malformed
-			expectedAnalysisError: errNPGErrorsIndicator,
+			expectedAnalysisError: npg.ErrErrors,
 			stopOnFirstErr:        true,
 		},
 		{
