@@ -83,43 +83,47 @@ func (c *nodeInventoryHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error 
 func (c *nodeInventoryHandlerImpl) run() (<-chan *central.MsgFromSensor, <-chan *common.MessageToComplianceWithAddress) {
 	toCentral := make(chan *central.MsgFromSensor)
 	toCompliance := make(chan *common.MessageToComplianceWithAddress)
-	go func() {
-		defer c.stopper.Flow().ReportStopped()
-		defer close(toCentral)
-		defer close(toCompliance)
-		for {
-			select {
-			case <-c.stopper.Flow().StopRequested():
+
+	go c.nodeInventoryHandlingLoop(toCentral, toCompliance)
+
+	return toCentral, toCompliance
+}
+
+func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *central.MsgFromSensor, toCompliance chan *common.MessageToComplianceWithAddress) {
+	defer c.stopper.Flow().ReportStopped()
+	defer close(toCentral)
+	defer close(toCompliance)
+	for {
+		select {
+		case <-c.stopper.Flow().StopRequested():
+			return
+		case inventory, ok := <-c.inventories:
+			if !ok {
+				c.stopper.Flow().StopWithError(errInputChanClosed)
 				return
-			case inventory, ok := <-c.inventories:
-				if !ok {
-					c.stopper.Flow().StopWithError(errInputChanClosed)
-					return
-				}
-				if !c.centralReady.IsDone() {
-					log.Warnf("Received NodeInventory but Central is not reachable. Requesting Compliance to resend NodeInventory later")
-					c.sendNackToCompliance(toCompliance, inventory)
-					continue
-				}
-				if inventory == nil {
-					log.Warnf("Received nil node inventory: not sending to Central")
-					break
-				}
-				if nodeID, err := c.nodeMatcher.GetNodeID(inventory.GetNodeName()); err != nil {
-					log.Infof("Sending NACK to compliance after receiving unknown NodeInventory with ID %s", inventory.GetNodeId())
-					c.sendNackToCompliance(toCompliance, inventory)
-				} else {
-					inventory.NodeId = nodeID
-					metrics.ObserveReceivedNodeInventory(inventory)
-					log.Infof("Mapping NodeInventory name '%s' to Node ID '%s'", inventory.GetNodeName(), nodeID)
-					c.sendNodeInventory(toCentral, inventory)
-					log.Infof("Sending ACK to compliance for NodeInventory with ID %s", inventory.GetNodeId())
-					c.sendAckToCompliance(toCompliance, inventory)
-				}
+			}
+			if !c.centralReady.IsDone() {
+				log.Warnf("Received NodeInventory but Central is not reachable. Requesting Compliance to resend NodeInventory later")
+				c.sendNackToCompliance(toCompliance, inventory)
+				continue
+			}
+			if inventory == nil {
+				log.Warnf("Received nil node inventory: not sending to Central")
+				break
+			}
+			if nodeID, err := c.nodeMatcher.GetNodeID(inventory.GetNodeName()); err != nil {
+				log.Infof("Sending NACK to compliance after receiving unknown NodeInventory with ID %s", inventory.GetNodeId())
+				c.sendNackToCompliance(toCompliance, inventory)
+			} else {
+				inventory.NodeId = nodeID
+				metrics.ObserveReceivedNodeInventory(inventory)
+				log.Debugf("Mapping NodeInventory name '%s' to Node ID '%s'", inventory.GetNodeName(), nodeID)
+				c.sendNodeInventory(toCentral, inventory)
+				log.Debugf("Sending ACK to compliance for NodeInventory with ID %s", inventory.GetNodeId())
+				c.sendAckToCompliance(toCompliance, inventory)
 			}
 		}
-	}()
-	return toCentral, toCompliance
+	}
 }
 
 func (c *nodeInventoryHandlerImpl) sendNackToCompliance(complianceC chan<- *common.MessageToComplianceWithAddress, inventory *storage.NodeInventory) {

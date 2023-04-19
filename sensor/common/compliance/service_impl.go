@@ -36,6 +36,40 @@ type serviceImpl struct {
 	connectionManager *connectionManager
 }
 
+type connectionManager struct {
+	connectionLock sync.RWMutex
+	connectionMap  map[string]sensor.ComplianceService_CommunicateServer
+}
+
+func newConnectionManager() *connectionManager {
+	return &connectionManager{
+		connectionMap: make(map[string]sensor.ComplianceService_CommunicateServer),
+	}
+}
+
+func (c *connectionManager) add(node string, connection sensor.ComplianceService_CommunicateServer) {
+	c.connectionLock.Lock()
+	defer c.connectionLock.Unlock()
+
+	c.connectionMap[node] = connection
+}
+
+func (c *connectionManager) remove(node string) {
+	c.connectionLock.Lock()
+	defer c.connectionLock.Unlock()
+
+	delete(c.connectionMap, node)
+}
+
+func (c *connectionManager) forEach(fn func(node string, server sensor.ComplianceService_CommunicateServer)) {
+	c.connectionLock.RLock()
+	defer c.connectionLock.RUnlock()
+
+	for node, server := range c.connectionMap {
+		fn(node, server)
+	}
+}
+
 // GetScrapeConfig returns the scrape configuration for the given node name and scrape ID.
 func (s *serviceImpl) GetScrapeConfig(_ context.Context, nodeName string) (*sensor.MsgToCompliance_ScrapeConfig, error) {
 	nodeScrapeConfig, err := s.orchestrator.GetNodeScrapeConfig(nodeName)
@@ -170,38 +204,4 @@ func (s *serviceImpl) AuditEvents() chan *sensor.AuditEvents {
 
 func (s *serviceImpl) NodeInventories() <-chan *storage.NodeInventory {
 	return s.nodeInventories
-}
-
-type connectionManager struct {
-	connectionLock sync.RWMutex
-	connectionMap  map[string]sensor.ComplianceService_CommunicateServer
-}
-
-func newConnectionManager() *connectionManager {
-	return &connectionManager{
-		connectionMap: make(map[string]sensor.ComplianceService_CommunicateServer),
-	}
-}
-
-func (c *connectionManager) add(node string, connection sensor.ComplianceService_CommunicateServer) {
-	c.connectionLock.Lock()
-	defer c.connectionLock.Unlock()
-
-	c.connectionMap[node] = connection
-}
-
-func (c *connectionManager) remove(node string) {
-	c.connectionLock.Lock()
-	defer c.connectionLock.Unlock()
-
-	delete(c.connectionMap, node)
-}
-
-func (c *connectionManager) forEach(fn func(node string, server sensor.ComplianceService_CommunicateServer)) {
-	c.connectionLock.RLock()
-	defer c.connectionLock.RUnlock()
-
-	for node, server := range c.connectionMap {
-		fn(node, server)
-	}
 }

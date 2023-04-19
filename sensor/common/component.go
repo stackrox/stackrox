@@ -35,7 +35,8 @@ type MessageToComplianceWithAddress struct {
 	Broadcast bool
 }
 
-// ComplianceComponent is responsible for handling arriving NodeInventory messages, processing them, and sending them to central
+// ComplianceComponent is a sensor component that can communicate with compliance. All the messaged intended for
+// compliance are returned by ComplianceC(). It must be started before the compliance.Multiplexer or we panic.
 type ComplianceComponent interface {
 	SensorComponent
 	Stopped() concurrency.ReadOnlyErrorSignal

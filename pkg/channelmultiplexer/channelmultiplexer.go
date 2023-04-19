@@ -11,8 +11,6 @@ import (
 type ChannelMultiplexer[T any] struct {
 	inputChannels  []<-chan *T
 	outputCommands chan *T
-	// connectionMap  map[string]sensor.ComplianceService_CommunicateServer
-	// manager connectionManager
 
 	wg      sync.WaitGroup
 	started concurrency.Signal
@@ -32,7 +30,7 @@ func NewMultiplexer[T any]() *ChannelMultiplexer[T] {
 // for ALL channels before calling Run()
 func (c *ChannelMultiplexer[T]) AddChannel(channel <-chan *T) {
 	if c.started.IsDone() {
-		panic("Cannot addChannel after component is started")
+		panic("channelMultiplexer.AddChannel() was called the component was started. Make sure to add all channels before starting the component")
 	}
 	c.inputChannels = append(c.inputChannels, channel)
 }

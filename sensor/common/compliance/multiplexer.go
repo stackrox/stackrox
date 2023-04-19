@@ -71,7 +71,7 @@ func (c *Multiplexer) AddComponentWithComplianceC(comp ...common.ComplianceCompo
 // for ALL channels before calling Start()
 func (c *Multiplexer) addChannel(channel <-chan *common.MessageToComplianceWithAddress) {
 	if channel == nil {
-		panic("addChannel cannot work with nil channels")
+		panic("Multiplexer.AddChannel() cannot work with nil channels")
 	}
 	c.mp.AddChannel(channel)
 }
