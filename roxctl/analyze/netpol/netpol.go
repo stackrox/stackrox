@@ -1,11 +1,13 @@
 package netpol
 
 import (
+	"os"
+
 	npguard "github.com/np-guard/netpol-analyzer/pkg/netpol/connlist"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/npguardutils"
 )
 
 type analyzeNetpolCommand struct {
@@ -56,12 +58,11 @@ For more information about the support scope of Red Hat Technology Preview featu
 	c.Flags().StringVarP(&analyzeNetpolCmd.focusWorkload, "focus-workload", "", "", "focus connections of specified workload name in the output")
 	return c
 }
-
 func (cmd *analyzeNetpolCommand) construct(args []string) (netpolAnalyzer, error) {
 	cmd.inputFolderPath = args[0]
 	var opts []npguard.ConnlistAnalyzerOption
 	if cmd.env != nil && cmd.env.Logger() != nil {
-		opts = append(opts, npguard.WithLogger(npguardutils.NewNpgLogger(cmd.env.Logger())))
+		opts = append(opts, npguard.WithLogger(newNpgLogger(cmd.env.Logger())))
 	}
 	if cmd.stopOnFirstError {
 		opts = append(opts, npguard.WithStopOnError())
@@ -76,8 +77,17 @@ func (cmd *analyzeNetpolCommand) construct(args []string) (netpolAnalyzer, error
 }
 
 func (cmd *analyzeNetpolCommand) validate() error {
-	if err := npguardutils.SetupPath(cmd.outputFilePath, cmd.removeOutputPath); err != nil {
+	if err := cmd.setupPath(cmd.outputFilePath); err != nil {
 		return errors.Wrap(err, "failed to set up file path")
+	}
+	return nil
+}
+
+func (cmd *analyzeNetpolCommand) setupPath(path string) error {
+	if _, err := os.Stat(path); err == nil && !cmd.removeOutputPath {
+		return errox.AlreadyExists.Newf("path %s already exists. Use --remove to overwrite or select a different path.", path)
+	} else if !os.IsNotExist(err) {
+		return errors.Wrapf(err, "failed to check if path %s exists", path)
 	}
 	return nil
 }
