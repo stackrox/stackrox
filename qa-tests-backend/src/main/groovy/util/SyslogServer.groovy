@@ -24,8 +24,8 @@ class SyslogServer {
                     new Deployment()
                             .setNamespace(namespace)
                             .setName(deploymentName)
-                            // The original is at docker.io/rsyslog/syslog_appliance_alpine:8.36.0-3.7
-                            // and https://github.com/rsyslog/rsyslog-docker
+                            // The source for this image is in qa-tests-backend/test-images/syslog
+                            // Run make syslog-image from the main folder to build the image
                             .setImage("quay.io/rhacs-eng/qa:syslog_server_1_0")
                             .setCommand(["/syslog"])
                             .addPort(SYSLOG_PORT)
@@ -46,7 +46,7 @@ class SyslogServer {
 
             orchestrator.createService(rsyslog.syslogSvc)
             orchestrator.createService(rsyslog.restSvc)
-           rsyslog.syslogPortForward = orchestrator.
+            rsyslog.syslogPortForward = orchestrator.
                     createPortForward(REST_PORT, rsyslog.deployment) as LocalPortForward
         }   catch (Exception e) {
             log.info("error creating syslog deployment or service", e)
