@@ -55,6 +55,7 @@ class RoleService extends BaseService {
                 .setRole(role)
                 .build()
         )
+        log.info "Created role: ${role.name}"
         role
     }
 
@@ -63,6 +64,7 @@ class RoleService extends BaseService {
             def role = getRole(name)
             getRoleService().deleteRole(Common.ResourceByID.newBuilder().setId(name).build())
             deletePermissionSet(role.permissionSetId)
+            log.info "Deleted role: ${name}"
         } catch (Exception e) {
             log.warn("Error deleting role ${name}", e)
         }
