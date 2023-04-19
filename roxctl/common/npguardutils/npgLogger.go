@@ -1,4 +1,4 @@
-package netpol
+package npguardutils
 
 import (
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -10,7 +10,8 @@ type npgLogger struct {
 	l logger.Logger
 }
 
-func newNpgLogger(l logger.Logger) *npgLogger {
+// NewNpgLogger creates a new npgLogger
+func NewNpgLogger(l logger.Logger) *npgLogger {
 	return &npgLogger{
 		l: l,
 	}

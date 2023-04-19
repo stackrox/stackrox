@@ -1,13 +1,11 @@
 package netpol
 
 import (
-	"os"
-
 	npguard "github.com/np-guard/cluster-topology-analyzer/pkg/controller"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/npguardutils"
 	"github.com/stackrox/rox/roxctl/common/printer"
 )
 
@@ -69,7 +67,7 @@ func (cmd *generateNetpolCommand) construct(args []string, c *cobra.Command) (ne
 
 	var opts []npguard.PoliciesSynthesizerOption
 	if cmd.env != nil && cmd.env.Logger() != nil {
-		opts = append(opts, npguard.WithLogger(newNpgLogger(cmd.env.Logger())))
+		opts = append(opts, npguard.WithLogger(npguardutils.NewNpgLogger(cmd.env.Logger())))
 	}
 	if cmd.stopOnFirstError {
 		opts = append(opts, npguard.WithStopOnError())
@@ -82,23 +80,14 @@ func (cmd *generateNetpolCommand) validate() error {
 		return errors.New("Flags [-d|--output-dir, -f|--output-file] cannot be used together")
 	}
 	if cmd.splitMode {
-		if err := cmd.setupPath(cmd.outputFolderPath); err != nil {
+		if err := npguardutils.SetupPath(cmd.outputFolderPath, cmd.removeOutputPath); err != nil {
 			return errors.Wrap(err, "failed to set up folder path")
 		}
 	} else if cmd.mergeMode {
-		if err := cmd.setupPath(cmd.outputFilePath); err != nil {
+		if err := npguardutils.SetupPath(cmd.outputFilePath, cmd.removeOutputPath); err != nil {
 			return errors.Wrap(err, "failed to set up file path")
 		}
 	}
 
-	return nil
-}
-
-func (cmd *generateNetpolCommand) setupPath(path string) error {
-	if _, err := os.Stat(path); err == nil && !cmd.removeOutputPath {
-		return errox.AlreadyExists.Newf("path %s already exists. Use --remove to overwrite or select a different path.", path)
-	} else if !os.IsNotExist(err) {
-		return errors.Wrapf(err, "failed to check if path %s exists", path)
-	}
 	return nil
 }

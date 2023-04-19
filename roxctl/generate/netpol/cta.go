@@ -9,12 +9,8 @@ import (
 	npguard "github.com/np-guard/cluster-topology-analyzer/pkg/controller"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
+	"github.com/stackrox/rox/roxctl/common/npguardutils"
 	v1 "k8s.io/api/networking/v1"
-)
-
-var (
-	errNPGErrorsIndicator   = errors.New("there were errors during execution")
-	errNPGWarningsIndicator = errors.New("there were warnings during execution")
 )
 
 type netpolGenerator interface {
@@ -34,11 +30,11 @@ func (cmd *generateNetpolCommand) generateNetpol(synth netpolGenerator) error {
 	for _, e := range synth.Errors() {
 		if e.IsSevere() {
 			cmd.env.Logger().ErrfLn("%s %s", e.Error(), e.Location())
-			roxerr = errNPGErrorsIndicator
+			roxerr = npguardutils.ErrNPGErrorsIndicator
 		} else {
 			cmd.env.Logger().WarnfLn("%s %s", e.Error(), e.Location())
 			if cmd.treatWarningsAsErrors && roxerr == nil {
-				roxerr = errNPGWarningsIndicator
+				roxerr = npguardutils.ErrNPGWarningsIndicator
 			}
 		}
 	}
@@ -94,7 +90,7 @@ func (cmd *generateNetpolCommand) saveNetpolsToMergedFile(combinedNetpols string
 		filename = "policies.yaml"
 	}
 
-	if err := writeFile(filename, dirpath, combinedNetpols); err != nil {
+	if err := npguardutils.WriteFile(filename, dirpath, combinedNetpols); err != nil {
 		return errors.Wrap(err, "error writing merged Network Policies")
 	}
 	return nil
@@ -113,18 +109,9 @@ func (cmd *generateNetpolCommand) saveNetpolsToFolder(recommendedNetpols []*v1.N
 			return errors.Wrap(err, "error converting Network Policy object to yaml")
 		}
 
-		if err := writeFile(filename, cmd.outputFolderPath, yamlPolicy); err != nil {
+		if err := npguardutils.WriteFile(filename, cmd.outputFolderPath, yamlPolicy); err != nil {
 			return errors.Wrap(err, "error writing policy to file")
 		}
 	}
 	return nil
-}
-
-func writeFile(filename string, destDir string, content string) error {
-	outputPath := filepath.Join(destDir, filename)
-	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-		return errors.Wrapf(err, "error creating directory for file %q", filename)
-	}
-
-	return errors.Wrap(os.WriteFile(outputPath, []byte(content), os.FileMode(0644)), "error writing file")
 }
