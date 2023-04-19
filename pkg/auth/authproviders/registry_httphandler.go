@@ -147,7 +147,6 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 			return
 		}
 		clientState = state
-		log.Infof("Client state for auth provider %q in roxctl authorize: %s", providerID, clientState)
 	} else {
 		clientState = idputil.AttachTestStateOrEmpty(clientState, testMode)
 	}
@@ -257,9 +256,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	}
 
 	providerID, clientState, err := factory.ProcessHTTPRequest(w, req)
-	log.Infof("In providers HTTP handler for provider %q", providerID)
 	clientState, mode := idputil.ParseClientState(clientState)
-	log.Infof("Client state for auth provider %q: %s", providerID, clientState)
 
 	var provider Provider
 	if err == nil {
