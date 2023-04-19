@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/set"
-        "gorm.io/gorm"
+	"gorm.io/gorm"
 )
 
 var (
