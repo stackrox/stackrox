@@ -30,7 +30,7 @@ export const deploymentListQuery = gql`
     }
 `;
 
-type Deployment = {
+export type Deployment = {
     id: string;
     name: string;
     imageCVECountBySeverity: {
