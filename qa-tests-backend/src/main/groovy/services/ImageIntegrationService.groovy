@@ -158,6 +158,11 @@ class ImageIntegrationService extends BaseService {
     }
 
     static String addStackroxScannerIntegration() {
+        ImageIntegrationOuterClass.ImageIntegration existing =
+            getImageIntegrationByName(StackroxScannerIntegration.name())
+        if (existing) {
+            return existing.id
+        }
         return StackroxScannerIntegration.createDefaultIntegration()
     }
 
