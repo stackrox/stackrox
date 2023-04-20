@@ -43,8 +43,9 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 		}
 
 		if fieldMetadata.derivedMetadata == nil {
+			aggr, distinct := aggregatefunc.GetAggrFuncForV1(so.GetAggregateBy())
 			querySoFar.Pagination.OrderBys = append(querySoFar.Pagination.OrderBys, orderByEntry{
-				Field:       selectQueryField(so.GetField(), dbField, false, aggregatefunc.Unset, ""),
+				Field:       selectQueryField(so.GetField(), dbField, distinct, aggr, ""),
 				Descending:  so.GetReversed(),
 				SearchAfter: so.GetSearchAfter(),
 			})

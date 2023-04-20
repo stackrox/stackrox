@@ -110,30 +110,36 @@ func (q *query) ExtraSelectedFieldPaths() []pgsearch.SelectQueryField {
 		return nil
 	}
 
+	seenSelectPathsToIndex := make(map[string]int)
+	for idx, f := range q.SelectedFields {
+		seenSelectPathsToIndex[f.SelectPath] = idx
+	}
+
 	var out []pgsearch.SelectQueryField
 	for _, groupBy := range q.GroupBys {
-		var alreadyExists bool
-		for idx := range q.SelectedFields {
-			field := &q.SelectedFields[idx]
-			if field.SelectPath == groupBy.Field.SelectPath {
-				field.FromGroupBy = true
-				alreadyExists = true
-			}
-		}
-		if !alreadyExists {
+		// Make sure we do not add duplicate select paths to the query.
+		idx, found := seenSelectPathsToIndex[groupBy.Field.SelectPath]
+		if !found {
 			out = append(out, groupBy.Field)
+		} else {
+			// `FromGroupBy` property determines whether we want to apply json_agg() to the field later when
+			// generating the SQL string.
+			field := &q.SelectedFields[idx]
+			field.FromGroupBy = true
 		}
+
+		// -1 because the select path was added to `out` and not to `q.SelectedFields`.
+		seenSelectPathsToIndex[groupBy.Field.SelectPath] = -1
 	}
+
 	for _, orderByEntry := range q.Pagination.OrderBys {
-		var alreadyExists bool
-		for _, selectedField := range q.SelectedFields {
-			if selectedField.SelectPath == orderByEntry.Field.SelectPath {
-				alreadyExists = true
-			}
-		}
-		if !alreadyExists {
+		// Make sure we do not add duplicate select paths to the query.
+		if _, found := seenSelectPathsToIndex[orderByEntry.Field.SelectPath]; !found {
 			out = append(out, orderByEntry.Field)
 		}
+
+		// -1 because the select path was added to `out` and not to `q.SelectedFields`.
+		seenSelectPathsToIndex[orderByEntry.Field.SelectPath] = -1
 	}
 	return out
 }

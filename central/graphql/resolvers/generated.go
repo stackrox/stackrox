@@ -42,6 +42,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"scanInline: Boolean!",
 		"timeoutSeconds: Int!",
 	}))
+	utils.Must(builder.AddInput("AggregateBy", []string{
+		"aggregateFunc: String",
+		"distinct: Boolean",
+	}))
 	utils.Must(builder.AddType("Alert", []string{
 		"clusterId: String!",
 		"clusterName: String!",
@@ -1285,6 +1289,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 	}))
 	utils.Must(builder.AddInput("SortOption", []string{
+		"aggregateBy: AggregateBy",
 		"field: String",
 		"reversed: Boolean",
 	}))

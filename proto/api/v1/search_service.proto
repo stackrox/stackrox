@@ -91,14 +91,15 @@ message RawSearchRequest {
 }
 
 message QuerySortOption {
-    string field    = 1;
-    bool   reversed = 2;
+    string      field        = 1;
+    bool        reversed     = 2;
     oneof search_after_opt {
         // search_after is alternative to offset for pagination.
         // Each value in search_after corresponds to a field. Only results following a record specified by a combination
         // of field+search_after values in specified sorting order will be returned.
-        string search_after = 3;
+        string  search_after = 3;
     }
+    AggregateBy aggregate_by = 4;
 }
 
 message QueryField {
