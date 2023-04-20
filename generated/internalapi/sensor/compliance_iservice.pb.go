@@ -913,6 +913,7 @@ func (m *MsgToCompliance_AuditLogCollectionRequest_StopRequest) Clone() *MsgToCo
 	return cloned
 }
 
+// NodeInventoryNack will be removed in the future, hence it is not consolidated with the Ack
 type MsgToCompliance_NodeInventoryNack struct {
 	NodeId               string   `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
