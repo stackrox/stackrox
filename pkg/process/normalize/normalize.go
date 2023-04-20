@@ -21,6 +21,9 @@ func NormalizeIndicator(indicator *storage.ProcessIndicator) {
 	signal.ExecFilePath = sanitizeString(signal.GetExecFilePath())
 	signal.Name = sanitizeString(signal.GetName())
 	signal.Args = sanitizeString(signal.GetArgs())
+	for _, lineage := range signal.GetLineageInfo() {
+		lineage.ParentExecFilePath = sanitizeString(lineage.GetParentExecFilePath())
+	}
 }
 
 // NormalizeNetworkEndpoint normalizes network endpoints
