@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/process/normalize"
 	"github.com/stackrox/rox/pkg/sac"
+	"gorm.io/gorm"
 )
 
 var (
