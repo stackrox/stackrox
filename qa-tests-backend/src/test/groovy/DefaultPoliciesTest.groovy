@@ -1,6 +1,7 @@
 import static Services.getPolicies
 import static Services.waitForViolation
 
+import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
 
 import io.grpc.StatusRuntimeException
@@ -38,6 +39,8 @@ import util.Helpers
 import util.SlackUtil
 
 import org.junit.Assume
+import org.junit.Rule
+import org.junit.rules.Timeout
 import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Shared
@@ -105,6 +108,16 @@ class DefaultPoliciesTest extends BaseSpecification {
             .addLabel ( "app", "test" )
             .setCommand(["sleep", "600"]),
     ]
+
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 300
+
+    // Override the global JUnit test timeout to cover a test instance waiting
+    // WAIT_FOR_VIOLATION_TIMEOUT over three test tries and the appprox. 6
+    // minutes it can take to gather debug when the first test run fails plus
+    // some padding.
+    @Rule
+    @SuppressWarnings(["JUnitPublicProperty"])
+    Timeout globalTimeout = new Timeout(3*WAIT_FOR_VIOLATION_TIMEOUT + 300 + 120, TimeUnit.SECONDS)
 
     @Shared
     private String gcrId
@@ -201,7 +214,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         "Verify Violation for #policyName is triggered"
         // Some of these policies require scans so extend the timeout as the scan will be done inline
         // with our scanner
-        assert waitForViolation(deploymentName,  policyName, 300)
+        assert waitForViolation(deploymentName,  policyName, WAIT_FOR_VIOLATION_TIMEOUT)
 
         cleanup:
         if (policyEnabled) {
