@@ -54,7 +54,7 @@ func (Aggregation) EnumDescriptor() ([]byte, []int) {
 }
 
 type AggregateBy struct {
-	AggrFunc             Aggregation `protobuf:"varint,1,opt,name=aggrFunc,proto3,enum=v1.AggregateBy" json:"aggrFunc,omitempty"`
+	AggrFunc             Aggregation `protobuf:"varint,1,opt,name=aggrFunc,proto3,enum=v1.Aggregation" json:"aggrFunc,omitempty"`
 	Distinct             bool        `protobuf:"varint,2,opt,name=distinct,proto3" json:"distinct,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -277,7 +277,7 @@ func (m *Pagination) Clone() *Pagination {
 }
 
 func init() {
-	proto.RegisterEnum("v1.AggregateBy", Aggregation_name, Aggregation_value)
+	proto.RegisterEnum("v1.Aggregation", Aggregation_name, Aggregation_value)
 	proto.RegisterType((*AggregateBy)(nil), "v1.AggregateBy")
 	proto.RegisterType((*SortOption)(nil), "v1.SortOption")
 	proto.RegisterType((*Pagination)(nil), "v1.Pagination")

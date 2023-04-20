@@ -122,7 +122,7 @@ func (q *query) ExtraSelectedFieldPaths() []pgsearch.SelectQueryField {
 		if !found {
 			out = append(out, groupBy.Field)
 		} else {
-			// `FromGroupBy` property is determines whether we want to apply json_agg() to the field later when
+			// `FromGroupBy` property determines whether we want to apply json_agg() to the field later when
 			// generating the SQL string.
 			field := &q.SelectedFields[idx]
 			field.FromGroupBy = true
