@@ -66,7 +66,7 @@ func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 	}
 	metrics.IncrementProcessEnrichmentHits()
 	populateIndicatorFromCachedContainer(indicator, metadata)
-	normalize.NormalizeIndicator(indicator)
+	normalize.Indicator(indicator)
 	p.enrichedIndicators <- indicator
 }
 

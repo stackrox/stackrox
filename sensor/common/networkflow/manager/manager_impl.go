@@ -890,7 +890,7 @@ func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkCo
 	flowMetrics.NetworkFlowMessagesPerNode.With(prometheus.Labels{"Hostname": hostname}).Inc()
 
 	for _, endpoint := range networkInfo.GetUpdatedEndpoints() {
-		normalize.NormalizeNetworkEndpoint(endpoint)
+		normalize.NetworkEndpoint(endpoint)
 
 		flowMetrics.ContainerEndpointsPerNode.With(prometheus.Labels{"Hostname": hostname, "Protocol": endpoint.Protocol.String()}).Inc()
 

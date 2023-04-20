@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/process/normalize"
 	"github.com/stackrox/rox/pkg/sac"
-	"gorm.io/gorm"
 )
 
 var (
@@ -48,7 +47,7 @@ func move(gormDB *gorm.DB, postgresDB *postgres.DB, legacyStore legacy.Store) er
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableProcessIndicatorsStmt)
 	var processIndicators []*storage.ProcessIndicator
 	err := walk(ctx, legacyStore, func(obj *storage.ProcessIndicator) error {
-		normalize.NormalizeIndicator(obj)
+		normalize.Indicator(obj)
 		processIndicators = append(processIndicators, obj)
 		if len(processIndicators) == batchSize {
 			if err := store.UpsertMany(ctx, processIndicators); err != nil {

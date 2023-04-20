@@ -12,8 +12,8 @@ func sanitizeString(s string) string {
 	return strings.Trim(s, "\x00")
 }
 
-// NormalizeIndicator ensures that that indicator will comply with UTF8 encoding
-func NormalizeIndicator(indicator *storage.ProcessIndicator) {
+// Indicator ensures that that indicator will comply with UTF8 encoding
+func Indicator(indicator *storage.ProcessIndicator) {
 	signal := indicator.GetSignal()
 	if signal == nil {
 		return
@@ -26,8 +26,8 @@ func NormalizeIndicator(indicator *storage.ProcessIndicator) {
 	}
 }
 
-// NormalizeNetworkEndpoint normalizes network endpoints
-func NormalizeNetworkEndpoint(endpoint *sensor.NetworkEndpoint) {
+// NetworkEndpoint ensures that that endpoint will comply with UTF8 encoding
+func NetworkEndpoint(endpoint *sensor.NetworkEndpoint) {
 	originator := endpoint.GetOriginator()
 	if originator == nil {
 		return

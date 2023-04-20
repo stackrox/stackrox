@@ -54,7 +54,7 @@ func (s *pipelineImpl) Run(_ context.Context, clusterID string, msg *central.Msg
 	switch event.GetAction() {
 	case central.ResourceAction_CREATE_RESOURCE:
 		indicator := event.GetProcessIndicator()
-		normalize.NormalizeIndicator(indicator)
+		normalize.Indicator(indicator)
 
 		indicator.ClusterId = clusterID
 
