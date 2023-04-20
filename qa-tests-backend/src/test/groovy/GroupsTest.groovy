@@ -118,7 +118,7 @@ class GroupsTest extends BaseSpecification {
             }
         }
         for (def role : ROLES) {
-            RoleService.deleteRole(role.getName())
+            RoleService.deleteRole(role.getName(), false)
         }
     }
 
