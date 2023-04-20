@@ -21,7 +21,7 @@ jobs:
       run: make -sC deps/collector tag | tee COLLECTOR_VERSION
     - name: Create Pull Request
       id: cpr
-      uses: peter-evans/create-pull-request@v4
+      uses: peter-evans/create-pull-request@v5
       with:
         token: '${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}'
         commit-message: Update COLLECTOR_VERSION
