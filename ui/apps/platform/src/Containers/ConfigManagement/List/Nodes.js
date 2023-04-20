@@ -4,7 +4,6 @@ import { gql } from '@apollo/client';
 import { format } from 'date-fns';
 import pluralize from 'pluralize';
 
-import LabelChip from 'Components/LabelChip';
 import {
     defaultHeaderClassName,
     defaultColumnClassName,
@@ -18,6 +17,7 @@ import { nodeSortFields } from 'constants/sortFields';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import List from './List';
+import NoEntitiesIconText from './utilities/NoEntitiesIconText';
 
 const QUERY = gql`
     query nodes($query: String, $pagination: Pagination) {
@@ -128,7 +128,7 @@ const buildTableColumns = (match, location, entityContext) => {
                           nodeComplianceControlCount;
                       const controlCount = passingCount + failingCount + unknownCount;
                       if (!controlCount) {
-                          return <LabelChip text="No Controls" type="alert" />;
+                          return <NoEntitiesIconText text="No Controls" isTextOnly={pdf} />;
                       }
                       const url = URLService.getURL(match, location)
                           .push(original.id)

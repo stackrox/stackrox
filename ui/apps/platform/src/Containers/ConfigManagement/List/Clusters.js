@@ -8,7 +8,6 @@ import {
     nonSortableHeaderClassName,
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
-import LabelChip from 'Components/LabelChip';
 import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
@@ -17,6 +16,7 @@ import { clusterSortFields } from 'constants/sortFields';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import List from './List';
+import NoEntitiesIconText from './utilities/NoEntitiesIconText';
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
 
 const CLUSTERS_QUERY = gql`
@@ -103,7 +103,7 @@ const buildTableColumns = (match, location) => {
                 const { passingCount, failingCount, unknownCount } = complianceControlCount;
                 const totalCount = passingCount + failingCount + unknownCount;
                 if (!totalCount) {
-                    return <LabelChip text="No Controls" type="alert" />;
+                    return <NoEntitiesIconText text="No Controls" isTextOnly={pdf} />;
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)
@@ -125,7 +125,7 @@ const buildTableColumns = (match, location) => {
             Cell: ({ original, pdf }) => {
                 const { subjectCount } = original;
                 if (!subjectCount) {
-                    return <LabelChip text="No Users & Groups" type="alert" />;
+                    return <NoEntitiesIconText text="No Users & Groups" isTextOnly={pdf} />;
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)
@@ -149,7 +149,7 @@ const buildTableColumns = (match, location) => {
             Cell: ({ original, pdf }) => {
                 const { serviceAccountCount } = original;
                 if (!serviceAccountCount) {
-                    return <LabelChip text="No Service Accounts" type="alert" />;
+                    return <NoEntitiesIconText text="No Service Accounts" isTextOnly={pdf} />;
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)
@@ -176,7 +176,7 @@ const buildTableColumns = (match, location) => {
             Cell: ({ original, pdf }) => {
                 const { k8sRoleCount } = original;
                 if (!k8sRoleCount) {
-                    return <LabelChip text="No Roles" type="alert" />;
+                    return <NoEntitiesIconText text="No Roles" isTextOnly={pdf} />;
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)

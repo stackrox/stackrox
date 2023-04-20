@@ -19,7 +19,7 @@ function IconText({ icon, text, isTextOnly }: IconTextProps): ReactElement {
     return (
         <span className="pf-u-display-inline-flex pf-u-align-items-center">
             {icon}
-            <span className="pf-u-pl-sm">{text}</span>
+            <span className="pf-u-pl-sm pf-u-text-nowrap">{text}</span>
         </span>
     );
 }
