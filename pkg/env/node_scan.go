@@ -21,15 +21,9 @@ var (
 	// scanning wait time.
 	NodeScanningMaxInitialWait = registerDurationSetting("ROX_NODE_SCANNING_MAX_INITIAL_WAIT", 5*time.Minute)
 
-	// NodeScanningCacheDuration defines the time after which a cached inventory is considered outdated. Defaults to 90% of NodeScanningInterval.
-	NodeScanningCacheDuration = registerDurationSetting("ROX_NODE_SCANNING_CACHE_TIME", time.Duration(NodeScanningInterval.DurationSetting().Nanoseconds()-NodeScanningInterval.DurationSetting().Nanoseconds()/10))
-
-	// NodeScanningInitialBackoff defines the initial time in seconds a Node scan will be delayed if a backoff file is found
-	NodeScanningInitialBackoff = registerDurationSetting("ROX_NODE_SCANNING_INITIAL_BACKOFF", 30*time.Second)
-
-	// NodeScanningMaxBackoff is the upper boundary of backoff. Defaults to 5m in seconds, being 50% of Kubernetes restart policy stability timer.
-	NodeScanningMaxBackoff = registerDurationSetting("ROX_NODE_SCANNING_MAX_BACKOFF", 300*time.Second)
-
 	// NodeInventoryContainerEnabled is used to tell compliance whether a connection to the node-inventory container should be attempted
 	NodeInventoryContainerEnabled = RegisterBooleanSetting("ROX_CALL_NODE_INVENTORY_ENABLED", true)
+
+	// NodeAnalysisDeadline is a time in which node-inventory component should reply to compliance
+	NodeAnalysisDeadline = registerDurationSetting("ROX_NODE_SCANNING_DEADLINE", 30*time.Second)
 )
