@@ -1026,7 +1026,7 @@ openshift_ci_mods() {
     info "Git log:"
     git log --oneline --decorate -n 20 || true
 
-    info "Fetch tags"
+    info "Fetch tags:"
     git fetch --tags
 
     info "Recent git refs:"
