@@ -21,7 +21,7 @@ function AccessControlNoPermission({
             <PageSection variant={PageSectionVariants.light}>
                 <Alert
                     className="pf-u-mt-md"
-                    title={`You do not have permission to view ${subPage}. To access this page, you should have access to both Role and Access resources.`}
+                    title={`You do not have permission to view ${subPage}. To access this page, you should have access to the Access resource.`}
                     variant={AlertVariant.info}
                     isInline
                 />

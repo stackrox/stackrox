@@ -41,8 +41,8 @@ const entityType = 'ACCESS_SCOPE';
 
 function AccessScopes(): ReactElement {
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
-    const hasReadAccessToPage = hasReadAccess('Role') && hasReadAccess('Access');
-    const hasWriteAccessForPage = hasReadWriteAccess('Role') && hasReadWriteAccess('Access');
+    const hasReadAccessToPage = hasReadAccess('Access');
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
     const history = useHistory();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);

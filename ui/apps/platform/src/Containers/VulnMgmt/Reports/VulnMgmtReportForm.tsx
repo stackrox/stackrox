@@ -112,11 +112,11 @@ function VulnMgmtReportForm({
     const isCollectionsEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
-    const hasRoleWriteAccess = hasReadWriteAccess('Role');
+    const hasAccessWriteAccess = hasReadWriteAccess('Access');
     const hasClusterReadAccess = hasReadAccess('Cluster');
     const hasNamespaceReadAccess = hasReadAccess('Namespace');
     const hasNotifierWriteAccess = hasReadWriteAccess('Integration');
-    const canWriteScopes = hasRoleWriteAccess && hasClusterReadAccess && hasNamespaceReadAccess;
+    const canWriteScopes = hasAccessWriteAccess && hasClusterReadAccess && hasNamespaceReadAccess;
     const canWriteCollections = hasReadWriteAccess('WorkflowAdministration');
 
     const formik = useFormik<ReportConfiguration>({
