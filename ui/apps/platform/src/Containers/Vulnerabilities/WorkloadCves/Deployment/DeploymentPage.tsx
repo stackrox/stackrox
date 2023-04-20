@@ -102,7 +102,7 @@ function DeploymentPage() {
                         eventKey="Vulnerabilities"
                         title={<TabTitleText>Vulnerabilities</TabTitleText>}
                     >
-                        <DeploymentPageVulnerabilities />
+                        <DeploymentPageVulnerabilities deploymentId={deploymentId} />
                     </Tab>
                     <Tab
                         className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"

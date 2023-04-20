@@ -1,18 +1,11 @@
 import React from 'react';
 import { Card, CardBody, CardTitle, Flex, Grid, GridItem, Text } from '@patternfly/react-core';
-import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
+import { gql } from '@apollo/client';
 
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import { vulnerabilitySeverityLabels } from 'messages/common';
-
-export type BySeveritySummaryCardProps = {
-    className?: string;
-    title: string;
-    severityCounts: Omit<Record<VulnerabilitySeverity, number>, 'UNKNOWN_VULNERABILITY_SEVERITY'>;
-    hiddenSeverities: Set<VulnerabilitySeverity>;
-};
 
 const severitiesCriticalToLow = [
     'CRITICAL_VULNERABILITY_SEVERITY',
@@ -21,7 +14,45 @@ const severitiesCriticalToLow = [
     'LOW_VULNERABILITY_SEVERITY',
 ] as const;
 
+const severityToQuerySeverityKeys = {
+    CRITICAL_VULNERABILITY_SEVERITY: 'critical',
+    IMPORTANT_VULNERABILITY_SEVERITY: 'important',
+    MODERATE_VULNERABILITY_SEVERITY: 'moderate',
+    LOW_VULNERABILITY_SEVERITY: 'low',
+} as const;
+
 const fadedTextColor = 'var(--pf-global--Color--200)';
+
+export type ResourceCountsByCveSeverity = {
+    critical: { total: number };
+    important: { total: number };
+    moderate: { total: number };
+    low: { total: number };
+};
+
+export const resourceCountByCveSeverityFragment = gql`
+    fragment ResourceCountsByCVESeverity on ResourceCountByCVESeverity {
+        critical {
+            total
+        }
+        important {
+            total
+        }
+        moderate {
+            total
+        }
+        low {
+            total
+        }
+    }
+`;
+
+export type BySeveritySummaryCardProps = {
+    className?: string;
+    title: string;
+    severityCounts: ResourceCountsByCveSeverity;
+    hiddenSeverities: Set<VulnerabilitySeverity>;
+};
 
 function BySeveritySummaryCard({
     className = '',
@@ -35,12 +66,13 @@ function BySeveritySummaryCard({
             <CardBody>
                 <Grid className="pf-u-pl-sm">
                     {severitiesCriticalToLow.map((severity) => {
-                        const count = severityCounts[severity];
-                        const hasNoResults = count === 0;
+                        const querySeverityKey = severityToQuerySeverityKeys[severity];
+                        const count = severityCounts[querySeverityKey];
+                        const hasNoResults = count.total === 0;
                         const isHidden = hiddenSeverities.has(severity);
 
                         let textColor = '';
-                        let text = `${count} ${vulnerabilitySeverityLabels[severity]}`;
+                        let text = `${count.total} ${vulnerabilitySeverityLabels[severity]}`;
 
                         if (isHidden) {
                             textColor = fadedTextColor;
@@ -50,7 +82,7 @@ function BySeveritySummaryCard({
                             text = 'No results';
                         }
 
-                        const Icon: React.FC<SVGIconProps> | undefined = SeverityIcons[severity];
+                        const Icon = SeverityIcons[severity];
 
                         return (
                             <GridItem key={severity} span={6}>
