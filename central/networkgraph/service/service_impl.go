@@ -73,7 +73,7 @@ type serviceImpl struct {
 	clusters       clusterDS.DataStore
 	graphConfig    datastore.DataStore
 
-	sacHelper sachelper.SacHelper
+	clusterSACHelper sachelper.ClusterSacHelper
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -237,7 +237,7 @@ func (s *serviceImpl) validateCluster(ctx context.Context, clusterID string) err
 		return errors.Wrap(errox.InvalidArgs, "cluster ID must be specified")
 	}
 	requestedResourcesWithAccess := []permissions.ResourceWithAccess{permissions.View(resources.NetworkGraph)}
-	exists, err := s.sacHelper.IsClusterVisibleForPermissions(ctx, clusterID, requestedResourcesWithAccess)
+	exists, err := s.clusterSACHelper.IsClusterVisibleForPermissions(ctx, clusterID, requestedResourcesWithAccess)
 	if err != nil {
 		return err
 	}

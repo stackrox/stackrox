@@ -97,7 +97,7 @@ type serviceImpl struct {
 	notifierStore    notifierDataStore.DataStore
 	graphEvaluator   graph.Evaluator
 
-	sacHelper sachelper.SacHelper
+	clusterSACHelper sachelper.ClusterSacHelper
 
 	policyGenerator generator.Generator
 }
@@ -1130,7 +1130,7 @@ func (s *serviceImpl) clusterExists(ctx context.Context, clusterID string) error
 		return errors.Wrap(errox.InvalidArgs, "cluster ID must be specified")
 	}
 	requestedResourcesWithAccess := []permissions.ResourceWithAccess{permissions.View(resources.NetworkPolicy)}
-	exists, err := s.sacHelper.IsClusterVisibleForPermissions(ctx, clusterID, requestedResourcesWithAccess)
+	exists, err := s.clusterSACHelper.IsClusterVisibleForPermissions(ctx, clusterID, requestedResourcesWithAccess)
 	if err != nil {
 		return err
 	}

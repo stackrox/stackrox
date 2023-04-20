@@ -15,8 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-// SacHelper is an interface to query the requester scope for basic cluster and namespace information (ID and name).
-type SacHelper interface {
+// ClusterSacHelper is an interface to query the scope of the requester for basic cluster information (ID and name).
+type ClusterSacHelper interface {
 	GetClustersForPermissions(
 		ctx context.Context,
 		requestedPermissions []string,
@@ -28,7 +28,10 @@ type SacHelper interface {
 		clusterID string,
 		resourcesWithAccess []permissions.ResourceWithAccess,
 	) (bool, error)
+}
 
+// ClusterNamespaceSacHelper is an interface to query the scope of the requester for basic cluster and namespace information (ID and name).
+type ClusterNamespaceSacHelper interface {
 	GetNamespacesForClusterAndPermissions(
 		ctx context.Context,
 		clusterID string,
@@ -36,20 +39,33 @@ type SacHelper interface {
 	) ([]*v1.ScopeObject, error)
 }
 
-type sacHelperImpl struct {
-	clusterDataStore   clusterDS.DataStore
+type clusterSACHelperImpl struct {
+	clusterDataStore clusterDS.DataStore
+}
+
+type clusterNamespaceSACHelperImpl struct {
+	clusterHelper      *clusterSACHelperImpl
 	namespaceDataStore namespaceDS.DataStore
 }
 
-// NewSacHelper returns a helper object to get information from user scope.
-func NewSacHelper(clusterDataStore clusterDS.DataStore, namespaceDataStore namespaceDS.DataStore) SacHelper {
-	return &sacHelperImpl{
-		clusterDataStore:   clusterDataStore,
+// NewClusterSacHelper returns a helper object to get information from user scope.
+func NewClusterSacHelper(clusterDataStore clusterDS.DataStore) ClusterSacHelper {
+	return &clusterSACHelperImpl{
+		clusterDataStore: clusterDataStore,
+	}
+}
+
+// NewClusterNamespaceSacHelper returns a helper object to get information from user scope.
+func NewClusterNamespaceSacHelper(clusterDataStore clusterDS.DataStore, namespaceDataStore namespaceDS.DataStore) ClusterNamespaceSacHelper {
+	return &clusterNamespaceSACHelperImpl{
+		clusterHelper: &clusterSACHelperImpl{
+			clusterDataStore: clusterDataStore,
+		},
 		namespaceDataStore: namespaceDataStore,
 	}
 }
 
-func (h *sacHelperImpl) GetClustersForPermissions(
+func (h *clusterSACHelperImpl) GetClustersForPermissions(
 	ctx context.Context,
 	requestedPermissions []string,
 	pagination *v1.Pagination,
@@ -98,7 +114,7 @@ func (h *sacHelperImpl) GetClustersForPermissions(
 	return clusters, nil
 }
 
-func (h *sacHelperImpl) IsClusterVisibleForPermissions(
+func (h *clusterSACHelperImpl) IsClusterVisibleForPermissions(
 	ctx context.Context,
 	clusterID string,
 	resourcesWithAccess []permissions.ResourceWithAccess,
@@ -122,7 +138,7 @@ func (h *sacHelperImpl) IsClusterVisibleForPermissions(
 	return clusterFound, nil
 }
 
-func (h *sacHelperImpl) GetNamespacesForClusterAndPermissions(
+func (h *clusterNamespaceSACHelperImpl) GetNamespacesForClusterAndPermissions(
 	ctx context.Context,
 	clusterID string,
 	requestedPermissions []string,
@@ -130,7 +146,7 @@ func (h *sacHelperImpl) GetNamespacesForClusterAndPermissions(
 	resourcesWithAccess := listReadPermissions(requestedPermissions, permissions.NamespaceScope)
 	allNsResourcesWithAccess := listReadPermissions([]string{}, permissions.NamespaceScope)
 
-	clusterVisible, err := h.IsClusterVisibleForPermissions(ctx, clusterID, allNsResourcesWithAccess)
+	clusterVisible, err := h.clusterHelper.IsClusterVisibleForPermissions(ctx, clusterID, allNsResourcesWithAccess)
 	if err != nil {
 		return nil, err
 	}

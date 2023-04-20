@@ -43,12 +43,12 @@ func newService(store nfDS.ClusterDataStore,
 	clusters clusterDS.DataStore,
 	graphConfigDS datastore.DataStore) *serviceImpl {
 	return &serviceImpl{
-		clusterFlows:   store,
-		entities:       entities,
-		networkTreeMgr: networkTreeMgr,
-		deployments:    deployments,
-		clusters:       clusters,
-		graphConfig:    graphConfigDS,
-		sacHelper:      sachelper.NewSacHelper(clusters, nil),
+		clusterFlows:     store,
+		entities:         entities,
+		networkTreeMgr:   networkTreeMgr,
+		deployments:      deployments,
+		clusters:         clusters,
+		graphConfig:      graphConfigDS,
+		clusterSACHelper: sachelper.NewClusterSacHelper(clusters),
 	}
 }

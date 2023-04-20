@@ -59,7 +59,7 @@ func New(storage npDS.DataStore,
 		notifierStore:    notifierStore,
 		clusterStore:     clusterStore,
 		graphEvaluator:   graphEvaluator,
-		sacHelper:        sachelper.NewSacHelper(clusterStore, nil),
+		clusterSACHelper: sachelper.NewClusterSacHelper(clusterStore),
 		policyGenerator:  generator.New(storage, deployments, namespacesStore, globalFlowDataStore, networkTreeMgr, networkBaselines),
 	}
 }

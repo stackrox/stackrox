@@ -30,20 +30,20 @@ func listNamespaceNamesInScope(
 	for _, r := range resourcesWithAccess {
 		scope, err := getRequesterScopeForReadPermission(ctx, r)
 		if err != nil {
-			return noNamespaces, hasPartialAccess, err
+			return noNamespaces, partialAccess, err
 		}
 		if scope == nil || scope.State == effectiveaccessscope.Excluded {
 			continue
 		}
 		if scope.State == effectiveaccessscope.Included {
-			return noNamespaces, hasFullAccess, nil
+			return noNamespaces, fullAccess, nil
 		}
 		clusterScope := scope.GetClusterByID(clusterID)
 		if clusterScope == nil || clusterScope.State == effectiveaccessscope.Excluded {
 			continue
 		}
 		if clusterScope.State == effectiveaccessscope.Included {
-			return noNamespaces, hasFullAccess, nil
+			return noNamespaces, fullAccess, nil
 		}
 		for namespace, namespaceScope := range clusterScope.Namespaces {
 			if namespaceScope == nil || namespaceScope.State == effectiveaccessscope.Excluded {
@@ -52,7 +52,7 @@ func listNamespaceNamesInScope(
 			namespacesInScope.Add(namespace)
 		}
 	}
-	return namespacesInScope, hasPartialAccess, nil
+	return namespacesInScope, partialAccess, nil
 }
 
 func getNamespacesOptionsMap() search.OptionsMap {

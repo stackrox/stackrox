@@ -76,7 +76,8 @@ type serviceImpl struct {
 	roleDataStore      datastore.DataStore
 	clusterDataStore   clusterDS.DataStore
 	namespaceDataStore namespaceDS.DataStore
-	sacHelper          sachelper.SacHelper
+	clusterSACHelper   sachelper.ClusterSacHelper
+	namespaceSACHelper sachelper.ClusterNamespaceSacHelper
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -356,7 +357,7 @@ func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.C
 func (s *serviceImpl) GetClustersForPermissions(ctx context.Context, req *v1.GetClustersForPermissionsRequest) (*v1.GetClustersForPermissionsResponse, error) {
 	requestedPermissions := req.GetPermissions()
 
-	clusters, err := s.sacHelper.GetClustersForPermissions(ctx, requestedPermissions, req.GetPagination())
+	clusters, err := s.clusterSACHelper.GetClustersForPermissions(ctx, requestedPermissions, req.GetPagination())
 	if err != nil {
 		return nil, err
 	}
@@ -371,7 +372,7 @@ func (s *serviceImpl) GetNamespacesForClusterAndPermissions(ctx context.Context,
 	requestedPermissions := req.GetPermissions()
 	clusterID := req.GetClusterId()
 
-	namespaces, err := s.sacHelper.GetNamespacesForClusterAndPermissions(ctx, clusterID, requestedPermissions)
+	namespaces, err := s.namespaceSACHelper.GetNamespacesForClusterAndPermissions(ctx, clusterID, requestedPermissions)
 	if err != nil {
 		return nil, err
 	}

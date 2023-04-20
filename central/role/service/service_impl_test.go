@@ -535,7 +535,8 @@ func (s *serviceImplTestSuite) SetupSuite() {
 			roleDataStore:      roleStore,
 			clusterDataStore:   clusterStore,
 			namespaceDataStore: namespaceStore,
-			sacHelper:          sachelper.NewSacHelper(clusterStore, namespaceStore),
+			clusterSACHelper:   sachelper.NewClusterSacHelper(clusterStore),
+			namespaceSACHelper: sachelper.NewClusterNamespaceSacHelper(clusterStore, namespaceStore),
 		}
 	} else {
 		s.boltEngine, err = boltPkg.NewTemp("roleServiceTestBolt")
@@ -561,7 +562,8 @@ func (s *serviceImplTestSuite) SetupSuite() {
 			roleDataStore:      roleStore,
 			clusterDataStore:   clusterStore,
 			namespaceDataStore: namespaceStore,
-			sacHelper:          sachelper.NewSacHelper(clusterStore, namespaceStore),
+			clusterSACHelper:   sachelper.NewClusterSacHelper(clusterStore),
+			namespaceSACHelper: sachelper.NewClusterNamespaceSacHelper(clusterStore, namespaceStore),
 		}
 	}
 }

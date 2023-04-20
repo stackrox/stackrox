@@ -12,10 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-////////////////////////////////////////////////////////////////////////////////
-// Helpers                                                                    //
-//                                                                            //
-
 // listClusterIDsInScope consolidates the list of cluster IDs in the user scopes associated
 // with the requested resources and access level.
 // - If one of the allowed scopes is unrestricted, then the string set is returned empty

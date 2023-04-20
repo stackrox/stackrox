@@ -25,6 +25,7 @@ func New(roleDataStore datastore.DataStore, clusterDataStore clusterDS.DataStore
 		roleDataStore:      roleDataStore,
 		clusterDataStore:   clusterDataStore,
 		namespaceDataStore: namespaceDataStore,
-		sacHelper:          sachelper.NewSacHelper(clusterDataStore, namespaceDataStore),
+		clusterSACHelper:   sachelper.NewClusterSacHelper(clusterDataStore),
+		namespaceSACHelper: sachelper.NewClusterNamespaceSacHelper(clusterDataStore, namespaceDataStore),
 	}
 }
