@@ -14,7 +14,7 @@ type SortOption struct {
 	Reversed    *bool
 }
 
-// SortOption is the sort option input type.
+// AggregateBy is the sort option input type.
 type AggregateBy struct {
 	AggregateFunc *string
 	Distinct      *bool
