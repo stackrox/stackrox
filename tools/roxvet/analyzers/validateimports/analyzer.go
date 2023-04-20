@@ -222,6 +222,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/postgres/pgutils",
 			"pkg/postgres/schema",
 			"pkg/postgres/walker",
+			"pkg/process/normalize",
 			"pkg/process/id",
 			"pkg/protoconv",
 			"pkg/retry",
