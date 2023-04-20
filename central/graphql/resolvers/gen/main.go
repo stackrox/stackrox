@@ -107,6 +107,7 @@ var (
 		},
 		InputTypes: []reflect.Type{
 			reflect.TypeOf((*inputtypes.FalsePositiveVulnRequest)(nil)),
+			reflect.TypeOf((*inputtypes.AggregateBy)(nil)),
 			reflect.TypeOf((*inputtypes.SortOption)(nil)),
 			reflect.TypeOf((*inputtypes.Pagination)(nil)),
 			reflect.TypeOf((*inputtypes.VulnReqGlobalScope)(nil)),
