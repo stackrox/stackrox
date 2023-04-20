@@ -408,7 +408,7 @@ main-build-dockerized: main-builder-image
 
 .PHONY: main-build-nodeps
 main-build-nodeps: central-build-nodeps migrator-build-nodeps
-	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection
+	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection invalidprocess
 	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
 ifndef CI
     CGO_ENABLED=0 $(GOBUILD) roxctl
@@ -602,6 +602,7 @@ endif
 	cp bin/linux_$(GOARCH)/upgrader          image/bin/sensor-upgrader
 	cp bin/linux_$(GOARCH)/admission-control image/bin/admission-control
 	cp bin/linux_$(GOARCH)/collection        image/bin/compliance
+	cp bin/linux_$(GOARCH)/invalidprocess    image/bin/invalidprocess
 	# Workaround to bug in lima: https://github.com/lima-vm/lima/issues/602
 	find image/bin -not -path "*/.*" -type f -exec chmod +x {} \;
 
