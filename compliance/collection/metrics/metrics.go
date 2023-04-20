@@ -51,6 +51,20 @@ var (
 			"error",
 		})
 
+	callToNodeInventoryDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "call_node_inventory_duration_seconds",
+		Help:      "Time between sending the request to Node Inventory and getting the reply in Compliance (per Node) in seconds",
+		Buckets:   []float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 50, 100, 500, 1000},
+	},
+		[]string{
+			// The Node this scan belongs to
+			"node_name",
+			// Whether the inventory run was completed successfully
+			"error",
+		})
+
 	rescanInterval = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.ComplianceSubsystem.String(),
@@ -113,6 +127,14 @@ func ObserveNodeInventoryScan(inventory *storage.NodeInventory) {
 	}).Set(float64(rhelContentSets))
 }
 
+// ObserveNodeInventoryCallDuration observes the metric.
+func ObserveNodeInventoryCallDuration(d time.Duration, nodeName string, e error) {
+	callToNodeInventoryDuration.With(prometheus.Labels{
+		"node_name": nodeName,
+		"error":     strconv.FormatBool(e != nil),
+	}).Observe(d.Seconds())
+}
+
 // ObserveScanDuration observes the metric.
 func ObserveScanDuration(d time.Duration, nodeName string, e error) {
 	scanDuration.With(prometheus.Labels{
@@ -145,5 +167,5 @@ func ObserveInventoryProtobufMessage(cmsg *sensor.MsgFromCompliance) {
 // TODO(ROX-13164): Add number of retries
 
 func init() {
-	prometheus.MustRegister(numberOfRHELPackages, numberOfContentSets, scanDuration, rescanInterval, scansTotal, protobufMessageSize)
+	prometheus.MustRegister(numberOfRHELPackages, numberOfContentSets, scanDuration, callToNodeInventoryDuration, rescanInterval, scansTotal, protobufMessageSize)
 }
