@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"os"
+	"os/signal"
+	"syscall"
 	"unicode/utf8"
 
 	"github.com/stackrox/rox/central/globaldb"
@@ -20,6 +22,8 @@ func main() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := rocksdb.New(globaldb.GetRocksDB())
+	defer globaldb.GetRocksDB().Close()
+
 	var idsToDelete []string
 	err := store.Walk(ctx, func(obj *storage.ProcessIndicator) error {
 		var bad bool
@@ -58,4 +62,9 @@ func main() {
 		log.Fatalf("error deleting processes: %v", err)
 	}
 	log.Infof("Succcessfully deleted %d processes", len(idsToDelete))
+
+	signalsC := make(chan os.Signal, 1)
+	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	sig := <-signalsC
+	log.Infof("Caught %s signal", sig)
 }
