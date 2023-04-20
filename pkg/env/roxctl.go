@@ -1,13 +1,13 @@
 package env
 
 var (
-	// CACertFileEnv allows to pass a custom CA certificate file (path to a certificate file in PEN format).
+	// CACertFileEnv allows to pass a custom CA certificate file (path to a certificate file in PEM format).
 	CACertFileEnv = RegisterSetting("ROX_CA_CERT_FILE")
 
-	// ClientForceHTTP1Env ...
+	// ClientForceHTTP1Env configures the use of HTTP/1 for all connections (advanced; only use if you encounter connection issues).
 	ClientForceHTTP1Env = RegisterBooleanSetting("ROX_CLIENT_FORCE_HTTP1", false)
 
-	// DirectGRPCEnv ...
+	// DirectGRPCEnv configures the use of direct gRPC (advanced; only use if you encounter connection issues).
 	DirectGRPCEnv = RegisterBooleanSetting("ROX_DIRECT_GRPC_CLIENT", false)
 
 	// EndpointEnv specifies the central endpoint to use for commandline operations.
@@ -19,8 +19,8 @@ var (
 	// InsecureClientSkipTLSVerifyEnv allows commandline clients to skip the TLS certificate validation.
 	InsecureClientSkipTLSVerifyEnv = RegisterBooleanSetting("ROX_INSECURE_CLIENT_SKIP_TLS_VERIFY", false)
 
-	// NoColorPrinterEnv disables commandline color output.
-	NoColorPrinterEnv = RegisterBooleanSetting("ROX_NO_COLOR_PRINTER", false)
+	// NoColorEnv disables commandline color output.
+	NoColorEnv = RegisterBooleanSetting("ROX_NO_COLOR", false)
 
 	// PasswordEnv specifies the central admin password to use for commandline operations.
 	PasswordEnv = RegisterSetting("ROX_ADMIN_PASSWORD")

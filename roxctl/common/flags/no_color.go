@@ -17,7 +17,7 @@ func AddNoColor(c *cobra.Command) {
 	// Printer is required to initialize commands thus we cannot follow
 	// https://github.com/fatih/color/blob/v1.13.0/doc.go#L109-L119
 	var noColor bool
-	c.PersistentFlags().BoolVar(&noColor, noColorName, false, "Disable color output. Alternately disable the color output by setting the ROX_NO_COLOR_PRINTER environment variable")
+	c.PersistentFlags().BoolVar(&noColor, noColorName, false, "Disable color output. Alternately disable the color output by setting the ROX_NO_COLOR environment variable")
 }
 
 // HasNoColor returns true is passed args contain noColorFlag
@@ -27,8 +27,8 @@ func HasNoColor(args []string) bool {
 			return true
 		}
 	}
-	if env.NoColorPrinterEnv.BooleanSetting() != env.NoColorPrinterEnv.DefaultBooleanSetting() {
-		return env.NoColorPrinterEnv.BooleanSetting()
+	if env.NoColorEnv.BooleanSetting() != env.NoColorEnv.DefaultBooleanSetting() {
+		return env.NoColorEnv.BooleanSetting()
 	}
 	return false
 }
