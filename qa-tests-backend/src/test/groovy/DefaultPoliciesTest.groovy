@@ -482,17 +482,18 @@ class DefaultPoliciesTest extends BaseSpecification {
                 }
                  exists
              }.filter { alert ->
-                // The OpenShift: Kubeadmin Secret Accessed policy can sometimes get triggered
-                // by the CI. This happens when the CI scripts use kubectl to pull resources
-                // to save on a test failure. Ignore this alert iff _all_ violations was by kube:admin
-                // using kubectl. Do not ignore for any other violations.
-                // See https://issues.redhat.com/browse/ROX-10018
+                // The OpenShift: Kubeadmin Secret Accessed policy can sometimes
+                // get triggered by the CI. This happens when the CI scripts use
+                // kubectl to pull resources to save on an earlier test failure.
+                // Ignore this alert iff _all_ violations was by kube:admin or
+                // system:admin using kubectl. Do not ignore for any other
+                // violations. See https://issues.redhat.com/browse/ROX-10018
                 def noKubectlViolation = true
                 if (alert.policy.getName() == "OpenShift: Kubeadmin Secret Accessed") {
                     noKubectlViolation = !AlertService.getViolation(alert.id).getViolationsList().
                         stream().allMatch { v ->
                             def user = v.getKeyValueAttrs().getAttrsList().find { a ->
-                                a.getKey() == "Username" && a.getValue() == "kube:admin"
+                                a.getKey() == "Username" && a.getValue() =~ /(kube|system)\:admin/
                             }
                             def ua = v.getKeyValueAttrs().getAttrsList().find { a ->
                                 a.getKey() == "User Agent" && a.getValue().startsWith("kubectl/")
@@ -510,6 +511,12 @@ class DefaultPoliciesTest extends BaseSpecification {
                 log.info violation.toString()
                 log.info "The policy details:"
                 log.info Services.getPolicy(violation.policy.id).toString()
+                log.debug "The attribute list:"
+                AlertService.getViolation(violation.id).getViolationsList().forEach { v ->
+                    v.getKeyValueAttrs().getAttrsList().forEach { a ->
+                        log.debug "\t${a.getKey()}: ${a.getValue()}"
+                    }
+                }
             }
         }
 
