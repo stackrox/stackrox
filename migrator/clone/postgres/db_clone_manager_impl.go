@@ -161,7 +161,7 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 	// of Rocks -> Postgres fails so we can start fresh.
 	if d.versionExists(rocksVersion) {
 		log.Infof("A previously used version of Rocks exists -- %v", rocksVersion)
-		if !currExists || !d.versionExists(currClone.GetMigVersion()) {
+		if !currExists || !d.versionExists(currClone.GetMigVersion()) || currClone.GetSeqNum() < migrations.CurrentDBVersionSeqNum() {
 			d.cloneMap[TempClone] = metadata.NewPostgres(nil, TempClone)
 			return TempClone, true, nil
 		}
