@@ -134,7 +134,7 @@ class GraphQLService {
         private Response parseResponse(HttpResponse response)  {
             def bsa = new ByteArrayOutputStream()
             response.getEntity().writeTo(bsa)
-            log.info "GraphQL response: " + bsa
+            log.debug "GraphQL response: " + (bsa.length() < 1024 ? bsa : bsa.take(1024) + "...")
             def returnedValue = new JsonSlurper().parseText(bsa.toString())
             return new Response(response.getStatusLine().getStatusCode(), returnedValue.data, returnedValue.errors)
         }
@@ -163,7 +163,7 @@ class GraphQLService {
                 httpPost.addHeader(header.getFirst(), header.getSecond())
             }
             def jsonContent = new JsonOutput().toJson(content)
-            log.info "GraphQL query: " + jsonContent
+            log.debug "GraphQL query: " + (jsonContent.length() < 1024 ? jsonContent : jsonContent.take(1024) + "...")
             httpPost.setEntity(new StringEntity(jsonContent))
             return httpPost
         }
