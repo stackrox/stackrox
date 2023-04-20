@@ -3,7 +3,6 @@ import static util.Helpers.withRetry
 import java.util.concurrent.TimeUnit
 
 import io.grpc.StatusRuntimeException
-import org.apache.commons.lang3.RandomStringUtils
 
 import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.NotifierOuterClass
@@ -762,6 +761,7 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Tag("Integration")
+    @Tag("BAT")
     def "Verify syslog notifier"() {
        given:
        "syslog server is created"
@@ -777,12 +777,12 @@ class IntegrationsTest extends BaseSpecification {
         withRetry(3, 10) {
             assert notifier.testNotifier()
         }
+        def msg = syslog.fetchLastMsg()
+        assert msg.contains("app_name:stackRoxKubernetesSecurityPlatform")
+
         cleanup:
         "remove syslog notifier integration"
         syslog.tearDown(orchestrator)
     }
 
-    def uniqueName(String name) {
-        return name + RandomStringUtils.randomAlphanumeric(5).toLowerCase()
-    }
 }
