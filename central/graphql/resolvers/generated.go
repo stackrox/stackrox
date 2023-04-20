@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/generator"
+	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage" // end range imports
 	"github.com/stackrox/rox/pkg/utils"
@@ -41,6 +42,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"enforceOnUpdates: Boolean!",
 		"scanInline: Boolean!",
 		"timeoutSeconds: Int!",
+	}))
+	utils.Must(builder.AddType("AggregateBy", []string{
+		"aggregateFunc: String",
+		"distinct: Boolean",
 	}))
 	utils.Must(builder.AddType("Alert", []string{
 		"clusterId: String!",
@@ -1285,7 +1290,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 	}))
 	utils.Must(builder.AddInput("SortOption", []string{
-		"aggregation: String",
+		"aggregateBy: AggregateBy",
 		"field: String",
 		"reversed: Boolean",
 	}))
@@ -1775,6 +1780,48 @@ func (resolver *admissionControllerConfigResolver) ScanInline(ctx context.Contex
 func (resolver *admissionControllerConfigResolver) TimeoutSeconds(ctx context.Context) int32 {
 	value := resolver.data.GetTimeoutSeconds()
 	return value
+}
+
+type aggregateByResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *inputtypes.AggregateBy
+}
+
+func (resolver *Resolver) wrapAggregateBy(value *inputtypes.AggregateBy, ok bool, err error) (*aggregateByResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &aggregateByResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAggregateBies(values []*inputtypes.AggregateBy, err error) ([]*aggregateByResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*aggregateByResolver, len(values))
+	for i, v := range values {
+		output[i] = &aggregateByResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAggregateByWithContext(ctx context.Context, value *inputtypes.AggregateBy, ok bool, err error) (*aggregateByResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &aggregateByResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAggregateBiesWithContext(ctx context.Context, values []*inputtypes.AggregateBy, err error) ([]*aggregateByResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*aggregateByResolver, len(values))
+	for i, v := range values {
+		output[i] = &aggregateByResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
 }
 
 type alertResolver struct {

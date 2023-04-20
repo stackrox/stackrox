@@ -725,7 +725,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				AddGroupBy(search.TestNestedString).WithPagination(
 				search.NewPagination().AddSortOption(
 					search.NewSortOption(search.TestNestedString).
-						Aggregation(aggregatefunc.Count).
+						AggregateBy(aggregatefunc.Count, false).
 						Reversed(true),
 				).Limit(1),
 			).ProtoQuery(),
@@ -773,7 +773,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				search.NewPagination().
 					AddSortOption(
 						search.NewSortOption(search.TestString).
-							Aggregation(aggregatefunc.Count).Reversed(true),
+							AggregateBy(aggregatefunc.Count, false).Reversed(true),
 					).AddSortOption(
 					search.NewSortOption(search.TestNestedString),
 				),

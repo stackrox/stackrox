@@ -1,6 +1,8 @@
 package aggregatefunc
 
 import (
+	"fmt"
+
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
 )
@@ -37,9 +39,14 @@ func (a AggrFunc) DataType() postgres.DataType {
 	return a.dataType
 }
 
-// String returns the name for aggregate function.
-func (a AggrFunc) String() string {
+// Name returns the name for aggregate function.
+func (a AggrFunc) Name() string {
 	return a.name
+}
+
+// String returns the string form of aggregate function applied to arg.
+func (a AggrFunc) String(arg string) string {
+	return fmt.Sprintf("%s(%s)", a.name, arg)
 }
 
 // Proto returns the v1 type for aggregrate function.
@@ -57,10 +64,10 @@ func GetAggrFunc(name string) AggrFunc {
 }
 
 // GetAggrFuncForV1 returns aggregate function registered for specified v1.Aggregation.
-func GetAggrFuncForV1(aggregation v1.Aggregation) AggrFunc {
-	aggrFunc, found := v1AggregationToGoAggrFunc[aggregation]
+func GetAggrFuncForV1(aggregation *v1.AggregateBy) (AggrFunc, bool) {
+	aggrFunc, found := v1AggregationToGoAggrFunc[aggregation.GetAggrFunc()]
 	if !found {
-		return Unset
+		return Unset, false
 	}
-	return aggrFunc
+	return aggrFunc, aggregation.GetDistinct()
 }

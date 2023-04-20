@@ -96,7 +96,7 @@ func NewQuerySelect(field FieldLabel) *Select {
 
 // AggrFunc sets aggregate function to be applied on the select field.
 func (s *Select) AggrFunc(aggr aggregatefunc.AggrFunc) *Select {
-	s.qs.Field.AggregateFunc = aggr.String()
+	s.qs.Field.AggregateFunc = aggr.Name()
 	return s
 }
 
@@ -156,10 +156,26 @@ func (p *Pagination) Offset(offset int32) *Pagination {
 	return p
 }
 
+// AddSortOption adds the sort option to the pagination object
+func (p *Pagination) AddSortOption(so *SortOption) *Pagination {
+	opt := &v1.QuerySortOption{
+		Field:       string(so.field),
+		AggregateBy: so.aggregateBy.Proto(),
+		Reversed:    so.reversed,
+	}
+	if so.searchAfter != "" {
+		opt.SearchAfterOpt = &v1.QuerySortOption_SearchAfter{
+			SearchAfter: so.searchAfter,
+		}
+	}
+	p.qp.SortOptions = append(p.qp.SortOptions, opt)
+	return p
+}
+
 // SortOption describes the way to sort the query
 type SortOption struct {
 	field       FieldLabel
-	aggregation aggregatefunc.AggrFunc
+	aggregateBy aggregateBy
 	reversed    bool
 	searchAfter string
 }
@@ -183,27 +199,26 @@ func (s *SortOption) SearchAfter(searchAfter string) *SortOption {
 	return s
 }
 
-// Aggregation describes the aggregation that should be applied to base sort option. When aggregation is set,
-// the sorting happens on the aggregation of base field not directly on the base field. For example, sort by count(x)
-func (s *SortOption) Aggregation(aggrFunc aggregatefunc.AggrFunc) *SortOption {
-	s.aggregation = aggrFunc
+// AggregateBy describes the aggregateBy that should be applied to base sort option. When aggregateBy is set,
+// the sorting happens on the aggregateBy of base field not directly on the base field. For example, sort by count(x)
+func (s *SortOption) AggregateBy(aggrFunc aggregatefunc.AggrFunc, distinct bool) *SortOption {
+	s.aggregateBy = aggregateBy{
+		aggrFunc: aggrFunc,
+		distinct: distinct,
+	}
 	return s
 }
 
-// AddSortOption adds the sort option to the pagination object
-func (p *Pagination) AddSortOption(so *SortOption) *Pagination {
-	opt := &v1.QuerySortOption{
-		Field:       string(so.field),
-		Aggregation: so.aggregation.Proto(),
-		Reversed:    so.reversed,
+type aggregateBy struct {
+	aggrFunc aggregatefunc.AggrFunc
+	distinct bool
+}
+
+func (a *aggregateBy) Proto() *v1.AggregateBy {
+	return &v1.AggregateBy{
+		AggrFunc: a.aggrFunc.Proto(),
+		Distinct: a.distinct,
 	}
-	if so.searchAfter != "" {
-		opt.SearchAfterOpt = &v1.QuerySortOption_SearchAfter{
-			SearchAfter: so.searchAfter,
-		}
-	}
-	p.qp.SortOptions = append(p.qp.SortOptions, opt)
-	return p
 }
 
 // QueryBuilder builds a search query

@@ -10,8 +10,14 @@ import (
 // SortOption is the sort option input type.
 type SortOption struct {
 	Field       *string
-	Aggregation *string
+	AggregateBy *AggregateBy
 	Reversed    *bool
+}
+
+// SortOption is the sort option input type.
+type AggregateBy struct {
+	AggregateFunc *string
+	Distinct      *bool
 }
 
 // AsV1SortOption converts the sort option to proto.
@@ -26,18 +32,23 @@ func (s *SortOption) AsV1SortOption() *v1.SortOption {
 			}
 			return *s.Field
 		}(),
-		Aggregation: func() v1.Aggregation {
-			if s.Aggregation == nil {
-				return v1.Aggregation_UNSET
-			}
-			aggrFunc := aggregatefunc.GetAggrFunc(strings.ToLower(*s.Aggregation))
-			return aggrFunc.Proto()
-		}(),
+		AggregateBy: s.AggregateBy.AsV1AggregateBy(),
 		Reversed: func() bool {
 			if s.Reversed == nil {
 				return false
 			}
 			return *s.Reversed
 		}(),
+	}
+}
+
+// AsV1AggregateBy converts the aggregation to proto.
+func (a *AggregateBy) AsV1AggregateBy() *v1.AggregateBy {
+	if a == nil {
+		return nil
+	}
+	return &v1.AggregateBy{
+		AggrFunc: aggregatefunc.GetAggrFunc(strings.ToLower(*a.AggregateFunc)).Proto(),
+		Distinct: *a.Distinct,
 	}
 }

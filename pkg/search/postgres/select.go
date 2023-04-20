@@ -151,7 +151,7 @@ func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1
 		}
 
 		// SQL constraint
-		if field.GetAggregateFunc() == aggregatefunc.Unset.String() {
+		if field.GetAggregateFunc() == aggregatefunc.Unset.Name() {
 			return errors.New("FILTER clause can only be applied to aggregate functions")
 		}
 
@@ -188,7 +188,7 @@ func selectQueryField(searchField string, field *walker.Field, selectDistinct bo
 		selectPath = fmt.Sprintf("distinct(%s)", selectPath)
 	}
 	if aggrFunc != aggregatefunc.Unset {
-		selectPath = fmt.Sprintf("%s(%s)", aggrFunc, selectPath)
+		selectPath = aggrFunc.String(selectPath)
 		dataType = aggrFunc.DataType()
 	}
 	if filter != "" {
@@ -199,7 +199,7 @@ func selectQueryField(searchField string, field *walker.Field, selectDistinct bo
 	}
 	return pgsearch.SelectQueryField{
 		SelectPath:   selectPath,
-		Alias:        strings.Join(strings.Fields(searchField+" "+aggrFunc.String()), "_"),
+		Alias:        strings.Join(strings.Fields(searchField+" "+aggrFunc.Name()), "_"),
 		FieldType:    dataType,
 		DerivedField: aggrFunc != aggregatefunc.Unset,
 	}

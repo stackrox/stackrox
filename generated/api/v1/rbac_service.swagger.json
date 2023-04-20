@@ -62,8 +62,7 @@
             "type": "boolean"
           },
           {
-            "name": "pagination.sortOption.aggregation",
-            "description": "This field is under development. It is not supported on any REST APIs.",
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
             "in": "query",
             "required": false,
             "type": "string",
@@ -74,6 +73,12 @@
               "MAX"
             ],
             "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -162,8 +167,7 @@
             "type": "boolean"
           },
           {
-            "name": "pagination.sortOption.aggregation",
-            "description": "This field is under development. It is not supported on any REST APIs.",
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
             "in": "query",
             "required": false,
             "type": "string",
@@ -174,6 +178,12 @@
               "MAX"
             ],
             "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -293,8 +303,7 @@
             "type": "boolean"
           },
           {
-            "name": "pagination.sortOption.aggregation",
-            "description": "This field is under development. It is not supported on any REST APIs.",
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
             "in": "query",
             "required": false,
             "type": "string",
@@ -305,6 +314,12 @@
               "MAX"
             ],
             "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -516,6 +531,17 @@
       ],
       "default": "UNSET_KIND"
     },
+    "v1AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v1Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
     "v1Aggregation": {
       "type": "string",
       "enum": [
@@ -637,8 +663,8 @@
         "reversed": {
           "type": "boolean"
         },
-        "aggregation": {
-          "$ref": "#/definitions/v1Aggregation",
+        "aggregateBy": {
+          "$ref": "#/definitions/v1AggregateBy",
           "description": "This field is under development. It is not supported on any REST APIs."
         }
       }
