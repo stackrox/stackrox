@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/process/id"
+	"github.com/stackrox/rox/pkg/process/normalize"
 )
 
 var (
@@ -53,6 +54,8 @@ func (s *pipelineImpl) Run(_ context.Context, clusterID string, msg *central.Msg
 	switch event.GetAction() {
 	case central.ResourceAction_CREATE_RESOURCE:
 		indicator := event.GetProcessIndicator()
+		normalize.Indicator(indicator)
+
 		indicator.ClusterId = clusterID
 
 		// Build indicator from exec filepath, process, and args
