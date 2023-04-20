@@ -48,7 +48,7 @@ function DeclarativeConfigurationHealthCard({ pollingCount }: Props): ReactEleme
      * Wait for isFetching only until response to the initial request.
      * Otherwise count temporarily disappears during each subsequent request.
      */
-    const hasItemCount = (pollingCount !== 0 || !isFetching) && !requestErrorMessage;
+    const hasCount = (pollingCount !== 0 || !isFetching) && !requestErrorMessage;
     const itemCount = items.length;
 
     return (
@@ -59,7 +59,7 @@ function DeclarativeConfigurationHealthCard({ pollingCount }: Props): ReactEleme
                         <FlexItem>
                             <CardTitle component="h2">Declarative configuration</CardTitle>
                         </FlexItem>
-                        {hasItemCount && (
+                        {hasCount && (
                             <FlexItem>
                                 <IconText
                                     icon={
