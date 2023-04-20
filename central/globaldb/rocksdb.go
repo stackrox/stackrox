@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/central/option"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	rocksdbInstance "github.com/stackrox/rox/pkg/rocksdb/instance"
 	rocksMetrics "github.com/stackrox/rox/pkg/rocksdb/metrics"
@@ -29,8 +28,6 @@ func RegisterBucket(bucketName []byte, objType string) {
 
 // GetRocksDB returns the global rocksdb instance
 func GetRocksDB() *rocksdb.RocksDB {
-	postgres.DeprecatedCall("GetRocksDB")
-
 	rocksInit.Do(func() {
 		rocksDB = rocksdbInstance.GetRocksDB()
 		go startMonitoringRocksDB(rocksDB)
