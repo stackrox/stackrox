@@ -3,8 +3,7 @@ package main
 import (
 	"context"
 	"os"
-	"os/signal"
-	"syscall"
+	"strconv"
 	"unicode/utf8"
 
 	"github.com/stackrox/rox/central/globaldb"
@@ -12,12 +11,19 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 var log = logging.LoggerForModule()
 
 func main() {
 	shouldDelete := os.Getenv("DELETE_PROCESSES") == "true"
+	maxPrintString := stringutils.OrDefault(os.Getenv("MAX_PRINT"), "5")
+	numToPrint, err := strconv.Atoi(maxPrintString)
+	if err != nil {
+		log.Errorf("Could not parse max print string. defaulting to 5")
+		numToPrint = 5
+	}
 
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -25,27 +31,37 @@ func main() {
 	defer globaldb.GetRocksDB().Close()
 
 	var idsToDelete []string
-	err := store.Walk(ctx, func(obj *storage.ProcessIndicator) error {
+
+	err = store.Walk(ctx, func(obj *storage.ProcessIndicator) error {
 		var bad bool
 		if !utf8.ValidString(obj.GetSignal().GetExecFilePath()) {
 			bad = true
-			log.Errorf("Found non utf-8 in exec file path for deployment=%s container=%s data=%s", obj.GetDeploymentId(), obj.GetContainerName(), obj.GetSignal().GetExecFilePath())
+			if numToPrint > 0 {
+				log.Errorf("Found non utf-8 in exec file path for %s", obj)
+			}
 		}
 		if !utf8.ValidString(obj.GetSignal().GetName()) {
 			bad = true
-			log.Errorf("Found non utf-8 in name for deployment=%s container=%s data=%s", obj.GetDeploymentId(), obj.GetContainerName(), obj.GetSignal().GetName())
+			if numToPrint > 0 {
+				log.Errorf("Found non utf-8 in name for %s", obj)
+			}
 		}
 		if !utf8.ValidString(obj.GetSignal().GetArgs()) {
 			bad = true
-			log.Errorf("Found non utf-8 in args for deployment=%s container=%s data=%s", obj.GetDeploymentId(), obj.GetContainerName(), obj.GetSignal().GetArgs())
+			if numToPrint > 0 {
+				log.Errorf("Found non utf-8 in args for %s", obj)
+			}
 		}
 		for _, lineage := range obj.GetSignal().GetLineageInfo() {
 			if !utf8.ValidString(lineage.GetParentExecFilePath()) {
 				bad = true
-				log.Errorf("Found non utf-8 in lineage for deployment=%s container=%s data=%s", obj.GetDeploymentId(), obj.GetContainerName(), lineage.GetParentExecFilePath())
+				if numToPrint > 0 {
+					log.Errorf("Found non utf-8 in lineage for %s", obj)
+				}
 			}
 		}
 		if bad {
+			numToPrint--
 			idsToDelete = append(idsToDelete, obj.GetId())
 		}
 		return nil
@@ -62,9 +78,4 @@ func main() {
 		log.Fatalf("error deleting processes: %v", err)
 	}
 	log.Infof("Succcessfully deleted %d processes", len(idsToDelete))
-
-	signalsC := make(chan os.Signal, 1)
-	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	sig := <-signalsC
-	log.Infof("Caught %s signal", sig)
 }

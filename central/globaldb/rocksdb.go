@@ -30,7 +30,7 @@ func RegisterBucket(bucketName []byte, objType string) {
 func GetRocksDB() *rocksdb.RocksDB {
 	rocksInit.Do(func() {
 		rocksDB = rocksdbInstance.GetRocksDB()
-		go startMonitoringRocksDB(rocksDB)
+		//go startMonitoringRocksDB(rocksDB)
 	})
 	return rocksDB
 }
