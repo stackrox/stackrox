@@ -5,7 +5,6 @@ import { format } from 'date-fns';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import CveType from 'Components/CveType';
 import Metadata from 'Components/Metadata';
-import LabelChip from 'Components/LabelChip';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import { isValidURL } from 'utils/urlUtils';
@@ -134,11 +133,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         },
         {
             key: 'Fixability',
-            value: isFixable ? (
-                <LabelChip text="Fixable" type="success" />
-            ) : (
-                <LabelChip text="Not fixable" type="base" />
-            ),
+            value: isFixable ? 'Fixable' : 'Not fixable',
         },
     ];
     if (cveType === entityTypes.NODE_CVE || cveType === entityTypes.IMAGE_CVE) {

@@ -15,7 +15,6 @@ import RowActionMenu from 'Components/RowActionMenu';
 import DateTimeField from 'Components/DateTimeField';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
-import LabelChip from 'Components/LabelChip';
 import Menu from 'Components/Menu';
 import TableCountLinks from 'Components/workflow/TableCountLinks';
 import TopCvssLabel from 'Components/TopCvssLabel';
@@ -115,27 +114,11 @@ export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
         },
         {
             Header: `Active`,
-            headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
+            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original }) => {
-                const activeStatus = original.activeState?.state || 'Undetermined';
-                switch (activeStatus) {
-                    case 'Active': {
-                        return (
-                            <div className="mx-auto">
-                                <LabelChip text={activeStatus} type="alert" size="large" />
-                            </div>
-                        );
-                    }
-                    case 'Inactive': {
-                        return <div className="mx-auto">{activeStatus}</div>;
-                    }
-                    case 'Undetermined':
-                    default: {
-                        return <div className="mx-auto">Undetermined</div>;
-                    }
-                }
+                return original.activeState?.state || 'Undetermined';
             },
             id: cveSortFields.ACTIVE,
             accessor: 'isActive',
