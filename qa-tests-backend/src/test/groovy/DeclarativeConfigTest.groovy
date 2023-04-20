@@ -467,6 +467,178 @@ oidc:
         }
     }
 
+    @Tag("BAT")
+    def "Check orphaned declarative resources are correctly handled"() {
+        when:
+
+        createDefaultSetOfResources(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
+
+        then:
+        // Retry this multiple times, with a pause of 60 seconds.
+        // It may take some time until a) the config map contents are mapped within the pod b) the reconciliation
+        // has been triggered.
+        // If the tests are flaky, we have to increase this value.
+        withRetry(5, 60) {
+            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
+            // Expect 6 integration health status for the created resources and one for the config map.
+            assert response.integrationHealthCount == CREATED_RESOURCES + 1
+            for (integrationHealth in response.integrationHealthList) {
+                assert integrationHealth.hasLastTimestamp()
+                assert integrationHealth.getErrorMessage() == ""
+                assert integrationHealth.getStatus() == Status.HEALTHY
+            }
+        }
+
+        when:
+        deleteConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, PERMISSION_SET_KEY)
+
+        then:
+        // Verify the integration health for the permission set is unhealthy and contains an error message.
+        // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
+        // times here.
+        withRetry(5, 60) {
+            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
+            def permissionSetHealth = response.getIntegrationHealthList().find {
+                it.getName().contains(PERMISSION_SET_KEY)
+            }
+            assert permissionSetHealth
+            assert permissionSetHealth.getErrorMessage().contains("referenced by another object")
+            assert permissionSetHealth.getStatus() == Status.UNHEALTHY
+        }
+
+        // Verify the permission set stored is still the same, but origin is orphaned.
+        assert verifyDeclarativePermissionSet(VALID_PERMISSION_SET.toBuilder()
+                    .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE_ORPHANED))
+                    .build()
+        )
+
+        when:
+        updateConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, PERMISSION_SET_KEY, VALID_PERMISSION_SET_YAML)
+
+        then:
+        withRetry(5, 60) {
+            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
+            def permissionSetHealth = response.getIntegrationHealthList().find {
+                it.getName().contains(PERMISSION_SET_KEY)
+            }
+            assert permissionSetHealth
+            assert permissionSetHealth.hasLastTimestamp()
+            assert permissionSetHealth.getErrorMessage() == ""
+            assert permissionSetHealth.getStatus() == Status.HEALTHY
+        }
+
+        when:
+        deleteConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ACCESS_SCOPE_KEY)
+
+        then:
+        withRetry(5, 60) {
+            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
+            def accessScopeHealth = response.getIntegrationHealthList().find {
+                it.getName().contains(ACCESS_SCOPE_KEY)
+            }
+            assert accessScopeHealth
+            assert accessScopeHealth.getErrorMessage().contains("referenced by another object")
+            assert accessScopeHealth.getStatus() == Status.UNHEALTHY
+        }
+
+        // Verify the access scope stored is still the same, but origin is orphaned.
+        assert verifyDeclarativeAccessScope(VALID_ACCESS_SCOPE.toBuilder()
+                .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE_ORPHANED))
+                .build()
+        )
+
+        when:
+        updateConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ACCESS_SCOPE_KEY, VALID_ACCESS_SCOPE_YAML)
+
+        then:
+        withRetry(5, 60) {
+            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
+            def accessScopeHealth = response.getIntegrationHealthList().find {
+                it.getName().contains(ACCESS_SCOPE_KEY)
+            }
+            assert accessScopeHealth
+            assert accessScopeHealth.hasLastTimestamp()
+            assert accessScopeHealth.getErrorMessage() == ""
+            assert accessScopeHealth.getStatus() == Status.HEALTHY
+        }
+
+        when:
+        def authProvidersResponse = AuthProviderService.getAuthProviders()
+        def authProvider = authProvidersResponse.getAuthProvidersList().find {
+            it.getName() == AUTH_PROVIDER_KEY
+        }
+        def imperativeGroup = Group.newBuilder()
+                .setRoleName(ROLE_KEY)
+                .setProps(GroupProperties.newBuilder()
+                    .setAuthProviderId(authProvider.getId())
+                    .setKey("white")
+                    .setValue("stripes"))
+                .build()
+        GroupService.createGroup(imperativeGroup)
+        def imperativeGroupWithId = GroupService.getGroups(GroupServiceOuterClass.GetGroupsRequest.newBuilder()
+                .setAuthProviderId(authProvider.getId())
+                .setKey("white")
+                .setValue("stripes")
+                .build())
+                .getGroups(0)
+
+        deleteConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ROLE_KEY)
+
+        then:
+        withRetry(5, 60) {
+            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
+            def roleHealth = response.getIntegrationHealthList().find {
+                it.getName().contains(ROLE_KEY)
+            }
+            assert roleHealth
+            assert roleHealth.getErrorMessage().contains("is referenced by groups")
+            assert roleHealth.getStatus() == Status.UNHEALTHY
+        }
+
+        // Verify the role stored is still the same, but origin is orphaned.
+        assert verifyDeclarativeRole(VALID_ROLE.toBuilder()
+                .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE_ORPHANED))
+                .build()
+        )
+
+        when:
+        updateConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ROLE_KEY, VALID_ROLE_YAML)
+
+        then:
+        withRetry(5, 60) {
+            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
+            def roleHealth = response.getIntegrationHealthList().find {
+                it.getName().contains(ROLE_KEY)
+            }
+            assert roleHealth
+            assert roleHealth.hasLastTimestamp()
+            assert roleHealth.getErrorMessage() == ""
+            assert roleHealth.getStatus() == Status.HEALTHY
+        }
+
+        when:
+        deleteConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, AUTH_PROVIDER_KEY)
+
+        then:
+        withRetry(5, 60) {
+            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
+            // After auth provider deletion we should be left only with integration health for:
+            // - access scope
+            // - role
+            // - permission set
+            // - config map
+            assert response.getIntegrationHealthCount() == 4
+        }
+
+        when:
+        GroupService.getGroup(imperativeGroupWithId.getProps())
+
+        then:
+        // Verify imperative group referencing declarative auth provider is deleted with it.
+        def error = thrown(StatusRuntimeException)
+        assert error.getStatus().getCode() == io.grpc.Status.Code.NOT_FOUND
+    }
+
     // Helpers
 
     // createDefaultSetOfResources creates the following resources:
@@ -491,6 +663,12 @@ oidc:
         orchestrator.createConfigMap(configMap)
     }
 
+    private deleteConfigMapValue(String configMapName, String namespace, String key) {
+        def configMap = orchestrator.getConfigMap(configMapName, namespace)
+        configMap.data.remove(key)
+        orchestrator.createConfigMap(configMap)
+    }
+
     // verifyDeclarativeRole will verify that the expected role exists within the API and shares the same values.
     // The retrieved role from the API will be returned.
     private Role verifyDeclarativeRole(Role expectedRole, String permissionSetID, String accessScopeID) {
@@ -501,6 +679,15 @@ oidc:
         assert role.getTraits().getOrigin() == expectedRole.getTraits().getOrigin()
         assert role.getAccessScopeId() == accessScopeID
         assert role.getPermissionSetId() == permissionSetID
+        return role
+    }
+
+    private Role verifyDeclarativeRole(Role expectedRole) {
+        def role = RoleService.getRole(expectedRole.getName())
+        assert role : "declarative role ${expectedRole.getName()} does not exist"
+        assert role.getName() == expectedRole.getName()
+        assert role.getDescription() == expectedRole.getDescription()
+        assert role.getTraits().getOrigin() == expectedRole.getTraits().getOrigin()
         return role
     }
 
