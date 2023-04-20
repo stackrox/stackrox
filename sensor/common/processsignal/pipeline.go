@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/pkg/process/normalize"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
@@ -65,6 +66,7 @@ func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 	}
 	metrics.IncrementProcessEnrichmentHits()
 	populateIndicatorFromCachedContainer(indicator, metadata)
+	normalize.Indicator(indicator)
 	p.enrichedIndicators <- indicator
 }
 
