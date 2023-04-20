@@ -644,7 +644,7 @@ syslog-image: syslog-build
 	docker build \
 		-t stackrox/qa:syslog_server_1_0 \
 		-t quay.io/rhacs-eng/qa:syslog_server_1_0 \
-		-f syslog/Dockerfile syslog
+		-f qa-tests-backend/test-images/syslog/Dockerfile qa-tests-backend/test-images/syslog
 
 .PHONY: mock-grpc-server-image
 mock-grpc-server-image: mock-grpc-server-build clean-image
