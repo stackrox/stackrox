@@ -135,7 +135,7 @@ class BaseSpecification extends Specification {
 
             String testRoleName = "Test Automation Role - ${RUN_ID}"
 
-            if (RoleService.getRole(testRoleName)) {
+            if (RoleService.checkRoleExists(testRoleName)) {
                 RoleService.deleteRole(testRoleName)
             }
             testRole = RoleService.createRoleWithScopeAndPermissionSet(

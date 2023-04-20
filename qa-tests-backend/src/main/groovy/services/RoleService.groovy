@@ -1,6 +1,8 @@
 package services
 
 import groovy.util.logging.Slf4j
+import io.grpc.Status
+import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.RoleServiceGrpc
 import io.stackrox.proto.api.v1.RoleServiceOuterClass
@@ -19,6 +21,18 @@ class RoleService extends BaseService {
 
     static getRole(String roleId) {
         return getRoleService().getRole(Common.ResourceByID.newBuilder().setId(roleId).build())
+    }
+
+    static Boolean checkRoleExists(String roleId) {
+        try {
+            getRoleService().getRole(Common.ResourceByID.newBuilder().setId(roleId).build())
+        } catch (StatusRuntimeException e) {
+            if (e.status.code == Status.Code.NOT_FOUND) {
+                return false
+            }
+            throw e
+        }
+        return true
     }
 
     static RoleServiceOuterClass.GetResourcesResponse getResources() {
