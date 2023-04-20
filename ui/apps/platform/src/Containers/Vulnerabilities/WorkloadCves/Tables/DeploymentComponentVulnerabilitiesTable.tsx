@@ -3,6 +3,7 @@ import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-tab
 import { gql } from '@apollo/client';
 
 import useTableSort from 'hooks/patternfly/useTableSort';
+import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import ImageNameTd from '../components/ImageNameTd';
 import {
     imageMetadataContextFragment,
@@ -29,6 +30,7 @@ export const deploymentComponentVulnerabilitiesFragment = gql`
             cvss
             scoreVersion
             fixedByVersion
+            discoveredAtImage
         }
     }
 `;
@@ -101,7 +103,9 @@ function DeploymentComponentVulnerabilitiesTable({
                                 )}
                             </Td>
                             <Td>{name}</Td>
-                            <Td>{severity}</Td>
+                            <Td>
+                                <VulnerabilitySeverityIconText severity={severity} />
+                            </Td>
                             <Td>
                                 {cvss.toFixed(1)} ({scoreVersion})
                             </Td>
@@ -112,7 +116,7 @@ function DeploymentComponentVulnerabilitiesTable({
                             <Td>{location || 'N/A'}</Td>
                         </Tr>
                         <Tr>
-                            <Td colSpan={6} className="pf-u-pt-0">
+                            <Td colSpan={7} className="pf-u-pt-0">
                                 <DockerfileLayerTd layer={layer} />
                             </Td>
                         </Tr>

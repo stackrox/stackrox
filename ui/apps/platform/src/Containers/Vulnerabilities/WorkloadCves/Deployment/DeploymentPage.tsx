@@ -34,7 +34,7 @@ const workloadCveOverviewDeploymentsPath = getOverviewCvesPath({
 
 const deploymentMetadataQuery = gql`
     ${deploymentMetadataFragment}
-    query DeploymentMetadata($id: ID!) {
+    query getDeploymentMetadata($id: ID!) {
         deployment(id: $id) {
             ...DeploymentMetadata
         }
