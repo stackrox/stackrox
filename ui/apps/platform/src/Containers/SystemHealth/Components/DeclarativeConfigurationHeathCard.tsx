@@ -45,7 +45,7 @@ function DeclarativeConfigurationHealthCard({ pollingCount }: Props): ReactEleme
     }, [pollingCount]);
 
     /*
-     * Wait for isFetching only until after response to the initial request.
+     * Wait for isFetching only until response to the initial request.
      * Otherwise count temporarily disappears during each subsequent request.
      */
     const hasItemCount = (pollingCount !== 0 || !isFetching) && !requestErrorMessage;
