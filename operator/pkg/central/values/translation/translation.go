@@ -167,8 +167,6 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 
 	// TODO(ROX-7147): design CentralEndpointSpec, see central_types.go
 
-	cv.AddChild("persistence", getCentralPersistenceValues(c.GetPersistence()))
-
 	if c.Exposure != nil {
 		exposure := translation.NewValuesBuilder()
 		if c.Exposure.LoadBalancer != nil {

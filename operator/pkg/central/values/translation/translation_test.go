@@ -28,7 +28,6 @@ func TestTranslate(t *testing.T) {
 	}
 
 	connectivityPolicy := platform.ConnectivityOffline
-	claimName := "central-claim-name"
 	scannerComponentPolicy := platform.ScannerComponentEnabled
 	scannerAutoScalingPolicy := platform.ScannerAutoScalingEnabled
 	monitoringExposeEndpointEnabled := platform.ExposeEndpointEnabled
@@ -58,11 +57,6 @@ func TestTranslate(t *testing.T) {
 			want: chartutil.Values{
 				"central": map[string]interface{}{
 					"exposeMonitoring": false,
-					"persistence": map[string]interface{}{
-						"persistentVolumeClaim": map[string]interface{}{
-							"createClaim": false,
-						},
-					},
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
@@ -118,14 +112,6 @@ func TestTranslate(t *testing.T) {
 							},
 							Monitoring: &platform.Monitoring{
 								ExposeEndpoint: &monitoringExposeEndpointEnabled,
-							},
-							Persistence: &platform.Persistence{
-								HostPath: &platform.HostPathSpec{
-									Path: pointer.String("/central/host/path"),
-								},
-								PersistentVolumeClaim: &platform.PersistentVolumeClaim{
-									ClaimName: &claimName,
-								},
 							},
 							Exposure: &platform.Exposure{
 								LoadBalancer: &platform.ExposureLoadBalancer{
@@ -302,9 +288,6 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 					"exposeMonitoring": true,
-					"persistence": map[string]interface{}{
-						"hostPath": "/central/host/path",
-					},
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
@@ -437,27 +420,13 @@ func TestTranslate(t *testing.T) {
 			args: args{
 				c: platform.Central{
 					Spec: platform.CentralSpec{
-						Central: &platform.CentralComponentSpec{
-							Persistence: &platform.Persistence{
-								PersistentVolumeClaim: &platform.PersistentVolumeClaim{
-									ClaimName:        pointer.String("stackrox-db-test"),
-									StorageClassName: pointer.String("storage-class"),
-									Size:             pointer.String("50Gi"),
-								},
-							},
-						},
+						Central: &platform.CentralComponentSpec{},
 					},
 				},
 			},
 			want: chartutil.Values{
 				"central": map[string]interface{}{
 					"exposeMonitoring": false,
-					"persistence": map[string]interface{}{
-						"persistentVolumeClaim": map[string]interface{}{
-							"claimName":   "stackrox-db-test",
-							"createClaim": false,
-						},
-					},
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
@@ -489,11 +458,6 @@ func TestTranslate(t *testing.T) {
 			want: chartutil.Values{
 				"central": map[string]interface{}{
 					"exposeMonitoring": false,
-					"persistence": map[string]interface{}{
-						"persistentVolumeClaim": map[string]interface{}{
-							"createClaim": false,
-						},
-					},
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
@@ -532,11 +496,6 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 					"exposeMonitoring": false,
-					"persistence": map[string]interface{}{
-						"persistentVolumeClaim": map[string]interface{}{
-							"createClaim": false,
-						},
-					},
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
@@ -557,11 +516,6 @@ func TestTranslate(t *testing.T) {
 			want: chartutil.Values{
 				"central": map[string]interface{}{
 					"exposeMonitoring": false,
-					"persistence": map[string]interface{}{
-						"persistentVolumeClaim": map[string]interface{}{
-							"createClaim": false,
-						},
-					},
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
@@ -591,7 +545,6 @@ func TestTranslate(t *testing.T) {
 			want: chartutil.Values{
 				"central": map[string]interface{}{
 					"exposeMonitoring": false,
-					"persistence":      map[string]interface{}{"persistentVolumeClaim": map[string]interface{}{"createClaim": false}},
 					"telemetry":        map[string]interface{}{"enabled": false},
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
