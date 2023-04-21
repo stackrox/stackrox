@@ -6,7 +6,6 @@ import {
     defaultColumnClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
-import LabelChip from 'Components/LabelChip';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
@@ -83,23 +82,7 @@ export function getComponentTableColumns(workflowState, isFeatureFlagEnabled) {
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original }) => {
-                const activeStatus = original.activeState?.state || 'Undetermined';
-                switch (activeStatus) {
-                    case 'Active': {
-                        return (
-                            <div className="mx-auto">
-                                <LabelChip text={activeStatus} type="alert" size="large" />
-                            </div>
-                        );
-                    }
-                    case 'Inactive': {
-                        return <div className="mx-auto">{activeStatus}</div>;
-                    }
-                    case 'Undetermined':
-                    default: {
-                        return <div className="mx-auto">Undetermined</div>;
-                    }
-                }
+                return original.activeState?.state || 'Undetermined';
             },
             id: componentSortFields.ACTIVE,
             accessor: 'isActive',
