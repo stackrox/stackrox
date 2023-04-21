@@ -168,9 +168,11 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 }
 
 func (s *ImageCVEViewTestSuite) TestGetImageCVECoreWithPagination() {
-	for _, p := range s.paginationTestCases() {
-		for _, tc := range s.testCases() {
-			applyPaginationProps(&tc, p)
+	for _, paginationTestCase := range s.paginationTestCases() {
+		baseTestCases := s.testCases()
+		for idx := range baseTestCases {
+			tc := &baseTestCases[idx]
+			applyPaginationProps(&tc, paginationTestCase)
 
 			s.T().Run(tc.desc, func(t *testing.T) {
 				actual, err := s.cveView.Get(tc.ctx, tc.q, tc.readOptions)
