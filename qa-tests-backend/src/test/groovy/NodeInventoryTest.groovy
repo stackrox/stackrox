@@ -1,9 +1,8 @@
+import static util.Helpers.withRetry
 import io.stackrox.proto.storage.NodeOuterClass.Node
-
 import services.BaseService
 import services.ClusterService
 import services.NodeService
-
 import spock.lang.Shared
 import spock.lang.Tag
 
@@ -22,12 +21,20 @@ class NodeInventoryTest extends BaseSpecification {
     @Tag("BAT")
     def "Verify node inventories and their scans"() {
         given:
-        "given a list of nodes"
+        "given a non-empty list of nodes"
         List<Node> nodes = NodeService.getNodes()
+        assert nodes.size() > 0
 
         expect:
         "confirm the number of components in the inventory and their scan"
-        assert nodes.size() > 0, "Expected to find at least one node"
+        // ensure that the nodes got scanned at least once - retry up to 6 minutes
+        withRetry(12, 30) {
+            nodes = NodeService.getNodes()
+            assert nodes.size() > 0, "Expected to find at least one node"
+            nodes.each { node ->
+                assert node.getScan().getComponentsList().size() >= 4, "Expected to find at least 4 node components"
+            }
+        }
         nodes.each { node ->
             assert node.getScan(), "Expected to find a nodeScan on the node"
             log.info("Node ${node.getName()} scan contains ${node.getScan().getComponentsList().size()} components")
