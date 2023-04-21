@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -29,7 +30,7 @@ type sensorEventHandler struct {
 	workerQueues      map[string]*workerQueue
 	workerQueuesMutex sync.RWMutex
 
-	deduper  *deduper
+	deduper  hashManager.Deduper
 	pipeline pipeline.ClusterPipeline
 	injector common.MessageInjector
 	stopSig  *concurrency.ErrorSignal
@@ -37,7 +38,7 @@ type sensorEventHandler struct {
 	reconciliationMap *reconciliation.StoreMap
 }
 
-func newSensorEventHandler(pipeline pipeline.ClusterPipeline, injector common.MessageInjector, stopSig *concurrency.ErrorSignal, deduper *deduper) *sensorEventHandler {
+func newSensorEventHandler(pipeline pipeline.ClusterPipeline, injector common.MessageInjector, stopSig *concurrency.ErrorSignal, deduper hashManager.Deduper) *sensorEventHandler {
 	return &sensorEventHandler{
 		workerQueues:      make(map[string]*workerQueue),
 		reconciliationMap: reconciliation.NewStoreMap(),
@@ -70,6 +71,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 			if err := s.pipeline.Reconcile(ctx, s.reconciliationMap); err != nil {
 				log.Errorf("error reconciling state: %v", err)
 			}
+			s.deduper.ProcessSync()
 			s.reconciliationMap.Close()
 			return
 		case *central.SensorEvent_ReprocessDeployment:
@@ -95,7 +97,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	// If this is our first attempt at processing, then dedupe if we already processed this
 	// If it is not our first attempt processing, then we need to check if a new version already
 	// was processed
-	if !s.deduper.shouldProcess(msg) {
+	if !s.deduper.ShouldProcess(msg) {
 		metrics.IncSensorEventsDeduper(true)
 		return
 	}

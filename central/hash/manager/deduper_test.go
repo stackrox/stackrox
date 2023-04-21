@@ -1,4 +1,4 @@
-package connection
+package manager
 
 import (
 	"testing"
@@ -170,11 +170,12 @@ func TestDeduper(t *testing.T) {
 	for _, c := range cases {
 		testCase := c
 		t.Run(c.testName, func(t *testing.T) {
-			deduper := newDeduper()
+			deduper := NewDeduper(make(map[string]uint64)).(*deduperImpl)
 			for _, testEvent := range testCase.testEvents {
-				assert.Equal(t, testEvent.result, deduper.shouldProcess(testEvent.event))
+				assert.Equal(t, testEvent.result, deduper.ShouldProcess(testEvent.event))
 			}
-			assert.Len(t, deduper.lastReceived, 0)
+			assert.Len(t, deduper.successfullyProcessed, 0)
+			assert.Len(t, deduper.received, 0)
 		})
 	}
 }
