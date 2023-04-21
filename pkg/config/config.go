@@ -25,7 +25,7 @@ var (
 	once   sync.Once
 	config *Config
 
-	log = logging.CreatePersistentLogger(logging.CurrentModule(), 0)
+	log = logging.CreateLogger(logging.CurrentModule(), 0)
 )
 
 // Compaction defines the compaction configuration

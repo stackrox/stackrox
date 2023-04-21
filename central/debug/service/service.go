@@ -327,9 +327,6 @@ func getLogs(zipWriter *zip.Writer) error {
 	if err := getLogFile(zipWriter, "central.log", logging.LoggingPath); err != nil {
 		return err
 	}
-	if err := getLogFile(zipWriter, "migration.log", logging.PersistentLoggingPath); err != nil {
-		return err
-	}
 	return nil
 }
 
