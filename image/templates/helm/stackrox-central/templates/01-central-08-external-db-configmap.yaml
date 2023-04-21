@@ -23,4 +23,5 @@ data:
         statement_timeout={{ ._rox.central.db.source.statementTimeoutMs }}
         pool_min_conns={{ ._rox.central.db.source.minConns }}
         pool_max_conns={{ ._rox.central.db.source.maxConns }}
+        client_encoding=UTF8
       {{- end }}

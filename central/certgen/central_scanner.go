@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/central/jwt"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -82,7 +83,9 @@ func (s *serviceImpl) scannerHandler(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
 	}
-	if err := certgen.IssueScannerCerts(secrets, ca); err != nil {
+
+	namespace := env.Namespace.Setting()
+	if err := certgen.IssueScannerCerts(secrets, ca, mtls.WithNamespace(namespace)); err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
 	}

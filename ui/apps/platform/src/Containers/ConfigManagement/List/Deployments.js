@@ -1,13 +1,13 @@
 import React, { useContext } from 'react';
 import pluralize from 'pluralize';
 
+import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import {
     defaultHeaderClassName,
     defaultColumnClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
-import StatusChip from 'Components/StatusChip';
 import searchContext from 'Containers/searchContext';
 import entityTypes from 'constants/entityTypes';
 import { deploymentSortFields } from 'constants/sortFields';
@@ -92,7 +92,7 @@ const buildTableColumns = (match, location, entityContext) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { policyStatus } = original;
-                return <StatusChip status={policyStatus} asString={pdf} />;
+                return <PolicyStatusIconText isPass={policyStatus === 'pass'} isTextOnly={pdf} />;
             },
             id: 'policyStatus',
             accessor: 'policyStatus',

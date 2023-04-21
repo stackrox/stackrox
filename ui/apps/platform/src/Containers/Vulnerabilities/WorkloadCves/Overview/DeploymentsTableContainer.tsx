@@ -6,13 +6,13 @@ import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import ImagesTable, { imageListQuery } from './Tables/ImagesTable';
-import TableErrorComponent from './components/TableErrorComponent';
-import { parseQuerySearchFilter } from './searchUtils';
+import DeploymentsTable, { Deployment, deploymentListQuery } from '../Tables/DeploymentsTable';
+import TableErrorComponent from '../components/TableErrorComponent';
+import { parseQuerySearchFilter } from '../searchUtils';
 
-const defaultSortFields = ['Image', 'Operating system', 'Deployment count', 'Age', 'Scan time'];
+const defaultSortFields = ['Deployment', 'Cluster', 'Namespace'];
 
-function ImagesTableContainer() {
+function DeploymentsTableContainer() {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
@@ -20,13 +20,15 @@ function ImagesTableContainer() {
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
         defaultSortOption: {
-            field: 'Image',
-            direction: 'desc',
+            field: 'Deployment',
+            direction: 'asc',
         },
         onSort: () => setPage(1),
     });
 
-    const { error, loading, data } = useQuery(imageListQuery, {
+    const { error, loading, data, previousData } = useQuery<{
+        deployments: Deployment[];
+    }>(deploymentListQuery, {
         variables: {
             query: getRequestQueryStringForSearchFilter({
                 ...querySearchFilter,
@@ -39,9 +41,10 @@ function ImagesTableContainer() {
         },
     });
 
+    const tableData = data ?? previousData;
     return (
         <>
-            {loading && (
+            {loading && !tableData && (
                 <Bullseye>
                     <Spinner isSVG />
                 </Bullseye>
@@ -49,9 +52,9 @@ function ImagesTableContainer() {
             {error && (
                 <TableErrorComponent error={error} message="Adjust your filters and try again" />
             )}
-            {data && (
-                <ImagesTable
-                    images={data.images}
+            {tableData && (
+                <DeploymentsTable
+                    deployments={tableData.deployments}
                     getSortParams={getSortParams}
                     isFiltered={isFiltered}
                 />
@@ -60,4 +63,4 @@ function ImagesTableContainer() {
     );
 }
 
-export default ImagesTableContainer;
+export default DeploymentsTableContainer;

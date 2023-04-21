@@ -11,16 +11,7 @@ const colors = [
     'var(--secondary-400)',
 ];
 
-export const colorTypes = [
-    'alert',
-    'caution',
-    'warning',
-    'success',
-    'tertiary',
-    'secondary',
-    'primary',
-    'base',
-];
+export const colorTypes = ['alert', 'caution', 'warning', 'success', 'tertiary', 'primary', 'base'];
 
 export const fileUploadColors = {
     BACKGROUND_COLOR: 'var(--warning-300)', // close to original upload background '#faecd2'

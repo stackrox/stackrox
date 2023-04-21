@@ -13,7 +13,8 @@ import {
 import RowActionButton from 'Components/RowActionButton';
 import RowActionMenu from 'Components/RowActionMenu';
 import DateTimeField from 'Components/DateTimeField';
-import LabelChip from 'Components/LabelChip';
+import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
+import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import Menu from 'Components/Menu';
 import TableCountLinks from 'Components/workflow/TableCountLinks';
 import TopCvssLabel from 'Components/TopCvssLabel';
@@ -38,7 +39,6 @@ import {
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 
-import CVSSSeverityLabel from 'Components/CVSSSeverityLabel';
 import CveType from 'Components/CveType';
 import CveBulkActionDialogue from './CveBulkActionDialogue';
 
@@ -100,15 +100,12 @@ export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
         },
         {
             Header: `Fixable`,
-            headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
+            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                const fixableFlag = original.isFixable ? (
-                    <LabelChip text="Fixable" type="success" size="large" />
-                ) : (
-                    'No'
+            Cell: ({ original, pdf }) => {
+                return (
+                    <VulnerabilityFixableIconText isFixable={original.isFixable} isTextOnly={pdf} />
                 );
-                return <div className="mx-auto">{fixableFlag}</div>;
             },
             id: cveSortFields.FIXABLE,
             accessor: 'isFixable',
@@ -117,27 +114,11 @@ export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
         },
         {
             Header: `Active`,
-            headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
+            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original }) => {
-                const activeStatus = original.activeState?.state || 'Undetermined';
-                switch (activeStatus) {
-                    case 'Active': {
-                        return (
-                            <div className="mx-auto">
-                                <LabelChip text={activeStatus} type="alert" size="large" />
-                            </div>
-                        );
-                    }
-                    case 'Inactive': {
-                        return <div className="mx-auto">{activeStatus}</div>;
-                    }
-                    case 'Undetermined':
-                    default: {
-                        return <div className="mx-auto">Undetermined</div>;
-                    }
-                }
+                return original.activeState?.state || 'Undetermined';
             },
             id: cveSortFields.ACTIVE,
             accessor: 'isActive',
@@ -157,8 +138,10 @@ export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
             Header: `Severity`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 text-center ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                return <CVSSSeverityLabel severity={original.severity} />;
+            Cell: ({ original, pdf }) => {
+                return (
+                    <VulnerabilitySeverityIconText severity={original.severity} isTextOnly={pdf} />
+                );
             },
             id: cveSortFields.SEVERITY,
             accessor: 'severity',
@@ -166,7 +149,7 @@ export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
         },
         {
             Header: `CVSS Score`,
-            headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { cvss, scoreVersion } = original;

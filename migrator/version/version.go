@@ -67,13 +67,23 @@ func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.
 	if ensureSchema {
 		pkgSchema.ApplySchemaForTable(ctx, db, pkgSchema.VersionsSchema.Table)
 	}
-	modelVersion, err := ConvertVersionFromProto(updatedVersion)
-	if err != nil {
-		utils.Must(errors.Wrapf(err, "failed to write migration version to %s", "name"))
-	}
-	err = pgutils.Retry(func() error {
-		result := db.Table(pkgSchema.VersionsSchema.Table).WithContext(ctx).Save(modelVersion)
-		return result.Error
+
+	err := pgutils.Retry(func() error {
+		return db.Transaction(func(tx *gorm.DB) error {
+			// Gorm broke Save, so we have to do delete/insert:  https://github.com/go-gorm/gorm/pull/6149/files
+			result := tx.Exec("DELETE FROM versions")
+			if err := result.Error; err != nil {
+				return err
+			}
+
+			serialized, marshalErr := updatedVersion.Marshal()
+			if marshalErr != nil {
+				return marshalErr
+			}
+
+			result = tx.Exec("INSERT INTO versions (serialized) VALUES($1)", serialized)
+			return result.Error
+		})
 	})
 	if err != nil {
 		utils.Must(errors.Wrapf(err, "failed to write migration version to %s", "name"))

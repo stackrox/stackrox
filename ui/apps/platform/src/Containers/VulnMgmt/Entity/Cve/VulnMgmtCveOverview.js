@@ -5,10 +5,8 @@ import { format } from 'date-fns';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import CveType from 'Components/CveType';
 import Metadata from 'Components/Metadata';
-import LabelChip from 'Components/LabelChip';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
-import { getSeverityChipType } from 'utils/vulnerabilityUtils';
 import { isValidURL } from 'utils/urlUtils';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 
@@ -106,7 +104,6 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         },
     ];
 
-    const severityStyle = getSeverityChipType(cvss);
     const newEntityContext = { ...entityContext, [entityTypes.CVE]: cve };
 
     // TODO: change the CveType to handle one of the new split types: IMAGE_CVE, NODE_CVE, or CLUSTER_CVE
@@ -128,19 +125,15 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         },
         {
             key: 'CVE Type',
-            value: <CveType context="bare" types={legacyTypeList} />,
+            value: <CveType types={legacyTypeList} />,
         },
         {
             key: 'CVSS Score',
-            value: <LabelChip text={`CVSS ${cvss && cvss.toFixed(1)}`} type={severityStyle} />,
+            value: cvss && cvss.toFixed(1),
         },
         {
             key: 'Fixability',
-            value: isFixable ? (
-                <LabelChip text="Fixable" type="success" />
-            ) : (
-                <LabelChip text="Not fixable" type="base" />
-            ),
+            value: isFixable ? 'Fixable' : 'Not fixable',
         },
     ];
     if (cveType === entityTypes.NODE_CVE || cveType === entityTypes.IMAGE_CVE) {

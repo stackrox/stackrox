@@ -1,6 +1,7 @@
 import static Services.getPolicies
 import static Services.waitForViolation
 
+import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
 
 import io.grpc.StatusRuntimeException
@@ -38,6 +39,8 @@ import util.Helpers
 import util.SlackUtil
 
 import org.junit.Assume
+import org.junit.Rule
+import org.junit.rules.Timeout
 import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Shared
@@ -105,6 +108,16 @@ class DefaultPoliciesTest extends BaseSpecification {
             .addLabel ( "app", "test" )
             .setCommand(["sleep", "600"]),
     ]
+
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 300
+
+    // Override the global JUnit test timeout to cover a test instance waiting
+    // WAIT_FOR_VIOLATION_TIMEOUT over three test tries and the appprox. 6
+    // minutes it can take to gather debug when the first test run fails plus
+    // some padding.
+    @Rule
+    @SuppressWarnings(["JUnitPublicProperty"])
+    Timeout globalTimeout = new Timeout(3*WAIT_FOR_VIOLATION_TIMEOUT + 300 + 120, TimeUnit.SECONDS)
 
     @Shared
     private String gcrId
@@ -201,7 +214,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         "Verify Violation for #policyName is triggered"
         // Some of these policies require scans so extend the timeout as the scan will be done inline
         // with our scanner
-        assert waitForViolation(deploymentName,  policyName, 300)
+        assert waitForViolation(deploymentName,  policyName, WAIT_FOR_VIOLATION_TIMEOUT)
 
         cleanup:
         if (policyEnabled) {
@@ -469,17 +482,18 @@ class DefaultPoliciesTest extends BaseSpecification {
                 }
                  exists
              }.filter { alert ->
-                // The OpenShift: Kubeadmin Secret Accessed policy can sometimes get triggered
-                // by the CI. This happens when the CI scripts use kubectl to pull resources
-                // to save on a test failure. Ignore this alert iff _all_ violations was by kube:admin
-                // using kubectl. Do not ignore for any other violations.
-                // See https://issues.redhat.com/browse/ROX-10018
+                // The OpenShift: Kubeadmin Secret Accessed policy can sometimes
+                // get triggered by the CI. This happens when the CI scripts use
+                // kubectl to pull resources to save on an earlier test failure.
+                // Ignore this alert iff _all_ violations was by kube:admin or
+                // system:admin using kubectl. Do not ignore for any other
+                // violations. See https://issues.redhat.com/browse/ROX-10018
                 def noKubectlViolation = true
                 if (alert.policy.getName() == "OpenShift: Kubeadmin Secret Accessed") {
                     noKubectlViolation = !AlertService.getViolation(alert.id).getViolationsList().
                         stream().allMatch { v ->
                             def user = v.getKeyValueAttrs().getAttrsList().find { a ->
-                                a.getKey() == "Username" && a.getValue() == "kube:admin"
+                                a.getKey() == "Username" && a.getValue() =~ /(kube|system)\:admin/
                             }
                             def ua = v.getKeyValueAttrs().getAttrsList().find { a ->
                                 a.getKey() == "User Agent" && a.getValue().startsWith("kubectl/")
@@ -497,6 +511,12 @@ class DefaultPoliciesTest extends BaseSpecification {
                 log.info violation.toString()
                 log.info "The policy details:"
                 log.info Services.getPolicy(violation.policy.id).toString()
+                log.debug "The attribute list:"
+                AlertService.getViolation(violation.id).getViolationsList().forEach { v ->
+                    v.getKeyValueAttrs().getAttrsList().forEach { a ->
+                        log.debug "\t${a.getKey()}: ${a.getValue()}"
+                    }
+                }
             }
         }
 

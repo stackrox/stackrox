@@ -4,9 +4,9 @@ import { gql } from '@apollo/client';
 import { List } from 'react-feather';
 
 import PanelButton from 'Components/PanelButton';
+import ImageActiveIconText from 'Components/PatternFly/IconText/ImageActiveIconText';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import ImageTableCountLinks from 'Components/workflow/ImageTableCountLinks';
-import StatusChip from 'Components/StatusChip';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import DateTimeField from 'Components/DateTimeField';
 import {
@@ -91,16 +91,12 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
             },
             {
                 Header: `Top CVSS`,
-                headerClassName: `w-1/12 text-center ${defaultHeaderClassName}`,
+                headerClassName: `w-1/12 ${defaultHeaderClassName}`,
                 className: `w-1/12 ${defaultColumnClassName}`,
                 Cell: ({ original }) => {
                     const { topVuln } = original;
                     if (!topVuln) {
-                        return (
-                            <div className="mx-auto flex flex-col">
-                                <span>–</span>
-                            </div>
-                        );
+                        return 'N/A';
                     }
                     const { cvss, scoreVersion } = topVuln;
                     return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
@@ -160,11 +156,11 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
                 className: `w-1/10 ${defaultColumnClassName} content-center`,
                 Cell: ({ original, pdf }) => {
                     const { deploymentCount, watchStatus } = original;
-                    const imageStatus = deploymentCount === 0 ? 'inactive' : 'active';
+                    const isActive = deploymentCount !== 0;
                     const isWatched = watchStatus === imageWatchStatuses.WATCHED;
                     return (
                         <div className="flex-col justify-center items-center w-full">
-                            <StatusChip status={imageStatus} asString={pdf} />
+                            <ImageActiveIconText isActive={isActive} isTextOnly={pdf} />
                             {isWatched && (
                                 <button
                                     type="button"

@@ -91,12 +91,14 @@ func FillPagination(query *v1.Query, pagination *v1.Pagination, maxLimit int32) 
 	}
 	// Fill in sort options.
 	if pagination.GetSortOption() != nil {
-		queryPagination.SortOptions = []*v1.QuerySortOption{
-			{
-				Field:    pagination.GetSortOption().GetField(),
-				Reversed: pagination.GetSortOption().GetReversed(),
-			},
+		sortOption := &v1.QuerySortOption{
+			Field:    pagination.GetSortOption().GetField(),
+			Reversed: pagination.GetSortOption().GetReversed(),
 		}
+		if pagination.GetSortOption().GetAggregateBy() != nil {
+			sortOption.AggregateBy = pagination.GetSortOption().GetAggregateBy()
+		}
+		queryPagination.SortOptions = []*v1.QuerySortOption{sortOption}
 	}
 	// Fill in offset.
 	queryPagination.Offset = pagination.GetOffset()

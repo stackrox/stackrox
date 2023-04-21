@@ -22,11 +22,11 @@ import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils
 import ImagesTableContainer from './ImagesTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
 import CVEsTableContainer from './CVEsTableContainer';
-import WorkloadTableToolbar from './WorkloadTableToolbar';
-import EntityTypeToggleGroup from './components/EntityTypeToggleGroup';
-import { DynamicTableLabel } from './components/DynamicIcon';
-import { DefaultFilters, cveStatusTabValues, entityTabValues, EntityTab } from './types';
-import { parseQuerySearchFilter } from './searchUtils';
+import WorkloadTableToolbar from '../WorkloadTableToolbar';
+import EntityTypeToggleGroup from '../components/EntityTypeToggleGroup';
+import { DynamicTableLabel } from '../components/DynamicIcon';
+import { DefaultFilters, cveStatusTabValues, entityTabValues, EntityTab } from '../types';
+import { parseQuerySearchFilter } from '../searchUtils';
 
 type CveStatusTabNavigationProps = {
     defaultFilters: DefaultFilters;
@@ -134,8 +134,8 @@ function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps)
                                 </ToolbarContent>
                             </Toolbar>
                             <Divider component="div" />
-                            {activeEntityTabKey === 'Image' && <ImagesTableContainer />}
                             {activeEntityTabKey === 'CVE' && <CVEsTableContainer />}
+                            {activeEntityTabKey === 'Image' && <ImagesTableContainer />}
                             {activeEntityTabKey === 'Deployment' && <DeploymentsTableContainer />}
                         </CardBody>
                     </Card>

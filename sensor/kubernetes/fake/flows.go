@@ -20,6 +20,7 @@ import (
 var (
 	ipPool        = newPool()
 	containerPool = newPool()
+	endpointPool  = newEndpointPool()
 
 	registeredHostConnections []manager.HostNetworkInfo
 )
@@ -51,6 +52,7 @@ func (p *pool) remove(val string) {
 
 	p.pool.Remove(val)
 	processPool.remove(val)
+	endpointPool.remove(val)
 }
 
 func (p *pool) randomElem() (string, bool) {
@@ -68,6 +70,63 @@ func (p *pool) mustGetRandomElem() string {
 		panic("not expecting an empty pool")
 	}
 	return val
+}
+
+// EndpointPool stores endpoints by containerID using a map
+type EndpointPool struct {
+	Endpoints           map[string][]*sensor.NetworkEndpoint
+	EndpointsToBeClosed []*sensor.NetworkEndpoint
+	Capacity            int
+	Size                int
+	lock                sync.RWMutex
+}
+
+func newEndpointPool() *EndpointPool {
+	return &EndpointPool{
+		Endpoints:           make(map[string][]*sensor.NetworkEndpoint),
+		EndpointsToBeClosed: make([]*sensor.NetworkEndpoint, 0),
+		Capacity:            10000,
+		Size:                0,
+	}
+}
+
+func (p *EndpointPool) add(val *sensor.NetworkEndpoint) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	if p.Size < p.Capacity {
+		p.Endpoints[val.ContainerId] = append(p.Endpoints[val.ContainerId], val)
+		p.Size++
+	}
+}
+
+func (p *EndpointPool) remove(containerID string) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	p.EndpointsToBeClosed = append(p.EndpointsToBeClosed, p.Endpoints[containerID]...)
+	delete(p.Endpoints, containerID)
+	p.Size -= len(p.Endpoints[containerID])
+}
+
+func (p *EndpointPool) clearEndpointsToBeClosed() {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	p.EndpointsToBeClosed = []*sensor.NetworkEndpoint{}
+}
+
+func (p *EndpointPool) getRandomEndpoint(containerID string) *sensor.NetworkEndpoint {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	size := len(p.Endpoints[containerID])
+	if size > 0 {
+		randIdx := rand.Intn(size)
+		return p.Endpoints[containerID][randIdx]
+	}
+
+	return nil
 }
 
 func generateIP() string {
@@ -182,8 +241,24 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 		networkEndpoint := getNetworkEndpointFromConnectionAndOriginator(conn, originator)
 
 		conns = append(conns, conn)
-		networkEndpoints = append(networkEndpoints, networkEndpoint)
+		if endpointPool.Size < endpointPool.Capacity {
+			endpointPool.add(networkEndpoint)
+			networkEndpoints = append(networkEndpoints, networkEndpoint)
+		}
 	}
+
+	for _, endpoint := range endpointPool.EndpointsToBeClosed {
+		networkEndpoint := endpoint
+		closeTS, err := types.TimestampProto(time.Now().Add(-5 * time.Second))
+		if err != nil {
+			log.Errorf("Unable to set CloseTimestamp for endpoint %+v", err)
+		} else {
+			networkEndpoint.CloseTimestamp = closeTS
+			networkEndpoints = append(networkEndpoints, networkEndpoint)
+		}
+	}
+
+	endpointPool.clearEndpointsToBeClosed()
 
 	return &sensor.NetworkConnectionInfo{
 		UpdatedConnections: conns,

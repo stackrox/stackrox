@@ -7,7 +7,7 @@ import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
-import SeverityLabel from 'Components/SeverityLabel';
+import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import Widget from 'Components/Widget';
 import Metadata from 'Components/Metadata';
 import Button from 'Components/Button';
@@ -158,7 +158,7 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext, paginatio
                     },
                     {
                         key: 'Severity',
-                        value: <SeverityLabel severity={severity} />,
+                        value: <PolicySeverityIconText severity={severity} isTextOnly={false} />,
                     },
                     {
                         key: 'Enforced',

@@ -34,11 +34,7 @@ function DeploymentSelector({
     searchFilter,
     setSearchFilter,
 }: DeploymentSelectorProps) {
-    const {
-        isOpen: isDeploymentOpen,
-        toggleSelect: toggleIsDeploymentOpen,
-        closeSelect,
-    } = useSelectToggle();
+    const { isOpen: isDeploymentOpen, toggleSelect: toggleIsDeploymentOpen } = useSelectToggle();
     const [input, setInput] = React.useState('');
 
     const handleTextInputChange = (value: string) => {
@@ -47,7 +43,7 @@ function DeploymentSelector({
 
     const filteredDeploymentSelectMenuItems = useMemo(() => {
         let deploymentSelectMenuItems = deploymentsByNamespace.map((namespace) => {
-            let menuItems = namespace.deployments
+            const menuItems = namespace.deployments
                 .filter((deployment) =>
                     deployment.name.toLowerCase().includes(input.toString().toLowerCase())
                 )
@@ -67,7 +63,7 @@ function DeploymentSelector({
                     </MenuItem>
                 ));
             if (menuItems.length === 0) {
-                menuItems = [<MenuItem isDisabled>-</MenuItem>];
+                return null;
             }
             return (
                 <MenuGroup
@@ -96,7 +92,6 @@ function DeploymentSelector({
     const onClearSelections = () => {
         const modifiedSearchObject = { ...searchFilter };
         delete modifiedSearchObject.Deployment;
-        closeSelect();
         setSearchFilter(modifiedSearchObject);
     };
 
@@ -123,7 +118,12 @@ function DeploymentSelector({
                 </MenuList>
             </MenuContent>
             <MenuFooter>
-                <Button variant="link" isInline onClick={onClearSelections}>
+                <Button
+                    variant="link"
+                    isInline
+                    onClick={onClearSelections}
+                    isDisabled={selectedDeployments.length === 0}
+                >
                     Clear selections
                 </Button>
             </MenuFooter>

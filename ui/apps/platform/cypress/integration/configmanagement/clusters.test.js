@@ -63,7 +63,7 @@ describe('Configuration Management Clusters', () => {
     it('should have items in the Findings section', () => {
         visitConfigurationManagementEntities(entitiesKey);
 
-        cy.get(`.rt-td:contains(fail)`).eq(0).click();
+        cy.get(`.rt-td:contains("Fail")`).eq(0).click();
 
         cy.get(
             `${selectors.sidePanel} [data-testid="deployments-with-failed-policies"]:contains("Severity")`
