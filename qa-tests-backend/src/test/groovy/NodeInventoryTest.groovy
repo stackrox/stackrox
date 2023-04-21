@@ -25,7 +25,14 @@ class NodeInventoryTest extends BaseSpecification {
         List<Node> nodes = NodeService.getNodes()
         assert nodes.size() > 0
 
-        expect:
+        when:
+        log.info("Setting collector.node-inventory ROX_NODE_SCANNING_MAX_INITIAL_WAIT to 1s")
+        orchestrator.updateDaemonSetEnv("stackrox", "collector", "node-inventory", "ROX_NODE_SCANNING_MAX_INITIAL_WAIT", "1s")
+        log.info("Wait for collector ds to be restarted")
+        orchestrator.waitForDaemonSetReady("stackrox", "collector", 20, 6)
+
+
+        then:
         "confirm the number of components in the inventory and their scan"
         // ensure that the nodes got scanned at least once - retry up to 6 minutes
         withRetry(12, 30) {

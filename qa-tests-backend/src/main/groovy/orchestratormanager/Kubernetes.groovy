@@ -56,6 +56,7 @@ import io.fabric8.kubernetes.api.model.Volume
 import io.fabric8.kubernetes.api.model.VolumeMount
 import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration
 import io.fabric8.kubernetes.api.model.apps.DaemonSet as K8sDaemonSet
+import io.fabric8.kubernetes.api.model.apps.DaemonSetBuilder
 import io.fabric8.kubernetes.api.model.apps.DaemonSetList
 import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
 import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
@@ -616,6 +617,38 @@ class Kubernetes implements OrchestratorMain {
     def deleteDaemonSet(DaemonSet daemonSet) {
         this.daemonsets.inNamespace(daemonSet.namespace).withName(daemonSet.name).delete()
         log.debug "${daemonSet.name}: daemonset removed."
+    }
+
+    def updateDaemonSetEnv(String ns, String name, String containerName, String key, String value) {
+        log.debug "Update env var in ${ns}/${name}/${containerName}: ${key} = ${value}"
+        List<Container> containers = client.apps().daemonSets().inNamespace(ns).withName(name).get().spec.template
+            .spec.containers
+        Container container = containers.find { it.name = containerName }
+        if (container == null) {
+            throw new OrchestratorManagerException(
+                "Could not update env var, did not find container ${containerName} in ${ns}/${name}")
+        }
+        List<EnvVar> envVars = container.env
+
+        int index = envVars.findIndexOf { EnvVar it -> it.name == key }
+        if (index < 0) {
+            throw new OrchestratorManagerException(
+                "Could not update env var, did not find env variable ${key} in ${ns}/${name}")
+        }
+        envVars.get(index).value = value
+
+        client.apps().daemonSets().inNamespace(ns).withName(name)
+            .edit { d -> new DaemonSetBuilder(d)
+                .editSpec()
+                .editTemplate()
+                .editSpec()
+                .editContainer(0)
+                .withEnv(envVars)
+                .endContainer()
+                .endSpec()
+                .endTemplate()
+                .endSpec()
+                .build() }
     }
 
     def waitForDaemonSetReady(String ns, String name, int retries, int intervalSeconds) {
