@@ -35,6 +35,7 @@ message ComplianceStandardMetadata {
     int32  num_implemented_checks = 4;
     repeated Scope scopes         = 5;
     bool   dynamic                = 6;
+    bool hidden                   = 7;
 }
 
 message ComplianceControlGroup {

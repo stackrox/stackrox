@@ -322,6 +322,10 @@ func (m *managerImpl) IsStandardActive(standardID string) bool {
 		log.Errorf("error getting standard ID %s: %v", standardID, err)
 		return false
 	}
+
+	if standard.GetMetadata().GetId() == "CIS_Docker_v1_2_0" {
+		return false
+	}
 	if !ok {
 		return false
 	}
