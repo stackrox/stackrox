@@ -197,8 +197,8 @@ type CollectionMethod string
 const (
 	// CollectionEBPF means: use EBPF collection.
 	CollectionEBPF CollectionMethod = "EBPF"
-	// CollectionCoreBpf means: use CORE_BPF collection.
-	CollectionCoreBpf CollectionMethod = "CORE_BPF"
+	// CollectionCOREBPF means: use CORE_BPF collection.
+	CollectionCOREBPF CollectionMethod = "CORE_BPF"
 	// CollectionKernelModule means: use KERNEL_MODULE collection.
 	CollectionKernelModule CollectionMethod = "KernelModule"
 	// CollectionNone means: NO_COLLECTION.

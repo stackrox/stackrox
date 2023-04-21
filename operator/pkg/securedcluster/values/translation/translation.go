@@ -279,7 +279,7 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *platform
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_KERNEL_MODULE.String())
 		case platform.CollectionNone:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_NO_COLLECTION.String())
-		case platform.CollectionCoreBpf:
+		case platform.CollectionCOREBPF:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_CORE_BPF.String())
 		default:
 			return cv.SetError(fmt.Errorf("invalid spec.perNode.collection %q", *c))
