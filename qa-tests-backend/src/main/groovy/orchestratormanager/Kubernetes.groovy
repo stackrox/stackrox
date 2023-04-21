@@ -623,12 +623,12 @@ class Kubernetes implements OrchestratorMain {
         log.debug "Update env var in ${ns}/${name}/${containerName}: ${key} = ${value}"
         List<Container> containers = client.apps().daemonSets().inNamespace(ns).withName(name).get().spec.template
             .spec.containers
-        Container container = containers.find { it.name = containerName }
-        if (container == null) {
+        int containerIndex = containers.findIndexOf { it.name = containerName }
+        if (containerIndex == -1) {
             throw new OrchestratorManagerException(
                 "Could not update env var, did not find container ${containerName} in ${ns}/${name}")
         }
-        List<EnvVar> envVars = container.env
+        List<EnvVar> envVars = containers.get(containerIndex).env
 
         int index = envVars.findIndexOf { EnvVar it -> it.name == key }
         if (index < 0) {
@@ -642,7 +642,7 @@ class Kubernetes implements OrchestratorMain {
                 .editSpec()
                 .editTemplate()
                 .editSpec()
-                .editContainer(0)
+                .editContainer(containerIndex)
                 .withEnv(envVars)
                 .endContainer()
                 .endSpec()
