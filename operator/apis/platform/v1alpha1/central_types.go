@@ -111,7 +111,8 @@ type CentralComponentSpec struct {
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 
 	// Configures how Central should store its persistent data. You can choose between using a persistent
-	// volume claim (recommended default), and a host path.
+	// volume claim, and a host path. Central persistent storage is deprecated for installation.
+	// Existing customers may continue using it for restoration from legacy RocksDB backups.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	Persistence *Persistence `json:"persistence,omitempty"`
 
@@ -300,10 +301,8 @@ type HostPathSpec struct {
 // PersistentVolumeClaim defines PVC-based persistence settings.
 type PersistentVolumeClaim struct {
 	// The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
-	// created. Defaults to "stackrox-db" if not set.
+	// created.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Claim Name",order=1
-	//+kubebuilder:validation:Default=stackrox-db
-	//+kubebuilder:default=stackrox-db
 	ClaimName *string `json:"claimName,omitempty"`
 
 	// The size of the persistent volume when created through the claim. If a claim was automatically created,
