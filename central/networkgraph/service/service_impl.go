@@ -301,6 +301,7 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 		return nil, err
 	}
 
+	log.Infof("NetworkGraph Builder: %+v", builder)
 	depSet := set.NewStringSet()
 	for _, deployment := range deployments {
 		depSet.Add(deployment.GetId())
@@ -379,6 +380,7 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 		return err
 	}
 
+	log.Infof("Flows retrieved from the store: %+v", flows)
 	networkTree := tree.NewMultiNetworkTree(
 		s.networkTreeMgr.GetReadOnlyNetworkTree(ctx, request.GetClusterId()),
 		s.networkTreeMgr.GetDefaultNetworkTree(ctx),
@@ -388,6 +390,7 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 	aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
 	utils.Should(err)
 	flows = aggr.Aggregate(flows)
+	log.Infof("Flows after aggregating: %+v", flows)
 
 	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, deploymentsMap,
 		func(id string) *storage.NetworkEntityInfo {
@@ -400,7 +403,9 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 
 	// Aggregate all external flows by node names to control the number of external nodes.
 	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
+	log.Infof("Flows after aggregating external sources: %+v", flows)
 	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
+	log.Infof("MissingFlows after aggregating external sources: %+v", missingInfoFlows)
 	graphBuilder.AddFlows(flows)
 
 	filteredFlows, visibleNeighbors, maskedDeployments, err := filterFlowsAndMaskScopeAlienDeployments(ctx,
@@ -408,6 +413,7 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 	if err != nil {
 		return err
 	}
+	log.Infof("FilteredFlows: %+v", filteredFlows)
 	graphBuilder.AddDeployments(visibleNeighbors)
 	graphBuilder.AddDeployments(maskedDeployments)
 	graphBuilder.AddFlows(filteredFlows)

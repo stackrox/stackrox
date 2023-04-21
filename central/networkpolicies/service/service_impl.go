@@ -202,7 +202,10 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetwor
 		return nil, errors.Errorf("unable to get network tree for cluster %s: %v", request.GetClusterId(), err)
 	}
 	// Generate the graph.
-	return s.graphEvaluator.GetGraph(request.GetClusterId(), queryDeploymentIDs, clusterDeployments, networkTree, networkPolicies, request.GetIncludePorts()), nil
+	log.Infof("NetworkTree: %+v", networkTree)
+	ng, err := s.graphEvaluator.GetGraph(request.GetClusterId(), queryDeploymentIDs, clusterDeployments, networkTree, networkPolicies, request.GetIncludePorts()), nil
+	log.Infof("Graph: %+v", ng)
+	return ng, err
 }
 
 func (s *serviceImpl) GetNetworkGraphEpoch(_ context.Context, req *v1.GetNetworkGraphEpochRequest) (*v1.NetworkGraphEpoch, error) {
