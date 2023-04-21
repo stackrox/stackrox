@@ -34,18 +34,15 @@ import CvesByStatusSummaryCard, {
     ResourceCountByCveSeverityAndStatus,
     resourceCountByCveSeverityAndStatusFragment,
 } from '../SummaryCards/CvesByStatusSummaryCard';
-import SingleEntityVulnerabilitiesTable, {
+import ImageVulnerabilitiesTable, {
     ImageVulnerability,
     imageVulnerabilitiesFragment,
-} from '../Tables/SingleEntityVulnerabilitiesTable';
+} from '../Tables/ImageVulnerabilitiesTable';
 import { DynamicTableLabel } from '../components/DynamicIcon';
 import { getHiddenSeverities, getHiddenStatuses, parseQuerySearchFilter } from '../searchUtils';
 import { cveStatusTabValues } from '../types';
-import {
-    ImageMetadataContext,
-    imageMetadataContextFragment,
-} from '../Tables/ComponentVulnerabilitiesTable';
 import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
+import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/table.utils';
 
 const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
@@ -190,7 +187,7 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                             />
                         </SplitItem>
                     </Split>
-                    <SingleEntityVulnerabilitiesTable
+                    <ImageVulnerabilitiesTable
                         image={vulnerabilityData.image}
                         getSortParams={getSortParams}
                         isFiltered={isFiltered}
