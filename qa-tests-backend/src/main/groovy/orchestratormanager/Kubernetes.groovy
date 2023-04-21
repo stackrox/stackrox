@@ -619,11 +619,17 @@ class Kubernetes implements OrchestratorMain {
         log.debug "${daemonSet.name}: daemonset removed."
     }
 
+    boolean containsDaemonSetContainer(String ns, String name, String containerName) {
+        return client.apps().daemonSets().inNamespace(ns).withName(name).get().spec.template
+            .spec.containers.findIndexOf { it.name == containerName } > -1
+    }
+
+
     def updateDaemonSetEnv(String ns, String name, String containerName, String key, String value) {
         log.debug "Update env var in ${ns}/${name}/${containerName}: ${key} = ${value}"
         List<Container> containers = client.apps().daemonSets().inNamespace(ns).withName(name).get().spec.template
             .spec.containers
-        int containerIndex = containers.findIndexOf { it.name = containerName }
+        int containerIndex = containers.findIndexOf { it.name == containerName }
         if (containerIndex == -1) {
             throw new OrchestratorManagerException(
                 "Could not update env var, did not find container ${containerName} in ${ns}/${name}")

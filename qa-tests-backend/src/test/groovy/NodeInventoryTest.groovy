@@ -26,10 +26,13 @@ class NodeInventoryTest extends BaseSpecification {
         assert nodes.size() > 0
 
         when:
-        log.info("Setting collector.node-inventory ROX_NODE_SCANNING_MAX_INITIAL_WAIT to 1s")
-        orchestrator.updateDaemonSetEnv("stackrox", "collector", "node-inventory", "ROX_NODE_SCANNING_MAX_INITIAL_WAIT", "1s")
-        log.info("Wait for collector ds to be restarted")
-        orchestrator.waitForDaemonSetReady("stackrox", "collector", 20, 6)
+        boolean nodeInventoryContainerAvailable = orchestrator.containsDaemonSetContainer("stackrox", "collector", "node-inventory")
+        if (nodeInventoryContainerAvailable) {
+            log.info("Setting collector.node-inventory ROX_NODE_SCANNING_MAX_INITIAL_WAIT to 1s")
+            orchestrator.updateDaemonSetEnv("stackrox", "collector", "node-inventory", "ROX_NODE_SCANNING_MAX_INITIAL_WAIT", "1s")
+            log.info("Wait for collector ds to be restarted")
+            orchestrator.waitForDaemonSetReady("stackrox", "collector", 20, 6)
+        }
 
 
         then:
@@ -46,7 +49,7 @@ class NodeInventoryTest extends BaseSpecification {
             assert node.getScan(), "Expected to find a nodeScan on the node"
             log.info("Node ${node.getName()} scan contains ${node.getScan().getComponentsList().size()} components")
 
-            if (!ClusterService.isOpenShift4()) {
+            if (!nodeInventoryContainerAvailable) {
                 // No RHCOS node scanning on this cluster
                 assert node.getScan().getComponentsList().size() == 4,
                     "Expected to find exactly 4 components on non-RHCOS node"

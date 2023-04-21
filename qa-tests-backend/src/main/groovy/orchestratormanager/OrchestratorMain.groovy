@@ -63,6 +63,7 @@ interface OrchestratorMain {
     //DaemonSets
     def createDaemonSet(DaemonSet daemonSet)
     def deleteDaemonSet(DaemonSet daemonSet)
+    boolean containsDaemonSetContainer(String ns, String name, String containerName)
     def updateDaemonSetEnv(String ns, String name, String containerName, String key, String value)
     def getDaemonSetReplicaCount(DaemonSet daemonSet)
     def getDaemonSetNodeSelectors(DaemonSet daemonSet)
