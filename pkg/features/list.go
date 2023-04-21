@@ -45,4 +45,7 @@ var (
 
 	// PostgresBlobStore enables the creation of the Postgres Blob Store
 	PostgresBlobStore = registerFeature("Postgres Blob Store", "ROX_POSTGRES_BLOB_STORE", false)
+
+	// VulnMgmtReportingEnhancements enables APIs and UI pages for VM Reporting enhancements including downloadable reports
+	VulnMgmtReportingEnhancements = registerFeature("Vuln Mgmt Reporting Enhancements", "ROX_VULN_MGMT_REPORTING_ENHANCEMENTS", false)
 )
