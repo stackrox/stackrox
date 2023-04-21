@@ -137,22 +137,6 @@ func getCentralDBPersistenceValues(p *platform.DBPersistence) *translation.Value
 	return &persistence
 }
 
-func getCentralPersistenceValues(p *platform.Persistence) *translation.ValuesBuilder {
-	persistence := translation.NewValuesBuilder()
-	if hostPath := p.GetHostPath(); hostPath != "" {
-		persistence.SetStringValue("hostPath", hostPath)
-	} else {
-		pvcBuilder := translation.NewValuesBuilder()
-		pvcBuilder.SetBoolValue("createClaim", false)
-		if pvc := p.GetPersistentVolumeClaim(); pvc != nil {
-			pvcBuilder.SetString("claimName", pvc.ClaimName)
-		}
-
-		persistence.AddChild("persistentVolumeClaim", &pvcBuilder)
-	}
-	return &persistence
-}
-
 func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
 
