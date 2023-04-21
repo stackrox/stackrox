@@ -17,7 +17,7 @@ type Repository interface {
 	Group(groupID string) *v1.ComplianceControlGroup
 	GetCISDockerStandardID() (string, error)
 	GetCISKubernetesStandardID() (string, error)
-
+	SetStandardHidden(id string, hidden bool) error
 	SearchStandards(q *v1.Query) ([]search.Result, error)
 	SearchControls(q *v1.Query) ([]search.Result, error)
 }

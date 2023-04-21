@@ -167,6 +167,19 @@ func (r *Registry) Standard(id string) (*v1.ComplianceStandard, bool, error) {
 	return standard.ToProto(), true, nil
 }
 
+// Standard returns the full proto definition of the compliance standard with the given ID.
+func (r *Registry) SetStandardHidden(id string, hidden bool) error {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
+	standard := r.standardsByID[id]
+	if standard == nil {
+		return errors.New("Standard not found")
+	}
+	standard.MetadataProto().Hidden = hidden
+	return nil
+
+}
+
 // StandardMetadata returns the metadata proto for the compliance standard with the given ID.
 func (r *Registry) StandardMetadata(id string) (*v1.ComplianceStandardMetadata, bool, error) {
 	r.lock.RLock()

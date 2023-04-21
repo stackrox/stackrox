@@ -35,6 +35,7 @@ message ComplianceStandardMetadata {
     int32  num_implemented_checks = 4;
     repeated Scope scopes         = 5;
     bool   dynamic                = 6;
+    bool hidden                   = 7;
 }
 
 message ComplianceControlGroup {
@@ -69,6 +70,13 @@ message GetComplianceStandardResponse {
 message GetComplianceStandardsResponse {
     repeated ComplianceStandardMetadata standards = 1;
 }
+
+message UpdateComplianceRequest {
+
+    string id = 1;
+    bool hidden = 2;
+}
+
 
 message GetComplianceRunResultsRequest {
     string cluster_id = 1;
@@ -107,6 +115,13 @@ service ComplianceService {
     rpc GetAggregatedResults(ComplianceAggregationRequest) returns (storage.ComplianceAggregation.Response) {
         option (google.api.http) = {
             get: "/v1/compliance/aggregatedresults"
+        };
+    }
+
+    rpc UpdateCompliance(UpdateComplianceRequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/compliance/standards/{id}"
+            body: "*"
         };
     }
 }
