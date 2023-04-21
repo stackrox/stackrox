@@ -92,6 +92,16 @@ class ProcessBaselinesTest extends BaseSpecification {
                      .addLabel("app", "test"),
             ]
 
+    static final private Integer LONGEST_TEST = 400
+
+    // Override the global JUnit test timeout to cover a test instance taking
+    // LONGEST_TEST over three test tries and the appprox. 6
+    // minutes it can take to gather debug when the first test run fails plus
+    // some padding.
+    @Rule
+    @SuppressWarnings(["JUnitPublicProperty"])
+    Timeout globalTimeout = new Timeout(3*LONGEST_TEST + 300 + 120, TimeUnit.SECONDS)
+
     def setupSpec() {
         clusterId = ClusterService.getClusterId()
     }
