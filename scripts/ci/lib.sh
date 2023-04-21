@@ -1015,19 +1015,21 @@ gate_pr_job() {
 openshift_ci_mods() {
     info "BEGIN OpenShift CI mods"
 
-    info "Env A-Z dump:"
-    env | sort | grep -E '^[A-Z]' || true
+    local debug="${ARTIFACT_DIR:-/tmp}/debug.txt"
+
+    echo "Env A-Z dump:" > "${debug}"
+    env | sort | grep -E '^[A-Z]' >> "${debug}" || true
 
     ensure_writable_home_dir
 
     # Prevent fatal error "detected dubious ownership in repository" from recent git.
     git config --global --add safe.directory "$(pwd)"
 
-    info "Git log:"
-    git log --oneline --decorate -n 20 || true
+    echo "Git log:" >> "${debug}"
+    git log --oneline --decorate -n 20 >> "${debug}" || true
 
-    info "Recent git refs:"
-    git for-each-ref --format='%(creatordate) %(refname)' --sort=creatordate | tail -20
+    echo "Recent git refs:" >> "${debug}"
+    git for-each-ref --format='%(creatordate) %(refname)' --sort=creatordate | tail -20 >> "${debug}"
 
     info "Current Status:"
     "$ROOT/status.sh" || true
