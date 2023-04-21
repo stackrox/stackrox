@@ -1,6 +1,14 @@
 import React from 'react';
 import { gql } from '@apollo/client';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import {
+    TableComposable,
+    Tbody,
+    Td,
+    Th,
+    Thead,
+    Tr,
+    ExpandableRowContent,
+} from '@patternfly/react-table';
 import { Button, ButtonVariant, Tooltip } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
@@ -29,6 +37,12 @@ export const cveListQuery = gql`
     }
 `;
 
+export const unfilteredImageCountQuery = gql`
+    query getUnfilteredImageCount {
+        imageCount
+    }
+`;
+
 type ImageCVE = {
     cve: string;
     // summary: string;
@@ -38,18 +52,19 @@ type ImageCVE = {
         moderate: number;
         low: number;
     };
-    topCVSS: string;
+    topCVSS: number;
     affectedImageCount: number;
     firstDiscoveredInSystem: Date | null;
 };
 
 type CVEsTableProps = {
     cves: ImageCVE[];
+    unfilteredImageCount: number;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
 };
 
-function CVEsTable({ cves, getSortParams, isFiltered }: CVEsTableProps) {
+function CVEsTable({ cves, unfilteredImageCount, getSortParams, isFiltered }: CVEsTableProps) {
     const expandedRowSet = useSet<string>();
     return (
         <TableComposable borders={false} variant="compact">
@@ -118,8 +133,12 @@ function CVEsTable({ cves, getSortParams, isFiltered }: CVEsTableProps) {
                                         low={affectedImageCountBySeverity.low}
                                     />
                                 </Td>
-                                <Td>{topCVSS}</Td>
-                                <Td>{affectedImageCount}</Td>
+                                {/* TODO: score version? */}
+                                <Td>{topCVSS.toFixed(1)}</Td>
+                                <Td>
+                                    {/* TODO: fix upon PM feedback */}
+                                    {affectedImageCount}/{unfilteredImageCount} affected images
+                                </Td>
                                 <Td>
                                     <Tooltip content={getDateTime(firstDiscoveredInSystem)}>
                                         <div>
@@ -129,6 +148,22 @@ function CVEsTable({ cves, getSortParams, isFiltered }: CVEsTableProps) {
                                             )}
                                         </div>
                                     </Tooltip>
+                                </Td>
+                            </Tr>
+                            <Tr isExpanded={isExpanded}>
+                                <Td />
+                                <Td colSpan={6}>
+                                    <ExpandableRowContent>
+                                        {/* TODO: add summary once it's in */}
+                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. In
+                                        a vehicula nisl. Interdum et malesuada fames ac ante ipsum
+                                        primis in faucibus. Duis mollis nisi eget augue rhoncus, a
+                                        consectetur magna tincidunt. Nam est diam, aliquet at
+                                        hendrerit at, venenatis eu est. Integer pulvinar diam ac dui
+                                        efficitur finibus. Vestibulum ante ipsum primis in faucibus
+                                        orci luctus et ultrices posuere cubilia curae; Cras eu ex
+                                        sit amet enim lacinia placerat eget vitae arcu.
+                                    </ExpandableRowContent>
                                 </Td>
                             </Tr>
                         </Tbody>

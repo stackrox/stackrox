@@ -6,7 +6,7 @@ import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import CVEsTable, { cveListQuery } from '../Tables/CVEsTable';
+import CVEsTable, { cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
 import TableErrorComponent from '../components/TableErrorComponent';
 import { parseQuerySearchFilter } from '../searchUtils';
 
@@ -39,6 +39,8 @@ function CVEsTableContainer() {
         },
     });
 
+    const { data: imageCountData } = useQuery(unfilteredImageCountQuery);
+
     const tableData = data ?? previousData;
     return (
         <>
@@ -52,7 +54,8 @@ function CVEsTableContainer() {
             )}
             {tableData && (
                 <CVEsTable
-                    cves={data.imageCVEs}
+                    cves={tableData.imageCVEs}
+                    unfilteredImageCount={imageCountData?.imageCount || 0}
                     getSortParams={getSortParams}
                     isFiltered={isFiltered}
                 />
