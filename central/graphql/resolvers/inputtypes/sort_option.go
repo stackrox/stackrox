@@ -47,8 +47,12 @@ func (a *AggregateBy) AsV1AggregateBy() *v1.AggregateBy {
 	if a == nil {
 		return nil
 	}
+	aggrFunc := aggregatefunc.GetAggrFunc(strings.ToLower(*a.AggregateFunc))
+	if aggrFunc == aggregatefunc.Unset {
+		return nil
+	}
 	return &v1.AggregateBy{
-		AggrFunc: aggregatefunc.GetAggrFunc(strings.ToLower(*a.AggregateFunc)).Proto(),
+		AggrFunc: aggrFunc.Proto(),
 		Distinct: func() bool {
 			if a.Distinct == nil {
 				return false
