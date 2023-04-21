@@ -172,7 +172,10 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreWithPagination() {
 		baseTestCases := s.testCases()
 		for idx := range baseTestCases {
 			tc := &baseTestCases[idx]
-			applyPaginationProps(&tc, paginationTestCase)
+			if !tc.readOptions.IsDefault() {
+				continue
+			}
+			applyPaginationProps(tc, paginationTestCase)
 
 			s.T().Run(tc.desc, func(t *testing.T) {
 				actual, err := s.cveView.Get(tc.ctx, tc.q, tc.readOptions)
@@ -184,7 +187,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreWithPagination() {
 
 				expected := compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
 				assert.Equal(t, len(expected), len(actual))
-				assert.ElementsMatch(t, expected, actual)
+				assert.EqualValues(t, expected, actual)
 
 				if tc.readOptions.SkipGetAffectedImages || tc.readOptions.SkipGetImagesBySeverity {
 					return
@@ -443,10 +446,13 @@ func (s *ImageCVEViewTestSuite) paginationTestCases() []testCase {
 			q: search.NewQueryBuilder().WithPagination(
 				search.NewPagination().AddSortOption(
 					search.NewSortOption(search.ImageSHA).AggregateBy(aggregatefunc.Count, true).Reversed(true),
-				),
+				).AddSortOption(search.NewSortOption(search.CVE)),
 			).ProtoQuery(),
 			less: func(records []*imageCVECore) func(i, j int) bool {
 				return func(i, j int) bool {
+					if records[i].AffectedImages == records[j].AffectedImages {
+						return records[i].CVE < records[j].CVE
+					}
 					return records[i].AffectedImages > records[j].AffectedImages
 				}
 			},
@@ -456,10 +462,13 @@ func (s *ImageCVEViewTestSuite) paginationTestCases() []testCase {
 			q: search.NewQueryBuilder().WithPagination(
 				search.NewPagination().AddSortOption(
 					search.NewSortOption(search.CVSS).AggregateBy(aggregatefunc.Max, false).Reversed(true),
-				),
+				).AddSortOption(search.NewSortOption(search.CVE)),
 			).ProtoQuery(),
 			less: func(records []*imageCVECore) func(i, j int) bool {
 				return func(i, j int) bool {
+					if records[i].TopCVSS == records[j].TopCVSS {
+						return records[i].CVE < records[j].CVE
+					}
 					return records[i].TopCVSS > records[j].TopCVSS
 				}
 			},
@@ -469,10 +478,13 @@ func (s *ImageCVEViewTestSuite) paginationTestCases() []testCase {
 			q: search.NewQueryBuilder().WithPagination(
 				search.NewPagination().AddSortOption(
 					search.NewSortOption(search.CVECreatedTime).AggregateBy(aggregatefunc.Min, false),
-				),
+				).AddSortOption(search.NewSortOption(search.CVE)),
 			).ProtoQuery(),
 			less: func(records []*imageCVECore) func(i, j int) bool {
 				return func(i, j int) bool {
+					if records[i].FirstDiscoveredInSystem.Equal(records[j].FirstDiscoveredInSystem) {
+						return records[i].CVE < records[j].CVE
+					}
 					return records[i].FirstDiscoveredInSystem.Before(records[j].FirstDiscoveredInSystem)
 				}
 			},
@@ -481,15 +493,12 @@ func (s *ImageCVEViewTestSuite) paginationTestCases() []testCase {
 }
 
 func applyPaginationProps(baseTc *testCase, paginationTc testCase) {
-	if !baseTc.readOptions.IsDefault() {
-		return
-	}
 	baseTc.desc = fmt.Sprintf("%s %s", baseTc.desc, paginationTc.desc)
 	baseTc.q.Pagination = paginationTc.q.GetPagination()
 	baseTc.less = paginationTc.less
 }
 
-func compileExpected(images []*storage.Image, filter *filterImpl, options views.ReadOptions, less lessFunc) []*imageCVECore {
+func compileExpected(images []*storage.Image, filter *filterImpl, options views.ReadOptions, less lessFunc) []CveCore {
 	cveMap := make(map[string]*imageCVECore)
 
 	for _, image := range images {
@@ -538,12 +547,12 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 		}
 	}
 
-	ret := make([]*imageCVECore, 0, len(cveMap))
+	expected := make([]*imageCVECore, 0, len(cveMap))
 	for _, entry := range cveMap {
-		ret = append(ret, entry)
+		expected = append(expected, entry)
 	}
 	if options.SkipGetImagesBySeverity {
-		for _, entry := range ret {
+		for _, entry := range expected {
 			entry.ImagesWithLowSeverity = 0
 			entry.ImagesWithModerateSeverity = 0
 			entry.ImagesWithImportantSeverity = 0
@@ -551,7 +560,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 		}
 	}
 	if options.SkipGetTopCVSS {
-		for _, entry := range ret {
+		for _, entry := range expected {
 			entry.TopCVSS = 0
 		}
 	}
@@ -566,7 +575,12 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 		}
 	}
 	if less != nil {
-		sort.SliceStable(ret, less(ret))
+		sort.SliceStable(expected, less(expected))
+	}
+
+	ret := make([]CveCore, 0, len(cveMap))
+	for _, entry := range expected {
+		ret = append(ret, entry)
 	}
 	return ret
 }
