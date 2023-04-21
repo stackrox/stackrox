@@ -139,12 +139,34 @@ func withCountBySeveritySelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.
 		search.NewQuerySelect(countOn).
 			Distinct().
 			AggrFunc(aggregatefunc.Count).
+			Filter("fixable_critical_severity_count",
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String(),
+					).
+					AddBools(search.Fixable, true).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(countOn).
+			Distinct().
+			AggrFunc(aggregatefunc.Count).
 			Filter("important_severity_count",
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.Severity,
 						storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY.String(),
 					).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(countOn).
+			Distinct().
+			AggrFunc(aggregatefunc.Count).
+			Filter("fixable_important_severity_count",
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY.String(),
+					).
+					AddBools(search.Fixable, true).ProtoQuery(),
 			).Proto(),
 		search.NewQuerySelect(countOn).
 			Distinct().
@@ -159,12 +181,34 @@ func withCountBySeveritySelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.
 		search.NewQuerySelect(countOn).
 			Distinct().
 			AggrFunc(aggregatefunc.Count).
+			Filter("fixable_moderate_severity_count",
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY.String(),
+					).
+					AddBools(search.Fixable, true).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(countOn).
+			Distinct().
+			AggrFunc(aggregatefunc.Count).
 			Filter("low_severity_count",
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.Severity,
 						storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY.String(),
 					).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(countOn).
+			Distinct().
+			AggrFunc(aggregatefunc.Count).
+			Filter("fixable_low_severity_count",
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY.String(),
+					).
+					AddBools(search.Fixable, true).ProtoQuery(),
 			).Proto(),
 	)
 	return cloned

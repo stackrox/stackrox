@@ -156,10 +156,10 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 
 			for _, record := range actual {
 				assert.Equal(t,
-					record.GetImagesBySeverity().GetLowSeverityCount()+
-						record.GetImagesBySeverity().GetModerateSeverityCount()+
-						record.GetImagesBySeverity().GetImportantSeverityCount()+
-						record.GetImagesBySeverity().GetCriticalSeverityCount(),
+					record.GetImagesBySeverity().GetLowSeverityCount().GetTotal()+
+						record.GetImagesBySeverity().GetModerateSeverityCount().GetTotal()+
+						record.GetImagesBySeverity().GetImportantSeverityCount().GetTotal()+
+						record.GetImagesBySeverity().GetCriticalSeverityCount().GetTotal(),
 					record.GetAffectedImages(),
 				)
 			}
