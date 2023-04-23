@@ -30,6 +30,8 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 		strict                bool
 		stopOnFirstErr        bool
 		outFile               string
+		outputToFile          bool
+		focusWorkload         string
 		removeOutputPath      bool
 	}{
 		{
@@ -67,6 +69,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 		{
 			name:                  "output should be written to a single file",
 			inputFolderPath:       "testdata/minimal",
+			expectedValidateError: nil,
 			expectedAnalysisError: nil,
 			outFile:               outFile,
 			removeOutputPath:      false,
@@ -87,6 +90,20 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			outFile:               outFile,
 			removeOutputPath:      true,
 		},
+		{
+			name:                  "output should be written to default output file",
+			inputFolderPath:       "testdata/minimal",
+			expectedValidateError: nil,
+			expectedAnalysisError: nil,
+			outputToFile:          true,
+		},
+		{
+			name:                  "output should be focused to a workload",
+			inputFolderPath:       "testdata/minimal",
+			focusWorkload:         "default/backend",
+			expectedValidateError: nil,
+			expectedAnalysisError: nil,
+		},
 	}
 
 	for _, tt := range cases {
@@ -94,6 +111,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 		d.Run(tt.name, func() {
 			testCmd := &cobra.Command{Use: "test"}
 			testCmd.Flags().String("output-file", "", "")
+			testCmd.Flags().String("focus-workload", "", "")
 
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
 			analyzeNetpolCmd := analyzeNetpolCommand{
@@ -102,11 +120,17 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 				inputFolderPath:       "", // set through construct
 				outputFilePath:        tt.outFile,
 				removeOutputPath:      tt.removeOutputPath,
+				outputToFile:          tt.outputToFile,
+				focusWorkload:         tt.focusWorkload,
 				env:                   env,
 			}
 
 			if tt.outFile != "" {
 				d.Assert().NoError(testCmd.Flags().Set("output-file", tt.outFile))
+			}
+
+			if tt.focusWorkload != "" {
+				d.Assert().NoError(testCmd.Flags().Set("focus-workload", tt.focusWorkload))
 			}
 
 			analyzer, err := analyzeNetpolCmd.construct([]string{tt.inputFolderPath})
@@ -131,6 +155,12 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			if tt.outFile != "" && tt.expectedAnalysisError == nil && tt.expectedValidateError == nil {
 				_, err := os.Stat(tt.outFile)
 				d.Assert().NoError(err) // out file should exist
+			}
+
+			if tt.outputToFile && tt.outFile == "" && tt.expectedAnalysisError == nil && tt.expectedValidateError == nil {
+				_, err := os.Stat(defaultOutputFileName)
+				d.Assert().NoError(err) // default output file should exist
+				d.Assert().NoError(os.Remove(defaultOutputFileName))
 			}
 
 		})

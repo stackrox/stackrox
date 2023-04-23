@@ -55,7 +55,8 @@ For more information about the support scope of Red Hat Technology Preview featu
 	c.Flags().BoolVar(&analyzeNetpolCmd.treatWarningsAsErrors, "strict", false, "treat warnings as errors")
 	c.Flags().BoolVar(&analyzeNetpolCmd.stopOnFirstError, "fail", false, "fail on the first encountered error")
 	c.Flags().BoolVar(&analyzeNetpolCmd.removeOutputPath, "remove", false, "remove the output path if it already exists")
-	c.Flags().StringVarP(&analyzeNetpolCmd.outputFilePath, "output-file", "f", "", "save connlist output into a txt file")
+	c.Flags().BoolVar(&analyzeNetpolCmd.outputToFile, "save-to-file", false, "whether to save connlist output into default file")
+	c.Flags().StringVarP(&analyzeNetpolCmd.outputFilePath, "output-file", "f", "", "save connlist output into specific txt file")
 	c.Flags().StringVarP(&analyzeNetpolCmd.focusWorkload, "focus-workload", "", "", "focus connections of specified workload name in the output")
 	return c
 }
