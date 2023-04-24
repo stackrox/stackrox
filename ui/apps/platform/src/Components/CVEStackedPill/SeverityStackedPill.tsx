@@ -3,7 +3,7 @@ import React, { ReactElement } from 'react';
 import { vulnSeverityIconColors } from 'constants/visuals/colors';
 import { getPercentage } from 'utils/mathUtils';
 
-export type SeverityStackedPillType = {
+export type SeverityStackedPillProps = {
     vulnCounter: VulnCounter;
 };
 
@@ -37,7 +37,7 @@ const vulnKeyMap = {
     critical: 'CRITICAL_VULNERABILITY_SEVERITY',
 };
 
-function SeverityStackedPill({ vulnCounter }: SeverityStackedPillType): ReactElement {
+function SeverityStackedPill({ vulnCounter }: SeverityStackedPillProps): ReactElement {
     const { total } = vulnCounter.all;
 
     return (
