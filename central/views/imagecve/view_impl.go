@@ -64,10 +64,17 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 	}
 
 	return &resourceCountByImageCVESeverity{
-		CriticalSeverityCount:  results[0].CriticalSeverityCount,
-		ImportantSeverityCount: results[0].ImportantSeverityCount,
-		ModerateSeverityCount:  results[0].ModerateSeverityCount,
-		LowSeverityCount:       results[0].LowSeverityCount,
+		CriticalSeverityCount:        results[0].CriticalSeverityCount,
+		FixableCriticalSeverityCount: results[0].FixableCriticalSeverityCount,
+
+		ImportantSeverityCount:        results[0].ImportantSeverityCount,
+		FixableImportantSeverityCount: results[0].FixableImportantSeverityCount,
+
+		ModerateSeverityCount:        results[0].ModerateSeverityCount,
+		FixableModerateSeverityCount: results[0].FixableModerateSeverityCount,
+
+		LowSeverityCount:        results[0].LowSeverityCount,
+		FixableLowSeverityCount: results[0].FixableLowSeverityCount,
 	}, nil
 }
 
