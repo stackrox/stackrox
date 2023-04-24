@@ -7,10 +7,10 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
-# Build 3.73.x-75-gbab217c487 was chosen as it is the first build that contains the
-# capability to allow for a RocksDB backup to uploaded to Postgres
-INITIAL_POSTGRES_TAG="3.73.x-75-gbab217c487"
-INITIAL_POSTGRES_SHA="bab217c48736c4dbe4757fbb4a61579b3051bd9d"
+# Build 3.74.0-1-gfe924fce30 was chosen as it is the first 3.74 build and
+# also not set to expire
+INITIAL_POSTGRES_TAG="3.74.0-1-gfe924fce30"
+INITIAL_POSTGRES_SHA="fe924fce30bbec4dbd37d731ccd505837a2c2575"
 CURRENT_TAG="$(make --quiet tag)"
 
 source "$TEST_ROOT/scripts/lib.sh"
@@ -307,7 +307,12 @@ helm_upgrade_to_postgres() {
     kubectl -n stackrox apply -f $TEST_ROOT/tests/upgrade/pvc.yaml
     create_db_tls_secret
 
-    helm upgrade -n stackrox stackrox-central-services /tmp/stackrox-central-services-chart --set central.db.enabled=true --set central.exposure.loadBalancer.enabled=true --force
+    helm upgrade -n stackrox stackrox-central-services /tmp/stackrox-central-services-chart \
+      --set central.db.enabled=true \
+      --set central.exposure.loadBalancer.enabled=true \
+      --set central.image.tag="${INITIAL_POSTGRES_TAG}" \
+      --set central.db.image.tag="${INITIAL_POSTGRES_TAG}" \
+      --force
 
     # return back to test root
     cd "$TEST_ROOT"
