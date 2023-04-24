@@ -31,13 +31,13 @@ function EdgeStateSelect({ edgeState, setEdgeState, isDisabled }: EdgeStateSelec
         >
             <SelectOption
                 value="active"
-                description="Traffic observed in your selected time window."
+                description="Flows where traffic has been observed during your selected time window."
             >
-                Active traffic
+                Active flows
             </SelectOption>
             <SelectOption
                 value="inactive"
-                description="Inactive flows allowed by your network policies in your selected time window."
+                description="Possible flows allowed by your Kubernetes network policies although they carried no traffic in your selected time window.  In a well isolated implementation this view will be empty."
             >
                 Inactive flows
             </SelectOption>
