@@ -624,7 +624,6 @@ class Kubernetes implements OrchestratorMain {
             .spec.containers.findIndexOf { it.name == containerName } > -1
     }
 
-
     def updateDaemonSetEnv(String ns, String name, String containerName, String key, String value) {
         log.debug "Update env var in ${ns}/${name}/${containerName}: ${key} = ${value}"
         List<Container> containers = client.apps().daemonSets().inNamespace(ns).withName(name).get().spec.template
@@ -638,7 +637,6 @@ class Kubernetes implements OrchestratorMain {
         List<EnvVar> envVars = containers.get(containerIndex).env
         log.debug "Current env vars of ${ns}/${name}/${containerName}: ${envVars}"
 
-
         int index = envVars.findIndexOf { EnvVar it -> it.name == key }
         if (index > -1) {
             log.debug "Env var ${key} found on index: ${index}"
@@ -646,7 +644,7 @@ class Kubernetes implements OrchestratorMain {
         }
         else {
             log.debug "Env var ${key} not found. Adding it now"
-            envVars.add(new EnvVarBuilder().withName(key).withValue(value))
+            envVars.add(new EnvVarBuilder().withName(key).withValue(value).build())
         }
 
         client.apps().daemonSets().inNamespace(ns).withName(name)
@@ -675,6 +673,57 @@ class Kubernetes implements OrchestratorMain {
             log.debug "Waiting for daemonset ${ns}/${name} being ready, retrying..."
         }
         return false
+    }
+
+    // waitForDaemonSetEnvVarUpdate checks if all pods are ready and the env var has a given value for all pods
+    def waitForDaemonSetEnvVarUpdate(String ns, String name, String containerName, String envVarName,
+                                     String envVarValue, int retries, int intervalSeconds) {
+        Timer t = new Timer(retries, intervalSeconds)
+        int attempt = 0
+        while (t.IsValid()) {
+            attempt++
+            def ds = client.apps().daemonSets().inNamespace(ns).withName(name).get()
+            if (ds.getStatus().getNumberReady() != client.nodes().list().getItems().size()) {
+                log.debug "Only ${ds.getStatus().getNumberReady()} out of " +
+                    "${client.nodes().list().getItems().size()} pods in ds are ready"
+                continue
+            }
+            def pods = client.pods().inNamespace(ns).withLabel("app", name).list().getItems()
+            int podsPassing = 0
+            for (Pod pod : pods) {
+                log.debug "Found pod \"${pod.getMetadata().name}\" with ${pod.getSpec().containers.size()} containers"
+                int containerIndex = pod.getSpec().containers.findIndexOf { it.name == containerName }
+                if (containerIndex == -1) {
+                    log.debug "Pod ${pod.getMetadata().name}: could not find container ${containerName}"
+                    break
+                }
+                log.debug "Pod ${pod.getMetadata().name}: " +
+                    "Container ${ns}/${name}/${containerName} found on index: ${containerIndex}"
+                List<EnvVar> envVars = pod.getSpec().containers.get(containerIndex).env
+                int index = envVars.findIndexOf { EnvVar it -> it.name == envVarName }
+                if (index == -1) {
+                    log.debug "Pod ${pod.getMetadata().name}: " +
+                        "could not find env variable ${envVarName} in container ${containerName}"
+                    break
+                }
+                def value = envVars.get(index).value
+                log.debug "Pod ${pod.getMetadata().name}: " +
+                    "Env var ${envVarName} found on index: ${index} with value ${value}"
+                if (value != envVarValue) {
+                    log.debug "Pod ${pod.getMetadata().name}: " +
+                        "Expected value ${envVarValue} does not match current ${value}"
+                    break
+                }
+                log.debug "Pod ${pod.getMetadata().name}: All conditions have been met"
+                podsPassing++
+            }
+            if (podsPassing == pods.size()) {
+                return true
+            }
+            log.debug "Attempt ${attempt}: Only ${podsPassing} out of ${pods.size()} met the condition. Retrying"
+        }
+        throw new OrchestratorManagerException(
+            "DaemonSet ${ns}/${name} could not reach desired state")
     }
 
     def createJob(Job job) {

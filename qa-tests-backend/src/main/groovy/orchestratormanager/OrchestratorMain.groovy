@@ -72,6 +72,8 @@ interface OrchestratorMain {
     def getDaemonSetCount(String ns)
     def waitForDaemonSetDeletion(String name)
     def waitForDaemonSetReady(String ns, String name, int retires, int intervalSeconds)
+    def waitForDaemonSetEnvVarUpdate(String ns, String name, String containerName, String envVarName,
+                                     String envVarValue, int retries, int intervalSeconds)
     String getDaemonSetId(DaemonSet daemonSet)
 
     // StatefulSets

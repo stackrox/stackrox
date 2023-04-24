@@ -14,7 +14,8 @@ class NodeInventoryTest extends BaseSpecification {
         BaseService.useBasicAuth()
 
         // Get cluster ID
-        clusterId = ClusterService.getClusterId()
+        assert ClusterService.getClusters().size() > 0, "There must be at least one secured cluster"
+        clusterId = ClusterService.getClusters().get(0).getId()
         assert clusterId
     }
 
@@ -26,14 +27,17 @@ class NodeInventoryTest extends BaseSpecification {
         assert nodes.size() > 0
 
         when:
-        boolean nodeInventoryContainerAvailable = orchestrator.containsDaemonSetContainer("stackrox", "collector", "node-inventory")
+        boolean nodeInventoryContainerAvailable =
+            orchestrator.containsDaemonSetContainer("stackrox", "collector", "node-inventory")
         if (nodeInventoryContainerAvailable) {
             log.info("Setting collector.node-inventory ROX_NODE_SCANNING_MAX_INITIAL_WAIT to 1s")
-            orchestrator.updateDaemonSetEnv("stackrox", "collector", "node-inventory", "ROX_NODE_SCANNING_MAX_INITIAL_WAIT", "1s")
+            orchestrator.updateDaemonSetEnv("stackrox", "collector", "node-inventory",
+                "ROX_NODE_SCANNING_MAX_INITIAL_WAIT", "2s")
             log.info("Wait for collector ds to be restarted")
+            orchestrator.waitForDaemonSetEnvVarUpdate("stackrox", "collector", "node-inventory",
+                "ROX_NODE_SCANNING_MAX_INITIAL_WAIT", "2s", 20, 6)
             orchestrator.waitForDaemonSetReady("stackrox", "collector", 20, 6)
         }
-
 
         then:
         "confirm the number of components in the inventory and their scan"
