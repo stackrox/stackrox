@@ -51,7 +51,7 @@ message MsgToCompliance {
             StopRequest  stop_req  = 2;
         }
     }
-    // NodeInventoryNack will be removed in the future, hence it is not consolidated with the Ack
+    // TODO(ROX-16687): Remove NodeInventoryNack, we only want the NodeInventoryAck. Hence they are not consolidated
     message NodeInventoryNack {
         string          node_id    = 1;
     }

@@ -9,8 +9,8 @@ import (
 
 // ChannelMultiplexer combines n input channels of type T into one output channel of type T
 type ChannelMultiplexer[T any] struct {
-	inputChannels  []<-chan *T
-	outputCommands chan *T
+	inputChannels  []<-chan T
+	outputCommands chan T
 
 	wg      sync.WaitGroup
 	started concurrency.Signal
@@ -19,8 +19,8 @@ type ChannelMultiplexer[T any] struct {
 // NewMultiplexer creates a ChannelMultiplexer of type T
 func NewMultiplexer[T any]() *ChannelMultiplexer[T] {
 	multiplexer := ChannelMultiplexer[T]{
-		inputChannels:  make([]<-chan *T, 0),
-		outputCommands: make(chan *T),
+		inputChannels:  make([]<-chan T, 0),
+		outputCommands: make(chan T),
 		started:        concurrency.NewSignal()}
 
 	return &multiplexer
@@ -28,9 +28,9 @@ func NewMultiplexer[T any]() *ChannelMultiplexer[T] {
 
 // AddChannel Adds a channel to ComplianceCommunicator, AddChannel must be called
 // for ALL channels before calling Run()
-func (c *ChannelMultiplexer[T]) AddChannel(channel <-chan *T) {
+func (c *ChannelMultiplexer[T]) AddChannel(channel <-chan T) {
 	if c.started.IsDone() {
-		panic("channelMultiplexer.AddChannel() was called the component was started. Make sure to add all channels before starting the component")
+		panic("channelMultiplexer.AddChannel() was called after the component has started. Channels should be added before starting the component")
 	}
 	c.inputChannels = append(c.inputChannels, channel)
 }
@@ -49,17 +49,17 @@ func (c *ChannelMultiplexer[T]) Run() {
 }
 
 // GetOutput returns the multiplexed output channel combining all input channels added with AddChannel
-func (c *ChannelMultiplexer[T]) GetOutput() <-chan *T {
+func (c *ChannelMultiplexer[T]) GetOutput() <-chan T {
 	return c.outputCommands
 }
 
 // FanIn multiplexes multiple input channels into one output channel and
 // finishes when all input channels are closed
-func FanIn[T any](ctx context.Context, channels ...<-chan *T) <-chan *T {
-	multiplexedStream := make(chan *T)
+func FanIn[T any](ctx context.Context, channels ...<-chan T) <-chan T {
+	multiplexedStream := make(chan T)
 	wg := sync.WaitGroup{}
 
-	multiplex := func(ch <-chan *T) {
+	multiplex := func(ch <-chan T) {
 		defer wg.Done()
 		for i := range ch {
 			select {

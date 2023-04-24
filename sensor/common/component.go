@@ -35,7 +35,7 @@ type MessageToComplianceWithAddress struct {
 	Broadcast bool
 }
 
-// ComplianceComponent is a sensor component that can communicate with compliance. All the messaged intended for
+// ComplianceComponent is a sensor component that can communicate with compliance. All the messages intended for
 // compliance are returned by ComplianceC(). It must be started before the compliance.Multiplexer or we panic.
 type ComplianceComponent interface {
 	SensorComponent

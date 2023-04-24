@@ -12,8 +12,18 @@ type msgstruct struct {
 }
 
 func TestMultiplexingChannels(t *testing.T) {
+	ch1 := make(chan string)
+	defer close(ch1)
+	ch2 := make(chan string)
+	defer close(ch2)
+	ch3 := make(chan string)
+	defer close(ch3)
+	ch4 := make(chan string)
+	defer close(ch4)
+	ch5 := make(chan string)
+	defer close(ch5)
 	cases := map[string]struct {
-		inputChannels []chan *string
+		inputChannels []chan string
 		messages      []msgstruct
 	}{
 		"No input": {
@@ -21,15 +31,15 @@ func TestMultiplexingChannels(t *testing.T) {
 			messages:      nil,
 		},
 		"Single message": {
-			inputChannels: []chan *string{make(chan *string)},
+			inputChannels: []chan string{ch1},
 			messages:      []msgstruct{{i: 0, str: "First message"}},
 		},
 		"Single channel": {
-			inputChannels: []chan *string{make(chan *string)},
+			inputChannels: []chan string{ch2},
 			messages:      []msgstruct{{i: 0, str: "First message"}, {i: 0, str: "Second message"}, {i: 0, str: "Third message"}},
 		},
 		"Multiple channels": {
-			inputChannels: []chan *string{make(chan *string), make(chan *string), make(chan *string)},
+			inputChannels: []chan string{ch3, ch4, ch5},
 			messages:      []msgstruct{{i: 0, str: "First message"}, {i: 2, str: "Second message"}, {i: 1, str: "Third message"}, {i: 0, str: "Fourth message"}},
 		},
 	}
@@ -44,10 +54,10 @@ func TestMultiplexingChannels(t *testing.T) {
 			mp.Run()
 
 			for _, m := range c.messages {
-				c.inputChannels[m.i] <- &m.str
+				c.inputChannels[m.i] <- m.str
 				received, ok := <-mp.GetOutput()
 				assert.True(t, ok)
-				assert.Equal(t, m.str, *received)
+				assert.Equal(t, m.str, received)
 			}
 		})
 	}
