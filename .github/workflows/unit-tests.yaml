@@ -59,7 +59,7 @@ jobs:
       with:
         paths: 'junit-reports/report.xml'
 
-    - name: Report junit failures in jira
+    - name: Report test failures to Jira
       if: always() && github.event_name == 'push'
       uses: ./.github/actions/junit2jira
       with:

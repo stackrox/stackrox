@@ -1,5 +1,5 @@
 name: 'junit2jira'
-description: 'Convert junit failures into jira tickets'
+description: 'Convert test failures into Jira tickets'
 branding:
   icon: 'archive'
   color: 'blue'
