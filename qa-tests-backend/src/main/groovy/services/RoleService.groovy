@@ -73,14 +73,22 @@ class RoleService extends BaseService {
         role
     }
 
-    static deleteRole(String name, Boolean alsoDeletePermissionSet = true) {
+    static deleteRole(String name) {
         try {
             def role = getRole(name)
             getRoleService().deleteRole(Common.ResourceByID.newBuilder().setId(name).build())
-            if (alsoDeletePermissionSet) {
-                deletePermissionSet(role.permissionSetId)
-            }
-            log.info "Deleted role: ${name}, and permission set (${alsoDeletePermissionSet})"
+            deletePermissionSet(role.permissionSetId)
+            log.info "Deleted role: ${name} and permission set")
+        } catch (Exception e) {
+            log.warn("Error deleting role ${name} or permission set", e)
+        }
+    }
+
+    static deleteRoleWithoutPermissionSet(String name, Boolean alsoDeletePermissionSet = true) {
+        try {
+            def role = getRole(name)
+            getRoleService().deleteRole(Common.ResourceByID.newBuilder().setId(name).build())
+            log.info "Deleted role: ${name}")
         } catch (Exception e) {
             log.warn("Error deleting role ${name}", e)
         }
