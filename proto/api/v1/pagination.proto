@@ -28,4 +28,6 @@ message Pagination {
     int32       limit        = 1;
     int32       offset       = 2;
     SortOption  sort_option  = 3;
+    // This field is under development. It is not supported on any REST APIs.
+    repeated SortOption sort_options = 4;
 }
