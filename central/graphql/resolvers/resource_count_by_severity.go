@@ -40,23 +40,23 @@ func (resolver *Resolver) wrapResourceCountByCVESeverityWithContext(ctx context.
 }
 
 // Critical returns the number of resource with low CVE impact.
-func (resolver *resourceCountBySeverityResolver) Critical(_ context.Context) common.ResourceCountByFixability {
-	return resolver.data.GetCriticalSeverityCount()
+func (resolver *resourceCountBySeverityResolver) Critical(ctx context.Context) (*resourceCountByFixabilityResolver, error) {
+	return resolver.root.wrapResourceCountByFixabilityContext(ctx, resolver.data.GetCriticalSeverityCount(), nil)
 }
 
 // Important returns the number of resource with important CVE impact.
-func (resolver *resourceCountBySeverityResolver) Important(_ context.Context) common.ResourceCountByFixability {
-	return resolver.data.GetImportantSeverityCount()
+func (resolver *resourceCountBySeverityResolver) Important(ctx context.Context) (*resourceCountByFixabilityResolver, error) {
+	return resolver.root.wrapResourceCountByFixabilityContext(ctx, resolver.data.GetImportantSeverityCount(), nil)
 }
 
 // Moderate returns the number of resource with moderate CVE impact.
-func (resolver *resourceCountBySeverityResolver) Moderate(_ context.Context) common.ResourceCountByFixability {
-	return resolver.data.GetModerateSeverityCount()
+func (resolver *resourceCountBySeverityResolver) Moderate(ctx context.Context) (*resourceCountByFixabilityResolver, error) {
+	return resolver.root.wrapResourceCountByFixabilityContext(ctx, resolver.data.GetModerateSeverityCount(), nil)
 }
 
 // Low returns the number of resource with low CVE impact.
-func (resolver *resourceCountBySeverityResolver) Low(_ context.Context) common.ResourceCountByFixability {
-	return resolver.data.GetLowSeverityCount()
+func (resolver *resourceCountBySeverityResolver) Low(ctx context.Context) (*resourceCountByFixabilityResolver, error) {
+	return resolver.root.wrapResourceCountByFixabilityContext(ctx, resolver.data.GetLowSeverityCount(), nil)
 }
 
 type resourceCountByFixabilityResolver struct {
