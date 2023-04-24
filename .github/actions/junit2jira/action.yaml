@@ -25,7 +25,7 @@ runs:
       set -u
       LOCATION="https://github.com/stackrox/junit2jira/releases/download/$VERSION/junit2jira"
       # Skip downloading release if downloaded already, e.g. when the action is used multiple times.
-      if [[ ! -e junit2jira ]]; then
+      if [[ ! -x junit2jira ]]; then
         curl --retry 5 --silent --show-error --fail --location --output junit2jira "$LOCATION"
         chmod +x junit2jira
       fi
@@ -34,7 +34,6 @@ runs:
     env:
       JIRA_TOKEN: ${{ inputs.jira-token }}
     run: |
-      set -u
       ./junit2jira \
           -base-link "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
           -build-id "${{ github.run_id }}"  \
