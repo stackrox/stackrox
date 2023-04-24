@@ -1232,7 +1232,7 @@ store_test_results() {
             -build-tag "$STACKROX_BUILD_TAG" \
             -job-name "$JOB_NAME" \
             -junit-reports-dir "$from" \
-            -orchestrator "$ORCHESTRATOR_FLAVOR" \
+            -orchestrator ${ORCHESTRATOR_FLAVOR:-PROW}" \
             -threshold 5
     } || true
     fi
