@@ -136,7 +136,8 @@ class GraphQLService {
         private Response parseResponse(HttpResponse response)  {
             def bsa = new ByteArrayOutputStream()
             response.getEntity().writeTo(bsa)
-            log.debug "GraphQL response: " + (bsa.size() < MAX_LOG_CHARS ? bsa : bsa.toString().take(MAX_LOG_CHARS) + "...")
+            log.debug "GraphQL response: " + (
+                bsa.size() < MAX_LOG_CHARS ? bsa : bsa.toString().take(MAX_LOG_CHARS) + "...")
             def returnedValue = new JsonSlurper().parseText(bsa.toString())
             return new Response(response.getStatusLine().getStatusCode(), returnedValue.data, returnedValue.errors)
         }
@@ -165,7 +166,8 @@ class GraphQLService {
                 httpPost.addHeader(header.getFirst(), header.getSecond())
             }
             def jsonContent = new JsonOutput().toJson(content)
-            log.debug "GraphQL query: " + (jsonContent.length() < MAX_LOG_CHARS ? jsonContent : jsonContent.take(MAX_LOG_CHARS) + "...")
+            log.debug "GraphQL query: " + (
+                jsonContent.length() < MAX_LOG_CHARS ? jsonContent : jsonContent.take(MAX_LOG_CHARS) + "...")
             httpPost.setEntity(new StringEntity(jsonContent))
             return httpPost
         }
