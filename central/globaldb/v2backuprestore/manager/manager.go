@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -121,13 +122,19 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 		return nil, err
 	}
 
-	if err := m.checkDiskSpace(totalSizeUncompressed); err != nil {
-		return nil, err
-	}
-
 	process, err := newRestoreProcess(ctx, id, requestHeader, handlerFuncs, data)
 	if err != nil {
 		return nil, err
+	}
+
+	if !process.postgresBundle {
+		//if _, err := os.Stat(m.outputRoot); os.IsNotExist(err) {
+		if _, err := os.Stat("This/dir/does/not/exist"); os.IsNotExist(err) {
+			return nil, errors.Errorf("the volume %q and pre-4.0 restore bundles are no longer supported", m.outputRoot)
+		}
+		if err := m.checkDiskSpace(totalSizeUncompressed); err != nil {
+			return nil, err
+		}
 	}
 
 	// Create the paths for the restore directory
