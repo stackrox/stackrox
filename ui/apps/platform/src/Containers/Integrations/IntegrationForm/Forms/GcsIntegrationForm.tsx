@@ -118,6 +118,9 @@ function GcsIntegrationForm({
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.externalBackup.gcs.serviceAccount = '';
+
+        // Don't assume user wants to change password; that has caused confusing UX.
+        formInitialValues.updatePassword = false;
     }
     const {
         values,

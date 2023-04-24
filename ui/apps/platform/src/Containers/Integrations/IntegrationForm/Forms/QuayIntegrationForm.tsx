@@ -94,7 +94,11 @@ function computeInitialValues(
             config.quay.registryRobotCredentials.password = '';
         }
 
+        // Don't assume user wants to change password; that has caused confusing UX.
+        const updatePassword = false;
         /*
+         * DEPRECATED: this is no longer needed
+         *
          * Special case for Quay integration,
          * because unauthenticated is an implicit instead of explicit property.
          * If an existing integration does not have stored credentials,
@@ -102,9 +106,11 @@ function computeInitialValues(
          *
          * However, assignment statement is from positive instead of negative viewpoint.
          */
+        /*
         const hasInitialOauthToken = Boolean(initialValues.quay.oauthToken);
         const hasInitialRobotAccount = Boolean(initialValues.quay.registryRobotCredentials);
         const updatePassword = hasInitialOauthToken || hasInitialRobotAccount;
+        */
 
         // Edit or view existing integration.
         return { config, updatePassword };

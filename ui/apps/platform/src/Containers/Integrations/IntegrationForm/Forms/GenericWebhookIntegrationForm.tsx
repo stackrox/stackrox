@@ -113,6 +113,9 @@ function GenericWebhookIntegrationForm({
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.notifier.generic.password = '';
+
+        // Don't assume user wants to change password; that has caused confusing UX.
+        formInitialValues.updatePassword = false;
     }
     const formik = useIntegrationForm<GenericWebhookIntegrationFormValues>({
         initialValues: formInitialValues,

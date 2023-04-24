@@ -144,6 +144,9 @@ function EcrIntegrationForm({
         // are currently stored credentials
         formInitialValues.config.ecr.accessKeyId = '';
         formInitialValues.config.ecr.secretAccessKey = '';
+
+        // Don't assume user wants to change password; that has caused confusing UX.
+        formInitialValues.updatePassword = false;
     }
     const {
         values,
