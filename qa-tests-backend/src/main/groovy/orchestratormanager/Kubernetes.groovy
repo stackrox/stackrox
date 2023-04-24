@@ -630,8 +630,7 @@ class Kubernetes implements OrchestratorMain {
             .spec.containers
         int containerIndex = containers.findIndexOf { it.name == containerName }
         if (containerIndex == -1) {
-            throw new OrchestratorManagerException(
-                "Could not update env var, did not find container ${containerName} in ${ns}/${name}")
+            throw new RuntimeException("Could not update env var. No container named ${containerName} in ${ns}/${name}")
         }
         log.debug "Container ${ns}/${name}/${containerName} found on index: ${containerIndex}"
         List<EnvVar> envVars = containers.get(containerIndex).env
@@ -661,43 +660,22 @@ class Kubernetes implements OrchestratorMain {
                 .build() }
     }
 
-    static <V> V waitForCondition(int retries, int intervalSeconds, Closure <V> closure) {
-        Timer t = new Timer(retries, intervalSeconds)
-        int attempt = 0
-        boolean result = false
-        while (t.IsValid()) {
-            attempt++
-            result = closure()
-            if (!result) {
-                log.debug "Attempt ${attempt} failed, retrying"
-            }
+    boolean deploymentReady(String ns, String name) {
+        def depl = client.apps().deployments().inNamespace(ns).withName(name).get()
+        if (depl == null) {
+            return false
         }
-        if (!result) {
-            throw new OrchestratorManagerException("All ${attempt} attempts failed, could not reach desired state")
-        }
-        return result
+        return depl.status.readyReplicas > 0
     }
 
-    def waitForDaemonSetReady(String ns, String name, int retries, int intervalSeconds) {
-        waitForCondition(retries, intervalSeconds) {
-            daemonSetReady(ns, name)
-        }
-    }
-
-    boolean daemonSetReady(String ns, String name){
+    boolean daemonSetReady(String ns, String name) {
         def daemonSet = client.apps().daemonSets().inNamespace(ns).withName(name).get()
         return daemonSet.status.numberReady >= daemonSet.status.desiredNumberScheduled
     }
 
-    // waitForDaemonSetEnvVarUpdate checks if all pods are ready and the env var has a given value for all pods
-    def waitForDaemonSetEnvVarUpdate(String ns, String name, String containerName, String envVarName,
-                                     String envVarValue, int retries, int intervalSeconds) {
-        waitForCondition(retries, intervalSeconds){
-            daemonSetEnvVarUpdated(ns, name, containerName, envVarName, envVarValue)
-        }
-    }
-
-    boolean daemonSetEnvVarUpdated(String ns, String name, String containerName, String envVarName, String envVarValue){
+    // daemonSetEnvVarUpdated returns true if all pods are ready and the env var has a given value for all pods
+    boolean daemonSetEnvVarUpdated(String ns, String name, String containerName,
+                                   String envVarName, String envVarValue) {
         def pods = client.pods().inNamespace(ns).withLabel("app", name).list().getItems()
         int podsPassing = 0
         for (Pod pod : pods) {
@@ -707,8 +685,6 @@ class Kubernetes implements OrchestratorMain {
                 log.debug "Pod ${pod.getMetadata().name}: could not find container ${containerName}"
                 return false
             }
-            log.debug "Pod ${pod.getMetadata().name}: " +
-                "Container ${ns}/${name}/${containerName} found on index: ${containerIndex}"
             List<EnvVar> envVars = pod.getSpec().containers.get(containerIndex).env
             int index = envVars.findIndexOf { EnvVar it -> it.name == envVarName }
             if (index == -1) {

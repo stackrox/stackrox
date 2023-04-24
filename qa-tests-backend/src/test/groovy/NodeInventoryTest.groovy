@@ -1,5 +1,8 @@
+import static util.Helpers.waitForTrue
 import static util.Helpers.withRetry
 import io.stackrox.proto.storage.NodeOuterClass.Node
+
+import common.Constants
 import services.BaseService
 import services.ClusterService
 import services.NodeService
@@ -28,15 +31,24 @@ class NodeInventoryTest extends BaseSpecification {
 
         when:
         boolean nodeInventoryContainerAvailable =
-            orchestrator.containsDaemonSetContainer("stackrox", "collector", "node-inventory")
+            orchestrator.containsDaemonSetContainer(Constants.STACKROX_NAMESPACE, "collector", "node-inventory")
         if (nodeInventoryContainerAvailable) {
             log.info("Setting collector.node-inventory ROX_NODE_SCANNING_MAX_INITIAL_WAIT to 1s")
-            orchestrator.updateDaemonSetEnv("stackrox", "collector", "node-inventory",
-                "ROX_NODE_SCANNING_MAX_INITIAL_WAIT", "2s")
-            log.info("Wait for collector ds to be restarted")
-            orchestrator.waitForDaemonSetEnvVarUpdate("stackrox", "collector", "node-inventory",
-                "ROX_NODE_SCANNING_MAX_INITIAL_WAIT", "2s", 20, 6)
-            orchestrator.waitForDaemonSetReady("stackrox", "collector", 20, 6)
+            orchestrator.updateDaemonSetEnv(Constants.STACKROX_NAMESPACE, "collector", "node-inventory",
+                "ROX_NODE_SCANNING_MAX_INITIAL_WAIT", "1s")
+
+            log.info("Wait for collector DS to be restarted with new values")
+            waitForTrue(20, 6) {
+                orchestrator.daemonSetEnvVarUpdated(Constants.STACKROX_NAMESPACE, "collector",
+                    "node-inventory", "ROX_NODE_SCANNING_MAX_INITIAL_WAIT", "1s")
+            }
+            waitForTrue(20, 6) {
+                orchestrator.daemonSetReady(Constants.STACKROX_NAMESPACE, "collector")
+            }
+        }
+        log.info("Waiting for scanner deployment to be ready")
+        waitForTrue(20, 6) {
+            orchestrator.deploymentReady(Constants.STACKROX_NAMESPACE, "scanner")
         }
 
         then:

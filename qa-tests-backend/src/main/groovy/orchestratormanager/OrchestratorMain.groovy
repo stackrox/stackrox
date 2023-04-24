@@ -59,6 +59,7 @@ interface OrchestratorMain {
     EnvVar getDeploymentEnv(String ns, String name, String key)
     def scaleDeployment(String ns, String name, Integer replicas)
     List<String> getDeployments(String ns)
+    boolean deploymentReady(String ns, String name)
 
     //DaemonSets
     def createDaemonSet(DaemonSet daemonSet)
@@ -70,10 +71,9 @@ interface OrchestratorMain {
     def getDaemonSetUnavailableReplicaCount(DaemonSet daemonSet)
     def getDaemonSetCount()
     def getDaemonSetCount(String ns)
+    boolean daemonSetReady(String ns, String name)
+    boolean daemonSetEnvVarUpdated(String ns, String name, String containerName, String envVarName, String envVarValue)
     def waitForDaemonSetDeletion(String name)
-    def waitForDaemonSetReady(String ns, String name, int retires, int intervalSeconds)
-    def waitForDaemonSetEnvVarUpdate(String ns, String name, String containerName, String envVarName,
-                                     String envVarValue, int retries, int intervalSeconds)
     String getDaemonSetId(DaemonSet daemonSet)
 
     // StatefulSets
