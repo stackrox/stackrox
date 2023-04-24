@@ -81,7 +81,7 @@ func GetPostgres() postgres.DB {
 	return postgresDB
 }
 
-// SetPostgresTest returns a global database instance. It should be used in tests only.
+// SetPostgresTest sets a global database instance. It should be used in tests only.
 func SetPostgresTest(t *testing.T, db postgres.DB) postgres.DB {
 	t.Log("Initializing Postgres... ")
 	postgresDB = db
