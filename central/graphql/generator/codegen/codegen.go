@@ -38,6 +38,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 {{- if isEnum $td.Data.Type }}
 	generator.RegisterProtoEnum(builder, reflect.TypeOf({{ importedName $td.Data.Type }}(0)))
 {{- else }}
+{{- if not $td.Data.Name }}
+{{- continue}}
+{{- end}}
 {{- if $td.Data.IsInputType }}
 	utils.Must(builder.AddInput("{{ $td.Data.Name }}", []string{
 {{- else }}
