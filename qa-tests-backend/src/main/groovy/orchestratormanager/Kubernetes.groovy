@@ -634,14 +634,20 @@ class Kubernetes implements OrchestratorMain {
             throw new OrchestratorManagerException(
                 "Could not update env var, did not find container ${containerName} in ${ns}/${name}")
         }
+        log.debug "Container ${ns}/${name}/${containerName} found on index: ${containerIndex}"
         List<EnvVar> envVars = containers.get(containerIndex).env
+        log.debug "Current env vars of ${ns}/${name}/${containerName}: ${envVars}"
+
 
         int index = envVars.findIndexOf { EnvVar it -> it.name == key }
-        if (index < 0) {
-            throw new OrchestratorManagerException(
-                "Could not update env var, did not find env variable ${key} in ${ns}/${name}")
+        if (index > -1) {
+            log.debug "Env var ${key} found on index: ${index}"
+            envVars.get(index).value = value
         }
-        envVars.get(index).value = value
+        else {
+            log.debug "Env var ${key} not found. Adding it now"
+            envVars.add(new EnvVarBuilder().withName(key).withValue(value))
+        }
 
         client.apps().daemonSets().inNamespace(ns).withName(name)
             .edit { d -> new DaemonSetBuilder(d)
