@@ -66,7 +66,7 @@ func createScanImageRequest(containerId int, imageId string, fullName string, no
 	}
 }
 
-func (s *enricherSuite) Test_runScan() {
+func (s *enricherSuite) Test_dataRaceInRunScan() {
 	// Three requests with same Ids but different FullNames
 	// The first one should trigger the scan
 	req := createScanImageRequest(0, "nginx-id", "nginx:latest", false)
