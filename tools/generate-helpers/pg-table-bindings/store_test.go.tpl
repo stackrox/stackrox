@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -43,6 +44,13 @@ func (s *{{$namePrefix}}StoreSuite) SetupSuite() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
+	{{ if .FeatureFlag }}
+	s.T().Setenv(features.{{.FeatureFlag}}.EnvVar(), "true")
+	if !features.{{.FeatureFlag}}.Enabled() {
+		s.T().Skip("Skip postgres store tests because feature flag is off")
+		s.T().SkipNow()
+	}
+	{{- end }}
 
 	s.testDB = pgtest.ForT(s.T())
 	s.store = New(s.testDB.DB)
