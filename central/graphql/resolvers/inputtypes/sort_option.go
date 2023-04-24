@@ -14,7 +14,7 @@ type SortOption struct {
 	Reversed    *bool
 }
 
-// AggregateBy is the sort option input type.
+// AggregateBy is the input type to specifies the aggregation to be applied to sort field. e.g. count, min, max.
 type AggregateBy struct {
 	AggregateFunc *string
 	Distinct      *bool

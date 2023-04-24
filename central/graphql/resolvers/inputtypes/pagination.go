@@ -8,7 +8,7 @@ import (
 type Pagination struct {
 	Offset      *int32
 	Limit       *int32
-	SortOptions []*SortOption
+	SortOptions *[]*SortOption
 
 	// Retained for backward compatibility.
 	SortOption *SortOption
@@ -37,8 +37,11 @@ func (r *Pagination) AsV1Pagination() *v1.Pagination {
 			if r.SortOptions == nil {
 				return nil
 			}
-			ret := make([]*v1.SortOption, 0, len(r.SortOptions))
-			for _, so := range r.SortOptions {
+			ret := make([]*v1.SortOption, 0, len(*r.SortOptions))
+			for _, so := range *r.SortOptions {
+				if so == nil {
+					continue
+				}
 				ret = append(ret, so.AsV1SortOption())
 			}
 			return ret

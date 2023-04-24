@@ -225,7 +225,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 			arg: PaginatedQuery{
 				Query: pointers.String("CVE:abc"),
 				Pagination: &inputtypes.Pagination{
-					SortOptions: []*inputtypes.SortOption{
+					SortOptions: &[]*inputtypes.SortOption{
 						{
 							Field: pointers.String("Image"),
 						},
@@ -248,7 +248,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 			arg: PaginatedQuery{
 				Query: pointers.String("CVE:abc"),
 				Pagination: &inputtypes.Pagination{
-					SortOptions: []*inputtypes.SortOption{
+					SortOptions: &[]*inputtypes.SortOption{
 						{
 							Field: pointers.String("Image"),
 							AggregateBy: &inputtypes.AggregateBy{
@@ -274,7 +274,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 			arg: PaginatedQuery{
 				Query: pointers.String("CVE:abc"),
 				Pagination: &inputtypes.Pagination{
-					SortOptions: []*inputtypes.SortOption{
+					SortOptions: &[]*inputtypes.SortOption{
 						{
 							Field: pointers.String("Image"),
 						},
@@ -296,11 +296,39 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 			).ProtoQuery(),
 		},
 		{
+			desc: "query + nil sort",
+			arg: PaginatedQuery{
+				Query: pointers.String("CVE:abc"),
+				Pagination: &inputtypes.Pagination{
+					SortOptions: &[]*inputtypes.SortOption{nil},
+				},
+			},
+			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").
+				WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery(),
+		},
+		{
+			desc: "query + empty sorts",
+			arg: PaginatedQuery{
+				Query: pointers.String("CVE:abc"),
+				Pagination: &inputtypes.Pagination{
+					SortOptions: &[]*inputtypes.SortOption{
+						{},
+						{},
+					},
+				},
+			},
+			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").
+				WithPagination(search.NewPagination().
+					AddSortOption(search.NewSortOption("")).
+					AddSortOption(search.NewSortOption("")).Limit(math.MaxInt32),
+				).ProtoQuery(),
+		},
+		{
 			desc: "query + primary sort + secondary sort w/ invalid aggregate + limit",
 			arg: PaginatedQuery{
 				Query: pointers.String("CVE:abc"),
 				Pagination: &inputtypes.Pagination{
-					SortOptions: []*inputtypes.SortOption{
+					SortOptions: &[]*inputtypes.SortOption{
 						{
 							Field: pointers.String("Image"),
 						},
