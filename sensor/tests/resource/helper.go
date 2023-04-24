@@ -85,6 +85,10 @@ func objByKind(kind string) k8s.Object {
 		return &v12.Role{}
 	case "Binding":
 		return &v12.RoleBinding{}
+	case "ClusterRole":
+		return &v12.ClusterRole{}
+	case "ClusterRoleBinding":
+		return &v12.ClusterRoleBinding{}
 	case "Pod":
 		return &v1.Pod{}
 	case "ServiceAccount":
