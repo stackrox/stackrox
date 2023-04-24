@@ -53,14 +53,14 @@ func TestEnricherSuite(t *testing.T) {
 	suite.Run(t, new(enricherSuite))
 }
 
-func createScanImageRequest(containerId int, imageId string, fullName string, notPullable bool) *scanImageRequest {
+func createScanImageRequest(containerID int, imageID string, fullName string, notPullable bool) *scanImageRequest {
 	return &scanImageRequest{
-		containerIdx: containerId,
+		containerIdx: containerID,
 		containerImage: &storage.ContainerImage{
 			Name: &storage.ImageName{
 				FullName: fullName,
 			},
-			Id:          imageId,
+			Id:          imageID,
 			NotPullable: notPullable,
 		},
 	}
