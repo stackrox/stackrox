@@ -112,7 +112,7 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
             .filter((vuln) => vuln.severity === severity)
             .map(({ cve, cvss, summary }) => {
                 return {
-                    // severity,
+                    // severity, // generic Sunburst does not expect this data-specific property
                     name: `${cve} -- ${summary}`,
                     color: vulnSeverityIconColors[severity],
                     labelColor: 'var(--base-600)',
