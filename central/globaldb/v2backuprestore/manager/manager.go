@@ -96,8 +96,7 @@ func analyzeManifest(manifest *v1.DBExportManifest, format *formats.ExportFormat
 func (m *manager) checkDiskSpace(requiredBytes int64) error {
 	availableBytes, err := fsutils.AvailableBytesIn(m.outputRoot)
 	if err != nil {
-		log.Warnf("Could not determine free disk space of volume containing %s: %v. Assuming free space is sufficient for %d bytes.", m.outputRoot, err, requiredBytes)
-		return nil
+		return errors.Errorf("could not determine free disk space of volume containing %s: %v. Assuming free space is sufficient for %d bytes.", m.outputRoot, err, requiredBytes)
 	}
 	if availableBytes < uint64(requiredBytes) {
 		return errors.Errorf("restoring backup requires %d bytes of free disk space, but volume containing %s only has %d bytes available", requiredBytes, m.outputRoot, availableBytes)
@@ -128,8 +127,7 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 	}
 
 	if !process.postgresBundle {
-		//if _, err := os.Stat(m.outputRoot); os.IsNotExist(err) {
-		if _, err := os.Stat("This/dir/does/not/exist"); os.IsNotExist(err) {
+		if _, err := os.Stat(m.outputRoot); os.IsNotExist(err) {
 			return nil, errors.Errorf("the volume %q and pre-4.0 restore bundles are no longer supported", m.outputRoot)
 		}
 		if err := m.checkDiskSpace(totalSizeUncompressed); err != nil {
