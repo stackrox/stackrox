@@ -37,7 +37,7 @@ function EdgeStateSelect({ edgeState, setEdgeState, isDisabled }: EdgeStateSelec
             </SelectOption>
             <SelectOption
                 value="inactive"
-                description="Possible flows allowed by your Kubernetes network policies although they carried no traffic in your selected time window.  In a well isolated implementation this view will be empty."
+                description="Possible flows allowed by your Kubernetes network policies, although they carried no traffic in your selected time window.  In a well-isolated implementation, this view will be empty."
             >
                 Inactive flows
             </SelectOption>
