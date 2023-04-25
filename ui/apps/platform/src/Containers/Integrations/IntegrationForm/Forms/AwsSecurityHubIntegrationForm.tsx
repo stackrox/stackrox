@@ -123,6 +123,9 @@ function AwsSecurityHubIntegrationForm({
         // are currently stored credentials
         formInitialValues.notifier.awsSecurityHub.credentials.accessKeyId = '';
         formInitialValues.notifier.awsSecurityHub.credentials.secretAccessKey = '';
+
+        // Don't assume user wants to change password; that has caused confusing UX.
+        formInitialValues.updatePassword = false;
     }
     const {
         values,
