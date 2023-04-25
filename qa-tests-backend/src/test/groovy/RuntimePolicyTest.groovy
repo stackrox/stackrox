@@ -20,20 +20,20 @@ class RuntimePolicyTest extends BaseSpecification  {
                     .setImage ("quay.io/rhacs-eng/qa:nginx-"+
                                "204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad")
                     .addLabel ( "app", "test" )
-                    .setCommand(["sh" , "-c" , "apt-get -y update && sleep 600"]),
+                    .setCommand(["sh" , "-c" , "apt-get -y update || true && sleep 600"]),
             new Deployment()
                     .setName (DEPLOYMENTAPT)
                     .setImage ("quay.io/rhacs-eng/qa:redis-"+
                                "96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e")
                     .addLabel ( "app", "test" )
-                    .setCommand(["sh" , "-c" , "apt -y update && sleep 600"]),
+                    .setCommand(["sh" , "-c" , "apt -y update || true && sleep 600"]),
     ]
 
     static final private DEPLOYMENTREMOVAL =  new Deployment()
             .setName ("runtimeremoval")
             .setImage ("quay.io/rhacs-eng/qa:redis-96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e")
             .addLabel ( "app", "test" )
-            .setCommand(["sh" , "-c" , "apt -y update && sleep 600"])
+            .setCommand(["sh" , "-c" , "apt -y update || true && sleep 600"])
 
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
