@@ -97,6 +97,13 @@ jobs:
           path: cli-build.tgz
 
   pre-build-go-binaries:
+    strategy:
+      matrix:
+        include:
+          - release: false
+            artifact: "go-binaries-build"
+          - release: true
+            artifact: "go-binaries-build-release"
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
@@ -117,11 +124,8 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
-      - name: PR labels
-        uses: joerick/pr-labels-action@v1.0.8
-
       - name: Setup Go build environment
-        if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
+        if: ${{ matrix.release }}
         run: echo "GOTAGS=release" >> "$GITHUB_ENV"
 
       - name: Build Go Binaries
@@ -132,8 +136,9 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: go-binaries-build
+          name: ${{ matrix.artifact }}
           path: go-binaries-build.tgz
+
   pre-build-go-binaries-rcd:
     runs-on: ubuntu-latest
     container:
@@ -175,6 +180,7 @@ jobs:
       with:
         name: go-binaries-build-rcd
         path: go-binaries-build-rcd.tgz
+
   pre-build-docs:
     runs-on: ubuntu-latest
     container:
