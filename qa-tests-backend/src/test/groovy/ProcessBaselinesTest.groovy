@@ -120,6 +120,9 @@ class ProcessBaselinesTest extends BaseSpecification {
         "exec into the container and run a process and wait for lock to kick in"
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
+
+        // test to see if the timeout is honored real quick
+        sleep 800000
         orchestrator.createDeployment(deployment)
         assert Services.waitForDeployment(deployment)
         String deploymentId = deployment.getDeploymentUid()
@@ -228,6 +231,9 @@ class ProcessBaselinesTest extends BaseSpecification {
         "exec into the container after locking baseline and create a baseline violation"
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
+        // test to see if the timeout is honored real quick
+        sleep 800000
+
         orchestrator.createDeployment(deployment)
         String deploymentId = deployment.getDeploymentUid()
         assert deploymentId != null
@@ -326,6 +332,10 @@ class ProcessBaselinesTest extends BaseSpecification {
         // Get all baselines for our deployment and assert they exist
         def deployment = DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_DELETE }
         assert deployment != null
+
+        // test to see if the timeout is honored real quick
+        sleep 800000
+
         orchestrator.createDeployment(deployment)
         String containerName = deployment.getName()
         def baselinesCreated = ProcessBaselineService.
@@ -362,6 +372,8 @@ class ProcessBaselinesTest extends BaseSpecification {
         orchestrator.createDeployment(deployment)
         def deploymentId = deployment.deploymentUid
         assert deploymentId != null
+        // test to see if the timeout is honored real quick
+        sleep 800000
 
         def containerName = deploymentName
         def namespace = deployment.getNamespace()
@@ -419,6 +431,9 @@ class ProcessBaselinesTest extends BaseSpecification {
         // Get all baselines for our deployment and assert they exist
         def deployment = DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_DELETE_API }
         assert deployment != null
+        // test to see if the timeout is honored real quick
+        sleep 800000
+
         orchestrator.createDeployment(deployment)
         String containerName = deployment.getName()
         def baselinesCreated = ProcessBaselineService.
@@ -448,6 +463,9 @@ class ProcessBaselinesTest extends BaseSpecification {
         when:
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
+        // test to see if the timeout is honored real quick
+        sleep 800000
+
         orchestrator.createDeployment(deployment)
         String deploymentId = deployment.getDeploymentUid()
         assert deploymentId != null
