@@ -23,7 +23,6 @@ export type ImageCveSeveritySummary = {
 
 export const imageCveSeveritySummaryFragment = gql`
     fragment ImageCVESeveritySummary on ImageCVECore {
-        # TODO These need to accept query parameters to be filtered correctly
         affectedImageCountBySeverity {
             critical
             important
@@ -44,7 +43,7 @@ export const imageCveSummaryCountFragment = gql`
 
 export type ImageCveSummaryCardsProps = {
     summaryCounts: ImageCveSummaryCount;
-    severitySummary: ImageCveSeveritySummary;
+    severitySummary: ImageCveSeveritySummary | null;
     hiddenSeverities: Set<VulnerabilitySeverity>;
 };
 
@@ -53,8 +52,9 @@ function ImageCveSummaryCards({
     severitySummary,
     hiddenSeverities,
 }: ImageCveSummaryCardsProps) {
-    const { critical, important, moderate, low } = severitySummary.affectedImageCountBySeverity;
-    const { affectedImageCount, topCVSS } = severitySummary;
+    const { critical, important, moderate, low } =
+        severitySummary?.affectedImageCountBySeverity ?? {};
+    const { affectedImageCount, topCVSS } = severitySummary ?? {};
     const { totalImageCount } = summaryCounts;
     return (
         <Flex
@@ -64,25 +64,23 @@ function ImageCveSummaryCards({
         >
             <AffectedImages
                 className="pf-u-flex-grow-1 pf-u-flex-basis-0"
-                // TODO Should affectedImagesCount be the value derived from
-                //      `imageCount(query: $query)` or from `affectedImageCount`?
-                affectedImageCount={affectedImageCount}
+                affectedImageCount={affectedImageCount ?? 0}
                 totalImagesCount={totalImageCount}
             />
             <BySeveritySummaryCard
                 className="pf-u-flex-grow-1 pf-u-flex-basis-0"
                 title="Images by severity"
                 severityCounts={{
-                    CRITICAL_VULNERABILITY_SEVERITY: critical,
-                    IMPORTANT_VULNERABILITY_SEVERITY: important,
-                    MODERATE_VULNERABILITY_SEVERITY: moderate,
-                    LOW_VULNERABILITY_SEVERITY: low,
+                    CRITICAL_VULNERABILITY_SEVERITY: critical ?? 0,
+                    IMPORTANT_VULNERABILITY_SEVERITY: important ?? 0,
+                    MODERATE_VULNERABILITY_SEVERITY: moderate ?? 0,
+                    LOW_VULNERABILITY_SEVERITY: low ?? 0,
                 }}
                 hiddenSeverities={hiddenSeverities}
             />
             <TopCvssScoreBreakdown
                 className="pf-u-flex-grow-1 pf-u-flex-basis-0"
-                cvssScore={topCVSS}
+                cvssScore={topCVSS ?? 0}
                 vector="TODO - Not implemented"
             />
         </Flex>

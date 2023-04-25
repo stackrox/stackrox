@@ -18,23 +18,51 @@ import {
     Text,
     Title,
 } from '@patternfly/react-core';
+import { ExclamationCircleIcon } from '@patternfly/react-icons';
+import { gql, useQuery } from '@apollo/client';
 
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
+import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import BySeveritySummaryCard from './SummaryCards/BySeveritySummaryCard';
-import CvesByStatusSummaryCard from './SummaryCards/CvesByStatusSummaryCard';
-import SingleEntityVulnerabilitiesTable from './Tables/SingleEntityVulnerabilitiesTable';
-import useImageVulnerabilities from './hooks/useImageVulnerabilities';
+import CvesByStatusSummaryCard, {
+    ImageVulnerabilityCounter,
+    imageVulnerabilityCounterFragment,
+} from './SummaryCards/CvesByStatusSummaryCard';
+import SingleEntityVulnerabilitiesTable, {
+    ImageVulnerability,
+    imageVulnerabilitiesFragment,
+} from './Tables/SingleEntityVulnerabilitiesTable';
 import { DynamicTableLabel } from './components/DynamicIcon';
 import { getHiddenSeverities, parseQuerySearchFilter } from './searchUtils';
 import { QuerySearchFilter, FixableStatus, cveStatusTabValues } from './types';
+import {
+    ImageMetadataContext,
+    imageMetadataContextFragment,
+} from './Tables/ComponentVulnerabilitiesTable';
+
+const imageVulnerabilitiesQuery = gql`
+    ${imageMetadataContextFragment}
+    ${imageVulnerabilityCounterFragment}
+    ${imageVulnerabilitiesFragment}
+    query getImageCoreVulnerabilities($id: ID!, $query: String!, $pagination: Pagination!) {
+        image(id: $id) {
+            ...ImageMetadataContext
+            imageVulnerabilityCounter(query: $query) {
+                ...ImageVulnerabilityCounterFields
+            }
+            imageVulnerabilities(query: $query, pagination: $pagination) {
+                ...ImageVulnerabilityFields
+            }
+        }
+    }
+`;
 
 function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<FixableStatus> {
     const hiddenStatuses = new Set<FixableStatus>([]);
@@ -53,7 +81,7 @@ function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<FixableSta
     return hiddenStatuses;
 }
 
-const defaultSortFields = ['CVE', 'Severity', 'Fixable'];
+const defaultSortFields = ['CVE'];
 
 export type ImagePageVulnerabilitiesProps = {
     imageId: string;
@@ -66,7 +94,7 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
         defaultSortOption: {
-            field: 'Severity',
+            field: 'CVE',
             direction: 'desc',
         },
         onSort: () => setPage(1),
@@ -77,11 +105,26 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
         limit: perPage,
         sortOption,
     };
-    const { data, previousData, loading, error } = useImageVulnerabilities(
-        imageId,
-        getRequestQueryStringForSearchFilter(querySearchFilter),
-        pagination
-    );
+
+    const { data, previousData, loading, error } = useQuery<
+        {
+            image: ImageMetadataContext & {
+                imageVulnerabilityCounter: ImageVulnerabilityCounter;
+                imageVulnerabilities: ImageVulnerability[];
+            };
+        },
+        {
+            id: string;
+            query: string;
+            pagination: PaginationParam;
+        }
+    >(imageVulnerabilitiesQuery, {
+        variables: {
+            id: imageId,
+            query: getRequestQueryStringForSearchFilter(querySearchFilter),
+            pagination,
+        },
+    });
 
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('cveStatus', cveStatusTabValues);
 

@@ -11,16 +11,47 @@ import {
 } from '@patternfly/react-core';
 
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
+import { gql } from '@apollo/client';
 import { FixableStatus } from '../types';
-import {
-    ImageVulnerabilityCounter,
-    imageVulnerabilityCounterKeys,
-} from '../hooks/useImageVulnerabilities';
+
+export const imageVulnerabilityCounterKeys = ['low', 'moderate', 'important', 'critical'] as const;
+
+export type ImageVulnerabilityCounterKey = (typeof imageVulnerabilityCounterKeys)[number];
+
+export type ImageVulnerabilityCounter = Record<
+    ImageVulnerabilityCounterKey | 'all',
+    { total: number; fixable: number }
+>;
 
 export type CvesByStatusSummaryCardProps = {
     cveStatusCounts: ImageVulnerabilityCounter;
     hiddenStatuses: Set<FixableStatus>;
 };
+
+export const imageVulnerabilityCounterFragment = gql`
+    fragment ImageVulnerabilityCounterFields on VulnerabilityCounter {
+        all {
+            total
+            fixable
+        }
+        low {
+            total
+            fixable
+        }
+        moderate {
+            total
+            fixable
+        }
+        important {
+            total
+            fixable
+        }
+        critical {
+            total
+            fixable
+        }
+    }
+`;
 
 const statusDisplays = [
     {
