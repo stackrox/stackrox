@@ -54,6 +54,13 @@ jobs:
             ui/monorepo.lock
 
   pre-build-cli:
+    strategy:
+      matrix:
+        include:
+          - release: false
+            artifact: "cli-build"
+          - release: true
+            artifact: "cli-build-release"
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
@@ -74,6 +81,10 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
+      - name: Setup Go build environment
+        if: ${{ matrix.release }}
+        run: echo "GOTAGS=release" >> "$GITHUB_ENV"
+
       - name: Build CLI
         run: make cli
 
@@ -82,8 +93,9 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: cli-build
+          name: ${{ matrix.artifact }}
           path: cli-build.tgz
+
   pre-build-go-binaries:
     runs-on: ubuntu-latest
     container:
