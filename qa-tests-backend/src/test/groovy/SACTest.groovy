@@ -208,7 +208,7 @@ class SACTest extends BaseSpecification {
                 RoleService.deleteRole(role.name)
                 RoleService.deleteAccessScope(role.accessScopeId)
             } catch (Exception e) {
-                log.error("Error deleting role ${name}", e)
+                log.error("Error deleting role ${it} or associated access scope: " + e)
             }
         }
     }
