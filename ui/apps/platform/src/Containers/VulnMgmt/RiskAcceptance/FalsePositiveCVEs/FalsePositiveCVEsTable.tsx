@@ -218,10 +218,7 @@ function FalsePositiveCVEsTable({
                                     </Td>
                                     <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
                                     <Td dataLabel="Severity">
-                                        <VulnerabilitySeverityIconText
-                                            severity={row.severity}
-                                            isTextOnly={false}
-                                        />
+                                        <VulnerabilitySeverityIconText severity={row.severity} />
                                     </Td>
                                     <Td dataLabel="Scope">
                                         <VulnerabilityRequestScope

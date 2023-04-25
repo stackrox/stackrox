@@ -275,10 +275,7 @@ function ObservedCVEsTable({
                                     </Td>
                                     <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
                                     <Td dataLabel="Severity">
-                                        <VulnerabilitySeverityIconText
-                                            severity={row.severity}
-                                            isTextOnly={false}
-                                        />
+                                        <VulnerabilitySeverityIconText severity={row.severity} />
                                     </Td>
                                     <Td dataLabel="CVSS score">{Number(row.cvss).toFixed(1)}</Td>
                                     <Td dataLabel="Affected components">
