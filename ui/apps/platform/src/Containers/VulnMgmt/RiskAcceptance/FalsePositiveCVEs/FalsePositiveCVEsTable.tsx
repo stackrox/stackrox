@@ -15,7 +15,7 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
+import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
@@ -218,7 +218,10 @@ function FalsePositiveCVEsTable({
                                     </Td>
                                     <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
                                     <Td dataLabel="Severity">
-                                        <VulnerabilitySeverityLabel severity={row.severity} />
+                                        <VulnerabilitySeverityIconText
+                                            severity={row.severity}
+                                            isTextOnly={false}
+                                        />
                                     </Td>
                                     <Td dataLabel="Scope">
                                         <VulnerabilityRequestScope

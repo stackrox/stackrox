@@ -17,7 +17,7 @@ import {
 
 import useTableSelection from 'hooks/useTableSelection';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
-import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
+import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import usePermissions from 'hooks/usePermissions';
 import useAuthStatus from 'hooks/useAuthStatus';
@@ -218,7 +218,10 @@ function DeferredCVEsTable({
                                     </Td>
                                     <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
                                     <Td dataLabel="Severity">
-                                        <VulnerabilitySeverityLabel severity={row.severity} />
+                                        <VulnerabilitySeverityIconText
+                                            severity={row.severity}
+                                            isTextOnly={false}
+                                        />
                                     </Td>
                                     <Td dataLabel="Expires">
                                         {row.vulnerabilityRequest ? (

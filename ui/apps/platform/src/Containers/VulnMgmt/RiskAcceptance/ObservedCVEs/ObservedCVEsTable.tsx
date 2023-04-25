@@ -23,8 +23,7 @@ import useTableSelection from 'hooks/useTableSelection';
 
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
-import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
-import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
+import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
 import usePermissions from 'hooks/usePermissions';
 import { SearchFilter } from 'types/search';
@@ -276,11 +275,12 @@ function ObservedCVEsTable({
                                     </Td>
                                     <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
                                     <Td dataLabel="Severity">
-                                        <VulnerabilitySeverityLabel severity={row.severity} />
+                                        <VulnerabilitySeverityIconText
+                                            severity={row.severity}
+                                            isTextOnly={false}
+                                        />
                                     </Td>
-                                    <Td dataLabel="CVSS score">
-                                        <CVSSScoreLabel cvss={row.cvss} />
-                                    </Td>
+                                    <Td dataLabel="CVSS score">{Number(row.cvss).toFixed(1)}</Td>
                                     <Td dataLabel="Affected components">
                                         <Button
                                             variant={ButtonVariant.link}

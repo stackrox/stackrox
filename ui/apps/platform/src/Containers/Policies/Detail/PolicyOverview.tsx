@@ -11,12 +11,12 @@ import {
 } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
+import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { Policy } from 'types/policy.proto';
 import MitreAttackVectorsViewContainer from 'Containers/MitreAttackVectors/MitreAttackVectorsViewContainer';
 
 import { formatCategories, formatType } from '../policies.utils';
-import PolicySeverityLabel from '../PolicySeverityLabel';
 import Notifier from './Notifier';
 
 type PolicyOverviewProps = {
@@ -53,7 +53,7 @@ function PolicyOverview({
                 <DescriptionList isCompact isHorizontal>
                     <DescriptionListItem
                         term="Severity"
-                        desc={<PolicySeverityLabel severity={severity} />}
+                        desc={<PolicySeverityIconText severity={severity} />}
                     />
                     <DescriptionListItem term="Categories" desc={formatCategories(categories)} />
                     <DescriptionListItem term="Type" desc={formatType(isDefault)} />

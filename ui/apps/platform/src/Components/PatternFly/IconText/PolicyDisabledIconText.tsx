@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactElement } from 'react';
 import { BanIcon, CheckIcon } from '@patternfly/react-icons';
 
 import IconText from './IconText';
@@ -11,7 +11,7 @@ export type PolicyDisabledIconTextProps = {
 function PolicyDisabledIconText({
     isDisabled,
     isTextOnly,
-}: PolicyDisabledIconTextProps): ReactNode {
+}: PolicyDisabledIconTextProps): ReactElement {
     const icon = isDisabled ? (
         <BanIcon />
     ) : (
