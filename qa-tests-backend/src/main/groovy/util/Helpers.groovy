@@ -65,22 +65,17 @@ class Helpers {
         return willRetry
     }
 
-    static <V> V waitForTrue(int retries, int intervalSeconds, Closure <V> closure) {
+    static boolean waitForTrue(int retries, int intervalSeconds, Closure closure) {
         Timer t = new Timer(retries, intervalSeconds)
         int attempt = 0
-        boolean result = false
         while (t.IsValid()) {
             attempt++
-            result = closure()
-            if (result) {
+            if (closure()) {
                 return true
             }
             log.debug "Attempt ${attempt} failed, retrying"
         }
-        if (!result) {
-            throw new RuntimeException("All ${attempt} attempts failed, could not reach desired state")
-        }
-        return result
+        throw new RuntimeException("All ${attempt} attempts failed, could not reach desired state")
     }
 
     static void resetRetryAttempts() {
