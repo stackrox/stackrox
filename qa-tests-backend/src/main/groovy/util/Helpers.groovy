@@ -23,7 +23,7 @@ class Helpers {
             try {
                 return closure()
             } catch (Exception | PowerAssertionError | SpockAssertionError t) {
-                log.debug("Caught exception. Retrying in ${pauseSecs}s", t)
+                log.debug("Caught exception. Retrying in ${pauseSecs}s. " + t)
             }
             sleep pauseSecs * 1000
         }
@@ -97,7 +97,7 @@ class Helpers {
 
         if (exception && (exception instanceof AssumptionViolatedException ||
                 exception.getMessage()?.contains("org.junit.AssumptionViolatedException"))) {
-            log.info("Won't collect logs for", exception)
+            log.info("Won't collect logs for: " + exception)
             return
         }
 
