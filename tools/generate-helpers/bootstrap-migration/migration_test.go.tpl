@@ -1,27 +1,61 @@
+//go:build sql_integration
+
 package {{.packageName}}
 
 import (
+    "context"
     "testing"
 
     pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stretchr/testify/suite"
 )
 
+var (
+    ctx = sac.WithAllAccess(context.Background())
+)
+
+type migrationTestSuite struct {
+	suite.Suite
+
+	db *pghelper.TestPostgres
+}
+
 func TestMigration(t *testing.T) {
-    postgres := pghelper.ForT(t, true)
-    defer postgres.TearDown(t)
+    suite.Run(T, new(migrationTestSuite))
+}
 
-    databases := &types.Databases{
-    	GormDB:     s.db.GetGormDB(),
-    	PostgresDB: s.db.DB,
-    }
 
-    // TODO: populate database prior to migration
+func (s *migrationTestSuite) SetupSuite() {
+	s.db = pghelper.ForT(s.T(), true)
+	// TODO: Create the schemas and tables required for the pre-migration dataset push to DB
+}
 
-    assert.NoError(migration.Run(dbs))
+func (s *migrationTestSuite) TearDownSuite() {
+	s.db.Teardown(s.T())
+}
 
-    // TODO: validate database content post migration
+
+
+func (s *migrationTestSuite) TestMigration() {
+    // TODO: instantiate any store required for the pre-migration dataset push to DB
+
+    // TODO: push the pre-migration dataset to DB
+
+	dbs := &types.Databases{
+	    GormDB:     s.db.GetGormDB(),
+		PostgresDB: s.db.DB,
+	}
+
+	s.Require().NoError(migration.Run(dbs))
+
+    // TODO: instantiate any store required for the post-migration dataset pull from DB
+
+	// TODO: pull the post-migration dataset from DB
+
+	// TODO: validate that the post-migration dataset has the expected content
+
 }
 
 // TODO: remove any pending TODO
