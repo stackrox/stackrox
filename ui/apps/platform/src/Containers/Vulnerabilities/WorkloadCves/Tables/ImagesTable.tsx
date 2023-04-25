@@ -11,6 +11,7 @@ import ImageNameTd from '../components/ImageNameTd';
 import { getEntityPagePath } from '../searchUtils';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
+import EmptyTableResults from '../components/EmptyTableResults';
 
 export const imageListQuery = gql`
     query getImageList($query: String, $pagination: Pagination) {
@@ -90,6 +91,7 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                     <Th sort={getSortParams('Scan Time')}>Scan time</Th>
                 </Tr>
             </Thead>
+            {images.length === 0 && <EmptyTableResults colSpan={6} />}
             {images.map(
                 ({
                     id,
