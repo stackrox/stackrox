@@ -3,12 +3,12 @@ import { Toolbar, ToolbarGroup, ToolbarContent, ToolbarChip } from '@patternfly/
 
 import useURLSearch from 'hooks/useURLSearch';
 import { uniq } from 'lodash';
-import { DefaultFilters, VulnerabilitySeverityLabel, FixableStatus } from './types';
+import { DefaultFilters, VulnerabilitySeverityLabel, FixableStatus } from '../types';
 import { Resource } from './FilterResourceDropdown';
 import FilterAutocomplete from './FilterAutocomplete';
 import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
-import FilterChips from './components/FilterChips';
+import FilterChips from './FilterChips';
 
 const emptyDefaultFilters = {
     Severity: [],
