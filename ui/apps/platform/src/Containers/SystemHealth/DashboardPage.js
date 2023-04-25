@@ -12,7 +12,7 @@ import ClusterOverview from './Components/ClusterOverview';
 import CollectorStatus from './Components/CollectorStatus';
 import AdmissionControlStatus from './Components/AdmissionControlStatus';
 import CredentialExpiration from './Components/CredentialExpiration';
-import DeclarativeConfigurationHealthCard from './Components/DeclarativeConfigurationHeathCard';
+import DeclarativeConfigurationHealthCard from './Components/DeclarativeConfigurationHealthCard';
 import GenerateDiagnosticBundle from './PatternFly/Components/GenerateDiagnosticBundle';
 import SensorStatus from './Components/SensorStatus';
 import SensorUpgrade from './Components/SensorUpgrade';

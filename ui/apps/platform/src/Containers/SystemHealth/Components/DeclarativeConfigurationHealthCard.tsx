@@ -18,12 +18,13 @@ import { fetchDeclarativeConfigurationsHealth } from 'services/IntegrationHealth
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import { IntegrationHealthItem } from '../utils/integrations';
+import { getDateTime } from '../../../utils/dateUtils';
 
-type Props = {
+type CardProps = {
     pollingCount: number;
 };
 
-function DeclarativeConfigurationHealthCard({ pollingCount }: Props): ReactElement {
+function DeclarativeConfigurationHealthCard({ pollingCount }: CardProps): ReactElement {
     const [isFetching, setIsFetching] = useState(false);
     const [requestErrorMessage, setRequestErrorMessage] = useState('');
     const [items, setItems] = useState<IntegrationHealthItem[]>([]);
@@ -49,7 +50,10 @@ function DeclarativeConfigurationHealthCard({ pollingCount }: Props): ReactEleme
      * Otherwise count temporarily disappears during each subsequent request.
      */
     const hasCount = (pollingCount !== 0 || !isFetching) && !requestErrorMessage;
-    const itemCount = items.length;
+    const unhealthyItems = items.filter((value) => {
+        return value.status === 'UNHEALTHY';
+    });
+    const itemCount = unhealthyItems.length;
 
     return (
         <Card isFullHeight isCompact>
@@ -93,8 +97,8 @@ function DeclarativeConfigurationHealthCard({ pollingCount }: Props): ReactEleme
                                     <Th width={20}>Date</Th>
                                 </Tr>
                             </Thead>
-                            <Tbody>
-                                {items.map(({ id, name, errorMessage, lastTimestamp }) => (
+                            <Tbody data-testid="declarative-configs">
+                                {unhealthyItems.map(({ id, name, errorMessage, lastTimestamp }) => (
                                     <Tr key={id}>
                                         <Td dataLabel="Name" modifier="breakWord">
                                             {name}
@@ -102,7 +106,7 @@ function DeclarativeConfigurationHealthCard({ pollingCount }: Props): ReactEleme
                                         <Td dataLabel="Error" modifier="breakWord">
                                             {errorMessage}
                                         </Td>
-                                        <Td dataLabel="Date">{lastTimestamp}</Td>
+                                        <Td dataLabel="Date">{getDateTime(lastTimestamp)}</Td>
                                     </Tr>
                                 ))}
                             </Tbody>
