@@ -28,7 +28,7 @@ class DeploymentTest extends BaseSpecification {
             .setName(DEPLOYMENT_NAME)
             .setImage(DEPLOYMENT_IMAGE_NAME)
             .addLabel("app", "test")
-            .setCommand(["sh", "-c", "apt-get -y update && sleep 600"])
+            .setCommand(["sh", "-c", "apt-get -y update || true && sleep 600"])
 
     private static final Job JOB = new Job()
             .setName("test-job-pi")
