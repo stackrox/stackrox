@@ -8,7 +8,6 @@ import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
-import java.util.stream.Collectors
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
@@ -2309,15 +2308,12 @@ class Kubernetes implements OrchestratorMain {
     def updateDeploymentDetails(Deployment deployment) {
         // Filtering pod query by using the "name=<name>" because it should always be present in the deployment
         // object - IF this is ever missing, it may cause problems fetching pod details
-        def deployedPods = evaluateWithRetry(2, 3) {
+        PodList deployedPods = evaluateWithRetry(2, 3) {
             return client.pods().inNamespace(deployment.namespace).withLabel("name", deployment.name).list()
         }
+        log.debug("Updating deployment ${deployment.name} with ${deployedPods.getItems().size()} pods")
         for (Pod pod : deployedPods.getItems()) {
-            List<String> containerIDs = pod.getStatus().getContainerStatuses() != null ?
-                pod.getStatus().getContainerStatuses().stream().map {
-                    container -> container.getContainerID()
-                }.collect(Collectors.toList()) :
-                []
+            List<String> containerIDs = pod.getStatus().getContainerStatuses()*.getContainerID() ?: []
             deployment.addPod(
                     pod.getMetadata().getName(),
                     pod.getMetadata().getUid(),
