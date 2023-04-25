@@ -104,7 +104,7 @@ function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps)
                                     <ToolbarItem>
                                         <EntityTypeToggleGroup
                                             imageCount={countsData?.imageCount}
-                                            cveCount={countsData?.cveCount}
+                                            cveCount={countsData?.imageCVECount}
                                             deploymentCount={countsData?.deploymentCount}
                                         />
                                     </ToolbarItem>
