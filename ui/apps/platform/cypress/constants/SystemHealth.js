@@ -4,8 +4,7 @@ export const systemHealthUrl = '/main/system-health';
 
 export const selectors = {
     bundle: {
-        filterByClusters: '[data-testid="filter-by-clusters"]',
-        filterByStartingTime: '#filter-by-starting-time',
+        filterByStartingTime: '#filterByStartingTime',
         startingTimeMessage: '[data-testid="starting-time-message"]',
     },
     clusters: {
