@@ -273,7 +273,7 @@
 #      cpu: "1"
 #
 #  # Resource configuration for the Node Inventory container.
-#  nodeInventoryResources:
+#  nodeScanningResources:
 #    requests:
 #      memory: "10Mi"
 #      cpu: "10m"

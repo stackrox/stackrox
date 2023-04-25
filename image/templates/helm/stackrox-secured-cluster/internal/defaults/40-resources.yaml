@@ -35,7 +35,7 @@ collector:
       memory: "2Gi"
       cpu: "1"
 
-  nodeInventoryResources:
+  nodeScanningResources:
     requests:
       memory: "10Mi"
       cpu: "10m"
