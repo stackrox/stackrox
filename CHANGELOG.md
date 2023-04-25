@@ -20,6 +20,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The time interval used to determine the frequency to scan orchestrator-level components (Kubernetes, OpenShift, Istio) is now configurable
   via ROX_ORCHESTRATOR_VULN_SCAN_INTERVAL.
 
+- The k8s-istio.zip file inside scanner-vuln-updates.zip (the file downloaded from https://install.stackrox.io/scanner/scanner-vuln-updates.zip for updating Scanner vulnerabilities in offline-mode)
+  is no longer needed. We will continue to populate it to support older versions of the product, but it will be ignored.
+- The time interval used to determine the frequency to scan orchestrator-level components (Kubernetes, OpenShift, Istio) is now configurable
+  via ROX_ORCHESTRATOR_VULN_SCAN_INTERVAL.
+
 ## [4.0.0]
 
 ### Added Features
