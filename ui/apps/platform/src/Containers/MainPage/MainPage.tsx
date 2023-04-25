@@ -2,6 +2,7 @@ import React, { ReactElement } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { Page, Button } from '@patternfly/react-core';
+import { OutlinedCommentsIcon } from '@patternfly/react-icons';
 import { gql, useQuery } from '@apollo/client';
 
 import LoadingSection from 'Components/PatternFly/LoadingSection';
@@ -93,6 +94,8 @@ function MainPage(): ReactElement {
                         right: 'var(--pf-global--spacer--xl)',
                         zIndex: 20000,
                     }}
+                    icon={<OutlinedCommentsIcon />}
+                    iconPosition="left"
                     variant="danger"
                     id="feedback-trigger-button"
                     onClick={() => {

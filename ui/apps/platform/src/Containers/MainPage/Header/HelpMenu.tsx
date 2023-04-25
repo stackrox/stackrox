@@ -39,7 +39,7 @@ function HelpMenu(): ReactElement {
                     dispatch(actions.setFeedbackModalVisibility(true));
                 }}
             >
-                Feedback
+                Share feedback
             </ApplicationLauncherItem>
             {version && (
                 <>
