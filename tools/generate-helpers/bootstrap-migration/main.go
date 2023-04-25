@@ -28,6 +28,9 @@ import (
 //go:embed migration.go.tpl
 var migrationFile string
 
+//go:embed migration_impl.go.tpl
+var migrationImplFile string
+
 //go:embed migration_test.go.tpl
 var migrationTestFile string
 
@@ -36,6 +39,7 @@ var seqNumFile string
 
 var (
 	migrationTemplate     = newTemplate(migrationFile)
+	migrationImplTemplate = newTemplate(migrationImplFile)
 	migrationTestTemplate = newTemplate(migrationTestFile)
 	seqNumTemplate        = newTemplate(seqNumFile)
 )
@@ -78,6 +82,12 @@ func main() {
 		// Write migration file
 		migrationFilePath := path.Join(fullMigrationDirPath, "migration.go")
 		err = renderFile(templateMap, migrationTemplate, migrationFilePath)
+		if err != nil {
+			return err
+		}
+		// Write migration impl file
+		migrationImplFilePath := path.Join(fullMigrationDirPath, "migration_impl.go")
+		err = renderFile(templateMap, migrationImplTemplate, migrationImplFilePath)
 		if err != nil {
 			return err
 		}

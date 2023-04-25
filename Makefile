@@ -810,3 +810,10 @@ mitre:
 	@echo "+ $@"
 	CGO_ENABLED=0 GOOS=$(HOST_OS) $(GOBUILD) ./tools/mitre
 	go install ./tools/mitre
+
+.PHONY: bootstrap_migration
+bootstrap_migration:
+	$(SILENT)echo "package migrations" > migrator/migrations/gen.go
+	$(SILENT)echo "//go:generate bootstrap_new_migration \"${DESCRIPTION}\"" >> migrator/migrations/gen.go
+	$(SILENT)PATH="$(GOTOOLS_BIN):$(PATH):$(BASE_DIR)/tools/generate-helpers" go generate -v -x migrator/migrations/gen.go
+	$(SILENT)rm migrator/migrations/gen.go
