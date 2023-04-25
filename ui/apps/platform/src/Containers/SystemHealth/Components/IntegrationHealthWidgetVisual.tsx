@@ -24,6 +24,7 @@ const IntegrationHealthWidget = ({
         <Widget
             header={integrationText}
             headerComponents={<ViewAllButton url={`${integrationsPath}#${id}`} />}
+            className="h-48 text-lg"
             id={id}
         >
             {requestHasError ? (
