@@ -57,6 +57,7 @@ enum CollectionMethod {
     NO_COLLECTION    = 1;
     KERNEL_MODULE    = 2;
     EBPF             = 3;
+    CORE_BPF         = 4;
 }
 
 message AdmissionControllerConfig {

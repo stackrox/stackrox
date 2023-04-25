@@ -190,13 +190,15 @@ type PerNodeSpec struct {
 	TaintToleration *TaintTolerationPolicy `json:"taintToleration,omitempty"`
 }
 
-// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'KernelModule' or 'None'.
-// +kubebuilder:validation:Enum=EBPF;KernelModule;NoCollection
+// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'CORE_BPF', 'KernelModule' or 'None'.
+// +kubebuilder:validation:Enum=EBPF;CORE_BPF;KernelModule;NoCollection
 type CollectionMethod string
 
 const (
 	// CollectionEBPF means: use EBPF collection.
 	CollectionEBPF CollectionMethod = "EBPF"
+	// CollectionCOREBPF means: use CORE_BPF collection.
+	CollectionCOREBPF CollectionMethod = "CORE_BPF"
 	// CollectionKernelModule means: use KERNEL_MODULE collection.
 	CollectionKernelModule CollectionMethod = "KernelModule"
 	// CollectionNone means: NO_COLLECTION.
