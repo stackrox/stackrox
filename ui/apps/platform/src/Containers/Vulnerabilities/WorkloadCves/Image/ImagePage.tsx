@@ -15,21 +15,21 @@ import {
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useParams } from 'react-router-dom';
+import { gql, useQuery } from '@apollo/client';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { gql, useQuery } from '@apollo/client';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
-import { detailsTabValues } from './types';
-import { getOverviewCvesPath } from './searchUtils';
+import { detailsTabValues } from '../types';
+import { getOverviewCvesPath } from '../searchUtils';
 import ImageDetailBadges, {
     ImageDetails,
     imageDetailsFragment,
-} from './components/ImageDetailBadges';
+} from '../components/ImageDetailBadges';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
