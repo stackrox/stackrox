@@ -88,7 +88,7 @@ export const defaultValues: GoogleIntegrationFormValues = {
     updatePassword: true,
 };
 
-function DockerIntegrationForm({
+function GoogleIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<GoogleImageIntegration>): ReactElement {
@@ -98,6 +98,9 @@ function DockerIntegrationForm({
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.config.google.serviceAccount = '';
+
+        // Don't assume user wants to change password; that has caused confusing UX.
+        formInitialValues.updatePassword = false;
     }
     const {
         values,
@@ -293,4 +296,4 @@ function DockerIntegrationForm({
     );
 }
 
-export default DockerIntegrationForm;
+export default GoogleIntegrationForm;
