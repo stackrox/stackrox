@@ -282,7 +282,7 @@ non-standard environments:
 |`sensor.resources`|Resource specification for Sensor.|See below.|
 |`collector.resources`|Resource specification for Collector.|See below.|
 |`collector.complianceResources`|Resource specification for Collector's Compliance container.|See below.|
-|`collector.nodeInventoryResources`|Resource specification for Collector's Node Inventory container.|See below.|
+|`collector.nodeScanningResources`|Resource specification for Collector's Node Inventory container.|See below.|
 |`collector.nodeSelector` | Node selector for Collector pods placement. | `null` (no placement constraints) |
 |`admissionControl.resources`|Resource specification for Admission Control.|See below.|
 |`sensor.imagePullPolicy`| Kubernetes image pull policy for Sensor. | `IfNotPresent` |
@@ -307,7 +307,7 @@ paths to the respective defaults for each container that this chart deploys:
 |Sensor           |`defaults.sensor.resources`                |
 |Collector        |`defaults.collector.resources`             |
 |Compliance       |`defaults.collector.complianceResources`   |
-|NodeInventory    |`defaults.collector.nodeInventoryResources`|
+|NodeInventory    |`defaults.collector.nodeScanningResources`|
 |Admission Control|`defaults.admissionControl.resources`      |
 
 ### Customization settings
