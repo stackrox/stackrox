@@ -81,7 +81,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         isInline
                         title="This policy has active violations, and the policy criteria cannot be changed. To update criteria, clone and create a new policy."
                         className="pf-u-mt-sm pf-u-mb-md"
-                        data-testid="default-policy-alert"
+                        data-testid="active-violations-policy-alert"
                     />
                 )}
                 <BooleanPolicyLogicSection readOnly />
