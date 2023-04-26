@@ -1450,14 +1450,13 @@ save_junit_success() {
 
     local class="$1"
     local description="$2"
-    local timestamp
-    timestamp="$(date -u +"%s.%N")"
 
     local junit_dir
     junit_dir="$(get_junit_misc_dir)"
     mkdir -p "${junit_dir}"
 
-    cat << EOF > "${junit_dir}/junit-${class}-${timestamp}.xml"
+    cat << EOF > "${junit_dir}/junit-${class}.xml"
+
 <testsuite name="${class}" tests="1" skipped="0" failures="0" errors="0">
     <testcase name="${description}" classname="${class}">
     </testcase>
@@ -1478,17 +1477,16 @@ save_junit_failure() {
     local class="$1"
     local description="$2"
     local details="$3"
-    local timestamp
-    timestamp="$(date -u +"%s.%N")"
 
     local junit_dir
     junit_dir="$(get_junit_misc_dir)"
     mkdir -p "${junit_dir}"
 
-    cat << EOF > "${junit_dir}/junit-${class}-${timestamp}.xml"
+    cat << EOF > "${junit_dir}/junit-${class}.xml"
+
 <testsuite name="${class}" tests="1" skipped="0" failures="1" errors="0">
     <testcase name="${description}" classname="${class}">
-        <failure><![CDATA[${details}]]></failure>
+        <failure>${details}</failure>
     </testcase>
 </testsuite>
 EOF
