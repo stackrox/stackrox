@@ -8,6 +8,7 @@ import (
 	networkPolicyMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -77,7 +78,7 @@ func Test_MatchDeployments(t *testing.T) {
 		}, nil)
 
 	ctx := context.Background()
-	matcher, err := BuildMatcher(ctx, mockNetpol, []ClusterNamespace{
+	matcher, err := BuildMatcher(ctx, mockNetpol, set.NewSet[ClusterNamespace]([]ClusterNamespace{
 		{
 			Cluster:   fixtureconsts.Cluster1,
 			Namespace: "ns1",
@@ -90,7 +91,7 @@ func Test_MatchDeployments(t *testing.T) {
 			Cluster:   fixtureconsts.Cluster2,
 			Namespace: "ns3",
 		},
-	})
+	}...))
 
 	require.NoError(t, err)
 
