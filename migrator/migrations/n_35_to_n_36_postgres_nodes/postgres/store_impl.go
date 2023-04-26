@@ -50,12 +50,12 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db                 *postgres.DB
+	db                 postgres.DB
 	noUpdateTimestamps bool
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB, noUpdateTimestamps bool) Store {
+func New(db postgres.DB, noUpdateTimestamps bool) Store {
 	return &storeImpl{
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,

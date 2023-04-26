@@ -46,7 +46,7 @@ var (
 )
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB, noUpdateTimestamps bool) store.Store {
+func New(db postgres.DB, noUpdateTimestamps bool) store.Store {
 	return &storeImpl{
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
@@ -54,7 +54,7 @@ func New(db *postgres.DB, noUpdateTimestamps bool) store.Store {
 }
 
 type storeImpl struct {
-	db                 *postgres.DB
+	db                 postgres.DB
 	noUpdateTimestamps bool
 }
 

@@ -48,7 +48,7 @@ type NodePostgresDataStoreTestSuite struct {
 	suite.Suite
 
 	ctx                context.Context
-	db                 *postgres.DB
+	db                 postgres.DB
 	gormDB             *gorm.DB
 	datastore          DataStore
 	mockCtrl           *gomock.Controller

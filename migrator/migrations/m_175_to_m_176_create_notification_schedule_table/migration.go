@@ -27,7 +27,7 @@ func init() {
 	migrations.MustRegisterMigration(migration)
 }
 
-func createNotificationScheduleTable(_ *postgres.DB, gormDB *gorm.DB) error {
+func createNotificationScheduleTable(_ postgres.DB, gormDB *gorm.DB) error {
 	ctx := context.Background()
 	pgutils.CreateTableFromModel(ctx, gormDB, frozenSchema.CreateTableNotificationSchedulesStmt)
 	return nil

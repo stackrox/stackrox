@@ -12,7 +12,7 @@ import (
 )
 
 // ReadVersionPostgres - reads the version from the postgres database.
-func ReadVersionPostgres(pool *postgres.DB) (*migrations.MigrationVersion, error) {
+func ReadVersionPostgres(pool postgres.DB) (*migrations.MigrationVersion, error) {
 	store := vStore.NewPostgres(pool)
 
 	ver, err := store.GetVersion()
@@ -29,7 +29,7 @@ func ReadVersionPostgres(pool *postgres.DB) (*migrations.MigrationVersion, error
 }
 
 // SetCurrentVersionPostgres - sets the current version in the postgres database
-func SetCurrentVersionPostgres(pool *postgres.DB) {
+func SetCurrentVersionPostgres(pool postgres.DB) {
 	if curr, err := ReadVersionPostgres(pool); err != nil || curr.MainVersion != version.GetMainVersion() || curr.SeqNum != migrations.CurrentDBVersionSeqNum() {
 		newVersion := &storage.Version{
 			SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
@@ -40,7 +40,7 @@ func SetCurrentVersionPostgres(pool *postgres.DB) {
 	}
 }
 
-func setVersionPostgres(pool *postgres.DB, updatedVersion *storage.Version) {
+func setVersionPostgres(pool postgres.DB, updatedVersion *storage.Version) {
 	store := vStore.NewPostgres(pool)
 
 	err := store.UpdateVersion(updatedVersion)

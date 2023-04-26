@@ -59,12 +59,12 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *postgres.DB
+	db    postgres.DB
 	mutex sync.Mutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB) Store {
+func New(db postgres.DB) Store {
 	return &storeImpl{
 		db: db,
 	}
@@ -447,12 +447,12 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkEntity
 
 //// Used for testing
 
-func dropTableNetworkEntities(ctx context.Context, db *postgres.DB) {
+func dropTableNetworkEntities(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS network_entities CASCADE")
 
 }
 
-func Destroy(ctx context.Context, db *postgres.DB) {
+func Destroy(ctx context.Context, db postgres.DB) {
 	dropTableNetworkEntities(ctx, db)
 }
 

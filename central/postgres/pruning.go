@@ -31,7 +31,7 @@ var (
 
 // PruneActiveComponents - prunes active components
 // TODO (ROX-12710):  This will no longer be necessary when the foreign keys are added back
-func PruneActiveComponents(ctx context.Context, pool *postgres.DB) {
+func PruneActiveComponents(ctx context.Context, pool postgres.DB) {
 	if _, err := pool.Exec(ctx, pruneActiveComponentsStmt); err != nil {
 		log.Errorf("failed to prune active components: %v", err)
 	}
@@ -39,13 +39,13 @@ func PruneActiveComponents(ctx context.Context, pool *postgres.DB) {
 
 // PruneClusterHealthStatuses - prunes cluster health statuses
 // TODO (ROX-12711):  This will no longer be necessary when the foreign keys are added back
-func PruneClusterHealthStatuses(ctx context.Context, pool *postgres.DB) {
+func PruneClusterHealthStatuses(ctx context.Context, pool postgres.DB) {
 	if _, err := pool.Exec(ctx, pruneClusterHealthStatusesStmt); err != nil {
 		log.Errorf("failed to prune cluster health statuses: %v", err)
 	}
 }
 
-func getOrphanedAlertIDs(ctx context.Context, pool *postgres.DB, orphanWindow time.Duration) ([]string, error) {
+func getOrphanedAlertIDs(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) ([]string, error) {
 	var ids []string
 	query := fmt.Sprintf(getAllOrphanedAlerts, int(orphanWindow.Minutes()))
 	rows, err := pool.Query(ctx, query)
@@ -64,7 +64,7 @@ func getOrphanedAlertIDs(ctx context.Context, pool *postgres.DB, orphanWindow ti
 }
 
 // GetOrphanedAlertIDs returns the alert IDs for alerts that are orphaned so they can be resolved
-func GetOrphanedAlertIDs(ctx context.Context, pool *postgres.DB, orphanWindow time.Duration) ([]string, error) {
+func GetOrphanedAlertIDs(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) ([]string, error) {
 	return pgutils.Retry2(func() ([]string, error) {
 		ctx, cancel := context.WithTimeout(ctx, orphanedAlertsTimeout)
 		defer cancel()

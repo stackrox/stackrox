@@ -153,7 +153,7 @@ func (s *serviceImplTestSuite) TestDatabaseStatus() {
 		s.Equal(v1.DatabaseStatus_Hidden, dbStatus.DatabaseType)
 		s.Equal("", dbStatus.DatabaseVersion)
 
-		tp.Pool.Close()
+		tp.Close()
 		dbStatus, err = service.GetDatabaseStatus(context.Background(), nil)
 		s.NoError(err)
 		s.False(dbStatus.DatabaseAvailable)

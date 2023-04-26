@@ -40,7 +40,7 @@ var (
 	schema = frozenSchema.NetworkFlowsSchema
 )
 
-func move(gormDB *gorm.DB, postgresDB *postgres.DB, legacyStore store.ClusterStore) error {
+func move(gormDB *gorm.DB, postgresDB postgres.DB, legacyStore store.ClusterStore) error {
 	ctx := sac.WithAllAccess(context.Background())
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableNetworkFlowsStmt)
 

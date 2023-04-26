@@ -16,7 +16,7 @@ var (
 
 // NewCVEView returns the interface CveView
 // that provides searching image cves stored in the database.
-func NewCVEView(db *postgres.DB) CveView {
+func NewCVEView(db postgres.DB) CveView {
 	return &imageCVECoreViewImpl{
 		db:     db,
 		schema: schema.ImageCvesSchema,

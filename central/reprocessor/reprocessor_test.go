@@ -44,7 +44,7 @@ func TestGetActiveImageIDs(t *testing.T) {
 	testCtx := sac.WithAllAccess(context.Background())
 
 	var (
-		pool          *postgres.DB
+		pool          postgres.DB
 		imageDS       imageDatastore.DataStore
 		deploymentsDS deploymentDatastore.DataStore
 		indexingQ     queue.WaitableQueue

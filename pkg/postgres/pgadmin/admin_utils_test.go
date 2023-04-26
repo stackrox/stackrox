@@ -26,7 +26,7 @@ const (
 
 type PostgresRestoreSuite struct {
 	suite.Suite
-	pool      *postgres.DB
+	pool      postgres.DB
 	config    *postgres.Config
 	sourceMap map[string]string
 	ctx       context.Context

@@ -933,7 +933,7 @@ func New(
 }
 
 // GetTestPostgresManager provides a network baseline manager connected to postgres for testing purposes.
-func GetTestPostgresManager(t *testing.T, pool *postgres.DB) (Manager, error) {
+func GetTestPostgresManager(t *testing.T, pool postgres.DB) (Manager, error) {
 	networkBaselineStore, err := datastore.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err

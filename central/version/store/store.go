@@ -29,6 +29,6 @@ func New(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB) Store {
 }
 
 // NewPostgres returns a new postgres-based version store
-func NewPostgres(pg *postgres.DB) Store {
+func NewPostgres(pg postgres.DB) Store {
 	return &storeImpl{pgStore: pgStore.New(pg)}
 }

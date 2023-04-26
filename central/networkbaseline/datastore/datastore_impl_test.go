@@ -36,7 +36,7 @@ type NetworkBaselineDataStoreTestSuite struct {
 
 	datastore DataStore
 	storage   store.Store
-	pool      *postgres.DB
+	pool      postgres.DB
 	engine    *rocksdb.RocksDB
 }
 

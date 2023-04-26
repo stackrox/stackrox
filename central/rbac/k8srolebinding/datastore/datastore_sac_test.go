@@ -33,7 +33,7 @@ type k8sRoleBindingSACSuite struct {
 
 	datastore DataStore
 
-	pool *postgres.DB
+	pool postgres.DB
 
 	engine *rocksdb.RocksDB
 	index  bleve.Index

@@ -10,7 +10,7 @@ import (
 )
 
 // NewClusterStore returns a new ClusterStore instance using the provided rocksdb instance.
-func NewClusterStore(db *postgres.DB) store.ClusterStore {
+func NewClusterStore(db postgres.DB) store.ClusterStore {
 	return &clusterStoreImpl{
 		db:        db,
 		flowStore: make(map[string]store.FlowStore),
@@ -18,7 +18,7 @@ func NewClusterStore(db *postgres.DB) store.ClusterStore {
 }
 
 type clusterStoreImpl struct {
-	db        *postgres.DB
+	db        postgres.DB
 	lock      sync.Mutex
 	flowStore map[string]store.FlowStore
 }

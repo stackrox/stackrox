@@ -44,7 +44,7 @@ func init() {
 	migrations.MustRegisterMigration(migration)
 }
 
-func ensureUniqueGroups(postgresDB *postgres.DB) error {
+func ensureUniqueGroups(postgresDB postgres.DB) error {
 	ctx := sac.WithAllAccess(context.Background())
 	previousStore := previous.New(postgresDB)
 
@@ -83,7 +83,7 @@ func migrateSchema(gormDB *gorm.DB) {
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenschema.CreateTableGroupsStmt)
 }
 
-func reUpsertGroupEntries(postgresDB *postgres.DB) error {
+func reUpsertGroupEntries(postgresDB postgres.DB) error {
 	ctx := sac.WithAllAccess(context.Background())
 	updatedStore := updated.New(postgresDB)
 

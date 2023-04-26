@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	postgresDB *postgres.DB
+	postgresDB postgres.DB
 	gormDB     *gorm.DB
 
 	err error
@@ -21,7 +21,7 @@ var (
 )
 
 // Load loads a Postgres instance and returns a GormDB.
-func Load(databaseName string) (*postgres.DB, *gorm.DB, error) {
+func Load(databaseName string) (postgres.DB, *gorm.DB, error) {
 	log.WriteToStderrf("Load database = %q", databaseName)
 	gc := migGorm.GetConfig()
 

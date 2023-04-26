@@ -32,7 +32,7 @@ func TestNetworkBaselineDatastoreSAC(t *testing.T) {
 type networkBaselineDatastoreSACTestSuite struct {
 	suite.Suite
 	engine       *rocksdb.RocksDB
-	pool         *postgres.DB
+	pool         postgres.DB
 	datastore    DataStore
 	testContexts map[string]context.Context
 	testNBIDs    []string

@@ -60,7 +60,7 @@ import (
 // as well as test data injection and cleanup functions.
 type DackboxTestDataStore interface {
 	// Expose internal for the case other datastores would be needed for testing purposes
-	GetPostgresPool() *postgres.DB
+	GetPostgresPool() postgres.DB
 	GetRocksEngine() *rocksPkg.RocksDB
 	GetBleveIndex() bleve.Index
 	GetDackbox() *dackbox.DackBox
@@ -138,7 +138,7 @@ func embeddedVulnerabilityToClusterCVE(from *storage.EmbeddedVulnerability) *sto
 	return ret
 }
 
-func (s *dackboxTestDataStoreImpl) GetPostgresPool() *postgres.DB {
+func (s *dackboxTestDataStoreImpl) GetPostgresPool() postgres.DB {
 	return s.pgtestbase.DB
 }
 

@@ -47,7 +47,7 @@ type ProcessBaselineDataStoreTestSuite struct {
 	indicatorMockStore *indicatorMocks.MockDataStore
 
 	db   *rocksdb.RocksDB
-	pool *postgres.DB
+	pool postgres.DB
 
 	baselineResultsStore *mocks.MockDataStore
 

@@ -37,7 +37,7 @@ type datastoreImpl struct {
 	sync.Mutex
 }
 
-func newPostgres(pool *postgres.DB) *datastoreImpl {
+func newPostgres(pool postgres.DB) *datastoreImpl {
 	storage := postgresStore.New(pool)
 	indexer := postgresStore.NewIndexer(pool)
 	searcher := blevesearch.WrapUnsafeSearcherAsSearcher(indexer)
