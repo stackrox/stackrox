@@ -12,13 +12,12 @@ import max from 'lodash/max';
 import { severityValues, severities } from 'constants/severities';
 import { policySeverityColorMap } from 'constants/visuals/colors';
 import { severityLabels as policySeverityLabels } from 'messages/common';
+import { policySeverities } from 'types/policy.proto';
 import policyStatus from 'constants/policyStatus';
 import entityTypes from 'constants/entityTypes';
 import searchContext from 'Containers/searchContext';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 import { getPercentage } from 'utils/mathUtils';
-
-const policySeverities = ['LOW_SEVERITY', 'MEDIUM_SEVERITY', 'HIGH_SEVERITY', 'CRITICAL_SEVERITY'];
 
 const legendData = policySeverities.map((severity) => ({
     title: policySeverityLabels[severity],

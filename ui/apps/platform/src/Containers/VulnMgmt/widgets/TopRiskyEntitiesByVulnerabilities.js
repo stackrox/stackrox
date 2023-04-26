@@ -16,6 +16,7 @@ import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
 import { policySeverityColorMap } from 'constants/visuals/colors';
 import { severityLabels as policySeverityLabels } from 'messages/common';
+import { policySeverities } from 'types/policy.proto';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
 import { entitySortFieldsMap, cveSortFields } from 'constants/sortFields';
@@ -24,8 +25,6 @@ import { entityPriorityField } from 'Containers/VulnMgmt/VulnMgmt.constants';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 
 // Beware, policy instead of vulnerability severities because of getSeverityByCvss function!
-
-const policySeverities = ['LOW_SEVERITY', 'MEDIUM_SEVERITY', 'HIGH_SEVERITY', 'CRITICAL_SEVERITY'];
 
 const legendData = policySeverities.map((severity) => ({
     title: policySeverityLabels[severity],
