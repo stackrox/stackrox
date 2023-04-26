@@ -24,7 +24,7 @@ const legendData = policySeverities.map((severity) => ({
     color: policySeverityColorMap[severity],
 }));
 
-const linkColor = 'var(--primary-600)'; // TODO might be able to remove after PatternFly dark them
+const linkColor = 'var(--primary-600)'; // TODO might be able to remove after PatternFly dark theme
 const textColor = 'var(--base-600)';
 const passingChartColor = 'var(--base-400)';
 
