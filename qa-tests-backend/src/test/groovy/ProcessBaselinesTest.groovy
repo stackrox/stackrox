@@ -122,7 +122,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         assert deployment != null
 
         // test to see if the timeout is honored real quick
-        sleep 800000
+        sleep 1700000
         orchestrator.createDeployment(deployment)
         assert Services.waitForDeployment(deployment)
         String deploymentId = deployment.getDeploymentUid()
@@ -232,7 +232,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
         // test to see if the timeout is honored real quick
-        sleep 800000
+        sleep 1700000
 
         orchestrator.createDeployment(deployment)
         String deploymentId = deployment.getDeploymentUid()
@@ -334,7 +334,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         assert deployment != null
 
         // test to see if the timeout is honored real quick
-        sleep 800000
+        sleep 1700000
 
         orchestrator.createDeployment(deployment)
         String containerName = deployment.getName()
@@ -373,7 +373,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         def deploymentId = deployment.deploymentUid
         assert deploymentId != null
         // test to see if the timeout is honored real quick
-        sleep 800000
+        sleep 1700000
 
         def containerName = deploymentName
         def namespace = deployment.getNamespace()
@@ -432,7 +432,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         def deployment = DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_DELETE_API }
         assert deployment != null
         // test to see if the timeout is honored real quick
-        sleep 800000
+        sleep 1700000
 
         orchestrator.createDeployment(deployment)
         String containerName = deployment.getName()
@@ -464,7 +464,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
         // test to see if the timeout is honored real quick
-        sleep 800000
+        sleep 1700000
 
         orchestrator.createDeployment(deployment)
         String deploymentId = deployment.getDeploymentUid()
