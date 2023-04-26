@@ -71,11 +71,9 @@ func ParseClientState(clientState string) (string, AuthMode) {
 		return "", LoginAuthMode
 	}
 
-	if parts[0] == "" {
-		return parts[len(parts)-1], LoginAuthMode
-	}
-
 	switch parts[0] {
+	case "":
+		return parts[len(parts)-1], LoginAuthMode
 	case TestLoginClientState:
 		if len(parts) == 1 {
 			return "", TestAuthMode

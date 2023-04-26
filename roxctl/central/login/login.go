@@ -197,6 +197,6 @@ You may now close this window.
 		l.env.Logger().InfofLn("Refresh token: %s", refreshToken)
 	}
 	l.env.Logger().InfofLn("Storing these values under $HOME/.roxctl/login ...")
-	// TODO(dhaus): Persist login information.
+	// TODO: Persisting the login information will be done in a follow-up PR.
 	l.loginSignal.Signal()
 }

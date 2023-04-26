@@ -257,6 +257,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 
 	providerID, clientState, err := factory.ProcessHTTPRequest(w, req)
 	clientState, mode := idputil.ParseClientState(clientState)
+	testMode := mode == idputil.TestAuthMode
 
 	var provider Provider
 	if err == nil {
@@ -268,13 +269,13 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 		}
 	}
 	if err != nil {
-		r.error(w, err, typ, "", mode == idputil.TestAuthMode)
+		r.error(w, err, typ, "", testMode)
 		return
 	}
 
 	backend, err := provider.GetOrCreateBackend(req.Context())
 	if err != nil {
-		r.error(w, err, typ, "", mode == idputil.TestAuthMode)
+		r.error(w, err, typ, "", testMode)
 		return
 	}
 
@@ -282,18 +283,18 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	if err != nil {
 		log.Errorf(fmt.Sprintf("error processing HTTP request for provider %s of type %s: %v",
 			provider.Name(), provider.Type(), err))
-		r.error(w, err, typ, clientState, mode == idputil.TestAuthMode)
+		r.error(w, err, typ, clientState, testMode)
 		return
 	}
 
 	if authResp == nil || authResp.Claims == nil {
-		r.error(w, errox.NoCredentials.CausedBy("authentication response is empty"), typ, clientState, mode == idputil.TestAuthMode)
+		r.error(w, errox.NoCredentials.CausedBy("authentication response is empty"), typ, clientState, testMode)
 		return
 	}
 
 	if provider.AttributeVerifier() != nil {
 		if err := provider.AttributeVerifier().Verify(authResp.Claims.Attributes); err != nil {
-			r.error(w, errox.NoCredentials.CausedBy(err), typ, clientState, mode == idputil.TestAuthMode)
+			r.error(w, errox.NoCredentials.CausedBy(err), typ, clientState, testMode)
 			return
 		}
 	}
@@ -301,12 +302,12 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	// We need all access for retrieving roles.
 	user, err := CreateRoleBasedIdentity(sac.WithAllAccess(req.Context()), provider, authResp)
 	if err != nil {
-		r.error(w, errors.Wrap(err, "cannot create role based identity"), typ, clientState, mode == idputil.TestAuthMode)
+		r.error(w, errors.Wrap(err, "cannot create role based identity"), typ, clientState, testMode)
 		return
 	}
 
 	if mode == idputil.TestAuthMode {
-		w.Header().Set("Location", r.userMetadataURL(user, typ, clientState, mode == idputil.TestAuthMode).String())
+		w.Header().Set("Location", r.userMetadataURL(user, typ, clientState, testMode).String())
 		w.WriteHeader(http.StatusSeeOther)
 		return
 	}
@@ -314,13 +315,13 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	userInfo := user.GetUserInfo()
 	if userInfo == nil {
 		err := errox.NotAuthorized.CausedBy("failed to get user info")
-		r.error(w, err, typ, clientState, mode == idputil.TestAuthMode)
+		r.error(w, err, typ, clientState, testMode)
 		return
 	}
 
 	userRoles := userInfo.GetRoles()
 	if len(userRoles) == 0 {
-		r.error(w, auth.ErrNoValidRole, typ, clientState, mode == idputil.TestAuthMode)
+		r.error(w, auth.ErrNoValidRole, typ, clientState, testMode)
 		return
 	}
 
@@ -328,7 +329,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	var refreshCookie *http.Cookie
 	tokenInfo, refreshCookie, err = r.issueTokenForResponse(req.Context(), provider, authResp)
 	if err != nil {
-		r.error(w, err, typ, clientState, mode == idputil.TestAuthMode)
+		r.error(w, err, typ, clientState, testMode)
 		return
 	}
 
