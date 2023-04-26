@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactElement } from 'react';
 
 import { severityLabels } from 'messages/common';
 import { VulnerabilitySeverity } from 'types/cve.proto';
@@ -21,7 +21,10 @@ export type PolicySeverityIconTextProps = {
     isTextOnly?: boolean;
 };
 
-function PolicySeverityIconText({ severity, isTextOnly }: PolicySeverityIconTextProps): ReactNode {
+function PolicySeverityIconText({
+    severity,
+    isTextOnly,
+}: PolicySeverityIconTextProps): ReactElement {
     const Icon = SeverityIcons[policyToVulnerabilitySeverity[severity]];
     const text = severityLabels[severity];
 
