@@ -10,11 +10,8 @@ import ViewAllButton from 'Components/ViewAllButton';
 import Sunburst from 'Components/visuals/Sunburst';
 import NoComponentVulnMessage from 'Components/NoComponentVulnMessage';
 import workflowStateContext from 'Containers/workflowStateContext';
-import {
-    cvssSeverityColorMap,
-    cvssSeverityTextColorMap,
-    cvssSeverityColorLegend,
-} from 'constants/severityColors';
+import { vulnSeverityIconColors } from 'constants/visuals/colors';
+import { vulnerabilitySeverityLabels } from 'messages/common';
 import { getScopeQuery } from 'Containers/VulnMgmt/Entity/VulnMgmtPolicyQueryUtil';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 
@@ -62,7 +59,12 @@ const CLUSTER_CVES_QUERY = gql`
     }
 `;
 
-const vulnerabilitySeveritySuffix = '_VULNERABILITY_SEVERITY';
+const vulnerabilitySeverities = [
+    'LOW_VULNERABILITY_SEVERITY',
+    'MODERATE_VULNERABILITY_SEVERITY',
+    'IMPORTANT_VULNERABILITY_SEVERITY',
+    'CRITICAL_VULNERABILITY_SEVERITY',
+];
 
 const CvesByCvssScore = ({ entityContext, parentContext }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
@@ -107,18 +109,14 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
 
     function getChildren(vulns, severity) {
         return vulns
-            .filter(
-                (vuln) =>
-                    vuln.severity === `${severity.toUpperCase()}${vulnerabilitySeveritySuffix}`
-            )
+            .filter((vuln) => vuln.severity === severity)
             .map(({ cve, cvss, summary }) => {
-                const severityString = `${severity.toUpperCase()}${vulnerabilitySeveritySuffix}`;
                 return {
-                    severity,
+                    // severity, // generic Sunburst does not expect this data-specific property
                     name: `${cve} -- ${summary}`,
-                    color: cvssSeverityColorMap[severityString],
-                    labelColor: cvssSeverityTextColorMap[severityString],
-                    textColor: cvssSeverityTextColorMap[severityString],
+                    color: vulnSeverityIconColors[severity],
+                    labelColor: 'var(--base-600)',
+                    textColor: 'var(--base-600)',
                     value: cvss,
                     link: workflowState.pushRelatedEntity(entityTypes.CVE, cve).toUrl(),
                 };
@@ -126,26 +124,24 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
     }
 
     function getSunburstData(vulns) {
-        return cvssSeverityColorLegend.map(({ title, color, textColor }) => {
-            const severity = title.toUpperCase();
+        return vulnerabilitySeverities.map((severity) => {
             return {
-                name: title,
-                color,
+                name: vulnerabilitySeverityLabels[severity],
+                color: vulnSeverityIconColors[severity],
                 children: getChildren(vulns, severity),
-                textColor,
+                textColor: 'var(--base-600)',
                 value: 0,
             };
         });
     }
 
     function getSidePanelData(vulns) {
-        return cvssSeverityColorLegend.map(({ title, textColor }) => {
-            const severity = `${title.toUpperCase()}${vulnerabilitySeveritySuffix}`;
+        return vulnerabilitySeverities.map((severity) => {
             const category = vulns.filter((vuln) => vuln.severity === severity);
-            const text = `${category.length} rated as ${title}`;
+            const text = `${category.length} rated as ${vulnerabilitySeverityLabels[severity]}`;
             return {
                 text,
-                textColor,
+                textColor: 'var(--base-600)',
             };
         });
     }

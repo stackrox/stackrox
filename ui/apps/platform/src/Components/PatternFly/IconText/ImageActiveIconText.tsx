@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactElement } from 'react';
 import { CheckIcon, TimesIcon } from '@patternfly/react-icons';
 
 import IconText from './IconText';
@@ -8,7 +8,7 @@ export type ImageActiveIconTextProps = {
     isTextOnly?: boolean;
 };
 
-function ImageActiveIconText({ isActive, isTextOnly }: ImageActiveIconTextProps): ReactNode {
+function ImageActiveIconText({ isActive, isTextOnly }: ImageActiveIconTextProps): ReactElement {
     const icon = isActive ? (
         <CheckIcon color="var(--pf-global--success-color--100)" />
     ) : (
