@@ -198,11 +198,6 @@ oidc:
   clientID: SOMECLIENTID
 """
 
-    // Overwrite the default timeout, as these tests may take longer than 800 seconds to finish.
-    @Rule
-    @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(1200, TimeUnit.SECONDS)
-
     def cleanup() {
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
     }
@@ -218,7 +213,7 @@ oidc:
         // It may take some time until a) the config map contents are mapped within the pod b) the reconciliation
         // has been triggered.
         // If the tests are flaky, we have to increase this value.
-        withRetry(5, 60) {
+        withRetry(60, 5) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             // Expect 6 integration health status for the created resources and one for the config map.
             assert response.integrationHealthCount == CREATED_RESOURCES + 1
@@ -258,7 +253,7 @@ oidc:
         // Verify the integration health for the permission set is unhealthy and contains an error message.
         // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
         // times here.
-        withRetry(5, 60) {
+        withRetry(60, 5) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             def permissionSetHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(PERMISSION_SET_KEY)
@@ -279,7 +274,7 @@ oidc:
         // Verify the integration health for the access scope is unhealthy and contains an error message.
         // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
         // times here.
-        withRetry(5, 60) {
+        withRetry(60, 5) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             def accessScopeHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(ACCESS_SCOPE_KEY)
@@ -298,7 +293,7 @@ oidc:
 
         then:
         // Verify the integration health for the role is unhealthy and contains an error message.
-        withRetry(5, 60) {
+        withRetry(60, 5) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             def roleHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(ROLE_KEY)
@@ -319,7 +314,7 @@ oidc:
         // Verify the integration health for the auth provider is unhealthy and contains an error message.
         // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
         // times here.
-        withRetry(5, 60) {
+        withRetry(60, 5) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             def roleHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(AUTH_PROVIDER_KEY)
@@ -343,7 +338,7 @@ oidc:
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
 
         then:
-        withRetry(5, 60) {
+        withRetry(60, 5) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             assert response.getIntegrationHealthCount() == 1
             def configMapHealth = response.getIntegrationHealth(0)
@@ -401,7 +396,7 @@ oidc:
                 ], DEFAULT_NAMESPACE)
 
         then:
-        withRetry(5, 60) {
+        withRetry(60, 5) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             // Expect 6 integration health status for the created resources and one for the config map.
             assert response.integrationHealthCount == CREATED_RESOURCES + 1
@@ -456,7 +451,7 @@ oidc:
 
         then:
         // Only the config map health status should exist, all others should be removed.
-        withRetry(5, 60) {
+        withRetry(60, 5) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             assert response.getIntegrationHealthCount() == 1
             def configMapHealth = response.getIntegrationHealth(0)
@@ -478,7 +473,7 @@ oidc:
         // It may take some time until a) the config map contents are mapped within the pod b) the reconciliation
         // has been triggered.
         // If the tests are flaky, we have to increase this value.
-        withRetry(5, 60) {
+        withRetry(60, 5) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             // Expect 6 integration health status for the created resources and one for the config map.
             assert response.integrationHealthCount == CREATED_RESOURCES + 1
@@ -496,7 +491,7 @@ oidc:
         // Verify the integration health for the permission set is unhealthy and contains an error message.
         // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
         // times here.
-        withRetry(5, 60) {
+        withRetry(60, 5) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             def permissionSetHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(PERMISSION_SET_KEY)
@@ -516,7 +511,7 @@ oidc:
         updateConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, PERMISSION_SET_KEY, VALID_PERMISSION_SET_YAML)
 
         then:
-        withRetry(5, 60) {
+        withRetry(60, 5) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             def permissionSetHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(PERMISSION_SET_KEY)
@@ -531,7 +526,7 @@ oidc:
         deleteConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ACCESS_SCOPE_KEY)
 
         then:
-        withRetry(5, 60) {
+        withRetry(60, 5) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             def accessScopeHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(ACCESS_SCOPE_KEY)
@@ -551,7 +546,7 @@ oidc:
         updateConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ACCESS_SCOPE_KEY, VALID_ACCESS_SCOPE_YAML)
 
         then:
-        withRetry(5, 60) {
+        withRetry(60, 5) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             def accessScopeHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(ACCESS_SCOPE_KEY)
@@ -585,7 +580,7 @@ oidc:
         deleteConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ROLE_KEY)
 
         then:
-        withRetry(5, 60) {
+        withRetry(60, 5) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             def roleHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(ROLE_KEY)
@@ -605,7 +600,7 @@ oidc:
         updateConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ROLE_KEY, VALID_ROLE_YAML)
 
         then:
-        withRetry(5, 60) {
+        withRetry(60, 5) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             def roleHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(ROLE_KEY)
@@ -620,7 +615,7 @@ oidc:
         deleteConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, AUTH_PROVIDER_KEY)
 
         then:
-        withRetry(5, 60) {
+        withRetry(60, 5) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             // After auth provider deletion we should be left only with integration health for:
             // - access scope
