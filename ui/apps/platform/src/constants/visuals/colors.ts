@@ -20,6 +20,7 @@ export const fileUploadColors = {
 
 export const defaultColorType = 'base';
 
+// TODO supersede with policySeverityColors below.
 export const severityColors: Record<PolicySeverity, string> = {
     LOW_SEVERITY: 'var(--color-severity-low)',
     MEDIUM_SEVERITY: 'var(--color-severity-medium)',
@@ -27,12 +28,31 @@ export const severityColors: Record<PolicySeverity, string> = {
     CRITICAL_SEVERITY: 'var(--color-severity-critical)',
 };
 
+/*
+ * Export individual constants for consistency in pseudo-severity use cases like compliance.
+ * Vulnerability severity name preceded policy severity name when they differ.
+ */
+export const LOW_SEVERITY_COLOR = 'var(--pf-global--palette--blue-300)';
+export const MODERATE_MEDIUM_SEVERITY_COLOR = 'var(--pf-global--palette--gold-300)';
+export const IMPORTANT_HIGH_SEVERITY_COLOR = 'var(--pf-global--palette--orange-200)';
+export const CRITICAL_SEVERITY_COLOR = 'var(--pf-global--palette--red-100)';
+export const UNKNOWN_SEVERITY_COLOR = 'var(--pf-global--palette--black-400)';
+
+export const policySeverityColorMap: Record<PolicySeverity, string> = {
+    LOW_SEVERITY: LOW_SEVERITY_COLOR,
+    MEDIUM_SEVERITY: MODERATE_MEDIUM_SEVERITY_COLOR,
+    HIGH_SEVERITY: IMPORTANT_HIGH_SEVERITY_COLOR,
+    CRITICAL_SEVERITY: UNKNOWN_SEVERITY_COLOR,
+};
+
+// TODO rename as vulnerabilitySeverityColorMap.
+// TODO include Icon in name only if color text below is confirmed.
 export const vulnSeverityIconColors: Record<VulnerabilitySeverity, string> = {
-    LOW_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--blue-300)',
-    MODERATE_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--gold-300)',
-    IMPORTANT_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--orange-200)',
-    CRITICAL_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--red-100)',
-    UNKNOWN_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--black-400)',
+    LOW_VULNERABILITY_SEVERITY: LOW_SEVERITY_COLOR,
+    MODERATE_VULNERABILITY_SEVERITY: MODERATE_MEDIUM_SEVERITY_COLOR,
+    IMPORTANT_VULNERABILITY_SEVERITY: IMPORTANT_HIGH_SEVERITY_COLOR,
+    CRITICAL_VULNERABILITY_SEVERITY: CRITICAL_SEVERITY_COLOR,
+    UNKNOWN_VULNERABILITY_SEVERITY: UNKNOWN_SEVERITY_COLOR,
 };
 
 export const vulnSeverityTextColors: Record<VulnerabilitySeverity, string> = {

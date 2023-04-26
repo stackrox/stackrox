@@ -14,18 +14,22 @@ import HoverHintListItem from 'Components/visuals/HoverHintListItem';
 import TextSelect from 'Components/TextSelect';
 import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
-import { severityLabels } from 'messages/common';
-import {
-    severityColorMap,
-    severityTextColorMap,
-    severityColorLegend,
-} from 'constants/severityColors';
+import { policySeverityColorMap } from 'constants/visuals/colors';
+import { severityLabels as policySeverityLabels } from 'messages/common';
+import { policySeverities } from 'types/policy.proto';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
 import { entitySortFieldsMap, cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 import { entityPriorityField } from 'Containers/VulnMgmt/VulnMgmt.constants';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+
+// Beware, policy instead of vulnerability severities because of getSeverityByCvss function!
+
+const legendData = policySeverities.map((severity) => ({
+    title: policySeverityLabels[severity],
+    color: policySeverityColorMap[severity],
+}));
 
 const ENTITY_COUNT = 25;
 const VULN_COUNT = 50;
@@ -375,8 +379,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                 ? (datum.metadata && datum.metadata.priority) || 0
                 : datum.priority;
         const severityKey = getSeverityByCvss(datum.avgSeverity);
-        const severityTextColor = severityTextColorMap[severityKey];
-        const severityText = severityLabels[severityKey];
+        const severityText = policySeverityLabels[severityKey];
 
         let cveCountText =
             filter !== 'Fixable' ? `${datum.plottedVulns.basicVulnCounter.all.total} total / ` : '';
@@ -389,11 +392,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                 (datum.metadata && datum.metadata.name),
             body: (
                 <ul className="flex-1 border-base-300 overflow-hidden">
-                    <HoverHintListItem
-                        key="severity"
-                        label="Severity"
-                        value={<span style={{ color: severityTextColor }}>{severityText}</span>}
-                    />
+                    <HoverHintListItem key="severity" label="Severity" value={severityText} />
                     <HoverHintListItem
                         key="riskPriority"
                         label="Risk Priority"
@@ -421,7 +420,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                 const vulnCount = result?.plottedVulns?.basicVulnCounter?.all?.total;
                 const url = workflowState.pushRelatedEntity(selectedEntityType, entityId).toUrl();
                 const avgSeverity = getAverageSeverity(result.plottedVulns.vulns);
-                const color = severityColorMap[getSeverityByCvss(avgSeverity)];
+                const color = policySeverityColorMap[getSeverityByCvss(avgSeverity)];
 
                 return {
                     x: vulnCount,
@@ -494,7 +493,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                         yMultiple={5}
                         yAxisTitle="Weighted CVSS Score"
                         xAxisTitle="Critical Vulnerabilities & Exposures"
-                        legendData={!small ? severityColorLegend : []}
+                        legendData={!small ? legendData : []}
                     />
                 );
             }
