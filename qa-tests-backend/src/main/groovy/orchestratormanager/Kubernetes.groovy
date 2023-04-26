@@ -56,6 +56,7 @@ import io.fabric8.kubernetes.api.model.Volume
 import io.fabric8.kubernetes.api.model.VolumeMount
 import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration
 import io.fabric8.kubernetes.api.model.apps.DaemonSet as K8sDaemonSet
+import io.fabric8.kubernetes.api.model.apps.DaemonSetBuilder
 import io.fabric8.kubernetes.api.model.apps.DaemonSetList
 import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
 import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
@@ -618,18 +619,91 @@ class Kubernetes implements OrchestratorMain {
         log.debug "${daemonSet.name}: daemonset removed."
     }
 
-    def waitForDaemonSetReady(String ns, String name, int retries, int intervalSeconds) {
-        log.debug "Waiting for daemonset ${ns}/${name} being ready"
-        Timer t = new Timer(retries, intervalSeconds)
-        while (t.IsValid()) {
-            def daemonSet = client.apps().daemonSets().inNamespace(ns).withName(name).get()
-            def numReady = daemonSet.status.numberReady
-            if (numReady >= daemonSet.status.desiredNumberScheduled) {
-                return true
-            }
-            log.debug "Waiting for daemonset ${ns}/${name} being ready, retrying..."
+    boolean containsDaemonSetContainer(String ns, String name, String containerName) {
+        return client.apps().daemonSets().inNamespace(ns).withName(name).get().spec.template
+            .spec.containers.findIndexOf { it.name == containerName } > -1
+    }
+
+    def updateDaemonSetEnv(String ns, String name, String containerName, String key, String value) {
+        log.debug "Update env var in ${ns}/${name}/${containerName}: ${key} = ${value}"
+        List<Container> containers = client.apps().daemonSets().inNamespace(ns).withName(name).get().spec.template
+            .spec.containers
+        int containerIndex = containers.findIndexOf { it.name == containerName }
+        if (containerIndex == -1) {
+            throw new RuntimeException("Could not update env var. No container named ${containerName} in ${ns}/${name}")
         }
-        return false
+        log.debug "Container ${ns}/${name}/${containerName} found on index: ${containerIndex}"
+        List<EnvVar> envVars = containers.get(containerIndex).env
+        log.debug "Current env vars of ${ns}/${name}/${containerName}: ${envVars}"
+
+        int index = envVars.findIndexOf { EnvVar it -> it.name == key }
+        if (index > -1) {
+            log.debug "Env var ${key} found on index: ${index}"
+            envVars.get(index).value = value
+        }
+        else {
+            log.debug "Env var ${key} not found. Adding it now"
+            envVars.add(new EnvVarBuilder().withName(key).withValue(value).build())
+        }
+
+        client.apps().daemonSets().inNamespace(ns).withName(name)
+            .edit { d -> new DaemonSetBuilder(d)
+                .editSpec()
+                .editTemplate()
+                .editSpec()
+                .editContainer(containerIndex)
+                .withEnv(envVars)
+                .endContainer()
+                .endSpec()
+                .endTemplate()
+                .endSpec()
+                .build() }
+    }
+
+    boolean deploymentReady(String ns, String name) {
+        def depl = client.apps().deployments().inNamespace(ns).withName(name).get()
+        if (depl == null) {
+            return false
+        }
+        return depl.status.readyReplicas > 0
+    }
+
+    boolean daemonSetReady(String ns, String name) {
+        def daemonSet = client.apps().daemonSets().inNamespace(ns).withName(name).get()
+        return daemonSet.status.numberReady >= daemonSet.status.desiredNumberScheduled
+    }
+
+    // daemonSetEnvVarUpdated returns true if all pods are ready and the env var has a given value for all pods
+    boolean daemonSetEnvVarUpdated(String ns, String name, String containerName,
+                                   String envVarName, String envVarValue) {
+        def pods = client.pods().inNamespace(ns).withLabel("app", name).list().getItems()
+        int podsPassing = 0
+        for (Pod pod : pods) {
+            log.debug "Found pod \"${pod.getMetadata().name}\" with ${pod.getSpec().containers.size()} containers"
+            int containerIndex = pod.getSpec().containers.findIndexOf { it.name == containerName }
+            if (containerIndex == -1) {
+                log.debug "Pod ${pod.getMetadata().name}: could not find container ${containerName}"
+                return false
+            }
+            List<EnvVar> envVars = pod.getSpec().containers.get(containerIndex).env
+            int index = envVars.findIndexOf { EnvVar it -> it.name == envVarName }
+            if (index == -1) {
+                log.debug "Pod ${pod.getMetadata().name}: " +
+                    "could not find env variable ${envVarName} in container ${containerName}"
+                return false
+            }
+            def value = envVars.get(index).value
+            log.debug "Pod ${pod.getMetadata().name}: " +
+                "Env var ${envVarName} found on index: ${index} with value ${value}"
+            if (value != envVarValue) {
+                log.debug "Pod ${pod.getMetadata().name}: " +
+                    "Expected value ${envVarValue} does not match current ${value}"
+                return false
+            }
+            log.debug "Pod ${pod.getMetadata().name}: All conditions have been met"
+            podsPassing++
+        }
+        return podsPassing == pods.size()
     }
 
     def createJob(Job job) {
