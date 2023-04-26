@@ -138,7 +138,7 @@ save_credentials_to_cluster
 disable_autoupgrader
 deploy_violations "test1"
 deploy_violations "test2"
-deploy_sensor "test1" "central.stackrox:443" "KERNEL_MODULE"
+deploy_sensor "test1" "central.stackrox:443" "EBPF"
 deploy_sensor "test2" "${CENTRAL_IP}:443" "EBPF"
 create_policy
 trigger_compliance_check
