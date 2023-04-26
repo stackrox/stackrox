@@ -31,15 +31,19 @@ func (r *RoxctlConfig) GetCentralConfigs() CentralConfigs {
 	return r.CentralConfigs
 }
 
-// CentralConfigs is the list of configurations per central.
-type CentralConfigs map[string]*CentralConfig
+// CentralURL is the URL of central.
+type CentralURL = string
 
-// GetCentralConfig retrieves a CentralConfig for a given host. If no central config is specified, nil will be returned.
-func (c CentralConfigs) GetCentralConfig(host string) *CentralConfig {
+// CentralConfigs is the list of configurations per central.
+type CentralConfigs map[CentralURL]*CentralConfig
+
+// GetCentralConfig retrieves a CentralConfig for a given central URL. If no central config is specified,
+// nil will be returned.
+func (c CentralConfigs) GetCentralConfig(centralURL CentralURL) *CentralConfig {
 	if c == nil {
 		return nil
 	}
-	return c[host]
+	return c[centralURL]
 }
 
 // CentralConfig contains all configurations available for a single central. Currently, it only holds access information.
