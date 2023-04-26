@@ -59,14 +59,14 @@ type Store interface {
 }
 
 type storeImpl struct {
-    db *postgres.DB
+    db postgres.DB
     mutex sync.Mutex
 }
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB) Store {
+func New(db postgres.DB) Store {
     return &storeImpl{
         db: db,
     }
@@ -226,6 +226,6 @@ func (s *storeImpl) retryableDelete(ctx context.Context) error {
 // Used for Testing
 
 // Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db *postgres.DB) {
+func Destroy(ctx context.Context, db postgres.DB) {
     _, _ = db.Exec(ctx, "DROP TABLE IF EXISTS {{.Schema.Table}} CASCADE")
 }

@@ -18,14 +18,14 @@ import (
 )
 
 // NewIndexer returns new indexer for `{{.Type}}`.
-func NewIndexer(db *postgres.DB) *indexerImpl {
+func NewIndexer(db postgres.DB) *indexerImpl {
 	return &indexerImpl {
 		db: db,
 	}
 }
 
 type indexerImpl struct {
-	db *postgres.DB
+	db postgres.DB
 }
 
 func (b *indexerImpl) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {

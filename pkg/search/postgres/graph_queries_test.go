@@ -67,7 +67,7 @@ type GraphQueriesTestSuite struct {
 	suite.Suite
 
 	testDB *pgtest.TestPostgres
-	pool   *postgres.DB
+	pool   postgres.DB
 
 	testGrandparentStore   testGrandparent.Store
 	testChild1Store        testChild1.Store

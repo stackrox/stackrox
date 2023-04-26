@@ -151,7 +151,7 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 	}
 
 	var gormDB *gorm.DB
-	var pgPool *postgres.DB
+	var pgPool postgres.DB
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		pgPool, gormDB, err = postgreshelper.Load(dbClone)
 		if err != nil {

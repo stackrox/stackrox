@@ -99,7 +99,7 @@ var (
 	}
 )
 
-func updatePolicies(db *postgres.DB) error {
+func updatePolicies(db postgres.DB) error {
 	return postgresHelper.MigratePoliciesWithDiffs(db, policyDiffFS, policyDiffs)
 }
 

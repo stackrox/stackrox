@@ -20,7 +20,7 @@ import (
 type NodesStoreSuite struct {
 	suite.Suite
 	ctx    context.Context
-	pool   *postgres.DB
+	pool   postgres.DB
 	gormDB *gorm.DB
 }
 

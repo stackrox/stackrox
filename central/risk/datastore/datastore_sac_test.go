@@ -35,7 +35,7 @@ type riskDatastoreSACSuite struct {
 	engine *rocksdb.RocksDB
 	index  bleve.Index
 
-	pool *postgres.DB
+	pool postgres.DB
 
 	datastore DataStore
 

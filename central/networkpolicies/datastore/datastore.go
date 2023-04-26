@@ -66,7 +66,7 @@ func New(storage store.Store, undoStorage undostore.UndoStore, undoDeploymentSto
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool *postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
 	dbstore := pgStore.New(pool)
 	undodbstore := undopostgres.New(pool)
 	undodeploymentdbstore := undoDeploymentPostgres.New(pool)

@@ -95,7 +95,7 @@ type ProcessBaselineServiceTestSuite struct {
 	service   Service
 
 	db   *rocksdb.RocksDB
-	pool *postgres.DB
+	pool postgres.DB
 
 	reprocessor        *mocks.MockLoop
 	resultDatastore    *resultsMocks.MockDataStore
@@ -166,7 +166,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestGetProcessBaseline() {
 		shouldFail     bool
 	}{
 		{
-			name:       "Empty DB",
+			name:       "Empty db",
 			baselines:  []*storage.ProcessBaseline{},
 			shouldFail: true,
 		},

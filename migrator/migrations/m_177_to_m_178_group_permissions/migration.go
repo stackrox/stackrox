@@ -75,7 +75,7 @@ func propagateAccessForPermission(permission string, accessLevel storage.Access,
 	return accessLevel
 }
 
-func migrateReplacedResourcesInPermissionSets(db *postgres.DB) error {
+func migrateReplacedResourcesInPermissionSets(db postgres.DB) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := permissionsetpostgresstore.New(db)
 

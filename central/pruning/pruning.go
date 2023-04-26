@@ -111,7 +111,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 }
 
 type garbageCollectorImpl struct {
-	postgres *pgPkg.DB
+	postgres pgPkg.DB
 
 	alerts          alertDatastore.DataStore
 	clusters        clusterDatastore.DataStore

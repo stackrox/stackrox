@@ -37,7 +37,7 @@ var (
 )
 
 // MigrateToPartitions updates the btree network flow indexes to be hash
-func MigrateToPartitions(gormDB *gorm.DB, db *postgres.DB) error {
+func MigrateToPartitions(gormDB *gorm.DB, db postgres.DB) error {
 	ctx := context.Background()
 
 	err := analyzeOldTable(ctx, db)
@@ -136,7 +136,7 @@ func cleanupDestinationPartition(ctx context.Context, store updated.FlowStore) e
 	return store.RemoveStaleFlows(ctx)
 }
 
-func analyzeOldTable(ctx context.Context, db *postgres.DB) error {
+func analyzeOldTable(ctx context.Context, db postgres.DB) error {
 	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
 	defer cancel()
 
@@ -144,7 +144,7 @@ func analyzeOldTable(ctx context.Context, db *postgres.DB) error {
 	return err
 }
 
-func getClusters(ctx context.Context, db *postgres.DB) ([]string, error) {
+func getClusters(ctx context.Context, db postgres.DB) ([]string, error) {
 	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
 	defer cancel()
 
@@ -169,7 +169,7 @@ func getClusters(ctx context.Context, db *postgres.DB) ([]string, error) {
 	return clusters, rows.Err()
 }
 
-func migrateData(ctx context.Context, db *postgres.DB, partitionName string, cluster string) error {
+func migrateData(ctx context.Context, db postgres.DB, partitionName string, cluster string) error {
 	clusterUUID, err := uuid.FromString(cluster)
 	if err != nil {
 		return err

@@ -33,7 +33,7 @@ func init() {
 	migrations.MustRegisterMigration(migration)
 }
 
-func migrateReportConfigs(postgresDB *postgres.DB, gormDB *gorm.DB) error {
+func migrateReportConfigs(postgresDB postgres.DB, gormDB *gorm.DB) error {
 	ctx := context.Background()
 	pgutils.CreateTableFromModel(ctx, gormDB, frozenSchema.CreateTableReportConfigurationsStmt)
 	newReportStore := newStore.New(postgresDB)

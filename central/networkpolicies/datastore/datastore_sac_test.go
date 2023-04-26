@@ -36,7 +36,7 @@ type networkPolicySACSuite struct {
 
 	datastore DataStore
 
-	pool *postgres.DB
+	pool postgres.DB
 
 	engine *bolt.DB
 

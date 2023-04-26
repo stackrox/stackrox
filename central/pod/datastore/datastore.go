@@ -51,7 +51,7 @@ func NewRocksDB(db *rocksdbBase.RocksDB, bleveIndex bleve.Index, indicators piDS
 }
 
 // NewPostgresDB creates a pod datastore based on Postgres
-func NewPostgresDB(db *postgres.DB, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
+func NewPostgresDB(db postgres.DB, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
 	store, err := cache.NewCachedStore(pgStore.New(db))
 	if err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func NewPostgresDB(db *postgres.DB, indicators piDS.DataStore, processFilter fil
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool *postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error) {
 	processIndicatorStore, err := piDS.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err

@@ -29,7 +29,7 @@ import (
 type serviceImpl struct {
 	v1.UnimplementedMetadataServiceServer
 
-	db              *postgres.DB
+	db              postgres.DB
 	systemInfoStore systemInfoStorage.Store
 }
 

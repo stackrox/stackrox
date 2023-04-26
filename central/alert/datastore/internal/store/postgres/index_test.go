@@ -24,7 +24,7 @@ var (
 type AlertsIndexSuite struct {
 	suite.Suite
 
-	pool    *postgres.DB
+	pool    postgres.DB
 	store   Store
 	indexer *indexerImpl
 }

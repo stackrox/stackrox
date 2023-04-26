@@ -25,7 +25,7 @@ type Databases struct {
 
 	PkgRocksDB *rocksdb.RocksDB
 	GormDB     *gorm.DB
-	PostgresDB *postgres.DB
+	PostgresDB postgres.DB
 }
 
 // A Migration represents a migration.

@@ -57,12 +57,12 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *postgres.DB
+	db    postgres.DB
 	mutex sync.Mutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB) Store {
+func New(db postgres.DB) Store {
 	return &storeImpl{
 		db: db,
 	}
@@ -420,13 +420,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Role) error) 
 
 //// Used for testing
 
-func dropTableRoles(ctx context.Context, db *postgres.DB) {
+func dropTableRoles(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS roles CASCADE")
 
 }
 
 // Destroy removes the access scope storage from the database
-func Destroy(ctx context.Context, db *postgres.DB) {
+func Destroy(ctx context.Context, db postgres.DB) {
 	dropTableRoles(ctx, db)
 }
 

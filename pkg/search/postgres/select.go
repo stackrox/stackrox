@@ -19,7 +19,7 @@ import (
 
 // RunSelectRequestForSchema executes a select request against the database for given schema. The input query must
 // explicitly specify select fields.
-func RunSelectRequestForSchema[T any](ctx context.Context, db *postgres.DB, schema *walker.Schema, q *v1.Query) ([]*T, error) {
+func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query) ([]*T, error) {
 	var query *query
 	var err error
 	// Add this to be safe and convert panics to errors,
@@ -105,7 +105,7 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 	return parsedQuery, nil
 }
 
-func retryableRunSelectRequestForSchema[T any](ctx context.Context, db *postgres.DB, query *query) ([]*T, error) {
+func retryableRunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, query *query) ([]*T, error) {
 	if len(query.SelectedFields) == 0 {
 		return nil, errors.New("select fields required for select query")
 	}

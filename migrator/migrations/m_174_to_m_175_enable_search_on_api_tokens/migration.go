@@ -34,7 +34,7 @@ func init() {
 	migrations.MustRegisterMigration(migration)
 }
 
-func migrateAPITokens(postgresDB *postgres.DB, gormDB *gorm.DB) error {
+func migrateAPITokens(postgresDB postgres.DB, gormDB *gorm.DB) error {
 	ctx := context.Background()
 	oldStore := oldAPITokenStore.New(postgresDB)
 	pgutils.CreateTableFromModel(ctx, gormDB, frozenSchema.CreateTableAPITokensStmt)
