@@ -15,6 +15,7 @@ scripts/
 !templates/collector-secret.yaml
 !templates/_*.tpl
 templates/*
+internal/defaults/50-images.yaml.htpl
 [<- end >]
 [<- end >]
 [< if .ReleaseBuild >]

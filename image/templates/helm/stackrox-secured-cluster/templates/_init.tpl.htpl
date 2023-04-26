@@ -228,6 +228,7 @@
 {{ end }}
 
 {{/* Image settings */}}
+{{/* TODO: ignore this if .CertsOnly */}}
 {{ include "srox.configureImage" (list $ ._rox.image.main) }}
 {{ include "srox.configureImage" (list $ ._rox.image.collector) }}
 [< if (not .KubectlOutput) ->]
