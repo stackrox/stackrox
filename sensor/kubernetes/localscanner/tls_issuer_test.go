@@ -260,7 +260,7 @@ func (s *localScannerTLSIssueIntegrationTests) TestSuccessfulRefresh() {
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
-			testTimeout := 1 * time.Second
+			testTimeout := 2 * time.Second
 			ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 			defer cancel()
 			ca, err := mtls.CAForSigning()

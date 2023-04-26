@@ -57,7 +57,7 @@ type retryTickerImpl struct {
 	initialBackoff wait.Backoff
 	backoff        wait.Backoff
 	timer          *time.Timer
-	mutex          sync.RWMutex
+	timerMutex     sync.RWMutex
 	stopFlag       Flag
 }
 
@@ -81,6 +81,9 @@ func (t *retryTickerImpl) Start() error {
 // wait for the tick function to complete before returning.
 func (t *retryTickerImpl) Stop() {
 	t.stopFlag.Set(true)
+
+	t.timerMutex.Lock()
+	defer t.timerMutex.Unlock()
 	t.setTickTimer(nil)
 }
 
@@ -90,6 +93,9 @@ func (t *retryTickerImpl) Stopped() bool {
 }
 
 func (t *retryTickerImpl) scheduleTick(timeToTick time.Duration) {
+	t.timerMutex.Lock()
+	defer t.timerMutex.Unlock()
+
 	t.setTickTimer(t.scheduler(timeToTick, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), t.timeout)
 		defer cancel()
@@ -113,8 +119,6 @@ func (t *retryTickerImpl) scheduleTick(timeToTick time.Duration) {
 }
 
 func (t *retryTickerImpl) setTickTimer(timer *time.Timer) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
 	if t.timer != nil {
 		t.timer.Stop()
 	}
@@ -122,7 +126,7 @@ func (t *retryTickerImpl) setTickTimer(timer *time.Timer) {
 }
 
 func (t *retryTickerImpl) getTickTimer() *time.Timer {
-	t.mutex.RLock()
-	defer t.mutex.RUnlock()
+	t.timerMutex.RLock()
+	defer t.timerMutex.RUnlock()
 	return t.timer
 }
