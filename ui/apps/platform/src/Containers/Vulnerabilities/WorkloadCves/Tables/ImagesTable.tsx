@@ -23,10 +23,18 @@ export const imageListQuery = gql`
                 tag
             }
             imageCVECountBySeverity(query: $query) {
-                critical
-                important
-                moderate
-                low
+                critical {
+                    total
+                }
+                important {
+                    total
+                }
+                moderate {
+                    total
+                }
+                low {
+                    total
+                }
             }
             operatingSystem
             deploymentCount(query: $query)
@@ -49,10 +57,10 @@ type Image = {
         tag: string;
     } | null;
     imageCVECountBySeverity: {
-        critical: number;
-        important: number;
-        moderate: number;
-        low: number;
+        critical: { total: number };
+        important: { total: number };
+        moderate: { total: number };
+        low: { total: number };
     };
     operatingSystem: string;
     deploymentCount: number;
@@ -120,10 +128,10 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                                 </Td>
                                 <Td>
                                     <SeverityCountLabels
-                                        critical={imageCVECountBySeverity.critical}
-                                        important={imageCVECountBySeverity.important}
-                                        moderate={imageCVECountBySeverity.moderate}
-                                        low={imageCVECountBySeverity.low}
+                                        critical={imageCVECountBySeverity.critical.total}
+                                        important={imageCVECountBySeverity.important.total}
+                                        moderate={imageCVECountBySeverity.moderate.total}
+                                        low={imageCVECountBySeverity.low.total}
                                     />
                                 </Td>
                                 <Td>{operatingSystem}</Td>
