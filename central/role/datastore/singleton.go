@@ -114,19 +114,6 @@ var defaultRoles = map[string]roleAttributes{
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.None],
 		description: "For users: use it to provide no read and write access to any resource",
 	},
-	// TODO: ROX-14398 Remove ScopeManager default role
-	accesscontrol.ScopeManager: {
-		idSuffix:    "scopemanager",
-		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.ScopeManager],
-		description: "For users: use it to create and modify scopes for the purpose of access control or vulnerability reporting",
-		resourceWithAccess: []permissions.ResourceWithAccess{
-			permissions.View(resources.Access),
-			permissions.View(resources.Cluster),
-			permissions.View(resources.Namespace),
-			permissions.View(resources.Access),
-			permissions.Modify(resources.Access),
-		},
-	},
 	accesscontrol.SensorCreator: {
 		idSuffix:    "sensorcreator",
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.SensorCreator],

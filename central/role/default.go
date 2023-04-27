@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-var (
 	// defaultScopesIDs is a string set containing the names of all default (built-in) scopes.
 	defaultScopesIDs = set.NewFrozenStringSet(AccessScopeIncludeAll.Id, AccessScopeExcludeAll.Id)
 
