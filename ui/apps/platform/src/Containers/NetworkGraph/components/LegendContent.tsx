@@ -29,10 +29,15 @@ function LegendContent() {
                         Node types
                     </Title>
                     <DescriptionListCompact isHorizontal termWidth="20px" className="pf-u-pl-md">
-                        <DescriptionListItem term={<BuilderImageIcon />} desc="Deployment" />
+                        <DescriptionListItem
+                            term={<BuilderImageIcon />}
+                            desc="Deployment"
+                            groupClassName="pf-u-align-items-center"
+                        />
                         <DescriptionListItem
                             term={<PficonNetworkRangeIcon />}
                             desc="External CIDR block"
+                            groupClassName="pf-u-align-items-center"
                         />
                     </DescriptionListCompact>
                 </FlexItem>
@@ -45,11 +50,20 @@ function LegendContent() {
                         Namespace types
                     </Title>
                     <DescriptionListCompact isHorizontal termWidth="20px" className="pf-u-pl-md">
-                        <DescriptionListItem term={<FilterIcon />} desc="Filtered namespace" />
-                        <DescriptionListItem term={<CodeBranchIcon />} desc="Related namespace" />
+                        <DescriptionListItem
+                            term={<FilterIcon />}
+                            desc="Filtered namespace"
+                            groupClassName="pf-u-align-items-center"
+                        />
+                        <DescriptionListItem
+                            term={<CodeBranchIcon />}
+                            desc="Related namespace"
+                            groupClassName="pf-u-align-items-center"
+                        />
                         <DescriptionListItem
                             term={<RelatedNSBorder />}
                             desc="Related namespace grouping"
+                            groupClassName="pf-u-align-items-center"
                         />
                     </DescriptionListCompact>
                 </FlexItem>
