@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Alert,
     Title,
@@ -19,12 +19,14 @@ import {
 } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 
+import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import { ClientPolicy, LifecycleStage } from 'types/policy.proto';
 
 import {
     appendEnforcementActionsForAddedLifecycleStage,
     filterEnforcementActionsForRemovedLifecycleStage,
     hasEnforcementActionForLifecycleStage,
+    initialPolicy,
 } from '../../policies.utils';
 import DownloadCLIDropdown from './DownloadCLIDropdown';
 
@@ -36,12 +38,28 @@ type PolicyBehaviorFormProps = {
 
 function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
     const { values, setFieldValue, setValues } = useFormikContext<ClientPolicy>();
+    const [lifeCycleChange, setLifeCycleChange] = useState<{
+        lifecycleStage: LifecycleStage;
+        isChecked: boolean;
+    } | null>(null);
+
     const hasEnforcementActions =
         values.enforcementActions?.length > 0 &&
         !values.enforcementActions?.includes('UNSET_ENFORCEMENT');
     const [showEnforcement, setShowEnforcement] = React.useState(hasEnforcementActions);
 
     function onChangeLifecycleStage(lifecycleStage: LifecycleStage, isChecked: boolean) {
+        if (values?.id) {
+            // for existing policies, warn that changing lifecycles will clear all policy criteria
+            setLifeCycleChange({ lifecycleStage, isChecked });
+        } else {
+            // for new policies, just update lifecycle stages
+            const newValues = getLifeCyclesUpdates(lifecycleStage, isChecked);
+            setValues(newValues);
+        }
+    }
+
+    function getLifeCyclesUpdates(lifecycleStage: LifecycleStage, isChecked: boolean) {
         /*
          * Set all changed values at once, because separate setFieldValue calls
          * for lifecycleStages and eventSource cause inconsistent incorrect validation.
@@ -64,7 +82,28 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                 values.enforcementActions
             );
         }
-        setValues(changedValues);
+        return changedValues;
+    }
+
+    function onConfirmChangeLifecycle(
+        lifecycleStage: LifecycleStage | undefined,
+        isChecked: boolean | undefined
+    ) {
+        // type guard, because TS is a cruel master
+        if (lifecycleStage) {
+            // first, update the lifecycles
+            const newValues = getLifeCyclesUpdates(lifecycleStage, !!isChecked);
+
+            // second, clear the policy criteria
+            const clearedCriteria = initialPolicy.policySections;
+            newValues.policySections = clearedCriteria;
+            setValues(newValues);
+        }
+        setLifeCycleChange(null);
+    }
+
+    function onCancelChangeLifecycle() {
+        setLifeCycleChange(null);
     }
 
     function onChangeEnforcementActions(lifecycleStage: LifecycleStage, isChecked: boolean) {
@@ -131,6 +170,22 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
             spaceItems={{ default: 'spaceItemsNone' }}
             flexWrap={{ default: 'nowrap' }}
         >
+            <ConfirmationModal
+                ariaLabel="Reset policy criteria"
+                confirmText="Reset policy criteria"
+                isOpen={!!lifeCycleChange}
+                onConfirm={() =>
+                    onConfirmChangeLifecycle(
+                        lifeCycleChange?.lifecycleStage,
+                        lifeCycleChange?.isChecked
+                    )
+                }
+                onCancel={onCancelChangeLifecycle}
+                title="Reset policy criteria?"
+            >
+                Editing the lifecycle stage will reset and clear any saved criteria for this policy.
+                You will be required to reselect policy criteria in the next step.
+            </ConfirmationModal>
             <Flex
                 direction={{ default: 'column' }}
                 spaceItems={{ default: 'spaceItemsNone' }}

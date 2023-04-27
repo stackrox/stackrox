@@ -28,6 +28,41 @@ function isValidAction(action: unknown): action is ExtendedPageAction {
     return action === 'clone' || action === 'create' || action === 'edit' || action === 'generate';
 }
 
+export const initialPolicy: ClientPolicy = {
+    id: '',
+    name: '',
+    description: '',
+    severity: 'LOW_SEVERITY',
+    disabled: false,
+    lifecycleStages: [],
+    notifiers: [],
+    lastUpdated: null,
+    eventSource: 'NOT_APPLICABLE',
+    isDefault: false,
+    rationale: '',
+    remediation: '',
+    categories: [],
+    exclusions: [],
+    scope: [],
+    enforcementActions: [],
+    excludedImageNames: [],
+    excludedDeploymentScopes: [],
+    SORTName: '', // For internal use only.
+    SORTLifecycleStage: '', // For internal use only.
+    SORTEnforcement: false, // For internal use only.
+    policyVersion: '',
+    serverPolicySections: [],
+    policySections: [
+        {
+            sectionName: 'Policy Section 1',
+            policyGroups: [],
+        },
+    ],
+    mitreAttackVectors: [],
+    criteriaLocked: false,
+    mitreVectorsLocked: false,
+};
+
 export type PoliciesSearch = {
     pageAction?: ExtendedPageAction;
     searchFilter?: SearchFilter;
