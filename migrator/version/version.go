@@ -82,7 +82,7 @@ func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.
 				return marshalErr
 			}
 
-			result = tx.Exec("INSERT INTO versions (seqnum, version, minseqnum, serialized)) VALUES($1, $2, $3, $4)", updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(), serialized)
+			result = tx.Exec("INSERT INTO versions (seqnum, version, minseqnum, serialized) VALUES($1, $2, $3, $4)", updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(), serialized)
 			return result.Error
 		})
 	})
