@@ -154,8 +154,20 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 
 	if !pointer.BoolDeref(req.DryRun, false) {
 		go m.filterAndPutAttemptedAlertsOnChan(req.Operation, alerts...)
+		if failDeployReviewRequest(alerts...) {
+			return fail(req.UID, message(alerts, !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass())), nil
+		}
 	}
 
 	log.Debugf("Violated policies: %d, rejecting %s request on %s/%s [%s]", len(alerts), req.Operation, req.Namespace, req.Name, req.Kind)
-	return fail(req.UID, message(alerts, !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass())), nil
+	return pass(req.UID), nil
+}
+
+func failDeployReviewRequest(alerts ...*storage.Alert) bool {
+	for _, alert := range alerts {
+		if alert.GetEnforcement().GetAction() != storage.EnforcementAction_UNSET_ENFORCEMENT {
+			return true
+		}
+	}
+	return false
 }
