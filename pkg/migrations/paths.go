@@ -15,8 +15,10 @@ const (
 	// Current is the current database in use.
 	Current = "current"
 	// PreviousClone is the symbolic link pointing to the previous databases.
+	// TODO (ROX-16774): remove
 	PreviousClone = ".previous"
 	// BackupClone is the symbolic link pointing to the previous databases.
+	// TODO (ROX-16774): remove
 	BackupClone = ".backup"
 	// RestoreClone is the symbolic link pointing to the restored database
 	RestoreClone = ".restore"
@@ -24,6 +26,7 @@ const (
 	// CurrentDatabase - current database
 	CurrentDatabase = "central_active"
 	// PreviousDatabase - previous database
+	// TODO (ROX-16774): remove
 	PreviousDatabase = "central_previous"
 	// BackupDatabase - backup database
 	BackupDatabase = "central_backup"
@@ -59,6 +62,7 @@ func GetBackupClone() string {
 }
 
 // GetPreviousClone - returns the previous clone
+// TODO (ROX-16774): remove
 func GetPreviousClone() string {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return PreviousDatabase

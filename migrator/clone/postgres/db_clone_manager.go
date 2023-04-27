@@ -17,13 +17,16 @@ const (
 	BackupClone = migrations.BackupDatabase
 
 	// PreviousClone - previous postgres clone used for rollback
+	// TODO (ROX-16774): remove
 	PreviousClone = migrations.PreviousDatabase
 
 	// TempClone - temp postgres clone
+	// TODO (ROX-16774): remove
 	TempClone = "central_temp"
 )
 
 var (
+	// TODO (ROX-16774): update to remove clones no longer used
 	knownClones = set.NewStringSet(CurrentClone, RestoreClone, BackupClone, PreviousClone)
 
 	log = logging.CurrentModule().Logger()

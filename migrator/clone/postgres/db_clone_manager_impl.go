@@ -71,6 +71,7 @@ func (d *dbCloneManagerImpl) Scan() error {
 	if !currExists || currClone.GetMigVersion() == nil {
 		log.Info("Cannot find the current database or it has no version, so we need to let it create and ignore other clones.")
 	} else {
+		// TODO:  Do we need to keep track of versions supported?
 		if currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0 {
 			// If there is no previous clone or force rollback is not requested, we cannot downgrade.
 			prevClone, prevExists := d.cloneMap[PreviousClone]
