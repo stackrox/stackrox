@@ -226,7 +226,19 @@ jobs:
       - pre-build-docs
     strategy:
       matrix:
-        branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
+        include:
+          - branding: RHACS_BRANDING
+            cli-artifact: cli-build
+            go-binaries-artifact: go-binaries-build
+            release: false
+          - branding: STACKROX_BRANDING
+            cli-artifact: cli-build
+            go-binaries-artifact: go-binaries-build
+            release: false
+          - branding: RHACS_BRANDING
+            cli-artifact: cli-build-release
+            go-binaries-artifact: go-binaries-build-release
+            release: true
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     container:
@@ -263,7 +275,7 @@ jobs:
 
       - uses: actions/download-artifact@v3
         with:
-          name: cli-build
+          name: ${{ matrix.cli-artifact }}
 
       - name: Unpack cli build
         run: |
@@ -271,7 +283,7 @@ jobs:
 
       - uses: actions/download-artifact@v3
         with:
-          name: go-binaries-build
+          name: ${{ matrix.go-binaries-artifact }}
 
       - name: Unpack Go binaries build
         run: |
