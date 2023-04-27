@@ -18,7 +18,7 @@
         "@patternfly/react-icons": "4.93.6",
         "@patternfly/react-styles": "4.92.6",
         "@patternfly/react-table": "4.112.39",
-        "@patternfly/react-topology": "^4.91.27",
+        "@patternfly/react-topology": "4.93.5",
         "@patternfly/react-user-feedback": "^1.0.7",
         "@stackrox/ui-components": "*",
         "axios": "^0.25.0",
