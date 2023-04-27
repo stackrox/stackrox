@@ -36,6 +36,7 @@ func init() {
 		&storage.Config{}:                                       resources.Administration,
 		&storage.ExternalBackup{}:                               resources.Integration,
 		&storage.Group{}:                                        resources.Access,
+		&storage.Hash{}:                                         resources.Hash,
 		&storage.ImageComponent{}:                               resources.Image,
 		&storage.ImageComponentEdge{}:                           resources.Image,
 		&storage.ImageCVE{}:                                     resources.Image,
