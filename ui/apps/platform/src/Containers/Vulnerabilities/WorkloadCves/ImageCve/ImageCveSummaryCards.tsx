@@ -12,10 +12,10 @@ export type ImageCveSummaryCount = {
 
 export type ImageCveSeveritySummary = {
     affectedImageCountBySeverity: {
-        critical: number;
-        important: number;
-        moderate: number;
-        low: number;
+        critical: { total: number };
+        important: { total: number };
+        moderate: { total: number };
+        low: { total: number };
     };
     affectedImageCount: number;
     topCVSS: number;
@@ -24,10 +24,18 @@ export type ImageCveSeveritySummary = {
 export const imageCveSeveritySummaryFragment = gql`
     fragment ImageCVESeveritySummary on ImageCVECore {
         affectedImageCountBySeverity {
-            critical
-            important
-            moderate
-            low
+            critical {
+                total
+            }
+            important {
+                total
+            }
+            moderate {
+                total
+            }
+            low {
+                total
+            }
         }
         affectedImageCount
         topCVSS
@@ -71,10 +79,10 @@ function ImageCveSummaryCards({
                 className="pf-u-flex-grow-1 pf-u-flex-basis-0"
                 title="Images by severity"
                 severityCounts={{
-                    CRITICAL_VULNERABILITY_SEVERITY: critical ?? 0,
-                    IMPORTANT_VULNERABILITY_SEVERITY: important ?? 0,
-                    MODERATE_VULNERABILITY_SEVERITY: moderate ?? 0,
-                    LOW_VULNERABILITY_SEVERITY: low ?? 0,
+                    CRITICAL_VULNERABILITY_SEVERITY: critical?.total ?? 0,
+                    IMPORTANT_VULNERABILITY_SEVERITY: important?.total ?? 0,
+                    MODERATE_VULNERABILITY_SEVERITY: moderate?.total ?? 0,
+                    LOW_VULNERABILITY_SEVERITY: low?.total ?? 0,
                 }}
                 hiddenSeverities={hiddenSeverities}
             />
