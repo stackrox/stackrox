@@ -69,7 +69,7 @@ function AffectedDeploymentsTable({
     return (
         // TODO UX question - Collapse to cards, or allow headers to overflow?
         // <TableComposable gridBreakPoint="grid-xl">
-        <TableComposable>
+        <TableComposable variant="compact">
             <Thead>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
