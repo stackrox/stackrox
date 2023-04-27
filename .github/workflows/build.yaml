@@ -306,6 +306,10 @@ jobs:
       - name: Generate OSS notice
         run: make ossls-notice
 
+      - name: Set build tag for prerelease images
+        if: ${{ matrix.release }}
+        run: echo "BUILD_TAG=$(make --quiet tag)-prerelease" >> "$GITHUB_ENV"
+
       - name: Build main images
         run: make docker-build-main-image
 
