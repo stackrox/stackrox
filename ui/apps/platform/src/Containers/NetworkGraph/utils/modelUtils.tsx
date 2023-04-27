@@ -1,6 +1,6 @@
 import { EdgeStyle, EdgeTerminalType, NodeShape } from '@patternfly/react-topology';
 
-import derivedNamespaceSVG from 'images/network-graph/derived-namespace.svg';
+import relatedNamespaceSVG from 'images/network-graph/related-namespace.svg';
 import filteredNamespaceSVG from 'images/network-graph/filtered-namespace.svg';
 
 import {
@@ -66,7 +66,7 @@ function getNamespaceNode(
         namespace,
         cluster,
         isFilteredNamespace,
-        labelIconClass: isFilteredNamespace ? filteredNamespaceSVG : derivedNamespaceSVG,
+        labelIconClass: isFilteredNamespace ? filteredNamespaceSVG : relatedNamespaceSVG,
         isFadedOut: false,
         badge: namespaceBadgeText,
         badgeColor: namespaceBadgeColor,
