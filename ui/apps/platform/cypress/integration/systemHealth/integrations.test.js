@@ -198,10 +198,10 @@ describe('System Health Integrations fixtures', () => {
             'integrationhealth/declarativeconfigs': { body: { integrationHealth } },
         });
 
-        const { integrationName, errorMessage, widgets } = selectors.integrations;
+        const { widgets } = selectors.integrations;
         const itemSelector = `${widgets.declarativeConfigs} tr:first`;
-        cy.get(`${itemSelector} td${integrationName}`).should('have.text', healthName);
-        cy.get(`${itemSelector} td${errorMessage}`).should('have.text', errorMessageText);
+        cy.get(`${itemSelector} td[data-label="Name"]`).should('have.text', healthName);
+        cy.get(`${itemSelector} td[data-label="Error"]`).should('have.text', errorMessageText);
     });
 
     it('should have no declarative configuration errors displayed', () => {
@@ -220,8 +220,8 @@ describe('System Health Integrations fixtures', () => {
         visitSystemHealth({
             'integrationhealth/declarativeconfigs': { body: { integrationHealth } },
         });
-        const { integrationName, widgets } = selectors.integrations;
+        const { widgets } = selectors.integrations;
         const itemSelector = `${widgets.declarativeConfigs} tr:first`;
-        cy.get(`${itemSelector} td${integrationName}`).should('not.exist');
+        cy.get(`${itemSelector} td[data-label="Name"]`).should('not.exist');
     });
 });

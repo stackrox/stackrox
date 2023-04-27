@@ -69,7 +69,6 @@ export const integrationHealth = {
     notifiers: '/v1/integrationhealth/notifiers',
     externalBackups: '/v1/integrationhealth/externalbackups',
     vulnDefinitions: '/v1/integrationhealth/vulndefinitions',
-    declarativeConfigs: '/v1/integrationhealth/declarativeconfigs',
 };
 
 export const integrations = {
