@@ -38,6 +38,9 @@ export const IMPORTANT_HIGH_SEVERITY_COLOR = 'var(--pf-global--palette--orange-2
 export const CRITICAL_SEVERITY_COLOR = 'var(--pf-global--palette--red-100)';
 export const UNKNOWN_SEVERITY_COLOR = 'var(--pf-global--palette--black-400)';
 
+export const COMPLIANCE_PASS_COLOR = LOW_SEVERITY_COLOR; // so long as LOW_SEVERITY_COLOR is blue!
+export const COMPLIANCE_FAIL_COLOR = CRITICAL_SEVERITY_COLOR;
+
 export const policySeverityColorMap: Record<PolicySeverity, string> = {
     LOW_SEVERITY: LOW_SEVERITY_COLOR,
     MEDIUM_SEVERITY: MODERATE_MEDIUM_SEVERITY_COLOR,
