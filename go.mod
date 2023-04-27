@@ -18,6 +18,7 @@ require (
 	github.com/blevesearch/bleve v1.0.14
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cloudflare/cfssl v1.6.4
+	github.com/cockroachdb/pebble v0.0.0-20230330185756-53a50a04c2ef
 	github.com/containers/image/v5 v5.24.2
 	github.com/coreos/go-oidc/v3 v3.5.0
 	github.com/coreos/go-systemd/v22 v22.5.0
@@ -28,6 +29,7 @@ require (
 	github.com/docker/docker v20.10.24+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0
+	github.com/driftprogramming/pgxpoolmock v1.1.0
 	github.com/facebookincubator/nvdtools v0.1.5
 	github.com/fatih/color v1.15.0
 	github.com/fullsailor/pkcs7 v0.0.0
@@ -234,7 +236,7 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.2 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
-	github.com/jackc/pgx/v5 v5.3.0 // indirect
+	github.com/jackc/pgx/v5 v5.3.1 // indirect
 	github.com/jackc/puddle v1.3.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jedisct1/go-minisign v0.0.0-20211028175153-1c139d1cc84b // indirect
@@ -360,8 +362,6 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
-
-require github.com/cockroachdb/pebble v0.0.0-20230330185756-53a50a04c2ef
 
 require (
 	github.com/DataDog/zstd v1.4.5 // indirect
