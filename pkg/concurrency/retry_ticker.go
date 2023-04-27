@@ -96,7 +96,7 @@ func (t *retryTickerImpl) scheduleTick(timeToTick time.Duration) {
 	t.timerMutex.Lock()
 	defer t.timerMutex.Unlock()
 
-	t.setTickTimer(t.scheduler(timeToTick, func() {
+	timer := t.scheduler(timeToTick, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), t.timeout)
 		defer cancel()
 
@@ -115,7 +115,12 @@ func (t *retryTickerImpl) scheduleTick(timeToTick time.Duration) {
 		}
 		t.backoff = t.initialBackoff // reset backoff strategy
 		t.scheduleTick(nextTimeToTick)
-	}))
+	})
+	// We take mutex at the start of this method (rather than inside setTickTimer)
+	// to make sure the setTickTimer() call below completes before one of
+	// the t.scheduleTick() calls in the goroutine started by t.scheduler() above
+	// starts running.
+	t.setTickTimer(timer)
 }
 
 func (t *retryTickerImpl) setTickTimer(timer *time.Timer) {
