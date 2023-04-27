@@ -12,7 +12,8 @@ import (
     "github.com/lib/pq"
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
-    {{if .FeatureFlag }} "github.com/stackrox/rox/pkg/features"{{ end }}
+    {{- if .FeatureFlag }}
+    "github.com/stackrox/rox/pkg/features"{{- end }}
     "github.com/stackrox/rox/pkg/postgres"
     "github.com/stackrox/rox/pkg/postgres/walker"
     "github.com/stackrox/rox/pkg/search"
