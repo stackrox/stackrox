@@ -1,27 +1,36 @@
 package service
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
+	"io"
+	"net/http"
 	"testing"
+	"time"
 
+	"github.com/driftprogramming/pgxpoolmock"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	configMocks "github.com/stackrox/rox/central/config/datastore/mocks"
+	"github.com/stackrox/rox/central/globaldb"
 	groupMocks "github.com/stackrox/rox/central/group/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
+	"github.com/stackrox/rox/pkg/postgres/mocks"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestDebugService(t *testing.T) {
 	t.Parallel()
-	suite.Run(t, new(DebugServiceTestSuite))
+	suite.Run(t, new(debugServiceTestSuite))
 }
 
-type DebugServiceTestSuite struct {
+type debugServiceTestSuite struct {
 	suite.Suite
 
 	mockCtrl *gomock.Controller
@@ -35,7 +44,7 @@ type DebugServiceTestSuite struct {
 	service *serviceImpl
 }
 
-func (s *DebugServiceTestSuite) SetupTest() {
+func (s *debugServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.noneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 
@@ -58,11 +67,11 @@ func (s *DebugServiceTestSuite) SetupTest() {
 	}
 }
 
-func (s *DebugServiceTestSuite) TearDownTest() {
+func (s *debugServiceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
-func (s *DebugServiceTestSuite) TestGetGroups() {
+func (s *debugServiceTestSuite) TestGetGroups() {
 	s.groupsMock.EXPECT().GetAll(gomock.Any()).Return(nil, errors.New("Test"))
 	_, err := s.service.getGroups(s.noneCtx)
 	s.Error(err, "expected error propagation")
@@ -84,7 +93,7 @@ func (s *DebugServiceTestSuite) TestGetGroups() {
 	s.Equal(expectedGroups, actualGroups)
 }
 
-func (s *DebugServiceTestSuite) TestGetRoles() {
+func (s *debugServiceTestSuite) TestGetRoles() {
 	s.rolesMock.EXPECT().GetAllRoles(gomock.Any()).Return(nil, errors.New("Test"))
 	_, err := s.service.getRoles(s.noneCtx)
 	s.Error(err, "expected error propagation")
@@ -125,7 +134,7 @@ func (s *DebugServiceTestSuite) TestGetRoles() {
 	s.EqualValues(expectedRoles, actualRoles)
 }
 
-func (s *DebugServiceTestSuite) TestGetNotifiers() {
+func (s *debugServiceTestSuite) TestGetNotifiers() {
 	s.notifiersMock.EXPECT().GetScrubbedNotifiers(gomock.Any()).Return(nil, errors.New("Test"))
 	_, err := s.service.getNotifiers(s.noneCtx)
 	s.Error(err, "expected error propagation")
@@ -147,7 +156,7 @@ func (s *DebugServiceTestSuite) TestGetNotifiers() {
 	s.EqualValues(expectedNotifiers, actualNotifiers)
 }
 
-func (s *DebugServiceTestSuite) TestGetConfig() {
+func (s *debugServiceTestSuite) TestGetConfig() {
 	s.configMock.EXPECT().GetConfig(gomock.Any()).Return(nil, errors.New("Test"))
 	_, err := s.service.getConfig(s.noneCtx)
 	s.Error(err, "expected error propagation")
@@ -167,4 +176,67 @@ func (s *DebugServiceTestSuite) TestGetConfig() {
 
 	s.NoError(err)
 	s.Equal(expectedConfig, actualConfig)
+}
+
+func (s *debugServiceTestSuite) TestGetBundle() {
+	stubTime := time.Date(2023, 03, 14, 0, 0, 0, 0, time.UTC)
+	now = func() time.Time {
+		return stubTime
+	}
+
+	w := mockResponseWriter{
+		code: http.StatusOK,
+		data: bytes.NewBuffer(nil),
+	}
+	testutils.SetVersion(s.T(), testutils.GetExampleVersion(s.T()))
+	db := mocks.NewMockDB(s.mockCtrl)
+	pgxRows := pgxpoolmock.NewRows([]string{"server_version"}).AddRow("15.1").ToPgxRows()
+	// Workaround for https://github.com/driftprogramming/pgxpoolmock/issues/8
+	pgxRows.Next()
+	db.EXPECT().QueryRow(gomock.Any(), "SHOW server_version;").Return(pgxRows)
+	globaldb.SetPostgresTest(s.T(), db)
+
+	s.configMock.EXPECT().GetConfig(gomock.Any()).Return(&storage.Config{}, nil)
+	s.service.writeZippedDebugDump(context.Background(), &w, "debug.zip", debugDumpOptions{
+		logs:              0,
+		telemetryMode:     0,
+		withCPUProfile:    false,
+		withLogImbue:      false,
+		withAccessControl: false,
+		withNotifiers:     false,
+		withCentral:       false,
+		clusters:          nil,
+		since:             time.Now(),
+	})
+
+	s.Equal(http.StatusOK, w.code)
+
+	body, err := io.ReadAll(w.data)
+	s.Require().NoError(err)
+
+	zipReader, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
+	s.Require().NoError(err)
+
+	s.Assert().Len(zipReader.File, 2)
+	for _, zipFile := range zipReader.File {
+		s.T().Log("Reading file:", zipFile.Name)
+		s.Assert().Equal(stubTime, zipFile.Modified.UTC())
+	}
+}
+
+type mockResponseWriter struct {
+	data *bytes.Buffer
+	code int
+}
+
+func (rw *mockResponseWriter) Header() http.Header {
+	return make(http.Header)
+}
+
+func (rw *mockResponseWriter) Write(data []byte) (int, error) {
+	return rw.data.Write(data)
+}
+
+func (rw *mockResponseWriter) WriteHeader(statusCode int) {
+	rw.code = statusCode
 }

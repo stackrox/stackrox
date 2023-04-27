@@ -81,10 +81,11 @@ func GetPostgres() postgres.DB {
 	return postgresDB
 }
 
-// GetPostgresTest returns a global database instance. It should be used in tests only.
-func GetPostgresTest(t *testing.T) postgres.DB {
-	t.Log("Initializing Postgres...")
-	return InitializePostgres(context.Background())
+// SetPostgresTest sets a global database instance. It should be used in tests only.
+func SetPostgresTest(t *testing.T, db postgres.DB) postgres.DB {
+	t.Log("Initializing Postgres... ")
+	postgresDB = db
+	return postgresDB
 }
 
 // InitializePostgres creates and returns returns a global database instance.
