@@ -303,6 +303,11 @@ var (
 	Expiration = newFieldLabel("Expiration")
 	Revoked    = newFieldLabel("Revoked")
 
+	// Version fields
+	Version               = newFieldLabel("Version")
+	MinSequenceNumber     = newFieldLabel("Minimum Sequence Number")
+	CurrentSequenceNumber = newFieldLabel("Current Sequence Number")
+
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
 	TestKey2              = newFieldLabel("Test Key 2")

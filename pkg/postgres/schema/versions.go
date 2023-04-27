@@ -35,5 +35,8 @@ const (
 
 // Versions holds the Gorm model for Postgres table `versions`.
 type Versions struct {
+	SeqNum     int32  `gorm:"column:seqnum;type:integer"`
+	Version    string `gorm:"column:version;type:varchar"`
+	MinSeqNum  int32  `gorm:"column:minseqnum;type:integer"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

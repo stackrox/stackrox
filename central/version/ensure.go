@@ -37,6 +37,7 @@ func Ensure(versionStore vStore.Store) error {
 				SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 				Version:       versionUtil.GetMainVersion(),
 				LastPersisted: timestamp.TimestampNow(),
+				MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
 			},
 		)
 		if err != nil {

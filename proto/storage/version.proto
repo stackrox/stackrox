@@ -10,12 +10,12 @@ package storage;
 
 message Version {
     // This is a strictly incrementing integer describing the DB version.
-    int32 seq_num = 1 [(gogoproto.moretags) = 'sql:"type(integer)"'];
+    int32 seq_num = 1 [(gogoproto.moretags) = 'search:"Current Sequence Number"'];
     // Associated version metadata. (For example, the corresponding product version.)
-    string version = 2 [(gogoproto.moretags) = 'sql:"type(varchar)"'];
+    string version = 2 [(gogoproto.moretags) = 'search:"Version"'];
     // Last time version was updated
     google.protobuf.Timestamp last_persisted = 3;
     // The minimum sequence number supported by this iteration of the database.  Rollbacks
     // to versions prior to this sequence number are not supported.
-    int32 min_seq_num = 4[(gogoproto.moretags) = 'sql:"type(integer)"'];
+    int32 min_seq_num = 4[(gogoproto.moretags) = 'search:"Minimum Sequence Number"'];
 }

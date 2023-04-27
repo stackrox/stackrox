@@ -12,6 +12,9 @@ func ConvertVersionFromProto(obj *storage.Version) (*schema.Versions, error) {
 		return nil, err
 	}
 	model := &schema.Versions{
+		Version:    obj.GetVersion(),
+		SeqNum:     obj.GetSeqNum(),
+		MinSeqNum:  obj.GetMinSeqNum(),
 		Serialized: serialized,
 	}
 	return model, nil

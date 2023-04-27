@@ -49,11 +49,13 @@ func insertIntoVersions(ctx context.Context, tx *postgres.Tx, obj *storage.Versi
 	}
 
 	values := []interface{}{
-		// parent primary keys start
+		obj.GetSeqNum(),
+		obj.GetVersion(),
+		obj.GetMinSeqNum(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO versions (serialized) VALUES($1)"
+	finalStr := "INSERT INTO versions (seqnum, version, minseqnum, serialized) VALUES($1, $2, $3, $4)"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err

@@ -32,6 +32,7 @@ type MigrationVersion struct {
 	dbPath        string
 	MainVersion   string `yaml:"image"`
 	SeqNum        int    `yaml:"database"`
+	MinimumSeqNum int    `yaml:"mindatabase"`
 	LastPersisted time.Time
 }
 
@@ -65,9 +66,10 @@ func Read(dbPath string) (*MigrationVersion, error) {
 func SetCurrent(dbPath string) {
 	if curr, err := Read(dbPath); err != nil || curr.MainVersion != version.GetMainVersion() || curr.SeqNum != LastRocksDBVersionSeqNum() {
 		newVersion := &MigrationVersion{
-			dbPath:      dbPath,
-			MainVersion: version.GetMainVersion(),
-			SeqNum:      mathutil.MinInt(LastRocksDBVersionSeqNum(), CurrentDBVersionSeqNum()),
+			dbPath:        dbPath,
+			MainVersion:   version.GetMainVersion(),
+			SeqNum:        mathutil.MinInt(LastRocksDBVersionSeqNum(), CurrentDBVersionSeqNum()),
+			MinimumSeqNum: MinimumSupportedDBVersionSeqNum(),
 		}
 		err := newVersion.atomicWrite()
 		if err != nil {
