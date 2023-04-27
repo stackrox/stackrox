@@ -539,10 +539,13 @@ class NetworkFlowTest extends BaseSpecification {
         }
     }
 
-    // TODO(ROX-7046): Re-enable this test
     @Tag("NetworkFlowVisualization")
-    @Ignore("ROX-7046 - this test does not pass")
     def "Verify intra-cluster connection via external IP"() {
+        // We changed the test to reflect the NetworkGraph's current behavior. Communication between two deployments
+        // through a LoadBalancer shows an edge from 'External Entities', not an edge between the two deployments.
+        // ROX-17936 should address whether we revert to the old behavior or we maintain this new behavior.
+        // We do not test this in OCP. Manual testing on OCP shows the same behavior but on prow times out most of the time.
+        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
         given:
         "Deployment A, exposed via LB"
         String deploymentUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
@@ -565,9 +568,11 @@ class NetworkFlowTest extends BaseSpecification {
 
         then:
         "Check for edge in network graph"
-        log.info "Checking for edge from internal to ${NGINXCONNECTIONTARGET} using its external address"
-        List<Edge> edges = NetworkGraphUtil.checkForEdge(newDeployment.deploymentUid, deploymentUid, null, 180)
-        assert edges
+        withRetry(2, 10) {
+            log.info "Checking for edge from internal to ${NGINXCONNECTIONTARGET} using its external address"
+            List<Edge> edgesToExternalSource = NetworkGraphUtil.checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
+            assert edgesToExternalSource
+        }
 
         cleanup:
         "remove the new deployment"
