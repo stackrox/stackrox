@@ -220,10 +220,19 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 				actualCVECnt, err := image.ImageCVECountBySeverity(ctx, RawQuery{Query: paginatedQ.Query})
 				assert.NoError(t, err)
 
-				assert.Equal(t, int32(expectedCVESevCount.critical), actualCVECnt.Critical(ctx))
-				assert.Equal(t, int32(expectedCVESevCount.important), actualCVECnt.Important(ctx))
-				assert.Equal(t, int32(expectedCVESevCount.moderate), actualCVECnt.Moderate(ctx))
-				assert.Equal(t, int32(expectedCVESevCount.low), actualCVECnt.Low(ctx))
+				critical, err := actualCVECnt.Critical(ctx)
+				assert.NoError(t, err)
+				important, err := actualCVECnt.Important(ctx)
+				assert.NoError(t, err)
+				moderate, err := actualCVECnt.Moderate(ctx)
+				assert.NoError(t, err)
+				low, err := actualCVECnt.Low(ctx)
+				assert.NoError(t, err)
+
+				assert.Equal(t, int32(expectedCVESevCount.critical), critical.Total(ctx))
+				assert.Equal(t, int32(expectedCVESevCount.important), important.Total(ctx))
+				assert.Equal(t, int32(expectedCVESevCount.moderate), moderate.Total(ctx))
+				assert.Equal(t, int32(expectedCVESevCount.low), low.Total(ctx))
 			}
 		})
 	}
