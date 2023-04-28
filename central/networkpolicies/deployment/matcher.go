@@ -7,7 +7,12 @@ import (
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/labels"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // IsolationDetails represents the isolation level of a deployment.
@@ -69,7 +74,12 @@ func buildNetworkPolicies(ctx context.Context, store networkPolicyDS.DataStore, 
 		for _, policy := range policies {
 			selector, err := labels.CompileSelector(policy.GetSpec().GetPodSelector())
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to create selector for policy: %s", policy.GetId())
+				log.Warnf("compile error in Network Policy (cluster:%s namespace:%s name:%s) for selector: %+v",
+					policy.GetClusterName(),
+					policy.GetNamespace(),
+					policy.GetName(),
+					policy.GetSpec().GetPodSelector())
+				continue
 			}
 			result[clusterNs] = append(result[clusterNs], selectablePolicy{
 				PolicyID: policy.GetId(),

@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -21,9 +22,11 @@ var (
 
 func givenNetworkPolicy(id, cluster, namespace string, types []storage.NetworkPolicyType, podSelector *storage.LabelSelector) *storage.NetworkPolicy {
 	return &storage.NetworkPolicy{
-		Id:        id,
-		ClusterId: cluster,
-		Namespace: namespace,
+		Id:          id,
+		Name:        fmt.Sprintf("name-%s", id),
+		ClusterId:   cluster,
+		Namespace:   namespace,
+		ClusterName: fmt.Sprintf("name-%s", cluster),
 		Spec: &storage.NetworkPolicySpec{
 			PodSelector: podSelector,
 			PolicyTypes: types,
@@ -35,6 +38,18 @@ func givenPodSelector(key, value string) *storage.LabelSelector {
 	return &storage.LabelSelector{
 		MatchLabels: map[string]string{
 			key: value,
+		},
+	}
+}
+
+func givenIncorrectPodSelector() *storage.LabelSelector {
+	return &storage.LabelSelector{
+		Requirements: []*storage.LabelSelector_Requirement{
+			{
+				Key:    "bogus",
+				Op:     storage.LabelSelector_UNKNOWN,
+				Values: []string{"a", "b"},
+			},
 		},
 	}
 }
@@ -54,6 +69,28 @@ func givenDeployment(id, cluster, namespace string, labels map[string]string) *s
 		Namespace: namespace,
 		PodLabels: labels,
 	}
+}
+
+func Test_MatchDeployments_NoError_SelectorCompileError(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+
+	mockNetpol := networkPolicyMocks.NewMockDataStore(mockCtrl)
+
+	mockNetpol.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Eq(fixtureconsts.Cluster1), gomock.Eq("ns1")).
+		Return([]*storage.NetworkPolicy{
+			givenNetworkPolicy(fixtureconsts.NetworkPolicy1, fixtureconsts.Cluster1, "ns1", IngressType,
+				givenIncorrectPodSelector()),
+		}, nil)
+	ctx := context.Background()
+
+	_, err := BuildMatcher(ctx, mockNetpol, set.NewSet[ClusterNamespace]([]ClusterNamespace{
+		{
+			Cluster:   fixtureconsts.Cluster1,
+			Namespace: "ns1",
+		},
+	}...))
+
+	require.NoError(t, err)
 }
 
 func Test_MatchDeployments(t *testing.T) {
