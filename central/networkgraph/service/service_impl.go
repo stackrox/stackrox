@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/entity/mappings"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/sachelper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -71,6 +72,7 @@ type serviceImpl struct {
 	networkTreeMgr networktree.Manager
 	deployments    deploymentDS.DataStore
 	clusters       clusterDS.DataStore
+	networkPolicy  networkPolicyDS.DataStore
 	graphConfig    datastore.DataStore
 
 	clusterSACHelper sachelper.ClusterSacHelper

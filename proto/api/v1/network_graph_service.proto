@@ -45,6 +45,7 @@ message NetworkGraphRequest {
 
     bool              include_ports = 4;
     NetworkGraphScope scope         = 5;
+    bool include_policies           = 6;
 }
 
 message NetworkGraph {
