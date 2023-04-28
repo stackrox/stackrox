@@ -9,40 +9,21 @@ import {
     Td,
     ExpandableRowContent,
 } from '@patternfly/react-table';
-import { gql } from '@apollo/client';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
+import { graphql } from 'generated/graphql-codegen';
+import { DeploymentsForCveFragment } from 'generated/graphql-codegen/graphql';
 import { getEntityPagePath } from '../searchUtils';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
-import DeploymentComponentVulnerabilitiesTable, {
-    DeploymentComponentVulnerability,
-    ImageMetadataContext,
-    deploymentComponentVulnerabilitiesFragment,
-    imageMetadataContextFragment,
-} from './DeploymentComponentVulnerabilitiesTable';
+import DeploymentComponentVulnerabilitiesTable from './DeploymentComponentVulnerabilitiesTable';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import DateDistanceTd from '../components/DatePhraseTd';
 import { VulnerabilitySeverityLabel } from '../types';
 
-export type DeploymentForCve = {
-    id: string;
-    name: string;
-    namespace: string;
-    clusterName: string;
-    created: string | null;
-    lowImageCount: number;
-    moderateImageCount: number;
-    importantImageCount: number;
-    criticalImageCount: number;
-    images: (ImageMetadataContext & { imageComponents: DeploymentComponentVulnerability[] })[];
-};
-
-export const deploymentsForCveFragment = gql`
-    ${imageMetadataContextFragment}
-    ${deploymentComponentVulnerabilitiesFragment}
+export const deploymentsForCveFragment = graphql(/* GraphQL */ `
     fragment DeploymentsForCVE on Deployment {
         id
         name
@@ -60,10 +41,10 @@ export const deploymentsForCveFragment = gql`
             }
         }
     }
-`;
+`);
 
 export type AffectedDeploymentsTableProps = {
-    deployments: DeploymentForCve[];
+    deployments: DeploymentsForCveFragment[];
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     filteredSeverities?: VulnerabilitySeverityLabel[];

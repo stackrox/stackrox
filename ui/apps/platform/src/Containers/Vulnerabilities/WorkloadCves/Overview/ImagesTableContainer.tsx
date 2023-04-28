@@ -6,9 +6,9 @@ import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
+import { GetEntityTypeCountsQuery } from 'generated/graphql-codegen/graphql';
 import ImagesTable, { imageListQuery } from '../Tables/ImagesTable';
 import TableErrorComponent from '../components/TableErrorComponent';
-import { EntityCounts } from '../components/EntityTypeToggleGroup';
 import { getCveStatusScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
 import { defaultImageSortFields, imagesDefaultSort } from '../sortUtils';
 import { DefaultFilters, VulnerabilitySeverityLabel, CveStatusTab } from '../types';
@@ -16,7 +16,7 @@ import TableEntityToolbar from '../components/TableEntityToolbar';
 
 type ImagesTableContainerProps = {
     defaultFilters: DefaultFilters;
-    countsData: EntityCounts;
+    countsData: GetEntityTypeCountsQuery;
     cveStatusTab?: CveStatusTab; // TODO Make this required once Observed/Deferred/FP states are re-implemented
     pagination: ReturnType<typeof useURLPagination>;
 };

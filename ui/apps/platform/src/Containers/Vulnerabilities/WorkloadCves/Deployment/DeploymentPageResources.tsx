@@ -8,29 +8,29 @@ import {
     Spinner,
     Text,
 } from '@patternfly/react-core';
-import { gql, useQuery } from '@apollo/client';
-import { Pagination as PaginationParam } from 'services/types';
+import { useQuery } from '@apollo/client';
 
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import { graphql } from 'generated/graphql-codegen';
 import { defaultImageSortFields, imagesDefaultSort } from '../sortUtils';
 import TableErrorComponent from '../components/TableErrorComponent';
-import ImageResourceTable, { ImageResources, imageResourcesFragment } from './ImageResourceTable';
+import ImageResourceTable from './ImageResourceTable';
 
 export type DeploymentPageResourcesProps = {
     deploymentId: string;
 };
 
-const deploymentResourcesQuery = gql`
-    ${imageResourcesFragment}
+const deploymentResourcesQuery = graphql(/* GraphQL */ `
     query getDeploymentResources($id: ID!, $query: String, $pagination: Pagination) {
         deployment(id: $id) {
             id
+            imageCount(query: $query)
             ...ImageResources
         }
     }
-`;
+`);
 
 function DeploymentPageResources({ deploymentId }: DeploymentPageResourcesProps) {
     const { page, perPage, setPage, setPerPage } = useURLPagination(20);
@@ -42,10 +42,7 @@ function DeploymentPageResources({ deploymentId }: DeploymentPageResourcesProps)
 
     const imageTableToggle = useSelectToggle(true);
 
-    const { data, previousData, loading, error } = useQuery<
-        { deployment: ImageResources | null },
-        { id: string; query: string; pagination: PaginationParam }
-    >(deploymentResourcesQuery, {
+    const { data, previousData, loading, error } = useQuery(deploymentResourcesQuery, {
         variables: {
             id: deploymentId,
             query: '',
@@ -107,7 +104,7 @@ function DeploymentPageResources({ deploymentId }: DeploymentPageResourcesProps)
                                 }}
                             />
                             <ImageResourceTable
-                                data={deploymentResourcesData}
+                                deployment={deploymentResourcesData}
                                 getSortParams={getSortParams}
                             />
                         </div>

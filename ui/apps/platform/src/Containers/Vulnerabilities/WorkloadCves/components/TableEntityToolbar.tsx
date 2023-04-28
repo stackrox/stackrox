@@ -3,14 +3,15 @@ import { Divider, Toolbar, ToolbarItem, ToolbarContent, Pagination } from '@patt
 
 import { SortOption } from 'types/table';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { GetEntityTypeCountsQuery } from 'generated/graphql-codegen/graphql';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import { DynamicTableLabel } from './DynamicIcon';
-import EntityTypeToggleGroup, { EntityCounts } from './EntityTypeToggleGroup';
+import EntityTypeToggleGroup from './EntityTypeToggleGroup';
 import { DefaultFilters } from '../types';
 
 type TableEntityToolbarProps = {
     defaultFilters: DefaultFilters;
-    countsData: EntityCounts;
+    countsData: GetEntityTypeCountsQuery;
     setSortOption: (sortOption: SortOption) => void;
     pagination: UseURLPaginationResult;
     tableRowCount: number;

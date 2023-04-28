@@ -1,11 +1,12 @@
 import React from 'react';
-import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Button, ButtonVariant, Truncate } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { UseURLSortResult } from 'hooks/useURLSort';
+import { graphql } from 'generated/graphql-codegen';
+import { GetDeploymentListQuery } from 'generated/graphql-codegen/graphql';
 import { getEntityPagePath } from '../searchUtils';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
@@ -14,7 +15,7 @@ import DateDistanceTd from '../components/DatePhraseTd';
 import TooltipTh from '../components/TooltipTh';
 import { VulnerabilitySeverityLabel } from '../types';
 
-export const deploymentListQuery = gql`
+export const deploymentListQuery = graphql(/* GraphQL */ `
     query getDeploymentList($query: String, $pagination: Pagination) {
         deployments(query: $query, pagination: $pagination) {
             id
@@ -39,25 +40,10 @@ export const deploymentListQuery = gql`
             created
         }
     }
-`;
-
-export type Deployment = {
-    id: string;
-    name: string;
-    imageCVECountBySeverity: {
-        critical: { total: number };
-        important: { total: number };
-        moderate: { total: number };
-        low: { total: number };
-    };
-    clusterName: string;
-    namespace: string;
-    imageCount: number;
-    created: string | null;
-};
+`);
 
 type DeploymentsTableProps = {
-    deployments: Deployment[];
+    deployments: GetDeploymentListQuery['deployments'];
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     filteredSeverities?: VulnerabilitySeverityLabel[];

@@ -6,17 +6,17 @@ import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
-import DeploymentsTable, { Deployment, deploymentListQuery } from '../Tables/DeploymentsTable';
+import { GetEntityTypeCountsQuery } from 'generated/graphql-codegen/graphql';
+import DeploymentsTable, { deploymentListQuery } from '../Tables/DeploymentsTable';
 import TableErrorComponent from '../components/TableErrorComponent';
 import TableEntityToolbar from '../components/TableEntityToolbar';
-import { EntityCounts } from '../components/EntityTypeToggleGroup';
 import { getCveStatusScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
 import { defaultDeploymentSortFields, deploymentsDefaultSort } from '../sortUtils';
 import { DefaultFilters, VulnerabilitySeverityLabel, CveStatusTab } from '../types';
 
 type DeploymentsTableContainerProps = {
     defaultFilters: DefaultFilters;
-    countsData: EntityCounts;
+    countsData: GetEntityTypeCountsQuery;
     cveStatusTab?: CveStatusTab; // TODO Make this required once Observed/Deferred/FP states are re-implemented
     pagination: ReturnType<typeof useURLPagination>;
 };
@@ -37,9 +37,7 @@ function DeploymentsTableContainer({
         onSort: () => setPage(1),
     });
 
-    const { error, loading, data, previousData } = useQuery<{
-        deployments: Deployment[];
-    }>(deploymentListQuery, {
+    const { error, loading, data, previousData } = useQuery(deploymentListQuery, {
         variables: {
             query: getCveStatusScopedQueryString(querySearchFilter, cveStatusTab),
             pagination: {

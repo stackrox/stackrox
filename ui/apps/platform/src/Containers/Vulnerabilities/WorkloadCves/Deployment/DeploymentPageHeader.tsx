@@ -1,18 +1,10 @@
 import React from 'react';
-import { gql } from '@apollo/client';
 import { Flex, Title, LabelGroup, Label, Skeleton } from '@patternfly/react-core';
 import { getDateTime } from 'utils/dateUtils';
+import { graphql } from 'generated/graphql-codegen';
+import { DeploymentMetadataFragment } from 'generated/graphql-codegen/graphql';
 
-export type DeploymentMetadata = {
-    id: string;
-    name: string;
-    namespace: string;
-    clusterName: string;
-    created: string | null;
-    imageCount: number;
-};
-
-export const deploymentMetadataFragment = gql`
+export const deploymentMetadataFragment = graphql(/* GraphQL */ `
     fragment DeploymentMetadata on Deployment {
         id
         name
@@ -21,24 +13,24 @@ export const deploymentMetadataFragment = gql`
         created
         imageCount
     }
-`;
+`);
 
 export type DeploymentPageHeaderProps = {
-    data: DeploymentMetadata | null | undefined;
+    deployment: DeploymentMetadataFragment | null | undefined;
 };
 
-function DeploymentPageHeader({ data }: DeploymentPageHeaderProps) {
-    return data ? (
+function DeploymentPageHeader({ deployment }: DeploymentPageHeaderProps) {
+    return deployment ? (
         <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexStart' }}>
             <Title headingLevel="h1" className="pf-u-mb-sm">
-                {data.name}
+                {deployment.name}
             </Title>
             <LabelGroup numLabels={3}>
                 <Label>
-                    In: {data.clusterName}/{data.namespace}
+                    In: {deployment.clusterName}/{deployment.namespace}
                 </Label>
-                <Label>Images: {data.imageCount}</Label>
-                {data.created && <Label>Created: {getDateTime(data.created)}</Label>}
+                <Label>Images: {deployment.imageCount}</Label>
+                {deployment.created && <Label>Created: {getDateTime(deployment.created)}</Label>}
             </LabelGroup>
         </Flex>
     ) : (

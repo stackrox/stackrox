@@ -11,18 +11,16 @@ import {
     TabsComponent,
 } from '@patternfly/react-core';
 import { useParams } from 'react-router-dom';
-import { gql, useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
+import { graphql } from 'generated/graphql-codegen';
 import { getOverviewCvesPath } from '../searchUtils';
-import DeploymentPageHeader, {
-    DeploymentMetadata,
-    deploymentMetadataFragment,
-} from './DeploymentPageHeader';
+import DeploymentPageHeader from './DeploymentPageHeader';
 import TableErrorComponent from '../components/TableErrorComponent';
 import { detailsTabValues } from '../types';
 import DeploymentPageResources from './DeploymentPageResources';
@@ -33,25 +31,22 @@ const workloadCveOverviewDeploymentsPath = getOverviewCvesPath({
     entityTab: 'Deployment',
 });
 
-const deploymentMetadataQuery = gql`
-    ${deploymentMetadataFragment}
+const deploymentMetadataQuery = graphql(/* GraphQL */ `
     query getDeploymentMetadata($id: ID!) {
         deployment(id: $id) {
+            name
             ...DeploymentMetadata
         }
     }
-`;
+`);
 
 function DeploymentPage() {
     const { deploymentId } = useParams() as { deploymentId: string };
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
-    const metadataRequest = useQuery<{ deployment: DeploymentMetadata | null }, { id: string }>(
-        deploymentMetadataQuery,
-        {
-            variables: { id: deploymentId },
-        }
-    );
+    const metadataRequest = useQuery(deploymentMetadataQuery, {
+        variables: { id: deploymentId },
+    });
 
     const deploymentName = metadataRequest.data?.deployment?.name;
     const deploymentNotFound = metadataRequest.data && !metadataRequest.data.deployment;
@@ -91,7 +86,7 @@ function DeploymentPage() {
                                 message="The system was unable to load metadata for this deployment"
                             />
                         )}
-                        <DeploymentPageHeader data={metadataRequest.data?.deployment} />
+                        <DeploymentPageHeader deployment={metadataRequest.data?.deployment} />
                     </PageSection>
                     <PageSection
                         className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"

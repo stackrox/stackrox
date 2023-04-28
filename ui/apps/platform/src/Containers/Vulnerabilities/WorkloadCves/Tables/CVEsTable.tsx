@@ -1,5 +1,4 @@
 import React from 'react';
-import { gql } from '@apollo/client';
 import {
     TableComposable,
     Tbody,
@@ -14,6 +13,8 @@ import { Button, ButtonVariant, Text } from '@patternfly/react-core';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
+import { graphql } from 'generated/graphql-codegen';
+import { GetImageCveListQuery } from 'generated/graphql-codegen/graphql';
 import { VulnerabilitySeverityLabel } from '../types';
 import { getEntityPagePath } from '../searchUtils';
 import TooltipTh from '../components/TooltipTh';
@@ -30,7 +31,7 @@ import {
 } from '../sortUtils';
 import EmptyTableResults from '../components/EmptyTableResults';
 
-export const cveListQuery = gql`
+export const cveListQuery = graphql(/* GraphQL */ `
     query getImageCVEList($query: String, $pagination: Pagination) {
         imageCVEs(query: $query, pagination: $pagination) {
             cve
@@ -59,35 +60,16 @@ export const cveListQuery = gql`
             }
         }
     }
-`;
+`);
 
-export const unfilteredImageCountQuery = gql`
+export const unfilteredImageCountQuery = graphql(/* GraphQL */ `
     query getUnfilteredImageCount {
         imageCount
     }
-`;
-
-type ImageCVE = {
-    cve: string;
-    affectedImageCountBySeverity: {
-        critical: { total: number };
-        important: { total: number };
-        moderate: { total: number };
-        low: { total: number };
-    };
-    topCVSS: number;
-    affectedImageCount: number;
-    firstDiscoveredInSystem: string | null;
-    distroTuples: {
-        summary: string;
-        operatingSystem: string;
-        cvss: number;
-        scoreVersion: string;
-    }[];
-};
+`);
 
 type CVEsTableProps = {
-    cves: ImageCVE[];
+    cves: GetImageCveListQuery['imageCVEs'];
     unfilteredImageCount: number;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;

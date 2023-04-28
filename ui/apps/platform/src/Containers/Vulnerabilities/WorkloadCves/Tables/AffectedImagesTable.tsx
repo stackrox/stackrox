@@ -1,5 +1,4 @@
 import React from 'react';
-import { gql } from '@apollo/client';
 import {
     ExpandableRowContent,
     TableComposable,
@@ -14,6 +13,8 @@ import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
+import { graphql } from 'generated/graphql-codegen';
+import { ImagesForCveFragment } from 'generated/graphql-codegen/graphql';
 import {
     getAnyVulnerabilityIsFixable,
     getHighestCvssScore,
@@ -22,44 +23,12 @@ import {
 import ImageNameTd from '../components/ImageNameTd';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 
-import ImageComponentVulnerabilitiesTable, {
-    ImageComponentVulnerability,
-    imageComponentVulnerabilitiesFragment,
-    imageMetadataContextFragment,
-} from './ImageComponentVulnerabilitiesTable';
+import ImageComponentVulnerabilitiesTable from './ImageComponentVulnerabilitiesTable';
 import EmptyTableResults from '../components/EmptyTableResults';
 import DateDistanceTd from '../components/DatePhraseTd';
 import CvssTd from '../components/CvssTd';
 
-export type ImageForCve = {
-    id: string;
-    name: {
-        registry: string;
-        remote: string;
-        tag: string;
-    } | null;
-    metadata: {
-        v1: {
-            layers: {
-                instruction: string;
-                value: string;
-            }[];
-        } | null;
-    } | null;
-    operatingSystem: string;
-    watchStatus: 'WATCHED' | 'NOT_WATCHED';
-    scanTime: string | null;
-    imageComponents: (ImageComponentVulnerability & {
-        imageVulnerabilities: (ImageComponentVulnerability['imageVulnerabilities'][number] & {
-            cvss: number;
-            scoreVersion: string;
-        })[];
-    })[];
-};
-
-export const imagesForCveFragment = gql`
-    ${imageMetadataContextFragment}
-    ${imageComponentVulnerabilitiesFragment}
+export const imagesForCveFragment = graphql(/* GraphQL */ `
     fragment ImagesForCVE on Image {
         ...ImageMetadataContext
 
@@ -75,10 +44,10 @@ export const imagesForCveFragment = gql`
             ...ImageComponentVulnerabilities
         }
     }
-`;
+`);
 
 export type AffectedImagesTableProps = {
-    images: ImageForCve[];
+    images: ImagesForCveFragment[];
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
 };

@@ -1,27 +1,17 @@
-import { gql } from '@apollo/client';
 import sortBy from 'lodash/sortBy';
+
 import { severityRankings } from 'constants/vulnerabilities';
+import { graphql } from 'generated/graphql-codegen';
+import {
+    DeploymentComponentVulnerabilitiesFragment,
+    ImageComponentVulnerabilitiesFragment,
+    ImageMetadataContextFragment,
+} from 'generated/graphql-codegen/graphql';
 import { VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
 import { ApiSortOption } from 'types/search';
+import { isNonNullish } from 'utils/type.utils';
 
-export type ImageMetadataContext = {
-    id: string;
-    name: {
-        registry: string;
-        remote: string;
-        tag: string;
-    } | null;
-    metadata: {
-        v1: {
-            layers: {
-                instruction: string;
-                value: string;
-            }[];
-        } | null;
-    } | null;
-};
-
-export const imageMetadataContextFragment = gql`
+export const imageMetadataContextFragment = graphql(/* GraphQL */ `
     fragment ImageMetadataContext on Image {
         id
         name {
@@ -38,7 +28,7 @@ export const imageMetadataContextFragment = gql`
             }
         }
     }
-`;
+`);
 
 // This is a general type that isn't specific to this component, so should be moved elsewhere if
 // there is a more appropriate location. (top level ./types/ directory?)
@@ -51,45 +41,17 @@ export type SourceType =
     | 'DOTNETCORERUNTIME'
     | 'INFRASTRUCTURE';
 
-// TODO Enforce a non-empty imageVulnerabilities array at a higher level?
-export type ComponentVulnerabilityBase = {
-    type: 'Image' | 'Deployment';
-    name: string;
-    version: string;
-    location: string;
-    source: SourceType;
-    layerIndex: number | null;
-    imageVulnerabilities: {
-        vulnerabilityId: string;
-        severity: string;
-        fixedByVersion: string;
-    }[];
-};
-
-export type ImageComponentVulnerability = ComponentVulnerabilityBase;
-
-export type DeploymentComponentVulnerability = Omit<
-    ComponentVulnerabilityBase,
-    'imageVulnerabilities'
-> & {
-    imageVulnerabilities: {
-        vulnerabilityId: string;
-        severity: string;
-        cvss: number;
-        scoreVersion: string;
-        fixedByVersion: string;
-        discoveredAtImage: string | null;
-    }[];
-};
-
 export type TableDataRow = {
     image: {
         id: string;
-        name: {
-            remote: string;
-            registry: string;
-            tag: string;
-        } | null;
+        name?:
+            | {
+                  remote: string;
+                  registry: string;
+                  tag: string;
+              }
+            | null
+            | undefined;
     };
     name: string;
     vulnerabilityId: string;
@@ -98,11 +60,14 @@ export type TableDataRow = {
     version: string;
     location: string;
     source: SourceType;
-    layer: {
-        line: number;
-        instruction: string;
-        value: string;
-    } | null;
+    layer:
+        | {
+              line: number;
+              instruction: string;
+              value: string;
+          }
+        | null
+        | undefined;
 };
 
 /**
@@ -116,11 +81,11 @@ export type TableDataRow = {
  * @returns The flattened table data
  */
 export function flattenImageComponentVulns(
-    imageMetadataContext: ImageMetadataContext,
-    componentVulnerabilities: ImageComponentVulnerability[]
+    imageMetadataContext: ImageMetadataContextFragment,
+    componentVulnerabilities: ImageComponentVulnerabilitiesFragment[]
 ): TableDataRow[] {
     const image = imageMetadataContext;
-    const layers = imageMetadataContext.metadata?.v1?.layers ?? [];
+    const layers = imageMetadataContext.metadata?.v1?.layers?.filter(isNonNullish) ?? [];
 
     return componentVulnerabilities.map((component) => {
         const vulnerability = component.imageVulnerabilities[0];
@@ -129,14 +94,14 @@ export function flattenImageComponentVulns(
 }
 
 export function flattenDeploymentComponentVulns(
-    imageMetadataContext: ImageMetadataContext,
-    componentVulnerabilities: DeploymentComponentVulnerability[]
+    imageMetadataContext: ImageMetadataContextFragment,
+    componentVulnerabilities: DeploymentComponentVulnerabilitiesFragment[]
 ): (TableDataRow & {
     cvss: number;
     scoreVersion: string;
 })[] {
     const image = imageMetadataContext;
-    const layers = imageMetadataContext.metadata?.v1?.layers ?? [];
+    const layers = imageMetadataContext.metadata?.v1?.layers?.filter(isNonNullish) ?? [];
 
     return componentVulnerabilities.map((component) => {
         const vulnerability = component.imageVulnerabilities[0];
@@ -152,16 +117,16 @@ export function flattenDeploymentComponentVulns(
 }
 
 function extractCommonComponentFields(
-    image: ImageMetadataContext,
+    image: ImageMetadataContextFragment,
     layers: { instruction: string; value: string }[],
-    component: ComponentVulnerabilityBase,
-    vulnerability: ComponentVulnerabilityBase['imageVulnerabilities'][0] | undefined
+    component: ImageComponentVulnerabilitiesFragment,
+    vulnerability: ImageComponentVulnerabilitiesFragment['imageVulnerabilities'][0] | undefined
 ): TableDataRow {
     const { name, version, location, source, layerIndex } = component;
 
     let layer: TableDataRow['layer'] = null;
 
-    if (layerIndex !== null) {
+    if (typeof layerIndex === 'number') {
         const targetLayer = layers[layerIndex];
         if (targetLayer) {
             layer = {
@@ -217,11 +182,12 @@ export function sortTableData<TableRowType extends TableDataRow>(
  * Get the highest severity of any vulnerability in the image.
  */
 export function getHighestVulnerabilitySeverity(
-    imageComponents: ImageComponentVulnerability[]
+    imageComponents: ImageComponentVulnerabilitiesFragment[]
 ): VulnerabilitySeverity {
     let topSeverity: VulnerabilitySeverity = 'UNKNOWN_VULNERABILITY_SEVERITY';
     imageComponents.forEach((component) => {
-        component.imageVulnerabilities.forEach(({ severity }) => {
+        component.imageVulnerabilities.forEach((imageVulnerability) => {
+            const severity = imageVulnerability?.severity;
             if (
                 isVulnerabilitySeverity(severity) &&
                 severityRankings[severity] > severityRankings[topSeverity]
@@ -237,19 +203,21 @@ export function getHighestVulnerabilitySeverity(
  * Get whether or not the image has any fixable vulnerabilities.
  */
 export function getAnyVulnerabilityIsFixable(
-    imageComponents: ImageComponentVulnerability[]
+    imageComponents: ImageComponentVulnerabilitiesFragment[]
 ): boolean {
     return imageComponents.some((component) =>
-        component.imageVulnerabilities.some(({ fixedByVersion }) => fixedByVersion !== '')
+        component.imageVulnerabilities.some((imageVulnerability) => {
+            return imageVulnerability && imageVulnerability.fixedByVersion !== '';
+        })
     );
 }
 
 export function getHighestCvssScore(
     imageComponents: {
-        imageVulnerabilities: {
+        imageVulnerabilities: ({
             cvss: number;
             scoreVersion: string;
-        }[];
+        } | null)[];
     }[]
 ): {
     cvss: number;
@@ -258,7 +226,8 @@ export function getHighestCvssScore(
     let topCvss = 0;
     let topScoreVersion = 'N/A';
     imageComponents.forEach((component) => {
-        component.imageVulnerabilities.forEach(({ cvss, scoreVersion }) => {
+        component.imageVulnerabilities.forEach((imageVulnerability) => {
+            const { cvss, scoreVersion } = imageVulnerability ?? { cvss: 0, scoreVersion: 'N/A' };
             if (cvss > topCvss) {
                 topCvss = cvss;
                 topScoreVersion = scoreVersion;

@@ -1,19 +1,20 @@
 import React from 'react';
-import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Flex } from '@patternfly/react-core';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
+import { graphql } from 'generated/graphql-codegen';
+import { GetImageListQuery } from 'generated/graphql-codegen/graphql';
 import ImageNameTd from '../components/ImageNameTd';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
 import DateDistanceTd from '../components/DatePhraseTd';
 import TooltipTh from '../components/TooltipTh';
-import { VulnerabilitySeverityLabel, watchStatusLabel, WatchStatus } from '../types';
+import { VulnerabilitySeverityLabel, watchStatusLabel } from '../types';
 
-export const imageListQuery = gql`
+export const imageListQuery = graphql(/* GraphQL */ `
     query getImageList($query: String, $pagination: Pagination) {
         images(query: $query, pagination: $pagination) {
             id
@@ -47,34 +48,10 @@ export const imageListQuery = gql`
             scanTime
         }
     }
-`;
-
-type Image = {
-    id: string;
-    name: {
-        registry: string;
-        remote: string;
-        tag: string;
-    } | null;
-    imageCVECountBySeverity: {
-        critical: { total: number };
-        important: { total: number };
-        moderate: { total: number };
-        low: { total: number };
-    };
-    operatingSystem: string;
-    deploymentCount: number;
-    watchStatus: WatchStatus;
-    metadata: {
-        v1: {
-            created: string | null;
-        } | null;
-    } | null;
-    scanTime: string | null;
-};
+`);
 
 type ImagesTableProps = {
-    images: Image[];
+    images: GetImageListQuery['images'];
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     filteredSeverities?: VulnerabilitySeverityLabel[];

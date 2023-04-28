@@ -1,30 +1,15 @@
 import React from 'react';
 import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
-import { gql } from '@apollo/client';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
+import { graphql } from 'generated/graphql-codegen';
+import { ImageResourcesFragment } from 'generated/graphql-codegen/graphql';
 import DateDistanceTd from '../components/DatePhraseTd';
 import EmptyTableResults from '../components/EmptyTableResults';
 import ImageNameTd from '../components/ImageNameTd';
 
-export type ImageResources = {
-    imageCount: number;
-    images: {
-        id: string;
-        name: {
-            registry: string;
-            remote: string;
-            tag: string;
-        } | null;
-        deploymentCount: number;
-        operatingSystem: string;
-        scanTime: string | null;
-    }[];
-};
-
-export const imageResourcesFragment = gql`
+export const imageResourcesFragment = graphql(/* GraphQL */ `
     fragment ImageResources on Deployment {
-        imageCount(query: $query)
         images(query: $query, pagination: $pagination) {
             id
             name {
@@ -37,14 +22,14 @@ export const imageResourcesFragment = gql`
             scanTime
         }
     }
-`;
+`);
 
 export type ImageResourceTableProps = {
-    data: ImageResources;
+    deployment: ImageResourcesFragment;
     getSortParams: UseURLSortResult['getSortParams'];
 };
 
-function ImageResourceTable({ data, getSortParams }: ImageResourceTableProps) {
+function ImageResourceTable({ deployment, getSortParams }: ImageResourceTableProps) {
     return (
         <TableComposable borders={false} variant="compact">
             <Thead noWrap>
@@ -55,8 +40,8 @@ function ImageResourceTable({ data, getSortParams }: ImageResourceTableProps) {
                     <Th>Created</Th>
                 </Tr>
             </Thead>
-            {data.images.length === 0 && <EmptyTableResults colSpan={4} />}
-            {data.images.map(({ id, name, deploymentCount, operatingSystem, scanTime }) => {
+            {deployment.images.length === 0 && <EmptyTableResults colSpan={4} />}
+            {deployment.images.map(({ id, name, deploymentCount, operatingSystem, scanTime }) => {
                 return (
                     <Tbody
                         key={id}

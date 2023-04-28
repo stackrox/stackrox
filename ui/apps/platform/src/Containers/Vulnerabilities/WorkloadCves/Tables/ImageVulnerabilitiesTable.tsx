@@ -9,7 +9,6 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
-import { gql } from '@apollo/client';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useSet from 'hooks/useSet';
@@ -17,48 +16,40 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import { isVulnerabilitySeverity } from 'types/cve.proto';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
+import { graphql } from 'generated/graphql-codegen';
+import {
+    ImageMetadataContextFragment,
+    ImageVulnerabilitiesFragment,
+} from 'generated/graphql-codegen/graphql';
+import { isNonNullish } from 'utils/type.utils';
+
 import { getEntityPagePath } from '../searchUtils';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
-import ImageComponentVulnerabilitiesTable, {
-    ImageComponentVulnerability,
-    ImageMetadataContext,
-    imageComponentVulnerabilitiesFragment,
-} from './ImageComponentVulnerabilitiesTable';
+import ImageComponentVulnerabilitiesTable from './ImageComponentVulnerabilitiesTable';
 
 import EmptyTableResults from '../components/EmptyTableResults';
 import DateDistanceTd from '../components/DatePhraseTd';
 import CvssTd from '../components/CvssTd';
 import { getAnyVulnerabilityIsFixable } from './table.utils';
 
-export const imageVulnerabilitiesFragment = gql`
-    ${imageComponentVulnerabilitiesFragment}
-    fragment ImageVulnerabilityFields on ImageVulnerability {
-        severity
-        cve
-        summary
-        cvss
-        scoreVersion
-        discoveredAtImage
-        imageComponents(query: $query) {
-            ...ImageComponentVulnerabilities
+export const imageVulnerabilitiesFragment = graphql(/* GraphQL */ `
+    fragment ImageVulnerabilities on Image {
+        imageVulnerabilities(query: $query, pagination: $pagination) {
+            severity
+            cve
+            summary
+            cvss
+            scoreVersion
+            discoveredAtImage
+            imageComponents(query: $query) {
+                ...ImageComponentVulnerabilities
+            }
         }
     }
-`;
-
-export type ImageVulnerability = {
-    severity: string;
-    cve: string;
-    summary: string;
-    cvss: number;
-    scoreVersion: string;
-    discoveredAtImage: string | null;
-    imageComponents: ImageComponentVulnerability[];
-};
+`);
 
 export type ImageVulnerabilitiesTableProps = {
-    image: ImageMetadataContext & {
-        imageVulnerabilities: ImageVulnerability[];
-    };
+    image: ImageMetadataContextFragment & ImageVulnerabilitiesFragment;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
 };
@@ -69,6 +60,8 @@ function ImageVulnerabilitiesTable({
     isFiltered,
 }: ImageVulnerabilitiesTableProps) {
     const expandedRowSet = useSet<string>();
+
+    const vulnerabilities = image.imageVulnerabilities.filter(isNonNullish);
 
     return (
         <TableComposable variant="compact">
@@ -89,8 +82,8 @@ function ImageVulnerabilitiesTable({
                     <Th>First discovered</Th>
                 </Tr>
             </Thead>
-            {image.imageVulnerabilities.length === 0 && <EmptyTableResults colSpan={7} />}
-            {image.imageVulnerabilities.map(
+            {vulnerabilities.length === 0 && <EmptyTableResults colSpan={7} />}
+            {vulnerabilities.map(
                 (
                     {
                         cve,
@@ -105,6 +98,8 @@ function ImageVulnerabilitiesTable({
                 ) => {
                     const isFixable = getAnyVulnerabilityIsFixable(imageComponents);
                     const isExpanded = expandedRowSet.has(cve);
+
+                    const components = imageComponents.filter(isNonNullish);
 
                     return (
                         <Tbody key={cve} isExpanded={isExpanded}>
@@ -138,9 +133,9 @@ function ImageVulnerabilitiesTable({
                                     <CvssTd cvss={cvss} scoreVersion={scoreVersion} />
                                 </Td>
                                 <Td dataLabel="Affected components">
-                                    {imageComponents.length === 1
-                                        ? imageComponents[0].name
-                                        : `${imageComponents.length} components`}
+                                    {components.length === 1
+                                        ? components[0].name
+                                        : `${components.length} components`}
                                 </Td>
                                 <Td dataLabel="First discovered">
                                     <DateDistanceTd date={discoveredAtImage} />
@@ -153,7 +148,7 @@ function ImageVulnerabilitiesTable({
                                         <p className="pf-u-mb-md">{summary}</p>
                                         <ImageComponentVulnerabilitiesTable
                                             imageMetadataContext={image}
-                                            componentVulnerabilities={imageComponents}
+                                            componentVulnerabilities={components}
                                         />
                                     </ExpandableRowContent>
                                 </Td>

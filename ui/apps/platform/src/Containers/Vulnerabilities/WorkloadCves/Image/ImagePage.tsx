@@ -55,8 +55,9 @@ function ImagePage() {
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
     const imageData = data && data.image;
-    const imageName = imageData?.name
-        ? `${imageData.name.registry}/${imageData.name.remote}:${imageData.name.tag}`
+    const imageNameObject = imageData?.name;
+    const imageName = imageNameObject
+        ? `${imageNameObject.registry}/${imageNameObject.remote}:${imageNameObject.tag}`
         : 'NAME UNKNOWN';
 
     let mainContent: ReactNode | null = null;
@@ -75,7 +76,6 @@ function ImagePage() {
             </PageSection>
         );
     } else {
-        const sha = imageData?.id;
         mainContent = (
             <>
                 <PageSection variant="light">
@@ -87,16 +87,14 @@ function ImagePage() {
                             <Title headingLevel="h1" className="pf-u-m-0">
                                 {imageName}
                             </Title>
-                            {sha && (
-                                <ClipboardCopy
-                                    hoverTip="Copy SHA"
-                                    clickTip="Copied!"
-                                    variant="inline-compact"
-                                    className="pf-u-display-inline-flex pf-u-align-items-center pf-u-mt-sm pf-u-mb-md pf-u-font-size-sm"
-                                >
-                                    {sha}
-                                </ClipboardCopy>
-                            )}
+                            <ClipboardCopy
+                                hoverTip="Copy SHA"
+                                clickTip="Copied!"
+                                variant="inline-compact"
+                                className="pf-u-display-inline-flex pf-u-align-items-center pf-u-mt-sm pf-u-mb-md pf-u-font-size-sm"
+                            >
+                                {imageId}
+                            </ClipboardCopy>
                             <ImageDetailBadges imageData={imageData} />
                         </Flex>
                     ) : (

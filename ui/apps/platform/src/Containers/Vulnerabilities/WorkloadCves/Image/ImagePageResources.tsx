@@ -8,32 +8,28 @@ import {
     Spinner,
     Text,
 } from '@patternfly/react-core';
-import { gql, useQuery } from '@apollo/client';
-import { Pagination as PaginationParam } from 'services/types';
+import { useQuery } from '@apollo/client';
 
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import { graphql } from 'generated/graphql-codegen';
 import { deploymentsDefaultSort, defaultDeploymentSortFields } from '../sortUtils';
 import TableErrorComponent from '../components/TableErrorComponent';
-import DeploymentResourceTable, {
-    DeploymentResources,
-    deploymentResourcesFragment,
-} from './DeploymentResourceTable';
+import DeploymentResourceTable from './DeploymentResourceTable';
 
 export type ImagePageResourcesProps = {
     imageId: string;
 };
 
-const imageResourcesQuery = gql`
-    ${deploymentResourcesFragment}
+const imageResourcesQuery = graphql(/* GraphQL */ `
     query getImageResources($id: ID!, $query: String, $pagination: Pagination) {
         image(id: $id) {
             id
             ...DeploymentResources
         }
     }
-`;
+`);
 
 function ImagePageResources({ imageId }: ImagePageResourcesProps) {
     const { page, perPage, setPage, setPerPage } = useURLPagination(20);
@@ -45,10 +41,7 @@ function ImagePageResources({ imageId }: ImagePageResourcesProps) {
 
     const deploymentTableToggle = useSelectToggle(true);
 
-    const { data, previousData, loading, error } = useQuery<
-        { image: DeploymentResources | null },
-        { id: string; query: string; pagination: PaginationParam }
-    >(imageResourcesQuery, {
+    const { data, previousData, loading, error } = useQuery(imageResourcesQuery, {
         variables: {
             id: imageId,
             query: '',

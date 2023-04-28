@@ -1,26 +1,20 @@
 import React from 'react';
-import { gql } from '@apollo/client';
 import { ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import { NonEmptyArray } from 'utils/type.utils';
 import { SortOption } from 'types/table';
+import { graphql } from 'generated/graphql-codegen';
 import { entityTabValues, EntityTab } from '../types';
 import { getDefaultSortOption } from '../sortUtils';
 
-export type EntityCounts = {
-    imageCount: number;
-    deploymentCount: number;
-    imageCVECount: number;
-};
-
-export const entityTypeCountsQuery = gql`
+export const entityTypeCountsQuery = graphql(/* GraphQL */ `
     query getEntityTypeCounts($query: String) {
         imageCount(query: $query)
         deploymentCount(query: $query)
         imageCVECount(query: $query)
     }
-`;
+`);
 
 type EntityTabToggleGroupProps = {
     className?: string;

@@ -10,18 +10,12 @@ import {
     Text,
 } from '@patternfly/react-core';
 import { MinusIcon, WrenchIcon } from '@patternfly/react-icons';
-import { gql } from '@apollo/client';
 
+import { graphql } from 'generated/graphql-codegen';
+import { ResourceCountsByCveSeverityAndStatusFragment } from 'generated/graphql-codegen/graphql';
 import { FixableStatus } from '../types';
 
-export type ResourceCountByCveSeverityAndStatus = {
-    critical: { total: number; fixable: number };
-    important: { total: number; fixable: number };
-    moderate: { total: number; fixable: number };
-    low: { total: number; fixable: number };
-};
-
-export const resourceCountByCveSeverityAndStatusFragment = gql`
+export const resourceCountByCveSeverityAndStatusFragment = graphql(/* GraphQL */ `
     fragment ResourceCountsByCVESeverityAndStatus on ResourceCountByCVESeverity {
         low {
             total
@@ -40,13 +34,13 @@ export const resourceCountByCveSeverityAndStatusFragment = gql`
             fixable
         }
     }
-`;
+`);
 
 const statusDisplays = [
     {
         status: 'Fixable',
         Icon: WrenchIcon,
-        text: (counts: ResourceCountByCveSeverityAndStatus) => {
+        text: (counts: ResourceCountsByCveSeverityAndStatusFragment) => {
             const { critical, important, moderate, low } = counts;
             const fixable = critical.fixable + important.fixable + moderate.fixable + low.fixable;
             return `${pluralize(fixable, 'vulnerability', 'vulnerabilities')} with available fixes`;
@@ -55,7 +49,7 @@ const statusDisplays = [
     {
         status: 'Not fixable',
         Icon: MinusIcon,
-        text: (counts: ResourceCountByCveSeverityAndStatus) => {
+        text: (counts: ResourceCountsByCveSeverityAndStatusFragment) => {
             const { critical, important, moderate, low } = counts;
             const total = critical.total + important.total + moderate.total + low.total;
             const fixable = critical.fixable + important.fixable + moderate.fixable + low.fixable;
@@ -67,7 +61,7 @@ const statusDisplays = [
 const disabledColor100 = 'var(--pf-global--disabled-color--100)';
 
 export type CvesByStatusSummaryCardProps = {
-    cveStatusCounts: ResourceCountByCveSeverityAndStatus;
+    cveStatusCounts: ResourceCountsByCveSeverityAndStatusFragment;
     hiddenStatuses: Set<FixableStatus>;
 };
 

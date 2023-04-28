@@ -1,26 +1,16 @@
 import React from 'react';
 import { Button, ButtonVariant } from '@patternfly/react-core';
 import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
-import { gql } from '@apollo/client';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { UseURLSortResult } from 'hooks/useURLSort';
+import { graphql } from 'generated/graphql-codegen';
+import { DeploymentResourcesFragment } from 'generated/graphql-codegen/graphql';
 import DateDistanceTd from '../components/DatePhraseTd';
 import EmptyTableResults from '../components/EmptyTableResults';
 import { getEntityPagePath } from '../searchUtils';
 
-export type DeploymentResources = {
-    deploymentCount: number;
-    deployments: {
-        id: string;
-        name: string;
-        clusterName: string;
-        namespace: string;
-        created: string | null;
-    }[];
-};
-
-export const deploymentResourcesFragment = gql`
+export const deploymentResourcesFragment = graphql(/* GraphQL */ `
     fragment DeploymentResources on Image {
         deploymentCount(query: $query)
         deployments(query: $query, pagination: $pagination) {
@@ -31,10 +21,10 @@ export const deploymentResourcesFragment = gql`
             created
         }
     }
-`;
+`);
 
 export type DeploymentResourceTableProps = {
-    data: DeploymentResources;
+    data: DeploymentResourcesFragment;
     getSortParams: UseURLSortResult['getSortParams'];
 };
 

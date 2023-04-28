@@ -5,6 +5,8 @@ import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import { vulnerabilitySeverityLabels } from 'messages/common';
+import { graphql } from 'generated/graphql-codegen';
+import { ResourceCountsByCveSeverityFragment } from 'generated/graphql-codegen/graphql';
 
 const severitiesCriticalToLow = [
     'CRITICAL_VULNERABILITY_SEVERITY',
@@ -22,17 +24,27 @@ const severityToQuerySeverityKeys = {
 
 const fadedTextColor = 'var(--pf-global--Color--200)';
 
-export type ResourceCountsByCveSeverity = {
-    critical: { total: number };
-    important: { total: number };
-    moderate: { total: number };
-    low: { total: number };
-};
+export const resourceCountByCveSeverityFragment = graphql(/* GraphQL */ `
+    fragment ResourceCountsByCVESeverity on ResourceCountByCVESeverity {
+        low {
+            total
+        }
+        moderate {
+            total
+        }
+        important {
+            total
+        }
+        critical {
+            total
+        }
+    }
+`);
 
 export type BySeveritySummaryCardProps = {
     className?: string;
     title: string;
-    severityCounts: ResourceCountsByCveSeverity;
+    severityCounts: ResourceCountsByCveSeverityFragment;
     hiddenSeverities: Set<VulnerabilitySeverity>;
 };
 

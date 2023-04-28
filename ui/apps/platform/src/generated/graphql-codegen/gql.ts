@@ -53,41 +53,43 @@ const documents = {
         types.UndoVulnerabilityRequestDocument,
     '\n    mutation updateVulnerabilityRequest(\n        $requestID: ID!\n        $comment: String!\n        $expiry: VulnReqExpiry!\n    ) {\n        updateVulnerabilityRequest(requestID: $requestID, comment: $comment, expiry: $expiry) {\n            id\n        }\n    }\n':
         types.UpdateVulnerabilityRequestDocument,
-    '\n    \n    query getDeploymentMetadata($id: ID!) {\n        deployment(id: $id) {\n            ...DeploymentMetadata\n        }\n    }\n':
+    '\n    query getDeploymentMetadata($id: ID!) {\n        deployment(id: $id) {\n            name\n            ...DeploymentMetadata\n        }\n    }\n':
         types.GetDeploymentMetadataDocument,
     '\n    fragment DeploymentMetadata on Deployment {\n        id\n        name\n        namespace\n        clusterName\n        created\n        imageCount\n    }\n':
         types.DeploymentMetadataFragmentDoc,
-    '\n    \n    query getDeploymentResources($id: ID!, $query: String, $pagination: Pagination) {\n        deployment(id: $id) {\n            id\n            ...ImageResources\n        }\n    }\n':
+    '\n    query getDeploymentResources($id: ID!, $query: String, $pagination: Pagination) {\n        deployment(id: $id) {\n            id\n            imageCount(query: $query)\n            ...ImageResources\n        }\n    }\n':
         types.GetDeploymentResourcesDocument,
-    '\n    \n    query getDeploymentSummaryData($id: ID!, $query: String!) {\n        deployment(id: $id) {\n            id\n            imageCVECountBySeverity(query: $query) {\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n        }\n    }\n':
+    '\n    query getDeploymentSummaryData($id: ID!, $query: String!) {\n        deployment(id: $id) {\n            id\n            imageCVECountBySeverity(query: $query) {\n                ...ResourceCountsByCVESeverity\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n        }\n    }\n':
         types.GetDeploymentSummaryDataDocument,
-    '\n    \n    \n    query getCvesForDeployment($id: ID!, $query: String!, $pagination: Pagination!) {\n        deployment(id: $id) {\n            imageVulnerabilityCount(query: $query)\n            ...DeploymentWithVulnerabilities\n        }\n    }\n':
+    '\n    query getCvesForDeployment($id: ID!, $query: String!, $pagination: Pagination!) {\n        deployment(id: $id) {\n            imageVulnerabilityCount(query: $query)\n            ...DeploymentWithVulnerabilities\n        }\n    }\n':
         types.GetCvesForDeploymentDocument,
-    '\n    fragment ImageResources on Deployment {\n        imageCount(query: $query)\n        images(query: $query, pagination: $pagination) {\n            id\n            name {\n                registry\n                remote\n                tag\n            }\n            deploymentCount(query: $query)\n            operatingSystem\n            scanTime\n        }\n    }\n':
+    '\n    fragment ImageResources on Deployment {\n        images(query: $query, pagination: $pagination) {\n            id\n            name {\n                registry\n                remote\n                tag\n            }\n            deploymentCount(query: $query)\n            operatingSystem\n            scanTime\n        }\n    }\n':
         types.ImageResourcesFragmentDoc,
     '\n    fragment DeploymentResources on Image {\n        deploymentCount(query: $query)\n        deployments(query: $query, pagination: $pagination) {\n            id\n            name\n            clusterName\n            namespace\n            created\n        }\n    }\n':
         types.DeploymentResourcesFragmentDoc,
     '\n    query getImageDetails($id: ID!) {\n        image(id: $id) {\n            id\n            name {\n                registry\n                remote\n                tag\n            }\n            ...ImageDetails\n        }\n    }\n':
         types.GetImageDetailsDocument,
-    '\n    \n    query getImageResources($id: ID!, $query: String, $pagination: Pagination) {\n        image(id: $id) {\n            id\n            ...DeploymentResources\n        }\n    }\n':
+    '\n    query getImageResources($id: ID!, $query: String, $pagination: Pagination) {\n        image(id: $id) {\n            id\n            ...DeploymentResources\n        }\n    }\n':
         types.GetImageResourcesDocument,
-    '\n    \n    \n    \n    query getCVEsForImage($id: ID!, $query: String!, $pagination: Pagination!) {\n        image(id: $id) {\n            ...ImageMetadataContext\n            imageCVECountBySeverity(query: $query) {\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n            imageVulnerabilities(query: $query, pagination: $pagination) {\n                ...ImageVulnerabilityFields\n            }\n        }\n    }\n':
+    '\n    query getCVEsForImage($id: ID!, $query: String!, $pagination: Pagination!) {\n        image(id: $id) {\n            ...ImageMetadataContext\n            ...ImageVulnerabilities\n            imageVulnerabilityCount(query: $query)\n            imageCVECountBySeverity(query: $query) {\n                ...ResourceCountsByCVESeverity\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n        }\n    }\n':
         types.GetCvEsForImageDocument,
-    '\n    \n    query getImageCveMetadata($cve: String!) {\n        imageCVE(cve: $cve) {\n            ...ImageCVEMetadata\n        }\n    }\n':
+    '\n    query getImageCveMetadata($cve: String!) {\n        imageCVE(cve: $cve) {\n            ...ImageCVEMetadata\n        }\n    }\n':
         types.GetImageCveMetadataDocument,
-    '\n    \n    query getImageCveSummaryData($cve: String!, $query: String!) {\n        totalImageCount: imageCount\n        imageCount(query: $query)\n        deploymentCount(query: $query)\n        imageCVE(cve: $cve, subfieldScopeQuery: $query) {\n            cve\n            affectedImageCount\n            affectedImageCountBySeverity {\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n        }\n    }\n':
+    '\n    query getImageCveSummaryData($cve: String!, $query: String!) {\n        totalImageCount: imageCount\n        imageCount(query: $query)\n        deploymentCount(query: $query)\n        imageCVE(cve: $cve, subfieldScopeQuery: $query) {\n            cve\n            affectedImageCount\n            affectedImageCountBySeverity {\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n        }\n    }\n':
         types.GetImageCveSummaryDataDocument,
-    '\n    \n    # by default, query must include the CVE id\n    query getImagesForCVE($query: String, $pagination: Pagination) {\n        images(query: $query, pagination: $pagination) {\n            ...ImagesForCVE\n        }\n    }\n':
+    '\n    # by default, query must include the CVE id\n    query getImagesForCVE($query: String, $pagination: Pagination) {\n        images(query: $query, pagination: $pagination) {\n            ...ImagesForCVE\n        }\n    }\n':
         types.GetImagesForCveDocument,
-    '\n    \n    # by default, query must include the CVE id\n    query getDeploymentsForCVE(\n        $query: String\n        $pagination: Pagination\n        $lowImageCountQuery: String\n        $moderateImageCountQuery: String\n        $importantImageCountQuery: String\n        $criticalImageCountQuery: String\n    ) {\n        deployments(query: $query, pagination: $pagination) {\n            ...DeploymentsForCVE\n        }\n    }\n':
+    '\n    # by default, query must include the CVE id\n    query getDeploymentsForCVE(\n        $query: String\n        $pagination: Pagination\n        $lowImageCountQuery: String\n        $moderateImageCountQuery: String\n        $importantImageCountQuery: String\n        $criticalImageCountQuery: String\n    ) {\n        deployments(query: $query, pagination: $pagination) {\n            ...DeploymentsForCVE\n        }\n    }\n':
         types.GetDeploymentsForCveDocument,
     '\n    fragment ImageCVEMetadata on ImageCVECore {\n        cve\n        firstDiscoveredInSystem\n        distroTuples {\n            summary\n            link\n            operatingSystem\n        }\n    }\n':
         types.ImageCveMetadataFragmentDoc,
+    '\n    fragment ResourceCountsByCVESeverity on ResourceCountByCVESeverity {\n        low {\n            total\n        }\n        moderate {\n            total\n        }\n        important {\n            total\n        }\n        critical {\n            total\n        }\n    }\n':
+        types.ResourceCountsByCveSeverityFragmentDoc,
     '\n    fragment ResourceCountsByCVESeverityAndStatus on ResourceCountByCVESeverity {\n        low {\n            total\n            fixable\n        }\n        moderate {\n            total\n            fixable\n        }\n        important {\n            total\n            fixable\n        }\n        critical {\n            total\n            fixable\n        }\n    }\n':
         types.ResourceCountsByCveSeverityAndStatusFragmentDoc,
-    '\n    \n    \n    fragment DeploymentsForCVE on Deployment {\n        id\n        name\n        namespace\n        clusterName\n        created\n        lowImageCount: imageCount(query: $lowImageCountQuery)\n        moderateImageCount: imageCount(query: $moderateImageCountQuery)\n        importantImageCount: imageCount(query: $importantImageCountQuery)\n        criticalImageCount: imageCount(query: $criticalImageCountQuery)\n        images(query: $query) {\n            ...ImageMetadataContext\n            imageComponents(query: $query) {\n                ...DeploymentComponentVulnerabilities\n            }\n        }\n    }\n':
+    '\n    fragment DeploymentsForCVE on Deployment {\n        id\n        name\n        namespace\n        clusterName\n        created\n        lowImageCount: imageCount(query: $lowImageCountQuery)\n        moderateImageCount: imageCount(query: $moderateImageCountQuery)\n        importantImageCount: imageCount(query: $importantImageCountQuery)\n        criticalImageCount: imageCount(query: $criticalImageCountQuery)\n        images(query: $query) {\n            ...ImageMetadataContext\n            imageComponents(query: $query) {\n                ...DeploymentComponentVulnerabilities\n            }\n        }\n    }\n':
         types.DeploymentsForCveFragmentDoc,
-    '\n    \n    \n    fragment ImagesForCVE on Image {\n        ...ImageMetadataContext\n\n        operatingSystem\n        watchStatus\n        scanTime\n\n        imageComponents(query: $query) {\n            imageVulnerabilities(query: $query) {\n                cvss\n                scoreVersion\n            }\n            ...ImageComponentVulnerabilities\n        }\n    }\n':
+    '\n    fragment ImagesForCVE on Image {\n        ...ImageMetadataContext\n\n        operatingSystem\n        watchStatus\n        scanTime\n\n        imageComponents(query: $query) {\n            imageVulnerabilities(query: $query) {\n                cvss\n                scoreVersion\n            }\n            ...ImageComponentVulnerabilities\n        }\n    }\n':
         types.ImagesForCveFragmentDoc,
     '\n    query getImageCVEList($query: String, $pagination: Pagination) {\n        imageCVEs(query: $query, pagination: $pagination) {\n            cve\n            affectedImageCountBySeverity {\n                critical {\n                    total\n                }\n                important {\n                    total\n                }\n                moderate {\n                    total\n                }\n                low {\n                    total\n                }\n            }\n            topCVSS\n            affectedImageCount\n            firstDiscoveredInSystem\n            distroTuples {\n                summary\n                operatingSystem\n                cvss\n                scoreVersion\n            }\n        }\n    }\n':
         types.GetImageCveListDocument,
@@ -95,14 +97,14 @@ const documents = {
         types.GetUnfilteredImageCountDocument,
     '\n    fragment DeploymentComponentVulnerabilities on ImageComponent {\n        name\n        version\n        location\n        source\n        layerIndex\n        imageVulnerabilities(query: $query) {\n            vulnerabilityId: id\n            severity\n            cvss\n            scoreVersion\n            fixedByVersion\n            discoveredAtImage\n        }\n    }\n':
         types.DeploymentComponentVulnerabilitiesFragmentDoc,
-    '\n    \n    fragment DeploymentWithVulnerabilities on Deployment {\n        id\n        images(query: $query) {\n            ...ImageMetadataContext\n        }\n        imageVulnerabilities(query: $query, pagination: $pagination) {\n            vulnerabilityId: id\n            cve\n            summary\n            images(query: $query) {\n                imageId: id\n                imageComponents(query: $query) {\n                    ...DeploymentComponentVulnerabilities\n                }\n            }\n        }\n    }\n':
+    '\n    fragment DeploymentWithVulnerabilities on Deployment {\n        id\n        images(query: $query) {\n            ...ImageMetadataContext\n        }\n        imageVulnerabilities(query: $query, pagination: $pagination) {\n            vulnerabilityId: id\n            cve\n            summary\n            images(query: $query) {\n                imageId: id\n                imageComponents(query: $query) {\n                    ...DeploymentComponentVulnerabilities\n                }\n            }\n        }\n    }\n':
         types.DeploymentWithVulnerabilitiesFragmentDoc,
     '\n    query getDeploymentList($query: String, $pagination: Pagination) {\n        deployments(query: $query, pagination: $pagination) {\n            id\n            name\n            imageCVECountBySeverity(query: $query) {\n                critical {\n                    total\n                }\n                important {\n                    total\n                }\n                moderate {\n                    total\n                }\n                low {\n                    total\n                }\n            }\n            clusterName\n            namespace\n            imageCount(query: $query)\n            created\n        }\n    }\n':
         types.GetDeploymentListDocument,
     '\n    fragment ImageComponentVulnerabilities on ImageComponent {\n        name\n        version\n        location\n        source\n        layerIndex\n        imageVulnerabilities(query: $query) {\n            vulnerabilityId: id\n            severity\n            fixedByVersion\n        }\n    }\n':
         types.ImageComponentVulnerabilitiesFragmentDoc,
-    '\n    \n    fragment ImageVulnerabilityFields on ImageVulnerability {\n        severity\n        cve\n        summary\n        cvss\n        scoreVersion\n        discoveredAtImage\n        imageComponents(query: $query) {\n            ...ImageComponentVulnerabilities\n        }\n    }\n':
-        types.ImageVulnerabilityFieldsFragmentDoc,
+    '\n    fragment ImageVulnerabilities on Image {\n        imageVulnerabilities(query: $query, pagination: $pagination) {\n            severity\n            cve\n            summary\n            cvss\n            scoreVersion\n            discoveredAtImage\n            imageComponents(query: $query) {\n                ...ImageComponentVulnerabilities\n            }\n        }\n    }\n':
+        types.ImageVulnerabilitiesFragmentDoc,
     '\n    query getImageList($query: String, $pagination: Pagination) {\n        images(query: $query, pagination: $pagination) {\n            id\n            name {\n                registry\n                remote\n                tag\n            }\n            imageCVECountBySeverity(query: $query) {\n                critical {\n                    total\n                }\n                important {\n                    total\n                }\n                moderate {\n                    total\n                }\n                low {\n                    total\n                }\n            }\n            operatingSystem\n            deploymentCount(query: $query)\n            watchStatus\n            metadata {\n                v1 {\n                    created\n                }\n            }\n            scanTime\n        }\n    }\n':
         types.GetImageListDocument,
     '\n    fragment ImageMetadataContext on Image {\n        id\n        name {\n            registry\n            remote\n            tag\n        }\n        metadata {\n            v1 {\n                layers {\n                    instruction\n                    value\n                }\n            }\n        }\n    }\n':
@@ -253,8 +255,8 @@ export function graphql(
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-    source: '\n    \n    query getDeploymentMetadata($id: ID!) {\n        deployment(id: $id) {\n            ...DeploymentMetadata\n        }\n    }\n'
-): (typeof documents)['\n    \n    query getDeploymentMetadata($id: ID!) {\n        deployment(id: $id) {\n            ...DeploymentMetadata\n        }\n    }\n'];
+    source: '\n    query getDeploymentMetadata($id: ID!) {\n        deployment(id: $id) {\n            name\n            ...DeploymentMetadata\n        }\n    }\n'
+): (typeof documents)['\n    query getDeploymentMetadata($id: ID!) {\n        deployment(id: $id) {\n            name\n            ...DeploymentMetadata\n        }\n    }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -265,26 +267,26 @@ export function graphql(
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-    source: '\n    \n    query getDeploymentResources($id: ID!, $query: String, $pagination: Pagination) {\n        deployment(id: $id) {\n            id\n            ...ImageResources\n        }\n    }\n'
-): (typeof documents)['\n    \n    query getDeploymentResources($id: ID!, $query: String, $pagination: Pagination) {\n        deployment(id: $id) {\n            id\n            ...ImageResources\n        }\n    }\n'];
+    source: '\n    query getDeploymentResources($id: ID!, $query: String, $pagination: Pagination) {\n        deployment(id: $id) {\n            id\n            imageCount(query: $query)\n            ...ImageResources\n        }\n    }\n'
+): (typeof documents)['\n    query getDeploymentResources($id: ID!, $query: String, $pagination: Pagination) {\n        deployment(id: $id) {\n            id\n            imageCount(query: $query)\n            ...ImageResources\n        }\n    }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-    source: '\n    \n    query getDeploymentSummaryData($id: ID!, $query: String!) {\n        deployment(id: $id) {\n            id\n            imageCVECountBySeverity(query: $query) {\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n        }\n    }\n'
-): (typeof documents)['\n    \n    query getDeploymentSummaryData($id: ID!, $query: String!) {\n        deployment(id: $id) {\n            id\n            imageCVECountBySeverity(query: $query) {\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n        }\n    }\n'];
+    source: '\n    query getDeploymentSummaryData($id: ID!, $query: String!) {\n        deployment(id: $id) {\n            id\n            imageCVECountBySeverity(query: $query) {\n                ...ResourceCountsByCVESeverity\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n        }\n    }\n'
+): (typeof documents)['\n    query getDeploymentSummaryData($id: ID!, $query: String!) {\n        deployment(id: $id) {\n            id\n            imageCVECountBySeverity(query: $query) {\n                ...ResourceCountsByCVESeverity\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n        }\n    }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-    source: '\n    \n    \n    query getCvesForDeployment($id: ID!, $query: String!, $pagination: Pagination!) {\n        deployment(id: $id) {\n            imageVulnerabilityCount(query: $query)\n            ...DeploymentWithVulnerabilities\n        }\n    }\n'
-): (typeof documents)['\n    \n    \n    query getCvesForDeployment($id: ID!, $query: String!, $pagination: Pagination!) {\n        deployment(id: $id) {\n            imageVulnerabilityCount(query: $query)\n            ...DeploymentWithVulnerabilities\n        }\n    }\n'];
+    source: '\n    query getCvesForDeployment($id: ID!, $query: String!, $pagination: Pagination!) {\n        deployment(id: $id) {\n            imageVulnerabilityCount(query: $query)\n            ...DeploymentWithVulnerabilities\n        }\n    }\n'
+): (typeof documents)['\n    query getCvesForDeployment($id: ID!, $query: String!, $pagination: Pagination!) {\n        deployment(id: $id) {\n            imageVulnerabilityCount(query: $query)\n            ...DeploymentWithVulnerabilities\n        }\n    }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-    source: '\n    fragment ImageResources on Deployment {\n        imageCount(query: $query)\n        images(query: $query, pagination: $pagination) {\n            id\n            name {\n                registry\n                remote\n                tag\n            }\n            deploymentCount(query: $query)\n            operatingSystem\n            scanTime\n        }\n    }\n'
-): (typeof documents)['\n    fragment ImageResources on Deployment {\n        imageCount(query: $query)\n        images(query: $query, pagination: $pagination) {\n            id\n            name {\n                registry\n                remote\n                tag\n            }\n            deploymentCount(query: $query)\n            operatingSystem\n            scanTime\n        }\n    }\n'];
+    source: '\n    fragment ImageResources on Deployment {\n        images(query: $query, pagination: $pagination) {\n            id\n            name {\n                registry\n                remote\n                tag\n            }\n            deploymentCount(query: $query)\n            operatingSystem\n            scanTime\n        }\n    }\n'
+): (typeof documents)['\n    fragment ImageResources on Deployment {\n        images(query: $query, pagination: $pagination) {\n            id\n            name {\n                registry\n                remote\n                tag\n            }\n            deploymentCount(query: $query)\n            operatingSystem\n            scanTime\n        }\n    }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -301,38 +303,38 @@ export function graphql(
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-    source: '\n    \n    query getImageResources($id: ID!, $query: String, $pagination: Pagination) {\n        image(id: $id) {\n            id\n            ...DeploymentResources\n        }\n    }\n'
-): (typeof documents)['\n    \n    query getImageResources($id: ID!, $query: String, $pagination: Pagination) {\n        image(id: $id) {\n            id\n            ...DeploymentResources\n        }\n    }\n'];
+    source: '\n    query getImageResources($id: ID!, $query: String, $pagination: Pagination) {\n        image(id: $id) {\n            id\n            ...DeploymentResources\n        }\n    }\n'
+): (typeof documents)['\n    query getImageResources($id: ID!, $query: String, $pagination: Pagination) {\n        image(id: $id) {\n            id\n            ...DeploymentResources\n        }\n    }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-    source: '\n    \n    \n    \n    query getCVEsForImage($id: ID!, $query: String!, $pagination: Pagination!) {\n        image(id: $id) {\n            ...ImageMetadataContext\n            imageCVECountBySeverity(query: $query) {\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n            imageVulnerabilities(query: $query, pagination: $pagination) {\n                ...ImageVulnerabilityFields\n            }\n        }\n    }\n'
-): (typeof documents)['\n    \n    \n    \n    query getCVEsForImage($id: ID!, $query: String!, $pagination: Pagination!) {\n        image(id: $id) {\n            ...ImageMetadataContext\n            imageCVECountBySeverity(query: $query) {\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n            imageVulnerabilities(query: $query, pagination: $pagination) {\n                ...ImageVulnerabilityFields\n            }\n        }\n    }\n'];
+    source: '\n    query getCVEsForImage($id: ID!, $query: String!, $pagination: Pagination!) {\n        image(id: $id) {\n            ...ImageMetadataContext\n            ...ImageVulnerabilities\n            imageVulnerabilityCount(query: $query)\n            imageCVECountBySeverity(query: $query) {\n                ...ResourceCountsByCVESeverity\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n        }\n    }\n'
+): (typeof documents)['\n    query getCVEsForImage($id: ID!, $query: String!, $pagination: Pagination!) {\n        image(id: $id) {\n            ...ImageMetadataContext\n            ...ImageVulnerabilities\n            imageVulnerabilityCount(query: $query)\n            imageCVECountBySeverity(query: $query) {\n                ...ResourceCountsByCVESeverity\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n        }\n    }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-    source: '\n    \n    query getImageCveMetadata($cve: String!) {\n        imageCVE(cve: $cve) {\n            ...ImageCVEMetadata\n        }\n    }\n'
-): (typeof documents)['\n    \n    query getImageCveMetadata($cve: String!) {\n        imageCVE(cve: $cve) {\n            ...ImageCVEMetadata\n        }\n    }\n'];
+    source: '\n    query getImageCveMetadata($cve: String!) {\n        imageCVE(cve: $cve) {\n            ...ImageCVEMetadata\n        }\n    }\n'
+): (typeof documents)['\n    query getImageCveMetadata($cve: String!) {\n        imageCVE(cve: $cve) {\n            ...ImageCVEMetadata\n        }\n    }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-    source: '\n    \n    query getImageCveSummaryData($cve: String!, $query: String!) {\n        totalImageCount: imageCount\n        imageCount(query: $query)\n        deploymentCount(query: $query)\n        imageCVE(cve: $cve, subfieldScopeQuery: $query) {\n            cve\n            affectedImageCount\n            affectedImageCountBySeverity {\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n        }\n    }\n'
-): (typeof documents)['\n    \n    query getImageCveSummaryData($cve: String!, $query: String!) {\n        totalImageCount: imageCount\n        imageCount(query: $query)\n        deploymentCount(query: $query)\n        imageCVE(cve: $cve, subfieldScopeQuery: $query) {\n            cve\n            affectedImageCount\n            affectedImageCountBySeverity {\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n        }\n    }\n'];
+    source: '\n    query getImageCveSummaryData($cve: String!, $query: String!) {\n        totalImageCount: imageCount\n        imageCount(query: $query)\n        deploymentCount(query: $query)\n        imageCVE(cve: $cve, subfieldScopeQuery: $query) {\n            cve\n            affectedImageCount\n            affectedImageCountBySeverity {\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n        }\n    }\n'
+): (typeof documents)['\n    query getImageCveSummaryData($cve: String!, $query: String!) {\n        totalImageCount: imageCount\n        imageCount(query: $query)\n        deploymentCount(query: $query)\n        imageCVE(cve: $cve, subfieldScopeQuery: $query) {\n            cve\n            affectedImageCount\n            affectedImageCountBySeverity {\n                ...ResourceCountsByCVESeverityAndStatus\n            }\n        }\n    }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-    source: '\n    \n    # by default, query must include the CVE id\n    query getImagesForCVE($query: String, $pagination: Pagination) {\n        images(query: $query, pagination: $pagination) {\n            ...ImagesForCVE\n        }\n    }\n'
-): (typeof documents)['\n    \n    # by default, query must include the CVE id\n    query getImagesForCVE($query: String, $pagination: Pagination) {\n        images(query: $query, pagination: $pagination) {\n            ...ImagesForCVE\n        }\n    }\n'];
+    source: '\n    # by default, query must include the CVE id\n    query getImagesForCVE($query: String, $pagination: Pagination) {\n        images(query: $query, pagination: $pagination) {\n            ...ImagesForCVE\n        }\n    }\n'
+): (typeof documents)['\n    # by default, query must include the CVE id\n    query getImagesForCVE($query: String, $pagination: Pagination) {\n        images(query: $query, pagination: $pagination) {\n            ...ImagesForCVE\n        }\n    }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-    source: '\n    \n    # by default, query must include the CVE id\n    query getDeploymentsForCVE(\n        $query: String\n        $pagination: Pagination\n        $lowImageCountQuery: String\n        $moderateImageCountQuery: String\n        $importantImageCountQuery: String\n        $criticalImageCountQuery: String\n    ) {\n        deployments(query: $query, pagination: $pagination) {\n            ...DeploymentsForCVE\n        }\n    }\n'
-): (typeof documents)['\n    \n    # by default, query must include the CVE id\n    query getDeploymentsForCVE(\n        $query: String\n        $pagination: Pagination\n        $lowImageCountQuery: String\n        $moderateImageCountQuery: String\n        $importantImageCountQuery: String\n        $criticalImageCountQuery: String\n    ) {\n        deployments(query: $query, pagination: $pagination) {\n            ...DeploymentsForCVE\n        }\n    }\n'];
+    source: '\n    # by default, query must include the CVE id\n    query getDeploymentsForCVE(\n        $query: String\n        $pagination: Pagination\n        $lowImageCountQuery: String\n        $moderateImageCountQuery: String\n        $importantImageCountQuery: String\n        $criticalImageCountQuery: String\n    ) {\n        deployments(query: $query, pagination: $pagination) {\n            ...DeploymentsForCVE\n        }\n    }\n'
+): (typeof documents)['\n    # by default, query must include the CVE id\n    query getDeploymentsForCVE(\n        $query: String\n        $pagination: Pagination\n        $lowImageCountQuery: String\n        $moderateImageCountQuery: String\n        $importantImageCountQuery: String\n        $criticalImageCountQuery: String\n    ) {\n        deployments(query: $query, pagination: $pagination) {\n            ...DeploymentsForCVE\n        }\n    }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -343,20 +345,26 @@ export function graphql(
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
+    source: '\n    fragment ResourceCountsByCVESeverity on ResourceCountByCVESeverity {\n        low {\n            total\n        }\n        moderate {\n            total\n        }\n        important {\n            total\n        }\n        critical {\n            total\n        }\n    }\n'
+): (typeof documents)['\n    fragment ResourceCountsByCVESeverity on ResourceCountByCVESeverity {\n        low {\n            total\n        }\n        moderate {\n            total\n        }\n        important {\n            total\n        }\n        critical {\n            total\n        }\n    }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
     source: '\n    fragment ResourceCountsByCVESeverityAndStatus on ResourceCountByCVESeverity {\n        low {\n            total\n            fixable\n        }\n        moderate {\n            total\n            fixable\n        }\n        important {\n            total\n            fixable\n        }\n        critical {\n            total\n            fixable\n        }\n    }\n'
 ): (typeof documents)['\n    fragment ResourceCountsByCVESeverityAndStatus on ResourceCountByCVESeverity {\n        low {\n            total\n            fixable\n        }\n        moderate {\n            total\n            fixable\n        }\n        important {\n            total\n            fixable\n        }\n        critical {\n            total\n            fixable\n        }\n    }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-    source: '\n    \n    \n    fragment DeploymentsForCVE on Deployment {\n        id\n        name\n        namespace\n        clusterName\n        created\n        lowImageCount: imageCount(query: $lowImageCountQuery)\n        moderateImageCount: imageCount(query: $moderateImageCountQuery)\n        importantImageCount: imageCount(query: $importantImageCountQuery)\n        criticalImageCount: imageCount(query: $criticalImageCountQuery)\n        images(query: $query) {\n            ...ImageMetadataContext\n            imageComponents(query: $query) {\n                ...DeploymentComponentVulnerabilities\n            }\n        }\n    }\n'
-): (typeof documents)['\n    \n    \n    fragment DeploymentsForCVE on Deployment {\n        id\n        name\n        namespace\n        clusterName\n        created\n        lowImageCount: imageCount(query: $lowImageCountQuery)\n        moderateImageCount: imageCount(query: $moderateImageCountQuery)\n        importantImageCount: imageCount(query: $importantImageCountQuery)\n        criticalImageCount: imageCount(query: $criticalImageCountQuery)\n        images(query: $query) {\n            ...ImageMetadataContext\n            imageComponents(query: $query) {\n                ...DeploymentComponentVulnerabilities\n            }\n        }\n    }\n'];
+    source: '\n    fragment DeploymentsForCVE on Deployment {\n        id\n        name\n        namespace\n        clusterName\n        created\n        lowImageCount: imageCount(query: $lowImageCountQuery)\n        moderateImageCount: imageCount(query: $moderateImageCountQuery)\n        importantImageCount: imageCount(query: $importantImageCountQuery)\n        criticalImageCount: imageCount(query: $criticalImageCountQuery)\n        images(query: $query) {\n            ...ImageMetadataContext\n            imageComponents(query: $query) {\n                ...DeploymentComponentVulnerabilities\n            }\n        }\n    }\n'
+): (typeof documents)['\n    fragment DeploymentsForCVE on Deployment {\n        id\n        name\n        namespace\n        clusterName\n        created\n        lowImageCount: imageCount(query: $lowImageCountQuery)\n        moderateImageCount: imageCount(query: $moderateImageCountQuery)\n        importantImageCount: imageCount(query: $importantImageCountQuery)\n        criticalImageCount: imageCount(query: $criticalImageCountQuery)\n        images(query: $query) {\n            ...ImageMetadataContext\n            imageComponents(query: $query) {\n                ...DeploymentComponentVulnerabilities\n            }\n        }\n    }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-    source: '\n    \n    \n    fragment ImagesForCVE on Image {\n        ...ImageMetadataContext\n\n        operatingSystem\n        watchStatus\n        scanTime\n\n        imageComponents(query: $query) {\n            imageVulnerabilities(query: $query) {\n                cvss\n                scoreVersion\n            }\n            ...ImageComponentVulnerabilities\n        }\n    }\n'
-): (typeof documents)['\n    \n    \n    fragment ImagesForCVE on Image {\n        ...ImageMetadataContext\n\n        operatingSystem\n        watchStatus\n        scanTime\n\n        imageComponents(query: $query) {\n            imageVulnerabilities(query: $query) {\n                cvss\n                scoreVersion\n            }\n            ...ImageComponentVulnerabilities\n        }\n    }\n'];
+    source: '\n    fragment ImagesForCVE on Image {\n        ...ImageMetadataContext\n\n        operatingSystem\n        watchStatus\n        scanTime\n\n        imageComponents(query: $query) {\n            imageVulnerabilities(query: $query) {\n                cvss\n                scoreVersion\n            }\n            ...ImageComponentVulnerabilities\n        }\n    }\n'
+): (typeof documents)['\n    fragment ImagesForCVE on Image {\n        ...ImageMetadataContext\n\n        operatingSystem\n        watchStatus\n        scanTime\n\n        imageComponents(query: $query) {\n            imageVulnerabilities(query: $query) {\n                cvss\n                scoreVersion\n            }\n            ...ImageComponentVulnerabilities\n        }\n    }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -379,8 +387,8 @@ export function graphql(
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-    source: '\n    \n    fragment DeploymentWithVulnerabilities on Deployment {\n        id\n        images(query: $query) {\n            ...ImageMetadataContext\n        }\n        imageVulnerabilities(query: $query, pagination: $pagination) {\n            vulnerabilityId: id\n            cve\n            summary\n            images(query: $query) {\n                imageId: id\n                imageComponents(query: $query) {\n                    ...DeploymentComponentVulnerabilities\n                }\n            }\n        }\n    }\n'
-): (typeof documents)['\n    \n    fragment DeploymentWithVulnerabilities on Deployment {\n        id\n        images(query: $query) {\n            ...ImageMetadataContext\n        }\n        imageVulnerabilities(query: $query, pagination: $pagination) {\n            vulnerabilityId: id\n            cve\n            summary\n            images(query: $query) {\n                imageId: id\n                imageComponents(query: $query) {\n                    ...DeploymentComponentVulnerabilities\n                }\n            }\n        }\n    }\n'];
+    source: '\n    fragment DeploymentWithVulnerabilities on Deployment {\n        id\n        images(query: $query) {\n            ...ImageMetadataContext\n        }\n        imageVulnerabilities(query: $query, pagination: $pagination) {\n            vulnerabilityId: id\n            cve\n            summary\n            images(query: $query) {\n                imageId: id\n                imageComponents(query: $query) {\n                    ...DeploymentComponentVulnerabilities\n                }\n            }\n        }\n    }\n'
+): (typeof documents)['\n    fragment DeploymentWithVulnerabilities on Deployment {\n        id\n        images(query: $query) {\n            ...ImageMetadataContext\n        }\n        imageVulnerabilities(query: $query, pagination: $pagination) {\n            vulnerabilityId: id\n            cve\n            summary\n            images(query: $query) {\n                imageId: id\n                imageComponents(query: $query) {\n                    ...DeploymentComponentVulnerabilities\n                }\n            }\n        }\n    }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -397,8 +405,8 @@ export function graphql(
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-    source: '\n    \n    fragment ImageVulnerabilityFields on ImageVulnerability {\n        severity\n        cve\n        summary\n        cvss\n        scoreVersion\n        discoveredAtImage\n        imageComponents(query: $query) {\n            ...ImageComponentVulnerabilities\n        }\n    }\n'
-): (typeof documents)['\n    \n    fragment ImageVulnerabilityFields on ImageVulnerability {\n        severity\n        cve\n        summary\n        cvss\n        scoreVersion\n        discoveredAtImage\n        imageComponents(query: $query) {\n            ...ImageComponentVulnerabilities\n        }\n    }\n'];
+    source: '\n    fragment ImageVulnerabilities on Image {\n        imageVulnerabilities(query: $query, pagination: $pagination) {\n            severity\n            cve\n            summary\n            cvss\n            scoreVersion\n            discoveredAtImage\n            imageComponents(query: $query) {\n                ...ImageComponentVulnerabilities\n            }\n        }\n    }\n'
+): (typeof documents)['\n    fragment ImageVulnerabilities on Image {\n        imageVulnerabilities(query: $query, pagination: $pagination) {\n            severity\n            cve\n            summary\n            cvss\n            scoreVersion\n            discoveredAtImage\n            imageComponents(query: $query) {\n                ...ImageComponentVulnerabilities\n            }\n        }\n    }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

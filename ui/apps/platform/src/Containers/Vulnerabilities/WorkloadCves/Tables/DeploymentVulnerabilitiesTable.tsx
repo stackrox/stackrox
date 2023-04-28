@@ -9,7 +9,6 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
-import { gql } from '@apollo/client';
 import { min } from 'date-fns';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
@@ -18,20 +17,21 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
+import { graphql } from 'generated/graphql-codegen';
+import {
+    DeploymentComponentVulnerabilitiesFragment,
+    DeploymentWithVulnerabilitiesFragment,
+    ImageMetadataContextFragment,
+} from 'generated/graphql-codegen/graphql';
 import { getEntityPagePath } from '../searchUtils';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 
 import EmptyTableResults from '../components/EmptyTableResults';
-import DeploymentComponentVulnerabilitiesTable, {
-    DeploymentComponentVulnerability,
-    ImageMetadataContext,
-    deploymentComponentVulnerabilitiesFragment,
-} from './DeploymentComponentVulnerabilitiesTable';
+import DeploymentComponentVulnerabilitiesTable from './DeploymentComponentVulnerabilitiesTable';
 import { getAnyVulnerabilityIsFixable, getHighestVulnerabilitySeverity } from './table.utils';
 import DateDistanceTd from '../components/DatePhraseTd';
 
-export const deploymentWithVulnerabilitiesFragment = gql`
-    ${deploymentComponentVulnerabilitiesFragment}
+export const deploymentWithVulnerabilitiesFragment = graphql(/* GraphQL */ `
     fragment DeploymentWithVulnerabilities on Deployment {
         id
         images(query: $query) {
@@ -49,28 +49,14 @@ export const deploymentWithVulnerabilitiesFragment = gql`
             }
         }
     }
-`;
-
-export type DeploymentWithVulnerabilities = {
-    id: string;
-    images: ImageMetadataContext[];
-    imageVulnerabilities: {
-        vulnerabilityId: string;
-        cve: string;
-        summary: string;
-        images: {
-            imageId: string;
-            imageComponents: DeploymentComponentVulnerability[];
-        }[];
-    }[];
-};
+`);
 
 type DeploymentVulnerabilityImageMapping = {
-    imageMetadataContext: ImageMetadataContext;
-    componentVulnerabilities: DeploymentComponentVulnerability[];
+    imageMetadataContext: ImageMetadataContextFragment;
+    componentVulnerabilities: DeploymentComponentVulnerabilitiesFragment[];
 };
 
-function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
+function formatVulnerabilityData(deployment: DeploymentWithVulnerabilitiesFragment): {
     vulnerabilityId: string;
     cve: string;
     severity: VulnerabilitySeverity;
@@ -82,7 +68,7 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
 }[] {
     // Create a map of image ID to image metadata for easy lookup
     // We use 'Partial' here because there is no guarantee that the image will be found
-    const imageMap: Partial<Record<string, ImageMetadataContext>> = {};
+    const imageMap: Partial<Record<string, ImageMetadataContextFragment>> = {};
     deployment.images.forEach((image) => {
         imageMap[image.id] = image;
     });
@@ -94,8 +80,8 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
         const highestVulnSeverity = getHighestVulnerabilitySeverity(allVulnerableComponents);
         const isAnyVulnFixable = getAnyVulnerabilityIsFixable(allVulnerableComponents);
         const allDiscoveredDates = allVulnerableComponents
-            .flatMap((c) => c.imageVulnerabilities.map((v) => v.discoveredAtImage))
-            .filter((d): d is string => d !== null);
+            .flatMap((c) => c.imageVulnerabilities.map((v) => v?.discoveredAtImage))
+            .filter((d): d is string => typeof d === 'string');
         const oldestDiscoveredVulnDate = min(...allDiscoveredDates);
         // TODO This logic is used in many places, could extract to a util
         const uniqueComponents = new Set(allVulnerableComponents.map((c) => c.name));
@@ -129,7 +115,7 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
 }
 
 export type DeploymentVulnerabilitiesTableProps = {
-    deployment: DeploymentWithVulnerabilities;
+    deployment: DeploymentWithVulnerabilitiesFragment;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
 };

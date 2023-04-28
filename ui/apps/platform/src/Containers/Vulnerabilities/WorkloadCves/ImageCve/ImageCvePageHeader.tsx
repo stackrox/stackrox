@@ -1,5 +1,4 @@
 import React from 'react';
-import { gql } from '@apollo/client';
 import {
     Flex,
     LabelGroup,
@@ -14,19 +13,11 @@ import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 import uniqBy from 'lodash/uniqBy';
 import { getDateTime } from 'utils/dateUtils';
 import { ensureExhaustive } from 'utils/type.utils';
+import { graphql } from 'generated/graphql-codegen';
+import { ImageCveMetadataFragment } from 'generated/graphql-codegen/graphql';
 import { Distro, sortCveDistroList } from '../sortUtils';
 
-export type ImageCveMetadata = {
-    cve: string;
-    firstDiscoveredInSystem: string | null;
-    distroTuples: {
-        summary: string;
-        link: string;
-        operatingSystem: string;
-    }[];
-};
-
-export const imageCveMetadataFragment = gql`
+export const imageCveMetadataFragment = graphql(/* GraphQL */ `
     fragment ImageCVEMetadata on ImageCVECore {
         cve
         firstDiscoveredInSystem
@@ -36,7 +27,7 @@ export const imageCveMetadataFragment = gql`
             operatingSystem
         }
     }
-`;
+`);
 
 function getDistroLinkText({ distro }: { distro: Distro }): string {
     switch (distro) {
@@ -59,7 +50,7 @@ function getDistroLinkText({ distro }: { distro: Distro }): string {
 }
 
 export type ImageCvePageHeaderProps = {
-    data?: ImageCveMetadata;
+    data: ImageCveMetadataFragment | null | undefined;
 };
 
 function ImageCvePageHeader({ data }: ImageCvePageHeaderProps) {

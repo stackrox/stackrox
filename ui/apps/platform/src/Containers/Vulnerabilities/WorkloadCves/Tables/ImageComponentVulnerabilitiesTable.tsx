@@ -1,11 +1,14 @@
 import React from 'react';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { gql } from '@apollo/client';
 
 import useTableSort from 'hooks/patternfly/useTableSort';
+import { graphql } from 'generated/graphql-codegen';
 import {
-    ImageComponentVulnerability,
-    ImageMetadataContext,
+    ImageComponentVulnerabilitiesFragment,
+    ImageMetadataContextFragment,
+} from 'generated/graphql-codegen/graphql';
+
+import {
     flattenImageComponentVulns,
     imageMetadataContextFragment,
     sortTableData,
@@ -15,9 +18,8 @@ import DockerfileLayerTd from '../components/DockerfileLayerTd';
 import ComponentLocationTd from '../components/ComponentLocationTd';
 
 export { imageMetadataContextFragment };
-export type { ImageMetadataContext, ImageComponentVulnerability };
 
-export const imageComponentVulnerabilitiesFragment = gql`
+export const imageComponentVulnerabilitiesFragment = graphql(/* GraphQL */ `
     fragment ImageComponentVulnerabilities on ImageComponent {
         name
         version
@@ -30,15 +32,15 @@ export const imageComponentVulnerabilitiesFragment = gql`
             fixedByVersion
         }
     }
-`;
+`);
 
 const sortFields = ['Component'];
 const defaultSortOption = { field: 'Component', direction: 'asc' } as const;
 
 export type ImageComponentVulnerabilitiesTableProps = {
     /** The image and associated component vulnerability data to display in the table */
-    imageMetadataContext: ImageMetadataContext;
-    componentVulnerabilities: ImageComponentVulnerability[];
+    imageMetadataContext: ImageMetadataContextFragment;
+    componentVulnerabilities: ImageComponentVulnerabilitiesFragment[];
 };
 
 function ImageComponentVulnerabilitiesTable({

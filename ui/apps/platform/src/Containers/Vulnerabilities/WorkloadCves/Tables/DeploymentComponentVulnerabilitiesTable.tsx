@@ -1,26 +1,23 @@
 import React from 'react';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { gql } from '@apollo/client';
 
 import useTableSort from 'hooks/patternfly/useTableSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
-import ImageNameTd from '../components/ImageNameTd';
+import { graphql } from 'generated/graphql-codegen';
 import {
-    imageMetadataContextFragment,
-    ImageMetadataContext,
-    DeploymentComponentVulnerability,
-    sortTableData,
-    flattenDeploymentComponentVulns,
-} from './table.utils';
+    DeploymentComponentVulnerabilitiesFragment,
+    ImageMetadataContextFragment,
+} from 'generated/graphql-codegen/graphql';
+import ImageNameTd from '../components/ImageNameTd';
+import { sortTableData, flattenDeploymentComponentVulns } from './table.utils';
 import FixedByVersionTd from '../components/FixedByVersionTd';
 import DockerfileLayerTd from '../components/DockerfileLayerTd';
 import ComponentLocationTd from '../components/ComponentLocationTd';
 import CvssTd from '../components/CvssTd';
 
-export { imageMetadataContextFragment };
-export type { ImageMetadataContext, DeploymentComponentVulnerability };
+export type { ImageMetadataContextFragment, DeploymentComponentVulnerabilitiesFragment };
 
-export const deploymentComponentVulnerabilitiesFragment = gql`
+export const deploymentComponentVulnerabilitiesFragment = graphql(/* GraphQL */ `
     fragment DeploymentComponentVulnerabilities on ImageComponent {
         name
         version
@@ -36,7 +33,7 @@ export const deploymentComponentVulnerabilitiesFragment = gql`
             discoveredAtImage
         }
     }
-`;
+`);
 
 const sortFields = ['Image', 'Component'];
 const defaultSortOption = { field: 'Image', direction: 'asc' } as const;
@@ -44,8 +41,8 @@ const defaultSortOption = { field: 'Image', direction: 'asc' } as const;
 export type DeploymentComponentVulnerabilitiesTableProps = {
     /** The images and associated component vulnerability data to display in the table */
     images: {
-        imageMetadataContext: ImageMetadataContext;
-        componentVulnerabilities: DeploymentComponentVulnerability[];
+        imageMetadataContext: ImageMetadataContextFragment;
+        componentVulnerabilities: DeploymentComponentVulnerabilitiesFragment[];
     }[];
 };
 
