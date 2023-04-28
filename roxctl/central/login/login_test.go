@@ -129,7 +129,7 @@ func TestCallbackHandle_Success(t *testing.T) {
 	expectedOutput := `INFO:	Received the following after the authorization flow from Central:
 INFO:	Access token: my-token
 INFO:	Refresh token: my-refresh-token
-INFO:	Successfully persisted the authentication information for central http://localhost:8080.
+INFO:	Successfully persisted the authentication information for central localhost:8080.
 
 You can now use the retrieved access token for all other roxctl commands!
 
