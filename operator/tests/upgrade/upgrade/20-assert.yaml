@@ -17,7 +17,7 @@ commands:
     rm $assert_file
 collectors:
 - type: pod
-  selector: app=central
+  selector: app=centralwithcheese
   tail: -1
 - type: pod
   selector: app=sensor
