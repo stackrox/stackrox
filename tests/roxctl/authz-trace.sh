@@ -96,4 +96,4 @@ verify_trace_for_endpoint "/api/graphql?opname=getNodes"
 
 # Query Central to get a specific GRPC authz trace.
 curl_central_token "/v1/alertscount" -o /dev/null || die "Failed to query alerts count"
-verify_trace_for_endpoint "/v1/alertscountnot"
+verify_trace_for_endpoint "/v1/alertscount"
