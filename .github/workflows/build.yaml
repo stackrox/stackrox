@@ -601,22 +601,24 @@ jobs:
           ./scripts/ci/lib.sh install_built_roxctl_in_gopath
           roxctl version
 
-      - name: Scan images
-        run: |
-          ./release/scripts/scan-images-with-roxctl.sh
-
       - name: Get tag
         id: tag
         run: |
           echo "TAG=$(make --quiet tag)" >> "$GITHUB_OUTPUT"
 
+      - name: Scan images
+        run: |
+          ./release/scripts/scan-images-with-roxctl.sh
+
       - name: Upload SARIF file
+        if: failure()
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: main:3.74.x-850-gc0d4efc8c8.sarif
           category: roxctl
 
       - name: Upload SARIF file
+        if: failure()
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: central-db:${{ steps.tag.outputs.TAG }}.sarif
