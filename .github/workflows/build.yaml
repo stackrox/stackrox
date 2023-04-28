@@ -36,7 +36,8 @@ jobs:
 
       - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
 
-      - uses: ./.github/actions/cache-ui-dependencies
+      # disable ui cache to troubleshoot build
+      # - uses: ./.github/actions/cache-ui-dependencies
 
       - uses: ./.github/actions/handle-tagged-build
 
