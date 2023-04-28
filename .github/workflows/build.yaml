@@ -93,7 +93,7 @@ jobs:
       - uses: ./.github/actions/handle-tagged-build
 
       - name: Setup Go build environment
-        if: matrix.release
+        if: matrix.name == 'prerelease'
         run: echo "GOTAGS=release" >> "$GITHUB_ENV"
 
       - name: Build CLI
@@ -132,7 +132,7 @@ jobs:
       - uses: ./.github/actions/handle-tagged-build
 
       - name: Setup Go build environment
-        if: matrix.release
+        if: matrix.name == 'prerelease'
         run: echo "GOTAGS=release" >> "$GITHUB_ENV"
 
       - name: Build Go Binaries
