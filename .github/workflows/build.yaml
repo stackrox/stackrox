@@ -14,14 +14,17 @@ on:
 
 jobs:
   define:
+    outputs:
+      pre_build_cli_matrix: ${{ steps.define-matrix.outputs.pre_build_cli_matrix }}
     runs-on: ubuntu-latest
     steps:
       - name: Define the matrix for builds
+        id: define-matrix
         run: |
           echo "pre_build_cli_matrix={\
                   include: [\
-                    {release: false, artifact: cli-build} \
-                  ]}" >> $GITHUB_OUTPUT
+                    {release: false, artifact: cli-build}\
+                  ]}" >> "$GITHUB_OUTPUT"
 
   pre-build-ui:
     strategy:
