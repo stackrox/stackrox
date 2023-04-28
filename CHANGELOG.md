@@ -11,6 +11,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - A default role `Vulnerability Manager` has been added that provides sufficient privileges to analyze and manage system vulnerabilities.
 
 ### Removed Features
+- As announced in 3.74, restoring a backup taken on a 3.y release is no longer supported.
 
 ### Deprecated Fatures
 

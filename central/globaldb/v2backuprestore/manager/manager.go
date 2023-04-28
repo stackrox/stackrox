@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -116,7 +115,7 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 		return nil, errors.Errorf("invalid DB restore format %q", requestHeader.GetFormatName())
 	}
 
-	handlerFuncs, totalSizeUncompressed, err := analyzeManifest(requestHeader.GetManifest(), format)
+	handlerFuncs, _, err := analyzeManifest(requestHeader.GetManifest(), format)
 	if err != nil {
 		return nil, err
 	}
@@ -127,12 +126,7 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 	}
 
 	if !process.postgresBundle {
-		if _, err := os.Stat(m.outputRoot); os.IsNotExist(err) {
-			return nil, errors.Errorf("the volume %q and pre-4.0 restore bundles are no longer supported", m.outputRoot)
-		}
-		if err := m.checkDiskSpace(totalSizeUncompressed); err != nil {
-			return nil, err
-		}
+		return nil, errors.Errorf("restoration of legacy backup bundles is no longer available")
 	}
 
 	// Create the paths for the restore directory
