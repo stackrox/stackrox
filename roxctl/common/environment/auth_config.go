@@ -66,7 +66,7 @@ func (c configMethod) retrieveToken(url string) (string, error) {
 	}
 
 	// 1. Check if an access token is given. If an access token is given, and it's not yet expired, then return it.
-	if access.AccessToken != "" && access.ExpiresAt != nil && access.ExpiresAt.After(time.Now().Add(30*time.Second)) {
+	if access.AccessToken != "" && access.ExpiresAt != nil && access.ExpiresAt.After(time.Now().UTC().Add(30*time.Second)) {
 		return access.AccessToken, nil
 	}
 
@@ -82,6 +82,7 @@ Still, trying to authenticate with the given token. In case there's any issues, 
 	// 3. This is the case where an access token is either not set or expired, and a refresh token is available.
 	// We attempt to refresh the access token here.
 	if err := c.refreshAccessToken(url, access); err != nil {
+		c.env.Logger().WarnfLn("An error occurred during access token refresh. Try running roxctl central login again.")
 		return "", errors.Wrap(err, "refreshing access token")
 	}
 
@@ -94,7 +95,7 @@ Still, trying to authenticate with the given token. In case there's any issues, 
 }
 
 func (c configMethod) refreshAccessToken(url string, accessConfig *config.CentralAccessConfig) error {
-	client, err := c.env.HTTPClient(time.Minute)
+	client, err := c.env.HTTPClient(time.Minute, auth.Anonymous())
 	if err != nil {
 		return errors.Wrap(err, "obtaining client for token refresh")
 	}
@@ -103,7 +104,8 @@ func (c configMethod) refreshAccessToken(url string, accessConfig *config.Centra
 		return errors.Wrap(err, "creating request for token refresh")
 	}
 	req.AddCookie(&http.Cookie{
-		Name: "RoxRefreshToken",
+		Name:  authproviders.RefreshTokenCookieName,
+		Value: accessConfig.RefreshToken,
 	})
 
 	resp, err := client.Do(req)
@@ -134,10 +136,8 @@ func (c configMethod) refreshAccessToken(url string, accessConfig *config.Centra
 	accessConfig.ExpiresAt = &tokenRefreshResponse.Expiry
 	now := time.Now()
 	accessConfig.IssuedAt = &now
-	for _, cookie := range resp.Cookies() {
-		if cookie.Valid() == nil && cookie.Name == authproviders.RefreshTokenCookieName {
-			accessConfig.RefreshToken = cookie.Value
-		}
-	}
+	// Although a cookie will be returned, we will _not_ be able to read from it, since the cookie has the
+	// HTTPOnly flag set. Hence, ignore the refresh token, and attempt refreshing until the refresh token is invalid -
+	// then users will have to run roxctl central login again.
 	return nil
 }

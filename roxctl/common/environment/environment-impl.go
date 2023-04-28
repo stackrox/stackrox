@@ -63,10 +63,16 @@ func CLIEnvironment() Environment {
 }
 
 // HTTPClient returns the common.RoxctlHTTPClient associated with the CLI Environment
-func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration) (common.RoxctlHTTPClient, error) {
-	am, err := determineAuthMethod(c)
-	if err != nil {
-		return nil, errors.Wrap(err, "determining auth method")
+func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration, authMethod ...auth.Method) (common.RoxctlHTTPClient, error) {
+	var am auth.Method
+	if len(authMethod) > 0 {
+		am = authMethod[0]
+	} else {
+		var err error
+		am, err = determineAuthMethod(c)
+		if err != nil {
+			return nil, errors.Wrap(err, "determining auth method")
+		}
 	}
 	client, err := common.GetRoxctlHTTPClient(am, timeout, flags.ForceHTTP1(), flags.UseInsecure(), c.Logger())
 	return client, errors.WithStack(err)
