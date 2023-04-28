@@ -168,7 +168,10 @@ function handleGenericResponse(location) {
     if (parsedFragment.has('error') || !parsedFragment.has('token')) {
         return Object.fromEntries(parsedFragment.entries());
     }
-    return { token: parsedFragment.get('token'), authorizeRoxctl: isAuthorizeRoxctlMode(parsedFragment.get('state')) };
+    return {
+        token: parsedFragment.get('token'),
+        authorizeRoxctl: isAuthorizeRoxctlMode(parsedFragment.get('state')),
+    };
 }
 
 function* handleErrAuthResponse(result, defaultErrMsg) {
