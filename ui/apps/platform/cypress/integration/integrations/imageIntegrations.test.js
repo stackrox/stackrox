@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasOrchestratorFlavor } from '../../helpers/features';
 import {
     getHelperElementByLabel,
     getInputByLabel,
@@ -76,6 +77,10 @@ describe('Image Integrations', () => {
     });
 
     it('should create a new Generic Docker Registry integration', () => {
+        if (!hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         const integrationName = generateNameWithDate('Generic Docker Registry Test');
         const integrationType = 'docker';
 

@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasOrchestratorFlavor } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import {
@@ -11,6 +12,12 @@ import { selectors } from './Compliance.selectors';
 
 describe('Compliance Dashboard', () => {
     withAuth();
+
+    before(function beforeHook() {
+        if (!hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+    });
 
     it('should scan for compliance data', () => {
         visitComplianceDashboard();
