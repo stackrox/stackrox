@@ -157,10 +157,10 @@ var (
 	}()
 
 	// rootLogger is the convenience logger used when module specific loggers are not specified
-	rootLogger *Logger
+	rootLogger *LoggerImpl
 
 	// thisModuleLogger is the logger for logging in this module.
-	thisModuleLogger *Logger
+	thisModuleLogger *LoggerImpl
 )
 
 func init() {
@@ -267,7 +267,12 @@ func GetGlobalLogLevel() zapcore.Level {
 }
 
 // LoggerForModule returns a logger for the current module.
-func LoggerForModule() *Logger {
+func LoggerForModule() Logger {
+	return currentModule(3).Logger()
+}
+
+// LoggerImplForModule returns the underlying structure of a logger for the current module.
+func LoggerImplForModule() *LoggerImpl {
 	return currentModule(3).Logger()
 }
 
@@ -365,12 +370,12 @@ func SortedLevels() []zapcore.Level {
 
 // CreateLogger creates (but does not register) a new logger instance.
 // Skip allows to specify how much layers of nested calls we will skip during logging.
-func CreateLogger(module *Module, skip int) *Logger {
+func CreateLogger(module *Module, skip int) *LoggerImpl {
 	lc := config
 	return createLoggerWithConfig(&lc, module, skip)
 }
 
-func createLoggerWithConfig(lc *zap.Config, module *Module, skip int) *Logger {
+func createLoggerWithConfig(lc *zap.Config, module *Module, skip int) *LoggerImpl {
 	lc.Level = module.logLevel
 
 	logger, err := lc.Build(zap.AddCallerSkip(skip))
@@ -378,12 +383,12 @@ func createLoggerWithConfig(lc *zap.Config, module *Module, skip int) *Logger {
 		panic(errors.Wrap(err, "failed to instantiate logger"))
 	}
 
-	result := &Logger{
+	result := &LoggerImpl{
 		SugaredLogger: logger.Named(module.name).Sugar(),
 		module:        module,
 	}
 
-	runtime.SetFinalizer(result, (*Logger).finalize)
+	runtime.SetFinalizer(result, (*LoggerImpl).finalize)
 
 	return result
 }

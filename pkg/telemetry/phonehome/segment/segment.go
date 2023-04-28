@@ -74,7 +74,7 @@ func NewTelemeter(key, endpoint, clientID, clientType string, interval time.Dura
 }
 
 type logWrapper struct {
-	internal *logging.Logger
+	internal logging.Logger
 }
 
 func (l *logWrapper) Logf(format string, args ...any) {
