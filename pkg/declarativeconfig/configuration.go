@@ -3,9 +3,10 @@ package declarativeconfig
 import (
 	"bytes"
 	"io"
+	"strings"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"gopkg.in/yaml.v3"
 )
 
@@ -61,36 +62,25 @@ func fromUnstructured(unstructured interface{}) (Configuration, error) {
 		return nil, errors.Wrap(err, "marshalling unstructured configuration")
 	}
 
-	var decodeErrs *multierror.Error
-
-	var authProvider AuthProvider
-	err = decodeYAMLToConfiguration(rawConfiguration, &authProvider)
-	if err == nil {
-		return &authProvider, nil
+	configs := []Configuration{&AuthProvider{}, &AccessScope{}, &PermissionSet{}, &Role{}}
+	for _, c := range configs {
+		err := decodeYAMLToConfiguration(rawConfiguration, c)
+		if err == nil {
+			return c, nil
+		}
+		if errors.Is(err, errox.InvalidArgs) {
+			return nil, err
+		}
 	}
-	decodeErrs = multierror.Append(decodeErrs, err)
+	return nil, errox.InvalidArgs.Newf("could not unmarshal configuration into any of the supported types [%s]", configNames(configs))
+}
 
-	var accessScope AccessScope
-	err = decodeYAMLToConfiguration(rawConfiguration, &accessScope)
-	if err == nil {
-		return &accessScope, nil
+func configNames(configs []Configuration) string {
+	names := make([]string, 0, len(configs))
+	for _, c := range configs {
+		names = append(names, c.Type())
 	}
-	decodeErrs = multierror.Append(decodeErrs, err)
-
-	var permissionSet PermissionSet
-	err = decodeYAMLToConfiguration(rawConfiguration, &permissionSet)
-	if err == nil {
-		return &permissionSet, nil
-	}
-	decodeErrs = multierror.Append(decodeErrs, err)
-
-	var role Role
-	err = decodeYAMLToConfiguration(rawConfiguration, &role)
-	if err == nil {
-		return &role, nil
-	}
-	decodeErrs = multierror.Append(decodeErrs, err)
-	return nil, errors.Wrap(decodeErrs, "unable to unmarshal the configuration")
+	return strings.Join(names, ",")
 }
 
 func decodeYAMLToConfiguration(rawYAML []byte, configuration Configuration) error {

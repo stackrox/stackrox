@@ -164,7 +164,7 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 	configurations, err := declarativeconfig.ConfigurationFromRawBytes(contents...)
 	if err != nil {
 		m.updateHandlerHealth(handlerID, err)
-		log.Errorf("Error during unmarshalling of declarative configuration files: %+v", err)
+		log.Debugf("Error during unmarshalling of declarative configuration files: %+v", err)
 		return
 	}
 
@@ -173,7 +173,7 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 	for _, configuration := range configurations {
 		transformedConfig, err := m.universalTransformer.Transform(configuration)
 		if err != nil {
-			log.Errorf("Error during transforming declarative configuration %+v: %+v", configuration, err)
+			log.Debugf("Error during transforming declarative configuration %+v: %+v", configuration, err)
 			transformationErrors = multierror.Append(transformationErrors, err)
 			continue
 		}
@@ -310,7 +310,7 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 	}
 
 	if err := m.removeStaleHealthStatuses(allProtoIDsToSkip); err != nil {
-		log.Errorf("Failed to delete stale health status entries for declarative config: %v", err)
+		log.Debugf("Failed to delete stale health status entries for declarative config: %v", err)
 	}
 	m.lastDeletionFailed.Set(failureInDeletion)
 }
@@ -360,7 +360,7 @@ func (m *managerImpl) registerHealthForMessage(handler string, messages ...proto
 
 		if err := m.declarativeConfigErrorReporter.Register(messageID, messageName,
 			storage.IntegrationHealth_DECLARATIVE_CONFIG); err != nil {
-			log.Errorf("Error registering health status for declarative config %+v: %v", message, err)
+			log.Debugf("Error registering health status for declarative config %+v: %v", message, err)
 		}
 	}
 }
@@ -416,7 +416,7 @@ func (m *managerImpl) calculateHashAndIndicateChanges(transformedMessagesByHandl
 	// If we received an error for hash generation, log it and _always_ run the deletion. This way we ensure
 	// we don't mistakenly skip reconciliation runs where we shouldn't (e.g. consecutive errors).
 	if err != nil {
-		log.Errorf("Failed to create hash for transformed messages by handler %+v, "+
+		log.Debugf("Failed to create hash for transformed messages by handler %+v, "+
 			"reconciliation will be executed: %v",
 			transformedMessagesByHandler, err)
 		return true
