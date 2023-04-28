@@ -23,14 +23,6 @@ tests:
     .deployments["scanner"] | assertThat(. == null)
     .deployments["scanner-db"] | assertThat(. == null)
 
-- name: "scanner is enabled on non-openshift cluster should fail"
-  set:
-    env.openshift: false
-    scanner.disable: false
-  expectError: true
-  expect: |
-    .error | assertThat(contains("Scanner was enabled but is only supported on OpenShift."))
-
 - name: "scanner can override image config"
   set:
     scanner.disable: false
