@@ -276,7 +276,7 @@ describe('Configuration Management Dashboard', () => {
     });
 
     it('clicking the "CIS Standard Across Clusters" widget\'s "passing controls" link should take you to the controls list and filter by passing controls', () => {
-        if (!hasOrchestratorFlavor('openshift')) {
+        if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
 

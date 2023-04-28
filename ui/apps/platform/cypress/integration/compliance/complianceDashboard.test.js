@@ -14,7 +14,7 @@ describe('Compliance Dashboard', () => {
     withAuth();
 
     before(function beforeHook() {
-        if (!hasOrchestratorFlavor('openshift')) {
+        if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
     });

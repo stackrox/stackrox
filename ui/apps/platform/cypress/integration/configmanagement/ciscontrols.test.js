@@ -21,7 +21,7 @@ describe('Configuration Management Controls', () => {
     withAuth();
 
     it('should render the controls list and open the side panel when a row is clicked', () => {
-        if (!hasOrchestratorFlavor('openshift')) {
+        if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
 

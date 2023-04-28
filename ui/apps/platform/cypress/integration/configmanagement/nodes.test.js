@@ -58,7 +58,7 @@ describe('Configuration Management Nodes', () => {
     });
 
     it('should click on the controls count widget in the entity page and show the controls tab', () => {
-        if (!hasOrchestratorFlavor('openshift')) {
+        if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
 

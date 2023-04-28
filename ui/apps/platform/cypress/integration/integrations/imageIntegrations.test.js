@@ -77,7 +77,7 @@ describe('Image Integrations', () => {
     });
 
     it('should create a new Generic Docker Registry integration', () => {
-        if (!hasOrchestratorFlavor('openshift')) {
+        if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
 
