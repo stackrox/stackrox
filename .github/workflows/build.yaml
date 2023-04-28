@@ -560,10 +560,11 @@ jobs:
           quay.io/rhacs-eng/grpc-server:${{ steps.tag.outputs.TAG }}
 
   scan-images-with-roxctl:
-    if: github.event_name == 'push'
+#    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     needs:
-      - build-and-push-main
+      - pre-build-cli
+#      - build-and-push-main
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
       env:
@@ -604,10 +605,15 @@ jobs:
         run: |
           ./release/scripts/scan-images-with-roxctl.sh
 
+      - name: Get tag
+        id: tag
+        run: |
+          echo "TAG=$(make --quiet tag)" >> "$GITHUB_OUTPUT"
+
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v2
         with:
-          sarif_file: main:${{ steps.tag.outputs.TAG }}.sarif
+          sarif_file: main:3.74.x-850-gc0d4efc8c8.sarif
           category: roxctl
 
       - name: Upload SARIF file
