@@ -361,6 +361,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	} else {
 		// Otherwise, check if the remote entity is actually a cluster entity.
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
+		log.Infof("Connection: %+v LookupResults: %+v", conn, lookupResults)
 	}
 
 	if len(lookupResults) == 0 {
