@@ -96,7 +96,8 @@ class ProcessBaselinesTest extends BaseSpecification {
                      .addLabel("app", "test"),
             ]
 
-    static final private Integer LONGEST_TEST = 400
+    static final private Integer BASELINE_WAIT_TIME = 100
+    static final private Integer RISK_WAIT_TIME = 240
 
     // Override the global JUnit test timeout to cover a test instance taking
     // LONGEST_TEST over three test tries and the appprox. 6
@@ -104,7 +105,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     // some padding.
     @Rule
     @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(3*LONGEST_TEST + 300 + 120, TimeUnit.SECONDS)
+    Timeout globalTimeout = new Timeout(3*(BASELINE_WAIT_TIME + RISK_WAIT_TIME) + 300 + 120, TimeUnit.SECONDS)
 
     def setupSpec() {
         clusterId = ClusterService.getClusterId()
@@ -120,7 +121,6 @@ class ProcessBaselinesTest extends BaseSpecification {
         "exec into the container and run a process and wait for lock to kick in"
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
-
         orchestrator.createDeployment(deployment)
         assert Services.waitForDeployment(deployment)
         String deploymentId = deployment.getDeploymentUid()
@@ -229,7 +229,6 @@ class ProcessBaselinesTest extends BaseSpecification {
         "exec into the container after locking baseline and create a baseline violation"
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
-
         orchestrator.createDeployment(deployment)
         String deploymentId = deployment.getDeploymentUid()
         assert deploymentId != null
@@ -264,7 +263,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         log.info "Locked Process Baseline after pwd: ${lockProcessBaselines}"
 
         // check for process baseline violation
-        assert waitForViolation(containerName, "Unauthorized Process Execution", 240)
+        assert waitForViolation(containerName, "Unauthorized Process Execution", RISK_WAIT_TIME)
         List<AlertOuterClass.ListAlert> alertList = AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest
                  .newBuilder().build())
         String alertId
@@ -328,7 +327,6 @@ class ProcessBaselinesTest extends BaseSpecification {
         // Get all baselines for our deployment and assert they exist
         def deployment = DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_DELETE }
         assert deployment != null
-
         orchestrator.createDeployment(deployment)
         String containerName = deployment.getName()
         def baselinesCreated = ProcessBaselineService.
@@ -422,7 +420,6 @@ class ProcessBaselinesTest extends BaseSpecification {
         // Get all baselines for our deployment and assert they exist
         def deployment = DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_DELETE_API }
         assert deployment != null
-
         orchestrator.createDeployment(deployment)
         String containerName = deployment.getName()
         def baselinesCreated = ProcessBaselineService.
@@ -506,7 +503,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         then:
         "verify for suspicious process in risk indicator"
-        RiskOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, 240)
+        RiskOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, RISK_WAIT_TIME)
         assert (result != null)
         // Check that pwd is a risky process
         RiskOuterClass.Risk.Result.Factor pwdFactor =  result.factorsList.find { it.message.contains("pwd") }
