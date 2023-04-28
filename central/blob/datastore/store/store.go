@@ -21,12 +21,12 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *pgPkg.DB
+	db    pgPkg.DB
 	store postgres.Store
 }
 
 // New creates a new Blob store
-func New(db *pgPkg.DB) Store {
+func New(db pgPkg.DB) Store {
 	return &storeImpl{
 		db:    db,
 		store: postgres.New(db),

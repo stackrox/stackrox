@@ -8,7 +8,7 @@ import "google/protobuf/timestamp.proto";
 
 package storage;
 
-// Next Tag: 4
+// Next Tag: 6
 message Blob {
     string name                              = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     uint32 oid                               = 2;
