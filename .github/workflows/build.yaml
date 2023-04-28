@@ -604,7 +604,7 @@ jobs:
       - name: Get tag
         id: tag
         run: |
-          echo "TAG=$(make --quiet tag)" >> "$GITHUB_OUTPUT"
+          echo "TAG=3.74.0" >> "$GITHUB_OUTPUT"
 
       - name: Scan images
         run: |
@@ -614,7 +614,7 @@ jobs:
         if: failure()
         uses: github/codeql-action/upload-sarif@v2
         with:
-          sarif_file: main:3.74.x-850-gc0d4efc8c8.sarif
+          sarif_file: main:${{ steps.tag.outputs.TAG }}.sarif
           category: roxctl
 
       - name: Upload SARIF file

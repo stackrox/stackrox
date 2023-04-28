@@ -13,7 +13,7 @@ scan_images_with_roxctl() {
 
     # determine all image tags
     local release_tag
-    release_tag=$(make tag)
+    release_tag=3.74.0
     local collector_tag
     collector_tag=$(make collector-tag)
     local scanner_tag
