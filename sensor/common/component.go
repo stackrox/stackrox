@@ -41,7 +41,7 @@ type ComplianceComponent interface {
 	SensorComponent
 	Stopped() concurrency.ReadOnlyErrorSignal
 
-	ComplianceC() <-chan *MessageToComplianceWithAddress
+	ComplianceC() <-chan MessageToComplianceWithAddress
 }
 
 // CentralGRPCConnAware allows to set gRPC connections in sensor components.

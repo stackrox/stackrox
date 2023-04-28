@@ -68,7 +68,7 @@ func (c *Multiplexer) AddComponentWithComplianceC(comp ...common.ComplianceCompo
 
 // addChannel Adds a channel to ComplianceCommunicator, addChannel must be called
 // for ALL channels before calling Start()
-func (c *Multiplexer) addChannel(channel <-chan *common.MessageToComplianceWithAddress) {
+func (c *Multiplexer) addChannel(channel <-chan common.MessageToComplianceWithAddress) {
 	if channel == nil {
 		panic("Multiplexer.AddChannel() cannot work with nil channels")
 	}
@@ -76,6 +76,6 @@ func (c *Multiplexer) addChannel(channel <-chan *common.MessageToComplianceWithA
 }
 
 // GetCommandsC returns the multiplexed output channel combining all input channels added with addChannel
-func (c *Multiplexer) GetCommandsC() <-chan *common.MessageToComplianceWithAddress {
+func (c *Multiplexer) GetCommandsC() <-chan common.MessageToComplianceWithAddress {
 	return c.mp.GetOutput()
 }

@@ -91,7 +91,7 @@ func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateCli
 			log.Infof("Received NACK from Sensor, resending NodeInventory in 10 seconds.")
 			go func() {
 				time.Sleep(time.Second * 10)
-				msg, err := scanNode(scanner)
+				msg, err := scanNode(ctx, scanner)
 				if err != nil {
 					log.Errorf("error running scanNode: %v", err)
 				} else {

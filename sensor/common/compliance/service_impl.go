@@ -26,7 +26,7 @@ type serviceImpl struct {
 	auditEvents     chan *sensor.AuditEvents
 	nodeInventories chan *storage.NodeInventory
 
-	complianceC <-chan *common.MessageToComplianceWithAddress
+	complianceC <-chan common.MessageToComplianceWithAddress
 
 	auditLogCollectionManager AuditLogCollectionManager
 

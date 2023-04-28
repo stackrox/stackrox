@@ -21,7 +21,7 @@ type nodeInventoryHandlerImpl struct {
 	inventories  <-chan *storage.NodeInventory
 	toCentral    <-chan *central.MsgFromSensor
 	centralReady concurrency.Signal
-	toCompliance <-chan *common.MessageToComplianceWithAddress
+	toCompliance <-chan common.MessageToComplianceWithAddress
 	nodeMatcher  NodeIDMatcher
 	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
 	lock    *sync.Mutex
@@ -47,7 +47,7 @@ func (c *nodeInventoryHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 }
 
 // ComplianceC returns a channel with messages to Compliance
-func (c *nodeInventoryHandlerImpl) ComplianceC() <-chan *common.MessageToComplianceWithAddress {
+func (c *nodeInventoryHandlerImpl) ComplianceC() <-chan common.MessageToComplianceWithAddress {
 	return c.toCompliance
 }
 
@@ -80,16 +80,16 @@ func (c *nodeInventoryHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error 
 
 // run handles the messages from Compliance and forwards them to Central
 // This is the only goroutine that writes into the toCentral channel, thus it is responsible for creating and closing that chan
-func (c *nodeInventoryHandlerImpl) run() (<-chan *central.MsgFromSensor, <-chan *common.MessageToComplianceWithAddress) {
+func (c *nodeInventoryHandlerImpl) run() (<-chan *central.MsgFromSensor, <-chan common.MessageToComplianceWithAddress) {
 	toCentral := make(chan *central.MsgFromSensor)
-	toCompliance := make(chan *common.MessageToComplianceWithAddress)
+	toCompliance := make(chan common.MessageToComplianceWithAddress)
 
 	go c.nodeInventoryHandlingLoop(toCentral, toCompliance)
 
 	return toCentral, toCompliance
 }
 
-func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *central.MsgFromSensor, toCompliance chan *common.MessageToComplianceWithAddress) {
+func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *central.MsgFromSensor, toCompliance chan common.MessageToComplianceWithAddress) {
 	defer c.stopper.Flow().ReportStopped()
 	defer close(toCentral)
 	defer close(toCompliance)
@@ -125,11 +125,11 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *cen
 	}
 }
 
-func (c *nodeInventoryHandlerImpl) sendNackToCompliance(complianceC chan<- *common.MessageToComplianceWithAddress, inventory *storage.NodeInventory) {
+func (c *nodeInventoryHandlerImpl) sendNackToCompliance(complianceC chan<- common.MessageToComplianceWithAddress, inventory *storage.NodeInventory) {
 	if inventory == nil {
 		return
 	}
-	complianceC <- &common.MessageToComplianceWithAddress{
+	complianceC <- common.MessageToComplianceWithAddress{
 		Msg: &sensor.MsgToCompliance{
 			Msg: &sensor.MsgToCompliance_Nack{
 				Nack: &sensor.MsgToCompliance_NodeInventoryNack{
