@@ -95,7 +95,7 @@ docker_init_database_dir() {
 		set -- --waldir "$POSTGRES_INITDB_WALDIR" "$@"
 	fi
 
-	eval 'initdb --username="$POSTGRES_USER" --pwfile=<(echo "$POSTGRES_PASSWORD") '"$POSTGRES_INITDB_ARGS"' "$@"'
+	eval 'initdb --username="$POSTGRES_USER" --pwfile=<(echo "$POSTGRES_PASSWORD") --encoding=UTF8 '"$POSTGRES_INITDB_ARGS"' "$@"'
 
 	# unset/cleanup "nss_wrapper" bits
 	if [[ "${LD_PRELOAD:-}" == */libnss_wrapper.so ]]; then
@@ -344,7 +344,7 @@ _main() {
 		fi
 	fi
 
-	"$@" &
+	flock /var/lib/postgresql/data/pglock "$@" &
 	child=$!
 	echo "Waiting for child process $child to exit"
 	wait "$child"

@@ -94,11 +94,11 @@ const ContainerVolumes = ({ volumes }: { volumes: Volume[] }): ReactElement => {
                     {Object.keys(volume).map(
                         (key) =>
                             volume[key] && (
-                                <div key={key} className="py-1 font-600">
-                                    <span className=" pr-1">{capitalize(lowerCase(key))}:</span>
-                                    <span className="text-accent-800 italic">
-                                        {volume[key].toString()}
+                                <div key={key} className="py-1">
+                                    <span className="font-700 pr-1">
+                                        {capitalize(lowerCase(key))}:
                                     </span>
+                                    <span className="font-600">{volume[key].toString()}</span>
                                 </div>
                             )
                     )}
@@ -114,19 +114,19 @@ type Secret = {
 };
 const ContainerSecrets = ({ secrets }: { secrets: Secret[] }): ReactElement => {
     if (!secrets?.length) {
-        return <span className="py-1 font-600 italic">None</span>;
+        return <span className="py-1 font-600">None</span>;
     }
     return (
         <>
             {secrets.map(({ name, path }) => (
                 <div key={`${name}-${path}`} className="py-2">
-                    <div className="py-1 font-600">
-                        <span className="pr-1">Name:</span>
-                        <span className="text-accent-800 italic">{name}</span>
+                    <div className="py-1">
+                        <span className="font-700 pr-1">Name:</span>
+                        <span className="font-600">{name}</span>
                     </div>
-                    <div className="py-1 font-600">
-                        <span className="pr-1">Container Path:</span>
-                        <span className="text-accent-800 italic">{path}</span>
+                    <div className="py-1">
+                        <span className="font-700 pr-1">Container Path:</span>
+                        <span className="font-600">{path}</span>
                     </div>
                 </div>
             ))}

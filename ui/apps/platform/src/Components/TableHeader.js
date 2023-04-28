@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import { Tooltip } from '@patternfly/react-core';
 
 const maxSize = 1000;
 
@@ -24,7 +23,7 @@ const TableHeader = (props) => {
             className="overflow-hidden mx-4 flex text-base-600 items-center tracking-wide leading-normal font-700 uppercase"
             data-testid="filtered-header"
         >
-            <Tooltip content={<TooltipOverlay>{headerText}</TooltipOverlay>}>
+            <Tooltip content={headerText}>
                 <div className="truncate flex-none">{headerText}</div>
             </Tooltip>
         </div>

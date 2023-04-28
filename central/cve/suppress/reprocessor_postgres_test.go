@@ -37,7 +37,7 @@ type ReprocessorPostgresTestSuite struct {
 	suite.Suite
 
 	ctx             context.Context
-	db              *postgres.DB
+	db              postgres.DB
 	gormDB          *gorm.DB
 	imageDataStore  imageDS.DataStore
 	cveDataStore    cveDS.DataStore

@@ -40,14 +40,14 @@ type fakeDS struct {
 	datastore.DataStore
 }
 
-func (f *fakeDS) UpsertNetworkBaselines(ctx context.Context, baselines []*storage.NetworkBaseline) error {
+func (f *fakeDS) UpsertNetworkBaselines(_ context.Context, baselines []*storage.NetworkBaseline) error {
 	for _, baseline := range baselines {
 		f.baselines[baseline.GetDeploymentId()] = baseline
 	}
 	return nil
 }
 
-func (f *fakeDS) Walk(ctx context.Context, fn func(baseline *storage.NetworkBaseline) error) error {
+func (f *fakeDS) Walk(_ context.Context, fn func(baseline *storage.NetworkBaseline) error) error {
 	for _, baseline := range f.baselines {
 		if err := fn(baseline); err != nil {
 			return err
@@ -56,19 +56,19 @@ func (f *fakeDS) Walk(ctx context.Context, fn func(baseline *storage.NetworkBase
 	return nil
 }
 
-func (f *fakeDS) DeleteNetworkBaseline(ctx context.Context, deploymentID string) error {
+func (f *fakeDS) DeleteNetworkBaseline(_ context.Context, deploymentID string) error {
 	delete(f.baselines, deploymentID)
 	return nil
 }
 
-func (f *fakeDS) DeleteNetworkBaselines(ctx context.Context, deploymentIDs []string) error {
+func (f *fakeDS) DeleteNetworkBaselines(_ context.Context, deploymentIDs []string) error {
 	for _, id := range deploymentIDs {
 		delete(f.baselines, id)
 	}
 	return nil
 }
 
-func (f *fakeDS) GetNetworkBaseline(ctx context.Context, deploymentID string) (*storage.NetworkBaseline, bool, error) {
+func (f *fakeDS) GetNetworkBaseline(_ context.Context, deploymentID string) (*storage.NetworkBaseline, bool, error) {
 	if baseline, ok := f.baselines[deploymentID]; ok {
 		return baseline, true, nil
 	}
@@ -231,7 +231,8 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 				Id:   extSrcID(10),
 				Desc: &storage.NetworkEntityInfo_ExternalSource_{
 					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Name: extSrcName(10),
+						Name:   extSrcName(10),
+						Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{Cidr: "11.0.0.0/32"},
 					},
 				},
 			},
@@ -298,7 +299,8 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 					Id:   extSrcID(10),
 					Desc: &storage.NetworkEntityInfo_ExternalSource_{
 						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Name: extSrcName(10),
+							Name:   extSrcName(10),
+							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{Cidr: "11.0.0.0/32"},
 						},
 					},
 				}},
@@ -565,7 +567,7 @@ func (suite *ManagerTestSuite) TestDeleteWithExtSrcPeer() {
 		baselineWithPeers(
 			1,
 			depPeer(2, properties(false, 52)),
-			extSrcPeer(3, properties(false, 443)),
+			extSrcPeer(3, "11.0.0.0/32", properties(false, 443)),
 		),
 		baselineWithPeers(2, depPeer(1, properties(true, 52))),
 	)
@@ -573,13 +575,13 @@ func (suite *ManagerTestSuite) TestDeleteWithExtSrcPeer() {
 		baselineWithPeers(
 			1,
 			depPeer(2, properties(false, 52)),
-			extSrcPeer(3, properties(false, 443)),
+			extSrcPeer(3, "11.0.0.0/32", properties(false, 443)),
 		),
 		baselineWithPeers(2, depPeer(1, properties(true, 52))),
 	)
 	// Make sure deleting a deployment does not trigger an error even if we have ext src peer
 	suite.Nil(suite.m.ProcessDeploymentDelete(depID(2)))
-	suite.assertBaselinesAre(baselineWithPeers(1, extSrcPeer(3, properties(false, 443))))
+	suite.assertBaselinesAre(baselineWithPeers(1, extSrcPeer(3, "11.0.0.0/32", properties(false, 443))))
 }
 
 func (suite *ManagerTestSuite) TestValidEntityTypesMatch() {
@@ -881,7 +883,7 @@ func depPeer(id int, properties ...*storage.NetworkBaselineConnectionProperties)
 	}
 }
 
-func extSrcPeer(id int, properties ...*storage.NetworkBaselineConnectionProperties) *storage.NetworkBaselinePeer {
+func extSrcPeer(id int, cidr string, properties ...*storage.NetworkBaselineConnectionProperties) *storage.NetworkBaselinePeer {
 	return &storage.NetworkBaselinePeer{
 		Entity: &storage.NetworkEntity{
 			Info: &storage.NetworkEntityInfo{
@@ -889,7 +891,8 @@ func extSrcPeer(id int, properties ...*storage.NetworkBaselineConnectionProperti
 				Id:   extSrcID(id),
 				Desc: &storage.NetworkEntityInfo_ExternalSource_{
 					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Name: extSrcName(id),
+						Name:   extSrcName(id),
+						Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{Cidr: cidr},
 					},
 				},
 			}},

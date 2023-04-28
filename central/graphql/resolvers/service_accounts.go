@@ -265,7 +265,7 @@ func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[
 	return evaluators, nil
 }
 
-func (resolver *serviceAccountResolver) getClusterEvaluator(ctx context.Context) k8srbac.EvaluatorForContext {
+func (resolver *serviceAccountResolver) getClusterEvaluator(_ context.Context) k8srbac.EvaluatorForContext {
 	saClusterID := resolver.data.GetClusterId()
 
 	return rbacUtils.NewClusterPermissionEvaluator(saClusterID,

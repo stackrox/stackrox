@@ -5,6 +5,7 @@ import (
 	"hash/fnv"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -66,7 +67,7 @@ func (w *workerQueue) runWorker(ctx context.Context, idx int, stopSig *concurren
 	queue := w.queues[idx]
 	for msg := queue.pullBlocking(stopSig); msg != nil; msg = queue.pullBlocking(stopSig) {
 		err := handler(ctx, msg)
-		if err != nil {
+		if err != nil && !errors.Is(err, context.Canceled) {
 			if pgutils.IsTransientError(err) {
 				msg.ProcessingAttempt++
 

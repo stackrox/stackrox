@@ -43,7 +43,7 @@ export const SUMMARY_COUNTS = gql`
 `;
 
 const tileEntityTypes = ['Cluster', 'Node', 'Violation', 'Deployment', 'Image', 'Secret'] as const;
-type TileEntity = typeof tileEntityTypes[number];
+type TileEntity = (typeof tileEntityTypes)[number];
 
 const tileLinks: Record<TileEntity, string> = {
     Cluster: clustersBasePath,

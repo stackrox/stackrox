@@ -58,18 +58,18 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *postgres.DB
+	db    postgres.DB
 	mutex sync.Mutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB) Store {
+func New(db postgres.DB) Store {
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoClusterCves(ctx context.Context, batch *pgx.Batch, obj *storage.ClusterCVE) error {
+func insertIntoClusterCves(_ context.Context, batch *pgx.Batch, obj *storage.ClusterCVE) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -309,7 +309,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ClusterCVE, bo
 	return data, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*postgres.Conn, func(), error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -428,7 +428,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ClusterCVE) e
 
 //// Used for testing
 
-func dropTableClusterCves(ctx context.Context, db *postgres.DB) {
+func dropTableClusterCves(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS cluster_cves CASCADE")
 
 }
@@ -436,11 +436,11 @@ func dropTableClusterCves(ctx context.Context, db *postgres.DB) {
 //// Stubs for satisfying legacy interfaces
 
 // AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
+func (s *storeImpl) AckKeysIndexed(_ context.Context, _ ...string) error {
 	return nil
 }
 
 // GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
+func (s *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
 	return nil, nil
 }

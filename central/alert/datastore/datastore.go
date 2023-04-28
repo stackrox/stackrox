@@ -37,7 +37,6 @@ type DataStore interface {
 	SearchRawAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error)
 	SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error)
 
-	ListAlerts(ctx context.Context, request *v1.ListAlertsRequest) ([]*storage.ListAlert, error)
 	WalkAll(ctx context.Context, fn func(alert *storage.ListAlert) error) error
 	GetAlert(ctx context.Context, id string) (*storage.Alert, bool, error)
 	CountAlerts(ctx context.Context) (int, error)
@@ -83,7 +82,7 @@ func NewWithDb(db *rocksdbBase.RocksDB, bIndex bleve.Index) DataStore {
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ testing.TB, pool *postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
 	alertStore := pgStore.New(pool)
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(alertStore, indexer)

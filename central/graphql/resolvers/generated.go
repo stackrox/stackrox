@@ -42,6 +42,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"scanInline: Boolean!",
 		"timeoutSeconds: Int!",
 	}))
+	utils.Must(builder.AddInput("AggregateBy", []string{
+		"aggregateFunc: String",
+		"distinct: Boolean",
+	}))
 	utils.Must(builder.AddType("Alert", []string{
 		"clusterId: String!",
 		"clusterName: String!",
@@ -953,6 +957,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"limit: Int",
 		"offset: Int",
 		"sortOption: SortOption",
+		"sortOptions: [SortOption]",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.PermissionLevel(0)))
 	utils.Must(builder.AddType("PermissionSet", []string{
@@ -1285,6 +1290,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 	}))
 	utils.Must(builder.AddInput("SortOption", []string{
+		"aggregateBy: AggregateBy",
 		"field: String",
 		"reversed: Boolean",
 	}))

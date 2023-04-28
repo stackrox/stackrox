@@ -14,7 +14,8 @@ import (
 // Command controls all of the functions being applied to a sensor
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "sensor",
+		Use:   "sensor",
+		Short: "Commands related to deploying StackRox services in secured clusters.",
 	}
 	c.AddCommand(
 		generate.Command(cliEnvironment),

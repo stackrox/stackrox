@@ -18,7 +18,7 @@ import (
 
 type imageCVECoreViewImpl struct {
 	schema *walker.Schema
-	db     *postgres.DB
+	db     postgres.DB
 }
 
 func (v *imageCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
@@ -112,7 +112,7 @@ func withSelectQuery(q *v1.Query, options views.ReadOptions) *v1.Query {
 		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto())
 	}
 	if !options.SkipGetAffectedImages {
-		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.ImageSHA).AggrFunc(aggregatefunc.Count).Proto())
+		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.ImageSHA).AggrFunc(aggregatefunc.Count).Distinct().Proto())
 	}
 	if !options.SkipGetFirstDiscoveredInSystem {
 		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.CVECreatedTime).AggrFunc(aggregatefunc.Min).Proto())

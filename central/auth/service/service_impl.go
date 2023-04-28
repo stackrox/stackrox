@@ -34,7 +34,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetAuthStatus retrieves the auth status based on the credentials given to the server.
-func (s *serviceImpl) GetAuthStatus(ctx context.Context, request *v1.Empty) (*v1.AuthStatus, error) {
+func (s *serviceImpl) GetAuthStatus(ctx context.Context, _ *v1.Empty) (*v1.AuthStatus, error) {
 	id, err := authn.IdentityFromContext(ctx)
 	if err != nil {
 		return nil, err

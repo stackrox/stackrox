@@ -190,13 +190,15 @@ type PerNodeSpec struct {
 	TaintToleration *TaintTolerationPolicy `json:"taintToleration,omitempty"`
 }
 
-// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'KernelModule' or 'None'.
-// +kubebuilder:validation:Enum=EBPF;KernelModule;NoCollection
+// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'CORE_BPF', 'KernelModule' or 'None'.
+// +kubebuilder:validation:Enum=EBPF;CORE_BPF;KernelModule;NoCollection
 type CollectionMethod string
 
 const (
 	// CollectionEBPF means: use EBPF collection.
 	CollectionEBPF CollectionMethod = "EBPF"
+	// CollectionCOREBPF means: use CORE_BPF collection.
+	CollectionCOREBPF CollectionMethod = "CORE_BPF"
 	// CollectionKernelModule means: use KERNEL_MODULE collection.
 	CollectionKernelModule CollectionMethod = "KernelModule"
 	// CollectionNone means: NO_COLLECTION.
@@ -256,7 +258,8 @@ func (t TaintTolerationPolicy) Pointer() *TaintTolerationPolicy {
 
 // CollectorContainerSpec defines settings for the collector container.
 type CollectorContainerSpec struct {
-	// The method for system-level data collection. Kernel module is recommended.
+	// The method for system-level data collection. EBPF is recommended. KernelModule
+	// is deprecated and will be removed in the 4.1 release.
 	// If you select "NoCollection", you will not be able to see any information about network activity
 	// and process executions. The remaining settings in these section will not have any effect.
 	//+kubebuilder:validation:Default=EBPF

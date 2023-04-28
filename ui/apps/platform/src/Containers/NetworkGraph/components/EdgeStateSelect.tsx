@@ -3,7 +3,7 @@ import { Select, SelectOption } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
-export type EdgeState = 'active' | 'extraneous';
+export type EdgeState = 'active' | 'inactive';
 
 type EdgeStateSelectProps = {
     edgeState: EdgeState;
@@ -31,15 +31,15 @@ function EdgeStateSelect({ edgeState, setEdgeState, isDisabled }: EdgeStateSelec
         >
             <SelectOption
                 value="active"
-                description="Traffic observed in your selected time window."
+                description="Flows where traffic has been observed during your selected time window."
             >
-                Active traffic
+                Active flows
             </SelectOption>
             <SelectOption
-                value="extraneous"
-                description="Inactive flows allowed by your network policies in your selected time window."
+                value="inactive"
+                description="Possible flows allowed by your Kubernetes network policies, although they carried no traffic in your selected time window.  In a well-isolated implementation, this view will be empty."
             >
-                Extraneous flows
+                Inactive flows
             </SelectOption>
         </Select>
     );

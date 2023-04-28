@@ -45,7 +45,7 @@ const (
 
 	// nodeScanClientTimeout is used for node scanning operations, it is shorter than
 	// the default because we expect it to have only the database on its path.
-	nodeScanClientTimeout = 10 * time.Second
+	nodeScanClientTimeout = 1 * time.Minute
 
 	defaultMaxConcurrentScans = int64(30)
 )

@@ -37,4 +37,13 @@ describe('getNodeScanMessage', () => {
 
         expect(messageObj).toEqual(nodeScanMessages.kernelUnsupported);
     });
+
+    it('should return an object for certifiedRHELCVEsUnavailable when scan notes contain CERTIFIED_RHEL_CVES_UNAVAILABLE', () => {
+        const nodesNotes = [];
+        const scanNotes = ['CERTIFIED_RHEL_CVES_UNAVAILABLE'];
+
+        const messageObj = getNodeScanMessage(nodesNotes, scanNotes);
+
+        expect(messageObj).toEqual(nodeScanMessages.certifiedRHELCVEsUnavailable);
+    });
 });

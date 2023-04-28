@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# shellcheck disable=1091
+# shellcheck source=./lib.sh
 source "$(dirname "$0")/lib.sh"
 
 if [[ $# -eq 0 ]]; then

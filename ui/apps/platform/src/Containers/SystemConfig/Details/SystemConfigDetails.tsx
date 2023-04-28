@@ -1,23 +1,25 @@
 import React, { ReactElement } from 'react';
+import { useSelector } from 'react-redux';
 import { Grid, GridItem, PageSection, Title } from '@patternfly/react-core';
 
 import { SystemConfig } from 'types/config.proto';
+import { selectors } from 'reducers';
 
 import PrivateConfigDataRetentionDetails from './PrivateConfigDataRetentionDetails';
 import PublicConfigBannerDetails from './PublicConfigBannerDetails';
 import PublicConfigLoginDetails from './PublicConfigLoginDetails';
+import PublicConfigTelemetryDetails from './PublicConfigTelemetryDetails';
 
 export type SystemConfigDetailsProps = {
     isClustersRoutePathRendered: boolean;
-    isDecommissionedClusterRetentionEnabled: boolean;
     systemConfig: SystemConfig;
 };
 
 function SystemConfigDetails({
     isClustersRoutePathRendered,
-    isDecommissionedClusterRetentionEnabled,
     systemConfig,
 }: SystemConfigDetailsProps): ReactElement {
+    const isTelemetryConfigured = useSelector(selectors.getIsTelemetryConfigured);
     return (
         <>
             <PageSection data-testid="data-retention-config">
@@ -26,9 +28,6 @@ function SystemConfigDetails({
                 </Title>
                 <PrivateConfigDataRetentionDetails
                     isClustersRoutePathRendered={isClustersRoutePathRendered}
-                    isDecommissionedClusterRetentionEnabled={
-                        isDecommissionedClusterRetentionEnabled
-                    }
                     privateConfig={systemConfig?.privateConfig}
                 />
             </PageSection>
@@ -52,6 +51,13 @@ function SystemConfigDetails({
                     <GridItem sm={12} md={6}>
                         <PublicConfigLoginDetails publicConfig={systemConfig?.publicConfig} />
                     </GridItem>
+                    {isTelemetryConfigured && (
+                        <GridItem sm={12} md={6}>
+                            <PublicConfigTelemetryDetails
+                                publicConfig={systemConfig?.publicConfig}
+                            />
+                        </GridItem>
+                    )}
                 </Grid>
             </PageSection>
         </>

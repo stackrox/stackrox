@@ -76,14 +76,18 @@ const processData = (data, workflowState, limit) => {
 };
 
 const FrequentlyViolatedPolicies = ({ entityContext, limit }) => {
+    // combine any given scope (empty on dashboards) with a Policy Category filter of "Vulnerability Management"
+    const entityContextObject = queryService.entityContextToQueryObject(entityContext);
+    const queryObject = { ...entityContextObject, Category: 'Vulnerability Management' };
+    const query = queryService.objectToWhereClause(queryObject); // get final gql query string
+
     const {
         loading,
         data = {},
         error,
     } = useQuery(FREQUENTLY_VIOLATED_POLICIES, {
         variables: {
-            query: `${queryService.entityContextToQueryString(entityContext)}+
-            ${queryService.objectToWhereClause({ Category: 'Vulnerability Management' })}`,
+            query,
         },
     });
 

@@ -8,6 +8,7 @@ export const vulnerabilitySeverityLabels: VulnerabilitySeverityLabels = {
     IMPORTANT_VULNERABILITY_SEVERITY: 'Important',
     MODERATE_VULNERABILITY_SEVERITY: 'Medium',
     LOW_VULNERABILITY_SEVERITY: 'Low',
+    UNKNOWN_VULNERABILITY_SEVERITY: 'Unknown',
 };
 
 export type FixabilityLabelKey = Exclude<Fixability, 'BOTH'>;

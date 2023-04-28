@@ -1,8 +1,11 @@
 package declarativeconfig
 
 import (
-	"github.com/pkg/errors"
+	"strings"
+
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/maputil"
 	"gopkg.in/yaml.v3"
 )
 
@@ -22,9 +25,9 @@ func (a *AccessScope) Type() ConfigurationType {
 type Operator storage.SetBasedLabelSelector_Operator
 
 // MarshalYAML transforms Operator to YAML format.
-func (a Operator) MarshalYAML() ([]byte, error) {
+func (a Operator) MarshalYAML() (interface{}, error) {
 	protoAccess := storage.SetBasedLabelSelector_Operator(a)
-	return []byte(protoAccess.String()), nil
+	return protoAccess.String(), nil
 }
 
 // UnmarshalYAML makes transformation from YAML to Operator.
@@ -35,7 +38,8 @@ func (a *Operator) UnmarshalYAML(value *yaml.Node) error {
 	}
 	i, ok := storage.SetBasedLabelSelector_Operator_value[v]
 	if !ok {
-		return errors.Errorf("Operator value %s not found", v)
+		return errox.InvalidArgs.Newf("operator %s is invalid, valid operators are: [%s]", v, strings.Join(
+			maputil.Keys(storage.SetBasedLabelSelector_Operator_value), ","))
 	}
 	*a = Operator(i)
 	return nil

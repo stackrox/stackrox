@@ -1,10 +1,9 @@
 import React, { ReactElement } from 'react';
-
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import { Tooltip } from '@patternfly/react-core';
 
 import HealthStatus from './HealthStatus';
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
-import { findUpgradeState, formatSensorVersion, sensorUpgradeStyles } from '../cluster.helpers';
+import { findUpgradeState, formatSensorVersion, sensorUpgradeStylesPF } from '../cluster.helpers';
 import { SensorUpgradeStatus } from '../clusterTypes';
 
 const trClassName = 'align-top leading-normal';
@@ -46,7 +45,7 @@ function SensorUpgrade({
             let actionElement: ReactElement | null = null;
 
             if (displayValue) {
-                const { bgColor, fgColor } = sensorUpgradeStyles[type];
+                const { bgColor, fgColor } = sensorUpgradeStylesPF[type];
                 displayElement = (
                     <span className={`${bgColor as string} ${fgColor as string}`}>
                         {displayValue}
@@ -55,7 +54,7 @@ function SensorUpgrade({
             }
 
             if (actionText) {
-                const actionStyle = sensorUpgradeStyles.download;
+                const actionStyle = sensorUpgradeStylesPF.download;
                 if (actionProps) {
                     const { clusterId, upgradeSingleCluster } = actionProps;
                     const onClick = (event) => {
@@ -89,7 +88,7 @@ function SensorUpgrade({
                 </div>
             );
 
-            const { Icon, bgColor, fgColor } = sensorUpgradeStyles[type];
+            const { Icon, bgColor, fgColor } = sensorUpgradeStylesPF[type];
             const icon = <Icon className="h-4 w-4" />;
 
             // Use table instead of TooltipFieldValue to align version numbers.
@@ -152,7 +151,7 @@ function SensorUpgrade({
                 );
 
                 return (
-                    <Tooltip content={<TooltipOverlay>{overlayElement}</TooltipOverlay>}>
+                    <Tooltip content={overlayElement}>
                         <div>
                             <HealthStatus icon={icon} iconColor={fgColor}>
                                 {upgradeElement}

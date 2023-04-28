@@ -153,7 +153,7 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 	if c == nil {
 		return false
 	}
-	return pointer.BoolPtrDerefOr(c.AdminPasswordGenerationDisabled, false)
+	return pointer.BoolDeref(c.AdminPasswordGenerationDisabled, false)
 }
 
 // IsExternalDB returns true if central DB is not managed by the Operator
@@ -185,22 +185,28 @@ type CentralDBSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	IsEnabled *CentralDBEnabled `json:"isEnabled,omitempty"`
 
-	// Specify a secret that contains the password in the "password" data item.
-	// If omitted, the operator will auto-generate a DB password and store it in the "password" item
+	// Specify a secret that contains the password in the "password" data item. This can only be used when
+	// specifying a connection string manually.
+	// When omitted, the operator will auto-generate a DB password and store it in the "password" item
 	// in the "central-db-password" secret.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=1
 	PasswordSecret *LocalSecretReference `json:"passwordSecret,omitempty"`
 
-	// Specify a connection string that corresponds to an existing database. If set, the operator will not manage Central DB.
+	// NOTE: Connecting to an external database is in Technology Preview.
+	// Specify a connection string that corresponds to an external database. If set, the operator will not manage Central DB.
 	// When using this option, you must explicitly set a password secret; automatically generating a password will not
 	// be supported.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Connection String (Technology Preview)"
 	ConnectionStringOverride *string `json:"connectionString,omitempty"`
 
 	// Configures how Central DB should store its persistent data. You can choose between using a persistent
 	// volume claim (recommended default), and a host path.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	Persistence *DBPersistence `json:"persistence,omitempty"`
+
+	// Config map containing postgresql.conf and pg_hba.conf that will be used if modifications need to be applied.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Config map that will override postgresql.conf and pg_hba.conf"
+	ConfigOverride LocalConfigMapReference `json:"configOverride,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
@@ -281,7 +287,7 @@ func (p *Persistence) GetHostPath() string {
 		return ""
 	}
 
-	return pointer.StringPtrDerefOr(p.HostPath.Path, "")
+	return pointer.StringDeref(p.HostPath.Path, "")
 }
 
 // HostPathSpec defines settings for host path config.
@@ -343,7 +349,7 @@ func (p *DBPersistence) GetHostPath() string {
 		return ""
 	}
 
-	return pointer.StringPtrDerefOr(p.HostPath.Path, "")
+	return pointer.StringDeref(p.HostPath.Path, "")
 }
 
 // DBPersistentVolumeClaim defines PVC-based persistence settings for Central DB.

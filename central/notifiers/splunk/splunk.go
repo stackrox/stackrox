@@ -110,19 +110,19 @@ func (s *splunk) postAlert(ctx context.Context, alert *storage.Alert) error {
 }
 
 func (s *splunk) getSplunkEvent(msg proto.Message, sourceTypeKey string) (*wrapper.SplunkEvent, error) {
-	any, err := protoutils.MarshalAny(msg)
+	e, err := protoutils.MarshalAny(msg)
 	if err != nil {
 		return nil, err
 	}
 
 	return &wrapper.SplunkEvent{
-		Event:      any,
+		Event:      e,
 		Source:     source,
 		Sourcetype: s.conf.SourceTypes[sourceTypeKey],
 	}, nil
 }
 
-func (*splunk) Close(ctx context.Context) error {
+func (*splunk) Close(_ context.Context) error {
 	return nil
 }
 

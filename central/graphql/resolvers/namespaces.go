@@ -512,7 +512,7 @@ func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context, q 
 			AddExactMatches(search.Namespace, namespace.GetMetadata().GetName()).
 			AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
 			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery())
-	q = paginated.FillDefaultSortOption(q, paginated.ViolationTimeSortOption)
+	q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
 
 	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
 }
@@ -682,7 +682,7 @@ func (resolver *namespaceResolver) DeploymentCount(ctx context.Context, args Raw
 	return resolver.root.DeploymentCount(resolver.namespaceScopeContext(ctx), args)
 }
 
-func (resolver *namespaceResolver) NetworkPolicyCount(ctx context.Context, args RawQuery) (int32, error) {
+func (resolver *namespaceResolver) NetworkPolicyCount(ctx context.Context, _ RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "NetworkPolicyCount")
 	if err := readNetPolicies(ctx); err != nil {
 		return 0, err

@@ -1,6 +1,8 @@
 import static Services.getAllResourceViolationsWithTimeout
 import static Services.getResourceViolationsWithTimeout
 
+import orchestratormanager.OrchestratorTypes
+
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 
@@ -11,21 +13,20 @@ import services.ClusterService
 import services.PolicyService
 import util.Helpers
 
-import org.junit.Assume
+import spock.lang.Requires
 import spock.lang.Stepwise
 import spock.lang.Tag
 import spock.lang.Unroll
+import util.Env
 
+// Audit Log alerts are only supported on OpenShift 4
+@Requires({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
 @Stepwise
 class AuditLogAlertsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
     def "Verify Audit Log Event Source Policies Trigger: #verb - #resourceType"() {
-        given:
-        "Running on an OpenShift 4 cluster"
-        Assume.assumeTrue("Audit Log alerts are only supported on OpenShift 4", ClusterService.isOpenShift4())
-
         when:
         "Audit log collection is enabled"
         def previouslyDisabled = ClusterService.getCluster().getDynamicConfig().getDisableAuditLogs()
@@ -81,10 +82,6 @@ class AuditLogAlertsTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("RUNTIME")
     def "Verify collection continues even after ACS components restarts: #component"() {
-        given:
-        "Running on an OpenShift 4 cluster"
-        Assume.assumeTrue("Audit Log alerts are only supported on OpenShift 4", ClusterService.isOpenShift4())
-
         when:
         "Audit log collection is enabled"
         def previouslyDisabled = ClusterService.getCluster().getDynamicConfig().getDisableAuditLogs()
@@ -152,10 +149,6 @@ class AuditLogAlertsTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("RUNTIME")
     def "Verify collection continues when it is disabled and then re-enabled"() {
-        given:
-        "Running on an OpenShift 4 cluster"
-        Assume.assumeTrue("Audit Log alerts are only supported on OpenShift 4", ClusterService.isOpenShift4())
-
         when:
         "Audit log collection is enabled"
         def previouslyDisabled = ClusterService.getCluster().getDynamicConfig().getDisableAuditLogs()
@@ -216,10 +209,6 @@ class AuditLogAlertsTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("RUNTIME")
     def "Verify collection stops when feature is is disabled"() {
-        given:
-        "Running on an OpenShift 4 cluster"
-        Assume.assumeTrue("Audit Log alerts are only supported on OpenShift 4", ClusterService.isOpenShift4())
-
         when:
         "Audit log collection is disabled"
         def previouslyDisabled = ClusterService.getCluster().getDynamicConfig().getDisableAuditLogs()
@@ -289,13 +278,20 @@ class AuditLogAlertsTest extends BaseSpecification {
         testSecret.data = [
                 "value": Base64.getEncoder().encodeToString("sooper sekret".getBytes()),
         ]
-
+        // some breather needed on few arches
+        if (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x") {
+            sleep(5000)
+        }
         orchestrator.createSecret(testSecret)
         orchestrator.getSecret(name, namespace)
         orchestrator.deleteSecret(name, namespace)
     }
 
     def createGetAndDeleteConfigMap(String name, String namespace) {
+        // some breather needed on few arches
+        if (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x") {
+            sleep(5000)
+        }
         orchestrator.createConfigMap(name, ["value": "map me"], namespace)
         orchestrator.getConfigMap(name, namespace)
         orchestrator.deleteConfigMap(name, namespace)

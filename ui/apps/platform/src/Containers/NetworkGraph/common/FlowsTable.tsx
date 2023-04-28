@@ -19,7 +19,12 @@ import {
     TextVariants,
     Tooltip,
 } from '@patternfly/react-core';
-import { ExclamationCircleIcon, MinusIcon, PlusIcon } from '@patternfly/react-icons';
+import {
+    ExclamationCircleIcon,
+    ExclamationTriangleIcon,
+    MinusIcon,
+    PlusIcon,
+} from '@patternfly/react-icons';
 
 import { BaselineSimulationDiffState, Flow, FlowEntityType } from '../types/flow.type';
 import { protocolLabel } from '../utils/flowUtils';
@@ -105,7 +110,7 @@ function AnomalousIcon({ type }: { type: FlowEntityType }) {
     }
     return (
         <Tooltip content={<div>Anomalous internal flow</div>}>
-            <ExclamationCircleIcon className="pf-u-warning-color-100" />
+            <ExclamationTriangleIcon className="pf-u-warning-color-100" />
         </Tooltip>
     );
 }
@@ -163,7 +168,7 @@ function FlowsTable({
         <TableComposable aria-label={label} variant="compact">
             <Thead>
                 <Tr>
-                    <Th />
+                    <Td />
                     {isEditable && (
                         <Th
                             select={{
@@ -172,11 +177,11 @@ function FlowsTable({
                             }}
                         />
                     )}
-                    {isBaselineSimulation && <Th />}
+                    {isBaselineSimulation && <Td />}
                     <Th>{columnNames.entity}</Th>
                     <Th modifier="nowrap">{columnNames.direction}</Th>
                     <Th modifier="nowrap">{columnNames.portAndProtocol}</Th>
-                    <Th />
+                    <Td />
                 </Tr>
             </Thead>
             {flows.map((row, rowIndex) => {

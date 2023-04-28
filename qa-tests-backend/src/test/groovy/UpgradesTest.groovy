@@ -200,6 +200,7 @@ class UpgradesTest extends BaseSpecification {
     }
 
     @Tag("Upgrade")
+    @IgnoreIf({ true }) // ROX-16401 this test will not work with current upgrade methodology & image tags
     def "Verify upgraded policies match default policy set"() {
         given:
         "Default policies in code"

@@ -2,9 +2,8 @@ import { combineReducers } from 'redux';
 
 import { createFetchingActionTypes } from 'utils/fetchingReduxRoutines';
 import { fetchTelemetryConfig } from 'services/TelemetryConfigService';
-import { analyticsIdentity } from 'utils/analytics';
 
-import { initializeSegment } from 'global/initializeAnalytics';
+import { initializeAnalytics } from 'global/initializeAnalytics';
 
 // Types
 
@@ -15,13 +14,17 @@ export const types = {
 // Actions
 
 export const fetchTelemetryConfigThunk = () => {
-    return async (dispatch) => {
+    return async (dispatch, getState) => {
         dispatch({ type: types.FETCH_TELEMETRY_CONFIG.REQUEST });
 
         try {
             const result = await fetchTelemetryConfig();
-            initializeSegment(result.response.storageKeyV1);
-            analyticsIdentity(result.response.userId);
+            const { app: appState } = getState();
+            const telemetryEnabled =
+                appState?.publicConfig?.publicConfig?.telemetry?.enabled !== false;
+            if (telemetryEnabled) {
+                initializeAnalytics(result.response.storageKeyV1, result.response.userId);
+            }
 
             dispatch({
                 type: types.FETCH_TELEMETRY_CONFIG.SUCCESS,
@@ -37,7 +40,7 @@ export const fetchTelemetryConfigThunk = () => {
 
 const telemetryConfig = (state = [], action) => {
     if (action.type === types.FETCH_TELEMETRY_CONFIG.SUCCESS) {
-        return action.response.telemetryConfig ?? state;
+        return action.response ?? state;
     }
     return state;
 };
@@ -70,20 +73,37 @@ const isLoading = (state = true, action) => {
     }
 };
 
+const isConfigured = (state = false, action) => {
+    switch (action.type) {
+        case types.FETCH_TELEMETRY_CONFIG.SUCCESS:
+            return true;
+
+        case types.FETCH_TELEMETRY_CONFIG.FAILURE:
+        case types.FETCH_TELEMETRY_CONFIG.REQUEST:
+            return false;
+
+        default:
+            return state;
+    }
+};
+
 const reducer = combineReducers({
     telemetryConfig,
     error,
     isLoading,
+    isConfigured,
 });
 
 const getTelemetryConfig = (state) => state.telemetryConfig;
 const getTelemetryConfigError = (state) => state.error;
 const getIsLoadingTelemetryConfig = (state) => state.isLoading;
+const getIsTelemetryConfigured = (state) => state.isConfigured;
 
 export const selectors = {
     getTelemetryConfig,
     getTelemetryConfigError,
     getIsLoadingTelemetryConfig,
+    getIsTelemetryConfigured,
 };
 
 export default reducer;

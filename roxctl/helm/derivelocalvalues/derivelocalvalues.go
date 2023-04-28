@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/set"
@@ -182,7 +183,7 @@ func helmValuesForCentralServices(ctx context.Context, namespace string, k8s k8s
 }
 
 // Implementation for command `helm derive-local-values`.
-func derivePrivateLocalValuesForCentralServices(ctx context.Context, namespace string, k8s k8sObjectDescription) (map[string]interface{}, error) {
+func derivePrivateLocalValuesForCentralServices(ctx context.Context, _ string, k8s k8sObjectDescription) (map[string]interface{}, error) {
 	m := map[string]interface{}{
 		"licenseKey": k8s.lookupSecretStringP(ctx, "central-license", "license.lic"),
 		"env": map[string]interface{}{
@@ -227,7 +228,7 @@ func derivePrivateLocalValuesForCentralServices(ctx context.Context, namespace s
 }
 
 // Implementation for command `helm derive-local-values`.
-func derivePublicLocalValuesForCentralServices(ctx context.Context, namespace string, k8s k8sObjectDescription) (map[string]interface{}, error) {
+func derivePublicLocalValuesForCentralServices(ctx context.Context, _ string, k8s k8sObjectDescription) (map[string]interface{}, error) {
 
 	// Note regarding custom metadata (annotations, labels and env vars): We make it easy for us:
 	// we simply retrieve the metadata from the central deployment and assume that any custom metadata
@@ -393,7 +394,7 @@ func retrieveCustomLabels(labels map[string]interface{}) map[string]interface{} 
 }
 
 func retrieveCustomEnvVars(envVars map[string]interface{}) map[string]interface{} {
-	return filterMap(envVars, []string{"ROX_OFFLINE_MODE", "ROX_INIT_TELEMETRY_ENABLED"})
+	return filterMap(envVars, []string{env.OfflineModeEnv.EnvVar()})
 }
 
 func printWarnings(logger logger.Logger, warnings []string) {

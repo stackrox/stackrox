@@ -62,7 +62,7 @@ func logErrorIfInternal(err error) {
 }
 
 // ErrorToGrpcCodeInterceptor translates common errors defined in errorhelpers to GRPC codes.
-func ErrorToGrpcCodeInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func ErrorToGrpcCodeInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	resp, err := handler(ctx, req)
 	grpcStatus := ErrToGrpcStatus(err)
 	return resp, grpcStatus.Err()

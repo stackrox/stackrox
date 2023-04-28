@@ -5,10 +5,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/cockroachdb/pebble"
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
 	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
@@ -75,6 +77,7 @@ func (c *clientSetImpl) OpenshiftRoute() routeVersioned.Interface {
 
 // WorkloadManager encapsulates running a fake Kubernetes client
 type WorkloadManager struct {
+	db         *pebble.DB
 	fakeClient *fake.Clientset
 	client     client.Interface
 	workload   *Workload
@@ -123,7 +126,16 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 		log.Panicf("could not unmarshal workload from file due to error (%v): %s", err, data)
 	}
 
+	var db *pebble.DB
+	if storagePath := env.FakeWorkloadStoragePath.Setting(); storagePath != "" {
+		db, err = pebble.Open(storagePath, &pebble.Options{})
+		if err != nil {
+			log.Panicf("could not open id storage")
+		}
+	}
+
 	mgr := &WorkloadManager{
+		db:                  db,
 		workload:            &workload,
 		servicesInitialized: concurrency.NewSignal(),
 	}
@@ -159,22 +171,28 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	if num := w.workload.NumNamespaces; num != 0 {
 		numNamespaces = num
 	}
-	for _, n := range getNamespaces(numNamespaces) {
+	for _, n := range getNamespaces(numNamespaces, w.getIDsForPrefix(namespacePrefix)) {
+		w.writeID(namespacePrefix, n.UID)
 		objects = append(objects, n)
 	}
 
-	nodes := w.getNodes(w.workload.NodeWorkload)
+	nodes := w.getNodes(w.workload.NodeWorkload, w.getIDsForPrefix(nodePrefix))
 	for _, node := range nodes {
+		w.writeID(nodePrefix, node.UID)
 		objects = append(objects, node)
 	}
 
 	labelsPool.matchLabels = w.workload.MatchLabels
 
-	objects = append(objects, getRBAC(w.workload.RBACWorkload)...)
+	objects = append(objects, w.getRBAC(w.workload.RBACWorkload, w.getIDsForPrefix(serviceAccountPrefix), w.getIDsForPrefix(rolesPrefix), w.getIDsForPrefix(rolebindingsPrefix))...)
 	var resources []*deploymentResourcesToBeManaged
+
+	deploymentIDs := w.getIDsForPrefix(deploymentPrefix)
+	replicaSetIDs := w.getIDsForPrefix(replicaSetPrefix)
+	podIDs := w.getIDsForPrefix(podPrefix)
 	for _, deploymentWorkload := range w.workload.DeploymentWorkload {
 		for i := 0; i < deploymentWorkload.NumDeployments; i++ {
-			resource := w.getDeployment(deploymentWorkload)
+			resource := w.getDeployment(deploymentWorkload, i, deploymentIDs, replicaSetIDs, podIDs)
 			resources = append(resources, resource)
 
 			objects = append(objects, resource.deployment, resource.replicaSet)
@@ -184,11 +202,13 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		}
 	}
 
-	objects = append(objects, getService(w.workload.ServiceWorkload)...)
+	objects = append(objects, w.getServices(w.workload.ServiceWorkload, w.getIDsForPrefix(servicePrefix))...)
 	var npResources []*networkPolicyToBeManaged
+	networkPolicyIDs := w.getIDsForPrefix(networkPolicyPrefix)
 	for _, npWorkload := range w.workload.NetworkPolicyWorkload {
 		for i := 0; i < npWorkload.NumNetworkPolicies; i++ {
-			resource := w.getNetworkPolicy(npWorkload)
+			resource := w.getNetworkPolicy(npWorkload, getID(networkPolicyIDs, i))
+			w.writeID(networkPolicyPrefix, resource.networkPolicy.UID)
 			npResources = append(npResources, resource)
 
 			objects = append(objects, resource.networkPolicy)

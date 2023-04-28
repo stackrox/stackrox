@@ -7,11 +7,17 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
+# shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
+# shellcheck source=../../scripts/ci/lib.sh
 source "$TEST_ROOT/scripts/ci/lib.sh"
+# shellcheck source=../../scripts/ci/sensor-wait.sh
 source "$TEST_ROOT/scripts/ci/sensor-wait.sh"
+# shellcheck source=../../tests/scripts/setup-certs.sh
 source "$TEST_ROOT/tests/scripts/setup-certs.sh"
+# shellcheck source=../../tests/e2e/lib.sh
 source "$TEST_ROOT/tests/e2e/lib.sh"
+# shellcheck source=../../tests/upgrade/lib.sh
 source "$TEST_ROOT/tests/upgrade/lib.sh"
 
 test_upgrade() {
@@ -208,6 +214,12 @@ test_upgrade_paths() {
     kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$(make --quiet tag)"
     kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(cat COLLECTOR_VERSION)" \
         "compliance=$REGISTRY/main:$(make --quiet tag)"
+    if [[ "$(kubectl -n stackrox get ds/collector -o=jsonpath='{$.spec.template.spec.containers[*].name}')" == *"node-inventory"* ]]; then
+        echo "Upgrading node-inventory container"
+        kubectl -n stackrox set image ds/collector "node-inventory=$REGISTRY/scanner-slim:$(cat SCANNER_VERSION)"
+    else
+        echo "Skipping node-inventory container as this is not Openshift 4"
+    fi
 
     sensor_wait
 

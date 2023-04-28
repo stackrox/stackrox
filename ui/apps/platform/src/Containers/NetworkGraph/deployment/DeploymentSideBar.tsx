@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, CSSProperties } from 'react';
 import {
     Alert,
     AlertVariant,
@@ -35,6 +35,10 @@ import NetworkPolicies from '../common/NetworkPolicies';
 import useSimulation from '../hooks/useSimulation';
 import { EdgeState } from '../components/EdgeStateSelect';
 import { deploymentTabs } from '../utils/deploymentUtils';
+
+const sidebarHeadingStyleConstant = {
+    '--pf-u-max-width--MaxWidth': '26ch',
+} as CSSProperties;
 
 type DeploymentSideBarProps = {
     deploymentId: string;
@@ -97,7 +101,22 @@ function DeploymentSideBar({
 
     if (error) {
         return (
-            <Alert isInline variant={AlertVariant.danger} title={error} className="pf-u-mb-lg" />
+            <Stack>
+                <StackItem>
+                    <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
+                        <FlexItem>
+                            <DeploymentIcon />
+                        </FlexItem>
+                    </Flex>
+                </StackItem>
+                <StackItem>
+                    <Alert
+                        variant={AlertVariant.danger}
+                        title={error.toString()}
+                        className="pf-u-my-lg pf-u-mx-lg"
+                    />
+                </StackItem>
+            </Stack>
         );
     }
 
@@ -110,7 +129,12 @@ function DeploymentSideBar({
                     </FlexItem>
                     <FlexItem>
                         <TextContent>
-                            <Text component={TextVariants.h1} className="pf-u-font-size-xl">
+                            <Text
+                                component={TextVariants.h1}
+                                className="pf-u-font-size-xl pf-u-max-width"
+                                style={sidebarHeadingStyleConstant}
+                                data-testid="drawer-title"
+                            >
                                 {deployment?.name}
                             </Text>
                         </TextContent>
@@ -118,6 +142,7 @@ function DeploymentSideBar({
                             <Text
                                 component={TextVariants.h2}
                                 className="pf-u-font-size-sm pf-u-color-200"
+                                data-testid="drawer-subtitle"
                             >
                                 in &quot;{deployment?.clusterName} / {deployment?.namespace}&quot;
                             </Text>

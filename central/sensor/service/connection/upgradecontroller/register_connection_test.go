@@ -82,7 +82,7 @@ func (f fakeConnection) InjectMessage(_ concurrency.Waitable, _ *central.MsgToSe
 	panic("not implemented")
 }
 
-func (f fakeConnection) InjectMessageIntoQueue(msg *central.MsgFromSensor) {
+func (f fakeConnection) InjectMessageIntoQueue(_ *central.MsgFromSensor) {
 	panic("not implemented")
 }
 

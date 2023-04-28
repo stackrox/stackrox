@@ -3,7 +3,6 @@ import static util.Helpers.withRetry
 import java.util.concurrent.TimeUnit
 
 import io.grpc.StatusRuntimeException
-import org.apache.commons.lang3.RandomStringUtils
 
 import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.NotifierOuterClass
@@ -218,7 +217,7 @@ class IntegrationsTest extends BaseSpecification {
         Deployment nginxdeployment =
                 new Deployment()
                         .setName(nginxName)
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
                         .addLabel("app", nginxName)
         orchestrator.createDeployment(nginxdeployment)
         assert Services.waitForViolation(nginxName, policy.name, 60)
@@ -248,6 +247,8 @@ class IntegrationsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Notifiers")
+    // slack notifications are not supported on P/Z
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify Network Simulator Notifications: #type"() {
         when:
         "create notifier"
@@ -533,6 +534,8 @@ class IntegrationsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Notifiers")
+    // slack notifications are not supported on P/Z
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify Policy Violation Notifications Destination Overrides: #type"() {
         when:
         "Create notifier"
@@ -758,6 +761,7 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Tag("Integration")
+    @Tag("BAT")
     def "Verify syslog notifier"() {
        given:
        "syslog server is created"
@@ -773,12 +777,12 @@ class IntegrationsTest extends BaseSpecification {
         withRetry(3, 10) {
             assert notifier.testNotifier()
         }
+        def msg = syslog.fetchLastMsg()
+        assert msg.contains("app_name:stackRoxKubernetesSecurityPlatform")
+
         cleanup:
         "remove syslog notifier integration"
         syslog.tearDown(orchestrator)
     }
 
-    def uniqueName(String name) {
-        return name + RandomStringUtils.randomAlphanumeric(5).toLowerCase()
-    }
 }

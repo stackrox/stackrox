@@ -77,7 +77,7 @@ func (s *serviceImpl) GetNetworkBaselineStatusForFlows(
 	return &v1.NetworkBaselineStatusResponse{Statuses: statuses}, nil
 }
 
-// GetNetworkBaseline -- gets the network baseline assocated with the deployment.
+// GetNetworkBaseline gets the network baseline associated with the deployment.
 func (s *serviceImpl) GetNetworkBaseline(
 	ctx context.Context,
 	request *v1.ResourceByID,

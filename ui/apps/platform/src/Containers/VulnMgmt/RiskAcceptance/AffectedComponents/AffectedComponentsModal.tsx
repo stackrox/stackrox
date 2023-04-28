@@ -82,7 +82,7 @@ function AffectedComponentsModal({
                 <TableComposable aria-label="Affected Components Table" variant="compact" borders>
                     <Thead>
                         <Tr>
-                            <Th />
+                            <Td />
                             <Th>Component</Th>
                             <Th>Version</Th>
                             <Th>Fixed in</Th>

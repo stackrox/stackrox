@@ -1,24 +1,25 @@
-import React, { useCallback, ChangeEvent } from 'react';
-import { Badge, Button, Select, SelectOption, SelectVariant } from '@patternfly/react-core';
+import React, { useMemo } from 'react';
+import {
+    Badge,
+    Button,
+    Divider,
+    Flex,
+    FlexItem,
+    Menu,
+    MenuContent,
+    MenuFooter,
+    MenuInput,
+    MenuItem,
+    MenuList,
+    SearchInput,
+    Select,
+} from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { Namespace } from 'hooks/useFetchClusterNamespaces';
+import { Namespace } from 'hooks/useFetchClusterNamespacesForPermissions';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
 import { NamespaceIcon } from '../common/NetworkGraphIcons';
 import { getDeploymentLookupMap, getDeploymentsAllowedByNamespaces } from '../utils/hierarchyUtils';
-
-function filterElementsWithValueProp(
-    filterValue: string,
-    elements: React.ReactElement[] | undefined
-): React.ReactElement[] | undefined {
-    if (filterValue === '' || elements === undefined) {
-        return elements;
-    }
-
-    return elements.filter((reactElement) =>
-        reactElement.props.value?.toLowerCase().includes(filterValue.toLowerCase())
-    );
-}
 
 type NamespaceSelectorProps = {
     namespaces?: Namespace[];
@@ -37,36 +38,43 @@ function NamespaceSelector({
     searchFilter,
     setSearchFilter,
 }: NamespaceSelectorProps) {
-    const {
-        isOpen: isNamespaceOpen,
-        toggleSelect: toggleIsNamespaceOpen,
-        closeSelect,
-    } = useSelectToggle();
+    const { isOpen: isNamespaceOpen, toggleSelect: toggleIsNamespaceOpen } = useSelectToggle();
+    const [input, setInput] = React.useState('');
 
-    const onFilterNamespaces = useCallback(
-        (e: ChangeEvent<HTMLInputElement> | null, filterValue: string) =>
-            filterElementsWithValueProp(
-                filterValue,
-                namespaces.map((namespace) => (
-                    <SelectOption
-                        key={namespace.metadata.id}
-                        value={namespace.metadata.name}
-                        isDisabled={namespace.deploymentCount < 1}
-                    >
-                        <span>
-                            <NamespaceIcon /> {namespace.metadata.name}{' '}
-                            <Badge isRead>{namespace.deploymentCount}</Badge>
-                        </span>
-                    </SelectOption>
-                ))
-            ),
-        [namespaces]
-    );
+    const handleTextInputChange = (value: string) => {
+        setInput(value);
+    };
 
     const clusterSelected = Boolean(searchFilter?.Cluster);
     const isEmptyCluster = clusterSelected && namespaces.length === 0;
 
     const deploymentLookupMap = getDeploymentLookupMap(deploymentsByNamespace);
+
+    const filteredDeploymentSelectMenuItems = useMemo(() => {
+        const namespaceSelectMenuItems = namespaces
+            .filter((namespace) =>
+                namespace.name.toLowerCase().includes(input.toString().toLowerCase())
+            )
+            .map((namespace) => {
+                return (
+                    <MenuItem
+                        key={namespace.id}
+                        hasCheck
+                        itemId={namespace.name}
+                        isSelected={selectedNamespaces.includes(namespace.name)}
+                    >
+                        <span>
+                            <NamespaceIcon />
+                            <span className="pf-u-mx-xs" data-testid="namespace-name">
+                                {namespace.name}
+                            </span>
+                        </span>
+                    </MenuItem>
+                );
+            });
+
+        return namespaceSelectMenuItems;
+    }, [namespaces, input, selectedNamespaces]);
 
     const onNamespaceSelect = (_, selected) => {
         const newSelection = selectedNamespaces.find((nsFilter) => nsFilter === selected)
@@ -92,55 +100,74 @@ function NamespaceSelector({
         const modifiedSearchObject = { ...searchFilter };
         delete modifiedSearchObject.Namespace;
         delete modifiedSearchObject.Deployment;
-        closeSelect();
         setSearchFilter(modifiedSearchObject);
     };
 
-    const namespaceSelectOptions: JSX.Element[] = namespaces.map((namespace) => {
-        return (
-            <SelectOption
-                key={namespace.metadata.id}
-                value={namespace.metadata.name}
-                isDisabled={namespace.deploymentCount < 1}
-            >
-                <span>
-                    <NamespaceIcon /> {namespace.metadata.name}{' '}
-                    <Badge isRead>{namespace.deploymentCount}</Badge>
-                </span>
-            </SelectOption>
-        );
-    });
+    const namespaceSelectMenu = (
+        <Menu onSelect={onNamespaceSelect} selected={selectedNamespaces} isScrollable>
+            <MenuInput className="pf-u-p-md">
+                <SearchInput
+                    value={input}
+                    aria-label="Filter namespaces"
+                    type="search"
+                    placeholder="Filter namespaces..."
+                    onChange={(_event, value) => handleTextInputChange(value)}
+                />
+            </MenuInput>
+            <Divider className="pf-u-m-0" />
+            <MenuContent>
+                <MenuList>
+                    {filteredDeploymentSelectMenuItems.length === 0 && (
+                        <MenuItem isDisabled key="no result">
+                            No namespaces found
+                        </MenuItem>
+                    )}
+                    {filteredDeploymentSelectMenuItems}
+                </MenuList>
+            </MenuContent>
+            <MenuFooter>
+                <Button
+                    variant="link"
+                    isInline
+                    onClick={onClearSelections}
+                    isDisabled={selectedNamespaces.length === 0}
+                >
+                    Clear selections
+                </Button>
+            </MenuFooter>
+        </Menu>
+    );
 
     return (
         <Select
             isOpen={isNamespaceOpen}
             onToggle={toggleIsNamespaceOpen}
-            onSelect={onNamespaceSelect}
-            onFilter={onFilterNamespaces}
             className="namespace-select"
             placeholderText={
-                <span>
-                    <NamespaceIcon className="pf-u-mr-xs" />{' '}
-                    <span style={{ position: 'relative', top: '1px' }}>
-                        {isEmptyCluster ? 'No namespaces' : 'Namespaces'}
-                    </span>
-                </span>
+                <Flex alignSelf={{ default: 'alignSelfCenter' }}>
+                    <FlexItem
+                        spacer={{ default: 'spacerSm' }}
+                        alignSelf={{ default: 'alignSelfCenter' }}
+                    >
+                        <NamespaceIcon />
+                    </FlexItem>
+                    <FlexItem spacer={{ default: 'spacerSm' }}>
+                        <span style={{ position: 'relative', top: '1px' }}>
+                            {isEmptyCluster ? 'No namespaces' : 'Namespaces'}
+                        </span>
+                    </FlexItem>
+                    {selectedNamespaces.length !== 0 && (
+                        <FlexItem spacer={{ default: 'spacerSm' }}>
+                            <Badge isRead>{selectedNamespaces.length}</Badge>
+                        </FlexItem>
+                    )}
+                </Flex>
             }
             toggleAriaLabel="Select namespaces"
-            isDisabled={namespaceSelectOptions.length === 0}
-            selections={selectedNamespaces}
-            variant={SelectVariant.checkbox}
-            maxHeight="275px"
-            hasInlineFilter
+            isDisabled={namespaces.length === 0}
             isPlain
-            footer={
-                <Button variant="link" isInline onClick={onClearSelections}>
-                    Clear selections
-                </Button>
-            }
-        >
-            {namespaceSelectOptions}
-        </Select>
+            customContent={namespaceSelectMenu}
+        />
     );
 }
 

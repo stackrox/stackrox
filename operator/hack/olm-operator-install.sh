@@ -2,6 +2,7 @@
 # Installs the operator using OLM which is already running in the cluster.
 set -eu -o pipefail
 
+# shellcheck source=./common.sh
 source "$(dirname "$0")/common.sh"
 
 declare allow_dirty_tag=false

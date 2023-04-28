@@ -236,7 +236,7 @@ describe('Vulnerability Management Reporting form', () => {
         cy.get(`button:contains("Actions")`).click();
         cy.get(`button:contains("Delete collection")`).click();
         cy.get('*[role="dialog"] button:contains("Delete")').click();
-        cy.get('*:contains("Failed to delete collection")');
+        cy.get('*:contains("Collection is in use by one or more report configurations")');
 
         // Self cleanup
         tryDeleteVMReportConfigs(reportName);

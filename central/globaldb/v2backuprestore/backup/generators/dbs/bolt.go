@@ -22,7 +22,7 @@ type BoltBackup struct {
 }
 
 // WriteTo writes a backup of BoltDB to the input io.Writer.
-func (bgen *BoltBackup) WriteTo(ctx context.Context, out io.Writer) error {
+func (bgen *BoltBackup) WriteTo(_ context.Context, out io.Writer) error {
 	tempFile, err := os.CreateTemp("", "bolt-backup-")
 	if err != nil {
 		return errors.Wrap(err, "could not create temporary file for bolt backup")

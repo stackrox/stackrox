@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
@@ -14,6 +15,10 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	// RedHatRegistryEndpoints represents endpoints for RHEL registries that should
+	// use this registry implementation (Metadata invocations may fail otherwise)
+	RedHatRegistryEndpoints = set.NewFrozenSet("registry.redhat.io")
 )
 
 // Creator provides the type and registries.Creator to add to the registries Registry.

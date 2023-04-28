@@ -40,7 +40,7 @@ type alertDatastoreSACTestSuite struct {
 	engine *rocksdb.RocksDB
 	index  bleve.Index
 
-	pool *postgres.DB
+	pool postgres.DB
 
 	optionsMap searchPkg.OptionsMap
 	datastore  DataStore
@@ -649,7 +649,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearchListAlerts() {
 
 func (s *alertDatastoreSACTestSuite) runListAlertsTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
-	searchResults, err := s.datastore.ListAlerts(ctx, nil)
+	searchResults, err := s.datastore.SearchListAlerts(ctx, searchPkg.EmptyQuery())
 	s.NoError(err)
 	resultsDistribution := countListAlertsResultsPerClusterAndNamespace(searchResults)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)

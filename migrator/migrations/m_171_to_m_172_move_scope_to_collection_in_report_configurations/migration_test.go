@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package m171Tom172
+package m171tom172
 
 import (
 	"context"

@@ -7,14 +7,14 @@ import { Manager, Target, Popper } from 'react-popper';
 
 class ColorPickerComponent extends Component {
     static propTypes = {
-        id: PropTypes.string,
+        id: PropTypes.string.isRequired,
+        label: PropTypes.string.isRequired,
         color: PropTypes.string,
         onChange: PropTypes.func,
         disabled: PropTypes.bool,
     };
 
     static defaultProps = {
-        id: null,
         color: null,
         onChange: () => {},
         disabled: false,
@@ -46,7 +46,8 @@ class ColorPickerComponent extends Component {
                 <Target>
                     <button
                         type="button"
-                        data-testid="color-picker"
+                        id={this.props.id}
+                        aria-label={this.props.label}
                         onClick={this.onClickHandler}
                         className={`p-1 h-5 w-full border border-base-300 ignore-react-onclickoutside ${
                             this.props.disabled ? 'pointer-events-none' : ''

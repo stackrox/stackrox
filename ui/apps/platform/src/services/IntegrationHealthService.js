@@ -21,5 +21,10 @@ export const fetchPluginIntegrationsHealth = () =>
         .get('/v1/integrationhealth/notifiers')
         .then((response) => response?.data?.integrationHealth ?? []);
 
+export const fetchDeclarativeConfigurationsHealth = () =>
+    axios
+        .get('/v1/integrationhealth/declarativeconfigs')
+        .then((response) => response?.data?.integrationHealth ?? []);
+
 export const fetchVulnerabilityDefinitionsInfo = () =>
     axios.get('/v1/integrationhealth/vulndefinitions').then((response) => response?.data ?? {});

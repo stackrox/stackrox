@@ -19,6 +19,7 @@
         "@patternfly/react-styles": "4.92.6",
         "@patternfly/react-table": "4.112.39",
         "@patternfly/react-topology": "^4.91.27",
+        "@patternfly/react-user-feedback": "^1.0.7",
         "@stackrox/ui-components": "*",
         "axios": "^0.25.0",
         "classnames": "^2.3.2",
@@ -95,7 +96,6 @@
         "redux-saga": "^0.16.0",
         "redux-thunk": "^2.4.1",
         "reselect": "^4.1.2",
-        "slick-carousel": "^1.8.1",
         "store": "^2.0.12",
         "styled-components": "^5.3.1",
         "tippy.js": "^6.3.7",
@@ -138,7 +138,7 @@
         "@types/segment-analytics": "^0.0.34",
         "autoprefixer": "^10.2.5",
         "babel-eslint": "^10.1.0",
-        "cypress": "^12.7.0",
+        "cypress": "^12.10.0",
         "eslint": "^7.32.0",
         "eslint-config-airbnb": "^18.2.1",
         "eslint-config-airbnb-typescript": "12.3.1",
@@ -162,7 +162,7 @@
         "npm-run-all": "^4.1.5",
         "postcss": "^8.3.4",
         "postcss-cli": "^8.3.1",
-        "prettier": "^2.8.0",
+        "prettier": "^2.8.7",
         "randomstring": "^1.2.1",
         "react-app-rewired": "^2.2.1",
         "react-scripts": "^5.0.1",
@@ -170,7 +170,7 @@
         "redux-immutable-state-invariant": "^2.1.0",
         "redux-saga-test-plan": "^3.7.0",
         "tailwindcss": "^2.0.3",
-        "typescript": "^4.9.3"
+        "typescript": "^5.0.4"
     },
     "browserslist": [
         ">0.2%",

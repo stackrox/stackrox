@@ -51,7 +51,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetUpgradeStatus returns the upgrade status for Central.
-func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v1.GetUpgradeStatusResponse, error) {
+func (s *serviceImpl) GetUpgradeStatus(_ context.Context, _ *v1.Empty) (*v1.GetUpgradeStatusResponse, error) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		// Get Postgres config data
 		_, adminConfig, err := pgconfig.GetPostgresConfig()
@@ -79,14 +79,21 @@ func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v
 			requiredBytes := int64(math.Ceil(float64(currentDBBytes) * (1.0 + capacityMarginFraction)))
 
 			var toBeFreedBytes int64
-			if pgadmin.CheckIfDBExists(adminConfig, migrations.PreviousDatabase) {
+			exists, err := pgadmin.CheckIfDBExists(adminConfig, migrations.PreviousDatabase)
+			if err != nil {
+				return nil, errors.Wrapf(err, "Failed to determine if %s database exists", migrations.PreviousDatabase)
+			}
+			if exists {
 				toBeFreedBytes, err = pgadmin.GetDatabaseSize(adminConfig, migrations.GetPreviousClone())
 				if err != nil {
 					return nil, errors.Wrapf(err, "Fail to get database size %s", migrations.PreviousDatabase)
 				}
 
 				// Get a short-lived connection for the purposes of checking the version of the previous clone.
-				pool := pgadmin.GetClonePool(adminConfig, migrations.GetPreviousClone())
+				pool, err := pgadmin.GetClonePool(adminConfig, migrations.GetPreviousClone())
+				if err != nil {
+					return nil, errors.Wrap(err, "Failed to retrieve previous database version.")
+				}
 				defer pool.Close()
 
 				// Get rollback to version

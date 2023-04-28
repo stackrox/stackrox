@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
@@ -20,6 +21,7 @@ type outputQueueImpl struct {
 // Send a ResourceEvent message to the inner queue
 func (q *outputQueueImpl) Send(msg *component.ResourceEvent) {
 	q.innerQueue <- msg
+	metrics.IncOutputChannelSize()
 }
 
 // ResponsesC returns the MsgFromSensor channel
@@ -60,5 +62,6 @@ func (q *outputQueueImpl) runOutputQueue() {
 		for _, detectorRequest := range msg.DetectorMessages {
 			q.detector.ProcessDeployment(detectorRequest.Object, detectorRequest.Action)
 		}
+		metrics.DecOutputChannelSize()
 	}
 }

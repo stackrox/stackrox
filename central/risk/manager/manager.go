@@ -181,13 +181,13 @@ func (e *managerImpl) CalculateRiskAndUpsertNode(node *storage.Node) error {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Node")
 
 	if err := e.calculateAndUpsertNodeRisk(node); err != nil {
-		return errors.Wrapf(err, "calculating risk for node %s", node.GetName())
+		return errors.Wrapf(err, "calculating risk for node %s", nodeDS.NodeString(node))
 	}
 
 	// TODO: ROX-6235: Evaluate cluster risk.
 
 	if err := e.nodeStorage.UpsertNode(riskReprocessorCtx, node); err != nil {
-		return errors.Wrapf(err, "upserting node %s", node.GetName())
+		return errors.Wrapf(err, "upserting node %s", nodeDS.NodeString(node))
 	}
 	return nil
 }

@@ -35,8 +35,23 @@ create_webhook_server_port_forward() {
     echo "Got pod ${pod}"
     [[ -n "${pod}" ]]
     kubectl -n stackrox wait --for=condition=ready "${pod}" --timeout=5m
-    nohup kubectl -n stackrox port-forward "${pod}" 8080:8080 </dev/null > /dev/null 2>&1 &
+    log="${ARTIFACT_DIR:-/tmp}/webhook_server_port_forward.log"
+    nohup "${BASH_SOURCE[0]}" restart_webhook_server_port_forward "${pod}" 0<&- &> "${log}" &
     sleep 1
+}
+
+restart_webhook_server_port_forward() {
+    local pod="$1"
+
+    while true
+    do
+        echo "INFO: $(date): Starting webhook server port-forward: ${pod} 8080"
+        kubectl -n stackrox port-forward "${pod}" 8080:8080 || {
+            echo "WARNING: $(date): The webhook server port-forward exited with: $?"
+            echo "Will restart in 5 seconds..."
+            sleep 5
+        }
+    done
 }
 
 export_webhook_server_certs() {
@@ -44,3 +59,13 @@ export_webhook_server_certs() {
 
     ci_export GENERIC_WEBHOOK_SERVER_CA_CONTENTS "$(cat "${certs_dir}/ca.crt")"
 }
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    if [[ "$#" -lt 1 ]]; then
+        usage
+        die "When invoked at the command line a method is required."
+    fi
+    fn="$1"
+    shift
+    "$fn" "$@"
+fi

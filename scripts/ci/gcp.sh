@@ -2,9 +2,6 @@
 
 # A collection of GCP related reusable bash functions for CI
 
-SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-source "$SCRIPTS_ROOT/scripts/ci/lib.sh"
-
 set -euo pipefail
 
 setup_gcp() {

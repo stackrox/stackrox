@@ -523,7 +523,7 @@ func (container *bulkControlResults) addNodeData(root *Resolver, results []*stor
 	}
 }
 
-func (resolver *controlResultResolver) Resource(ctx context.Context) *controlResultResolver {
+func (resolver *controlResultResolver) Resource(_ context.Context) *controlResultResolver {
 	return resolver
 }
 
@@ -555,7 +555,7 @@ func (resolver *controlResultResolver) ToComplianceDomain_Node() (*complianceDom
 
 //revive:enable:var-naming
 
-func (resolver *controlResultResolver) Value(ctx context.Context) *complianceResultValueResolver {
+func (resolver *controlResultResolver) Value(_ context.Context) *complianceResultValueResolver {
 	return &complianceResultValueResolver{
 		root: resolver.root,
 		data: resolver.value,

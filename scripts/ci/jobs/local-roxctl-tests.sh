@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
+# shellcheck source=../../../tests/e2e/run.sh
 source "$ROOT/tests/e2e/run.sh"
 
 set -euo pipefail

@@ -266,7 +266,7 @@ func (eicr *imageComponentResolver) VulnCount(_ context.Context, args RawQuery) 
 }
 
 // VulnCounter resolves the number of different types of vulnerabilities contained in an image component.
-func (eicr *imageComponentResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+func (eicr *imageComponentResolver) VulnCounter(ctx context.Context, _ RawQuery) (*VulnerabilityCounterResolver, error) {
 	vulnLoader, err := loaders.GetCVELoader(ctx)
 	if err != nil {
 		return nil, err

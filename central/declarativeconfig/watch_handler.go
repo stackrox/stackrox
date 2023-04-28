@@ -56,7 +56,7 @@ func (w *watchHandler) OnChange(dir string) (interface{}, error) {
 		}
 		entryContents, err := readDeclarativeConfigFile(path.Join(dir, entry.Name()))
 		if err != nil {
-			log.Errorf("Error reading file %s: %+v", entry.Name(), err)
+			log.Errorf("Error reading file %s: %v", entry.Name(), err)
 			continue
 		}
 		declarativeConfigFiles[entry.Name()] = entryContents
@@ -93,7 +93,7 @@ func (w *watchHandler) OnStableUpdate(val interface{}, err error) {
 }
 
 func (w *watchHandler) OnWatchError(err error) {
-	log.Errorf("Error watching declarative configuration directory: %+v", err)
+	log.Errorf("Error watching declarative configuration directory: %v", err)
 }
 
 // compareHashesForChanges compares the file contents for changes based on previous hashes stored for this handler.

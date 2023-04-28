@@ -8,9 +8,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	postgresGroupStore "github.com/stackrox/rox/central/group/datastore/internal/store/postgres"
+	roleDatastoreMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	authProvidersMocks "github.com/stackrox/rox/pkg/auth/authproviders/mocks"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -30,12 +33,16 @@ type groupsWithPostgresTestSuite struct {
 	testPostgres *pgtest.TestPostgres
 	store        postgresGroupStore.Store
 
-	groupsDatastore DataStore
+	groupsDatastore   DataStore
+	mockCtrl          *gomock.Controller
+	roleStore         *roleDatastoreMocks.MockDataStore
+	authProviderStore *authProvidersMocks.MockStore
 }
 
 func (s *groupsWithPostgresTestSuite) SetupSuite() {
 	pgtest.SkipIfPostgresDisabled(s.T())
 
+	s.mockCtrl = gomock.NewController(s.T())
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -45,7 +52,9 @@ func (s *groupsWithPostgresTestSuite) SetupSuite() {
 	s.Require().NotNil(s.testPostgres)
 
 	store := postgresGroupStore.New(s.testPostgres.DB)
-	s.groupsDatastore = New(store)
+	s.roleStore = roleDatastoreMocks.NewMockDataStore(s.mockCtrl)
+	s.authProviderStore = authProvidersMocks.NewMockStore(s.mockCtrl)
+	s.groupsDatastore = New(store, s.roleStore, s.authProviderStore)
 }
 
 func (s *groupsWithPostgresTestSuite) TearDownSuite() {
@@ -61,6 +70,7 @@ func (s *groupsWithPostgresTestSuite) TearDownTest() {
 func (s *groupsWithPostgresTestSuite) TestAddGroups() {
 	group := fixtures.GetGroup()
 
+	s.validRoleAndAuthProvider(group.GetRoleName(), group.GetProps().GetAuthProviderId(), 2)
 	// 0. Ensure the group to be added has no ID set.
 	group.Props.Id = ""
 
@@ -77,6 +87,7 @@ func (s *groupsWithPostgresTestSuite) TestAddGroups() {
 	// 3. Adding a different group should work.
 	group.RoleName = "headmaster"
 	group.Props.Id = ""
+	s.validRoleAndAuthProvider(group.GetRoleName(), group.GetProps().GetAuthProviderId(), 1)
 	err = s.groupsDatastore.Add(s.ctx, group)
 	s.NoError(err)
 }
@@ -84,6 +95,7 @@ func (s *groupsWithPostgresTestSuite) TestAddGroups() {
 func (s *groupsWithPostgresTestSuite) TestUpdateGroups() {
 	group := fixtures.GetGroup()
 
+	s.validRoleAndAuthProvider(group.GetRoleName(), group.GetProps().GetAuthProviderId(), 3)
 	// 0. Insert the group.
 	group.Props.Id = ""
 	err := s.groupsDatastore.Add(s.ctx, group)
@@ -102,6 +114,7 @@ func (s *groupsWithPostgresTestSuite) TestUpdateGroups() {
 		},
 		RoleName: "some-role",
 	}
+	s.validRoleAndAuthProvider(newGroup.GetRoleName(), newGroup.GetProps().GetAuthProviderId(), 1)
 	err = s.groupsDatastore.Add(s.ctx, newGroup)
 	s.NoError(err)
 
@@ -117,6 +130,8 @@ func (s *groupsWithPostgresTestSuite) TestUpdateGroups() {
 
 func (s *groupsWithPostgresTestSuite) TestUpsertGroups() {
 	group := fixtures.GetGroup()
+
+	s.validRoleAndAuthProvider(group.GetRoleName(), group.GetProps().GetAuthProviderId(), 3)
 
 	// 0. Insert the group.
 	group.Props.Id = ""
@@ -136,6 +151,8 @@ func (s *groupsWithPostgresTestSuite) TestUpsertGroups() {
 
 func (s *groupsWithPostgresTestSuite) TestMutateGroups() {
 	group := fixtures.GetGroup()
+
+	s.validRoleAndAuthProvider(group.GetRoleName(), group.GetProps().GetAuthProviderId(), 2)
 
 	// 1. Adding new groups to the store with mutate should work.
 	group.Props.Id = ""
@@ -165,7 +182,20 @@ func (s *groupsWithPostgresTestSuite) TestMutateGroups() {
 	group.Props.Value = newGroup.GetProps().GetValue()
 	group.Props.Id = existingGroupID
 
+	s.validRoleAndAuthProvider(group.GetRoleName(), group.GetProps().GetAuthProviderId(), 2)
+
 	err = s.groupsDatastore.Mutate(s.ctx, nil, []*storage.Group{group}, []*storage.Group{newGroup}, false)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
+}
+
+func (s *groupsWithPostgresTestSuite) validRoleAndAuthProvider(roleName, authProviderID string, times int) {
+	mockedRole := &storage.Role{
+		Name: roleName,
+	}
+	mockedAP := &storage.AuthProvider{
+		Id: authProviderID,
+	}
+	s.roleStore.EXPECT().GetRole(gomock.Any(), roleName).Return(mockedRole, true, nil).Times(times)
+	s.authProviderStore.EXPECT().GetAuthProvider(gomock.Any(), authProviderID).Return(mockedAP, true, nil).Times(times)
 }

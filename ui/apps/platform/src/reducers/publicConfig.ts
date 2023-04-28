@@ -4,6 +4,7 @@ import isEqual from 'lodash/isEqual';
 import { fetchPublicConfig } from 'services/SystemConfigService';
 import { PublicConfig } from 'types/config.proto';
 import { PrefixedAction } from 'utils/fetchingReduxRoutines';
+import { fetchTelemetryConfigThunk } from './telemetryConfig';
 
 // Action types
 
@@ -23,6 +24,8 @@ export const fetchPublicConfigThunk = () => {
             });
         } catch (error) {
             dispatch({ type: 'config/FETCH_PUBLIC_CONFIG_FAILURE', error });
+        } finally {
+            dispatch(fetchTelemetryConfigThunk());
         }
     };
 };
@@ -48,6 +51,7 @@ const publicConfigInitialState: PublicConfig = {
     footer: null,
     header: null,
     loginNotice: null,
+    telemetry: null,
 };
 
 const publicConfig: Reducer<PublicConfig, PublicConfigAction> = (
@@ -91,6 +95,7 @@ const publicConfigErrorSelector = (state: State) => state.publicConfigError;
 const publicConfigFooterSelector = (state: State) => state.publicConfig.footer;
 const publicConfigHeaderSelector = (state: State) => state.publicConfig.header;
 const publicConfigLoginNoticeSelector = (state: State) => state.publicConfig.loginNotice;
+const publicConfigTelemetrySelector = (state: State) => state.publicConfig.telemetry;
 
 export const selectors = {
     isLoadingPublicConfigSelector,
@@ -98,6 +103,7 @@ export const selectors = {
     publicConfigFooterSelector,
     publicConfigHeaderSelector,
     publicConfigLoginNoticeSelector,
+    publicConfigTelemetrySelector,
 };
 
 export default reducer;

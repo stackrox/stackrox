@@ -50,7 +50,7 @@ describe.skip('Network Graph tooltip', () => {
 
                     expect(nBidirectional).to.equal(2);
 
-                    cy.get('#panel-close-button').click();
+                    cy.get('#panel-close-button').click(); // obsolete interaction to close panel
 
                     cy.getCytoscape(cytoscapeContainer).then((cytoscape2) => {
                         mouseOverNodeByName(cytoscape2, { type: 'DEPLOYMENT', name });
@@ -88,7 +88,7 @@ describe.skip('Network Graph tooltip', () => {
 
                     expect(nBidirectional).not.to.equal(0);
 
-                    cy.get('#panel-close-button').click();
+                    cy.get('#panel-close-button').click(); // obsolete interaction to close panel
 
                     cy.getCytoscape(cytoscapeContainer).then((cytoscape2) => {
                         mouseOverNodeByName(cytoscape2, { type: 'DEPLOYMENT', name });
@@ -128,7 +128,7 @@ describe.skip('Network Graph tooltip', () => {
                     expect(nEgressOnly).to.equal(0);
                     expect(nBidirectional).to.equal(0);
 
-                    cy.get('#panel-close-button').click();
+                    cy.get('#panel-close-button').click(); // obsolete interaction to close panel
 
                     cy.getCytoscape(cytoscapeContainer).then((cytoscape2) => {
                         mouseOverNodeByName(cytoscape2, { type: 'DEPLOYMENT', name });
@@ -168,7 +168,7 @@ describe.skip('Network Graph tooltip', () => {
                     expect(nIngressOnly).to.equal(0);
                     expect(nBidirectional).to.equal(0);
 
-                    cy.get('#panel-close-button').click();
+                    cy.get('#panel-close-button').click(); // obsolete interaction to close panel
 
                     cy.getCytoscape(cytoscapeContainer).then((cytoscape2) => {
                         mouseOverNodeByName(cytoscape2, { type: 'DEPLOYMENT', name });

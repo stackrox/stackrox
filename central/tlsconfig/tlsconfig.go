@@ -3,9 +3,12 @@ package tlsconfig
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/fileutils"
@@ -23,75 +26,156 @@ const (
 	DefaultCertPath = "/run/secrets/stackrox.io/default-tls-cert"
 )
 
-// GetAdditionalCAs reads all additional CAs in DER format.
-func GetAdditionalCAs() ([][]byte, error) {
+// GetAdditionalCAFilePaths returns the list of file paths containing additional CAs.
+func GetAdditionalCAFilePaths() ([]string, error) {
 	additionalCADir := AdditionalCACertsDirPath()
-	certFileInfos, err := os.ReadDir(additionalCADir)
+	directoryEntries, err := os.ReadDir(additionalCADir)
 	if err != nil {
 		// Ignore error if additional CAs do not exist on filesystem
 		if os.IsNotExist(err) {
+			log.Infof("Additional CA directory %q does not exist: skipping", additionalCADir)
 			return nil, nil
 		}
-		return nil, errors.Wrap(err, "reading additional CAs directory")
+		return nil, errors.Wrap(err, fmt.Sprintf("Failed to read additional CAs directory %q", additionalCADir))
+	}
+
+	var files []string
+
+	for _, directoryEntry := range directoryEntries {
+
+		entryName := directoryEntry.Name()
+		filePath := path.Join(additionalCADir, entryName)
+
+		if directoryEntry.IsDir() {
+			log.Infof("Skipping additional CA directory entry %q because it is a directory", entryName)
+			continue
+		}
+
+		fileInfo, err := directoryEntry.Info()
+		if err != nil {
+			log.Warnf("Failed to read additional CA file info for %q: %s", entryName, err)
+			continue
+		}
+
+		if isSymlink(fileInfo) {
+			resolvedPathForSymlink, err := filepath.EvalSymlinks(filePath)
+			if err != nil {
+				log.Warnf("Failed to evaluate additional CA file symlinks for file %q: %s", filePath, err)
+				continue
+			}
+			fileInfo, err = os.Stat(resolvedPathForSymlink)
+			if err != nil {
+				log.Warnf("Error reading additional CA file info for symlink %q that resolved to %q: %s", filePath, resolvedPathForSymlink, err)
+				continue
+			}
+			if fileInfo.IsDir() {
+				log.Infof("Skipping additional CA file %q because it is a symlink that resolved to a directory", filePath)
+				continue
+			}
+		}
+
+		if !isValidAdditionalCAFileName(entryName) {
+			log.Infof(skipAdditionalCAFileMsg, entryName)
+			continue
+		}
+
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("Failed to read additional CAs cert file %q", filePath))
+		}
+
+		_, err = x509utils.ConvertPEMToDERs(content)
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("Failed to convert additional CA cert file %q from PEM to DER format", filePath))
+		}
+
+		files = append(files, filePath)
+	}
+
+	return files, nil
+
+}
+
+func isSymlink(fileInfo fs.FileInfo) bool {
+	return fileInfo.Mode()&os.ModeSymlink != 0
+}
+
+// GetAdditionalCAs reads all additional CAs in DER format.
+func GetAdditionalCAs() ([][]byte, error) {
+	additionalCAFilePaths, err := GetAdditionalCAFilePaths()
+	if err != nil {
+		return nil, err
 	}
 
 	var certDERs [][]byte
-	for _, certFile := range certFileInfos {
-		if filepath.Ext(certFile.Name()) != ".crt" {
-			log.Infof("Skipping additional-ca file %q, must end with '*.crt'.", certFile.Name())
-			continue
-		}
-		content, err := os.ReadFile(path.Join(additionalCADir, certFile.Name()))
+	for _, certFilePath := range additionalCAFilePaths {
+		pemBytes, err := os.ReadFile(certFilePath)
 		if err != nil {
-			return nil, errors.Wrap(err, "reading additional CAs cert")
+			return nil, errors.Wrap(err, fmt.Sprintf("Failed to read additional CAs cert file %q", certFilePath))
 		}
 
-		certDER, err := x509utils.ConvertPEMToDERs(content)
+		ders, err := x509utils.ConvertPEMToDERs(pemBytes)
 		if err != nil {
-			return nil, errors.Wrap(err, "converting additional CA cert to DER")
+			return nil, errors.Wrap(err, fmt.Sprintf("Failed to convert additional CA cert file %q from PEM to DER format", certFilePath))
 		}
-		certDERs = append(certDERs, certDER...)
+
+		certDERs = append(certDERs, ders...)
 	}
 
 	return certDERs, nil
 }
 
-// GetDefaultCertChain reads and parses default cert chain and returns it in DER encoded format
-func GetDefaultCertChain() ([][]byte, error) {
-	certFile := filepath.Join(DefaultCertPath, TLSCertFileName)
-	content, err := os.ReadFile(certFile)
+// MaybeGetDefaultCertChain reads and parses default cert chain and returns it in DER encoded format.
+func MaybeGetDefaultCertChain() ([][]byte, error) {
+	cert, err := MaybeGetDefaultTLSCertificateFromDirectory(DefaultCertPath)
 	if err != nil {
-		// Ignore error if default certs do not exist on filesystem
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, errors.Wrap(err, "reading default cert file")
+		return nil, err
 	}
-
-	certDERsFromFile, err := x509utils.ConvertPEMToDERs(content)
-	if err != nil {
-		return nil, errors.Wrap(err, "converting additional CA cert to DER")
+	if cert == nil {
+		return nil, nil
 	}
-
-	return certDERsFromFile, nil
+	return cert.Certificate, nil
 }
 
-// loadDefaultCertificate load the default tls certificate
-func loadDefaultCertificate(dir string) (*tls.Certificate, error) {
+// MaybeGetDefaultTLSCertificateFromDefaultDirectory loads the default TLS certificate from the default directory.
+func MaybeGetDefaultTLSCertificateFromDefaultDirectory() (*tls.Certificate, error) {
+	return MaybeGetDefaultTLSCertificateFromDirectory(DefaultCertPath)
+}
+
+// MaybeGetDefaultTLSCertificateFromDirectory loads the default TLS certificate from the given directory.
+func MaybeGetDefaultTLSCertificateFromDirectory(dir string) (*tls.Certificate, error) {
 	certFile := filepath.Join(dir, TLSCertFileName)
 	keyFile := filepath.Join(dir, TLSKeyFileName)
 
-	if filesExist, err := fileutils.AllExist(certFile, keyFile); err != nil || !filesExist {
-		return nil, err
+	if exists, err := fileutils.Exists(certFile); err != nil || !exists {
+		if err != nil {
+			log.Warnw("Error checking if default TLS certificate file exists", zap.Error(err))
+			return nil, err
+		}
+		log.Infof("Default TLS certificate file %q does not exist. Skipping", certFile)
+		return nil, nil
+	}
+
+	if exists, err := fileutils.Exists(keyFile); err != nil || !exists {
+		if err != nil {
+			log.Warnw("Error checking if default TLS key file exists", zap.Error(err))
+			return nil, err
+		}
+		log.Infof("Default TLS key file %q does not exist. Skipping", keyFile)
+		return nil, nil
 	}
 
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		return nil, err
+		if strings.Contains(err.Error(), "private key does not match public key") {
+			return nil, errors.Wrap(err, "loading default certificate; if the certificate file contains a certificate chain, ensure that the certificate chain is in the correct order (the first certificate should be the leaf certificate, any following certificates should form the certificate chain)")
+		}
+		return nil, errors.Wrap(err, "loading default certificate failed")
 	}
+
 	cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing leaf certificate")
+		return nil, errors.Wrap(err, "parsing leaf certificate failed")
 	}
 
 	return &cert, nil
@@ -166,4 +250,22 @@ func validForAllDNSNames(cert *x509.Certificate, dnsNames ...string) bool {
 		}
 	}
 	return true
+}
+
+var (
+	allowedAdditionalCAExtensionList = []string{".crt", ".pem"}
+	allowedAdditionalCAExtensionMap  = map[string]struct{}{}
+)
+
+func init() {
+	for _, ext := range allowedAdditionalCAExtensionList {
+		allowedAdditionalCAExtensionMap[ext] = struct{}{}
+	}
+}
+
+var skipAdditionalCAFileMsg = fmt.Sprintf("skipping additional-ca file %%q because it has an invalid extension; allowed file extensions for additional ca certificates are %v", allowedAdditionalCAExtensionList)
+
+func isValidAdditionalCAFileName(fileName string) bool {
+	_, ok := allowedAdditionalCAExtensionMap[path.Ext(fileName)]
+	return ok
 }

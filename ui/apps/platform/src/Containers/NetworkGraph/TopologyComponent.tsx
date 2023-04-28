@@ -43,7 +43,7 @@ export const UrlDetailType = {
     EXTERNAL_GROUP: 'external',
 } as const;
 export type UrlDetailTypeKey = keyof typeof UrlDetailType;
-export type UrlDetailTypeValue = typeof UrlDetailType[UrlDetailTypeKey];
+export type UrlDetailTypeValue = (typeof UrlDetailType)[UrlDetailTypeKey];
 
 function getUrlParamsForEntity(type, id): [UrlDetailTypeValue, string] {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return

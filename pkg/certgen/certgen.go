@@ -31,9 +31,9 @@ func IssueServiceCert(fileMap map[string][]byte, ca mtls.CA, subject mtls.Subjec
 
 // IssueOtherServiceCerts issues certificates for the given subjects, and stores them in the given file
 // map. The file name prefix is chosen as the slug-case of the service type plus a trailing hyphen.
-func IssueOtherServiceCerts(fileMap map[string][]byte, ca mtls.CA, subjs ...mtls.Subject) error {
+func IssueOtherServiceCerts(fileMap map[string][]byte, ca mtls.CA, subjs []mtls.Subject, opts ...mtls.IssueCertOption) error {
 	for _, subj := range subjs {
-		if err := IssueServiceCert(fileMap, ca, subj, services.ServiceTypeToSlugName(subj.ServiceType)+"-"); err != nil {
+		if err := IssueServiceCert(fileMap, ca, subj, services.ServiceTypeToSlugName(subj.ServiceType)+"-", opts...); err != nil {
 			return err
 		}
 	}

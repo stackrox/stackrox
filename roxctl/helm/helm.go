@@ -10,7 +10,8 @@ import (
 // Command defines the helm command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "helm",
+		Use:   "helm",
+		Short: "Commands related to StackRox Helm Charts.",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return nil
 		},

@@ -13,7 +13,7 @@ import (
 
 // TestPostgres is a postgres database for migration testing
 type TestPostgres struct {
-	*postgres.DB
+	postgres.DB
 	gormDB   *gorm.DB
 	database string
 }

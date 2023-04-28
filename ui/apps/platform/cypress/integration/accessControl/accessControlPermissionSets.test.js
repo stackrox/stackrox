@@ -123,8 +123,7 @@ describe('Access Control Permission sets', () => {
         });
     });
 
-    // TODO: ROX-12750 Rename DebugLogs to Administration
-    it('direct link to default Analyst has all (but DebugLogs) read and no write access', () => {
+    it('direct link to default Analyst has all (but Administration) read and no write access', () => {
         /*
          * TODO: ROX-13585 - remove the pre-postgres constants once the migration to postgres
          * is completed and the support for BoltDB, RocksDB and Bleve is dropped.
@@ -151,8 +150,7 @@ describe('Access Control Permission sets', () => {
 
             $tds.get().forEach((td) => {
                 const resource = td.textContent;
-                // TODO: ROX-12750 Rename DebugLogs to Administration
-                if (resource.includes('DebugLogs')) {
+                if (resource === 'Administration') {
                     cy.get(getReadAccessIconForResource(resource)).should(
                         'have.attr',
                         'aria-label',
@@ -211,7 +209,7 @@ describe('Access Control Permission sets', () => {
 
             $tds.get().forEach((td) => {
                 const resource = td.textContent;
-                if (!resourcesLimited.some((v) => resource.includes(v))) {
+                if (!resourcesLimited.some((v) => resource === v)) {
                     cy.get(getReadAccessIconForResource(resource)).should(
                         'have.attr',
                         'aria-label',
@@ -319,8 +317,7 @@ describe('Access Control Permission sets', () => {
             getAccessLevelSelectForResource,
         } = selectors.form.permissionSet;
 
-        // TODO: ROX-12750 Rename ServiceIdentity to Administration
-        const resourcesLimited = ['Cluster', 'ServiceIdentity'];
+        const resourcesLimited = ['Cluster', 'Administration'];
 
         cy.get(selectors.form.permissionSet.tdResource).then(($tds) => {
             const resourceCount = String($tds.length);
@@ -331,7 +328,7 @@ describe('Access Control Permission sets', () => {
 
             $tds.get().forEach((td) => {
                 const resource = td.textContent;
-                if (!resourcesLimited.some((v) => resource.includes(v))) {
+                if (!resourcesLimited.some((v) => resource === v)) {
                     cy.get(getReadAccessIconForResource(resource)).should(
                         'have.attr',
                         'aria-label',
@@ -365,20 +362,17 @@ describe('Access Control Permission sets', () => {
             'Read and Write Access'
         );
 
-        // TODO: ROX-12750 Rename ServiceIdentity to Administration
-        cy.get(getReadAccessIconForResource('ServiceIdentity')).should(
+        cy.get(getReadAccessIconForResource('Administration')).should(
             'have.attr',
             'aria-label',
             'permitted'
         );
-        // TODO: ROX-12750 Rename ServiceIdentity to Administration
-        cy.get(getWriteAccessIconForResource('ServiceIdentity')).should(
+        cy.get(getWriteAccessIconForResource('Administration')).should(
             'have.attr',
             'aria-label',
             'permitted'
         );
-        // TODO: ROX-12750 Rename ServiceIdentity to Administration
-        cy.get(getAccessLevelSelectForResource('ServiceIdentity')).should(
+        cy.get(getAccessLevelSelectForResource('Administration')).should(
             'contain',
             'Read and Write Access'
         );

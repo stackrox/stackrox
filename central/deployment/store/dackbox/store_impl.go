@@ -88,7 +88,7 @@ func (b *StoreImpl) Walk(_ context.Context, fn func(deployment *storage.Deployme
 }
 
 // GetListDeployment returns ListDeployment with given id.
-func (b *StoreImpl) GetListDeployment(ctx context.Context, id string) (deployment *storage.ListDeployment, exists bool, err error) {
+func (b *StoreImpl) GetListDeployment(_ context.Context, id string) (deployment *storage.ListDeployment, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ListDeployment")
 
 	txn, err := b.dacky.NewReadOnlyTransaction()

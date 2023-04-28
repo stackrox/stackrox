@@ -7,8 +7,7 @@ import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
-import SeverityLabel from 'Components/SeverityLabel';
-import LifecycleStageLabel from 'Components/LifecycleStageLabel';
+import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import Widget from 'Components/Widget';
 import Metadata from 'Components/Metadata';
 import Button from 'Components/Button';
@@ -17,10 +16,11 @@ import entityTypes from 'constants/entityTypes';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import useCases from 'constants/useCaseTypes';
 import searchContext from 'Containers/searchContext';
-import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
+import { formatLifecycleStages } from 'Containers/Policies/policies.utils';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
+import { getConfigMgmtCountQuery } from '../../ConfigMgmt.utils';
 import EntityList from '../../List/EntityList';
 import PolicyFindings from './PolicyFindings';
 
@@ -153,17 +153,12 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext, paginatio
 
                 const metadataKeyValuePairs = [
                     {
-                        key: 'Life Cycle',
-                        value: lifecycleStages.map((lifecycleStage) => (
-                            <LifecycleStageLabel
-                                key={lifecycleStage}
-                                lifecycleStage={lifecycleStage}
-                            />
-                        )),
+                        key: 'Lifecycle Stage',
+                        value: formatLifecycleStages(lifecycleStages),
                     },
                     {
                         key: 'Severity',
-                        value: <SeverityLabel severity={severity} />,
+                        value: <PolicySeverityIconText severity={severity} isTextOnly={false} />,
                     },
                     {
                         key: 'Enforced',

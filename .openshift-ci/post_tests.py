@@ -20,7 +20,7 @@ class PostTestsConstants:
     ARTIFACTS_TIMEOUT = 3 * 60
     # QA_TEST_DEBUG_LOGS - where the QA tests store failure logs.
     QA_TEST_DEBUG_LOGS = os.getenv("QA_TEST_DEBUG_LOGS")
-    QA_SPOCK_RESULTS = "qa-tests-backend/build/spock-reports"
+    QA_SPOCK_RESULTS = "qa-tests-backend/build/reports"
     K8S_LOG_DIR = "/tmp/k8s-service-logs"
     COLLECTOR_METRICS_DIR = "/tmp/collector-metrics"
     DEBUG_OUTPUT = "debug-dump"
@@ -30,7 +30,7 @@ class PostTestsConstants:
 
 
 class NullPostTest:
-    def run(self, test_outputs=None, test_results=None):
+    def run(self, test_outputs=None):
         pass
 
 
@@ -75,25 +75,9 @@ class StoreArtifacts(RunWithBestEffortMixin):
         self.artifact_destination_prefix = artifact_destination_prefix
         self.data_to_store = []
 
-    def run(self, test_outputs=None, test_results=None):
+    def run(self, test_outputs=None):
         self.store_artifacts(test_outputs)
-        self.add_test_results(test_results)
         self.handle_run_failure()
-
-    def add_test_results(self, test_results):
-        if not test_results:
-            return
-        print("Storing test results in JUnit format")
-        for to_dir, from_dir in test_results.items():
-            self.run_with_best_effort(
-                [
-                    "scripts/ci/store-artifacts.sh",
-                    "store_test_results",
-                    from_dir,
-                    to_dir,
-                ],
-                timeout=PostTestsConstants.ARTIFACTS_TIMEOUT,
-            )
 
     def store_artifacts(self, test_outputs=None):
         if test_outputs is not None:
@@ -124,7 +108,7 @@ class PostClusterTest(StoreArtifacts):
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
         self._check_stackrox_logs = check_stackrox_logs
-        self.k8s_namespaces = ["stackrox", "stackrox-operator", "proxies", "squid"]
+        self.k8s_namespaces = ["stackrox", "stackrox-operator", "proxies", "squid", "kube-system"]
         self.openshift_namespaces = [
             "openshift-dns",
             "openshift-apiserver",
@@ -134,7 +118,7 @@ class PostClusterTest(StoreArtifacts):
         ]
         self.collect_central_artifacts = collect_central_artifacts
 
-    def run(self, test_outputs=None, test_results=None):
+    def run(self, test_outputs=None):
         self.collect_collector_metrics()
         if self.collect_central_artifacts and self.wait_for_central_api():
             self.get_central_debug_dump()
@@ -144,7 +128,6 @@ class PostClusterTest(StoreArtifacts):
         if self._check_stackrox_logs:
             self.check_stackrox_logs()
         self.store_artifacts(test_outputs)
-        self.add_test_results(test_results)
         self.handle_run_failure()
 
     def wait_for_central_api(self):
@@ -236,7 +219,7 @@ class CheckStackroxLogs(StoreArtifacts):
         self._check_for_errors_in_stackrox_logs = check_for_errors_in_stackrox_logs
         self.central_is_responsive = False
 
-    def run(self, test_outputs=None, test_results=None):
+    def run(self, test_outputs=None):
         self.central_is_responsive = self.wait_for_central_api()
         if self.central_is_responsive:
             self.collect_stackrox_logs()
@@ -245,7 +228,6 @@ class CheckStackroxLogs(StoreArtifacts):
             if self._check_for_errors_in_stackrox_logs:
                 self.check_for_errors_in_stackrox_logs()
         self.store_artifacts(test_outputs)
-        self.add_test_results(test_results)
         self.handle_run_failure()
 
     def wait_for_central_api(self):
@@ -305,9 +287,8 @@ class FinalPost(StoreArtifacts):
             self.data_to_store.append(PostTestsConstants.QA_SPOCK_RESULTS)
         self._handle_e2e_progress_failures = handle_e2e_progress_failures
 
-    def run(self, test_outputs=None, test_results=None):
+    def run(self, test_outputs=None):
         self.store_artifacts()
-        self.add_test_results(test_results)
         self.fixup_artifacts_content_type()
         self.make_artifacts_help()
         self.handle_run_failure()

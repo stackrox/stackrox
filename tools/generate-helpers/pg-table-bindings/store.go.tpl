@@ -112,7 +112,7 @@ type Store interface {
 }
 
 type storeImpl struct {
-    db *postgres.DB
+    db postgres.DB
     mutex sync.RWMutex
 }
 
@@ -121,7 +121,7 @@ type storeImpl struct {
 {{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB) Store {
+func New(db postgres.DB) Store {
     return &storeImpl{
         db: db,
     }
@@ -1082,7 +1082,7 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 {{- if not $inMigration }}
 
 // CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db *postgres.DB, gormDB *gorm.DB) Store {
+func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db)
 }
@@ -1092,13 +1092,13 @@ func CreateTableAndNewStore(ctx context.Context, db *postgres.DB, gormDB *gorm.D
 
 
 // Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db *postgres.DB) {
+func Destroy(ctx context.Context, db postgres.DB) {
     {{template "dropTableFunctionName" .Schema}}(ctx, db)
 }
 
 {{- define "dropTable"}}
 {{- $schema := . }}
-func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db *postgres.DB) {
+func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db postgres.DB) {
     _, _ = db.Exec(ctx, "DROP TABLE IF EXISTS {{$schema.Table}} CASCADE")
     {{range $child := $schema.Children}}{{ template "dropTableFunctionName" $child }}(ctx, db)
     {{end}}

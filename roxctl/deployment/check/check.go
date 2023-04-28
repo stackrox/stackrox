@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/gjson"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
@@ -44,6 +45,31 @@ var (
 		printers.JUnitSkippedTestCasesExpressionKey:     "results.#.violatedPolicies.#(failingCheck==~false)#.name",
 		printers.JUnitFailedTestCaseErrMsgExpressionKey: "results.#.violatedPolicies.#(failingCheck==~true)#.violation.@list",
 	}
+
+	sarifJSONPathExpressions = map[string]string{
+		printers.SarifRuleJSONPathExpressionKey: "results.#.violatedPolicies.#.name",
+		printers.SarifHelpJSONPathExpressionKey: gjson.MultiPathExpression(
+			"@text",
+			gjson.Expression{
+				Key:        "Policy",
+				Expression: "results.#.violatedPolicies.#.name",
+			},
+			gjson.Expression{
+				Key:        "Severity",
+				Expression: "results.#.violatedPolicies.#.severity",
+			},
+			gjson.Expression{
+				Key:        "Violations",
+				Expression: "results.#.violatedPolicies.#.violation.@list",
+			},
+			gjson.Expression{
+				Key:        "Remediation",
+				Expression: "results.#.violatedPolicies.#.remediation",
+			},
+		),
+		printers.SarifSeverityJSONPathExpressionKey: "results.#.violatedPolicies.#.severity",
+	}
+
 	// supported output formats with default values
 	supportedObjectPrinters = []printer.CustomPrinterFactory{
 		printer.NewTabularPrinterFactory(defaultDeploymentCheckHeaders, defaultDeploymentCheckJSONPathExpression),
@@ -56,13 +82,16 @@ var (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	deploymentCheckCmd := &deploymentCheckCommand{env: cliEnvironment}
 
-	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", supportedObjectPrinters...)
+	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", append(supportedObjectPrinters,
+		printer.NewSarifPrinterFactory(printers.SarifPolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.file))...)
 	// this error should never occur, it would only occur if default values are invalid
 	utils.Must(err)
 
 	c := &cobra.Command{
-		Use:  "check",
-		Args: cobra.NoArgs,
+		Use:   "check",
+		Short: "Check deployments for deploy time policy violations.",
+		Long:  "Check deployments for deploy time policy violations, and exit with an non-zero code if at least one of the violated policies has deploy time enforcement turned on.",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := deploymentCheckCmd.Construct(args, cmd, objectPrinterFactory); err != nil {
 				return err
@@ -84,6 +113,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().IntVarP(&deploymentCheckCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
 	c.Flags().StringSliceVarP(&deploymentCheckCmd.policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
 	c.Flags().BoolVar(&deploymentCheckCmd.printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
+	c.Flags().BoolVar(&deploymentCheckCmd.force, "force", false, "bypass Central's cache for images and force a new pull from the Scanner")
 	utils.Must(c.MarkFlagRequired("file"))
 
 	// mark legacy output format specific flags as deprecated
@@ -104,6 +134,7 @@ type deploymentCheckCommand struct {
 	policyCategories   []string
 	printAllViolations bool
 	timeout            time.Duration
+	force              bool
 
 	// injected or constructed values by Construct
 	env                environment.Environment
@@ -111,7 +142,7 @@ type deploymentCheckCommand struct {
 	standardizedFormat bool
 }
 
-func (d *deploymentCheckCommand) Construct(args []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
+func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	d.timeout = flags.Timeout(cmd)
 
 	// Only create a printer if legacy json output format is not used

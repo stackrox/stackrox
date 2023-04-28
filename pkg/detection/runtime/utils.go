@@ -56,7 +56,7 @@ func constructKubeEventAlert(
 func constructNetworkFlowAlert(
 	policy *storage.Policy,
 	deployment *storage.Deployment,
-	flow *augmentedobjs.NetworkFlowDetails,
+	_ *augmentedobjs.NetworkFlowDetails,
 	violations booleanpolicy.Violations,
 ) *storage.Alert {
 	if len(violations.AlertViolations) == 0 {

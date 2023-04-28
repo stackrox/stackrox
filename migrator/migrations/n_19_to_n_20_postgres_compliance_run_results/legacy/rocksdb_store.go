@@ -91,7 +91,7 @@ func unmarshalResults(iterator *gorocksdb.Iterator) (*storage.ComplianceRunResul
 	return &results, nil
 }
 
-func (r *rocksdbStore) Walk(ctx context.Context, fn func(obj *storage.ComplianceRunResults) error) error {
+func (r *rocksdbStore) Walk(_ context.Context, fn func(obj *storage.ComplianceRunResults) error) error {
 	iterator := r.db.NewIterator(readOptions)
 	defer iterator.Close()
 	// Runs are sorted by time so we must iterate over each key to see if it has the correct run ID.
@@ -107,7 +107,7 @@ func (r *rocksdbStore) Walk(ctx context.Context, fn func(obj *storage.Compliance
 	return nil
 }
 
-func (r *rocksdbStore) UpsertMany(ctx context.Context, objs []*storage.ComplianceRunResults) error {
+func (r *rocksdbStore) UpsertMany(_ context.Context, objs []*storage.ComplianceRunResults) error {
 	batch := gorocksdb.NewWriteBatch()
 	defer batch.Destroy()
 

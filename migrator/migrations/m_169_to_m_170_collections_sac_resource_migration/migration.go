@@ -35,7 +35,7 @@ var (
 	}
 )
 
-func migrateWorkflowAdministrationPermissionSet(db *postgres.DB) error {
+func migrateWorkflowAdministrationPermissionSet(db postgres.DB) error {
 	ctx := sac.WithAllAccess(context.Background())
 	pgStore := permissionSetPostgresStore.New(db)
 	permissionSetsToInsert := make([]*storage.PermissionSet, 0, batchSize)

@@ -120,7 +120,7 @@ describe('Risk page', () => {
 
             cy.get(RiskPageSelectors.panel).should('have.length', 2); // main panel and side panel
             cy.get(RiskPageSelectors.panelTabs.riskIndicators);
-            cy.get(RiskPageSelectors.cancelButton).click();
+            cy.get(RiskPageSelectors.sidePanel.closeButton).click();
             cy.get(RiskPageSelectors.panel).should('have.length', 1); // main panel
         });
 
@@ -130,7 +130,7 @@ describe('Risk page', () => {
 
             cy.get(RiskPageSelectors.panel).should('have.length', 2); // main panel and side panel
             cy.get(RiskPageSelectors.panelTabs.deploymentDetails);
-            cy.get(RiskPageSelectors.cancelButton).click();
+            cy.get(RiskPageSelectors.sidePanel.closeButton).click();
             cy.get(RiskPageSelectors.panel).should('have.length', 1); // main panel
         });
 
@@ -152,16 +152,13 @@ describe('Risk page', () => {
             viewRiskDeploymentInNetworkGraph();
         });
 
-        const searchPlaceholderText = 'Add one or more resource filters';
+        const searchPlaceholderSelector = `${RiskPageSelectors.search.valueContainer} input[placeholder="Filter deployments"]`;
 
         it('should not have anything in search bar when URL has no search params', () => {
             visitRiskDeployments();
 
             // Positive assertion:
-            cy.get(RiskPageSelectors.search.valueContainer).should(
-                'have.text',
-                searchPlaceholderText
-            );
+            cy.get(searchPlaceholderSelector);
             // Negative assertion:
             cy.get(RiskPageSelectors.search.searchLabels).should('not.exist');
         });
@@ -179,10 +176,7 @@ describe('Risk page', () => {
                 visitRiskDeploymentsWithSearchQuery(`?s[${nsOption}]=${nsValue}`);
 
                 // Negative assertion:
-                cy.get(RiskPageSelectors.search.valueContainer).should(
-                    'not.have.text',
-                    searchPlaceholderText
-                );
+                cy.get(searchPlaceholderSelector).should('not.exist');
                 // Positive assertions:
                 cy.get(RiskPageSelectors.search.searchLabels).should('have.length', 2);
                 cy.get(`${RiskPageSelectors.search.searchLabels}:nth(0)`).should(
@@ -215,10 +209,7 @@ describe('Risk page', () => {
                 );
 
                 // Negative assertion:
-                cy.get(RiskPageSelectors.search.valueContainer).should(
-                    'not.have.text',
-                    searchPlaceholderText
-                );
+                cy.get(searchPlaceholderSelector).should('not.exist');
                 // Positive assertions:
                 cy.get(RiskPageSelectors.search.searchLabels).should('have.length', 4);
                 cy.get(`${RiskPageSelectors.search.searchLabels}:nth(0)`).should(
@@ -253,10 +244,7 @@ describe('Risk page', () => {
                 visitRiskDeploymentsWithSearchQuery(`?s[${sillyOption}]=${sillyValue}`);
 
                 // Positive assertion:
-                cy.get(RiskPageSelectors.search.valueContainer).should(
-                    'have.text',
-                    searchPlaceholderText
-                );
+                cy.get(searchPlaceholderSelector);
                 // Negative assertion:
                 cy.get(RiskPageSelectors.search.searchLabels).should('not.exist');
 

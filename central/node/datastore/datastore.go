@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -80,7 +81,7 @@ func NewWithPostgres(storage store.Store, indexer nodeIndexer.Indexer, searcher 
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t testing.TB, pool *postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error) {
 	dbstore := pgStore.New(pool, false, concurrency.NewKeyFence())
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.NewV2(dbstore, indexer)
@@ -102,4 +103,9 @@ func GetTestRocksBleveDataStore(t testing.TB, rocksengine *rocksdbBase.RocksDB, 
 	nodeRanker := ranking.NodeRanker()
 	nodeComponentRanker := ranking.NodeComponentRanker()
 	return New(dacky, keyFence, bleveIndex, riskStore, nodeRanker, nodeComponentRanker), nil
+}
+
+// NodeString returns a human-readable string representation of a node.
+func NodeString(node *storage.Node) string {
+	return fmt.Sprintf("%s/%s (id: %s)", node.GetClusterName(), node.GetName(), node.GetId())
 }

@@ -29,7 +29,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) Store {
 	}
 }
 
-func (b *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
+func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return false, err
@@ -44,7 +44,7 @@ func (b *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return exists, nil
 }
 
-func (b *storeImpl) Count(ctx context.Context) (int, error) {
+func (b *storeImpl) Count(_ context.Context) (int, error) {
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return 0, err
@@ -59,7 +59,7 @@ func (b *storeImpl) Count(ctx context.Context) (int, error) {
 	return count, nil
 }
 
-func (b *storeImpl) Get(ctx context.Context, id string) (cve *storage.CVE, exists bool, err error) {
+func (b *storeImpl) Get(_ context.Context, id string) (cve *storage.CVE, exists bool, err error) {
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, false, err
@@ -82,7 +82,7 @@ func (b *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.CVE, 
 	return cves, missing, nil
 }
 
-func (b *storeImpl) getMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error) {
+func (b *storeImpl) getMany(_ context.Context, ids []string) ([]*storage.CVE, []int, error) {
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return nil, nil, err
@@ -127,7 +127,7 @@ func (b *storeImpl) GetIDs(_ context.Context) ([]string, error) {
 	return ids, err
 }
 
-func (b *storeImpl) Upsert(ctx context.Context, cves ...*storage.CVE) error {
+func (b *storeImpl) Upsert(_ context.Context, cves ...*storage.CVE) error {
 	keysToUpsert := make([][]byte, 0, len(cves))
 	for _, vuln := range cves {
 		keysToUpsert = append(keysToUpsert, vulnDackBox.KeyFunc(vuln))

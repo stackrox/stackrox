@@ -27,26 +27,17 @@ export type ResourceName =
     | 'NetworkGraph'
     | 'NetworkPolicy'
     | 'Node'
-    | 'Policy'
-    | 'Role'
     | 'Secret'
     | 'ServiceAccount'
     | 'VulnerabilityManagementApprovals'
     | 'VulnerabilityManagementRequests'
-    | 'VulnerabilityReports'
     | 'WatchedImage'
     | 'WorkflowAdministration'
     // To-be-deprecated resources.
-    // TODO: ROX-12750 Remove AllComments, ComplianceRunSchedule, ComplianceRuns, Config, DebugLogs,
-    // NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig and ServiceIdentity.
-    | 'AllComments'
-    | 'ComplianceRuns'
-    | 'Config'
-    | 'DebugLogs'
-    | 'NetworkGraphConfig'
-    | 'ProbeUpload'
-    | 'ScannerBundle'
-    | 'ScannerDefinitions'
-    | 'SensorUpgradeConfig'
-    | 'ServiceIdentity'
+    // TODO: ROX-13888 Remove Policy, VulnerabilityReports.
+    | 'Policy'
+    // TODO: ROX-14398 Remove Role
+    | 'Role'
+    // TODO: ROX-13888 Remove Policy, VulnerabilityReports.
+    | 'VulnerabilityReports'
     ;

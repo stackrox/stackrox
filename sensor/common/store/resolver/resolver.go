@@ -1,6 +1,7 @@
 package resolver
 
 import (
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
 )
@@ -35,5 +36,24 @@ func ResolveDeploymentsByMultipleServiceAccounts(serviceAccounts []NamespaceServ
 func ResolveDeploymentLabels(namespace string, sel selector.Selector) DeploymentReference {
 	return func(store store.DeploymentStore) []string {
 		return store.FindDeploymentIDsByLabels(namespace, sel)
+	}
+}
+
+// ResolveAllDeployments returns a function that generates a list of a all deployment ids in the system
+func ResolveAllDeployments() DeploymentReference {
+	return func(store store.DeploymentStore) []string {
+		allDeployments := store.GetAll()
+		ids := make([]string, len(allDeployments))
+		for i, dp := range allDeployments {
+			ids[i] = dp.GetId()
+		}
+		return ids
+	}
+}
+
+// ResolveDeploymentsByImages returns a function that returns a list of deployment ids based on a slice of images
+func ResolveDeploymentsByImages(images ...*storage.Image) DeploymentReference {
+	return func(store store.DeploymentStore) []string {
+		return store.FindDeploymentIDsByImages(images)
 	}
 }

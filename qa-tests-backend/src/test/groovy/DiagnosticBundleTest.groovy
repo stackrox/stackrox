@@ -1,5 +1,6 @@
 import static io.restassured.RestAssured.given
 
+import java.time.Instant
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
@@ -23,7 +24,7 @@ import spock.lang.Unroll
 class DiagnosticBundleTest extends BaseSpecification {
 
     @Shared
-    private String debugLogsReaderRoleName
+    private String administrationReaderRoleName
     @Shared
     private GenerateTokenResponse adminToken
     @Shared
@@ -35,21 +36,19 @@ class DiagnosticBundleTest extends BaseSpecification {
 
     def setupSpec() {
         adminToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(), "Admin")
-        debugLogsReaderRoleName = UUID.randomUUID()
-        RoleService.createRoleWithScopeAndPermissionSet(debugLogsReaderRoleName,
+        administrationReaderRoleName = UUID.randomUUID()
+        RoleService.createRoleWithScopeAndPermissionSet(administrationReaderRoleName,
                 UNRESTRICTED_SCOPE_ID,
                 [
-                        // TODO: ROX-12750 Replace DebugLogs with Administration
-                        "DebugLogs": RoleOuterClass.Access.READ_ACCESS,
+                        "Administration": RoleOuterClass.Access.READ_ACCESS,
                         "Cluster": RoleOuterClass.Access.READ_ACCESS,
                 ]
         )
         debugLogsReaderToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(),
-                debugLogsReaderRoleName)
+                administrationReaderRoleName)
         Map<String, RoleOuterClass.Access> resourceToAccess =
                 [
-                        // TODO: ROX-12750 Replace DebugLogs with Administration
-                        "DebugLogs": RoleOuterClass.Access.NO_ACCESS,
+                        "Administration": RoleOuterClass.Access.NO_ACCESS,
                         "Cluster": RoleOuterClass.Access.NO_ACCESS,
                 ]
 
@@ -71,11 +70,14 @@ class DiagnosticBundleTest extends BaseSpecification {
         if (noAccessRole != null) {
             RoleService.deleteRole(noAccessRole.name)
         }
-        RoleService.deleteRole(debugLogsReaderRoleName)
+        RoleService.deleteRole(administrationReaderRoleName)
     }
 
     @Unroll
     def "Test that diagnostic bundle download #desc"() {
+        given:
+        Instant modifiedAfter = (new Date()).toInstant().minusSeconds(1)
+
         when:
         "Making a request for the diagnostic bundle"
 
@@ -115,7 +117,8 @@ class DiagnosticBundleTest extends BaseSpecification {
             try {
                 ZipEntry entry
                 while ((entry = zis.nextEntry) != null) {
-                    log.info "Found file ${entry.name}"
+                    log.info "Found file ${entry.name} modified at ${entry.lastModifiedTime}"
+                    assert modifiedAfter.isBefore(entry.lastModifiedTime.toInstant())
                     if (entry.name == ("kubernetes/" + ClusterService.DEFAULT_CLUSTER_NAME +
                             "/stackrox/sensor/deployment-sensor.yaml")) {
                         foundK8sInfo = true

@@ -48,7 +48,7 @@ type pipelineImpl struct {
 	metricsStore MetricsStore
 }
 
-func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
+func (p *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
 	return nil
 }
 

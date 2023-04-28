@@ -136,7 +136,7 @@ func (j *jira) getAlertDescription(alert *storage.Alert) (string, error) {
 	return notifiers.FormatAlert(alert, alertLink, funcMap, j.mitreStore)
 }
 
-func (j *jira) Close(ctx context.Context) error {
+func (j *jira) Close(_ context.Context) error {
 	return nil
 }
 
@@ -297,7 +297,7 @@ func (j *jira) ProtoNotifier() *storage.Notifier {
 	return j.notifier
 }
 
-func (j *jira) createIssue(ctx context.Context, severity storage.Severity, i *jiraLib.Issue) error {
+func (j *jira) createIssue(_ context.Context, severity storage.Severity, i *jiraLib.Issue) error {
 	i.Fields.Unknowns = j.unknownMap
 
 	if j.needsPriority {

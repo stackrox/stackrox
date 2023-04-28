@@ -12,7 +12,6 @@ from common import popen_graceful_kill
 class BaseTest:
     def __init__(self):
         self.test_outputs = []
-        self.test_results = {}
 
     def run_with_graceful_kill(self, args, timeout, post_start_hook=None):
         with subprocess.Popen(args) as cmd:
@@ -23,6 +22,9 @@ class BaseTest:
                 if exitstatus != 0:
                     raise RuntimeError(f"Test failed: exit {exitstatus}")
             except subprocess.TimeoutExpired as err:
+                # Kill child processes as we cannot rely on bash scripts to handle signals and stop tests
+                subprocess.run(["/usr/bin/pkill", "-P", str(cmd.pid)], check=True, timeout=5)
+                # Then kill the test command
                 popen_graceful_kill(cmd)
                 raise err
 
@@ -51,7 +53,7 @@ class UpgradeTest(BaseTest):
 
 
 class PostgresUpgradeTest(BaseTest):
-    TEST_TIMEOUT = 60 * 60
+    TEST_TIMEOUT = 60 * 60 * 2
     TEST_OUTPUT_DIR = "/tmp/postgres-upgrade-test-logs"
     TEST_LEGACY_OUTPUT_DIR = "/tmp/legacy-postgres-upgrade-test-logs"
     TEST_SENSOR_OUTPUT_DIR = "/tmp/postgres-sensor-upgrade-test-logs"
@@ -83,75 +85,14 @@ class PostgresUpgradeTest(BaseTest):
 
 
 class OperatorE2eTest(BaseTest):
-    # TODO(ROX-12348): adjust these timeouts once we know average run times
-    FETCH_KUTTL_TIMEOUT_SEC = 5 * 60
-    DEPLOY_TIMEOUT_SEC = 40 * 60
-    UPGRADE_TEST_TIMEOUT_SEC = 50 * 60
-    E2E_TEST_TIMEOUT_SEC = 50 * 60
-    SCORECARD_TEST_TIMEOUT_SEC = 20 * 60
-
-    def __init__(self):
-        self.test_outputs = [
-            "operator/build/kuttl-test-artifacts",
-            "operator/build/kuttl-test-artifacts-upgrade",
-        ]
-        self.test_results = {
-            "kuttl-test-artifacts": "operator/build/kuttl-test-artifacts",
-            "kuttl-test-artifacts-upgrade": "operator/build/kuttl-test-artifacts-upgrade",
-        }
+    TEST_TIMEOUT = 60 * 60 * 2
 
     def run(self):
-        print("Fetching kuttl binary")
-        self.run_with_graceful_kill(
-            ["operator/hack/junit_wrap.sh", "fetch-kuttl",
-             "Download kuttl binary.", "See log for error details.",
-             "make", "-C", "operator", "kuttl"],
-            OperatorE2eTest.FETCH_KUTTL_TIMEOUT_SEC,
-        )
-        print("Deploying operator")
-        self.run_with_graceful_kill(
-            ["operator/hack/junit_wrap.sh", "deploy-previous-operator",
-             "Deploy previously released version of the operator.",
-             "See log for error details. Reading operator/tests/TROUBLESHOOTING_E2E_TESTS.md may also be helpful.",
-             "make", "-C", "operator", "deploy-previous-via-olm"],
-            OperatorE2eTest.DEPLOY_TIMEOUT_SEC,
-        )
-
-        print("Executing operator upgrade test")
-        self.run_with_graceful_kill(
-            ["operator/hack/junit_wrap.sh", "test-upgrade",
-             "Test operator upgrade from previously released version to the current one.",
-             "See log and/or kuttl JUnit output for error details. "
-             "Reading operator/tests/TROUBLESHOOTING_E2E_TESTS.md may also be helpful.",
-             "make", "-C", "operator", "test-upgrade"],
-            OperatorE2eTest.UPGRADE_TEST_TIMEOUT_SEC,
-        )
-
         print("Executing operator e2e tests")
-        self.run_with_graceful_kill(
-            ["operator/hack/junit_wrap.sh", "test-e2e",
-             "Run operator E2E tests.",
-             "See log and/or kuttl JUnit output for error details. "
-             "Reading operator/tests/TROUBLESHOOTING_E2E_TESTS.md may also be helpful.",
-             "make", "-C", "operator", "test-e2e-deployed"],
-            OperatorE2eTest.E2E_TEST_TIMEOUT_SEC,
-        )
 
-        print("Executing Operator Bundle Scorecard tests")
         self.run_with_graceful_kill(
-            [
-                "operator/hack/junit_wrap.sh", "bundle-test-image",
-                "Run scorecard tests.",
-                "See log for error details.",
-                "./operator/scripts/retry.sh",
-                "4",
-                "2",
-                "make",
-                "-C",
-                "operator",
-                "bundle-test-image",
-            ],
-            OperatorE2eTest.SCORECARD_TEST_TIMEOUT_SEC,
+            ["operator/tests/run.sh"],
+            OperatorE2eTest.TEST_TIMEOUT,
         )
 
 

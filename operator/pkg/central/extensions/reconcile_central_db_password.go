@@ -29,7 +29,7 @@ func ReconcileCentralDBPasswordExtension(client ctrlClient.Client) extensions.Re
 	return wrapExtension(reconcileCentralDBPassword, client)
 }
 
-func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, statusUpdater func(updateStatusFunc), log logr.Logger) error {
+func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), _ logr.Logger) error {
 	run := &reconcileCentralDBPasswordExtensionRun{
 		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, c),
 		centralObj:          c,
@@ -97,7 +97,7 @@ func (r *reconcileCentralDBPasswordExtensionRun) Execute(ctx context.Context) er
 	return nil
 }
 
-func (r *reconcileCentralDBPasswordExtensionRun) validateSecretData(data types.SecretDataMap, controllerOwned bool) error {
+func (r *reconcileCentralDBPasswordExtensionRun) validateSecretData(data types.SecretDataMap, _ bool) error {
 	password, err := passwordFromSecretData(data)
 	if err != nil {
 		return errors.Wrap(err, "validating existing secret data")

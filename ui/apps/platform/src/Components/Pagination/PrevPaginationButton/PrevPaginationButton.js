@@ -15,7 +15,7 @@ const PrevPaginationButton = ({ className, currentPage, totalSize, pageSize, onC
             className={className}
             onClick={onPreviousPage}
             disabled={currentPage <= 1}
-            data-testid="prev-page-button"
+            aria-label="Go to previous page"
         >
             <ChevronLeft className="h-6 w-6" />
         </button>

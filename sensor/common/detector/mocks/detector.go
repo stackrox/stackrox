@@ -114,6 +114,62 @@ func (mr *MockDetectorMockRecorder) ProcessNetworkFlow(flow interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessNetworkFlow", reflect.TypeOf((*MockDetector)(nil).ProcessNetworkFlow), flow)
 }
 
+// ProcessPolicySync mocks base method.
+func (m *MockDetector) ProcessPolicySync(sync *central.PolicySync) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessPolicySync", sync)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessPolicySync indicates an expected call of ProcessPolicySync.
+func (mr *MockDetectorMockRecorder) ProcessPolicySync(sync interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessPolicySync", reflect.TypeOf((*MockDetector)(nil).ProcessPolicySync), sync)
+}
+
+// ProcessReassessPolicies mocks base method.
+func (m *MockDetector) ProcessReassessPolicies() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessReassessPolicies")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessReassessPolicies indicates an expected call of ProcessReassessPolicies.
+func (mr *MockDetectorMockRecorder) ProcessReassessPolicies() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessReassessPolicies", reflect.TypeOf((*MockDetector)(nil).ProcessReassessPolicies))
+}
+
+// ProcessReprocessDeployments mocks base method.
+func (m *MockDetector) ProcessReprocessDeployments() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessReprocessDeployments")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessReprocessDeployments indicates an expected call of ProcessReprocessDeployments.
+func (mr *MockDetectorMockRecorder) ProcessReprocessDeployments() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessReprocessDeployments", reflect.TypeOf((*MockDetector)(nil).ProcessReprocessDeployments))
+}
+
+// ProcessUpdatedImage mocks base method.
+func (m *MockDetector) ProcessUpdatedImage(image *storage.Image) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessUpdatedImage", image)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessUpdatedImage indicates an expected call of ProcessUpdatedImage.
+func (mr *MockDetectorMockRecorder) ProcessUpdatedImage(image interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessUpdatedImage", reflect.TypeOf((*MockDetector)(nil).ProcessUpdatedImage), image)
+}
+
 // ReprocessDeployments mocks base method.
 func (m *MockDetector) ReprocessDeployments(deploymentIDs ...string) {
 	m.ctrl.T.Helper()

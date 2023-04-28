@@ -23,7 +23,7 @@ func (c credsFromConn) Info() credentials.ProtocolInfo {
 	}
 }
 
-func (c credsFromConn) ClientHandshake(ctx context.Context, authority string, rawConn net.Conn) (net.Conn, credentials.AuthInfo, error) {
+func (c credsFromConn) ClientHandshake(_ context.Context, _ string, _ net.Conn) (net.Conn, credentials.AuthInfo, error) {
 	return nil, nil, errors.New("server use only")
 }
 
@@ -47,6 +47,6 @@ func (c credsFromConn) Clone() credentials.TransportCredentials {
 	return c
 }
 
-func (c credsFromConn) OverrideServerName(serverNameOverride string) error {
+func (c credsFromConn) OverrideServerName(_ string) error {
 	return errors.New("not supported")
 }

@@ -48,7 +48,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (store.Store, er
 	}, nil
 }
 
-func (b *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
+func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return false, err
@@ -63,7 +63,7 @@ func (b *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return exists, nil
 }
 
-func (b *storeImpl) Count(ctx context.Context) (int, error) {
+func (b *storeImpl) Count(_ context.Context) (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "ClusterCVEEdge")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -80,7 +80,7 @@ func (b *storeImpl) Count(ctx context.Context) (int, error) {
 	return count, nil
 }
 
-func (b *storeImpl) GetAll(ctx context.Context) ([]*storage.ClusterCVEEdge, error) {
+func (b *storeImpl) GetAll(_ context.Context) ([]*storage.ClusterCVEEdge, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "ClusterCVEEdge")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -101,7 +101,7 @@ func (b *storeImpl) GetAll(ctx context.Context) ([]*storage.ClusterCVEEdge, erro
 	return ret, nil
 }
 
-func (b *storeImpl) Get(ctx context.Context, id string) (edges *storage.ClusterCVEEdge, exists bool, err error) {
+func (b *storeImpl) Get(_ context.Context, id string) (edges *storage.ClusterCVEEdge, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ClusterCVEEdge")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -118,7 +118,7 @@ func (b *storeImpl) Get(ctx context.Context, id string) (edges *storage.ClusterC
 	return msg.(*storage.ClusterCVEEdge), msg != nil, err
 }
 
-func (b *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ClusterCVEEdge, []int, error) {
+func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.ClusterCVEEdge, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "ClusterCVEEdge")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -155,7 +155,7 @@ type clusterCVEEdge struct {
 	ClusterIDSet set.StringSet
 }
 
-func (b *storeImpl) Upsert(ctx context.Context, parts ...converter.ClusterCVEParts) error {
+func (b *storeImpl) Upsert(_ context.Context, parts ...converter.ClusterCVEParts) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "CVE")
 
 	keysToUpdate := gatherKeysForCVEParts(parts...)
@@ -220,7 +220,7 @@ func (b *storeImpl) upsertNoBatch(parts ...converter.ClusterCVEParts) error {
 	return dackTxn.Commit()
 }
 
-func (b *storeImpl) Delete(ctx context.Context, ids ...string) error {
+func (b *storeImpl) Delete(_ context.Context, ids ...string) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.RemoveMany, "ClusterCVEEdge")
 
 	parts, err := createClusterCVEEdges(ids)

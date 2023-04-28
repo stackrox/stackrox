@@ -8,8 +8,7 @@ import (
 )
 
 func TestRoleYAMLTransformation(t *testing.T) {
-	data := []byte(`
-name: test-name
+	data := []byte(`name: test-name
 description: test-description
 accessScope: access-scope
 permissionSet: permission-set
@@ -22,4 +21,8 @@ permissionSet: permission-set
 	assert.Equal(t, "test-description", role.Description)
 	assert.Equal(t, "access-scope", role.AccessScope)
 	assert.Equal(t, "permission-set", role.PermissionSet)
+
+	bytes, err := yaml.Marshal(&role)
+	assert.NoError(t, err)
+	assert.Equal(t, string(data), string(bytes))
 }

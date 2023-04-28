@@ -163,8 +163,8 @@ export const healthStatusStyles = {
     UNINITIALIZED: styleUninitialized,
     UNAVAILABLE: {
         Icon: ResourcesEmptyIcon,
-        bgColor: 'bg-secondary-200',
-        fgColor: 'text-secondary-700',
+        bgColor: 'bg-base-200',
+        fgColor: 'text-base-700',
     },
     UNHEALTHY: styleUnhealthy,
     DEGRADED: styleDegraded,
@@ -206,6 +206,22 @@ export const sensorUpgradeStyles = {
     },
     intervention: styleDegraded,
     failure: styleUnhealthy,
+};
+
+export const sensorUpgradeStylesPF = {
+    current: styleHealthyPF,
+    progress: {
+        Icon: InProgressIcon,
+        bgColor: 'bg-tertiary-200',
+        fgColor: 'text-tertiary-700',
+    },
+    download: {
+        Icon: DownloadCloud,
+        bgColor: 'bg-tertiary-200',
+        fgColor: 'text-tertiary-700',
+    },
+    intervention: styleDegradedPF,
+    failure: styleUnhealthyPF,
 };
 
 type UpgradeState = {

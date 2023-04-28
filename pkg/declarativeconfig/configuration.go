@@ -2,6 +2,7 @@ package declarativeconfig
 
 import (
 	"bytes"
+	"io"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -32,23 +33,11 @@ type Configuration interface {
 func ConfigurationFromRawBytes(rawConfigurations ...[]byte) ([]Configuration, error) {
 	var configurations []Configuration
 	for _, rawConfiguration := range rawConfigurations {
-		// A declarative configuration file can either contain a single declarative configuration, or an array of
-		// configurations, hence we first check whether we have an array of objects present.
-		var objects []interface{}
-		err := yaml.Unmarshal(rawConfiguration, &objects)
-		if err == nil {
-			configs, err := fromUnstructuredConfigs(objects)
-			if err != nil {
-				return nil, errors.Wrap(err, "unmarshalling list of raw configurations")
-			}
-			configurations = append(configurations, configs...)
-		} else {
-			config, err := fromRawBytes(rawConfiguration)
-			if err != nil {
-				return nil, errors.Wrap(err, "unmarshalling raw configuration")
-			}
-			configurations = append(configurations, config)
+		configs, err := parseToConfiguration(rawConfiguration)
+		if err != nil {
+			return nil, err
 		}
+		configurations = append(configurations, configs...)
 	}
 
 	return configurations, nil
@@ -56,12 +45,8 @@ func ConfigurationFromRawBytes(rawConfigurations ...[]byte) ([]Configuration, er
 
 func fromUnstructuredConfigs(unstructuredConfigs []interface{}) ([]Configuration, error) {
 	configurations := make([]Configuration, 0, len(unstructuredConfigs))
-	for i, unstructuredConfig := range unstructuredConfigs {
-		rawConfigurationBytes, err := yaml.Marshal(unstructuredConfig)
-		if err != nil {
-			return nil, errors.Wrapf(err, "marshalling configuration[%d] from list %+v", i, unstructuredConfig)
-		}
-		config, err := fromRawBytes(rawConfigurationBytes)
+	for _, unstructuredConfig := range unstructuredConfigs {
+		config, err := fromUnstructured(unstructuredConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -70,11 +55,16 @@ func fromUnstructuredConfigs(unstructuredConfigs []interface{}) ([]Configuration
 	return configurations, nil
 }
 
-func fromRawBytes(rawConfiguration []byte) (Configuration, error) {
+func fromUnstructured(unstructured interface{}) (Configuration, error) {
+	rawConfiguration, err := yaml.Marshal(unstructured)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling unstructured configuration")
+	}
+
 	var decodeErrs *multierror.Error
 
 	var authProvider AuthProvider
-	err := decodeYAMLToConfiguration(rawConfiguration, &authProvider)
+	err = decodeYAMLToConfiguration(rawConfiguration, &authProvider)
 	if err == nil {
 		return &authProvider, nil
 	}
@@ -100,7 +90,7 @@ func fromRawBytes(rawConfiguration []byte) (Configuration, error) {
 		return &role, nil
 	}
 	decodeErrs = multierror.Append(decodeErrs, err)
-	return nil, errors.Wrapf(decodeErrs, "raw configuration %s didn't match any of the given configurations", rawConfiguration)
+	return nil, errors.Wrap(decodeErrs, "unable to unmarshal the configuration")
 }
 
 func decodeYAMLToConfiguration(rawYAML []byte, configuration Configuration) error {
@@ -110,4 +100,42 @@ func decodeYAMLToConfiguration(rawYAML []byte, configuration Configuration) erro
 		return err
 	}
 	return nil
+}
+
+func parseToConfiguration(contents []byte) ([]Configuration, error) {
+	dec := yaml.NewDecoder(bytes.NewReader(contents))
+	var unstructuredObjs []interface{}
+	for {
+		var obj interface{}
+		err := dec.Decode(&obj)
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, errors.Wrap(err, "decoding YAML file contents")
+		}
+		unstructuredObjs = append(unstructuredObjs, obj)
+	}
+
+	var configurations []Configuration
+	for _, unstructured := range unstructuredObjs {
+		// Special case: a list of objects.
+		listOfObj, ok := unstructured.([]interface{})
+		if ok {
+			configs, err := fromUnstructuredConfigs(listOfObj)
+			if err != nil {
+				return nil, err
+			}
+			configurations = append(configurations, configs...)
+			continue
+		}
+
+		config, err := fromUnstructured(unstructured)
+		if err != nil {
+			return nil, err
+		}
+		configurations = append(configurations, config)
+	}
+
+	return configurations, nil
 }

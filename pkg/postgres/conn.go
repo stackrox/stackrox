@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
@@ -46,7 +45,6 @@ func (c *Conn) Exec(ctx context.Context, sql string, args ...interface{}) (pgcon
 		return tx.Exec(ctx, sql, args...)
 	}
 
-	defer setQueryDuration(time.Now(), "conn", sql)
 	ct, err := c.Conn.Exec(ctx, sql, args...)
 	if err != nil {
 		incQueryErrors(sql, err)
@@ -63,7 +61,6 @@ func (c *Conn) Query(ctx context.Context, sql string, args ...interface{}) (*Row
 		return tx.Query(ctx, sql, args...)
 	}
 
-	defer setQueryDuration(time.Now(), "conn", sql)
 	rows, err := c.Conn.Query(ctx, sql, args...)
 	if err != nil {
 		incQueryErrors(sql, err)
@@ -85,7 +82,6 @@ func (c *Conn) QueryRow(ctx context.Context, sql string, args ...interface{}) *R
 	if tx, ok := TxFromContext(ctx); ok {
 		row = tx.QueryRow(ctx, sql, args...)
 	} else {
-		defer setQueryDuration(time.Now(), "conn", sql)
 		row = c.Conn.QueryRow(ctx, sql, args...)
 	}
 

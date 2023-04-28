@@ -3,7 +3,7 @@
 set -ueo pipefail
 
 CWD=$(dirname "$0")
-# shellcheck disable=1091
+# shellcheck source=./lib.sh
 source "${CWD}/lib.sh"
 
 if [[ $# -eq 0 ]]; then

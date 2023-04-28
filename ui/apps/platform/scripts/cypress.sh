@@ -5,6 +5,7 @@ api_endpoint="${UI_BASE_URL:-https://localhost:8000}"
 
 if [[ -z "$ROX_USERNAME" || -z "$ROX_PASSWORD" ]]; then
   # basic auth creds weren't set (e.g. by CI), assume local k8s deployment
+  # shellcheck source=../../../../scripts/k8s/export-basic-auth-creds.sh
   source ../../../scripts/k8s/export-basic-auth-creds.sh ../../../deploy/k8s
 fi
 
@@ -25,6 +26,9 @@ export CYPRESS_SCREENSHOTS_FOLDER="${artifacts_dir}/screenshots"
 if [[ -n "${UI_BASE_URL}" ]]; then
   export CYPRESS_BASE_URL="${UI_BASE_URL}"
 fi
+
+# be able to skip tests that are not relevant, for example: openshift
+export CYPRESS_ORCHESTRATOR_FLAVOR="${ORCHESTRATOR_FLAVOR}"
 
 if [ $2 == "--spec" ]; then
     if [ $# -ne 3 ]; then

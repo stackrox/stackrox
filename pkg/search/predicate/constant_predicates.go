@@ -10,13 +10,13 @@ import (
 
 type alwaysTrueIntType struct{}
 
-func (alwaysTrueIntType) Evaluate(value reflect.Value) (*search.Result, bool) {
+func (alwaysTrueIntType) Evaluate(_ reflect.Value) (*search.Result, bool) {
 	return &search.Result{}, true
 }
 
 type alwaysFalseIntType struct{}
 
-func (alwaysFalseIntType) Evaluate(value reflect.Value) (*search.Result, bool) {
+func (alwaysFalseIntType) Evaluate(_ reflect.Value) (*search.Result, bool) {
 	return nil, false
 }
 

@@ -187,7 +187,7 @@ type mockImageServiceServer struct {
 	components []*storage.EmbeddedImageScanComponent
 }
 
-func (m *mockImageServiceServer) ScanImage(ctx context.Context, in *v1.ScanImageRequest) (*storage.Image, error) {
+func (m *mockImageServiceServer) ScanImage(_ context.Context, _ *v1.ScanImageRequest) (*storage.Image, error) {
 	img := &storage.Image{
 		Scan: &storage.ImageScan{
 			Components: m.components,

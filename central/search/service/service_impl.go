@@ -397,7 +397,7 @@ func Options(categories []v1.SearchCategory) []string {
 }
 
 // Options returns the options available for the categories specified in the request
-func (s *serviceImpl) Options(ctx context.Context, request *v1.SearchOptionsRequest) (*v1.SearchOptionsResponse, error) {
+func (s *serviceImpl) Options(_ context.Context, request *v1.SearchOptionsRequest) (*v1.SearchOptionsResponse, error) {
 	return &v1.SearchOptionsResponse{Options: Options(request.GetCategories())}, nil
 }
 

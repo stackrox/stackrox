@@ -467,7 +467,7 @@ const processData = (data, entityType, workflowState, showVmUpdates) => {
     return results;
 };
 
-const TopRiskiestEntities = ({ entityContext, limit }) => {
+const TopRiskiestEntities = ({ entityContext, search, limit }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
     const entities = getEntitiesByContext(entityContext, showVmUpdates);
@@ -476,6 +476,14 @@ const TopRiskiestEntities = ({ entityContext, limit }) => {
     function onEntityChange(value) {
         setSelectedEntity(value);
     }
+
+    const entityContextObject = queryService.entityContextToQueryObject(entityContext); // deals with BE inconsistency
+
+    const queryObject = {
+        ...entityContextObject,
+        ...search,
+    }; // Combine entity context and search
+    const query = queryService.objectToWhereClause(queryObject); // get final gql query string
 
     const {
         loading,
@@ -487,7 +495,7 @@ const TopRiskiestEntities = ({ entityContext, limit }) => {
             : getQueryBySelectedEntity(selectedEntity),
         {
             variables: {
-                query: queryService.entityContextToQueryString(entityContext),
+                query,
                 pagination: queryService.getPagination(
                     {
                         id: entityPriorityField[selectedEntity],
@@ -552,11 +560,13 @@ const TopRiskiestEntities = ({ entityContext, limit }) => {
 
 TopRiskiestEntities.propTypes = {
     entityContext: PropTypes.shape({}),
+    search: PropTypes.shape({}),
     limit: PropTypes.number,
 };
 
 TopRiskiestEntities.defaultProps = {
     entityContext: {},
+    search: {},
     limit: 5,
 };
 

@@ -14,6 +14,7 @@ import (
 type DataStore interface {
 	GetRole(ctx context.Context, name string) (*storage.Role, bool, error)
 	GetAllRoles(ctx context.Context) ([]*storage.Role, error)
+	GetRolesFiltered(ctx context.Context, filter func(role *storage.Role) bool) ([]*storage.Role, error)
 	CountRoles(ctx context.Context) (int, error)
 	AddRole(ctx context.Context, role *storage.Role) error
 	UpdateRole(ctx context.Context, role *storage.Role) error
@@ -21,6 +22,7 @@ type DataStore interface {
 
 	GetPermissionSet(ctx context.Context, id string) (*storage.PermissionSet, bool, error)
 	GetAllPermissionSets(ctx context.Context) ([]*storage.PermissionSet, error)
+	GetPermissionSetsFiltered(ctx context.Context, filter func(permissionSet *storage.PermissionSet) bool) ([]*storage.PermissionSet, error)
 	CountPermissionSets(ctx context.Context) (int, error)
 	AddPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) error
 	UpdatePermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) error
@@ -29,6 +31,7 @@ type DataStore interface {
 
 	GetAccessScope(ctx context.Context, id string) (*storage.SimpleAccessScope, bool, error)
 	GetAllAccessScopes(ctx context.Context) ([]*storage.SimpleAccessScope, error)
+	GetAccessScopesFiltered(ctx context.Context, filter func(accessScope *storage.SimpleAccessScope) bool) ([]*storage.SimpleAccessScope, error)
 	CountAccessScopes(ctx context.Context) (int, error)
 	AddAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error
 	UpdateAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error
@@ -40,10 +43,13 @@ type DataStore interface {
 }
 
 // New returns a new DataStore instance.
-func New(roleStorage rocksDBStore.RoleStore, permissionSetStore rocksDBStore.PermissionSetStore, accessScopeStore rocksDBStore.SimpleAccessScopeStore) DataStore {
+func New(roleStorage rocksDBStore.RoleStore, permissionSetStore rocksDBStore.PermissionSetStore,
+	accessScopeStore rocksDBStore.SimpleAccessScopeStore,
+	groupGetFilteredFunc func(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error)) DataStore {
 	return &dataStoreImpl{
 		roleStorage:          roleStorage,
 		permissionSetStorage: permissionSetStore,
 		accessScopeStorage:   accessScopeStore,
+		groupGetFilteredFunc: groupGetFilteredFunc,
 	}
 }

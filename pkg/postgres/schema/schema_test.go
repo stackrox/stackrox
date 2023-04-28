@@ -31,7 +31,7 @@ var (
 type SchemaTestSuite struct {
 	suite.Suite
 	connConfig *pgx.ConnConfig
-	pool       *postgres.DB
+	pool       postgres.DB
 	gormDB     *gorm.DB
 	ctx        context.Context
 }

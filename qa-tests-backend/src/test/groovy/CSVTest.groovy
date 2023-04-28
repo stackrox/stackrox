@@ -198,7 +198,7 @@ class CSVTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-    def "Verify CVE CSV data scoped by entity is correct"() {
+    def "Verify CVE CSV data scoped by entity is correct #testLabel"() {
         when:
         "Query fixable CVEs from graphQL"
         def gqlService = new GraphQLService()
@@ -284,8 +284,12 @@ class CSVTest extends BaseSpecification {
         where :
         "Data is"
 
-        baseGraphQLQuery                | postgresGraphQLQuery                       | graphQLPayload | csvQuery
-        FIXABLE_CVES_IN_IMAGE_QUERY     | FIXABLE_CVES_IN_IMAGE_POSTGRES_QUERY       | [
+        testLabel \
+          | baseGraphQLQuery                 | postgresGraphQLQuery \
+          | graphQLPayload | csvQuery
+        "Fixable Cves In Image Query" \
+          | FIXABLE_CVES_IN_IMAGE_QUERY      | FIXABLE_CVES_IN_IMAGE_POSTGRES_QUERY \
+          | [
                 id        : "sha256:e18c5814a9f7ddd5fe410f17417a48d2de562325e9d71337274134f4a6654e3f",
                 query: "",
                 // must scope without scope query since graphQL is hitting sub-resolver
@@ -294,7 +298,9 @@ class CSVTest extends BaseSpecification {
                 vulnPagination: new Pagination(0, 0, new SortOption("cvss", true)),
         ] | getCVETypeImageQuery() +
             "Image Sha:sha256:e18c5814a9f7ddd5fe410f17417a48d2de562325e9d71337274134f4a6654e3f+Fixable:true"
-        FIXABLE_CVES_IN_COMPONENT_QUERY | FIXABLE_CVES_IN_COMPONENT_POSTGRES_QUERY   | [
+        "Fixable Cves In Component Query" \
+          | FIXABLE_CVES_IN_COMPONENT_QUERY  | FIXABLE_CVES_IN_COMPONENT_POSTGRES_QUERY \
+          | [
                 // openssl 1.0.1k-3+deb8u5
                 id        : getComponentId(),
                 query: "",
@@ -302,7 +308,9 @@ class CSVTest extends BaseSpecification {
                 vulnQuery : "Fixable:true",
                 vulnPagination: new Pagination(0, 0, new SortOption("cvss", true)),
         ] | getCVETypeImageQuery() + getComponentQuery()
-        FIXABLE_CVES_IN_DEPLOYMENT_QUERY | FIXABLE_CVES_IN_DEPLOYMENT_POSTGRES_QUERY | [
+        "Fixable Cves In Deployment Query" \
+          | FIXABLE_CVES_IN_DEPLOYMENT_QUERY | FIXABLE_CVES_IN_DEPLOYMENT_POSTGRES_QUERY \
+          | [
                 id        : CVE_DEPLOYMENT.deploymentUid,
                 query: "",
                 scopeQuery: "",

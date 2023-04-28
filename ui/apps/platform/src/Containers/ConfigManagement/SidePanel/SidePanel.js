@@ -78,7 +78,7 @@ const SidePanel = ({
         <div className="flex items-center h-full hover:bg-base-300">
             <Link
                 to={externalURL}
-                data-testid="external-link"
+                aria-label="External link"
                 className="border-base-400 border-l h-full p-4"
             >
                 <ExternalLink className="h-6 w-6 text-base-600" />

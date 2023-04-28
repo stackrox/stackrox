@@ -84,11 +84,19 @@ func TestConvertNodeToVulnRequest(t *testing.T) {
 					},
 				},
 			},
+			kernelVersion:    "3.10.0-1127.13.1.el7.x86_64",
+			osImage:          "linux",
+			kubeletVersion:   "v1.14.8",
+			kubeProxyVersion: "v1.16.13-gke.401",
 			containerRuntime: &storage.ContainerRuntimeInfo{
 				Type:    storage.ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME,
 				Version: "containerd://1.2.8",
 			},
 			expected: &v1.GetNodeVulnerabilitiesRequest{
+				KernelVersion:    "3.10.0-1127.13.1.el7.x86_64",
+				OsImage:          "linux",
+				KubeletVersion:   "v1.14.8",
+				KubeproxyVersion: "v1.16.13-gke.401",
 				Runtime: &v1.GetNodeVulnerabilitiesRequest_ContainerRuntime{
 					Name:    "containerd",
 					Version: "1.2.8",
@@ -183,9 +191,9 @@ func TestConvertVulnResponseToNodeScan(t *testing.T) {
 						FixedBy: "4",
 					},
 				},
-				NodeNotes: []v1.NodeNote{v1.NodeNote_NODE_UNSUPPORTED, v1.NodeNote_NODE_KERNEL_UNSUPPORTED},
+				NodeNotes: []v1.NodeNote{v1.NodeNote_NODE_UNSUPPORTED, v1.NodeNote_NODE_KERNEL_UNSUPPORTED, v1.NodeNote_NODE_CERTIFIED_RHEL_CVES_UNAVAILABLE},
 			},
-			expectedNotes: []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_KERNEL_UNSUPPORTED},
+			expectedNotes: []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_KERNEL_UNSUPPORTED, storage.NodeScan_CERTIFIED_RHEL_CVES_UNAVAILABLE},
 			expectedComponents: []*storage.EmbeddedNodeScanComponent{
 				{
 					Name:    "docker",
@@ -244,6 +252,81 @@ func TestConvertVulnResponseToNodeScan(t *testing.T) {
 							Link: "link4",
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "4",
+							},
+							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+						},
+					},
+				},
+			},
+		},
+		{
+			req: &v1.GetNodeVulnerabilitiesRequest{
+				KubeletVersion:   "v1.24.6+deccab3",
+				KubeproxyVersion: "v1.24.6+deccab3",
+				Runtime: &v1.GetNodeVulnerabilitiesRequest_ContainerRuntime{
+					Name:    "cri-o",
+					Version: "1.24.4-5.rhaos4.11.git57d7127.el8",
+				},
+				Components: &v1.Components{
+					Namespace:       "rhcos:4.11",
+					RhelContentSets: []string{"rhel-8-for-x86_64-appstream-rpms", "rhel-8-for-x86_64-baseos-rpms"},
+					RhelComponents: []*v1.RHELComponent{
+						{
+							Id:          int64(1),
+							Name:        "vim-minimal",
+							Namespace:   "rhel:8",
+							Version:     "2:7.4.629-6.el8",
+							Arch:        "x86_64",
+							Module:      "",
+							AddedBy:     "",
+							Cpes:        nil,
+							Executables: []*v1.Executable{},
+						},
+					},
+					OsComponents:       nil,
+					LanguageComponents: nil,
+				},
+			},
+			resp: &v1.GetNodeVulnerabilitiesResponse{
+				Features: []*v1.Feature{
+					{
+						Name:    "vim-minimal",
+						Version: "2:7.4.629-6.el8",
+						Vulnerabilities: []*v1.Vulnerability{
+							{
+								Name:    "CVE-2020-0000",
+								Link:    "link0",
+								FixedBy: "0",
+							},
+							{
+								Name:    "CVE-2020-1111",
+								Link:    "link1",
+								FixedBy: "1",
+							},
+						},
+					},
+				},
+				NodeNotes: []v1.NodeNote{v1.NodeNote_NODE_UNSUPPORTED, v1.NodeNote_NODE_KERNEL_UNSUPPORTED},
+			},
+			expectedNotes: []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_KERNEL_UNSUPPORTED},
+			expectedComponents: []*storage.EmbeddedNodeScanComponent{
+				{
+					Name:    "vim-minimal",
+					Version: "2:7.4.629-6.el8",
+					Vulns: []*storage.EmbeddedVulnerability{
+						{
+							Cve:  "CVE-2020-0000",
+							Link: "link0",
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+								FixedBy: "0",
+							},
+							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+						},
+						{
+							Cve:  "CVE-2020-1111",
+							Link: "link1",
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+								FixedBy: "1",
 							},
 							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
 						},

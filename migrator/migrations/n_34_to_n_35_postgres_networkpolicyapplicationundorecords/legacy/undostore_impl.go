@@ -43,7 +43,7 @@ func (s *undoStore) Get(_ context.Context, clusterID string) (*storage.NetworkPo
 	return &record, true, nil
 }
 
-func (s *undoStore) Upsert(ctx context.Context, record *storage.NetworkPolicyApplicationUndoRecord) error {
+func (s *undoStore) Upsert(_ context.Context, record *storage.NetworkPolicyApplicationUndoRecord) error {
 	serialized, err := proto.Marshal(record)
 	if err != nil {
 		return errors.Wrap(err, "serializing record")

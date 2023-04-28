@@ -38,7 +38,7 @@ func GetTestRocksBleveDataStore(_ *testing.T, bleveIndex bleve.Index, dacky *dac
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool *postgres.DB) DataStore {
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) DataStore {
 	return New(
 		nil,
 		pgStore.New(pool),

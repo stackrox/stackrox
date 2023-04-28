@@ -161,30 +161,44 @@ function fadeOutUnconnectedNodes(
     edges: CustomEdgeModel[],
     selectedNodeId: string | undefined
 ): CustomNodeModel[] {
-    if (!selectedNodeId) {
+    const selectedNode = getNodeById(nodes, selectedNodeId);
+    // if nothing is selected we don't want to fade anything out
+    if (!selectedNodeId || !selectedNode) {
         return nodes;
     }
-    const connectedNodeIds = getConnectedNodeIds(edges, selectedNodeId);
+    let emphasizedNodeIds: string[] = [];
+    if (selectedNode.children) {
+        // if the selected node is a group, we want to emphasize all connected nodes of the children
+        emphasizedNodeIds =
+            selectedNode.children.reduce((acc, currId) => {
+                const connectedNodeIds = getConnectedNodeIds(edges, currId);
+                return [...acc, ...connectedNodeIds];
+            }, [] as string[]) || [];
+        // we include the child nodes so that they aren't faded out
+        emphasizedNodeIds = [...emphasizedNodeIds, ...selectedNode.children];
+    } else {
+        // if the selected node is not a group, we want to emphasize all connected nodes of the selected node
+        emphasizedNodeIds = getConnectedNodeIds(edges, selectedNodeId);
+        // we include the selected node so that it isn't faded out
+        emphasizedNodeIds = [...emphasizedNodeIds, selectedNodeId];
+    }
     const modifiedNodes: CustomNodeModel[] = nodes.map((node) => {
         const { data } = node;
-        // We only want to fade out nodes (not groups), so we target node types specifically
-        if (
-            data.type === 'DEPLOYMENT' ||
-            data.type === 'CIDR_BLOCK' ||
-            data.type === 'EXTERNAL_ENTITIES'
-        ) {
-            const isConnectedToSelectedNode = connectedNodeIds.includes(node.id);
-            const isSelectedNode = node.id === selectedNodeId;
-            const isFadedOut = !isConnectedToSelectedNode && !isSelectedNode;
-            return {
-                ...node,
-                data: {
-                    ...data,
-                    isFadedOut,
-                },
-            } as CustomNodeModel;
+        let isFadedOut = false;
+        if (node.children) {
+            isFadedOut = !node.children.some((childNodeId) =>
+                emphasizedNodeIds.includes(childNodeId)
+            );
+        } else {
+            isFadedOut = !emphasizedNodeIds.includes(node.id);
         }
-        return node;
+        return {
+            ...node,
+            data: {
+                ...data,
+                isFadedOut,
+            },
+        } as CustomNodeModel;
     });
     return modifiedNodes;
 }
@@ -232,7 +246,7 @@ function NetworkGraphContainer({
     let filteredNodes: CustomNodeModel[] = [...baseModel.nodes];
     let filteredEdges: CustomEdgeModel[] = [...baseModel.edges];
     // if edgeState is extraneous && there is a selectedNode, add in/egress flows nodes/edges
-    if (edgeState === 'extraneous' && selectedNode?.data.type === 'DEPLOYMENT') {
+    if (edgeState === 'inactive' && selectedNode?.data.type === 'DEPLOYMENT') {
         const extraneousFlowsNodes = getExtraneousNodes(extraneousNodes, selectedNode.data);
         filteredNodes = [...extraneousModel.nodes, ...extraneousFlowsNodes];
         const extraneousFlowsEdges = getExtraneousEdges(selectedNode.data);

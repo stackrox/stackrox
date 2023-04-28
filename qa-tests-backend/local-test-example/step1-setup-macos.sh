@@ -1,6 +1,8 @@
 #!/bin/bash
 set -eu
+# shellcheck source=./common.sh
 source "local-test-example/common.sh"
+# shellcheck source=./config.sh
 source "local-test-example/config.sh"
 
 function install_golang {

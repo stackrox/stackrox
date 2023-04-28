@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -111,12 +110,6 @@ func (s *serviceImpl) getCluster(ctx context.Context, id string) (*v1.ClusterRes
 		return nil, errors.Wrap(errox.NotFound, "Not found")
 	}
 
-	if !features.DecommissionedClusterRetention.Enabled() {
-		return &v1.ClusterResponse{
-			Cluster: cluster,
-		}, nil
-	}
-
 	clusterRetentionInfo, err := s.getClusterRetentionInfo(ctx, cluster)
 	if err != nil {
 		return nil, err
@@ -189,12 +182,6 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 	clusters, err := s.datastore.SearchRawClusters(ctx, q)
 	if err != nil {
 		return nil, err
-	}
-
-	if !features.DecommissionedClusterRetention.Enabled() {
-		return &v1.ClustersList{
-			Clusters: clusters,
-		}, nil
 	}
 
 	clusterIDToRetentionInfoMap, err := s.getClusterIDToRetentionInfoMap(ctx, clusters)

@@ -60,7 +60,7 @@ var (
 
 {{$rocksDB :=  eq .Migration.MigrateFromDB "rocksdb" }}
 
-func move(gormDB *gorm.DB, postgresDB *postgres.DB, legacyStore legacy.Store) error {
+func move(gormDB *gorm.DB, postgresDB postgres.DB, legacyStore legacy.Store) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTable{{.Table|upperCamelCase}}Stmt)

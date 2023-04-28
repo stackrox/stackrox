@@ -24,8 +24,7 @@ var (
 			"/v1.IntegrationHealthService/GetNotifiers",
 			"/v1.IntegrationHealthService/GetDeclarativeConfigs",
 		},
-		// TODO: ROX-12750 Replace ScannerDefinitions with Administration
-		user.With(permissions.View(resources.ScannerDefinitions)): {
+		user.With(permissions.View(resources.Administration)): {
 			"/v1.IntegrationHealthService/GetVulnDefinitionsInfo",
 		},
 	})
@@ -54,7 +53,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetImageIntegrations returns the health status for all configured registries and scanners.
-func (s *serviceImpl) GetImageIntegrations(ctx context.Context, empty *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
+func (s *serviceImpl) GetImageIntegrations(ctx context.Context, _ *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
 	healthData, err := s.datastore.GetRegistriesAndScanners(ctx)
 	if err != nil {
 		return nil, err
@@ -65,7 +64,7 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, empty *v1.Empty)
 }
 
 // GetNotifiers returns the health status for all configured notifiers.
-func (s *serviceImpl) GetNotifiers(ctx context.Context, empty *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
+func (s *serviceImpl) GetNotifiers(ctx context.Context, _ *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
 	healthData, err := s.datastore.GetNotifierPlugins(ctx)
 	if err != nil {
 		return nil, err
@@ -76,7 +75,7 @@ func (s *serviceImpl) GetNotifiers(ctx context.Context, empty *v1.Empty) (*v1.Ge
 }
 
 // GetBackupPlugins returns the health status for all configured external backup integrations.
-func (s *serviceImpl) GetBackupPlugins(ctx context.Context, empty *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
+func (s *serviceImpl) GetBackupPlugins(ctx context.Context, _ *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
 	healthData, err := s.datastore.GetBackupPlugins(ctx)
 	if err != nil {
 		return nil, err
@@ -87,7 +86,7 @@ func (s *serviceImpl) GetBackupPlugins(ctx context.Context, empty *v1.Empty) (*v
 }
 
 // GetDeclarativeConfigs returns the health status for all declarative configurations.
-func (s *serviceImpl) GetDeclarativeConfigs(ctx context.Context, req *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
+func (s *serviceImpl) GetDeclarativeConfigs(ctx context.Context, _ *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
 	healthData, err := s.datastore.GetDeclarativeConfigs(ctx)
 	if err != nil {
 		return nil, err
@@ -95,7 +94,7 @@ func (s *serviceImpl) GetDeclarativeConfigs(ctx context.Context, req *v1.Empty) 
 	return &v1.GetIntegrationHealthResponse{IntegrationHealth: healthData}, nil
 }
 
-func (s *serviceImpl) GetVulnDefinitionsInfo(ctx context.Context, empty *v1.Empty) (*v1.VulnDefinitionsInfo, error) {
+func (s *serviceImpl) GetVulnDefinitionsInfo(_ context.Context, _ *v1.Empty) (*v1.VulnDefinitionsInfo, error) {
 	info, err := s.vulnDefsInfoProvider.GetVulnDefsInfo()
 	if err != nil {
 		return nil, errors.Errorf("failed to obtain vulnerability definitions information: %v", err)

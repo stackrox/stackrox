@@ -32,10 +32,11 @@ message Traits {
   Visibility visibility = 2;
 
   // Origin specifies the origin of an object.
-  // Objects can have three different origins:
+  // Objects can have four different origins:
   // - IMPERATIVE: the object was created via the API. This is assumed by default.
   // - DEFAULT: the object is a default object, such as default roles, access scopes etc.
   // - DECLARATIVE: the object is created via declarative configuration.
+  // - DECLARATIVE_ORPHANED: the object is created via declarative configuration and then unsuccessfully deleted(for example, because it is referenced by another object)
   // Based on the origin, different rules apply to the objects.
   // Objects with the DECLARATIVE origin are not allowed to be modified via API, only via declarative configuration.
   // Additionally, they may not reference objects with the IMPERATIVE origin.
@@ -43,10 +44,15 @@ message Traits {
   // They may be referenced by all other objects.
   // Objects with the IMPERATIVE origin are allowed to be modified via API, not via declarative configuration.
   // They may reference all other objects.
+  // Objects with the DECLARATIVE_ORPHANED origin are not allowed to be modified via either API or declarative configuration.
+  // DECLARATIVE_ORPHANED resource can become DECLARATIVE again if it is redefined in declarative configuration.
+  // Objects with this origin will be cleaned up from the system immediately after they are not referenced by other resources anymore.
+  // They may be referenced by all other objects.
   enum Origin {
-     IMPERATIVE  = 0;
-     DEFAULT     = 1;
-     DECLARATIVE = 2;
+     IMPERATIVE           = 0;
+     DEFAULT              = 1;
+     DECLARATIVE          = 2;
+     DECLARATIVE_ORPHANED = 3;
   }
   Origin origin = 3;
 }
