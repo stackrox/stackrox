@@ -38,7 +38,7 @@ scan_images_with_roxctl() {
     export ROX_API_TOKEN="${STACKROX_CI_INSTANCE_API_KEY}"
     local errors=()
     for image in "${images[@]}"; do
-        roxctl image check --insecure-skip-tls-verify --endpoint "https://${STACKROX_CI_INSTANCE_CENTRAL_HOST}:443" --image "quay.io/rhacs-eng/${image}" || {
+        roxctl image check --insecure-skip-tls-verify --endpoint "https://${STACKROX_CI_INSTANCE_CENTRAL_HOST}:443" --image "quay.io/rhacs-eng/${image}" --output sarif | tee "${image}.sarif" || {
             errors+=("$image")
         }
     done

@@ -604,6 +604,18 @@ jobs:
         run: |
           ./release/scripts/scan-images-with-roxctl.sh
 
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: main:${{ steps.tag.outputs.TAG }}.sarif
+          category: roxctl
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: central-db:${{ steps.tag.outputs.TAG }}.sarif
+          category: roxctl
+
   slack-on-build-failure:
     if: github.event_name == 'push' && failure()
     name: Post failure message to Slack
