@@ -316,7 +316,7 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 		}
 	}
 
-	if request.IncludePolicies {
+	if request.GetIncludePolicies() {
 		err := s.enhanceWithNetworkPolicyIsolationInfo(ctx, graph)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to enhance graph nodes with Network Policy information")
