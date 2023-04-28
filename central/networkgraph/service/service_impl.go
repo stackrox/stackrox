@@ -340,12 +340,14 @@ func (s *serviceImpl) enhanceWithNetworkPolicyIsolationInfo(ctx context.Context,
 		return errors.Wrapf(err, "fetching deployment")
 	}
 
+	deploymentMap := make(map[string]*storage.Deployment, len(deploymentObjects))
 	clusterNamespaceContext := set.NewSet[deploymentMatcher.ClusterNamespace]()
 	for _, deployment := range deploymentObjects {
 		clusterNamespaceContext.Add(deploymentMatcher.ClusterNamespace{
 			Cluster:   deployment.GetClusterId(),
 			Namespace: deployment.GetNamespace(),
 		})
+		deploymentMap[deployment.GetId()] = deployment
 	}
 
 	matcher, err := deploymentMatcher.BuildMatcher(ctx, s.networkPolicy, clusterNamespaceContext)
@@ -353,20 +355,11 @@ func (s *serviceImpl) enhanceWithNetworkPolicyIsolationInfo(ctx context.Context,
 		return errors.Wrap(err, "building deployment matcher")
 	}
 
-	isolationDetails := make(map[string]deploymentMatcher.IsolationDetails, len(deploymentObjects))
-	for _, deployment := range deploymentObjects {
-		details := matcher.GetIsolationDetails(deployment)
-		isolationDetails[deployment.GetId()] = deploymentMatcher.IsolationDetails{
-			IngressIsolated: details.IngressIsolated,
-			EgressIsolated:  details.EgressIsolated,
-			PolicyIDs:       details.PolicyIDs,
-		}
-	}
-
 	for _, node := range graph.Nodes {
 		if node.GetEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
 			deploymentID := node.GetEntity().GetId()
-			if isolationDetail, ok := isolationDetails[deploymentID]; ok {
+			if deployment, ok := deploymentMap[deploymentID]; ok {
+				isolationDetail := matcher.GetIsolationDetails(deployment)
 				node.NonIsolatedEgress = !isolationDetail.EgressIsolated
 				node.NonIsolatedIngress = !isolationDetail.IngressIsolated
 				node.PolicyIds = isolationDetail.PolicyIDs
