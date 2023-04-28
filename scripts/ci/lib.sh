@@ -1220,6 +1220,7 @@ store_test_results() {
     local from="$1"
     local to="$2"
 
+    set +u
     if ! is_in_PR_context; then
     {
         info "Creating JIRA task for failures found in $from"
@@ -1236,6 +1237,7 @@ store_test_results() {
             -threshold 5
     } || true
     fi
+    set -u
 
     info "Copying test results from $from to $to"
 
