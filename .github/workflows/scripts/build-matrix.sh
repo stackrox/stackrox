@@ -41,5 +41,7 @@ _EO_MATRIX_
 
     jq <<< "$matrix"
 
-    echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+    condensed="$(jq -c <<< "$matrix")"
+
+    echo "matrix=$condensed" >> "$GITHUB_OUTPUT"
 }
