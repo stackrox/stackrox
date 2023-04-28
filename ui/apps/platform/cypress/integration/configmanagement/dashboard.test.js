@@ -298,7 +298,11 @@ describe('Configuration Management Dashboard', () => {
         cy.location('search').should('contain', '[Compliance%20State]=Pass');
     });
 
-    it('clicking the "CIS Standard Across Clusters" widget\'s "failing controls" link should take you to the controls list and filter by failing controls', () => {
+    it('clicking the "CIS Standard Across Clusters" widget\'s "failing controls" link should take you to the controls list and filter by failing controls', function() {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         const entitiesKey = 'controls';
 
         visitConfigurationManagementDashboard();
