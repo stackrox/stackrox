@@ -125,10 +125,7 @@ func hasEgress(types []storage.NetworkPolicyType) bool {
 }
 
 func hasIngress(types []storage.NetworkPolicyType) bool {
-	if len(types) == 0 {
-		return true
-	}
-	return hasPolicyType(types, storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE)
+	return len(types) == 0 || hasPolicyType(types, storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE)
 }
 
 func hasPolicyType(types []storage.NetworkPolicyType, t storage.NetworkPolicyType) bool {
