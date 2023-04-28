@@ -634,10 +634,10 @@ class SACTest extends BaseSpecification {
 
         and:
         "The masked deployments should be external to stackrox namespace"
-        assert sacFlows.size() - sacFlowsFiltered.size() ==
-                allAccessFlows.size() - allAccessFlowsWithoutNeighbors.size()
-        assert sacFlowsNoQuery.size() - sacFlowsNoQueryFiltered.size() ==
-                allAccessFlows.size() - allAccessFlowsWithoutNeighbors.size()
+        assert sacFlows.intersect(sacFlowsFiltered) ==
+                allAccessFlows.intersect(allAccessFlowsWithoutNeighbors)
+        assert sacFlowsNoQuery.intersect(sacFlowsNoQueryFiltered) ==
+                allAccessFlows.intersect(allAccessFlowsWithoutNeighbors)
     }
 
     def "test role aggregation should not combine permissions sets"() {
