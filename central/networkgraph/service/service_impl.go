@@ -337,7 +337,7 @@ func (s *serviceImpl) enhanceWithNetworkPolicyIsolationInfo(ctx context.Context,
 	// TODO(ROX-16312): Change this to a custom query once Postgres ships
 	deploymentObjects, err := s.deployments.GetDeployments(ctx, deploymentIds)
 	if err != nil {
-		return errors.Wrapf(err, "fetching deployment")
+		return errors.Wrap(err, "fetching deployments")
 	}
 
 	deploymentMap := make(map[string]*storage.Deployment, len(deploymentObjects))
