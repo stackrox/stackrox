@@ -109,7 +109,7 @@ jobs:
 
   pre-build-go-binaries:
     strategy:
-      matrix: ${{ fromJson(needs.define-build-matrix.outputs.matrix.pre_build_go_binaries) }}
+      matrix: ${{ fromJson(needs.define-build-matrix.outputs.matrix).pre_build_go_binaries }}
     needs: define-build-matrix
     runs-on: ubuntu-latest
     container:
@@ -196,7 +196,7 @@ jobs:
       - pre-build-go-binaries
       - pre-build-docs
     strategy:
-      matrix: ${{ fromJson(needs.define-build-matrix.outputs.matrix.build_and_push_main) }}
+      matrix: ${{ fromJson(needs.define-build-matrix.outputs.matrix).build_and_push_main }}
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     container:
@@ -270,7 +270,7 @@ jobs:
 
       - name: Set build tag for race condition images
         if: matrix.name == 'race condition debug'
-        run: echo "BUILD_TAG=$(make --quiet tag)-rcd >> "$GITHUB_ENV"
+        run: echo "BUILD_TAG=$(make --quiet tag)-rcd" >> "$GITHUB_ENV"
 
       - name: Build main images
         run: make docker-build-main-image
