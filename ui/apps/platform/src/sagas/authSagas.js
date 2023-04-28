@@ -139,19 +139,21 @@ function isGivenMode(state, mode) {
 
 function* handleOidcResponse(location) {
     const hash = parseFragment(location);
-    if (hash.error) {
-        return {
-            ...hash,
-            test: isTestMode(hash.state),
-            authorizeRoxctl: isAuthorizeRoxctlMode(hash.state),
-        };
+    if (hash.has('error')) {
+        const state = hash.get('state');
+        hash.set('test', isTestMode(state).toString());
+        hash.set('authorizeRoxctl', isAuthorizeRoxctlMode(state).toString());
+        return Object.fromEntries(hash.entries());
     }
 
     try {
-        const { state, ...otherFields } = hash;
+        const state = hash.get('state');
+        const otherFields = Object.fromEntries(
+            Array.from(hash.entries()).filter(([key]) => key !== 'state')
+        );
         const pseudoToken = `#${queryString.stringify({ ...otherFields })}`;
         const result = yield call(AuthService.exchangeAuthToken, pseudoToken, 'oidc', state);
-        result.authorizeRoxctl = isAuthorizeRoxctlMode(hash.state);
+        result.authorizeRoxctl = isAuthorizeRoxctlMode(state);
         return result;
     } catch (error) {
         if (error.response) {
@@ -163,10 +165,10 @@ function* handleOidcResponse(location) {
 
 function handleGenericResponse(location) {
     const hash = parseFragment(location);
-    if (hash.error || !hash?.token) {
-        return hash;
+    if (hash.has('error') || !hash.has('token')) {
+        return Object.fromEntries(hash.entries());
     }
-    return { token: hash.token, authorizeRoxctl: isAuthorizeRoxctlMode(hash?.state) };
+    return { token: hash.get('token'), authorizeRoxctl: isAuthorizeRoxctlMode(hash.get('state')) };
 }
 
 function* handleErrAuthResponse(result, defaultErrMsg) {
@@ -241,7 +243,7 @@ function* dispatchAuthResponse(type, location) {
         // `test` property can be a string or boolean, depending on the type of provider
         //    but if it is present in any form, its a test of the provider and not an actual login
         yield call(handleTestLoginAuthResponse, location, type, result);
-    } else if (result?.authorizeRoxctl === true) {
+    } else if (result?.authorizeRoxctl === true || result?.authorizeRoxctl === 'true') {
         yield call(handleAuthorizeRoxctlLoginResponse, result);
     } else if (result?.token) {
         yield call(AuthService.storeAccessToken, result.token);

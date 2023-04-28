@@ -88,8 +88,8 @@ class LoginPage extends Component {
                 });
                 return;
             }
-            const { authorizeCallback } = parseFragment(window.location);
-            if (!authorizeCallback) {
+            const parsedFragment = parseFragment(window.location);
+            if (!parsedFragment.has('authorizeCallback')) {
                 this.setState({
                     authProviderResponse: {
                         error: 'No authorize callback specified. Make sure you reach this page via the roxctl login command',
@@ -99,7 +99,9 @@ class LoginPage extends Component {
             }
             this.setState({ loggingIn: true });
             window.location.assign(
-                `${authProvider.loginUrl}?authorizeCallback=${authorizeCallback}`
+                `${authProvider.loginUrl}?authorizeCallback=${parsedFragment.get(
+                    'authorizeCallback'
+                )}`
             );
             return;
         }
