@@ -70,7 +70,7 @@ jobs:
 
   pre-build-cli:
     strategy:
-      matrix: ${{ fromJson(needs.define-build-matrix.outputs.matrix.pre_build_cli) }}
+      matrix: ${{ fromJson(needs.define-build-matrix.outputs.matrix).pre_build_cli }}
     needs: define-build-matrix
     runs-on: ubuntu-latest
     container:
