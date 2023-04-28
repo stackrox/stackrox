@@ -275,7 +275,7 @@ describe('Configuration Management Dashboard', () => {
         cy.location('search').should('contain', '[Policy%20Status]='); // either Fail (for rated as Whatever) or Pass (for policies without violations)
     });
 
-    it('clicking the "CIS Standard Across Clusters" widget\'s "passing controls" link should take you to the controls list and filter by passing controls', () => {
+    it('clicking the "CIS Standard Across Clusters" widget\'s "passing controls" link should take you to the controls list and filter by passing controls', function() {
         if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
