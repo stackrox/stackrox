@@ -39,6 +39,14 @@ func givenPodSelector(key, value string) *storage.LabelSelector {
 	}
 }
 
+func givenEmptySelector() *storage.LabelSelector {
+	return &storage.LabelSelector{
+		MatchLabels: map[string]string{
+			"app": "any",
+		},
+	}
+}
+
 func givenDeployment(id, cluster, namespace string, labels map[string]string) *storage.Deployment {
 	return &storage.Deployment{
 		Id:        id,
@@ -77,6 +85,12 @@ func Test_MatchDeployments(t *testing.T) {
 				givenPodSelector("never", "match")),
 		}, nil)
 
+	mockNetpol.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Eq(fixtureconsts.Cluster2), gomock.Eq("ns4")).
+		Return([]*storage.NetworkPolicy{
+			givenNetworkPolicy(fixtureconsts.NetworkPolicy4, fixtureconsts.Cluster2, "ns4", IngressType,
+				givenEmptySelector()),
+		}, nil)
+
 	ctx := context.Background()
 	matcher, err := BuildMatcher(ctx, mockNetpol, set.NewSet[ClusterNamespace]([]ClusterNamespace{
 		{
@@ -90,6 +104,10 @@ func Test_MatchDeployments(t *testing.T) {
 		{
 			Cluster:   fixtureconsts.Cluster2,
 			Namespace: "ns3",
+		},
+		{
+			Cluster:   fixtureconsts.Cluster2,
+			Namespace: "ns4",
 		},
 	}...))
 
@@ -148,6 +166,14 @@ func Test_MatchDeployments(t *testing.T) {
 			ingressIsolated: false,
 			egressIsolated:  false,
 			hasPolicyIds:    []string{},
+		},
+		"Empty selector matches all deployments": {
+			deployment: givenDeployment(fixtureconsts.Deployment1, fixtureconsts.Cluster2, "ns4", map[string]string{
+				"app": "any",
+			}),
+			ingressIsolated: true,
+			egressIsolated:  false,
+			hasPolicyIds:    []string{fixtureconsts.NetworkPolicy4},
 		},
 	}
 
