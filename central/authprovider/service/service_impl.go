@@ -315,9 +315,10 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 	}
 
 	clientState, mode := idputil.ParseClientState(clientState)
+	testMode := mode == idputil.TestAuthMode
 	response := &v1.ExchangeTokenResponse{
 		ClientState: clientState,
-		Test:        mode == idputil.TestAuthMode,
+		Test:        testMode,
 	}
 
 	userMetadata, err := authproviders.CreateRoleBasedIdentity(sac.WithAllAccess(ctx), provider, authResponse)
@@ -329,7 +330,7 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 	}
 	userPkg.LogSuccessfulUserLogin(log, userMetadata)
 
-	if mode == idputil.TestAuthMode {
+	if testMode {
 		response.User = userMetadata
 		return response, nil
 	}

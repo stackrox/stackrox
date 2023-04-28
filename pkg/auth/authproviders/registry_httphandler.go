@@ -306,7 +306,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	if mode == idputil.TestAuthMode {
+	if testMode {
 		w.Header().Set("Location", r.userMetadataURL(user, typ, clientState, testMode).String())
 		w.WriteHeader(http.StatusSeeOther)
 		return
@@ -347,6 +347,8 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 				clientState, false)
 			return
 		}
+		// Verify the callback URL again before doing the final redirect, ensuring we _only_ redirect to localhost and
+		// no unauthorized third-party.
 		if callbackURL.Hostname() != "localhost" && callbackURL.Hostname() != "127.0.0.1" {
 			r.error(w, errox.InvalidArgs.New("roxctl authorization has to specify localhost / "+
 				"127.0.0.1 as callback URL"), typ, clientState, false)
