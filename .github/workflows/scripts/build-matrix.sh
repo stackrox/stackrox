@@ -12,8 +12,9 @@ set -euo pipefail
 # source "$TEST_ROOT/scripts/ci/lib.sh"
 
 define_build_matrix() {
-    cat << _EOM_ >> "$GITHUB_OUTPUT"
-matrix={
+
+    read -r -d '' matrix <<- _EO_MATRIX_ || true
+    {
         "pre_build_cli": {
             "include": [
                 {"name": "development", "release": false, "artifact": "cli-build-development"},
@@ -34,7 +35,11 @@ matrix={
                 {"name": "race condition debug", "branding": "STACKROX_BRANDING", "cli-artifact": "cli-build-development", "go-binaries-artifact": "go-binaries-build-rcd"},
                 {"name": "prerelease", "branding": "RHACS_BRANDING", "cli-artifact": "cli-build-prerelease", "go-binaries-artifact": "go-binaries-build-prerelease"}
             ]
-        },
+        }
     }
-_EOM_
+_EO_MATRIX_
+
+    jq <<< "$matrix"
+
+    echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
 }
