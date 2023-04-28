@@ -13,7 +13,7 @@ set -euo pipefail
 
 define_build_matrix() {
     cat << _EOM_ >> "$GITHUB_OUTPUT"
-    {
+matrix={
         "pre_build_cli": {
             "include": [
                 {"name": "development", "release": false, "artifact": "cli-build-development"},
