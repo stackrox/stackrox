@@ -21,10 +21,7 @@ jobs:
       - name: Define the matrix for builds
         id: define-matrix
         run: |
-          echo "pre_build_cli_matrix={\
-                  include: [\
-                    {release: false, artifact: cli-build}\
-                  ]}" >> "$GITHUB_OUTPUT"
+          echo 'pre_build_cli_matrix={"include": [{"release": false, "artifact": "cli-build"}]}' >> "$GITHUB_OUTPUT"
 
   pre-build-ui:
     strategy:
