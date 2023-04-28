@@ -19,6 +19,7 @@ import (
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
+	"github.com/stackrox/rox/pkg/httputil/mock"
 	"github.com/stackrox/rox/pkg/postgres/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -184,10 +185,7 @@ func (s *debugServiceTestSuite) TestGetBundle() {
 		return stubTime
 	}
 
-	w := mockResponseWriter{
-		code: http.StatusOK,
-		data: bytes.NewBuffer(nil),
-	}
+	w := mock.NewResponseWriter()
 	testutils.SetVersion(s.T(), testutils.GetExampleVersion(s.T()))
 	db := mocks.NewMockDB(s.mockCtrl)
 	pgxRows := pgxpoolmock.NewRows([]string{"server_version"}).AddRow("15.1").ToPgxRows()
@@ -197,7 +195,7 @@ func (s *debugServiceTestSuite) TestGetBundle() {
 	globaldb.SetPostgresTest(s.T(), db)
 
 	s.configMock.EXPECT().GetConfig(gomock.Any()).Return(&storage.Config{}, nil)
-	s.service.writeZippedDebugDump(context.Background(), &w, "debug.zip", debugDumpOptions{
+	s.service.writeZippedDebugDump(context.Background(), w, "debug.zip", debugDumpOptions{
 		logs:              0,
 		telemetryMode:     0,
 		withCPUProfile:    false,
@@ -209,9 +207,9 @@ func (s *debugServiceTestSuite) TestGetBundle() {
 		since:             time.Now(),
 	})
 
-	s.Equal(http.StatusOK, w.code)
+	s.Equal(http.StatusOK, w.Code)
 
-	body, err := io.ReadAll(w.data)
+	body, err := io.ReadAll(w.Data)
 	s.Require().NoError(err)
 
 	zipReader, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
@@ -222,21 +220,4 @@ func (s *debugServiceTestSuite) TestGetBundle() {
 		s.T().Log("Reading file:", zipFile.Name)
 		s.Assert().Equal(stubTime, zipFile.Modified.UTC())
 	}
-}
-
-type mockResponseWriter struct {
-	data *bytes.Buffer
-	code int
-}
-
-func (rw *mockResponseWriter) Header() http.Header {
-	return make(http.Header)
-}
-
-func (rw *mockResponseWriter) Write(data []byte) (int, error) {
-	return rw.data.Write(data)
-}
-
-func (rw *mockResponseWriter) WriteHeader(statusCode int) {
-	rw.code = statusCode
 }
