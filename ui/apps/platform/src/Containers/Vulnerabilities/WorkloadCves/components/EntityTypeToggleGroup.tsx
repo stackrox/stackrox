@@ -1,9 +1,26 @@
 import React from 'react';
+import { gql } from '@apollo/client';
 import { ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import { NonEmptyArray } from 'utils/type.utils';
+import { SortOption } from 'types/table';
 import { entityTabValues, EntityTab } from '../types';
+import { getDefaultSortOption } from '../sortUtils';
+
+export type EntityCounts = {
+    imageCount: number;
+    deploymentCount: number;
+    imageCVECount: number;
+};
+
+export const entityTypeCountsQuery = gql`
+    query getEntityTypeCounts($query: String) {
+        imageCount(query: $query)
+        deploymentCount(query: $query)
+        imageCVECount(query: $query)
+    }
+`;
 
 type EntityTabToggleGroupProps = {
     className?: string;
@@ -11,7 +28,8 @@ type EntityTabToggleGroupProps = {
     cveCount?: number;
     imageCount?: number;
     deploymentCount?: number;
-    onChange?: (entityTab: EntityTab) => void;
+    setSortOption: (sortOption: SortOption) => void;
+    setPage: (num) => void;
 };
 
 function EntityTabToggleGroup({
@@ -20,13 +38,15 @@ function EntityTabToggleGroup({
     cveCount = 0,
     imageCount = 0,
     deploymentCount = 0,
-    onChange,
+    setSortOption,
+    setPage,
 }: EntityTabToggleGroupProps) {
     const [activeEntityTabKey, setActiveEntityTabKey] = useURLStringUnion('entityTab', entityTabs);
 
     function handleEntityTabChange(entityTab: EntityTab) {
         setActiveEntityTabKey(entityTab);
-        onChange?.(entityTab);
+        setSortOption(getDefaultSortOption(entityTab));
+        setPage(1);
     }
 
     return (
