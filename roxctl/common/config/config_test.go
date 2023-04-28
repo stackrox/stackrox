@@ -17,7 +17,7 @@ func TestReadConfig(t *testing.T) {
 	// Reading from a non-existing file should simply return an empty config and no error.
 	cfg, err := store.Read()
 	assert.NoError(t, err)
-	assert.Empty(t, cfg)
+	assert.Equal(t, &RoxctlConfig{CentralConfigs: map[CentralURL]*CentralConfig{}}, cfg)
 
 	// Write a config to the file.
 	sampleCfg := RoxctlConfig{CentralConfigs: map[string]*CentralConfig{
