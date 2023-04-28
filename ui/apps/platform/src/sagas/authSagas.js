@@ -7,7 +7,7 @@ import { Base64 } from 'js-base64';
 
 import { loginPath, testLoginResultsPath, authResponsePrefix } from 'routePaths';
 import { takeEveryLocation } from 'utils/sagaEffects';
-import { parseFragment } from 'utils/getFragment';
+import { parseAndDecodeFragment } from 'utils/parseAndDecodeFragment';
 import * as AuthService from 'services/AuthService';
 import fetchUsersAttributes from 'services/AttributesService';
 import { fetchUserRolePermissions } from 'services/RolesService';
@@ -138,18 +138,18 @@ function isGivenMode(state, mode) {
 }
 
 function* handleOidcResponse(location) {
-    const hash = parseFragment(location);
-    if (hash.has('error')) {
-        const state = hash.get('state');
-        hash.set('test', isTestMode(state).toString());
-        hash.set('authorizeRoxctl', isAuthorizeRoxctlMode(state).toString());
-        return Object.fromEntries(hash.entries());
+    const parsedFragment = parseAndDecodeFragment(location);
+    if (parsedFragment.has('error')) {
+        const state = parsedFragment.get('state');
+        parsedFragment.set('test', isTestMode(state).toString());
+        parsedFragment.set('authorizeRoxctl', isAuthorizeRoxctlMode(state).toString());
+        return Object.fromEntries(parsedFragment.entries());
     }
 
     try {
-        const state = hash.get('state');
+        const state = parsedFragment.get('state');
         const otherFields = Object.fromEntries(
-            Array.from(hash.entries()).filter(([key]) => key !== 'state')
+            Array.from(parsedFragment.entries()).filter(([key]) => key !== 'state')
         );
         const pseudoToken = `#${queryString.stringify({ ...otherFields })}`;
         const result = yield call(AuthService.exchangeAuthToken, pseudoToken, 'oidc', state);
@@ -164,11 +164,11 @@ function* handleOidcResponse(location) {
 }
 
 function handleGenericResponse(location) {
-    const hash = parseFragment(location);
-    if (hash.has('error') || !hash.has('token')) {
-        return Object.fromEntries(hash.entries());
+    const parsedFragment = parseAndDecodeFragment(location);
+    if (parsedFragment.has('error') || !parsedFragment.has('token')) {
+        return Object.fromEntries(parsedFragment.entries());
     }
-    return { token: hash.get('token'), authorizeRoxctl: isAuthorizeRoxctlMode(hash.get('state')) };
+    return { token: parsedFragment.get('token'), authorizeRoxctl: isAuthorizeRoxctlMode(parsedFragment.get('state')) };
 }
 
 function* handleErrAuthResponse(result, defaultErrMsg) {

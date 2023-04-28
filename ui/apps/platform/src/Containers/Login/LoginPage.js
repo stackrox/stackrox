@@ -22,7 +22,7 @@ import ServerStatusBanner from '../MainPage/Banners/ServerStatusBanner';
 import LoginNotice from './LoginNotice';
 
 import { loginWithBasicAuth } from '../../services/AuthService';
-import { parseFragment } from '../../utils/getFragment';
+import { parseAndDecodeFragment } from '../../utils/parseAndDecodeFragment';
 
 const unknownErrorResponse = {
     error: 'Unknown error',
@@ -88,7 +88,7 @@ class LoginPage extends Component {
                 });
                 return;
             }
-            const parsedFragment = parseFragment(window.location);
+            const parsedFragment = parseAndDecodeFragment(window.location);
             if (!parsedFragment.has('authorizeCallback')) {
                 this.setState({
                     authProviderResponse: {
