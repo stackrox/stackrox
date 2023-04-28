@@ -13,7 +13,8 @@
   "paths": {
     "/v1/listening_endpoints/deployment/{deploymentId}": {
       "get": {
-        "operationId": "ProcessesListeningOnPortsService_GetProcessesListeningOnPorts",
+        "summary": "GetListeningEndpoints returns the listening endpoints and the processes that opened them for a given deployment",
+        "operationId": "ListeningEndpointsService_GetListeningEndpoints",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -37,7 +38,7 @@
           }
         ],
         "tags": [
-          "ProcessesListeningOnPortsService"
+          "ListeningEndpointsService"
         ]
       }
     }

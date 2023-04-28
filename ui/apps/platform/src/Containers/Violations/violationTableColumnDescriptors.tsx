@@ -1,12 +1,12 @@
 import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
 import dateFns from 'date-fns';
-import { Button, ButtonVariant, Flex, FlexItem, Tooltip, Label } from '@patternfly/react-core';
+import { Button, ButtonVariant, Flex, FlexItem, Tooltip } from '@patternfly/react-core';
 
+import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import dateTimeFormat from 'constants/dateTimeFormat';
-import { severityColorMapPF } from 'constants/severityColors';
-import { severityLabels, lifecycleStageLabels } from 'messages/common';
+import { lifecycleStageLabels } from 'messages/common';
 import {
     BLOCKING_ENFORCEMENT_ACTIONS,
     ENFORCEMENT_ACTIONS_AS_PAST_TENSE,
@@ -34,7 +34,7 @@ function EntityTableCell({ original }: EntityTableCellProps): ReactElement {
     return (
         <Flex direction={{ default: 'column' }}>
             <FlexItem className="pf-u-mb-0">{name}</FlexItem>
-            <FlexItem className="pf-u-color-400 pf-u-font-size-xs">
+            <FlexItem className="pf-u-color-200 pf-u-font-size-xs">
                 {`in "${clusterName}/${namespace}"`}
             </FlexItem>
         </Flex>
@@ -115,8 +115,7 @@ const tableColumnDescriptor = [
         accessor: 'policy.severity',
         sortField: 'Severity',
         Cell: ({ value }) => {
-            const severity = severityLabels[value];
-            return <Label color={severityColorMapPF[severity]}>{severity}</Label>;
+            return <PolicySeverityIconText severity={value} />;
         },
     },
     {

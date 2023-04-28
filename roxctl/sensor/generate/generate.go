@@ -161,7 +161,7 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	params := apiparams.ClusterZip{
 		ID:               id,
 		CreateUpgraderSA: &s.createUpgraderSA,
-		SlimCollector:    pointer.BoolPtr(s.cluster.GetSlimCollector()),
+		SlimCollector:    pointer.Bool(s.cluster.GetSlimCollector()),
 		IstioVersion:     s.istioVersion,
 
 		DisablePodSecurityPolicies: !s.enablePodSecurityPolicies,
@@ -199,7 +199,8 @@ func (s *sensorGenerateCommand) createCluster(ctx context.Context, svc v1.Cluste
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	generateCmd := &sensorGenerateCommand{env: cliEnvironment, cluster: defaultCluster()}
 	c := &cobra.Command{
-		Use: "generate",
+		Use:   "generate",
+		Short: "Commands that generate files to deploy StackRox services into secured clusters.",
 		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
 			return generateCmd.Construct(c)
 		},
@@ -212,7 +213,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().StringVar(&generateCmd.cluster.MainImage, mainImageRepository, "", "image repository sensor should be deployed with (if unset, a default will be used)")
 	c.PersistentFlags().StringVar(&generateCmd.cluster.CollectorImage, "collector-image-repository", "", "image repository collector should be deployed with (if unset, a default will be derived according to the effective --"+mainImageRepository+" value)")
 
-	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &generateCmd.cluster.CollectionMethod}, "collection-method", "which collection method to use for runtime support (none, default, kernel-module, ebpf)")
+	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &generateCmd.cluster.CollectionMethod}, "collection-method", "which collection method to use for runtime support (none, default, kernel-module, ebpf, core_bpf)")
 
 	c.PersistentFlags().BoolVar(&generateCmd.createUpgraderSA, "create-upgrader-sa", true, "whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades")
 

@@ -23,12 +23,12 @@ const nameOfComponent: Record<CertExpiryComponent, string> = {
 
 type CredentialExpiryProps = {
     component: CertExpiryComponent;
-    hasServiceIdentityWritePermission: boolean;
+    hasAdministrationWritePermission: boolean;
 };
 
 function CredentialExpiryBanner({
     component,
-    hasServiceIdentityWritePermission,
+    hasAdministrationWritePermission,
 }: CredentialExpiryProps): ReactElement | null {
     const [expirationDate, setExpirationDate] = useState('');
     useEffect(() => {
@@ -64,7 +64,7 @@ function CredentialExpiryBanner({
         <span className="flex-1 text-center">
             {name} certificate expires in {distanceInWordsStrict(expirationDate, now)} on{' '}
             {format(expirationDate, 'MMMM D, YYYY')} (at {format(expirationDate, 'h:mm a')}).{' '}
-            {hasServiceIdentityWritePermission ? (
+            {hasAdministrationWritePermission ? (
                 <>To use renewed certificates, {downloadLink} and apply it to your cluster.</>
             ) : (
                 'Contact your administrator.'

@@ -77,12 +77,24 @@ const StyleGroup: React.FunctionComponent<StyleGroupProps> = ({
         return newData as CustomGroupNodeData;
     }, [data]);
 
+    let className = '';
+
+    if (passedData.type === 'NAMESPACE') {
+        className = `${className} ${
+            passedData.isFilteredNamespace ? 'filtered-namespace' : 'derived-namespace'
+        }`.trim();
+    }
+
+    // @TODO: If multiple classes need to be stringed together, then we need a more systematic way to generate those here
+    className = `${className} ${passedData?.isFadedOut ? 'pf-topology-node-faded' : ''}`.trim();
+
     return (
         <DefaultGroup
             element={element}
             collapsedWidth={collapsedWidth}
             collapsedHeight={collapsedHeight}
             showLabel={detailsLevel === ScaleDetailsLevel.high}
+            className={className}
             {...rest}
             {...passedData}
         >

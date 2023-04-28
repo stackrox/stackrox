@@ -1,9 +1,9 @@
 /* eslint-disable */
 
-// the code below is generated from segment api with the exception of the writeKey parameter
+// the code below is generated from segment api with the exception of the writeKey/userId parameters as well as the analyticsIdentity call
 // segment intends for the write key to be hardcoded but we are pulling it from the telemetry config service call and adding it using a parameter
 
-export function initializeSegment(writeKey) {
+export function initializeAnalytics(writeKey, userId) {
     const analytics = (window.analytics = window.analytics || []);
     if (!analytics.initialize) {
         if (analytics.invoked) {
@@ -57,6 +57,7 @@ export function initializeSegment(writeKey) {
             analytics.SNIPPET_VERSION = '4.15.3';
             analytics.load(writeKey);
             analytics.page();
+            analytics.identify(userId);
         }
     }
 }

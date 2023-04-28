@@ -47,9 +47,21 @@ message  ReconciliationStatsByClusterResponse {
     repeated ReconciliationStatsForCluster stats = 1;
 }
 
+message ReplicateImageRequest {
+    string id    = 1;
+    int32  times = 2;
+}
+
 message Empty {}
 
 service DevelopmentService {
+    rpc ReplicateImage (ReplicateImageRequest) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/internal/dev/image/replicate"
+            body: "*"
+        };
+    }
+
     rpc URLHasValidCert (URLHasValidCertRequest) returns (URLHasValidCertResponse) {
         option (google.api.http) = {
             get: "/v1/internal/dev/certcheck"

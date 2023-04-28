@@ -68,12 +68,12 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *postgres.DB
+	db    postgres.DB
 	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB) Store {
+func New(db postgres.DB) Store {
 	return &storeImpl{
 		db: db,
 	}
@@ -93,10 +93,11 @@ func insertIntoReportConfigurations(ctx context.Context, batch *pgx.Batch, obj *
 		obj.GetId(),
 		obj.GetName(),
 		obj.GetType(),
+		obj.GetScopeId(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO report_configurations (Id, Name, Type, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO report_configurations (Id, Name, Type, ScopeId, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, ScopeId = EXCLUDED.ScopeId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -120,6 +121,8 @@ func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx *postgr
 
 		"type",
 
+		"scopeid",
+
 		"serialized",
 	}
 
@@ -141,6 +144,8 @@ func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx *postgr
 			obj.GetName(),
 
 			obj.GetType(),
+
+			obj.GetScopeId(),
 
 			serialized,
 		})
@@ -556,17 +561,17 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 //// Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db *postgres.DB, gormDB *gorm.DB) Store {
+func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db)
 }
 
 // Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db *postgres.DB) {
+func Destroy(ctx context.Context, db postgres.DB) {
 	dropTableReportConfigurations(ctx, db)
 }
 
-func dropTableReportConfigurations(ctx context.Context, db *postgres.DB) {
+func dropTableReportConfigurations(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS report_configurations CASCADE")
 
 }

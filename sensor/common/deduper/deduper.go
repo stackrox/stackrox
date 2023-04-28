@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/alert"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sensor/hash"
+	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/messagestream"
 )
 
@@ -44,6 +45,10 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		return d.stream.Send(msg)
 	}
 	event := eventMsg.Event
+	// This filter works around race conditions in which image integrations may be initialized prior to CentralHello being received
+	if managedcentral.IsCentralManaged() && event.GetImageIntegration() != nil {
+		return nil
+	}
 	key := key{
 		id:           event.GetId(),
 		resourceType: reflect.TypeOf(event.GetResource()),

@@ -3,6 +3,7 @@
 set -euo pipefail
 
 run_path="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=./common.sh
 source "${run_path}/common.sh"
 
 repo_path="${1:-}"

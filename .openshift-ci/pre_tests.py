@@ -23,7 +23,7 @@ class PreSystemTests:
         subprocess.run(
             [
                 "scripts/ci/lib.sh",
-                "highlight_cluster_versions",
+                "gather_debug_for_cluster_under_test",
             ],
             check=False,
             timeout=PreSystemTests.VERSIONS_TIMEOUT,

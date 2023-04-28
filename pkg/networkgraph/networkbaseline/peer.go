@@ -11,22 +11,23 @@ import (
 
 var (
 	// EntityTypeToEntityInfoDesc collects the functions to get names from corresponding network entity types
-	EntityTypeToEntityInfoDesc = map[storage.NetworkEntityInfo_Type]func(name string, info *storage.NetworkEntityInfo){
-		storage.NetworkEntityInfo_DEPLOYMENT: func(name string, info *storage.NetworkEntityInfo) {
+	EntityTypeToEntityInfoDesc = map[storage.NetworkEntityInfo_Type]func(name string, info *storage.NetworkEntityInfo, customProperties EntityProperties){
+		storage.NetworkEntityInfo_DEPLOYMENT: func(name string, info *storage.NetworkEntityInfo, _ EntityProperties) {
 			info.Desc = &storage.NetworkEntityInfo_Deployment_{
 				Deployment: &storage.NetworkEntityInfo_Deployment{
 					Name: name,
 				},
 			}
 		},
-		storage.NetworkEntityInfo_EXTERNAL_SOURCE: func(name string, info *storage.NetworkEntityInfo) {
+		storage.NetworkEntityInfo_EXTERNAL_SOURCE: func(name string, info *storage.NetworkEntityInfo, custom EntityProperties) {
 			info.Desc = &storage.NetworkEntityInfo_ExternalSource_{
 				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-					Name: name,
+					Name:   name,
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{Cidr: custom.CIDRBlock},
 				},
 			}
 		},
-		storage.NetworkEntityInfo_INTERNET: func(name string, info *storage.NetworkEntityInfo) {
+		storage.NetworkEntityInfo_INTERNET: func(name string, info *storage.NetworkEntityInfo, _ EntityProperties) {
 			// No-op.
 		},
 	}
@@ -46,11 +47,23 @@ type Peer struct {
 	Name      string
 	DstPort   uint32
 	Protocol  storage.L4Protocol
+
+	// CidrBlock is specific to external source peers. This should only be filled when the underlying entity
+	// is an external source. This is needed in order to differentiate baselines that are created to the same
+	// provider/region but for different CIDR blocks. Check (https://github.com/stackrox/stackrox/pull/5194)
+	CidrBlock string
 }
 
 type entityWithName struct {
 	networkgraph.Entity
 	Name string
+}
+
+// EntityProperties represents the properties of a peer entity for the baseline.
+type EntityProperties struct {
+	// CIDRBlock will only be filled if the peer entity is an External Source.
+	CIDRBlock            string
+	ConnectionProperties []*storage.NetworkBaselineConnectionProperties
 }
 
 // ConvertPeersFromProto converts proto NetworkBaselinePeer to its in memory representation
@@ -66,6 +79,12 @@ func ConvertPeersFromProto(protoPeers []*storage.NetworkBaselinePeer) (map[Peer]
 			return nil, errors.Errorf("unsupported entity type in network baseline: %q", entity.Type)
 		}
 
+		// CIDR block is only set if the peer is of type External Source.
+		var cidr string
+		if entity.Type == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
+			cidr = protoPeer.GetEntity().GetInfo().GetExternalSource().GetCidr()
+		}
+
 		name := nameFn(protoPeer.GetEntity().GetInfo())
 		for _, props := range protoPeer.GetProperties() {
 			out[Peer{
@@ -74,6 +93,7 @@ func ConvertPeersFromProto(protoPeers []*storage.NetworkBaselinePeer) (map[Peer]
 				Name:      name,
 				DstPort:   props.GetPort(),
 				Protocol:  props.GetProtocol(),
+				CidrBlock: cidr,
 			}] = struct{}{}
 		}
 	}
@@ -85,29 +105,50 @@ func ConvertPeersToProto(peerSet map[Peer]struct{}) ([]*storage.NetworkBaselineP
 	if len(peerSet) == 0 {
 		return nil, nil
 	}
-	propertiesByEntity := make(map[entityWithName][]*storage.NetworkBaselineConnectionProperties)
+	propertiesByEntity := make(map[entityWithName]EntityProperties)
 	for peer := range peerSet {
 		entity := entityWithName{
 			Entity: peer.Entity,
 			Name:   peer.Name,
 		}
-		propertiesByEntity[entity] = append(propertiesByEntity[entity], &storage.NetworkBaselineConnectionProperties{
-			Ingress:  peer.IsIngress,
-			Port:     peer.DstPort,
-			Protocol: peer.Protocol,
-		})
+
+		if properties, ok := propertiesByEntity[entity]; ok {
+			properties.ConnectionProperties = append(propertiesByEntity[entity].ConnectionProperties,
+				&storage.NetworkBaselineConnectionProperties{
+					Ingress:  peer.IsIngress,
+					Port:     peer.DstPort,
+					Protocol: peer.Protocol,
+				})
+			propertiesByEntity[entity] = properties
+		} else {
+			propertiesByEntity[entity] = EntityProperties{
+				CIDRBlock: peer.CidrBlock,
+				ConnectionProperties: []*storage.NetworkBaselineConnectionProperties{
+					{
+						Ingress:  peer.IsIngress,
+						Port:     peer.DstPort,
+						Protocol: peer.Protocol,
+					},
+				},
+			}
+		}
+
 	}
+
 	out := make([]*storage.NetworkBaselinePeer, 0, len(propertiesByEntity))
 	for entity, properties := range propertiesByEntity {
-		sort.Slice(properties, func(i, j int) bool {
-			if properties[i].Ingress != properties[j].Ingress {
-				return properties[i].Ingress
+		connectionProperties := properties.ConnectionProperties
+		sort.Slice(connectionProperties, func(i, j int) bool {
+			if connectionProperties[i].Ingress != connectionProperties[j].Ingress {
+				return connectionProperties[i].Ingress
 			}
-			if properties[i].Protocol != properties[j].Protocol {
-				return properties[i].Protocol < properties[j].Protocol
+			if connectionProperties[i].Protocol != connectionProperties[j].Protocol {
+				return connectionProperties[i].Protocol < connectionProperties[j].Protocol
 			}
-			return properties[i].Port < properties[j].Port
+			return connectionProperties[i].Port < connectionProperties[j].Port
 		})
+		properties.ConnectionProperties = connectionProperties
+		propertiesByEntity[entity] = properties
 
 		// Get corresponding entity proto
 		entityInfo := &storage.NetworkEntityInfo{
@@ -121,10 +162,10 @@ func ConvertPeersToProto(peerSet map[Peer]struct{}) ([]*storage.NetworkBaselineP
 		}
 
 		// Fill desc of info
-		infoDescFn(entity.Name, entityInfo)
+		infoDescFn(entity.Name, entityInfo, EntityProperties{CIDRBlock: properties.CIDRBlock})
 		out = append(out, &storage.NetworkBaselinePeer{
 			Entity:     &storage.NetworkEntity{Info: entityInfo},
-			Properties: properties,
+			Properties: properties.ConnectionProperties,
 		})
 	}
 	sort.Slice(out, func(i, j int) bool {
@@ -134,16 +175,17 @@ func ConvertPeersToProto(peerSet map[Peer]struct{}) ([]*storage.NetworkBaselineP
 }
 
 // PeerFromV1Peer converts peer within v1 request to in-memory representation form
-func PeerFromV1Peer(v1Peer *v1.NetworkBaselineStatusPeer, peerName string) Peer {
+func PeerFromV1Peer(v1Peer *v1.NetworkBaselineStatusPeer, peerName, cidrBlock string) Peer {
 	return Peer{
 		IsIngress: v1Peer.GetIngress(),
 		Entity: networkgraph.Entity{
 			Type: v1Peer.GetEntity().GetType(),
 			ID:   v1Peer.GetEntity().GetId(),
 		},
-		Name:     peerName,
-		DstPort:  v1Peer.GetPort(),
-		Protocol: v1Peer.GetProtocol(),
+		Name:      peerName,
+		DstPort:   v1Peer.GetPort(),
+		Protocol:  v1Peer.GetProtocol(),
+		CidrBlock: cidrBlock,
 	}
 }
 

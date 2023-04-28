@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -99,6 +100,21 @@ func (d *DatastoreBasedIntegrationHealthReporter) UpdateIntegrationHealthAsync(h
 	case <-d.stopSig.Done():
 		return
 	}
+}
+
+// RetrieveIntegrationHealths retrieves the integration healths for a specific type.
+func (d *DatastoreBasedIntegrationHealthReporter) RetrieveIntegrationHealths(typ storage.IntegrationHealth_Type) ([]*storage.IntegrationHealth, error) {
+	switch typ {
+	case storage.IntegrationHealth_DECLARATIVE_CONFIG:
+		return d.integrationDS.GetDeclarativeConfigs(integrationWriteCtx)
+	case storage.IntegrationHealth_IMAGE_INTEGRATION:
+		return d.integrationDS.GetRegistriesAndScanners(integrationWriteCtx)
+	case storage.IntegrationHealth_BACKUP:
+		return d.integrationDS.GetBackupPlugins(integrationWriteCtx)
+	case storage.IntegrationHealth_NOTIFIER:
+		return d.integrationDS.GetNotifierPlugins(integrationWriteCtx)
+	}
+	return nil, errox.InvalidArgs.Newf("type %s is not supported", typ)
 }
 
 func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdates() {

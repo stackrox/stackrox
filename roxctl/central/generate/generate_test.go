@@ -1,19 +1,23 @@
 package generate
 
 import (
+	"archive/zip"
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"io"
 	"path/filepath"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
-	"github.com/stackrox/rox/roxctl/common/io"
+	io2 "github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
@@ -79,7 +83,7 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 		},
 	}
 
-	io, _, _, _ := io.TestIO()
+	io, _, _, _ := io2.TestIO()
 	logger := logger.NewLogger(io, printer.DefaultColorPrinter())
 
 	for _, testCase := range testCases {
@@ -110,4 +114,88 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 func getSha256Sum(input string) string {
 	shaHash := sha256.Sum256([]byte(input))
 	return hex.EncodeToString(shaHash[:])
+}
+
+func TestTelemetryConfiguration(t *testing.T) {
+
+	// Keep the bundle in memory
+	t.Setenv("ROX_ROXCTL_IN_MAIN_IMAGE", "true")
+
+	testutils.SetExampleVersion(t)
+
+	flavorName := defaults.ImageFlavorNameDevelopmentBuild
+	if buildinfo.ReleaseBuild {
+		flavorName = defaults.ImageFlavorNameStackRoxIORelease
+	}
+	config := renderer.Config{
+		Version:     version.GetMainVersion(),
+		ClusterType: storage.ClusterType_KUBERNETES_CLUSTER,
+		K8sConfig: &renderer.K8sConfig{
+			AppName:          "someApp",
+			ImageFlavorName:  flavorName,
+			DeploymentFormat: v1.DeploymentFormat_HELM,
+			Telemetry:        renderer.TelemetryConfig{},
+		},
+	}
+
+	type result struct {
+		enabled bool
+		err     error
+		key     interface{}
+	}
+	testCases := []struct {
+		testDir   string
+		offline   bool
+		telemetry bool
+		key       string
+		expected  result
+	}{
+		{testDir: "test1", offline: false, telemetry: false, key: "", expected: result{enabled: false}},
+		{testDir: "test2", offline: true, telemetry: false, key: "", expected: result{enabled: false}},
+		// TODO(ROX-13889): (when the key is hardcoded for on-prem telemetry)
+		// {testDir: "test3", offline: false, telemetry: true, key: "", expected: result{err: errox.InvalidArgs}},
+		{testDir: "test3", offline: false, telemetry: true, key: "", expected: result{enabled: false}},
+		{testDir: "test4", offline: false, telemetry: true, key: "test", expected: result{enabled: true, key: "test"}},
+		{testDir: "test5", offline: false, telemetry: false, key: "test", expected: result{enabled: false, key: "test"}},
+		{testDir: "test6", offline: true, telemetry: true, key: "test", expected: result{enabled: true, key: "test"}},
+	}
+
+	logio, _, _, _ := io2.TestIO()
+	logger := logger.NewLogger(logio, printer.DefaultColorPrinter())
+
+	for _, testCase := range testCases {
+		t.Run(testCase.testDir, func(t *testing.T) {
+			if testCase.telemetry {
+				t.Setenv(env.TelemetryStorageKey.EnvVar(), testCase.key)
+			} else {
+				t.Setenv(env.TelemetryStorageKey.EnvVar(), "")
+			}
+
+			config.K8sConfig.OfflineMode = testCase.offline
+			config.K8sConfig.Telemetry.Enabled = testCase.telemetry
+
+			bundleio, _, out, _ := io2.TestIO()
+			require.ErrorIs(t, OutputZip(logger, bundleio, config), testCase.expected.err)
+			if testCase.expected.err != nil {
+				return
+			}
+			r, err := zip.NewReader(bytes.NewReader(out.Bytes()), int64(len(out.Bytes())))
+			require.NoError(t, err)
+			file, err := r.Open("values-public.yaml")
+			require.NoError(t, err)
+			data, err := io.ReadAll(file)
+			require.NoError(t, err)
+
+			values, err := chartutil.ReadValues(data)
+			require.NoError(t, err)
+
+			enabled, err := values.PathValue("central.telemetry.enabled")
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.expected.enabled, enabled)
+
+			key, err := values.PathValue("central.telemetry.storage.key")
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.expected.key, key)
+		})
+	}
 }

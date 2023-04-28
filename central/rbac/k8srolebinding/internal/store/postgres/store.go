@@ -70,12 +70,12 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *postgres.DB
+	db    postgres.DB
 	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB) Store {
+func New(db postgres.DB) Store {
 	return &storeImpl{
 		db: db,
 	}
@@ -745,23 +745,23 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 //// Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db *postgres.DB, gormDB *gorm.DB) Store {
+func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db)
 }
 
 // Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db *postgres.DB) {
+func Destroy(ctx context.Context, db postgres.DB) {
 	dropTableRoleBindings(ctx, db)
 }
 
-func dropTableRoleBindings(ctx context.Context, db *postgres.DB) {
+func dropTableRoleBindings(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS role_bindings CASCADE")
 	dropTableRoleBindingsSubjects(ctx, db)
 
 }
 
-func dropTableRoleBindingsSubjects(ctx context.Context, db *postgres.DB) {
+func dropTableRoleBindingsSubjects(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS role_bindings_subjects CASCADE")
 
 }

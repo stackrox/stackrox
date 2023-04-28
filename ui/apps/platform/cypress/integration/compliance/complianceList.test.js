@@ -46,7 +46,7 @@ describe('Compliance entities list', () => {
                 cy.get('[data-testid="side-panel"]').should('exist');
                 cy.get('[data-testid="side-panel-header"]').contains(name);
                 cy.get(selectors.widget.relatedEntities).should('not.exist');
-                cy.get('[data-testid="cancel"]').click();
+                cy.get('[data-testid="side-panel"] [aria-label="Close"]').click();
                 cy.get('[data-testid="side-panel"]').should('not.exist');
                 cy.get('[data-testid="panel-header"]').should('contain', 'CLUSTER');
             });

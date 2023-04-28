@@ -8,27 +8,27 @@ import (
 )
 
 func TestAuthProviderYAMLTransformation_OIDC(t *testing.T) {
-	data := []byte(`
-name: test-name
-requiredAttributes:
-- key: "groups"
-  value: "stackrox"
-minimumRole: "None"
-uiEndpoint: "localhost:8000"
-extraUIEndpoints: ["localhost:8001"]
+	data := []byte(`name: test-name
+minimumRole: None
+uiEndpoint: localhost:8000
+extraUIEndpoints:
+    - localhost:8001
 groups:
-- key: "email"
-  value: "admin@stackrox.com"
-  role: "Admin"
-- key: "email"
-  value: "someone@stackrox.com"
-  role: "Analyst"
+    - key: email
+      value: admin@stackrox.com
+      role: Admin
+    - key: email
+      value: someone@stackrox.com
+      role: Analyst
+requiredAttributes:
+    - key: groups
+      value: stackrox
 oidc:
-  issuer: "https://stackrox.com"
-  mode: "auto"
-  clientID: "some-client-id"
-  clientSecret: "some-client-secret"
-  disableOfflineAccessScope: true
+    issuer: https://stackrox.com
+    mode: auto
+    clientID: some-client-id
+    clientSecret: some-client-secret
+    disableOfflineAccessScope: true
 `)
 	ap := AuthProvider{}
 
@@ -63,6 +63,10 @@ oidc:
 	assert.Equal(t, "auto", ap.OIDCConfig.CallbackMode)
 	assert.Equal(t, "https://stackrox.com", ap.OIDCConfig.Issuer)
 	assert.True(t, ap.OIDCConfig.DisableOfflineAccessScope)
+
+	bytes, err := yaml.Marshal(&ap)
+	assert.NoError(t, err)
+	assert.Equal(t, string(data), string(bytes))
 }
 
 func TestAuthProviderYAMLTransformation_SAML(t *testing.T) {

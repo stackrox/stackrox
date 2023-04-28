@@ -94,7 +94,7 @@ func (m *orchestratorIstioCVEManagerImpl) Update(zipPath string, forceUpdate boo
 }
 
 // GetAffectedClusters returns the affected clusters for a CVE
-func (m *orchestratorIstioCVEManagerImpl) GetAffectedClusters(ctx context.Context, cveID string, ct utils.CVEType, cveMatcher *cveMatcher.CVEMatcher) ([]*storage.Cluster, error) {
+func (m *orchestratorIstioCVEManagerImpl) GetAffectedClusters(ctx context.Context, cveID string, ct utils.CVEType, _ *cveMatcher.CVEMatcher) ([]*storage.Cluster, error) {
 	clusters, err := m.orchestratorCVEMgr.getAffectedClusters(ctx, cveID, ct)
 	if err != nil {
 		return nil, err
@@ -106,12 +106,12 @@ func (m *orchestratorIstioCVEManagerImpl) reconcile() {
 	m.orchestratorCVEMgr.Reconcile()
 }
 
-func (m *orchestratorIstioCVEManagerImpl) reconcileAllCVEsInOnlineMode(forceUpdate bool) {
+func (m *orchestratorIstioCVEManagerImpl) reconcileAllCVEsInOnlineMode(_ bool) {
 	log.Infof("Start to reconcile all CVEs online")
 	m.reconcile()
 }
 
-func (m *orchestratorIstioCVEManagerImpl) reconcileAllCVEsInOfflineMode(zipPath string, forceUpdate bool) {
+func (m *orchestratorIstioCVEManagerImpl) reconcileAllCVEsInOfflineMode(_ string, _ bool) {
 	m.reconcile()
 }
 

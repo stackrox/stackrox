@@ -71,7 +71,7 @@ func GetMisc(miscSpec *platform.MiscSpec) *ValuesBuilder {
 	if miscSpec == nil {
 		return nil
 	}
-	if !pointer.BoolPtrDerefOr(miscSpec.CreateSCCs, false) {
+	if !pointer.BoolDeref(miscSpec.CreateSCCs, false) {
 		return nil
 	}
 

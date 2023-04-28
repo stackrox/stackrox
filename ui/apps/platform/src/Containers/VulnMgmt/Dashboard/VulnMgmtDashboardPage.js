@@ -125,7 +125,7 @@ const VulnDashboardPage = ({ history }) => {
                     />
                 </div>
                 <div className="s-2 xxxl:sx-2">
-                    <TopRiskiestEntities limit={DASHBOARD_LIMIT} />
+                    <TopRiskiestEntities search={searchState} limit={DASHBOARD_LIMIT} />
                 </div>
                 <div className="s-2 xxxl:sx-2">
                     <FrequentlyViolatedPolicies />

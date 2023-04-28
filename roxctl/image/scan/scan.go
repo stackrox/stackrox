@@ -11,7 +11,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/gjson"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
@@ -39,6 +41,52 @@ var (
 		"result.vulnerabilities.#.cveId," +
 		"result.vulnerabilities.#.cveSeverity," +
 		"result.vulnerabilities.#.cveInfo}"
+
+	// JSON Path expressions to use for sarif report generation
+	sarifJSONPathExpressions = map[string]string{
+		printers.SarifRuleJSONPathExpressionKey: gjson.MultiPathExpression(
+			`@text:{"printKeys":"false","customSeparator":"_"}`,
+			gjson.Expression{
+				Expression: "result.vulnerabilities.#.cveId",
+			},
+			gjson.Expression{
+				Expression: "result.vulnerabilities.#.componentName",
+			},
+			gjson.Expression{
+				Expression: "result.vulnerabilities.#.componentVersion",
+			},
+		),
+		printers.SarifHelpJSONPathExpressionKey: gjson.MultiPathExpression(
+			"@text",
+			gjson.Expression{
+				Key:        "Vulnerability",
+				Expression: "result.vulnerabilities.#.cveId",
+			},
+			gjson.Expression{
+				Key:        "Link",
+				Expression: "result.vulnerabilities.#.cveInfo",
+			},
+			gjson.Expression{
+				Key:        "Severity",
+				Expression: "result.vulnerabilities.#.cveSeverity",
+			},
+			gjson.Expression{
+				Key:        "Component",
+				Expression: "result.vulnerabilities.#.componentName",
+			},
+			gjson.Expression{
+				Key:        "Version",
+				Expression: "result.vulnerabilities.#.componentVersion",
+			},
+			gjson.Expression{
+				Key:        "Fixed Version",
+				Expression: "result.vulnerabilities.#.componentFixedVersion",
+			},
+		),
+		printers.SarifSeverityJSONPathExpressionKey: "result.vulnerabilities.#.cveSeverity",
+		printers.SarifHelpLinkJSONPathExpressionKey: "result.vulnerabilities.#.cveInfo",
+	}
+
 	// supported output formats with default values
 	supportedObjectPrinters = []printer.CustomPrinterFactory{
 		printer.NewTabularPrinterFactoryWithAutoMerge(defaultImageScanHeaders, columnsToMerge, defaultImageScanJSONPathExpression),
@@ -50,7 +98,9 @@ var (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	imageScanCmd := &imageScanCommand{env: cliEnvironment}
 
-	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", supportedObjectPrinters...)
+	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table",
+		append(supportedObjectPrinters,
+			printer.NewSarifPrinterFactory(printers.SarifVulnerabilityReport, sarifJSONPathExpressions, &imageScanCmd.image))...)
 	// should not happen when using default values, must be a programming error
 	utils.Must(err)
 	// Set the Output Format to empty, so by default the new output format will not be used and the legacy one will be
@@ -59,7 +109,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	objectPrinterFactory.OutputFormat = ""
 
 	c := &cobra.Command{
-		Use: "scan",
+		Use:   "scan",
+		Short: "Scan the specified image, and return scan results.",
+		Long:  "Scan the specified image and return the fully enriched image. Optionally, force a rescan of the image. You must have write permissions for the `Image` resource.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if err := imageScanCmd.Construct(nil, c, objectPrinterFactory); err != nil {
 				return err
@@ -110,7 +162,7 @@ type imageScanCommand struct {
 }
 
 // Construct will enhance the struct with other values coming either from os.Args, other, global flags or environment variables
-func (i *imageScanCommand) Construct(args []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
+func (i *imageScanCommand) Construct(_ []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	i.timeout = flags.Timeout(cmd)
 
 	if err := imageUtils.IsValidImageString(i.image); err != nil {

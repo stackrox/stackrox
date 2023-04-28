@@ -43,13 +43,23 @@ export type CustomNodeData =
     | ExternalEntitiesData
     | CIDRBlockData;
 
+export type BadgeData = {
+    badge?: string;
+    badgeColor?: string;
+    badgeTextColor?: string;
+    badgeBorderColor?: string;
+};
+
 export type NamespaceData = {
     type: 'NAMESPACE';
     collapsible: boolean;
     showContextMenu: boolean;
     namespace: string;
     cluster: string;
-};
+    isFilteredNamespace: boolean;
+    labelIconClass: string;
+    isFadedOut: boolean;
+} & BadgeData;
 
 export type NetworkPolicyState = 'none' | 'both' | 'ingress' | 'egress';
 
@@ -75,12 +85,14 @@ export type DeploymentData = {
     isExternallyConnected: boolean;
     showExternalState: boolean;
     isFadedOut: boolean;
-};
+    labelIconClass: string;
+} & BadgeData;
 
 export type ExternalGroupData = {
     type: 'EXTERNAL_GROUP';
     collapsible: boolean;
     showContextMenu: boolean;
+    isFadedOut: boolean;
 };
 
 export type ExternalEntitiesData = {
@@ -100,7 +112,7 @@ export type CIDRBlockData = {
     };
     outEdges: OutEdges;
     isFadedOut: boolean;
-};
+} & BadgeData;
 
 export type ExtraneousData = {
     type: 'EXTRANEOUS';

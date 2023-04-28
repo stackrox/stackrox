@@ -36,6 +36,7 @@ message ProcessListeningOnPortFromSensor {
     ProcessIndicatorUniqueKey process = 3;
     google.protobuf.Timestamp close_timestamp = 4;
     string cluster_id = 6;
+    string deployment_id = 7;
 }
 
 message ProcessListeningOnPortStorage {
@@ -57,4 +58,6 @@ message ProcessListeningOnPortStorage {
     // ProcessIndicator will be not empty only for those cases when we were not
     // able to find references process in the database
     ProcessIndicatorUniqueKey process = 7;
+
+    string deployment_id = 8 [(gogoproto.moretags) = 'search:"Deployment ID,store" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"'];
 }

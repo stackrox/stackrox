@@ -21,7 +21,7 @@ import (
 
 // TestPostgres is a Postgres instance used in tests
 type TestPostgres struct {
-	*postgres.DB
+	postgres.DB
 	database string
 }
 
@@ -117,7 +117,7 @@ func ForTCustomDB(t testing.TB, dbName string) *TestPostgres {
 }
 
 // ForTCustomPool - gets a connection pool to a specific database.
-func ForTCustomPool(t testing.TB, dbName string) *postgres.DB {
+func ForTCustomPool(t testing.TB, dbName string) postgres.DB {
 	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(t, dbName)
 	ctx := context.Background()
 

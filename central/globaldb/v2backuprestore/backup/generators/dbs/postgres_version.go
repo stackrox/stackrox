@@ -11,7 +11,7 @@ import (
 
 // NewPostgresVersion returns a generator for Postgres backups.
 // We take in the connection to connect to the DB
-func NewPostgresVersion(db *postgres.DB) *PostgresVersion {
+func NewPostgresVersion(db postgres.DB) *PostgresVersion {
 	return &PostgresVersion{
 		db: db,
 	}
@@ -19,11 +19,11 @@ func NewPostgresVersion(db *postgres.DB) *PostgresVersion {
 
 // PostgresVersion is an implementation of a StreamGenerator which writes information from the version table to the input io.Writer.
 type PostgresVersion struct {
-	db *postgres.DB
+	db postgres.DB
 }
 
 // WriteTo writes a backup of Postgres to the writer
-func (ps *PostgresVersion) WriteTo(ctx context.Context, out io.Writer) error {
+func (ps *PostgresVersion) WriteTo(_ context.Context, out io.Writer) error {
 	version, err := versionUtils.ReadVersionPostgres(ps.db)
 	if err != nil {
 		log.Fatalf("Could not retrieve version data: %v", err)

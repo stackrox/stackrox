@@ -1,0 +1,50 @@
+{
+  "id": "32d770b9-c6ba-4398-b48a-0c3e807644ed",
+  "name": "Docker CIS 5.19: Ensure mount propagation mode is not enabled",
+  "description": "Mount propagation mode allows mounting container volumes in Bidirectional, Host to Container, and None modes. Do not use Bidirectional mount propagation mode unless explicitly needed.",
+  "rationale": "A Bidirectional mount is replicated at all mounts and changes made at any mount point are propagated to all other mount points. Mounting a volume in Bidirectional mode does not restrict any other container from mounting and making changes to that volume. As this is likely not a desirable option from a security standpoint, this feature should not be used unless explicitly required",
+  "remediation": "Do not mount volumes in Bidirectional propagation mode.",
+  "categories": [
+    "Docker CIS"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on openshift-cluster-csi-drivers namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on a pdcsi-node deployment",
+      "deployment": {
+        "name": "pdcsi-node"
+      }
+    }
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "lastUpdated": "2021-01-19T22:26:36.455422100Z",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "sectionName": "Section 1",
+      "policyGroups": [
+        {
+          "fieldName": "Mount Propagation",
+          "values": [
+            {
+              "value": "BIDIRECTIONAL"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

@@ -26,8 +26,7 @@ SCRIPTS_ROOT=$(git rev-parse --show-toplevel)/.github/workflows/scripts
 CI="false" # true if running in GitHub context
 export CI
 
-# Supress shellcheck false warning:
-# shellcheck source=/dev/null
+# shellcheck source=./common.sh
 source "$SCRIPTS_ROOT/common.sh"
 
 SCRIPT="$SCRIPTS_ROOT/$1.sh"

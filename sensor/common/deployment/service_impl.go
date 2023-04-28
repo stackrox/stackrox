@@ -51,7 +51,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, idcheck.AdmissionControlOnly().Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) GetDeploymentForPod(ctx context.Context, req *sensor.GetDeploymentForPodRequest) (*storage.Deployment, error) {
+func (s *serviceImpl) GetDeploymentForPod(_ context.Context, req *sensor.GetDeploymentForPodRequest) (*storage.Deployment, error) {
 	if req.GetPodName() == "" || req.GetNamespace() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "pod namespace and pod name must be provided")
 	}

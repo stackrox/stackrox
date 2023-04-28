@@ -63,7 +63,7 @@ func withSize(size resource.Quantity) pvcVerifyFunc {
 func withStorageClass(storageClass string) pvcVerifyFunc {
 	return func(t *testing.T, pvc *corev1.PersistentVolumeClaim) {
 		require.NotNil(t, pvc)
-		assert.Equal(t, storageClass, pointer.StringPtrDerefOr(pvc.Spec.StorageClassName, ""))
+		assert.Equal(t, storageClass, pointer.StringDeref(pvc.Spec.StorageClassName, ""))
 	}
 }
 
@@ -93,33 +93,33 @@ func TestReconcilePVCExtension(t *testing.T) {
 
 	changedPVCConfigCentral := makeCentral(&platform.Persistence{
 		PersistentVolumeClaim: &platform.PersistentVolumeClaim{
-			Size:             pointer.StringPtr("500Gi"),
-			StorageClassName: pointer.StringPtr("new-storage-class"),
-			ClaimName:        pointer.StringPtr(testPVCName),
+			Size:             pointer.String("500Gi"),
+			StorageClassName: pointer.String("new-storage-class"),
+			ClaimName:        pointer.String(testPVCName),
 		},
 	})
 	changedPVCNameCentral := makeCentral(&platform.Persistence{
 		PersistentVolumeClaim: &platform.PersistentVolumeClaim{
-			ClaimName: pointer.StringPtr(testPVCName),
-			Size:      pointer.StringPtr("500Gi"),
+			ClaimName: pointer.String(testPVCName),
+			Size:      pointer.String("500Gi"),
 		},
 	})
 	referencedPVCCentral := makeCentral(&platform.Persistence{
 		PersistentVolumeClaim: &platform.PersistentVolumeClaim{
-			ClaimName: pointer.StringPtr(testPVCName),
+			ClaimName: pointer.String(testPVCName),
 		},
 	})
 	pvcShouldCreateWithConfigCentral := makeCentral(&platform.Persistence{
 		PersistentVolumeClaim: &platform.PersistentVolumeClaim{
-			ClaimName:        pointer.StringPtr(testPVCName),
-			Size:             pointer.StringPtr("50Gi"),
-			StorageClassName: pointer.StringPtr("test-storage-class"),
+			ClaimName:        pointer.String(testPVCName),
+			Size:             pointer.String("50Gi"),
+			StorageClassName: pointer.String("test-storage-class"),
 		},
 	})
 	notOwnedPVCConfigChangeCentral := makeCentral(&platform.Persistence{
 		PersistentVolumeClaim: &platform.PersistentVolumeClaim{
-			Size:             pointer.StringPtr("500Gi"),
-			StorageClassName: pointer.StringPtr("new-storage-class"),
+			Size:             pointer.String("500Gi"),
+			StorageClassName: pointer.String("new-storage-class"),
 		},
 	})
 	centralTargetAnnotations := map[string]string{
@@ -133,9 +133,9 @@ func TestReconcilePVCExtension(t *testing.T) {
 	changedPVCConfigCentralDB.Spec.Central.DB = &platform.CentralDBSpec{
 		Persistence: &platform.DBPersistence{
 			PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
-				Size:             pointer.StringPtr("500Gi"),
-				StorageClassName: pointer.StringPtr("new-storage-class"),
-				ClaimName:        pointer.StringPtr(testPVCName),
+				Size:             pointer.String("500Gi"),
+				StorageClassName: pointer.String("new-storage-class"),
+				ClaimName:        pointer.String(testPVCName),
 			},
 		},
 	}
@@ -452,7 +452,7 @@ func makeCentral(p *platform.Persistence) *platform.Central {
 	}
 }
 
-func makePVC(owner *platform.Central, name string, size resource.Quantity, storageClassName string, annotations map[string]string) *corev1.PersistentVolumeClaim {
+func makePVC(owner *platform.Central, name string, size resource.Quantity, storageClassName string, _ map[string]string) *corev1.PersistentVolumeClaim {
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:       "stackrox",
@@ -460,7 +460,7 @@ func makePVC(owner *platform.Central, name string, size resource.Quantity, stora
 			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(owner, owner.GroupVersionKind())},
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
-			StorageClassName: pointer.StringPtr(storageClassName),
+			StorageClassName: pointer.String(storageClassName),
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceStorage: size,

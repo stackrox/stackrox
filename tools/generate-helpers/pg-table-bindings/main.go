@@ -134,6 +134,9 @@ type properties struct {
 
 	// Indicates the batch size for migrating records.
 	MigrationBatchSize int
+
+	// The feature flag that specifies if the schema should be registered
+	FeatureFlag string
 }
 
 func renderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, templateFileName string) error {
@@ -189,6 +192,7 @@ func main() {
 	c.Flags().StringVar(&props.Type, "type", "", "the (Go) name of the object")
 	utils.Must(c.MarkFlagRequired("type"))
 
+	c.Flags().StringVar(&props.FeatureFlag, "feature-flag", "", "the feature flag that registers the schema")
 	c.Flags().StringVar(&props.RegisteredType, "registered-type", "", "the type this is registered in proto as storage.X")
 
 	c.Flags().StringVar(&props.Table, "table", "", "the logical table of the objects, default to lower snake_case of type")
@@ -317,6 +321,7 @@ func main() {
 			"References":     filteredReferences,
 			"SearchScope":    searchScope,
 			"RegisterSchema": !props.ConversionFuncs,
+			"FeatureFlag":    props.FeatureFlag,
 		}
 
 		if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {

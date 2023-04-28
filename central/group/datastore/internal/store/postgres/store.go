@@ -69,12 +69,12 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *postgres.DB
+	db    postgres.DB
 	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB) Store {
+func New(db postgres.DB) Store {
 	return &storeImpl{
 		db: db,
 	}
@@ -82,7 +82,7 @@ func New(db *postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoGroups(ctx context.Context, batch *pgx.Batch, obj *storage.Group) error {
+func insertIntoGroups(_ context.Context, batch *pgx.Batch, obj *storage.Group) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -538,12 +538,12 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Group) error)
 //// Stubs for satisfying legacy interfaces
 
 // AckKeysIndexed acknowledges the passed keys were indexed.
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
+func (s *storeImpl) AckKeysIndexed(_ context.Context, _ ...string) error {
 	return nil
 }
 
 // GetKeysToIndex returns the keys that need to be indexed.
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
+func (s *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
 	return nil, nil
 }
 
@@ -552,17 +552,17 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 //// Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db *postgres.DB, gormDB *gorm.DB) Store {
+func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db)
 }
 
 // Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db *postgres.DB) {
+func Destroy(ctx context.Context, db postgres.DB) {
 	dropTableGroups(ctx, db)
 }
 
-func dropTableGroups(ctx context.Context, db *postgres.DB) {
+func dropTableGroups(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS groups CASCADE")
 
 }

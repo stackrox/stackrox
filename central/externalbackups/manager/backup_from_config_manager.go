@@ -108,7 +108,7 @@ func (w *watchHandler) OnStableUpdate(val interface{}, err error) {
 	w.id = config.Id
 }
 
-func (w *watchHandler) OnWatchError(err error) {
+func (w *watchHandler) OnWatchError(_ error) {
 	if w.id != "" {
 		w.mgr.Remove(elevatedCtx, w.id)
 	}

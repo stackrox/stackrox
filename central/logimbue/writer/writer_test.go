@@ -51,7 +51,7 @@ func TestWriteNonJSONLogAddsErrorToOutput(t *testing.T) {
 
 type errorWriter struct{}
 
-func (w errorWriter) Write(p []byte) (int, error) {
+func (w errorWriter) Write(_ []byte) (int, error) {
 	return 0, errors.New("i'm an error, how about you")
 }
 

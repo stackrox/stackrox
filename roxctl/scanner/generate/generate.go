@@ -91,8 +91,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	scannerGenerateCmd := &scannerGenerateCommand{env: cliEnvironment}
 
 	c := &cobra.Command{
-		Use:  "generate",
-		Args: cobra.NoArgs,
+		Use:   "generate",
+		Short: "Generate the required YAML configuration files to deploy StackRox Scanner",
+		Args:  cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
 			scannerGenerateCmd.construct(c)
 

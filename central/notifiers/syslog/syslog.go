@@ -227,7 +227,7 @@ func (s *syslog) wrapSyslogUnstructuredData(severity int, timestamp time.Time, m
 	return fmt.Sprintf("<%d>%d %s central %s %d %s - %s", priority, syslogVersion, timestamp.Format(time.RFC3339), application, s.pid, messageID, unstructuredData)
 }
 
-func (s *syslog) AlertNotify(ctx context.Context, alert *storage.Alert) error {
+func (s *syslog) AlertNotify(_ context.Context, alert *storage.Alert) error {
 	unstructuredData := alertToCEF(alert, s.Notifier)
 	severity := alertToSyslogSeverityMap[alert.GetPolicy().GetSeverity()]
 	timestamp, err := types.TimestampFromProto(alert.GetTime())
@@ -251,7 +251,7 @@ func (s *syslog) Test(context.Context) error {
 	return s.sendSyslog(testMessageSeverity, time.Now(), "stackroxKubernetesSecurityPlatformIntegrationTest", data)
 }
 
-func (s *syslog) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) error {
+func (s *syslog) SendAuditMessage(_ context.Context, msg *v1.Audit_Message) error {
 	unstructuredData := auditLogToCEF(msg, s.Notifier)
 	timestamp, err := types.TimestampFromProto(msg.GetTime())
 	if err != nil {

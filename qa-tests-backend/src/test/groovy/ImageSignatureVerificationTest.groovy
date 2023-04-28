@@ -229,7 +229,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
 
     def cleanupSpec() {
         // Delete all deployments.
-        DEPLOYMENTS.each { orchestrator.deleteDeployment(it) }
+        DEPLOYMENTS.each { orchestrator.deleteAndWaitForDeploymentDeletion(it) }
 
         // Delete all created policies.
         CREATED_POLICY_IDS.each { PolicyService.deletePolicy(it) }
@@ -241,6 +241,12 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
         orchestrator.deleteNamespace(SIGNATURE_TESTING_NAMESPACE)
     }
 
+    def setup() {
+        // Reassessing policies will trigger a re-enrichment of images, ensuring we cover potential timeouts occurred
+        // during enriching images.
+        PolicyService.reassessPolicies()
+    }
+
     @Unroll
     @SuppressWarnings('LineLength')
     @Tag("BAT")
@@ -249,7 +255,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
         expect:
         "Verify deployment has expected violations"
         if (expectViolations) {
-            assert waitForViolation(deployment.name, policyName, 5)
+            assert waitForViolation(deployment.name, policyName)
         } else {
             assert checkForNoViolations(deployment.name, policyName, 15)
         }

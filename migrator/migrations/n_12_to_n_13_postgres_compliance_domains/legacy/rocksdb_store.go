@@ -35,7 +35,7 @@ type rocksdbStore struct {
 	db *rocksdb.RocksDB
 }
 
-func (r *rocksdbStore) Walk(ctx context.Context, fn func(obj *storage.ComplianceDomain) error) error {
+func (r *rocksdbStore) Walk(_ context.Context, fn func(obj *storage.ComplianceDomain) error) error {
 	iterator := r.db.NewIterator(readOptions)
 	defer iterator.Close()
 	// Runs are sorted by time so we must iterate over each key to see if it has the correct run ID.

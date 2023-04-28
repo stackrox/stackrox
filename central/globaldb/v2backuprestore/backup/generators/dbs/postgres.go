@@ -17,7 +17,7 @@ var (
 
 // NewPostgresBackup returns a generator for Postgres backups.
 // We take in the connection to connect to the DB
-func NewPostgresBackup(db *postgres.DB) *PostgresBackup {
+func NewPostgresBackup(db postgres.DB) *PostgresBackup {
 	return &PostgresBackup{
 		db: db,
 	}
@@ -25,11 +25,11 @@ func NewPostgresBackup(db *postgres.DB) *PostgresBackup {
 
 // PostgresBackup is an implementation of a StreamGenerator which writes a backup of PostgresDB to the input io.Writer.
 type PostgresBackup struct {
-	db *postgres.DB
+	db postgres.DB
 }
 
 // WriteTo writes a backup of Postgres to the writer
-func (bu *PostgresBackup) WriteTo(ctx context.Context, out io.Writer) error {
+func (bu *PostgresBackup) WriteTo(_ context.Context, out io.Writer) error {
 	sourceMap, config, err := pgconfig.GetPostgresConfig()
 	if err != nil {
 		log.Fatalf("Could not parse postgres config: %v", err)

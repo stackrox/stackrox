@@ -1,25 +1,23 @@
 import React from 'react';
-import { Bullseye } from '@patternfly/react-core';
+import { Bullseye, Text } from '@patternfly/react-core';
 import { ModuleIcon } from '@patternfly/react-icons';
 import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 
 function EmptyIcon(props: SVGIconProps) {
-    return (
-        <ModuleIcon {...props} size="lg" style={{ color: 'var(--pf-global--palette--red-100)' }} />
-    );
+    return <ModuleIcon {...props} size="lg" />;
 }
 
 function EmptyUnscopedState() {
     return (
         <Bullseye>
-            <EmptyStateTemplate
-                title="Select a cluster and at least one namespace to render active deployment traffic
-                    on the graph"
-                headingLevel="h2"
-                icon={EmptyIcon}
-            />
+            <EmptyStateTemplate title="Nothing to render yet" headingLevel="h2" icon={EmptyIcon}>
+                <Text>
+                    Select a cluster and at least one namespace to render
+                    <br /> active deployment traffic on the graph
+                </Text>
+            </EmptyStateTemplate>
         </Bullseye>
     );
 }

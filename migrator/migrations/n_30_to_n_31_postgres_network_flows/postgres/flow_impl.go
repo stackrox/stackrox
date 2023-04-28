@@ -68,7 +68,7 @@ var (
 )
 
 type flowStoreImpl struct {
-	db        *postgres.DB
+	db        postgres.DB
 	clusterID uuid.UUID
 }
 
@@ -143,7 +143,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB, clusterID string) store.FlowStore {
+func New(db postgres.DB, clusterID string) store.FlowStore {
 	clusterUUID, err := uuid.FromString(clusterID)
 	if err != nil {
 		log.Errorf("cluster ID is not valid.  %v", err)
@@ -214,7 +214,7 @@ func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.Networ
 	})
 }
 
-func (s *flowStoreImpl) retryableUpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
+func (s *flowStoreImpl) retryableUpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, _ timestamp.MicroTS) error {
 	// RocksDB implementation was adding the lastUpdatedTS to a key.  That is not necessary in PG world so that
 	// parameter is not being passed forward and should be removed from the interface once RocksDB is removed.
 	if len(flows) < batchAfter {

@@ -22,7 +22,7 @@ function AccessScopesTable({
         <TableComposable variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
-                    <Th />
+                    <Td />
                     <Th width={20}>Name</Th>
                     <Th>Description</Th>
                 </Tr>

@@ -4,10 +4,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -39,7 +37,7 @@ func GetMessageType(msg *central.MsgFromSensor) string {
 	case *central.MsgFromSensor_ProcessListeningOnPortUpdate:
 		return "ProcessListeningOnPortUpdate"
 	default:
-		utils.Should(errors.Errorf("Unknown message type: %T", t))
+		log.Errorf("UNEXPECTED:  Unknown message type: %T", t)
 		return "Unknown"
 	}
 }

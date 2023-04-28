@@ -13,7 +13,7 @@ import (
 )
 
 // NewFullStore augments the generated store with backward compatible functions.
-func NewFullStore(db *postgres.DB) store.Store {
+func NewFullStore(db postgres.DB) store.Store {
 	return &fullStoreImpl{
 		Store: New(db),
 	}

@@ -129,6 +129,9 @@ function S3IntegrationForm({
         // are currently stored credentials
         formInitialValues.externalBackup.s3.accessKeyId = '';
         formInitialValues.externalBackup.s3.secretAccessKey = '';
+
+        // Don't assume user wants to change password; that has caused confusing UX.
+        formInitialValues.updatePassword = false;
     }
     const {
         values,

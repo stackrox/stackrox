@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
@@ -11,11 +12,11 @@ import (
 )
 
 type postgresGatherer struct {
-	db          *postgres.DB
+	db          postgres.DB
 	adminConfig *postgres.Config
 }
 
-func newPostgresGatherer(db *postgres.DB, adminConfig *postgres.Config) *postgresGatherer {
+func newPostgresGatherer(db postgres.DB, adminConfig *postgres.Config) *postgresGatherer {
 	return &postgresGatherer{
 		db:          db,
 		adminConfig: adminConfig,
@@ -36,11 +37,9 @@ func (d *postgresGatherer) Gather(ctx context.Context) *data.DatabaseStats {
 	dbStats.Errors = errorList.ErrorStrings()
 
 	// Check Postgres remaining capacity
-	availableDBBytes, err := pgadmin.GetRemainingCapacity(d.adminConfig)
-	errorList.AddError(err)
-
-	// In RDS or BYOBD configurations we may not be able to calculate this.
-	if availableDBBytes > 0 {
+	if !env.ManagedCentral.BooleanSetting() {
+		availableDBBytes, err := pgadmin.GetRemainingCapacity(d.adminConfig)
+		errorList.AddError(err)
 		dbStats.AvailableBytes = availableDBBytes
 	}
 

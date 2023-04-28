@@ -50,19 +50,19 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    *postgres.DB
+	db    postgres.DB
 	mutex sync.Mutex
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB) Store {
+func New(db postgres.DB) Store {
 	return &storeImpl{
 		db: db,
 	}
 }
 
 // Helper functions
-func insertIntoSimpleAccessScopes(ctx context.Context, batch *pgx.Batch, obj *storage.SimpleAccessScope) error {
+func insertIntoSimpleAccessScopes(_ context.Context, batch *pgx.Batch, obj *storage.SimpleAccessScope) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -149,7 +149,7 @@ func (s *storeImpl) copyFromSimpleAccessScopes(ctx context.Context, tx *postgres
 	return err
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
+func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*postgres.Conn, func(), error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err

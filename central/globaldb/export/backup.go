@@ -56,7 +56,7 @@ func Backup(ctx context.Context, boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, back
 }
 
 // BackupPostgres backs up the given databases (optionally removing secrets) and writes a ZIP archive to the given writer.
-func BackupPostgres(ctx context.Context, postgresDB *postgres.DB, backupListener listener.BackupListener, includeCerts bool, out io.Writer) error {
+func BackupPostgres(ctx context.Context, postgresDB postgres.DB, backupListener listener.BackupListener, includeCerts bool, out io.Writer) error {
 	zipWriter := zip.NewWriter(out)
 	defer utils.IgnoreError(zipWriter.Close)
 

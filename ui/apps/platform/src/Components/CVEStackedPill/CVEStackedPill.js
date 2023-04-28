@@ -1,11 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { AlertTriangle } from 'react-feather';
+import { Tooltip } from '@patternfly/react-core';
 
-import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
-
+import DetailedTooltipContent from 'Components/DetailedTooltipContent';
 import FixableCVECount from 'Components/FixableCVECount';
-import SeverityStackedPill from 'Components/visuals/SeverityStackedPill';
+
+import SeverityStackedPill from './SeverityStackedPill';
 
 function PillTooltipBody({ vulnCounter }) {
     if (vulnCounter?.all?.total > 0) {
@@ -46,13 +47,6 @@ const CVEStackedPill = ({
     const hasScan = !!scanTime;
     const hasScanMessage = !!scanMessage?.header;
 
-    const pillTooltip = showTooltip
-        ? {
-              title: 'Criticality Distribution',
-              body: <PillTooltipBody vulnCounter={vulnCounter} />,
-          }
-        : null;
-
     const width = horizontal ? '' : 'min-w-16';
 
     return (
@@ -71,20 +65,28 @@ const CVEStackedPill = ({
                             hideLink={hideLink}
                         />
                     </div>
-                    <SeverityStackedPill
-                        critical={vulnCounter.critical.total}
-                        important={vulnCounter.important.total}
-                        moderate={vulnCounter.moderate.total}
-                        low={vulnCounter.low.total}
-                        tooltip={pillTooltip}
-                    />
+                    {showTooltip ? (
+                        <Tooltip
+                            isContentLeftAligned
+                            content={
+                                <DetailedTooltipContent
+                                    title="Severity distribution"
+                                    body={<PillTooltipBody vulnCounter={vulnCounter} />}
+                                />
+                            }
+                        >
+                            <SeverityStackedPill vulnCounter={vulnCounter} />
+                        </Tooltip>
+                    ) : (
+                        <SeverityStackedPill vulnCounter={vulnCounter} />
+                    )}
                 </>
             )}
             {hasScanMessage && (
                 <Tooltip
                     type="alert"
                     content={
-                        <DetailedTooltipOverlay
+                        <DetailedTooltipContent
                             extraClassName="text-alert-800"
                             title="CVE Data May Be Inaccurate"
                             subtitle={scanMessage?.header}

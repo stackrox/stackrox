@@ -45,12 +45,12 @@ type scopedPermissionsResolver struct {
 }
 
 // Key represents the key value of the string list entry
-func (resolver *stringListEntryResolver) Key(ctx context.Context) string {
+func (resolver *stringListEntryResolver) Key(_ context.Context) string {
 	return resolver.key
 }
 
 // Values represents the set of values of the string list entry
-func (resolver *stringListEntryResolver) Values(ctx context.Context) []string {
+func (resolver *stringListEntryResolver) Values(_ context.Context) []string {
 	return resolver.values.AsSlice()
 }
 
@@ -68,12 +68,12 @@ func wrapStringListEntries(values map[string]set.StringSet) []*stringListEntryRe
 }
 
 // Scope represents the scope of the permissions - cluster wide or the namespace name to which the permissions are scoped
-func (resolver *scopedPermissionsResolver) Scope(ctx context.Context) string {
+func (resolver *scopedPermissionsResolver) Scope(_ context.Context) string {
 	return resolver.scope
 }
 
 // Permissions represents the verbs and the resources to which those verbs are granted
-func (resolver *scopedPermissionsResolver) Permissions(ctx context.Context) []*stringListEntryResolver {
+func (resolver *scopedPermissionsResolver) Permissions(_ context.Context) []*stringListEntryResolver {
 	return resolver.permissions
 }
 

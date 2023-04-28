@@ -100,7 +100,7 @@ func (s *PostgresUtilitySuite) TestCollectPostgresStats() {
 	s.Equal(true, stats.DatabaseAvailable)
 	s.True(len(stats.Tables) > 0)
 
-	tp.Pool.Close()
+	tp.Close()
 
 	stats = CollectPostgresStats(ctx, tp.DB)
 	s.NotNil(stats)

@@ -220,11 +220,11 @@ func (s *TranslationTestSuite) TestTranslate() {
 							},
 						},
 						AdmissionControl: &platform.AdmissionControlComponentSpec{
-							ListenOnCreates:      pointer.BoolPtr(true),
-							ListenOnUpdates:      pointer.BoolPtr(false),
-							ListenOnEvents:       pointer.BoolPtr(true),
+							ListenOnCreates:      pointer.Bool(true),
+							ListenOnUpdates:      pointer.Bool(false),
+							ListenOnEvents:       pointer.Bool(true),
 							ContactImageScanners: platform.ScanIfMissing.Pointer(),
-							TimeoutSeconds:       pointer.Int32Ptr(4),
+							TimeoutSeconds:       pointer.Int32(4),
 							Bypass:               platform.BypassBreakGlassAnnotation.Pointer(),
 							DeploymentSpec: platform.DeploymentSpec{
 								Resources: &v1.ResourceRequirements{
@@ -355,7 +355,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 							},
 						},
 						Misc: &platform.MiscSpec{
-							CreateSCCs: pointer.BoolPtr(true),
+							CreateSCCs: pointer.Bool(true),
 						},
 					},
 				},

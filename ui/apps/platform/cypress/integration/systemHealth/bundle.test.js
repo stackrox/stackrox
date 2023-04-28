@@ -2,18 +2,19 @@ import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { setClock, visitSystemHealth } from '../../helpers/systemHealth';
-import selectSelectors from '../../selectors/select';
 
 const routeMatcherMapForClusters = {
     clusters: '/v1/clusters',
 };
 
 function openDiagnosticBundleDialogBox() {
+    cy.get('[role="dialog"]').should('not.exist');
+
     interactAndWaitForResponses(() => {
-        cy.get('button:contains("Generate Diagnostic Bundle")').click();
+        cy.get('button:contains("Generate diagnostic bundle")').click();
     }, routeMatcherMapForClusters);
 
-    cy.get('[data-testid="diagnostic-bundle-dialog-box"] > div:contains("Diagnostic Bundle")');
+    cy.get('[role="dialog"]').should('exist');
 }
 
 const diagnosticBundleAlias = '/api/extensions/diagnostics';
@@ -45,7 +46,7 @@ function downloadDiagnosticBundle(query) {
 
     interactAndWaitForResponses(
         () => {
-            cy.get('button:contains("Download Diagnostic Bundle")').click();
+            cy.get('button:contains("Download diagnostic bundle")').click();
         },
         routeMatcherMap,
         staticResponseMapForDiagnosticBundle
@@ -55,31 +56,24 @@ function downloadDiagnosticBundle(query) {
 describe('Download Diagnostic Data', () => {
     withAuth();
 
-    const { filterByClusters, filterByStartingTime, startingTimeMessage } = selectors.bundle;
-    const { multiSelect } = selectSelectors;
+    const { filterByStartingTime, startingTimeMessage } = selectors.bundle;
 
     describe('interaction', () => {
         const currentTime = new Date('2020-10-20T21:22:00.000Z');
 
-        it('should display placeholder instead of value for initial default no cluster selected', () => {
-            visitSystemHealth();
-            openDiagnosticBundleDialogBox();
-
-            cy.get(`${filterByClusters} ${multiSelect.placeholder}`);
-            cy.get(`${filterByClusters} ${multiSelect.values}`).should('not.exist');
-        });
-
-        it('should display value instead of placeholder for one cluster selected', () => {
+        it('should display value for one cluster selected', () => {
             visitSystemHealth();
             openDiagnosticBundleDialogBox();
 
             const clusterName = 'remote';
 
-            cy.get(`${filterByClusters} ${multiSelect.dropdown}`).click();
-            cy.get(`${filterByClusters} ${multiSelect.options}:contains("${clusterName}")`).click();
+            cy.get(`.pf-c-chip-group__list-item:contains("${clusterName}")`).should('not.exist');
 
-            cy.get(`${filterByClusters} ${multiSelect.placeholder}`).should('not.exist');
-            cy.get(`${filterByClusters} ${multiSelect.values}`).should('have.text', clusterName);
+            // TODO factor out as helper function
+            cy.get('[aria-label="Options menu"]').click(); // TODO better label
+            cy.get(`[role="option"]:contains("${clusterName}")`).click();
+
+            cy.get(`.pf-c-chip-group__list-item:contains("${clusterName}")`).should('exist');
         });
 
         it('should display info message for initial default no starting time', () => {
@@ -153,8 +147,9 @@ describe('Download Diagnostic Data', () => {
 
             const clusterName = 'remote';
 
-            cy.get(`${filterByClusters} ${multiSelect.dropdown}`).click();
-            cy.get(`${filterByClusters} ${multiSelect.options}:contains("${clusterName}")`).click();
+            // TODO factor out as helper function
+            cy.get('[aria-label="Options menu"]').click(); // TODO better label
+            cy.get(`[role="option"]:contains("${clusterName}")`).click();
             cy.get(filterByStartingTime).type(startingTime);
 
             const query = {

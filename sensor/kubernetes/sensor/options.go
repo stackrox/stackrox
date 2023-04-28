@@ -77,7 +77,7 @@ func (cfg *CreateOptions) WithResyncPeriod(duration time.Duration) *CreateOption
 }
 
 // WithEventPipelineQueueSize sets the size of the eventPipeline's queue.
-// Default: 100
+// Default: 1000
 func (cfg *CreateOptions) WithEventPipelineQueueSize(size int) *CreateOptions {
 	cfg.eventPipelineQueueSize = size
 	return cfg

@@ -103,7 +103,7 @@ var (
 )
 
 // CreatePolicyCategoryEdges reads policies and creates categories and policy <-> category edges
-func CreatePolicyCategoryEdges(gormDB *gorm.DB, db *postgres.DB) error {
+func CreatePolicyCategoryEdges(gormDB *gorm.DB, db postgres.DB) error {
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTablePolicyCategoryEdgesStmt)
 
 	ctx := sac.WithAllAccess(context.Background())

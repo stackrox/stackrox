@@ -46,26 +46,6 @@ const resourceDescriptions: Record<ResourceName, string> = {
         'Read: View undeployed watched images monitored. Write: Configure watched images.',
     WorkflowAdministration:
         'Read: View all resource collections. Write: Add, modify, or delete resource collections.',
-    // TODO: ROX-12750 Remove AllComments, ComplianceRunSchedule, ComplianceRuns, Config, DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig and ServiceIdentity.
-    AllComments:
-        'Read: N/A Write: Delete comments from other users. All users can edit and delete their own comments by default. To add and remove comments or tags, you need a role with write access for the resource you are modifying.',
-    ComplianceRuns:
-        'Read: View recent compliance runs and their completion status. Write: Trigger compliance runs.',
-    Config: 'Read: View options for data retention, security notices, and other related configurations. Write: Modify options for data retention, security notices, and other related configurations.',
-    DebugLogs:
-        "Read: View the current logging verbosity level of all components, including Central, Scanner, Sensor, Collector, and Admission controller. Download the diagnostic bundle. Important: The diagnostic bundle contains sensitive information, not dependent on the user's role and access scope. The diagnostic bundle includes information about all clusters and namespaces, access control, notifier integrations, and system configuration. Do not give this permission to users with limited access scope. Write: Modify the logging verbosity level.",
-    NetworkGraphConfig:
-        'Read: View network graph configuration. Write: Modify network graph configuration.',
-    ProbeUpload:
-        'Read: Read manifests for the uploaded probe files. Write: Upload support packages to Central.',
-    ScannerBundle: 'Read: Download the scanner bundle. Write: N/A',
-    ScannerDefinitions:
-        'Read: List image scanner integrations. Write: Add, modify, or delete image scanner integrations.',
-    SensorUpgradeConfig:
-        'Read: Check the status of automatic upgrades. Write: Disable or enable automatic upgrades for secured clusters.',
-    ServiceIdentity:
-        'Read: View metadata about service-to-service authentication. Write: Revoke or reissue service-to-service authentication credentials.',
-    // End of ROX-12750 removal block
 };
 
 export type ResourceDescriptionProps = {

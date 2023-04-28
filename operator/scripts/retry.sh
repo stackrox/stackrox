@@ -2,7 +2,7 @@
 
 set -eu -o pipefail
 
-# shellcheck source=./hack/common.sh
+# shellcheck source=../hack/common.sh
 source "$(dirname "$0")/../hack/common.sh"
 
 die() {

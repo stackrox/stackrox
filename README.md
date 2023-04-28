@@ -74,10 +74,6 @@ The script adds the StackRox helm repository, generates an admin password, insta
 
 Finally, the script will automatically open the browser and log you into StackRox. A certificate warning may be displayed since the certificate is self-signed. See the [Accessing the StackRox User Interface (UI)](#accessing-the-stackrox-user-interface-ui) section to read more about the warnings. After authenticating you can access the dashboard using <https://localhost:8000/main/dashboard>.
 
-To further customize your Helm installation, consult these documents:
-* <https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html>
-* <https://docs.openshift.com/acs/installing/installing_helm/install-helm-customization.html>
-
 </details>
 
 ### Manual Installation using Helm
@@ -103,13 +99,15 @@ To see all available Helm charts in the repo run (you may add the option `--deve
 ```sh
 helm search repo stackrox
 ```
-To install stackrox-central-services, you will need a secure password. This password will be needed later when creating an init bundle.
+To install stackrox-central-services, you will need a secure password. This password will be needed later for UI login and when creating an init bundle.
 ```sh
 STACKROX_ADMIN_PASSWORD="$(openssl rand -base64 20 | tr -d '/=+')"
 ```
 From here, you can install stackrox-central-services to get Central and Scanner components deployed on your cluster. Note that you need only one deployed instance of stackrox-central-services even if you plan to secure multiple clusters.
 ```sh
-helm upgrade --install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --set central.adminPassword.value="${STACKROX_ADMIN_PASSWORD}"
+helm upgrade --install -n stackrox --create-namespace stackrox-central-services \
+  stackrox/stackrox-central-services \
+  --set central.adminPassword.value="${STACKROX_ADMIN_PASSWORD}"
 ```
 
 #### Install Central in Clusters With Limited Resources
@@ -122,6 +120,10 @@ helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-ser
   --set central.resources.requests.cpu=1 \
   --set central.resources.limits.memory=4Gi \
   --set central.resources.limits.cpu=1 \
+  --set central.db.resources.requests.memory=1Gi \
+  --set central.db.resources.requests.cpu=500m \
+  --set central.db.resources.limits.memory=4Gi \
+  --set central.db.resources.limits.cpu=1 \
   --set scanner.autoscaling.disable=true \
   --set scanner.replicas=1 \
   --set scanner.resources.requests.memory=500Mi \
@@ -167,10 +169,15 @@ helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-sec
   --set sensor.resources.limits.memory=500Mi \
   --set sensor.resources.limits.cpu=500m
 ```
+</details>
+
+<details>
+<summary>Additional information about Helm charts</summary>
 
 To further customize your Helm installation consult these documents:
-* <https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html>
-* <https://docs.openshift.com/acs/installing/installing_helm/install-helm-customization.html>
+
+* <https://docs.openshift.com/acs/installing/installing_other/install-central-other.html#install-using-helm-customizations-other>
+* <https://docs.openshift.com/acs/installing/installing_other/install-secured-cluster-other.html#configure-secured-cluster-services-helm-chart-customizations-other>
 
 </details>
 
@@ -200,7 +207,7 @@ Run the following in your working directory of choice:
 ```
 git clone git@github.com:stackrox/stackrox.git
 cd stackrox
-MAIN_IMAGE_TAG=VERSION_TO_USE ./deploy/k8s/deploy.sh
+MAIN_IMAGE_TAG=VERSION_TO_USE ./deploy/deploy.sh
 ```
 
 After a few minutes, all resources should be deployed.
@@ -224,7 +231,7 @@ Run the following in your working directory of choice:
 ```
 git clone git@github.com:stackrox/stackrox.git
 cd stackrox
-MAIN_IMAGE_TAG=VERSION_TO_USE ./deploy/openshift/deploy.sh
+MAIN_IMAGE_TAG=VERSION_TO_USE ./deploy/deploy.sh
 ```
 
 After a few minutes, all resources should be deployed. The process will complete with this message.
@@ -244,7 +251,7 @@ Run the following in your working directory of choice:
 ```
 git clone git@github.com:stackrox/stackrox.git
 cd stackrox
-MAIN_IMAGE_TAG=latest ./deploy/k8s/deploy-local.sh
+MAIN_IMAGE_TAG=latest ./deploy/deploy-local.sh
 ```
 
 After a few minutes, all resources should be deployed.
@@ -302,6 +309,7 @@ The following tools are necessary to test code and build image(s):
 * [Bats](https://github.com/sstephenson/bats) is used to run certain shell tests.
   You can obtain it with `brew install bats` or `npm install -g bats`.
 * [oc](https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/) OpenShift cli tool
+* [shellcheck](https://github.com/koalaman/shellcheck#installing) for shell scripts linting.
 
 **Xcode - macOS Only**
 
@@ -377,7 +385,7 @@ $ export SKIP_UI_BUILD=1
 $ roxkubectx
 
 # To deploy locally, call:
-$ ./deploy/k8s/deploy-local.sh
+$ ./deploy/deploy-local.sh
 
 # Now you can access StackRox dashboard at https://localhost:8000
 # or simply call another workflow script:

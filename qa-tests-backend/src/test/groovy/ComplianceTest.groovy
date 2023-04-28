@@ -60,6 +60,7 @@ import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
+import util.Env
 
 class ComplianceTest extends BaseSpecification {
     @Shared
@@ -624,6 +625,7 @@ class ComplianceTest extends BaseSpecification {
     */
 
     @Tag("BAT")
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify checks based on Integrations"() {
         def failureEvidence = ["No image scanners are being used in the cluster"]
         def controls = [
@@ -752,7 +754,7 @@ class ComplianceTest extends BaseSpecification {
         "create Deployment that forces checks to fail"
         Deployment deployment = new Deployment()
                 .setName("compliance-deployment")
-                .setImage("quay.io/rhacs-eng/qa:nginx-1-15-4-alpine")
+                .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                 .addPort(80, "UDP")
                 .setCommand(["/bin/sh", "-c",])
                 .setArgs(["dd if=/dev/zero of=/dev/null & yes"])
@@ -1086,12 +1088,12 @@ class ComplianceTest extends BaseSpecification {
         def controls = [
                 new Control(
                         "PCI_DSS_3_2:6_2",
-                        ["Image us.gcr.io/stackrox-ci/nginx:1.11 has \\d{2}\\d+ fixed CVEs. " +
+                        ["Image quay.io/rhacs-eng/qa-multi-arch:nginx-1.12 has \\d{2}\\d+ fixed CVEs. " +
                                  "An image upgrade is required."],
                         ComplianceState.COMPLIANCE_STATE_FAILURE),
                 new Control(
                         "HIPAA_164:306_e",
-                        ["Image us.gcr.io/stackrox-ci/nginx:1.11 has \\d{2}\\d+ fixed CVEs. " +
+                        ["Image quay.io/rhacs-eng/qa-multi-arch:nginx-1.12 has \\d{2}\\d+ fixed CVEs. " +
                                  "An image upgrade is required."],
                         ComplianceState.COMPLIANCE_STATE_FAILURE),
         ]
@@ -1100,7 +1102,7 @@ class ComplianceTest extends BaseSpecification {
         "deploy image with fixable CVEs"
         Deployment cveDeployment = new Deployment()
                 .setName("cve-compliance-deployment")
-                .setImage("us.gcr.io/stackrox-ci/nginx:1.11")
+                .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12")
                 .addLabel("app", "cve-compliance-deployment")
         orchestrator.createDeployment(cveDeployment)
 
@@ -1224,7 +1226,7 @@ class ComplianceTest extends BaseSpecification {
     def "Verify Docker 5_6, no SSH processes"() {
         def deployment = new Deployment()
                 .setName("triggerssh")
-                .setImage("us.gcr.io/stackrox-ci/qa/fail-compliance/ssh:0.1")
+                .setImage("quay.io/rhacs-eng/qa-multi-arch:fail-compliance-ssh")
 
         given:
         "create a deployment which forces the ssh check to fail"
@@ -1325,24 +1327,13 @@ class ComplianceTest extends BaseSpecification {
                 "Compliance Test Automation Role " + UUID.randomUUID(),
                 remoteStackroxAccessScope.id, [
                 "Access"               : READ_WRITE_ACCESS,
-                // TODO: ROX-12750 Remove AllComments, ComplianceRuns, ComplianceRunSchedule, Config, DebugLogs,
-                // ProbeUpload, ScannerBundle, ScannerDefinitions, SensorUpgradeConfig and ServiceIdentity permissions.
-                // TODO: ROX-12750 Add Administration permission
-                "AllComments"          : READ_WRITE_ACCESS,
-                "Config"               : READ_WRITE_ACCESS,
-                "DebugLogs"            : READ_WRITE_ACCESS,
+                "Administration"       : READ_WRITE_ACCESS,
                 "Detection"            : READ_WRITE_ACCESS,
                 "Integration"          : READ_WRITE_ACCESS,
                 "Policy"               : READ_WRITE_ACCESS,
-                "ProbeUpload"          : READ_WRITE_ACCESS,
                 "Role"                 : READ_WRITE_ACCESS,
-                "ScannerBundle"        : READ_WRITE_ACCESS,
-                "ScannerDefinitions"   : READ_WRITE_ACCESS,
-                "SensorUpgradeConfig"  : READ_WRITE_ACCESS,
-                "ServiceIdentity"      : READ_WRITE_ACCESS,
                 "Cluster"              : READ_WRITE_ACCESS,
                 "Compliance"           : READ_WRITE_ACCESS,
-                "ComplianceRuns"       : READ_WRITE_ACCESS,
                 "Node"                 : READ_WRITE_ACCESS,
         ]).name
 

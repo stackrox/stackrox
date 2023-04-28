@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { Tooltip } from '@patternfly/react-core';
+
 import Table from 'Components/Table';
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
     const columns = [
@@ -33,12 +34,8 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
                 if (!cvss) {
                     return (
                         <Tooltip
-                            content={
-                                <TooltipOverlay>
-                                    A CVSS value can be pending when the vulnerability has not been
-                                    scored or has been disputed
-                                </TooltipOverlay>
-                            }
+                            content="A CVSS value can be pending when the vulnerability has not been
+                                    scored or has been disputed"
                         >
                             <div>Pending</div>
                         </Tooltip>

@@ -6,6 +6,13 @@ import { WorkflowState } from 'utils/WorkflowState';
 import { getCveTableColumns } from './VulnMgmtListCves';
 import { getFilteredCVEColumns } from './ListCVEs.utils';
 
+function mockIsFeatureFlagEnabled(flag) {
+    if (flag === 'ROX_ACTIVE_VULN_MGMT') {
+        return true;
+    }
+    return false;
+}
+
 describe('ListCVEs.utils', () => {
     describe('getFilteredCVEColumns', () => {
         it('should return all the cve columns when in a context that allows them', () => {
@@ -14,9 +21,13 @@ describe('ListCVEs.utils', () => {
                 new WorkflowEntity(entityTypes.CVE),
             ];
             const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
-            const tableColumns = getCveTableColumns(workflowState);
+            const tableColumns = getCveTableColumns(workflowState, mockIsFeatureFlagEnabled);
 
-            const filteredColumns = getFilteredCVEColumns(tableColumns, workflowState);
+            const filteredColumns = getFilteredCVEColumns(
+                tableColumns,
+                workflowState,
+                mockIsFeatureFlagEnabled
+            );
 
             expect(filteredColumns).toEqual(tableColumns);
         });
@@ -24,9 +35,13 @@ describe('ListCVEs.utils', () => {
         it('should remove the fixed in columns when in CVE main list context', () => {
             const stateStack = [new WorkflowEntity(entityTypes.CVE)];
             const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
-            const tableColumns = getCveTableColumns(workflowState);
+            const tableColumns = getCveTableColumns(workflowState, mockIsFeatureFlagEnabled);
 
-            const filteredColumns = getFilteredCVEColumns(tableColumns, workflowState);
+            const filteredColumns = getFilteredCVEColumns(
+                tableColumns,
+                workflowState,
+                mockIsFeatureFlagEnabled
+            );
 
             const locationColumnPresent = filteredColumns.find(
                 (col) => col.accessor === 'fixedByVersion'
@@ -40,9 +55,13 @@ describe('ListCVEs.utils', () => {
                 new WorkflowEntity(entityTypes.CVE),
             ];
             const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
-            const tableColumns = getCveTableColumns(workflowState);
+            const tableColumns = getCveTableColumns(workflowState, mockIsFeatureFlagEnabled);
 
-            const filteredColumns = getFilteredCVEColumns(tableColumns, workflowState);
+            const filteredColumns = getFilteredCVEColumns(
+                tableColumns,
+                workflowState,
+                mockIsFeatureFlagEnabled
+            );
 
             const locationColumnPresent = filteredColumns.find(
                 (col) => col.accessor === 'fixedByVersion'
@@ -56,9 +75,13 @@ describe('ListCVEs.utils', () => {
                 new WorkflowEntity(entityTypes.CVE),
             ];
             const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
-            const tableColumns = getCveTableColumns(workflowState);
+            const tableColumns = getCveTableColumns(workflowState, mockIsFeatureFlagEnabled);
 
-            const filteredColumns = getFilteredCVEColumns(tableColumns, workflowState);
+            const filteredColumns = getFilteredCVEColumns(
+                tableColumns,
+                workflowState,
+                mockIsFeatureFlagEnabled
+            );
 
             expect(filteredColumns).toEqual(tableColumns);
         });

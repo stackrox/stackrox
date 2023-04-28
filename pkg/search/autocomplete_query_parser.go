@@ -2,7 +2,6 @@ package search
 
 import (
 	"errors"
-	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
@@ -21,7 +20,7 @@ func (pi autocompleteQueryParser) parse(input string) (*v1.Query, string, error)
 }
 
 func (pi autocompleteQueryParser) parseInternal(query string) (*v1.Query, string, error) {
-	pairs := strings.Split(query, "+")
+	pairs := splitQuery(query)
 
 	queries := make([]*v1.Query, 0, len(pairs))
 	var autocompleteKey string
@@ -31,10 +30,10 @@ func (pi autocompleteQueryParser) parseInternal(query string) (*v1.Query, string
 			continue
 		}
 		if i == len(pairs)-1 {
-			queries = append(queries, queryFromFieldValues(key, strings.Split(commaSeparatedValues, ","), true))
+			queries = append(queries, queryFromFieldValues(key, splitCommaSeparatedValues(commaSeparatedValues), true))
 			autocompleteKey = key
 		} else {
-			queries = append(queries, queryFromFieldValues(key, strings.Split(commaSeparatedValues, ","), false))
+			queries = append(queries, queryFromFieldValues(key, splitCommaSeparatedValues(commaSeparatedValues), false))
 		}
 	}
 

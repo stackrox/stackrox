@@ -15,7 +15,7 @@ var (
 	serviceAccountPool = make(map[string][]string)
 )
 
-func getRoleBinding() *v1.RoleBinding {
+func getRoleBinding(id string) *v1.RoleBinding {
 	ns := namespacePool.mustGetRandomElem()
 	possibleServiceAccounts := serviceAccountPool[ns]
 	if len(possibleServiceAccounts) == 0 {
@@ -30,7 +30,7 @@ func getRoleBinding() *v1.RoleBinding {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      randStringWithLength(16),
 			Namespace: ns,
-			UID:       newUUID(),
+			UID:       idOrNewUID(id),
 		},
 		Subjects: []v1.Subject{
 			{
@@ -74,13 +74,13 @@ func getVerbs() []string {
 	return k8srbac.ResourceVerbs.AsSlice()
 }
 
-func getRole() *v1.Role {
+func getRole(id string) *v1.Role {
 	ns := namespacePool.mustGetRandomElem()
 	role := &v1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      randStringWithLength(16),
 			Namespace: ns,
-			UID:       newUUID(),
+			UID:       idOrNewUID(id),
 		},
 		Rules: []v1.PolicyRule{
 			{
@@ -94,30 +94,33 @@ func getRole() *v1.Role {
 	return role
 }
 
-func getServiceAccount() *corev1.ServiceAccount {
+func getServiceAccount(id string) *corev1.ServiceAccount {
 	sa := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      randStringWithLength(16),
 			Namespace: namespacePool.mustGetRandomElem(),
-			UID:       newUUID(),
+			UID:       idOrNewUID(id),
 		},
 	}
 	serviceAccountPool[sa.Namespace] = append(serviceAccountPool[sa.Namespace], sa.Name)
 	return sa
 }
 
-func getRBAC(workload RBACWorkload) []runtime.Object {
+func (w *WorkloadManager) getRBAC(workload RBACWorkload, saIDs, roleIDs, rolebindingIDs []string) []runtime.Object {
 	objects := make([]runtime.Object, 0, workload.NumServiceAccounts+workload.NumRoles+workload.NumBindings)
 	for i := 0; i < workload.NumServiceAccounts; i++ {
-		sa := getServiceAccount()
+		sa := getServiceAccount(getID(saIDs, i))
+		w.writeID(serviceAccountPrefix, sa.UID)
 		objects = append(objects, sa)
 	}
 	for i := 0; i < workload.NumRoles; i++ {
-		role := getRole()
+		role := getRole(getID(roleIDs, i))
+		w.writeID(rolesPrefix, role.UID)
 		objects = append(objects, role)
 	}
 	for i := 0; i < workload.NumBindings; i++ {
-		if binding := getRoleBinding(); binding != nil {
+		if binding := getRoleBinding(getID(rolebindingIDs, i)); binding != nil {
+			w.writeID(rolebindingsPrefix, binding.UID)
 			objects = append(objects, binding)
 		}
 	}

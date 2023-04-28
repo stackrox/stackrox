@@ -143,7 +143,7 @@ func slimHTTPRequest(req *http.Request) *HTTPRequest {
 
 // AnnotateMD builds a RequestInfo for a request coming in through the HTTP/1.1 gateway, and returns it in serialized
 // form as GRPC metadata.
-func (h *Handler) AnnotateMD(ctx context.Context, req *http.Request) metadata.MD {
+func (h *Handler) AnnotateMD(_ context.Context, req *http.Request) metadata.MD {
 	tlsState := req.TLS
 
 	var ri RequestInfo

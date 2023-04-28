@@ -29,7 +29,7 @@ var (
 type SingleIndexSuite struct {
 	suite.Suite
 
-	pool    *postgres.DB
+	pool    postgres.DB
 	store   pgStore.Store
 	indexer interface {
 		Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)

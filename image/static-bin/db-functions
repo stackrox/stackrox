@@ -21,21 +21,3 @@ move_if_needed()
     mv "$SRC" "$TGT"
   fi
 }
-
-trunc_log()
-{
-  local LOG_LINE_LIMIT=$1
-
-  local LOG_DIR="/var/lib/stackrox/migration_log"
-  local LOG_FILE="$LOG_DIR/log.txt"
-
-  mkdir -p "$LOG_DIR"
-  if [ -e "$LOG_FILE" ]; then
-    local log_lines=$(wc -l "$LOG_FILE" | head -n1 | cut -d " " -f1)
-    if [ "$log_lines" -gt "$LOG_LINE_LIMIT" ]; then
-      echo "Log $LOG_FILE has $log_lines lines, truncate it to the last $LOG_LINE_LIMIT lines."
-      tail -"$LOG_LINE_LIMIT" "$LOG_FILE" > "${LOG_FILE}.tmp"
-      mv "$LOG_FILE.tmp" "$LOG_FILE"
-    fi
-  fi
-}

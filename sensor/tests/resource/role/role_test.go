@@ -20,6 +20,8 @@ var (
 	NginxRole             = resource.K8sResourceInfo{Kind: "Role", YamlFile: "nginx-role.yaml"}
 	NginxRoleBinding      = resource.K8sResourceInfo{Kind: "Binding", YamlFile: "nginx-binding.yaml"}
 	NginxRoleGroupBinding = resource.K8sResourceInfo{Kind: "Binding", YamlFile: "nginx-binding-group.yaml"}
+	NginxClusterRole      = resource.K8sResourceInfo{Kind: "ClusterRole", YamlFile: "nginx-cluster-role.yaml"}
+	NginxClusterBinding   = resource.K8sResourceInfo{Kind: "ClusterRoleBinding", YamlFile: "nginx-cluster-binding.yaml"}
 )
 
 type RoleDependencySuite struct {
@@ -40,6 +42,7 @@ func (s *RoleDependencySuite) TearDownTest() {
 }
 
 func (s *RoleDependencySuite) SetupSuite() {
+	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
 	if testContext, err := resource.NewContext(s.T()); err != nil {
 		s.Fail("failed to setup test context: %s", err)
 	} else {
@@ -71,7 +74,7 @@ func assertBindingHasRoleID(roleID string) resource.AssertFuncAny {
 	}
 }
 
-func (s *RoleDependencySuite) Test_PermutationTest() {
+func (s *RoleDependencySuite) Test_RolePermutationTest() {
 	s.testContext.GetFakeCentral().ClearReceivedBuffer()
 	s.testContext.RunTest(
 		resource.WithResources([]resource.K8sResourceInfo{
@@ -84,6 +87,24 @@ func (s *RoleDependencySuite) Test_PermutationTest() {
 			testC.LastDeploymentState("nginx-deployment",
 				assertPermissionLevel(storage.PermissionLevel_ELEVATED_IN_NAMESPACE),
 				"Permission level has to be elevated in namespace")
+			testC.GetFakeCentral().ClearReceivedBuffer()
+		}),
+	)
+}
+
+func (s *RoleDependencySuite) Test_ClusterRolePermutationTest() {
+	s.testContext.GetFakeCentral().ClearReceivedBuffer()
+	s.testContext.RunTest(
+		resource.WithResources([]resource.K8sResourceInfo{
+			NginxDeployment,
+			NginxClusterRole,
+			NginxClusterBinding,
+		}),
+		resource.WithPermutation(),
+		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, objects map[string]k8s.Object) {
+			testC.LastDeploymentState("nginx-deployment",
+				assertPermissionLevel(storage.PermissionLevel_ELEVATED_CLUSTER_WIDE),
+				"Permission level has to be elevated cluster wide")
 			testC.GetFakeCentral().ClearReceivedBuffer()
 		}),
 	)

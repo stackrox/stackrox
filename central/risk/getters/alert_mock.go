@@ -9,19 +9,13 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// MockAlertsGetter is a mock AlertsGetter.
-type MockAlertsGetter struct {
+// MockAlertsSearcher is a mock AlertsSearcher.
+type MockAlertsSearcher struct {
 	Alerts []*storage.ListAlert
 }
 
-// ListAlerts supports a limited set of request parameters.
-// It only needs to be as specific as the production code.
-func (m MockAlertsGetter) ListAlerts(ctx context.Context, req *v1.ListAlertsRequest) (alerts []*storage.ListAlert, err error) {
-	q, err := search.ParseQuery(req.GetQuery())
-	if err != nil {
-		return nil, err
-	}
-
+// SearchListAlerts implements the AlertsSearcher interface
+func (m MockAlertsSearcher) SearchListAlerts(_ context.Context, q *v1.Query) (alerts []*storage.ListAlert, err error) {
 	state := storage.ViolationState_ACTIVE.String()
 	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
 		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)

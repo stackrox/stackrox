@@ -16,17 +16,17 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ProcessListeningOnPortsStoreSuite struct {
+type ListeningEndpointsStoreSuite struct {
 	suite.Suite
 	store  Store
 	testDB *pgtest.TestPostgres
 }
 
-func TestProcessListeningOnPortsStore(t *testing.T) {
-	suite.Run(t, new(ProcessListeningOnPortsStoreSuite))
+func TestListeningEndpointsStore(t *testing.T) {
+	suite.Run(t, new(ListeningEndpointsStoreSuite))
 }
 
-func (s *ProcessListeningOnPortsStoreSuite) SetupSuite() {
+func (s *ListeningEndpointsStoreSuite) SetupSuite() {
 	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
@@ -38,18 +38,18 @@ func (s *ProcessListeningOnPortsStoreSuite) SetupSuite() {
 	s.store = New(s.testDB.DB)
 }
 
-func (s *ProcessListeningOnPortsStoreSuite) SetupTest() {
+func (s *ListeningEndpointsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.testDB.Exec(ctx, "TRUNCATE process_listening_on_ports CASCADE")
-	s.T().Log("process_listening_on_ports", tag)
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE listening_endpoints CASCADE")
+	s.T().Log("listening_endpoints", tag)
 	s.NoError(err)
 }
 
-func (s *ProcessListeningOnPortsStoreSuite) TearDownSuite() {
+func (s *ListeningEndpointsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
-func (s *ProcessListeningOnPortsStoreSuite) TestStore() {
+func (s *ListeningEndpointsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store

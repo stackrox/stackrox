@@ -5,7 +5,7 @@
 const tooltip = {
     title: '[data-testid="tooltip-title"]',
     body: '[data-testid="tooltip-body"]',
-    overlay: '.rox-tooltip-overlay',
+    overlay: '.pf-c-tooltip',
 };
 
 export default tooltip;

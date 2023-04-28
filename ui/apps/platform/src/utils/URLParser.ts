@@ -16,7 +16,7 @@ import {
     policiesPath,
     networkPath,
     userRolePath,
-    accessControlPathV2,
+    accessControlPath,
 } from '../routePaths';
 
 type ParamsWithContext = {
@@ -31,7 +31,7 @@ const nonWorkflowUseCasePathEntries = Object.entries({
     POLICIES: policiesPath,
     NETWORK: networkPath,
     USER: userRolePath, // however, it matches workflow list path
-    ACCESS_CONTROL: accessControlPathV2,
+    ACCESS_CONTROL: accessControlPath,
 });
 
 function getNonWorkflowParams(pathname): ParamsWithContext {

@@ -18,7 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry/gatherers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -46,14 +46,14 @@ type commandHandler struct {
 }
 
 // NewCommandHandler creates a new network policies command handler.
-func NewCommandHandler(client kubernetes.Interface) common.SensorComponent {
-	return newCommandHandler(client)
+func NewCommandHandler(client kubernetes.Interface, provider store.Provider) common.SensorComponent {
+	return newCommandHandler(client, provider)
 }
 
-func newCommandHandler(k8sClient kubernetes.Interface) *commandHandler {
+func newCommandHandler(k8sClient kubernetes.Interface, provider store.Provider) *commandHandler {
 	return &commandHandler{
 		responsesC:            make(chan *central.MsgFromSensor),
-		clusterGatherer:       gatherers.NewClusterGatherer(k8sClient, resources.DeploymentStoreSingleton()),
+		clusterGatherer:       gatherers.NewClusterGatherer(k8sClient, provider.Deployments()),
 		stopSig:               concurrency.NewErrorSignal(),
 		pendingContextCancels: make(map[string]context.CancelFunc),
 	}

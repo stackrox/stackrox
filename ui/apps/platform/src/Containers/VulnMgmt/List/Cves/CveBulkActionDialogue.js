@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { gql, useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
@@ -157,22 +157,18 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
         policyQueryOptions
     );
 
-    if (
-        !policyLoading &&
-        policyData &&
-        policyData.results &&
-        policyData.results.length &&
-        policies.length === 0
-    ) {
-        const existingPolicies = policyData.results
-            .filter((policyToFilter) => !policyToFilter?.isDefault)
-            .map((policyToMap, idx) => ({
-                ...policyToMap,
-                value: idx,
-                label: policyToMap.name,
-            }));
-        setPolicies(existingPolicies);
-    }
+    useEffect(() => {
+        if (!policyLoading && policyData?.results?.length) {
+            const existingPolicies = policyData.results
+                .filter((policyToFilter) => !policyToFilter?.isDefault)
+                .map((policyToMap, idx) => ({
+                    ...policyToMap,
+                    value: idx,
+                    label: policyToMap.name,
+                }));
+            setPolicies(existingPolicies);
+        }
+    }, [policyLoading, policyData]);
 
     function handleChange(event) {
         if (get(policy, event.target.name) !== undefined) {

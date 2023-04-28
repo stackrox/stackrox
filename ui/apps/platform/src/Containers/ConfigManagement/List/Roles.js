@@ -2,7 +2,6 @@ import React from 'react';
 import pluralize from 'pluralize';
 import { format } from 'date-fns';
 
-import LabelChip from 'Components/LabelChip';
 import {
     defaultHeaderClassName,
     defaultColumnClassName,
@@ -17,6 +16,7 @@ import { K8S_ROLES_QUERY } from 'queries/role';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import List from './List';
+import NoEntitiesIconText from './utilities/NoEntitiesIconText';
 
 export const defaultRoleSort = [
     {
@@ -131,7 +131,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 if (!subjectsLength) {
                     return !serviceAccountsLength ||
                         (serviceAccountsLength === 1 && serviceAccounts[0].message) ? (
-                        <LabelChip text="No Users & Groups" type="alert" />
+                        <NoEntitiesIconText text="No Users & Groups" isTextOnly={pdf} />
                     ) : (
                         'No Users & Groups'
                     );
@@ -172,7 +172,7 @@ const buildTableColumns = (match, location, entityContext) => {
                         (serviceAccountsLength === 1 && serviceAccounts[0].message)) &&
                     !subjectsLength
                 ) {
-                    return <LabelChip text="No Service Accounts" type="alert" />;
+                    return <NoEntitiesIconText text="No Service Accounts" isTextOnly={pdf} />;
                 }
                 if (!serviceAccountsLength) {
                     return 'No Service Accounts';

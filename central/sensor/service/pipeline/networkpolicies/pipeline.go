@@ -150,4 +150,4 @@ func (s *pipelineImpl) persistNetworkPolicy(ctx context.Context, action central.
 	}
 }
 
-func (s *pipelineImpl) OnFinish(clusterID string) {}
+func (s *pipelineImpl) OnFinish(_ string) {}

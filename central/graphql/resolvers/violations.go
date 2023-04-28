@@ -35,7 +35,7 @@ func (resolver *Resolver) Violations(ctx context.Context, args PaginatedQuery) (
 		return nil, err
 	}
 
-	q = paginated.FillDefaultSortOption(q, paginated.ViolationTimeSortOption)
+	q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
 	return resolver.wrapListAlerts(
 		resolver.ViolationsDataStore.SearchListAlerts(ctx, q))
 }
@@ -75,7 +75,7 @@ func (resolver *Resolver) getAlert(ctx context.Context, id string) *storage.Aler
 	return alert
 }
 
-func (resolver *alertResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+func (resolver *alertResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
 	return nil
 }
 

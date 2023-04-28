@@ -56,6 +56,11 @@ type Struct3 struct {
 	TestNestedString string `db:"test_nested_string"`
 }
 
+type Struct4 struct {
+	TestString       string   `db:"test_string"`
+	TestNestedString []string `db:"test_nested_string"`
+}
+
 func TestSelectQuery(t *testing.T) {
 	t.Parallel()
 
@@ -259,6 +264,72 @@ func TestSelectQuery(t *testing.T) {
 			},
 		},
 		{
+			desc: "base schema and child schema; select; pagination",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestString),
+					search.NewQuerySelect(search.TestNestedString),
+				).WithPagination(
+				search.NewPagination().
+					AddSortOption(search.NewSortOption(search.TestString)).
+					AddSortOption(search.NewSortOption(search.TestNestedString)),
+			).ProtoQuery(),
+			resultStruct: Struct3{},
+			expectedQuery: "select test_multi_key_structs.String_ as test_string, test_multi_key_structs_nesteds.Nested as test_nested_string " +
+				"from test_multi_key_structs inner join test_multi_key_structs_nesteds " +
+				"on test_multi_key_structs.Key1 = test_multi_key_structs_nesteds.test_multi_key_structs_Key1 " +
+				"and test_multi_key_structs.Key2 = test_multi_key_structs_nesteds.test_multi_key_structs_Key2 " +
+				"order by test_multi_key_structs.String_ asc, test_multi_key_structs_nesteds.Nested as asc",
+			expectedResult: []*Struct3{
+				{
+					TestString:       "acs",
+					TestNestedString: "nested_acs",
+				},
+				{
+					TestString:       "bcs",
+					TestNestedString: "nested_bcs_1",
+				},
+				{
+					TestString:       "bcs",
+					TestNestedString: "nested_bcs_1",
+				},
+				{
+					TestString:       "bcs",
+					TestNestedString: "nested_bcs_2",
+				},
+			},
+		},
+		{
+			desc: "base schema and child schema; select; pagination",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestString),
+					search.NewQuerySelect(search.TestNestedString),
+				).
+				AddGroupBy(search.TestString).
+				WithPagination(
+					search.NewPagination().
+						AddSortOption(search.NewSortOption(search.TestString).Reversed(true)),
+				).ProtoQuery(),
+			resultStruct: Struct4{},
+			expectedQuery: "select test_multi_key_structs.String_ as test_string, json_agg(test_multi_key_structs_nesteds.Nested) as test_nested_string " +
+				"from test_multi_key_structs inner join test_multi_key_structs_nesteds " +
+				"on test_multi_key_structs.Key1 = test_multi_key_structs_nesteds.test_multi_key_structs_Key1 " +
+				"and test_multi_key_structs.Key2 = test_multi_key_structs_nesteds.test_multi_key_structs_Key2 " +
+				"group by test_multi_key_structs.String_" +
+				"order by test_multi_key_structs.String_ desc",
+			expectedResult: []*Struct4{
+				{
+					TestString:       "bcs",
+					TestNestedString: []string{"nested_bcs_1", "nested_bcs_1", "nested_bcs_2"},
+				},
+				{
+					TestString:       "acs",
+					TestNestedString: []string{"nested_acs"},
+				},
+			},
+		},
+		{
 			desc: "nil query",
 			q:    nil,
 		},
@@ -314,6 +385,13 @@ type DerivedStruct8 struct {
 	TestStringAffectedByEnum1 int  `db:"test_string_affected_by_enum1"`
 	TestStringAffectedByEnum2 int  `db:"test_string_affected_by_enum2"`
 	TestBool                  bool `db:"test_bool"`
+}
+
+type DerivedStruct9 struct {
+	TestNestedStringCount int      `db:"test_nested_string_count"`
+	TestString            []string `db:"test_string"`
+	TestStringCount       int      `db:"test_string_count"`
+	TestNestedString      string   `db:"test_nested_string"`
 }
 
 func TestSelectDerivedFieldQuery(t *testing.T) {
@@ -611,6 +689,112 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 			},
 		},
 		{
+			desc: "select multiple derived w/ group by & pagination",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestNestedString).AggrFunc(aggregatefunc.Count),
+					search.NewQuerySelect(search.TestNestedString2).AggrFunc(aggregatefunc.Count),
+				).
+				AddGroupBy(search.TestNestedString).
+				WithPagination(
+					search.NewPagination().AddSortOption(
+						search.NewSortOption(search.TestNestedString).Reversed(true),
+					),
+				).ProtoQuery(),
+			resultStruct: DerivedStruct3{},
+			expectedQuery: "select count(test_multi_key_structs_nesteds.Nested) as test_nested_string_count, " +
+				"count(test_multi_key_structs_nesteds.Nested2_Nested2) as test_nested_string_2_count, " +
+				"test_multi_key_structs_nesteds.Nested as test_nested_string " +
+				"from test_multi_key_structs inner join test_multi_key_structs_nesteds " +
+				"on test_multi_key_structs.Key1 = test_multi_key_structs_nesteds.test_multi_key_structs_Key1 " +
+				"and test_multi_key_structs.Key2 = test_multi_key_structs_nesteds.test_multi_key_structs_Key2 " +
+				"group by test_multi_key_structs_nesteds.Nested order by test_multi_key_structs_nesteds.Nested desc",
+			expectedResult: []*DerivedStruct3{
+				{1, 1, "nested_bcs_2"},
+				{2, 2, "nested_bcs_1"},
+				{1, 1, "nested_acs"},
+			},
+		},
+		{
+			desc: "select multiple derived w/ group by & derived field pagination",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestNestedString).AggrFunc(aggregatefunc.Count),
+					search.NewQuerySelect(search.TestNestedString2).AggrFunc(aggregatefunc.Count),
+				).
+				AddGroupBy(search.TestNestedString).WithPagination(
+				search.NewPagination().AddSortOption(
+					search.NewSortOption(search.TestNestedString).
+						AggregateBy(aggregatefunc.Count, false).
+						Reversed(true),
+				).Limit(1),
+			).ProtoQuery(),
+			resultStruct: DerivedStruct3{},
+			expectedQuery: "select count(test_multi_key_structs_nesteds.Nested) as test_nested_string_count, " +
+				"count(test_multi_key_structs_nesteds.Nested2_Nested2) as test_nested_string_2_count, " +
+				"test_multi_key_structs_nesteds.Nested as test_nested_string " +
+				"from test_multi_key_structs inner join test_multi_key_structs_nesteds " +
+				"on test_multi_key_structs.Key1 = test_multi_key_structs_nesteds.test_multi_key_structs_Key1 " +
+				"and test_multi_key_structs.Key2 = test_multi_key_structs_nesteds.test_multi_key_structs_Key2 " +
+				"group by test_multi_key_structs_nesteds.Nested order by count(test_multi_key_structs_nesteds.Nested) desc LIMIT 1",
+			expectedResult: []*DerivedStruct3{
+				{2, 2, "nested_bcs_1"},
+			},
+		},
+		{
+			desc: "select derived & primary field w/ group by non-primary field & pagination",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestNestedString).AggrFunc(aggregatefunc.Count),
+				).
+				AddGroupBy(search.TestNestedString).WithPagination(
+				search.NewPagination().AddSortOption(
+					search.NewSortOption(search.TestString),
+				),
+			).ProtoQuery(),
+			resultStruct: DerivedStruct6{},
+			expectedQuery: "select count(test_multi_key_structs_nesteds.Nested) as test_nested_string_count, " +
+				"test_multi_key_structs_nesteds.Nested as test_nested_string, " +
+				"jsonb_agg(test_multi_key_structs.String_) as test_string " +
+				"from test_multi_key_structs inner join test_multi_key_structs_nesteds " +
+				"on test_multi_key_structs.Key1 = test_multi_key_structs_nesteds.test_multi_key_structs_Key1 " +
+				"and test_multi_key_structs.Key2 = test_multi_key_structs_nesteds.test_multi_key_structs_Key2 " +
+				"group by test_multi_key_structs_nesteds.Nested order by test_multi_key_structs.String_ asc",
+			expectedError: "column \"test_multi_key_structs.string_\" must appear in the GROUP BY clause or be used in an aggregate function",
+		},
+		{
+			desc: "select derived & primary field w/ group by non-primary field & pagination",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestNestedString).AggrFunc(aggregatefunc.Count),
+					search.NewQuerySelect(search.TestString),
+				).
+				AddGroupBy(search.TestNestedString).WithPagination(
+				search.NewPagination().
+					AddSortOption(
+						search.NewSortOption(search.TestString).
+							AggregateBy(aggregatefunc.Count, false).Reversed(true),
+					).AddSortOption(
+					search.NewSortOption(search.TestNestedString),
+				),
+			).ProtoQuery(),
+			resultStruct: DerivedStruct9{},
+			expectedQuery: "select count(test_multi_key_structs_nesteds.Nested) as test_nested_string_count, " +
+				"jsonb_agg(test_multi_key_structs.String_) as test_string, " +
+				"test_multi_key_structs_nesteds.Nested as test_nested_string, " +
+				"count(test_multi_key_structs.String_) as test_string_count " +
+				"from test_multi_key_structs inner join test_multi_key_structs_nesteds " +
+				"on test_multi_key_structs.Key1 = test_multi_key_structs_nesteds.test_multi_key_structs_Key1 " +
+				"and test_multi_key_structs.Key2 = test_multi_key_structs_nesteds.test_multi_key_structs_Key2 " +
+				"group by test_multi_key_structs_nesteds.Nested " +
+				"order by count(test_multi_key_structs.String_) desc, test_multi_key_structs_nesteds.Nested asc",
+			expectedResult: []*DerivedStruct9{
+				{2, []string{"bcs", "bcs"}, 2, "nested_bcs_1"},
+				{1, []string{"acs"}, 1, "nested_acs"},
+				{1, []string{"bcs"}, 1, "nested_bcs_2"},
+			},
+		},
+		{
 			desc: "nil query",
 			q:    nil,
 		},
@@ -691,6 +875,8 @@ func runTest(ctx context.Context, t *testing.T, testDB *pgtest.TestPostgres, tc 
 		results, err = pgSearch.RunSelectRequestForSchema[Struct2GrpBy2](ctx, testDB.DB, schema.TestMultiKeyStructsSchema, tc.q)
 	case Struct3:
 		results, err = pgSearch.RunSelectRequestForSchema[Struct3](ctx, testDB.DB, schema.TestMultiKeyStructsSchema, tc.q)
+	case Struct4:
+		results, err = pgSearch.RunSelectRequestForSchema[Struct4](ctx, testDB.DB, schema.TestMultiKeyStructsSchema, tc.q)
 	case DerivedStruct1:
 		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct1](ctx, testDB.DB, schema.TestMultiKeyStructsSchema, tc.q)
 	case DerivedStruct2:
@@ -709,6 +895,8 @@ func runTest(ctx context.Context, t *testing.T, testDB *pgtest.TestPostgres, tc 
 		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct7](ctx, testDB.DB, schema.TestMultiKeyStructsSchema, tc.q)
 	case DerivedStruct8:
 		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct8](ctx, testDB.DB, schema.TestMultiKeyStructsSchema, tc.q)
+	case DerivedStruct9:
+		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct9](ctx, testDB.DB, schema.TestMultiKeyStructsSchema, tc.q)
 	}
 	if tc.expectedError != "" {
 		assert.Error(t, err, tc.expectedError)
@@ -721,5 +909,9 @@ func runTest(ctx context.Context, t *testing.T, testDB *pgtest.TestPostgres, tc 
 		return
 	}
 
-	assert.ElementsMatch(t, tc.expectedResult, results)
+	if tc.q.GetPagination() != nil {
+		assert.Equal(t, tc.expectedResult, results)
+	} else {
+		assert.ElementsMatch(t, tc.expectedResult, results)
+	}
 }

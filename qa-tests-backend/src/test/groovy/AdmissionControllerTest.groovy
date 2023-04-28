@@ -1,5 +1,4 @@
 import io.stackrox.proto.api.v1.Common
-import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
@@ -13,6 +12,7 @@ import objects.GCRImageIntegration
 import services.CVEService
 import services.ClusterService
 import services.ImageIntegrationService
+import services.ImageService
 import services.PolicyService
 import util.ChaosMonkey
 import util.Env
@@ -51,12 +51,12 @@ class AdmissionControllerTest extends BaseSpecification {
 
     static final private Deployment BUSYBOX_NO_BYPASS_DEPLOYMENT = new Deployment()
             .setName(BUSYBOX_NO_BYPASS)
-            .setImage("busybox:latest")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch-busybox:latest")
             .addLabel("app", "test")
 
     static final private Deployment BUSYBOX_BYPASS_DEPLOYMENT = new Deployment()
             .setName(BUSYBOX_BYPASS)
-            .setImage("busybox:latest")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch-busybox:latest")
             .addLabel("app", "test")
             .addAnnotation("admission.stackrox.io/break-glass", "yay")
 
@@ -82,6 +82,9 @@ class AdmissionControllerTest extends BaseSpecification {
         ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
         gcrId = GCRImageIntegration.createDefaultIntegration()
         assert gcrId != ""
+
+        // Pre run scan to avoid timeouts with inline scans in the tests below
+        ImageService.scanImage(GCR_NGINX)
     }
 
     def setup() {
@@ -179,7 +182,10 @@ class AdmissionControllerTest extends BaseSpecification {
         prepareChaosMonkey()
 
         and:
-         "Create policy looking for a specific CVE"
+        "Scan image"
+        ImageService.scanImage(image)
+
+        "Create policy looking for a specific CVE"
         // We don't want to block on SEVERITY
         Services.updatePolicyEnforcement(
                 SEVERITY,
@@ -202,24 +208,23 @@ class AdmissionControllerTest extends BaseSpecification {
                 .setBooleanOperator(PolicyOuterClass.BooleanOperator.AND)
         policyGroup.addAllValues([PolicyValue.newBuilder().setValue("CVE-2019-3462").build(),])
 
+        String policyName = "Matching CVE (CVE-2019-3462)"
         PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
-                .setName("Matching CVE (CVE-2019-3462)")
+                .setName(policyName)
                 .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
-                .addCategories("Testing")
+                .addCategories("DevOps Best Practices")
                 .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
                 .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
                 .addPolicySections(
                         PolicySection.newBuilder().addPolicyGroups(policyGroup.build()).build())
                 .build()
-        policy = PolicyService.policyClient.postPolicy(
-                PolicyServiceOuterClass.PostPolicyRequest.newBuilder()
-                        .setPolicy(policy)
-                        .build()
-        )
+
+        String policyID = PolicyService.createNewPolicy(policy)
+        assert policyID
 
         log.info("Policy created to scale-to-zero deployments with CVE-2019-3462")
         // Maximum time to wait for propagation to sensor
-        Helpers.sleepWithRetryBackoff(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
+        Helpers.sleepWithRetryBackoff(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
         log.info("Sensor and admission-controller _should_ have the policy update")
 
         def deployment = new Deployment()
@@ -279,15 +284,14 @@ class AdmissionControllerTest extends BaseSpecification {
 
         and:
         "Delete policy"
-        PolicyService.policyClient.deletePolicy(Common.ResourceByID.newBuilder().setId(policy.id).build())
+        PolicyService.policyClient.deletePolicy(Common.ResourceByID.newBuilder().setId(policyID).build())
 
         if (created) {
             deleteDeploymentWithCaution(deployment)
         }
 
         // Add back enforcement
-        Services.updatePolicyEnforcement(
-                SEVERITY,
+        Services.updatePolicyEnforcement(SEVERITY,
                 [PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
         )
 
@@ -385,7 +389,7 @@ class AdmissionControllerTest extends BaseSpecification {
         "Create a deployment with a latest tag"
         def deployment = new Deployment()
                 .setName("scoped-enforcement-${clusterMatch}-${nsMatch}")
-                .setImage("busybox:latest")
+                .setImage("quay.io/rhacs-eng/qa-multi-arch-busybox:latest")
                 .addLabel("app", "test")
         def created = orchestrator.createDeploymentNoWait(deployment)
 

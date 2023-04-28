@@ -1,5 +1,5 @@
 export const selectorEntityTypes = ['Cluster', 'Namespace', 'Deployment'] as const;
-export type SelectorEntityType = typeof selectorEntityTypes[number];
+export type SelectorEntityType = (typeof selectorEntityTypes)[number];
 
 export type ByNameSelectorField = `${SelectorEntityType}`;
 export type ByLabelSelectorField = `${SelectorEntityType} Label`;
@@ -28,9 +28,9 @@ export function isByAnnotationField(field: SelectorField): field is ByAnnotation
 }
 
 export const byLabelMatchTypes = ['EXACT'] as const;
-export type ByLabelMatchType = typeof byLabelMatchTypes[number];
+export type ByLabelMatchType = (typeof byLabelMatchTypes)[number];
 export const byNameMatchType = ['EXACT', 'REGEX'] as const;
-export type ByNameMatchType = typeof byNameMatchType[number];
+export type ByNameMatchType = (typeof byNameMatchType)[number];
 export type MatchType = ByNameMatchType | ByLabelMatchType;
 
 /**
@@ -72,7 +72,7 @@ export function isSupportedSelectorField(field: SelectorField): field is Support
 
 export const selectorOptions = ['All', 'ByName', 'ByLabel'] as const;
 
-export type RuleSelectorOption = typeof selectorOptions[number];
+export type RuleSelectorOption = (typeof selectorOptions)[number];
 
 export type AllResourceSelector = {
     type: 'All';

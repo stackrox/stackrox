@@ -20,7 +20,6 @@ import OperatorIndicator from './Components/OperatorIndicator';
 export function getColumnsForClusters({
     clusterIdToRetentionInfo,
     hasReadWriteAccessForCluster,
-    isDecommissionedClusterRetentionEnabled,
     metadata,
     rowActions,
 }) {
@@ -109,10 +108,7 @@ export function getColumnsForClusters({
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
         },
-    ];
-
-    if (isDecommissionedClusterRetentionEnabled) {
-        clusterColumns.push({
+        {
             Header: 'Cluster Deletion',
             Cell: ({ original }) => (
                 <ClusterDeletion
@@ -121,8 +117,8 @@ export function getColumnsForClusters({
             ),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
-        });
-    }
+        },
+    ];
 
     if (hasReadWriteAccessForCluster) {
         clusterColumns.push({

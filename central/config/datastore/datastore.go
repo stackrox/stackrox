@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/config/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -28,8 +27,7 @@ func New(store store.Store) DataStore {
 }
 
 var (
-	// TODO: ROX-12750 Replace Config with Administration and rename SAC variable accordingly.
-	configSAC = sac.ForResource(resources.Config)
+	administrationSAC = sac.ForResource(resources.Administration)
 )
 
 type datastoreImpl struct {
@@ -38,7 +36,7 @@ type datastoreImpl struct {
 
 // GetConfig returns Central's config
 func (d *datastoreImpl) GetConfig(ctx context.Context) (*storage.Config, error) {
-	if ok, err := configSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := administrationSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
@@ -50,33 +48,26 @@ func (d *datastoreImpl) GetConfig(ctx context.Context) (*storage.Config, error) 
 
 // UpsertConfig updates Central's config
 func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config) error {
-	if ok, err := configSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-
-	if features.DecommissionedClusterRetention.Enabled() {
-		if clusterRetentionConf := config.GetPrivateConfig().GetDecommissionedClusterRetention(); clusterRetentionConf != nil {
-			oldConf, err := d.getClusterRetentionConfig(ctx)
-			if err != nil {
-				return err
-			}
-			if oldConf != nil {
-				clusterRetentionConf.CreatedAt = oldConf.GetCreatedAt()
-			} else {
-				clusterRetentionConf.CreatedAt = types.TimestampNow()
-			}
-
-			hasUpdate := !clusterRetentionConfigsEqual(oldConf, clusterRetentionConf)
-
-			if hasUpdate {
-				clusterRetentionConf.LastUpdated = types.TimestampNow()
-			}
+	if clusterRetentionConf := config.GetPrivateConfig().GetDecommissionedClusterRetention(); clusterRetentionConf != nil {
+		oldConf, err := d.getClusterRetentionConfig(ctx)
+		if err != nil {
+			return err
 		}
-	} else {
-		if config.GetPrivateConfig() != nil {
-			config.GetPrivateConfig().DecommissionedClusterRetention = nil
+		if oldConf != nil {
+			clusterRetentionConf.CreatedAt = oldConf.GetCreatedAt()
+		} else {
+			clusterRetentionConf.CreatedAt = types.TimestampNow()
+		}
+
+		hasUpdate := !clusterRetentionConfigsEqual(oldConf, clusterRetentionConf)
+
+		if hasUpdate {
+			clusterRetentionConf.LastUpdated = types.TimestampNow()
 		}
 	}
 

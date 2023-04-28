@@ -19,6 +19,7 @@ export const vulnerabilitySeverityLabels: Record<VulnerabilitySeverity, string> 
     IMPORTANT_VULNERABILITY_SEVERITY: 'Important',
     MODERATE_VULNERABILITY_SEVERITY: 'Moderate',
     LOW_VULNERABILITY_SEVERITY: 'Low',
+    UNKNOWN_VULNERABILITY_SEVERITY: 'Unknown',
 });
 
 export const clusterTypeLabels = Object.freeze({

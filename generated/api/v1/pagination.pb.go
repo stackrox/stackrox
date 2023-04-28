@@ -22,19 +22,120 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+type Aggregation int32
+
+const (
+	Aggregation_UNSET Aggregation = 0
+	Aggregation_COUNT Aggregation = 1
+	Aggregation_MIN   Aggregation = 2
+	Aggregation_MAX   Aggregation = 3
+)
+
+var Aggregation_name = map[int32]string{
+	0: "UNSET",
+	1: "COUNT",
+	2: "MIN",
+	3: "MAX",
+}
+
+var Aggregation_value = map[string]int32{
+	"UNSET": 0,
+	"COUNT": 1,
+	"MIN":   2,
+	"MAX":   3,
+}
+
+func (x Aggregation) String() string {
+	return proto.EnumName(Aggregation_name, int32(x))
+}
+
+func (Aggregation) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_5993a9cae165a01a, []int{0}
+}
+
+type AggregateBy struct {
+	AggrFunc             Aggregation `protobuf:"varint,1,opt,name=aggrFunc,proto3,enum=v1.Aggregation" json:"aggrFunc,omitempty"`
+	Distinct             bool        `protobuf:"varint,2,opt,name=distinct,proto3" json:"distinct,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
+}
+
+func (m *AggregateBy) Reset()         { *m = AggregateBy{} }
+func (m *AggregateBy) String() string { return proto.CompactTextString(m) }
+func (*AggregateBy) ProtoMessage()    {}
+func (*AggregateBy) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5993a9cae165a01a, []int{0}
+}
+func (m *AggregateBy) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AggregateBy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AggregateBy.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AggregateBy) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AggregateBy.Merge(m, src)
+}
+func (m *AggregateBy) XXX_Size() int {
+	return m.Size()
+}
+func (m *AggregateBy) XXX_DiscardUnknown() {
+	xxx_messageInfo_AggregateBy.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AggregateBy proto.InternalMessageInfo
+
+func (m *AggregateBy) GetAggrFunc() Aggregation {
+	if m != nil {
+		return m.AggrFunc
+	}
+	return Aggregation_UNSET
+}
+
+func (m *AggregateBy) GetDistinct() bool {
+	if m != nil {
+		return m.Distinct
+	}
+	return false
+}
+
+func (m *AggregateBy) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *AggregateBy) Clone() *AggregateBy {
+	if m == nil {
+		return nil
+	}
+	cloned := new(AggregateBy)
+	*cloned = *m
+
+	return cloned
+}
+
 type SortOption struct {
-	Field                string   `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
-	Reversed             bool     `protobuf:"varint,2,opt,name=reversed,proto3" json:"reversed,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Field    string `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
+	Reversed bool   `protobuf:"varint,2,opt,name=reversed,proto3" json:"reversed,omitempty"`
+	// This field is under development. It is not supported on any REST APIs.
+	AggregateBy          *AggregateBy `protobuf:"bytes,3,opt,name=aggregate_by,json=aggregateBy,proto3" json:"aggregate_by,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
+	XXX_unrecognized     []byte       `json:"-"`
+	XXX_sizecache        int32        `json:"-"`
 }
 
 func (m *SortOption) Reset()         { *m = SortOption{} }
 func (m *SortOption) String() string { return proto.CompactTextString(m) }
 func (*SortOption) ProtoMessage()    {}
 func (*SortOption) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5993a9cae165a01a, []int{0}
+	return fileDescriptor_5993a9cae165a01a, []int{1}
 }
 func (m *SortOption) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -77,6 +178,13 @@ func (m *SortOption) GetReversed() bool {
 	return false
 }
 
+func (m *SortOption) GetAggregateBy() *AggregateBy {
+	if m != nil {
+		return m.AggregateBy
+	}
+	return nil
+}
+
 func (m *SortOption) MessageClone() proto.Message {
 	return m.Clone()
 }
@@ -87,23 +195,26 @@ func (m *SortOption) Clone() *SortOption {
 	cloned := new(SortOption)
 	*cloned = *m
 
+	cloned.AggregateBy = m.AggregateBy.Clone()
 	return cloned
 }
 
 type Pagination struct {
-	Limit                int32       `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
-	Offset               int32       `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
-	SortOption           *SortOption `protobuf:"bytes,3,opt,name=sort_option,json=sortOption,proto3" json:"sort_option,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
-	XXX_unrecognized     []byte      `json:"-"`
-	XXX_sizecache        int32       `json:"-"`
+	Limit      int32       `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset     int32       `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
+	SortOption *SortOption `protobuf:"bytes,3,opt,name=sort_option,json=sortOption,proto3" json:"sort_option,omitempty"`
+	// This field is under development. It is not supported on any REST APIs.
+	SortOptions          []*SortOption `protobuf:"bytes,4,rep,name=sort_options,json=sortOptions,proto3" json:"sort_options,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
 func (m *Pagination) Reset()         { *m = Pagination{} }
 func (m *Pagination) String() string { return proto.CompactTextString(m) }
 func (*Pagination) ProtoMessage()    {}
 func (*Pagination) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5993a9cae165a01a, []int{1}
+	return fileDescriptor_5993a9cae165a01a, []int{2}
 }
 func (m *Pagination) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -153,6 +264,13 @@ func (m *Pagination) GetSortOption() *SortOption {
 	return nil
 }
 
+func (m *Pagination) GetSortOptions() []*SortOption {
+	if m != nil {
+		return m.SortOptions
+	}
+	return nil
+}
+
 func (m *Pagination) MessageClone() proto.Message {
 	return m.Clone()
 }
@@ -164,10 +282,18 @@ func (m *Pagination) Clone() *Pagination {
 	*cloned = *m
 
 	cloned.SortOption = m.SortOption.Clone()
+	if m.SortOptions != nil {
+		cloned.SortOptions = make([]*SortOption, len(m.SortOptions))
+		for idx, v := range m.SortOptions {
+			cloned.SortOptions[idx] = v.Clone()
+		}
+	}
 	return cloned
 }
 
 func init() {
+	proto.RegisterEnum("v1.Aggregation", Aggregation_name, Aggregation_value)
+	proto.RegisterType((*AggregateBy)(nil), "v1.AggregateBy")
 	proto.RegisterType((*SortOption)(nil), "v1.SortOption")
 	proto.RegisterType((*Pagination)(nil), "v1.Pagination")
 }
@@ -175,21 +301,71 @@ func init() {
 func init() { proto.RegisterFile("api/v1/pagination.proto", fileDescriptor_5993a9cae165a01a) }
 
 var fileDescriptor_5993a9cae165a01a = []byte{
-	// 220 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x4f, 0x2c, 0xc8, 0xd4,
-	0x2f, 0x33, 0xd4, 0x2f, 0x48, 0x4c, 0xcf, 0xcc, 0x4b, 0x2c, 0xc9, 0xcc, 0xcf, 0xd3, 0x2b, 0x28,
-	0xca, 0x2f, 0xc9, 0x17, 0x62, 0x2a, 0x33, 0x54, 0xb2, 0xe3, 0xe2, 0x0a, 0xce, 0x2f, 0x2a, 0xf1,
-	0x2f, 0x00, 0x89, 0x0b, 0x89, 0x70, 0xb1, 0xa6, 0x65, 0xa6, 0xe6, 0xa4, 0x48, 0x30, 0x2a, 0x30,
-	0x6a, 0x70, 0x06, 0x41, 0x38, 0x42, 0x52, 0x5c, 0x1c, 0x45, 0xa9, 0x65, 0xa9, 0x45, 0xc5, 0xa9,
-	0x29, 0x12, 0x4c, 0x0a, 0x8c, 0x1a, 0x1c, 0x41, 0x70, 0xbe, 0x52, 0x36, 0x17, 0x57, 0x00, 0xdc,
-	0x5c, 0x90, 0xfe, 0x9c, 0xcc, 0xdc, 0xcc, 0x12, 0xb0, 0x7e, 0xd6, 0x20, 0x08, 0x47, 0x48, 0x8c,
-	0x8b, 0x2d, 0x3f, 0x2d, 0xad, 0x38, 0xb5, 0x04, 0xac, 0x9b, 0x35, 0x08, 0xca, 0x13, 0xd2, 0xe7,
-	0xe2, 0x2e, 0xce, 0x2f, 0x2a, 0x89, 0xcf, 0x07, 0x5b, 0x2e, 0xc1, 0xac, 0xc0, 0xa8, 0xc1, 0x6d,
-	0xc4, 0xa7, 0x57, 0x66, 0xa8, 0x87, 0x70, 0x52, 0x10, 0x57, 0x31, 0x9c, 0xed, 0xa4, 0x77, 0xe2,
-	0x91, 0x1c, 0xe3, 0x85, 0x47, 0x72, 0x8c, 0x0f, 0x1e, 0xc9, 0x31, 0xce, 0x78, 0x2c, 0xc7, 0xc0,
-	0x25, 0x91, 0x99, 0xaf, 0x57, 0x5c, 0x92, 0x98, 0x9c, 0x5d, 0x94, 0x5f, 0x01, 0xf1, 0x95, 0x5e,
-	0x62, 0x41, 0xa6, 0x5e, 0x99, 0x61, 0x14, 0x53, 0x99, 0x61, 0x12, 0x1b, 0x58, 0xc4, 0x18, 0x10,
-	0x00, 0x00, 0xff, 0xff, 0x99, 0x29, 0xff, 0x9d, 0x02, 0x01, 0x00, 0x00,
+	// 346 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x91, 0x41, 0x4a, 0xc3, 0x40,
+	0x14, 0x86, 0x3b, 0x89, 0xa9, 0xed, 0x4b, 0xa9, 0x61, 0x10, 0x0d, 0x2e, 0x42, 0xe8, 0xaa, 0x28,
+	0xa4, 0xa4, 0xe2, 0x01, 0x5a, 0x51, 0x70, 0x61, 0x2b, 0x69, 0x2b, 0xe2, 0xa6, 0x4c, 0xdb, 0x69,
+	0x18, 0xac, 0x99, 0x30, 0x33, 0x06, 0x7b, 0x13, 0x57, 0x9e, 0xc7, 0xa5, 0x47, 0x90, 0x7a, 0x11,
+	0x49, 0xd2, 0x34, 0x0a, 0xee, 0xde, 0x1f, 0xde, 0xf7, 0xfe, 0xff, 0xcf, 0xc0, 0x31, 0x89, 0x59,
+	0x27, 0xf1, 0x3b, 0x31, 0x09, 0x59, 0x44, 0x14, 0xe3, 0x91, 0x17, 0x0b, 0xae, 0x38, 0xd6, 0x12,
+	0xbf, 0x75, 0x0f, 0x66, 0x2f, 0x0c, 0x05, 0x0d, 0x89, 0xa2, 0xfd, 0x35, 0x3e, 0x83, 0x1a, 0x09,
+	0x43, 0x71, 0xfd, 0x12, 0xcd, 0x6d, 0xe4, 0xa2, 0x76, 0xb3, 0x7b, 0xe0, 0x25, 0xbe, 0x57, 0xac,
+	0x30, 0x1e, 0x05, 0xbb, 0x05, 0x7c, 0x02, 0xb5, 0x05, 0x93, 0x8a, 0x45, 0x73, 0x65, 0x6b, 0x2e,
+	0x6a, 0xd7, 0x82, 0x9d, 0x6e, 0x09, 0x80, 0x11, 0x17, 0x6a, 0x18, 0xa7, 0x0c, 0x3e, 0x04, 0x63,
+	0xc9, 0xe8, 0x6a, 0x91, 0xdd, 0xac, 0x07, 0xb9, 0x48, 0x79, 0x41, 0x13, 0x2a, 0x24, 0x5d, 0x14,
+	0x7c, 0xa1, 0x71, 0x17, 0x1a, 0xa4, 0xc8, 0x35, 0x9d, 0xad, 0x6d, 0xdd, 0x45, 0x6d, 0xf3, 0x6f,
+	0x18, 0xda, 0x5f, 0x07, 0x26, 0x29, 0x45, 0xeb, 0x1d, 0x01, 0xdc, 0xed, 0x4a, 0xa6, 0xa6, 0x2b,
+	0xf6, 0xcc, 0x54, 0x66, 0x6a, 0x04, 0xb9, 0xc0, 0x47, 0x50, 0xe5, 0xcb, 0xa5, 0xa4, 0x79, 0x64,
+	0x23, 0xd8, 0x2a, 0xdc, 0x01, 0x53, 0x72, 0xa1, 0xa6, 0x3c, 0x4b, 0xbc, 0xf5, 0x6b, 0xa6, 0x7e,
+	0x65, 0x8f, 0x00, 0x64, 0xd9, 0xc9, 0x87, 0xc6, 0x2f, 0x40, 0xda, 0x7b, 0xae, 0xfe, 0x0f, 0x61,
+	0x96, 0x84, 0x3c, 0xbd, 0x28, 0x7f, 0x76, 0x7a, 0xa1, 0x0e, 0xc6, 0x64, 0x30, 0xba, 0x1a, 0x5b,
+	0x95, 0x74, 0xbc, 0x1c, 0x4e, 0x06, 0x63, 0x0b, 0xe1, 0x7d, 0xd0, 0x6f, 0x6f, 0x06, 0x96, 0x96,
+	0x0d, 0xbd, 0x07, 0x4b, 0xef, 0x7b, 0x1f, 0x1b, 0x07, 0x7d, 0x6e, 0x1c, 0xf4, 0xb5, 0x71, 0xd0,
+	0xdb, 0xb7, 0x53, 0x01, 0x9b, 0x71, 0x4f, 0x2a, 0x32, 0x7f, 0x12, 0xfc, 0x35, 0x7f, 0x4c, 0x8f,
+	0xc4, 0xcc, 0x4b, 0xfc, 0x47, 0x2d, 0xf1, 0x67, 0xd5, 0xec, 0xcb, 0xf9, 0x4f, 0x00, 0x00, 0x00,
+	0xff, 0xff, 0xa1, 0xa3, 0x9b, 0x02, 0xf9, 0x01, 0x00, 0x00,
+}
+
+func (m *AggregateBy) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AggregateBy) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AggregateBy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Distinct {
+		i--
+		if m.Distinct {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.AggrFunc != 0 {
+		i = encodeVarintPagination(dAtA, i, uint64(m.AggrFunc))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *SortOption) Marshal() (dAtA []byte, err error) {
@@ -215,6 +391,18 @@ func (m *SortOption) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.AggregateBy != nil {
+		{
+			size, err := m.AggregateBy.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintPagination(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
 	}
 	if m.Reversed {
 		i--
@@ -260,6 +448,20 @@ func (m *Pagination) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if len(m.SortOptions) > 0 {
+		for iNdEx := len(m.SortOptions) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.SortOptions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintPagination(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x22
+		}
+	}
 	if m.SortOption != nil {
 		{
 			size, err := m.SortOption.MarshalToSizedBuffer(dAtA[:i])
@@ -296,6 +498,24 @@ func encodeVarintPagination(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *AggregateBy) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.AggrFunc != 0 {
+		n += 1 + sovPagination(uint64(m.AggrFunc))
+	}
+	if m.Distinct {
+		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *SortOption) Size() (n int) {
 	if m == nil {
 		return 0
@@ -308,6 +528,10 @@ func (m *SortOption) Size() (n int) {
 	}
 	if m.Reversed {
 		n += 2
+	}
+	if m.AggregateBy != nil {
+		l = m.AggregateBy.Size()
+		n += 1 + l + sovPagination(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -331,6 +555,12 @@ func (m *Pagination) Size() (n int) {
 		l = m.SortOption.Size()
 		n += 1 + l + sovPagination(uint64(l))
 	}
+	if len(m.SortOptions) > 0 {
+		for _, e := range m.SortOptions {
+			l = e.Size()
+			n += 1 + l + sovPagination(uint64(l))
+		}
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -342,6 +572,96 @@ func sovPagination(x uint64) (n int) {
 }
 func sozPagination(x uint64) (n int) {
 	return sovPagination(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *AggregateBy) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowPagination
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AggregateBy: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AggregateBy: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AggrFunc", wireType)
+			}
+			m.AggrFunc = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPagination
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AggrFunc |= Aggregation(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Distinct", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPagination
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Distinct = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipPagination(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthPagination
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *SortOption) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -424,6 +744,42 @@ func (m *SortOption) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.Reversed = bool(v != 0)
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AggregateBy", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPagination
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthPagination
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthPagination
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.AggregateBy == nil {
+				m.AggregateBy = &AggregateBy{}
+			}
+			if err := m.AggregateBy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipPagination(dAtA[iNdEx:])
@@ -546,6 +902,40 @@ func (m *Pagination) Unmarshal(dAtA []byte) error {
 				m.SortOption = &SortOption{}
 			}
 			if err := m.SortOption.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SortOptions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPagination
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthPagination
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthPagination
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SortOptions = append(m.SortOptions, &SortOption{})
+			if err := m.SortOptions[len(m.SortOptions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

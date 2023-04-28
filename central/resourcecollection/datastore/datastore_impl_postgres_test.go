@@ -32,7 +32,7 @@ type CollectionPostgresDataStoreTestSuite struct {
 	suite.Suite
 
 	ctx       context.Context
-	db        *postgres.DB
+	db        postgres.DB
 	gormDB    *gorm.DB
 	store     pgStore.Store
 	datastore DataStore

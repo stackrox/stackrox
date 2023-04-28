@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
-import StatusChip from 'Components/StatusChip';
+import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import RiskScore from 'Components/RiskScore';
 import Metadata from 'Components/Metadata';
 import entityTypes from 'constants/entityTypes';
@@ -69,7 +69,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
         <RiskScore key="risk-score" score={priority} />,
         <React.Fragment key="policy-status">
             <span className="pb-2">Policy status:</span>
-            <StatusChip status={status} size="large" />
+            <PolicyStatusIconText isPass={status === 'pass'} isTextOnly={false} />
         </React.Fragment>,
     ];
 

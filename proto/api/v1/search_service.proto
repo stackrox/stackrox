@@ -8,7 +8,7 @@ import "api/v1/pagination.proto";
 
 package v1;
 
-// Next available tag: 51
+// Next available tag: 52
 enum SearchCategory {
     SEARCH_UNSET              = 0;
     ALERTS                    = 1;
@@ -60,6 +60,7 @@ enum SearchCategory {
     COLLECTIONS               = 48;
     POLICY_CATEGORY_EDGE      = 49;
     PROCESS_LISTENING_ON_PORT = 50;
+    API_TOKEN                 = 51;
 }
 
 enum SearchDataType {
@@ -90,14 +91,15 @@ message RawSearchRequest {
 }
 
 message QuerySortOption {
-    string field    = 1;
-    bool   reversed = 2;
+    string      field        = 1;
+    bool        reversed     = 2;
     oneof search_after_opt {
         // search_after is alternative to offset for pagination.
         // Each value in search_after corresponds to a field. Only results following a record specified by a combination
         // of field+search_after values in specified sorting order will be returned.
-        string search_after = 3;
+        string  search_after = 3;
     }
+    AggregateBy aggregate_by = 4;
 }
 
 message QueryField {

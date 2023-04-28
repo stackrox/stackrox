@@ -5,8 +5,11 @@ package postgres
 import (
 	"context"
 	"testing"
+	"time"
 
+	"github.com/gogo/protobuf/types"
 	activeComponent "github.com/stackrox/rox/central/activecomponent/datastore"
+	alertStore "github.com/stackrox/rox/central/alert/datastore"
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterHealthPostgresStore "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -14,7 +17,9 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -133,4 +138,114 @@ func (s *PostgresPruningSuite) TestPruneClusterHealthStatuses() {
 	exists, err = clusterHealthStore.Exists(s.ctx, fixtureconsts.Cluster2)
 	s.Nil(err)
 	s.False(exists)
+}
+
+func (s *PostgresPruningSuite) TestGetOrphanedAlertIDs() {
+	alertDS, err := alertStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Nil(err)
+
+	deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Nil(err)
+
+	deploymentID := "2c507da1-b882-48cc-8143-b74e14c5cd4f"
+	s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID}))
+
+	orphanWindow := 30 * time.Minute
+	now := types.TimestampNow()
+	old := protoconv.ConvertTimeToTimestamp(time.Now().Add(-2 * orphanWindow))
+
+	cases := []struct {
+		name           string
+		alert          *storage.Alert
+		shouldBePruned bool
+	}{
+		{
+			name: "base",
+			alert: &storage.Alert{
+				Id:             uuid.NewV4().String(),
+				LifecycleStage: storage.LifecycleStage_DEPLOY,
+				State:          storage.ViolationState_ACTIVE,
+				Time:           old,
+				Entity: &storage.Alert_Deployment_{
+					Deployment: &storage.Alert_Deployment{
+						Id: "i-do-not-exist",
+					},
+				},
+			},
+			shouldBePruned: true,
+		},
+		{
+			name: "matches deployment id",
+			alert: &storage.Alert{
+				Id:             uuid.NewV4().String(),
+				LifecycleStage: storage.LifecycleStage_DEPLOY,
+				State:          storage.ViolationState_ACTIVE,
+				Time:           old,
+				Entity: &storage.Alert_Deployment_{
+					Deployment: &storage.Alert_Deployment{
+						Id: deploymentID,
+					},
+				},
+			},
+			shouldBePruned: false,
+		},
+		{
+			name: "not in orphan window",
+			alert: &storage.Alert{
+				Id:             uuid.NewV4().String(),
+				LifecycleStage: storage.LifecycleStage_DEPLOY,
+				State:          storage.ViolationState_ACTIVE,
+				Time:           now,
+				Entity: &storage.Alert_Deployment_{
+					Deployment: &storage.Alert_Deployment{
+						Id: "i-do-not-exist",
+					},
+				},
+			},
+			shouldBePruned: false,
+		},
+		{
+			name: "not the right state",
+			alert: &storage.Alert{
+				Id:             uuid.NewV4().String(),
+				LifecycleStage: storage.LifecycleStage_DEPLOY,
+				State:          storage.ViolationState_RESOLVED,
+				Time:           old,
+				Entity: &storage.Alert_Deployment_{
+					Deployment: &storage.Alert_Deployment{
+						Id: "i-do-not-exist",
+					},
+				},
+			},
+			shouldBePruned: false,
+		},
+		{
+			name: "not the right lifecycle",
+			alert: &storage.Alert{
+				Id:             uuid.NewV4().String(),
+				LifecycleStage: storage.LifecycleStage_RUNTIME,
+				State:          storage.ViolationState_RESOLVED,
+				Time:           old,
+				Entity: &storage.Alert_Deployment_{
+					Deployment: &storage.Alert_Deployment{
+						Id: "i-do-not-exist",
+					},
+				},
+			},
+			shouldBePruned: false,
+		},
+	}
+	for _, c := range cases {
+		s.Run(c.name, func() {
+			s.NoError(alertDS.UpsertAlert(s.ctx, c.alert))
+			idsToResolve, err := GetOrphanedAlertIDs(s.ctx, s.testDB.DB, orphanWindow)
+			s.NoError(err)
+			if c.shouldBePruned {
+				s.Contains(idsToResolve, c.alert.Id)
+			} else {
+				s.NotContains(idsToResolve, c.alert.Id)
+			}
+			s.NoError(alertDS.DeleteAlerts(s.ctx, c.alert.GetId()))
+		})
+	}
 }

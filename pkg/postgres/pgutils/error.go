@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/set"
+	"golang.org/x/net/context"
 )
 
 var transientPGCodes = set.NewFrozenStringSet(
@@ -49,6 +50,16 @@ var transientPGCodes = set.NewFrozenStringSet(
 
 // IsTransientError specifies if the passed error is transient and should be retried
 func IsTransientError(err error) bool {
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false
+	}
+	if multiError := (*errorhelpers.ErrorList)(nil); errors.As(err, &multiError) {
+		for _, err := range multiError.Errors() {
+			if IsTransientError(err) {
+				return true
+			}
+		}
+	}
 	if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) {
 		return transientPGCodes.Contains(pgErr.Code)
 	}
@@ -58,13 +69,19 @@ func IsTransientError(err error) bool {
 	if errorhelpers.IsAny(err, pgx.ErrNoRows, pgx.ErrTxClosed, pgx.ErrTxCommitRollback) {
 		return false
 	}
-	if netErr := (*net.OpError)(nil); errors.As(err, &netErr) {
-		if netErr.Temporary() || netErr.Timeout() {
-			return true
-		}
-		return errorhelpers.IsAny(err, syscall.ECONNREFUSED, syscall.ECONNRESET, syscall.ECONNABORTED, syscall.EPIPE)
+	if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+		return true
 	}
-	return errorhelpers.IsAny(err, io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe)
+	if errorhelpers.IsAny(err, context.DeadlineExceeded) {
+		return true
+	}
+	if errorhelpers.IsAny(err, io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe, syscall.ECONNREFUSED, syscall.ECONNRESET, syscall.ECONNABORTED, syscall.EPIPE) {
+		return true
+	}
+	if err := errors.Unwrap(err); err != nil {
+		return IsTransientError(err)
+	}
+	return false
 }
 
 const (

@@ -18,7 +18,7 @@ import {
     riskPath,
     searchPath,
     apidocsPath,
-    accessControlPathV2,
+    accessControlPath,
     userBasePath,
     systemConfigPath,
     systemHealthPath,
@@ -38,7 +38,7 @@ import PageTitle from 'Components/PageTitle';
 import ErrorBoundary from 'Containers/ErrorBoundary';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import { analyticsPageVisit } from 'utils/analytics';
+import useAnalytics from 'hooks/useAnalytics';
 
 function NotFoundPage(): ReactElement {
     return (
@@ -101,9 +101,10 @@ type BodyProps = {
 
 function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement {
     const location = useLocation();
+    const { analyticsPageVisit } = useAnalytics();
     useEffect(() => {
-        analyticsPageVisit('visit', location.pathname);
-    }, [location]);
+        analyticsPageVisit('Page Viewed', '', { path: location.pathname });
+    }, [location, analyticsPageVisit]);
 
     const { isDarkMode } = useTheme();
 
@@ -142,7 +143,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         <Route path={collectionsPath} component={AsyncCollectionsPage} />
                     )}
                     <Route path={riskPath} component={AsyncRiskPage} />
-                    <Route path={accessControlPathV2} component={AsyncAccessControlPageV2} />
+                    <Route path={accessControlPath} component={AsyncAccessControlPageV2} />
                     <Route path={searchPath} component={AsyncSearchPage} />
                     <Route path={apidocsPath} component={AsyncApiDocsPage} />
                     <Route path={userBasePath} component={AsyncUserPage} />

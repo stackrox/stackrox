@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/central"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/completion"
+	"github.com/stackrox/rox/roxctl/declarativeconfig"
 	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/generate"
 	"github.com/stackrox/rox/roxctl/helm"
@@ -26,8 +28,9 @@ import (
 
 func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use:  "version",
-		Args: cobra.NoArgs,
+		Use:   "version",
+		Short: "Display the current roxctl version.",
+		Args:  cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
 			if useJSON, _ := c.Flags().GetBool("json"); useJSON {
 				enc := json.NewEncoder(cliEnvironment.InputOutput().Out())
@@ -78,6 +81,9 @@ func Command() *cobra.Command {
 	)
 	if features.RoxctlNetpolGenerate.Enabled() {
 		c.AddCommand(generate.Command(cliEnvironment))
+	}
+	if env.DeclarativeConfiguration.BooleanSetting() {
+		c.AddCommand(declarativeconfig.Command(cliEnvironment))
 	}
 
 	return c

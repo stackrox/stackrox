@@ -32,6 +32,9 @@ func TestRequiredMetaValuesArePresent(t *testing.T) {
 			assert.NotEmpty(t, metaVals.CollectorSlimImageRemote)
 			assert.NotEmpty(t, metaVals.CollectorFullImageTag)
 			assert.NotEmpty(t, metaVals.CollectorSlimImageTag)
+			assert.NotEmpty(t, metaVals.ScannerSlimImageRemote)
+			assert.NotEmpty(t, metaVals.ScannerImageRemote)
+			assert.NotEmpty(t, metaVals.ScannerImageTag)
 			assert.NotEmpty(t, metaVals.ChartRepo.URL)
 			assert.NotNil(t, metaVals.ImagePullSecrets)
 

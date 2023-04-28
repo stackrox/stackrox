@@ -5,10 +5,10 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-var (
-	// ViolationTimeSortOption is a search options for alerts
-	ViolationTimeSortOption = &v1.QuerySortOption{
+// GetViolationTimeSortOption returns the commonly used violation time sort option
+func GetViolationTimeSortOption() *v1.QuerySortOption {
+	return &v1.QuerySortOption{
 		Field:    search.ViolationTime.String(),
 		Reversed: true,
 	}
-)
+}

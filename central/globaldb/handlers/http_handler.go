@@ -32,7 +32,7 @@ const (
 )
 
 // BackupDB is a handler that writes a consistent view of the databases to the HTTP response.
-func BackupDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, postgresDB *postgres.DB, backupListener listener.BackupListener, includeCerts bool) http.Handler {
+func BackupDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, postgresDB postgres.DB, backupListener listener.BackupListener, includeCerts bool) http.Handler {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return dumpDB(postgresDB, backupListener, includeCerts)
 	}
@@ -122,7 +122,7 @@ func serializeDB(rocksDB *rocksdb.RocksDB, boltDB *bolt.DB, backupListener liste
 	}
 }
 
-func dumpDB(postgresDB *postgres.DB, backupListener listener.BackupListener, includeCerts bool) http.HandlerFunc {
+func dumpDB(postgresDB postgres.DB, backupListener listener.BackupListener, includeCerts bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		log.Info("Starting Postgres DB backup ...")
 		filename := time.Now().Format(pgFileFormat)

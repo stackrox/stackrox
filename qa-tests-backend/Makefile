@@ -3,6 +3,8 @@ all: style test
 
 GRADLE := ./gradlew
 GRADLE_TEST_ARGS =
+# Stop testing after the first test failure by defining FAIL_FAST. (Can be
+# achieved on a PR with a ci-fail-fast label)
 ifdef FAIL_FAST
 GRADLE_TEST_ARGS = --fail-fast
 endif

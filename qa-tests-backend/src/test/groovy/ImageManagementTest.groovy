@@ -13,6 +13,8 @@ import services.PolicyService
 
 import spock.lang.Tag
 import spock.lang.Unroll
+import spock.lang.IgnoreIf
+import util.Env
 
 class ImageManagementTest extends BaseSpecification {
 
@@ -48,18 +50,18 @@ class ImageManagementTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        policy                            | imageRegistry | imageRemote              | imageTag     | note
-        "Latest tag"                      | "docker.io"   | "library/nginx"          | "latest"     | ""
+        policy                            | imageRegistry | imageRemote                      | imageTag     | note
+        "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | ""
         //intentionally use the same policy twice to make sure alert count does not increment
-        "Latest tag"                      | "docker.io"   | "library/nginx"          | "latest"     | "(repeat)"
-        "90-Day Image Age"                | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
+        "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | "(repeat)"
+        "90-Day Image Age"                | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
         // verify Azure registry
-        // "90-Day Image Age"                | "stackroxacr.azurecr.io" | "nginx"                  | "1.12"   | ""
-        "Ubuntu Package Manager in Image" | "quay.io"   | "rhacs-eng/qa-multi-arch"            | "struts-app" | ""
-        "Curl in Image"                   | "quay.io"   | "rhacs-eng/qa-multi-arch"            | "struts-app" | ""
-        "Fixable CVSS >= 7"               | "quay.io"   | "rhacs-eng/qa-multi-arch"            | "nginx-1.12" | ""
-        "Wget in Image"                   | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
-        "Apache Struts: CVE-2017-5638"    | "quay.io"   | "rhacs-eng/qa-multi-arch"            | "struts-app" | ""
+        // "90-Day Image Age"             | "stackroxacr.azurecr.io" | "nginx"               | "1.12"       | ""
+        "Ubuntu Package Manager in Image" | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
+        "Curl in Image"                   | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
+        "Fixable CVSS >= 7"               | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "nginx-1.12" | ""
+        "Wget in Image"                   | "quay.io"     | "rhacs-eng/qa"                   | "struts-app" | ""
+        "Apache Struts: CVE-2017-5638"    | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
     }
 
     @Tag("BAT")
@@ -67,11 +69,13 @@ class ImageManagementTest extends BaseSpecification {
         given:
         // Scan an ubuntu 14:04 image we're pretending is latest
         def img = Services.scanImage(
-            "docker.io/library/ubuntu:latest@sha256:ffc76f71dd8be8c9e222d420dc96901a07b61616689a44c7b3ef6a10b7213de4")
+            "quay.io/rhacs-eng/qa-multi-arch:ubuntu-latest" +
+                "@sha256:64483f3496c1373bfd55348e88694d1c4d0c9b660dee6bfef5e12f43b9933b30") // 14.04
         assert img.scan.componentsList.stream().find { x -> x.name == "eglibc" } != null
 
         img = Services.scanImage(
-             "docker.io/library/ubuntu:latest@sha256:3235326357dfb65f1781dbc4df3b834546d8bf914e82cce58e6e6b676e23ce8f")
+            "quay.io/rhacs-eng/qa-multi-arch:ubuntu-latest" +
+                "@sha256:1f1a2d56de1d604801a9671f301190704c25d604a416f59e03c04f5c6ffee0d6") // 16.04
 
         expect:
         assert img.scan != null
@@ -126,14 +130,18 @@ class ImageManagementTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        policy       | imageRegistry | imageRemote       | imageTag | excludedscopes | expectedViolation
-        "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["docker.io"]                         | false
-        "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["docker.io/library"]                 | false
-        "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["docker.io/library/busybox"]         | false
-        "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["docker.io/library/busybox:latest"]  | false
-        "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["other"]                             | true
-        "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["docker.io/library/busybox:1.10"]    | true
-        "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["library/busybox:1.10"]              | true
+        policy       | imageRegistry | imageRemote            | imageTag | excludedscopes | expectedViolation
+        "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" | ["quay.io"]           | false
+        "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" | ["quay.io/rhacs-eng"] | false
+        "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" |
+                      ["quay.io/rhacs-eng/qa-multi-arch-busybox"]        | false
+        "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" |
+                      ["quay.io/rhacs-eng/qa-multi-arch-busybox:latest"] | false
+        "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" | ["other"]             | true
+        "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" |
+                      ["quay.io/rhacs-eng/qa-multi-arch-busybox:1.30"]   | true
+        "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" |
+                      ["rhacs-eng/qa-multi-arch-busybox:1.30"]           | true
     }
 
     @Tag("Integration")
@@ -251,7 +259,7 @@ class ImageManagementTest extends BaseSpecification {
     def "Verify image scan results when CVEs are suppressed: "() {
         given:
         "Scan image"
-        def image = ImageService.scanImage("library/nginx:1.10", true)
+        def image = ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12", true)
         assert hasOpenSSLVuln(image)
 
         image = ImageService.getImage(image.id, true)
@@ -261,10 +269,10 @@ class ImageManagementTest extends BaseSpecification {
         CVEService.suppressImageCVE(cve)
 
         when:
-        def scanIncludeSnoozed = ImageService.scanImage("library/nginx:1.10", true)
+        def scanIncludeSnoozed = ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12", true)
         assert hasOpenSSLVuln(scanIncludeSnoozed)
 
-        def scanExcludedSnoozed = ImageService.scanImage("library/nginx:1.10", false)
+        def scanExcludedSnoozed = ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12", false)
         assert !hasOpenSSLVuln(scanExcludedSnoozed)
 
         def getIncludeSnoozed  = ImageService.getImage(image.id, true)
@@ -275,7 +283,7 @@ class ImageManagementTest extends BaseSpecification {
 
         CVEService.unsuppressImageCVE(cve)
 
-        def unsuppressedScan = ImageService.scanImage("library/nginx:1.10", false)
+        def unsuppressedScan = ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12", false)
         def unsuppressedGet  = ImageService.getImage(image.id, false)
 
         then:
@@ -290,6 +298,7 @@ class ImageManagementTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("Integration")
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify CI/CD Integration Endpoint with notifications"() {
         when:
         "Update policy to build time, create notifier and add it to policy"

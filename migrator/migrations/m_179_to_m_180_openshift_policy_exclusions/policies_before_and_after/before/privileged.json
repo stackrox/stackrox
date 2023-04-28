@@ -1,0 +1,131 @@
+{
+  "id": "fe9de18b-86db-44d5-a7c4-74173ccffe2e",
+  "name": "Privileged Container",
+  "description": "Alert on deployments with containers running in privileged mode",
+  "rationale": "Containers running as privileged represent greater post-exploitation risk by allowing an attacker to access all host devices, run a daemon in the container, etc.",
+  "remediation": "Verify that privileged capabilities are required and cannot be provided with a subset of other controls.",
+  "categories": [
+    "Privileges",
+    "Docker CIS"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on the stackrox namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-node namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-node"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-sdn namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-sdn"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-kube-apiserver namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-apiserver"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-etcd namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-etcd"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-apiserver namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-apiserver"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-dns namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-dns"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-cluster-node-tuning-operator namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-cluster-node-tuning-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-cluster-csi-drivers namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-machine-config-operator namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-machine-config-operator"
+        }
+      }
+    }
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Privileged Container",
+          "values": [
+            {
+              "value": "true"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

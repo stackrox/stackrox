@@ -71,13 +71,13 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db                 *postgres.DB
+	db                 postgres.DB
 	noUpdateTimestamps bool
 	keyFence           concurrency.KeyFence
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB, noUpdateTimestamps bool, keyFence concurrency.KeyFence) Store {
+func New(db postgres.DB, noUpdateTimestamps bool, keyFence concurrency.KeyFence) Store {
 	return &storeImpl{
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
@@ -463,32 +463,25 @@ func removeOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error {
 	return nil
 }
 
-func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, bool, error) {
+func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, error) {
 	oldNode, found, err := s.GetNodeMetadata(ctx, node.GetId())
 	if err != nil {
-		return false, false, err
+		return false, err
 	}
 	if !found {
-		return true, true, nil
+		return true, nil
 	}
-
-	scanUpdated := false
-	// We skip rewriting components and cves if scan is not newer, hence we do not need to merge.
-	if oldNode.GetScan().GetScanTime().Compare(node.GetScan().GetScanTime()) > 0 {
-		node.Scan = oldNode.Scan
-	} else {
-		scanUpdated = true
-	}
-
-	// If the node in the DB is latest, then use its risk score and scan stats
+	// We skip rewriting components and vulnerabilities if the node scan is older.
+	scanUpdated := oldNode.GetScan().GetScanTime().Compare(node.GetScan().GetScanTime()) <= 0
 	if !scanUpdated {
+		node.Scan = oldNode.Scan
 		node.RiskScore = oldNode.GetRiskScore()
 		node.SetComponents = oldNode.GetSetComponents()
 		node.SetCves = oldNode.GetSetCves()
 		node.SetFixable = oldNode.GetSetFixable()
 		node.SetTopCvss = oldNode.GetSetTopCvss()
 	}
-	return true, scanUpdated, nil
+	return scanUpdated, nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
@@ -497,12 +490,9 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
 	if !s.noUpdateTimestamps {
 		obj.LastUpdated = iTime
 	}
-	metadataUpdated, scanUpdated, err := s.isUpdated(ctx, obj)
+	scanUpdated, err := s.isUpdated(ctx, obj)
 	if err != nil {
 		return err
-	}
-	if !metadataUpdated && !scanUpdated {
-		return nil
 	}
 
 	nodeParts := getPartsAsSlice(common.Split(obj, scanUpdated))
@@ -985,7 +975,7 @@ func (s *storeImpl) retryableGetManyNodeMetadata(ctx context.Context, ids []stri
 //// Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, _ testing.TB, db *postgres.DB, gormDB *gorm.DB, noUpdateTimestamps bool) Store {
+func CreateTableAndNewStore(ctx context.Context, _ testing.TB, db postgres.DB, gormDB *gorm.DB, noUpdateTimestamps bool) Store {
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableClustersStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodesStmt)
 	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentsStmt)
@@ -995,7 +985,7 @@ func CreateTableAndNewStore(ctx context.Context, _ testing.TB, db *postgres.DB, 
 	return New(db, noUpdateTimestamps, concurrency.NewKeyFence())
 }
 
-func dropTableNodes(ctx context.Context, db *postgres.DB) {
+func dropTableNodes(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS nodes CASCADE")
 	dropTableNodesTaints(ctx, db)
 	dropTableNodesComponents(ctx, db)
@@ -1004,28 +994,28 @@ func dropTableNodes(ctx context.Context, db *postgres.DB) {
 	dropTableComponentCVEEdges(ctx, db)
 }
 
-func dropTableNodesTaints(ctx context.Context, db *postgres.DB) {
+func dropTableNodesTaints(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS nodes_taints CASCADE")
 }
 
-func dropTableNodesComponents(ctx context.Context, db *postgres.DB) {
+func dropTableNodesComponents(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeComponentsTable+" CASCADE")
 }
 
-func dropTableNodeCVEs(ctx context.Context, db *postgres.DB) {
+func dropTableNodeCVEs(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeCVEsTable+" CASCADE")
 }
 
-func dropTableComponentCVEEdges(ctx context.Context, db *postgres.DB) {
+func dropTableComponentCVEEdges(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+componentCVEEdgesTable+" CASCADE")
 }
 
-func dropTableNodeComponentEdges(ctx context.Context, db *postgres.DB) {
+func dropTableNodeComponentEdges(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeComponentEdgesTable+" CASCADE")
 }
 
 // Destroy drops all node tree tables.
-func Destroy(ctx context.Context, db *postgres.DB) {
+func Destroy(ctx context.Context, db postgres.DB) {
 	dropTableNodes(ctx, db)
 }
 

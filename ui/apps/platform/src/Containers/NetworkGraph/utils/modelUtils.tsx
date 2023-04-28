@@ -1,5 +1,8 @@
 import { EdgeStyle, EdgeTerminalType, NodeShape } from '@patternfly/react-topology';
 
+import derivedNamespaceSVG from 'images/network-graph/derived-namespace.svg';
+import filteredNamespaceSVG from 'images/network-graph/filtered-namespace.svg';
+
 import {
     DeploymentNetworkEntityInfo,
     ExternalSourceNetworkEntityInfo,
@@ -11,6 +14,14 @@ import {
     EdgeProperties,
 } from 'types/networkFlow.proto';
 import { ensureExhaustive } from 'utils/type.utils';
+import {
+    cidrBlockBadgeColor,
+    cidrBlockBadgeText,
+    deploymentBadgeColor,
+    deploymentBadgeText,
+    namespaceBadgeColor,
+    namespaceBadgeText,
+} from '../common/NetworkGraphIcons';
 import {
     CustomModel,
     CustomNodeModel,
@@ -28,7 +39,7 @@ import {
 import { protocolLabel } from './flowUtils';
 
 export const graphModel = {
-    id: 'stackrox-active-graph',
+    id: 'stackrox-graph',
     type: 'graph',
     layout: 'ColaNoForce',
 };
@@ -45,7 +56,8 @@ function getBaseNode(id: string): CustomNodeModel {
 function getNamespaceNode(
     namespace: string,
     cluster: string,
-    deploymentId: string
+    deploymentId: string,
+    isFilteredNamespace: boolean
 ): NamespaceNodeModel {
     const namespaceData: NamespaceData = {
         collapsible: true,
@@ -53,6 +65,13 @@ function getNamespaceNode(
         type: 'NAMESPACE',
         namespace,
         cluster,
+        isFilteredNamespace,
+        labelIconClass: isFilteredNamespace ? filteredNamespaceSVG : derivedNamespaceSVG,
+        isFadedOut: false,
+        badge: namespaceBadgeText,
+        badgeColor: namespaceBadgeColor,
+        badgeTextColor: '#FFFFFF',
+        badgeBorderColor: '#FFFFFF',
     };
     return {
         id: namespace,
@@ -70,6 +89,7 @@ function getExternalGroupNode(): ExternalGroupNodeModel {
         collapsible: true,
         showContextMenu: false,
         type: 'EXTERNAL_GROUP',
+        isFadedOut: false,
     };
     return {
         id: 'External to cluster',
@@ -86,7 +106,8 @@ function getDeploymentNodeModel(
     entity: DeploymentNetworkEntityInfo,
     policyIds: string[],
     networkPolicyState: NetworkPolicyState,
-    isExternallyConnected: boolean
+    isExternallyConnected: boolean,
+    isFiltered: boolean
 ): DeploymentNodeModel {
     const baseNode = getBaseNode(entity.id) as DeploymentNodeModel;
     return {
@@ -100,6 +121,11 @@ function getDeploymentNodeModel(
             isExternallyConnected,
             showExternalState: true,
             isFadedOut: false,
+            labelIconClass: isFiltered ? filteredNamespaceSVG : '',
+            badge: deploymentBadgeText,
+            badgeColor: deploymentBadgeColor,
+            badgeTextColor: '#FFFFFF',
+            badgeBorderColor: '#FFFFFF',
         },
     };
 }
@@ -122,7 +148,16 @@ function getExternalNodeModel(
                 ...baseNode,
                 shape: NodeShape.rect,
                 label: entity.externalSource.name,
-                data: { ...entity, type: 'CIDR_BLOCK', outEdges, isFadedOut: false },
+                data: {
+                    ...entity,
+                    type: 'CIDR_BLOCK',
+                    outEdges,
+                    isFadedOut: false,
+                    badge: cidrBlockBadgeText,
+                    badgeColor: cidrBlockBadgeColor,
+                    badgeTextColor: '#FFFFFF',
+                    badgeBorderColor: '#FFFFFF',
+                },
             };
         default:
             return ensureExhaustive(entity);
@@ -134,7 +169,8 @@ function getNodeModel(
     policyIds: string[],
     networkPolicyState: NetworkPolicyState,
     isExternallyConnected: boolean,
-    outEdges: OutEdges
+    outEdges: OutEdges,
+    isDeploymentFiltered: boolean
 ): CustomNodeModel {
     switch (entity.type) {
         case 'DEPLOYMENT':
@@ -142,7 +178,8 @@ function getNodeModel(
                 entity,
                 policyIds,
                 networkPolicyState,
-                isExternallyConnected
+                isExternallyConnected,
+                isDeploymentFiltered
             );
         case 'EXTERNAL_SOURCE':
         case 'INTERNET':
@@ -189,7 +226,9 @@ function mergePortProtocolEdgeLabels(firstLabel: string, secondLabel = ''): stri
 
 export function transformActiveData(
     nodes: Node[],
-    policyNodeMap: Record<string, DeploymentNodeModel>
+    policyNodeMap: Record<string, DeploymentNodeModel>,
+    filteredNamespaces: string[],
+    filteredDeployments: string[]
 ): {
     activeDataModel: CustomModel;
     activeEdgeMap: Record<string, CustomEdgeModel>;
@@ -222,15 +261,23 @@ export function transformActiveData(
             if (namespaceNode && namespaceNode?.children) {
                 namespaceNode?.children.push(id);
             } else {
-                namespaceNodes[namespace] = getNamespaceNode(namespace, cluster, id);
+                const isNamespaceFiltered = filteredNamespaces.includes(namespace);
+                namespaceNodes[namespace] = getNamespaceNode(
+                    namespace,
+                    cluster,
+                    id,
+                    isNamespaceFiltered
+                );
             }
 
             // creating deployment nodes
+            const isDeploymentFiltered = filteredDeployments.includes(entity.deployment.name);
             const deploymentNode = getDeploymentNodeModel(
                 entity,
                 policyIds,
                 networkPolicyState,
-                isExternallyConnected
+                isExternallyConnected,
+                isDeploymentFiltered
             );
 
             deploymentNodes[id] = deploymentNode;
@@ -349,7 +396,10 @@ function getNetworkPolicyState(
 // external connections can only be active, so this is hard coded to false
 const POLICY_NODE_EXTERNALLY_CONNECTED_VALUE = false;
 
-export function transformPolicyData(nodes: Node[]): {
+export function transformPolicyData(
+    nodes: Node[],
+    filteredDeployments: string[]
+): {
     policyDataModel: CustomModel;
     policyNodeMap: Record<string, DeploymentNodeModel>;
 } {
@@ -365,12 +415,17 @@ export function transformPolicyData(nodes: Node[]): {
     nodes.forEach((policyNode) => {
         const { entity, policyIds, outEdges, nonIsolatedEgress, nonIsolatedIngress } = policyNode;
         const networkPolicyState = getNetworkPolicyState(nonIsolatedEgress, nonIsolatedIngress);
+        const isDeploymentFiltered =
+            entity.type === 'DEPLOYMENT'
+                ? filteredDeployments.includes(entity.deployment.name)
+                : false;
         const node = getNodeModel(
             entity,
             policyIds,
             networkPolicyState,
             POLICY_NODE_EXTERNALLY_CONNECTED_VALUE,
-            outEdges
+            outEdges,
+            isDeploymentFiltered
         );
         if (!policyNodeMap[node.id]) {
             policyNodeMap[node.id] = node as DeploymentNodeModel;
@@ -436,7 +491,8 @@ export function transformPolicyData(nodes: Node[]): {
 export function createExtraneousFlowsModel(
     policyDataModel: CustomModel,
     activeNodeMap: Record<string, CustomNodeModel>,
-    activeEdgeMap: Record<string, CustomEdgeModel>
+    activeEdgeMap: Record<string, CustomEdgeModel>,
+    filteredNamespaces: string[]
 ): CustomModel {
     const extraneousDataModel = {
         graph: graphModel,
@@ -513,7 +569,13 @@ export function createExtraneousFlowsModel(
             if (namespaceNode && namespaceNode?.children) {
                 namespaceNode?.children.push(id);
             } else {
-                namespaceNodes[namespace] = getNamespaceNode(namespace, cluster, id);
+                const isNamespaceFiltered = filteredNamespaces.includes(namespace);
+                namespaceNodes[namespace] = getNamespaceNode(
+                    namespace,
+                    cluster,
+                    id,
+                    isNamespaceFiltered
+                );
             }
         }
 

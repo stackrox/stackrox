@@ -16,80 +16,87 @@ import spock.lang.Timeout
 
 @Retry(count = 0)
 class NetworkBaselineTest extends BaseSpecification {
-    static final private String SERVER_DEP_NAME = "net-bl-server"
-    static final private String BASELINED_CLIENT_DEP_NAME = "net-bl-client-baselined"
-    static final private String USER_DEP_NAME = "net-bl-user-server"
-    static final private String BASELINED_USER_CLIENT_DEP_NAME = "net-bl-user-client-baselined"
-    static final private String ANOMALOUS_CLIENT_DEP_NAME = "net-bl-client-anomalous"
-    static final private String DEFERRED_BASELINED_CLIENT_DEP_NAME = "net-bl-client-deferred-baselined"
-    static final private String DEFERRED_POST_LOCK_DEP_NAME = "net-bl-client-post-lock"
+    private static final String SERVER_DEP_NAME = "net-bl-server"
+    private static final String BASELINED_CLIENT_DEP_NAME = "net-bl-client-baselined"
+    private static final String USER_DEP_NAME = "net-bl-user-server"
+    private static final String BASELINED_USER_CLIENT_DEP_NAME = "net-bl-user-client-baselined"
+    private static final String ANOMALOUS_CLIENT_DEP_NAME = "net-bl-client-anomalous"
+    private static final String DEFERRED_BASELINED_CLIENT_DEP_NAME = "net-bl-client-deferred-baselined"
+    private static final String DEFERRED_POST_LOCK_DEP_NAME = "net-bl-client-post-lock"
+    private static final String DATE_CMD = "date -Iseconds"
 
-    static final private String NGINX_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine"
+    private static final String NGINX_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine"
 
     // The baseline generation duration must be changed from the default for this test to succeed.
-    static final private int EXPECTED_BASELINE_DURATION_SECONDS = 240
+    private static final int EXPECTED_BASELINE_DURATION_SECONDS = 240
 
-    static final private int CLOCK_SKEW_ALLOWANCE_SECONDS = 15
+    private static final int CLOCK_SKEW_ALLOWANCE_SECONDS = 15
 
-    static final private List<Deployment> DEPLOYMENTS = []
+    private static final List<Deployment> DEPLOYMENTS = []
 
-    static final private SERVER_DEP = createAndRegisterDeployment()
-                    .setName(SERVER_DEP_NAME)
-                    .setImage(NGINX_IMAGE)
-                    .addLabel("app", SERVER_DEP_NAME)
-                    .addPort(80)
-                    .setExposeAsService(true)
+    private static final SERVER_DEP = createAndRegisterDeployment()
+            .setName(SERVER_DEP_NAME)
+            .setImage(NGINX_IMAGE)
+            .addLabel("app", SERVER_DEP_NAME)
+            .addPort(80)
+            .setExposeAsService(true)
 
-    static final private BASELINED_CLIENT_DEP = createAndRegisterDeployment()
-                .setName(BASELINED_CLIENT_DEP_NAME)
-                .setImage(NGINX_IMAGE)
-                .addLabel("app", BASELINED_CLIENT_DEP_NAME)
-                .setCommand(["/bin/sh", "-c",])
-                .setArgs(
-                    ["for i in \$(seq 1 10); do wget -S http://${SERVER_DEP_NAME}; sleep 1; done; sleep 1000" as String]
-                )
+    private static final BASELINED_CLIENT_DEP = createAndRegisterDeployment()
+            .setName(BASELINED_CLIENT_DEP_NAME)
+            .setImage(NGINX_IMAGE)
+            .addLabel("app", BASELINED_CLIENT_DEP_NAME)
+            .setCommand(["/bin/sh", "-c",])
+            .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
+                              "for i in \$(seq 1 10); do wget --timeout=10 -S http://${SERVER_DEP_NAME};" +
+                              "sleep 1; done; sleep 1000" as String])
 
-    static final private USER_DEP = createAndRegisterDeployment()
-                    .setName(USER_DEP_NAME)
-                    .setImage(NGINX_IMAGE)
-                    .addLabel("app", USER_DEP_NAME)
-                    .addPort(80)
-                    .setExposeAsService(true)
+    private static final USER_DEP = createAndRegisterDeployment()
+            .setName(USER_DEP_NAME)
+            .setImage(NGINX_IMAGE)
+            .addLabel("app", USER_DEP_NAME)
+            .addPort(80)
+            .setExposeAsService(true)
 
-    static final private BASELINED_USER_CLIENT_DEP = createAndRegisterDeployment()
-                .setName(BASELINED_USER_CLIENT_DEP_NAME)
-                .setImage(NGINX_IMAGE)
-                .addLabel("app", BASELINED_USER_CLIENT_DEP_NAME)
-                .setCommand(["/bin/sh", "-c",])
-                .setArgs(["for i in \$(seq 1 10); do wget -S http://${USER_DEP_NAME};" +
-                    "sleep 1; done; sleep 1000" as String])
+    private static final BASELINED_USER_CLIENT_DEP = createAndRegisterDeployment()
+            .setName(BASELINED_USER_CLIENT_DEP_NAME)
+            .setImage(NGINX_IMAGE)
+            .addLabel("app", BASELINED_USER_CLIENT_DEP_NAME)
+            .setCommand(["/bin/sh", "-c",])
+            .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
+                              "for i in \$(seq 1 10); do wget --timeout=10 -S http://${USER_DEP_NAME};" +
+                              "sleep 1; done; sleep 1000" as String])
 
-    static final private ANOMALOUS_CLIENT_DEP = createAndRegisterDeployment()
-        .setName(ANOMALOUS_CLIENT_DEP_NAME)
-        .setImage(NGINX_IMAGE)
-        .addLabel("app", ANOMALOUS_CLIENT_DEP_NAME)
-        .setCommand(["/bin/sh", "-c",])
-        .setArgs(["echo sleeping; date; sleep ${EXPECTED_BASELINE_DURATION_SECONDS+30}; echo sleep done; date;" +
-                      "for i in \$(seq 1 10); do wget -S http://${SERVER_DEP_NAME}; sleep 1; done;" +
-                      "sleep 1000" as String,])
+    private static final ANOMALOUS_CLIENT_DEP = createAndRegisterDeployment()
+            .setName(ANOMALOUS_CLIENT_DEP_NAME)
+            .setImage(NGINX_IMAGE)
+            .addLabel("app", ANOMALOUS_CLIENT_DEP_NAME)
+            .setCommand(["/bin/sh", "-c",])
+            .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
+                              "echo sleeping; sleep ${EXPECTED_BASELINE_DURATION_SECONDS + 30}; echo sleep done;" +
+                              "${DATE_CMD};" +
+                              "for i in \$(seq 1 10); do wget --timeout=10 -S http://${SERVER_DEP_NAME}; " +
+                              "sleep 1; done;" +
+                              "sleep 1000" as String,])
 
-    static final private DEFERRED_BASELINED_CLIENT_DEP = createAndRegisterDeployment()
-        .setName(DEFERRED_BASELINED_CLIENT_DEP_NAME)
-        .setImage(NGINX_IMAGE)
-        .addLabel("app", DEFERRED_BASELINED_CLIENT_DEP_NAME)
-        .setCommand(["/bin/sh", "-c",])
-        .setArgs(["while sleep 1; " +
-                      "do wget -S http://${SERVER_DEP_NAME}; " +
-                      "done" as String,])
+    private static final DEFERRED_BASELINED_CLIENT_DEP = createAndRegisterDeployment()
+            .setName(DEFERRED_BASELINED_CLIENT_DEP_NAME)
+            .setImage(NGINX_IMAGE)
+            .addLabel("app", DEFERRED_BASELINED_CLIENT_DEP_NAME)
+            .setCommand(["/bin/sh", "-c",])
+            .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
+                              "while sleep 1; " +
+                              "do wget --timeout=10 -S http://${SERVER_DEP_NAME}; " +
+                              "done" as String,])
 
-    static final private DEFERRED_POST_LOCK_CLIENT_DEP = createAndRegisterDeployment()
-        .setName(DEFERRED_POST_LOCK_DEP_NAME)
-        .setImage(NGINX_IMAGE)
-        .addLabel("app", DEFERRED_POST_LOCK_DEP_NAME)
-        .setCommand(["/bin/sh", "-c",])
-        .setArgs(["while sleep 1; " +
-                      "do wget -S http://${SERVER_DEP_NAME}; " +
-                      "done" as String,])
+    private static final DEFERRED_POST_LOCK_CLIENT_DEP = createAndRegisterDeployment()
+            .setName(DEFERRED_POST_LOCK_DEP_NAME)
+            .setImage(NGINX_IMAGE)
+            .addLabel("app", DEFERRED_POST_LOCK_DEP_NAME)
+            .setCommand(["/bin/sh", "-c",])
+            .setArgs(["echo -n 'Startup time: '; ${DATE_CMD};" +
+                              "while sleep 1; " +
+                              "do wget --timeout=10 -S http://${SERVER_DEP_NAME}; " +
+                              "done" as String,])
 
     private static createAndRegisterDeployment() {
         Deployment deployment = new Deployment()

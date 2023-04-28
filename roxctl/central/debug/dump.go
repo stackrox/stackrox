@@ -24,7 +24,9 @@ func dumpCommand(cliEnvironment environment.Environment) *cobra.Command {
 	)
 
 	c := &cobra.Command{
-		Use: "dump",
+		Use:   "dump",
+		Short: "Download a bundle containing debug information for Central.",
+		Long:  "Download a bundle containing debug information for Central such as log files, memory, and CPU profiles. Bundle generation takes a few minutes.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			cliEnvironment.Logger().InfofLn("Retrieving debug metrics. This may take a couple of minutes...")
 			path := fmt.Sprintf("/debug/dump?logs=%t", withLogs)

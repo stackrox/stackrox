@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
+import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import RiskScore from 'Components/RiskScore';
-import StatusChip from 'Components/StatusChip';
 import entityTypes from 'constants/entityTypes';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import RecentlyDetectedImageVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedImageVulnerabilities';
@@ -74,7 +74,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         <RiskScore key="risk-score" score={priority} />,
         <React.Fragment key="policy-status">
             <span className="pb-2">Policy status:</span>
-            <StatusChip status={policyStatus} />
+            <PolicyStatusIconText isPass={policyStatus === 'pass'} isTextOnly={false} />
         </React.Fragment>,
     ];
     const currentEntity = { [entityTypes.DEPLOYMENT]: id };

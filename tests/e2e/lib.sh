@@ -6,8 +6,11 @@ set -euo pipefail
 # Test utility functions
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
+# shellcheck source=../../scripts/ci/lib.sh
 source "$TEST_ROOT/scripts/ci/lib.sh"
+# shellcheck source=../../scripts/ci/test_state.sh
 source "$TEST_ROOT/scripts/ci/test_state.sh"
 
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
@@ -23,6 +26,7 @@ deploy_stackrox() {
     export_central_basic_auth_creds
     wait_for_api
     setup_client_TLS_certs "${1:-}"
+    record_build_info
 
     deploy_sensor
     echo "Sensor deployed. Waiting for sensor to be up"
@@ -51,10 +55,11 @@ deploy_stackrox_with_custom_sensor() {
     export_central_basic_auth_creds
     wait_for_api
     setup_client_TLS_certs "${2:-}"
+    record_build_info
 
     # generate init bundle
     password_file="$ROOT/deploy/$ORCHESTRATOR_FLAVOR/central-deploy/password"
-    if [ ! -f "$password_file" ]; then 
+    if [ ! -f "$password_file" ]; then
         die "password file $password_file not found after deploying central"
     fi
     kubectl -n stackrox exec deploy/central -- roxctl --insecure-skip-tls-verify \
@@ -91,14 +96,21 @@ export_test_environment() {
 
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
-    ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
-    ci_export ROX_DECOMMISSIONED_CLUSTER_RETENTION "${ROX_DECOMMISSIONED_CLUSTER_RETENTION:-true}"
     ci_export ROX_NETWORK_GRAPH_PATTERNFLY "${ROX_NETWORK_GRAPH_PATTERNFLY:-true}"
     ci_export ROX_QUAY_ROBOT_ACCOUNTS "${ROX_QUAY_ROBOT_ACCOUNTS:-true}"
     ci_export ROX_SYSTEM_HEALTH_PF "${ROX_SYSTEM_HEALTH_PF:-true}"
     ci_export ROX_SYSLOG_EXTRA_FIELDS "${ROX_SYSLOG_EXTRA_FIELDS:-true}"
+    ci_export ROX_VULN_MGMT_REPORTING_ENHANCEMENTS "${ROX_VULN_MGMT_REPORTING_ENHANCEMENTS:-true}"
     ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
-    ci_export ROX_PROCESSES_LISTENING_ON_PORT "${ROX_PROCESSES_LISTENING_ON_PORT:-true}"
+
+    if [[ -z "${BUILD_TAG:-}" ]]; then
+        # TODO(ROX-16008): Remove this once the declarative config feature flag is enabled by default.
+        ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
+    fi
+
+    if is_in_PR_context && pr_has_label ci-fail-fast; then
+        ci_export FAIL_FAST "true"
+    fi
 }
 
 deploy_stackrox_operator() {
@@ -176,6 +188,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "'"${ROX_POSTGRES_DATASTORE:-false}"'"'
     customize_envVars+=$'\n      - name: ROX_PROCESSES_LISTENING_ON_PORT'
     customize_envVars+=$'\n        value: "'"${ROX_PROCESSES_LISTENING_ON_PORT:-true}"'"'
+    customize_envVars+=$'\n      - name: ROX_DECLARATIVE_CONFIGURATION'
+    customize_envVars+=$'\n        value: "'"${ROX_DECLARATIVE_CONFIGURATION:-true}"'"'
 
     env - \
       centralAdminPasswordBase64="$centralAdminPasswordBase64" \
@@ -272,6 +286,9 @@ deploy_sensor_via_operator() {
        kubectl -n stackrox set env deployment/sensor ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
        kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
     fi
+
+    # Every E2E test should have ROX_RESYNC_DISABLED="true"
+    kubectl -n stackrox set env deployment/sensor ROX_RESYNC_DISABLED="true"
 }
 
 export_central_basic_auth_creds() {
@@ -443,10 +460,8 @@ check_for_stackrox_OOMs() {
             if pod_name=$(jq -ser 'if . == [] then null else .[] | select(.kind=="Pod") | .metadata.name end' "$object"); then
                 info "Checking $pod_name for OOMKilled"
                 if jq -e '. | select(.status.containerStatuses[].lastState.terminated.reason=="OOMKilled")' "$object" >/dev/null 2>&1; then
-                    echo "OOM $object"
                     save_junit_failure "OOMCheck-$pod_name" "OOMCheck" "$pod_name was OOMKilled"
                 else
-                    echo "NOT OOM $object"
                     save_junit_success "OOMCheck-$pod_name" "$pod_name was not OOMKilled"
                 fi
             else
@@ -544,7 +559,7 @@ wait_for_api() {
     info "Waiting for Central to be ready"
 
     start_time="$(date '+%s')"
-    max_seconds=300
+    max_seconds=${MAX_WAIT_SECONDS:-300}
 
     while true; do
         central_json="$(kubectl -n stackrox get deploy/central -o json)"
@@ -590,7 +605,7 @@ wait_for_api() {
     NUM_SUCCESSES_IN_A_ROW=0
     SUCCESSES_NEEDED_IN_A_ROW=3
     # shellcheck disable=SC2034
-    for i in $(seq 1 40); do
+    for i in $(seq 1 60); do
         metadata="$(curl -sk --connect-timeout 5 --max-time 10 "${METADATA_URL}")"
         metadata_exitstatus="$?"
         status="$(echo "$metadata" | jq '.licenseStatus' -r)"
@@ -621,6 +636,41 @@ wait_for_api() {
     ci_export API_HOSTNAME "${API_HOSTNAME}"
     ci_export API_PORT "${API_PORT}"
     ci_export API_ENDPOINT "${API_ENDPOINT}"
+}
+
+record_build_info() {
+    _record_build_info || {
+        # Failure to gather metrics is not a test failure
+        info "WARNING: Job build info record failed"
+    }
+}
+
+_record_build_info() {
+    if ! is_CI; then
+        return
+    fi
+
+    local build_info
+
+    local metadata_url="https://${API_ENDPOINT}/v1/metadata"
+    local metadata
+    releaseBuild="$(curl -skS "${metadata_url}" | jq -r '.releaseBuild')"
+
+    if [[ "$releaseBuild" == "true" ]]; then
+        build_info="release"
+    else
+        build_info="dev"
+    fi
+
+    # -race debug builds - use the image tag as the most reliable way to
+    # determin the build under test.
+    local central_image
+    central_image="$(kubectl -n stackrox get deploy central -o json | jq -r '.spec.template.spec.containers[0].image')"
+    if [[ "${central_image}" =~ -rcd$ ]]; then
+        build_info="${build_info},-race"
+    fi
+
+    update_job_record "build" "${build_info}"
 }
 
 restore_56_1_backup() {

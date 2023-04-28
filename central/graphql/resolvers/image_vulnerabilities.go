@@ -277,6 +277,7 @@ func (resolver *imageCVEResolver) imageVulnerabilityScopeContext(ctx context.Con
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
+
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		ID:    resolver.data.GetId(),
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
@@ -490,6 +491,9 @@ func (resolver *imageCVEResolver) VulnerabilityState(ctx context.Context) string
 }
 
 func (resolver *imageCVEResolver) ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error) {
+	if !env.ActiveVulnMgmt.BooleanSetting() {
+		return &activeStateResolver{}, nil
+	}
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ActiveState")
 
 	if resolver.ctx == nil {

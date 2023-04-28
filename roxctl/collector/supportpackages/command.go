@@ -9,7 +9,8 @@ import (
 // Command defines the central command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "support-packages",
+		Use:   "support-packages",
+		Short: "Commands to upload support packages for Collector.",
 	}
 
 	c.AddCommand(

@@ -136,9 +136,13 @@ func (ss *serviceStore) OnNamespaceDeleted(ns string) {
 }
 
 func (ss *serviceStore) getMatchingServicesWithRoutes(namespace string, labels map[string]string) (matching []serviceWithRoutes) {
-	labelSet := k8sLabels.Set(labels)
 	ss.lock.RLock()
 	defer ss.lock.RUnlock()
+	return ss.getMatchingServicesWithRoutesNoLock(namespace, labels)
+}
+
+func (ss *serviceStore) getMatchingServicesWithRoutesNoLock(namespace string, labels map[string]string) (matching []serviceWithRoutes) {
+	labelSet := k8sLabels.Set(labels)
 	for _, entry := range ss.services[namespace] {
 		if entry.selector.Matches(selector.CreateLabelsWithLen(labelSet)) {
 			svcWithRoutes := serviceWithRoutes{
@@ -153,7 +157,9 @@ func (ss *serviceStore) getMatchingServicesWithRoutes(namespace string, labels m
 
 // GetExposureInfos returns all port exposure definition for services matching a namespace and a set of labels.
 func (ss *serviceStore) GetExposureInfos(namespace string, labels map[string]string) (result []map[service.PortRef][]*storage.PortConfig_ExposureInfo) {
-	for _, svc := range ss.getMatchingServicesWithRoutes(namespace, labels) {
+	ss.lock.Lock()
+	defer ss.lock.Unlock()
+	for _, svc := range ss.getMatchingServicesWithRoutesNoLock(namespace, labels) {
 		result = append(result, svc.exposure())
 	}
 	return

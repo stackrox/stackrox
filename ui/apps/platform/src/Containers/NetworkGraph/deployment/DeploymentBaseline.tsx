@@ -172,7 +172,10 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
                             <Tooltip
                                 content={
                                     <div>
-                                        Trigger violations for network policies not in the baseline
+                                        Trigger violations for traffic not in the baseline. This
+                                        offers soak time for finalizing your network policies, where
+                                        ACS can alert you on unexpected traffic, while that traffic
+                                        is not blocked by a network policy.
                                     </div>
                                 }
                             >
@@ -191,7 +194,6 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
                         </FlexItem>
                         <FlexItem>
                             <AdvancedFlowsFilter
-                                isBaseline
                                 filters={advancedFilters}
                                 setFilters={setAdvancedFilters}
                                 allUniquePorts={allUniquePorts}

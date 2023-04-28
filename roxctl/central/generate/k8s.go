@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
@@ -64,7 +63,7 @@ func (w *flagsWrapper) Var(value pflag.Value, name, usage string, groups ...stri
 	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
 }
 
-func orchestratorCommand(shortName, longName string) *cobra.Command {
+func orchestratorCommand(shortName, _ string) *cobra.Command {
 	c := &cobra.Command{
 		Use: shortName,
 		Annotations: map[string]string{
@@ -110,7 +109,7 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 	flagWrap.StringVar(&k8sConfig.ScannerDBImage, flags.FlagNameScannerDBImage, "", "scanner-db image to use"+defaultImageHelp, "scanner")
 	flagWrap.BoolVar(&k8sConfig.Telemetry.Enabled, "enable-telemetry", false, "whether to enable telemetry", "central")
 
-	if features.DeclarativeConfiguration.Enabled() {
+	if env.DeclarativeConfiguration.BooleanSetting() {
 		flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfigMounts.ConfigMaps, "declarative-config-config-maps", nil,
 			"list of config maps to add as declarative configuration mounts in central", "central")
 		flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfigMounts.Secrets, "declarative-config-secrets", nil,
@@ -129,6 +128,7 @@ func newK8sConfig() *renderer.K8sConfig {
 func k8s(cliEnvironment environment.Environment) *cobra.Command {
 	k8sConfig := newK8sConfig()
 	c := k8sBasedOrchestrator(cliEnvironment, k8sConfig, "k8s", "Kubernetes", func() (storage.ClusterType, error) { return storage.ClusterType_KUBERNETES_CLUSTER, nil })
+	c.Short = "Generate the required YAML configuration files to deploy StackRox Central into a Kubernetes cluster."
 	flagWrap := &flagsWrapper{FlagSet: c.PersistentFlags()}
 
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (lb, np, none)", "central")
@@ -167,6 +167,7 @@ func openshift(cliEnvironment environment.Environment) *cobra.Command {
 		}
 		return clusterType, nil
 	})
+	c.Short = "Generate the required YAML configuration files to deploy StackRox Central into an OpenShift cluster."
 
 	flagWrap := &flagsWrapper{FlagSet: c.PersistentFlags()}
 

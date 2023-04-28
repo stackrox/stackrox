@@ -3,6 +3,7 @@ package datastore
 import (
 	"testing"
 
+	groupFilter "github.com/stackrox/rox/central/group/datastore/filter"
 	permissionSetPostgresStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
 	permissionSetRocksDBStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
 	rolePostgresStore "github.com/stackrox/rox/central/role/store/role/postgres"
@@ -14,12 +15,12 @@ import (
 )
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool *postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
 	permissionStore := permissionSetPostgresStore.New(pool)
 	roleStore := rolePostgresStore.New(pool)
 	scopeStore := accessScopePostgresStore.New(pool)
 
-	return New(roleStore, permissionStore, scopeStore), nil
+	return New(roleStore, permissionStore, scopeStore, groupFilter.GetFiltered), nil
 }
 
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
@@ -37,5 +38,5 @@ func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB) 
 		return nil, err
 	}
 
-	return New(roleStore, permissionStore, scopeStore), nil
+	return New(roleStore, permissionStore, scopeStore, groupFilter.GetFiltered), nil
 }

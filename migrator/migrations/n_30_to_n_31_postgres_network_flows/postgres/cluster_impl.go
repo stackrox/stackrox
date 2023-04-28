@@ -15,14 +15,14 @@ import (
 )
 
 // NewClusterStore returns a new ClusterStore instance using the provided rocksdb instance.
-func NewClusterStore(db *postgres.DB) store.ClusterStore {
+func NewClusterStore(db postgres.DB) store.ClusterStore {
 	return &clusterStoreImpl{
 		db: db,
 	}
 }
 
 type clusterStoreImpl struct {
-	db *postgres.DB
+	db postgres.DB
 }
 
 // GetFlowStore returns the FlowStore for the cluster ID, or nil if none exists.

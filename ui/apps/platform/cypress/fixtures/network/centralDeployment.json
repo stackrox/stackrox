@@ -35,7 +35,6 @@
             "id": "9015bcfd-30c8-11eb-adc5-025000000001:central",
             "config": {
                 "env": [
-                    { "key": "ROX_INIT_TELEMETRY_ENABLED", "value": "true", "envVarSource": "RAW" },
                     { "key": "ROX_OFFLINE_MODE", "value": "false", "envVarSource": "RAW" },
                     { "key": "ROX_DEVELOPMENT_BUILD", "value": "true", "envVarSource": "RAW" },
                     { "key": "ROX_NETWORK_ACCESS_LOG", "value": "false", "envVarSource": "RAW" },

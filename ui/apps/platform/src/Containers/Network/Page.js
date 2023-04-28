@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { connect, useDispatch, useSelector } from 'react-redux';
 import { useRouteMatch } from 'react-router-dom';
 import { createStructuredSelector } from 'reselect';
+import { Alert } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 import useLocalStorage from 'hooks/useLocalStorage';
@@ -19,6 +20,7 @@ import SidePanel from 'Containers/Network/SidePanel/SidePanel';
 import SimulationFrame from 'Components/SimulationFrame';
 import { fetchDeployment } from 'services/DeploymentsService';
 import { getErrorMessageFromServerResponse } from 'utils/networkGraphUtils';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import Header from './Header/Header';
 import NoSelectedNamespace from './NoSelectedNamespace';
 import GraphLoadErrorState from './GraphLoadErrorState';
@@ -87,6 +89,7 @@ function NetworkPage({
     const { isBaselineSimulationOn } = useNetworkBaselineSimulation();
     const isSimulationOn = isNetworkSimulationOn || isBaselineSimulationOn;
     const [isInitialRender, setIsInitialRender] = useState(true);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const {
         params: { deploymentId },
@@ -143,6 +146,19 @@ function NetworkPage({
 
     return (
         <>
+            {isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY') && (
+                <Alert
+                    isInline
+                    variant="warning"
+                    title={
+                        <p>
+                            Version 1.0 of Network Graph is being deprecated soon. Please switch to
+                            the new 2.0 version for improved functionality and a better user
+                            experience. Contact our support team for assistance
+                        </p>
+                    }
+                />
+            )}
             <Header
                 isGraphDisabled={hasNoSelectedNamespace || hasGraphLoadError}
                 isSimulationOn={isSimulationOn}

@@ -35,14 +35,12 @@ class KeyValuePairs extends Component {
         }
 
         return keys.map((key) => (
-            <div className="py-2 max-w-md text-accent-400" key={key} data-testid={key}>
-                {!isNumeric(key) ? <span className="pr-1 text-secondary-800">{key}:</span> : ''}
+            <div className="py-2 max-w-md" key={key} data-testid={key}>
+                {!isNumeric(key) ? <span className="pr-1 font-700">{key}:</span> : ''}
                 {isObject(nestedData[key]) ? (
                     this.getNestedValue(nestedData[key])
                 ) : (
-                    <span title={nestedData[key]} className="italic text-accent-800">
-                        {nestedData[key].toString()}
-                    </span>
+                    <span title={nestedData[key]}>{nestedData[key].toString()}</span>
                 )}
             </div>
         ));

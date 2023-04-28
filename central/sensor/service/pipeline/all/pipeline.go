@@ -60,6 +60,9 @@ func (s *pipelineImpl) Run(ctx context.Context, msg *central.MsgFromSensor, inje
 				err = fragment.Run(ctx, s.clusterID, msg, injector)
 			})
 			if err != nil {
+				if errors.Is(err, context.Canceled) {
+					return nil
+				}
 				return errors.Wrap(err, "processing message from sensor")
 			}
 			if panicErr != nil {

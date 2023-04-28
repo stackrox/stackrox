@@ -47,7 +47,7 @@ func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	return exists, nil
 }
 
-func (b *storeImpl) Count(ctx context.Context) (int, error) {
+func (b *storeImpl) Count(_ context.Context) (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "ImageComponentEdge")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()

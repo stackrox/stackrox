@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output"
@@ -19,7 +20,7 @@ import (
 )
 
 // New instantiates the eventPipeline component
-func New(client client.Interface, configHandler config.Handler, detector detector.Detector, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer, storeProvider *resources.InMemoryStoreProvider, queueSize int) common.SensorComponent {
+func New(client client.Interface, configHandler config.Handler, detector detector.Detector, reprocessor reprocessor.Handler, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer, storeProvider *resources.InMemoryStoreProvider, queueSize int) common.SensorComponent {
 	outputQueue := output.New(detector, queueSize)
 	var depResolver component.Resolver
 	var resourceListener component.PipelineComponent
@@ -32,10 +33,12 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 
 	pipelineResponses := make(chan *central.MsgFromSensor)
 	return &eventPipeline{
-		eventsC:  pipelineResponses,
-		stopSig:  concurrency.NewSignal(),
-		output:   outputQueue,
-		resolver: depResolver,
-		listener: resourceListener,
+		eventsC:     pipelineResponses,
+		stopSig:     concurrency.NewSignal(),
+		output:      outputQueue,
+		resolver:    depResolver,
+		listener:    resourceListener,
+		detector:    detector,
+		reprocessor: reprocessor,
 	}
 }

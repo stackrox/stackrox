@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/globaldb"
+	groupFilter "github.com/stackrox/rox/central/group/datastore/filter"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/store"
@@ -47,11 +48,7 @@ func Singleton() DataStore {
 			utils.CrashOnError(err)
 		}
 		// Which role format is used is determined solely by the feature flag.
-		ds = New(roleStorage, permissionSetStorage, accessScopeStorage)
-
-		for r, a := range vulnReportingDefaultRoles {
-			defaultRoles[r] = a
-		}
+		ds = New(roleStorage, permissionSetStorage, accessScopeStorage, groupFilter.GetFiltered)
 
 		ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
@@ -126,8 +123,7 @@ var defaultRoles = map[string]roleAttributes{
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Cluster),
 			permissions.Modify(resources.Cluster),
-			// TODO: ROX-12750 Replace ServiceIdentity with Administration.
-			permissions.Modify(resources.ServiceIdentity),
+			permissions.Modify(resources.Administration),
 		},
 	},
 	rolePkg.VulnMgmtApprover: {
@@ -148,11 +144,7 @@ var defaultRoles = map[string]roleAttributes{
 			permissions.Modify(resources.VulnerabilityManagementRequests),
 		},
 	},
-}
-
-// TODO ROX-13888 when we migrate to WorkflowAdministration we can remove VulnerabilityReports and Role resources
-var vulnReportingDefaultRoles = map[string]roleAttributes{
-	// TODO: ROX-14398 Remove Role permission from default role VulnReporter
+	// TODO ROX-13888 when we migrate to WorkflowAdministration we can remove VulnerabilityReports and Role resources
 	rolePkg.VulnReporter: {
 		idSuffix:    "vulnreporter",
 		postgresID:  vulnReporterPermissionSetID,
@@ -172,6 +164,23 @@ var vulnReportingDefaultRoles = map[string]roleAttributes{
 				permissions.View(resources.Integration),              // required for vuln report configurations
 			}
 		}(),
+	},
+	rolePkg.VulnerabilityManager: {
+		idSuffix:    "vulnmgmt",
+		postgresID:  vulnMgmtPermissionSetID,
+		description: "For users: use it to provide access to analyze and manage system vulnerabilities",
+		resourceWithAccess: []permissions.ResourceWithAccess{
+			permissions.View(resources.Cluster),
+			permissions.View(resources.Node),
+			permissions.View(resources.Namespace),
+			permissions.View(resources.Deployment),
+			permissions.View(resources.Image),
+			permissions.View(resources.Integration),
+			permissions.Modify(resources.WatchedImage),
+			permissions.Modify(resources.VulnerabilityManagementRequests),
+			permissions.Modify(resources.VulnerabilityReports),
+			permissions.Modify(resources.WorkflowAdministration),
+		},
 	},
 }
 

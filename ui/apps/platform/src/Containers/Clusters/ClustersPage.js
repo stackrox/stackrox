@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { useQuery } from '@apollo/client';
 
@@ -9,7 +9,6 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import useURLSearch from 'hooks/useURLSearch';
 import parseURL from 'utils/URLParser';
-import { analyticsPageVisit } from 'utils/analytics';
 
 import ClustersTablePanel from './ClustersTablePanel';
 import ClustersSidePanel from './ClustersSidePanel';
@@ -22,10 +21,6 @@ const ClustersPage = ({
         params: { clusterId: selectedClusterId },
     },
 }) => {
-    useEffect(() => {
-        analyticsPageVisit('Visit', 'Clusters');
-    }, []);
-
     const { searchFilter, setSearchFilter } = useURLSearch();
     const workflowState = parseURL({ pathname, search });
 
@@ -63,7 +58,7 @@ const ClustersPage = ({
                     searchFilter={searchFilter}
                     searchOptions={searchOptions}
                     searchCategory="CLUSTERS"
-                    placeholder="Add one or more filters"
+                    placeholder="Filter clusters"
                     handleChangeSearchFilter={setSearchFilter}
                 />
                 <div className="flex items-center ml-4 mr-3">
