@@ -2,7 +2,6 @@ package login
 
 import (
 	"embed"
-	_ "embed"
 	"fmt"
 	"io/fs"
 	"net"
@@ -148,7 +147,7 @@ In case you want to increase the timeout, use the --timeout flag.`, l.timeout.St
 		if err := l.loginSignal.Err(); err != nil {
 			return errors.Wrap(err, "error within authorization flow")
 		}
-		<-time.After(2 * time.Second) // Wait until the page is served successfully, then close the server.
+		time.Sleep(time.Second) // Wait until the page is served successfully, then close the server.
 		return server.Close()
 	}
 }
@@ -235,7 +234,7 @@ func (l *loginCommand) storeConfiguration(token string, expiresAt time.Time, ref
 		return errors.Wrap(err, "reading configuration")
 	}
 
-	// We store the config under <endpoint>:<port> and omit the scheme. This way it's agnostic to using either HTTP or
+	// We store the config under <endpoint>:<port> and omit the scheme. This way it's agnostic to use either HTTP or
 	// HTTPS.
 	centralURL := l.centralURL.Hostname() + ":" + l.centralURL.Port()
 
