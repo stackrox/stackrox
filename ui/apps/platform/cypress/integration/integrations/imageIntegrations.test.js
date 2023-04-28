@@ -76,7 +76,7 @@ describe('Image Integrations', () => {
         // Test does not delete, because it did not create.
     });
 
-    it('should create a new Generic Docker Registry integration', () => {
+    it('should create a new Generic Docker Registry integration', function () {
         if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
