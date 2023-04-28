@@ -20,7 +20,7 @@ const entitiesKey = 'controls';
 describe('Configuration Management Controls', () => {
     withAuth();
 
-    it('should render the controls list and open the side panel when a row is clicked', () => {
+    it('should render the controls list and open the side panel when a row is clicked', function () {
         if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
