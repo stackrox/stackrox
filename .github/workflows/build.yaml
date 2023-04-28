@@ -13,6 +13,16 @@ on:
     - synchronize
 
 jobs:
+  define:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Define the matrix for builds
+        run: |
+          echo "pre_build_cli_matrix={\
+                  include: [\
+                    {release: false, artifact: cli-build} \
+                  ]}" >> $GITHUB_OUTPUT
+
   pre-build-ui:
     strategy:
       matrix:
@@ -55,12 +65,8 @@ jobs:
 
   pre-build-cli:
     strategy:
-      matrix:
-        include:
-          - release: false
-            artifact: "cli-build"
-          - release: true
-            artifact: "cli-build-release"
+      matrix: ${{ fromJson(needs.define.outputs.pre_build_cli_matrix) }}
+    needs: define
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
