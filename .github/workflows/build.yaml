@@ -22,21 +22,30 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+
       - name: Define the matrix for build jobs
         id: define-job-matrix
         run: |
+          source './scripts/ci/lib.sh'
+
           matrix='{"pre_build_cli": {"name":[]}, "pre_build_go_binaries": {"name":[]}, "build_and_push_main": {"name":[]} }'
 
           # The base matrix
           matrix="$(jq '.pre_build_cli.name += ["development"]' <<< "$matrix")"
-          matrix="$(jq '.pre_build_go_binaries.name += ["development", "race-condition-debug"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_main.name += ["STACKROX_BRANDING", "RHACS_BRANDING", "race-condition-debug"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries.name += ["development"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_main.name += ["STACKROX_BRANDING", "RHACS_BRANDING"]' <<< "$matrix")"
 
           # Conditionally add a prerelease build (binaries built with GOTAGS=release)
-          if true; then
+          if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
             matrix="$(jq '.pre_build_cli.name += ["prerelease"]' <<< "$matrix")"
             matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
+          fi
+
+          # Conditionally add a -race debug build (binaries built with -race)
+          if ! is_in_PR_context || pr_has_label ci-build-race-condition-debug; then
+            matrix="$(jq '.pre_build_go_binaries.name += ["race-condition-debug"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_main.name += ["race-condition-debug"]' <<< "$matrix")"
           fi
 
           echo "Job matrix after conditionals:"
