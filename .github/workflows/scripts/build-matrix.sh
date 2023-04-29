@@ -13,24 +13,9 @@ define_build_matrix() {
 
     read -r -d '' matrix <<- _EO_MATRIX_ || true
     {
-        "pre_build_cli": {
-            "include": [
-                {"name": "development", "artifact": "cli-build-development"}
-            ]
-        },
-        "pre_build_go_binaries": {
-            "include": [
-                {"name": "development", "artifact": "go-binaries-build-development"},
-                {"name": "race condition debug", "artifact": "go-binaries-build-rcd"}
-            ]
-        },
-        "build_and_push_main": {
-            "include": [
-                {"name": "stackrox branding", "branding": "STACKROX_BRANDING", "cli-artifact": "cli-build-development", "go-binaries-artifact": "go-binaries-build-development"},
-                {"name": "rhacs branding", "branding": "RHACS_BRANDING", "cli-artifact": "cli-build-development", "go-binaries-artifact": "go-binaries-build-development"},
-                {"name": "race condition debug", "branding": "STACKROX_BRANDING", "cli-artifact": "cli-build-development", "go-binaries-artifact": "go-binaries-build-rcd"}
-            ]
-        }
+        "pre_build_cli": { "name": ["development"] },
+        "pre_build_go_binaries": { "name": ["development", "race-condition-debug"] },
+        "build_and_push_main": { "name": ["STACKROX_BRANDING", "RHACS_BRANDING", "race-condition-debug"] }
     }
 _EO_MATRIX_
 
@@ -38,9 +23,9 @@ _EO_MATRIX_
     jq <<< "$matrix"
 
     if true; then
-        matrix="$(jq '.pre_build_cli.include += [{"name": "prerelease", "artifact": "cli-build-prerelease"}]' <<< "$matrix")"
-        matrix="$(jq '.pre_build_go_binaries.include += [{"name": "prerelease", "artifact": "go-binaries-build-prerelease"}]' <<< "$matrix")"
-        matrix="$(jq '.build_and_push_main.include += [{"name": "prerelease", "branding": "RHACS_BRANDING", "cli-artifact": "cli-build-prerelease", "go-binaries-artifact": "go-binaries-build-prerelease"}]' <<< "$matrix")"
+        matrix="$(jq '.pre_build_cli.name += ["prerelease"]' <<< "$matrix")"
+        matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
+        matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
 
         info "Build matrix after prerelease addition:"
         jq <<< "$matrix"
