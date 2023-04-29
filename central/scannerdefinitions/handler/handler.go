@@ -2,6 +2,7 @@ package handler
 
 import (
 	"archive/zip"
+	"context"
 	"io"
 	"io/fs"
 	"net/http"
@@ -11,15 +12,18 @@ import (
 	"strings"
 	"time"
 
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	blob "github.com/stackrox/rox/central/blob/datastore"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc/codes"
@@ -27,6 +31,9 @@ import (
 
 const (
 	definitionsBaseDir = "scannerdefinitions"
+
+	scannerDefinitionBlobName = "offline.scanner.definitions"
+	scannerDefinitionTemp     = "scanner-defs-*.zip"
 
 	// scannerDefsSubZipName represents the offline zip bundle for CVEs for Scanner.
 	scannerDefsSubZipName = "scanner-defs.zip"
@@ -67,6 +74,7 @@ type httpHandler struct {
 	updaters      map[string]*requestedUpdater
 	onlineVulnDir string
 	offlineFile   *file.File
+	blobStore     blob.Datastore
 }
 
 // New creates a new http.Handler to handle vulnerability data.
@@ -74,11 +82,10 @@ func New(cveManager fetcher.OrchestratorIstioCVEManager, opts handlerOpts) http.
 	h := &httpHandler{
 		cveManager: cveManager,
 
-		online:   !env.OfflineModeEnv.BooleanSetting(),
-		interval: env.ScannerVulnUpdateInterval.DurationSetting(),
+		online:    !env.OfflineModeEnv.BooleanSetting(),
+		interval:  env.ScannerVulnUpdateInterval.DurationSetting(),
+		blobStore: blob.Singleton(),
 	}
-
-	h.initializeOfflineVulnDump(opts.offlineVulnDefsDir)
 
 	if h.online {
 		h.initializeUpdaters(opts.cleanupInterval, opts.cleanupAge)
@@ -87,14 +94,6 @@ func New(cveManager fetcher.OrchestratorIstioCVEManager, opts handlerOpts) http.
 	}
 
 	return h
-}
-
-func (h *httpHandler) initializeOfflineVulnDump(vulnDefsDir string) {
-	if vulnDefsDir == "" {
-		vulnDefsDir = filepath.Join(migrations.DBMountPath(), definitionsBaseDir)
-	}
-
-	h.offlineFile = file.New(filepath.Join(vulnDefsDir, offlineScannerDefsName))
 }
 
 func (h *httpHandler) initializeUpdaters(cleanupInterval, cleanupAge *time.Duration) {
@@ -212,14 +211,20 @@ func (h *httpHandler) handleScannerDefsFile(zipF *zip.File) error {
 	defer utils.IgnoreError(r.Close)
 
 	// POST requests only update the offline feed.
-	if err := h.offlineFile.Write(r, zipF.Modified); err != nil {
+	b := &storage.Blob{
+		Name:         scannerDefinationBlobName,
+		LastUpdated:  timestamp.TimestampNow(),
+		ModifiedTime: timestamp.TimestampNow(),
+	}
+
+	if err := h.blobStore.Upsert(context.Background(), b, r); err != nil {
 		return errors.Wrap(err, "writing scanner definitions")
 	}
 
 	return nil
 }
 
-func (h *httpHandler) handleZipContentsFromVulnDump(zipPath string) error {
+func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath string) error {
 	zipR, err := zip.OpenReader(zipPath)
 	if err != nil {
 		return errors.Wrap(err, "couldn't open file as zip")
@@ -263,7 +268,7 @@ func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.handleZipContentsFromVulnDump(tempFile); err != nil {
+	if err := h.handleZipContentsFromVulnDump(r.Context(), tempFile); err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
 	}
@@ -308,10 +313,16 @@ func (h *httpHandler) cleanupUpdaters(cleanupAge time.Duration) {
 // online, otherwise fallback to the manually uploaded definitions. The file
 // object can be `nil` if the definitions file does not exist, rather than
 // returning an error.
-func (h *httpHandler) openMostRecentDefinitions(uuid string) (file *os.File, modTime time.Time, err error) {
+func (h *httpHandler) openMostRecentDefinitions(uuid string) (rc io.ReadCloser, modTime time.Time, err error) {
 	// If in offline mode or uuid is not provided, default to the offline file.
 	if !h.online || uuid == "" {
-		file, modTime, err = h.offlineFile.Open()
+		var blob *storage.Blob
+		blob, rc, _, err = h.blobStore.Get(context.Background(), scannerDefinitionBlobName)
+		if err != nil {
+			err = errors.Wrapf(err, "failed to open offline scanner definition bundle")
+			return
+		}
+		modTime = *pgutils.NilOrTime(blob.GetLastUpdated())
 		return
 	}
 
@@ -336,10 +347,10 @@ func (h *httpHandler) openMostRecentDefinitions(uuid string) (file *os.File, mod
 	// since modification time will be zero.
 
 	if offlineTime.After(onlineTime) {
-		file, modTime = offlineFile, offlineTime
+		rc, modTime = offlineFile, offlineTime
 		utils.IgnoreError(onlineFile.Close)
 	} else {
-		file, modTime = onlineFile, onlineTime
+		rc, modTime = onlineFile, onlineTime
 		utils.IgnoreError(offlineFile.Close)
 	}
 
