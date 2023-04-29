@@ -31,8 +31,8 @@ jobs:
           matrix='{"pre_build_cli": {"name":[]}, "pre_build_go_binaries": {"name":[]}, "build_and_push_main": {"name":[]} }'
 
           # The base matrix
-          matrix="$(jq '.pre_build_cli.name += ["development"]' <<< "$matrix")"
-          matrix="$(jq '.pre_build_go_binaries.name += ["development"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_cli.name += ["default"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_main.name += ["STACKROX_BRANDING", "RHACS_BRANDING"]' <<< "$matrix")"
 
           # Conditionally add a prerelease build (binaries built with GOTAGS=release)
@@ -97,7 +97,7 @@ jobs:
   pre-build-cli:
     strategy:
       # Supports two cli builds:
-      # development
+      # default - built with environment defaults (see handle-tagged-build & env.mk)
       # prerelease - built with GOTAGS=release
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_cli }}
     needs: define-job-matrix
@@ -145,7 +145,7 @@ jobs:
   pre-build-go-binaries:
     strategy:
       # Supports three go binary builds:
-      # development
+      # default - built with environment defaults (see handle-tagged-build & env.mk)
       # prerelease - built with GOTAGS=release
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
@@ -266,17 +266,17 @@ jobs:
         run: |
           case "${{ matrix.name }}" in
             STACKROX_BRANDING)
-              cli="development"
-              go_binaries="development"
+              cli="default"
+              go_binaries="default"
               brand="STACKROX_BRANDING"
               ;;
             RHACS_BRANDING)
-              cli="development"
-              go_binaries="development"
+              cli="default"
+              go_binaries="default"
               brand="RHACS_BRANDING"
               ;;
             race-condition-debug)
-              cli="development"
+              cli="default"
               go_binaries="race-condition-debug"
               brand="RHACS_BRANDING"
               ;;
