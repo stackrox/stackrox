@@ -264,9 +264,11 @@ jobs:
               exit 1
           esac
 
-          echo "CLI_BUILD_ARTIFACT=cli-build-${cli}" >> "$GITHUB_ENV"
-          echo "GO_BINARIES_BUILD_ARTIFACT=go-binaries-build-${go_binaries}" >> "$GITHUB_ENV"
-          echo "ROX_PRODUCT_BRANDING=${brand}" >> "$GITHUB_ENV"
+          {
+            echo "CLI_BUILD_ARTIFACT=cli-build-${cli}"
+            echo "GO_BINARIES_BUILD_ARTIFACT=go-binaries-build-${go_binaries}"
+            echo "ROX_PRODUCT_BRANDING=${brand}"
+          } >> "$GITHUB_ENV"
 
       - name: Checkout
         uses: actions/checkout@v3
