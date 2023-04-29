@@ -13,9 +13,9 @@ on:
     - synchronize
 
 jobs:
-  define-build-matrix:
+  define-job-matrix:
     outputs:
-      matrix: ${{ steps.define-build-matrix.outputs.matrix }}
+      matrix: ${{ steps.define-job-matrix.outputs.matrix }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,10 +23,27 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Define the matrix for build jobs
-        id: define-build-matrix
+        id: define-job-matrix
         run: |
-          source ./.github/workflows/scripts/build-matrix.sh
-          define_build_matrix
+          matrix='{"pre_build_cli": {"name":[]}, "pre_build_go_binaries": {"name":[]}, "build_and_push_main": {"name":[]} }'
+
+          # The base matrix
+          matrix="$(jq '.pre_build_cli.name += ["development"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries.name += ["development", "race-condition-debug"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_main.name += ["STACKROX_BRANDING", "RHACS_BRANDING", "race-condition-debug"]' <<< "$matrix")"
+
+          # Conditionally add a prerelease build (binaries built with GOTAGS=release)
+          if true; then
+            matrix="$(jq '.pre_build_cli.name += ["prerelease"]' <<< "$matrix")"
+            matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
+          fi
+
+          echo "Job matrix after conditionals:"
+          jq <<< "$matrix"
+
+          condensed="$(jq -c <<< "$matrix")"
+          echo "matrix=$condensed" >> "$GITHUB_OUTPUT"
 
   pre-build-ui:
     strategy:
@@ -73,8 +90,8 @@ jobs:
       # Supports two cli builds:
       # development
       # prerelease - built with GOTAGS=release
-      matrix: ${{ fromJson(needs.define-build-matrix.outputs.matrix).pre_build_cli }}
-    needs: define-build-matrix
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_cli }}
+    needs: define-job-matrix
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
@@ -122,8 +139,8 @@ jobs:
       # development
       # prerelease - built with GOTAGS=release
       # race-condition-debug - built with -race
-      matrix: ${{ fromJson(needs.define-build-matrix.outputs.matrix).pre_build_go_binaries }}
-    needs: define-build-matrix
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
+    needs: define-job-matrix
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
@@ -209,7 +226,7 @@ jobs:
   build-and-push-main:
     runs-on: ubuntu-latest
     needs:
-      - define-build-matrix
+      - define-job-matrix
       - pre-build-ui
       - pre-build-cli
       - pre-build-go-binaries
@@ -220,7 +237,7 @@ jobs:
       # RHACS_BRANDING
       # prerelease
       # race-condition-debug
-      matrix: ${{ fromJson(needs.define-build-matrix.outputs.matrix).build_and_push_main }}
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_main }}
     env:
       CLI_BUILD_ARTIFACT: ""
       GO_BINARIES_BUILD_ARTIFACT: ""
