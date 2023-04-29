@@ -70,6 +70,9 @@ jobs:
 
   pre-build-cli:
     strategy:
+      # Supports two cli builds:
+      # development
+      # prerelease - built with GOTAGS=release
       matrix: ${{ fromJson(needs.define-build-matrix.outputs.matrix).pre_build_cli }}
     needs: define-build-matrix
     runs-on: ubuntu-latest
@@ -92,8 +95,14 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
+      - name: PR labels
+        uses: joerick/pr-labels-action@v1.0.8
+
       - name: Setup Go build environment
-        if: matrix.name == 'prerelease'
+        if: |
+          contains(github.event.pull_request.labels.*.name, 'ci-release-build') 
+            || 
+          matrix.name == 'prerelease'
         run: echo "GOTAGS=release" >> "$GITHUB_ENV"
 
       - name: Build CLI
@@ -109,6 +118,10 @@ jobs:
 
   pre-build-go-binaries:
     strategy:
+      # Supports three go binary builds:
+      # development
+      # prerelease - built with GOTAGS=release
+      # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-build-matrix.outputs.matrix).pre_build_go_binaries }}
     needs: define-build-matrix
     runs-on: ubuntu-latest
@@ -202,6 +215,11 @@ jobs:
       - pre-build-go-binaries
       - pre-build-docs
     strategy:
+      # Supports four image builds (see Setup build env):
+      # STACKROX_BRANDING
+      # RHACS_BRANDING
+      # prerelease
+      # race-condition-debug
       matrix: ${{ fromJson(needs.define-build-matrix.outputs.matrix).build_and_push_main }}
     env:
       CLI_BUILD_ARTIFACT: ""
@@ -220,32 +238,35 @@ jobs:
 
       - name: Setup build env
         run: |
-          echo -n "CLI_BUILD_ARTIFACT=cli-build-" >> "$GITHUB_ENV"
           case "${{ matrix.name }}" in
+            STACKROX_BRANDING)
+              cli="development"
+              go_binaries="development"
+              brand="STACKROX_BRANDING"
+              ;;
+            RHACS_BRANDING)
+              cli="development"
+              go_binaries="development"
+              brand="RHACS_BRANDING"
+              ;;
+            race-condition-debug)
+              cli="development"
+              go_binaries="race-condition-debug"
+              brand="RHACS_BRANDING"
+              ;;
             prerelease)
-              echo "${{ matrix.name }}" >> "$GITHUB_ENV"
+              cli="prerelease"
+              go_binaries="prerelease"
+              brand="RHACS_BRANDING"
               ;;
             *)
-              echo development >> "$GITHUB_ENV"
+              echo "Unsupport build: ${{ matrix.name }}"
+              exit 1
           esac
 
-          echo -n "GO_BINARIES_BUILD_ARTIFACT=go-binaries-build-" >> "$GITHUB_ENV"
-          case "${{ matrix.name }}" in
-            race-condition-debug|prerelease)
-              echo "${{ matrix.name }}" >> "$GITHUB_ENV"
-              ;;
-            *)
-              echo development >> "$GITHUB_ENV"
-          esac
-
-          echo -n "ROX_PRODUCT_BRANDING=" >> "$GITHUB_ENV"
-          case "${{ matrix.name }}" in
-            race-condition-debug|prerelease)
-              echo RHACS_BRANDING >> "$GITHUB_ENV"
-              ;;
-            *)
-              echo "${{ matrix.name }}" >> "$GITHUB_ENV"
-          esac
+          echo "CLI_BUILD_ARTIFACT=cli-build-${cli}" >> "$GITHUB_ENV"
+          echo "GO_BINARIES_BUILD_ARTIFACT=go-binaries-build-${go_binaries}" >> "$GITHUB_ENV"
+          echo "ROX_PRODUCT_BRANDING=${brand}" >> "$GITHUB_ENV"
 
       - name: Checkout
         uses: actions/checkout@v3
