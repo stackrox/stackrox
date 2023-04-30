@@ -292,7 +292,8 @@ deploy_sensor_via_operator() {
 }
 
 export_central_basic_auth_creds() {
-    #DEPLOY_DIR="${DEPLOY_DIR:-deploy/${ORCHESTRATOR_FLAVOR}}"
+    DEPLOY_DIR="${DEPLOY_DIR:-deploy/${ORCHESTRATOR_FLAVOR}}"
+    
     if [[ -f "${DEPLOY_DIR}/central-deploy/password" ]]; then
         info "Getting central basic auth creds from central-deploy/password"
         ROX_PASSWORD="$(cat "${DEPLOY_DIR}"/central-deploy/password)"
