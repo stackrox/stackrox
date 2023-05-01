@@ -109,7 +109,7 @@ require (
 	golang.org/x/time v0.3.0
 	golang.org/x/tools v0.8.0
 	golang.stackrox.io/grpc-http1 v0.2.6
-	google.golang.org/api v0.119.0
+	google.golang.org/api v0.120.0
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 	google.golang.org/grpc v1.54.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
