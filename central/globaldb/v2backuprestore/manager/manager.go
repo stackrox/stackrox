@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -95,7 +96,7 @@ func analyzeManifest(manifest *v1.DBExportManifest, format *formats.ExportFormat
 func (m *manager) checkDiskSpace(requiredBytes int64) error {
 	availableBytes, err := fsutils.AvailableBytesIn(m.outputRoot)
 	if err != nil {
-		return errors.Errorf("could not determine free disk space of volume containing %s: %v. Assuming free space is sufficient for %d bytes.", m.outputRoot, err, requiredBytes)
+		return errors.Errorf("could not determine free disk space of volume containing %s: %v. Assuming free space is not sufficient for %d bytes.", m.outputRoot, err, requiredBytes)
 	}
 	if availableBytes < uint64(requiredBytes) {
 		return errors.Errorf("restoring backup requires %d bytes of free disk space, but volume containing %s only has %d bytes available", requiredBytes, m.outputRoot, availableBytes)
@@ -115,7 +116,7 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 		return nil, errors.Errorf("invalid DB restore format %q", requestHeader.GetFormatName())
 	}
 
-	handlerFuncs, _, err := analyzeManifest(requestHeader.GetManifest(), format)
+	handlerFuncs, totalSizeUncompressed, err := analyzeManifest(requestHeader.GetManifest(), format)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +127,12 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 	}
 
 	if !process.postgresBundle {
-		return nil, errors.Errorf("restoration of legacy backup bundles is no longer available")
+		if _, err := os.Stat(m.outputRoot); os.IsNotExist(err) {
+			return nil, errors.Errorf("the required volume %q does not exist", m.outputRoot)
+		}
+		if err := m.checkDiskSpace(totalSizeUncompressed); err != nil {
+			return nil, err
+		}
 	}
 
 	// Create the paths for the restore directory
