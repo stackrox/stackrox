@@ -656,3 +656,33 @@ export function getServerPolicy(policyUntrimmed: ClientPolicy): Policy {
     serverPolicy = postFormatNestedPolicyFields(serverPolicy as ClientPolicy);
     return serverPolicy;
 }
+
+export function getLifeCyclesUpdates(
+    values: ClientPolicy,
+    lifecycleStage: LifecycleStage,
+    isChecked: boolean
+) {
+    /*
+     * Set all changed values at once, because separate setFieldValue calls
+     * for lifecycleStages and eventSource cause inconsistent incorrect validation.
+     */
+    const changedValues = cloneDeep(values);
+    if (isChecked) {
+        changedValues.lifecycleStages = [...values.lifecycleStages, lifecycleStage];
+    } else {
+        changedValues.lifecycleStages = values.lifecycleStages.filter(
+            (stage) => stage !== lifecycleStage
+        );
+        if (lifecycleStage === 'RUNTIME') {
+            changedValues.eventSource = 'NOT_APPLICABLE';
+        }
+        if (lifecycleStage === 'BUILD') {
+            changedValues.excludedImageNames = [];
+        }
+        changedValues.enforcementActions = filterEnforcementActionsForRemovedLifecycleStage(
+            lifecycleStage,
+            values.enforcementActions
+        );
+    }
+    return changedValues;
+}

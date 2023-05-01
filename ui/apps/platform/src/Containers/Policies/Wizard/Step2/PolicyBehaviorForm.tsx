@@ -25,6 +25,7 @@ import { ClientPolicy, LifecycleStage } from 'types/policy.proto';
 import {
     appendEnforcementActionsForAddedLifecycleStage,
     filterEnforcementActionsForRemovedLifecycleStage,
+    getLifeCyclesUpdates,
     hasEnforcementActionForLifecycleStage,
     initialPolicy,
 } from '../../policies.utils';
@@ -54,35 +55,9 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
             setLifeCycleChange({ lifecycleStage, isChecked });
         } else {
             // for new policies, just update lifecycle stages
-            const newValues = getLifeCyclesUpdates(lifecycleStage, isChecked);
+            const newValues = getLifeCyclesUpdates(values, lifecycleStage, isChecked);
             setValues(newValues);
         }
-    }
-
-    function getLifeCyclesUpdates(lifecycleStage: LifecycleStage, isChecked: boolean) {
-        /*
-         * Set all changed values at once, because separate setFieldValue calls
-         * for lifecycleStages and eventSource cause inconsistent incorrect validation.
-         */
-        const changedValues = { ...values };
-        if (isChecked) {
-            changedValues.lifecycleStages = [...values.lifecycleStages, lifecycleStage];
-        } else {
-            changedValues.lifecycleStages = values.lifecycleStages.filter(
-                (stage) => stage !== lifecycleStage
-            );
-            if (lifecycleStage === 'RUNTIME') {
-                changedValues.eventSource = 'NOT_APPLICABLE';
-            }
-            if (lifecycleStage === 'BUILD') {
-                changedValues.excludedImageNames = [];
-            }
-            changedValues.enforcementActions = filterEnforcementActionsForRemovedLifecycleStage(
-                lifecycleStage,
-                values.enforcementActions
-            );
-        }
-        return changedValues;
     }
 
     function onConfirmChangeLifecycle(
@@ -92,7 +67,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
         // type guard, because TS is a cruel master
         if (lifecycleStage) {
             // first, update the lifecycles
-            const newValues = getLifeCyclesUpdates(lifecycleStage, !!isChecked);
+            const newValues = getLifeCyclesUpdates(values, lifecycleStage, !!isChecked);
 
             // second, clear the policy criteria
             const clearedCriteria = initialPolicy.policySections;
