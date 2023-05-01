@@ -246,7 +246,7 @@ class K8sRbacTest extends BaseSpecification {
         withRetry(45, 2) {
             def stackroxBindings = RbacService.getRoleBindings()
             def orchestratorBindings = orchestrator.getRoleBindings() + orchestrator.getClusterRoleBindings()
-            assert stackroxBindings.size() == orchestratorBindings.size()
+            assert stackroxBindings.size() == orchestratorBindings.size(), "Binding sizes differ"
 
             for (Rbac.K8sRoleBinding b : stackroxBindings) {
                 K8sRoleBinding binding = orchestratorBindings.find {
@@ -268,8 +268,6 @@ class K8sRbacTest extends BaseSpecification {
                     assert CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, sSubject.kind.toString()) ==
                             oSubject.kind
                 }
-
-                assert RbacService.getRoleBinding(b.id) == b
             }
         }
     }

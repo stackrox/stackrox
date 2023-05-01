@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/role/sachelper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -71,6 +72,8 @@ type serviceImpl struct {
 	deployments    deploymentDS.DataStore
 	clusters       clusterDS.DataStore
 	graphConfig    datastore.DataStore
+
+	clusterSACHelper sachelper.ClusterSacHelper
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -123,7 +126,7 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	if err := s.validateCluster(request.GetClusterId()); err != nil {
+	if err := s.validateCluster(ctx, request.GetClusterId()); err != nil {
 		return nil, err
 	}
 
@@ -229,16 +232,16 @@ func (s *serviceImpl) getFlowStore(ctx context.Context, clusterID string) (netwo
 	return flowStore, nil
 }
 
-func (s *serviceImpl) validateCluster(clusterID string) error {
-	// Use elevated context to perform certain cluster validations.
-	clusterReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Cluster)))
-
-	if exists, err := s.clusters.Exists(clusterReadCtx, clusterID); err != nil {
+func (s *serviceImpl) validateCluster(ctx context.Context, clusterID string) error {
+	if clusterID == "" {
+		return errors.Wrap(errox.InvalidArgs, "cluster ID must be specified")
+	}
+	requestedResourcesWithAccess := []permissions.ResourceWithAccess{permissions.View(resources.NetworkGraph)}
+	exists, err := s.clusterSACHelper.IsClusterVisibleForPermissions(ctx, clusterID, requestedResourcesWithAccess)
+	if err != nil {
 		return err
-	} else if !exists {
+	}
+	if !exists {
 		return errors.Wrapf(errox.NotFound, "cluster %s not found. It may have been deleted", clusterID)
 	}
 	return nil

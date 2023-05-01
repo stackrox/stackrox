@@ -85,7 +85,12 @@ _update_job_record() {
     fi
 
     if is_OPENSHIFT_CI && [[ -z "${BUILD_ID:-}" ]]; then
-        info "Skipping job record for jobs without a BUILD_ID (bin, images)"
+        info "Skipping job record update for jobs without a BUILD_ID (bin, images)"
+        return
+    fi
+
+    if [[ -z "${METRICS_JOB_ID:-}" ]]; then
+        info "WARNING: Skipping job record update as no initial record was created"
         return
     fi
 
@@ -137,7 +142,12 @@ _finalize_job_record() {
     fi
 
     if is_OPENSHIFT_CI && [[ -z "${BUILD_ID:-}" ]]; then
-        info "Skipping job record for jobs without a BUILD_ID (bin, images)"
+        info "Skipping job record finalization for jobs without a BUILD_ID (bin, images)"
+        return
+    fi
+
+    if [[ -z "${METRICS_JOB_ID:-}" ]]; then
+        info "WARNING: Skipping job record finalization as no initial record was created"
         return
     fi
 

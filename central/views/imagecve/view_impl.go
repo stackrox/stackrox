@@ -64,10 +64,17 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 	}
 
 	return &resourceCountByImageCVESeverity{
-		CriticalSeverityCount:  results[0].CriticalSeverityCount,
-		ImportantSeverityCount: results[0].ImportantSeverityCount,
-		ModerateSeverityCount:  results[0].ModerateSeverityCount,
-		LowSeverityCount:       results[0].LowSeverityCount,
+		CriticalSeverityCount:        results[0].CriticalSeverityCount,
+		FixableCriticalSeverityCount: results[0].FixableCriticalSeverityCount,
+
+		ImportantSeverityCount:        results[0].ImportantSeverityCount,
+		FixableImportantSeverityCount: results[0].FixableImportantSeverityCount,
+
+		ModerateSeverityCount:        results[0].ModerateSeverityCount,
+		FixableModerateSeverityCount: results[0].FixableModerateSeverityCount,
+
+		LowSeverityCount:        results[0].LowSeverityCount,
+		FixableLowSeverityCount: results[0].FixableLowSeverityCount,
 	}, nil
 }
 
@@ -139,12 +146,34 @@ func withCountBySeveritySelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.
 		search.NewQuerySelect(countOn).
 			Distinct().
 			AggrFunc(aggregatefunc.Count).
+			Filter("fixable_critical_severity_count",
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String(),
+					).
+					AddBools(search.Fixable, true).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(countOn).
+			Distinct().
+			AggrFunc(aggregatefunc.Count).
 			Filter("important_severity_count",
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.Severity,
 						storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY.String(),
 					).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(countOn).
+			Distinct().
+			AggrFunc(aggregatefunc.Count).
+			Filter("fixable_important_severity_count",
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY.String(),
+					).
+					AddBools(search.Fixable, true).ProtoQuery(),
 			).Proto(),
 		search.NewQuerySelect(countOn).
 			Distinct().
@@ -159,12 +188,34 @@ func withCountBySeveritySelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.
 		search.NewQuerySelect(countOn).
 			Distinct().
 			AggrFunc(aggregatefunc.Count).
+			Filter("fixable_moderate_severity_count",
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY.String(),
+					).
+					AddBools(search.Fixable, true).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(countOn).
+			Distinct().
+			AggrFunc(aggregatefunc.Count).
 			Filter("low_severity_count",
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.Severity,
 						storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY.String(),
 					).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(countOn).
+			Distinct().
+			AggrFunc(aggregatefunc.Count).
+			Filter("fixable_low_severity_count",
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.Severity,
+						storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY.String(),
+					).
+					AddBools(search.Fixable, true).ProtoQuery(),
 			).Proto(),
 	)
 	return cloned

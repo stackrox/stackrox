@@ -22,6 +22,12 @@ scale_worker_nodes() {
     oc get nodes -o wide
     oc -n openshift-machine-api get machineset
     oc -n openshift-machine-api get machines
+    if [[ -n "${ARTIFACT_DIR:-}" ]]; then
+        local scale_debug_dir="${ARTIFACT_DIR}/openshift/scaling-debug"
+        mkdir -p "${scale_debug_dir}"
+        oc -n openshift-machine-api get machineset -o json > "${scale_debug_dir}/machineset.json"
+        oc -n openshift-machine-api get machines -o json > "${scale_debug_dir}/machines.json"
+    fi
 
     original_count="$(get_running_worker_count)"
     first_worker_machine_set="$(get_first_worker_machine_set)"

@@ -25,10 +25,18 @@ export const cveListQuery = gql`
         imageCVEs(query: $query, pagination: $pagination) {
             cve
             affectedImageCountBySeverity {
-                critical
-                important
-                moderate
-                low
+                critical {
+                    total
+                }
+                important {
+                    total
+                }
+                moderate {
+                    total
+                }
+                low {
+                    total
+                }
             }
             topCVSS
             affectedImageCount
@@ -47,10 +55,10 @@ type ImageCVE = {
     cve: string;
     // summary: string;
     affectedImageCountBySeverity: {
-        critical: number;
-        important: number;
-        moderate: number;
-        low: number;
+        critical: { total: number };
+        important: { total: number };
+        moderate: { total: number };
+        low: { total: number };
     };
     topCVSS: number;
     affectedImageCount: number;
@@ -127,10 +135,10 @@ function CVEsTable({ cves, unfilteredImageCount, getSortParams, isFiltered }: CV
                                 </Td>
                                 <Td>
                                     <SeverityCountLabels
-                                        critical={affectedImageCountBySeverity.critical}
-                                        important={affectedImageCountBySeverity.important}
-                                        moderate={affectedImageCountBySeverity.moderate}
-                                        low={affectedImageCountBySeverity.low}
+                                        critical={affectedImageCountBySeverity.critical.total}
+                                        important={affectedImageCountBySeverity.important.total}
+                                        moderate={affectedImageCountBySeverity.moderate.total}
+                                        low={affectedImageCountBySeverity.low.total}
                                     />
                                 </Td>
                                 {/* TODO: score version? */}
