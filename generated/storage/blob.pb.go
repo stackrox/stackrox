@@ -24,7 +24,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// Next Tag: 4
+// Next Tag: 6
 type Blob struct {
 	Name                 string           `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" sql:"pk"`
 	Oid                  uint32           `protobuf:"varint,2,opt,name=oid,proto3" json:"oid,omitempty"`
