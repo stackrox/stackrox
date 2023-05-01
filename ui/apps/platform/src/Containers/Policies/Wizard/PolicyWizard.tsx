@@ -11,6 +11,7 @@ import {
 } from '@patternfly/react-core';
 
 import { createPolicy, savePolicy } from 'services/PoliciesService';
+import { fetchAlertCount } from 'services/AlertsService';
 import { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { policiesBasePath } from 'routePaths';
@@ -39,6 +40,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
     const [isValidOnServer, setIsValidOnServer] = useState(false);
     const [policyErrorMessage, setPolicyErrorMessage] = useState('');
     const [isBadRequest, setIsBadRequest] = useState(false);
+    const [hasActiveViolations, setHasActiveViolations] = useState(false);
 
     const formik = useFormik({
         initialValues: policy,
@@ -112,6 +114,23 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stepId]); // but not validateForm
 
+    useEffect(() => {
+        if (policy?.name) {
+            const queryObj = {
+                Policy: policy.name || '',
+            };
+            const { request: countRequest } = fetchAlertCount(queryObj);
+            // eslint-disable-next-line no-void
+            void countRequest.then((counts) => {
+                if (counts > 0) {
+                    setHasActiveViolations(true);
+                } else {
+                    setHasActiveViolations(false);
+                }
+            });
+        }
+    }, [policy]);
+
     const canJumpToAny = pageAction === 'clone' || pageAction === 'edit';
 
     return (
@@ -157,14 +176,18 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                             {
                                 id: 2,
                                 name: 'Policy behavior',
-                                component: <PolicyBehaviorForm />,
+                                component: (
+                                    <PolicyBehaviorForm hasActiveViolations={hasActiveViolations} />
+                                ),
                                 canJumpTo: canJumpToAny || stepIdReached >= 2,
                                 enableNext: isValidOnClient,
                             },
                             {
                                 id: 3,
                                 name: 'Policy criteria',
-                                component: <PolicyCriteriaForm />,
+                                component: (
+                                    <PolicyCriteriaForm hasActiveViolations={hasActiveViolations} />
+                                ),
                                 canJumpTo: canJumpToAny || stepIdReached >= 3,
                                 enableNext: isValidOnClient,
                             },

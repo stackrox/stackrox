@@ -1,0 +1,45 @@
+name: 'junit2jira'
+description: 'Convert test failures into Jira tickets'
+branding:
+  icon: 'archive'
+  color: 'blue'
+inputs:
+  jira-token:
+    description: 'Token used to authenticate with Jira.'
+    required: true
+  directory:
+    description: 'Directory with Junit XML files.'
+    required: true
+  threshold:
+    description: 'Minimal number of failed issues that will result in reporting a single cumulative Jira issue.'
+    required: false
+    default: '5'
+runs:
+  using: "composite"
+  steps:
+  - name: Download junit2jira
+    shell: bash
+    env:
+      VERSION: "v0.0.6"
+    run: |
+      set -u
+      LOCATION="https://github.com/stackrox/junit2jira/releases/download/$VERSION/junit2jira"
+      # Skip downloading release if downloaded already, e.g. when the action is used multiple times.
+      if [[ ! -x junit2jira ]]; then
+        curl --retry 5 --silent --show-error --fail --location --output junit2jira "$LOCATION"
+        chmod +x junit2jira
+      fi
+  - name: Check files
+    shell: bash
+    env:
+      JIRA_TOKEN: ${{ inputs.jira-token }}
+    run: |
+      ./junit2jira \
+          -base-link "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
+          -build-id "${{ github.run_id }}"  \
+          -build-link "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+          -build-tag "${{ github.ref_name }}@${{ github.sha }}" \
+          -job-name "${{ github.job }}" \
+          -junit-reports-dir "${{ inputs.directory }}" \
+          -orchestrator "${{ runner.name }} ${{ runner.os }}-${{ runner.arch }}" \
+          -threshold "${{ inputs.threshold }}"

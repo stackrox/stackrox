@@ -32,8 +32,8 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {
-    ImageVulnerabilityCounter,
-    imageVulnerabilityCounterFragment,
+    ResourceCountByCveSeverity,
+    resourceCountByCveSeverityFragment,
 } from '../SummaryCards/CvesByStatusSummaryCard';
 import SingleEntityVulnerabilitiesTable, {
     ImageVulnerability,
@@ -49,13 +49,13 @@ import {
 
 const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
-    ${imageVulnerabilityCounterFragment}
+    ${resourceCountByCveSeverityFragment}
     ${imageVulnerabilitiesFragment}
     query getImageCoreVulnerabilities($id: ID!, $query: String!, $pagination: Pagination!) {
         image(id: $id) {
             ...ImageMetadataContext
-            imageVulnerabilityCounter(query: $query) {
-                ...ImageVulnerabilityCounterFields
+            imageCVECountBySeverity(query: $query) {
+                ...AllResourceCountsByCVESeverity
             }
             imageVulnerabilities(query: $query, pagination: $pagination) {
                 ...ImageVulnerabilityFields
@@ -109,7 +109,7 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
     const { data, previousData, loading, error } = useQuery<
         {
             image: ImageMetadataContext & {
-                imageVulnerabilityCounter: ImageVulnerabilityCounter;
+                imageCVECountBySeverity: ResourceCountByCveSeverity;
                 imageVulnerabilities: ImageVulnerability[];
             };
         },
@@ -156,9 +156,10 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
     } else if (vulnerabilityData) {
         const hiddenSeverities = getHiddenSeverities(querySearchFilter);
         const hiddenStatuses = getHiddenStatuses(querySearchFilter);
-        const vulnCounter = vulnerabilityData.image.imageVulnerabilityCounter;
-        const totalVulnerabilityCount = vulnCounter.all.total;
+        const vulnCounter = vulnerabilityData.image.imageCVECountBySeverity;
         const { critical, important, moderate, low } = vulnCounter;
+        const totalVulnerabilityCount =
+            critical.total + important.total + moderate.total + low.total;
 
         mainContent = (
             <>
@@ -178,7 +179,7 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                         </GridItem>
                         <GridItem sm={12} md={6} xl2={4}>
                             <CvesByStatusSummaryCard
-                                cveStatusCounts={vulnerabilityData.image.imageVulnerabilityCounter}
+                                cveStatusCounts={vulnerabilityData.image.imageCVECountBySeverity}
                                 hiddenStatuses={hiddenStatuses}
                             />
                         </GridItem>

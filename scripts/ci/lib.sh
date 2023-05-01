@@ -1424,12 +1424,27 @@ junit_wrap() {
     local class="$1"; shift
     local description="$1"; shift
     local failure_message="$1"; shift
+    local command_output=""
 
-    if "$@"; then
+    if command_output="$("$@" 2>&1)"; then
+        echo "${command_output}"
         save_junit_success "${class}" "${description}"
     else
         local ret_code="$?"
-        save_junit_failure "${class}" "${description}" "${failure_message}"
+        echo "${command_output}"
+
+        local failure_body=""
+        if [[ -n "$failure_message" ]]; then
+            failure_body="${failure_message}
+"
+        fi
+        if [[ "${#command_output}" -gt 512 ]]; then
+            command_output="...${command_output: -512}"
+        fi
+        failure_body="${failure_body}Command output: ${command_output}"
+
+        save_junit_failure "${class}" "${description}" "${failure_body}"
+
         return ${ret_code}
     fi
 }

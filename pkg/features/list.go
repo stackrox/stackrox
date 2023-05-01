@@ -48,4 +48,7 @@ var (
 
 	// VulnMgmtReportingEnhancements enables APIs and UI pages for VM Reporting enhancements including downloadable reports
 	VulnMgmtReportingEnhancements = registerFeature("Vuln Mgmt Reporting Enhancements", "ROX_VULN_MGMT_REPORTING_ENHANCEMENTS", false)
+
+	// StoreEventHashes stores the hashes of successfully processed objects we receive from Sensor into the database
+	StoreEventHashes = registerFeature("Store Event Hashes", "ROX_STORE_EVENT_HASHES", false)
 )

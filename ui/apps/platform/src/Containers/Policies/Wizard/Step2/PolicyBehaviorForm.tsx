@@ -30,7 +30,11 @@ import DownloadCLIDropdown from './DownloadCLIDropdown';
 
 import './PolicyBehaviorForm.css';
 
-function PolicyBehaviorForm() {
+type PolicyBehaviorFormProps = {
+    hasActiveViolations: boolean;
+};
+
+function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
     const { values, setFieldValue, setValues } = useFormikContext<ClientPolicy>();
     const hasEnforcementActions =
         values.enforcementActions?.length > 0 &&
@@ -174,6 +178,7 @@ function PolicyBehaviorForm() {
                                 onChange={(isChecked) => {
                                     onChangeLifecycleStage('BUILD', isChecked);
                                 }}
+                                isDisabled={hasActiveViolations}
                             />
                             <Checkbox
                                 label="Deploy"
@@ -182,6 +187,7 @@ function PolicyBehaviorForm() {
                                 onChange={(isChecked) => {
                                     onChangeLifecycleStage('DEPLOY', isChecked);
                                 }}
+                                isDisabled={hasActiveViolations}
                             />
                             <Checkbox
                                 label="Runtime"
@@ -190,9 +196,17 @@ function PolicyBehaviorForm() {
                                 onChange={(isChecked) => {
                                     onChangeLifecycleStage('RUNTIME', isChecked);
                                 }}
+                                isDisabled={hasActiveViolations}
                             />
                         </Flex>
                     </FormGroup>
+                    {hasActiveViolations && (
+                        <Alert
+                            isInline
+                            variant="warning"
+                            title="Policy has active violations, and the lifecycle stage cannot be changed. To update the lifecycle, clone and create a new policy."
+                        />
+                    )}
                     <FormGroup
                         fieldId="policy-event-source"
                         label="Event sources (Runtime lifecycle only)"
@@ -205,7 +219,7 @@ function PolicyBehaviorForm() {
                                 id="policy-event-source-deployment"
                                 name="eventSource"
                                 onChange={() => setFieldValue('eventSource', 'DEPLOYMENT_EVENT')}
-                                isDisabled={!hasRuntime}
+                                isDisabled={!hasRuntime || hasActiveViolations}
                             />
                             <Radio
                                 label="Audit logs"
@@ -213,7 +227,7 @@ function PolicyBehaviorForm() {
                                 id="policy-event-source-audit-logs"
                                 name="eventSource"
                                 onChange={onChangeAuditLogEventSource}
-                                isDisabled={!hasRuntime}
+                                isDisabled={!hasRuntime || hasActiveViolations}
                             />
                         </Flex>
                     </FormGroup>

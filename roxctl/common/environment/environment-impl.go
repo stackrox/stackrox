@@ -7,8 +7,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	cliIO "github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -60,13 +63,21 @@ func CLIEnvironment() Environment {
 
 // HTTPClient returns the common.RoxctlHTTPClient associated with the CLI Environment
 func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration) (common.RoxctlHTTPClient, error) {
-	client, err := common.GetRoxctlHTTPClient(timeout, flags.ForceHTTP1(), flags.UseInsecure(), c.Logger())
+	am, err := determineAuthMethod(c.logger)
+	if err != nil {
+		return nil, errors.Wrap(err, "determining auth method")
+	}
+	client, err := common.GetRoxctlHTTPClient(am, timeout, flags.ForceHTTP1(), flags.UseInsecure(), c.Logger())
 	return client, errors.WithStack(err)
 }
 
 // GRPCConnection returns the common.GetGRPCConnection
 func (c *cliEnvironmentImpl) GRPCConnection() (*grpc.ClientConn, error) {
-	connection, err := common.GetGRPCConnection(c.Logger())
+	am, err := determineAuthMethod(c.logger)
+	if err != nil {
+		return nil, errors.Wrap(err, "determining auth method")
+	}
+	connection, err := common.GetGRPCConnection(am, c.Logger())
 	return connection, errors.WithStack(err)
 }
 
@@ -103,4 +114,21 @@ func (w colorWriter) Write(p []byte) (int, error) {
 		return n, errors.Wrap(err, "could not write")
 	}
 	return len(p), nil
+}
+
+func determineAuthMethod(l logger.Logger) (auth.Method, error) {
+	if flags.APITokenFile() != "" && flags.Password() != "" {
+		return nil, errox.InvalidArgs.New("cannot use basic and token-based authentication at the same time")
+	}
+	switch {
+	case flags.Password() != "":
+		return auth.BasicAuth(), nil
+	case flags.APITokenFile() != "" || env.TokenEnv.Setting() != "":
+		return auth.TokenAuth(), nil
+	default:
+		l.WarnfLn(`No authentication method was provided, defaulting to anonymous auth.
+In case you want to choose a different authentication method, either use the password flag / environment variable or
+the API token file flag / environment variable.`)
+		return auth.AnonymousAuth(), nil
+	}
 }
