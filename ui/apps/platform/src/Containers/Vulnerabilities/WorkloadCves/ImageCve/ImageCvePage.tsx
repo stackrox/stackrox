@@ -33,12 +33,6 @@ import ImageCvePageHeader, {
     ImageCveMetadata,
     imageCveMetadataFragment,
 } from './ImageCvePageHeader';
-import ImageCveSummaryCards, {
-    ImageCveSeveritySummary,
-    imageCveSeveritySummaryFragment,
-    ImageCveSummaryCount,
-    imageCveSummaryCountFragment,
-} from './ImageCveSummaryCards';
 import AffectedImagesTable, {
     ImageForCve,
     imagesForCveFragment,
@@ -50,6 +44,12 @@ import AffectedDeploymentsTable, {
     DeploymentForCve,
     deploymentsForCveFragment,
 } from '../Tables/AffectedDeploymentsTable';
+import AffectedImages from '../SummaryCards/AffectedImages';
+import BySeveritySummaryCard, {
+    ResourceCountsByCveSeverity,
+} from '../SummaryCards/BySeveritySummaryCard';
+import TopCvssScoreBreakdown from '../SummaryCards/TopCvssScoreBreakdown';
+import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
@@ -66,15 +66,19 @@ export const imageCveMetadataQuery = gql`
 `;
 
 export const imageCveSummaryQuery = gql`
-    ${imageCveSummaryCountFragment}
-    ${imageCveSeveritySummaryFragment}
+    ${resourceCountByCveSeverityAndStatusFragment}
     query getImageCveSummaryData($cve: String!, $query: String!) {
-        ...ImageCVESummaryCounts
+        totalImageCount: imageCount
         imageCount(query: $query)
         deploymentCount(query: $query)
         imageCVE(cve: $cve, subfieldScopeQuery: $query) {
             cve
-            ...ImageCVESeveritySummary
+            affectedImageCount
+            topCVSS
+            # TODO vector
+            affectedImageCountBySeverity {
+                ...ResourceCountsByCVESeverityAndStatus
+            }
         }
     }
 `;
@@ -115,6 +119,17 @@ function getDefaultSortOption(entityTab: (typeof imageCveEntities)[number]) {
     return entityTab === 'Image' ? imageDefaultSort : deploymentDefaultSort;
 }
 
+const defaultSeveritySummary = {
+    affectedImageCountBySeverity: {
+        critical: { total: 0 },
+        important: { total: 0 },
+        moderate: { total: 0 },
+        low: { total: 0 },
+    },
+    affectedImageCount: 0,
+    topCVSS: 0,
+};
+
 function ImageCvePage() {
     const urlParams = useParams();
     const cveId: string = urlParams.cveId ?? '';
@@ -140,10 +155,15 @@ function ImageCvePage() {
     );
 
     const summaryRequest = useQuery<
-        ImageCveSummaryCount & {
+        {
+            totalImageCount: number;
             imageCount: number;
             deploymentCount: number;
-            imageCVE: ImageCveSeveritySummary | null;
+            imageCVE: {
+                affectedImageCountBySeverity: ResourceCountsByCveSeverity;
+                affectedImageCount: number;
+                topCVSS: number;
+            };
         },
         { cve: string; query: string }
     >(imageCveSummaryQuery, {
@@ -230,6 +250,7 @@ function ImageCvePage() {
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
+    const severitySummary = summaryRequest.data?.imageCVE ?? defaultSeveritySummary;
 
     return (
         <>
@@ -284,11 +305,28 @@ function ImageCvePage() {
                             />
                         )}
                         {summaryRequest.data && (
-                            <ImageCveSummaryCards
-                                summaryCounts={summaryRequest.data}
-                                severitySummary={summaryRequest.data.imageCVE}
-                                hiddenSeverities={hiddenSeverities}
-                            />
+                            <Flex
+                                direction={{ default: 'column', lg: 'row' }}
+                                alignItems={{ lg: 'alignItemsStretch' }}
+                                justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                            >
+                                <AffectedImages
+                                    className="pf-u-flex-grow-1 pf-u-flex-basis-0"
+                                    affectedImageCount={severitySummary.affectedImageCount}
+                                    totalImagesCount={summaryRequest.data.totalImageCount}
+                                />
+                                <BySeveritySummaryCard
+                                    className="pf-u-flex-grow-1 pf-u-flex-basis-0"
+                                    title="Images by severity"
+                                    severityCounts={severitySummary.affectedImageCountBySeverity}
+                                    hiddenSeverities={hiddenSeverities}
+                                />
+                                <TopCvssScoreBreakdown
+                                    className="pf-u-flex-grow-1 pf-u-flex-basis-0"
+                                    cvssScore={severitySummary.topCVSS}
+                                    vector="TODO - Not implemented"
+                                />
+                            </Flex>
                         )}
                     </div>
                 </div>
