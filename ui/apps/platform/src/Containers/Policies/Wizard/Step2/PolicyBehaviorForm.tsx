@@ -18,6 +18,7 @@ import {
     GridItem,
 } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
+import cloneDeep from 'lodash/cloneDeep';
 
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import { ClientPolicy, LifecycleStage } from 'types/policy.proto';
@@ -50,7 +51,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
     const [showEnforcement, setShowEnforcement] = React.useState(hasEnforcementActions);
 
     function onChangeLifecycleStage(lifecycleStage: LifecycleStage, isChecked: boolean) {
-        if (values?.id) {
+        if (values.id) {
             // for existing policies, warn that changing lifecycles will clear all policy criteria
             setLifeCycleChange({ lifecycleStage, isChecked });
         } else {
@@ -70,7 +71,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
             const newValues = getLifeCyclesUpdates(values, lifecycleStage, !!isChecked);
 
             // second, clear the policy criteria
-            const clearedCriteria = initialPolicy.policySections;
+            const clearedCriteria = cloneDeep(initialPolicy.policySections);
             newValues.policySections = clearedCriteria;
             setValues(newValues);
         }
@@ -119,16 +120,8 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
         });
 
         // clear policy sections to prevent non-runtime criteria from being sent to BE
-        setFieldValue(
-            'policySections',
-            [
-                {
-                    sectionName: 'Policy Section 1',
-                    policyGroups: [],
-                },
-            ],
-            false
-        );
+        const clearedCriteria = cloneDeep(initialPolicy.policySections);
+        setFieldValue('policySections', clearedCriteria, false);
     }
 
     const responseMethodHelperText = showEnforcement
