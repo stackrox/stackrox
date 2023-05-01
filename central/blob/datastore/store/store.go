@@ -18,6 +18,7 @@ var log = logging.LoggerForModule()
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error
 	Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error)
+	Delete(ctx context.Context, name string) error
 }
 
 type storeImpl struct {
@@ -116,7 +117,7 @@ func (s *storeImpl) Get(ctx context.Context, name string, writer io.Writer) (*st
 	ctx = pgPkg.ContextWithTx(ctx, tx)
 
 	los := tx.LargeObjects()
-	lo, err := los.Open(ctx, existingBlob.GetOid(), pgx.LargeObjectModeWrite)
+	lo, err := los.Open(ctx, existingBlob.GetOid(), pgx.LargeObjectModeRead)
 	if err != nil {
 		err := errors.Wrapf(err, "error opening large object with oid %d", existingBlob.GetOid())
 		return nil, false, wrapRollback(ctx, tx, err)
@@ -145,4 +146,32 @@ func (s *storeImpl) Get(ctx context.Context, name string, writer io.Writer) (*st
 	}
 
 	return existingBlob, true, tx.Commit(ctx)
+}
+
+// Delete removes a blob from database if it exists
+func (s *storeImpl) Delete(ctx context.Context, name string) error {
+	existingBlob, exists, err := s.store.Get(ctx, name)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return nil
+	}
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	ctx = pgPkg.ContextWithTx(ctx, tx)
+	los := tx.LargeObjects()
+	if err = los.Unlink(ctx, existingBlob.GetOid()); err != nil {
+		return errors.Wrapf(err, "failed to remove large object with oid %d", existingBlob.GetOid())
+	}
+	if err = s.store.Delete(ctx, name); err != nil {
+		err = errors.Wrapf(err, "deleting large object %s", name)
+		return wrapRollback(ctx, tx, err)
+	}
+
+	return tx.Commit(ctx)
 }

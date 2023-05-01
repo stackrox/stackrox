@@ -71,4 +71,6 @@ func (s *BlobsStoreSuite) TestStore() {
 	s.NotZero(blob.GetOid())
 	s.Equal(insertBlob, blob)
 	s.Equal(randomData, buf.Bytes())
+
+	s.NoError(s.store.Delete(ctx, insertBlob.GetName()))
 }
