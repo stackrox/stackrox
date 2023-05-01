@@ -81,7 +81,7 @@ const StyleGroup: React.FunctionComponent<StyleGroupProps> = ({
 
     if (passedData.type === 'NAMESPACE') {
         className = `${className} ${
-            passedData.isFilteredNamespace ? 'filtered-namespace' : 'derived-namespace'
+            passedData.isFilteredNamespace ? 'filtered-namespace' : 'related-namespace'
         }`.trim();
     }
 
