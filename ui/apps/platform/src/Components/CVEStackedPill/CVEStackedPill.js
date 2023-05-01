@@ -84,10 +84,9 @@ const CVEStackedPill = ({
             )}
             {hasScanMessage && (
                 <Tooltip
-                    type="alert"
+                    isContentLeftAligned
                     content={
                         <DetailedTooltipContent
-                            extraClassName="text-alert-800"
                             title="CVE Data May Be Inaccurate"
                             subtitle={scanMessage?.header}
                             body={
