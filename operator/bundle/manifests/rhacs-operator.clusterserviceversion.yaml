@@ -621,10 +621,9 @@ spec:
         displayName: Taint Toleration
         path: perNode.taintToleration
       - description: The method for system-level data collection. EBPF is recommended.
-          KernelModule is deprecated and will be removed in the 4.1 release. If you
-          select "NoCollection", you will not be able to see any information about
-          network activity and process executions. The remaining settings in these
-          section will not have any effect.
+          If you select "NoCollection", you will not be able to see any information
+          about network activity and process executions. The remaining settings
+          in these section will not have any effect.
         displayName: Collection
         path: perNode.collector.collection
       - description: The image flavor to use for collector. "Regular" images are bigger
