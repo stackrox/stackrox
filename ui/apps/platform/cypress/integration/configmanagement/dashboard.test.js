@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasOrchestratorFlavor } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import {
@@ -274,7 +275,11 @@ describe('Configuration Management Dashboard', () => {
         cy.location('search').should('contain', '[Policy%20Status]='); // either Fail (for rated as Whatever) or Pass (for policies without violations)
     });
 
-    it('clicking the "CIS Standard Across Clusters" widget\'s "passing controls" link should take you to the controls list and filter by passing controls', () => {
+    it('clicking the "CIS Standard Across Clusters" widget\'s "passing controls" link should take you to the controls list and filter by passing controls', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         const entitiesKey = 'controls';
 
         visitConfigurationManagementDashboard();
@@ -293,7 +298,11 @@ describe('Configuration Management Dashboard', () => {
         cy.location('search').should('contain', '[Compliance%20State]=Pass');
     });
 
-    it('clicking the "CIS Standard Across Clusters" widget\'s "failing controls" link should take you to the controls list and filter by failing controls', () => {
+    it('clicking the "CIS Standard Across Clusters" widget\'s "failing controls" link should take you to the controls list and filter by failing controls', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         const entitiesKey = 'controls';
 
         visitConfigurationManagementDashboard();

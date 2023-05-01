@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasOrchestratorFlavor } from '../../helpers/features';
 import searchSelectors from '../../selectors/search';
 
 import {
@@ -12,6 +13,12 @@ import { selectors } from './Compliance.selectors';
 
 describe('Compliance entities list', () => {
     withAuth();
+
+    before(function beforeHook() {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+    });
 
     it('should filter namespaces table with passing controls', () => {
         visitComplianceEntities('namespaces');
