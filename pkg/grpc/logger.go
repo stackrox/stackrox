@@ -12,7 +12,7 @@ type httpErrorLogger struct {
 
 // Write suppresses EOF error messages
 func (l httpErrorLogger) Write(p []byte) (n int, err error) {
-	if !bytes.Contains(p, []byte("EOF")) && !bytes.Contains(p, []byte("preface")) {
+	if !bytes.Contains(p, []byte("EOF")) && !bytes.Contains(p, []byte("error reading preface from client")) {
 		return os.Stderr.Write(p)
 	}
 	return len(p), nil
