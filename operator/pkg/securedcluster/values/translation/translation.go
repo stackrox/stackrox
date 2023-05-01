@@ -275,8 +275,6 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *platform
 		switch *c {
 		case platform.CollectionEBPF:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_EBPF.String())
-		case platform.CollectionKernelModule:
-			cv.SetStringValue("collectionMethod", storage.CollectionMethod_KERNEL_MODULE.String())
 		case platform.CollectionNone:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_NO_COLLECTION.String())
 		case platform.CollectionCOREBPF:
