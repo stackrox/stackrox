@@ -23,7 +23,7 @@ class Helpers {
             try {
                 return closure()
             } catch (Exception | PowerAssertionError | SpockAssertionError t) {
-                log.debug("Caught exception. Retrying in ${pauseSecs}s", t)
+                log.debug("Caught exception. Retrying in ${pauseSecs}s. " + t)
             }
             sleep pauseSecs * 1000
         }
@@ -65,6 +65,19 @@ class Helpers {
         return willRetry
     }
 
+    static boolean waitForTrue(int retries, int intervalSeconds, Closure closure) {
+        Timer t = new Timer(retries, intervalSeconds)
+        int attempt = 0
+        while (t.IsValid()) {
+            attempt++
+            if (closure()) {
+                return true
+            }
+            log.debug "Attempt ${attempt} failed, retrying"
+        }
+        throw new RuntimeException("All ${attempt} attempts failed, could not reach desired state")
+    }
+
     static void resetRetryAttempts() {
         retryAttempt = 0
     }
@@ -97,7 +110,7 @@ class Helpers {
 
         if (exception && (exception instanceof AssumptionViolatedException ||
                 exception.getMessage()?.contains("org.junit.AssumptionViolatedException"))) {
-            log.info("Won't collect logs for", exception)
+            log.info("Won't collect logs for: " + exception)
             return
         }
 

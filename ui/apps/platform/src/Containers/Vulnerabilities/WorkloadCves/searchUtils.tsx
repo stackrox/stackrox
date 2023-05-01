@@ -50,7 +50,7 @@ export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySear
     const cleanSearchFilter: QuerySearchFilter = {};
 
     // SearchFilter values that can be directly translated over to the backend equivalent
-    const unprocessedSearchKeys = ['IMAGE', 'DEPLOYMENT', 'NAMESPACE', 'CLUSTER'] as const;
+    const unprocessedSearchKeys = ['CVE', 'IMAGE', 'DEPLOYMENT', 'NAMESPACE', 'CLUSTER'] as const;
     unprocessedSearchKeys.forEach((key) => {
         if (rawSearchFilter[key]) {
             cleanSearchFilter[key] = searchValueAsArray(rawSearchFilter[key]);

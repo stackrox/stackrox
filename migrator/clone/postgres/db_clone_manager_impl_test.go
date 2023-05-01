@@ -42,7 +42,7 @@ type versionPair struct {
 
 type PostgresCloneManagerSuite struct {
 	suite.Suite
-	pool      *postgres.DB
+	pool      postgres.DB
 	config    *postgres.Config
 	sourceMap map[string]string
 	ctx       context.Context

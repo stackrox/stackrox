@@ -122,7 +122,7 @@ type PruningTestSuite struct {
 	suite.Suite
 
 	ctx  context.Context
-	pool *postgres.DB
+	pool postgres.DB
 }
 
 func (s *PruningTestSuite) SetupSuite() {

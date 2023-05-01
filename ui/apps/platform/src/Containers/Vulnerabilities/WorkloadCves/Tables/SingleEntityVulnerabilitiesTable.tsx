@@ -10,6 +10,7 @@ import {
     Tr,
 } from '@patternfly/react-table';
 import { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
+import { gql } from '@apollo/client';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
@@ -18,17 +19,56 @@ import { vulnerabilitySeverityLabels } from 'messages/common';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { FixableIcon, NotFixableIcon } from 'Components/PatternFly/FixabilityIcons';
-import { ImageVulnerabilitiesResponse } from '../hooks/useImageVulnerabilities';
 import { getEntityPagePath } from '../searchUtils';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
-import ComponentVulnerabilitiesTable from './ComponentVulnerabilitiesTable';
+import ComponentVulnerabilitiesTable, {
+    ComponentVulnerability,
+    ImageMetadataContext,
+    componentVulnerabilitiesFragment,
+} from './ComponentVulnerabilitiesTable';
+
+import EmptyTableResults from '../components/EmptyTableResults';
+
+export const imageVulnerabilitiesFragment = gql`
+    ${componentVulnerabilitiesFragment}
+    fragment ImageVulnerabilityFields on ImageVulnerability {
+        id
+        severity
+        isFixable
+        cve
+        summary
+        cvss
+        scoreVersion
+        discoveredAtImage
+        imageComponents(query: $query) {
+            ...ComponentVulnerabilities
+        }
+    }
+`;
+
+export type ImageVulnerability = {
+    id: string;
+    severity: string;
+    isFixable: boolean;
+    cve: string;
+    summary: string;
+    cvss: number;
+    scoreVersion: string;
+    discoveredAtImage: Date | null;
+    imageComponents: ComponentVulnerability[];
+};
 
 export type SingleEntityVulnerabilitiesTableProps = {
-    image: ImageVulnerabilitiesResponse['image'];
+    image: ImageMetadataContext & {
+        imageVulnerabilities: ImageVulnerability[];
+    };
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
 };
 
+// TODO Although the structure of this table is identical for both the Image and Deployment single page
+// tables, the data format coming in will be quite different. We will need a layer in between the parent
+// component and the table to normalize the data into a common format.
 function SingleEntityVulnerabilitiesTable({
     image,
     getSortParams,
@@ -42,12 +82,12 @@ function SingleEntityVulnerabilitiesTable({
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('CVE')}>CVE</Th>
-                    <Th sort={getSortParams('Severity')}>Severity</Th>
-                    <Th sort={getSortParams('Fixable')}>
+                    <Th>Severity</Th>
+                    <Th>
                         CVE Status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    {/* TODO Add sorting for these columns once aggregate sorting is available in BE */}
+                    <Th sort={getSortParams('CVSS')}>CVSS</Th>
                     <Th>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
@@ -55,9 +95,19 @@ function SingleEntityVulnerabilitiesTable({
                     <Th>First discovered</Th>
                 </Tr>
             </Thead>
+            {image.imageVulnerabilities.length === 0 && <EmptyTableResults colSpan={7} />}
             {image.imageVulnerabilities.map(
                 (
-                    { cve, severity, summary, isFixable, imageComponents, discoveredAtImage },
+                    {
+                        cve,
+                        severity,
+                        summary,
+                        isFixable,
+                        cvss,
+                        scoreVersion,
+                        imageComponents,
+                        discoveredAtImage,
+                    },
                     rowIndex
                 ) => {
                     const SeverityIcon: React.FC<SVGIconProps> | undefined =
@@ -105,6 +155,9 @@ function SingleEntityVulnerabilitiesTable({
                                         </span>
                                     </span>
                                 </Td>
+                                <Td dataLabel="CVSS">
+                                    {cvss.toFixed(1)} ({scoreVersion})
+                                </Td>
                                 <Td dataLabel="Affected components">
                                     {imageComponents.length === 1
                                         ? imageComponents[0].name
@@ -116,7 +169,7 @@ function SingleEntityVulnerabilitiesTable({
                             </Tr>
                             <Tr isExpanded={isExpanded}>
                                 <Td />
-                                <Td colSpan={5}>
+                                <Td colSpan={6}>
                                     <ExpandableRowContent>
                                         <p className="pf-u-mb-md">{summary}</p>
                                         <ComponentVulnerabilitiesTable

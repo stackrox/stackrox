@@ -100,6 +100,7 @@ export_test_environment() {
     ci_export ROX_QUAY_ROBOT_ACCOUNTS "${ROX_QUAY_ROBOT_ACCOUNTS:-true}"
     ci_export ROX_SYSTEM_HEALTH_PF "${ROX_SYSTEM_HEALTH_PF:-true}"
     ci_export ROX_SYSLOG_EXTRA_FIELDS "${ROX_SYSLOG_EXTRA_FIELDS:-true}"
+    ci_export ROX_VULN_MGMT_REPORTING_ENHANCEMENTS "${ROX_VULN_MGMT_REPORTING_ENHANCEMENTS:-true}"
     ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
 
     if [[ -z "${BUILD_TAG:-}" ]]; then

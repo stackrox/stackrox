@@ -657,10 +657,6 @@ class NetworkFlowTest extends BaseSpecification {
         // TODO(RS-178): EKS cannot NetworkPolicy
         Assume.assumeFalse(ClusterService.isEKS())
 
-        // TODO(ROX-7878): Re-enable for OSD clusters
-        Assume.assumeFalse(ClusterService.isOpenShift3())
-        Assume.assumeFalse(ClusterService.isOpenShift4())
-
         given:
         "Get current state of network graph"
         NetworkGraph currentGraph = NetworkGraphService.getNetworkGraph()

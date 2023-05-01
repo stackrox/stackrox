@@ -27,7 +27,7 @@ collector:
     key: true
   resources: true
   complianceResources: true
-  nodeInventoryResources: true
+  nodeScanningResources: true
   nodeSelector: true
 scanner:
   resources: true

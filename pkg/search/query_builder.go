@@ -159,9 +159,11 @@ func (p *Pagination) Offset(offset int32) *Pagination {
 // AddSortOption adds the sort option to the pagination object
 func (p *Pagination) AddSortOption(so *SortOption) *Pagination {
 	opt := &v1.QuerySortOption{
-		Field:       string(so.field),
-		AggregateBy: so.aggregateBy.Proto(),
-		Reversed:    so.reversed,
+		Field:    string(so.field),
+		Reversed: so.reversed,
+	}
+	if so.aggregateBy.aggrFunc != aggregatefunc.Unset {
+		opt.AggregateBy = so.aggregateBy.Proto()
 	}
 	if so.searchAfter != "" {
 		opt.SearchAfterOpt = &v1.QuerySortOption_SearchAfter{

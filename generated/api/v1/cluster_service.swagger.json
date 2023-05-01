@@ -595,7 +595,8 @@
         "UNSET_COLLECTION",
         "NO_COLLECTION",
         "KERNEL_MODULE",
-        "EBPF"
+        "EBPF",
+        "CORE_BPF"
       ],
       "default": "UNSET_COLLECTION"
     },

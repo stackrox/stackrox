@@ -1015,19 +1015,21 @@ gate_pr_job() {
 openshift_ci_mods() {
     info "BEGIN OpenShift CI mods"
 
-    info "Env A-Z dump:"
-    env | sort | grep -E '^[A-Z]' || true
+    local debug="${ARTIFACT_DIR:-/tmp}/debug.txt"
+
+    echo "Env A-Z dump:" > "${debug}"
+    env | sort | grep -E '^[A-Z]' >> "${debug}" || true
 
     ensure_writable_home_dir
 
     # Prevent fatal error "detected dubious ownership in repository" from recent git.
     git config --global --add safe.directory "$(pwd)"
 
-    info "Git log:"
-    git log --oneline --decorate -n 20 || true
+    echo "Git log:" >> "${debug}"
+    git log --oneline --decorate -n 20 >> "${debug}" || true
 
-    info "Recent git refs:"
-    git for-each-ref --format='%(creatordate) %(refname)' --sort=creatordate | tail -20
+    echo "Recent git refs:" >> "${debug}"
+    git for-each-ref --format='%(creatordate) %(refname)' --sort=creatordate | tail -20 >> "${debug}"
 
     info "Current Status:"
     "$ROOT/status.sh" || true
@@ -1422,12 +1424,27 @@ junit_wrap() {
     local class="$1"; shift
     local description="$1"; shift
     local failure_message="$1"; shift
+    local command_output=""
 
-    if "$@"; then
+    if command_output="$("$@" 2>&1)"; then
+        echo "${command_output}"
         save_junit_success "${class}" "${description}"
     else
         local ret_code="$?"
-        save_junit_failure "${class}" "${description}" "${failure_message}"
+        echo "${command_output}"
+
+        local failure_body=""
+        if [[ -n "$failure_message" ]]; then
+            failure_body="${failure_message}
+"
+        fi
+        if [[ "${#command_output}" -gt 512 ]]; then
+            command_output="...${command_output: -512}"
+        fi
+        failure_body="${failure_body}Command output: ${command_output}"
+
+        save_junit_failure "${class}" "${description}" "${failure_body}"
+
         return ${ret_code}
     fi
 }

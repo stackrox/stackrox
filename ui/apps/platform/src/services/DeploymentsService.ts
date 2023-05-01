@@ -13,8 +13,8 @@ import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 import axios from './instance';
 
-const deploymentsUrl = '/v1/deploymentswithprocessinfo';
-const deploymentByIdUrl = '/v1/deployments';
+const deploymentsUrl = '/v1/deployments';
+const deploymentsWithProcessUrl = '/v1/deploymentswithprocessinfo';
 const deploymentWithRiskUrl = '/v1/deploymentswithrisk';
 const deploymentsCountUrl = '/v1/deploymentscount';
 
@@ -23,20 +23,12 @@ function shouldHideOrchestratorComponents() {
     return localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true';
 }
 
-/**
- * Fetches list of registered deployments.
- *
- * Changes from the 'legacy' version of this same function:
- * - returns a 'cancel' function to abort the request
- * - uses the new `SearchFilter` type instead of `RestSearchOption`
- * - Does not implicitly read the value of "shouldHideOrchestratorComponents"
- */
-export function fetchDeployments(
+function fillDeploymentSearchQuery(
     searchFilter: SearchFilter,
     sortOption: Record<string, string>,
     page: number,
     pageSize: number
-): CancellableRequest<ListDeploymentWithProcessInfo[]> {
+): string {
     const offset = page * pageSize;
     const query = getRequestQueryStringForSearchFilter(searchFilter);
     const queryObject: Record<
@@ -52,12 +44,51 @@ export function fetchDeployments(
     if (query) {
         queryObject.query = query;
     }
-    const params = queryString.stringify(queryObject, { arrayFormat: 'repeat', allowDots: true });
+    return queryString.stringify(queryObject, { arrayFormat: 'repeat', allowDots: true });
+}
+
+/**
+ * Fetches list of registered deployments.
+ *
+ * Changes from the 'fetchDeploymentsLegacy' function:
+ * - uses the new `SearchFilter` type instead of `RestSearchOption`
+ * - Does not fetch process information linked to the deployment
+ */
+export function listDeployments(
+    searchFilter: SearchFilter,
+    sortOption: Record<string, string>,
+    page: number,
+    pageSize: number
+): Promise<ListDeployment[]> {
+    const params = fillDeploymentSearchQuery(searchFilter, sortOption, page, pageSize);
+    return axios
+        .get<{ deployments: ListDeployment[] }>(`${deploymentsUrl}?${params}`)
+        .then((response) => response?.data?.deployments ?? []);
+}
+
+/**
+ * Fetches list of registered deployments.
+ *
+ * Changes from the 'legacy' version of this same function:
+ * - returns a 'cancel' function to abort the request
+ * - uses the new `SearchFilter` type instead of `RestSearchOption`
+ * - Does not implicitly read the value of "shouldHideOrchestratorComponents"
+ */
+export function fetchDeploymentsWithProcessInfo(
+    searchFilter: SearchFilter,
+    sortOption: Record<string, string>,
+    page: number,
+    pageSize: number
+): CancellableRequest<ListDeploymentWithProcessInfo[]> {
+    const params = fillDeploymentSearchQuery(searchFilter, sortOption, page, pageSize);
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .get<{ deployments: ListDeploymentWithProcessInfo[] }>(`${deploymentsUrl}?${params}`, {
-                signal,
-            })
+            .get<{ deployments: ListDeploymentWithProcessInfo[] }>(
+                `${deploymentsWithProcessUrl}?${params}`,
+                {
+                    signal,
+                }
+            )
             .then((response) => response?.data?.deployments ?? [])
     );
 }
@@ -65,7 +96,7 @@ export function fetchDeployments(
 /**
  * Fetches list of registered deployments.
  */
-export function fetchDeploymentsLegacy(
+export function fetchDeploymentsWithProcessInfoLegacy(
     options: RestSearchOption[] = [],
     sortOption: Record<string, string>,
     page: number,
@@ -92,7 +123,9 @@ export function fetchDeploymentsLegacy(
     }
     const params = queryString.stringify(queryObject, { arrayFormat: 'repeat', allowDots: true });
     return axios
-        .get<{ deployments: ListDeploymentWithProcessInfo[] }>(`${deploymentsUrl}?${params}`)
+        .get<{ deployments: ListDeploymentWithProcessInfo[] }>(
+            `${deploymentsWithProcessUrl}?${params}`
+        )
         .then((response) => response?.data?.deployments ?? []);
 }
 
@@ -129,7 +162,7 @@ export function fetchDeployment(id: string): Promise<Deployment> {
     if (!id) {
         throw new Error('Deployment ID must be specified');
     }
-    return axios.get<Deployment>(`${deploymentByIdUrl}/${id}`).then((response) => response.data);
+    return axios.get<Deployment>(`${deploymentsUrl}/${id}`).then((response) => response.data);
 }
 
 /**

@@ -1,7 +1,14 @@
-import { useState, useEffect } from 'react';
-import { gql, useQuery } from '@apollo/client';
+import { useState } from 'react';
+import useDeepCompareEffect from 'use-deep-compare-effect';
 
-import queryService from 'utils/queryService';
+import forEach from 'lodash/forEach';
+import get from 'lodash/get';
+import groupBy from 'lodash/groupBy';
+import keys from 'lodash/keys';
+
+import { listDeployments } from 'services/DeploymentsService';
+import { ListDeployment } from 'types/deployment.proto';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type Deployment = {
     id: string;
@@ -9,60 +16,86 @@ type Deployment = {
 };
 export type NamespaceWithDeployments = {
     metadata: {
-        id: string;
         name: string;
     };
     deployments: Deployment[];
 };
-type DeploymentResponse = {
-    results: NamespaceWithDeployments[];
+
+type ListDeploymentResponse = {
+    loading: boolean;
+    error: string;
+    deploymentsByNamespace: NamespaceWithDeployments[];
 };
 
-const DEPLOYMENTS_FOR_NAMESPACE_QUERY = gql`
-    query getNamespaceDeployments($query: String!) {
-        results: namespaces(query: $query) {
-            metadata {
-                name
-                id
-            }
-            deployments {
-                name
-                id
-            }
-        }
-    }
-`;
+function getNamespacesWithDeployments(deployments: ListDeployment[]): NamespaceWithDeployments[] {
+    const namespacesWithDeployments: NamespaceWithDeployments[] = [];
+    const listDeploymentsIndexedByNamespace = groupBy(deployments, 'namespace');
+    const namespaces = keys(listDeploymentsIndexedByNamespace);
+    forEach(namespaces, (ns) => {
+        const namespaceDeployments: Deployment[] = [];
+        const listDeploymentsForNamespace = get(listDeploymentsIndexedByNamespace, ns);
+        forEach(listDeploymentsForNamespace, ({ id, name }) => {
+            namespaceDeployments.push({ id, name });
+        });
+        const namespaceWithDeployments: NamespaceWithDeployments = {
+            metadata: {
+                name: ns,
+            },
+            deployments: namespaceDeployments,
+        };
+        namespacesWithDeployments.push(namespaceWithDeployments);
+    });
+    return namespacesWithDeployments;
+}
 
 function useFetchNamespaceDeployments(selectedNamespaceIds: string[]) {
-    const [availableDeployments, setAvailableNamespaces] = useState<NamespaceWithDeployments[]>([]);
-
-    const searchClause = { 'Namespace ID': selectedNamespaceIds };
-    // If the selectedNamespaceId has not been set yet, do not run the gql query
-    const queryOptions =
-        selectedNamespaceIds.length > 0
-            ? { variables: { query: queryService.objectToWhereClause(searchClause) } }
-            : { skip: true };
-
-    const { loading, error, data } = useQuery<DeploymentResponse, { query: string }>(
-        DEPLOYMENTS_FOR_NAMESPACE_QUERY,
-        queryOptions
-    );
-
-    useEffect(() => {
-        if (!data || !data.results) {
-            setAvailableNamespaces([]);
+    const [deploymentResponse, setDeploymentResponse] = useState<ListDeploymentResponse>({
+        loading: false,
+        error: '',
+        deploymentsByNamespace: [],
+    });
+    useDeepCompareEffect(() => {
+        if (selectedNamespaceIds.length <= 0) {
+            setDeploymentResponse({
+                loading: false,
+                error: '',
+                deploymentsByNamespace: [],
+            });
         } else {
-            setAvailableNamespaces(data.results);
-        }
-        // clean up state on unmount
-        return () => setAvailableNamespaces([]);
-    }, [data]);
+            setDeploymentResponse({
+                loading: true,
+                error: '',
+                deploymentsByNamespace: [],
+            });
+            const searchQuery: Record<string, string[]> = {
+                'Namespace ID': selectedNamespaceIds,
+            };
+            const sortOption = { field: 'Deployment', reversed: 'false' };
+            listDeployments(searchQuery, sortOption, 0, 0)
+                .then((response) => {
+                    const namespacesWithDeployments: NamespaceWithDeployments[] =
+                        getNamespacesWithDeployments(response);
+                    setDeploymentResponse({
+                        loading: false,
+                        error: '',
+                        deploymentsByNamespace: namespacesWithDeployments,
+                    });
+                })
+                .catch((error) => {
+                    const message = getAxiosErrorMessage(error);
+                    const errorMessage =
+                        message ||
+                        'An unknown error occurred while getting the list of deployments';
 
-    return {
-        loading,
-        error,
-        deploymentsByNamespace: availableDeployments,
-    };
+                    setDeploymentResponse({
+                        loading: false,
+                        error: errorMessage,
+                        deploymentsByNamespace: [],
+                    });
+                });
+        }
+    }, [selectedNamespaceIds]);
+    return deploymentResponse;
 }
 
 export default useFetchNamespaceDeployments;

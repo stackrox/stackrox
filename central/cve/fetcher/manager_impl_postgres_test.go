@@ -460,7 +460,7 @@ type TestClusterCVEOpsInPostgresTestSuite struct {
 
 	mockCtrl            *gomock.Controller
 	ctx                 context.Context
-	db                  *postgres.DB
+	db                  postgres.DB
 	gormDB              *gorm.DB
 	clusterDataStore    clusterDS.DataStore
 	clusterCVEDatastore clusterCVEDataStore.DataStore

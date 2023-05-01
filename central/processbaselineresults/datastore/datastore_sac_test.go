@@ -28,7 +28,7 @@ type processBaselineResultsDatastoreSACSuite struct {
 
 	engine *rocksdb.RocksDB
 
-	pool *postgres.DB
+	pool postgres.DB
 
 	datastore                  DataStore
 	testContexts               map[string]context.Context

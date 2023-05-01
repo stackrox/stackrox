@@ -43,7 +43,7 @@ type SecretDataStoreTestSuite struct {
 	storage   store.Store
 	datastore DataStore
 
-	pool *postgres.DB
+	pool postgres.DB
 
 	ctx context.Context
 }

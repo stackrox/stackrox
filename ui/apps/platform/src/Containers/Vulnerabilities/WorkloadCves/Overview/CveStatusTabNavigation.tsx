@@ -22,7 +22,7 @@ import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils
 import ImagesTableContainer from './ImagesTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
 import CVEsTableContainer from './CVEsTableContainer';
-import WorkloadTableToolbar from '../WorkloadTableToolbar';
+import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import EntityTypeToggleGroup from '../components/EntityTypeToggleGroup';
 import { DynamicTableLabel } from '../components/DynamicIcon';
 import { DefaultFilters, cveStatusTabValues, entityTabValues, EntityTab } from '../types';
@@ -104,7 +104,7 @@ function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps)
                                     <ToolbarItem>
                                         <EntityTypeToggleGroup
                                             imageCount={countsData?.imageCount}
-                                            cveCount={countsData?.cveCount}
+                                            cveCount={countsData?.imageCVECount}
                                             deploymentCount={countsData?.deploymentCount}
                                         />
                                     </ToolbarItem>

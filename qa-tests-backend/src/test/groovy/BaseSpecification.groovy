@@ -135,8 +135,11 @@ class BaseSpecification extends Specification {
 
             String testRoleName = "Test Automation Role - ${RUN_ID}"
 
-            RoleService.deleteRole(testRoleName)
-            RoleService.createRoleWithScopeAndPermissionSet(testRoleName, UNRESTRICTED_SCOPE_ID, resourceAccess)
+            if (RoleService.checkRoleExists(testRoleName)) {
+                RoleService.deleteRole(testRoleName)
+            }
+            testRole = RoleService.createRoleWithScopeAndPermissionSet(
+                testRoleName, UNRESTRICTED_SCOPE_ID, resourceAccess)
 
             tokenResp = services.ApiTokenService.generateToken("allAccessToken-${RUN_ID}", testRoleName)
         }

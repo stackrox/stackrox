@@ -39,7 +39,7 @@ type metadataIndex interface {
 }
 
 // NewStore returns a compliance store based on Postgres
-func NewStore(db *postgres.DB) store.Store {
+func NewStore(db postgres.DB) store.Store {
 	return &storeImpl{
 		domain:        domainStore.New(db),
 		metadata:      metadataStore.New(db),

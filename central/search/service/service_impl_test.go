@@ -112,7 +112,7 @@ type SearchOperationsTestSuite struct {
 	mockCtrl *gomock.Controller
 	rocksDB  *rocksdb.RocksDB
 	boltDB   *bolt.DB
-	pool     *postgres.DB
+	pool     postgres.DB
 }
 
 func (s *SearchOperationsTestSuite) SetupTest() {

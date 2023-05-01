@@ -68,7 +68,7 @@ var (
 )
 
 type flowStoreImpl struct {
-	db        *postgres.DB
+	db        postgres.DB
 	clusterID uuid.UUID
 }
 
@@ -143,7 +143,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *postgres.DB, clusterID string) store.FlowStore {
+func New(db postgres.DB, clusterID string) store.FlowStore {
 	clusterUUID, err := uuid.FromString(clusterID)
 	if err != nil {
 		log.Errorf("cluster ID is not valid.  %v", err)

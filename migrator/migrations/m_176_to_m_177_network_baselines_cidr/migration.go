@@ -76,7 +76,7 @@ func updatePeer(
 	return false, nil
 }
 
-func addCIDRBlockToBaselines(postgresDB *postgres.DB) error {
+func addCIDRBlockToBaselines(postgresDB postgres.DB) error {
 	ctx := context.Background()
 	networkBaselineStore := networkbaselinestore.New(postgresDB)
 	networkEntityStore := networkentitystore.New(postgresDB)

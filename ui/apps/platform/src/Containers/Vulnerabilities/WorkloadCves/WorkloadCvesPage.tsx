@@ -11,10 +11,10 @@ import {
     vulnerabilitiesWorkloadCveSinglePath,
     vulnerabilitiesWorkloadCvesPath,
 } from 'routePaths';
-import DeploymentPage from './DeploymentPage';
-import ImagePage from './ImagePage';
+import DeploymentPage from './Deployment/DeploymentPage';
+import ImagePage from './Image/ImagePage';
 import WorkloadCvesOverviewPage from './Overview/WorkloadCvesOverviewPage';
-import ImageCvePage from './ImageCvePage';
+import ImageCvePage from './ImageCve/ImageCvePage';
 
 function WorkloadCvesPage() {
     return (

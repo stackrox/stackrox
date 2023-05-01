@@ -48,7 +48,7 @@ type imageIDAndOs struct {
 	ScanOperatingSystem string `gorm:"column:scan_operatingsystem;type:varchar"`
 }
 
-func move(gormDB *gorm.DB, postgresDB *postgres.DB, legacyStore legacy.Store) error {
+func move(gormDB *gorm.DB, postgresDB postgres.DB, legacyStore legacy.Store) error {
 	imageTable := gormDB.Table(frozenSchema.ImagesSchema.Table).Model(frozenSchema.CreateTableImagesStmt.GormModel)
 	var imageCount int64
 	if err := imageTable.Count(&imageCount).Error; err != nil {

@@ -11,25 +11,52 @@ import {
 } from '@patternfly/react-core';
 
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
+import { gql } from '@apollo/client';
 import { FixableStatus } from '../types';
-import {
-    ImageVulnerabilityCounter,
-    imageVulnerabilityCounterKeys,
-} from '../hooks/useImageVulnerabilities';
+
+export const resourceCountByCVESeverityKeys = ['low', 'moderate', 'important', 'critical'] as const;
+
+export type ResourceCountByCveSeverityKey = (typeof resourceCountByCVESeverityKeys)[number];
+
+export type ResourceCountByCveSeverity = Record<
+    ResourceCountByCveSeverityKey,
+    { total: number; fixable: number }
+>;
 
 export type CvesByStatusSummaryCardProps = {
-    cveStatusCounts: ImageVulnerabilityCounter;
+    cveStatusCounts: ResourceCountByCveSeverity;
     hiddenStatuses: Set<FixableStatus>;
 };
+
+export const resourceCountByCveSeverityFragment = gql`
+    fragment AllResourceCountsByCVESeverity on ResourceCountByCVESeverity {
+        low {
+            total
+            fixable
+        }
+        moderate {
+            total
+            fixable
+        }
+        important {
+            total
+            fixable
+        }
+        critical {
+            total
+            fixable
+        }
+    }
+`;
 
 const statusDisplays = [
     {
         status: 'Fixable',
         Icon: CheckCircleIcon,
         iconColor: 'var(--pf-global--success-color--100)',
-        text: (counts: ImageVulnerabilityCounter) => {
+        text: (counts: ResourceCountByCveSeverity) => {
             let count = 0;
-            imageVulnerabilityCounterKeys.forEach((key) => {
+            resourceCountByCVESeverityKeys.forEach((key) => {
                 count += counts[key].fixable;
             });
             return `${pluralize(count, 'vulnerability', 'vulnerabilities')} with available fixes`;
@@ -39,9 +66,9 @@ const statusDisplays = [
         status: 'Not fixable',
         Icon: ExclamationCircleIcon,
         iconColor: 'var(--pf-global--danger-color--100)',
-        text: (counts: ImageVulnerabilityCounter) => {
+        text: (counts: ResourceCountByCveSeverity) => {
             let count = 0;
-            imageVulnerabilityCounterKeys.forEach((key) => {
+            resourceCountByCVESeverityKeys.forEach((key) => {
                 count += counts[key].total - counts[key].fixable;
             });
             return `${count} vulnerabilities without fixes`;

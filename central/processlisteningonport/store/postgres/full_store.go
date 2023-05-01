@@ -15,7 +15,7 @@ import (
 )
 
 // NewFullStore augments the generated store with GetProcessListeningOnPort functions.
-func NewFullStore(db *postgres.DB) store.Store {
+func NewFullStore(db postgres.DB) store.Store {
 	return &fullStoreImpl{
 		Store: New(db),
 		db:    db,
@@ -24,7 +24,7 @@ func NewFullStore(db *postgres.DB) store.Store {
 
 type fullStoreImpl struct {
 	Store
-	db *postgres.DB
+	db postgres.DB
 }
 
 // SQL query to join process_listening_on_port together with

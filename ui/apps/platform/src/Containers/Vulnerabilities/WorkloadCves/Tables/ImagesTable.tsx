@@ -11,6 +11,7 @@ import ImageNameTd from '../components/ImageNameTd';
 import { getEntityPagePath } from '../searchUtils';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
+import EmptyTableResults from '../components/EmptyTableResults';
 
 export const imageListQuery = gql`
     query getImageList($query: String, $pagination: Pagination) {
@@ -22,10 +23,18 @@ export const imageListQuery = gql`
                 tag
             }
             imageCVECountBySeverity(query: $query) {
-                critical
-                important
-                moderate
-                low
+                critical {
+                    total
+                }
+                important {
+                    total
+                }
+                moderate {
+                    total
+                }
+                low {
+                    total
+                }
             }
             operatingSystem
             deploymentCount(query: $query)
@@ -48,10 +57,10 @@ type Image = {
         tag: string;
     } | null;
     imageCVECountBySeverity: {
-        critical: number;
-        important: number;
-        moderate: number;
-        low: number;
+        critical: { total: number };
+        important: { total: number };
+        moderate: { total: number };
+        low: { total: number };
     };
     operatingSystem: string;
     deploymentCount: number;
@@ -90,6 +99,7 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                     <Th sort={getSortParams('Scan Time')}>Scan time</Th>
                 </Tr>
             </Thead>
+            {images.length === 0 && <EmptyTableResults colSpan={6} />}
             {images.map(
                 ({
                     id,
@@ -118,10 +128,10 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                                 </Td>
                                 <Td>
                                     <SeverityCountLabels
-                                        critical={imageCVECountBySeverity.critical}
-                                        important={imageCVECountBySeverity.important}
-                                        moderate={imageCVECountBySeverity.moderate}
-                                        low={imageCVECountBySeverity.low}
+                                        critical={imageCVECountBySeverity.critical.total}
+                                        important={imageCVECountBySeverity.important.total}
+                                        moderate={imageCVECountBySeverity.moderate.total}
+                                        low={imageCVECountBySeverity.low.total}
                                     />
                                 </Td>
                                 <Td>{operatingSystem}</Td>

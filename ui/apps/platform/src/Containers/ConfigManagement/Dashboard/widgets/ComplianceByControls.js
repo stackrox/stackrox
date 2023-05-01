@@ -4,6 +4,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { gql } from '@apollo/client';
 import queryService from 'utils/queryService';
 import entityTypes, { standardEntityTypes, standardBaseTypes } from 'constants/entityTypes';
+import { COMPLIANCE_FAIL_COLOR, COMPLIANCE_PASS_COLOR } from 'constants/visuals/colors';
 import { standardLabels } from 'messages/standards';
 import { Link, withRouter } from 'react-router-dom';
 import URLService from 'utils/URLService';
@@ -19,18 +20,17 @@ import Sunburst from 'Components/visuals/Sunburst';
 import TextSelect from 'Components/TextSelect';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
-const passingColor = 'var(--tertiary-400)';
-const failingColor = 'var(--alert-400)';
-const NAColor = 'var(--base-400)';
+const passingColor = COMPLIANCE_PASS_COLOR;
+const failingColor = COMPLIANCE_FAIL_COLOR;
+const NAColor = 'var(--base-400)'; // same as skippedColor in ComplianceByStandards
 
-const passingTextColor = 'var(--tertiary-500)';
-const failingTextColor = 'var(--alert-500)';
-const NATextColor = 'var(--base-500)';
+const linkColor = 'var(--primary-600)'; // TODO might be able to remove after PatternFly dark theme
+const textColor = 'var(--base-600)';
 
 const sunburstLegendData = [
-    { title: 'Passing', color: 'var(--tertiary-400)' },
-    { title: 'Failing', color: 'var(--alert-400)' },
-    { title: 'N/A', color: 'var(--base-400)' },
+    { title: 'Passing', color: passingColor },
+    { title: 'Failing', color: failingColor },
+    { title: 'N/A', color: NAColor },
 ];
 
 const QUERY = gql`
@@ -102,16 +102,6 @@ const getColor = (numPassing, numFailing) => {
     return failingColor;
 };
 
-const getTextColor = (numPassing, numFailing) => {
-    if (!numPassing && !numFailing) {
-        return NATextColor;
-    }
-    if (!numFailing) {
-        return passingTextColor;
-    }
-    return failingTextColor;
-};
-
 const getSunburstData = (categoryMapping, urlBuilder, searchParam, standardType) => {
     const categories = Object.keys(categoryMapping);
     const data = categories.map((categoryId) => {
@@ -128,7 +118,7 @@ const getSunburstData = (categoryMapping, urlBuilder, searchParam, standardType)
         return {
             name: `${category.name}. ${category.description}`,
             color: getColor(totalPassing, totalFailing),
-            textColor: getTextColor(totalPassing, totalFailing),
+            textColor,
             value: categoryValue,
             children: controls.map(({ control, numPassing, numFailing }) => {
                 const value = getPercentagePassing(numPassing, numFailing);
@@ -145,7 +135,7 @@ const getSunburstData = (categoryMapping, urlBuilder, searchParam, standardType)
                 return {
                     name: `${control.name} - ${control.description}`,
                     color: getColor(numPassing, numFailing),
-                    textColor: getTextColor(numPassing, numFailing),
+                    textColor,
                     value,
                     link,
                 };
@@ -216,17 +206,17 @@ const getSunburstRootData = (
         {
             text: `${controlsPassing} Controls Passing`,
             link: controlsPassingLink,
-            className: 'text-tertiary-700',
+            color: linkColor,
         },
         {
             text: `${controlsFailing} Controls Failing`,
             link: controlsFailingLink,
-            className: 'text-alert-700',
+            color: linkColor,
         },
         {
             text: `${controlsNA} Controls N/A`,
             link: controlsNALink,
-            className: 'text-base-700',
+            color: linkColor,
         },
     ];
     return sunburstRootData;

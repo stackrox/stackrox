@@ -1,31 +1,15 @@
 package httputil
 
 import (
-	"net/http"
 	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/httputil/mock"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
-
-type mockResponseWriter struct {
-	writtenStatusCodes int
-}
-
-func (rw *mockResponseWriter) Header() http.Header {
-	return make(http.Header)
-}
-
-func (rw *mockResponseWriter) Write(data []byte) (int, error) {
-	return len(data), nil
-}
-
-func (rw *mockResponseWriter) WriteHeader(statusCode int) {
-	rw.writtenStatusCodes = statusCode
-}
 
 func TestWriteError(t *testing.T) {
 	type testCase struct {
@@ -62,9 +46,9 @@ func TestWriteError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			writer := &mockResponseWriter{}
+			writer := mock.NewResponseWriter()
 			WriteError(writer, tt.incomingErr)
-			assert.Equal(t, tt.expectedStatus, writer.writtenStatusCodes)
+			assert.Equal(t, tt.expectedStatus, writer.Code)
 		})
 	}
 }

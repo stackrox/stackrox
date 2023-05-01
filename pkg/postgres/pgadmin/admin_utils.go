@@ -105,7 +105,7 @@ func CreateDB(sourceMap map[string]string, adminConfig *postgres.Config, dbTempl
 }
 
 // RenameDB - renames a database
-func RenameDB(adminPool *postgres.DB, originalDB, newDB string) error {
+func RenameDB(adminPool postgres.DB, originalDB, newDB string) error {
 	log.Debugf("Renaming database %q to %q", originalDB, newDB)
 	ctx, cancel := context.WithTimeout(context.Background(), PostgresQueryTimeout)
 	defer cancel()
@@ -231,7 +231,7 @@ func TerminateConnection(config *postgres.Config, dbName string) error {
 // GetAdminPool - returns a pool to connect to the admin database.
 // This is useful for renaming databases such as a restore to active.
 // THIS POOL SHOULD BE CLOSED ONCE ITS PURPOSE HAS BEEN FULFILLED.
-func GetAdminPool(postgresConfig *postgres.Config) (*postgres.DB, error) {
+func GetAdminPool(postgresConfig *postgres.Config) (postgres.DB, error) {
 	// Clone config to connect to template DB
 	tempConfig := postgresConfig.Copy()
 
@@ -249,7 +249,7 @@ func GetAdminPool(postgresConfig *postgres.Config) (*postgres.DB, error) {
 
 // GetClonePool - returns a connection pool for the specified database clone.
 // THIS POOL SHOULD BE CLOSED ONCE ITS PURPOSE HAS BEEN FULFILLED.
-func GetClonePool(postgresConfig *postgres.Config, clone string) (*postgres.DB, error) {
+func GetClonePool(postgresConfig *postgres.Config, clone string) (postgres.DB, error) {
 	log.Debugf("GetClonePool -- %q", clone)
 
 	// Clone config to connect to template DB
@@ -268,9 +268,9 @@ func GetClonePool(postgresConfig *postgres.Config, clone string) (*postgres.DB, 
 	return postgresDB, nil
 }
 
-func getPool(postgresConfig *postgres.Config) (*postgres.DB, error) {
+func getPool(postgresConfig *postgres.Config) (postgres.DB, error) {
 	var err error
-	var postgresDB *postgres.DB
+	var postgresDB postgres.DB
 
 	err = pgutils.Retry(func() error {
 		postgresDB, err = postgres.New(context.Background(), postgresConfig)

@@ -23,6 +23,7 @@ import ComponentVulnerabilitiesTable, {
     imageMetadataContextFragment,
 } from './ComponentVulnerabilitiesTable';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
+import EmptyTableResults from '../components/EmptyTableResults';
 
 export type DeploymentForCve = {
     id: string;
@@ -68,7 +69,7 @@ function AffectedDeploymentsTable({
     return (
         // TODO UX question - Collapse to cards, or allow headers to overflow?
         // <TableComposable gridBreakPoint="grid-xl">
-        <TableComposable>
+        <TableComposable variant="compact">
             <Thead>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
@@ -86,6 +87,7 @@ function AffectedDeploymentsTable({
                     <Th>First discovered</Th>
                 </Tr>
             </Thead>
+            {deployments.length === 0 && <EmptyTableResults colSpan={7} />}
             {deployments.map((deployment, rowIndex) => {
                 const { id, name, namespace, clusterName, imageCount, created, images } =
                     deployment;

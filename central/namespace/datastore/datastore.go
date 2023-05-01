@@ -83,7 +83,7 @@ func New(nsStore store.Store, graphProvider graph.Provider, indexer index.Indexe
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool *postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error) {
 	dbstore := pgStore.New(pool)
 	indexer := pgStore.NewIndexer(pool)
 	deploymentStore, err := deploymentDataStore.GetTestPostgresDataStore(t, pool)

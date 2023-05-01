@@ -7,7 +7,6 @@ import {
     DropdownItem,
     DropdownSeparator,
     DropdownToggle,
-    Flex,
     PageSection,
     Pagination,
     Toolbar,
@@ -18,13 +17,15 @@ import {
     Truncate,
 } from '@patternfly/react-core';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
-import { CaretDownIcon, CheckCircleIcon } from '@patternfly/react-icons';
+import { CaretDownIcon } from '@patternfly/react-icons';
 import orderBy from 'lodash/orderBy';
 import pluralize from 'pluralize';
 
 import { ListPolicy } from 'types/policy.proto';
 import { sortSeverity, sortAsciiCaseInsensitive, sortValueByLength } from 'sorters/sorters';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
+import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisabledIconText';
+import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { ActionItem } from 'Containers/Violations/ViolationsTablePanel';
@@ -44,7 +45,6 @@ import {
     formatNotifierCountsWithLabelStrings,
     getLabelAndNotifierIdsForTypes,
 } from '../policies.utils';
-import PolicySeverityLabel from '../PolicySeverityLabel';
 
 import './PoliciesTable.css';
 
@@ -453,14 +453,7 @@ function PoliciesTable({
                                         />
                                     </Td>
                                     <Td dataLabel="Status">
-                                        {disabled ? (
-                                            'Disabled'
-                                        ) : (
-                                            <Flex className="pf-u-info-color-200">
-                                                <CheckCircleIcon className="pf-u-mr-sm pf-m-align-self-center" />
-                                                Enabled
-                                            </Flex>
-                                        )}
+                                        <PolicyDisabledIconText isDisabled={disabled} />
                                     </Td>
                                     <Td dataLabel="Notifiers">
                                         {notifierCountsWithLabelStrings.length === 0 ? (
@@ -481,7 +474,7 @@ function PoliciesTable({
                                         )}
                                     </Td>
                                     <Td dataLabel="Severity">
-                                        <PolicySeverityLabel severity={severity} />
+                                        <PolicySeverityIconText severity={severity} />
                                     </Td>
                                     <Td dataLabel="Lifecycle">
                                         {formatLifecycleStages(lifecycleStages)}

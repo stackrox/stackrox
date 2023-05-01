@@ -67,7 +67,7 @@ function DeploymentSelector({
             }
             return (
                 <MenuGroup
-                    key={namespace.metadata.id}
+                    key={namespace.metadata.name}
                     label={namespace.metadata.name}
                     labelHeadingLevel="h3"
                 >

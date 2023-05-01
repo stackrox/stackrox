@@ -21,17 +21,22 @@ var (
 )
 
 type registeredTable struct {
-	Schema     *walker.Schema
-	CreateStmt *postgres.CreateStmts
+	Schema             *walker.Schema
+	CreateStmt         *postgres.CreateStmts
+	FeatureEnabledFunc func() bool
 }
 
 // RegisterTable maps a table to an object type for the purposes of metrics gathering
-func RegisterTable(schema *walker.Schema, stmt *postgres.CreateStmts) {
+func RegisterTable(schema *walker.Schema, stmt *postgres.CreateStmts, featureFlagFuncs ...func() bool) {
 	if _, ok := registeredTables[schema.Table]; ok {
 		log.Fatalf("table %q is already registered for %s", schema.Table, schema.Type)
 		return
 	}
-	registeredTables[schema.Table] = &registeredTable{Schema: schema, CreateStmt: stmt}
+	featureFlagFunc := func() bool { return true }
+	if len(featureFlagFuncs) != 0 {
+		featureFlagFunc = featureFlagFuncs[0]
+	}
+	registeredTables[schema.Table] = &registeredTable{Schema: schema, CreateStmt: stmt, FeatureEnabledFunc: featureFlagFunc}
 }
 
 // GetSchemaForTable return the schema registered for specified table name.
@@ -40,6 +45,14 @@ func GetSchemaForTable(tableName string) *walker.Schema {
 		return rt.Schema
 	}
 	return nil
+}
+
+func getAllTables() []*registeredTable {
+	tables := make([]*registeredTable, 0, len(registeredTables))
+	for _, v := range registeredTables {
+		tables = append(tables, v)
+	}
+	return tables
 }
 
 func getAllRegisteredTablesInOrder() []*registeredTable {
@@ -64,6 +77,9 @@ func getRegisteredTablesFor(visited set.StringSet, table string) []*registeredTa
 	}
 	var rts []*registeredTable
 	rt := registeredTables[table]
+	if !rt.FeatureEnabledFunc() {
+		return nil
+	}
 	for _, ref := range rt.Schema.References {
 		rts = append(rts, getRegisteredTablesFor(visited, ref.OtherSchema.Table)...)
 	}

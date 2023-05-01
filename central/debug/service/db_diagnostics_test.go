@@ -22,7 +22,7 @@ type DBDiagnosticTestSuite struct {
 
 	ctx      context.Context
 	dbConfig *postgres.Config
-	dbPool   *postgres.DB
+	dbPool   postgres.DB
 }
 
 func (s *DBDiagnosticTestSuite) SetupSuite() {

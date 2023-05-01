@@ -31,7 +31,7 @@ var (
 type SchemaTestSuite struct {
 	suite.Suite
 	connConfig *pgx.ConnConfig
-	pool       *postgres.DB
+	pool       postgres.DB
 	gormDB     *gorm.DB
 	ctx        context.Context
 }
@@ -81,12 +81,13 @@ func (s *SchemaTestSuite) TearDownSuite() {
 
 func (s *SchemaTestSuite) TestTableNameSanity() {
 	type testCaseStruct struct {
-		name        string
-		createStmts *pkgPostgres.CreateStmts
+		name           string
+		createStmts    *pkgPostgres.CreateStmts
+		featureEnabled func() bool
 	}
 	var testCases []testCaseStruct
-	for _, rt := range getAllRegisteredTablesInOrder() {
-		testCases = append(testCases, testCaseStruct{rt.Schema.Table, rt.CreateStmt})
+	for _, rt := range getAllTables() {
+		testCases = append(testCases, testCaseStruct{rt.Schema.Table, rt.CreateStmt, rt.FeatureEnabledFunc})
 	}
 
 	for _, testCase := range testCases {

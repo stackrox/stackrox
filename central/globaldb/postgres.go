@@ -67,7 +67,7 @@ SELECT TABLE_NAME
 var (
 	postgresOpenRetries        = 10
 	postgresTimeBetweenRetries = 10 * time.Second
-	postgresDB                 *postgres.DB
+	postgresDB                 postgres.DB
 	pgSync                     sync.Once
 
 	// PostgresQueryTimeout - Postgres query timeout value
@@ -77,18 +77,19 @@ var (
 )
 
 // GetPostgres returns a global database instance. It should be called after InitializePostgres
-func GetPostgres() *postgres.DB {
+func GetPostgres() postgres.DB {
 	return postgresDB
 }
 
-// GetPostgresTest returns a global database instance. It should be used in tests only.
-func GetPostgresTest(t *testing.T) *postgres.DB {
-	t.Log("Initializing Postgres...")
-	return InitializePostgres(context.Background())
+// SetPostgresTest sets a global database instance. It should be used in tests only.
+func SetPostgresTest(t *testing.T, db postgres.DB) postgres.DB {
+	t.Log("Initializing Postgres... ")
+	postgresDB = db
+	return postgresDB
 }
 
 // InitializePostgres creates and returns returns a global database instance.
-func InitializePostgres(ctx context.Context) *postgres.DB {
+func InitializePostgres(ctx context.Context) postgres.DB {
 	pgSync.Do(func() {
 		_, dbConfig, err := pgconfig.GetPostgresConfig()
 		if err != nil {
@@ -123,7 +124,7 @@ func InitializePostgres(ctx context.Context) *postgres.DB {
 }
 
 // GetPostgresVersion -- return version of the database
-func GetPostgresVersion(ctx context.Context, db *postgres.DB) string {
+func GetPostgresVersion(ctx context.Context, db postgres.DB) string {
 	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
 	defer cancel()
 
@@ -137,7 +138,7 @@ func GetPostgresVersion(ctx context.Context, db *postgres.DB) string {
 }
 
 // CollectPostgresStats -- collect table level stats for Postgres
-func CollectPostgresStats(ctx context.Context, db *postgres.DB) *stats.DatabaseStats {
+func CollectPostgresStats(ctx context.Context, db postgres.DB) *stats.DatabaseStats {
 	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
 	defer cancel()
 
@@ -261,7 +262,7 @@ func CollectPostgresDatabaseStats(postgresConfig *postgres.Config) {
 }
 
 // CollectPostgresConnectionStats -- collect connection stats for Postgres
-func CollectPostgresConnectionStats(ctx context.Context, db *postgres.DB) {
+func CollectPostgresConnectionStats(ctx context.Context, db postgres.DB) {
 	// Get the total connections by database
 	getTotalConnections(ctx, db)
 
@@ -270,7 +271,7 @@ func CollectPostgresConnectionStats(ctx context.Context, db *postgres.DB) {
 }
 
 // getTotalConnections -- gets the total connections by database
-func getTotalConnections(ctx context.Context, db *postgres.DB) {
+func getTotalConnections(ctx context.Context, db postgres.DB) {
 	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
 	defer cancel()
 
@@ -298,7 +299,7 @@ func getTotalConnections(ctx context.Context, db *postgres.DB) {
 }
 
 // getMaxConnections -- gets maximum number of connections to Postgres server
-func getMaxConnections(ctx context.Context, db *postgres.DB) {
+func getMaxConnections(ctx context.Context, db postgres.DB) {
 	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
 	defer cancel()
 
@@ -328,7 +329,7 @@ func processConnectionCountRow(metric *prometheus.GaugeVec, rows *postgres.Rows)
 	}
 }
 
-func startMonitoringPostgres(ctx context.Context, db *postgres.DB, postgresConfig *postgres.Config) {
+func startMonitoringPostgres(ctx context.Context, db postgres.DB, postgresConfig *postgres.Config) {
 	t := time.NewTicker(1 * time.Minute)
 	defer t.Stop()
 	for range t.C {

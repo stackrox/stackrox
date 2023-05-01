@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
@@ -53,13 +54,17 @@ type enricher struct {
 }
 
 type cacheValue struct {
+	lock      sync.RWMutex
 	signal    concurrency.Signal
 	image     *storage.Image
 	localScan *scan.LocalScan
 }
 
 func (c *cacheValue) waitAndGet() *storage.Image {
+	// We need to wait before locking
 	c.signal.Wait()
+	c.lock.RLock()
+	defer c.lock.RUnlock()
 	return c.image
 }
 
@@ -152,6 +157,9 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	}
 
 	scannedImage, err := c.scanWithRetries(ctx, svc, req, scanImageFn)
+	// lock here to set the image
+	c.lock.Lock()
+	defer c.lock.Unlock()
 	if err != nil {
 		// Ignore the error and set the image to something basic,
 		// so alerting can progress.

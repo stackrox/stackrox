@@ -11,7 +11,7 @@ import (
 )
 
 // NewFullStore augments the generated store with ListDeployment functions.
-func NewFullStore(db *postgres.DB) store.Store {
+func NewFullStore(db postgres.DB) store.Store {
 	return &fullStoreImpl{
 		Store: New(db),
 	}

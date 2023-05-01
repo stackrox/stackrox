@@ -35,7 +35,7 @@ func TestServiceAccountDataStore(t *testing.T) {
 type ServiceAccountDataStoreTestSuite struct {
 	suite.Suite
 
-	pool       *postgres.DB
+	pool       postgres.DB
 	db         *rocksdbHelper.RocksDB
 	bleveIndex bleve.Index
 

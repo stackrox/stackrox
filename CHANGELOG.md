@@ -16,6 +16,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Technical Changes
 
+- Helm setting `collector.nodeInventoryResources` has been renamed to `collector.nodeScanningResources`
+
 ## [4.0.0]
 
 ### Added Features

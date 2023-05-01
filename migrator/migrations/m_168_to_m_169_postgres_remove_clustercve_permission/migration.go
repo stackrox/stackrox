@@ -51,7 +51,7 @@ func propagateAccessForPermission(permission string, accessLevel storage.Access,
 	return accessLevel
 }
 
-func cleanupPermissionSets(db *postgres.DB) error {
+func cleanupPermissionSets(db postgres.DB) error {
 	ctx := context.Background()
 	permissionSetStore := permissionSetPostgresStore.New(db)
 	permissionSetsToInsert := make([]*storage.PermissionSet, 0, batchSize)

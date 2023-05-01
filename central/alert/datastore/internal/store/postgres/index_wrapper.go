@@ -13,7 +13,7 @@ import (
 // NewIndexWrapper returns a wrapper around the generated postgres indexer code
 // which satisfies the alert bleve indexer interface (using storage.ListAlert
 // instead of storage.Alert as input parameters)
-func NewIndexWrapper(db *postgres.DB) *indexWrapperImpl {
+func NewIndexWrapper(db postgres.DB) *indexWrapperImpl {
 	return &indexWrapperImpl{
 		indexer: NewIndexer(db),
 	}

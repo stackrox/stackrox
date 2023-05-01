@@ -90,6 +90,7 @@ var (
 	InstallationInfo   = newInternalResourceMetadata("InstallationInfo", permissions.GlobalScope)
 	Notifications      = newInternalResourceMetadata("Notifications", permissions.GlobalScope)
 	Version            = newInternalResourceMetadata("Version", permissions.GlobalScope)
+	Hash               = newInternalResourceMetadata("Hash", permissions.GlobalScope)
 
 	resourceToMetadata         = make(map[permissions.Resource]permissions.ResourceMetadata)
 	disabledResourceToMetadata = make(map[permissions.Resource]permissions.ResourceMetadata)
