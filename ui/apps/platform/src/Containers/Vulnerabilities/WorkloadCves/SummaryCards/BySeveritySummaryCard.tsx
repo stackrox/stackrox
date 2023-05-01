@@ -1,6 +1,5 @@
 import React from 'react';
 import { Card, CardBody, CardTitle, Flex, Grid, GridItem, Text } from '@patternfly/react-core';
-import { gql } from '@apollo/client';
 
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 
@@ -29,23 +28,6 @@ export type ResourceCountsByCveSeverity = {
     moderate: { total: number };
     low: { total: number };
 };
-
-export const resourceCountByCveSeverityFragment = gql`
-    fragment ResourceCountsByCVESeverity on ResourceCountByCVESeverity {
-        critical {
-            total
-        }
-        important {
-            total
-        }
-        moderate {
-            total
-        }
-        low {
-            total
-        }
-    }
-`;
 
 export type BySeveritySummaryCardProps = {
     className?: string;
