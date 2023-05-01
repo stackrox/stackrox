@@ -86,15 +86,15 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
     return deployment.imageVulnerabilities.map((vulnerability) => {
         const { id, cve, summary, images } = vulnerability;
         // Severity, Fixability, and Discovered date are all based on the aggregate value of all components
-        const allComponents = vulnerability.images.flatMap((img) => img.imageComponents);
-        const severity = getHighestVulnerabilitySeverity(allComponents);
-        const isFixable = getAnyVulnerabilityIsFixable(allComponents);
-        const allDiscoveredDates = allComponents
+        const allVulnerableComponents = vulnerability.images.flatMap((img) => img.imageComponents);
+        const highestVulnSeverity = getHighestVulnerabilitySeverity(allVulnerableComponents);
+        const isAnyVulnFixable = getAnyVulnerabilityIsFixable(allVulnerableComponents);
+        const allDiscoveredDates = allVulnerableComponents
             .flatMap((c) => c.imageVulnerabilities.map((v) => v.discoveredAtImage))
             .filter((d): d is string => d !== null);
-        const discoveredAtImage = min(...allDiscoveredDates);
+        const oldestDiscoveredVulnDate = min(...allDiscoveredDates);
         // TODO This logic is used in many places, could extract to a util
-        const uniqueComponents = new Set(allComponents.map((c) => c.name));
+        const uniqueComponents = new Set(allVulnerableComponents.map((c) => c.name));
         const affectedComponentsText =
             uniqueComponents.size === 1
                 ? uniqueComponents.values().next().value
@@ -103,9 +103,9 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
         return {
             id,
             cve,
-            severity,
-            isFixable,
-            discoveredAtImage,
+            severity: highestVulnSeverity,
+            isFixable: isAnyVulnFixable,
+            discoveredAtImage: oldestDiscoveredVulnDate,
             summary,
             affectedComponentsText,
             images: images.map((img) => ({
