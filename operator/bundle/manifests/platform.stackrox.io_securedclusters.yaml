@@ -396,7 +396,6 @@ spec:
                         enum:
                         - EBPF
                         - CORE_BPF
-                        - KernelModule
                         - NoCollection
                         type: string
                       imageFlavor:
