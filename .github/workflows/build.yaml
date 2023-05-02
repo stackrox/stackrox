@@ -37,7 +37,6 @@ jobs:
 
           # Conditionally add a prerelease build (binaries built with GOTAGS=release)
           if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
-            matrix="$(jq '.pre_build_cli.name += ["prerelease"]' <<< "$matrix")"
             matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
           fi
@@ -95,12 +94,6 @@ jobs:
             ui/monorepo.lock
 
   pre-build-cli:
-    strategy:
-      # Supports two cli builds:
-      # default - built with environment defaults (see handle-tagged-build & env.mk)
-      # prerelease - built with GOTAGS=release
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_cli }}
-    needs: define-job-matrix
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
@@ -121,16 +114,6 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
-      - name: PR labels
-        uses: joerick/pr-labels-action@v1.0.8
-
-      - name: Setup Go build environment
-        if: |
-          contains(github.event.pull_request.labels.*.name, 'ci-release-build') 
-            || 
-          matrix.name == 'prerelease'
-        run: echo "GOTAGS=release" >> "$GITHUB_ENV"
-
       - name: Build CLI
         run: make cli
 
@@ -139,7 +122,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: cli-build-${{ matrix.name }}
+          name: cli-build
           path: cli-build.tgz
 
   pre-build-go-binaries:
@@ -250,7 +233,6 @@ jobs:
       # race-condition-debug
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_main }}
     env:
-      CLI_BUILD_ARTIFACT: ""
       GO_BINARIES_BUILD_ARTIFACT: ""
       ROX_PRODUCT_BRANDING: ""
     container:
@@ -268,22 +250,18 @@ jobs:
         run: |
           case "${{ matrix.name }}" in
             STACKROX_BRANDING)
-              cli="default"
               go_binaries="default"
               brand="STACKROX_BRANDING"
               ;;
             RHACS_BRANDING)
-              cli="default"
               go_binaries="default"
               brand="RHACS_BRANDING"
               ;;
             race-condition-debug)
-              cli="default"
               go_binaries="race-condition-debug"
               brand="RHACS_BRANDING"
               ;;
             prerelease)
-              cli="prerelease"
               go_binaries="prerelease"
               brand="RHACS_BRANDING"
               ;;
@@ -293,7 +271,6 @@ jobs:
           esac
 
           {
-            echo "CLI_BUILD_ARTIFACT=cli-build-${cli}"
             echo "GO_BINARIES_BUILD_ARTIFACT=go-binaries-build-${go_binaries}"
             echo "ROX_PRODUCT_BRANDING=${brand}"
           } >> "$GITHUB_ENV"
@@ -322,7 +299,7 @@ jobs:
 
       - uses: actions/download-artifact@v3
         with:
-          name: ${{ env.CLI_BUILD_ARTIFACT }}
+          name: cli-build
 
       - name: Unpack cli build
         run: |
