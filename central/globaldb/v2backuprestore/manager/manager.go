@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/moby/sys/mountinfo"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/formats"
@@ -129,6 +130,9 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 	if !process.postgresBundle {
 		if _, err := os.Stat(m.outputRoot); os.IsNotExist(err) {
 			return nil, errors.Errorf("the required volume %q does not exist", m.outputRoot)
+		}
+		if mounted, err := mountinfo.Mounted(m.outputRoot); !mounted || err != nil {
+			return nil, errors.Errorf("the required volume %q is required to be backed by a PVC", m.outputRoot)
 		}
 		if err := m.checkDiskSpace(totalSizeUncompressed); err != nil {
 			return nil, err
