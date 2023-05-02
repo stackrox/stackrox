@@ -111,8 +111,8 @@ type CentralComponentSpec struct {
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 
 	// Configures how Central should store its persistent data. You can choose between using a persistent
-	// volume claim, and a host path. Central persistent storage is deprecated for installation.
-	// Existing customers may continue using it for restoration from legacy RocksDB backups.
+	// volume claim, and a host path. Central persistent storage is deprecated for new installations.
+	// Existing users may continue using it for restoration from legacy RocksDB backups.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	Persistence *Persistence `json:"persistence,omitempty"`
 
