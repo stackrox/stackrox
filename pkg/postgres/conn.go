@@ -37,15 +37,17 @@ func (c *Conn) Begin(ctx context.Context) (*Tx, error) {
 }
 
 // Exec wraps pgxpool.Conn Exec
-func (c *Conn) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error) {
+func (c *Conn) Exec(ctx context.Context, sql string, args ...interface{}) (ct pgconn.CommandTag, err error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 	defer cancel()
 
-	if tx, ok := TxFromContext(ctx); ok {
-		return tx.Exec(ctx, sql, args...)
+	tx, ok := TxFromContext(ctx)
+	if ok {
+		ct, err = tx.Exec(ctx, sql, args...)
+	} else {
+		ct, err = c.Conn.Exec(ctx, sql, args...)
 	}
 
-	ct, err := c.Conn.Exec(ctx, sql, args...)
 	if err != nil {
 		incQueryErrors(sql, err)
 		return nil, err
@@ -58,7 +60,11 @@ func (c *Conn) Query(ctx context.Context, sql string, args ...interface{}) (*Row
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
 	if tx, ok := TxFromContext(ctx); ok {
-		return tx.Query(ctx, sql, args...)
+		rows, err := tx.Query(ctx, sql, args...)
+		if err != nil {
+			incQueryErrors(sql, err)
+		}
+		return rows, err
 	}
 
 	rows, err := c.Conn.Query(ctx, sql, args...)
