@@ -50,6 +50,7 @@
 
 {{/*
     Setup configuration for persistence backend.
+    TODO(ROX-16253): Remove PVC
   */}}
 {{ $volumeCfg := dict }}
 {{ if $centralCfg.persistence.none }}

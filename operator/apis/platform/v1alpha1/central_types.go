@@ -299,6 +299,7 @@ type HostPathSpec struct {
 }
 
 // PersistentVolumeClaim defines PVC-based persistence settings.
+// TODO(ROX-16253): Remove PVC
 type PersistentVolumeClaim struct {
 	// The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
 	// created.

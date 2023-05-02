@@ -176,6 +176,7 @@ func (s *baseSuite) TestAllGeneratableGenerated() {
 	s.Require().NotEmpty(rendered)
 	// We are in the process to remove these files. The support is limited to
 	// upgrade process only. Exclude them for now.
+	// TODO(ROX-16253): Remove PVC
 	excludes := set.NewFrozenStringSet("01-central-11-pvc.yaml", "00-storage-class.yaml")
 
 	for k, v := range rendered {
