@@ -16,14 +16,14 @@ import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { getEntityPagePath } from '../searchUtils';
-import ComponentVulnerabilitiesTable, {
-    ComponentVulnerability,
-    ImageMetadataContext,
-    componentVulnerabilitiesFragment,
-    imageMetadataContextFragment,
-} from './ComponentVulnerabilitiesTable';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
+import DeploymentComponentVulnerabilitiesTable, {
+    DeploymentComponentVulnerability,
+    ImageMetadataContext,
+    deploymentComponentVulnerabilitiesFragment,
+    imageMetadataContextFragment,
+} from './DeploymentComponentVulnerabilitiesTable';
 
 export type DeploymentForCve = {
     id: string;
@@ -32,12 +32,12 @@ export type DeploymentForCve = {
     clusterName: string;
     created: Date | null;
     imageCount: number;
-    images: (ImageMetadataContext & { imageComponents: ComponentVulnerability[] })[];
+    images: (ImageMetadataContext & { imageComponents: DeploymentComponentVulnerability[] })[];
 };
 
 export const deploymentsForCveFragment = gql`
     ${imageMetadataContextFragment}
-    ${componentVulnerabilitiesFragment}
+    ${deploymentComponentVulnerabilitiesFragment}
     fragment DeploymentsForCVE on Deployment {
         id
         name
@@ -48,7 +48,7 @@ export const deploymentsForCveFragment = gql`
         images(query: $query) {
             ...ImageMetadataContext
             imageComponents(query: $query) {
-                ...ComponentVulnerabilities
+                ...DeploymentComponentVulnerabilities
             }
         }
     }
@@ -135,7 +135,7 @@ function AffectedDeploymentsTable({
                             <Td />
                             <Td colSpan={6}>
                                 <ExpandableRowContent>
-                                    <ComponentVulnerabilitiesTable
+                                    <DeploymentComponentVulnerabilitiesTable
                                         showImage
                                         images={imageComponentVulns}
                                     />

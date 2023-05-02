@@ -21,11 +21,11 @@ import { VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto'
 import ImageNameTd from '../components/ImageNameTd';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 
-import ComponentVulnerabilitiesTable, {
-    ComponentVulnerability,
-    componentVulnerabilitiesFragment,
+import ImageComponentVulnerabilitiesTable, {
+    ImageComponentVulnerability,
+    imageComponentVulnerabilitiesFragment,
     imageMetadataContextFragment,
-} from './ComponentVulnerabilitiesTable';
+} from './ImageComponentVulnerabilitiesTable';
 import EmptyTableResults from '../components/EmptyTableResults';
 
 export type ImageForCve = {
@@ -46,12 +46,12 @@ export type ImageForCve = {
     operatingSystem: string;
     watchStatus: 'WATCHED' | 'NOT_WATCHED';
     scanTime: Date | null;
-    imageComponents: ComponentVulnerability[];
+    imageComponents: ImageComponentVulnerability[];
 };
 
 export const imagesForCveFragment = gql`
     ${imageMetadataContextFragment}
-    ${componentVulnerabilitiesFragment}
+    ${imageComponentVulnerabilitiesFragment}
     fragment ImagesForCVE on Image {
         ...ImageMetadataContext
 
@@ -60,7 +60,7 @@ export const imagesForCveFragment = gql`
         scanTime
 
         imageComponents(query: $query) {
-            ...ComponentVulnerabilities
+            ...ImageComponentVulnerabilities
         }
     }
 `;
@@ -69,7 +69,7 @@ export const imagesForCveFragment = gql`
  * Get the highest severity of any vulnerability in the image.
  */
 function getVulnerabilitySeverity(
-    imageComponents: ComponentVulnerability[]
+    imageComponents: ImageComponentVulnerability[]
 ): VulnerabilitySeverity {
     let topSeverity: VulnerabilitySeverity = 'UNKNOWN_VULNERABILITY_SEVERITY';
     imageComponents.forEach((component) => {
@@ -88,7 +88,7 @@ function getVulnerabilitySeverity(
 /**
  * Get whether or not the image has any fixable vulnerabilities.
  */
-function getIsFixable(imageComponents: ComponentVulnerability[]) {
+function getIsFixable(imageComponents: ImageComponentVulnerability[]) {
     return imageComponents.find((component) =>
         component.imageVulnerabilities.find(({ fixedByVersion }) => fixedByVersion !== '')
     );
@@ -184,14 +184,9 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                             <Td />
                             <Td colSpan={6}>
                                 <ExpandableRowContent>
-                                    <ComponentVulnerabilitiesTable
-                                        showImage={false}
-                                        images={[
-                                            {
-                                                imageMetadataContext: image,
-                                                componentVulnerabilities: image.imageComponents,
-                                            },
-                                        ]}
+                                    <ImageComponentVulnerabilitiesTable
+                                        imageMetadataContext={image}
+                                        componentVulnerabilities={image.imageComponents}
                                     />
                                 </ExpandableRowContent>
                             </Td>
