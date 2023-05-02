@@ -1327,10 +1327,6 @@
                 "integer": 1
               },
               {
-                "name": "KERNEL_MODULE",
-                "integer": 2
-              },
-              {
                 "name": "EBPF",
                 "integer": 3
               }
