@@ -33,6 +33,7 @@ export const selectors = {
             imageIntegrations: '[data-testid="image-integrations"]',
             notifierIntegrations: '[data-testid="notifier-integrations"]',
             backupIntegrations: '[data-testid="backup-integrations"]',
+            declarativeConfigs: '[data-testid="declarative-configs"]',
         },
     },
     vulnDefinitions: scopeSelectors('[data-testid="vulnerability-definitions"]', {
