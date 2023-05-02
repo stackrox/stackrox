@@ -35,9 +35,11 @@ jobs:
           matrix="$(jq '.build_and_push_main.name += ["STACKROX_BRANDING", "RHACS_BRANDING"]' <<< "$matrix")"
 
           # Conditionally add a prerelease build (binaries built with GOTAGS=release)
-          if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
-            matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
+          if ! is_tagged; then
+            if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
+              matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
+              matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
+            fi
           fi
 
           # Conditionally add a -race debug build (binaries built with -race)
