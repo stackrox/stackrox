@@ -27,6 +27,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { Pagination as PaginationParam } from 'services/types';
 
+import { VulnerabilitySeverity } from 'types/cve.proto';
 import { getHiddenSeverities, getOverviewCvesPath, parseQuerySearchFilter } from '../searchUtils';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import ImageCvePageHeader, {
@@ -96,7 +97,14 @@ export const imageCveAffectedImagesQuery = gql`
 export const imageCveAffectedDeploymentsQuery = gql`
     ${deploymentsForCveFragment}
     # by default, query must include the CVE id
-    query getDeploymentsForCVE($query: String, $pagination: Pagination) {
+    query getDeploymentsForCVE(
+        $query: String
+        $pagination: Pagination
+        $lowImageCountQuery: String
+        $moderateImageCountQuery: String
+        $importantImageCountQuery: String
+        $criticalImageCountQuery: String
+    ) {
         deployments(query: $query, pagination: $pagination) {
             ...DeploymentsForCVE
         }
@@ -191,18 +199,31 @@ function ImageCvePage() {
         skip: entityTab !== 'Image',
     });
 
+    function getDeploymentSearchQuery(severity?: VulnerabilitySeverity) {
+        const filters = { ...querySearchFilter, CVE: cveId };
+        if (severity) {
+            filters.Severity = [severity];
+        }
+        return getRequestQueryStringForSearchFilter(filters);
+    }
+
     const deploymentDataRequest = useQuery<
         { deploymentCount: number; deployments: DeploymentForCve[] },
         {
             query: string;
+            lowImageCountQuery: string;
+            moderateImageCountQuery: string;
+            importantImageCountQuery: string;
+            criticalImageCountQuery: string;
             pagination: PaginationParam;
         }
     >(imageCveAffectedDeploymentsQuery, {
         variables: {
-            query: getRequestQueryStringForSearchFilter({
-                ...querySearchFilter,
-                CVE: cveId,
-            }),
+            query: getDeploymentSearchQuery(),
+            lowImageCountQuery: getDeploymentSearchQuery('LOW_VULNERABILITY_SEVERITY'),
+            moderateImageCountQuery: getDeploymentSearchQuery('MODERATE_VULNERABILITY_SEVERITY'),
+            importantImageCountQuery: getDeploymentSearchQuery('IMPORTANT_VULNERABILITY_SEVERITY'),
+            criticalImageCountQuery: getDeploymentSearchQuery('CRITICAL_VULNERABILITY_SEVERITY'),
             pagination: {
                 offset: (page - 1) * perPage,
                 limit: perPage,

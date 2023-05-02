@@ -24,6 +24,7 @@ import DeploymentComponentVulnerabilitiesTable, {
     deploymentComponentVulnerabilitiesFragment,
     imageMetadataContextFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
+import SeverityCountLabels from '../components/SeverityCountLabels';
 
 export type DeploymentForCve = {
     id: string;
@@ -32,6 +33,10 @@ export type DeploymentForCve = {
     clusterName: string;
     created: Date | null;
     imageCount: number;
+    lowImageCount: number;
+    moderateImageCount: number;
+    importantImageCount: number;
+    criticalImageCount: number;
     images: (ImageMetadataContext & { imageComponents: DeploymentComponentVulnerability[] })[];
 };
 
@@ -45,6 +50,10 @@ export const deploymentsForCveFragment = gql`
         clusterName
         created
         imageCount(query: $query)
+        lowImageCount: imageCount(query: $lowImageCountQuery)
+        moderateImageCount: imageCount(query: $moderateImageCountQuery)
+        importantImageCount: imageCount(query: $importantImageCountQuery)
+        criticalImageCount: imageCount(query: $criticalImageCountQuery)
         images(query: $query) {
             ...ImageMetadataContext
             imageComponents(query: $query) {
@@ -89,8 +98,19 @@ function AffectedDeploymentsTable({
             </Thead>
             {deployments.length === 0 && <EmptyTableResults colSpan={7} />}
             {deployments.map((deployment, rowIndex) => {
-                const { id, name, namespace, clusterName, imageCount, created, images } =
-                    deployment;
+                const {
+                    id,
+                    name,
+                    namespace,
+                    clusterName,
+                    imageCount,
+                    lowImageCount,
+                    moderateImageCount,
+                    importantImageCount,
+                    criticalImageCount,
+                    created,
+                    images,
+                } = deployment;
                 const isExpanded = expandedRowSet.has(id);
 
                 const imageComponentVulns = images.map((image) => ({
@@ -123,7 +143,14 @@ function AffectedDeploymentsTable({
                                     </Button>{' '}
                                 </Flex>
                             </Td>
-                            <Td dataLabel="Images by severity">TODO</Td>
+                            <Td dataLabel="Images by severity">
+                                <SeverityCountLabels
+                                    critical={criticalImageCount}
+                                    important={importantImageCount}
+                                    moderate={moderateImageCount}
+                                    low={lowImageCount}
+                                />
+                            </Td>
                             <Td dataLabel="Cluster">{clusterName}</Td>
                             <Td dataLabel="Namespace">{namespace}</Td>
                             <Td dataLabel="Images">{pluralize(imageCount, 'image')}</Td>
