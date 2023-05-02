@@ -26,7 +26,7 @@ func init() {
 				"cve: String!",
 				"firstDiscoveredInSystem: Time",
 				"topCVSS: Float!",
-				"distroTuples: CVEDistroTuple",
+				"distroTuples: [CVEDistroTuple]",
 			}),
 		schema.AddQuery("imageCVECount(query: String): Int!"),
 		schema.AddQuery("imageCVEs(query: String, pagination: Pagination): [ImageCVECore!]!"),
@@ -125,8 +125,8 @@ func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {
 	return float64(resolver.data.GetTopCVSS())
 }
 
-func (resolver *imageCVECoreResolver) DistroTuples(_ context.Context) float64 {
-	return float64(resolver.data.GetTopCVSS())
+func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]*cveDistroTupleResolver, error) {
+	return resolver.root.wrapCveDistroTuplesWithContext(ctx, resolver.data.GetDistroTuples(), nil)
 }
 
 // ImageCVE returns graphQL resolver for specified image cve.

@@ -52,8 +52,8 @@ func (t *cveDistroTupleResolver) GetOperatingSystem() string {
 	return t.data.GetOperatingSystem()
 }
 
-func (t *cveDistroTupleResolver) GetCvss() float32 {
-	return t.data.GetCvss()
+func (t *cveDistroTupleResolver) GetCvss() float64 {
+	return float64(t.data.GetCvss())
 }
 
 func (t *cveDistroTupleResolver) GetCvssVersion() string {
