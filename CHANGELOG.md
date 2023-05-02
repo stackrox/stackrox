@@ -9,6 +9,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 - A default role `Vulnerability Manager` has been added that provides sufficient privileges to analyze and manage system vulnerabilities.
+- A default role `Network Graph Viewer` has been added that provides sufficient privileges to display network graphs.
 
 ### Removed Features
 
