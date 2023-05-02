@@ -51,6 +51,7 @@ import BySeveritySummaryCard, {
 } from '../SummaryCards/BySeveritySummaryCard';
 import TopCvssScoreBreakdown from '../SummaryCards/TopCvssScoreBreakdown';
 import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
+import { Resource } from '../components/FilterResourceDropdown';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
@@ -137,6 +138,8 @@ const defaultSeveritySummary = {
     affectedImageCount: 0,
     topCVSS: 0,
 };
+
+const imageCveResourceFilters = new Set<Resource>(['IMAGE', 'DEPLOYMENT', 'NAMESPACE', 'CLUSTER']);
 
 function ImageCvePage() {
     const urlParams = useParams();
@@ -307,7 +310,7 @@ function ImageCvePage() {
             <PageSection className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
                 <div className="pf-u-background-color-100">
                     <div className="pf-u-px-sm">
-                        <WorkloadTableToolbar />
+                        <WorkloadTableToolbar supportedResourceFilters={imageCveResourceFilters} />
                     </div>
                     <div className="pf-u-px-lg pf-u-pb-lg">
                         {summaryRequest.error && (

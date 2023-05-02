@@ -45,6 +45,7 @@ import DeploymentVulnerabilitiesTable, {
     deploymentWithVulnerabilitiesFragment,
     DeploymentWithVulnerabilities,
 } from '../Tables/DeploymentVulnerabilitiesTable';
+import { Resource } from '../components/FilterResourceDropdown';
 
 const summaryQuery = gql`
     ${resourceCountByCveSeverityAndStatusFragment}
@@ -70,6 +71,8 @@ const vulnerabilityQuery = gql`
 `;
 
 const defaultSortFields = ['CVE'];
+
+const deploymentResourceFilters = new Set<Resource>(['CVE', 'IMAGE']);
 
 export type DeploymentPageVulnerabilitiesProps = {
     deploymentId: string;
@@ -165,7 +168,9 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                         title={<TabTitleText>Observed CVEs</TabTitleText>}
                     >
                         <div className="pf-u-px-sm pf-u-background-color-100">
-                            <WorkloadTableToolbar />
+                            <WorkloadTableToolbar
+                                supportedResourceFilters={deploymentResourceFilters}
+                            />
                         </div>
                         <div className="pf-u-flex-grow-1 pf-u-background-color-100">
                             <div className="pf-u-px-lg pf-u-pb-lg">
