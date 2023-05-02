@@ -14,7 +14,6 @@ import { gql } from '@apollo/client';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
-import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { getEntityPagePath } from '../searchUtils';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
@@ -25,6 +24,7 @@ import DeploymentComponentVulnerabilitiesTable, {
     imageMetadataContextFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
 import SeverityCountLabels from '../components/SeverityCountLabels';
+import DatePhraseTd from '../components/DatePhraseTd';
 
 export type DeploymentForCve = {
     id: string;
@@ -154,8 +154,9 @@ function AffectedDeploymentsTable({
                             <Td dataLabel="Cluster">{clusterName}</Td>
                             <Td dataLabel="Namespace">{namespace}</Td>
                             <Td dataLabel="Images">{pluralize(imageCount, 'image')}</Td>
+
                             <Td dataLabel="First discovered">
-                                {getDistanceStrictAsPhrase(created, new Date())}
+                                <DatePhraseTd date={created} />
                             </Td>
                         </Tr>
                         <Tr isExpanded={isExpanded}>

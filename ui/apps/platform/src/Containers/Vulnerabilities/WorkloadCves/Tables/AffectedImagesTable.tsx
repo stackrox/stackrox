@@ -15,7 +15,6 @@ import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { vulnerabilitySeverityLabels } from 'messages/common';
-import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { getAnyVulnerabilityIsFixable, getHighestVulnerabilitySeverity } from './table.utils';
 import ImageNameTd from '../components/ImageNameTd';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
@@ -26,6 +25,7 @@ import ImageComponentVulnerabilitiesTable, {
     imageMetadataContextFragment,
 } from './ImageComponentVulnerabilitiesTable';
 import EmptyTableResults from '../components/EmptyTableResults';
+import DatePhraseTd from '../components/DatePhraseTd';
 
 export type ImageForCve = {
     id: string;
@@ -147,7 +147,7 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                                     : `${imageComponents.length} components`}
                             </Td>
                             <Td dataLabel="First discovered">
-                                {getDistanceStrictAsPhrase(scanTime, new Date())}
+                                <DatePhraseTd date={scanTime} />
                             </Td>
                         </Tr>
                         <Tr isExpanded={isExpanded}>

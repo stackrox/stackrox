@@ -9,16 +9,16 @@ import {
     Tr,
     ExpandableRowContent,
 } from '@patternfly/react-table';
-import { Button, ButtonVariant, Tooltip } from '@patternfly/react-core';
+import { Button, ButtonVariant } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
-import { getDistanceStrictAsPhrase, getDateTime } from 'utils/dateUtils';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 
 import { getEntityPagePath } from '../searchUtils';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
+import DatePhraseTd from '../components/DatePhraseTd';
 
 export const cveListQuery = gql`
     query getImageCVEList($query: String, $pagination: Pagination) {
@@ -151,14 +151,7 @@ function CVEsTable({ cves, unfilteredImageCount, getSortParams, isFiltered }: CV
                                     {affectedImageCount}/{unfilteredImageCount} affected images
                                 </Td>
                                 <Td>
-                                    <Tooltip content={getDateTime(firstDiscoveredInSystem)}>
-                                        <div>
-                                            {getDistanceStrictAsPhrase(
-                                                firstDiscoveredInSystem,
-                                                new Date()
-                                            )}
-                                        </div>
-                                    </Tooltip>
+                                    <DatePhraseTd date={firstDiscoveredInSystem} />
                                 </Td>
                             </Tr>
                             <Tr isExpanded={isExpanded}>
