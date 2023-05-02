@@ -169,6 +169,16 @@ func TestRenderSensorHelm(t *testing.T) {
 	}
 }
 
+func TestRenderSensorTLSSensorOnly_NotPanicOnMissingImageData(t *testing.T) {
+	fields := getDefaultMetaValues(t)
+	fields.CertsOnly = true
+	// (ROX-16212) Should not fail when meta-values don't set ImageTag (e.g. when running with Operator installation)
+	// ImageTag isn't used to render TLS secrets, therefore it shouldn't result in RenderSensorTLSSecretsOnly returning an error
+	fields.ImageTag = ""
+	_, err := RenderSensorTLSSecretsOnly(*fields, certs)
+	require.NoError(t, err)
+}
+
 func TestRenderSensorTLSSecretsOnly(t *testing.T) {
 	fields := getDefaultMetaValues(t)
 	fields.CertsOnly = true
