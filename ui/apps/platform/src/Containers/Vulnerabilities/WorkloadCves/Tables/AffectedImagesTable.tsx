@@ -16,8 +16,7 @@ import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { vulnerabilitySeverityLabels } from 'messages/common';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
-import { severityRankings } from 'constants/vulnerabilities';
-import { VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
+import { getAnyVulnerabilityIsFixable, getHighestVulnerabilitySeverity } from './table.utils';
 import ImageNameTd from '../components/ImageNameTd';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 
@@ -65,35 +64,6 @@ export const imagesForCveFragment = gql`
     }
 `;
 
-/**
- * Get the highest severity of any vulnerability in the image.
- */
-function getVulnerabilitySeverity(
-    imageComponents: ImageComponentVulnerability[]
-): VulnerabilitySeverity {
-    let topSeverity: VulnerabilitySeverity = 'UNKNOWN_VULNERABILITY_SEVERITY';
-    imageComponents.forEach((component) => {
-        component.imageVulnerabilities.forEach(({ severity }) => {
-            if (
-                isVulnerabilitySeverity(severity) &&
-                severityRankings[severity] > severityRankings[topSeverity]
-            ) {
-                topSeverity = severity;
-            }
-        });
-    });
-    return topSeverity;
-}
-
-/**
- * Get whether or not the image has any fixable vulnerabilities.
- */
-function getIsFixable(imageComponents: ImageComponentVulnerability[]) {
-    return imageComponents.find((component) =>
-        component.imageVulnerabilities.find(({ fixedByVersion }) => fixedByVersion !== '')
-    );
-}
-
 export type AffectedImagesTableProps = {
     images: ImageForCve[];
     getSortParams: UseURLSortResult['getSortParams'];
@@ -127,8 +97,8 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
             {images.length === 0 && <EmptyTableResults colSpan={7} />}
             {images.map((image, rowIndex) => {
                 const { id, name, operatingSystem, scanTime, imageComponents } = image;
-                const topSeverity = getVulnerabilitySeverity(imageComponents);
-                const isFixable = getIsFixable(imageComponents);
+                const topSeverity = getHighestVulnerabilitySeverity(imageComponents);
+                const isFixable = getAnyVulnerabilityIsFixable(imageComponents);
                 const FixabilityIcon = isFixable ? FixableIcon : NotFixableIcon;
 
                 const SeverityIcon = SeverityIcons[topSeverity];

@@ -1,4 +1,5 @@
 import { gql } from '@apollo/client';
+import { severityRankings } from 'constants/vulnerabilities';
 import { sortBy } from 'lodash';
 import { VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
 import { ApiSortOption } from 'types/search';
@@ -55,13 +56,17 @@ export type ComponentVulnerabilityBase = {
 
 export type ImageComponentVulnerability = ComponentVulnerabilityBase;
 
-export type DeploymentComponentVulnerability = ComponentVulnerabilityBase & {
+export type DeploymentComponentVulnerability = Omit<
+    ComponentVulnerabilityBase,
+    'imageVulnerabilities'
+> & {
     imageVulnerabilities: {
         id: string;
         severity: string;
         cvss: number;
         scoreVersion: string;
         fixedByVersion: string;
+        discoveredAtImage: string | null;
     }[];
 };
 
@@ -191,4 +196,35 @@ export function sortTableData<TableRowType extends TableDataRow>(
         sortedRows.reverse();
     }
     return sortedRows;
+}
+
+/**
+ * Get the highest severity of any vulnerability in the image.
+ */
+export function getHighestVulnerabilitySeverity(
+    imageComponents: ImageComponentVulnerability[]
+): VulnerabilitySeverity {
+    let topSeverity: VulnerabilitySeverity = 'UNKNOWN_VULNERABILITY_SEVERITY';
+    imageComponents.forEach((component) => {
+        component.imageVulnerabilities.forEach(({ severity }) => {
+            if (
+                isVulnerabilitySeverity(severity) &&
+                severityRankings[severity] > severityRankings[topSeverity]
+            ) {
+                topSeverity = severity;
+            }
+        });
+    });
+    return topSeverity;
+}
+
+/**
+ * Get whether or not the image has any fixable vulnerabilities.
+ */
+export function getAnyVulnerabilityIsFixable(
+    imageComponents: ImageComponentVulnerability[]
+): boolean {
+    return imageComponents.some((component) =>
+        component.imageVulnerabilities.some(({ fixedByVersion }) => fixedByVersion !== '')
+    );
 }

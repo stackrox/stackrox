@@ -136,7 +136,6 @@ function AffectedDeploymentsTable({
                             <Td colSpan={6}>
                                 <ExpandableRowContent>
                                     <DeploymentComponentVulnerabilitiesTable
-                                        showImage
                                         images={imageComponentVulns}
                                     />
                                 </ExpandableRowContent>
