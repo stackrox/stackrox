@@ -267,7 +267,7 @@ jobs:
               brand="RHACS_BRANDING"
               ;;
             *)
-              echo "Unsupport build: ${{ matrix.name }}"
+              echo "Unsupported build: ${{ matrix.name }}"
               exit 1
           esac
 
