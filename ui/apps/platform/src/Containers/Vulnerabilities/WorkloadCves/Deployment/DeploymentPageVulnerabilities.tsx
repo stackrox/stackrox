@@ -1,6 +1,7 @@
 import React from 'react';
 import {
     Alert,
+    Bullseye,
     Divider,
     Flex,
     Grid,
@@ -9,6 +10,7 @@ import {
     Pagination,
     pluralize,
     Skeleton,
+    Spinner,
     Split,
     SplitItem,
     Tab,
@@ -23,10 +25,14 @@ import { gql, useQuery } from '@apollo/client';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
+import useURLSort from 'hooks/useURLSort';
+import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
 import { DynamicTableLabel } from '../components/DynamicIcon';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
+import TableErrorComponent from '../components/TableErrorComponent';
 import { cveStatusTabValues } from '../types';
 import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {
@@ -34,6 +40,11 @@ import CvesByStatusSummaryCard, {
     ResourceCountByCveSeverityAndStatus,
 } from '../SummaryCards/CvesByStatusSummaryCard';
 import { parseQuerySearchFilter, getHiddenSeverities, getHiddenStatuses } from '../searchUtils';
+import { imageMetadataContextFragment } from '../Tables/table.utils';
+import DeploymentVulnerabilitiesTable, {
+    deploymentWithVulnerabilitiesFragment,
+    DeploymentWithVulnerabilities,
+} from '../Tables/DeploymentVulnerabilitiesTable';
 
 const summaryQuery = gql`
     ${resourceCountByCveSeverityAndStatusFragment}
@@ -47,6 +58,19 @@ const summaryQuery = gql`
     }
 `;
 
+const vulnerabilityQuery = gql`
+    ${imageMetadataContextFragment}
+    ${deploymentWithVulnerabilitiesFragment}
+    query getCvesForDeployment($id: ID!, $query: String!, $pagination: Pagination!) {
+        deployment(id: $id) {
+            imageVulnerabilityCount(query: $query)
+            ...DeploymentWithVulnerabilities
+        }
+    }
+`;
+
+const defaultSortFields = ['CVE'];
+
 export type DeploymentPageVulnerabilitiesProps = {
     deploymentId: string;
 };
@@ -57,8 +81,15 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('cveStatus', cveStatusTabValues);
 
     const { page, setPage, perPage, setPerPage } = useURLPagination(20);
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields: defaultSortFields,
+        defaultSortOption: {
+            field: 'CVE',
+            direction: 'desc',
+        },
+        onSort: () => setPage(1),
+    });
 
-    const totalVulnerabilityCount = 0;
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
@@ -79,6 +110,34 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
     });
 
     const summaryData = summaryRequest.data ?? summaryRequest.previousData;
+
+    const pagination = {
+        offset: (page - 1) * perPage,
+        limit: perPage,
+        sortOption,
+    };
+
+    const vulnerabilityRequest = useQuery<
+        {
+            deployment: DeploymentWithVulnerabilities & {
+                imageVulnerabilityCount: number;
+            };
+        },
+        {
+            id: string;
+            query: string;
+            pagination: PaginationParam;
+        }
+    >(vulnerabilityQuery, {
+        variables: {
+            id: deploymentId,
+            query: getRequestQueryStringForSearchFilter(querySearchFilter),
+            pagination,
+        },
+    });
+
+    const vulnerabilityData = vulnerabilityRequest.data ?? vulnerabilityRequest.previousData;
+    const totalVulnerabilityCount = vulnerabilityData?.deployment?.imageVulnerabilityCount ?? 0;
 
     return (
         <>
@@ -182,7 +241,24 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                                         />
                                     </SplitItem>
                                 </Split>
-                                TODO Table
+                                {vulnerabilityRequest.error && (
+                                    <TableErrorComponent
+                                        error={vulnerabilityRequest.error}
+                                        message="Adjust your filters and try again"
+                                    />
+                                )}
+                                {vulnerabilityRequest.loading && !vulnerabilityData && (
+                                    <Bullseye>
+                                        <Spinner isSVG />
+                                    </Bullseye>
+                                )}
+                                {vulnerabilityData && (
+                                    <DeploymentVulnerabilitiesTable
+                                        deployment={vulnerabilityData.deployment}
+                                        getSortParams={getSortParams}
+                                        isFiltered={isFiltered}
+                                    />
+                                )}
                             </div>
                         </div>
                     </Tab>
