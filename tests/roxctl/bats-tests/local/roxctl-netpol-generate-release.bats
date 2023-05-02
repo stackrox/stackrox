@@ -68,7 +68,7 @@ teardown() {
   run roxctl-release generate netpol "$out_dir/"
   assert_failure
   assert_output --partial 'YAML document is malformed'
-  assert_output --partial 'no relevant Kubernetes resources found'
+  assert_output --partial 'could not find any Kubernetes workload resources'
 }
 
 @test "roxctl-release generate netpol produces errors when some yamls are templated" {
@@ -84,7 +84,7 @@ teardown() {
   run roxctl-release generate netpol "$out_dir/" --remove --output-file=/dev/null
   assert_failure
   assert_output --partial 'YAML document is malformed'
-  refute_output --partial 'no relevant Kubernetes resources found'
+  refute_output --partial 'could not find any Kubernetes workload resources'
 }
 
 @test "roxctl-release generate netpol produces warnings (or errors for --strict) when yamls are not K8s resources" {
@@ -97,12 +97,12 @@ teardown() {
   run roxctl-release generate netpol "$out_dir/" --remove --output-file=/dev/null
   assert_success
   assert_output --partial 'Yaml document is not a K8s resource'
-  assert_output --partial 'no relevant Kubernetes resources found'
+  assert_output --partial 'could not find any Kubernetes workload resources'
 
   run roxctl-release generate netpol "$out_dir/" --remove --output-file=/dev/null --strict
   assert_failure
   assert_output --partial 'Yaml document is not a K8s resource'
-  assert_output --partial 'no relevant Kubernetes resources found'
+  assert_output --partial 'could not find any Kubernetes workload resources'
   assert_output --partial 'ERROR:'
   assert_output --partial 'there were warnings during execution'
 }
