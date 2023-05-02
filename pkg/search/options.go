@@ -47,12 +47,15 @@ var (
 
 	CVEID              = newFieldLabel("CVE ID")
 	CVE                = newFieldLabel("CVE")
+	CVESummary         = newFieldLabel("CVE Summary")
+	CVEReference       = newFieldLabel("CVE Reference")
 	CVEType            = newFieldLabel("CVE Type")
 	CVEPublishedOn     = newFieldLabel("CVE Published On")
 	CVECreatedTime     = newFieldLabel("CVE Created Time")
 	CVESuppressed      = newFieldLabel("CVE Snoozed")
 	CVESuppressExpiry  = newFieldLabel("CVE Snooze Expiry")
 	CVSS               = newFieldLabel("CVSS")
+	CVSSVersion        = newFieldLabel("CVSS Version")
 	ImpactScore        = newFieldLabel("Impact Score")
 	VulnerabilityState = newFieldLabel("Vulnerability State")
 

@@ -14,10 +14,22 @@ import (
 //go:generate mockgen-wrapper
 type CveCore interface {
 	GetCVE() string
+	GetDistroTuples() []CVEDistroTuple
 	GetImagesBySeverity() common.ResourceCountByCVESeverity
 	GetTopCVSS() float32
 	GetAffectedImages() int
 	GetFirstDiscoveredInSystem() time.Time
+}
+
+// CVEDistroTuple is an interface to get distro based CVE data.
+//
+//go:generate mockgen-wrapper
+type CVEDistroTuple interface {
+	GetDescription() string
+	GetUrl() string
+	GetOperatingSystem() string
+	GetCvss() float32
+	GetCvssVersion() string
 }
 
 // CveView interface is like a SQL view that provides functionality to fetch the image CVE data

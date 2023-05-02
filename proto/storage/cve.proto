@@ -104,14 +104,14 @@ message CVEInfo {
         UNKNOWN = 2;
     }
     string                    cve                   = 1 [(gogoproto.moretags) = 'search:"CVE,store" sql:"index=hash"'];
-    string                    summary               = 2;
-    string                    link                  = 3;
+    string                    summary               = 2 [(gogoproto.moretags) = 'search:"CVE Summary"'];
+    string                    link                  = 3 [(gogoproto.moretags) = 'search:"CVE Reference"'];
     // This indicates the timestamp when the cve was first published in the cve feeds.
     google.protobuf.Timestamp published_on          = 4 [(gogoproto.moretags) = 'search:"CVE Published On"'];
     // Time when the CVE was first seen in the system.
     google.protobuf.Timestamp created_at            = 5 [(gogoproto.moretags) = 'search:"CVE Created Time"'];
     google.protobuf.Timestamp last_modified         = 6;
-    ScoreVersion              score_version         = 7;
+    ScoreVersion              score_version         = 7 [(gogoproto.moretags) = 'search:"CVSS Version"'];
     CVSSV2                    cvss_v2               = 8;
     CVSSV3                    cvss_v3               = 9;
     repeated Reference        references            = 10;

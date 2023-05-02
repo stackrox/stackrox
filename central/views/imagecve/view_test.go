@@ -525,6 +525,26 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 				}
 
 				val.TopCVSS = mathutil.MaxFloat32(val.GetTopCVSS(), vuln.GetCvss())
+
+				var found bool
+				for _, tuple := range val.GetDistroTuples() {
+					if tuple.GetOperatingSystem() == image.GetScan().GetOperatingSystem() {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					val.CVEIDs = append(val.CVEIDs, cve.ID(val.GetCVE(), image.GetScan().GetOperatingSystem()))
+					val.cveDistroTuples = append(val.cveDistroTuples, &cveDistroTuple{
+						Description:     vuln.GetSummary(),
+						Url:             vuln.GetLink(),
+						OperatingSystem: image.GetScan().GetOperatingSystem(),
+						Cvss:            vuln.GetCvss(),
+						CvssVersion:     storage.CVEInfo_ScoreVersion_value[vuln.GetScoreVersion().String()],
+					})
+				}
+
 				if val.GetFirstDiscoveredInSystem().After(vulnTime) {
 					val.FirstDiscoveredInSystem = vulnTime
 				}
@@ -562,6 +582,9 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 
 	expected := make([]*imageCVECore, 0, len(cveMap))
 	for _, entry := range cveMap {
+		sort.SliceStable(entry.cveDistroTuples, func(i, j int) bool {
+			return entry.cveDistroTuples[i].GetOperatingSystem() < entry.cveDistroTuples[j].GetOperatingSystem()
+		})
 		expected = append(expected, entry)
 	}
 	if options.SkipGetImagesBySeverity {

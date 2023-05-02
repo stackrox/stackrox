@@ -93,8 +93,11 @@ func insertIntoImageCves(ctx context.Context, batch *pgx.Batch, obj *storage.Ima
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetCveBaseInfo().GetCve(),
+		obj.GetCveBaseInfo().GetSummary(),
+		obj.GetCveBaseInfo().GetLink(),
 		pgutils.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 		pgutils.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
+		obj.GetCveBaseInfo().GetScoreVersion(),
 		obj.GetOperatingSystem(),
 		obj.GetCvss(),
 		obj.GetSeverity(),
@@ -104,7 +107,7 @@ func insertIntoImageCves(ctx context.Context, batch *pgx.Batch, obj *storage.Ima
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_cves (Id, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, OperatingSystem, Cvss, Severity, ImpactScore, Snoozed, SnoozeExpiry, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Snoozed = EXCLUDED.Snoozed, SnoozeExpiry = EXCLUDED.SnoozeExpiry, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_cves (Id, CveBaseInfo_Cve, CveBaseInfo_Summary, CveBaseInfo_Link, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_ScoreVersion, OperatingSystem, Cvss, Severity, ImpactScore, Snoozed, SnoozeExpiry, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_Summary = EXCLUDED.CveBaseInfo_Summary, CveBaseInfo_Link = EXCLUDED.CveBaseInfo_Link, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_ScoreVersion = EXCLUDED.CveBaseInfo_ScoreVersion, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Snoozed = EXCLUDED.Snoozed, SnoozeExpiry = EXCLUDED.SnoozeExpiry, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -126,9 +129,15 @@ func (s *storeImpl) copyFromImageCves(ctx context.Context, tx *postgres.Tx, objs
 
 		"cvebaseinfo_cve",
 
+		"cvebaseinfo_summary",
+
+		"cvebaseinfo_link",
+
 		"cvebaseinfo_publishedon",
 
 		"cvebaseinfo_createdat",
+
+		"cvebaseinfo_scoreversion",
 
 		"operatingsystem",
 
@@ -162,9 +171,15 @@ func (s *storeImpl) copyFromImageCves(ctx context.Context, tx *postgres.Tx, objs
 
 			obj.GetCveBaseInfo().GetCve(),
 
+			obj.GetCveBaseInfo().GetSummary(),
+
+			obj.GetCveBaseInfo().GetLink(),
+
 			pgutils.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 
 			pgutils.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
+
+			obj.GetCveBaseInfo().GetScoreVersion(),
 
 			obj.GetOperatingSystem(),
 

@@ -4,10 +4,12 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/views/common"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type imageCVECore struct {
 	CVE                                string    `db:"cve"`
+	CVEIDs                             []string  `db:"cve_id"`
 	ImagesWithCriticalSeverity         int       `db:"critical_severity_count"`
 	FixableImagesWithCriticalSeverity  int       `db:"fixable_critical_severity_count"`
 	ImagesWithImportantSeverity        int       `db:"important_severity_count"`
@@ -19,10 +21,20 @@ type imageCVECore struct {
 	TopCVSS                            float32   `db:"cvss_max"`
 	AffectedImages                     int       `db:"image_sha_count"`
 	FirstDiscoveredInSystem            time.Time `db:"cve_created_time_min"`
+
+	cveDistroTuples []*cveDistroTuple
 }
 
 func (c *imageCVECore) GetCVE() string {
 	return c.CVE
+}
+
+func (c *imageCVECore) GetDistroTuples() []CVEDistroTuple {
+	ret := make([]CVEDistroTuple, 0, len(c.cveDistroTuples))
+	for _, t := range c.cveDistroTuples {
+		ret = append(ret, t)
+	}
+	return ret
 }
 
 func (c *imageCVECore) GetImagesBySeverity() common.ResourceCountByCVESeverity {
@@ -104,4 +116,32 @@ func (r *resourceCountByImageCVESeverity) GetLowSeverityCount() common.ResourceC
 		total:   r.LowSeverityCount,
 		fixable: r.FixableLowSeverityCount,
 	}
+}
+
+type cveDistroTuple struct {
+	Description     string  `db:"cve_summary"`
+	Url             string  `db:"cve_reference"`
+	OperatingSystem string  `db:"operating_system"`
+	Cvss            float32 `db:"cvss"`
+	CvssVersion     int32   `db:"cvss_version"`
+}
+
+func (t *cveDistroTuple) GetDescription() string {
+	return t.Description
+}
+
+func (t *cveDistroTuple) GetUrl() string {
+	return t.Url
+}
+
+func (t *cveDistroTuple) GetOperatingSystem() string {
+	return t.OperatingSystem
+}
+
+func (t *cveDistroTuple) GetCvss() float32 {
+	return t.Cvss
+}
+
+func (t *cveDistroTuple) GetCvssVersion() string {
+	return storage.CVEInfo_ScoreVersion_name[t.CvssVersion]
 }

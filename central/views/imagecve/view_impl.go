@@ -83,15 +83,46 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 		return nil, err
 	}
 
-	results, err := pgSearch.RunSelectRequestForSchema[imageCVECore](ctx, v.db, v.schema, withSelectQuery(q, options))
+	var err error
+	var results []*imageCVECore
+	results, err = pgSearch.RunSelectRequestForSchema[imageCVECore](ctx, v.db, v.schema, withSelectQuery(q, options))
 	if err != nil {
 		return nil, err
 	}
+
+	if !options.SkipDistroTuple {
+		for _, r := range results {
+			distroTuples, err := v.getDistroTuplesForCVE(ctx, r.CVEIDs...)
+			if err != nil {
+				return nil, err
+			}
+			r.cveDistroTuples = distroTuples
+		}
+	}
+
 	ret := make([]CveCore, 0, len(results))
 	for _, r := range results {
 		ret = append(ret, r)
 	}
 	return ret, nil
+}
+
+func (v *imageCVECoreViewImpl) getDistroTuplesForCVE(ctx context.Context, cveIDs ...string) ([]*cveDistroTuple, error) {
+	if len(cveIDs) == 0 {
+		return nil, nil
+	}
+
+	query := search.NewQueryBuilder().
+		AddSelectFields(search.NewQuerySelect(search.CVESummary)).
+		AddSelectFields(search.NewQuerySelect(search.CVEReference)).
+		AddSelectFields(search.NewQuerySelect(search.OperatingSystem)).
+		AddSelectFields(search.NewQuerySelect(search.CVSS)).
+		AddSelectFields(search.NewQuerySelect(search.CVSSVersion)).
+		AddExactMatches(search.CVEID, cveIDs...).
+		WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.OperatingSystem))).
+		ProtoQuery()
+
+	return pgSearch.RunSelectRequestForSchema[cveDistroTuple](ctx, v.db, v.schema, query)
 }
 
 func validateQuery(q *v1.Query) error {
@@ -109,6 +140,7 @@ func withSelectQuery(q *v1.Query, options views.ReadOptions) *v1.Query {
 	cloned := q.Clone()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVE).Proto(),
+		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
 	}
 	if !options.SkipGetImagesBySeverity {
 		cloned.Selects = append(cloned.Selects,

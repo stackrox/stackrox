@@ -67,6 +67,20 @@ func (mr *MockCveCoreMockRecorder) GetCVE() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVE", reflect.TypeOf((*MockCveCore)(nil).GetCVE))
 }
 
+// GetDistroTuples mocks base method.
+func (m *MockCveCore) GetDistroTuples() []imagecve.CVEDistroTuple {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDistroTuples")
+	ret0, _ := ret[0].([]imagecve.CVEDistroTuple)
+	return ret0
+}
+
+// GetDistroTuples indicates an expected call of GetDistroTuples.
+func (mr *MockCveCoreMockRecorder) GetDistroTuples() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDistroTuples", reflect.TypeOf((*MockCveCore)(nil).GetDistroTuples))
+}
+
 // GetFirstDiscoveredInSystem mocks base method.
 func (m *MockCveCore) GetFirstDiscoveredInSystem() time.Time {
 	m.ctrl.T.Helper()
@@ -107,6 +121,99 @@ func (m *MockCveCore) GetTopCVSS() float32 {
 func (mr *MockCveCoreMockRecorder) GetTopCVSS() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopCVSS", reflect.TypeOf((*MockCveCore)(nil).GetTopCVSS))
+}
+
+// MockCVEDistroTuple is a mock of CVEDistroTuple interface.
+type MockCVEDistroTuple struct {
+	ctrl     *gomock.Controller
+	recorder *MockCVEDistroTupleMockRecorder
+}
+
+// MockCVEDistroTupleMockRecorder is the mock recorder for MockCVEDistroTuple.
+type MockCVEDistroTupleMockRecorder struct {
+	mock *MockCVEDistroTuple
+}
+
+// NewMockCVEDistroTuple creates a new mock instance.
+func NewMockCVEDistroTuple(ctrl *gomock.Controller) *MockCVEDistroTuple {
+	mock := &MockCVEDistroTuple{ctrl: ctrl}
+	mock.recorder = &MockCVEDistroTupleMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockCVEDistroTuple) EXPECT() *MockCVEDistroTupleMockRecorder {
+	return m.recorder
+}
+
+// GetCvss mocks base method.
+func (m *MockCVEDistroTuple) GetCvss() float32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCvss")
+	ret0, _ := ret[0].(float32)
+	return ret0
+}
+
+// GetCvss indicates an expected call of GetCvss.
+func (mr *MockCVEDistroTupleMockRecorder) GetCvss() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCvss", reflect.TypeOf((*MockCVEDistroTuple)(nil).GetCvss))
+}
+
+// GetCvssVersion mocks base method.
+func (m *MockCVEDistroTuple) GetCvssVersion() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCvssVersion")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetCvssVersion indicates an expected call of GetCvssVersion.
+func (mr *MockCVEDistroTupleMockRecorder) GetCvssVersion() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCvssVersion", reflect.TypeOf((*MockCVEDistroTuple)(nil).GetCvssVersion))
+}
+
+// GetDescription mocks base method.
+func (m *MockCVEDistroTuple) GetDescription() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDescription")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetDescription indicates an expected call of GetDescription.
+func (mr *MockCVEDistroTupleMockRecorder) GetDescription() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDescription", reflect.TypeOf((*MockCVEDistroTuple)(nil).GetDescription))
+}
+
+// GetOperatingSystem mocks base method.
+func (m *MockCVEDistroTuple) GetOperatingSystem() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOperatingSystem")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetOperatingSystem indicates an expected call of GetOperatingSystem.
+func (mr *MockCVEDistroTupleMockRecorder) GetOperatingSystem() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOperatingSystem", reflect.TypeOf((*MockCVEDistroTuple)(nil).GetOperatingSystem))
+}
+
+// GetUrl mocks base method.
+func (m *MockCVEDistroTuple) GetUrl() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUrl")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetUrl indicates an expected call of GetUrl.
+func (mr *MockCVEDistroTupleMockRecorder) GetUrl() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUrl", reflect.TypeOf((*MockCVEDistroTuple)(nil).GetUrl))
 }
 
 // MockCveView is a mock of CveView interface.

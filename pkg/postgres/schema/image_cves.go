@@ -52,15 +52,18 @@ const (
 
 // ImageCves holds the Gorm model for Postgres table `image_cves`.
 type ImageCves struct {
-	Id                     string                        `gorm:"column:id;type:varchar;primaryKey"`
-	CveBaseInfoCve         string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:imagecves_cvebaseinfo_cve,type:hash"`
-	CveBaseInfoPublishedOn *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
-	CveBaseInfoCreatedAt   *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
-	OperatingSystem        string                        `gorm:"column:operatingsystem;type:varchar"`
-	Cvss                   float32                       `gorm:"column:cvss;type:numeric"`
-	Severity               storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
-	ImpactScore            float32                       `gorm:"column:impactscore;type:numeric"`
-	Snoozed                bool                          `gorm:"column:snoozed;type:bool"`
-	SnoozeExpiry           *time.Time                    `gorm:"column:snoozeexpiry;type:timestamp"`
-	Serialized             []byte                        `gorm:"column:serialized;type:bytea"`
+	Id                      string                        `gorm:"column:id;type:varchar;primaryKey"`
+	CveBaseInfoCve          string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:imagecves_cvebaseinfo_cve,type:hash"`
+	CveBaseInfoSummary      string                        `gorm:"column:cvebaseinfo_summary;type:varchar"`
+	CveBaseInfoLink         string                        `gorm:"column:cvebaseinfo_link;type:varchar"`
+	CveBaseInfoPublishedOn  *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
+	CveBaseInfoCreatedAt    *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
+	CveBaseInfoScoreVersion storage.CVEInfo_ScoreVersion  `gorm:"column:cvebaseinfo_scoreversion;type:integer"`
+	OperatingSystem         string                        `gorm:"column:operatingsystem;type:varchar"`
+	Cvss                    float32                       `gorm:"column:cvss;type:numeric"`
+	Severity                storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
+	ImpactScore             float32                       `gorm:"column:impactscore;type:numeric"`
+	Snoozed                 bool                          `gorm:"column:snoozed;type:bool"`
+	SnoozeExpiry            *time.Time                    `gorm:"column:snoozeexpiry;type:timestamp"`
+	Serialized              []byte                        `gorm:"column:serialized;type:bytea"`
 }

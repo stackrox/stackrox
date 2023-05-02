@@ -2,6 +2,7 @@ package views
 
 // ReadOptions provide functionality to skip reading specific fields. This can be used avoid reading fields that are not required.
 type ReadOptions struct {
+	SkipDistroTuple                bool
 	SkipGetImagesBySeverity        bool
 	SkipGetTopCVSS                 bool
 	SkipGetAffectedImages          bool
@@ -10,7 +11,8 @@ type ReadOptions struct {
 
 // IsDefault returns true if all readoptions are set to default/false.
 func (r *ReadOptions) IsDefault() bool {
-	return !r.SkipGetImagesBySeverity &&
+	return !r.SkipDistroTuple &&
+		!r.SkipGetImagesBySeverity &&
 		!r.SkipGetTopCVSS &&
 		!r.SkipGetAffectedImages &&
 		!r.SkipGetFirstDiscoveredInSystem
