@@ -14,6 +14,7 @@ import (
 	entityMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	networkTreeMocks "github.com/stackrox/rox/central/networkgraph/entity/networktree/mocks"
 	nfDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
+	networkPolicyMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	npDSMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -40,6 +41,7 @@ type NetworkGraphServiceTestSuite struct {
 	flows          *nfDSMocks.MockClusterDataStore
 	graphConfig    *graphConfigDSMocks.MockDataStore
 	networkTreeMgr *networkTreeMocks.MockManager
+	policies       *networkPolicyMocks.MockDataStore
 
 	evaluator *npDSMocks.MockEvaluator
 	tested    *serviceImpl
@@ -57,8 +59,9 @@ func (s *NetworkGraphServiceTestSuite) SetupTest() {
 	s.graphConfig = graphConfigDSMocks.NewMockDataStore(s.mockCtrl)
 	s.evaluator = npDSMocks.NewMockEvaluator(s.mockCtrl)
 	s.networkTreeMgr = networkTreeMocks.NewMockManager(s.mockCtrl)
+	s.policies = networkPolicyMocks.NewMockDataStore(s.mockCtrl)
 
-	s.tested = newService(s.flows, s.entities, s.networkTreeMgr, s.deployments, s.clusters, s.graphConfig)
+	s.tested = newService(s.flows, s.entities, s.networkTreeMgr, s.deployments, s.clusters, s.policies, s.graphConfig)
 }
 
 func (s *NetworkGraphServiceTestSuite) TearDownTest() {
