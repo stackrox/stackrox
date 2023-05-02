@@ -338,10 +338,7 @@ describe('Risk Page Deployment Event Timeline', () => {
             // if there's a parent process, and the parent uid is -1, it means that it's unknown
             cy.get(selectors.tooltip.body).should('contain', 'Parent UID: Unknown');
             cy.get(selectors.tooltip.body).should('contain', 'UID: 2000');
-            cy.get(selectors.tooltip.bodyContent.uidFieldValue).should(
-                'have.class',
-                'text-alert-600'
-            );
+            cy.get(selectors.tooltip.getUidFieldIconSelector('danger')).should('exist');
             // since the displayed time depends on the time zone, we don't want to check against a  hardcoded value
             getFormattedEventTimeById('e7519642-958a-534b-8246-59de4560d4ab').then(
                 (formattedEventTime) => {
@@ -374,10 +371,7 @@ describe('Risk Page Deployment Event Timeline', () => {
             cy.get(selectors.tooltip.body).should('contain', 'Parent Name: /usr/sbin/nginx');
             cy.get(selectors.tooltip.body).should('contain', 'Parent UID: 1000');
             cy.get(selectors.tooltip.body).should('contain', 'UID: 3000');
-            cy.get(selectors.tooltip.bodyContent.uidFieldValue).should(
-                'have.class',
-                'text-alert-600'
-            );
+            cy.get(selectors.tooltip.getUidFieldIconSelector('danger')).should('exist');
             // since the displayed time depends on the time zone, we don't want to check against a  hardcoded value
             getFormattedEventTimeById('e7519642-958a-534b-8296-59de5560d4ab').then(
                 (formattedEventTime) => {
@@ -410,10 +404,7 @@ describe('Risk Page Deployment Event Timeline', () => {
             cy.get(selectors.tooltip.body).should('contain', 'Parent Name: /usr/sbin/nginx');
             cy.get(selectors.tooltip.body).should('contain', 'Parent UID: 4000');
             cy.get(selectors.tooltip.body).should('contain', 'UID: 4000');
-            cy.get(selectors.tooltip.bodyContent.uidFieldValue).should(
-                'not.have.class',
-                'text-alert-600'
-            );
+            cy.get(selectors.tooltip.getUidFieldIconSelector('danger')).should('not.exist');
             // since the displayed time depends on the time zone, we don't want to check against a  hardcoded value
             getFormattedEventTimeById('e7519642-959a-534b-8296-59de4560d4ab').then(
                 (formattedEventTime) => {

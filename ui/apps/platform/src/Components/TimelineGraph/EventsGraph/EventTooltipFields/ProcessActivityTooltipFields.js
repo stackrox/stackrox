@@ -17,10 +17,10 @@ const ProcessActivityTooltipFields = ({ name, args, uid, parentName, parentUid, 
 
     let uidType;
     if (hasParent && isParentUidUnknown && hasUidChanged) {
-        uidType = 'caution';
+        uidType = 'warning';
     }
     if (hasParent && hasUidChanged) {
-        uidType = 'alert';
+        uidType = 'danger';
     } else {
         uidType = null;
     }
@@ -39,12 +39,7 @@ const ProcessActivityTooltipFields = ({ name, args, uid, parentName, parentUid, 
             <TooltipFieldValue field="Arguments" value={argsValue} />
             <TooltipFieldValue field="Parent Name" value={parentNameValue} />
             <TooltipFieldValue field="Parent UID" value={parentUidValue} />
-            <TooltipFieldValue
-                field="UID"
-                value={uid}
-                type={uidType}
-                dataTestId="tooltip-uid-field-value"
-            />
+            <TooltipFieldValue field="UID" value={uid} type={uidType} />
             <TooltipFieldValue field="Event time" value={eventTimeValue} />
         </>
     );
