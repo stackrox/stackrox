@@ -21,16 +21,16 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import { FixableIcon, NotFixableIcon } from 'Components/PatternFly/FixabilityIcons';
 import { getEntityPagePath } from '../searchUtils';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
-import ComponentVulnerabilitiesTable, {
-    ComponentVulnerability,
+import ImageComponentVulnerabilitiesTable, {
+    ImageComponentVulnerability,
     ImageMetadataContext,
-    componentVulnerabilitiesFragment,
-} from './ComponentVulnerabilitiesTable';
+    imageComponentVulnerabilitiesFragment,
+} from './ImageComponentVulnerabilitiesTable';
 
 import EmptyTableResults from '../components/EmptyTableResults';
 
 export const imageVulnerabilitiesFragment = gql`
-    ${componentVulnerabilitiesFragment}
+    ${imageComponentVulnerabilitiesFragment}
     fragment ImageVulnerabilityFields on ImageVulnerability {
         id
         severity
@@ -41,7 +41,7 @@ export const imageVulnerabilitiesFragment = gql`
         scoreVersion
         discoveredAtImage
         imageComponents(query: $query) {
-            ...ComponentVulnerabilities
+            ...ImageComponentVulnerabilities
         }
     }
 `;
@@ -55,10 +55,10 @@ export type ImageVulnerability = {
     cvss: number;
     scoreVersion: string;
     discoveredAtImage: Date | null;
-    imageComponents: ComponentVulnerability[];
+    imageComponents: ImageComponentVulnerability[];
 };
 
-export type SingleEntityVulnerabilitiesTableProps = {
+export type ImageVulnerabilitiesTableProps = {
     image: ImageMetadataContext & {
         imageVulnerabilities: ImageVulnerability[];
     };
@@ -66,14 +66,11 @@ export type SingleEntityVulnerabilitiesTableProps = {
     isFiltered: boolean;
 };
 
-// TODO Although the structure of this table is identical for both the Image and Deployment single page
-// tables, the data format coming in will be quite different. We will need a layer in between the parent
-// component and the table to normalize the data into a common format.
-function SingleEntityVulnerabilitiesTable({
+function ImageVulnerabilitiesTable({
     image,
     getSortParams,
     isFiltered,
-}: SingleEntityVulnerabilitiesTableProps) {
+}: ImageVulnerabilitiesTableProps) {
     const expandedRowSet = useSet<string>();
 
     return (
@@ -172,14 +169,9 @@ function SingleEntityVulnerabilitiesTable({
                                 <Td colSpan={6}>
                                     <ExpandableRowContent>
                                         <p className="pf-u-mb-md">{summary}</p>
-                                        <ComponentVulnerabilitiesTable
-                                            showImage={false}
-                                            images={[
-                                                {
-                                                    imageMetadataContext: image,
-                                                    componentVulnerabilities: imageComponents,
-                                                },
-                                            ]}
+                                        <ImageComponentVulnerabilitiesTable
+                                            imageMetadataContext={image}
+                                            componentVulnerabilities={imageComponents}
                                         />
                                     </ExpandableRowContent>
                                 </Td>
@@ -192,4 +184,4 @@ function SingleEntityVulnerabilitiesTable({
     );
 }
 
-export default SingleEntityVulnerabilitiesTable;
+export default ImageVulnerabilitiesTable;
