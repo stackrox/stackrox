@@ -28,10 +28,9 @@ jobs:
         run: |
           source './scripts/ci/lib.sh'
 
-          matrix='{"pre_build_cli": {"name":[]}, "pre_build_go_binaries": {"name":[]}, "build_and_push_main": {"name":[]} }'
+          matrix='{"pre_build_go_binaries": {"name":[]}, "build_and_push_main": {"name":[]} }'
 
           # The base matrix
-          matrix="$(jq '.pre_build_cli.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_main.name += ["STACKROX_BRANDING", "RHACS_BRANDING"]' <<< "$matrix")"
 
