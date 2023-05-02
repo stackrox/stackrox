@@ -3,12 +3,12 @@ package utils
 import (
 	"sort"
 
-	mitreDS "github.com/stackrox/rox/central/mitre/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
 )
 
 // GetFullMitreAttackVectors returns MITRE ATT&CK for policy with full data.
-func GetFullMitreAttackVectors(mitreStore mitreDS.MitreAttackReadOnlyDataStore, policy *storage.Policy) ([]*storage.MitreAttackVector, error) {
+func GetFullMitreAttackVectors(mitreStore mitreDS.AttackReadOnlyDataStore, policy *storage.Policy) ([]*storage.MitreAttackVector, error) {
 	if mitreStore == nil || policy == nil {
 		return nil, nil
 	}

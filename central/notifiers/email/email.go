@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/mitchellh/go-wordwrap"
-	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
@@ -26,6 +25,8 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
+	mitreDataStore "github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -44,7 +45,7 @@ type email struct {
 	smtpServer smtpServer
 
 	namespaces namespaceDataStore.DataStore
-	mitreStore mitreDataStore.MitreAttackReadOnlyDataStore
+	mitreStore mitreDS.AttackReadOnlyDataStore
 
 	notifier *storage.Notifier
 }
@@ -143,7 +144,7 @@ func validate(email *storage.Email) error {
 	return errorList.ToError()
 }
 
-func newEmail(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore, mitreStore mitreDataStore.MitreAttackReadOnlyDataStore) (*email, error) {
+func newEmail(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore, mitreStore mitreDS.AttackReadOnlyDataStore) (*email, error) {
 	emailConfig, ok := notifier.GetConfig().(*storage.Notifier_Email)
 	if !ok {
 		return nil, errors.New("Email configuration required")

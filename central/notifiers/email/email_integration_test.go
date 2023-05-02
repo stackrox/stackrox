@@ -9,10 +9,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mitreMocks "github.com/stackrox/rox/central/mitre/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,7 +37,7 @@ func getEmail(t *testing.T) (*email, *gomock.Controller) {
 	mockCtrl := gomock.NewController(t)
 	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
 	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return([]*storage.NamespaceMetadata{}, nil).AnyTimes()
-	mitreStore := mitreMocks.NewMockMitreAttackReadOnlyDataStore(mockCtrl)
+	mitreStore := mitreMocks.NewMockAttackReadOnlyDataStore(mockCtrl)
 	mitreStore.EXPECT().Get(gomock.Any()).Return(&storage.MitreAttackVector{}, nil).AnyTimes()
 
 	recipient := skip(t)
@@ -64,7 +64,7 @@ func getUnauthEmail(t *testing.T) (*email, *gomock.Controller) {
 	mockCtrl := gomock.NewController(t)
 	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
 	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return([]*storage.NamespaceMetadata{}, nil).AnyTimes()
-	mitreStore := mitreMocks.NewMockMitreAttackReadOnlyDataStore(mockCtrl)
+	mitreStore := mitreMocks.NewMockAttackReadOnlyDataStore(mockCtrl)
 	mitreStore.EXPECT().Get(gomock.Any()).Return(&storage.MitreAttackVector{}, nil).AnyTimes()
 
 	notifier := &storage.Notifier{
