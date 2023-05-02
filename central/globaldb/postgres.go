@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	stats "github.com/stackrox/rox/pkg/telemetry/data"
 )
@@ -74,6 +75,10 @@ var (
 	PostgresQueryTimeout = 10 * time.Second
 
 	loggedCapacityCalculationError = false
+
+	// writtenStates tracks the states written for connections in order to reset them to zero
+	// when they no longer exist
+	writtenStates = set.NewStringSet()
 )
 
 // GetPostgres returns a global database instance. It should be called after InitializePostgres
@@ -283,6 +288,7 @@ func getTotalConnections(ctx context.Context, db postgres.DB) {
 
 	defer rows.Close()
 
+	currentStates := set.NewStringSet()
 	for rows.Next() {
 		var (
 			state           string
@@ -293,9 +299,16 @@ func getTotalConnections(ctx context.Context, db postgres.DB) {
 			return
 		}
 
+		currentStates.Add(state)
 		stateLabel := prometheus.Labels{"state": state}
 		metrics.PostgresTotalConnections.With(stateLabel).Set(float64(connectionCount))
 	}
+	// Set metric for states that no longer exist to 0
+	for state := range writtenStates.Difference(currentStates) {
+		stateLabel := prometheus.Labels{"state": state}
+		metrics.PostgresTotalConnections.With(stateLabel).Set(0)
+	}
+	writtenStates = currentStates
 }
 
 // getMaxConnections -- gets maximum number of connections to Postgres server
