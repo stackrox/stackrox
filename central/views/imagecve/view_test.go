@@ -538,7 +538,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 					val.CVEIDs = append(val.CVEIDs, cve.ID(val.GetCVE(), image.GetScan().GetOperatingSystem()))
 					val.cveDistroTuples = append(val.cveDistroTuples, &cveDistroTuple{
 						Description:     vuln.GetSummary(),
-						Url:             vuln.GetLink(),
+						URL:             vuln.GetLink(),
 						OperatingSystem: image.GetScan().GetOperatingSystem(),
 						Cvss:            vuln.GetCvss(),
 						CvssVersion:     storage.CVEInfo_ScoreVersion_value[vuln.GetScoreVersion().String()],

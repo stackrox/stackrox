@@ -26,7 +26,7 @@ type CveCore interface {
 //go:generate mockgen-wrapper
 type CVEDistroTuple interface {
 	GetDescription() string
-	GetUrl() string
+	GetURL() string
 	GetOperatingSystem() string
 	GetCvss() float32
 	GetCvssVersion() string

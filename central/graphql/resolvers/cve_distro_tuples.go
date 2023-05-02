@@ -44,8 +44,8 @@ func (t *cveDistroTupleResolver) GetDescription() string {
 	return t.data.GetDescription()
 }
 
-func (t *cveDistroTupleResolver) GetUrl() string {
-	return t.data.GetUrl()
+func (t *cveDistroTupleResolver) GetURL() string {
+	return t.data.GetURL()
 }
 
 func (t *cveDistroTupleResolver) GetOperatingSystem() string {

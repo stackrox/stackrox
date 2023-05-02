@@ -120,7 +120,7 @@ func (r *resourceCountByImageCVESeverity) GetLowSeverityCount() common.ResourceC
 
 type cveDistroTuple struct {
 	Description     string  `db:"cve_summary"`
-	Url             string  `db:"cve_reference"`
+	URL             string  `db:"cve_reference"`
 	OperatingSystem string  `db:"operating_system"`
 	Cvss            float32 `db:"cvss"`
 	CvssVersion     int32   `db:"cvss_version"`
@@ -130,8 +130,8 @@ func (t *cveDistroTuple) GetDescription() string {
 	return t.Description
 }
 
-func (t *cveDistroTuple) GetUrl() string {
-	return t.Url
+func (t *cveDistroTuple) GetURL() string {
+	return t.URL
 }
 
 func (t *cveDistroTuple) GetOperatingSystem() string {
