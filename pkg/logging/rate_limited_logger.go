@@ -11,9 +11,9 @@ import (
 
 // RateLimitedLogger wraps a zap.SugaredLogger that supports rate limiting.
 type RateLimitedLogger struct {
-	Logger       Logger
-	frequency    float64
-	burst        int
+	Logger    Logger
+	frequency float64
+	burst     int
 	// rateLimiters *lru.Cache[string, *rate.Limiter]
 	rateLimitedLogs *lru.Cache[string, *rateLimitedLog]
 }
@@ -21,12 +21,12 @@ type RateLimitedLogger struct {
 // NewRateLimitLogger returns a rate limited logger
 func NewRateLimitLogger(l Logger, size int, logLines int, interval time.Duration, burst int) *RateLimitedLogger {
 	/*
-	cache, err := lru.New[string, *rate.Limiter](size)
-	if err != nil {
-		l.Errorf("unable to create rate limiter cache for logger in module %q: %v", CurrentModule().name, err)
-		return nil
-	}
-	 */
+		cache, err := lru.New[string, *rate.Limiter](size)
+		if err != nil {
+			l.Errorf("unable to create rate limiter cache for logger in module %q: %v", CurrentModule().name, err)
+			return nil
+		}
+	*/
 	cache, err := lru.NewWithEvict[string, *rateLimitedLog](size, func(key string, value *rateLimitedLog) {
 		if value.count > 0 {
 			value.log()
@@ -44,10 +44,10 @@ func NewRateLimitLogger(l Logger, size int, logLines int, interval time.Duration
 func (rl *RateLimitedLogger) ErrorL(limiter string, template string, args ...interface{}) {
 	rl.logf(zapcore.ErrorLevel, limiter, template, args...)
 	/*
-	if rl.allowLog(limiter) {
-		rl.Errorf(template, args...)
-	}
-	 */
+		if rl.allowLog(limiter) {
+			rl.Errorf(template, args...)
+		}
+	*/
 }
 
 // Error logs the consecutive interfaces
@@ -69,10 +69,10 @@ func (rl *RateLimitedLogger) Errorw(msg string, keysAndValues ...interface{}) {
 func (rl *RateLimitedLogger) WarnL(limiter string, template string, args ...interface{}) {
 	rl.logf(zapcore.WarnLevel, limiter, template, args...)
 	/*
-	if rl.allowLog(limiter) {
-		rl.Warnf(template, args...)
-	}
-	 */
+		if rl.allowLog(limiter) {
+			rl.Warnf(template, args...)
+		}
+	*/
 }
 
 // Warn logs the consecutive interfaces
@@ -94,10 +94,10 @@ func (rl *RateLimitedLogger) Warnw(msg string, keysAndValues ...interface{}) {
 func (rl *RateLimitedLogger) InfoL(limiter string, template string, args ...interface{}) {
 	rl.logf(zapcore.InfoLevel, limiter, template, args...)
 	/*
-	if rl.allowLog(limiter) {
-		rl.Infof(template, args...)
-	}
-	 */
+		if rl.allowLog(limiter) {
+			rl.Infof(template, args...)
+		}
+	*/
 }
 
 // Info logs the consecutive interfaces
@@ -119,10 +119,10 @@ func (rl *RateLimitedLogger) Infow(msg string, keysAndValues ...interface{}) {
 func (rl *RateLimitedLogger) DebugL(limiter string, template string, args ...interface{}) {
 	rl.logf(zapcore.DebugLevel, limiter, template, args...)
 	/*
-	if rl.allowLog(limiter) {
-		rl.Debugf(template, args...)
-	}
-	 */
+		if rl.allowLog(limiter) {
+			rl.Debugf(template, args...)
+		}
+	*/
 }
 
 // Debug logs the consecutive interfaces
@@ -149,7 +149,7 @@ func (rl *RateLimitedLogger) allowLog(limiter string) bool {
 	}
 	return false
 }
- */
+*/
 
 func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template string, args ...interface{}) {
 	payload := fmt.Sprintf(template, args...)
@@ -173,13 +173,13 @@ func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template 
 }
 
 type rateLimitedLog struct {
-	logger Logger
+	logger      Logger
 	rateLimiter *rate.Limiter
-	level zapcore.Level
-	last time.Time
-	limiter string
-	payload string
-	count int
+	level       zapcore.Level
+	last        time.Time
+	limiter     string
+	payload     string
+	count       int
 }
 
 func newRateLimitedLog(
@@ -187,22 +187,24 @@ func newRateLimitedLog(
 	level zapcore.Level,
 	rateLimiter *rate.Limiter,
 	limiter string,
-	payload string
+	payload string,
 ) *rateLimitedLog {
 	return &rateLimitedLog{
 		logger:      logger,
 		rateLimiter: rateLimiter,
 		level:       level,
 		// last sticks to default so the first log can be issued unaltered.
-		limiter:     limiter,
-		payload:     payload,
+		limiter: limiter,
+		payload: payload,
 		// count is one at instantiation time as the first log should be issued.
 		count: 1,
 	}
 }
 
 func (l *rateLimitedLog) log() {
-	if l.count == 0 { return }
+	if l.count == 0 {
+		return
+	}
 	now := time.Now()
 	var suffix string
 	if !l.last.IsZero() && l.count > 1 {
