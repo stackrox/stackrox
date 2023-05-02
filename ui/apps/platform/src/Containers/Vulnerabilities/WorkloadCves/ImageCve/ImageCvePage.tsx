@@ -147,7 +147,7 @@ function ImageCvePage() {
         ...querySearchFilter,
         CVE: cveId,
     });
-    const { page, perPage, setPage, setPerPage } = useURLPagination(25);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
 
     const [entityTab] = useURLStringUnion('entityTab', imageCveEntities);
 

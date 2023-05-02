@@ -23,7 +23,7 @@ function DeploymentsTableContainer({ defaultFilters, countsData }: DeploymentsTa
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
-    const pagination = useURLPagination(25);
+    const pagination = useURLPagination(20);
     const { page, perPage, setPage } = pagination;
     const { sortOption, getSortParams, setSortOption } = useURLSort({
         sortFields: defaultDeploymentSortFields,

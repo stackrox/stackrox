@@ -70,7 +70,7 @@ export type ImagePageVulnerabilitiesProps = {
 function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    const { page, perPage, setPage, setPerPage } = useURLPagination(50);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
         defaultSortOption: {
