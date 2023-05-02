@@ -12,7 +12,7 @@ import { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
 
-import { getClientWizardPolicy } from './policies.utils';
+import { getClientWizardPolicy, initialPolicy } from './policies.utils';
 import PolicyDetail from './Detail/PolicyDetail';
 import PolicyWizard from './Wizard/PolicyWizard';
 
@@ -31,41 +31,6 @@ function clonePolicy(policy: ClientPolicy) {
         name: `${policy.name} (COPY)`,
     };
 }
-
-const initialPolicy: ClientPolicy = {
-    id: '',
-    name: '',
-    description: '',
-    severity: 'LOW_SEVERITY',
-    disabled: false,
-    lifecycleStages: [],
-    notifiers: [],
-    lastUpdated: null,
-    eventSource: 'NOT_APPLICABLE',
-    isDefault: false,
-    rationale: '',
-    remediation: '',
-    categories: [],
-    exclusions: [],
-    scope: [],
-    enforcementActions: [],
-    excludedImageNames: [],
-    excludedDeploymentScopes: [],
-    SORTName: '', // For internal use only.
-    SORTLifecycleStage: '', // For internal use only.
-    SORTEnforcement: false, // For internal use only.
-    policyVersion: '',
-    serverPolicySections: [],
-    policySections: [
-        {
-            sectionName: 'Policy Section 1',
-            policyGroups: [],
-        },
-    ],
-    mitreAttackVectors: [],
-    criteriaLocked: false,
-    mitreVectorsLocked: false,
-};
 
 type WizardPolicyState = {
     wizardPolicy: ClientPolicy;
