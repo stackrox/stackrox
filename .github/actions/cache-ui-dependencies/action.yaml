@@ -1,7 +1,7 @@
 name: Cache UI Dependencies
 description: Cache UI Dependencies
 inputs:
-  lockFile: 
+  lockFile:
     description: Where the monorepo lock is written
     required: true
     default: "ui/monorepo.lock"
@@ -21,4 +21,5 @@ runs:
           ui/packages/tailwind-config/node_modules
         key: npm-v2-${{ hashFiles(inputs.lockFile) }}
         restore-keys: |
-          npm-v2-
+          npm-v2-${{ hashFiles(inputs.lockFile) }}-${{ github.job }}
+          npm-v2-${{ hashFiles(inputs.lockFile) }}-
