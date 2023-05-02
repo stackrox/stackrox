@@ -1,3 +1,4 @@
+import { ensureExhaustive } from 'utils/type.utils';
 import { EntityTab } from './types';
 
 export const defaultImageSortFields = [
@@ -36,9 +37,6 @@ export function getDefaultSortOption(entityTab: EntityTab) {
         case 'Image':
             return imagesDefaultSort;
         default:
-            return {
-                field: '',
-                direction: 'asc',
-            } as const;
+            return ensureExhaustive(entityTab);
     }
 }
