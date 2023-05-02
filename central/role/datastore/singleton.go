@@ -98,6 +98,16 @@ var defaultRoles = map[string]roleAttributes{
 			permissions.Modify(resources.Image),
 		},
 	},
+	rolePkg.NetworkGraphViewer: {
+		idSuffix:    "networkgraphviewer",
+		postgresID:  networkGraphViewerPermissionSetID,
+		description: "For users: use it to give read-only access to the NetworkGraph pages",
+		resourceWithAccess: []permissions.ResourceWithAccess{
+			permissions.View(resources.Deployment),
+			permissions.View(resources.NetworkGraph),
+			permissions.View(resources.NetworkPolicy),
+		},
+	},
 	rolePkg.None: {
 		idSuffix:    "none",
 		postgresID:  nonePermissionSetID,
