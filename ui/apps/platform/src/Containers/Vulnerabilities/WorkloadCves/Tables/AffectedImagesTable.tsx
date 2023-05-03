@@ -15,7 +15,11 @@ import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { vulnerabilitySeverityLabels } from 'messages/common';
-import { getAnyVulnerabilityIsFixable, getHighestVulnerabilitySeverity } from './table.utils';
+import {
+    getAnyVulnerabilityIsFixable,
+    getHighestCvssScore,
+    getHighestVulnerabilitySeverity,
+} from './table.utils';
 import ImageNameTd from '../components/ImageNameTd';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 
@@ -45,7 +49,12 @@ export type ImageForCve = {
     operatingSystem: string;
     watchStatus: 'WATCHED' | 'NOT_WATCHED';
     scanTime: string | null;
-    imageComponents: ImageComponentVulnerability[];
+    imageComponents: (ImageComponentVulnerability & {
+        imageVulnerabilities: {
+            cvss: number;
+            scoreVersion: string;
+        };
+    })[];
 };
 
 export const imagesForCveFragment = gql`
@@ -59,6 +68,10 @@ export const imagesForCveFragment = gql`
         scanTime
 
         imageComponents(query: $query) {
+            imageVulnerabilities(query: $query) {
+                cvss
+                scoreVersion
+            }
             ...ImageComponentVulnerabilities
         }
     }
@@ -82,6 +95,7 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('Image')}>Image</Th>
                     <Th>Severity</Th>
+                    <Th>CVSS</Th>
                     <Th>
                         Fix status
                         {isFiltered && <DynamicColumnIcon />}
@@ -99,6 +113,7 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                 const { id, name, operatingSystem, scanTime, imageComponents } = image;
                 const topSeverity = getHighestVulnerabilitySeverity(imageComponents);
                 const isFixable = getAnyVulnerabilityIsFixable(imageComponents);
+                const { cvss, scoreVersion } = getHighestCvssScore(imageComponents);
                 const FixabilityIcon = isFixable ? FixableIcon : NotFixableIcon;
 
                 const SeverityIcon = SeverityIcons[topSeverity];
@@ -132,6 +147,9 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                                     )}
                                 </span>
                             </Td>
+                            <Td dataLabel="CVSS">
+                                {cvss.toFixed(1)} ({scoreVersion})
+                            </Td>
                             <Td dataLabel="Fix status">
                                 <span>
                                     <FixabilityIcon className="pf-u-display-inline" />
@@ -152,7 +170,7 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                         </Tr>
                         <Tr isExpanded={isExpanded}>
                             <Td />
-                            <Td colSpan={6}>
+                            <Td colSpan={7}>
                                 <ExpandableRowContent>
                                     <ImageComponentVulnerabilitiesTable
                                         imageMetadataContext={image}

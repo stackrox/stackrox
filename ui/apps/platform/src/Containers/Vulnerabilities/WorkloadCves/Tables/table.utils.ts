@@ -242,3 +242,20 @@ export function getAnyVulnerabilityIsFixable(
         component.imageVulnerabilities.some(({ fixedByVersion }) => fixedByVersion !== '')
     );
 }
+
+export function getHighestCvssScore(imageComponents: ImageComponentVulnerability[]): {
+    cvss: number;
+    scoreVersion: string;
+} {
+    let topCvss = 0;
+    let topScoreVersion = 'N/A';
+    imageComponents.forEach((component) => {
+        component.imageVulnerabilities.forEach(({ cvss, scoreVersion }) => {
+            if (cvss > topCvss) {
+                topCvss = cvss;
+                topScoreVersion = scoreVersion;
+            }
+        });
+    });
+    return { cvss: topCvss, scoreVersion: topScoreVersion };
+}
