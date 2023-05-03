@@ -43,14 +43,13 @@ func TestExtractUserLogFields_MainFieldsTransformed(t *testing.T) {
 		},
 	}
 	fields := extractUserLogFields(user)
-	assert.Len(t, fields, 9)
+	assert.Len(t, fields, 8)
 	assert.Contains(t, fields, zap.String("userID", user.GetUserId()))
 	assert.Contains(t, fields, zap.String("serviceID", ""))
 	assert.Contains(t, fields, zap.Any("expires", user.GetExpires()))
 	assert.Contains(t, fields, zap.String("username", user.GetUserInfo().GetUsername()))
 	assert.Contains(t, fields, zap.String("friendlyName", user.GetUserInfo().GetFriendlyName()))
 	assert.Contains(t, fields, zap.Any("roleNames", []string{"Admin", "Analyst"}))
-	assert.Contains(t, fields, zap.String("permissions", "{\"resourceToAccess\":{\"Close Magic Doors\":\"READ_ACCESS\",\"Open Magic Doors\":\"READ_WRITE_ACCESS\"}}"))
 	assert.Contains(t, fields, zap.Any("authProvider", &loggableAuthProvider{
 		ID:   user.GetAuthProvider().GetId(),
 		Name: user.GetAuthProvider().GetName(),
@@ -71,14 +70,13 @@ func TestExtractUserLogFields_ServiceIdTransformed(t *testing.T) {
 		},
 	}
 	fields := extractUserLogFields(user)
-	assert.Len(t, fields, 9)
+	assert.Len(t, fields, 8)
 	assert.Contains(t, fields, zap.String("userID", ""))
 	assert.Contains(t, fields, zap.String("serviceID", "{\"serialStr\":\"serialStr\",\"id\":\"id\",\"type\":\"CENTRAL_SERVICE\",\"initBundleId\":\"initBundleId\"}"))
 	assert.Contains(t, fields, zap.Any("expires", user.GetExpires()))
 	assert.Contains(t, fields, zap.String("username", ""))
 	assert.Contains(t, fields, zap.String("friendlyName", ""))
 	assert.Contains(t, fields, zap.Any("roleNames", []string{}))
-	assert.Contains(t, fields, zap.String("permissions", ""))
 	assert.Contains(t, fields, zap.Any("authProvider", &loggableAuthProvider{
 		ID:   "",
 		Name: "",
@@ -91,14 +89,13 @@ func TestExtractUserLogFields_ServiceIdTransformed(t *testing.T) {
 func TestExtractUserLogFields_NilTransformed(t *testing.T) {
 	var user *v1.AuthStatus
 	fields := extractUserLogFields(user)
-	assert.Len(t, fields, 9)
+	assert.Len(t, fields, 8)
 	assert.Contains(t, fields, zap.String("userID", ""))
 	assert.Contains(t, fields, zap.String("serviceID", ""))
 	assert.Contains(t, fields, zap.Any("expires", user.GetExpires()))
 	assert.Contains(t, fields, zap.String("username", ""))
 	assert.Contains(t, fields, zap.String("friendlyName", ""))
 	assert.Contains(t, fields, zap.Any("roleNames", []string{}))
-	assert.Contains(t, fields, zap.String("permissions", ""))
 	assert.Contains(t, fields, zap.Any("authProvider", &loggableAuthProvider{
 		ID:   "",
 		Name: "",
