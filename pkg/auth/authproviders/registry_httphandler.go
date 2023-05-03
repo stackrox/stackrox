@@ -182,8 +182,8 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 	w.WriteHeader(http.StatusSeeOther)
 }
 
-// tokenRefreshResponse holds the HTTP response from the token refresh endpoint.
-type tokenRefreshResponse struct {
+// TokenRefreshResponse holds the HTTP response from the token refresh endpoint.
+type TokenRefreshResponse struct {
 	Token  string    `json:"token,omitempty"`
 	Expiry time.Time `json:"expiry,omitempty"`
 }
@@ -227,7 +227,7 @@ func (r *registryImpl) tokenRefreshEndpoint(req *http.Request) (interface{}, err
 		httputil.SetCookie(httputil.ResponseHeaderFromContext(req.Context()), newRefreshCookie)
 	}
 
-	return &tokenRefreshResponse{
+	return &TokenRefreshResponse{
 		Token:  token.Token,
 		Expiry: token.Expiry(),
 	}, nil
