@@ -3,6 +3,7 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
+    ClipboardCopy,
     Divider,
     Flex,
     PageSection,
@@ -93,14 +94,28 @@ function ImagePage() {
             </PageSection>
         );
     } else {
+        const digest = imageData?.metadata?.v1?.digest;
         mainContent = (
             <>
                 <PageSection variant="light">
                     {imageData ? (
-                        <Flex direction={{ default: 'column' }}>
-                            <Title headingLevel="h1" className="pf-u-mb-sm">
+                        <Flex
+                            direction={{ default: 'column' }}
+                            alignItems={{ default: 'alignItemsFlexStart' }}
+                        >
+                            <Title headingLevel="h1" className="pf-u-m-0">
                                 {imageName}
                             </Title>
+                            {digest && (
+                                <ClipboardCopy
+                                    hoverTip="Copy SHA"
+                                    clickTip="Copied!"
+                                    variant="inline-compact"
+                                    className="pf-u-display-inline-flex pf-u-align-items-center pf-u-mt-sm pf-u-mb-md pf-u-font-size-sm"
+                                >
+                                    {digest}
+                                </ClipboardCopy>
+                            )}
                             <ImageDetailBadges imageData={imageData} />
                         </Flex>
                     ) : (
