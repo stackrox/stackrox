@@ -526,7 +526,7 @@ func (c *sensorConnection) CheckAutoUpgradeSupport() error {
 		if config.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_HELM_CHART {
 			return errors.New("cluster is Helm-managed and does not support auto upgrades; use 'helm upgrade' or a Helm-aware CD pipeline for upgrades")
 		} else if config.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR {
-			return errors.New("cluster is Operator-managed and does not support auto upgrades")
+			return errors.New("cluster is Operator-managed and does not support auto upgrades; use OLM (operator lifecycle manager) to manage operator upgrades automatically.")
 		}
 	}
 
