@@ -67,6 +67,20 @@ func (mr *MockCveCoreMockRecorder) GetCVE() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVE", reflect.TypeOf((*MockCveCore)(nil).GetCVE))
 }
 
+// GetCVEIDs mocks base method.
+func (m *MockCveCore) GetCVEIDs() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCVEIDs")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetCVEIDs indicates an expected call of GetCVEIDs.
+func (mr *MockCveCoreMockRecorder) GetCVEIDs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVEIDs", reflect.TypeOf((*MockCveCore)(nil).GetCVEIDs))
+}
+
 // GetFirstDiscoveredInSystem mocks base method.
 func (m *MockCveCore) GetFirstDiscoveredInSystem() time.Time {
 	m.ctrl.T.Helper()
