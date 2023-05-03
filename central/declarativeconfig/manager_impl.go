@@ -310,7 +310,7 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 	}
 
 	if err := m.removeStaleHealthStatuses(allProtoIDsToSkip); err != nil {
-		log.Debugf("Failed to delete stale health status entries for declarative config: %v", err)
+		log.Errorf("Failed to delete stale health status entries for declarative config: %v", err)
 	}
 	m.lastDeletionFailed.Set(failureInDeletion)
 }
@@ -360,7 +360,7 @@ func (m *managerImpl) registerHealthForMessage(handler string, messages ...proto
 
 		if err := m.declarativeConfigErrorReporter.Register(messageID, messageName,
 			storage.IntegrationHealth_DECLARATIVE_CONFIG); err != nil {
-			log.Debugf("Error registering health status for declarative config %+v: %v", message, err)
+			log.Errorf("Error registering health status for declarative config %+v: %v", message, err)
 		}
 	}
 }
@@ -416,7 +416,7 @@ func (m *managerImpl) calculateHashAndIndicateChanges(transformedMessagesByHandl
 	// If we received an error for hash generation, log it and _always_ run the deletion. This way we ensure
 	// we don't mistakenly skip reconciliation runs where we shouldn't (e.g. consecutive errors).
 	if err != nil {
-		log.Debugf("Failed to create hash for transformed messages by handler %+v, "+
+		log.Errorf("Failed to create hash for transformed messages by handler %+v, "+
 			"reconciliation will be executed: %v",
 			transformedMessagesByHandler, err)
 		return true

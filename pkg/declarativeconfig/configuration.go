@@ -3,7 +3,6 @@ package declarativeconfig
 import (
 	"bytes"
 	"io"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
@@ -20,6 +19,8 @@ const (
 	PermissionSetConfiguration ConfigurationType = "permission-set"
 	RoleConfiguration          ConfigurationType = "role"
 )
+
+const supportedTypes = AuthProviderConfiguration + "," + AccessScopeConfiguration + "," + PermissionSetConfiguration + "," + RoleConfiguration
 
 // Configuration specifies a declarative configuration.
 type Configuration interface {
@@ -72,15 +73,7 @@ func fromUnstructured(unstructured interface{}) (Configuration, error) {
 			return nil, err
 		}
 	}
-	return nil, errox.InvalidArgs.Newf("could not unmarshal configuration into any of the supported types [%s]", configNames(configs))
-}
-
-func configNames(configs []Configuration) string {
-	names := make([]string, 0, len(configs))
-	for _, c := range configs {
-		names = append(names, c.Type())
-	}
-	return strings.Join(names, ",")
+	return nil, errox.InvalidArgs.Newf("could not unmarshal configuration into any of the supported types [%s]", supportedTypes)
 }
 
 func decodeYAMLToConfiguration(rawYAML []byte, configuration Configuration) error {
