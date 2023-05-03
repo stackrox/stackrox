@@ -159,9 +159,11 @@ export function visitVulnerabilityManagementEntities(entitiesKey) {
         opnameForEntities[entitiesKey],
     ]);
 
-    visit(getEntitiesPath(entitiesKey), routeMatcherMap);
+    const interceptions = visit(getEntitiesPath(entitiesKey), routeMatcherMap);
 
     cy.get(`h1:contains("${headingPlural[entitiesKey]}")`);
+
+    return interceptions;
 }
 
 export function visitVulnerabilityManagementEntitiesWithSearch(entitiesKey, search) {
@@ -292,8 +294,25 @@ export function verifySecondaryEntities(
     // 1. Visit list page for primary entities.
     visitVulnerabilityManagementEntities(entitiesKey1);
 
+    // 2. Find the first link for secondary entities.
+    verifyLinkCountDeep(
+        entitiesKey1,
+        entitiesKey2,
+        columnIndex,
+        entitiesRegExp2,
+        getCountAndNounFromLinkResults
+    );
+}
+
+function verifyLinkCountDeep(
+    entitiesKey1,
+    entitiesKey2,
+    columnIndex, // one-based index includes checkbox, hidden, invisible
+    entitiesRegExp2,
+    getCountAndNounFromLinkResults = getCountAndNounFromSecondaryEntitiesLinkResults
+) {
     // Find the first link for secondary entities.
-    cy.get(`.rt-tbody .rt-td:nth-child(${columnIndex})`)
+    cy.get(selectors.getTableDataColumnSelector(columnIndex))
         .contains('a', entitiesRegExp2)
         .then(($a) => {
             const { panelHeaderText, relatedEntitiesCount, relatedEntitiesNoun } =
@@ -334,7 +353,7 @@ export function verifySecondaryEntities(
  * 1 Fixable corresponds to any of the following: 1 Image CVE or 1 Node CVE or 1 Platform CVE
  * 2 failing deployments corresponds to 2 deployments
  */
-export function verifyFilteredSecondaryEntitiesLink(
+export function verifyLinkCountShallow(
     entitiesKey1,
     _entitiesKey2, // unused because response might have been cached
     columnIndex, // one-based index includes checkbox, hidden, invisible
@@ -345,7 +364,7 @@ export function verifyFilteredSecondaryEntitiesLink(
     visitVulnerabilityManagementEntities(entitiesKey1);
 
     // Find the first link for secondary entities.
-    cy.get(`.rt-tbody .rt-td:nth-child(${columnIndex})`)
+    cy.get(selectors.getTableDataColumnSelector(columnIndex))
         .contains('a', filteredEntitiesRegExp)
         .then(($a) => {
             const { panelHeaderText } = getCountAndNounFromLinkResults(
@@ -359,6 +378,64 @@ export function verifyFilteredSecondaryEntitiesLink(
         });
 }
 
+const allCVEsRegExp = /^\d+ CVEs?$/;
+const fixableCVEsRegExp = /^\d+ Fixable$/;
+
+export function verifyConditionalCVEs(
+    entitiesKey1,
+    entitiesKey2,
+    columnIndex, // one-based index includes checkbox, hidden, invisible
+    vulnCounterKey,
+    getCountAndNounFromLinkResults
+) {
+    // 1. Visit list page for primary entities.
+    // The first interception is ignored because for searchOptions request.
+    // The second interception is for entitiesKey1 request.
+    visitVulnerabilityManagementEntities(entitiesKey1).then(([, { response }]) => {
+        const { results } = response.body.data;
+
+        const hasFixableCVEs = results.some((result) => result[vulnCounterKey]?.all?.fixable > 0);
+        const hasCVEs = results.some((result) => result[vulnCounterKey]?.all?.total > 0);
+
+        if (hasFixableCVEs) {
+            // If at least one of entitiesKey1 has fixable CVEs, then CVEs link exists.
+            cy.get(selectors.getTableDataColumnSelector(columnIndex))
+                .contains('a', allCVEsRegExp)
+                .should('exist');
+
+            verifyLinkCountShallow(
+                entitiesKey1,
+                entitiesKey2,
+                columnIndex,
+                fixableCVEsRegExp,
+                getCountAndNounFromLinkResults
+            );
+        } else if (hasCVEs) {
+            // Fixable link does not exist in any row of entityKeys1 list.
+            cy.get(selectors.getTableDataColumnSelector(columnIndex))
+                .contains('a', fixableCVEsRegExp)
+                .should('not.exist');
+
+            verifyLinkCountDeep(
+                entitiesKey1,
+                entitiesKey2,
+                columnIndex,
+                allCVEsRegExp,
+                getCountAndNounFromLinkResults
+            );
+        } else {
+            // Neither link exists in any row of entitiesKey1 list.
+            cy.get(selectors.getTableDataColumnSelector(columnIndex))
+                .contains('a', fixableCVEsRegExp)
+                .should('not.exist');
+            cy.get(selectors.getTableDataColumnSelector(columnIndex))
+                .contains('a', allCVEsRegExp)
+                .should('not.exist');
+            cy.get(`${selectors.getTableDataColumnSelector(columnIndex)}:contains("No CVEs")`);
+        }
+    });
+}
+
 /*
  * For fixable CVEs link when primary entities are images,
  * also verify special case that image side panel has risk acceptance tabs.
@@ -370,14 +447,13 @@ export function verifyFixableCVEsLinkAndRiskAcceptanceTabs(
     entitiesKey1,
     _entitiesKey2, // unused because response might have been cached
     columnIndex, // one-based index includes checkbox, hidden, invisible
-    fixableCVEsRegExp,
     getCountAndNounFromLinkResults
 ) {
     // 1. Visit list page for primary entities.
     visitVulnerabilityManagementEntities(entitiesKey1);
 
     // Find the first link for secondary entities.
-    cy.get(`.rt-tbody .rt-td:nth-child(${columnIndex})`)
+    cy.get(selectors.getTableDataColumnSelector(columnIndex))
         .contains('a', fixableCVEsRegExp)
         .then(($a) => {
             const { panelHeaderText } = getCountAndNounFromLinkResults(

@@ -63,7 +63,7 @@ export function visit(pageUrl, routeMatcherMap, staticResponseMap) {
     cy.visit(pageUrl);
 
     waitForResponses(routeMatcherMapForAuthenticatedRoutes);
-    waitForResponses(routeMatcherMap);
+    return waitForResponses(routeMatcherMap);
 }
 
 /**

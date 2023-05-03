@@ -10,7 +10,7 @@ import {
 import {
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
-    verifyFilteredSecondaryEntitiesLink,
+    verifyLinkCountShallow,
     visitVulnerabilityManagementEntities,
 } from '../../helpers/vulnmanagement/entities';
 
@@ -90,7 +90,7 @@ describe('Vulnerability Management Policies', () => {
             this.skip();
         }
 
-        verifyFilteredSecondaryEntitiesLink(
+        verifyLinkCountShallow(
             entitiesKey,
             'deployments',
             10,

@@ -139,7 +139,6 @@ describe('Vulnerability Management Images', () => {
             entitiesKey,
             'image-cves',
             3,
-            /^\d+ Fixable$/,
             getCountAndNounFromImageCVEsLinkResults
         );
     });

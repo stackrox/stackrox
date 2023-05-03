@@ -8,7 +8,7 @@ import {
 import {
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
-    verifyFilteredSecondaryEntitiesLink,
+    verifyConditionalCVEs,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
 } from '../../helpers/vulnmanagement/entities';
@@ -100,11 +100,11 @@ describe('Vulnerability Management Deployments', () => {
     });
 
     it('should display links for fixable CVEs', () => {
-        verifyFilteredSecondaryEntitiesLink(
+        verifyConditionalCVEs(
             entitiesKey,
             'cves',
             3,
-            /^\d+ Fixable$/,
+            'vulnCounter',
             getCountAndNounFromCVEsLinkResults
         );
     });
