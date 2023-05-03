@@ -90,7 +90,10 @@ function CVEsTable({ cves, unfilteredImageCount, getSortParams, isFiltered }: CV
                         Affected images
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th tooltip="Time since this CVE first affected an entity">First discovered</Th>
+                    <Th tooltip="Time since this CVE first affected an entity">
+                        First discovered
+                        {isFiltered && <DynamicColumnIcon />}
+                    </Th>
                 </Tr>
             </Thead>
             {cves.map(
