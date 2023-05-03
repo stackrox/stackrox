@@ -7,6 +7,7 @@ import "storage/namespace_metadata.proto";
 import "storage/deployment.proto";
 import "storage/policy.proto";
 import "google/protobuf/timestamp.proto";
+import "internalapi/central/secured_cluster_notifier.proto";
 import "internalapi/central/sensor_events.proto";
 
 package sensor;
@@ -21,6 +22,7 @@ message AdmissionControlSettings {
 
     string                       cluster_id                    = 6;
     storage.PolicyList           runtime_policies              = 7;
+    central.NotifierSync         notifier_sync                 = 8;
 }
 
 message AdmissionControlAlerts {
