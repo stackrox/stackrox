@@ -623,10 +623,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	customRoutes = []routes.CustomRoute{
 		uiRoute(),
 		{
-			Route:         "/api/extensions/clusters/zip",
-			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster), permissions.View(resources.Administration))),
-			ServerHandler: clustersZip.Handler(clusterDataStore.Singleton(), siStore.Singleton()),
-			Compression:   false,
+			Route:      "/api/extensions/clusters/zip",
+			Authorizer: or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster), permissions.View(resources.Administration))),
+			ServerHandler: notImplementedOnManagedServices(
+				clustersZip.Handler(clusterDataStore.Singleton(), siStore.Singleton()),
+			),
+			Compression: false,
 		},
 		{
 			Route:         "/api/extensions/scanner/zip",
