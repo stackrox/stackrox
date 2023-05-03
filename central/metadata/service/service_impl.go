@@ -51,9 +51,10 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetMetadata returns the metadata for Rox.
 func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadata, error) {
 	metadata := &v1.Metadata{
-		BuildFlavor:   buildinfo.BuildFlavor,
-		ReleaseBuild:  buildinfo.ReleaseBuild,
-		LicenseStatus: v1.Metadata_VALID,
+		BuildFlavor:      buildinfo.BuildFlavor,
+		ReleaseBuild:     buildinfo.ReleaseBuild,
+		LicenseStatus:    v1.Metadata_VALID,
+		IsManagedService: env.ManagedCentral.BooleanSetting(),
 	}
 	// Only return the version to logged in users, not anonymous users.
 	if authn.IdentityFromContextOrNil(ctx) != nil {

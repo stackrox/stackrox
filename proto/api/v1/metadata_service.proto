@@ -24,6 +24,8 @@ message Metadata {
 
     // Do not use this field. It will always contain "VALID"
     LicenseStatus license_status = 4 [deprecated = true];
+
+    bool is_managed_service = 5;
 }
 
 message TrustInfo {
