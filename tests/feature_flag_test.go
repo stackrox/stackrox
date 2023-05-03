@@ -6,7 +6,6 @@ import (
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
@@ -44,12 +43,6 @@ func TestFeatureFlagSettings(t *testing.T) {
 	for _, flag := range featureFlags.GetFeatureFlags() {
 		actualFlagVals[flag.GetEnvVar()] = flag.GetEnabled()
 	}
-
-	// TODO(ROX-14939): Refactor feature flag logic to include environment variables
-	delete(actualFlagVals, "ROX_POSTGRES_DATASTORE")
-	delete(actualFlagVals, env.ActiveVulnMgmt.EnvVar())
-	delete(actualFlagVals, env.VulnReportingEnhancements.EnvVar())
-	delete(actualFlagVals, env.UnifiedCVEDeferral.EnvVar())
 
 	assert.Equal(t, expectedFlagVals, actualFlagVals, "mismatch between expected and actual feature flag settings")
 }
