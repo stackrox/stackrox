@@ -109,6 +109,7 @@ func withSelectQuery(q *v1.Query, options views.ReadOptions) *v1.Query {
 	cloned := q.Clone()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVE).Proto(),
+		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
 	}
 	if !options.SkipGetImagesBySeverity {
 		cloned.Selects = append(cloned.Selects,
