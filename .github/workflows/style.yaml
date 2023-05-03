@@ -73,6 +73,7 @@ jobs:
       run: scripts/ci/jobs/policy-checks.sh
 
   style-check:
+    timeout-minutes: 120
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
