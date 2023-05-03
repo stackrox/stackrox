@@ -332,6 +332,12 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			}
 		}
 	}
+	sort.SliceStable(registries, func(i, j int) bool {
+		if registries[i].Name != registries[j].Name {
+			return registries[i].GetName() < registries[j].GetName()
+		}
+		return registries[i].GetUsername() < registries[j].GetUsername()
+	})
 
 	protoSecret := getProtoSecret(secret)
 	protoSecret.Files = []*storage.SecretDataFile{{
