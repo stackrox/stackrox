@@ -523,8 +523,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: ContainerRuntime!",
 		"version: String!",
 	}))
-	utils.Must(builder.AddType("CosignSignature", []string{
-	}))
+	utils.Must(builder.AddType("CosignSignature", []string{}))
 	utils.Must(builder.AddType("DataSource", []string{
 		"id: ID!",
 		"name: String!",
@@ -601,8 +600,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Exclusion_Image", []string{
 		"name: String!",
 	}))
-	utils.Must(builder.AddType("FalsePositiveRequest", []string{
-	}))
+	utils.Must(builder.AddType("FalsePositiveRequest", []string{}))
 	utils.Must(builder.AddInput("FalsePositiveVulnRequest", []string{
 		"comment: String",
 		"cve: String",
@@ -626,8 +624,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"invalidRunIds: [String!]!",
 		"runs: [ComplianceRun]!",
 	}))
-	utils.Must(builder.AddType("GetPermissionsResponse", []string{
-	}))
+	utils.Must(builder.AddType("GetPermissionsResponse", []string{}))
 	utils.Must(builder.AddType("GoogleProviderMetadata", []string{
 		"clusterName: String!",
 		"project: String!",
@@ -794,6 +791,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ManagerType(0)))
 	utils.Must(builder.AddType("Metadata", []string{
 		"buildFlavor: String!",
+		"isManagedCentral: Boolean!",
 		"licenseStatus: Metadata_LicenseStatus!",
 		"releaseBuild: Boolean!",
 		"version: String!",
@@ -1431,8 +1429,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"VulnerabilityRequest_Scope_Image",
 		"VulnerabilityRequest_Scope_Global",
 	}))
-	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Global", []string{
-	}))
+	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Global", []string{}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Image", []string{
 		"registry: String!",
 		"remote: String!",
@@ -9322,6 +9319,11 @@ func (resolver *Resolver) wrapMetadatasWithContext(ctx context.Context, values [
 
 func (resolver *metadataResolver) BuildFlavor(ctx context.Context) string {
 	value := resolver.data.GetBuildFlavor()
+	return value
+}
+
+func (resolver *metadataResolver) IsManagedCentral(ctx context.Context) bool {
+	value := resolver.data.GetIsManagedCentral()
 	return value
 }
 

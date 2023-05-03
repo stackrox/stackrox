@@ -54,9 +54,9 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 		BuildFlavor:      buildinfo.BuildFlavor,
 		ReleaseBuild:     buildinfo.ReleaseBuild,
 		LicenseStatus:    v1.Metadata_VALID,
-		IsManagedService: env.ManagedCentral.BooleanSetting(),
+		IsManagedCentral: env.ManagedCentral.BooleanSetting(),
 	}
-	// Only return the version to logged in users, not anonymous users.
+	// Only return the version to logged-in users, not anonymous users.
 	if authn.IdentityFromContextOrNil(ctx) != nil {
 		metadata.Version = version.GetMainVersion()
 	}
