@@ -108,6 +108,7 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 			}
 			props["Provider Region"] = pmd.GetRegion()
 			props["Provider Zone"] = pmd.GetZone()
+			props["Provider Verified"] = pmd.GetVerified()
 		}
 
 		omd := cluster.GetStatus().GetOrchestratorMetadata()
