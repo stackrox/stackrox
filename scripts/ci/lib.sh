@@ -1458,26 +1458,12 @@ save_junit_success() {
         die "missing args. usage: save_junit_success <class> <description>"
     fi
 
-    if [[ -z "${ARTIFACT_DIR}" ]]; then
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
         info "Warning: save_junit_success() requires the \$ARTIFACT_DIR variable to be set"
         return
     fi
 
-    local class="$1"
-    local description="$2"
-    local timestamp
-    timestamp="$(date -u +"%s.%N")"
-
-    local junit_dir
-    junit_dir="$(get_junit_misc_dir)"
-    mkdir -p "${junit_dir}"
-
-    cat << EOF > "${junit_dir}/junit-${class}-${timestamp}.xml"
-<testsuite name="${class}" tests="1" skipped="0" failures="0" errors="0">
-    <testcase name="${description}" classname="${class}">
-    </testcase>
-</testsuite>
-EOF
+    save_junit_record "$@"
 }
 
 save_junit_failure() {
@@ -1485,28 +1471,77 @@ save_junit_failure() {
         die "missing args. usage: save_junit_failure <class> <description> <details>"
     fi
 
-    if [[ -z "${ARTIFACT_DIR}" ]]; then
-        info "Warning: save_junit_failure() requires an ARTIFACT_DIR"
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+        info "Warning: save_junit_failure() requires the \$ARTIFACT_DIR variable to be set"
         return
     fi
 
+    save_junit_record "$@"
+}
+
+save_junit_record() {
     local class="$1"
     local description="$2"
-    local details="$3"
-    local timestamp
-    timestamp="$(date -u +"%s.%N")"
+    local details="${3:-SUCCESS}"
 
     local junit_dir
     junit_dir="$(get_junit_misc_dir)"
-    mkdir -p "${junit_dir}"
+    mkdir -p "${junit_dir}/db"
 
-    cat << EOF > "${junit_dir}/junit-${class}-${timestamp}.xml"
-<testsuite name="${class}" tests="1" skipped="0" failures="1" errors="0">
-    <testcase name="${description}" classname="${class}">
-        <failure><![CDATA[${details}]]></failure>
-    </testcase>
-</testsuite>
-EOF
+    # base64 encode failure details to condense multilines
+    if [[ $details != "SUCCESS" ]]; then
+        details="$(base64 -w0 <<< "$details")"
+    fi
+
+    # record this instance
+    local record="${junit_dir}/db/${class}.txt"
+    echo "${description}" >> "${record}"
+    echo "${details}" >> "${record}"
+
+    local tests
+    tests=$(( "$(wc -l < "${record}")" / 2 ))
+
+    local failures=0
+    local lines
+    readarray -t lines < "${record}"
+    while (( ${#lines[@]} ))
+    do
+        local details="${lines[1]}"
+        if [[ "$details" != "SUCCESS" ]]; then
+            failures=$(( failures+1 ))
+        fi
+        lines=( "${lines[@]:2}" )
+    done
+
+    local junit_file="${junit_dir}/junit-${class}.xml"
+
+    cat << _EO_SUITE_HEADER_ > "${junit_file}"
+<testsuite name="${class}" tests="${tests}" skipped="0" failures="${failures}" errors="0">
+_EO_SUITE_HEADER_
+
+    readarray -t lines < "${record}"
+    while (( ${#lines[@]} ))
+    do
+        local description="${lines[0]}"
+        local details="${lines[1]}"
+
+        cat << _EO_CASE_HEADER_ >> "${junit_file}"
+        <testcase name="${description}" classname="${class}">
+_EO_CASE_HEADER_
+
+        if [[ "$details" != "SUCCESS" ]]; then
+            details="$(base64 --decode <<< "$details")"
+        cat << _EO_FAILURE_ >> "${junit_file}"
+            <failure><![CDATA[${details}]]></failure>
+_EO_FAILURE_
+        fi
+
+        echo "        </testcase>" >> "${junit_file}"
+
+        lines=( "${lines[@]:2}" )
+    done
+
+    echo "</testsuite>" >> "${junit_file}"
 }
 
 add_build_comment_to_pr() {
