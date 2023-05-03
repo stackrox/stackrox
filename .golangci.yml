@@ -1,5 +1,5 @@
 run:
-  timeout: 30m
+  timeout: 60m
   skip-dirs:
   - pkg/complianceoperator/api
   build-tags:
