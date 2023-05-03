@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/netutil"
 )
 
 const (
@@ -43,25 +44,41 @@ func SplitState(state string) (providerID, clientState string) {
 	return
 }
 
-// AttachTestStateOrEmpty prefixes the clientState with test state or empty string if not a test mode.
-func AttachTestStateOrEmpty(clientState string, testMode bool) string {
-	prefixState := ""
-	if testMode {
-		prefixState = TestLoginClientState
-	}
-	return fmt.Sprintf("%s#%s", prefixState, clientState)
+// attachTestState prefixes the clientState with test state or empty string if not a test mode.
+func attachTestState(clientState string) string {
+	return fmt.Sprintf("%s#%s", TestLoginClientState, clientState)
 }
 
-// AttachAuthorizeState prefixes the callback URL with the authorize state.
-func AttachAuthorizeState(callBackURL string) (string, error) {
+// attachAuthorizeRoxctlState prefixes the callback URL with the AuthorizeRoxctlClientState.
+func attachAuthorizeRoxctlState(callBackURL string) (string, error) {
 	parsedCallbackURL, err := url.Parse(callBackURL)
 	if err != nil {
 		return "", errors.Wrapf(err, "unable to parse URL %q", callBackURL)
 	}
-	if parsedCallbackURL.Hostname() != "localhost" && parsedCallbackURL.Hostname() != "127.0.0.1" {
+	if !netutil.IsLocalHost(parsedCallbackURL.Hostname()) {
 		return "", errox.InvalidArgs.New("roxctl authorization is only allowed for localhost as callback target")
 	}
 	return fmt.Sprintf("%s#%s", AuthorizeRoxctlClientState, parsedCallbackURL), nil
+}
+
+// AttachStateOrEmpty may modify the given clientState.
+// In case testMode == true, the clientState will be prefixed with TestLoginClientState and returned.
+// In case callbackURL != "", the clientState will be AuthorizeRoxctlClientState and the parsed callback URL.
+// If both are default values (testMode == false && callbackURL == ""), the clientState will be returned.
+func AttachStateOrEmpty(clientState string, testMode bool, callbackURL string) (string, error) {
+	if testMode && callbackURL != "" {
+		return "", errox.InvalidArgs.New("cannot use test mode and roxctl authorize in conjunction")
+	}
+
+	if testMode {
+		return attachTestState(clientState), nil
+	}
+
+	if callbackURL != "" {
+		return attachAuthorizeRoxctlState(callbackURL)
+	}
+
+	return clientState, nil
 }
 
 // ParseClientState parses the clientState and removes test login state in present

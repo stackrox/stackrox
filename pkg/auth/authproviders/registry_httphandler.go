@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -40,6 +41,15 @@ const (
 	AuthorizeCallbackQueryParameter = "authorizeCallback"
 )
 
+const (
+	testQueryParameter        = "test"
+	errorQueryParameter       = "error"
+	stateQueryParameter       = "state"
+	clientStateQueryParameter = "clientState"
+	typeQueryParameter        = "type"
+	userQueryParameter        = "user"
+)
+
 func (r *registryImpl) URLPathPrefix() string {
 	return r.urlPathPrefix
 }
@@ -48,10 +58,10 @@ func (r *registryImpl) errorURL(err error, typ string, clientState string, testM
 	return &url.URL{
 		Path: r.redirectURL,
 		Fragment: url.Values{
-			"test":  {strconv.FormatBool(testMode)},
-			"error": {err.Error()},
-			"type":  {typ},
-			"state": {clientState},
+			testQueryParameter:  {strconv.FormatBool(testMode)},
+			errorQueryParameter: {err.Error()},
+			typeQueryParameter:  {typ},
+			stateQueryParameter: {clientState},
 		}.Encode(),
 	}
 }
@@ -60,9 +70,9 @@ func (r *registryImpl) tokenURL(rawToken, typ, clientState string) *url.URL {
 	return &url.URL{
 		Path: r.redirectURL,
 		Fragment: url.Values{
-			"token": {rawToken},
-			"type":  {typ},
-			"state": {clientState},
+			TokenQueryParameter: {rawToken},
+			typeQueryParameter:  {typ},
+			stateQueryParameter: {clientState},
 		}.Encode(),
 	}
 }
@@ -76,10 +86,10 @@ func (r *registryImpl) userMetadataURL(user *v1.AuthStatus, typ, clientState str
 	return &url.URL{
 		Path: r.redirectURL,
 		Fragment: url.Values{
-			"test":  {strconv.FormatBool(testMode)},
-			"user":  {base64.RawURLEncoding.EncodeToString(buf.Bytes())},
-			"type":  {typ},
-			"state": {clientState},
+			testQueryParameter:  {strconv.FormatBool(testMode)},
+			userQueryParameter:  {base64.RawURLEncoding.EncodeToString(buf.Bytes())},
+			typeQueryParameter:  {typ},
+			stateQueryParameter: {clientState},
 		}.Encode(),
 	}
 }
@@ -133,23 +143,15 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 	}
 
 	providerID := req.URL.Path[len(prefix):]
-	clientState := req.URL.Query().Get("clientState")
-	testMode, _ := strconv.ParseBool(req.URL.Query().Get("test"))
+	clientState := req.URL.Query().Get(clientStateQueryParameter)
+	testMode, _ := strconv.ParseBool(req.URL.Query().Get(testQueryParameter))
 	authorizeRoxctlCallbackURL := req.URL.Query().Get(AuthorizeCallbackQueryParameter)
-	if authorizeRoxctlCallbackURL != "" {
-		if testMode {
-			http.Error(w, "Cannot use test mode in conjunction with roxctl authorization", http.StatusBadRequest)
-			return
-		}
-		state, err := idputil.AttachAuthorizeState(authorizeRoxctlCallbackURL)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Attaching state for roxctl authorization: %v", err), http.StatusBadRequest)
-			return
-		}
-		clientState = state
-	} else {
-		clientState = idputil.AttachTestStateOrEmpty(clientState, testMode)
+	state, err := idputil.AttachStateOrEmpty(clientState, testMode, authorizeRoxctlCallbackURL)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Attaching state: %v", err), http.StatusBadRequest)
+		return
 	}
+	clientState = state
 
 	provider := r.getAuthProvider(providerID)
 	if provider == nil {
@@ -180,8 +182,8 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 	w.WriteHeader(http.StatusSeeOther)
 }
 
-// TokenRefreshResponse holds the HTTP response from the token refresh endpoint.
-type TokenRefreshResponse struct {
+// tokenRefreshResponse holds the HTTP response from the token refresh endpoint.
+type tokenRefreshResponse struct {
 	Token  string    `json:"token,omitempty"`
 	Expiry time.Time `json:"expiry,omitempty"`
 }
@@ -225,7 +227,7 @@ func (r *registryImpl) tokenRefreshEndpoint(req *http.Request) (interface{}, err
 		httputil.SetCookie(httputil.ResponseHeaderFromContext(req.Context()), newRefreshCookie)
 	}
 
-	return &TokenRefreshResponse{
+	return &tokenRefreshResponse{
 		Token:  token.Token,
 		Expiry: token.Expiry(),
 	}, nil
@@ -349,7 +351,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 		}
 		// Verify the callback URL again before doing the final redirect, ensuring we _only_ redirect to localhost and
 		// no unauthorized third-party.
-		if callbackURL.Hostname() != "localhost" && callbackURL.Hostname() != "127.0.0.1" {
+		if !netutil.IsLocalHost(callbackURL.Hostname()) {
 			r.error(w, errox.InvalidArgs.New("roxctl authorization has to specify localhost / "+
 				"127.0.0.1 as callback URL"), typ, clientState, false)
 		}
