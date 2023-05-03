@@ -339,14 +339,8 @@ function ImageCvePage() {
                                     imageCount={imageCount}
                                     deploymentCount={deploymentCount}
                                     entityTabs={imageCveEntities}
-                                    onChange={(entity) => {
-                                        // Ugly type workaround
-                                        if (entity !== 'CVE') {
-                                            // Set the sort and pagination back to the default when changing between entity tabs
-                                            setSortOption(getDefaultSortOption(entity));
-                                            setPage(1);
-                                        }
-                                    }}
+                                    setSortOption={setSortOption}
+                                    setPage={setPage}
                                 />
                                 {isFiltered && <DynamicTableLabel />}
                             </Flex>
