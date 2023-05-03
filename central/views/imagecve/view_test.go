@@ -575,6 +575,9 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 
 	expected := make([]*imageCVECore, 0, len(cveMap))
 	for _, entry := range cveMap {
+		sort.SliceStable(entry.CVEIDs, func(i, j int) bool {
+			return entry.CVEIDs[i] < entry.CVEIDs[j]
+		})
 		expected = append(expected, entry)
 	}
 	if options.SkipGetImagesBySeverity {
