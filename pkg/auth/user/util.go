@@ -58,12 +58,8 @@ func LogSuccessfulUserLogin(logger *logging.Logger, user *v1.AuthStatus) {
 // to []interface{}.
 func extractUserLogFields(user *v1.AuthStatus) []interface{} {
 	serviceIDJSON := ""
-	permissionsJSON := ""
 	if user.GetServiceId() != nil {
 		serviceIDJSON = protoToJSON(user.GetServiceId())
-	}
-	if user.GetUserInfo().GetPermissions() != nil {
-		permissionsJSON = protoToJSON(user.GetUserInfo().GetPermissions())
 	}
 	return []interface{}{
 		zap.String("userID", user.GetUserId()),
@@ -72,7 +68,6 @@ func extractUserLogFields(user *v1.AuthStatus) []interface{} {
 		zap.String("username", user.GetUserInfo().GetUsername()),
 		zap.String("friendlyName", user.GetUserInfo().GetFriendlyName()),
 		zap.Any("roleNames", utils.RoleNamesFromUserInfo(user.GetUserInfo().GetRoles())),
-		zap.String("permissions", permissionsJSON),
 		zap.Any("authProvider", &loggableAuthProvider{
 			ID:   user.GetAuthProvider().GetId(),
 			Type: user.GetAuthProvider().GetType(),
