@@ -584,7 +584,7 @@ docker-build-roxctl-image:
 
 .PHONY: copy-go-binaries-to-image-dir
 copy-go-binaries-to-image-dir:
-	cp bin/linux_$(GOARCH)/central image/bin/central
+	cp bin/linux_$(GOARCH)/central/central image/bin/central
 ifdef CI
 	cp bin/linux_amd64/roxctl image/bin/roxctl-linux-amd64
 	cp bin/linux_ppc64le/roxctl image/bin/roxctl-linux-ppc64le
@@ -598,7 +598,7 @@ endif
 	cp bin/$(HOST_OS)_amd64/roxctl image/bin/roxctl-$(HOST_OS)-amd64
 endif
 	cp bin/linux_$(GOARCH)/migrator image/bin/migrator
-	cp bin/linux_$(GOARCH)/kubernetes        image/bin/kubernetes-sensor
+	cp bin/linux_$(GOARCH)/kubernetes/kubernetes image/bin/kubernetes-sensor
 	cp bin/linux_$(GOARCH)/upgrader          image/bin/sensor-upgrader
 	cp bin/linux_$(GOARCH)/admission-control image/bin/admission-control
 	cp bin/linux_$(GOARCH)/collection        image/bin/compliance
