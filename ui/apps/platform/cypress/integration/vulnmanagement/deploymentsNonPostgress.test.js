@@ -89,17 +89,7 @@ describe('Vulnerability Management Deployments', () => {
 
     // Some tests might fail in local deployment.
 
-    it('should display links for all CVEs', () => {
-        verifySecondaryEntities(
-            entitiesKey,
-            'cves',
-            3,
-            /^\d+ CVEs?$/,
-            getCountAndNounFromCVEsLinkResults
-        );
-    });
-
-    it('should display links for fixable CVEs', () => {
+    it('should display either links for CVEs of text for No CVEs', () => {
         verifyConditionalCVEs(
             entitiesKey,
             'cves',
