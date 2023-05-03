@@ -136,11 +136,11 @@ ifdef CI
 	@echo 'If this fails, run `make style`.'
 	$(GOLANGCILINT_BIN) --version
 	@echo "Running with no tags..."
-	$(GOLANGCILINT_BIN) run
+	$(GOLANGCILINT_BIN) run --verbose
 	@echo "Running with release tags..."
 	@# We use --tests=false because some unit tests don't compile with release tags,
 	@# since they use functions that we don't define in the release build. That's okay.
-	$(GOLANGCILINT_BIN) run --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
+	$(GOLANGCILINT_BIN) run --verbose --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
 else
 	$(GOLANGCILINT_BIN) run --fix
 	$(GOLANGCILINT_BIN) run --fix --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
