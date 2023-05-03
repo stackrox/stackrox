@@ -74,11 +74,11 @@ func RenderSensorTLSSecretsOnly(values charts.MetaValues, certs *sensor.Certs) (
 //
 // Ideally, this should not be needed, and it only happens due to the logic necessary to build manifest bundles.
 // Either the logic to render TLS secrets should be decoupled from the manifest bundle, and only the necessary
-// are files rendered. Or we fix the logic in the manifest bundle so that ImageTag is always set, regardless of the
+// files are rendered. Or we fix the logic in the manifest bundle so that ImageTag is always set, regardless of the
 // cluster configuration.
 func overwriteEmptyImageValues(values *charts.MetaValues) {
 	if values.ImageTag == "" {
-		values.ImageTag = "should-never-use"
+		values.ImageTag = "should-never-see-this"
 	}
 }
 
