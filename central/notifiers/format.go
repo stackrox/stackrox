@@ -7,10 +7,10 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/policy/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/mitre/datastore"
+	mitreUtils "github.com/stackrox/rox/pkg/mitre/utils"
 	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -125,7 +125,7 @@ func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMa
 		funcMap["valuePrinter"] = valuePrinter
 	}
 
-	fullMitreVectors, err := utils.GetFullMitreAttackVectors(mitreStore, alert.GetPolicy())
+	fullMitreVectors, err := mitreUtils.GetFullMitreAttackVectors(mitreStore, alert.GetPolicy())
 	if err != nil {
 		log.Errorf("Could not get MITRE details for alert %s: %v", alert.GetId(), err)
 	}
