@@ -28,9 +28,11 @@ function ImageCvePageHeader({ data }: ImageCvePageHeaderProps) {
                 {data.cve}
             </Title>
             <LabelGroup numLabels={1}>
-                <Label isCompact>
-                    First discovered in system {getDateTime(data.firstDiscoveredInSystem)}
-                </Label>
+                {data.firstDiscoveredInSystem && (
+                    <Label isCompact>
+                        First discovered in system {getDateTime(data.firstDiscoveredInSystem)}
+                    </Label>
+                )}
             </LabelGroup>
             <Text>
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam vel aliquet velit.
