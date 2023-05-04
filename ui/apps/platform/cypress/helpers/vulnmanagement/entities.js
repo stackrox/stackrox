@@ -446,54 +446,6 @@ export function verifyConditionalCVEs(
     });
 }
 
-/*
- * For fixable CVEs link when primary entities are images,
- * also verify special case that image side panel has risk acceptance tabs.
- *
- * Keep arguments consistent with other functions,
- * expecially in case risk acceptance ever applies to node or platform CVEs.
- */
-export function verifyFixableCVEsLinkAndRiskAcceptanceTabs(
-    entitiesKey1,
-    _entitiesKey2, // unused because response might have been cached
-    columnIndex, // one-based index includes checkbox, hidden, invisible
-    getCountAndNounFromLinkResults
-) {
-    // 1. Visit list page for primary entities.
-    visitVulnerabilityManagementEntities(entitiesKey1);
-
-    // Find the first link for secondary entities.
-    cy.get(selectors.getTableDataColumnSelector(columnIndex))
-        .contains('a', fixableCVEsRegExp)
-        .then(($a) => {
-            const { panelHeaderText } = getCountAndNounFromLinkResults(
-                /^(\d+) (\D+)$/.exec($a.text())
-            );
-
-            // 2. Visit secondary entities side panel.
-            cy.wrap($a).click();
-
-            cy.get(`${selectors.entityRowHeader}:contains(${panelHeaderText})`);
-
-            // 3. Visit primary entity side panel.
-            cy.get(selectors.parentEntityInfoHeader).click();
-
-            // Verify risk acceptance tabs under Image Findings.
-            cy.get('.pf-c-tabs .pf-c-tabs__item:eq(0):contains("Observed CVEs")').click({
-                force: true,
-                waitForAnimations: false,
-            });
-            cy.get('.pf-c-tabs .pf-c-tabs__item:eq(1):contains("Deferred CVEs")').click({
-                force: true,
-                waitForAnimations: false,
-            });
-            cy.get('.pf-c-tabs .pf-c-tabs__item:eq(2):contains("False positive CVEs")').click({
-                force: true,
-                waitForAnimations: false,
-            });
-        });
-}
-
 // table
 
 /*
