@@ -6,6 +6,8 @@ import (
 )
 
 // Logger is the interface exposed for logging purposes.
+//
+//go:generate mockgen-wrapper
 type Logger interface {
 	Log(level zapcore.Level, args ...interface{})
 	Logf(level zapcore.Level, format string, args ...interface{})

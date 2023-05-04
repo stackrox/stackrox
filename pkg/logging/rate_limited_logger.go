@@ -3,33 +3,29 @@ package logging
 import (
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/time/rate"
 )
 
 // RateLimitedLogger wraps a zap.SugaredLogger that supports rate limiting.
 type RateLimitedLogger struct {
-	logger    Logger
-	frequency float64
-	burst     int
-	// rateLimiters    *lru.Cache[string, *rate.Limiter]
+	logger          Logger
+	frequency       float64
+	burst           int
+	ticker          *time.Ticker
+	stopper         concurrency.Stopper
 	rateLimitedLogs *lru.Cache[string, *rateLimitedLog]
 }
 
 // NewRateLimitLogger returns a rate limited logger
 func NewRateLimitLogger(l Logger, size int, logLines int, interval time.Duration, burst int) *RateLimitedLogger {
-	/*
-		cache, err := lru.New[string, *rate.Limiter](size)
-		if err != nil {
-			l.Errorf("unable to create rate limiter cache for logger in module %q: %v", CurrentModule().name, err)
-			return nil
-		}
-	*/
 	logCache, err := lru.NewWithEvict[string, *rateLimitedLog](size, func(key string, value *rateLimitedLog) {
-		if value.count > 0 {
+		if value.count.Load() > 0 {
 			value.log()
 		}
 	})
@@ -37,13 +33,16 @@ func NewRateLimitLogger(l Logger, size int, logLines int, interval time.Duration
 		l.Errorf("unable to create rate limiter cache for logger in module %q: %v", CurrentModule().name, err)
 		return nil
 	}
-	return &RateLimitedLogger{
+	logger := &RateLimitedLogger{
 		l,
 		float64(logLines) / interval.Seconds(),
 		burst,
-		// cache,
+		time.NewTicker(time.Second),
+		concurrency.NewStopper(),
 		logCache,
 	}
+	go logger.logFlushLoop()
+	return logger
 }
 
 // ErrorL logs a templated error message if allowed by the rate limiter corresponding to the identifier
@@ -126,23 +125,7 @@ func (rl *RateLimitedLogger) Debugw(msg string, keysAndValues ...interface{}) {
 	rl.logger.Debugw(msg, keysAndValues...)
 }
 
-/*
-func (rl *RateLimitedLogger) allowLog(limiter string) bool {
-	_, _ = rl.rateLimiters.ContainsOrAdd(limiter, rate.NewLimiter(rate.Limit(rl.frequency), rl.burst))
-
-	if lim, ok := rl.rateLimiters.Get(limiter); ok {
-		return lim.Allow()
-	}
-	return false
-}
-*/
-
 func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template string, args ...interface{}) {
-	/*
-		if rl.allowLog(limiter) {
-			rl.logger.Logf(level, template, args...)
-		}
-	*/
 	payload := fmt.Sprintf(template, args...)
 	var keyWriter strings.Builder
 	keyWriter.WriteString(limiter)
@@ -162,12 +145,47 @@ func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template 
 		),
 	)
 	if log, ok := rl.rateLimitedLogs.Get(key); ok {
-		log.count++
+		log.count.Add(1)
 		if log.rateLimiter.Allow() {
 			log.log()
 		}
 	}
 }
+
+func (l *RateLimitedLogger) logFlushLoop() {
+	for {
+		select {
+		case <-l.ticker.C:
+			l.flush()
+		case <-l.stopper.Flow().StopRequested():
+			return
+		}
+	}
+}
+
+func (l *RateLimitedLogger) flush() {
+	keys := l.rateLimitedLogs.Keys()
+	for _, k := range keys {
+		trace, found := l.rateLimitedLogs.Peek(k)
+		if !found {
+			continue
+		}
+		if trace.count.Load() > 0 {
+			if trace.rateLimiter.Tokens() > 0.5 {
+				// One log could be issued
+				trace.log()
+			}
+		}
+	}
+}
+
+func (l *RateLimitedLogger) stop() {
+	l.stopper.Client().Stop()
+}
+
+const (
+	limitedLogSuffixFormat = " - %d log occurrences in the last %0.1f seconds for limiter %q"
+)
 
 type rateLimitedLog struct {
 	logger      Logger
@@ -176,7 +194,7 @@ type rateLimitedLog struct {
 	last        time.Time
 	limiter     string
 	payload     string
-	count       int
+	count       atomic.Int32
 }
 
 func newRateLimitedLog(
@@ -193,27 +211,25 @@ func newRateLimitedLog(
 		// last sticks to default so the first log can be issued unaltered.
 		limiter: limiter,
 		payload: payload,
-		// count is one at instantiation time as the first log should be issued.
-		count: 1,
 	}
 }
 
 func (l *rateLimitedLog) log() {
-	if l.count <= 0 {
+	if l.count.Load() <= 0 {
 		return
 	}
 	now := time.Now()
+	count := l.count.Swap(0)
 	var suffix string
-	if !l.last.IsZero() && l.count > 1 {
+	if !l.last.IsZero() && count > 1 {
 		delta := now.Sub(l.last)
 		suffix = fmt.Sprintf(
-			" - %d log occurrences in the last %0.1f seconds for limiter %q",
-			l.count,
+			limitedLogSuffixFormat,
+			count,
 			delta.Seconds(),
 			l.limiter,
 		)
 	}
 	l.logger.Logf(l.level, "%s%s", l.payload, suffix)
-	l.count = 0
 	l.last = now
 }
