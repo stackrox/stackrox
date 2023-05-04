@@ -25,7 +25,10 @@ func newAnnotationGetter() *datastoreAnnotationGetter {
 	}
 }
 
-func NewTestAnnotationGetter(_ *testing.T, store namespaceDataStore.DataStore) notifiers.AnnotationGetter {
+func NewTestAnnotationGetter(t *testing.T, store namespaceDataStore.DataStore) notifiers.AnnotationGetter {
+	if t == nil {
+		return nil
+	}
 	return &datastoreAnnotationGetter{
 		datastore: store,
 	}

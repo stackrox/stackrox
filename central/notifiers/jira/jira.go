@@ -56,8 +56,8 @@ type jira struct {
 
 	notifier *storage.Notifier
 
-	mitreStore       mitreDataStore.AttackReadOnlyDataStore
 	annotationGetter notifiers.AnnotationGetter
+	mitreStore       mitreDataStore.AttackReadOnlyDataStore
 
 	severityToPriority map[storage.Severity]string
 	needsPriority      bool

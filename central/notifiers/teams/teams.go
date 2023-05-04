@@ -35,7 +35,7 @@ var (
 type teams struct {
 	*storage.Notifier
 
-	namespaceProperties notifiers.AnnotationGetter
+	annotationGetter notifiers.AnnotationGetter
 }
 
 type section struct {
@@ -286,7 +286,7 @@ func (t *teams) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return errors.Wrapf(err, "Could not marshal notification for alert %v", alert.GetId())
 	}
 
-	webhookURL := t.namespaceProperties.GetAnnotationValue(ctx, alert, t.GetLabelKey(), t.GetLabelDefault())
+	webhookURL := t.annotationGetter.GetAnnotationValue(ctx, alert, t.GetLabelKey(), t.GetLabelDefault())
 	webhook := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
 	return retry.WithRetry(
@@ -340,10 +340,10 @@ func (t *teams) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 	)
 }
 
-func newTeams(notifier *storage.Notifier, namespaces notifiers.AnnotationGetter) (*teams, error) {
+func newTeams(notifier *storage.Notifier, annotationGetter notifiers.AnnotationGetter) (*teams, error) {
 	return &teams{
-		Notifier:            notifier,
-		namespaceProperties: namespaces,
+		Notifier:         notifier,
+		annotationGetter: annotationGetter,
 	}, nil
 }
 

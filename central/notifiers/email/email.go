@@ -43,8 +43,8 @@ type email struct {
 	config     *storage.Email
 	smtpServer smtpServer
 
-	namespaceProperties notifiers.AnnotationGetter
-	mitreStore          mitreDS.AttackReadOnlyDataStore
+	annotationGetter notifiers.AnnotationGetter
+	mitreStore       mitreDS.AttackReadOnlyDataStore
 
 	notifier *storage.Notifier
 }
@@ -143,7 +143,7 @@ func validate(email *storage.Email) error {
 	return errorList.ToError()
 }
 
-func newEmail(notifier *storage.Notifier, namespaces notifiers.AnnotationGetter, mitreStore mitreDS.AttackReadOnlyDataStore) (*email, error) {
+func newEmail(notifier *storage.Notifier, annotationGetter notifiers.AnnotationGetter, mitreStore mitreDS.AttackReadOnlyDataStore) (*email, error) {
 	emailConfig, ok := notifier.GetConfig().(*storage.Notifier_Email)
 	if !ok {
 		return nil, errors.New("Email configuration required")
@@ -171,9 +171,9 @@ func newEmail(notifier *storage.Notifier, namespaces notifiers.AnnotationGetter,
 			host: host,
 			port: port,
 		},
-		notifier:            notifier,
-		namespaceProperties: namespaces,
-		mitreStore:          mitreStore,
+		notifier:         notifier,
+		annotationGetter: annotationGetter,
+		mitreStore:       mitreStore,
 	}, nil
 }
 
@@ -304,7 +304,7 @@ func (e *email) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return err
 	}
 
-	recipient := e.namespaceProperties.GetAnnotationValue(ctx, alert, e.notifier.GetLabelKey(), e.notifier.GetLabelDefault())
+	recipient := e.annotationGetter.GetAnnotationValue(ctx, alert, e.notifier.GetLabelKey(), e.notifier.GetLabelDefault())
 	return e.sendEmail(ctx, recipient, subject, body)
 }
 

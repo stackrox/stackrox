@@ -37,8 +37,8 @@ type slack struct {
 	*storage.Notifier
 	client *http.Client
 
-	namespaceProperties notifiers.AnnotationGetter
-	mitreStore          mitreDS.AttackReadOnlyDataStore
+	annotationGetter notifiers.AnnotationGetter
+	mitreStore       mitreDS.AttackReadOnlyDataStore
 }
 
 // notification json struct for richly-formatted notifications
@@ -143,7 +143,7 @@ func (s *slack) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return errors.Errorf("Could not marshal notification for alert %v", alert.Id)
 	}
 
-	webhookURL := s.namespaceProperties.GetAnnotationValue(ctx, alert, s.GetLabelKey(), s.GetLabelDefault())
+	webhookURL := s.annotationGetter.GetAnnotationValue(ctx, alert, s.GetLabelKey(), s.GetLabelDefault())
 	webhook := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
 	return retry.WithRetry(
@@ -214,14 +214,14 @@ func (s *slack) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 	)
 }
 
-func newSlack(notifier *storage.Notifier, namespaces notifiers.AnnotationGetter, mitreStore mitreDS.AttackReadOnlyDataStore) (*slack, error) {
+func newSlack(notifier *storage.Notifier, annotationGetter notifiers.AnnotationGetter, mitreStore mitreDS.AttackReadOnlyDataStore) (*slack, error) {
 	return &slack{
 		Notifier: notifier,
 		client: &http.Client{
 			Transport: proxy.RoundTripper(),
 		},
-		namespaceProperties: namespaces,
-		mitreStore:          mitreStore,
+		annotationGetter: annotationGetter,
+		mitreStore:       mitreStore,
 	}, nil
 }
 

@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// AnnotationGetter provides functions for getting information about namespace metadata.
+// AnnotationGetter provides functionality for getting information about annotation values.
 type AnnotationGetter interface {
 	GetAnnotationValue(ctx context.Context, alert *storage.Alert, annotationKey, defaultValue string) string
 }
