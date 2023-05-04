@@ -50,5 +50,5 @@ var (
 	StoreEventHashes = registerFeature("Store Event Hashes", "ROX_STORE_EVENT_HASHES", false)
 
 	// DisableComplianceStandards enables Manage standards modal and conditional rendering in Compliance pages
-	DisableComplianceStandards = registerFeature("Store Event Hashes", "ROX_DISABLE_COMPLIANCE_STANDARDS", false)
+	DisableComplianceStandards = registerFeature("Disable compliance standards", "ROX_DISABLE_COMPLIANCE_STANDARDS", false)
 )
