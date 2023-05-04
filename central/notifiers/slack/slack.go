@@ -12,7 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/central/notifiers/namespaceproperties"
+	"github.com/stackrox/rox/central/notifiers/annotationgetter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -37,8 +37,8 @@ type slack struct {
 	*storage.Notifier
 	client *http.Client
 
+	namespaceProperties notifiers.AnnotationGetter
 	mitreStore          mitreDS.AttackReadOnlyDataStore
-	namespaceProperties notifiers.NamespaceProperties
 }
 
 // notification json struct for richly-formatted notifications
@@ -214,7 +214,7 @@ func (s *slack) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 	)
 }
 
-func newSlack(notifier *storage.Notifier, namespaces notifiers.NamespaceProperties, mitreStore mitreDS.AttackReadOnlyDataStore) (*slack, error) {
+func newSlack(notifier *storage.Notifier, namespaces notifiers.AnnotationGetter, mitreStore mitreDS.AttackReadOnlyDataStore) (*slack, error) {
 	return &slack{
 		Notifier: notifier,
 		client: &http.Client{
@@ -272,7 +272,7 @@ func (s *slack) postMessage(ctx context.Context, url string, jsonPayload []byte)
 
 func init() {
 	notifiers.Add("slack", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		s, err := newSlack(notifier, namespaceproperties.Singleton(), mitreDS.Singleton())
+		s, err := newSlack(notifier, annotationgetter.Singleton(), mitreDS.Singleton())
 		return s, err
 	})
 }

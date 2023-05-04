@@ -18,7 +18,7 @@ import (
 
 	"github.com/mitchellh/go-wordwrap"
 	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/central/notifiers/namespaceproperties"
+	"github.com/stackrox/rox/central/notifiers/annotationgetter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -43,8 +43,8 @@ type email struct {
 	config     *storage.Email
 	smtpServer smtpServer
 
+	namespaceProperties notifiers.AnnotationGetter
 	mitreStore          mitreDS.AttackReadOnlyDataStore
-	namespaceProperties notifiers.NamespaceProperties
 
 	notifier *storage.Notifier
 }
@@ -143,7 +143,7 @@ func validate(email *storage.Email) error {
 	return errorList.ToError()
 }
 
-func newEmail(notifier *storage.Notifier, namespaces notifiers.NamespaceProperties, mitreStore mitreDS.AttackReadOnlyDataStore) (*email, error) {
+func newEmail(notifier *storage.Notifier, namespaces notifiers.AnnotationGetter, mitreStore mitreDS.AttackReadOnlyDataStore) (*email, error) {
 	emailConfig, ok := notifier.GetConfig().(*storage.Notifier_Email)
 	if !ok {
 		return nil, errors.New("Email configuration required")
@@ -513,7 +513,7 @@ func (e *email) ProtoNotifier() *storage.Notifier {
 
 func init() {
 	notifiers.Add("email", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		e, err := newEmail(notifier, namespaceproperties.Singleton(), mitreDS.Singleton())
+		e, err := newEmail(notifier, annotationgetter.Singleton(), mitreDS.Singleton())
 		return e, err
 	})
 }

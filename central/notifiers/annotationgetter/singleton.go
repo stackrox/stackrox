@@ -1,4 +1,4 @@
-package namespaceproperties
+package annotationgetter
 
 import (
 	"github.com/stackrox/rox/central/notifiers"
@@ -8,14 +8,14 @@ import (
 var (
 	once sync.Once
 
-	resolver *datastoreNamespaceProperties
+	resolver *datastoreAnnotationGetter
 )
 
 func initialize() {
-	resolver = newNamespaceProperties()
+	resolver = newAnnotationGetter()
 }
 
-func Singleton() notifiers.NamespaceProperties {
+func Singleton() notifiers.AnnotationGetter {
 	once.Do(initialize)
 	return resolver
 }

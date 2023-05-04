@@ -1,4 +1,4 @@
-package namespaceproperties
+package annotationgetter
 
 import (
 	"context"
@@ -15,8 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newTestNamespaceProperties(nsStore *namespaceMocks.MockDataStore) notifiers.NamespaceProperties {
-	return &datastoreNamespaceProperties{datastore: nsStore}
+func newTestAnnotationGetter(nsStore *namespaceMocks.MockDataStore) notifiers.AnnotationGetter {
+	return &datastoreAnnotationGetter{datastore: nsStore}
 }
 
 func namespaceWithAnnotation(annotationKey, annotationValue string) *storage.NamespaceMetadata {
@@ -172,10 +172,10 @@ func TestGetAnnotationValue(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
 			nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
-			propertyResolver := newTestNamespaceProperties(nsStore)
+			annotationGetter := newTestAnnotationGetter(nsStore)
 
 			nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(c.namespace, nil).AnyTimes()
-			value := propertyResolver.GetAnnotationValue(context.Background(), c.alert, c.annotationKey, "default")
+			value := annotationGetter.GetAnnotationValue(context.Background(), c.alert, c.annotationKey, "default")
 
 			assert.Equal(t, c.expectedValue, value)
 		})
@@ -186,7 +186,7 @@ func TestGetAnnotationValueCorrectlyQueriesForNamespace(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
-	propertyResolver := newTestNamespaceProperties(nsStore)
+	annotationGetter := newTestAnnotationGetter(nsStore)
 
 	alert := fixtures.GetAlert()
 	ns := namespaceWithAnnotation("somekey", "somevalue")
@@ -194,7 +194,7 @@ func TestGetAnnotationValueCorrectlyQueriesForNamespace(t *testing.T) {
 	expectedQuery := search.NewQueryBuilder().AddExactMatches(search.Namespace, alert.GetDeployment().GetNamespace()).AddExactMatches(search.ClusterID, alert.GetDeployment().GetClusterId()).ProtoQuery()
 
 	nsStore.EXPECT().SearchNamespaces(gomock.Any(), expectedQuery).Return([]*storage.NamespaceMetadata{ns}, nil)
-	value := propertyResolver.GetAnnotationValue(context.Background(), alert, "somekey", "default")
+	value := annotationGetter.GetAnnotationValue(context.Background(), alert, "somekey", "default")
 
 	assert.Equal(t, "somevalue", value)
 }
@@ -203,12 +203,12 @@ func TestGetAnnotationValueReturnsDefaultIfNoStoreReturnsError(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
-	propertyResolver := newTestNamespaceProperties(nsStore)
+	annotationGetter := newTestAnnotationGetter(nsStore)
 
 	alert := fixtures.GetAlert()
 
 	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(nil, errors.New(fixtureconsts.Cluster1))
-	value := propertyResolver.GetAnnotationValue(context.Background(), alert, "somekey", "default")
+	value := annotationGetter.GetAnnotationValue(context.Background(), alert, "somekey", "default")
 
 	assert.Equal(t, "default", value)
 }

@@ -12,7 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/central/notifiers/namespaceproperties"
+	"github.com/stackrox/rox/central/notifiers/annotationgetter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -35,7 +35,7 @@ var (
 type teams struct {
 	*storage.Notifier
 
-	namespaceProperties notifiers.NamespaceProperties
+	namespaceProperties notifiers.AnnotationGetter
 }
 
 type section struct {
@@ -340,7 +340,7 @@ func (t *teams) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 	)
 }
 
-func newTeams(notifier *storage.Notifier, namespaces notifiers.NamespaceProperties) (*teams, error) {
+func newTeams(notifier *storage.Notifier, namespaces notifiers.AnnotationGetter) (*teams, error) {
 	return &teams{
 		Notifier:            notifier,
 		namespaceProperties: namespaces,
@@ -397,7 +397,7 @@ func backOff(previousAttempt int) {
 
 func init() {
 	notifiers.Add("teams", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		s, err := newTeams(notifier, namespaceproperties.Singleton())
+		s, err := newTeams(notifier, annotationgetter.Singleton())
 		return s, err
 	})
 }
