@@ -17,25 +17,25 @@ func TestSuite(t *testing.T) {
 	suite.Run(t, new(testSuite))
 }
 
-func (s *testSuite) TestMetadataManagedCentral() {
+func (s *testSuite) TestGetMetadataManagedCentral() {
 	srv := &serviceImpl{}
+	managedCentralEnvVar := env.ManagedCentral.EnvVar()
 
 	// ROX_MANAGED_CENTRAL not set
 	actual, err := srv.GetMetadata(context.Background(), &v1.Empty{})
 	s.NoError(err)
-	env.ManagedCentral.BooleanSetting()
-	s.EqualValues(false, actual.IsManagedCentral)
+	s.Equal(env.ManagedCentral.DefaultBooleanSetting(), actual.IsManagedCentral)
 
 	// ROX_MANAGED_CENTRAL set to false
-	s.T().Setenv("ROX_MANAGED_CENTRAL", "false")
+	s.T().Setenv(managedCentralEnvVar, "false")
 	actual, err = srv.GetMetadata(context.Background(), &v1.Empty{})
 	s.NoError(err)
-	s.EqualValues(false, actual.IsManagedCentral)
+	s.Equal(false, actual.IsManagedCentral)
 
 	// ROX_MANAGED_CENTRAL set to true
-	s.T().Setenv("ROX_MANAGED_CENTRAL", "true")
+	s.T().Setenv(managedCentralEnvVar, "true")
 	actual, err = srv.GetMetadata(context.Background(), &v1.Empty{})
 	s.NoError(err)
-	s.EqualValues(true, actual.IsManagedCentral)
+	s.Equal(true, actual.IsManagedCentral)
 
 }
