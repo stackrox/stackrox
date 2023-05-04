@@ -8,6 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	notifierMocks "github.com/stackrox/rox/central/notifiers/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 )
 
 func TestProcessor_LoopDoesNothing(t *testing.T) {
@@ -180,4 +181,46 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	// Retry previous failures. (None)
 	loop.retryFailures(ctx)
 	mockCtrl.Finish()
+}
+
+func TestProcessor_SkipNotificationsForSecuredClusterNotifiers(t *testing.T) {
+	t.Setenv(env.SecuredClusterNotifiers.EnvVar(), "true")
+	ctx := context.Background()
+	// Create mocks.
+	mockCtrl := gomock.NewController(t)
+
+	jiraAlertNotfierProto := &storage.Notifier{Id: "n1", Config: &storage.Notifier_Jira{Jira: &storage.Jira{}}}
+	mockJiraAlertNotifier := notifierMocks.NewMockAlertNotifier(mockCtrl)
+
+	emailAlertNotfierProto := &storage.Notifier{Id: "n2", Config: &storage.Notifier_Email{Email: &storage.Email{}}}
+	mockEmailAlertNotifier := notifierMocks.NewMockAlertNotifier(mockCtrl)
+
+	// Create our tested objects.
+	ns := NewNotifierSet()
+	processor := &processorImpl{ns: ns}
+
+	// Add the notifiers to the processor.
+	mockJiraAlertNotifier.EXPECT().ProtoNotifier().Return(jiraAlertNotfierProto).AnyTimes()
+	mockEmailAlertNotifier.EXPECT().ProtoNotifier().Return(emailAlertNotfierProto).AnyTimes()
+
+	processor.UpdateNotifier(ctx, mockJiraAlertNotifier)
+	processor.UpdateNotifier(ctx, mockEmailAlertNotifier)
+
+	policy := &storage.Policy{
+		Id:        "p1",
+		Notifiers: []string{"n1", "n2"},
+	}
+
+	// Running the loop should do anything if all of the alerts succeed.
+	activeAlert := &storage.Alert{
+		Id:     "a1",
+		State:  storage.ViolationState_ACTIVE,
+		Policy: policy,
+	}
+
+	// Since JIRA is a secured cluster notifier, notifications to it will not be processed in Central
+	mockEmailAlertNotifier.EXPECT().AlertNotify(gomock.Any(), activeAlert).Return(nil)
+
+	processor.processAlertSync(ctx, activeAlert)
+
 }

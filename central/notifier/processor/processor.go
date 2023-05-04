@@ -23,6 +23,7 @@ type Processor interface {
 
 	HasNotifiers() bool
 	HasEnabledAuditNotifiers() bool
+	IsSecuredClusterNotifier(notifier notifiers.Notifier) bool
 
 	UpdateNotifier(ctx context.Context, notifier notifiers.Notifier)
 	RemoveNotifier(ctx context.Context, id string)
