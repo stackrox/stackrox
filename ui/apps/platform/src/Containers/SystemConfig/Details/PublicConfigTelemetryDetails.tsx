@@ -37,7 +37,7 @@ const PublicConfigTelemetryDetails = ({
                 <p className="pf-u-mb-sm">
                     Online telemetry data collection allows Red Hat to use anonymized information to
                     enhance your user experience. Consult the documentation to see what is collected,
-                    and for how to opt out.
+                    and for information about how to opt out.
                 </p>
             </CardBody>
         </Card>
