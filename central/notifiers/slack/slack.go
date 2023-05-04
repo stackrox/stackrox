@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/central/notifiers/namespaceproperties"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -38,8 +38,8 @@ type slack struct {
 	*storage.Notifier
 	client *http.Client
 
-	namespaces namespaceDataStore.DataStore
-	mitreStore mitreDS.AttackReadOnlyDataStore
+	mitreStore          mitreDS.AttackReadOnlyDataStore
+	namespaceProperties notifiers.NamespaceProperties
 }
 
 // notification json struct for richly-formatted notifications
@@ -144,7 +144,7 @@ func (s *slack) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return errors.Errorf("Could not marshal notification for alert %v", alert.Id)
 	}
 
-	webhookURL := notifiers.GetAnnotationValue(ctx, alert, s.GetLabelKey(), s.GetLabelDefault(), s.namespaces)
+	webhookURL := s.namespaceProperties.GetAnnotationValue(ctx, alert, s.GetLabelKey(), s.GetLabelDefault())
 	webhook := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
 	return retry.WithRetry(
@@ -215,14 +215,14 @@ func (s *slack) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 	)
 }
 
-func newSlack(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore, mitreStore mitreDS.AttackReadOnlyDataStore) (*slack, error) {
+func newSlack(notifier *storage.Notifier, namespaces notifiers.NamespaceProperties, mitreStore mitreDS.AttackReadOnlyDataStore) (*slack, error) {
 	return &slack{
 		Notifier: notifier,
 		client: &http.Client{
 			Transport: proxy.RoundTripper(),
 		},
-		namespaces: namespaces,
-		mitreStore: mitreStore,
+		namespaceProperties: namespaces,
+		mitreStore:          mitreStore,
 	}, nil
 }
 
@@ -273,7 +273,7 @@ func (s *slack) postMessage(ctx context.Context, url string, jsonPayload []byte)
 
 func init() {
 	notifiers.Add("slack", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		s, err := newSlack(notifier, namespaceDataStore.Singleton(), mitreDataStore.Singleton())
+		s, err := newSlack(notifier, namespaceproperties.Singleton(), mitreDataStore.Singleton())
 		return s, err
 	})
 }

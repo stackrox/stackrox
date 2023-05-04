@@ -19,6 +19,7 @@ import (
 	"github.com/mitchellh/go-wordwrap"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/central/notifiers/namespaceproperties"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -44,8 +45,8 @@ type email struct {
 	config     *storage.Email
 	smtpServer smtpServer
 
-	namespaces namespaceDataStore.DataStore
 	mitreStore mitreDS.AttackReadOnlyDataStore
+	namespaceProperties notifiers.NamespaceProperties
 
 	notifier *storage.Notifier
 }
@@ -144,7 +145,7 @@ func validate(email *storage.Email) error {
 	return errorList.ToError()
 }
 
-func newEmail(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore, mitreStore mitreDS.AttackReadOnlyDataStore) (*email, error) {
+func newEmail(notifier *storage.Notifier, namespaces notifiers.NamespaceProperties, mitreStore mitreDS.AttackReadOnlyDataStore) (*email, error) {
 	emailConfig, ok := notifier.GetConfig().(*storage.Notifier_Email)
 	if !ok {
 		return nil, errors.New("Email configuration required")
@@ -172,9 +173,9 @@ func newEmail(notifier *storage.Notifier, namespaces namespaceDataStore.DataStor
 			host: host,
 			port: port,
 		},
-		notifier:   notifier,
-		namespaces: namespaces,
-		mitreStore: mitreStore,
+		notifier:            notifier,
+		namespaceProperties: namespaces,
+		mitreStore:          mitreStore,
 	}, nil
 }
 
@@ -305,7 +306,7 @@ func (e *email) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return err
 	}
 
-	recipient := notifiers.GetAnnotationValue(ctx, alert, e.notifier.GetLabelKey(), e.notifier.GetLabelDefault(), e.namespaces)
+	recipient := e.namespaceProperties.GetAnnotationValue(ctx, alert, e.notifier.GetLabelKey(), e.notifier.GetLabelDefault())
 	return e.sendEmail(ctx, recipient, subject, body)
 }
 
@@ -514,7 +515,7 @@ func (e *email) ProtoNotifier() *storage.Notifier {
 
 func init() {
 	notifiers.Add("email", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		e, err := newEmail(notifier, namespaceDataStore.Singleton(), mitreDataStore.Singleton())
+		e, err := newEmail(notifier, namespaceproperties.Singleton(), mitreDataStore.Singleton())
 		return e, err
 	})
 }
