@@ -123,7 +123,7 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsBurst() {
 		expectedCount := atomic.Int32{}
 		expectedCount.Swap(2 * burstSize)
 		if v != nil {
-			s.Equal(expectedCount, v.count)
+			s.Equal(expectedCount.Load(), v.count.Load())
 		}
 	}
 }
@@ -203,7 +203,7 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsCooldown() {
 		expectedCount := atomic.Int32{}
 		expectedCount.Swap(1)
 		if v != nil {
-			s.Equal(expectedCount, v.count)
+			s.Equal(expectedCount.Load(), v.count.Load())
 		}
 	}
 }
@@ -289,7 +289,7 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsTimedFlush() {
 		expectedCount := atomic.Int32{}
 		expectedCount.Swap(0)
 		if v != nil {
-			s.Equal(expectedCount, v.count)
+			s.Equal(expectedCount.Load(), v.count.Load())
 		}
 	}
 }
