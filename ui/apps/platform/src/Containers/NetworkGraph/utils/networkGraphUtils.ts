@@ -27,14 +27,6 @@ export function getNodeById(
 
 /* edge helper functions */
 
-export function getNumFlowsFromEdge(edge: CustomEdgeModel): number {
-    let numFlows = edge.data.sourceToTargetProperties.length;
-    if (edge.data.isBidirectional) {
-        numFlows += edge.data.targetToSourceProperties?.length || 0;
-    }
-    return numFlows;
-}
-
 export function getNumAnomalousInternalFlows(networkFlows: Flow[]) {
     const numAnomalousInternalFlows =
         networkFlows.reduce((acc, flow) => {
