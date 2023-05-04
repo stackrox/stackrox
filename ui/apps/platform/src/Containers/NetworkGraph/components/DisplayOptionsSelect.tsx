@@ -82,12 +82,12 @@ function DisplayOptionsSelect({
                 <SelectOption key={2} value="selectionIndicator">
                     <Split>
                         <SplitItem className="pf-u-mr-xs">
-                            <FilteredEntity width="22px" height="22px" className="pf-u-mr-xs" />
+                            <FilteredEntity width="22px" height="22px" />
                         </SplitItem>
                         <SplitItem>Filtered</SplitItem>
                         <SplitItem className="pf-u-mx-sm">&</SplitItem>
                         <SplitItem className="pf-u-mr-xs">
-                            <RelatedEntity width="18px" height="18px" className="pf-u-mr-xs" />
+                            <RelatedEntity width="18px" height="18px" />
                         </SplitItem>
                         <SplitItem>Related entities</SplitItem>
                     </Split>
