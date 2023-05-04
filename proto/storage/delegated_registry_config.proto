@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+// DelegatedRegistryConfig determines if and where scan requests are delegated to, such as kept in 
+// central services or sent to particular secured clusters
+message DelegatedRegistryConfig {
+    enum EnabledFor {
+        // delegate no scans
+        NONE     = 0;
+        // delegate all scans
+        ALL      = 1;
+        // delegate scans that match specific registries (+ path)
+        SPECIFIC = 2;
+    }
+
+    message Registry {
+        // registry + optional path (ie: artifactory.example.com/prod)
+        string registry_path = 1;
+        // id of the cluster to delegate requests to
+        string cluster_id    = 2;
+    }
+
+    // determines if delegation is enabled for no registries, all registries, or specific registries
+    EnabledFor enabled_for       = 1;
+
+    // the default cluster to delegate ad-hoc requests to if no match found in []registries, not used
+    // if enabled_for is NONE
+    string default_cluster_id    = 2;
+
+    // list of registries that has different outcome depending on value of enabled_for, allows
+    // for controlling which registries require delegation and how to route ad-hoc requests
+    repeated Registry registries = 3;
+}

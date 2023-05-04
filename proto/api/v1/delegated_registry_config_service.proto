@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+import "storage/delegated_registry_config.proto";
+
+package v1;
+
+message PutDelegatedRegistryConfigRequest {
+    storage.DelegatedRegistryConfig config      = 1;
+}
+
+// DelegatedRegistryConfigService APIs can be used to manage delegated registry config
+service DelegatedRegistryConfigService {
+
+    rpc GetConfig(Empty) returns (storage.DelegatedRegistryConfig) {
+        option (google.api.http) = {
+            get: "/v1/delegatedregistryconfig"
+        };
+    }
+
+    rpc PutConfig(PutDelegatedRegistryConfigRequest) returns (storage.DelegatedRegistryConfig) {
+        option (google.api.http) = {
+            put: "/v1/delegatedregistryconfig"
+            body: "*"
+        };
+    }
+
+}
