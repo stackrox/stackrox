@@ -10,12 +10,12 @@ export type ImageDetails = {
     operatingSystem: string;
     metadata: {
         v1: {
-            created: Date | null;
+            created: string | null;
             digest: string;
         } | null;
     } | null;
     dataSource: { id: string; name: string } | null;
-    scanTime: Date | null;
+    scanTime: string | null;
 };
 
 export const imageDetailsFragment = gql`
