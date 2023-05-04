@@ -13,9 +13,9 @@ import (
 	jiraLib "github.com/andygrunwald/go-jira"
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	mitreMocks "github.com/stackrox/rox/central/mitre/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -169,7 +169,7 @@ func TestWithFakeJira(t *testing.T) {
 
 	mockCtrl := gomock.NewController(t)
 	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
-	mitreStore := mitreMocks.NewMockMitreAttackReadOnlyDataStore(mockCtrl)
+	mitreStore := mitreMocks.NewMockAttackReadOnlyDataStore(mockCtrl)
 	mitreStore.EXPECT().Get(gomock.Any()).Return(&storage.MitreAttackVector{}, nil).AnyTimes()
 	j, err := newJira(fakeJiraConfig, nsStore, mitreStore)
 	defer mockCtrl.Finish()

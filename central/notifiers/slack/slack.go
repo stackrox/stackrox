@@ -11,12 +11,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
+	mitreDataStore "github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
@@ -38,7 +39,7 @@ type slack struct {
 	client *http.Client
 
 	namespaces namespaceDataStore.DataStore
-	mitreStore mitreDataStore.MitreAttackReadOnlyDataStore
+	mitreStore mitreDS.AttackReadOnlyDataStore
 }
 
 // notification json struct for richly-formatted notifications
@@ -214,7 +215,7 @@ func (s *slack) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 	)
 }
 
-func newSlack(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore, mitreStore mitreDataStore.MitreAttackReadOnlyDataStore) (*slack, error) {
+func newSlack(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore, mitreStore mitreDS.AttackReadOnlyDataStore) (*slack, error) {
 	return &slack{
 		Notifier: notifier,
 		client: &http.Client{

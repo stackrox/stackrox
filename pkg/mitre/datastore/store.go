@@ -14,11 +14,11 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// MitreAttackReadOnlyDataStore provides functionality to read MITRE ATT&CK vectors.
+// AttackReadOnlyDataStore provides functionality to read MITRE ATT&CK vectors.
 // A vector represents MITRE tactics (why) and its techniques/sub-techniques (how).
 //
 //go:generate mockgen-wrapper
-type MitreAttackReadOnlyDataStore interface {
+type AttackReadOnlyDataStore interface {
 	GetAll() []*storage.MitreAttackVector
 	Get(id string) (*storage.MitreAttackVector, error)
 }
@@ -28,7 +28,8 @@ type mitreAttackStoreImpl struct {
 	mitreAttackVectors map[string]*storage.MitreAttackVector
 }
 
-func newMitreAttackStore() *mitreAttackStoreImpl {
+// NewMitreAttackStore reads the json into the mitre attack vectors in memory map
+func NewMitreAttackStore() AttackReadOnlyDataStore {
 	s := &mitreAttackStoreImpl{
 		mitreAttackVectors: make(map[string]*storage.MitreAttackVector),
 	}
