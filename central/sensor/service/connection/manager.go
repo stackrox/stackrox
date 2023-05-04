@@ -3,6 +3,8 @@ package connection
 import (
 	"context"
 
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -20,6 +22,7 @@ type Manager interface {
 		policyMgr common.PolicyManager,
 		baselineMgr common.ProcessBaselineManager,
 		networkBaselineMgr common.NetworkBaselineManager,
+		notifierProcessor notifierProcessor.Processor,
 		autoTriggerUpgrades *concurrency.Flag) error
 
 	// Connection-related methods.
@@ -28,6 +31,8 @@ type Manager interface {
 	CloseConnection(clusterID string)
 	GetActiveConnections() []SensorConnection
 	PreparePoliciesAndBroadcast(policies []*storage.Policy)
+	PrepareNotifiersAndBroadcast(notifiers []notifiers.Notifier)
+
 	BroadcastMessage(msg *central.MsgToSensor)
 	SendMessage(clusterID string, msg *central.MsgToSensor) error
 
