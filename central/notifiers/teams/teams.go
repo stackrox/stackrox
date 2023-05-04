@@ -12,7 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/central/notifiers/annotationgetter"
+	"github.com/stackrox/rox/central/notifiers/metadatagetter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -35,7 +35,7 @@ var (
 type teams struct {
 	*storage.Notifier
 
-	annotationGetter notifiers.AnnotationGetter
+	metadataGetter notifiers.MetadataGetter
 }
 
 type section struct {
@@ -286,7 +286,7 @@ func (t *teams) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return errors.Wrapf(err, "Could not marshal notification for alert %v", alert.GetId())
 	}
 
-	webhookURL := t.annotationGetter.GetAnnotationValue(ctx, alert, t.GetLabelKey(), t.GetLabelDefault())
+	webhookURL := t.metadataGetter.GetAnnotationValue(ctx, alert, t.GetLabelKey(), t.GetLabelDefault())
 	webhook := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
 	return retry.WithRetry(
@@ -340,10 +340,10 @@ func (t *teams) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 	)
 }
 
-func newTeams(notifier *storage.Notifier, annotationGetter notifiers.AnnotationGetter) (*teams, error) {
+func newTeams(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter) (*teams, error) {
 	return &teams{
-		Notifier:         notifier,
-		annotationGetter: annotationGetter,
+		Notifier:       notifier,
+		metadataGetter: metadataGetter,
 	}, nil
 }
 
@@ -397,7 +397,7 @@ func backOff(previousAttempt int) {
 
 func init() {
 	notifiers.Add("teams", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		s, err := newTeams(notifier, annotationgetter.Singleton())
+		s, err := newTeams(notifier, metadatagetter.Singleton())
 		return s, err
 	})
 }

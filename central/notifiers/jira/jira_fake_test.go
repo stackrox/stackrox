@@ -14,7 +14,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	"github.com/stackrox/rox/central/notifiers/annotationgetter"
+	"github.com/stackrox/rox/central/notifiers/metadatagetter"
 	"github.com/stackrox/rox/generated/storage"
 	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
 	"github.com/stretchr/testify/assert"
@@ -171,9 +171,9 @@ func TestWithFakeJira(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
 	mitreStore := mitreMocks.NewMockAttackReadOnlyDataStore(mockCtrl)
-	annotationGetter := annotationgetter.NewTestAnnotationGetter(t, nsStore)
+	metadataGetter := metadatagetter.NewTestMetadataGetter(t, nsStore)
 	mitreStore.EXPECT().Get(gomock.Any()).Return(&storage.MitreAttackVector{}, nil).AnyTimes()
-	j, err := newJira(fakeJiraConfig, annotationGetter, mitreStore)
+	j, err := newJira(fakeJiraConfig, metadataGetter, mitreStore)
 	defer mockCtrl.Finish()
 
 	require.NoError(t, err)

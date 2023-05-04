@@ -16,7 +16,7 @@ import (
 	jiraLib "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/central/notifiers/annotationgetter"
+	"github.com/stackrox/rox/central/notifiers/metadatagetter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -56,8 +56,8 @@ type jira struct {
 
 	notifier *storage.Notifier
 
-	annotationGetter notifiers.AnnotationGetter
-	mitreStore       mitreDataStore.AttackReadOnlyDataStore
+	metadataGetter notifiers.MetadataGetter
+	mitreStore     mitreDataStore.AttackReadOnlyDataStore
 
 	severityToPriority map[storage.Severity]string
 	needsPriority      bool
@@ -147,7 +147,7 @@ func (j *jira) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return err
 	}
 
-	project := j.annotationGetter.GetAnnotationValue(ctx, alert, j.notifier.GetLabelKey(), j.notifier.GetLabelDefault())
+	project := j.metadataGetter.GetAnnotationValue(ctx, alert, j.notifier.GetLabelKey(), j.notifier.GetLabelDefault())
 	i := &jiraLib.Issue{
 		Fields: &jiraLib.IssueFields{
 			Summary: notifiers.SummaryForAlert(alert),
@@ -221,7 +221,7 @@ func validate(jira *storage.Jira) error {
 	return errorList.ToError()
 }
 
-func newJira(notifier *storage.Notifier, annotationGetter notifiers.AnnotationGetter, mitreStore mitreDataStore.AttackReadOnlyDataStore) (*jira, error) {
+func newJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDataStore.AttackReadOnlyDataStore) (*jira, error) {
 	conf := notifier.GetJira()
 	if conf == nil {
 		return nil, errors.New("Jira configuration required")
@@ -284,7 +284,7 @@ func newJira(notifier *storage.Notifier, annotationGetter notifiers.AnnotationGe
 		client:             client,
 		conf:               notifier.GetJira(),
 		notifier:           notifier,
-		annotationGetter:   annotationGetter,
+		metadataGetter:     metadataGetter,
 		mitreStore:         mitreStore,
 		severityToPriority: derivedPriorities,
 
@@ -398,7 +398,7 @@ func mapPriorities(integration *storage.Jira, prios []jiraLib.Priority) map[stor
 
 func init() {
 	notifiers.Add("jira", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		j, err := newJira(notifier, annotationgetter.Singleton(), mitreDataStore.Singleton())
+		j, err := newJira(notifier, metadatagetter.Singleton(), mitreDataStore.Singleton())
 		return j, err
 	})
 }

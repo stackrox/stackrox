@@ -18,7 +18,7 @@ import (
 
 	"github.com/mitchellh/go-wordwrap"
 	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/central/notifiers/annotationgetter"
+	"github.com/stackrox/rox/central/notifiers/metadatagetter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -43,8 +43,8 @@ type email struct {
 	config     *storage.Email
 	smtpServer smtpServer
 
-	annotationGetter notifiers.AnnotationGetter
-	mitreStore       mitreDS.AttackReadOnlyDataStore
+	metadataGetter notifiers.MetadataGetter
+	mitreStore     mitreDS.AttackReadOnlyDataStore
 
 	notifier *storage.Notifier
 }
@@ -143,7 +143,7 @@ func validate(email *storage.Email) error {
 	return errorList.ToError()
 }
 
-func newEmail(notifier *storage.Notifier, annotationGetter notifiers.AnnotationGetter, mitreStore mitreDS.AttackReadOnlyDataStore) (*email, error) {
+func newEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore) (*email, error) {
 	emailConfig, ok := notifier.GetConfig().(*storage.Notifier_Email)
 	if !ok {
 		return nil, errors.New("Email configuration required")
@@ -171,9 +171,9 @@ func newEmail(notifier *storage.Notifier, annotationGetter notifiers.AnnotationG
 			host: host,
 			port: port,
 		},
-		notifier:         notifier,
-		annotationGetter: annotationGetter,
-		mitreStore:       mitreStore,
+		notifier:       notifier,
+		metadataGetter: metadataGetter,
+		mitreStore:     mitreStore,
 	}, nil
 }
 
@@ -304,7 +304,7 @@ func (e *email) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return err
 	}
 
-	recipient := e.annotationGetter.GetAnnotationValue(ctx, alert, e.notifier.GetLabelKey(), e.notifier.GetLabelDefault())
+	recipient := e.metadataGetter.GetAnnotationValue(ctx, alert, e.notifier.GetLabelKey(), e.notifier.GetLabelDefault())
 	return e.sendEmail(ctx, recipient, subject, body)
 }
 
@@ -513,7 +513,7 @@ func (e *email) ProtoNotifier() *storage.Notifier {
 
 func init() {
 	notifiers.Add("email", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		e, err := newEmail(notifier, annotationgetter.Singleton(), mitreDS.Singleton())
+		e, err := newEmail(notifier, metadatagetter.Singleton(), mitreDS.Singleton())
 		return e, err
 	})
 }

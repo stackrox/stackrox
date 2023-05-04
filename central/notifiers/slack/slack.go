@@ -12,7 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/central/notifiers/annotationgetter"
+	"github.com/stackrox/rox/central/notifiers/metadatagetter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -37,8 +37,8 @@ type slack struct {
 	*storage.Notifier
 	client *http.Client
 
-	annotationGetter notifiers.AnnotationGetter
-	mitreStore       mitreDS.AttackReadOnlyDataStore
+	metadataGetter notifiers.MetadataGetter
+	mitreStore     mitreDS.AttackReadOnlyDataStore
 }
 
 // notification json struct for richly-formatted notifications
@@ -143,7 +143,7 @@ func (s *slack) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return errors.Errorf("Could not marshal notification for alert %v", alert.Id)
 	}
 
-	webhookURL := s.annotationGetter.GetAnnotationValue(ctx, alert, s.GetLabelKey(), s.GetLabelDefault())
+	webhookURL := s.metadataGetter.GetAnnotationValue(ctx, alert, s.GetLabelKey(), s.GetLabelDefault())
 	webhook := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
 	return retry.WithRetry(
@@ -214,14 +214,14 @@ func (s *slack) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 	)
 }
 
-func newSlack(notifier *storage.Notifier, annotationGetter notifiers.AnnotationGetter, mitreStore mitreDS.AttackReadOnlyDataStore) (*slack, error) {
+func newSlack(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore) (*slack, error) {
 	return &slack{
 		Notifier: notifier,
 		client: &http.Client{
 			Transport: proxy.RoundTripper(),
 		},
-		annotationGetter: annotationGetter,
-		mitreStore:       mitreStore,
+		metadataGetter: metadataGetter,
+		mitreStore:     mitreStore,
 	}, nil
 }
 
@@ -272,7 +272,7 @@ func (s *slack) postMessage(ctx context.Context, url string, jsonPayload []byte)
 
 func init() {
 	notifiers.Add("slack", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		s, err := newSlack(notifier, annotationgetter.Singleton(), mitreDS.Singleton())
+		s, err := newSlack(notifier, metadatagetter.Singleton(), mitreDS.Singleton())
 		return s, err
 	})
 }

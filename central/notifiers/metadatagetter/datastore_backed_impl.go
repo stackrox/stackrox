@@ -1,4 +1,4 @@
-package annotationgetter
+package metadatagetter
 
 import (
 	"context"
@@ -15,22 +15,22 @@ var (
 	log = logging.LoggerForModule()
 )
 
-type datastoreAnnotationGetter struct {
+type datastoreMetadataGetter struct {
 	datastore namespaceDataStore.DataStore
 }
 
-func newAnnotationGetter() *datastoreAnnotationGetter {
-	return &datastoreAnnotationGetter{
+func newMetadataGetter() *datastoreMetadataGetter {
+	return &datastoreMetadataGetter{
 		datastore: namespaceDataStore.Singleton(),
 	}
 }
 
-// NewTestAnnotationGetter returns an instance of notifiers.AnnotationGetter for testing purposes
-func NewTestAnnotationGetter(t *testing.T, store namespaceDataStore.DataStore) notifiers.AnnotationGetter {
+// NewTestMetadataGetter returns an instance of notifiers.MetadataGetter for testing purposes
+func NewTestMetadataGetter(t *testing.T, store namespaceDataStore.DataStore) notifiers.MetadataGetter {
 	if t == nil {
 		return nil
 	}
-	return &datastoreAnnotationGetter{
+	return &datastoreMetadataGetter{
 		datastore: store,
 	}
 }
@@ -39,7 +39,7 @@ func NewTestAnnotationGetter(t *testing.T, store namespaceDataStore.DataStore) n
 // It will attempt to get it from the deployment, but if it doesn't exist it will get it from the namespace. If neither exists, it will return the default value.
 // This value from the annotation is used by certain notifiers to redirect notifications to other channels. For example, the email notifier can send to an alternate email depending on the annotation value.
 // NOTE: It is possible that this will pull the value from a deployment label instead of annotation. This remains for backwards compatibility purposes, because versions <63.0 supported this on labels and annotations.
-func (resolver datastoreAnnotationGetter) GetAnnotationValue(ctx context.Context, alert *storage.Alert, annotationKey, defaultValue string) string {
+func (resolver datastoreMetadataGetter) GetAnnotationValue(ctx context.Context, alert *storage.Alert, annotationKey, defaultValue string) string {
 	// Skip entire processing if the label key is not even set
 	if annotationKey == "" {
 		return defaultValue
