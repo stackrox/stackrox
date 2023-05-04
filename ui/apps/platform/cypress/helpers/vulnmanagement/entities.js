@@ -356,7 +356,7 @@ function verifyLinkCountDeep(
  * 1 Fixable corresponds to any of the following: 1 Image CVE or 1 Node CVE or 1 Platform CVE
  * 2 failing deployments corresponds to 2 deployments
  */
-export function verifyLinkCountShallow(
+function verifyLinkCountShallow(
     entitiesKey1,
     _entitiesKey2, // unused because response might have been cached
     columnIndex, // one-based index includes checkbox, hidden, invisible
@@ -442,6 +442,48 @@ export function verifyConditionalCVEs(
                 .contains('a', allCVEsRegExp)
                 .should('not.exist');
             cy.get(`${selectors.getTableDataColumnSelector(columnIndex)}:contains("No CVEs")`);
+        }
+    });
+}
+
+const failingDeploymentsRegExp = /^\d+ failing deployments?$/;
+
+/*
+ * Conditional test of either links for failing deploymentss or text for No failing deployments.
+ */
+export function verifyConditionalFailingDeployments(
+    columnIndex, // one-based index includes checkbox, hidden, invisible
+    getCountAndNounFromLinkResults
+) {
+    const entitiesKey1 = 'policies';
+    const entitiesKey2 = 'deployments';
+
+    // 1. Visit list page for primary entities.
+    // The first interception is ignored because for searchOptions request.
+    // The second interception is for entitiesKey1 request.
+    visitVulnerabilityManagementEntities(entitiesKey1).then(([, { response }]) => {
+        const { results } = response.body.data;
+
+        // Check sources of truth whether or not to assert existence of links.
+        const hasFailingDeployments = results.some((result) => result.deploymentCount > 0);
+
+        if (hasFailingDeployments) {
+            verifyLinkCountShallow(
+                entitiesKey1,
+                entitiesKey2,
+                columnIndex,
+                failingDeploymentsRegExp,
+                getCountAndNounFromLinkResults
+            );
+        } else {
+            cy.get(selectors.getTableDataColumnSelector(columnIndex))
+                .contains('a', failingDeploymentsRegExp)
+                .should('not.exist');
+            cy.get(
+                `${selectors.getTableDataColumnSelector(
+                    columnIndex
+                )}:contains("No failing deployments")`
+            );
         }
     });
 }
