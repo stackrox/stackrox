@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/npg"
 	"github.com/stackrox/rox/roxctl/common/printer"
 )
 
@@ -69,7 +70,7 @@ func (cmd *generateNetpolCommand) construct(args []string, c *cobra.Command) (ne
 
 	var opts []npguard.PoliciesSynthesizerOption
 	if cmd.env != nil && cmd.env.Logger() != nil {
-		opts = append(opts, npguard.WithLogger(newNpgLogger(cmd.env.Logger())))
+		opts = append(opts, npguard.WithLogger(npg.NewLogger(cmd.env.Logger())))
 	}
 	if cmd.stopOnFirstError {
 		opts = append(opts, npguard.WithStopOnError())
