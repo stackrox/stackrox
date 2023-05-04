@@ -50,14 +50,38 @@ const getUrl = (workflowState, steps) => {
     return newURL === currentURL ? null : newURL;
 };
 
+// Tailwind purge needs to see complete class strings instead of `max-w-1/${length}` template literal.
+const getMaxWidthClass = (length) => {
+    switch (length) {
+        case 1:
+            return 'max-w-full';
+        case 2:
+            return 'max-w-1/2';
+        case 3:
+            return 'max-w-1/3';
+        case 4:
+            return 'max-w-1/4';
+        case 5:
+            return 'max-w-1/5';
+        case 6:
+            return 'max-w-1/6';
+        case 7:
+            return 'max-w-1/7';
+        case 8:
+            return 'max-w-1/8';
+        case 9:
+            return 'max-w-1/9';
+        case 10:
+            return 'max-w-1/10';
+        default:
+            return '';
+    }
+};
+
 const BreadCrumbLinks = ({ workflowEntities }) => {
     const workflowState = useContext(workflowStateContext);
 
-    let maxWidthClass = 'max-w-full';
-
-    if (workflowEntities.length > 1) {
-        maxWidthClass = `max-w-1/${workflowEntities.length}`;
-    }
+    const maxWidthClass = getMaxWidthClass(workflowEntities.length);
 
     const breadCrumbLinks = workflowEntities.map((workflowEntity, i, { length }) => {
         const icon = i !== length - 1 ? Icon : null;
