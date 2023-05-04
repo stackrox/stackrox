@@ -67,10 +67,10 @@ type Image = {
     watchStatus: 'WATCHED' | 'NOT_WATCHED';
     metadata: {
         v1: {
-            created: Date | null;
+            created: string | null;
         } | null;
     } | null;
-    scanTime: Date | null;
+    scanTime: string | null;
 };
 
 type ImagesTableProps = {

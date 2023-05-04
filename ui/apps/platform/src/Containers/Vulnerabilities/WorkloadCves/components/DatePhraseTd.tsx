@@ -8,6 +8,9 @@ export type DatePhraseTdProps = {
 };
 
 function DatePhraseTd({ date }: DatePhraseTdProps) {
+    if (!date) {
+        return null;
+    }
     return (
         <Tooltip content={getDateTime(date)}>
             <span>{getDistanceStrictAsPhrase(date, new Date())}</span>

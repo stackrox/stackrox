@@ -62,7 +62,7 @@ type ImageCVE = {
     };
     topCVSS: number;
     affectedImageCount: number;
-    firstDiscoveredInSystem: Date | null;
+    firstDiscoveredInSystem: string | null;
 };
 
 type CVEsTableProps = {

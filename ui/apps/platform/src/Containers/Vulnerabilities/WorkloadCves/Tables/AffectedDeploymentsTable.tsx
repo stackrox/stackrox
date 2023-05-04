@@ -31,7 +31,7 @@ export type DeploymentForCve = {
     name: string;
     namespace: string;
     clusterName: string;
-    created: Date | null;
+    created: string | null;
     imageCount: number;
     lowImageCount: number;
     moderateImageCount: number;

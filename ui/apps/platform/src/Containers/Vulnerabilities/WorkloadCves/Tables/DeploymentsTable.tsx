@@ -51,7 +51,7 @@ export type Deployment = {
     clusterName: string;
     namespace: string;
     imageCount: number;
-    created: Date | null;
+    created: string | null;
 };
 
 type DeploymentsTableProps = {

@@ -5,7 +5,7 @@ import { getDateTime } from 'utils/dateUtils';
 
 export type ImageCveMetadata = {
     cve: string;
-    firstDiscoveredInSystem: Date | null;
+    firstDiscoveredInSystem: string | null;
 };
 
 export const imageCveMetadataFragment = gql`

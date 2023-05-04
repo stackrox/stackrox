@@ -44,7 +44,7 @@ export type ImageForCve = {
     } | null;
     operatingSystem: string;
     watchStatus: 'WATCHED' | 'NOT_WATCHED';
-    scanTime: Date | null;
+    scanTime: string | null;
     imageComponents: ImageComponentVulnerability[];
 };
 

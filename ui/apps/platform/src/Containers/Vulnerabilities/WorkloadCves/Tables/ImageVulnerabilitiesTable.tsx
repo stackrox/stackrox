@@ -54,7 +54,7 @@ export type ImageVulnerability = {
     summary: string;
     cvss: number;
     scoreVersion: string;
-    discoveredAtImage: Date | null;
+    discoveredAtImage: string | null;
     imageComponents: ImageComponentVulnerability[];
 };
 
