@@ -25,6 +25,7 @@ func newAnnotationGetter() *datastoreAnnotationGetter {
 	}
 }
 
+// NewTestAnnotationGetter returns an instance of notifiers.AnnotationGetter for testing purposes
 func NewTestAnnotationGetter(t *testing.T, store namespaceDataStore.DataStore) notifiers.AnnotationGetter {
 	if t == nil {
 		return nil

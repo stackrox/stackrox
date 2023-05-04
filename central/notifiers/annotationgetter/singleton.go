@@ -15,6 +15,7 @@ func initialize() {
 	resolver = newAnnotationGetter()
 }
 
+// Singleton provides the interface for getting annotation values with a datastore backed implementation.
 func Singleton() notifiers.AnnotationGetter {
 	once.Do(initialize)
 	return resolver
