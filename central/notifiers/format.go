@@ -7,10 +7,10 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/mitre/datastore"
 	"github.com/stackrox/rox/central/policy/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -110,7 +110,7 @@ var requiredFunctions = set.NewFrozenStringSet(
 )
 
 // FormatAlert takes in an alert, a link and funcMap that must define specific formatting functions
-func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMap, mitreStore datastore.MitreAttackReadOnlyDataStore) (string, error) {
+func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMap, mitreStore datastore.AttackReadOnlyDataStore) (string, error) {
 	if funcMap == nil {
 		return "", errors.New("Function map passed to FormatAlert cannot be nil")
 	}

@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mitreMocks "github.com/stackrox/rox/central/mitre/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,7 +28,7 @@ func skip(t *testing.T) string {
 func getSlackWithMock(t *testing.T, notifier *storage.Notifier) (*slack, *gomock.Controller) {
 	mockCtrl := gomock.NewController(t)
 	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
-	mitreStore := mitreMocks.NewMockMitreAttackReadOnlyDataStore(mockCtrl)
+	mitreStore := mitreMocks.NewMockAttackReadOnlyDataStore(mockCtrl)
 	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return([]*storage.NamespaceMetadata{}, nil).AnyTimes()
 	mitreStore.EXPECT().Get(gomock.Any()).Return(&storage.MitreAttackVector{}, nil).AnyTimes()
 	s, err := newSlack(notifier, nsStore, mitreStore)

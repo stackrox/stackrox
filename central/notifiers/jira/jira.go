@@ -15,13 +15,13 @@ import (
 
 	jiraLib "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
-	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	mitreDataStore "github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
@@ -57,7 +57,7 @@ type jira struct {
 	notifier *storage.Notifier
 
 	namespaces namespaceDataStore.DataStore
-	mitreStore mitreDataStore.MitreAttackReadOnlyDataStore
+	mitreStore mitreDataStore.AttackReadOnlyDataStore
 
 	severityToPriority map[storage.Severity]string
 	needsPriority      bool
@@ -221,7 +221,7 @@ func validate(jira *storage.Jira) error {
 	return errorList.ToError()
 }
 
-func newJira(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore, mitreStore mitreDataStore.MitreAttackReadOnlyDataStore) (*jira, error) {
+func newJira(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore, mitreStore mitreDataStore.AttackReadOnlyDataStore) (*jira, error) {
 	conf := notifier.GetJira()
 	if conf == nil {
 		return nil, errors.New("Jira configuration required")

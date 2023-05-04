@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/mitre/datastore"
+	"github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
