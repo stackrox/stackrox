@@ -152,21 +152,21 @@ func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template 
 	}
 }
 
-func (l *RateLimitedLogger) logFlushLoop() {
+func (rl *RateLimitedLogger) logFlushLoop() {
 	for {
 		select {
-		case <-l.ticker.C:
-			l.flush()
-		case <-l.stopper.Flow().StopRequested():
+		case <-rl.ticker.C:
+			rl.flush()
+		case <-rl.stopper.Flow().StopRequested():
 			return
 		}
 	}
 }
 
-func (l *RateLimitedLogger) flush() {
-	keys := l.rateLimitedLogs.Keys()
+func (rl *RateLimitedLogger) flush() {
+	keys := rl.rateLimitedLogs.Keys()
 	for _, k := range keys {
-		trace, found := l.rateLimitedLogs.Peek(k)
+		trace, found := rl.rateLimitedLogs.Peek(k)
 		if !found {
 			continue
 		}
@@ -179,8 +179,8 @@ func (l *RateLimitedLogger) flush() {
 	}
 }
 
-func (l *RateLimitedLogger) stop() {
-	l.stopper.Client().Stop()
+func (rl *RateLimitedLogger) stop() {
+	rl.stopper.Client().Stop()
 }
 
 const (
