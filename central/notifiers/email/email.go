@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/mitchellh/go-wordwrap"
-	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/notifiers/namespaceproperties"
 	"github.com/stackrox/rox/generated/storage"
@@ -27,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
-	mitreDataStore "github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -45,7 +43,7 @@ type email struct {
 	config     *storage.Email
 	smtpServer smtpServer
 
-	mitreStore mitreDS.AttackReadOnlyDataStore
+	mitreStore          mitreDS.AttackReadOnlyDataStore
 	namespaceProperties notifiers.NamespaceProperties
 
 	notifier *storage.Notifier
@@ -515,7 +513,7 @@ func (e *email) ProtoNotifier() *storage.Notifier {
 
 func init() {
 	notifiers.Add("email", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		e, err := newEmail(notifier, namespaceproperties.Singleton(), mitreDataStore.Singleton())
+		e, err := newEmail(notifier, namespaceproperties.Singleton(), mitreDS.Singleton())
 		return e, err
 	})
 }
