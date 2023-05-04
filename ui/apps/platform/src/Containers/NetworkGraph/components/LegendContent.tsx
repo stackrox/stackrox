@@ -71,6 +71,22 @@ function LegendContent() {
                     <Title
                         headingLevel="h4"
                         className="pf-u-pb-sm"
+                        data-testid="deployment-types-title"
+                    >
+                        Deployment types
+                    </Title>
+                    <DescriptionListCompact isHorizontal termWidth="20px" className="pf-u-pl-md">
+                        <DescriptionListItem
+                            term={<FilterIcon />}
+                            desc="Filtered deployment"
+                            groupClassName="pf-u-align-items-center"
+                        />
+                    </DescriptionListCompact>
+                </FlexItem>
+                <FlexItem>
+                    <Title
+                        headingLevel="h4"
+                        className="pf-u-pb-sm"
                         data-testid="deployment-badges-title"
                     >
                         Deployment badges
