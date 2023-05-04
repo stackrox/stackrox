@@ -66,7 +66,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/mitre/datastore"
 	mitreDataStore "github.com/stackrox/rox/pkg/mitre/datastore"
 )
 
