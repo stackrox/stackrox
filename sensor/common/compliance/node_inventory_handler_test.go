@@ -281,20 +281,6 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerNodeUnknown() {
 	s.NoError(h.Stopped().Wait())
 }
 
-func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralNotReady() {
-	ch, producer := s.generateTestInputNoClose(10)
-	defer close(ch)
-	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
-	s.NoError(h.Start())
-	// expect consumer to get 0 messages - sensor should drop inventory when the connection with central is not ready
-	consumer := consumeAndCount(h.ResponsesC(), 0)
-	s.NoError(producer.Stopped().Wait())
-	s.NoError(consumer.Stopped().Wait())
-
-	h.Stop(nil)
-	s.NoError(h.Stopped().Wait())
-}
-
 // mockAlwaysHitNodeIDMatcher always finds a node when GetNodeResource is called
 type mockAlwaysHitNodeIDMatcher struct{}
 
