@@ -84,27 +84,15 @@ test_part_1() {
     rm -f FAIL
     local test_target
 
-    if is_openshift_CI_rehearse_PR; then
-        info "On an openshift rehearse PR, running BAT tests only..."
-        test_target="bat-test"
-    elif is_in_PR_context && pr_has_label ci-all-qa-tests; then
+    if is_in_PR_context && pr_has_label ci-all-qa-tests; then
         info "ci-all-qa-tests label was specified, so running all QA tests..."
         test_target="test"
     elif is_in_PR_context; then
         info "In a PR context without ci-all-qa-tests, running BAT tests only..."
         test_target="bat-test"
-    elif is_nightly_run; then
-        info "Nightly tests, running all QA tests..."
-        test_target="test"
-    elif is_tagged; then
-        info "Tagged, running all QA tests..."
-        test_target="test"
-    elif [[ -n "${QA_TEST_TARGET:-}" ]]; then
-        info "Directed to run the '""${QA_TEST_TARGET}""' target..."
-        test_target="${QA_TEST_TARGET}"
     else
-        info "An unexpected context. Defaulting to BAT tests only..."
-        test_target="bat-test"
+        info "Running all QA tests by default..."
+        test_target="test"
     fi
 
     update_job_record "test_target" "${test_target}"
