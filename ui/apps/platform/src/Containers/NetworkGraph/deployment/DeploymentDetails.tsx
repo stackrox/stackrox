@@ -41,8 +41,8 @@ import './DeploymentDetails.css';
 
 type DeploymentDetailsProps = {
     deployment: Deployment;
-    numExternalFlows: number;
-    numInternalFlows: number;
+    numAnomalousExternalFlows: number;
+    numAnomalousInternalFlows: number;
     listenPorts: ListenPort[];
     networkPolicyState: NetworkPolicyState;
     onDeploymentTabsSelect: (tab: string) => void;
@@ -74,8 +74,8 @@ function DetailSection({ title, children }) {
 
 function DeploymentDetails({
     deployment,
-    numExternalFlows,
-    numInternalFlows,
+    numAnomalousExternalFlows,
+    numAnomalousInternalFlows,
     listenPorts,
     networkPolicyState,
     onDeploymentTabsSelect,
@@ -100,27 +100,30 @@ function DeploymentDetails({
                                         direction={{ default: 'row' }}
                                         alignItems={{ default: 'alignItemsCenter' }}
                                     >
-                                        {numExternalFlows !== 0 && (
+                                        {numAnomalousExternalFlows === 0 &&
+                                            numAnomalousInternalFlows === 0 &&
+                                            'None'}
+                                        {numAnomalousExternalFlows !== 0 && (
                                             <FlexItem>
                                                 <Label
                                                     variant="outline"
                                                     color="red"
                                                     icon={<ExclamationCircleIcon />}
                                                 >
-                                                    {numExternalFlows} external{' '}
-                                                    {pluralize('flow', numExternalFlows)}
+                                                    {numAnomalousExternalFlows} external{' '}
+                                                    {pluralize('flow', numAnomalousExternalFlows)}
                                                 </Label>
                                             </FlexItem>
                                         )}
-                                        {numInternalFlows !== 0 && (
+                                        {numAnomalousInternalFlows !== 0 && (
                                             <FlexItem>
                                                 <Label
                                                     variant="outline"
                                                     color="gold"
                                                     icon={<ExclamationTriangleIcon />}
                                                 >
-                                                    {numInternalFlows} internal{' '}
-                                                    {pluralize('flow', numInternalFlows)}
+                                                    {numAnomalousInternalFlows} internal{' '}
+                                                    {pluralize('flow', numAnomalousInternalFlows)}
                                                 </Label>
                                             </FlexItem>
                                         )}
