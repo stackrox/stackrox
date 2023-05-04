@@ -88,7 +88,7 @@ describe('Vulnerability Management Components', () => {
     // Argument 3 in verify functions is index of column which has the links.
     // The one-based index includes checkbox, hidden, invisible.
 
-    it('should display either links for CVEs of text for No CVEs', () => {
+    it('should display either links for CVEs or text for No CVEs', () => {
         verifyConditionalCVEs(
             entitiesKey,
             'cves',

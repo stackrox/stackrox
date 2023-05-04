@@ -115,7 +115,7 @@ describe('Vulnerability Management Clusters', () => {
         );
     });
 
-    it('should display either links for cluster CVEs of text for No CVEs', function () {
+    it('should display either links for cluster CVEs or text for No CVEs', function () {
         if (hasOrchestratorFlavor('openshift')) {
             this.skip(); // TODO verify and remove
         }

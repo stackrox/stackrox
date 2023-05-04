@@ -89,7 +89,7 @@ describe('Vulnerability Management Deployments', () => {
 
     // Some tests might fail in local deployment.
 
-    it('should display either links for CVEs of text for No CVEs', () => {
+    it('should display either links for CVEs or text for No CVEs', () => {
         verifyConditionalCVEs(
             entitiesKey,
             'cves',
