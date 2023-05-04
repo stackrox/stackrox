@@ -83,7 +83,7 @@ describe('Vulnerability Management Namespaces', () => {
 
     it('should display either links for image CVEs or text for No CVEs', function () {
         if (hasOrchestratorFlavor('openshift')) {
-            this.skip(); // verify and remove
+            this.skip(); // TODO verify and remove
         }
 
         verifyConditionalCVEs(
