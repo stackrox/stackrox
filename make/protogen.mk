@@ -11,13 +11,14 @@ SERVICE_PROTOS = $(filter %_service.proto,$(ALL_PROTOS))
 ALL_PROTOS_REL = $(ALL_PROTOS:$(PROTO_BASE_PATH)/%=%)
 SERVICE_PROTOS_REL = $(SERVICE_PROTOS:$(PROTO_BASE_PATH)/%=%)
 
-API_SERVICE_PROTOS = $(filter api/v1/%, $(SERVICE_PROTOS_REL))
+API_SERVICE_PROTOS = $(filter api/v1/% api/v2/%, $(SERVICE_PROTOS_REL))
 STORAGE_PROTOS = $(filter storage/%, $(ALL_PROTOS_REL))
 
 GENERATED_BASE_PATH = $(BASE_PATH)/generated
 GENERATED_DOC_PATH = image/docs
 MERGED_API_SWAGGER_SPEC = $(GENERATED_DOC_PATH)/api/v1/swagger.json
-GENERATED_API_DOCS = $(GENERATED_DOC_PATH)/api/v1/reference
+MERGED_API_SWAGGER_SPEC_V2 = $(GENERATED_DOC_PATH)/api/v2/swagger.json
+GENERATED_API_DOCS = $(GENERATED_DOC_PATH)/api/v1/reference $(GENERATED_DOC_PATH)/api/v2/reference
 GENERATED_PB_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
 GENERATED_API_GW_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.gw.go)
 GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
@@ -239,10 +240,16 @@ endif
 $(MERGED_API_SWAGGER_SPEC): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS)
 	@echo "+ $@"
 	$(SILENT)mkdir -p "$(dir $@)"
-	$(BASE_PATH)/scripts/mergeswag.sh "$(GENERATED_BASE_PATH)/api/v1" >"$@"
+	$(BASE_PATH)/scripts/mergeswag.sh "$(GENERATED_BASE_PATH)/api/v1" "1" >"$@"
 
 # Generate the docs from the merged swagger specs.
-$(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(PROTOC_GEN_GRPC_GATEWAY)
+$(MERGED_API_SWAGGER_SPEC_V2): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS)
+	@echo "+ $@"
+	$(SILENT)mkdir -p "$(dir $@)"
+	$(BASE_PATH)/scripts/mergeswag.sh "$(GENERATED_BASE_PATH)/api/v2" "2" >"$@"
+
+# Generate the docs from the merged swagger specs.
+$(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2) $(PROTOC_GEN_GRPC_GATEWAY)
 	@echo "+ $@"
 	docker run $(DOCKER_USER) --rm -v $(CURDIR)/$(GENERATED_DOC_PATH):/tmp/$(GENERATED_DOC_PATH) swaggerapi/swagger-codegen-cli generate -l html2 -i /tmp/$< -o /tmp/$@
 

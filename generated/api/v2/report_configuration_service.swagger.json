@@ -1,0 +1,280 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v2/report_configuration_service.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v2/reports/configurations": {
+      "post": {
+        "summary": "PostReportConfiguration creates a report configuration",
+        "operationId": "ReportConfigurationService_PostReportConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ReportConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ReportConfiguration"
+            }
+          }
+        ],
+        "tags": [
+          "ReportConfigurationService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "EmailNotifierConfiguration": {
+      "type": "object",
+      "properties": {
+        "notifierId": {
+          "type": "string"
+        },
+        "mailingLists": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "NotifierConfiguration": {
+      "type": "object",
+      "properties": {
+        "emailConfig": {
+          "$ref": "#/definitions/EmailNotifierConfiguration"
+        }
+      }
+    },
+    "ReportConfiguration": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/ReportConfigurationReportType"
+        },
+        "vulnReportFilters": {
+          "$ref": "#/definitions/VulnerabilityReportFilters"
+        },
+        "schedule": {
+          "$ref": "#/definitions/Schedule"
+        },
+        "resourceScope": {
+          "$ref": "#/definitions/ResourceScope"
+        },
+        "notifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NotifierConfiguration"
+          }
+        }
+      }
+    },
+    "ReportConfigurationReportType": {
+      "type": "string",
+      "enum": [
+        "VULNERABILITY"
+      ],
+      "default": "VULNERABILITY"
+    },
+    "ResourceScope": {
+      "type": "object",
+      "properties": {
+        "collectionId": {
+          "type": "string"
+        }
+      }
+    },
+    "Schedule": {
+      "type": "object",
+      "properties": {
+        "intervalType": {
+          "$ref": "#/definitions/ScheduleIntervalType"
+        },
+        "hour": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "minute": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "weekly": {
+          "$ref": "#/definitions/ScheduleWeeklyInterval"
+        },
+        "daysOfWeek": {
+          "$ref": "#/definitions/ScheduleDaysOfWeek"
+        },
+        "daysOfMonth": {
+          "$ref": "#/definitions/ScheduleDaysOfMonth"
+        }
+      }
+    },
+    "ScheduleDaysOfMonth": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "title": "1 for 1st, 2 for 2nd .... 31 for 31st"
+    },
+    "ScheduleDaysOfWeek": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "title": "Sunday = 0, Monday = 1, .... Saturday =  6"
+    },
+    "ScheduleIntervalType": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "DAILY",
+        "WEEKLY",
+        "MONTHLY"
+      ],
+      "default": "UNSET"
+    },
+    "ScheduleWeeklyInterval": {
+      "type": "object",
+      "properties": {
+        "day": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "VulnerabilityReportFilters": {
+      "type": "object",
+      "properties": {
+        "fixability": {
+          "$ref": "#/definitions/VulnerabilityReportFiltersFixability"
+        },
+        "severities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VulnerabilityReportFiltersVulnerabilitySeverity"
+          }
+        },
+        "imageTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VulnerabilityReportFiltersImageType"
+          }
+        },
+        "allVuln": {
+          "type": "boolean"
+        },
+        "lastSuccessfulReport": {
+          "type": "boolean"
+        },
+        "startDate": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "VulnerabilityReportFiltersFixability": {
+      "type": "string",
+      "enum": [
+        "BOTH",
+        "FIXABLE",
+        "NOT_FIXABLE"
+      ],
+      "default": "BOTH"
+    },
+    "VulnerabilityReportFiltersImageType": {
+      "type": "string",
+      "enum": [
+        "DEPLOYED",
+        "WATCHED"
+      ],
+      "default": "DEPLOYED"
+    },
+    "VulnerabilityReportFiltersVulnerabilitySeverity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY_SEVERITY",
+        "LOW_VULNERABILITY_SEVERITY",
+        "MODERATE_VULNERABILITY_SEVERITY",
+        "IMPORTANT_VULNERABILITY_SEVERITY",
+        "CRITICAL_VULNERABILITY_SEVERITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "typeUrl": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

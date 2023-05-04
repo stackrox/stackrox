@@ -5,12 +5,15 @@
 
 [ -z "$1" ] && echo >&2 "Please specify a folder to search for .swagger.json files" && exit 1
 
+re='^[0-9]+$'
+[ -z "$2" ] && [[ "$2" =~ $re ]] && echo >&2 "Please specify an API version number for merged swagger.json file" && exit 1
+
 set -euo pipefail
 
 folder="$1"
 
 export TITLE="API Reference"
-export VERSION="1"
+export VERSION="$2"
 export DESCRIPTION="API reference for the StackRox Security Platform"
 
 metadata='{
