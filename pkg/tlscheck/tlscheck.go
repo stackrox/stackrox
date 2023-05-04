@@ -43,7 +43,11 @@ func CheckTLS(ctx context.Context, origAddr string) (bool, error) {
 	conn, err := proxy.AwareDialContextTLS(ctx, fmt.Sprintf("%s:%s", host, port), nil)
 	if err != nil {
 		switch err.(type) {
-		case x509.CertificateInvalidError, x509.HostnameError, x509.UnknownAuthorityError, tls.RecordHeaderError:
+		case x509.CertificateInvalidError,
+			x509.HostnameError,
+			x509.UnknownAuthorityError,
+			tls.RecordHeaderError,
+			*tls.CertificateVerificationError:
 			return false, nil
 		}
 		return false, err
