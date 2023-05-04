@@ -79,7 +79,7 @@ function AffectedDeploymentsTable({
         // TODO UX question - Collapse to cards, or allow headers to overflow?
         // <TableComposable gridBreakPoint="grid-xl">
         <TableComposable variant="compact">
-            <Thead>
+            <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('Deployment')}>Deployment</Th>
@@ -143,7 +143,7 @@ function AffectedDeploymentsTable({
                                     </Button>{' '}
                                 </Flex>
                             </Td>
-                            <Td dataLabel="Images by severity">
+                            <Td modifier="nowrap" dataLabel="Images by severity">
                                 <SeverityCountLabels
                                     critical={criticalImageCount}
                                     important={importantImageCount}
@@ -153,9 +153,11 @@ function AffectedDeploymentsTable({
                             </Td>
                             <Td dataLabel="Cluster">{clusterName}</Td>
                             <Td dataLabel="Namespace">{namespace}</Td>
-                            <Td dataLabel="Images">{pluralize(imageCount, 'image')}</Td>
+                            <Td modifier="nowrap" dataLabel="Images">
+                                {pluralize(imageCount, 'image')}
+                            </Td>
 
-                            <Td dataLabel="First discovered">
+                            <Td modifier="nowrap" dataLabel="First discovered">
                                 <DatePhraseTd date={created} />
                             </Td>
                         </Tr>

@@ -65,14 +65,14 @@ function DeploymentComponentVulnerabilitiesTable({
             }}
             borders={false}
         >
-            <Thead>
+            <Thead noWrap>
                 <Tr>
                     <Th sort={getSortParams('Image')}>Image</Th>
                     <Th sort={getSortParams('Component')}>Component</Th>
-                    <Th>CVE Severity</Th>
+                    <Th>CVE severity</Th>
                     <Th>CVSS</Th>
                     <Th>Version</Th>
-                    <Th>CVE Fixed in</Th>
+                    <Th>CVE fixed in</Th>
                     <Th>Location</Th>
                 </Tr>
             </Thead>
@@ -107,14 +107,14 @@ function DeploymentComponentVulnerabilitiesTable({
                                 )}
                             </Td>
                             <Td>{name}</Td>
-                            <Td>
+                            <Td modifier="nowrap">
                                 <VulnerabilitySeverityIconText severity={severity} />
                             </Td>
-                            <Td>
+                            <Td modifier="nowrap">
                                 <CvssTd cvss={cvss} scoreVersion={scoreVersion} />
                             </Td>
                             <Td>{version}</Td>
-                            <Td>
+                            <Td modifier="nowrap">
                                 <FixedByVersionTd fixedByVersion={fixedByVersion} />
                             </Td>
                             <Td>
