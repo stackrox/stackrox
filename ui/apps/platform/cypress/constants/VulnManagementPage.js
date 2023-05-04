@@ -14,6 +14,7 @@ export const vmHomePageSelectors = {
     vulnManagementExpandedReportingNavLink: `${navigationSelectors.nestedNavLinks}:contains("Reporting")`,
 };
 
+// The one-based index includes checkbox, hidden, invisible cells.
 const getTableDataColumnSelector = (columnIndex) => `.rt-tbody .rt-td:nth-child(${columnIndex})`;
 
 export const listSelectors = {
