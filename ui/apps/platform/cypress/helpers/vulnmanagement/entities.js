@@ -304,6 +304,9 @@ export function verifySecondaryEntities(
     );
 }
 
+/*
+ * Verify panelHeader text, and then visit related entities pages,
+ */
 function verifyLinkCountDeep(
     entitiesKey1,
     entitiesKey2,
@@ -381,6 +384,12 @@ export function verifyLinkCountShallow(
 const allCVEsRegExp = /^\d+ CVEs?$/;
 const fixableCVEsRegExp = /^\d+ Fixable$/;
 
+/*
+ * Conditional test of either links for CVEs or text for No CVEs.
+ * 1. Prefer link for Fixable CVEs and visit only side panel (shallow).
+ * 2. Otherwise link for all CVEs and visit related entities pages (deep).
+ * 3. Otherwise text for No CVEs.
+ */
 export function verifyConditionalCVEs(
     entitiesKey1,
     entitiesKey2,
@@ -394,6 +403,7 @@ export function verifyConditionalCVEs(
     visitVulnerabilityManagementEntities(entitiesKey1).then(([, { response }]) => {
         const { results } = response.body.data;
 
+        // Check sources of truth whether or not to assert existence of links.
         const hasFixableCVEs = results.some((result) => result[vulnCounterKey]?.all?.fixable > 0);
         const hasCVEs = results.some((result) => result[vulnCounterKey]?.all?.total > 0);
 
