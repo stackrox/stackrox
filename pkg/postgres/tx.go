@@ -11,6 +11,8 @@ import (
 type Tx struct {
 	pgx.Tx
 	cancelFunc context.CancelFunc
+	// If a tx is in transitMode, it does not commit or rollback.
+	transitMode bool
 }
 
 // Exec wraps pgx.Tx Exec
@@ -45,6 +47,9 @@ func (t *Tx) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.
 // Commit wraps pgx.Tx Commit
 func (t *Tx) Commit(ctx context.Context) error {
 	defer t.cancelFunc()
+	if t.transitMode {
+		return nil
+	}
 
 	if err := t.Tx.Commit(ctx); err != nil {
 		incQueryErrors("commit", err)
@@ -56,6 +61,9 @@ func (t *Tx) Commit(ctx context.Context) error {
 // Rollback wraps pgx.Tx Rollback
 func (t *Tx) Rollback(ctx context.Context) error {
 	defer t.cancelFunc()
+	if t.transitMode {
+		return nil
+	}
 
 	if err := t.Tx.Rollback(ctx); err != nil {
 		incQueryErrors("rollback", err)

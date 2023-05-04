@@ -5,27 +5,34 @@ import (
 
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/contextutil"
 )
 
 // Conn is a wrapper around pgxpool.Conn
 type Conn struct {
-	*pgxpool.Conn
+	PgxPoolConn
 }
 
 // Release wraps pgxpool.Conn Release
 func (c *Conn) Release() {
 	if c != nil {
-		c.Conn.Release()
+		c.PgxPoolConn.Release()
 	}
 }
 
 // Begin wraps pgxpool.Conn Begin
 func (c *Conn) Begin(ctx context.Context) (*Tx, error) {
+	if tx, ok := TxFromContext(ctx); ok {
+		return &Tx{
+			Tx:          tx.Tx,
+			cancelFunc:  tx.cancelFunc,
+			transitMode: true,
+		}, nil
+	}
+
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
-	tx, err := c.Conn.Begin(ctx)
+	tx, err := c.PgxPoolConn.Begin(ctx)
 	if err != nil {
 		incQueryErrors("begin", err)
 		return nil, err
@@ -45,7 +52,7 @@ func (c *Conn) Exec(ctx context.Context, sql string, args ...interface{}) (ct pg
 	if ok {
 		ct, err = tx.Exec(ctx, sql, args...)
 	} else {
-		ct, err = c.Conn.Exec(ctx, sql, args...)
+		ct, err = c.PgxPoolConn.Exec(ctx, sql, args...)
 	}
 
 	if err != nil {
@@ -67,7 +74,7 @@ func (c *Conn) Query(ctx context.Context, sql string, args ...interface{}) (*Row
 		return rows, err
 	}
 
-	rows, err := c.Conn.Query(ctx, sql, args...)
+	rows, err := c.PgxPoolConn.Query(ctx, sql, args...)
 	if err != nil {
 		incQueryErrors(sql, err)
 		return nil, err
@@ -88,7 +95,7 @@ func (c *Conn) QueryRow(ctx context.Context, sql string, args ...interface{}) *R
 	if tx, ok := TxFromContext(ctx); ok {
 		row = tx.QueryRow(ctx, sql, args...)
 	} else {
-		row = c.Conn.QueryRow(ctx, sql, args...)
+		row = c.PgxPoolConn.QueryRow(ctx, sql, args...)
 	}
 
 	return &Row{
@@ -106,7 +113,7 @@ func (c *Conn) SendBatch(ctx context.Context, b *pgx.Batch) *BatchResults {
 	if tx, ok := TxFromContext(ctx); ok {
 		batchResults = tx.SendBatch(ctx, b)
 	} else {
-		batchResults = c.Conn.SendBatch(ctx, b)
+		batchResults = c.PgxPoolConn.SendBatch(ctx, b)
 	}
 
 	return &BatchResults{
@@ -116,12 +123,17 @@ func (c *Conn) SendBatch(ctx context.Context, b *pgx.Batch) *BatchResults {
 }
 
 // CopyFrom wraps pgxpool.Conn CopyFrom
-func (c *Conn) CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error) {
+func (c *Conn) CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (rows int64, err error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 	defer cancel()
 
 	if tx, ok := TxFromContext(ctx); ok {
-		return tx.CopyFrom(ctx, tableName, columnNames, rowSrc)
+		rows, err = tx.CopyFrom(ctx, tableName, columnNames, rowSrc)
+	} else {
+		rows, err = c.PgxPoolConn.CopyFrom(ctx, tableName, columnNames, rowSrc)
 	}
-	return c.Conn.CopyFrom(ctx, tableName, columnNames, rowSrc)
+	if err != nil {
+		incQueryErrors("copyfrom", err)
+	}
+	return rows, err
 }
