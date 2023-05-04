@@ -232,7 +232,7 @@
 #
 #  # Collection method to use. Can be one of:
 #  #   - EBPF
-#  #   - KERNEL_MODULE
+#  #   - CORE_BPF
 #  #   - NO_COLLECTION
 #  collectionMethod: EBPF
 #
