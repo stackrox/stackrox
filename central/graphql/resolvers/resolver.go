@@ -115,7 +115,7 @@ type Resolver struct {
 	orchestratorIstioCVEManager   fetcher.OrchestratorIstioCVEManager
 	cveMatcher                    *cveMatcher.CVEMatcher
 	manager                       complianceOperatorManager.Manager
-	mitreStore                    datastore.AttackReadOnlyDataStore
+	mitreStore                    mitreDataStore.AttackReadOnlyDataStore
 	vulnReqMgr                    requestmgr.Manager
 	vulnReqQueryMgr               querymgr.VulnReqQueryManager
 	vulnReqStore                  vulnReqDataStore.DataStore
