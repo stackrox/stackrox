@@ -2,8 +2,10 @@ package namespaceproperties
 
 import (
 	"context"
+	"testing"
 
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
+	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
@@ -20,6 +22,12 @@ type datastoreNamespaceProperties struct {
 func newNamespaceProperties() *datastoreNamespaceProperties {
 	return &datastoreNamespaceProperties{
 		datastore: namespaceDataStore.Singleton(),
+	}
+}
+
+func NewTestNamespaceProperties(_ *testing.T, store namespaceDataStore.DataStore) notifiers.NamespaceProperties {
+	return &datastoreNamespaceProperties{
+		datastore: store,
 	}
 }
 
