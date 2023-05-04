@@ -60,9 +60,9 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 
 	createdReportConfig, _, err := s.reportConfigStore.GetReportConfiguration(ctx, id)
 	// TODO : Integrate with report manager when new reporting is implemented
-	//if err := s.manager.Upsert(ctx, createdReportConfig); err != nil {
-	//	return nil, err
-	//}
+	// if err := s.manager.Upsert(ctx, createdReportConfig); err != nil {
+	//	 return nil, err
+	// }
 
 	return reportConfigConverter.ConvertProtoReportConfigurationToV2(createdReportConfig), nil
 }

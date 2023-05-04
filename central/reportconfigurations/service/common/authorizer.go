@@ -10,6 +10,7 @@ import (
 )
 
 var (
+	// Authorizer is used for authorizing report configuration grpc service calls
 	Authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
 		or.Or(

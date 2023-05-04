@@ -39,6 +39,7 @@ func GetValidReportConfiguration() *storage.ReportConfiguration {
 	}
 }
 
+// GetValidReportConfigWithMultipleNotifiers returns a valid storage report configuration object with 2 email notifier configs
 func GetValidReportConfigWithMultipleNotifiers() *storage.ReportConfiguration {
 	return &storage.ReportConfiguration{
 		Id:          "report1",
@@ -163,6 +164,7 @@ func GetInvalidReportConfigurationIncorrectEmail() *storage.ReportConfiguration 
 	return rc
 }
 
+// GetValidV2ReportConfigWithMultipleNotifiers returns a valid v2 api report configuration object with 2 email notifier configs
 func GetValidV2ReportConfigWithMultipleNotifiers() *v2.ReportConfiguration {
 	return &v2.ReportConfiguration{
 		Id:          "report1",

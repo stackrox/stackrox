@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 )
 
+// ValidateReportConfiguration validates the given report configuration object
 func ValidateReportConfiguration(ctx context.Context, config *storage.ReportConfiguration,
 	accessScopeDatastore accessScopeDS.DataStore, collectionDatastore collectionDS.DataStore,
 	notifierDatastore notifierDS.DataStore) error {
@@ -33,7 +34,7 @@ func ValidateReportConfiguration(ctx context.Context, config *storage.ReportConf
 	if err := validateReportFilters(config); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -132,22 +133,22 @@ func validateResourceScope(ctx context.Context, config *storage.ReportConfigurat
 		return nil
 	}
 
-	var collectionId string
+	var collectionID string
 	if features.VulnMgmtReportingEnhancements.Enabled() {
 		if config.GetResourceScope() == nil || config.GetResourceScope().GetCollectionId() == "" {
 			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope")
 		}
-		collectionId = config.GetResourceScope().GetCollectionId()
+		collectionID = config.GetResourceScope().GetCollectionId()
 	} else {
 		if config.GetScopeId() == "" {
 			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid collection ID in the 'scopeId' field")
 		}
-		collectionId = config.GetScopeId()
+		collectionID = config.GetScopeId()
 	}
 
-	_, found, err := collectionDatastore.Get(ctx, collectionId)
+	_, found, err := collectionDatastore.Get(ctx, collectionID)
 	if !found || err != nil {
-		return errors.Wrapf(errox.NotFound, "Collection %s not found. Error: %s", collectionId, err)
+		return errors.Wrapf(errox.NotFound, "Collection %s not found. Error: %s", collectionID, err)
 	}
 	return nil
 }
