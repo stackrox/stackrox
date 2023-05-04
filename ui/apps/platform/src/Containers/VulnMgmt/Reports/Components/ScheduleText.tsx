@@ -17,7 +17,7 @@ function ScheduleText({ schedule }: ScheduleTextProps): ReactElement {
 
     const dayListType = schedule?.intervalType === 'WEEKLY' ? 'daysOfWeek' : 'daysOfMonth';
 
-    const dayList = getDayList(schedule?.intervalType, schedule[dayListType]?.days);
+    const dayList = getDayList(schedule?.intervalType, schedule[dayListType]?.days ?? []);
 
     // Intl.ListFormat is in ES2021
     //   rather than install a 3rd-party polyfill, if it's not present we fall back to just a comma-separated list
