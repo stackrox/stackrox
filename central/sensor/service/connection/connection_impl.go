@@ -522,9 +522,14 @@ func (c *sensorConnection) ObjectsDeletedByReconciliation() (map[string]int, boo
 }
 
 func (c *sensorConnection) CheckAutoUpgradeSupport() error {
-	if c.sensorHello.GetHelmManagedConfigInit() != nil && !c.sensorHello.GetHelmManagedConfigInit().GetNotHelmManaged() {
-		return errors.New("cluster is Helm-managed and does not support auto upgrades; use 'helm upgrade' or a Helm-aware CD pipeline for upgrades")
+	if config := c.sensorHello.GetHelmManagedConfigInit(); config != nil {
+		if config.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_HELM_CHART {
+			return errors.New("cluster is Helm-managed and does not support auto upgrades; use 'helm upgrade' or a Helm-aware CD pipeline for upgrades")
+		} else if config.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR {
+			return errors.New("cluster is Operator-managed and does not support auto upgrades; use OLM (operator lifecycle manager) to manage operator upgrades automatically.")
+		}
 	}
+
 	return nil
 }
 
