@@ -38,7 +38,7 @@ function DeploymentPageHeader({ data }: DeploymentPageHeaderProps) {
                     In: {data.clusterName}/{data.namespace}
                 </Label>
                 <Label isCompact>Images: {data.imageCount}</Label>
-                <Label isCompact>Created: {getDateTime(data.created)}</Label>
+                {data.created && <Label isCompact>Created: {getDateTime(data.created)}</Label>}
             </LabelGroup>
         </Flex>
     ) : (
