@@ -1,8 +1,8 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 
-import relatedNamespaceSVG from 'images/network-graph/related-namespace.svg';
-import filteredNamespaceSVG from 'images/network-graph/filtered-namespace.svg';
+import relatedEntitySVG from 'images/network-graph/related-entity.svg';
+import filteredEntitySVG from 'images/network-graph/filtered-entity.svg';
 
 import NetworkGraph from './NetworkGraph';
 import {
@@ -177,9 +177,7 @@ function getDisplayNodes(
             if (showSelectionIndicators) {
                 namespaceData = {
                     ...namespaceData,
-                    labelIconClass: data.isFilteredNamespace
-                        ? filteredNamespaceSVG
-                        : relatedNamespaceSVG,
+                    labelIconClass: data.isFilteredNamespace ? filteredEntitySVG : relatedEntitySVG,
                 };
             }
             return {
@@ -346,8 +344,6 @@ function NetworkGraphContainer({
 
     // fade out some nodes based on which nodes are connected to the selected node
     modifiedNodes = fadeOutUnconnectedNodes(modifiedNodes, modifiedEdges, selectedNode?.id);
-
-    console.log(modifiedNodes);
 
     // this is the resulting model that is passed to the NetworkGraph to render as-is
     const updatedModel: CustomModel = {

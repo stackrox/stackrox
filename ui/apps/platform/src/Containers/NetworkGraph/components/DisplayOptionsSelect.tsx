@@ -7,10 +7,12 @@ import {
     Split,
     SplitItem,
 } from '@patternfly/react-core';
-import { PficonNetworkRangeIcon, CodeBranchIcon, FilterIcon } from '@patternfly/react-icons';
+import { PficonNetworkRangeIcon } from '@patternfly/react-icons';
 
 import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
 import { ReactComponent as PortLabel } from 'images/network-graph/tcp-icon.svg';
+import { ReactComponent as RelatedEntity } from 'images/network-graph/related-entity.svg';
+import { ReactComponent as FilteredEntity } from 'images/network-graph/filtered-entity.svg';
 
 import './DisplayOptionsSelect.css';
 import { CidrBlockIcon, DeploymentIcon, NamespaceIcon } from '../common/NetworkGraphIcons';
@@ -80,14 +82,14 @@ function DisplayOptionsSelect({
                 <SelectOption key={2} value="selectionIndicator">
                     <Split>
                         <SplitItem className="pf-u-mr-xs">
-                            <FilterIcon />
+                            <FilteredEntity width="22px" height="22px" className="pf-u-mr-xs" />
                         </SplitItem>
-                        <SplitItem>Filtered namespace</SplitItem>
+                        <SplitItem>Filtered</SplitItem>
                         <SplitItem className="pf-u-mx-sm">&</SplitItem>
                         <SplitItem className="pf-u-mr-xs">
-                            <CodeBranchIcon />
+                            <RelatedEntity width="18px" height="18px" className="pf-u-mr-xs" />
                         </SplitItem>
-                        <SplitItem>Related namespace</SplitItem>
+                        <SplitItem>Related entities</SplitItem>
                     </Split>
                 </SelectOption>
             </SelectGroup>
