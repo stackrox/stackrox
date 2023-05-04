@@ -5,7 +5,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import { uniq } from 'lodash';
 import { DefaultFilters, VulnerabilitySeverityLabel, FixableStatus } from '../types';
 import { Resource } from './FilterResourceDropdown';
-import FilterAutocomplete from './FilterAutocomplete';
+import FilterAutocomplete, { FilterAutocompleteSelectProps } from './FilterAutocomplete';
 import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
 import FilterChips from './FilterChips';
@@ -18,12 +18,12 @@ const emptyDefaultFilters = {
 type FilterType = 'Severity' | 'Fixable';
 type WorkloadTableToolbarProps = {
     defaultFilters?: DefaultFilters;
-    resourceContext?: Resource;
+    supportedResourceFilters?: FilterAutocompleteSelectProps['supportedResourceFilters'];
 };
 
 function WorkloadTableToolbar({
     defaultFilters = emptyDefaultFilters,
-    resourceContext,
+    supportedResourceFilters,
 }: WorkloadTableToolbarProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
     const searchSeverity = (searchFilter.Severity as VulnerabilitySeverityLabel[]) || [];
@@ -89,7 +89,7 @@ function WorkloadTableToolbar({
                 <FilterAutocomplete
                     searchFilter={searchFilter}
                     setSearchFilter={setSearchFilter}
-                    resourceContext={resourceContext}
+                    supportedResourceFilters={supportedResourceFilters}
                     onDeleteGroup={onDeleteGroup}
                 />
                 <ToolbarGroup>

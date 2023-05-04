@@ -8,7 +8,7 @@ export type DeploymentMetadata = {
     name: string;
     namespace: string;
     clusterName: string;
-    created: Date | null;
+    created: string | null;
     imageCount: number;
 };
 

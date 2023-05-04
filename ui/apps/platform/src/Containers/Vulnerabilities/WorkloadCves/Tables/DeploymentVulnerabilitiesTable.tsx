@@ -14,7 +14,6 @@ import { min } from 'date-fns';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useSet from 'hooks/useSet';
-import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { FixableIcon, NotFixableIcon } from 'Components/PatternFly/FixabilityIcons';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
@@ -29,6 +28,7 @@ import DeploymentComponentVulnerabilitiesTable, {
     deploymentComponentVulnerabilitiesFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
 import { getAnyVulnerabilityIsFixable, getHighestVulnerabilitySeverity } from './table.utils';
+import DatePhraseTd from '../components/DatePhraseTd';
 
 export const deploymentWithVulnerabilitiesFragment = gql`
     ${deploymentComponentVulnerabilitiesFragment}
@@ -197,7 +197,7 @@ function DeploymentVulnerabilitiesTable({
                             </Td>
                             <Td dataLabel="Affected components">{affectedComponentsText}</Td>
                             <Td dataLabel="First discovered">
-                                {getDistanceStrictAsPhrase(discoveredAtImage, new Date())}
+                                <DatePhraseTd date={discoveredAtImage} />
                             </Td>
                         </Tr>
                         <Tr isExpanded={isExpanded}>
