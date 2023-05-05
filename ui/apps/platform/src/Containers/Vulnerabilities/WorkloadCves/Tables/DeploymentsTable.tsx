@@ -11,6 +11,7 @@ import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
 import DatePhraseTd from '../components/DatePhraseTd';
+import TooltipTh from '../components/TooltipTh';
 
 export const deploymentListQuery = gql`
     query getDeploymentList($query: String, $pagination: Pagination) {
@@ -67,10 +68,10 @@ function DeploymentsTable({ deployments, getSortParams, isFiltered }: Deployment
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th sort={getSortParams('Deployment')}>Deployment</Th>
-                    <Th tooltip="CVEs by severity across this deployment">
+                    <TooltipTh tooltip="CVEs by severity across this deployment">
                         CVEs by severity
                         {isFiltered && <DynamicColumnIcon />}
-                    </Th>
+                    </TooltipTh>
                     <Th sort={getSortParams('Cluster')}>Cluster</Th>
                     <Th sort={getSortParams('Namespace')}>Namespace</Th>
                     <Th>
@@ -115,6 +116,7 @@ function DeploymentsTable({ deployments, getSortParams, isFiltered }: Deployment
                                         important={imageCVECountBySeverity.important.total}
                                         moderate={imageCVECountBySeverity.moderate.total}
                                         low={imageCVECountBySeverity.low.total}
+                                        entity="deployment"
                                     />
                                 </Td>
                                 <Td>{clusterName}</Td>
