@@ -13,6 +13,7 @@ import (
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
 	"github.com/stackrox/rox/pkg/sac"
@@ -21,6 +22,10 @@ import (
 )
 
 func TestNotifierService(t *testing.T) {
+	log.Infof("Running tests with ROX_SECURED_CLUSTER_NOTIFICATIONS set to false")
+	suite.Run(t, new(notifierServiceTestSuite))
+
+	log.Infof("Running tests with ROX_SECURED_CLUSTER_NOTIFICATIONS set to true")
 	t.Setenv("ROX_SECURED_CLUSTER_NOTIFICATIONS", "true")
 	suite.Run(t, new(notifierServiceTestSuite))
 }
@@ -82,9 +87,11 @@ func (s *notifierServiceTestSuite) TestPutNotifier() {
 
 	s.datastore.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Return(nil)
 	s.processor.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Return()
-	s.processor.EXPECT().GetNotifiers(gomock.Any()).Return([]notifiers.Notifier{})
 
-	s.connectionManager.EXPECT().PrepareNotifiersAndBroadcast(gomock.Any()).Times(1)
+	if env.SecuredClusterNotifiers.BooleanSetting() {
+		s.processor.EXPECT().GetNotifiers(gomock.Any()).Return([]notifiers.Notifier{})
+		s.connectionManager.EXPECT().PrepareNotifiersAndBroadcast(gomock.Any()).Times(1)
+	}
 	_, err := s.getSvc().PutNotifier(s.ctx, &storage.Notifier{})
 	s.Error(err)
 
@@ -96,8 +103,11 @@ func (s *notifierServiceTestSuite) TestUpdateNotifier() {
 	// We attempt 6 updates below, out of which 3 are successful.
 	s.datastore.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Times(3).Return(nil)
 	s.processor.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Times(3).Return()
-	s.processor.EXPECT().GetNotifiers(gomock.Any()).Times(3).Return([]notifiers.Notifier{})
-	s.connectionManager.EXPECT().PrepareNotifiersAndBroadcast(gomock.Any()).Times(3)
+
+	if env.SecuredClusterNotifiers.BooleanSetting() {
+		s.processor.EXPECT().GetNotifiers(gomock.Any()).Times(3).Return([]notifiers.Notifier{})
+		s.connectionManager.EXPECT().PrepareNotifiersAndBroadcast(gomock.Any()).Times(3)
+	}
 
 	s.datastore.EXPECT().GetNotifier(gomock.Any(),
 		createUpdateNotifierRequest().GetNotifier().GetId()).Return(

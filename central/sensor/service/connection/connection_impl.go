@@ -514,7 +514,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 			return errors.Wrapf(err, "unable to get notifier sync msg for %q", c.clusterID)
 		}
 		if err := server.Send(msg); err != nil {
-			return errors.Wrapf(err, "unable to sync initial policies to cluster %q", c.clusterID)
+			return errors.Wrapf(err, "unable to sync initial notifiers to cluster %q", c.clusterID)
 		}
 	}
 
