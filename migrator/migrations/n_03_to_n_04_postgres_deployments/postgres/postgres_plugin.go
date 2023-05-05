@@ -203,6 +203,15 @@ func insertIntoDeploymentsContainersEnvs(_ context.Context, batch *pgx.Batch, ob
 	finalStr := "INSERT INTO deployments_containers_envs (deployments_Id, deployments_containers_idx, idx, Key, Value, EnvVarSource) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(deployments_Id, deployments_containers_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_containers_idx = EXCLUDED.deployments_containers_idx, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value, EnvVarSource = EXCLUDED.EnvVarSource"
 	batch.Queue(finalStr, values...)
 
+	values := []interface{}{
+		"EBPF",
+		"COLLECTION_METHOD",
+		"KERNEL_MODULE",
+	}
+
+	updateCollectionMethodStr := "UPDATE deployments_containers_envs SET value = $1 WHERE key = $2 AND value = $3"
+	batch.Queue(undateCollectionMethodStr, values...)
+
 	return nil
 }
 
