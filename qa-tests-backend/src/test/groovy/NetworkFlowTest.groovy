@@ -679,6 +679,8 @@ class NetworkFlowTest extends BaseSpecification {
 
         given:
         "Get current state of network graph"
+        // Make sure that we have enough time to populate the graph: 30s for sensor + some extra
+        sleep(35*1000)
         NetworkGraph currentGraph = NetworkGraphService.getNetworkGraph()
         List<String> deployedNamespaces = deployments*.namespace
 
@@ -739,6 +741,8 @@ class NetworkFlowTest extends BaseSpecification {
                 sourceNamespacesFromNetworkPolicy.addAll(ingressNamespaceSelectors.collect {
                     it."namespaceSelector"."matchLabels"."kubernetes.io/metadata.name"
                 }).findAll { it != null }
+                log.debug("sourceDeploymentsFromNetworkPolicy: {}", sourceDeploymentsFromNetworkPolicy)
+                log.debug("sourceDeploymentsFromGraph: {}", sourceDeploymentsFromGraph)
                 assert sourceDeploymentsFromNetworkPolicy.sort() == sourceDeploymentsFromGraph.sort()
                 if (!deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)) {
                     log.info "Deployed namespaces do not contain all namespaces found in the network policy"
