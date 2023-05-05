@@ -17,8 +17,8 @@ import (
 	"time"
 
 	"github.com/mitchellh/go-wordwrap"
-	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/central/notifiers/metadatagetter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
-	mitreDataStore "github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -44,8 +43,8 @@ type email struct {
 	config     *storage.Email
 	smtpServer smtpServer
 
-	namespaces namespaceDataStore.DataStore
-	mitreStore mitreDS.AttackReadOnlyDataStore
+	metadataGetter notifiers.MetadataGetter
+	mitreStore     mitreDS.AttackReadOnlyDataStore
 
 	notifier *storage.Notifier
 }
@@ -144,7 +143,7 @@ func validate(email *storage.Email) error {
 	return errorList.ToError()
 }
 
-func newEmail(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore, mitreStore mitreDS.AttackReadOnlyDataStore) (*email, error) {
+func newEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore) (*email, error) {
 	emailConfig, ok := notifier.GetConfig().(*storage.Notifier_Email)
 	if !ok {
 		return nil, errors.New("Email configuration required")
@@ -172,9 +171,9 @@ func newEmail(notifier *storage.Notifier, namespaces namespaceDataStore.DataStor
 			host: host,
 			port: port,
 		},
-		notifier:   notifier,
-		namespaces: namespaces,
-		mitreStore: mitreStore,
+		notifier:       notifier,
+		metadataGetter: metadataGetter,
+		mitreStore:     mitreStore,
 	}, nil
 }
 
@@ -305,7 +304,7 @@ func (e *email) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return err
 	}
 
-	recipient := notifiers.GetAnnotationValue(ctx, alert, e.notifier.GetLabelKey(), e.notifier.GetLabelDefault(), e.namespaces)
+	recipient := e.metadataGetter.GetAnnotationValue(ctx, alert, e.notifier.GetLabelKey(), e.notifier.GetLabelDefault())
 	return e.sendEmail(ctx, recipient, subject, body)
 }
 
@@ -514,7 +513,7 @@ func (e *email) ProtoNotifier() *storage.Notifier {
 
 func init() {
 	notifiers.Add("email", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		e, err := newEmail(notifier, namespaceDataStore.Singleton(), mitreDataStore.Singleton())
+		e, err := newEmail(notifier, metadatagetter.Singleton(), mitreDS.Singleton())
 		return e, err
 	})
 }
