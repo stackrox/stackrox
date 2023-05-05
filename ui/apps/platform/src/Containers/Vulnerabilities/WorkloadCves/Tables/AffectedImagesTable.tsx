@@ -30,6 +30,7 @@ import ImageComponentVulnerabilitiesTable, {
 } from './ImageComponentVulnerabilitiesTable';
 import EmptyTableResults from '../components/EmptyTableResults';
 import DatePhraseTd from '../components/DatePhraseTd';
+import CvssTd from '../components/CvssTd';
 
 export type ImageForCve = {
     id: string;
@@ -148,7 +149,7 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                                 </span>
                             </Td>
                             <Td dataLabel="CVSS">
-                                {cvss.toFixed(1)} ({scoreVersion})
+                                <CvssTd cvss={cvss} scoreVersion={scoreVersion} />
                             </Td>
                             <Td dataLabel="Fix status">
                                 <span>

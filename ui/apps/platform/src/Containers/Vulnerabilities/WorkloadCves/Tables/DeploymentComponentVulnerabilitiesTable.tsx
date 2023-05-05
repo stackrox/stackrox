@@ -15,6 +15,7 @@ import {
 import FixedByVersionTd from '../components/FixedByVersionTd';
 import DockerfileLayerTd from '../components/DockerfileLayerTd';
 import ComponentLocationTd from '../components/ComponentLocationTd';
+import CvssTd from '../components/CvssTd';
 
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, DeploymentComponentVulnerability };
@@ -110,7 +111,7 @@ function DeploymentComponentVulnerabilitiesTable({
                                 <VulnerabilitySeverityIconText severity={severity} />
                             </Td>
                             <Td>
-                                {cvss.toFixed(1)} ({scoreVersion})
+                                <CvssTd cvss={cvss} scoreVersion={scoreVersion} />
                             </Td>
                             <Td>{version}</Td>
                             <Td>
