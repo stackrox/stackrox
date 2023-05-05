@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -184,11 +185,11 @@ func (s *splunk) sendHTTPPayload(ctx context.Context, method, path string, data 
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
-	return notifiers.CreateError("Splunk", resp)
+	return pkgNotifiers.CreateError("Splunk", resp)
 }
 
 func init() {
-	notifiers.Add(integrationType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+	pkgNotifiers.Add(integrationType, func(notifier *storage.Notifier) (pkgNotifiers.Notifier, error) {
 		s, err := newSplunk(notifier)
 		return s, err
 	})

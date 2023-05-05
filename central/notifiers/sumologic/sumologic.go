@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
@@ -80,7 +81,7 @@ func (s *sumologic) sendPayload(ctx context.Context, buf io.Reader) error {
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
-	return notifiers.CreateError("Sumo Logic", resp)
+	return pkgNotifiers.CreateError("Sumo Logic", resp)
 }
 
 func validateConfig(sumologic *storage.SumoLogic) error {
@@ -138,7 +139,7 @@ func (s *sumologic) Test(ctx context.Context) error {
 }
 
 func init() {
-	notifiers.Add("sumologic", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+	pkgNotifiers.Add("sumologic", func(notifier *storage.Notifier) (pkgNotifiers.Notifier, error) {
 		return newSumoLogic(notifier)
 	})
 }

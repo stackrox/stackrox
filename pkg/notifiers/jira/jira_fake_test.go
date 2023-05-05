@@ -173,7 +173,7 @@ func TestWithFakeJira(t *testing.T) {
 	mitreStore := mitreMocks.NewMockAttackReadOnlyDataStore(mockCtrl)
 	metadataGetter := metadatagetter.NewTestMetadataGetter(t, nsStore)
 	mitreStore.EXPECT().Get(gomock.Any()).Return(&storage.MitreAttackVector{}, nil).AnyTimes()
-	j, err := newJira(fakeJiraConfig, metadataGetter, mitreStore)
+	j, err := NewJira(fakeJiraConfig, metadataGetter, mitreStore)
 	defer mockCtrl.Finish()
 
 	require.NoError(t, err)

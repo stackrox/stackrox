@@ -54,7 +54,7 @@ func getJira(t *testing.T) (*jira, *gomock.Controller) {
 		LabelDefault: "AJIT",
 	}
 
-	j, err := newJira(notifier, metadataGetter, mitreStore)
+	j, err := NewJira(notifier, metadataGetter, mitreStore)
 	require.NoError(t, err)
 	return j, mockCtrl
 }
