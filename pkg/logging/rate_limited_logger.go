@@ -244,6 +244,8 @@ func (l *rateLimitedLog) log() {
 	if l.count.Load() <= 0 {
 		return
 	}
+	l.logMutex.Lock()
+	defer l.logMutex.Unlock()
 	now := time.Now()
 	count := l.count.Swap(0)
 	var suffix string
@@ -256,13 +258,6 @@ func (l *rateLimitedLog) log() {
 			l.limiter,
 		)
 	}
-	canLog := l.logMutex.TryLock()
-	if canLog {
-		defer l.logMutex.Unlock()
-		l.logger.Logf(l.level, "%s%s", l.payload, suffix)
-		l.last = now
-	} else {
-		// Add back counter
-		l.count.Add(count)
-	}
+	l.logger.Logf(l.level, "%s%s", l.payload, suffix)
+	l.last = now
 }
