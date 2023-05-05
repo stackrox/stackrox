@@ -10,13 +10,14 @@ import "storage/delegated_registry_config.proto";
 
 package v1;
 
-message DelegatedRegistryClusters {
+message DelegatedRegistryClustersResponse {
     repeated DelegatedRegistryCluster clusters = 1;
 }
 
 message DelegatedRegistryCluster {
-    string id   = 1;
-    string name = 2;
+    string id      = 1;
+    string name    = 2;
+    bool   isValid = 3;
 }
 
 // DelegatedRegistryConfigService APIs can be used to control how to route image scans amongst
@@ -30,14 +31,15 @@ service DelegatedRegistryConfigService {
         };
     }
 
-    // GetClusters returns the list of clusters (id + name) that are eligible for delegating scanning
-    // requests (ie: only clusters with scanners understand the delegated registry config)
-    rpc GetClusters(Empty) returns (DelegatedRegistryClusters) {
+    // GetClusters returns the list of clusters (id + name) and a flag indicating whether or not 
+    // the cluster is valid for use in the delegated registry config
+    rpc GetClusters(Empty) returns (DelegatedRegistryClustersResponse) {
         option (google.api.http) = {
             get: "/v1/delegatedregistryconfig/clusters"
         };
     }
 
+    // PutConfig updates the stored delegated registry configuration
     rpc PutConfig(storage.DelegatedRegistryConfig) returns (storage.DelegatedRegistryConfig) {
         option (google.api.http) = {
             put: "/v1/delegatedregistryconfig"

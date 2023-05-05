@@ -13,6 +13,7 @@
   "paths": {
     "/v1/delegatedregistryconfig": {
       "get": {
+        "summary": "GetConfig returns the current delegated registry configuration",
         "operationId": "DelegatedRegistryConfigService_GetConfig",
         "responses": {
           "200": {
@@ -33,6 +34,7 @@
         ]
       },
       "put": {
+        "summary": "PutConfig updates the stored delegated registry configuration",
         "operationId": "DelegatedRegistryConfigService_PutConfig",
         "responses": {
           "200": {
@@ -62,6 +64,29 @@
           "DelegatedRegistryConfigService"
         ]
       }
+    },
+    "/v1/delegatedregistryconfig/clusters": {
+      "get": {
+        "summary": "GetClusters returns the list of clusters (id + name) and a flag indicating whether or not \nthe cluster is valid for use in the delegated registry config",
+        "operationId": "DelegatedRegistryConfigService_GetClusters",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DelegatedRegistryClustersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "DelegatedRegistryConfigService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -73,7 +98,7 @@
         "SPECIFIC"
       ],
       "default": "NONE",
-      "title": "- NONE: delegate no scans\n - ALL: delegate all scans\n - SPECIFIC: delegate scans that match specific registries (+ path)"
+      "title": "- NONE: delegate no scans\n - ALL: delegate all scans\n - SPECIFIC: delegate scans that match specific []registries"
     },
     "protobufAny": {
       "type": "object",
@@ -120,7 +145,7 @@
         },
         "defaultClusterId": {
           "type": "string",
-          "title": "the default cluster to delegate ad-hoc requests to if no match found in []registries, not used\nif enabled_for is NONE"
+          "title": "the default cluster to delegate ad-hoc requests to if no match found in []registries, not used\nif enabledFor is NONE"
         },
         "registries": {
           "type": "array",
@@ -137,11 +162,36 @@
       "properties": {
         "registryPath": {
           "type": "string",
-          "title": "registry + optional path (ie: artifactory.example.com/prod)"
+          "title": "registry + optional path, ie: quay.example.com/prod"
         },
         "clusterId": {
           "type": "string",
           "title": "id of the cluster to delegate requests to"
+        }
+      }
+    },
+    "v1DelegatedRegistryCluster": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "isValid": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1DelegatedRegistryClustersResponse": {
+      "type": "object",
+      "properties": {
+        "clusters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1DelegatedRegistryCluster"
+          }
         }
       }
     }

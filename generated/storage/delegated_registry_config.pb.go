@@ -29,7 +29,7 @@ const (
 	DelegatedRegistryConfig_NONE DelegatedRegistryConfig_EnabledFor = 0
 	// delegate all scans
 	DelegatedRegistryConfig_ALL DelegatedRegistryConfig_EnabledFor = 1
-	// delegate scans that match specific registries (+ path)
+	// delegate scans that match specific []registries
 	DelegatedRegistryConfig_SPECIFIC DelegatedRegistryConfig_EnabledFor = 2
 )
 
@@ -59,7 +59,7 @@ type DelegatedRegistryConfig struct {
 	// determines if delegation is enabled for no registries, all registries, or specific registries
 	EnabledFor DelegatedRegistryConfig_EnabledFor `protobuf:"varint,1,opt,name=enabled_for,json=enabledFor,proto3,enum=storage.DelegatedRegistryConfig_EnabledFor" json:"enabled_for,omitempty"`
 	// the default cluster to delegate ad-hoc requests to if no match found in []registries, not used
-	// if enabled_for is NONE
+	// if enabledFor is NONE
 	DefaultClusterId string `protobuf:"bytes,2,opt,name=default_cluster_id,json=defaultClusterId,proto3" json:"default_cluster_id,omitempty"`
 	// list of registries that has different outcome depending on value of enabled_for, allows
 	// for controlling which registries require delegation and how to route ad-hoc requests
@@ -143,7 +143,7 @@ func (m *DelegatedRegistryConfig) Clone() *DelegatedRegistryConfig {
 }
 
 type DelegatedRegistryConfig_Registry struct {
-	// registry + optional path (ie: artifactory.example.com/prod)
+	// registry + optional path, ie: quay.example.com/prod
 	RegistryPath string `protobuf:"bytes,1,opt,name=registry_path,json=registryPath,proto3" json:"registry_path,omitempty"`
 	// id of the cluster to delegate requests to
 	ClusterId            string   `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`

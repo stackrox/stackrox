@@ -11,7 +11,9 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	io "io"
 	math "math"
+	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -25,29 +27,183 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+type DelegatedRegistryClustersResponse struct {
+	Clusters             []*DelegatedRegistryCluster `protobuf:"bytes,1,rep,name=clusters,proto3" json:"clusters,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
+	XXX_unrecognized     []byte                      `json:"-"`
+	XXX_sizecache        int32                       `json:"-"`
+}
+
+func (m *DelegatedRegistryClustersResponse) Reset()         { *m = DelegatedRegistryClustersResponse{} }
+func (m *DelegatedRegistryClustersResponse) String() string { return proto.CompactTextString(m) }
+func (*DelegatedRegistryClustersResponse) ProtoMessage()    {}
+func (*DelegatedRegistryClustersResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_70904b65c1aaa73b, []int{0}
+}
+func (m *DelegatedRegistryClustersResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DelegatedRegistryClustersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DelegatedRegistryClustersResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DelegatedRegistryClustersResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DelegatedRegistryClustersResponse.Merge(m, src)
+}
+func (m *DelegatedRegistryClustersResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *DelegatedRegistryClustersResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DelegatedRegistryClustersResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DelegatedRegistryClustersResponse proto.InternalMessageInfo
+
+func (m *DelegatedRegistryClustersResponse) GetClusters() []*DelegatedRegistryCluster {
+	if m != nil {
+		return m.Clusters
+	}
+	return nil
+}
+
+func (m *DelegatedRegistryClustersResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *DelegatedRegistryClustersResponse) Clone() *DelegatedRegistryClustersResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DelegatedRegistryClustersResponse)
+	*cloned = *m
+
+	if m.Clusters != nil {
+		cloned.Clusters = make([]*DelegatedRegistryCluster, len(m.Clusters))
+		for idx, v := range m.Clusters {
+			cloned.Clusters[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
+type DelegatedRegistryCluster struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	IsValid              bool     `protobuf:"varint,3,opt,name=isValid,proto3" json:"isValid,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DelegatedRegistryCluster) Reset()         { *m = DelegatedRegistryCluster{} }
+func (m *DelegatedRegistryCluster) String() string { return proto.CompactTextString(m) }
+func (*DelegatedRegistryCluster) ProtoMessage()    {}
+func (*DelegatedRegistryCluster) Descriptor() ([]byte, []int) {
+	return fileDescriptor_70904b65c1aaa73b, []int{1}
+}
+func (m *DelegatedRegistryCluster) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DelegatedRegistryCluster) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DelegatedRegistryCluster.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DelegatedRegistryCluster) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DelegatedRegistryCluster.Merge(m, src)
+}
+func (m *DelegatedRegistryCluster) XXX_Size() int {
+	return m.Size()
+}
+func (m *DelegatedRegistryCluster) XXX_DiscardUnknown() {
+	xxx_messageInfo_DelegatedRegistryCluster.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DelegatedRegistryCluster proto.InternalMessageInfo
+
+func (m *DelegatedRegistryCluster) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *DelegatedRegistryCluster) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *DelegatedRegistryCluster) GetIsValid() bool {
+	if m != nil {
+		return m.IsValid
+	}
+	return false
+}
+
+func (m *DelegatedRegistryCluster) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *DelegatedRegistryCluster) Clone() *DelegatedRegistryCluster {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DelegatedRegistryCluster)
+	*cloned = *m
+
+	return cloned
+}
+
+func init() {
+	proto.RegisterType((*DelegatedRegistryClustersResponse)(nil), "v1.DelegatedRegistryClustersResponse")
+	proto.RegisterType((*DelegatedRegistryCluster)(nil), "v1.DelegatedRegistryCluster")
+}
+
 func init() {
 	proto.RegisterFile("api/v1/delegated_registry_config_service.proto", fileDescriptor_70904b65c1aaa73b)
 }
 
 var fileDescriptor_70904b65c1aaa73b = []byte{
-	// 259 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xd2, 0x4b, 0x2c, 0xc8, 0xd4,
-	0x2f, 0x33, 0xd4, 0x4f, 0x49, 0xcd, 0x49, 0x4d, 0x4f, 0x2c, 0x49, 0x4d, 0x89, 0x2f, 0x4a, 0x4d,
-	0xcf, 0x2c, 0x2e, 0x29, 0xaa, 0x8c, 0x4f, 0xce, 0xcf, 0x4b, 0xcb, 0x4c, 0x8f, 0x2f, 0x4e, 0x2d,
-	0x2a, 0xcb, 0x4c, 0x4e, 0xd5, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x2a, 0x33, 0x94, 0x92,
-	0x49, 0xcf, 0xcf, 0x4f, 0xcf, 0x49, 0xd5, 0x07, 0x69, 0x4d, 0xcc, 0xcb, 0xcb, 0x2f, 0x49, 0x2c,
-	0xc9, 0xcc, 0xcf, 0x2b, 0x86, 0xa8, 0x90, 0x12, 0x82, 0x9a, 0x98, 0x9a, 0x5b, 0x50, 0x52, 0x09,
-	0x15, 0x53, 0x2f, 0x2e, 0xc9, 0x2f, 0x4a, 0x4c, 0x4f, 0xc5, 0x6d, 0x0d, 0x44, 0xa1, 0xd1, 0x0f,
-	0x46, 0x2e, 0x39, 0x17, 0x98, 0x9a, 0x20, 0xa8, 0x12, 0x67, 0xb0, 0x8a, 0x60, 0x88, 0x3b, 0x84,
-	0x62, 0xb9, 0x38, 0xdd, 0x53, 0x4b, 0x20, 0x62, 0x42, 0x9c, 0x7a, 0x65, 0x86, 0x7a, 0xae, 0x20,
-	0x9b, 0xa4, 0x14, 0xf4, 0xa0, 0x96, 0xe8, 0xe1, 0x30, 0x40, 0x49, 0xb9, 0xe9, 0xf2, 0x93, 0xc9,
-	0x4c, 0xb2, 0x42, 0xd2, 0x28, 0x1e, 0x86, 0x39, 0x04, 0xe2, 0x0e, 0xa1, 0x72, 0x2e, 0xce, 0x80,
-	0x52, 0x98, 0xf1, 0x04, 0xcd, 0x24, 0xc2, 0x56, 0x35, 0xb0, 0xad, 0x0a, 0x52, 0xf8, 0x6c, 0xb5,
-	0x62, 0xd4, 0x72, 0xd2, 0x3b, 0xf1, 0x48, 0x8e, 0xf1, 0xc2, 0x23, 0x39, 0xc6, 0x07, 0x8f, 0xe4,
-	0x18, 0x67, 0x3c, 0x96, 0x63, 0xe0, 0x92, 0xc8, 0xcc, 0xd7, 0x2b, 0x2e, 0x49, 0x4c, 0xce, 0x2e,
-	0xca, 0xaf, 0x80, 0x84, 0x0f, 0x28, 0xb6, 0xf4, 0xca, 0x0c, 0xa3, 0x98, 0xca, 0x0c, 0x23, 0x18,
-	0x92, 0xd8, 0xc0, 0x62, 0xc6, 0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0xaf, 0xa4, 0xc6, 0xe5, 0xc4,
-	0x01, 0x00, 0x00,
+	// 376 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0x4f, 0x4b, 0xc3, 0x30,
+	0x00, 0xc5, 0x97, 0x4e, 0x74, 0xcd, 0xc0, 0x43, 0x4e, 0xa5, 0xce, 0x52, 0xab, 0xce, 0x21, 0x92,
+	0xd2, 0x79, 0x11, 0x8f, 0xfe, 0xc1, 0xab, 0x54, 0x90, 0x21, 0x8c, 0x11, 0xdb, 0x58, 0x82, 0x5d,
+	0x53, 0x9a, 0xac, 0xba, 0xab, 0x5f, 0xc1, 0x8b, 0x1f, 0xc9, 0xa3, 0xe0, 0x17, 0x90, 0x29, 0xf8,
+	0x35, 0xa4, 0xff, 0x86, 0x22, 0x9d, 0xde, 0xda, 0xc7, 0xcb, 0x7b, 0x7d, 0xbf, 0x06, 0x62, 0x12,
+	0x33, 0x3b, 0x75, 0x6c, 0x9f, 0x86, 0x34, 0x20, 0x92, 0xfa, 0xa3, 0x84, 0x06, 0x4c, 0xc8, 0x64,
+	0x3a, 0xf2, 0x78, 0x74, 0xc3, 0x82, 0x91, 0xa0, 0x49, 0xca, 0x3c, 0x8a, 0xe3, 0x84, 0x4b, 0x8e,
+	0x94, 0xd4, 0xd1, 0x3b, 0x01, 0xe7, 0x41, 0x48, 0xed, 0xec, 0x28, 0x89, 0x22, 0x2e, 0x89, 0x64,
+	0x3c, 0x12, 0x85, 0x43, 0x47, 0x65, 0x22, 0x1d, 0xc7, 0x72, 0x5a, 0x6a, 0x3b, 0x42, 0xf2, 0x84,
+	0x04, 0xb4, 0xbe, 0xa6, 0x30, 0x5a, 0x43, 0xb8, 0x71, 0x52, 0x59, 0xdc, 0xd2, 0x71, 0x1c, 0x4e,
+	0x84, 0xa4, 0x89, 0x70, 0xa9, 0x88, 0x79, 0x24, 0x28, 0x3a, 0x80, 0x2d, 0xaf, 0xd4, 0x34, 0x60,
+	0x36, 0x7b, 0xed, 0x7e, 0x07, 0xa7, 0x0e, 0xae, 0x3b, 0xe8, 0xce, 0xdd, 0xd6, 0x00, 0x6a, 0x75,
+	0x2e, 0xb4, 0x0a, 0x15, 0xe6, 0x6b, 0xc0, 0x04, 0x3d, 0xd5, 0x55, 0x98, 0x8f, 0x10, 0x5c, 0x8a,
+	0xc8, 0x98, 0x6a, 0x4a, 0xae, 0xe4, 0xcf, 0x48, 0x83, 0x2b, 0x4c, 0x5c, 0x92, 0x90, 0xf9, 0x5a,
+	0xd3, 0x04, 0xbd, 0x96, 0x5b, 0xbd, 0xf6, 0x3f, 0x15, 0x68, 0xfc, 0x8e, 0xce, 0xa7, 0x5d, 0x14,
+	0x00, 0xd1, 0x10, 0xaa, 0x67, 0x54, 0x16, 0x1a, 0x52, 0xb3, 0x2f, 0x3e, 0xcd, 0x10, 0xe9, 0x26,
+	0x2e, 0xe9, 0xe0, 0x9a, 0x00, 0x6b, 0xf3, 0xe1, 0xf5, 0xe3, 0x51, 0x59, 0x47, 0x6b, 0x3f, 0xfe,
+	0x54, 0x45, 0xb0, 0x00, 0x88, 0xc6, 0xb0, 0x9d, 0xc5, 0x97, 0x53, 0xbf, 0x17, 0x6c, 0x2f, 0xa2,
+	0x33, 0xc7, 0x6a, 0xed, 0xe5, 0x2d, 0x5d, 0xb4, 0xb5, 0xa0, 0xc5, 0xae, 0x50, 0xa2, 0x3b, 0xa8,
+	0x9e, 0x4f, 0xaa, 0x35, 0x7f, 0x4e, 0xf8, 0xc7, 0xc8, 0x6e, 0x5e, 0x6f, 0xea, 0x8b, 0x46, 0x1e,
+	0x82, 0xdd, 0x23, 0xfc, 0x3c, 0x33, 0xc0, 0xcb, 0xcc, 0x00, 0x6f, 0x33, 0x03, 0x3c, 0xbd, 0x1b,
+	0x0d, 0xa8, 0x31, 0x8e, 0x85, 0x24, 0xde, 0x6d, 0xc2, 0xef, 0x8b, 0x7b, 0x94, 0xdd, 0x6a, 0x9c,
+	0x3a, 0x57, 0x4a, 0xea, 0x0c, 0x1a, 0xd7, 0xcb, 0xb9, 0xb6, 0xff, 0x15, 0x00, 0x00, 0xff, 0xff,
+	0x42, 0xc8, 0x8b, 0x69, 0xec, 0x02, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -62,7 +218,12 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type DelegatedRegistryConfigServiceClient interface {
+	// GetConfig returns the current delegated registry configuration
 	GetConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.DelegatedRegistryConfig, error)
+	// GetClusters returns the list of clusters (id + name) and a flag indicating whether or not
+	// the cluster is valid for use in the delegated registry config
+	GetClusters(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*DelegatedRegistryClustersResponse, error)
+	// PutConfig updates the stored delegated registry configuration
 	PutConfig(ctx context.Context, in *storage.DelegatedRegistryConfig, opts ...grpc.CallOption) (*storage.DelegatedRegistryConfig, error)
 }
 
@@ -83,6 +244,15 @@ func (c *delegatedRegistryConfigServiceClient) GetConfig(ctx context.Context, in
 	return out, nil
 }
 
+func (c *delegatedRegistryConfigServiceClient) GetClusters(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*DelegatedRegistryClustersResponse, error) {
+	out := new(DelegatedRegistryClustersResponse)
+	err := c.cc.Invoke(ctx, "/v1.DelegatedRegistryConfigService/GetClusters", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *delegatedRegistryConfigServiceClient) PutConfig(ctx context.Context, in *storage.DelegatedRegistryConfig, opts ...grpc.CallOption) (*storage.DelegatedRegistryConfig, error) {
 	out := new(storage.DelegatedRegistryConfig)
 	err := c.cc.Invoke(ctx, "/v1.DelegatedRegistryConfigService/PutConfig", in, out, opts...)
@@ -94,7 +264,12 @@ func (c *delegatedRegistryConfigServiceClient) PutConfig(ctx context.Context, in
 
 // DelegatedRegistryConfigServiceServer is the server API for DelegatedRegistryConfigService service.
 type DelegatedRegistryConfigServiceServer interface {
+	// GetConfig returns the current delegated registry configuration
 	GetConfig(context.Context, *Empty) (*storage.DelegatedRegistryConfig, error)
+	// GetClusters returns the list of clusters (id + name) and a flag indicating whether or not
+	// the cluster is valid for use in the delegated registry config
+	GetClusters(context.Context, *Empty) (*DelegatedRegistryClustersResponse, error)
+	// PutConfig updates the stored delegated registry configuration
 	PutConfig(context.Context, *storage.DelegatedRegistryConfig) (*storage.DelegatedRegistryConfig, error)
 }
 
@@ -104,6 +279,9 @@ type UnimplementedDelegatedRegistryConfigServiceServer struct {
 
 func (*UnimplementedDelegatedRegistryConfigServiceServer) GetConfig(ctx context.Context, req *Empty) (*storage.DelegatedRegistryConfig, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
+}
+func (*UnimplementedDelegatedRegistryConfigServiceServer) GetClusters(ctx context.Context, req *Empty) (*DelegatedRegistryClustersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetClusters not implemented")
 }
 func (*UnimplementedDelegatedRegistryConfigServiceServer) PutConfig(ctx context.Context, req *storage.DelegatedRegistryConfig) (*storage.DelegatedRegistryConfig, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PutConfig not implemented")
@@ -127,6 +305,24 @@ func _DelegatedRegistryConfigService_GetConfig_Handler(srv interface{}, ctx cont
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DelegatedRegistryConfigServiceServer).GetConfig(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DelegatedRegistryConfigService_GetClusters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DelegatedRegistryConfigServiceServer).GetClusters(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.DelegatedRegistryConfigService/GetClusters",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DelegatedRegistryConfigServiceServer).GetClusters(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -158,6 +354,10 @@ var _DelegatedRegistryConfigService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _DelegatedRegistryConfigService_GetConfig_Handler,
 		},
 		{
+			MethodName: "GetClusters",
+			Handler:    _DelegatedRegistryConfigService_GetClusters_Handler,
+		},
+		{
 			MethodName: "PutConfig",
 			Handler:    _DelegatedRegistryConfigService_PutConfig_Handler,
 		},
@@ -165,3 +365,458 @@ var _DelegatedRegistryConfigService_serviceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "api/v1/delegated_registry_config_service.proto",
 }
+
+func (m *DelegatedRegistryClustersResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DelegatedRegistryClustersResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DelegatedRegistryClustersResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Clusters) > 0 {
+		for iNdEx := len(m.Clusters) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Clusters[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintDelegatedRegistryConfigService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DelegatedRegistryCluster) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DelegatedRegistryCluster) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DelegatedRegistryCluster) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.IsValid {
+		i--
+		if m.IsValid {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintDelegatedRegistryConfigService(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintDelegatedRegistryConfigService(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func encodeVarintDelegatedRegistryConfigService(dAtA []byte, offset int, v uint64) int {
+	offset -= sovDelegatedRegistryConfigService(v)
+	base := offset
+	for v >= 1<<7 {
+		dAtA[offset] = uint8(v&0x7f | 0x80)
+		v >>= 7
+		offset++
+	}
+	dAtA[offset] = uint8(v)
+	return base
+}
+func (m *DelegatedRegistryClustersResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Clusters) > 0 {
+		for _, e := range m.Clusters {
+			l = e.Size()
+			n += 1 + l + sovDelegatedRegistryConfigService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DelegatedRegistryCluster) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovDelegatedRegistryConfigService(uint64(l))
+	}
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovDelegatedRegistryConfigService(uint64(l))
+	}
+	if m.IsValid {
+		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func sovDelegatedRegistryConfigService(x uint64) (n int) {
+	return (math_bits.Len64(x|1) + 6) / 7
+}
+func sozDelegatedRegistryConfigService(x uint64) (n int) {
+	return sovDelegatedRegistryConfigService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *DelegatedRegistryClustersResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDelegatedRegistryConfigService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DelegatedRegistryClustersResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DelegatedRegistryClustersResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Clusters", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDelegatedRegistryConfigService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDelegatedRegistryConfigService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDelegatedRegistryConfigService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Clusters = append(m.Clusters, &DelegatedRegistryCluster{})
+			if err := m.Clusters[len(m.Clusters)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDelegatedRegistryConfigService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthDelegatedRegistryConfigService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DelegatedRegistryCluster) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDelegatedRegistryConfigService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DelegatedRegistryCluster: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DelegatedRegistryCluster: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDelegatedRegistryConfigService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDelegatedRegistryConfigService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDelegatedRegistryConfigService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDelegatedRegistryConfigService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDelegatedRegistryConfigService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDelegatedRegistryConfigService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsValid", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDelegatedRegistryConfigService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsValid = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDelegatedRegistryConfigService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthDelegatedRegistryConfigService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func skipDelegatedRegistryConfigService(dAtA []byte) (n int, err error) {
+	l := len(dAtA)
+	iNdEx := 0
+	depth := 0
+	for iNdEx < l {
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return 0, ErrIntOverflowDelegatedRegistryConfigService
+			}
+			if iNdEx >= l {
+				return 0, io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		wireType := int(wire & 0x7)
+		switch wireType {
+		case 0:
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return 0, ErrIntOverflowDelegatedRegistryConfigService
+				}
+				if iNdEx >= l {
+					return 0, io.ErrUnexpectedEOF
+				}
+				iNdEx++
+				if dAtA[iNdEx-1] < 0x80 {
+					break
+				}
+			}
+		case 1:
+			iNdEx += 8
+		case 2:
+			var length int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return 0, ErrIntOverflowDelegatedRegistryConfigService
+				}
+				if iNdEx >= l {
+					return 0, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				length |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if length < 0 {
+				return 0, ErrInvalidLengthDelegatedRegistryConfigService
+			}
+			iNdEx += length
+		case 3:
+			depth++
+		case 4:
+			if depth == 0 {
+				return 0, ErrUnexpectedEndOfGroupDelegatedRegistryConfigService
+			}
+			depth--
+		case 5:
+			iNdEx += 4
+		default:
+			return 0, fmt.Errorf("proto: illegal wireType %d", wireType)
+		}
+		if iNdEx < 0 {
+			return 0, ErrInvalidLengthDelegatedRegistryConfigService
+		}
+		if depth == 0 {
+			return iNdEx, nil
+		}
+	}
+	return 0, io.ErrUnexpectedEOF
+}
+
+var (
+	ErrInvalidLengthDelegatedRegistryConfigService        = fmt.Errorf("proto: negative length found during unmarshaling")
+	ErrIntOverflowDelegatedRegistryConfigService          = fmt.Errorf("proto: integer overflow")
+	ErrUnexpectedEndOfGroupDelegatedRegistryConfigService = fmt.Errorf("proto: unexpected end of group")
+)

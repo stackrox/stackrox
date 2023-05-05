@@ -13,12 +13,12 @@ message DelegatedRegistryConfig {
         NONE     = 0;
         // delegate all scans
         ALL      = 1;
-        // delegate scans that match specific registries (+ path)
+        // delegate scans that match specific []registries
         SPECIFIC = 2;
     }
 
     message Registry {
-        // registry + optional path (ie: artifactory.example.com/prod)
+        // registry + optional path, ie: quay.example.com/prod
         string registry_path = 1;
         // id of the cluster to delegate requests to
         string cluster_id    = 2;
@@ -28,7 +28,7 @@ message DelegatedRegistryConfig {
     EnabledFor enabled_for       = 1;
 
     // the default cluster to delegate ad-hoc requests to if no match found in []registries, not used
-    // if enabled_for is NONE
+    // if enabledFor is NONE
     string default_cluster_id    = 2;
 
     // list of registries that has different outcome depending on value of enabled_for, allows
