@@ -50,7 +50,7 @@ func (c configMethod) GetCredentials(url string) (credentials.PerRPCCredentials,
 }
 
 func (c configMethod) retrieveToken(url string) (string, error) {
-	cfgStore, err := c.env.Config()
+	cfgStore, err := c.env.ConfigStore()
 	if err != nil {
 		return "", errors.Wrap(err, "retrieving config store")
 	}

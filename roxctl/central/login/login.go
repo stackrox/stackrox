@@ -224,7 +224,7 @@ func (l *loginCommand) storeConfiguration(token string, expiresAt time.Time, ref
 		l.env.Logger().InfofLn("Refresh token: %s", refreshToken)
 	}
 
-	cfgStore, err := l.env.Config()
+	cfgStore, err := l.env.ConfigStore()
 	if err != nil {
 		return errors.Wrap(err, "retrieving config store")
 	}

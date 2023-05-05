@@ -34,6 +34,6 @@ type Environment interface {
 	// ConnectNames returns the endpoint and (SNI) server name
 	ConnectNames() (string, string, error)
 
-	// Config returns a config.Store which will handle reading / writing configuration from a configuration file.
-	Config() (config.Store, error)
+	// ConfigStore returns a config.Store which will handle reading / writing configuration from a configuration file.
+	ConfigStore() (config.Store, error)
 }

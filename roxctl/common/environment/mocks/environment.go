@@ -55,19 +55,19 @@ func (mr *MockEnvironmentMockRecorder) ColorWriter() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ColorWriter", reflect.TypeOf((*MockEnvironment)(nil).ColorWriter))
 }
 
-// Config mocks base method.
-func (m *MockEnvironment) Config() (config.Store, error) {
+// ConfigStore mocks base method.
+func (m *MockEnvironment) ConfigStore() (config.Store, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Config")
+	ret := m.ctrl.Call(m, "ConfigStore")
 	ret0, _ := ret[0].(config.Store)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Config indicates an expected call of Config.
-func (mr *MockEnvironmentMockRecorder) Config() *gomock.Call {
+// ConfigStore indicates an expected call of ConfigStore.
+func (mr *MockEnvironmentMockRecorder) ConfigStore() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Config", reflect.TypeOf((*MockEnvironment)(nil).Config))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigStore", reflect.TypeOf((*MockEnvironment)(nil).ConfigStore))
 }
 
 // ConnectNames mocks base method.

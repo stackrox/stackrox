@@ -110,8 +110,8 @@ func (c *cliEnvironmentImpl) ConnectNames() (string, string, error) {
 	return names, s, errors.Wrap(err, "could not get endpoint")
 }
 
-// Config returns a config.Store capable of reading / writing configuration for roxctl.
-func (c *cliEnvironmentImpl) Config() (config.Store, error) {
+// ConfigStore returns a config.Store capable of reading / writing configuration for roxctl.
+func (c *cliEnvironmentImpl) ConfigStore() (config.Store, error) {
 	cfgStore, err := config.NewConfigStore()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating config store")

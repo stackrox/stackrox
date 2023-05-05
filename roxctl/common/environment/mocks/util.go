@@ -40,7 +40,7 @@ func NewEnv(conn *grpc.ClientConn, store config.Store, t *testing.T) (environmen
 	envMock.EXPECT().Logger().AnyTimes().Return(env.Logger())
 	envMock.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
 	envMock.EXPECT().ColorWriter().AnyTimes().Return(env.ColorWriter())
-	envMock.EXPECT().Config().AnyTimes().Return(store, nil)
+	envMock.EXPECT().ConfigStore().AnyTimes().Return(store, nil)
 
 	return envMock, out, errOut
 }

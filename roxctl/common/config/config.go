@@ -20,7 +20,7 @@ type Store interface {
 
 // RoxctlConfig contains all configurations available for roxctl.
 type RoxctlConfig struct {
-	CentralConfigs CentralConfigs `json:"centrals"`
+	CentralConfigs CentralConfigs `yaml:"centrals"`
 }
 
 // GetCentralConfigs retrieves all central configs. In case RoxctlConfig is nil, nil will be returned.
@@ -48,7 +48,7 @@ func (c CentralConfigs) GetCentralConfig(centralURL CentralURL) *CentralConfig {
 
 // CentralConfig contains all configurations available for a single central. Currently, it only holds access information.
 type CentralConfig struct {
-	AccessConfig *CentralAccessConfig `json:"access,omitempty"`
+	AccessConfig *CentralAccessConfig `yaml:"access,omitempty"`
 }
 
 // GetAccess retrieves the access configuration for a central.
@@ -61,16 +61,20 @@ func (c *CentralConfig) GetAccess() *CentralAccessConfig {
 
 // CentralAccessConfig contains all configurations for access to a single central.
 type CentralAccessConfig struct {
-	AccessToken  string     `json:"accessToken,omitempty"`
-	IssuedAt     *time.Time `json:"issuedAt,omitempty"`
-	ExpiresAt    *time.Time `json:"expiresAt,omitempty"`
-	RefreshToken string     `json:"refreshToken"`
+	AccessToken  string     `yaml:"accessToken,omitempty"`
+	IssuedAt     *time.Time `yaml:"issuedAt,omitempty"`
+	ExpiresAt    *time.Time `yaml:"expiresAt,omitempty"`
+	RefreshToken string     `yaml:"refreshToken"`
 }
 
 // NewConfigStore initializes a config.Store that will be capable of reading and writing configuration to a configuration
 // file.
 func NewConfigStore() (Store, error) {
 	path, err := determineConfigPath()
+	if err != nil {
+		return nil, err
+	}
+	path, err = ensureRoxctlConfigFilePathExists(path)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +109,7 @@ func (c *configStore) Write(cfg *RoxctlConfig) error {
 	if err != nil {
 		return errors.Wrap(err, "unmarshalling config to YAML")
 	}
-	if err := os.WriteFile(c.path, rawConfig, 0644); err != nil {
+	if err := os.WriteFile(c.path, rawConfig, 0600); err != nil {
 		return errors.Wrapf(err, "writing config to file %s", c.path)
 	}
 	return nil
@@ -115,7 +119,7 @@ func (c *configStore) Write(cfg *RoxctlConfig) error {
 // This will be determined with the following priority:
 // 1. ROX_CONFIG_DIR environment variable value.
 // 2. XDG_RUNTIME_DIR environment variable value.
-// 3. $HOME/.roxctl/config location.
+// 3. $HOME/.roxctl location.
 func determineConfigPath() (string, error) {
 	if path := env.ConfigDirEnv.Setting(); path != "" {
 		if _, err := os.Stat(path); err != nil {
@@ -135,9 +139,18 @@ func determineConfigPath() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "determining home directory")
 	}
-	path := filepath.Join(homeDir, ".roxctl", "config.yaml")
-	if err := os.MkdirAll(filepath.Dir(path), 0775); err != nil {
+	path := filepath.Join(homeDir, ".roxctl")
+	if err := os.MkdirAll(path, 0775); err != nil {
 		return "", errors.Wrapf(err, "creating config directory %s", path)
 	}
 	return path, nil
+}
+
+// ensureRoxctlConfigFilePathExists will ensure that the file roxctl-config.yaml exists in the given path.
+func ensureRoxctlConfigFilePathExists(path string) (string, error) {
+	configFilePath := filepath.Join(path, "roxctl-config.yaml")
+	if err := os.MkdirAll(filepath.Dir(configFilePath), 0775); err != nil {
+		return "", errors.Wrapf(err, "creating roxctl config file %s", path)
+	}
+	return configFilePath, nil
 }

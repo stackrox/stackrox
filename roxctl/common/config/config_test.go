@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -41,6 +42,12 @@ func TestReadConfig(t *testing.T) {
 	cfg, err = store.Read()
 	assert.Error(t, err)
 	assert.Nil(t, cfg)
+
+	// Write some invalid JSON in the config file.
+	require.NoError(t, os.WriteFile(cfgPath, []byte(`{"some":"value"`), 0644))
+	cfg, err = store.Read()
+	assert.Error(t, err)
+	assert.Nil(t, cfg)
 }
 
 func TestWriteConfig(t *testing.T) {
@@ -59,4 +66,31 @@ func TestWriteConfig(t *testing.T) {
 	cfg, err := store.Read()
 	assert.NoError(t, err)
 	assert.Equal(t, sampleCfg, *cfg)
+}
+
+func TestDetermineConfigPath(t *testing.T) {
+	configDir := t.TempDir()
+	runtimeDir := t.TempDir()
+	homeDir, err := os.UserHomeDir()
+	require.NoError(t, err)
+	homeDir = filepath.Join(homeDir, ".roxctl")
+	t.Setenv(env.ConfigDirEnv.EnvVar(), configDir)
+	t.Setenv("XDG_RUNTIME_DIR", runtimeDir)
+
+	// ROX_CONFIG_DIR should be used instead of XDG_RUNTIME_DIR.
+	dir, err := determineConfigPath()
+	assert.NoError(t, err)
+	assert.Equal(t, configDir, dir)
+
+	// If only XDF_RUNTIME_DIR is set, it should be used.
+	t.Setenv(env.ConfigDirEnv.EnvVar(), "")
+	dir, err = determineConfigPath()
+	assert.NoError(t, err)
+	assert.Equal(t, runtimeDir, dir)
+
+	// If no environment variable is set, the homedir should be used.
+	t.Setenv("XDG_RUNTIME_DIR", "")
+	dir, err = determineConfigPath()
+	assert.NoError(t, err)
+	assert.Equal(t, homeDir, dir)
 }

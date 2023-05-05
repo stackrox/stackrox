@@ -53,7 +53,7 @@ func TestRetrieveToken_NonExpiredAccessToken(t *testing.T) {
 	env, _ := newMockEnvironment(t, nil, cfgStore, false)
 	cm := &configMethod{env: env}
 
-	now := time.Now().UTC()
+	now := time.Now().UTC().Add(24 * time.Hour)
 	cfgStore.EXPECT().Read().Return(
 		&config.RoxctlConfig{
 			CentralConfigs: map[config.CentralURL]*config.CentralConfig{
@@ -211,6 +211,6 @@ func (m *mockEnvironment) Logger() logger.Logger {
 	return m.logger
 }
 
-func (m *mockEnvironment) Config() (config.Store, error) {
+func (m *mockEnvironment) ConfigStore() (config.Store, error) {
 	return m.store, nil
 }
