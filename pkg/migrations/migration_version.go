@@ -66,10 +66,9 @@ func Read(dbPath string) (*MigrationVersion, error) {
 func SetCurrent(dbPath string) {
 	if curr, err := Read(dbPath); err != nil || curr.MainVersion != version.GetMainVersion() || curr.SeqNum != LastRocksDBVersionSeqNum() {
 		newVersion := &MigrationVersion{
-			dbPath:        dbPath,
-			MainVersion:   version.GetMainVersion(),
-			SeqNum:        mathutil.MinInt(LastRocksDBVersionSeqNum(), CurrentDBVersionSeqNum()),
-			MinimumSeqNum: MinimumSupportedDBVersionSeqNum(),
+			dbPath:      dbPath,
+			MainVersion: version.GetMainVersion(),
+			SeqNum:      mathutil.MinInt(LastRocksDBVersionSeqNum(), CurrentDBVersionSeqNum()),
 		}
 		err := newVersion.atomicWrite()
 		if err != nil {

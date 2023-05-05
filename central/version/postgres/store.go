@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -9,12 +10,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
-	getStmt    = "SELECT serialized FROM versions LIMIT 1"
+	getStmt    = "SELECT seqnum, version, minseqnum, lastpersisted FROM versions LIMIT 1"
 	deleteStmt = "DELETE FROM versions"
 )
 
@@ -43,19 +45,14 @@ func New(db postgres.DB) Store {
 }
 
 func insertIntoVersions(ctx context.Context, tx *postgres.Tx, obj *storage.Version) error {
-	serialized, marshalErr := obj.Marshal()
-	if marshalErr != nil {
-		return marshalErr
-	}
-
 	values := []interface{}{
 		obj.GetSeqNum(),
 		obj.GetVersion(),
 		obj.GetMinSeqNum(),
-		serialized,
+		time.Now(),
 	}
 
-	finalStr := "INSERT INTO versions (seqnum, version, minseqnum, serialized) VALUES($1, $2, $3, $4)"
+	finalStr := "INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -122,14 +119,19 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.Version, bool, e
 	defer release()
 
 	row := conn.QueryRow(ctx, getStmt)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	var sequenceNum int
+	var version string
+	var minSequenceNum int
+	var lastPersistedTime *time.Time
+	if err := row.Scan(&sequenceNum, &version, &minSequenceNum, &lastPersistedTime); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.Version
-	if err := msg.Unmarshal(data); err != nil {
-		return nil, false, err
+	msg := storage.Version{
+		SeqNum:        int32(sequenceNum),
+		Version:       version,
+		MinSeqNum:     int32(minSequenceNum),
+		LastPersisted: protoconv.MustConvertTimeToTimestamp(*lastPersistedTime),
 	}
 	return &msg, true, nil
 }

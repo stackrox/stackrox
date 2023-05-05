@@ -307,6 +307,7 @@ var (
 	Version               = newFieldLabel("Version")
 	MinSequenceNumber     = newFieldLabel("Minimum Sequence Number")
 	CurrentSequenceNumber = newFieldLabel("Current Sequence Number")
+	LastPersistedTime     = newFieldLabel("Last Persisted")
 
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")

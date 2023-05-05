@@ -30,10 +30,14 @@ func ReadVersionPostgres(pool postgres.DB) (*migrations.MigrationVersion, error)
 
 // SetCurrentVersionPostgres - sets the current version in the postgres database
 func SetCurrentVersionPostgres(pool postgres.DB) {
-	if curr, err := ReadVersionPostgres(pool); err != nil || curr.MainVersion != version.GetMainVersion() || curr.SeqNum != migrations.CurrentDBVersionSeqNum() {
+	if curr, err := ReadVersionPostgres(pool); err != nil ||
+		curr.MainVersion != version.GetMainVersion() ||
+		curr.SeqNum != migrations.CurrentDBVersionSeqNum() ||
+		curr.MinimumSeqNum != migrations.MinimumSupportedDBVersionSeqNum() {
 		newVersion := &storage.Version{
 			SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 			Version:       version.GetMainVersion(),
+			MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
 			LastPersisted: timestamp.Now().GogoProtobuf(),
 		}
 		setVersionPostgres(pool, newVersion)
