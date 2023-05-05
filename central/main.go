@@ -797,7 +797,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	)
 
-	customRoutes = append(customRoutes, debugRoutes()...)
+	customRoutes = append(customRoutes, utils.IfThenElse(env.ManagedCentral.BooleanSetting(), debugRoutes(), []routes.CustomRoute{})...)
 	return
 }
 
