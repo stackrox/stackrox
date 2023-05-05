@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -47,6 +48,7 @@ func (s *VersionsStoreSuite) TestStore() {
 
 	version := &storage.Version{}
 	s.NoError(testutils.FullInit(version, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	version.LastPersisted = timestamp.TimestampNow()
 
 	foundVersion, exists, err := store.Get(ctx)
 	s.NoError(err)
@@ -76,6 +78,7 @@ func (s *VersionsStoreSuite) TestStore() {
 
 	version = &storage.Version{}
 	s.NoError(testutils.FullInit(version, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	version.LastPersisted = timestamp.TimestampNow()
 	s.NoError(store.Upsert(ctx, version))
 
 	foundVersion, exists, err = store.Get(ctx)
@@ -85,6 +88,7 @@ func (s *VersionsStoreSuite) TestStore() {
 
 	version = &storage.Version{}
 	s.NoError(testutils.FullInit(version, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	version.LastPersisted = timestamp.TimestampNow()
 	s.NoError(store.Upsert(ctx, version))
 
 	foundVersion, exists, err = store.Get(ctx)

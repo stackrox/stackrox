@@ -49,7 +49,7 @@ func insertIntoVersions(ctx context.Context, tx *postgres.Tx, obj *storage.Versi
 		obj.GetSeqNum(),
 		obj.GetVersion(),
 		obj.GetMinSeqNum(),
-		time.Now(),
+		pgutils.NilOrTime(obj.GetLastPersisted()),
 	}
 
 	finalStr := "INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)"

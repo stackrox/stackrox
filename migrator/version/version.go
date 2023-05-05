@@ -2,7 +2,6 @@ package version
 
 import (
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -78,7 +77,7 @@ func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.
 				return err
 			}
 
-			result = tx.Exec("INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)", updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(), time.Now())
+			result = tx.Exec("INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)", updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(), pgutils.NilOrTime(updatedVersion.GetLastPersisted()))
 			return result.Error
 		})
 	})
@@ -90,9 +89,10 @@ func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.
 // SetCurrentVersionPostgres - sets the current version in the postgres database
 func SetCurrentVersionPostgres(ctx context.Context) {
 	newVersion := &storage.Version{
-		SeqNum:    int32(migrations.CurrentDBVersionSeqNum()),
-		Version:   version.GetMainVersion(),
-		MinSeqNum: int32(migrations.MinimumSupportedDBVersionSeqNum()),
+		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
+		Version:       version.GetMainVersion(),
+		MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
+		LastPersisted: timestamp.Now().GogoProtobuf(),
 	}
 	SetVersionPostgres(ctx, migrations.GetCurrentClone(), newVersion)
 }
