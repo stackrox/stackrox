@@ -93,9 +93,7 @@ func convertV2NotifierConfigToProto(notifier *v2.NotifierConfiguration) *storage
 		emailConfig := &storage.EmailNotifierConfiguration{
 			NotifierId: notifier.GetEmailConfig().GetNotifierId(),
 		}
-		for _, mailID := range notifier.GetEmailConfig().GetMailingLists() {
-			emailConfig.MailingLists = append(emailConfig.MailingLists, mailID)
-		}
+		emailConfig.MailingLists = append(emailConfig.MailingLists, notifier.GetEmailConfig().GetMailingLists()...)
 
 		ret.NotifierConfig = &storage.NotifierConfiguration_EmailConfig{
 			EmailConfig: emailConfig,
@@ -191,9 +189,7 @@ func convertProtoNotifierConfigToV2(notifier *storage.NotifierConfiguration) *v2
 		emailConfig := &v2.EmailNotifierConfiguration{
 			NotifierId: notifier.GetEmailConfig().GetNotifierId(),
 		}
-		for _, mailID := range notifier.GetEmailConfig().GetMailingLists() {
-			emailConfig.MailingLists = append(emailConfig.MailingLists, mailID)
-		}
+		emailConfig.MailingLists = append(emailConfig.MailingLists, notifier.GetEmailConfig().GetMailingLists()...)
 
 		ret.NotifierConfig = &v2.NotifierConfiguration_EmailConfig{
 			EmailConfig: emailConfig,
