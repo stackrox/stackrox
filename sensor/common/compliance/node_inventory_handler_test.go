@@ -156,7 +156,7 @@ func (s *NodeInventoryHandlerTestSuite) generateTestInputNoClose(numToProduce in
 
 // consumeAndCount consumes maximally numToConsume messages from the channel and counts the consumed messages
 // It sets the Stopper in error state if the number of messages consumed were less than numToConsume.
-func consumeAndCount[T any](ch <-chan *T, numToConsume int) concurrency.StopperClient {
+func consumeAndCount[T any](ch <-chan T, numToConsume int) concurrency.StopperClient {
 	st := concurrency.NewStopper()
 	go func() {
 		defer st.Flow().ReportStopped()
@@ -278,6 +278,24 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerNodeUnknown() {
 	s.NoError(consumer.Stopped().Wait())
 
 	h.Stop(nil)
+	s.NoError(h.Stopped().Wait())
+}
+
+func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralNotReady() {
+	ch, producer := s.generateTestInputNoClose(10)
+	defer close(ch)
+	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	s.NoError(h.Start())
+	// expect centralConsumer to get 0 messages - sensor should NACK to compliance when the connection with central is not ready
+	centralConsumer := consumeAndCount(h.ResponsesC(), 0)
+	// expect complianceConsumer to get NACK 10 messages
+	complianceConsumer := consumeAndCount(h.ComplianceC(), 10)
+	s.NoError(producer.Stopped().Wait())
+	s.NoError(centralConsumer.Stopped().Wait())
+	s.NoError(complianceConsumer.Stopped().Wait())
+
+	h.Stop(nil)
+	s.T().Logf("waiting for handler to stop")
 	s.NoError(h.Stopped().Wait())
 }
 
