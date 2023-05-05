@@ -287,7 +287,7 @@ func TestRateLimitedFunctionsTimedFlush(t *testing.T) {
 		rlLogger.InfoL(limiter, templateWithFields, "info", 2)
 		rlLogger.DebugL(limiter, templateWithFields, "debug", 2)
 	}
-	
+
 	time.Sleep(2 * time.Second)
 
 	cacheKeys := rlLogger.rateLimitedLogs.Keys()
