@@ -9,6 +9,7 @@ import (
 	notifierMocks "github.com/stackrox/rox/central/notifiers/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/notifiers/mocks"
 )
 
 func TestProcessor_LoopDoesNothing(t *testing.T) {
@@ -17,7 +18,7 @@ func TestProcessor_LoopDoesNothing(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 
 	alertNotfierProto := &storage.Notifier{Id: "n1"}
-	mockAlertNotifier := notifierMocks.NewMockAlertNotifier(mockCtrl)
+	mockAlertNotifier := mocks.NewMockAlertNotifier(mockCtrl)
 
 	resolvableAlertNotfierProto := &storage.Notifier{Id: "n2"}
 	mockResolvableNotifier := notifierMocks.NewMockResolvableAlertNotifier(mockCtrl)
@@ -45,7 +46,7 @@ func TestProcessor_LoopDoesNothingIfAllSucceed(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 
 	alertNotfierProto := &storage.Notifier{Id: "n1"}
-	mockAlertNotifier := notifierMocks.NewMockAlertNotifier(mockCtrl)
+	mockAlertNotifier := mocks.NewMockAlertNotifier(mockCtrl)
 
 	resolvableAlertNotfierProto := &storage.Notifier{Id: "n2"}
 	mockResolvableNotifier := notifierMocks.NewMockResolvableAlertNotifier(mockCtrl)
@@ -106,7 +107,7 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 
 	alertNotfierProto := &storage.Notifier{Id: "n1"}
-	mockAlertNotifier := notifierMocks.NewMockAlertNotifier(mockCtrl)
+	mockAlertNotifier := mocks.NewMockAlertNotifier(mockCtrl)
 
 	resolvableAlertNotfierProto := &storage.Notifier{Id: "n2"}
 	mockResolvableNotifier := notifierMocks.NewMockResolvableAlertNotifier(mockCtrl)
@@ -190,10 +191,10 @@ func TestProcessor_SkipNotificationsForSecuredClusterNotifiers(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 
 	jiraAlertNotfierProto := &storage.Notifier{Id: "n1", Config: &storage.Notifier_Jira{Jira: &storage.Jira{}}}
-	mockJiraAlertNotifier := notifierMocks.NewMockAlertNotifier(mockCtrl)
+	mockJiraAlertNotifier := mocks.NewMockAlertNotifier(mockCtrl)
 
 	emailAlertNotfierProto := &storage.Notifier{Id: "n2", Config: &storage.Notifier_Email{Email: &storage.Email{}}}
-	mockEmailAlertNotifier := notifierMocks.NewMockAlertNotifier(mockCtrl)
+	mockEmailAlertNotifier := mocks.NewMockAlertNotifier(mockCtrl)
 
 	// Create our tested objects.
 	ns := NewNotifierSet()

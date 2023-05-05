@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/notifiers/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
+	pkgMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -21,9 +22,9 @@ type notifierSetTestSuite struct {
 	suite.Suite
 
 	mockCtrl             *gomock.Controller
-	mockAlertN           *mocks.MockAlertNotifier
+	mockAlertN           *pkgMocks.MockAlertNotifier
 	mockResolvableAlertN *mocks.MockResolvableAlertNotifier
-	mockAuditN           *mocks.MockAuditNotifier
+	mockAuditN           *pkgMocks.MockAuditNotifier
 
 	ns NotifierSet
 }
@@ -31,9 +32,9 @@ type notifierSetTestSuite struct {
 func (s *notifierSetTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
-	s.mockAlertN = mocks.NewMockAlertNotifier(s.mockCtrl)
+	s.mockAlertN = pkgMocks.NewMockAlertNotifier(s.mockCtrl)
 	s.mockResolvableAlertN = mocks.NewMockResolvableAlertNotifier(s.mockCtrl)
-	s.mockAuditN = mocks.NewMockAuditNotifier(s.mockCtrl)
+	s.mockAuditN = pkgMocks.NewMockAuditNotifier(s.mockCtrl)
 
 	s.ns = NewNotifierSet()
 }
