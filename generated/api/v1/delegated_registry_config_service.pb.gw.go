@@ -17,6 +17,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/grpc-ecosystem/grpc-gateway/utilities"
+	"github.com/stackrox/rox/generated/storage"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
@@ -52,7 +53,7 @@ func local_request_DelegatedRegistryConfigService_GetConfig_0(ctx context.Contex
 }
 
 func request_DelegatedRegistryConfigService_PutConfig_0(ctx context.Context, marshaler runtime.Marshaler, client DelegatedRegistryConfigServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq PutDelegatedRegistryConfigRequest
+	var protoReq storage.DelegatedRegistryConfig
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -69,7 +70,7 @@ func request_DelegatedRegistryConfigService_PutConfig_0(ctx context.Context, mar
 }
 
 func local_request_DelegatedRegistryConfigService_PutConfig_0(ctx context.Context, marshaler runtime.Marshaler, server DelegatedRegistryConfigServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq PutDelegatedRegistryConfigRequest
+	var protoReq storage.DelegatedRegistryConfig
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)

@@ -13,16 +13,19 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
 	log        = logging.LoggerForModule()
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Administration)): {
+		or.SensorOrAuthorizer(user.With(permissions.View(resources.Administration))): {
 			"/v1.DelegatedRegistryConfigService/GetConfig",
 		},
 		user.With(permissions.Modify(resources.Administration)): {
@@ -70,24 +73,35 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetConfig returns Central's delegated registry config
 func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*storage.DelegatedRegistryConfig, error) {
+	if s.datastore == nil {
+		return nil, status.Errorf(codes.Unimplemented, "datastore not initialized, is postgres enabled?")
+	}
+
 	config, err := s.datastore.GetConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	if config == nil {
 		return &storage.DelegatedRegistryConfig{}, nil
 	}
+
 	return config, nil
 }
 
 // PutConfig updates Central's delegated registry config
-func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutDelegatedRegistryConfigRequest) (*storage.DelegatedRegistryConfig, error) {
-	if req.GetConfig() == nil {
+func (s *serviceImpl) PutConfig(ctx context.Context, config *storage.DelegatedRegistryConfig) (*storage.DelegatedRegistryConfig, error) {
+	if s.datastore == nil {
+		return nil, status.Errorf(codes.Unimplemented, "datastore not initialized, is postgres enabled?")
+	}
+
+	if config == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "config must be specified")
 	}
-	if err := s.datastore.UpsertConfig(ctx, req.GetConfig()); err != nil {
+
+	if err := s.datastore.UpsertConfig(ctx, config); err != nil {
 		return nil, err
 	}
 
-	return req.GetConfig(), nil
+	return config, nil
 }

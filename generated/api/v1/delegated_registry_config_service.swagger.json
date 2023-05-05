@@ -54,7 +54,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1PutDelegatedRegistryConfigRequest"
+              "$ref": "#/definitions/storageDelegatedRegistryConfig"
             }
           }
         ],
@@ -142,14 +142,6 @@
         "clusterId": {
           "type": "string",
           "title": "id of the cluster to delegate requests to"
-        }
-      }
-    },
-    "v1PutDelegatedRegistryConfigRequest": {
-      "type": "object",
-      "properties": {
-        "config": {
-          "$ref": "#/definitions/storageDelegatedRegistryConfig"
         }
       }
     }

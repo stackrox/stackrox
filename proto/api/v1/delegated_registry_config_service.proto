@@ -10,20 +10,35 @@ import "storage/delegated_registry_config.proto";
 
 package v1;
 
-message PutDelegatedRegistryConfigRequest {
-    storage.DelegatedRegistryConfig config      = 1;
+message DelegatedRegistryClusters {
+    repeated DelegatedRegistryCluster clusters = 1;
 }
 
-// DelegatedRegistryConfigService APIs can be used to manage delegated registry config
+message DelegatedRegistryCluster {
+    string id   = 1;
+    string name = 2;
+}
+
+// DelegatedRegistryConfigService APIs can be used to control how to route image scans amongst
+// central and secured clusters
 service DelegatedRegistryConfigService {
 
+    // GetConfig returns the current delegated registry configuration
     rpc GetConfig(Empty) returns (storage.DelegatedRegistryConfig) {
         option (google.api.http) = {
             get: "/v1/delegatedregistryconfig"
         };
     }
 
-    rpc PutConfig(PutDelegatedRegistryConfigRequest) returns (storage.DelegatedRegistryConfig) {
+    // GetClusters returns the list of clusters (id + name) that are eligible for delegating scanning
+    // requests (ie: only clusters with scanners understand the delegated registry config)
+    rpc GetClusters(Empty) returns (DelegatedRegistryClusters) {
+        option (google.api.http) = {
+            get: "/v1/delegatedregistryconfig/clusters"
+        };
+    }
+
+    rpc PutConfig(storage.DelegatedRegistryConfig) returns (storage.DelegatedRegistryConfig) {
         option (google.api.http) = {
             put: "/v1/delegatedregistryconfig"
             body: "*"
