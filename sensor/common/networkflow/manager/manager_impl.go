@@ -361,7 +361,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	} else {
 		// Otherwise, check if the remote entity is actually a cluster entity.
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
-		log.Infof("Connection: %+v LookupResults: %+v", conn, lookupResults)
+		log.Infof("Connection: %+v Remote: %+v LookupResults: %+v", conn, conn.remote, lookupResults)
 	}
 
 	if len(lookupResults) == 0 {
@@ -861,6 +861,7 @@ func getUpdatedConnections(hostname string, networkInfo *sensor.NetworkConnectio
 			L4Proto:   net.L4ProtoFromProtobuf(conn.GetProtocol()),
 		}
 		local := getIPAndPort(conn.GetLocalAddress())
+		log.Infof("UpdatedConnections: containerID: %s remote: %+v local: %+v incoming: %t", conn.GetContainerId(), remote, local, incoming)
 
 		// Special handling for UDP ports - role reported by collector may be unreliable, so look at which port is more
 		// likely to be ephemeral.
