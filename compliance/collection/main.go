@@ -86,7 +86,8 @@ func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateCli
 				}
 			}
 		case *sensor.MsgToCompliance_Ack:
-			// TODO(ROX-16549): Implement behavior when receiving Ack here. Maybe a tie in to metric to see the ratio of Ack/Nack(?)
+			// TODO(ROX-16687): Implement behavior when receiving Ack here
+			// TODO(ROX-16549): Add metric to see the ratio of Ack/Nack(?)
 		case *sensor.MsgToCompliance_Nack:
 			log.Infof("Received NACK from Sensor, resending NodeInventory in 10 seconds.")
 			go func() {
