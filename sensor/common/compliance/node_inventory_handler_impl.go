@@ -112,14 +112,13 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *cen
 				break
 			}
 			if nodeID, err := c.nodeMatcher.GetNodeID(inventory.GetNodeName()); err != nil {
-				log.Infof("Requesting Compliance to resend NodeInventory later after receiving unknown NodeInventory with ID %s", inventory.GetNodeId())
+				log.Warnf("Node unknown to Sensor. Requesting Compliance to resend NodeInventory with ID %q later", inventory.GetNodeId())
 				c.sendNackToCompliance(toCompliance, inventory)
 			} else {
 				inventory.NodeId = nodeID
 				metrics.ObserveReceivedNodeInventory(inventory)
 				log.Debugf("Mapping NodeInventory name '%s' to Node ID '%s'", inventory.GetNodeName(), nodeID)
 				c.sendNodeInventory(toCentral, inventory)
-				// TODO(ROX-16687) Write Ack functionality here.
 			}
 		}
 	}
