@@ -1,25 +1,38 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 
+import relatedEntitySVG from 'images/network-graph/related-entity.svg';
+import filteredEntitySVG from 'images/network-graph/filtered-entity.svg';
+
 import NetworkGraph from './NetworkGraph';
 import {
+    CIDRBlockData,
     CustomEdgeModel,
     CustomModel,
     CustomNodeModel,
     DeploymentData,
     ExtraneousNodeModel,
+    NamespaceData,
     NetworkPolicyState,
 } from './types/topology.type';
-import { EdgeState } from './components/EdgeStateSelect';
-import { DisplayOption } from './components/DisplayOptionsSelect';
 import { Simulation } from './utils/getSimulation';
 import { getNodeById } from './utils/networkGraphUtils';
+import { EdgeState } from './components/EdgeStateSelect';
+import { DisplayOption } from './components/DisplayOptionsSelect';
 import {
     createExtraneousNodes,
     createExtraneousEdges,
     graphModel,
     getConnectedNodeIds,
 } from './utils/modelUtils';
+import {
+    cidrBlockBadgeColor,
+    cidrBlockBadgeText,
+    deploymentBadgeColor,
+    deploymentBadgeText,
+    namespaceBadgeColor,
+    namespaceBadgeText,
+} from './common/NetworkGraphIcons';
 
 export type Models = {
     activeModel: CustomModel;
@@ -122,18 +135,72 @@ function getExtraneousEdges(selectedNodeData: DeploymentData): CustomEdgeModel[]
 function getDisplayNodes(
     nodes: CustomNodeModel[],
     showPolicyState: boolean,
-    showExternalState: boolean
+    showExternalState: boolean,
+    showSelectionIndicators: boolean,
+    showObjectTypeLabels: boolean
 ): CustomNodeModel[] {
     return nodes.map((node) => {
         const { data } = node;
         if (data.type === 'DEPLOYMENT') {
+            let deploymentData: DeploymentData = {
+                ...data,
+                showPolicyState,
+                showExternalState,
+            };
+            if (showObjectTypeLabels) {
+                deploymentData = {
+                    ...data,
+                    badge: deploymentBadgeText,
+                    badgeColor: deploymentBadgeColor,
+                    badgeTextColor: '#FFFFFF',
+                    badgeBorderColor: '#FFFFFF',
+                };
+            }
             return {
                 ...node,
-                data: {
+                data: deploymentData,
+            };
+        }
+        if (data.type === 'NAMESPACE') {
+            let namespaceData: NamespaceData = {
+                ...data,
+            };
+            if (showObjectTypeLabels) {
+                namespaceData = {
                     ...data,
-                    showPolicyState,
-                    showExternalState,
-                } as DeploymentData,
+                    badge: namespaceBadgeText,
+                    badgeColor: namespaceBadgeColor,
+                    badgeTextColor: '#FFFFFF',
+                    badgeBorderColor: '#FFFFFF',
+                };
+            }
+            if (showSelectionIndicators) {
+                namespaceData = {
+                    ...namespaceData,
+                    labelIconClass: data.isFilteredNamespace ? filteredEntitySVG : relatedEntitySVG,
+                };
+            }
+            return {
+                ...node,
+                data: namespaceData,
+            };
+        }
+        if (data.type === 'CIDR_BLOCK') {
+            let cidrData: CIDRBlockData = {
+                ...data,
+            };
+            if (showObjectTypeLabels) {
+                cidrData = {
+                    ...data,
+                    badge: cidrBlockBadgeText,
+                    badgeColor: cidrBlockBadgeColor,
+                    badgeTextColor: '#FFFFFF',
+                    badgeBorderColor: '#FFFFFF',
+                };
+            }
+            return {
+                ...node,
+                data: cidrData,
             };
         }
         return node;
@@ -259,11 +326,19 @@ function NetworkGraphContainer({
     const showPolicyState = !!displayOptions.includes('policyStatusBadge');
     const showExternalState = !!displayOptions.includes('externalBadge');
     const showEdgeLabels = !!displayOptions.includes('edgeLabel');
+    const showSelectionIndicators = !!displayOptions.includes('selectionIndicator');
+    const showObjectTypeLabels = !!displayOptions.includes('objectTypeLabel');
     // modified filtered nodes/edges based on selected displayOptions
     let modifiedNodes = filteredNodes;
     let modifiedEdges = filteredEdges;
     // update the display options visually for deployment nodes on the graph
-    modifiedNodes = getDisplayNodes(filteredNodes, showPolicyState, showExternalState);
+    modifiedNodes = getDisplayNodes(
+        filteredNodes,
+        showPolicyState,
+        showExternalState,
+        showSelectionIndicators,
+        showObjectTypeLabels
+    );
     // update the display options visually for edges on the graph
     modifiedEdges = getDisplayEdges(filteredEdges, showEdgeLabels);
 
