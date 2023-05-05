@@ -14,6 +14,7 @@ import (
 //go:generate mockgen-wrapper
 type CveCore interface {
 	GetCVE() string
+	GetCVEIDs() []string
 	GetImagesBySeverity() common.ResourceCountByCVESeverity
 	GetTopCVSS() float32
 	GetAffectedImages() int
