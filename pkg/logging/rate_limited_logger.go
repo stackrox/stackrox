@@ -2,6 +2,7 @@ package logging
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -23,6 +24,20 @@ type RateLimitedLogger struct {
 }
 
 // NewRateLimitLogger returns a rate limited logger
+//
+// This function adds a timer goroutine on the stack and will break tests if used to initialize globals.
+// A cleaner usage pattern would be to encapsulate the initialization and use of the global in a singleton-like function:
+//
+//	 var (
+//		    once sync.Once
+//		    logger *logging.RateLimitedLogger
+//	 )
+//		func getRateLimitedLogger() *logging.RateLimitedLogger {
+//		    once.Do(func () {
+//		        logger = newRateLimitLogger(...)
+//		    })
+//		    return logger
+//		}
 func NewRateLimitLogger(l Logger, size int, logLines int, interval time.Duration, burst int) *RateLimitedLogger {
 	logCache, err := lru.NewWithEvict[string, *rateLimitedLog](size, func(key string, value *rateLimitedLog) {
 		if value.count.Load() > 0 {
@@ -41,6 +56,7 @@ func NewRateLimitLogger(l Logger, size int, logLines int, interval time.Duration
 		concurrency.NewStopper(),
 		logCache,
 	}
+	runtime.SetFinalizer(logger, stopLogger)
 	go logger.logFlushLoop()
 	return logger
 }
@@ -153,17 +169,20 @@ func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template 
 }
 
 func (rl *RateLimitedLogger) logFlushLoop() {
+	defer rl.stopper.Flow().ReportStopped()
+	defer rl.ticker.Stop()
 	for {
 		select {
 		case <-rl.ticker.C:
-			rl.flush()
+			rl.flush(false)
 		case <-rl.stopper.Flow().StopRequested():
+			rl.flush(true)
 			return
 		}
 	}
 }
 
-func (rl *RateLimitedLogger) flush() {
+func (rl *RateLimitedLogger) flush(force bool) {
 	keys := rl.rateLimitedLogs.Keys()
 	for _, k := range keys {
 		trace, found := rl.rateLimitedLogs.Peek(k)
@@ -171,7 +190,7 @@ func (rl *RateLimitedLogger) flush() {
 			continue
 		}
 		if trace.count.Load() > 0 {
-			if trace.rateLimiter.Tokens() > 0.5 {
+			if force || trace.rateLimiter.Tokens() > 0.5 {
 				// One log could be issued
 				trace.log()
 			}
@@ -181,6 +200,11 @@ func (rl *RateLimitedLogger) flush() {
 
 func (rl *RateLimitedLogger) stop() {
 	rl.stopper.Client().Stop()
+	_ = rl.stopper.Client().Stopped().Wait()
+}
+
+func stopLogger(logger *RateLimitedLogger) {
+	logger.stop()
 }
 
 const (

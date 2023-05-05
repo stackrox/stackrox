@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
@@ -20,8 +21,22 @@ const (
 )
 
 var (
-	log = logging.NewRateLimitLogger(logging.LoggerForModule(), cacheSize, 1, rateLimitFrequency, logBurstSize)
+	once sync.Once
+	log  *logging.RateLimitedLogger
 )
+
+func getRateLimitedLogger() *logging.RateLimitedLogger {
+	once.Do(func() {
+		log = logging.NewRateLimitLogger(
+			logging.LoggerForModule(),
+			cacheSize,
+			1,
+			rateLimitFrequency,
+			logBurstSize,
+		)
+	})
+	return log
+}
 
 // NewExtractor returns an IdentityExtractor that will map identities based
 // on certificates available in the ProviderContainer
@@ -61,7 +76,7 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 	ctx = sac.WithAllAccess(ctx)
 
 	for _, chain := range ri.VerifiedChains {
-		log.Debugf("Looking up TLS trust for user cert chain: %+v", chain)
+		getRateLimitedLogger().Debugf("Looking up TLS trust for user cert chain: %+v", chain)
 		for _, info := range chain {
 			provider := i.manager.GetProviderForFingerprint(info.CertFingerprint)
 			if provider == nil {
@@ -80,7 +95,7 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 			}
 			resolvedRoles, err := provider.RoleMapper().FromUserDescriptor(ctx, ud)
 			if err != nil {
-				log.WarnL(ri.Hostname, "Token validation failed for hostname %v: %v", ri.Hostname, err)
+				getRateLimitedLogger().WarnL(ri.Hostname, "Token validation failed for hostname %v: %v", ri.Hostname, err)
 				return nil, err
 			}
 			identity.resolvedRoles = resolvedRoles

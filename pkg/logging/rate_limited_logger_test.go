@@ -39,6 +39,7 @@ func (s *rateLimitedLoggerTestSuite) SetupTest() {
 }
 
 func (s *rateLimitedLoggerTestSuite) TearDownTest() {
+	s.mockLogger.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	s.rlLogger.stop()
 }
 
