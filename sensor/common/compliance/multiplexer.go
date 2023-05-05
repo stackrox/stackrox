@@ -4,14 +4,22 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/channelmultiplexer"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common"
 )
+
+var _ common.ComplianceComponent = (*Multiplexer)(nil)
 
 // Multiplexer is a wrapper around pkg.channelmultiplexer that turns it into a sensor component.
 // This is necessary since multiplexers are also used elsewhere, eg. compliance
 type Multiplexer struct {
 	mp         channelmultiplexer.ChannelMultiplexer[common.MessageToComplianceWithAddress]
 	components []common.ComplianceComponent
+	stopper    concurrency.Stopper
+}
+
+func (c *Multiplexer) Stopped() concurrency.ReadOnlyErrorSignal {
+	return c.stopper.Client().Stopped()
 }
 
 // NewMultiplexer creates a Multiplexer of type T, wrapped up as a sensor component
@@ -42,8 +50,9 @@ func (c *Multiplexer) run() error {
 	return nil
 }
 
-// Stop is unimplemented, part of the component interface
+// Stop stops the component
 func (c *Multiplexer) Stop(_ error) {
+	c.stopper.Client().Stop()
 }
 
 // Capabilities is unimplemented, part of the component interface
@@ -75,7 +84,7 @@ func (c *Multiplexer) addChannel(channel <-chan common.MessageToComplianceWithAd
 	c.mp.AddChannel(channel)
 }
 
-// GetCommandsC returns the multiplexed output channel combining all input channels added with addChannel
-func (c *Multiplexer) GetCommandsC() <-chan common.MessageToComplianceWithAddress {
+// ComplianceC returns the multiplexed output channel combining all input channels added with addChannel
+func (c *Multiplexer) ComplianceC() <-chan common.MessageToComplianceWithAddress {
 	return c.mp.GetOutput()
 }

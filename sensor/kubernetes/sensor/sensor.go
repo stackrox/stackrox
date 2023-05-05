@@ -100,7 +100,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	o := orchestrator.New(cfg.k8sClient.Kubernetes())
 	complianceMultiplexer := compliance.NewMultiplexer()
 	// TODO(ROX-16931): Turn auditLogEventsInput and auditLogCollectionManager into ComplianceComponents if possible
-	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager, complianceMultiplexer.GetCommandsC())
+	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager, complianceMultiplexer.ComplianceC())
 
 	configHandler := config.NewCommandHandler(admCtrlSettingsMgr, deploymentIdentification, helmManagedConfig, auditLogCollectionManager)
 	enforcer, err := enforcer.New(cfg.k8sClient)
