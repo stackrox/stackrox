@@ -191,8 +191,8 @@ func (c *endpointsTestCase) runConnectionTest(t *testing.T, testCtx *endpointsTe
 		if conn != nil {
 			_ = conn.Close()
 		}
-		_, ok := err.(x509.HostnameError)
-		assert.True(t, ok, "expected error to be of type x509.HostnameError, was: %T (%v)", err, err)
+		_, ok := err.(*tls.CertificateVerificationError)
+		assert.True(t, ok, "expected error to be of type *tls.CertificateVerificationError, was: %T (%v)", err, err)
 	}
 }
 
