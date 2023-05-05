@@ -220,7 +220,7 @@ func validate(jira *storage.Jira) error {
 	return errorList.ToError()
 }
 
-// NewJira exported to allow for usage by implementations in various components
+// NewJira exported to allow for usage in various components
 func NewJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDataStore.AttackReadOnlyDataStore) (*jira, error) {
 	conf := notifier.GetJira()
 	if conf == nil {
