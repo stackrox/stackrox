@@ -5,11 +5,12 @@ package postgres
 import (
 	"context"
 	"testing"
+	"time"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -48,7 +49,7 @@ func (s *VersionsStoreSuite) TestStore() {
 
 	version := &storage.Version{}
 	s.NoError(testutils.FullInit(version, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-	version.LastPersisted = timestamp.TimestampNow()
+	version.LastPersisted = protoconv.MustConvertTimeToTimestamp(time.Now())
 
 	foundVersion, exists, err := store.Get(ctx)
 	s.NoError(err)
@@ -78,7 +79,7 @@ func (s *VersionsStoreSuite) TestStore() {
 
 	version = &storage.Version{}
 	s.NoError(testutils.FullInit(version, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-	version.LastPersisted = timestamp.TimestampNow()
+	version.LastPersisted = protoconv.MustConvertTimeToTimestamp(time.Now())
 	s.NoError(store.Upsert(ctx, version))
 
 	foundVersion, exists, err = store.Get(ctx)
@@ -88,7 +89,7 @@ func (s *VersionsStoreSuite) TestStore() {
 
 	version = &storage.Version{}
 	s.NoError(testutils.FullInit(version, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-	version.LastPersisted = timestamp.TimestampNow()
+	version.LastPersisted = protoconv.MustConvertTimeToTimestamp(time.Now())
 	s.NoError(store.Upsert(ctx, version))
 
 	foundVersion, exists, err = store.Get(ctx)
