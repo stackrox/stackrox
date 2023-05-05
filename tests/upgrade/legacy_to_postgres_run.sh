@@ -163,7 +163,7 @@ test_upgrade_paths() {
     ./sensor-remote/sensor.sh
     kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$LAST_ROCKS_TAG"
     kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$LAST_ROCKS_TAG"
-    kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(make collector-tag)" \
+    kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$LAST_ROCKS_TAG" \
         "compliance=$REGISTRY/main:$LAST_ROCKS_TAG"
 
     sensor_wait
