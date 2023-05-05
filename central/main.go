@@ -254,6 +254,16 @@ func main() {
 
 	devmode.StartOnDevBuilds("central")
 
+	done := make(chan bool)
+	m := make(map[string]string)
+	m["name"] = "world"
+	go func() {
+		m["name"] = "data race"
+		done <- true
+	}()
+	log.Infof("Hello %s", m["name"])
+	<-done
+
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
 	log.Warn("The following permission resources have been replaced:\n" +
 		"	Access replaces AuthProvider, Group, Licenses, and User\n" +
