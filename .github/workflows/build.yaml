@@ -2,15 +2,8 @@ name: Build
 on:
   workflow_call:
   push:
-    tags:
-    - '*-nightly-*'
     branches:
-    - master
-  pull_request:
-    types:
-    - opened
-    - reopened
-    - synchronize
+    - gavin/CI/build-matrix
 
 jobs:
   define-job-matrix:
