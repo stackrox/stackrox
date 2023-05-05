@@ -1,4 +1,4 @@
-package notifiers
+package metadatagetter
 
 import (
 	"context"
@@ -167,9 +167,10 @@ func TestGetAnnotationValue(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
 			nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
+			metadataGetter := NewTestMetadataGetter(t, nsStore)
 
 			nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(c.namespace, nil).AnyTimes()
-			value := GetAnnotationValue(context.Background(), c.alert, c.annotationKey, "default", nsStore)
+			value := metadataGetter.GetAnnotationValue(context.Background(), c.alert, c.annotationKey, "default")
 
 			assert.Equal(t, c.expectedValue, value)
 		})
@@ -180,6 +181,7 @@ func TestGetAnnotationValueCorrectlyQueriesForNamespace(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
+	metadataGetter := NewTestMetadataGetter(t, nsStore)
 
 	alert := fixtures.GetAlert()
 	ns := namespaceWithAnnotation("somekey", "somevalue")
@@ -187,7 +189,7 @@ func TestGetAnnotationValueCorrectlyQueriesForNamespace(t *testing.T) {
 	expectedQuery := search.NewQueryBuilder().AddExactMatches(search.Namespace, alert.GetDeployment().GetNamespace()).AddExactMatches(search.ClusterID, alert.GetDeployment().GetClusterId()).ProtoQuery()
 
 	nsStore.EXPECT().SearchNamespaces(gomock.Any(), expectedQuery).Return([]*storage.NamespaceMetadata{ns}, nil)
-	value := GetAnnotationValue(context.Background(), alert, "somekey", "default", nsStore)
+	value := metadataGetter.GetAnnotationValue(context.Background(), alert, "somekey", "default")
 
 	assert.Equal(t, "somevalue", value)
 }
@@ -196,11 +198,12 @@ func TestGetAnnotationValueReturnsDefaultIfNoStoreReturnsError(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
+	metadataGetter := NewTestMetadataGetter(t, nsStore)
 
 	alert := fixtures.GetAlert()
 
 	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(nil, errors.New(fixtureconsts.Cluster1))
-	value := GetAnnotationValue(context.Background(), alert, "somekey", "default", nsStore)
+	value := metadataGetter.GetAnnotationValue(context.Background(), alert, "somekey", "default")
 
 	assert.Equal(t, "default", value)
 }
