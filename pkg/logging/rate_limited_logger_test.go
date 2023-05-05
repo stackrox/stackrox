@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/pkg/logging/mocks"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap/zapcore"
 )
@@ -249,48 +250,55 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsCacheEviction() {
 	}
 }
 
-func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsTimedFlush() {
+func TestRateLimitedFunctionsTimedFlush(t *testing.T) {
+	mockController := gomock.NewController(t)
+	mockLogger := mocks.NewMockLogger(mockController)
 
 	templateWithFields := "This is a template for %s logs with %d arguments to convert"
 	limiter := "test limiter"
 
+	// Issued traces
 	resolvedErrorMsg := fmt.Sprintf(templateWithFields, "error", 2)
 	resolvedWarnMsg := fmt.Sprintf(templateWithFields, "warn", 2)
 	resolvedInfoMsg := fmt.Sprintf(templateWithFields, "info", 2)
 	resolvedDebugMsg := fmt.Sprintf(templateWithFields, "debug", 2)
 
-	time.Sleep(100 * time.Millisecond)
-
-	s.mockLogger.EXPECT().Logf(zapcore.ErrorLevel, "%s%s", resolvedErrorMsg, "").Times(burstSize)
-	s.mockLogger.EXPECT().Logf(zapcore.WarnLevel, "%s%s", resolvedWarnMsg, "").Times(burstSize)
-	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s", resolvedInfoMsg, "").Times(burstSize)
-	s.mockLogger.EXPECT().Logf(zapcore.DebugLevel, "%s%s", resolvedDebugMsg, "").Times(burstSize)
-
-	for i := 0; i < 3*burstSize; i++ {
-		s.rlLogger.ErrorL(limiter, templateWithFields, "error", 2)
-		s.rlLogger.WarnL(limiter, templateWithFields, "warn", 2)
-		s.rlLogger.InfoL(limiter, templateWithFields, "info", 2)
-		s.rlLogger.DebugL(limiter, templateWithFields, "debug", 2)
-	}
+	// First burst
+	mockLogger.EXPECT().Logf(zapcore.ErrorLevel, "%s%s", resolvedErrorMsg, "").Times(burstSize)
+	mockLogger.EXPECT().Logf(zapcore.WarnLevel, "%s%s", resolvedWarnMsg, "").Times(burstSize)
+	mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s", resolvedInfoMsg, "").Times(burstSize)
+	mockLogger.EXPECT().Logf(zapcore.DebugLevel, "%s%s", resolvedDebugMsg, "").Times(burstSize)
 
 	// flush should send one trace
 	limiterSuffix := fmt.Sprintf(limitedLogSuffixFormat, 2*burstSize, 0.9, limiter)
-	s.mockLogger.EXPECT().Logf(zapcore.ErrorLevel, "%s%s", resolvedErrorMsg, limiterSuffix).Times(1)
-	s.mockLogger.EXPECT().Logf(zapcore.WarnLevel, "%s%s", resolvedWarnMsg, limiterSuffix).Times(1)
-	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s", resolvedInfoMsg, limiterSuffix).Times(1)
-	s.mockLogger.EXPECT().Logf(zapcore.DebugLevel, "%s%s", resolvedDebugMsg, limiterSuffix).Times(1)
+	mockLogger.EXPECT().Logf(zapcore.ErrorLevel, "%s%s", resolvedErrorMsg, limiterSuffix).Times(1)
+	mockLogger.EXPECT().Logf(zapcore.WarnLevel, "%s%s", resolvedWarnMsg, limiterSuffix).Times(1)
+	mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s", resolvedInfoMsg, limiterSuffix).Times(1)
+	mockLogger.EXPECT().Logf(zapcore.DebugLevel, "%s%s", resolvedDebugMsg, limiterSuffix).Times(1)
 
+	rlLogger := NewRateLimitLogger(mockLogger, cacheSize, limiterLines, limiterPeriod, burstSize)
+
+	// Avoid concurrency with background logging loop
+	time.Sleep(100 * time.Millisecond)
+
+	for i := 0; i < 3*burstSize; i++ {
+		rlLogger.ErrorL(limiter, templateWithFields, "error", 2)
+		rlLogger.WarnL(limiter, templateWithFields, "warn", 2)
+		rlLogger.InfoL(limiter, templateWithFields, "info", 2)
+		rlLogger.DebugL(limiter, templateWithFields, "debug", 2)
+	}
+	
 	time.Sleep(2 * time.Second)
 
-	cacheKeys := s.rlLogger.rateLimitedLogs.Keys()
+	cacheKeys := rlLogger.rateLimitedLogs.Keys()
 	for _, k := range cacheKeys {
-		v, f := s.rlLogger.rateLimitedLogs.Peek(k)
-		s.True(f)
-		s.NotNil(v)
+		v, f := rlLogger.rateLimitedLogs.Peek(k)
+		assert.True(t, f)
+		assert.NotNil(t, v)
 		expectedCount := atomic.Int32{}
 		expectedCount.Swap(0)
 		if v != nil {
-			s.Equal(expectedCount.Load(), v.count.Load())
+			assert.Equal(t, expectedCount.Load(), v.count.Load())
 		}
 	}
 }
