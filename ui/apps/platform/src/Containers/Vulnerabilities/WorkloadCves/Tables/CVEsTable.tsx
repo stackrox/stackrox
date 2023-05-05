@@ -82,7 +82,9 @@ function CVEsTable({ cves, unfilteredImageCount, getSortParams, isFiltered }: CV
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
-                    <Th sort={getSortParams('CVE')}>CVE</Th>
+                    <Th sort={getSortParams('CVE')} tooltip="CVE">
+                        CVE
+                    </Th>
                     <TooltipTh tooltip="Severity of this CVE across images">
                         Images by severity
                         {isFiltered && <DynamicColumnIcon />}

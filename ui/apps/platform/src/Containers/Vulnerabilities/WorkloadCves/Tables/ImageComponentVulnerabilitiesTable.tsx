@@ -61,10 +61,12 @@ function ImageComponentVulnerabilitiesTable({
         >
             <Thead>
                 <Tr>
-                    <Th sort={getSortParams('Component')}>Component</Th>
-                    <Th>Version</Th>
-                    <Th>CVE Fixed in</Th>
-                    <Th>Location</Th>
+                    <Th sort={getSortParams('Component')} tooltip="Component">
+                        Component
+                    </Th>
+                    <Th tooltip="Version">Version</Th>
+                    <Th tooltip="CVE fixed in">CVE Fixed in</Th>
+                    <Th tooltip="Location">Location</Th>
                 </Tr>
             </Thead>
             {sortedComponentVulns.map((componentVuln, index) => {

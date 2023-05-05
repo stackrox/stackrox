@@ -79,18 +79,22 @@ function ImageVulnerabilitiesTable({
             <Thead>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
-                    <Th sort={getSortParams('CVE')}>CVE</Th>
-                    <Th>Severity</Th>
-                    <Th>
+                    <Th sort={getSortParams('CVE')} tooltip="CVE">
+                        CVE
+                    </Th>
+                    <Th tooltip="Severity">Severity</Th>
+                    <Th tooltip="CVE status">
                         CVE Status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th sort={getSortParams('CVSS')}>CVSS</Th>
-                    <Th>
+                    <Th sort={getSortParams('CVSS')} tooltip="CVSS">
+                        CVSS
+                    </Th>
+                    <Th tooltip="Affected components">
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th>First discovered</Th>
+                    <Th tooltip="First discovered">First discovered</Th>
                 </Tr>
             </Thead>
             {image.imageVulnerabilities.length === 0 && <EmptyTableResults colSpan={7} />}

@@ -67,18 +67,24 @@ function DeploymentsTable({ deployments, getSortParams, isFiltered }: Deployment
             <Thead>
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
-                    <Th sort={getSortParams('Deployment')}>Deployment</Th>
+                    <Th sort={getSortParams('Deployment')} tooltip="Deployment">
+                        Deployment
+                    </Th>
                     <TooltipTh tooltip="CVEs by severity across this deployment">
                         CVEs by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
-                    <Th sort={getSortParams('Cluster')}>Cluster</Th>
-                    <Th sort={getSortParams('Namespace')}>Namespace</Th>
-                    <Th>
+                    <Th sort={getSortParams('Cluster')} tooltip="Cluster">
+                        Cluster
+                    </Th>
+                    <Th sort={getSortParams('Namespace')} tooltip="Namespace">
+                        Namespace
+                    </Th>
+                    <Th tooltip="Images">
                         Images
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th>First discovered</Th>
+                    <Th tooltip="First discovered">First discovered</Th>
                 </Tr>
             </Thead>
             {deployments.length === 0 && <EmptyTableResults colSpan={6} />}

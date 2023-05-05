@@ -86,18 +86,26 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
             <Thead>
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
-                    <Th sort={getSortParams('Image')}>Image</Th>
+                    <Th sort={getSortParams('Image')} tooltip="Image">
+                        Image
+                    </Th>
                     <TooltipTh tooltip="CVEs by severity across this image">
                         CVEs by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
-                    <Th sort={getSortParams('Operating System')}>Operating system</Th>
-                    <Th sort={getSortParams('Deployment Count')}>
+                    <Th sort={getSortParams('Operating System')} tooltip="Operating system">
+                        Operating system
+                    </Th>
+                    <Th sort={getSortParams('Deployment Count')} tooltip="Deployments">
                         Deployments
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th sort={getSortParams('Age')}>Age</Th>
-                    <Th sort={getSortParams('Scan Time')}>Scan time</Th>
+                    <Th sort={getSortParams('Age')} tooltip="Age">
+                        Age
+                    </Th>
+                    <Th sort={getSortParams('Scan Time')} tooltip="Scan time">
+                        Scan time
+                    </Th>
                 </Tr>
             </Thead>
             {images.length === 0 && <EmptyTableResults colSpan={6} />}

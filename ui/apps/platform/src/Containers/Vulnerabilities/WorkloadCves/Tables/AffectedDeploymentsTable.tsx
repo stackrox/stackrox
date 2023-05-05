@@ -82,18 +82,24 @@ function AffectedDeploymentsTable({
             <Thead>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
-                    <Th sort={getSortParams('Deployment')}>Deployment</Th>
-                    <Th>
+                    <Th sort={getSortParams('Deployment')} tooltip="Deployment">
+                        Deployment
+                    </Th>
+                    <Th tooltip="Images by severity">
                         Images by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th sort={getSortParams('Cluster')}>Cluster</Th>
-                    <Th sort={getSortParams('Namespace')}>Namespace</Th>
-                    <Th>
+                    <Th sort={getSortParams('Cluster')} tooltip="Cluster">
+                        Cluster
+                    </Th>
+                    <Th sort={getSortParams('Namespace')} tooltip="Namespace">
+                        Namespace
+                    </Th>
+                    <Th tooltip="Images">
                         Images
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th>First discovered</Th>
+                    <Th tooltip="First discovered">First discovered</Th>
                 </Tr>
             </Thead>
             {deployments.length === 0 && <EmptyTableResults colSpan={7} />}
