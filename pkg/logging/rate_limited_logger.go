@@ -9,6 +9,7 @@ import (
 
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/time/rate"
 )
@@ -219,6 +220,7 @@ type rateLimitedLog struct {
 	limiter     string
 	payload     string
 	count       atomic.Int32
+	logMutex    sync.Mutex
 }
 
 func newRateLimitedLog(
@@ -254,6 +256,13 @@ func (l *rateLimitedLog) log() {
 			l.limiter,
 		)
 	}
-	l.logger.Logf(l.level, "%s%s", l.payload, suffix)
-	l.last = now
+	canLog := l.logMutex.TryLock()
+	if canLog {
+		defer l.logMutex.Unlock()
+		l.logger.Logf(l.level, "%s%s", l.payload, suffix)
+		l.last = now
+	} else {
+		// Add back counter
+		l.count.Add(count)
+	}
 }
