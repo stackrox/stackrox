@@ -272,10 +272,13 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerNodeUnknown() {
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
 	h.Notify(common.SensorComponentEventCentralReachable)
 	s.NoError(h.Start())
-	// expect consumer to get 0 messages - sensor should drop inventory when node is not found
-	consumer := consumeAndCount(h.ResponsesC(), 0)
+	// expect centralConsumer to get 0 messages - sensor should drop inventory when node is not found
+	centralConsumer := consumeAndCount(h.ResponsesC(), 0)
+	// expect complianceConsumer to get 10 NACK messages
+	complianceConsumer := consumeAndCount(h.ComplianceC(), 10)
 	s.NoError(producer.Stopped().Wait())
-	s.NoError(consumer.Stopped().Wait())
+	s.NoError(centralConsumer.Stopped().Wait())
+	s.NoError(complianceConsumer.Stopped().Wait())
 
 	h.Stop(nil)
 	s.NoError(h.Stopped().Wait())
@@ -288,7 +291,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralNotReady() {
 	s.NoError(h.Start())
 	// expect centralConsumer to get 0 messages - sensor should NACK to compliance when the connection with central is not ready
 	centralConsumer := consumeAndCount(h.ResponsesC(), 0)
-	// expect complianceConsumer to get NACK 10 messages
+	// expect complianceConsumer to get 10 NACK messages
 	complianceConsumer := consumeAndCount(h.ComplianceC(), 10)
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(centralConsumer.Stopped().Wait())
