@@ -319,7 +319,7 @@ func main() {
 
 	toSensorC := make(chan *sensor.MsgFromCompliance)
 	defer close(toSensorC)
-	// the anonymous go func will read from toSensorC
+	// the anonymous go func will read from toSensorC and send it using the client
 	go func() {
 		manageStream(ctx, cli, &stoppedSig, toSensorC, nodeInventoryClient)
 	}()
