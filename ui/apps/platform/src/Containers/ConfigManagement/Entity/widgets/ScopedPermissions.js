@@ -1,46 +1,42 @@
 import React from 'react';
+import { MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
 
-const getLabelColor = (key) => {
+const getVerbIcon = (key) => {
     switch (key) {
         case 'create':
         case 'update':
-            return 'success';
+            // Keep success color for backward compatibility, although it is questionable semantically.
+            return <PlusCircleIcon color="var(--pf-global--success-color--100)" />;
         case 'delete':
-            return 'alert';
+            return <MinusCircleIcon color="var(--pf-global--danger-color--100)" />;
         default:
-            return 'primary';
+            return null;
     }
 };
 
 const ScopedPermissions = ({ permissions }) => {
-    let content = [];
-    const { length } = permissions;
-    if (length) {
-        content = permissions.map((datum, i) => {
-            const colorClass = getLabelColor(datum.key);
-            const permissionKeyClass = `rounded bg-${colorClass}-200 text-${colorClass}-700 ${
-                i !== permissions.length - 1 ? `border border-${colorClass}-300` : ''
-            } px-2 py-1 self-center`;
-            return (
-                <div className="flex border-b border-base-300" key={datum.key}>
-                    <div className="w-43 border-r border-base-300 px-3 text-sm flex">
-                        <div className={permissionKeyClass}>
+    return permissions.map((datum) => {
+        return (
+            <div className="flex border-b border-base-300" key={datum.key}>
+                <div className="w-43 border-r border-base-300 p-3 text-sm flex">
+                    <span className="pf-u-display-inline-flex pf-u-align-items-center">
+                        <span className="w-4 pr-3">{getVerbIcon(datum.key)}</span>
+                        <span>
                             {datum.key === '*' ? (
                                 '* (All verbs)'
                             ) : (
                                 <span className="capitalize">{datum.key}</span>
                             )}
                             :
-                        </div>
-                    </div>
-                    <div className="w-full font-500 p-3 text-primary-800 text-sm leading-normal">
-                        {datum.values.includes('*') ? '* (All resources)' : datum.values.join(', ')}
-                    </div>
+                        </span>
+                    </span>
                 </div>
-            );
-        });
-    }
-    return content;
+                <div className="w-full p-3 text-sm leading-normal">
+                    {datum.values.includes('*') ? '* (All resources)' : datum.values.join(', ')}
+                </div>
+            </div>
+        );
+    });
 };
 
 export default ScopedPermissions;
