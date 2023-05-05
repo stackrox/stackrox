@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestReportConfigurationService(t *testing.T) {
+func TestReportConfigurationServiceV2(t *testing.T) {
 	suite.Run(t, new(ReportConfigurationServiceTestSuite))
 }
 
@@ -41,12 +41,12 @@ type upsertTestCase struct {
 var noMocks = func() {}
 
 func (s *ReportConfigurationServiceTestSuite) SetupTest() {
+	s.mockCtrl = gomock.NewController(s.T())
 	s.T().Setenv(features.VulnMgmtReportingEnhancements.EnvVar(), "true")
 	if !features.VulnMgmtReportingEnhancements.Enabled() {
 		s.T().Skip("Skip test when reporting enhancements are disabled")
 		s.T().SkipNow()
 	}
-	s.mockCtrl = gomock.NewController(s.T())
 	s.reportConfigDatastore = mocks.NewMockDataStore(s.mockCtrl)
 	s.notifierDatastore = notifierMocks.NewMockDataStore(s.mockCtrl)
 	s.collectionDatastore = collectionMocks.NewMockDataStore(s.mockCtrl)

@@ -30,11 +30,11 @@ type TestReportConfigurationServiceTestSuite struct {
 }
 
 func (s *TestReportConfigurationServiceTestSuite) SetupTest() {
+	s.mockCtrl = gomock.NewController(s.T())
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		s.T().Skip("Skip test when postgres is enabled")
 		s.T().SkipNow()
 	}
-	s.mockCtrl = gomock.NewController(s.T())
 	s.reportConfigDatastore = mocks.NewMockDataStore(s.mockCtrl)
 	s.notifierDatastore = notifierMocks.NewMockDataStore(s.mockCtrl)
 	s.accessScopeStore = accessScopeMocks.NewMockDataStore(s.mockCtrl)
