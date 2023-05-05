@@ -15,7 +15,7 @@ export const externalEntitiesBadgeColor = '#000000';
 
 export function DeploymentIcon(props) {
     return (
-        <Badge {...props} style={{ backgroundColor: deploymentBadgeColor, width: 15 }}>
+        <Badge {...props} style={{ backgroundColor: deploymentBadgeColor }}>
             {deploymentBadgeText}
         </Badge>
     );
@@ -37,13 +37,17 @@ export function ClusterIcon(props) {
     );
 }
 
-export function CidrBlockIcon() {
-    return <Badge style={{ backgroundColor: cidrBlockBadgeColor }}>{cidrBlockBadgeText}</Badge>;
+export function CidrBlockIcon(props) {
+    return (
+        <Badge {...props} style={{ backgroundColor: cidrBlockBadgeColor }}>
+            {cidrBlockBadgeText}
+        </Badge>
+    );
 }
 
-export function ExternalEntitiesIcon() {
+export function ExternalEntitiesIcon(props) {
     return (
-        <Badge style={{ backgroundColor: externalEntitiesBadgeColor }}>
+        <Badge {...props} style={{ backgroundColor: externalEntitiesBadgeColor }}>
             {externalEntitiesBadgeText}
         </Badge>
     );

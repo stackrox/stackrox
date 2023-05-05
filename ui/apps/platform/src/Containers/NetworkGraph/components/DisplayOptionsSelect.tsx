@@ -97,13 +97,13 @@ function DisplayOptionsSelect({
                 <SelectOption key={2} value="objectTypeLabel">
                     <Split>
                         <SplitItem className="pf-u-mr-xs">
-                            <NamespaceIcon />
+                            <NamespaceIcon screenReaderText="namespace" />
                         </SplitItem>
                         <SplitItem className="pf-u-mr-xs">
-                            <DeploymentIcon />
+                            <DeploymentIcon screenReaderText="deployment" />
                         </SplitItem>
                         <SplitItem className="pf-u-mr-xs">
-                            <CidrBlockIcon />
+                            <CidrBlockIcon screenReaderText="cidr block" />
                         </SplitItem>
                         <SplitItem>Labels</SplitItem>
                     </Split>
