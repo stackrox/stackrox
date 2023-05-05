@@ -12,16 +12,11 @@ type msgstruct struct {
 }
 
 func TestMultiplexingChannels(t *testing.T) {
-	ch1 := make(chan string)
-	defer close(ch1)
-	ch2 := make(chan string)
-	defer close(ch2)
-	ch3 := make(chan string)
-	defer close(ch3)
-	ch4 := make(chan string)
-	defer close(ch4)
-	ch5 := make(chan string)
-	defer close(ch5)
+	chans := make([]chan string, 5)
+	for i := range chans {
+		chans[i] = make(chan string)
+		defer close(chans[i])
+	}
 	cases := map[string]struct {
 		inputChannels []chan string
 		messages      []msgstruct
@@ -31,15 +26,15 @@ func TestMultiplexingChannels(t *testing.T) {
 			messages:      nil,
 		},
 		"Single message": {
-			inputChannels: []chan string{ch1},
+			inputChannels: []chan string{chans[0]},
 			messages:      []msgstruct{{i: 0, str: "First message"}},
 		},
 		"Single channel": {
-			inputChannels: []chan string{ch2},
+			inputChannels: []chan string{chans[1]},
 			messages:      []msgstruct{{i: 0, str: "First message"}, {i: 0, str: "Second message"}, {i: 0, str: "Third message"}},
 		},
 		"Multiple channels": {
-			inputChannels: []chan string{ch3, ch4, ch5},
+			inputChannels: chans[2:],
 			messages:      []msgstruct{{i: 0, str: "First message"}, {i: 2, str: "Second message"}, {i: 1, str: "Third message"}, {i: 0, str: "Fourth message"}},
 		},
 	}
