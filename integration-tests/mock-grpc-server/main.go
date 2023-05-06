@@ -90,7 +90,8 @@ func (s *signalServer) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnect
 		for _, networkConn := range networkConns {
 			networkInfo := fmt.Sprintf("%s|%s|%s|%s|%s", getEndpoint(networkConn.GetLocalAddress()), getEndpoint(networkConn.GetRemoteAddress()), networkConn.GetRole().String(), networkConn.GetSocketFamily().String(), networkConn.GetCloseTimestamp().String())
 			fmt.Printf("NetworkInfo: %s %s\n", networkConn.GetContainerId(), networkInfo)
-			if err := s.UpdateNetworkConnInfo(networkConn.GetContainerId(), networkInfo); err != nil {
+			//if err := s.UpdateNetworkConnInfo(networkConn.GetContainerId(), networkInfo); err != nil {
+			if err := s.UpdateBucket(networkConn.GetContainerId(), networkInfo, networkBucket); err != nil {
 				return err
 			}
 		}
