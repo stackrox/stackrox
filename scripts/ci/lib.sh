@@ -693,8 +693,8 @@ is_nightly_run() {
 }
 
 is_in_PR_context() {
-    if is_GITHUB_ACTIONS; then
-        return 1
+    if is_GITHUB_ACTIONS && [[ -n "${GITHUB_BASE_REF:-}" ]]; then
+        return 0
     elif is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]]; then
         return 0
     elif is_OPENSHIFT_CI && [[ -n "${CLONEREFS_OPTIONS:-}" ]]; then
