@@ -25,6 +25,26 @@ func ReadVersionPostgres(pool postgres.DB) (*migrations.MigrationVersion, error)
 		MainVersion:   ver.Version,
 		SeqNum:        int(ver.SeqNum),
 		LastPersisted: timestamp.FromProtobuf(ver.GetLastPersisted()).GoTime(),
+		MinimumSeqNum: int(ver.MinSeqNum),
+	}, nil
+}
+
+// ReadPreviousVersionPostgres - reads the version from the postgres database.
+// TODO(ROX-16774) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
+// the older database.  In that case we will need to process the serialized data.
+func ReadPreviousVersionPostgres(pool postgres.DB) (*migrations.MigrationVersion, error) {
+	store := vStore.NewPostgres(pool)
+
+	ver, err := store.GetPreviousVersion()
+	if err != nil {
+		utils.Should(err)
+		return nil, err
+	}
+
+	return &migrations.MigrationVersion{
+		MainVersion:   ver.Version,
+		SeqNum:        int(ver.SeqNum),
+		LastPersisted: timestamp.FromProtobuf(ver.GetLastPersisted()).GoTime(),
 	}, nil
 }
 
