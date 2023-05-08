@@ -28,16 +28,23 @@ Version = namedtuple("Version", ["major", "minor", "patch"])
 # Here we call "release" (or Y-Stream) the first appearance of X.Y.0 version.
 Release = namedtuple("Release", ["major", "minor"])
 
+# Default value of N, the number of previous releases to look up.
+# The current release cadence is 9 weeks (sometimes extended but not reduced), i.e. 9*7=63 days.
+# The current support period is 6 months, i.e. at most 184 days.
+# Therefore, at most 3 releases will be in support at any given moment of time with the current cadence and support
+# period.
+num_releases_default = 3
+
 
 def main(argv):
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
-    n = int(argv[1]) if len(argv) > 1 else 4
+    n = int(argv[1]) if len(argv) > 1 else num_releases_default
     helm_versions = get_latest_helm_chart_versions("stackrox-secured-cluster-services", n)
     logging.info(f"Helm chart versions for the latest {n} releases:")
     print("\n".join(helm_versions))
 
 
-def get_latest_helm_chart_versions(chart_name, num_releases):
+def get_latest_helm_chart_versions(chart_name, num_releases=num_releases_default):
     add_helm_repo()
     try:
         update_helm_repo()

@@ -15,7 +15,7 @@ class SensorVersionsFailure(Exception):
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 
-chart_versions = get_latest_helm_chart_versions("stackrox-secured-cluster-services", 4)
+chart_versions = get_latest_helm_chart_versions("stackrox-secured-cluster-services")
 
 gkecluster=GKECluster("compat-test")
 
