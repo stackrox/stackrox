@@ -101,6 +101,10 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*storage.Dele
 // GetClusters returns the list of clusters (id + name) that are eligible for delegating scanning
 // requests (ie: only clusters with scanners that understand the delegated registry config)
 func (s *serviceImpl) GetClusters(ctx context.Context, _ *v1.Empty) (*v1.DelegatedRegistryClustersResponse, error) {
+	if s.dataStore == nil {
+		return nil, status.Errorf(codes.Unimplemented, "datastore not initialized, is postgres enabled?")
+	}
+
 	clusters, err := s.getClusters(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving clusters")
@@ -120,8 +124,6 @@ func (s *serviceImpl) PutConfig(ctx context.Context, config *storage.DelegatedRe
 	if s.dataStore == nil {
 		return nil, status.Errorf(codes.Unimplemented, "datastore not initialized, is postgres enabled?")
 	}
-
-	log.Debugf("PutConfig %T [%+v]", config, *config)
 
 	if err := s.validate(ctx, config); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
