@@ -164,7 +164,7 @@ func ObserveInventoryProtobufMessage(cmsg *sensor.MsgFromCompliance) {
 	}).Observe(float64(cmsg.Size()))
 }
 
-// TODO(ROX-13164): Add number of retries
+// TODO(ROX-16549): Add number of retries
 
 func init() {
 	prometheus.MustRegister(numberOfRHELPackages, numberOfContentSets, scanDuration, callToNodeInventoryDuration, rescanInterval, scansTotal, protobufMessageSize)

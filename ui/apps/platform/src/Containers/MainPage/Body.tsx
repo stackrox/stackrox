@@ -22,7 +22,6 @@ import {
     userBasePath,
     systemConfigPath,
     systemHealthPath,
-    systemHealthPathPF,
     vulnManagementPath,
     vulnManagementReportsPath,
     configManagementPath,
@@ -90,9 +89,6 @@ const AsyncVulnMgmtRiskAcceptancePage = asyncComponent(
 );
 const AsyncVulnMgmtPage = asyncComponent(() => import('Containers/Workflow/WorkflowLayout'));
 const AsyncSystemHealthPage = asyncComponent(() => import('Containers/SystemHealth/DashboardPage'));
-const AsyncSystemHealthPagePF = asyncComponent(
-    () => import('Containers/SystemHealth/PatternFly/SystemHealthDashboard')
-);
 
 type BodyProps = {
     hasReadAccess: HasReadAccess;
@@ -108,7 +104,6 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
 
     const { isDarkMode } = useTheme();
 
-    const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled('ROX_SYSTEM_HEALTH_PF');
     const isPostgresEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
     const isCollectionsEnabled = isPostgresEnabled;
     const isNetworkGraphPatternflyEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY');
@@ -168,9 +163,6 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         <Route path={clustersListPath} component={AsyncPFClustersPage} />
                     )}
                     <Route path={systemHealthPath} component={AsyncSystemHealthPage} />
-                    {isSystemHealthPatternFlyEnabled && (
-                        <Route path={systemHealthPathPF} component={AsyncSystemHealthPagePF} />
-                    )}
                     <Route component={NotFoundPage} />
                 </Switch>
             </ErrorBoundary>

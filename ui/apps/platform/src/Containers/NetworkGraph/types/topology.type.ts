@@ -57,7 +57,7 @@ export type NamespaceData = {
     namespace: string;
     cluster: string;
     isFilteredNamespace: boolean;
-    labelIconClass: string;
+    labelIconClass?: string;
     isFadedOut: boolean;
 } & BadgeData;
 
@@ -85,7 +85,7 @@ export type DeploymentData = {
     isExternallyConnected: boolean;
     showExternalState: boolean;
     isFadedOut: boolean;
-    labelIconClass: string;
+    labelIconClass?: string;
 } & BadgeData;
 
 export type ExternalGroupData = {

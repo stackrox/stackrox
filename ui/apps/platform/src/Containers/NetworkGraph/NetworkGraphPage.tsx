@@ -68,6 +68,8 @@ function NetworkGraphPage() {
         'policyStatusBadge',
         'externalBadge',
         'edgeLabel',
+        'selectionIndicator',
+        'objectTypeLabel',
     ]);
     const [models, setModels] = useState<Models>({
         activeModel: emptyModel,
@@ -179,20 +181,12 @@ function NetworkGraphPage() {
                         // get policy nodes, and the starting epoch, from policy graph API response
                         const { nodes: policyNodes, epoch } = values[1].response;
                         // transform policy data to DataModel
-                        const { policyDataModel, policyNodeMap } = transformPolicyData(
-                            policyNodes,
-                            deploymentsFromUrl
-                        );
+                        const { policyDataModel, policyNodeMap } = transformPolicyData(policyNodes);
                         // get active nodes from network flow graph API response
                         const { nodes: activeNodes } = values[0].response;
                         // transform active data to DataModel
                         const { activeDataModel, activeEdgeMap, activeNodeMap } =
-                            transformActiveData(
-                                activeNodes,
-                                policyNodeMap,
-                                namespacesFromUrl,
-                                deploymentsFromUrl
-                            );
+                            transformActiveData(activeNodes, policyNodeMap, namespacesFromUrl);
 
                         // create extraneous flows graph
                         const extraneousFlowsDataModel = createExtraneousFlowsModel(

@@ -19,6 +19,7 @@ import { getEntityPagePath } from '../searchUtils';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import DatePhraseTd from '../components/DatePhraseTd';
+import CvssTd from '../components/CvssTd';
 
 export const cveListQuery = gql`
     query getImageCVEList($query: String, $pagination: Pagination) {
@@ -145,7 +146,9 @@ function CVEsTable({ cves, unfilteredImageCount, getSortParams, isFiltered }: CV
                                     />
                                 </Td>
                                 {/* TODO: score version? */}
-                                <Td>{topCVSS.toFixed(1)}</Td>
+                                <Td>
+                                    <CvssTd cvss={topCVSS} />
+                                </Td>
                                 <Td>
                                     {/* TODO: fix upon PM feedback */}
                                     {affectedImageCount}/{unfilteredImageCount} affected images
