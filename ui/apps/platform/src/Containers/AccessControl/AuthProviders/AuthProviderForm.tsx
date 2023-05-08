@@ -36,7 +36,8 @@ import {
     transformInitialValues,
     transformValuesBeforeSaving,
     getGroupsByAuthProviderId,
-    getDefaultRoleByAuthProviderId, isDefaultGroupModifiable,
+    getDefaultRoleByAuthProviderId,
+    isDefaultGroupModifiable,
 } from './authProviders.utils';
 import { AccessControlQueryAction } from '../accessControlPaths';
 import { TraitsOriginLabel } from '../TraitsOriginLabel';

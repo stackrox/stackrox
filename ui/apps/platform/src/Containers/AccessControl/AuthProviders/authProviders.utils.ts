@@ -4,8 +4,7 @@ import {
     AuthProviderRequiredAttributes,
     Group,
 } from 'services/AuthService';
-import {Traits} from "../../../types/traits.proto";
-import {isUserResource} from "../traits";
+import { isUserResource } from '../traits';
 
 export type DisplayedAuthProvider = AuthProvider & {
     do_not_use_client_secret?: boolean;
@@ -223,4 +222,5 @@ export function getDefaultGroupByAuthProviderId(groups: Group[], id: string): Gr
     if (defaultRoleGroups.length) {
         return defaultRoleGroups[0];
     }
+    return undefined;
 }
