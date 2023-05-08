@@ -28,6 +28,7 @@ import ImageComponentVulnerabilitiesTable, {
 
 import EmptyTableResults from '../components/EmptyTableResults';
 import DatePhraseTd from '../components/DatePhraseTd';
+import CvssTd from '../components/CvssTd';
 
 export const imageVulnerabilitiesFragment = gql`
     ${imageComponentVulnerabilitiesFragment}
@@ -153,7 +154,7 @@ function ImageVulnerabilitiesTable({
                                     </span>
                                 </Td>
                                 <Td dataLabel="CVSS">
-                                    {cvss.toFixed(1)} ({scoreVersion})
+                                    <CvssTd cvss={cvss} scoreVersion={scoreVersion} />
                                 </Td>
                                 <Td dataLabel="Affected components">
                                     {imageComponents.length === 1
