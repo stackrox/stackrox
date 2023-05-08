@@ -210,7 +210,7 @@ func insertIntoDeploymentsContainersEnvs(_ context.Context, batch *pgx.Batch, ob
 	}
 
 	updateCollectionMethodStr := "UPDATE deployments_containers_envs SET value = $1 WHERE key = $2 AND value = $3"
-	batch.Queue(undateCollectionMethodStr, values...)
+	batch.Queue(updateCollectionMethodStr, values...)
 
 	return nil
 }
