@@ -43,6 +43,11 @@ func (p *processorImpl) GetNotifier(ctx context.Context, id string) (notifier no
 	return p.ns.GetNotifier(ctx, id)
 }
 
+// GetNotifiers gets the in memory copies of all notifiers
+func (p *processorImpl) GetNotifiers(ctx context.Context) (notifiers []notifiers.Notifier) {
+	return p.ns.GetNotifiers(ctx)
+}
+
 // UpdateNotifier updates or adds the passed notifier into memory
 func (p *processorImpl) UpdateNotifier(ctx context.Context, notifier notifiers.Notifier) {
 	p.ns.UpsertNotifier(ctx, notifier)

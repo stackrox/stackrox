@@ -11,10 +11,12 @@ import (
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/notifiers/splunk"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/endpoints"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -50,13 +52,21 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedNotifierServiceServer
 
-	storage   datastore.DataStore
-	processor processor.Processor
-	reporter  integrationhealth.Reporter
+	storage           datastore.DataStore
+	processor         processor.Processor
+	reporter          integrationhealth.Reporter
+	connectionManager connection.Manager
 
 	buildTimePolicies  detection.PolicySet
 	deployTimePolicies detection.PolicySet
 	runTimePolicies    detection.PolicySet
+}
+
+func (s *serviceImpl) syncNotifiersWithSensors(ctx context.Context) {
+	if env.SecuredClusterNotifiers.BooleanSetting() {
+		notifiers := s.processor.GetNotifiers(ctx)
+		s.connectionManager.PrepareNotifiersAndBroadcast(notifiers)
+	}
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -146,6 +156,9 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 		return nil, err
 	}
 	s.processor.UpdateNotifier(ctx, notifier)
+
+	s.syncNotifiersWithSensors(ctx)
+
 	return &v1.Empty{}, nil
 }
 
@@ -226,6 +239,8 @@ func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNoti
 	}
 
 	s.processor.RemoveNotifier(ctx, request.GetId())
+	s.syncNotifiersWithSensors(ctx)
+
 	if err := s.reporter.RemoveIntegrationHealth(request.GetId()); err != nil {
 		return nil, err
 	}
