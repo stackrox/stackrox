@@ -912,6 +912,7 @@ func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkCo
 			ts = timestamp.InfiniteFuture
 		}
 		updatedEndpoints[ep] = ts
+		log.Infof("UpdatedEndpoint: containerID: %s IP: %s Protocol: %s", ep.containerID, ep.endpoint.IPAndPort, ep.endpoint.L4Proto)
 	}
 
 	return updatedEndpoints
