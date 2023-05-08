@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 )
 
-// DataStore is the entry point for modifying Config data.
+// DataStore is the entry point for modifying Delegated Registry Config data.
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
@@ -44,7 +44,7 @@ func (d *datastoreImpl) GetConfig(ctx context.Context) (*storage.DelegatedRegist
 	return conf, err
 }
 
-// UpsertConfig updates Central's config
+// UpsertConfig updates Central's delegated registry config
 func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.DelegatedRegistryConfig) error {
 	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
 		return err
