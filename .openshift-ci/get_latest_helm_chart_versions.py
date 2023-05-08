@@ -20,7 +20,7 @@ helm_repo_name = "temp-stackrox-oss-repo-should-not-see-me"
 
 add_repo_cmd = f"helm repo add {helm_repo_name} https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource"
 update_repo_cmd = "helm repo update"
-search_cmd = f"helm search repo {helm_repo_name} -l -o json"
+search_cmd = f"helm search repo {helm_repo_name} --versions --output json"
 remove_repo_cmd = f"helm repo remove {helm_repo_name}"
 
 Version = namedtuple("Version", ["major", "minor", "patch"])
