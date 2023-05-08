@@ -8,6 +8,8 @@ import (
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/notifiers/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
+	pkgMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -20,9 +22,9 @@ type notifierSetTestSuite struct {
 	suite.Suite
 
 	mockCtrl             *gomock.Controller
-	mockAlertN           *mocks.MockAlertNotifier
+	mockAlertN           *pkgMocks.MockAlertNotifier
 	mockResolvableAlertN *mocks.MockResolvableAlertNotifier
-	mockAuditN           *mocks.MockAuditNotifier
+	mockAuditN           *pkgMocks.MockAuditNotifier
 
 	ns NotifierSet
 }
@@ -30,9 +32,9 @@ type notifierSetTestSuite struct {
 func (s *notifierSetTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
-	s.mockAlertN = mocks.NewMockAlertNotifier(s.mockCtrl)
+	s.mockAlertN = pkgMocks.NewMockAlertNotifier(s.mockCtrl)
 	s.mockResolvableAlertN = mocks.NewMockResolvableAlertNotifier(s.mockCtrl)
-	s.mockAuditN = mocks.NewMockAuditNotifier(s.mockCtrl)
+	s.mockAuditN = pkgMocks.NewMockAuditNotifier(s.mockCtrl)
 
 	s.ns = NewNotifierSet()
 }
@@ -87,8 +89,8 @@ func (s *notifierSetTestSuite) TestCoorelatedPoliciesAndNotifiers() {
 	s.mockAlertN.EXPECT().AlertNotify(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	s.mockResolvableAlertN.EXPECT().AlertNotify(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	s.ns.ForEach(ctx, func(ctx context.Context, n notifiers.Notifier, failures AlertSet) {
-		an, ok := n.(notifiers.AlertNotifier)
+	s.ns.ForEach(ctx, func(ctx context.Context, n pkgNotifiers.Notifier, failures AlertSet) {
+		an, ok := n.(pkgNotifiers.AlertNotifier)
 		if !ok {
 			return
 		}
@@ -98,7 +100,7 @@ func (s *notifierSetTestSuite) TestCoorelatedPoliciesAndNotifiers() {
 	// Check that the resolvable alert notifiers are activated.
 	s.mockResolvableAlertN.EXPECT().AlertNotify(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	s.ns.ForEach(ctx, func(ctx context.Context, n notifiers.Notifier, failures AlertSet) {
+	s.ns.ForEach(ctx, func(ctx context.Context, n pkgNotifiers.Notifier, failures AlertSet) {
 		an, ok := n.(notifiers.ResolvableAlertNotifier)
 		if !ok {
 			return
@@ -109,8 +111,8 @@ func (s *notifierSetTestSuite) TestCoorelatedPoliciesAndNotifiers() {
 	// Check that the audit notifiers are activated.
 	s.mockAuditN.EXPECT().SendAuditMessage(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	s.ns.ForEach(ctx, func(ctx context.Context, n notifiers.Notifier, failures AlertSet) {
-		an, ok := n.(notifiers.AuditNotifier)
+	s.ns.ForEach(ctx, func(ctx context.Context, n pkgNotifiers.Notifier, failures AlertSet) {
+		an, ok := n.(pkgNotifiers.AuditNotifier)
 		if !ok {
 			return
 		}

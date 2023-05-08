@@ -5,14 +5,15 @@ import (
 
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 )
 
 // Sending alerts.
 //////////////////
 
-func tryToAlert(ctx context.Context, notifier notifiers.Notifier, alert *storage.Alert) error {
+func tryToAlert(ctx context.Context, notifier pkgNotifiers.Notifier, alert *storage.Alert) error {
 	if alert.GetState() == storage.ViolationState_ACTIVE || alert.GetState() == storage.ViolationState_ATTEMPTED {
-		alertNotifier, ok := notifier.(notifiers.AlertNotifier)
+		alertNotifier, ok := notifier.(pkgNotifiers.AlertNotifier)
 		if !ok {
 			return nil
 		}
@@ -26,7 +27,7 @@ func tryToAlert(ctx context.Context, notifier notifiers.Notifier, alert *storage
 	return sendResolvableNotification(alertNotifier, alert)
 }
 
-func sendNotification(ctx context.Context, notifier notifiers.AlertNotifier, alert *storage.Alert) error {
+func sendNotification(ctx context.Context, notifier pkgNotifiers.AlertNotifier, alert *storage.Alert) error {
 	err := notifier.AlertNotify(ctx, alert)
 	if err != nil {
 		logFailure(notifier, alert, err)
@@ -48,7 +49,7 @@ func sendResolvableNotification(notifier notifiers.ResolvableAlertNotifier, aler
 	return err
 }
 
-func logFailure(notifier notifiers.Notifier, alert *storage.Alert, err error) {
+func logFailure(notifier pkgNotifiers.Notifier, alert *storage.Alert, err error) {
 	protoNotifier := notifier.ProtoNotifier()
 	log.Errorf("Unable to send %s notification to %s (%s) for alert %s: %v", alert.GetState().String(), protoNotifier.GetName(), protoNotifier.GetType(), alert.GetId(), err)
 }

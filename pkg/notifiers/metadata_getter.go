@@ -7,6 +7,8 @@ import (
 )
 
 // MetadataGetter provides functionality for getting metadata information for alerts
+//
+//go:generate mockgen-wrapper MetadataGetter
 type MetadataGetter interface {
 	GetAnnotationValue(ctx context.Context, alert *storage.Alert, annotationKey, defaultValue string) string
 }
