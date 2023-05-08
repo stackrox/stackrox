@@ -222,6 +222,16 @@ function getDisplayEdges(edges: CustomEdgeModel[], showEdgeLabels: boolean): Cus
     });
 }
 
+function removeDNSFlows(edges: CustomEdgeModel[]) {
+    return edges.filter((edge) => {
+        return (
+            edge?.data?.sourceToTargetProperties[0]?.port !== 53 &&
+            edge?.data?.sourceToTargetProperties[0]?.port !== 5353 &&
+            edge?.data?.sourceToTargetProperties[0]?.protocol !== 'L4_PROTOCOL_UDP'
+        );
+    });
+}
+
 // This function modifies the nodes to add another data attribute to distinguish faded out nodes from normal ones
 function fadeOutUnconnectedNodes(
     nodes: CustomNodeModel[],
@@ -313,11 +323,14 @@ function NetworkGraphContainer({
     let filteredNodes: CustomNodeModel[] = [...baseModel.nodes];
     let filteredEdges: CustomEdgeModel[] = [...baseModel.edges];
     // if edgeState is extraneous && there is a selectedNode, add in/egress flows nodes/edges
-    if (edgeState === 'inactive' && selectedNode?.data.type === 'DEPLOYMENT') {
+    if (edgeState !== 'active' && selectedNode?.data.type === 'DEPLOYMENT') {
         const extraneousFlowsNodes = getExtraneousNodes(extraneousNodes, selectedNode.data);
         filteredNodes = [...extraneousModel.nodes, ...extraneousFlowsNodes];
         const extraneousFlowsEdges = getExtraneousEdges(selectedNode.data);
         filteredEdges = [...extraneousModel.edges, ...extraneousFlowsEdges];
+    }
+    if (edgeState === 'inactive') {
+        filteredEdges = removeDNSFlows(filteredEdges);
     }
     // filtering nodes/edges based on selection, edges will be [] by default
     filteredEdges = selectedNode ? getFilteredEdges(filteredEdges, selectedNode) : [];
