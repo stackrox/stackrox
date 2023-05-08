@@ -25,16 +25,23 @@ remove_repo_cmd = f"helm repo remove {helm_repo_name}"
 make_tag_cmd = ["make", "-C", repo_root, "--quiet", "--no-print-directory", "tag"]
 get_previous_y_stream_cmd = repo_root / "scripts/get-previous-y-stream.sh"
 
+# Default value of N, the number of previous releases to look up.
+# The current release cadence is 9 weeks (sometimes extended but not reduced), i.e. 9*7=63 days.
+# The current support period is 6 months, i.e. at most 184 days.
+# Therefore, at most 3 releases will be in support at any given moment of time with the current cadence and support
+# period.
+num_versions_default = 3
+
 
 def main(argv):
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
-    n = int(argv[1]) if len(argv) > 1 else 4
+    n = int(argv[1]) if len(argv) > 1 else num_versions_default
     helm_versions = get_previously_released_helm_chart_versions("stackrox-secured-cluster-services", n)
     logging.info(f"Previous {n} helm chart versions released:")
     print("\n".join(helm_versions))
 
 
-def get_previously_released_helm_chart_versions(chart_name, num_versions):
+def get_previously_released_helm_chart_versions(chart_name, num_versions=num_versions_default):
     """
     Looks up current tag (with `make tag`), resolves `num_versions` existing releases preceding the current tag, for
     each release finds the most recently available patch version, returns helm chart version for the most recent patch
