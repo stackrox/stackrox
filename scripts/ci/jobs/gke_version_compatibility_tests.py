@@ -27,7 +27,8 @@ for version in chart_versions:
     try:
         make_compatibility_test_runner(cluster=gkecluster).run()
     except Exception:
-        print(f"Exception \"{Exception}\" raised in compatibility test for sensor version {version}")
+        print(f"Exception \"{Exception}\" raised in compatibility test for sensor chart version {version}",
+              file=sys.stderr)
         failing_sensor_versions += version
 
 if len(failing_sensor_versions) > 0:
