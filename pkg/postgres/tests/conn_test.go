@@ -65,7 +65,7 @@ func (s *postgresConnTestSuite) TestConnBegin() {
 	ctxWithTx := postgres.ContextWithTx(context.Background(), tx1)
 	tx2, err := s.conn.Begin(ctxWithTx)
 	s.NoError(err)
-	s.Same(tx1, tx2)
+	s.Same(tx1.Tx, tx2.Tx)
 
 	// Error
 	s.mockPgxPoolConn.EXPECT().Begin(gomock.Any()).Times(1).DoAndReturn(func(ctx context.Context) (pgx.Tx, error) {

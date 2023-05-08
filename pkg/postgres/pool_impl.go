@@ -56,9 +56,9 @@ type db struct {
 func (d *db) Begin(ctx context.Context) (*Tx, error) {
 	if tx, ok := TxFromContext(ctx); ok {
 		return &Tx{
-			Tx:          tx.Tx,
-			cancelFunc:  tx.cancelFunc,
-			transitMode: true,
+			Tx:         tx.Tx,
+			cancelFunc: tx.cancelFunc,
+			mode:       inner,
 		}, nil
 	}
 

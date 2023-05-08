@@ -1,5 +1,3 @@
-//go:build sql_integration
-
 package postgres
 
 import (
@@ -49,6 +47,37 @@ func (s *TestChild1StoreSuite) TestStoreTxCommit() {
 	testChild1Count, err := s.store.Count(sac.WithAllAccess(context.Background()))
 	s.NoError(err)
 	s.Equal(200, testChild1Count)
+}
+
+func (s *TestChild1StoreSuite) TestStoreTxInnerRollback() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	tx, err := s.testDB.Begin(ctx)
+	s.NoError(err)
+
+	ctx = postgres.ContextWithTx(ctx, tx)
+	ctx, _ = contextutil.ContextWithTimeoutIfNotExists(ctx, time.Minute*10)
+	tx, ok := postgres.TxFromContext(ctx)
+	s.True(ok)
+	s.testWithCtx(ctx)
+	{
+		// This is to emulate an error occurred in the store. In reality,
+		// we should not extract and use inner tx here.
+		innerCtx, ok := postgres.TxFromContext(ctx)
+		s.True(ok)
+		s.NoError(innerCtx.Rollback(ctx))
+
+		// The transaction is cancelled so no rows should exist
+		testChild1Count, err := s.store.Count(sac.WithAllAccess(context.Background()))
+		s.NoError(err)
+		s.Equal(0, testChild1Count)
+	}
+	s.NoError(tx.Rollback(ctx))
+
+	// The transaction is cancelled so no rows should exist
+	testChild1Count, err := s.store.Count(sac.WithAllAccess(context.Background()))
+	s.NoError(err)
+	s.Equal(0, testChild1Count)
 }
 
 func (s *TestChild1StoreSuite) testWithCtx(ctx context.Context) {

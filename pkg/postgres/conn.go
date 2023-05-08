@@ -24,9 +24,9 @@ func (c *Conn) Release() {
 func (c *Conn) Begin(ctx context.Context) (*Tx, error) {
 	if tx, ok := TxFromContext(ctx); ok {
 		return &Tx{
-			Tx:          tx.Tx,
-			cancelFunc:  tx.cancelFunc,
-			transitMode: true,
+			Tx:         tx.Tx,
+			cancelFunc: tx.cancelFunc,
+			mode:       inner,
 		}, nil
 	}
 
