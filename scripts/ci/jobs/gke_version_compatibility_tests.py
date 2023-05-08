@@ -10,8 +10,6 @@ from get_latest_helm_chart_versions import get_latest_helm_chart_versions
 from compatibility_test import make_compatibility_test_runner
 from clusters import GKECluster
 
-class SensorVersionsFailure(Exception):
-    pass
 
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
@@ -33,5 +31,5 @@ for version in chart_versions:
         failing_sensor_versions += version
 
 if len(failing_sensor_versions) > 0:
-    raise SensorVersionsFailure(f"Compatibility tests failed for Sensor versions " + ', '.join(failing_sensor_versions))
+    raise RuntimeError(f"Compatibility tests failed for Sensor versions " + ', '.join(failing_sensor_versions))
 
