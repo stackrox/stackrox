@@ -10,7 +10,7 @@ import {
 import {
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
-    verifyFilteredSecondaryEntitiesLink,
+    verifyConditionalFailingDeployments,
     visitVulnerabilityManagementEntities,
 } from '../../helpers/vulnmanagement/entities';
 
@@ -82,21 +82,12 @@ describe('Vulnerability Management Policies', () => {
     // Argument 3 in verify functions is index of column which has the links.
     // The one-based index includes checkbox, hidden, invisible.
 
-    // Some tests might fail in local deployment.
-
-    // ROX-15891 ROX-15985: skip until decision whether valid to assume high severity violations.
-    it.skip('should display links for failing deployments', function () {
+    it('should display either links for failing deployments or text for No failing deployments', function () {
         if (hasOrchestratorFlavor('openshift')) {
-            this.skip();
+            this.skip(); // TODO verify and remove
         }
 
-        verifyFilteredSecondaryEntitiesLink(
-            entitiesKey,
-            'deployments',
-            10,
-            /^\d+ failing deployments?$/,
-            getPanelHeaderTextFromLinkResults
-        );
+        verifyConditionalFailingDeployments(10, getPanelHeaderTextFromLinkResults);
     });
 
     describe('post-Boolean Policy Logic tests', () => {
