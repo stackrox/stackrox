@@ -13,7 +13,7 @@ import CollectorStatus from './Components/CollectorStatus';
 import AdmissionControlStatus from './Components/AdmissionControlStatus';
 import CredentialExpiration from './Components/CredentialExpiration';
 import DeclarativeConfigurationHealthCard from './Components/DeclarativeConfigurationHealthCard';
-import GenerateDiagnosticBundle from './PatternFly/Components/GenerateDiagnosticBundle';
+import GenerateDiagnosticBundle from './Components/GenerateDiagnosticBundle';
 import SensorStatus from './Components/SensorStatus';
 import SensorUpgrade from './Components/SensorUpgrade';
 import VulnerabilityDefinitions from './Components/VulnerabilityDefinitions';
