@@ -3,7 +3,9 @@
 """
 Run version compatibility tests
 """
+import logging
 import os
+import sys
 from get_latest_helm_chart_versions import get_latest_helm_chart_versions
 from compatibility_test import make_compatibility_test_runner
 from clusters import GKECluster
@@ -14,6 +16,8 @@ class SensorVersionsFailure(Exception):
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 chart_versions = get_latest_helm_chart_versions("stackrox-secured-cluster-services")
 
