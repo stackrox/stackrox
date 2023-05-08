@@ -85,7 +85,7 @@ func (s *notifierSetTestSuite) TestCoorelatedPoliciesAndNotifiers() {
 	s.ns.UpsertNotifier(ctx, s.mockResolvableAlertN)
 	s.ns.UpsertNotifier(ctx, s.mockAuditN)
 
-	s.ElementsMatch(s.ns.GetNotifiers(ctx), []notifiers.Notifier{s.mockAlertN, s.mockResolvableAlertN, s.mockAuditN})
+	s.ElementsMatch(s.ns.GetNotifiers(ctx), []pkgNotifiers.Notifier{s.mockAlertN, s.mockResolvableAlertN, s.mockAuditN})
 
 	// Check that the alert notifiers are activated.
 	s.mockAlertN.EXPECT().AlertNotify(gomock.Any(), gomock.Any()).Return(nil).Times(1)

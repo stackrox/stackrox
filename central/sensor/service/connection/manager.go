@@ -4,12 +4,12 @@ import (
 	"context"
 
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
-	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 )
 
 // Manager is responsible for managing all active connections from sensors.
@@ -31,7 +31,7 @@ type Manager interface {
 	CloseConnection(clusterID string)
 	GetActiveConnections() []SensorConnection
 	PreparePoliciesAndBroadcast(policies []*storage.Policy)
-	PrepareNotifiersAndBroadcast(notifiers []notifiers.Notifier)
+	PrepareNotifiersAndBroadcast(notifiers []pkgNotifiers.Notifier)
 
 	BroadcastMessage(msg *central.MsgToSensor)
 	SendMessage(clusterID string, msg *central.MsgToSensor) error
