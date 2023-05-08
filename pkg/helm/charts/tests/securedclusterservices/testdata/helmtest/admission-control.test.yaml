@@ -69,3 +69,15 @@ tests:
             timeout: 10
       expect: |
         .validatingwebhookconfigurations[].webhooks[].timeoutSeconds | assertThat(. == 10 + 2)
+
+- name: "Admission control deployment configuration"
+  tests:
+    - name: "default replicas"
+      expect: |
+        .deployments["admission-control"].spec.replicas | assertThat(. == 3)
+    - name: "with configured replicas"
+      values:
+        admissionControl:
+          replicas: 50
+      expect: |
+        .deployments["admission-control"].spec.replicas | assertThat(. == 50)
