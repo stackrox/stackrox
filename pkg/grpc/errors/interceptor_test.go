@@ -92,7 +92,7 @@ func TestLogInternalErrorInterceptor(t *testing.T) {
 			core, logs := observer.New(zap.ErrorLevel)
 			module := logging.CurrentModule()
 			log = &logging.LoggerImpl{
-				SugaredLogger: zap.New(core).Named(module.Name()).Sugar(),
+				InnerLogger: zap.New(core).Named(module.Name()).Sugar(),
 			}
 			resp, _ := LogInternalErrorInterceptor(context.Background(), nil, nil, tt.handler)
 			assert.Equal(t, "", resp)

@@ -157,10 +157,10 @@ var (
 	}()
 
 	// rootLogger is the convenience logger used when module specific loggers are not specified
-	rootLogger *LoggerImpl
+	rootLogger Logger
 
 	// thisModuleLogger is the logger for logging in this module.
-	thisModuleLogger *LoggerImpl
+	thisModuleLogger Logger
 )
 
 func init() {
@@ -268,12 +268,7 @@ func GetGlobalLogLevel() zapcore.Level {
 
 // LoggerForModule returns a logger for the current module.
 func LoggerForModule() Logger {
-	return currentModule(3).Logger()
-}
-
-// LoggerImplForModule returns the underlying structure of a logger for the current module.
-func LoggerImplForModule() *LoggerImpl {
-	return currentModule(3).Logger()
+	return CurrentModule().Logger()
 }
 
 // convenience methods log apply to root logger
@@ -384,8 +379,8 @@ func createLoggerWithConfig(lc *zap.Config, module *Module, skip int) *LoggerImp
 	}
 
 	result := &LoggerImpl{
-		SugaredLogger: logger.Named(module.name).Sugar(),
-		module:        module,
+		InnerLogger: logger.Named(module.name).Sugar(),
+		module:      module,
 	}
 
 	runtime.SetFinalizer(result, (*LoggerImpl).finalize)
