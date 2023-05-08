@@ -49,13 +49,6 @@ type pagerDuty struct {
 	routingKey string
 }
 
-func init() {
-	notifiers.Add("pagerduty", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		s, err := newPagerDuty(notifier)
-		return s, err
-	})
-}
-
 func newPagerDuty(notifier *storage.Notifier) (*pagerDuty, error) {
 	pagerDutyConfig, ok := notifier.GetConfig().(*storage.Notifier_Pagerduty)
 	if !ok {
@@ -200,4 +193,11 @@ func (a *marshalableAlert) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON unmarshals alert JSON bytes into an Alert object, following jsonpb rules.
 func (a *marshalableAlert) UnmarshalJSON(data []byte) error {
 	return jsonutil.JSONBytesToProto(data, (*storage.Alert)(a))
+}
+
+func init() {
+	notifiers.Add("pagerduty", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+		s, err := newPagerDuty(notifier)
+		return s, err
+	})
 }

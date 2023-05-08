@@ -13,14 +13,13 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/wrapper"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
-	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -185,11 +184,11 @@ func (s *splunk) sendHTTPPayload(ctx context.Context, method, path string, data 
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
-	return pkgNotifiers.CreateError("Splunk", resp)
+	return notifiers.CreateError("Splunk", resp)
 }
 
 func init() {
-	pkgNotifiers.Add(integrationType, func(notifier *storage.Notifier) (pkgNotifiers.Notifier, error) {
+	notifiers.Add(integrationType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		s, err := newSplunk(notifier)
 		return s, err
 	})

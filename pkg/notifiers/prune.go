@@ -6,15 +6,10 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
 const (
 	sizeBuffer = 50
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 func cleanProcessIndicator(process *storage.ProcessIndicator) *storage.ProcessIndicator {
