@@ -744,11 +744,22 @@ class NetworkFlowTest extends BaseSpecification {
                 sourceNamespacesFromNetworkPolicy.addAll(ingressNamespaceSelectors.collect {
                     it."namespaceSelector"."matchLabels"."kubernetes.io/metadata.name"
                 }).findAll { it != null }
-                // Expect both to include: [two-ports-connect-source, tcp-connection-source-qa2, tcp-connection-source]
+                // Expect vz[-]both to include: [two-ports-connect-source, tcp-connection-source-qa2, tcp-connection-source]
+
                 log.debug("sourceDeploymentsFromNetworkPolicy: {}", sourceDeploymentsFromNetworkPolicy)
                 log.debug("sourceDeploymentsFromGraph: {}", sourceDeploymentsFromGraph)
-                assert sourceDeploymentsFromNetworkPolicy.size() == 3
-                assert sourceDeploymentsFromGraph.size() == 3
+
+                switch( deploymentName ) {
+                    case TCPCONNECTIONTARGET:
+                        assert sourceDeploymentsFromNetworkPolicy.size() == 3
+                        assert sourceDeploymentsFromGraph.size() == 3
+                        break
+                    case UDPCONNECTIONTARGET:
+                        assert sourceDeploymentsFromNetworkPolicy.size() == 1
+                        assert sourceDeploymentsFromGraph.size() == 1
+                        break
+                }
+
                 assert sourceDeploymentsFromNetworkPolicy.sort() == sourceDeploymentsFromGraph.sort()
                 if (!deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)) {
                     log.info "Deployed namespaces do not contain all namespaces found in the network policy"
