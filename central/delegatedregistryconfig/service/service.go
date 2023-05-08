@@ -180,6 +180,10 @@ func (s *serviceImpl) validate(ctx context.Context, config *storage.DelegatedReg
 	return errorList.ToError()
 }
 
+// getClusters returns all clusters annotated with a flag indicating if cluster is valid
+// for use as a delegation target. All clusters are returned instead of just valid clusters
+// so that a consumer (ie: the UI) can show the friendly name of clusters that may no longer
+// be valid but once were
 func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryCluster, error) {
 	clusters, err := s.clusterDataStore.GetClusters(ctx)
 	if err != nil {
