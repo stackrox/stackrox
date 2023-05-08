@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/localscanner"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/central/sensor/networkentities"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
@@ -19,7 +20,9 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -56,6 +59,7 @@ type sensorConnection struct {
 	policyMgr          common.PolicyManager
 	baselineMgr        common.ProcessBaselineManager
 	networkBaselineMgr common.NetworkBaselineManager
+	notifierProcessor  notifierProcessor.Processor
 
 	sensorHello  *central.SensorHello
 	capabilities set.Set[centralsensor.SensorCapability]
@@ -69,6 +73,7 @@ func newConnection(sensorHello *central.SensorHello,
 	policyMgr common.PolicyManager,
 	baselineMgr common.ProcessBaselineManager,
 	networkBaselineMgr common.NetworkBaselineManager,
+	notifierProcessor notifierProcessor.Processor,
 	msgDeduper *deduper,
 ) *sensorConnection {
 
@@ -85,6 +90,7 @@ func newConnection(sensorHello *central.SensorHello,
 		networkEntityMgr:   networkEntityMgr,
 		baselineMgr:        baselineMgr,
 		networkBaselineMgr: networkBaselineMgr,
+		notifierProcessor:  notifierProcessor,
 
 		sensorHello:  sensorHello,
 		capabilities: centralsensor.CapSetFromStringSlice(sensorHello.GetCapabilities()...),
@@ -289,6 +295,25 @@ func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Cont
 	return nil
 }
 
+// getNotifierSyncMsg fetches stored notifiers and prepares them for delivery to sensor.
+func (c *sensorConnection) getNotifierSyncMsg(ctx context.Context) *central.MsgToSensor {
+	return getNotifierSyncMsgFromNotifiers(c.notifierProcessor.GetNotifiers(ctx))
+}
+
+func getNotifierSyncMsgFromNotifiers(notifiers []pkgNotifiers.Notifier) *central.MsgToSensor {
+	var protoNotifiers []*storage.Notifier
+	for _, notifier := range notifiers {
+		protoNotifiers = append(protoNotifiers, notifier.ProtoNotifier())
+	}
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_NotifierSync{
+			NotifierSync: &central.NotifierSync{
+				Notifiers: protoNotifiers,
+			},
+		},
+	}
+}
+
 // getPolicySyncMsg fetches stored policies and prepares them for delivery to sensor.
 func (c *sensorConnection) getPolicySyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
 	policies, err := c.policyMgr.GetAllPolicies(ctx)
@@ -481,7 +506,16 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		if err := server.Send(msg); err != nil {
 			return errors.Wrapf(err, "unable to sync initial network baselines to cluster %q", c.clusterID)
 		}
+	}
 
+	if env.SecuredClusterNotifiers.BooleanSetting() && connectionCapabilities.Contains(centralsensor.SecuredClusterNotifications) {
+		msg := c.getNotifierSyncMsg(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "unable to get notifier sync msg for %q", c.clusterID)
+		}
+		if err := server.Send(msg); err != nil {
+			return errors.Wrapf(err, "unable to sync initial notifiers to cluster %q", c.clusterID)
+		}
 	}
 
 	go c.runSend(server)

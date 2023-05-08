@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -24,6 +25,7 @@ func initialize() {
 		deployTimeDetection.SingletonPolicySet(),
 		runTimeDetection.SingletonPolicySet(),
 		reporter.Singleton(),
+		connection.ManagerSingleton(),
 	)
 }
 

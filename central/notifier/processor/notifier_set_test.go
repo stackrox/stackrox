@@ -59,7 +59,7 @@ func (s *notifierSetTestSuite) TestHasFunctions() {
 	s.True(s.ns.HasNotifiers())
 	s.False(s.ns.HasEnabledAuditNotifiers())
 
-	// An alet and an enabled audit notifier.
+	// An alert and an enabled audit notifier.
 	notifier2 := &storage.Notifier{Id: "n2"}
 	s.mockAuditN.EXPECT().ProtoNotifier().Return(notifier2)
 	s.mockAuditN.EXPECT().AuditLoggingEnabled().Return(true)
@@ -84,6 +84,8 @@ func (s *notifierSetTestSuite) TestCoorelatedPoliciesAndNotifiers() {
 	s.ns.UpsertNotifier(ctx, s.mockAlertN)
 	s.ns.UpsertNotifier(ctx, s.mockResolvableAlertN)
 	s.ns.UpsertNotifier(ctx, s.mockAuditN)
+
+	s.ElementsMatch(s.ns.GetNotifiers(ctx), []pkgNotifiers.Notifier{s.mockAlertN, s.mockResolvableAlertN, s.mockAuditN})
 
 	// Check that the alert notifiers are activated.
 	s.mockAlertN.EXPECT().AlertNotify(gomock.Any(), gomock.Any()).Return(nil).Times(1)
