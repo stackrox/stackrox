@@ -54,7 +54,7 @@ func init() {
 }
 
 var (
-	log = logging.LoggerImplForModule()
+	log = logging.LoggerForModule()
 
 	maxResponseMsgSizeSetting = env.RegisterIntegerSetting("ROX_GRPC_MAX_RESPONSE_SIZE", defaultMaxResponseMsgSize)
 	enableRequestTracing      = env.RegisterBooleanSetting("ROX_GRPC_ENABLE_REQUEST_TRACING", false)
