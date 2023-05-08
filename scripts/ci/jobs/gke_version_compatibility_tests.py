@@ -6,10 +6,10 @@ Run version compatibility tests
 import logging
 import os
 import sys
-from lookup_previous_helm_releases import get_previously_released_helm_chart_versions
-from compatibility_test import make_compatibility_test_runner
-from clusters import GKECluster
 
+from clusters import GKECluster
+from compatibility_test import make_compatibility_test_runner
+from lookup_previous_helm_releases import get_previously_released_helm_chart_versions
 
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
@@ -19,7 +19,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 chart_versions = get_previously_released_helm_chart_versions("stackrox-secured-cluster-services")
 
-gkecluster=GKECluster("compat-test")
+gkecluster = GKECluster("compat-test")
 
 failing_sensor_versions = []
 for version in chart_versions:
@@ -33,4 +33,3 @@ for version in chart_versions:
 
 if len(failing_sensor_versions) > 0:
     raise RuntimeError(f"Compatibility tests failed for Sensor versions " + ', '.join(failing_sensor_versions))
-
