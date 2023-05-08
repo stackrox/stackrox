@@ -14,6 +14,8 @@ import {
 } from './table.utils';
 import FixedByVersionTd from '../components/FixedByVersionTd';
 import DockerfileLayerTd from '../components/DockerfileLayerTd';
+import ComponentLocationTd from '../components/ComponentLocationTd';
+import CvssTd from '../components/CvssTd';
 
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, DeploymentComponentVulnerability };
@@ -23,6 +25,7 @@ export const deploymentComponentVulnerabilitiesFragment = gql`
         name
         version
         location
+        source
         layerIndex
         imageVulnerabilities(query: $query) {
             id
@@ -84,6 +87,7 @@ function DeploymentComponentVulnerabilitiesTable({
                     scoreVersion,
                     fixedByVersion,
                     location,
+                    source,
                     layer,
                 } = componentVuln;
                 // No border on the last row
@@ -107,13 +111,15 @@ function DeploymentComponentVulnerabilitiesTable({
                                 <VulnerabilitySeverityIconText severity={severity} />
                             </Td>
                             <Td>
-                                {cvss.toFixed(1)} ({scoreVersion})
+                                <CvssTd cvss={cvss} scoreVersion={scoreVersion} />
                             </Td>
                             <Td>{version}</Td>
                             <Td>
                                 <FixedByVersionTd fixedByVersion={fixedByVersion} />
                             </Td>
-                            <Td>{location || 'N/A'}</Td>
+                            <Td>
+                                <ComponentLocationTd location={location} source={source} />
+                            </Td>
                         </Tr>
                         <Tr>
                             <Td colSpan={7} className="pf-u-pt-0">

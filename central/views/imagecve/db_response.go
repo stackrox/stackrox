@@ -8,6 +8,7 @@ import (
 
 type imageCVECore struct {
 	CVE                                string    `db:"cve"`
+	CVEIDs                             []string  `db:"cve_id"`
 	ImagesWithCriticalSeverity         int       `db:"critical_severity_count"`
 	FixableImagesWithCriticalSeverity  int       `db:"fixable_critical_severity_count"`
 	ImagesWithImportantSeverity        int       `db:"important_severity_count"`
@@ -23,6 +24,10 @@ type imageCVECore struct {
 
 func (c *imageCVECore) GetCVE() string {
 	return c.CVE
+}
+
+func (c *imageCVECore) GetCVEIDs() []string {
+	return c.CVEIDs
 }
 
 func (c *imageCVECore) GetImagesBySeverity() common.ResourceCountByCVESeverity {

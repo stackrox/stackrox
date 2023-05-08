@@ -37,13 +37,17 @@ export function ClusterIcon(props) {
     );
 }
 
-export function CidrBlockIcon() {
-    return <Badge style={{ backgroundColor: cidrBlockBadgeColor }}>{cidrBlockBadgeText}</Badge>;
+export function CidrBlockIcon(props) {
+    return (
+        <Badge {...props} style={{ backgroundColor: cidrBlockBadgeColor }}>
+            {cidrBlockBadgeText}
+        </Badge>
+    );
 }
 
-export function ExternalEntitiesIcon() {
+export function ExternalEntitiesIcon(props) {
     return (
-        <Badge style={{ backgroundColor: externalEntitiesBadgeColor }}>
+        <Badge {...props} style={{ backgroundColor: externalEntitiesBadgeColor }}>
             {externalEntitiesBadgeText}
         </Badge>
     );

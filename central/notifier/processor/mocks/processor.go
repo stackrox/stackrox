@@ -9,9 +9,9 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	notifiers "github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	notifiers "github.com/stackrox/rox/pkg/notifiers"
 )
 
 // MockProcessor is a mock of Processor interface.
@@ -77,6 +77,20 @@ func (m *MockProcessor) HasNotifiers() bool {
 func (mr *MockProcessorMockRecorder) HasNotifiers() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasNotifiers", reflect.TypeOf((*MockProcessor)(nil).HasNotifiers))
+}
+
+// IsSecuredClusterNotifier mocks base method.
+func (m *MockProcessor) IsSecuredClusterNotifier(notifier notifiers.Notifier) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsSecuredClusterNotifier", notifier)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsSecuredClusterNotifier indicates an expected call of IsSecuredClusterNotifier.
+func (mr *MockProcessorMockRecorder) IsSecuredClusterNotifier(notifier interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSecuredClusterNotifier", reflect.TypeOf((*MockProcessor)(nil).IsSecuredClusterNotifier), notifier)
 }
 
 // ProcessAlert mocks base method.

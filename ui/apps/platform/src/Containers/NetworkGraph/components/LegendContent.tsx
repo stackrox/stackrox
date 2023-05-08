@@ -3,8 +3,6 @@ import { Flex, FlexItem, Title } from '@patternfly/react-core';
 import {
     PficonNetworkRangeIcon,
     BuilderImageIcon,
-    CodeBranchIcon,
-    FilterIcon,
     ExclamationCircleIcon,
 } from '@patternfly/react-icons';
 
@@ -16,6 +14,8 @@ import { ReactComponent as EgressOnly } from 'images/network-graph/egress-only.s
 import { ReactComponent as IngressOnly } from 'images/network-graph/ingress-only.svg';
 import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
 import { ReactComponent as RelatedNSBorder } from 'images/network-graph/related-ns-border.svg';
+import { ReactComponent as RelatedEntity } from 'images/network-graph/related-entity.svg';
+import { ReactComponent as FilteredEntity } from 'images/network-graph/filtered-entity.svg';
 
 function LegendContent() {
     return (
@@ -51,18 +51,34 @@ function LegendContent() {
                     </Title>
                     <DescriptionListCompact isHorizontal termWidth="20px" className="pf-u-pl-md">
                         <DescriptionListItem
-                            term={<FilterIcon />}
+                            term={<FilteredEntity width="20px" height="20px" />}
                             desc="Filtered namespace"
                             groupClassName="pf-u-align-items-center"
                         />
                         <DescriptionListItem
-                            term={<CodeBranchIcon />}
+                            term={<RelatedEntity width="18px" height="18px" />}
                             desc="Related namespace"
                             groupClassName="pf-u-align-items-center"
                         />
                         <DescriptionListItem
                             term={<RelatedNSBorder />}
                             desc="Related namespace grouping"
+                            groupClassName="pf-u-align-items-center"
+                        />
+                    </DescriptionListCompact>
+                </FlexItem>
+                <FlexItem>
+                    <Title
+                        headingLevel="h4"
+                        className="pf-u-pb-sm"
+                        data-testid="deployment-types-title"
+                    >
+                        Deployment types
+                    </Title>
+                    <DescriptionListCompact isHorizontal termWidth="24px" className="pf-u-pl-md">
+                        <DescriptionListItem
+                            term={<FilteredEntity width="20px" height="20px" />}
+                            desc="Filtered deployment"
                             groupClassName="pf-u-align-items-center"
                         />
                     </DescriptionListCompact>

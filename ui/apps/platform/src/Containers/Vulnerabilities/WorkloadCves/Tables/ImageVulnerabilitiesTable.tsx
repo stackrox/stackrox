@@ -16,7 +16,6 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 import useSet from 'hooks/useSet';
 import { vulnerabilitySeverityLabels } from 'messages/common';
-import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { FixableIcon, NotFixableIcon } from 'Components/PatternFly/FixabilityIcons';
 import { getEntityPagePath } from '../searchUtils';
@@ -28,6 +27,8 @@ import ImageComponentVulnerabilitiesTable, {
 } from './ImageComponentVulnerabilitiesTable';
 
 import EmptyTableResults from '../components/EmptyTableResults';
+import DatePhraseTd from '../components/DatePhraseTd';
+import CvssTd from '../components/CvssTd';
 
 export const imageVulnerabilitiesFragment = gql`
     ${imageComponentVulnerabilitiesFragment}
@@ -54,7 +55,7 @@ export type ImageVulnerability = {
     summary: string;
     cvss: number;
     scoreVersion: string;
-    discoveredAtImage: Date | null;
+    discoveredAtImage: string | null;
     imageComponents: ImageComponentVulnerability[];
 };
 
@@ -153,7 +154,7 @@ function ImageVulnerabilitiesTable({
                                     </span>
                                 </Td>
                                 <Td dataLabel="CVSS">
-                                    {cvss.toFixed(1)} ({scoreVersion})
+                                    <CvssTd cvss={cvss} scoreVersion={scoreVersion} />
                                 </Td>
                                 <Td dataLabel="Affected components">
                                     {imageComponents.length === 1
@@ -161,7 +162,7 @@ function ImageVulnerabilitiesTable({
                                         : `${imageComponents.length} components`}
                                 </Td>
                                 <Td dataLabel="First discovered">
-                                    {getDistanceStrictAsPhrase(discoveredAtImage, new Date())}
+                                    <DatePhraseTd date={discoveredAtImage} />
                                 </Td>
                             </Tr>
                             <Tr isExpanded={isExpanded}>

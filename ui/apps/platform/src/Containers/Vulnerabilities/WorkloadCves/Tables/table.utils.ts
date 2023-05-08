@@ -40,12 +40,24 @@ export const imageMetadataContextFragment = gql`
     }
 `;
 
+// This is a general type that isn't specific to this component, so should be moved elsewhere if
+// there is a more appropriate location. (top level ./types/ directory?)
+export type SourceType =
+    | 'OS'
+    | 'PYTHON'
+    | 'JAVA'
+    | 'RUBY'
+    | 'NODEJS'
+    | 'DOTNETCORERUNTIME'
+    | 'INFRASTRUCTURE';
+
 // TODO Enforce a non-empty imageVulnerabilities array at a higher level?
 export type ComponentVulnerabilityBase = {
     type: 'Image' | 'Deployment';
     name: string;
     version: string;
     location: string;
+    source: SourceType;
     layerIndex: number | null;
     imageVulnerabilities: {
         id: string;
@@ -84,6 +96,7 @@ export type TableDataRow = {
     severity: VulnerabilitySeverity;
     version: string;
     location: string;
+    source: SourceType;
     layer: {
         line: number;
         instruction: string;
@@ -143,7 +156,7 @@ function extractCommonComponentFields(
     component: ComponentVulnerabilityBase,
     vulnerability: ComponentVulnerabilityBase['imageVulnerabilities'][0] | undefined
 ): TableDataRow {
-    const { name, version, location, layerIndex } = component;
+    const { name, version, location, source, layerIndex } = component;
 
     let layer: TableDataRow['layer'] = null;
 
@@ -169,6 +182,7 @@ function extractCommonComponentFields(
         name,
         version,
         location,
+        source,
         image,
         layer,
         vulnerabilityId,
@@ -227,4 +241,21 @@ export function getAnyVulnerabilityIsFixable(
     return imageComponents.some((component) =>
         component.imageVulnerabilities.some(({ fixedByVersion }) => fixedByVersion !== '')
     );
+}
+
+export function getHighestCvssScore(imageComponents: ImageComponentVulnerability[]): {
+    cvss: number;
+    scoreVersion: string;
+} {
+    let topCvss = 0;
+    let topScoreVersion = 'N/A';
+    imageComponents.forEach((component) => {
+        component.imageVulnerabilities.forEach(({ cvss, scoreVersion }) => {
+            if (cvss > topCvss) {
+                topCvss = cvss;
+                topScoreVersion = scoreVersion;
+            }
+        });
+    });
+    return { cvss: topCvss, scoreVersion: topScoreVersion };
 }

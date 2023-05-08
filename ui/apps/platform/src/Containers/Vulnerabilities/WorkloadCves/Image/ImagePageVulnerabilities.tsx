@@ -43,6 +43,7 @@ import { getHiddenSeverities, getHiddenStatuses, parseQuerySearchFilter } from '
 import { cveStatusTabValues } from '../types';
 import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/table.utils';
+import { Resource } from '../components/FilterResourceDropdown';
 
 const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
@@ -63,6 +64,8 @@ const imageVulnerabilitiesQuery = gql`
 
 const defaultSortFields = ['CVE'];
 
+const imageResourceFilters = new Set<Resource>(['CVE']);
+
 export type ImagePageVulnerabilitiesProps = {
     imageId: string;
 };
@@ -70,7 +73,7 @@ export type ImagePageVulnerabilitiesProps = {
 function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    const { page, perPage, setPage, setPerPage } = useURLPagination(50);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
         defaultSortOption: {
@@ -221,7 +224,7 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                         title={<TabTitleText>Observed CVEs</TabTitleText>}
                     >
                         <div className="pf-u-px-sm pf-u-background-color-100">
-                            <WorkloadTableToolbar />
+                            <WorkloadTableToolbar supportedResourceFilters={imageResourceFilters} />
                         </div>
                         <div className="pf-u-flex-grow-1 pf-u-background-color-100">
                             {mainContent}

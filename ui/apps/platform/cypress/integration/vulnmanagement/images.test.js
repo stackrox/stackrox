@@ -1,6 +1,6 @@
 import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
+import { hasFeatureFlag } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -10,7 +10,7 @@ import {
     getCountAndNounFromImageCVEsLinkResults,
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
-    verifyFixableCVEsLinkAndRiskAcceptanceTabs,
+    verifyConditionalCVEs,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
 } from '../../helpers/vulnmanagement/entities';
@@ -118,28 +118,12 @@ describe('Vulnerability Management Images', () => {
     // Argument 3 in verify functions is index of column which has the links.
     // The one-based index includes checkbox, hidden, invisible.
 
-    // Some tests might fail in local deployment.
-
-    it('should display links for all image CVEs', () => {
-        verifySecondaryEntities(
+    it('should display either links for image CVEs or text for No CVEs', () => {
+        verifyConditionalCVEs(
             entitiesKey,
             'image-cves',
             3,
-            /^\d+ CVEs?$/,
-            getCountAndNounFromImageCVEsLinkResults
-        );
-    });
-
-    it('should display links for fixable image CVEs and also Risk Acceptance tabs', function () {
-        if (hasOrchestratorFlavor('openshift')) {
-            this.skip();
-        }
-
-        verifyFixableCVEsLinkAndRiskAcceptanceTabs(
-            entitiesKey,
-            'image-cves',
-            3,
-            /^\d+ Fixable$/,
+            'vulnCounter',
             getCountAndNounFromImageCVEsLinkResults
         );
     });

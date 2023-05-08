@@ -8,9 +8,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/central/notifiers/metadatagetter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,9 +28,10 @@ func skip(t *testing.T) string {
 func getTeamsWithMock(t *testing.T, notifier *storage.Notifier) (*teams, *gomock.Controller) {
 	mockCtrl := gomock.NewController(t)
 	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
+	metadataGetter := metadatagetter.NewTestMetadataGetter(t, nsStore)
 	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return([]*storage.NamespaceMetadata{}, nil).AnyTimes()
 
-	s, err := newTeams(notifier, nsStore)
+	s, err := newTeams(notifier, metadataGetter)
 	assert.NoError(t, err)
 
 	return s, mockCtrl

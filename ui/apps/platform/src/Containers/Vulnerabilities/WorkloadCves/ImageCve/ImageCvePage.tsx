@@ -27,6 +27,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { Pagination as PaginationParam } from 'services/types';
 
+import { VulnerabilitySeverity } from 'types/cve.proto';
 import { getHiddenSeverities, getOverviewCvesPath, parseQuerySearchFilter } from '../searchUtils';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import ImageCvePageHeader, {
@@ -50,6 +51,7 @@ import BySeveritySummaryCard, {
 } from '../SummaryCards/BySeveritySummaryCard';
 import TopCvssScoreBreakdown from '../SummaryCards/TopCvssScoreBreakdown';
 import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
+import { Resource } from '../components/FilterResourceDropdown';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
@@ -96,7 +98,14 @@ export const imageCveAffectedImagesQuery = gql`
 export const imageCveAffectedDeploymentsQuery = gql`
     ${deploymentsForCveFragment}
     # by default, query must include the CVE id
-    query getDeploymentsForCVE($query: String, $pagination: Pagination) {
+    query getDeploymentsForCVE(
+        $query: String
+        $pagination: Pagination
+        $lowImageCountQuery: String
+        $moderateImageCountQuery: String
+        $importantImageCountQuery: String
+        $criticalImageCountQuery: String
+    ) {
         deployments(query: $query, pagination: $pagination) {
             ...DeploymentsForCVE
         }
@@ -130,6 +139,8 @@ const defaultSeveritySummary = {
     topCVSS: 0,
 };
 
+const imageCveResourceFilters = new Set<Resource>(['IMAGE', 'DEPLOYMENT', 'NAMESPACE', 'CLUSTER']);
+
 function ImageCvePage() {
     const urlParams = useParams();
     const cveId: string = urlParams.cveId ?? '';
@@ -139,7 +150,7 @@ function ImageCvePage() {
         ...querySearchFilter,
         CVE: cveId,
     });
-    const { page, perPage, setPage, setPerPage } = useURLPagination(25);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
 
     const [entityTab] = useURLStringUnion('entityTab', imageCveEntities);
 
@@ -191,18 +202,31 @@ function ImageCvePage() {
         skip: entityTab !== 'Image',
     });
 
+    function getDeploymentSearchQuery(severity?: VulnerabilitySeverity) {
+        const filters = { ...querySearchFilter, CVE: cveId };
+        if (severity) {
+            filters.Severity = [severity];
+        }
+        return getRequestQueryStringForSearchFilter(filters);
+    }
+
     const deploymentDataRequest = useQuery<
         { deploymentCount: number; deployments: DeploymentForCve[] },
         {
             query: string;
+            lowImageCountQuery: string;
+            moderateImageCountQuery: string;
+            importantImageCountQuery: string;
+            criticalImageCountQuery: string;
             pagination: PaginationParam;
         }
     >(imageCveAffectedDeploymentsQuery, {
         variables: {
-            query: getRequestQueryStringForSearchFilter({
-                ...querySearchFilter,
-                CVE: cveId,
-            }),
+            query: getDeploymentSearchQuery(),
+            lowImageCountQuery: getDeploymentSearchQuery('LOW_VULNERABILITY_SEVERITY'),
+            moderateImageCountQuery: getDeploymentSearchQuery('MODERATE_VULNERABILITY_SEVERITY'),
+            importantImageCountQuery: getDeploymentSearchQuery('IMPORTANT_VULNERABILITY_SEVERITY'),
+            criticalImageCountQuery: getDeploymentSearchQuery('CRITICAL_VULNERABILITY_SEVERITY'),
             pagination: {
                 offset: (page - 1) * perPage,
                 limit: perPage,
@@ -286,7 +310,7 @@ function ImageCvePage() {
             <PageSection className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
                 <div className="pf-u-background-color-100">
                     <div className="pf-u-px-sm">
-                        <WorkloadTableToolbar />
+                        <WorkloadTableToolbar supportedResourceFilters={imageCveResourceFilters} />
                     </div>
                     <div className="pf-u-px-lg pf-u-pb-lg">
                         {summaryRequest.error && (
@@ -339,14 +363,8 @@ function ImageCvePage() {
                                     imageCount={imageCount}
                                     deploymentCount={deploymentCount}
                                     entityTabs={imageCveEntities}
-                                    onChange={(entity) => {
-                                        // Ugly type workaround
-                                        if (entity !== 'CVE') {
-                                            // Set the sort and pagination back to the default when changing between entity tabs
-                                            setSortOption(getDefaultSortOption(entity));
-                                            setPage(1);
-                                        }
-                                    }}
+                                    setSortOption={setSortOption}
+                                    setPage={setPage}
                                 />
                                 {isFiltered && <DynamicTableLabel />}
                             </Flex>

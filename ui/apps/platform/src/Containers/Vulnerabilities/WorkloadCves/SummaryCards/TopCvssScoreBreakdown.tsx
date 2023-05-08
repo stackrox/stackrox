@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardTitle, CardBody, Flex, Tooltip, Text } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
+import CvssTd from '../components/CvssTd';
 
 export type TopCvssScoreBreakdownProps = {
     className?: string;
@@ -19,7 +20,9 @@ function TopCvssScoreBreakdown({ className, cvssScore, vector }: TopCvssScoreBre
             </CardTitle>
             <CardBody>
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                    <Text>{cvssScore.toFixed(1)}</Text>
+                    <Text>
+                        <CvssTd cvss={cvssScore} />
+                    </Text>
                     <Text className="pf-u-color-200">{vector}</Text>
                 </Flex>
             </CardBody>

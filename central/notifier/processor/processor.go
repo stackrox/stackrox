@@ -3,11 +3,11 @@ package processor
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifiers"
 )
 
 var (
@@ -23,6 +23,7 @@ type Processor interface {
 
 	HasNotifiers() bool
 	HasEnabledAuditNotifiers() bool
+	IsSecuredClusterNotifier(notifier notifiers.Notifier) bool
 
 	UpdateNotifier(ctx context.Context, notifier notifiers.Notifier)
 	RemoveNotifier(ctx context.Context, id string)
