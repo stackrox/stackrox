@@ -19,6 +19,7 @@ export type AdvancedFlowsFilterProps = {
 
 export const defaultAdvancedFlowsFilters: AdvancedFlowsFilterType = {
     directionality: [],
+    flows: [],
     protocols: [],
     ports: [],
 };
