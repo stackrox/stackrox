@@ -744,7 +744,7 @@ class NetworkFlowTest extends BaseSpecification {
                 sourceNamespacesFromNetworkPolicy.addAll(ingressNamespaceSelectors.collect {
                     it."namespaceSelector"."matchLabels"."kubernetes.io/metadata.name"
                 }).findAll { it != null }
-                // Expectation for both to include: [two-ports-connect-source, tcp-connection-source-qa2, tcp-connection-source]
+                // Expect both to include: [two-ports-connect-source, tcp-connection-source-qa2, tcp-connection-source]
                 log.debug("sourceDeploymentsFromNetworkPolicy: {}", sourceDeploymentsFromNetworkPolicy)
                 log.debug("sourceDeploymentsFromGraph: {}", sourceDeploymentsFromGraph)
                 assert sourceDeploymentsFromNetworkPolicy.size() == 3
