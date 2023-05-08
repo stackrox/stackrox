@@ -51,10 +51,10 @@ export type ImageForCve = {
     watchStatus: 'WATCHED' | 'NOT_WATCHED';
     scanTime: string | null;
     imageComponents: (ImageComponentVulnerability & {
-        imageVulnerabilities: {
+        imageVulnerabilities: (ImageComponentVulnerability['imageVulnerabilities'][number] & {
             cvss: number;
             scoreVersion: string;
-        };
+        })[];
     })[];
 };
 

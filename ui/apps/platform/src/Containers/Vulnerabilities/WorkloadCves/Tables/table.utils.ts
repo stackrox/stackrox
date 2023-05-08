@@ -243,7 +243,14 @@ export function getAnyVulnerabilityIsFixable(
     );
 }
 
-export function getHighestCvssScore(imageComponents: ImageComponentVulnerability[]): {
+export function getHighestCvssScore(
+    imageComponents: {
+        imageVulnerabilities: {
+            cvss: number;
+            scoreVersion: string;
+        }[];
+    }[]
+): {
     cvss: number;
     scoreVersion: string;
 } {
