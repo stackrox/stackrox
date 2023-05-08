@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/mitchellh/go-wordwrap"
-	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/notifiers/metadatagetter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
@@ -26,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
+	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/utils"
 )
 

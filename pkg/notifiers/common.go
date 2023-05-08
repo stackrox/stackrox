@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry"
 )
 
@@ -29,6 +30,10 @@ const (
 const (
 	alertLinkPath = "/main/violations/%s"
 	imageLinkPath = "/main/vulnerability-management/image/%s"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // AlertLink is the link URL for this alert

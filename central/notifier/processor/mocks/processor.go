@@ -9,9 +9,9 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	notifiers "github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	notifiers "github.com/stackrox/rox/pkg/notifiers"
 )
 
 // MockProcessor is a mock of Processor interface.

@@ -11,12 +11,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/notifiers/metadatagetter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
@@ -35,7 +35,7 @@ var (
 type teams struct {
 	*storage.Notifier
 
-	metadataGetter notifiers.MetadataGetter
+	metadataGetter pkgNotifiers.MetadataGetter
 }
 
 type section struct {
@@ -64,7 +64,7 @@ func (t *teams) getAlertSection(alert *storage.Alert) section {
 		facts = append(facts, fact{Name: "ID", Value: alertID})
 	}
 
-	alertLink := notifiers.AlertLink(t.Notifier.UiEndpoint, alert)
+	alertLink := pkgNotifiers.AlertLink(t.Notifier.UiEndpoint, alert)
 	if len(alertLink) > 0 {
 		facts = append(facts, fact{Name: "URL", Value: alertLink})
 	}
@@ -81,7 +81,7 @@ func (t *teams) getAlertSection(alert *storage.Alert) section {
 		return section
 	}
 
-	severityVal, err := notifiers.GetNotifiersCompatiblePolicySeverity(policy.GetSeverity().String())
+	severityVal, err := pkgNotifiers.GetNotifiersCompatiblePolicySeverity(policy.GetSeverity().String())
 	if err != nil {
 		return section
 	}
@@ -254,7 +254,7 @@ func (*teams) Close(_ context.Context) error {
 // AlertNotify takes in an alert and generates the Teams message
 func (t *teams) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	var sections []section
-	title := notifiers.SummaryForAlert(alert)
+	title := pkgNotifiers.SummaryForAlert(alert)
 
 	alertSection := t.getAlertSection(alert)
 	sections = append(sections, alertSection)
@@ -276,7 +276,7 @@ func (t *teams) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 
 	notification := notification{
 		Title:    title,
-		Color:    notifiers.GetAttachmentColor(alert.GetPolicy().GetSeverity()),
+		Color:    pkgNotifiers.GetAttachmentColor(alert.GetPolicy().GetSeverity()),
 		Text:     title,
 		Sections: sections,
 	}
@@ -314,13 +314,13 @@ func (t *teams) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 		},
 	}
 
-	body, err := notifiers.FormatNetworkPolicyYAML(yaml, clusterName, funcMap)
+	body, err := pkgNotifiers.FormatNetworkPolicyYAML(yaml, clusterName, funcMap)
 	if err != nil {
 		return err
 	}
 	notification := notification{
 		Title: tagLine,
-		Color: notifiers.YAMLNotificationColor,
+		Color: pkgNotifiers.YAMLNotificationColor,
 		Text:  body,
 	}
 
@@ -340,7 +340,7 @@ func (t *teams) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 	)
 }
 
-func newTeams(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter) (*teams, error) {
+func newTeams(notifier *storage.Notifier, metadataGetter pkgNotifiers.MetadataGetter) (*teams, error) {
 	return &teams{
 		Notifier:       notifier,
 		metadataGetter: metadataGetter,
@@ -379,7 +379,7 @@ func postMessage(ctx context.Context, url string, jsonPayload []byte) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{
-		Timeout:   notifiers.Timeout,
+		Timeout:   pkgNotifiers.Timeout,
 		Transport: proxy.RoundTripper(),
 	}
 	resp, err := client.Do(req)
@@ -388,7 +388,7 @@ func postMessage(ctx context.Context, url string, jsonPayload []byte) error {
 		return errors.Wrap(err, "Error posting to teams")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
-	return notifiers.CreateError("Teams", resp)
+	return pkgNotifiers.CreateError("Teams", resp)
 }
 
 func backOff(previousAttempt int) {
@@ -396,7 +396,7 @@ func backOff(previousAttempt int) {
 }
 
 func init() {
-	notifiers.Add("teams", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+	pkgNotifiers.Add("teams", func(notifier *storage.Notifier) (pkgNotifiers.Notifier, error) {
 		s, err := newTeams(notifier, metadatagetter.Singleton())
 		return s, err
 	})
