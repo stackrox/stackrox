@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
-	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/central/sensor/networkentities"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
@@ -23,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -300,7 +300,7 @@ func (c *sensorConnection) getNotifierSyncMsg(ctx context.Context) *central.MsgT
 	return getNotifierSyncMsgFromNotifiers(c.notifierProcessor.GetNotifiers(ctx))
 }
 
-func getNotifierSyncMsgFromNotifiers(notifiers []notifiers.Notifier) *central.MsgToSensor {
+func getNotifierSyncMsgFromNotifiers(notifiers []pkgNotifiers.Notifier) *central.MsgToSensor {
 	var protoNotifiers []*storage.Notifier
 	for _, notifier := range notifiers {
 		protoNotifiers = append(protoNotifiers, notifier.ProtoNotifier())

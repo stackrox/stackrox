@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	storageMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/notifier/processor/mocks"
-	"github.com/stackrox/rox/central/notifiers"
 	_ "github.com/stackrox/rox/central/notifiers/all"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stretchr/testify/suite"
@@ -89,7 +89,7 @@ func (s *notifierServiceTestSuite) TestPutNotifier() {
 	s.processor.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Return()
 
 	if env.SecuredClusterNotifiers.BooleanSetting() {
-		s.processor.EXPECT().GetNotifiers(gomock.Any()).Return([]notifiers.Notifier{})
+		s.processor.EXPECT().GetNotifiers(gomock.Any()).Return([]pkgNotifiers.Notifier{})
 		s.connectionManager.EXPECT().PrepareNotifiersAndBroadcast(gomock.Any()).Times(1)
 	}
 	_, err := s.getSvc().PutNotifier(s.ctx, &storage.Notifier{})
@@ -105,7 +105,7 @@ func (s *notifierServiceTestSuite) TestUpdateNotifier() {
 	s.processor.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Times(3).Return()
 
 	if env.SecuredClusterNotifiers.BooleanSetting() {
-		s.processor.EXPECT().GetNotifiers(gomock.Any()).Times(3).Return([]notifiers.Notifier{})
+		s.processor.EXPECT().GetNotifiers(gomock.Any()).Times(3).Return([]pkgNotifiers.Notifier{})
 		s.connectionManager.EXPECT().PrepareNotifiersAndBroadcast(gomock.Any()).Times(3)
 	}
 
