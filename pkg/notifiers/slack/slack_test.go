@@ -8,11 +8,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	"github.com/stackrox/rox/central/notifiers/metadatagetter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
+	notifierMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,12 +27,11 @@ func skip(t *testing.T) string {
 
 func getSlackWithMock(t *testing.T, notifier *storage.Notifier) (*slack, *gomock.Controller) {
 	mockCtrl := gomock.NewController(t)
-	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
 	mitreStore := mitreMocks.NewMockAttackReadOnlyDataStore(mockCtrl)
-	metadataGetter := metadatagetter.NewTestMetadataGetter(t, nsStore)
-	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return([]*storage.NamespaceMetadata{}, nil).AnyTimes()
 	mitreStore.EXPECT().Get(gomock.Any()).Return(&storage.MitreAttackVector{}, nil).AnyTimes()
-	s, err := newSlack(notifier, metadataGetter, mitreStore)
+	metadataGetter := notifierMocks.NewMockMetadataGetter(mockCtrl)
+	metadataGetter.EXPECT().GetAnnotationValue(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return("").AnyTimes()
+	s, err := NewSlack(notifier, metadataGetter, mitreStore)
 	assert.NoError(t, err)
 
 	return s, mockCtrl
