@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	cluster "github.com/stackrox/rox/central/cluster/datastore"
-
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -20,14 +19,13 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 var (
-	log        = logging.LoggerForModule()
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		or.SensorOrAuthorizer(user.With(permissions.View(resources.Administration))): {
 			"/v1.DelegatedRegistryConfigService/GetConfig",
@@ -83,12 +81,12 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetConfig returns Central's delegated registry config
 func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*storage.DelegatedRegistryConfig, error) {
 	if s.dataStore == nil {
-		return nil, status.Errorf(codes.Unimplemented, "datastore not initialized, is postgres enabled?")
+		return nil, status.Error(codes.Unimplemented, "datastore not initialized, is postgres enabled?")
 	}
 
 	config, err := s.dataStore.GetConfig(ctx)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "retrieving config")
 	}
 
 	if config == nil {
@@ -102,7 +100,7 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*storage.Dele
 // requests (ie: only clusters with scanners that understand the delegated registry config)
 func (s *serviceImpl) GetClusters(ctx context.Context, _ *v1.Empty) (*v1.DelegatedRegistryClustersResponse, error) {
 	if s.dataStore == nil {
-		return nil, status.Errorf(codes.Unimplemented, "datastore not initialized, is postgres enabled?")
+		return nil, status.Error(codes.Unimplemented, "datastore not initialized, is postgres enabled?")
 	}
 
 	clusters, err := s.getClusters(ctx)
@@ -111,7 +109,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, _ *v1.Empty) (*v1.Delegat
 	}
 
 	if len(clusters) == 0 {
-		return nil, status.Errorf(codes.NotFound, "no valid clusters found")
+		return nil, status.Error(codes.NotFound, "no valid clusters found")
 	}
 
 	return &v1.DelegatedRegistryClustersResponse{
@@ -122,7 +120,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, _ *v1.Empty) (*v1.Delegat
 // PutConfig updates Central's delegated registry config
 func (s *serviceImpl) PutConfig(ctx context.Context, config *storage.DelegatedRegistryConfig) (*storage.DelegatedRegistryConfig, error) {
 	if s.dataStore == nil {
-		return nil, status.Errorf(codes.Unimplemented, "datastore not initialized, is postgres enabled?")
+		return nil, status.Error(codes.Unimplemented, "datastore not initialized, is postgres enabled?")
 	}
 
 	if err := s.validate(ctx, config); err != nil {
@@ -130,7 +128,7 @@ func (s *serviceImpl) PutConfig(ctx context.Context, config *storage.DelegatedRe
 	}
 
 	if err := s.dataStore.UpsertConfig(ctx, config); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "upserting config")
 	}
 
 	return config, nil
@@ -150,28 +148,26 @@ func (s *serviceImpl) validate(ctx context.Context, config *storage.DelegatedReg
 	errorList := errorhelpers.NewErrorList("Validation")
 	// validate the default cluster id
 	if config.DefaultClusterId == "" {
-		errorList.AddStrings("defaultClusterId required if enabledFor != NONE")
+		errorList.AddStrings("defaultClusterId required if enabledFor is not NONE")
 		return errorList.ToError()
 	}
 
 	// get the valid clusters
-	validClusters, err := s.getValidClustersIds(ctx)
+	validClusters, err := s.getValidClusterIds(ctx)
 	if err != nil {
 		return errors.Wrap(err, "unable to validate config")
 	}
 
-	_, isValid := validClusters[config.DefaultClusterId]
-	if !isValid {
+	if !validClusters.Contains(config.DefaultClusterId) {
 		errorList.AddStrings(fmt.Sprintf("default cluster %q is not a valid cluster", config.DefaultClusterId))
 	}
 
 	// validate the registries / clusters
 	for i, r := range config.Registries {
-		if r.ClusterId != "" {
-			_, isValid := validClusters[r.ClusterId]
-			if !isValid {
-				errorList.AddStrings(fmt.Sprintf("cluster %q is not valid at index %v", r.ClusterId, i))
-			}
+
+		// if a cluster id was provided, check if its valid
+		if r.ClusterId != "" && !validClusters.Contains(r.ClusterId) {
+			errorList.AddStrings(fmt.Sprintf("cluster %q is not valid at index %v", r.ClusterId, i))
 		}
 
 		if r.RegistryPath == "" {
@@ -199,6 +195,7 @@ func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryC
 	var res []*v1.DelegatedRegistryCluster
 	for _, c := range clusters {
 
+		// TODO: change this to use sensor capability instead
 		valid := c.GetHealthStatus().GetScannerHealthStatus() == storage.ClusterHealthStatus_HEALTHY
 
 		res = append(res, &v1.DelegatedRegistryCluster{
@@ -211,18 +208,20 @@ func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryC
 	return res, nil
 }
 
-func (s *serviceImpl) getValidClustersIds(ctx context.Context) (map[string]string, error) {
+// getValidClusterIds returns a set cluster ids that are valid for delegation
+func (s *serviceImpl) getValidClusterIds(ctx context.Context) (set.Set[string], error) {
 	clusters, err := s.getClusters(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	r := map[string]string{}
+	validClusterIds := set.NewStringSet()
+
 	for _, c := range clusters {
 		if c.IsValid {
-			r[c.Id] = c.Name
+			validClusterIds.Add(c.Id)
 		}
 	}
 
-	return r, nil
+	return validClusterIds, nil
 }
