@@ -861,6 +861,8 @@ func getUpdatedConnections(hostname string, networkInfo *sensor.NetworkConnectio
 			L4Proto:   net.L4ProtoFromProtobuf(conn.GetProtocol()),
 		}
 		local := getIPAndPort(conn.GetLocalAddress())
+		log.Infof("UpdatedConnections: containerID %s RemoteAddress: %s", conn.GetContainerId(), conn.GetRemoteAddress().String())
+		log.Infof("UpdatedConnections: containerID %s LocalAddress: %s", conn.GetContainerId(), conn.GetLocalAddress().String())
 		log.Infof("UpdatedConnections: containerID: %s remote: %+v local: %+v incoming: %t", conn.GetContainerId(), remote, local, incoming)
 
 		// Special handling for UDP ports - role reported by collector may be unreliable, so look at which port is more
