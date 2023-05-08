@@ -17,7 +17,7 @@ message DelegatedRegistryConfig {
         SPECIFIC = 2;
     }
 
-    message Registry {
+    message DelegatedRegistry {
         // registry + optional path, ie: quay.example.com/prod
         string registry_path = 1;
         // id of the cluster to delegate requests to
@@ -33,5 +33,5 @@ message DelegatedRegistryConfig {
 
     // list of registries that has different outcome depending on value of enabled_for, allows
     // for controlling which registries require delegation and how to route ad-hoc requests
-    repeated Registry registries = 3;
+    repeated DelegatedRegistry registries = 3;
 }
