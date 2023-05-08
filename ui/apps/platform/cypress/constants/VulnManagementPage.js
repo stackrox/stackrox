@@ -13,12 +13,17 @@ export const vmHomePageSelectors = {
     vulnManagementExpandedDashboardNavLink: `${navigationSelectors.nestedNavLinks}:contains("Dashboard")`,
     vulnManagementExpandedReportingNavLink: `${navigationSelectors.nestedNavLinks}:contains("Reporting")`,
 };
+
+// The one-based index includes checkbox, hidden, invisible cells.
+const getTableDataColumnSelector = (columnIndex) => `.rt-tbody .rt-td:nth-child(${columnIndex})`;
+
 export const listSelectors = {
     riskScoreCol: '.rt-table > .rt-tbody > div > div > div:nth-child(10)',
     componentsRiskScoreCol: '.rt-table > .rt-tbody >div > div > div:nth-child(7)',
     cvesCvssScoreCol: '.rt-table > .rt-tbody > div > .rt-tr.-odd > div:nth-child(4) > div > span',
     tableRows: '.rt-tr',
     tableCells: '.rt-td',
+    getTableDataColumnSelector,
     tableBodyRowGroups: '.rt-tbody .rt-tr-group',
     tableBodyRows: '.rt-tbody .rt-tr',
     tableRowCheckbox: '[data-testid="checkbox-table-row-selector"]',
