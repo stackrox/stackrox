@@ -88,6 +88,7 @@ export type TableDataRow = {
         name: {
             remote: string;
             registry: string;
+            tag: string;
         } | null;
     };
     name: string;
