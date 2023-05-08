@@ -68,9 +68,7 @@ func (c *Conn) Query(ctx context.Context, sql string, args ...interface{}) (*Row
 
 	if tx, ok := TxFromContext(ctx); ok {
 		rows, err := tx.Query(ctx, sql, args...)
-		if err != nil {
-			incQueryErrors(sql, err)
-		}
+		incQueryErrors(sql, err)
 		return rows, err
 	}
 
@@ -132,8 +130,6 @@ func (c *Conn) CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNam
 	} else {
 		rows, err = c.PgxPoolConn.CopyFrom(ctx, tableName, columnNames, rowSrc)
 	}
-	if err != nil {
-		incQueryErrors("copyfrom", err)
-	}
+	incQueryErrors("copyfrom", err)
 	return rows, err
 }
