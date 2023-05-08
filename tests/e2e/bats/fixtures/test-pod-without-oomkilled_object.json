@@ -189,14 +189,6 @@
                     {
                         "name": "ROX_ROXCTL_NETPOL_GENERATE",
                         "value": "true"
-                    },
-                    {
-                        "name": "ROX_SEARCH_PAGE_UI",
-                        "value": "false"
-                    },
-                    {
-                        "name": "ROX_SYSTEM_HEALTH_PF",
-                        "value": "false"
                     }
                 ],
                 "image": "quay.io/rhacs-eng/main:3.73.0",
