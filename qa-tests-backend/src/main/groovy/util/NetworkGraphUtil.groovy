@@ -14,7 +14,8 @@ import services.NetworkGraphService
 class NetworkGraphUtil {
 
     // more time is needed on few architectures
-    static final NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS = ((System.getenv("REMOTE_CLUSTER_ARCH") == "x86_64" ) ? 30 : 120)
+    static final NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS =
+        ((System.getenv("REMOTE_CLUSTER_ARCH") == "x86_64" ) ? 30 : 120)
 
     static int edgeCount(NetworkGraphServiceOuterClass.NetworkGraph graph) {
         int numEdges = 0
