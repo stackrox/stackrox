@@ -1,5 +1,3 @@
-//go:build sql_integration
-
 package datastore
 
 import (
@@ -18,6 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -32,14 +31,14 @@ import (
 
 func TestAllDefaultRolesAreCovered(t *testing.T) {
 	// Merge the roles for vuln reporting into the defaults
-	assert.Len(t, defaultRoles, len(role.DefaultRoleNames))
+	assert.Len(t, defaultRoles, len(accesscontrol.DefaultRoleNames))
 	for r := range defaultRoles {
-		assert.Contains(t, role.DefaultRoleNames, r)
+		assert.Contains(t, accesscontrol.DefaultRoleNames, r)
 	}
 }
 
 func TestAnalystRoleDoesNotContainAdministration(t *testing.T) {
-	analystRole, found := defaultRoles[role.Analyst]
+	analystRole, found := defaultRoles[accesscontrol.Analyst]
 	// Analyst is one of the default roles.
 	assert.True(t, found)
 
@@ -267,7 +266,7 @@ func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 	updatedGoodRole := getValidRole("valid role", secondExistingPermissionSet.GetId(), s.existingScope.GetId())
 	badRole := &storage.Role{Name: "invalid role"}
 	cloneRole := getValidRole(s.existingRole.GetName(), s.existingPermissionSet.GetId(), s.existingScope.GetId())
-	updatedAdminRole := getValidRole(role.Admin, s.existingPermissionSet.GetId(), s.existingScope.GetId())
+	updatedAdminRole := getValidRole(accesscontrol.Admin, s.existingPermissionSet.GetId(), s.existingScope.GetId())
 	declarativeRole := getValidRole("declarative role", s.existingDeclarativePermissionSet.GetId(), s.existingDeclarativeScope.GetId())
 	declarativeRole.Traits = &storage.Traits{
 		Origin: storage.Traits_DECLARATIVE,
@@ -507,7 +506,7 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	badDeclarativePermissionSet.Traits = &storage.Traits{
 		Origin: storage.Traits_DECLARATIVE,
 	}
-	updatedAdminPermissionSet := getValidPermissionSet(role.EnsureValidAccessScopeID("admin"), role.Admin)
+	updatedAdminPermissionSet := getValidPermissionSet(role.EnsureValidAccessScopeID("admin"), accesscontrol.Admin)
 
 	err := s.dataStore.AddPermissionSet(s.hasWriteCtx, badPermissionSet)
 	s.ErrorIs(err, errox.InvalidArgs, "invalid permission set for Add*() yields an error")

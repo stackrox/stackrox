@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -77,30 +78,30 @@ func (attributes *roleAttributes) getID() string {
 }
 
 var defaultRoles = map[string]roleAttributes{
-	rolePkg.Admin: {
+	accesscontrol.Admin: {
 		idSuffix:           "admin",
-		postgresID:         adminPermissionSetID,
+		postgresID:         accesscontrol.DefaultPermissionSetIDs[accesscontrol.Admin],
 		description:        "For users: use it to provide read and write access to all the resources",
 		resourceWithAccess: resources.AllResourcesModifyPermissions(),
 	},
-	rolePkg.Analyst: {
+	accesscontrol.Analyst: {
 		idSuffix:           "analyst",
-		postgresID:         analystPermissionSetID,
+		postgresID:         accesscontrol.DefaultPermissionSetIDs[accesscontrol.Analyst],
 		resourceWithAccess: rolePkg.GetAnalystPermissions(),
 		description:        "For users: use it to give read-only access to all the resources",
 	},
-	rolePkg.ContinuousIntegration: {
+	accesscontrol.ContinuousIntegration: {
 		idSuffix:    "continuousintegration",
-		postgresID:  continuousIntegrationPermissionSetID,
+		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.ContinuousIntegration],
 		description: "For automation: it includes the permissions required to enforce deployment policies",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Detection),
 			permissions.Modify(resources.Image),
 		},
 	},
-	rolePkg.NetworkGraphViewer: {
+	accesscontrol.NetworkGraphViewer: {
 		idSuffix:    "networkgraphviewer",
-		postgresID:  networkGraphViewerPermissionSetID,
+		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.NetworkGraphViewer],
 		description: "For users: use it to give read-only access to the NetworkGraph pages",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Deployment),
@@ -108,15 +109,15 @@ var defaultRoles = map[string]roleAttributes{
 			permissions.View(resources.NetworkPolicy),
 		},
 	},
-	rolePkg.None: {
+	accesscontrol.None: {
 		idSuffix:    "none",
-		postgresID:  nonePermissionSetID,
+		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.None],
 		description: "For users: use it to provide no read and write access to any resource",
 	},
 	// TODO: ROX-14398 Remove ScopeManager default role
-	rolePkg.ScopeManager: {
+	accesscontrol.ScopeManager: {
 		idSuffix:    "scopemanager",
-		postgresID:  scopeManagerPermissionSetID,
+		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.ScopeManager],
 		description: "For users: use it to create and modify scopes for the purpose of access control or vulnerability reporting",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Access),
@@ -126,9 +127,9 @@ var defaultRoles = map[string]roleAttributes{
 			permissions.Modify(resources.Role),
 		},
 	},
-	rolePkg.SensorCreator: {
+	accesscontrol.SensorCreator: {
 		idSuffix:    "sensorcreator",
-		postgresID:  sensorCreatorPermissionSetID,
+		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.SensorCreator],
 		description: "For automation: it consists of the permissions to create Sensors in secured clusters",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Cluster),
@@ -136,18 +137,18 @@ var defaultRoles = map[string]roleAttributes{
 			permissions.Modify(resources.Administration),
 		},
 	},
-	rolePkg.VulnMgmtApprover: {
+	accesscontrol.VulnMgmtApprover: {
 		idSuffix:    "vulnmgmtapprover",
-		postgresID:  vulnMgmtApproverPermissionSetID,
+		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.VulnMgmtApprover],
 		description: "For users: use it to provide access to approve vulnerability deferrals or false positive requests",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.VulnerabilityManagementApprovals),
 			permissions.Modify(resources.VulnerabilityManagementApprovals),
 		},
 	},
-	rolePkg.VulnMgmtRequester: {
+	accesscontrol.VulnMgmtRequester: {
 		idSuffix:    "vulnmgmtrequester",
-		postgresID:  vulnMgmtRequesterPermissionSetID,
+		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.VulnMgmtRequester],
 		description: "For users: use it to provide access to request vulnerability deferrals or false positives",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.VulnerabilityManagementRequests),
@@ -155,9 +156,9 @@ var defaultRoles = map[string]roleAttributes{
 		},
 	},
 	// TODO ROX-13888 when we migrate to WorkflowAdministration we can remove VulnerabilityReports and Role resources
-	rolePkg.VulnReporter: {
+	accesscontrol.VulnReporter: {
 		idSuffix:    "vulnreporter",
-		postgresID:  vulnReporterPermissionSetID,
+		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.VulnReporter],
 		description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
 		resourceWithAccess: func() []permissions.ResourceWithAccess {
 			if !env.PostgresDatastoreEnabled.BooleanSetting() {
@@ -175,9 +176,9 @@ var defaultRoles = map[string]roleAttributes{
 			}
 		}(),
 	},
-	rolePkg.VulnerabilityManager: {
+	accesscontrol.VulnerabilityManager: {
 		idSuffix:    "vulnmgmt",
-		postgresID:  vulnMgmtPermissionSetID,
+		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.VulnerabilityManager],
 		description: "For users: use it to provide access to analyze and manage system vulnerabilities",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Cluster),
