@@ -750,7 +750,7 @@ class NetworkFlowTest extends BaseSpecification {
                 log.debug("sourceDeploymentsFromNetworkPolicy: {}", sourceDeploymentsFromNetworkPolicy)
                 log.debug("sourceDeploymentsFromGraph: {}", sourceDeploymentsFromGraph)
 
-                switch( deploymentName ) {
+                switch (deploymentName) {
                     case TCPCONNECTIONTARGET:
                         assert sourceDeploymentsFromNetworkPolicy.size() == 3
                         assert sourceDeploymentsFromGraph.size() == 3
