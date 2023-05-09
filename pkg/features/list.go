@@ -48,4 +48,7 @@ var (
 
 	// StoreEventHashes stores the hashes of successfully processed objects we receive from Sensor into the database
 	StoreEventHashes = registerFeature("Store Event Hashes", "ROX_STORE_EVENT_HASHES", false)
+
+	// DisableComplianceStandards enables Manage standards modal and conditional rendering in Compliance pages
+	DisableComplianceStandards = registerFeature("Disable compliance standards", "ROX_DISABLE_COMPLIANCE_STANDARDS", false)
 )
