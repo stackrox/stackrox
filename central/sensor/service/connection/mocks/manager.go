@@ -9,13 +9,13 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	processor "github.com/stackrox/rox/central/notifier/processor"
 	common "github.com/stackrox/rox/central/sensor/service/common"
 	connection "github.com/stackrox/rox/central/sensor/service/connection"
 	pipeline "github.com/stackrox/rox/central/sensor/service/pipeline"
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/notifier"
 	notifiers "github.com/stackrox/rox/pkg/notifiers"
 )
 
@@ -204,7 +204,7 @@ func (mr *MockManagerMockRecorder) SendMessage(clusterID, msg interface{}) *gomo
 }
 
 // Start mocks base method.
-func (m *MockManager) Start(mgr common.ClusterManager, netEntitiesMgr common.NetworkEntityManager, policyMgr common.PolicyManager, baselineMgr common.ProcessBaselineManager, networkBaselineMgr common.NetworkBaselineManager, notifierProcessor processor.Processor, autoTriggerUpgrades *concurrency.Flag) error {
+func (m *MockManager) Start(mgr common.ClusterManager, netEntitiesMgr common.NetworkEntityManager, policyMgr common.PolicyManager, baselineMgr common.ProcessBaselineManager, networkBaselineMgr common.NetworkBaselineManager, notifierProcessor notifier.Processor, autoTriggerUpgrades *concurrency.Flag) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Start", mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, notifierProcessor, autoTriggerUpgrades)
 	ret0, _ := ret[0].(error)
