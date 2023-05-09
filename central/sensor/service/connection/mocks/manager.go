@@ -15,7 +15,7 @@ import (
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/notifier"
+	notifier "github.com/stackrox/rox/pkg/notifier"
 	notifiers "github.com/stackrox/rox/pkg/notifiers"
 )
 
