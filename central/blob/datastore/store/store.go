@@ -44,15 +44,15 @@ func wrapRollback(ctx context.Context, tx *pgPkg.Tx, err error) error {
 
 // Upsert adds a blob to the database
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error {
-	existingBlob, exists, err := s.store.Get(ctx, obj.GetName())
-	if err != nil {
-		return err
-	}
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	ctx = pgPkg.ContextWithTx(ctx, tx)
+	existingBlob, exists, err := s.store.Get(ctx, obj.GetName())
+	if err != nil {
+		return wrapRollback(ctx, tx, err)
+	}
 
 	los := tx.LargeObjects()
 	var lo *pgx.LargeObject
@@ -62,7 +62,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Blob, reader io.Rea
 			return wrapRollback(ctx, tx, errors.Wrapf(err, "opening blob with oid %d", existingBlob.GetOid()))
 		}
 		if err := lo.Truncate(0); err != nil {
-			return errors.Wrapf(err, "truncating blob with oid %d", existingBlob.GetOid())
+			return wrapRollback(ctx, tx, errors.Wrapf(err, "truncating blob with oid %d", existingBlob.GetOid()))
 		}
 	} else {
 		oid, err := los.Create(ctx, 0)
@@ -105,16 +105,16 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Blob, reader io.Rea
 
 // Get returns a blob from the database
 func (s *storeImpl) Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error) {
-	existingBlob, exists, err := s.store.Get(ctx, name)
-	if err != nil || !exists {
-		return nil, exists, err
-	}
-
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return nil, false, err
 	}
 	ctx = pgPkg.ContextWithTx(ctx, tx)
+
+	existingBlob, exists, err := s.store.Get(ctx, name)
+	if err != nil || !exists {
+		return nil, exists, wrapRollback(ctx, tx, err)
+	}
 
 	los := tx.LargeObjects()
 	lo, err := los.Open(ctx, existingBlob.GetOid(), pgx.LargeObjectModeRead)
@@ -150,23 +150,21 @@ func (s *storeImpl) Get(ctx context.Context, name string, writer io.Writer) (*st
 
 // Delete removes a blob from database if it exists
 func (s *storeImpl) Delete(ctx context.Context, name string) error {
-	existingBlob, exists, err := s.store.Get(ctx, name)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return nil
-	}
-
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
 
 	ctx = pgPkg.ContextWithTx(ctx, tx)
+
+	existingBlob, exists, err := s.store.Get(ctx, name)
+	if err != nil || !exists {
+		return wrapRollback(ctx, tx, err)
+	}
+
 	los := tx.LargeObjects()
 	if err = los.Unlink(ctx, existingBlob.GetOid()); err != nil {
-		return errors.Wrapf(err, "failed to remove large object with oid %d", existingBlob.GetOid())
+		return wrapRollback(ctx, tx, errors.Wrapf(err, "failed to remove large object with oid %d", existingBlob.GetOid()))
 	}
 	if err = s.store.Delete(ctx, name); err != nil {
 		err = errors.Wrapf(err, "deleting large object %s", name)

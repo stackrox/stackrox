@@ -69,8 +69,31 @@ func (s *BlobsStoreSuite) TestStore() {
 	s.Require().NoError(err)
 	s.Require().True(exists)
 	s.NotZero(blob.GetOid())
+	s.verifyLargeObjectCounts(1)
 	s.Equal(insertBlob, blob)
 	s.Equal(randomData, buf.Bytes())
 
 	s.NoError(s.store.Delete(ctx, insertBlob.GetName()))
+
+	buf.Truncate(0)
+	blob, exists, err = s.store.Get(ctx, insertBlob.GetName(), buf)
+	s.Require().NoError(err)
+	s.Require().False(exists)
+	s.Zero(blob.GetOid())
+	s.Nil(blob)
+	s.Zero(buf.Len())
+	s.verifyLargeObjectCounts(0)
+}
+
+func (s *BlobsStoreSuite) verifyLargeObjectCounts(expected int) {
+	ctx := context.Background()
+	tx, err := s.testDB.DB.Begin(context.Background())
+	s.Require().NoError(err)
+
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var n int
+	err = tx.QueryRow(ctx, "SELECT COUNT(*) FROM pg_largeobject_metadata;").Scan(&n)
+	s.NoError(err)
+	s.Require().Equal(expected, n)
 }
