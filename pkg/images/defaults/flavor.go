@@ -337,6 +337,11 @@ func (f *ImageFlavor) ScannerImage() string {
 	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerImageName, f.ScannerImageTag)
 }
 
+// ScannerSlimImage is the container image reference (full name) for the scanner-slim image.
+func (f *ImageFlavor) ScannerSlimImage() string {
+	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerSlimImageName, f.ScannerImageTag)
+}
+
 // ScannerDBImage is the container image reference (full name) for the scanner-db image.
 func (f *ImageFlavor) ScannerDBImage() string {
 	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerDBImageName, f.ScannerImageTag)
