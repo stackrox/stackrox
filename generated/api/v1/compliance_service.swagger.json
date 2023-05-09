@@ -218,6 +218,42 @@
         "tags": [
           "ComplianceService"
         ]
+      },
+      "patch": {
+        "operationId": "ComplianceService_UpdateCompliance",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UpdateComplianceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ComplianceService"
+        ]
       }
     }
   },
@@ -664,6 +700,9 @@
         },
         "dynamic": {
           "type": "boolean"
+        },
+        "hidden": {
+          "type": "boolean"
         }
       }
     },
@@ -677,6 +716,9 @@
         "NODE"
       ],
       "default": "UNSET"
+    },
+    "v1Empty": {
+      "type": "object"
     },
     "v1GetComplianceRunResultsResponse": {
       "type": "object",
@@ -758,6 +800,17 @@
         "aggregateBy": {
           "$ref": "#/definitions/v1AggregateBy",
           "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v1UpdateComplianceRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "hidden": {
+          "type": "boolean"
         }
       }
     }

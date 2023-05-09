@@ -52,6 +52,22 @@ func (mr *MockDataStoreMockRecorder) ClearAggregationResults(ctx interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearAggregationResults", reflect.TypeOf((*MockDataStore)(nil).ClearAggregationResults), ctx)
 }
 
+// GetConfig mocks base method.
+func (m *MockDataStore) GetConfig(ctx context.Context, id string) (*storage.ComplianceConfig, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConfig", ctx, id)
+	ret0, _ := ret[0].(*storage.ComplianceConfig)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetConfig indicates an expected call of GetConfig.
+func (mr *MockDataStoreMockRecorder) GetConfig(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockDataStore)(nil).GetConfig), ctx, id)
+}
+
 // GetLatestRunResults mocks base method.
 func (m *MockDataStore) GetLatestRunResults(ctx context.Context, clusterID, standardID string, flags types.GetFlags) (types.ResultsWithStatus, error) {
 	m.ctrl.T.Helper()
@@ -169,4 +185,18 @@ func (m *MockDataStore) StoreRunResults(ctx context.Context, results *storage.Co
 func (mr *MockDataStoreMockRecorder) StoreRunResults(ctx, results interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreRunResults", reflect.TypeOf((*MockDataStore)(nil).StoreRunResults), ctx, results)
+}
+
+// UpdateConfig mocks base method.
+func (m *MockDataStore) UpdateConfig(ctx context.Context, id string, hide bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateConfig", ctx, id, hide)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateConfig indicates an expected call of UpdateConfig.
+func (mr *MockDataStoreMockRecorder) UpdateConfig(ctx, id, hide interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConfig", reflect.TypeOf((*MockDataStore)(nil).UpdateConfig), ctx, id, hide)
 }

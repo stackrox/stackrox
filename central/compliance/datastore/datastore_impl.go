@@ -79,6 +79,20 @@ func (ds *datastoreImpl) GetLatestRunResults(ctx context.Context, clusterID, sta
 	return res, err
 }
 
+func (ds *datastoreImpl) UpdateConfig(ctx context.Context, id string, hide bool) error {
+
+	config := &storage.ComplianceConfig{
+		Id:              id,
+		HideScanResults: hide,
+	}
+	return ds.storage.UpdateConfig(ctx, config)
+}
+
+func (ds *datastoreImpl) GetConfig(ctx context.Context, id string) (*storage.ComplianceConfig, bool, error) {
+
+	return ds.storage.GetConfig(ctx, id)
+}
+
 func (ds *datastoreImpl) GetLatestRunResultsBatch(ctx context.Context, clusterIDs, standardIDs []string, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
 	standardIDs, unsupported := standards.FilterSupported(standardIDs)
 	if len(unsupported) > 0 {

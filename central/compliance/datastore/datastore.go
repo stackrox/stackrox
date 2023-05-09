@@ -22,6 +22,9 @@ type DataStore interface {
 	StoreFailure(ctx context.Context, metadata *storage.ComplianceRunMetadata) error
 	StoreComplianceDomain(ctx context.Context, domain *storage.ComplianceDomain) error
 
+	UpdateConfig(ctx context.Context, id string, hide bool) error
+	GetConfig(ctx context.Context, id string) (*storage.ComplianceConfig, bool, error)
+
 	PerformStoredAggregation(ctx context.Context, args *StoredAggregationArgs) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error)
 	ClearAggregationResults(ctx context.Context) error
 }

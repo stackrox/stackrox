@@ -71,6 +71,12 @@ message GetComplianceStandardsResponse {
     repeated ComplianceStandardMetadata standards = 1;
 }
 
+message UpdateComplianceRequest {
+
+    string id = 1;
+    bool hidden = 2;
+}
+
 message GetComplianceRunResultsRequest {
     string cluster_id = 1;
     string standard_id = 2;
@@ -110,4 +116,12 @@ service ComplianceService {
             get: "/v1/compliance/aggregatedresults"
         };
     }
+
+    rpc UpdateComplianceStandardConfig(UpdateComplianceRequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/compliance/standards/{id}"
+            body: "*"
+        };
+    }
 }
+
