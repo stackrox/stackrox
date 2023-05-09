@@ -100,7 +100,7 @@ linters-settings:
           - Error
           - Errorf
           - github.com/stackrox/rox/migrator/log.WritetoStderr
-          - github.com/stackrox/rox/migrator/log.WritetoStderrf     -
+          - github.com/stackrox/rox/migrator/log.WritetoStderrf
   gocritic:
     enabled-checks:
       - commentFormatting
