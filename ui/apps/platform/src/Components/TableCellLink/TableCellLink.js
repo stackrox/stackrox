@@ -15,7 +15,7 @@ const TableCellLink = ({ url, children, pdf, extraClasses, testid }) => {
     return (
         <Link
             to={url}
-            className={`underline h-full text-left items-center flex text-base-700 hover:text-primary-700 ${extraClasses}`}
+            className={`underline h-full text-left items-center flex text-base-600 hover:text-primary-700 ${extraClasses}`}
             onClick={onClick}
             data-testid={testid}
         >
