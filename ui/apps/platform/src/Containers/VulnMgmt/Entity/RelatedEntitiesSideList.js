@@ -85,18 +85,7 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
         >
             {/* TODO: decide if this should be added as custom tailwind class, or a "component" CSS class in app.tw.css */}
             <div className="sticky top-0 py-4">
-                <h2
-                    style={{
-                        position: 'relative',
-                        left: '-0.5rem',
-                        width: 'calc(100% + 0.5rem)',
-                    }}
-                    className={`mb-3 p-2 rounded-l text-lg ${
-                        !isDarkMode
-                            ? 'bg-primary-700 text-base-100'
-                            : 'bg-tertiary-300 text-base-900'
-                    }`}
-                >
+                <h2 className="mb-3 p-2 rounded-l text-lg text-base-600 text-center font-700">
                     Related entities
                 </h2>
                 {!!matches.length && <TileList items={matches} title="Matches" />}
