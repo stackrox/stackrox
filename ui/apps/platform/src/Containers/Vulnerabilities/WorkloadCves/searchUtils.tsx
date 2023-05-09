@@ -29,14 +29,19 @@ export function getOverviewCvesPath(workloadCvesSearch: WorkloadCvesSearch): str
     return `${vulnerabilitiesWorkloadCvesPath}${getQueryString(workloadCvesSearch)}`;
 }
 
-export function getEntityPagePath(workloadCveEntity: EntityTab, id: string): string {
+export function getEntityPagePath(
+    workloadCveEntity: EntityTab,
+    id: string,
+    queryOptions?: qs.ParsedQs
+): string {
+    const queryString = getQueryString(queryOptions);
     switch (workloadCveEntity) {
         case 'CVE':
-            return `${vulnerabilitiesWorkloadCvesPath}/cves/${id}`;
+            return `${vulnerabilitiesWorkloadCvesPath}/cves/${id}${queryString}`;
         case 'Image':
-            return `${vulnerabilitiesWorkloadCvesPath}/images/${id}`;
+            return `${vulnerabilitiesWorkloadCvesPath}/images/${id}${queryString}`;
         case 'Deployment':
-            return `${vulnerabilitiesWorkloadCvesPath}/deployments/${id}`;
+            return `${vulnerabilitiesWorkloadCvesPath}/deployments/${id}${queryString}`;
         default:
             return ensureExhaustive(workloadCveEntity);
     }
