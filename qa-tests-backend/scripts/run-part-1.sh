@@ -84,7 +84,10 @@ test_part_1() {
     rm -f FAIL
     local test_target
 
-    if is_in_PR_context && pr_has_label ci-all-qa-tests; then
+    if is_openshift_CI_rehearse_PR; then
+        info "On an openshift rehearse PR, running BAT tests only..."
+        test_target="bat-test"
+    elif is_in_PR_context && pr_has_label ci-all-qa-tests; then
         info "ci-all-qa-tests label was specified, so running all QA tests..."
         test_target="test"
     elif is_in_PR_context; then
