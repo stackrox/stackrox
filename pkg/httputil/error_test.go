@@ -34,6 +34,11 @@ func TestWriteError(t *testing.T) {
 			expectedStatus: 404,
 		},
 		{
+			name:           "gRPC's Status.code is propagated to response header with a message",
+			incomingErr:    errors.WithMessage(status.New(codes.NotFound, "Origin: gRPC Status").Err(), "with message"),
+			expectedStatus: 404,
+		},
+		{
 			name:           "Known internal error yields appropriate status in response header",
 			incomingErr:    errors.Wrap(errox.NotFound, "Origin: known internal error"),
 			expectedStatus: 404,
