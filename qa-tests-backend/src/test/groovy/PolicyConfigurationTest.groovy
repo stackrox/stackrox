@@ -63,7 +63,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName(DEPLOYMENTNGINX)
-                    .setImage(TEST_IMAGE)
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12")
                     .addPort(22, "TCP")
                     .setEnv(["CLUSTER_NAME": "main"])
                     .addLabel("app", "test")
@@ -88,7 +88,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .addLabel("app", "test"),
             new Deployment()
                     .setName(DEPLOYMENTNGINX_LB)
-                    .setImage(TEST_IMAGE)
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12")
                     .addPort(22, "TCP")
                     .addAnnotation("test", "annotation")
                     .setEnv(["CLUSTER_NAME": "main"])
@@ -96,7 +96,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .setCreateLoadBalancer(true).setExposeAsService(true),
             new Deployment()
                     .setName(DEPLOYMENTNGINX_NP)
-                    .setImage(TEST_IMAGE)
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12")
                     .addPort(22, "TCP")
                     .addAnnotation("test", "annotation")
                     .setEnv(["CLUSTER_NAME": "main"])
