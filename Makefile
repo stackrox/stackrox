@@ -72,7 +72,9 @@ ifeq ($(UNAME_M),arm64)
 endif
 endif
 
-TARGET_ARCH := "amd64"
+TARGET_ARCH := $(ARCH)
+GOARCH := $(ARCH)
+
 ifeq ($(UNAME_M),arm64)
 TARGET_ARCH = "arm64"
 endif
@@ -84,6 +86,11 @@ else
 BIND_GOCACHE ?= 1
 BIND_GOPATH ?= 1
 endif
+
+ifeq ($(UNAME_S),Linux)
+PLATFORM := linux/$(TARGET_ARCH)
+ifeq ($(UNAME_S),Darwin)
+PLATFORM := darwin/$(TARGET_ARCH)
 
 ifeq ($(BIND_GOCACHE),1)
 GOCACHE_VOLUME_SRC := $(CURDIR)/linux-gocache

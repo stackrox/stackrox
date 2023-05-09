@@ -10,6 +10,8 @@ die() {
 
 INPUT_ROOT="$1"
 OUTPUT_DIR="$2"
+ARCH="$3"
+PLATFORM="$4"
 # Install the PG repo natively if true (versus using a container)
 NATIVE_PG_INSTALL="${3:-false}"
 
@@ -30,6 +32,11 @@ chmod -R 755 "${bundle_root}"
 # =============================================================================
 # Get latest postgres minor version
 arch="x86_64"
+
+if [[ $ARCH == "ppc64le" ]]; then
+    arch="ppc64le"
+fi
+
 dnf_list_args=()
 if [[ $(uname -m) == "arm64" ]]; then
   arch="aarch64"
@@ -48,7 +55,7 @@ if [[ "${NATIVE_PG_INSTALL}" == "true" ]]; then
     echo "PG minor version: ${postgres_minor}"
 else
     build_dir="$(mktemp -d)"
-    docker build -q -t postgres-minor-image "${build_dir}" -f - <<EOF
+    docker buildx build --load --platform ${PLATFORM} -q -t postgres-minor-image "${build_dir}" -f - <<EOF
 FROM registry.access.redhat.com/ubi8/ubi:${pg_rhel_version}
 RUN dnf install --disablerepo='*' -y "${postgres_repo_url}"
 ENTRYPOINT dnf list ${dnf_list_args[@]+"${dnf_list_args[@]}"} --disablerepo='*' --enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server.$arch | tail -n 1 | awk '{print \$2}'

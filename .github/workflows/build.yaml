@@ -95,6 +95,11 @@ jobs:
             ui/monorepo.lock
 
   pre-build-cli:
+    strategy:
+      matrix:
+        arch: [ amd64, ppc64le ]
+    env:
+      ARCH: ${{ matrix.arch }}
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
