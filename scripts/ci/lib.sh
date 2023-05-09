@@ -495,6 +495,13 @@ poll_for_system_test_images() {
             ;;
         *-race-condition-qa-e2e-tests)
             reqd_images=("main-rcd" "roxctl")
+            if is_in_PR_context && ! pr_has_label "ci-build-race-condition-debug"; then
+                echo "ERROR: Your PR is missing the \"ci-build-race-condition-debug\" label."
+                echo "ERROR: This label is required to build the images for $CI_JOB_NAME."
+                # Quietly continue to allow labels added after tests start.
+                # Otherwise this message will surface in the Prow log when
+                # images timeout out below.
+            fi
             ;;
         *)
             reqd_images=("main" "roxctl")
