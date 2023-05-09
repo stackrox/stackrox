@@ -9,10 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 // Set is a set that coordinates present policies and notifiers.
 type Set interface {
 	HasNotifiers() bool

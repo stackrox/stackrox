@@ -77,7 +77,6 @@ func newConnection(ctx context.Context,
 	networkBaselineMgr common.NetworkBaselineManager,
 	notifierProcessor notifier.Processor,
 	hashMgr hashManager.Manager,
-	msgDeduper *deduper,
 ) *sensorConnection {
 
 	conn := &sensorConnection{
