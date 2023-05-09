@@ -7,7 +7,7 @@ import { getQueryString } from 'utils/queryStringUtils';
 import { searchValueAsArray } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
-import { CveStatusTab, isValidCveStatusTab, QuerySearchFilter } from './types';
+import { CveStatusTab, FixableStatus, isValidCveStatusTab, QuerySearchFilter } from './types';
 
 export type EntityTab = 'CVE' | 'Image' | 'Deployment';
 
@@ -99,4 +99,21 @@ export function getHiddenSeverities(
     return querySearchFilter.Severity
         ? new Set(vulnerabilitySeverities.filter((s) => !querySearchFilter.Severity?.includes(s)))
         : new Set([]);
+}
+
+export function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<FixableStatus> {
+    const hiddenStatuses = new Set<FixableStatus>([]);
+    const fixableFilters = querySearchFilter?.Fixable ?? [];
+
+    if (fixableFilters.length > 0) {
+        if (!fixableFilters.includes('true')) {
+            hiddenStatuses.add('Fixable');
+        }
+
+        if (!fixableFilters.includes('false')) {
+            hiddenStatuses.add('Not fixable');
+        }
+    }
+
+    return hiddenStatuses;
 }

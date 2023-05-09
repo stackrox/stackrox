@@ -309,6 +309,26 @@ class NetworkFlowTest extends BaseSpecification {
         }
     }
 
+    @Tag("BAT")
+    @Tag("RUNTIME")
+    @Tag("NetworkFlowVisualization")
+    // TODO: additional handling may be needed for P/Z, skipping for 1st release
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    def "Verify ports are greater than 0"() {
+        given:
+        "ACS is running"
+        def graph = NetworkGraphService.getNetworkGraph(null, null)
+        def nodes = graph.nodesList
+
+        nodes.each { node ->
+            node.outEdges.each { key, value ->
+                value.propertiesList.each { property ->
+                    assert property.port > 0
+                }
+            }
+        }
+    }
+
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")

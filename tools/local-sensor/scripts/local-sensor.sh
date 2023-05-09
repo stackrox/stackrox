@@ -25,6 +25,7 @@ VERBOSE="false"
 
 function build_local_sensor() {
   [[ "$VERBOSE" == "false" ]] || echo "Building local-sensor: $LOCAL_SENSOR_BIN"
+  mkdir -p "$OUTPUT_DIR"
   go build -o "$EXEC" "$LOCAL_SENSOR_DIR"/main.go > "$OUTPUT_DIR"/build.log 2>&1
   [[ "$VERBOSE" == "false" ]] || echo "Build done"
 }

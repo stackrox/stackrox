@@ -525,6 +525,19 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 				}
 
 				val.TopCVSS = mathutil.MaxFloat32(val.GetTopCVSS(), vuln.GetCvss())
+
+				id := cve.ID(val.GetCVE(), image.GetScan().GetOperatingSystem())
+				var found bool
+				for _, seenID := range val.GetCVEIDs() {
+					if seenID == id {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					val.CVEIDs = append(val.CVEIDs, id)
+				}
 				if val.GetFirstDiscoveredInSystem().After(vulnTime) {
 					val.FirstDiscoveredInSystem = vulnTime
 				}
@@ -562,6 +575,9 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 
 	expected := make([]*imageCVECore, 0, len(cveMap))
 	for _, entry := range cveMap {
+		sort.SliceStable(entry.CVEIDs, func(i, j int) bool {
+			return entry.CVEIDs[i] < entry.CVEIDs[j]
+		})
 		expected = append(expected, entry)
 	}
 	if options.SkipGetImagesBySeverity {

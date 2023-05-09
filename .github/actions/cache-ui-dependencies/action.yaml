@@ -9,17 +9,12 @@ runs:
   using: composite
   steps:
     - name: Cache UI Dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
-          ui/deps
           /github/home/.cache/yarn
           /github/home/.cache/Cypress
           /usr/local/share/.cache
-          ui/node_modules
-          ui/apps/platform/node_modules
-          ui/packages/ui-components/node_modules
-          ui/packages/tailwind-config/node_modules
         key: npm-v2-${{ hashFiles(inputs.lockFile) }}-${{ github.job }}
         restore-keys: |
           npm-v2-${{ hashFiles(inputs.lockFile) }}-${{ github.job }}

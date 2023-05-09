@@ -134,6 +134,7 @@ ifdef CI
 	@echo '+ $@'
 	@echo 'The environment indicates we are in CI; running linters in check mode.'
 	@echo 'If this fails, run `make style`.'
+	$(GOLANGCILINT_BIN) --version
 	@echo "Running with no tags..."
 	$(GOLANGCILINT_BIN) run
 	@echo "Running with release tags..."

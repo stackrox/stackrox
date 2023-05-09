@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/integrationhealth"
@@ -31,7 +32,8 @@ func New(storage datastore.DataStore,
 	buildTimePolicies detection.PolicySet,
 	deployTimePolicies detection.PolicySet,
 	runTimePolicies detection.PolicySet,
-	reporter integrationhealth.Reporter) Service {
+	reporter integrationhealth.Reporter,
+	connectionManager connection.Manager) Service {
 	return &serviceImpl{
 		storage:            storage,
 		processor:          processor,
@@ -39,5 +41,6 @@ func New(storage datastore.DataStore,
 		deployTimePolicies: deployTimePolicies,
 		runTimePolicies:    runTimePolicies,
 		reporter:           reporter,
+		connectionManager:  connectionManager,
 	}
 }

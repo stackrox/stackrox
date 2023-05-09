@@ -1,8 +1,5 @@
 import { EdgeStyle, EdgeTerminalType, NodeShape } from '@patternfly/react-topology';
 
-import derivedNamespaceSVG from 'images/network-graph/derived-namespace.svg';
-import filteredNamespaceSVG from 'images/network-graph/filtered-namespace.svg';
-
 import {
     DeploymentNetworkEntityInfo,
     ExternalSourceNetworkEntityInfo,
@@ -14,14 +11,6 @@ import {
     EdgeProperties,
 } from 'types/networkFlow.proto';
 import { ensureExhaustive } from 'utils/type.utils';
-import {
-    cidrBlockBadgeColor,
-    cidrBlockBadgeText,
-    deploymentBadgeColor,
-    deploymentBadgeText,
-    namespaceBadgeColor,
-    namespaceBadgeText,
-} from '../common/NetworkGraphIcons';
 import {
     CustomModel,
     CustomNodeModel,
@@ -35,6 +24,8 @@ import {
     ExternalEntitiesNodeModel,
     CIDRBlockNodeModel,
     CustomEdgeModel,
+    DeploymentData,
+    CIDRBlockData,
 } from '../types/topology.type';
 import { protocolLabel } from './flowUtils';
 
@@ -66,12 +57,7 @@ function getNamespaceNode(
         namespace,
         cluster,
         isFilteredNamespace,
-        labelIconClass: isFilteredNamespace ? filteredNamespaceSVG : derivedNamespaceSVG,
         isFadedOut: false,
-        badge: namespaceBadgeText,
-        badgeColor: namespaceBadgeColor,
-        badgeTextColor: '#FFFFFF',
-        badgeBorderColor: '#FFFFFF',
     };
     return {
         id: namespace,
@@ -106,27 +92,22 @@ function getDeploymentNodeModel(
     entity: DeploymentNetworkEntityInfo,
     policyIds: string[],
     networkPolicyState: NetworkPolicyState,
-    isExternallyConnected: boolean,
-    isFiltered: boolean
+    isExternallyConnected: boolean
 ): DeploymentNodeModel {
     const baseNode = getBaseNode(entity.id) as DeploymentNodeModel;
+    const deploymentData: DeploymentData = {
+        ...entity,
+        policyIds,
+        networkPolicyState,
+        showPolicyState: true,
+        isExternallyConnected,
+        showExternalState: true,
+        isFadedOut: false,
+    };
     return {
         ...baseNode,
         label: entity.deployment.name,
-        data: {
-            ...entity,
-            policyIds,
-            networkPolicyState,
-            showPolicyState: true,
-            isExternallyConnected,
-            showExternalState: true,
-            isFadedOut: false,
-            labelIconClass: isFiltered ? filteredNamespaceSVG : '',
-            badge: deploymentBadgeText,
-            badgeColor: deploymentBadgeColor,
-            badgeTextColor: '#FFFFFF',
-            badgeBorderColor: '#FFFFFF',
-        },
+        data: deploymentData,
     };
 }
 
@@ -144,20 +125,18 @@ function getExternalNodeModel(
                 data: { ...entity, type: 'EXTERNAL_ENTITIES', outEdges, isFadedOut: false },
             };
         case 'EXTERNAL_SOURCE':
+            // eslint-disable-next-line no-case-declarations
+            const cidrBlockData: CIDRBlockData = {
+                ...entity,
+                type: 'CIDR_BLOCK',
+                outEdges,
+                isFadedOut: false,
+            };
             return {
                 ...baseNode,
                 shape: NodeShape.rect,
                 label: entity.externalSource.name,
-                data: {
-                    ...entity,
-                    type: 'CIDR_BLOCK',
-                    outEdges,
-                    isFadedOut: false,
-                    badge: cidrBlockBadgeText,
-                    badgeColor: cidrBlockBadgeColor,
-                    badgeTextColor: '#FFFFFF',
-                    badgeBorderColor: '#FFFFFF',
-                },
+                data: cidrBlockData,
             };
         default:
             return ensureExhaustive(entity);
@@ -169,8 +148,7 @@ function getNodeModel(
     policyIds: string[],
     networkPolicyState: NetworkPolicyState,
     isExternallyConnected: boolean,
-    outEdges: OutEdges,
-    isDeploymentFiltered: boolean
+    outEdges: OutEdges
 ): CustomNodeModel {
     switch (entity.type) {
         case 'DEPLOYMENT':
@@ -178,8 +156,7 @@ function getNodeModel(
                 entity,
                 policyIds,
                 networkPolicyState,
-                isExternallyConnected,
-                isDeploymentFiltered
+                isExternallyConnected
             );
         case 'EXTERNAL_SOURCE':
         case 'INTERNET':
@@ -227,8 +204,7 @@ function mergePortProtocolEdgeLabels(firstLabel: string, secondLabel = ''): stri
 export function transformActiveData(
     nodes: Node[],
     policyNodeMap: Record<string, DeploymentNodeModel>,
-    filteredNamespaces: string[],
-    filteredDeployments: string[]
+    filteredNamespaces: string[]
 ): {
     activeDataModel: CustomModel;
     activeEdgeMap: Record<string, CustomEdgeModel>;
@@ -271,13 +247,11 @@ export function transformActiveData(
             }
 
             // creating deployment nodes
-            const isDeploymentFiltered = filteredDeployments.includes(entity.deployment.name);
             const deploymentNode = getDeploymentNodeModel(
                 entity,
                 policyIds,
                 networkPolicyState,
-                isExternallyConnected,
-                isDeploymentFiltered
+                isExternallyConnected
             );
 
             deploymentNodes[id] = deploymentNode;
@@ -396,10 +370,7 @@ function getNetworkPolicyState(
 // external connections can only be active, so this is hard coded to false
 const POLICY_NODE_EXTERNALLY_CONNECTED_VALUE = false;
 
-export function transformPolicyData(
-    nodes: Node[],
-    filteredDeployments: string[]
-): {
+export function transformPolicyData(nodes: Node[]): {
     policyDataModel: CustomModel;
     policyNodeMap: Record<string, DeploymentNodeModel>;
 } {
@@ -415,17 +386,12 @@ export function transformPolicyData(
     nodes.forEach((policyNode) => {
         const { entity, policyIds, outEdges, nonIsolatedEgress, nonIsolatedIngress } = policyNode;
         const networkPolicyState = getNetworkPolicyState(nonIsolatedEgress, nonIsolatedIngress);
-        const isDeploymentFiltered =
-            entity.type === 'DEPLOYMENT'
-                ? filteredDeployments.includes(entity.deployment.name)
-                : false;
         const node = getNodeModel(
             entity,
             policyIds,
             networkPolicyState,
             POLICY_NODE_EXTERNALLY_CONNECTED_VALUE,
-            outEdges,
-            isDeploymentFiltered
+            outEdges
         );
         if (!policyNodeMap[node.id]) {
             policyNodeMap[node.id] = node as DeploymentNodeModel;

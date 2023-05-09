@@ -5,7 +5,9 @@ import "context"
 type txContextKey struct{}
 
 // ContextWithTx adds a database transaction to the context
+// The tx will be modified to be used as an outer tx.
 func ContextWithTx(ctx context.Context, tx *Tx) context.Context {
+	tx.UseInContext()
 	return context.WithValue(ctx, txContextKey{}, tx)
 }
 

@@ -15,6 +15,8 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/entity/mappings"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
+	deploymentMatcher "github.com/stackrox/rox/central/networkpolicies/deployment"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/sachelper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -71,6 +73,7 @@ type serviceImpl struct {
 	networkTreeMgr networktree.Manager
 	deployments    deploymentDS.DataStore
 	clusters       clusterDS.DataStore
+	networkPolicy  networkPolicyDS.DataStore
 	graphConfig    datastore.DataStore
 
 	clusterSACHelper sachelper.ClusterSacHelper
@@ -312,7 +315,59 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 			node.QueryMatch = true
 		}
 	}
+
+	if request.GetIncludePolicies() {
+		err := s.enhanceWithNetworkPolicyIsolationInfo(ctx, graph)
+		if err != nil {
+			log.Warnf("Failed to enhance Network Graph Nodes with Network policy: %s", err)
+		}
+	}
+
 	return graph, nil
+}
+
+func (s *serviceImpl) enhanceWithNetworkPolicyIsolationInfo(ctx context.Context, graph *v1.NetworkGraph) error {
+	var deploymentIds []string
+	for _, node := range graph.GetNodes() {
+		if node.GetEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
+			deploymentIds = append(deploymentIds, node.GetEntity().GetId())
+		}
+	}
+
+	// TODO(ROX-16312): Change this to a custom query once Postgres ships
+	deploymentObjects, err := s.deployments.GetDeployments(ctx, deploymentIds)
+	if err != nil {
+		return errors.Wrap(err, "fetching deployments")
+	}
+
+	deploymentMap := make(map[string]*storage.Deployment, len(deploymentObjects))
+	clusterNamespaceContext := set.NewSet[deploymentMatcher.ClusterNamespace]()
+	for _, deployment := range deploymentObjects {
+		clusterNamespaceContext.Add(deploymentMatcher.ClusterNamespace{
+			Cluster:   deployment.GetClusterId(),
+			Namespace: deployment.GetNamespace(),
+		})
+		deploymentMap[deployment.GetId()] = deployment
+	}
+
+	matcher, err := deploymentMatcher.BuildMatcher(ctx, s.networkPolicy, clusterNamespaceContext)
+	if err != nil {
+		return errors.Wrap(err, "building deployment matcher")
+	}
+
+	for _, node := range graph.Nodes {
+		if node.GetEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
+			deploymentID := node.GetEntity().GetId()
+			if deployment, ok := deploymentMap[deploymentID]; ok {
+				isolationDetail := matcher.GetIsolationDetails(deployment)
+				node.NonIsolatedEgress = !isolationDetail.EgressIsolated
+				node.NonIsolatedIngress = !isolationDetail.IngressIsolated
+				node.PolicyIds = isolationDetail.PolicyIDs
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *serviceImpl) addDeploymentFlowsToGraph(

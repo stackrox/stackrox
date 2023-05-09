@@ -58,19 +58,11 @@ div#topology-resize-panel table td {
     fill: #6853ae;
 }
 
-.derived-namespace .pf-topology__node__label__background {
+.related-namespace.pf-m-selected text, .related-namespace.pf-m-selected .pf-topology__node__action-icon svg {
     fill: #ffffff;
 }
 
-.derived-namespace > g > text, .derived-namespace .pf-topology__node__action-icon svg {
-    fill: #000000;
-}
-
-.derived-namespace.pf-m-selected text, .derived-namespace.pf-m-selected .pf-topology__node__action-icon svg {
-    fill: #ffffff;
-}
-
-.derived-namespace path.pf-topology__group__background {
+.related-namespace path.pf-topology__group__background {
     stroke-dasharray: 5;
 }
 
