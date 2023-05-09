@@ -14,12 +14,11 @@ import (
 // HTTPError is an interface for HTTP errors that can be returned from an HTTP handler.
 type HTTPError interface {
 	error
-	HTTPStatus
+	Message() string
+	HTTPStatusCode() int
 }
 
-type httpError struct {
-	httpStatus
-}
+type httpError = httpStatus
 
 func (e httpError) Error() string {
 	return e.message
@@ -27,12 +26,12 @@ func (e httpError) Error() string {
 
 // NewError returns a new HTTP error
 func NewError(statusCode int, message string) HTTPError {
-	return httpError{httpStatus: httpStatus{code: statusCode, message: message}}
+	return httpError{code: statusCode, message: message}
 }
 
 // Errorf returns a new HTTP error with a message constructed from a format string.
 func Errorf(statusCode int, format string, args ...interface{}) HTTPError {
-	return httpError{httpStatus: httpStatus{code: statusCode, message: fmt.Sprintf(format, args...)}}
+	return httpError{code: statusCode, message: fmt.Sprintf(format, args...)}
 }
 
 // StatusFromError returns a HTTP status code for the given error.
@@ -41,21 +40,13 @@ func StatusFromError(err error) int {
 		return http.StatusOK
 	}
 
-	if he, ok := err.(HTTPStatus); ok {
+	if he, ok := err.(HTTPError); ok {
 		return he.HTTPStatusCode()
 	}
 
 	// `grpc_errors.ErrToHTTPStatus()` must handle both gRPC and known internal
 	// sentinel errors.
 	return grpc_errors.ErrToHTTPStatus(err)
-}
-
-// ErrorFromStatus returns a HTTP error for the given status, or nil if the status does not indicate an error.
-func ErrorFromStatus(status HTTPStatus) HTTPError {
-	if err, ok := status.(HTTPError); ok {
-		return err
-	}
-	return nil
 }
 
 // WriteGRPCStyleError writes a gRPC-style error to an http response writer.
