@@ -281,7 +281,7 @@ func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor default
 			expectedCollectorSlimRef: fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.CollectorSlimImageName, flavor.CollectorSlimImageTag),
 			expectedScannerSlimRef:   fmt.Sprintf("quay.io/rhacs/%s:%s", flavor.ScannerSlimImageName, flavor.ScannerImageTag),
 		},
-		//// Expected fail cases
+		// Expected fail cases
 		"expectedError: empty main image": {
 			cluster:              makeTestCluster("", ""),
 			expectedErrorMessage: fmt.Sprintf("generating main image from cluster value (%s)", ""),
