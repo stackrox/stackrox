@@ -152,9 +152,8 @@ function ImagePage() {
                             className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                             eventKey="Resources"
                             title={<TabTitleText>Resources</TabTitleText>}
-                            isDisabled
                         >
-                            <ImagePageResources />
+                            <ImagePageResources imageId={imageId} />
                         </Tab>
                     </Tabs>
                 </PageSection>

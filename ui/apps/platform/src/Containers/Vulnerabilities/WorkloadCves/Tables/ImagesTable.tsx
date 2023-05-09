@@ -136,13 +136,14 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                                 </Td>
                                 <Td>{operatingSystem}</Td>
                                 <Td>
-                                    {/* TODO: add modal */}
                                     {deploymentCount > 0 ? (
                                         <Button
                                             variant={ButtonVariant.link}
                                             isInline
                                             component={LinkShim}
-                                            href={getEntityPagePath('Deployment', id)}
+                                            href={getEntityPagePath('Image', id, {
+                                                detailsTab: 'Resources',
+                                            })}
                                         >
                                             {deploymentCount}{' '}
                                             {pluralize('deployment', deploymentCount)}

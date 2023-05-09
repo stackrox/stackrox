@@ -108,9 +108,8 @@ function DeploymentPage() {
                         className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                         eventKey="Resources"
                         title={<TabTitleText>Resources</TabTitleText>}
-                        isDisabled
                     >
-                        <DeploymentPageResources />
+                        <DeploymentPageResources deploymentId={deploymentId} />
                     </Tab>
                 </Tabs>
             </PageSection>
