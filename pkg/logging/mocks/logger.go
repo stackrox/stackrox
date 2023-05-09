@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	zap "go.uber.org/zap"
 	zapcore "go.uber.org/zap/zapcore"
 )
 
@@ -316,6 +317,20 @@ func (mr *MockLoggerMockRecorder) Panicw(msg interface{}, keysAndValues ...inter
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{msg}, keysAndValues...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Panicw", reflect.TypeOf((*MockLogger)(nil).Panicw), varargs...)
+}
+
+// SugaredLogger mocks base method.
+func (m *MockLogger) SugaredLogger() *zap.SugaredLogger {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SugaredLogger")
+	ret0, _ := ret[0].(*zap.SugaredLogger)
+	return ret0
+}
+
+// SugaredLogger indicates an expected call of SugaredLogger.
+func (mr *MockLoggerMockRecorder) SugaredLogger() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SugaredLogger", reflect.TypeOf((*MockLogger)(nil).SugaredLogger))
 }
 
 // Warn mocks base method.
