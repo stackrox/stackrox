@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	grpc_errors "github.com/stackrox/rox/pkg/grpc/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -46,7 +47,8 @@ func StatusFromError(err error) int {
 		return http.StatusOK
 	}
 
-	if he, ok := err.(HTTPError); ok {
+	var he HTTPError
+	if errors.As(err, &he) {
 		return he.HTTPStatusCode()
 	}
 
