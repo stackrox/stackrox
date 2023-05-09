@@ -24,13 +24,23 @@ func (resolver *Resolver) ComplianceTriggerRuns(ctx context.Context, args struct
 	if err := writeCompliance(ctx); err != nil {
 		return nil, err
 	}
-	resp, err := resolver.ComplianceManagementService.TriggerRuns(ctx, &v1.TriggerComplianceRunsRequest{
-		Selection: &v1.ComplianceRunSelection{
-			ClusterId:  string(args.ClusterID),
-			StandardId: string(args.StandardID),
-		},
+
+	resp, err := resolver.processWithAuditLog(ctx, args, "ComplianceTriggerRuns", func() (interface{}, error) {
+		resp, err := resolver.ComplianceManagementService.TriggerRuns(ctx, &v1.TriggerComplianceRunsRequest{
+			Selection: &v1.ComplianceRunSelection{
+				ClusterId:  string(args.ClusterID),
+				StandardId: string(args.StandardID),
+			},
+		})
+
+		return resolver.wrapComplianceRuns(resp.GetStartedRuns(), err)
 	})
-	return resolver.wrapComplianceRuns(resp.GetStartedRuns(), err)
+
+	if resp == nil {
+		return nil, err
+	}
+
+	return resp.([]*complianceRunResolver), err
 }
 
 // ComplianceRunStatuses is a query to obtain the statuses of a list of compliance runs.

@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -150,6 +151,15 @@ func (a *audit) UnaryServerInterceptor() func(ctx context.Context, req interface
 		go a.sendAuditMessage(ctx, req, info.FullMethod, interceptor.GetAuthErrorFromContext(ctx), err)
 		return resp, err
 	}
+}
+
+func (a *audit) HTTPInterceptor(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		statusTrackingWriter := httputil.NewStatusTrackingWriter(w)
+		handler.ServeHTTP(statusTrackingWriter, r)
+
+		go a.SendAdhocAuditMessage(r.Context(), r, r.RequestURI, interceptor.AuthStatus{}, statusTrackingWriter.GetStatusCodeError())
+	})
 }
 
 func calculateAuditStatus(authError interceptor.AuthStatus, requestError error) (v1.Audit_RequestStatus, string) {
