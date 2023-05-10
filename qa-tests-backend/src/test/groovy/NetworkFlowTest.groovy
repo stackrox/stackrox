@@ -734,8 +734,8 @@ class NetworkFlowTest extends BaseSpecification {
                     log.info "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
                     assert it."spec"."ingress" == [[:]]
                 } else if (outNodes.size() > 0) {
-                    log.info "${deploymentName} has incoming connections - ensure podSelectors/namespaceSelectors match " +
-                        "sources from graph"
+                    log.info "${deploymentName} has incoming connections - " +
+                        "ensure podSelectors/namespaceSelectors match sources from graph"
                     def sourceDeploymentsFromGraph = outNodes.findAll { it.deploymentName }*.deploymentName
                     def sourceDeploymentsFromNetworkPolicy = ingressPodSelectors.collect {
                         it."podSelector"."matchLabels"."app"
