@@ -19,14 +19,14 @@ var (
 
 	// PermissionSetsSchema is the go schema for table `permission_sets`.
 	PermissionSetsSchema = func() *walker.Schema {
-		schema = walker.Walk(reflect.TypeOf((*storage.PermissionSet)(nil)), "permission_sets")
+		schema := walker.Walk(reflect.TypeOf((*storage.PermissionSet)(nil)), "permission_sets")
 		return schema
 	}()
 )
 
 // PermissionSets holds the Gorm model for Postgres table `permission_sets`.
 type PermissionSets struct {
-	Id         string `gorm:"column:id;type:uuid;primaryKey"`
+	ID         string `gorm:"column:id;type:uuid;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }
