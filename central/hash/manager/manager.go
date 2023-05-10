@@ -113,9 +113,12 @@ func (m *managerImpl) GetDeduper(ctx context.Context, clusterID string) Deduper 
 	defer m.dedupersLock.Unlock()
 
 	existingDeduper, ok := m.dedupers[clusterID]
-	if ok {
-		return existingDeduper
+	if !ok {
+		m.dedupers[clusterID] = d
+	} else {
+		d = existingDeduper
 	}
+	d.StartSync()
 	return d
 }
 

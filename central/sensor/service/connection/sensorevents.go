@@ -98,10 +98,10 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	// If it is not our first attempt processing, then we need to check if a new version already
 	// was processed
 	if !s.deduper.ShouldProcess(msg) {
-		metrics.IncSensorEventsDeduper(true)
+		metrics.IncSensorEventsDeduper(true, msg)
 		return
 	}
-	metrics.IncSensorEventsDeduper(false)
+	metrics.IncSensorEventsDeduper(false, msg)
 
 	// Lazily create the queue for a type when not found.
 	var queue *workerQueue

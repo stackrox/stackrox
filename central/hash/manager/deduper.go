@@ -7,7 +7,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/alert"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/reflectutils"
+	"github.com/stackrox/rox/pkg/env"
+	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/sensor/hash"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -23,18 +24,31 @@ type Deduper interface {
 	// MarkSuccessful marks the message if necessary as being successfully processed, so it can be committed to the database
 	// It will promote the message from the received map to the successfully processed map
 	MarkSuccessful(msg *central.MsgFromSensor)
+	// StartSync is called once a new Sensor connection is initialized
+	StartSync()
 	// ProcessSync processes the Sensor sync message and reconciles the successfully processed and received maps
 	ProcessSync()
 }
 
+var (
+	maxHashes = env.MaxEventHashSize.IntegerSetting()
+
+	alertResourceKey      = eventPkg.GetEventTypeWithoutPrefix((*central.SensorEvent_AlertResults)(nil))
+	deploymentResourceKey = eventPkg.GetEventTypeWithoutPrefix((*central.SensorEvent_Deployment)(nil))
+)
+
 // NewDeduper creates a new deduper from the passed existing hashes
 func NewDeduper(existingHashes map[string]uint64) Deduper {
 	existingEntries := make(map[string]*entry)
-	for k, v := range existingHashes {
-		existingEntries[k] = &entry{
-			val: v,
+
+	if len(existingHashes) < maxHashes {
+		for k, v := range existingHashes {
+			existingEntries[k] = &entry{
+				val: v,
+			}
 		}
 	}
+
 	return &deduperImpl{
 		received:              make(map[string]*entry),
 		successfullyProcessed: existingEntries,
@@ -57,7 +71,7 @@ type deduperImpl struct {
 	hasher *hash.Hasher
 }
 
-// skipDedupe signifies that a message from Sensor can be deduped and thus can be stored in a hash
+// skipDedupe signifies that a message from Sensor cannot be deduped and won't be stored
 func skipDedupe(msg *central.MsgFromSensor) bool {
 	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
 	if !ok {
@@ -103,13 +117,23 @@ func getIDFromKey(key string) string {
 }
 
 func buildKey(typ, id string) string {
-	typ = stringutils.GetAfter(typ, "_")
 	return fmt.Sprintf("%s:%s", typ, id)
 }
 
 func getKey(msg *central.MsgFromSensor) string {
 	event := msg.GetEvent()
-	return buildKey(reflectutils.Type(event.GetResource()), event.GetId())
+	return buildKey(eventPkg.GetEventTypeWithoutPrefix(event.GetResource()), event.GetId())
+}
+
+// StartSync is called when Sensor starts a new connection
+func (d *deduperImpl) StartSync() {
+	d.hashLock.Lock()
+	defer d.hashLock.Unlock()
+
+	// Mark all hashes as unseen when a new sensor connection is created
+	for _, v := range d.successfullyProcessed {
+		v.processed = false
+	}
 }
 
 // MarkSuccessful marks a message as successfully processed
@@ -153,18 +177,16 @@ func (d *deduperImpl) getValueNoLock(key string) (uint64, bool) {
 	return prevValue.val, true
 }
 
+// ProcessSync is triggered by the sync message sent from Sensor
 func (d *deduperImpl) ProcessSync() {
 	// Reconcile successfully processed map with received map. Any keys that exist in successfully processed
 	// but do not exist in received, can be dropped from successfully processed
 	d.hashLock.Lock()
 	defer d.hashLock.Unlock()
 
-	alertResource := reflectutils.Type((*central.SensorEvent_AlertResults)(nil))
-	deploymentResource := reflectutils.Type((*central.SensorEvent_Deployment)(nil))
-
 	for k, v := range d.successfullyProcessed {
 		// Ignore alerts in the first pass because they are not reconciled at the same time
-		if strings.HasPrefix(k, alertResource) {
+		if strings.HasPrefix(k, alertResourceKey) {
 			continue
 		}
 		if !v.processed {
@@ -173,13 +195,11 @@ func (d *deduperImpl) ProcessSync() {
 			}
 			delete(d.successfullyProcessed, k)
 			// If a deployment is being removed due to reconciliation, then we will need to remove the alerts too
-			if strings.HasPrefix(k, deploymentResource) {
-				alertKey := buildKey(alertResource, getIDFromKey(k))
+			if strings.HasPrefix(k, deploymentResourceKey) {
+				alertKey := buildKey(alertResourceKey, getIDFromKey(k))
 				delete(d.successfullyProcessed, alertKey)
 			}
 		}
-		// Mark it now as being not processed because reconciliation is completed
-		v.processed = false
 	}
 }
 
@@ -244,6 +264,13 @@ func (d *deduperImpl) GetSuccessfulHashes() map[string]uint64 {
 	copied := make(map[string]uint64, len(d.successfullyProcessed))
 	for k, v := range d.successfullyProcessed {
 		copied[k] = v.val
+	}
+
+	// Do not persist copied map if it has more than the max number of hashes. This could occur in two cases
+	// 1. The environment is much larger than anticipated (default max hashes is 1 million).
+	// 2. There is an event that does not have a proper lifecycle and it is causing unbounded growth.
+	if len(copied) > maxHashes {
+		return make(map[string]uint64)
 	}
 	return copied
 }
