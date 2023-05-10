@@ -410,7 +410,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": ":tada: *<https://infra.rox.systems/cluster/${{ steps.get_demo_artifacts.outputs.cluster-name }}|Openshift 4 Demo cluster> `${{ steps.get_demo_artifacts.outputs.cluster-name }}` is creating for ${{ needs.variables.outputs.milestone }} milestone of <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}>.*"
+                    "text": ":tada: *<https://infra.rox.systems/cluster/${{ steps.get_demo_artifacts.outputs.cluster-name }}|Openshift 4 Demo cluster> `${{ steps.get_demo_artifacts.outputs.cluster-name }}` is being created for ${{ needs.variables.outputs.milestone }} milestone of <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}>.*"
                   }
                 },
                 {
