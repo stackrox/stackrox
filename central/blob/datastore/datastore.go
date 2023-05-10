@@ -11,7 +11,7 @@ import (
 // Datastore provides access to the blob store
 type Datastore interface {
 	Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error
-	Get(ctx context.Context, name string) (*storage.Blob, io.ReadCloser, bool, error)
+	Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error)
 	Delete(ctx context.Context, name string) error
 }
 
@@ -32,8 +32,8 @@ func (d *datastoreImpl) Upsert(ctx context.Context, obj *storage.Blob, reader io
 }
 
 // Get retrieves a blob from the database
-func (d *datastoreImpl) Get(ctx context.Context, name string) (*storage.Blob, io.ReadCloser, bool, error) {
-	return d.store.Get(ctx, name)
+func (d *datastoreImpl) Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error) {
+	return d.store.Get(ctx, name, writer)
 }
 
 // Delete removes a blob store from database

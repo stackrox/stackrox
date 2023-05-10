@@ -17,7 +17,7 @@ var log = logging.LoggerForModule()
 // Store is the interface to interact with the storage for storage.Blob
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error
-	Get(ctx context.Context, name string) (*storage.Blob, io.ReadCloser, bool, error)
+	Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error)
 	Delete(ctx context.Context, name string) error
 }
 
@@ -44,15 +44,15 @@ func wrapRollback(ctx context.Context, tx *pgPkg.Tx, err error) error {
 
 // Upsert adds a blob to the database
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error {
-	existingBlob, exists, err := s.store.Get(ctx, obj.GetName())
-	if err != nil {
-		return err
-	}
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	ctx = pgPkg.ContextWithTx(ctx, tx)
+	existingBlob, exists, err := s.store.Get(ctx, obj.GetName())
+	if err != nil {
+		return wrapRollback(ctx, tx, err)
+	}
 
 	los := tx.LargeObjects()
 	var lo *pgx.LargeObject
@@ -62,7 +62,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Blob, reader io.Rea
 			return wrapRollback(ctx, tx, errors.Wrapf(err, "opening blob with oid %d", existingBlob.GetOid()))
 		}
 		if err := lo.Truncate(0); err != nil {
-			return errors.Wrapf(err, "truncating blob with oid %d", existingBlob.GetOid())
+			return wrapRollback(ctx, tx, errors.Wrapf(err, "truncating blob with oid %d", existingBlob.GetOid()))
 		}
 	} else {
 		oid, err := los.Create(ctx, 0)
@@ -104,46 +104,67 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Blob, reader io.Rea
 }
 
 // Get returns a blob from the database
-func (s *storeImpl) Get(ctx context.Context, name string) (*storage.Blob, io.ReadCloser, bool, error) {
-	existingBlob, exists, err := s.store.Get(ctx, name)
-	if err != nil || !exists {
-		return nil, nil, exists, err
-	}
-
+func (s *storeImpl) Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error) {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
-		return nil, nil, false, err
+		return nil, false, err
 	}
 	ctx = pgPkg.ContextWithTx(ctx, tx)
+
+	existingBlob, exists, err := s.store.Get(ctx, name)
+	if err != nil || !exists {
+		return nil, exists, wrapRollback(ctx, tx, err)
+	}
 
 	los := tx.LargeObjects()
 	lo, err := los.Open(ctx, existingBlob.GetOid(), pgx.LargeObjectModeRead)
 	if err != nil {
 		err := errors.Wrapf(err, "error opening large object with oid %d", existingBlob.GetOid())
-		return nil, nil, false, wrapRollback(ctx, tx, err)
+		return nil, false, wrapRollback(ctx, tx, err)
 	}
 
-	return existingBlob, lo, true, tx.Commit(ctx)
+	buf := make([]byte, 1024*1024)
+	for {
+		nRead, err := lo.Read(buf)
+
+		// nRead can be non-zero when err == io.EOF
+		if nRead != 0 {
+			if _, err := writer.Write(buf[:nRead]); err != nil {
+				err := errors.Wrap(err, "error writing to output")
+				return nil, false, wrapRollback(ctx, tx, err)
+			}
+		}
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+		}
+	}
+	if err := lo.Close(); err != nil {
+		err = errors.Wrap(err, "closing large object for blob")
+		return nil, false, wrapRollback(ctx, tx, err)
+	}
+
+	return existingBlob, true, tx.Commit(ctx)
 }
 
-// Delete removes a blob store from database
+// Delete removes a blob from database if it exists
 func (s *storeImpl) Delete(ctx context.Context, name string) error {
-	existingBlob, exists, err := s.store.Get(ctx, name)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return nil
-	}
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
 
 	ctx = pgPkg.ContextWithTx(ctx, tx)
+
+	existingBlob, exists, err := s.store.Get(ctx, name)
+	if err != nil || !exists {
+		return wrapRollback(ctx, tx, err)
+	}
+
 	los := tx.LargeObjects()
 	if err = los.Unlink(ctx, existingBlob.GetOid()); err != nil {
-		return errors.Wrapf(err, "failed to remove large object with oid %d", existingBlob.GetOid())
+		return wrapRollback(ctx, tx, errors.Wrapf(err, "failed to remove large object with oid %d", existingBlob.GetOid()))
 	}
 	if err = s.store.Delete(ctx, name); err != nil {
 		err = errors.Wrapf(err, "deleting large object %s", name)
