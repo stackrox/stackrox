@@ -136,19 +136,17 @@ function DeploymentVulnerabilitiesTable({
             <Thead>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
-                    <Th sort={getSortParams('CVE')} tooltip="CVE">
-                        CVE
-                    </Th>
-                    <Th tooltip="Severity">Severity</Th>
-                    <Th tooltip="CVE status">
+                    <Th sort={getSortParams('CVE')}>CVE</Th>
+                    <Th>Severity</Th>
+                    <Th>
                         CVE Status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th tooltip="Affected components">
+                    <Th>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th tooltip="First discovered">First discovered</Th>
+                    <Th>First discovered</Th>
                 </Tr>
             </Thead>
             {vulnerabilities.length === 0 && <EmptyTableResults colSpan={7} />}

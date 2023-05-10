@@ -101,14 +101,12 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                         Fix status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th sort={getSortParams('Operating System')} tooltip="Operating system">
-                        Operating system
-                    </Th>
-                    <Th tooltip="Affected components">
+                    <Th sort={getSortParams('Operating System')}>Operating system</Th>
+                    <Th>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th tooltip="First discovered">First discovered</Th>
+                    <Th>First discovered</Th>
                 </Tr>
             </Thead>
             {images.length === 0 && <EmptyTableResults colSpan={7} />}

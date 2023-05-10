@@ -67,17 +67,13 @@ function DeploymentComponentVulnerabilitiesTable({
         >
             <Thead>
                 <Tr>
-                    <Th sort={getSortParams('Image')} tooltip="Image">
-                        Image
-                    </Th>
-                    <Th sort={getSortParams('Component')} tooltip="Component">
-                        Component
-                    </Th>
-                    <Th tooltip="CVE severity">CVE Severity</Th>
-                    <Th tooltip="CVSS">CVSS</Th>
-                    <Th tooltip="Version">Version</Th>
-                    <Th tooltip="CVE fixed in">CVE Fixed in</Th>
-                    <Th tooltip="Location">Location</Th>
+                    <Th sort={getSortParams('Image')}>Image</Th>
+                    <Th sort={getSortParams('Component')}>Component</Th>
+                    <Th>CVE Severity</Th>
+                    <Th>CVSS</Th>
+                    <Th>Version</Th>
+                    <Th>CVE Fixed in</Th>
+                    <Th>Location</Th>
                 </Tr>
             </Thead>
             {sortedComponentVulns.map((componentVuln, index) => {
