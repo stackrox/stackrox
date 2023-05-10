@@ -1,0 +1,9 @@
+# This file lists the ACS versions supported by Scanner V4 and Scanner V4 Updater.
+# Since Scanner V4 shares the same version as ACS,
+# Scanner V4 Updater updates vulnerability data for all versions of Scanner V4 listed in this file
+# and uploads that data to Google Storage.
+# Various versions of Scanner V4 matchers will import vulnerability data based on their respective versions from Google Storage.
+4.0.0
+3.74.4
+4.1.x-475-g08897c063a
+4.1.x-470-g7f0dea0e37
