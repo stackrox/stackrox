@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package datastore
 
 import (
@@ -33,7 +35,7 @@ func TestAllDefaultRolesAreCovered(t *testing.T) {
 	// Merge the roles for vuln reporting into the defaults
 	assert.Len(t, defaultRoles, len(accesscontrol.DefaultRoleNames))
 	for r := range defaultRoles {
-		assert.Contains(t, accesscontrol.DefaultRoleNames, r)
+		assert.Truef(t, accesscontrol.DefaultRoleNames.Contains(r), "role %s not found in default role names", r)
 	}
 }
 

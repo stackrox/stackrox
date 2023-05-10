@@ -68,7 +68,7 @@ const (
 
 var (
 	// DefaultRoleNames is a string set containing the names of all default (built-in) Roles.
-	DefaultRoleNames = set.NewStringSet(Admin, Analyst, None, ContinuousIntegration, ScopeManager, SensorCreator, VulnerabilityManager, VulnMgmtApprover, VulnMgmtRequester, VulnReporter)
+	DefaultRoleNames = set.NewStringSet(Admin, Analyst, NetworkGraphViewer, None, ContinuousIntegration, ScopeManager, SensorCreator, VulnerabilityManager, VulnMgmtApprover, VulnMgmtRequester, VulnReporter)
 
 	// DefaultPermissionSetIDs is a list of all permission set IDs keyed by their name.
 	DefaultPermissionSetIDs = map[string]string{
