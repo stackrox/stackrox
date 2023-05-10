@@ -14,8 +14,8 @@ import (
 
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/blob/blobfile"
 	blob "github.com/stackrox/rox/central/blob/datastore"
+	"github.com/stackrox/rox/central/blob/snapshot"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
 	"github.com/stackrox/rox/generated/storage"
@@ -310,7 +310,7 @@ func (h *httpHandler) cleanupUpdaters(cleanupAge time.Duration) {
 }
 
 func (h *httpHandler) openOfflineBlob() (definitionFileReader, time.Time, error) {
-	snapshot, err := blobfile.BlobSnapshot(h.blobStore, offlineScannerDefsName)
+	snapshot, err := snapshot.TakeBlobSnapshot(h.blobStore, offlineScannerDefsName)
 	if err != nil {
 		return nil, time.Time{}, err
 	}

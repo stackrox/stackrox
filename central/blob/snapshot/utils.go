@@ -1,4 +1,4 @@
-package blobfile
+package snapshot
 
 import (
 	"context"
@@ -10,7 +10,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-func BlobSnapshot(blobStore datastore.Datastore, name string) (rnc ReadOnlyBlobFile, err error) {
+// TakeBlobSnapshot create a Snapshot for the named blob.
+func TakeBlobSnapshot(blobStore datastore.Datastore, name string) (rnc Snapshot, err error) {
 	var tempDir string
 	tempDir, err = os.MkdirTemp("", "blob-file-")
 	if err != nil {
@@ -39,7 +40,7 @@ func BlobSnapshot(blobStore datastore.Datastore, name string) (rnc ReadOnlyBlobF
 	if err != nil {
 		return
 	}
-	rnc, err = CreateBlobFile(tempFile, blob)
+	rnc, err = NewBlobSnapshot(tempFile, blob)
 	if err != nil {
 		return
 	}
