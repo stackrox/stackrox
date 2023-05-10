@@ -49,6 +49,20 @@ func (mr *MockNotifierMockRecorder) Close(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockNotifier)(nil).Close), arg0)
 }
 
+// IsSecuredClusterNotifier mocks base method.
+func (m *MockNotifier) IsSecuredClusterNotifier() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsSecuredClusterNotifier")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsSecuredClusterNotifier indicates an expected call of IsSecuredClusterNotifier.
+func (mr *MockNotifierMockRecorder) IsSecuredClusterNotifier() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSecuredClusterNotifier", reflect.TypeOf((*MockNotifier)(nil).IsSecuredClusterNotifier))
+}
+
 // ProtoNotifier mocks base method.
 func (m *MockNotifier) ProtoNotifier() *storage.Notifier {
 	m.ctrl.T.Helper()
