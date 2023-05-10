@@ -10,12 +10,14 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Added Features
 - A default role `Vulnerability Manager` has been added that provides sufficient privileges to analyze and manage system vulnerabilities.
 - A default role `Network Graph Viewer` has been added that provides sufficient privileges to display network graphs.
+- A new command `roxctl central login` has been added that allows to use a user's token within roxctl instead of an API token or admin password.
 
 ### Removed Features
 
 ### Deprecated Fatures
 
 ### Technical Changes
+- The output of `roxctl central whoami` now includes the username as well.
 
 - Helm setting `collector.nodeInventoryResources` has been renamed to `collector.nodeScanningResources`
 

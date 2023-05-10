@@ -120,12 +120,13 @@ function DeploymentsTable({ deployments, getSortParams, isFiltered }: Deployment
                                 <Td>{clusterName}</Td>
                                 <Td>{namespace}</Td>
                                 <Td>
-                                    {/* TODO: add modal */}
                                     <Button
                                         variant={ButtonVariant.link}
                                         isInline
                                         component={LinkShim}
-                                        href={getEntityPagePath('Deployment', id)}
+                                        href={getEntityPagePath('Deployment', id, {
+                                            detailsTab: 'Resources',
+                                        })}
                                     >
                                         {imageCount} {pluralize('image', imageCount)}
                                     </Button>

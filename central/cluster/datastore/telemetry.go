@@ -96,9 +96,19 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 		props["CPU Capacity"] = metrics.CpuCapacity
 
 		if pmd := cluster.GetStatus().GetProviderMetadata(); pmd.GetProvider() != nil {
-			props["Provider"] = pmd.GetProvider()
+			switch pmd.GetProvider().(type) {
+			case *storage.ProviderMetadata_Aws:
+				props["Provider"] = "AWS"
+			case *storage.ProviderMetadata_Azure:
+				props["Provider"] = "Azure"
+			case *storage.ProviderMetadata_Google:
+				props["Provider"] = "Google"
+			default:
+				props["Provider"] = "Unknown"
+			}
 			props["Provider Region"] = pmd.GetRegion()
 			props["Provider Zone"] = pmd.GetZone()
+			props["Provider Verified"] = pmd.GetVerified()
 		}
 
 		omd := cluster.GetStatus().GetOrchestratorMetadata()

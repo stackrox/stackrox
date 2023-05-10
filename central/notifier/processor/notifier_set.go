@@ -3,9 +3,9 @@ package processor
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -24,6 +24,7 @@ type NotifierSet interface {
 	UpsertNotifier(ctx context.Context, notifier notifiers.Notifier)
 	RemoveNotifier(ctx context.Context, id string)
 	GetNotifier(ctx context.Context, id string) notifiers.Notifier
+	GetNotifiers(ctx context.Context) []notifiers.Notifier
 }
 
 // NewNotifierSet returns a new instance of a NotifierSet
@@ -118,4 +119,16 @@ func (p *notifierSetImpl) GetNotifier(ctx context.Context, id string) notifiers.
 	defer p.lock.Unlock()
 
 	return p.notifiers[id]
+}
+
+// GetNotifies gets notifiers from the set.
+func (p *notifierSetImpl) GetNotifiers(_ context.Context) []notifiers.Notifier {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	var notifiers []notifiers.Notifier
+	for _, notifier := range p.notifiers {
+		notifiers = append(notifiers, notifier)
+	}
+	return notifiers
 }

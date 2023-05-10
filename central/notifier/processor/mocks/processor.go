@@ -9,9 +9,9 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	notifiers "github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	notifiers "github.com/stackrox/rox/pkg/notifiers"
 )
 
 // MockProcessor is a mock of Processor interface.
@@ -49,6 +49,20 @@ func (m *MockProcessor) GetNotifier(ctx context.Context, id string) notifiers.No
 func (mr *MockProcessorMockRecorder) GetNotifier(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotifier", reflect.TypeOf((*MockProcessor)(nil).GetNotifier), ctx, id)
+}
+
+// GetNotifiers mocks base method.
+func (m *MockProcessor) GetNotifiers(ctx context.Context) []notifiers.Notifier {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNotifiers", ctx)
+	ret0, _ := ret[0].([]notifiers.Notifier)
+	return ret0
+}
+
+// GetNotifiers indicates an expected call of GetNotifiers.
+func (mr *MockProcessorMockRecorder) GetNotifiers(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotifiers", reflect.TypeOf((*MockProcessor)(nil).GetNotifiers), ctx)
 }
 
 // HasEnabledAuditNotifiers mocks base method.

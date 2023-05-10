@@ -194,11 +194,10 @@ jobs:
         env:
           CFG_DIR: "ci-operator/config/stackrox/stackrox"
         run: |
-          # Duplicate the main config and keep only postsubmit jobs.
-          yq "del(.tests[] | select(.postsubmit != true or has(\"cron\"))) |
-              .zz_generated_metadata.branch=\"release-$RELEASE\"" \
-            "$CFG_DIR/stackrox-stackrox-master.yaml" \
-            > "$CFG_DIR/stackrox-$BRANCH.yaml"
+          # Duplicate the template configurations
+          for yaml in "$CFG_DIR"/stackrox-stackrox-release-x.y*.yaml ; do
+            yq eval ".zz_generated_metadata.branch=\"release-$RELEASE\"" "$yaml" > "${yaml//stackrox-release-x.y/$BRANCH}"
+          done
 
       - name: Make update
         if: steps.check-existing.outputs.branch-exists == 'false'

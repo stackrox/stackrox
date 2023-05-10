@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	timestamp "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -41,6 +41,11 @@ func (p *processorImpl) RemoveNotifier(ctx context.Context, id string) {
 // GetNotifier gets the in memory copy of the specified notifier id
 func (p *processorImpl) GetNotifier(ctx context.Context, id string) (notifier notifiers.Notifier) {
 	return p.ns.GetNotifier(ctx, id)
+}
+
+// GetNotifiers gets the in memory copies of all notifiers
+func (p *processorImpl) GetNotifiers(ctx context.Context) (notifiers []notifiers.Notifier) {
+	return p.ns.GetNotifiers(ctx)
 }
 
 // UpdateNotifier updates or adds the passed notifier into memory

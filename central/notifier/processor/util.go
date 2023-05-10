@@ -3,8 +3,8 @@ package processor
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/notifiers"
 )
 
 // Sending alerts.

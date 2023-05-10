@@ -3,22 +3,23 @@
 """
 Run version compatibility tests
 """
+import logging
 import os
-from get_latest_release_versions import update_helm_repo, get_latest_release_versions
-from compatibility_test import make_compatibility_test_runner
-from clusters import GKECluster
+import sys
 
-class SensorVersionsFailure(Exception):
-    pass
+from clusters import GKECluster
+from compatibility_test import make_compatibility_test_runner
+from get_latest_helm_chart_versions import get_latest_helm_chart_versions
 
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 
-update_helm_repo()
-chart_versions=get_latest_release_versions(4)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
-gkecluster=GKECluster("compat-test")
+chart_versions = get_latest_helm_chart_versions("stackrox-secured-cluster-services")
+
+gkecluster = GKECluster("compat-test")
 
 failing_sensor_versions = []
 for version in chart_versions:
@@ -26,9 +27,9 @@ for version in chart_versions:
     try:
         make_compatibility_test_runner(cluster=gkecluster).run()
     except Exception:
-        print(f"Exception \"{Exception}\" raised in compatibility test for sensor version {version}")
+        print(f"Exception \"{Exception}\" raised in compatibility test for sensor chart version {version}",
+              file=sys.stderr)
         failing_sensor_versions += version
 
 if len(failing_sensor_versions) > 0:
-    raise SensorVersionsFailure(f"Compatibility tests failed for Sensor versions " + ', '.join(failing_sensor_versions))
-
+    raise RuntimeError(f"Compatibility tests failed for Sensor versions " + ', '.join(failing_sensor_versions))
