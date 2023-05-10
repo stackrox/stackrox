@@ -88,6 +88,7 @@ export type TableDataRow = {
         name: {
             remote: string;
             registry: string;
+            tag: string;
         } | null;
     };
     name: string;
@@ -243,7 +244,14 @@ export function getAnyVulnerabilityIsFixable(
     );
 }
 
-export function getHighestCvssScore(imageComponents: ImageComponentVulnerability[]): {
+export function getHighestCvssScore(
+    imageComponents: {
+        imageVulnerabilities: {
+            cvss: number;
+            scoreVersion: string;
+        }[];
+    }[]
+): {
     cvss: number;
     scoreVersion: string;
 } {
