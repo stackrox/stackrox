@@ -9,6 +9,10 @@ ssl_cert_file = '/run/secrets/stackrox.io/certs/server.crt'
 ssl_key_file = '/run/secrets/stackrox.io/certs/server.key'
 
 shared_buffers = 2GB
+work_mem = 40MB
+maintenance_work_mem = 512MB
+effective_cache_size = 4GB
+
 dynamic_shared_memory_type = posix
 max_wal_size = 5GB
 min_wal_size = 80MB

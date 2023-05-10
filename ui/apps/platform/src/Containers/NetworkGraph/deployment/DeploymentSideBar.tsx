@@ -22,8 +22,8 @@ import useFetchDeployment from 'hooks/useFetchDeployment';
 import {
     getListenPorts,
     getNodeById,
-    getNumExternalFlows,
-    getNumInternalFlows,
+    getNumAnomalousExternalFlows,
+    getNumAnomalousInternalFlows,
 } from '../utils/networkGraphUtils';
 import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 
@@ -35,6 +35,7 @@ import NetworkPolicies from '../common/NetworkPolicies';
 import useSimulation from '../hooks/useSimulation';
 import { EdgeState } from '../components/EdgeStateSelect';
 import { deploymentTabs } from '../utils/deploymentUtils';
+import useFetchNetworkFlows from '../api/useFetchNetworkFlows';
 
 const sidebarHeadingStyleConstant = {
     '--pf-u-max-width--MaxWidth': '26ch',
@@ -58,12 +59,19 @@ function DeploymentSideBar({
     defaultDeploymentTab,
 }: DeploymentSideBarProps) {
     // component state
-    const { deployment, isLoading, error } = useFetchDeployment(deploymentId);
+    const { deployment, isLoading: isLoadingDeployment, error } = useFetchDeployment(deploymentId);
     const { activeKeyTab, onSelectTab, setActiveKeyTab } = useTabs({
         defaultTab: defaultDeploymentTab,
     });
     const { simulation } = useSimulation();
     const isBaselineSimulationOn = simulation.isOn && simulation.type === 'baseline';
+
+    const {
+        isLoading: isLoadingNetworkFlows,
+        error: networkFlowsError,
+        data: { networkFlows },
+        refetchFlows,
+    } = useFetchNetworkFlows({ nodes, edges, deploymentId, edgeState });
 
     useEffect(() => {
         if (isBaselineSimulationOn) {
@@ -77,8 +85,8 @@ function DeploymentSideBar({
 
     // derived values
     const deploymentNode = getNodeById(nodes, deploymentId);
-    const numExternalFlows = getNumExternalFlows(nodes, edges, deploymentId);
-    const numInternalFlows = getNumInternalFlows(nodes, edges, deploymentId);
+    const numAnomalousExternalFlows = getNumAnomalousExternalFlows(networkFlows);
+    const numAnomalousInternalFlows = getNumAnomalousInternalFlows(networkFlows);
     const listenPorts = getListenPorts(nodes, deploymentId);
     const deploymentPolicyIds =
         deploymentNode?.data.type === 'DEPLOYMENT' ? deploymentNode?.data?.policyIds : [];
@@ -91,7 +99,7 @@ function DeploymentSideBar({
         setActiveKeyTab(tab);
     };
 
-    if (isLoading) {
+    if (isLoadingDeployment) {
         return (
             <Bullseye>
                 <Spinner isSVG size="lg" />
@@ -190,8 +198,8 @@ function DeploymentSideBar({
                             {deployment && (
                                 <DeploymentDetails
                                     deployment={deployment}
-                                    numExternalFlows={numExternalFlows}
-                                    numInternalFlows={numInternalFlows}
+                                    numAnomalousExternalFlows={numAnomalousExternalFlows}
+                                    numAnomalousInternalFlows={numAnomalousInternalFlows}
                                     listenPorts={listenPorts}
                                     networkPolicyState={networkPolicyState}
                                     onDeploymentTabsSelect={onDeploymentTabsSelect}
@@ -206,10 +214,13 @@ function DeploymentSideBar({
                             {activeKeyTab === deploymentTabs.FLOWS && (
                                 <DeploymentFlows
                                     nodes={nodes}
-                                    edges={edges}
                                     deploymentId={deploymentId}
                                     edgeState={edgeState}
                                     onNodeSelect={onNodeSelect}
+                                    isLoadingNetworkFlows={isLoadingNetworkFlows}
+                                    networkFlowsError={networkFlowsError}
+                                    networkFlows={networkFlows}
+                                    refetchFlows={refetchFlows}
                                 />
                             )}
                         </TabContent>

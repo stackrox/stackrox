@@ -8,11 +8,12 @@ import "google/protobuf/timestamp.proto";
 
 package storage;
 
-// Next Tag: 6
+// Next Tag: 7
 message Blob {
     string name                              = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     uint32 oid                               = 2;
     string checksum                          = 3;
-    google.protobuf.Timestamp last_updated   = 4;
-    google.protobuf.Timestamp modified_time  = 5;
+    int64  length                            = 4;
+    google.protobuf.Timestamp last_updated   = 5;
+    google.protobuf.Timestamp modified_time  = 6;
 }

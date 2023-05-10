@@ -15,9 +15,6 @@ var (
 	// ComplianceOperatorCheckResults enables getting compliance results from the compliance operator
 	ComplianceOperatorCheckResults = registerFeature("Enable fetching of compliance operator results", "ROX_COMPLIANCE_OPERATOR_INTEGRATION", true)
 
-	// SystemHealthPatternFly enables the Pattern Fly version of System Health page. (used in the front-end app only)
-	SystemHealthPatternFly = registerFeature("Enable Pattern Fly version of System Health page", "ROX_SYSTEM_HEALTH_PF", false)
-
 	// NetworkPolicySystemPolicy enables two system policy fields (Missing (Ingress|Egress) Network Policy) to check deployments
 	// against network policies applied in the secured cluster.
 	NetworkPolicySystemPolicy = registerFeature("Enable NetworkPolicy-related system policy fields", "ROX_NETPOL_FIELDS", true)
@@ -48,4 +45,7 @@ var (
 
 	// VulnMgmtReportingEnhancements enables APIs and UI pages for VM Reporting enhancements including downloadable reports
 	VulnMgmtReportingEnhancements = registerFeature("Vuln Mgmt Reporting Enhancements", "ROX_VULN_MGMT_REPORTING_ENHANCEMENTS", false)
+
+	// StoreEventHashes stores the hashes of successfully processed objects we receive from Sensor into the database
+	StoreEventHashes = registerFeature("Store Event Hashes", "ROX_STORE_EVENT_HASHES", false)
 )

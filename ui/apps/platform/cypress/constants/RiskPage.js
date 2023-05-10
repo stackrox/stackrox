@@ -121,8 +121,9 @@ export const selectors = {
         legendContent: {
             event: eventSelectors,
         },
+        getUidFieldIconSelector: (type) =>
+            `.pf-c-tooltip__content span:contains("UID") ~ svg[fill="var(--pf-global--${type}-color--100)"]`,
         bodyContent: scopeSelectors(tooltipSelectors.body, {
-            uidFieldValue: `[data-testid="tooltip-uid-field-value"]`,
             eventDetails: 'ul > li',
         }),
     },

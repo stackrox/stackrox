@@ -2,16 +2,16 @@ import React from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Button, ButtonVariant, Flex, Tooltip } from '@patternfly/react-core';
+import { Button, ButtonVariant, Flex } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
-import { getDistanceStrictAsPhrase, getDateTime } from 'utils/dateUtils';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import ImageNameTd from '../components/ImageNameTd';
 import { getEntityPagePath } from '../searchUtils';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
+import DatePhraseTd from '../components/DatePhraseTd';
 
 export const imageListQuery = gql`
     query getImageList($query: String, $pagination: Pagination) {
@@ -23,10 +23,18 @@ export const imageListQuery = gql`
                 tag
             }
             imageCVECountBySeverity(query: $query) {
-                critical
-                important
-                moderate
-                low
+                critical {
+                    total
+                }
+                important {
+                    total
+                }
+                moderate {
+                    total
+                }
+                low {
+                    total
+                }
             }
             operatingSystem
             deploymentCount(query: $query)
@@ -49,20 +57,20 @@ type Image = {
         tag: string;
     } | null;
     imageCVECountBySeverity: {
-        critical: number;
-        important: number;
-        moderate: number;
-        low: number;
+        critical: { total: number };
+        important: { total: number };
+        moderate: { total: number };
+        low: { total: number };
     };
     operatingSystem: string;
     deploymentCount: number;
     watchStatus: 'WATCHED' | 'NOT_WATCHED';
     metadata: {
         v1: {
-            created: Date | null;
+            created: string | null;
         } | null;
     } | null;
-    scanTime: Date | null;
+    scanTime: string | null;
 };
 
 type ImagesTableProps = {
@@ -120,10 +128,10 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                                 </Td>
                                 <Td>
                                     <SeverityCountLabels
-                                        critical={imageCVECountBySeverity.critical}
-                                        important={imageCVECountBySeverity.important}
-                                        moderate={imageCVECountBySeverity.moderate}
-                                        low={imageCVECountBySeverity.low}
+                                        critical={imageCVECountBySeverity.critical.total}
+                                        important={imageCVECountBySeverity.important.total}
+                                        moderate={imageCVECountBySeverity.moderate.total}
+                                        low={imageCVECountBySeverity.low.total}
                                     />
                                 </Td>
                                 <Td>{operatingSystem}</Td>
@@ -148,19 +156,10 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                                     )}
                                 </Td>
                                 <Td>
-                                    <Tooltip content={getDateTime(metadata?.v1?.created)}>
-                                        <div>
-                                            {getDistanceStrictAsPhrase(
-                                                metadata?.v1?.created,
-                                                new Date()
-                                            )}
-                                        </div>
-                                    </Tooltip>
+                                    <DatePhraseTd date={metadata?.v1?.created} />
                                 </Td>
                                 <Td>
-                                    <Tooltip content={getDateTime(scanTime)}>
-                                        <div>{getDistanceStrictAsPhrase(scanTime, new Date())}</div>
-                                    </Tooltip>
+                                    <DatePhraseTd date={scanTime} />
                                 </Td>
                             </Tr>
                         </Tbody>

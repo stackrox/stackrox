@@ -34,4 +34,5 @@ const (
 	NodeCVEs
 	ClusterCVEs
 	NodeComponents
+	ImageCVECore
 )

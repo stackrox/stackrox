@@ -48,6 +48,9 @@ export type IntervalType = 'UNSET' | 'DAILY' | 'WEEKLY' | 'MONTHLY';
 
 export type Interval = DaysOfWeek | DaysOfMonth;
 
+// TODO - Note that the types of `days` below are not exact, the API returns `number[]`, but the UI converts
+// them to strings. This doesn't seem to be a problem, but it's worth noting.
+
 // Sunday = 0, Monday = 1, .... Saturday =  6
 export type DaysOfWeek = {
     days: string[]; // int32

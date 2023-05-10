@@ -1,5 +1,3 @@
-import scopeSelectors from '../helpers/scopeSelectors';
-
 export const systemHealthUrl = '/main/system-health';
 
 export const selectors = {
@@ -33,10 +31,7 @@ export const selectors = {
             imageIntegrations: '[data-testid="image-integrations"]',
             notifierIntegrations: '[data-testid="notifier-integrations"]',
             backupIntegrations: '[data-testid="backup-integrations"]',
+            declarativeConfigs: '[data-testid="declarative-configs"]',
         },
     },
-    vulnDefinitions: scopeSelectors('[data-testid="vulnerability-definitions"]', {
-        header: '[data-testid="widget-header"]',
-        text: '[data-testid="text"]',
-    }),
 };

@@ -152,6 +152,45 @@ describe('Auth Sagas', () => {
             });
     });
 
+    it('should handle OIDC response with authorize roxctl mode', () => {
+        delete window.location;
+        window.location = { assign: jest.fn() };
+        const token = 'my-token';
+        const requestedLocation = '/my-location';
+        const storeAccessTokenMock = jest.fn();
+        const callbackURL = 'http://localhost:8080/';
+        const serverState = `provider-id:2ed17ca6-4b3c-4279-8317-f26f8ba01c52#${callbackURL}`;
+
+        return expectSaga(saga)
+            .provide([
+                ...createStateSelectors(),
+                [call(AuthService.fetchLoginAuthProviders), { response: [] }],
+                [
+                    call(AuthService.exchangeAuthToken, `#id_token=${token}`, 'oidc', serverState),
+                    { token, clientState: callbackURL },
+                ],
+                [call(AuthService.storeAccessToken, token), dynamic(storeAccessTokenMock)],
+                [call(AuthService.getAndClearRequestedLocation), requestedLocation],
+                [call(AuthService.logout), null],
+                [call(fetchUserRolePermissions), { response: {} }],
+                [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
+            ])
+            .put(push(requestedLocation))
+            .dispatch(
+                createLocationChange(
+                    '/auth/response/oidc',
+                    null,
+                    `#id_token=${token}&state=${serverState}`
+                )
+            )
+            .silentRun()
+            .then(() => {
+                expect(window.location.assign).toHaveBeenCalledWith(
+                    `${callbackURL}?error=&errorDescription=&token=${token}`
+                );
+            });
+    });
+
     it('should handle SAML response with test mode', () => {
         const storeLocationMock = jest.fn();
         const user =

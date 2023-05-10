@@ -2,15 +2,15 @@ import React from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Button, ButtonVariant, Tooltip } from '@patternfly/react-core';
+import { Button, ButtonVariant } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
-import { getDistanceStrictAsPhrase, getDateTime } from 'utils/dateUtils';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { getEntityPagePath } from '../searchUtils';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
+import DatePhraseTd from '../components/DatePhraseTd';
 
 export const deploymentListQuery = gql`
     query getDeploymentList($query: String, $pagination: Pagination) {
@@ -18,10 +18,18 @@ export const deploymentListQuery = gql`
             id
             name
             imageCVECountBySeverity(query: $query) {
-                critical
-                important
-                moderate
-                low
+                critical {
+                    total
+                }
+                important {
+                    total
+                }
+                moderate {
+                    total
+                }
+                low {
+                    total
+                }
             }
             clusterName
             namespace
@@ -35,15 +43,15 @@ export type Deployment = {
     id: string;
     name: string;
     imageCVECountBySeverity: {
-        critical: number;
-        important: number;
-        moderate: number;
-        low: number;
+        critical: { total: number };
+        important: { total: number };
+        moderate: { total: number };
+        low: { total: number };
     };
     clusterName: string;
     namespace: string;
     imageCount: number;
-    created: Date | null;
+    created: string | null;
 };
 
 type DeploymentsTableProps = {
@@ -103,10 +111,10 @@ function DeploymentsTable({ deployments, getSortParams, isFiltered }: Deployment
                                 </Td>
                                 <Td>
                                     <SeverityCountLabels
-                                        critical={imageCVECountBySeverity.critical}
-                                        important={imageCVECountBySeverity.important}
-                                        moderate={imageCVECountBySeverity.moderate}
-                                        low={imageCVECountBySeverity.low}
+                                        critical={imageCVECountBySeverity.critical.total}
+                                        important={imageCVECountBySeverity.important.total}
+                                        moderate={imageCVECountBySeverity.moderate.total}
+                                        low={imageCVECountBySeverity.low.total}
                                     />
                                 </Td>
                                 <Td>{clusterName}</Td>
@@ -123,9 +131,7 @@ function DeploymentsTable({ deployments, getSortParams, isFiltered }: Deployment
                                     </Button>
                                 </Td>
                                 <Td>
-                                    <Tooltip content={getDateTime(created)}>
-                                        <div>{getDistanceStrictAsPhrase(created, new Date())}</div>
-                                    </Tooltip>
+                                    <DatePhraseTd date={created} />
                                 </Td>
                             </Tr>
                         </Tbody>

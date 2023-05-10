@@ -239,6 +239,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
                 { SignatureIntegrationService.deleteSignatureIntegration(it.value) }
 
         orchestrator.deleteNamespace(SIGNATURE_TESTING_NAMESPACE)
+        orchestrator.waitForNamespaceDeletion(SIGNATURE_TESTING_NAMESPACE)
     }
 
     def setup() {

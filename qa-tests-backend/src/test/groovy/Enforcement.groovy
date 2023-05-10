@@ -243,11 +243,8 @@ class Enforcement extends BaseSpecification {
         sleep 10000
 
         orchestrator.batchCreateDeployments(DEPLOYMENTS.collect {
-            label, d -> d.setName(label).addLabel("app", label)
+            String label, Deployment d -> d.setName(label).addLabel("app", label)
         })
-        DEPLOYMENTS.each {
-            label, d -> assert Services.waitForDeployment(d)
-        }
         DAEMON_SETS.each {
             label, d -> d.setName(label).addLabel("app", label).create()
         }

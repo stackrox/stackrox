@@ -47,6 +47,14 @@ func GetSchemaForTable(tableName string) *walker.Schema {
 	return nil
 }
 
+func getAllTables() []*registeredTable {
+	tables := make([]*registeredTable, 0, len(registeredTables))
+	for _, v := range registeredTables {
+		tables = append(tables, v)
+	}
+	return tables
+}
+
 func getAllRegisteredTablesInOrder() []*registeredTable {
 	visited := set.NewStringSet()
 

@@ -57,7 +57,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if env.ResyncDisabled.BooleanSetting() {
 		log.Infof("Running sensor with Kubernetes re-sync disabled")
 	} else {
-		log.Infof("Running sesnor with Kubernetes re-sync enabled. Re-sync time: %s", cfg.resyncPeriod.String())
+		log.Infof("Running sensor with Kubernetes re-sync enabled. Re-sync time: %s", cfg.resyncPeriod.String())
 	}
 
 	storeProvider := resources.InitializeStore()
@@ -98,7 +98,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	auditLogCollectionManager := compliance.NewAuditLogCollectionManager()
 
 	o := orchestrator.New(cfg.k8sClient.Kubernetes())
-	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager)
+	complianceMultiplexer := compliance.NewMultiplexer()
+	// TODO(ROX-16931): Turn auditLogEventsInput and auditLogCollectionManager into ComplianceComponents if possible
+	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager, complianceMultiplexer.ComplianceC())
 
 	configHandler := config.NewCommandHandler(admCtrlSettingsMgr, deploymentIdentification, helmManagedConfig, auditLogCollectionManager)
 	enforcer, err := enforcer.New(cfg.k8sClient)
@@ -139,7 +141,11 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 	if env.RHCOSNodeScanning.BooleanSetting() {
 		matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
-		components = append(components, compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher))
+		nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher)
+		complianceMultiplexer.AddComponentWithComplianceC(nodeInventoryHandler)
+		// complianceMultiplexer must start after all components that implement common.ComplianceComponent
+		// i.e., after nodeInventoryHandler
+		components = append(components, nodeInventoryHandler, complianceMultiplexer)
 	}
 
 	if !cfg.localSensor {

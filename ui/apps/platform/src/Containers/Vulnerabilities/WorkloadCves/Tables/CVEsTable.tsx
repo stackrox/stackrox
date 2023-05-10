@@ -9,26 +9,35 @@ import {
     Tr,
     ExpandableRowContent,
 } from '@patternfly/react-table';
-import { Button, ButtonVariant, Tooltip } from '@patternfly/react-core';
+import { Button, ButtonVariant } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
-import { getDistanceStrictAsPhrase, getDateTime } from 'utils/dateUtils';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 
 import { getEntityPagePath } from '../searchUtils';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
+import DatePhraseTd from '../components/DatePhraseTd';
+import CvssTd from '../components/CvssTd';
 
 export const cveListQuery = gql`
     query getImageCVEList($query: String, $pagination: Pagination) {
         imageCVEs(query: $query, pagination: $pagination) {
             cve
             affectedImageCountBySeverity {
-                critical
-                important
-                moderate
-                low
+                critical {
+                    total
+                }
+                important {
+                    total
+                }
+                moderate {
+                    total
+                }
+                low {
+                    total
+                }
             }
             topCVSS
             affectedImageCount
@@ -47,14 +56,14 @@ type ImageCVE = {
     cve: string;
     // summary: string;
     affectedImageCountBySeverity: {
-        critical: number;
-        important: number;
-        moderate: number;
-        low: number;
+        critical: { total: number };
+        important: { total: number };
+        moderate: { total: number };
+        low: { total: number };
     };
     topCVSS: number;
     affectedImageCount: number;
-    firstDiscoveredInSystem: Date | null;
+    firstDiscoveredInSystem: string | null;
 };
 
 type CVEsTableProps = {
@@ -82,7 +91,10 @@ function CVEsTable({ cves, unfilteredImageCount, getSortParams, isFiltered }: CV
                         Affected images
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th tooltip="Time since this CVE first affected an entity">First discovered</Th>
+                    <Th tooltip="Time since this CVE first affected an entity">
+                        First discovered
+                        {isFiltered && <DynamicColumnIcon />}
+                    </Th>
                 </Tr>
             </Thead>
             {cves.map(
@@ -127,27 +139,22 @@ function CVEsTable({ cves, unfilteredImageCount, getSortParams, isFiltered }: CV
                                 </Td>
                                 <Td>
                                     <SeverityCountLabels
-                                        critical={affectedImageCountBySeverity.critical}
-                                        important={affectedImageCountBySeverity.important}
-                                        moderate={affectedImageCountBySeverity.moderate}
-                                        low={affectedImageCountBySeverity.low}
+                                        critical={affectedImageCountBySeverity.critical.total}
+                                        important={affectedImageCountBySeverity.important.total}
+                                        moderate={affectedImageCountBySeverity.moderate.total}
+                                        low={affectedImageCountBySeverity.low.total}
                                     />
                                 </Td>
                                 {/* TODO: score version? */}
-                                <Td>{topCVSS.toFixed(1)}</Td>
+                                <Td>
+                                    <CvssTd cvss={topCVSS} />
+                                </Td>
                                 <Td>
                                     {/* TODO: fix upon PM feedback */}
                                     {affectedImageCount}/{unfilteredImageCount} affected images
                                 </Td>
                                 <Td>
-                                    <Tooltip content={getDateTime(firstDiscoveredInSystem)}>
-                                        <div>
-                                            {getDistanceStrictAsPhrase(
-                                                firstDiscoveredInSystem,
-                                                new Date()
-                                            )}
-                                        </div>
-                                    </Tooltip>
+                                    <DatePhraseTd date={firstDiscoveredInSystem} />
                                 </Td>
                             </Tr>
                             <Tr isExpanded={isExpanded}>

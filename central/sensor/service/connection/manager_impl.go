@@ -6,6 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/clusterhealth"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -63,6 +65,7 @@ type manager struct {
 	policies            common.PolicyManager
 	baselines           common.ProcessBaselineManager
 	networkBaselines    common.NetworkBaselineManager
+	notifierProcessor   notifierProcessor.Processor
 	autoTriggerUpgrades *concurrency.Flag
 }
 
@@ -98,6 +101,7 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 	policyManager common.PolicyManager,
 	baselineManager common.ProcessBaselineManager,
 	networkBaselineManager common.NetworkBaselineManager,
+	notifierProcessor notifierProcessor.Processor,
 	autoTriggerUpgrades *concurrency.Flag,
 ) error {
 	m.clusters = clusterManager
@@ -105,6 +109,7 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 	m.policies = policyManager
 	m.baselines = baselineManager
 	m.networkBaselines = networkBaselineManager
+	m.notifierProcessor = notifierProcessor
 	m.autoTriggerUpgrades = autoTriggerUpgrades
 	err := m.initializeUpgradeControllers()
 	if err != nil {
@@ -265,6 +270,7 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 			m.policies,
 			m.baselines,
 			m.networkBaselines,
+			m.notifierProcessor,
 			msgDeduper)
 	ctx = withConnection(ctx, conn)
 
@@ -400,7 +406,31 @@ func (m *manager) PreparePoliciesAndBroadcast(policies []*storage.Policy) {
 			log.Errorf("error broadcasting message to cluster %q", clusterID)
 		}
 	}
+}
 
+// PrepareNotifiersAndBroadcast prepares and sends NotifierSync message
+// separately for each sensor.
+func (m *manager) PrepareNotifiersAndBroadcast(notifiers []pkgNotifiers.Notifier) {
+	m.connectionsByClusterIDMutex.RLock()
+	defer m.connectionsByClusterIDMutex.RUnlock()
+
+	msg := getNotifierSyncMsgFromNotifiers(notifiers)
+	for clusterID, connAndUpgradeCtrl := range m.connectionsByClusterID {
+		if connAndUpgradeCtrl.connection == nil {
+			log.Debugf("could not broadcast message to cluster %q which has no active connection", clusterID)
+			continue
+		}
+
+		if !connAndUpgradeCtrl.connection.HasCapability(centralsensor.SecuredClusterNotifications) {
+			log.Debugf("did not broadcast notifiersync message to cluster %q since it does not have the %s capapbility",
+				clusterID, centralsensor.SecuredClusterNotifications)
+			continue
+		}
+
+		if err := connAndUpgradeCtrl.connection.InjectMessage(concurrency.Never(), msg); err != nil {
+			log.Errorf("error broadcasting message to cluster %q", clusterID)
+		}
+	}
 }
 
 func (m *manager) BroadcastMessage(msg *central.MsgToSensor) {

@@ -1,5 +1,6 @@
 import { ListenPort } from 'types/networkFlow.proto';
 import { CustomEdgeModel, CustomNodeModel, DeploymentNodeModel } from '../types/topology.type';
+import { Flow } from '../types/flow.type';
 
 /* node helper functions */
 
@@ -17,17 +18,6 @@ export function getDeploymentNodesInNamespace(
     return deploymentNodes;
 }
 
-function getExternalNodeIds(nodes: CustomNodeModel[]): string[] {
-    const externalNodeIds =
-        nodes?.reduce((acc, curr) => {
-            if (curr.data.type === 'EXTERNAL_ENTITIES' || curr.data.type === 'CIDR_BLOCK') {
-                return [...acc, curr.id];
-            }
-            return acc;
-        }, [] as string[]) || [];
-    return externalNodeIds;
-}
-
 export function getNodeById(
     nodes: CustomNodeModel[] | undefined,
     nodeId: string | undefined
@@ -37,52 +27,33 @@ export function getNodeById(
 
 /* edge helper functions */
 
-export function getNumFlowsFromEdge(edge: CustomEdgeModel): number {
-    let numFlows = edge.data.sourceToTargetProperties.length;
-    if (edge.data.isBidirectional) {
-        numFlows += edge.data.targetToSourceProperties?.length || 0;
-    }
-    return numFlows;
-}
-
-export function getNumInternalFlows(
-    nodes: CustomNodeModel[],
-    edges: CustomEdgeModel[],
-    deploymentId: string
-): number {
-    const externalNodeIds = getExternalNodeIds(nodes);
-    const numInternalFlows =
-        edges?.reduce((acc, edge) => {
+export function getNumAnomalousInternalFlows(networkFlows: Flow[]) {
+    const numAnomalousInternalFlows =
+        networkFlows.reduce((acc, flow) => {
             if (
-                (edge.source === deploymentId && !externalNodeIds.includes(edge.target || '')) ||
-                (edge.target === deploymentId && !externalNodeIds.includes(edge.source || ''))
+                flow.isAnomalous &&
+                flow.type !== 'CIDR_BLOCK' &&
+                flow.type !== 'EXTERNAL_ENTITIES'
             ) {
-                const numFlows = getNumFlowsFromEdge(edge);
-                return acc + numFlows;
+                return acc + 1;
             }
             return acc;
         }, 0) || 0;
-    return numInternalFlows;
+    return numAnomalousInternalFlows;
 }
 
-export function getNumExternalFlows(
-    nodes: CustomNodeModel[],
-    edges: CustomEdgeModel[],
-    deploymentId: string
-): number {
-    const externalNodeIds = getExternalNodeIds(nodes);
-    const numExternalFlows =
-        edges?.reduce((acc, edge) => {
+export function getNumAnomalousExternalFlows(networkFlows: Flow[]) {
+    const numAnomalousExternalFlows =
+        networkFlows.reduce((acc, flow) => {
             if (
-                (edge.source === deploymentId && externalNodeIds.includes(edge.target || '')) ||
-                (edge.target === deploymentId && externalNodeIds.includes(edge.source || ''))
+                flow.isAnomalous &&
+                (flow.type === 'CIDR_BLOCK' || flow.type === 'EXTERNAL_ENTITIES')
             ) {
-                const numFlows = getNumFlowsFromEdge(edge);
-                return acc + numFlows;
+                return acc + 1;
             }
             return acc;
         }, 0) || 0;
-    return numExternalFlows;
+    return numAnomalousExternalFlows;
 }
 
 export function getEdgesByNodeId(edges: CustomEdgeModel[], id: string): CustomEdgeModel[] {

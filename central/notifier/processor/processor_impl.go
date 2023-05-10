@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	timestamp "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -42,9 +43,31 @@ func (p *processorImpl) GetNotifier(ctx context.Context, id string) (notifier no
 	return p.ns.GetNotifier(ctx, id)
 }
 
+// GetNotifiers gets the in memory copies of all notifiers
+func (p *processorImpl) GetNotifiers(ctx context.Context) (notifiers []notifiers.Notifier) {
+	return p.ns.GetNotifiers(ctx)
+}
+
 // UpdateNotifier updates or adds the passed notifier into memory
 func (p *processorImpl) UpdateNotifier(ctx context.Context, notifier notifiers.Notifier) {
 	p.ns.UpsertNotifier(ctx, notifier)
+}
+
+// IsSecuredClusterNotifier returns true if this is a notifier that can be accessed by the secured cluster
+func (p *processorImpl) IsSecuredClusterNotifier(notifier notifiers.Notifier) bool {
+	if !env.SecuredClusterNotifiers.BooleanSetting() {
+		return false
+	}
+	if _, ok := notifier.ProtoNotifier().Config.(*storage.Notifier_Jira); ok {
+		return true
+	}
+	if _, ok := notifier.ProtoNotifier().Config.(*storage.Notifier_Generic); ok {
+		return true
+	}
+	if _, ok := notifier.ProtoNotifier().Config.(*storage.Notifier_Syslog); ok {
+		return true
+	}
+	return false
 }
 
 // ProcessAlert pushes the alert into a channel to be processed
@@ -53,8 +76,15 @@ func (p *processorImpl) ProcessAlert(ctx context.Context, alert *storage.Alert) 
 		return
 	}
 	alertNotifiers := set.NewStringSet(alert.GetPolicy().GetNotifiers()...)
+
 	p.ns.ForEach(ctx, func(ctx context.Context, notifier notifiers.Notifier, failures AlertSet) {
 		if alertNotifiers.Contains(notifier.ProtoNotifier().GetId()) {
+			// If this is a secured cluster notifier the notification for this alert has already been processed in the secured
+			// cluster before the alert reached here for processing. Hence, skip the notifier and continue with the rest
+			// of the notifiers configured for the policy that generated the alert
+			if p.IsSecuredClusterNotifier(notifier) {
+				return
+			}
 			go func() {
 				err := tryToAlert(ctx, notifier, alert)
 				if err != nil {
@@ -106,6 +136,9 @@ func (p *processorImpl) processAlertSync(ctx context.Context, alert *storage.Ale
 	alertNotifiers := set.NewStringSet(alert.GetPolicy().GetNotifiers()...)
 	p.ns.ForEach(ctx, func(ctx context.Context, notifier notifiers.Notifier, failures AlertSet) {
 		if alertNotifiers.Contains(notifier.ProtoNotifier().GetId()) {
+			if p.IsSecuredClusterNotifier(notifier) {
+				return
+			}
 			err := tryToAlert(ctx, notifier, alert)
 			if err != nil {
 				failures.Add(alert)

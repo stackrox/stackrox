@@ -211,6 +211,7 @@ func (s *Sensor) Start() {
 			utils.Should(errors.Wrapf(err, "sensor component %T failed to start", component))
 		}
 	}
+	log.Info("All components have started")
 
 	okSig := s.centralConnectionFactory.OkSignal()
 	errSig := s.centralConnectionFactory.StopSignal()

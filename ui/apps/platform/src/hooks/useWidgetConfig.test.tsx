@@ -140,8 +140,8 @@ describe('useWidgetConfig hook', () => {
             </>
         );
 
-        expect(renderSpies[idA]).toBeCalledTimes(1);
-        expect(renderSpies[idB]).toBeCalledTimes(1);
+        expect(renderSpies[idA]).toHaveBeenCalledTimes(1);
+        expect(renderSpies[idB]).toHaveBeenCalledTimes(1);
 
         reactAct(() => {
             hookReturns[idA][1]({ sort: 'desc' });
@@ -149,8 +149,8 @@ describe('useWidgetConfig hook', () => {
 
         // Updating the config for one component should not cause the other component to rerender
         // and should only update the config state of the changed component.
-        expect(renderSpies[idA]).toBeCalledTimes(2);
-        expect(renderSpies[idB]).toBeCalledTimes(1);
+        expect(renderSpies[idA]).toHaveBeenCalledTimes(2);
+        expect(renderSpies[idB]).toHaveBeenCalledTimes(1);
         expect(hookReturns[idA][0]).toEqual({ sort: 'desc', filter: '' });
         expect(hookReturns[idB][0]).toEqual({ sort: 'asc', filter: '' });
 
@@ -158,8 +158,8 @@ describe('useWidgetConfig hook', () => {
             hookReturns[idB][1]({ filter: 'Namespace:stackrox' });
         });
 
-        expect(renderSpies[idA]).toBeCalledTimes(2);
-        expect(renderSpies[idB]).toBeCalledTimes(2);
+        expect(renderSpies[idA]).toHaveBeenCalledTimes(2);
+        expect(renderSpies[idB]).toHaveBeenCalledTimes(2);
         expect(hookReturns[idA][0]).toEqual({ sort: 'desc', filter: '' });
         expect(hookReturns[idB][0]).toEqual({ sort: 'asc', filter: 'Namespace:stackrox' });
 

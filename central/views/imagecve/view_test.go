@@ -156,10 +156,10 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 
 			for _, record := range actual {
 				assert.Equal(t,
-					record.GetImagesBySeverity().GetLowSeverityCount()+
-						record.GetImagesBySeverity().GetModerateSeverityCount()+
-						record.GetImagesBySeverity().GetImportantSeverityCount()+
-						record.GetImagesBySeverity().GetCriticalSeverityCount(),
+					record.GetImagesBySeverity().GetLowSeverityCount().GetTotal()+
+						record.GetImagesBySeverity().GetModerateSeverityCount().GetTotal()+
+						record.GetImagesBySeverity().GetImportantSeverityCount().GetTotal()+
+						record.GetImagesBySeverity().GetCriticalSeverityCount().GetTotal(),
 					record.GetAffectedImages(),
 				)
 			}
@@ -195,10 +195,10 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreWithPagination() {
 
 				for _, record := range actual {
 					assert.Equal(t,
-						record.GetImagesBySeverity().GetLowSeverityCount()+
-							record.GetImagesBySeverity().GetModerateSeverityCount()+
-							record.GetImagesBySeverity().GetImportantSeverityCount()+
-							record.GetImagesBySeverity().GetCriticalSeverityCount(),
+						record.GetImagesBySeverity().GetLowSeverityCount().GetTotal()+
+							record.GetImagesBySeverity().GetModerateSeverityCount().GetTotal()+
+							record.GetImagesBySeverity().GetImportantSeverityCount().GetTotal()+
+							record.GetImagesBySeverity().GetCriticalSeverityCount().GetTotal(),
 						record.GetAffectedImages(),
 					)
 				}
@@ -525,22 +525,48 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 				}
 
 				val.TopCVSS = mathutil.MaxFloat32(val.GetTopCVSS(), vuln.GetCvss())
+
+				id := cve.ID(val.GetCVE(), image.GetScan().GetOperatingSystem())
+				var found bool
+				for _, seenID := range val.GetCVEIDs() {
+					if seenID == id {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					val.CVEIDs = append(val.CVEIDs, id)
+				}
 				if val.GetFirstDiscoveredInSystem().After(vulnTime) {
 					val.FirstDiscoveredInSystem = vulnTime
 				}
 
-				if seenForImage.Add(val.CVE) {
-					val.AffectedImages++
+				if !seenForImage.Add(val.CVE) {
+					continue
+				}
+				val.AffectedImages++
 
-					switch vuln.GetSeverity() {
-					case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
-						val.ImagesWithCriticalSeverity++
-					case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
-						val.ImagesWithImportantSeverity++
-					case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
-						val.ImagesWithModerateSeverity++
-					case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
-						val.ImagesWithLowSeverity++
+				switch vuln.GetSeverity() {
+				case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
+					val.ImagesWithCriticalSeverity++
+					if vuln.GetFixedBy() != "" {
+						val.FixableImagesWithCriticalSeverity++
+					}
+				case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
+					val.ImagesWithImportantSeverity++
+					if vuln.GetFixedBy() != "" {
+						val.FixableImagesWithImportantSeverity++
+					}
+				case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
+					val.ImagesWithModerateSeverity++
+					if vuln.GetFixedBy() != "" {
+						val.FixableImagesWithModerateSeverity++
+					}
+				case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
+					val.ImagesWithLowSeverity++
+					if vuln.GetFixedBy() != "" {
+						val.FixableImagesWithLowSeverity++
 					}
 				}
 			}
@@ -549,14 +575,24 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 
 	expected := make([]*imageCVECore, 0, len(cveMap))
 	for _, entry := range cveMap {
+		sort.SliceStable(entry.CVEIDs, func(i, j int) bool {
+			return entry.CVEIDs[i] < entry.CVEIDs[j]
+		})
 		expected = append(expected, entry)
 	}
 	if options.SkipGetImagesBySeverity {
 		for _, entry := range expected {
 			entry.ImagesWithLowSeverity = 0
+			entry.FixableImagesWithLowSeverity = 0
+
 			entry.ImagesWithModerateSeverity = 0
+			entry.FixableImagesWithModerateSeverity = 0
+
 			entry.ImagesWithImportantSeverity = 0
+			entry.FixableImagesWithImportantSeverity = 0
+
 			entry.ImagesWithCriticalSeverity = 0
+			entry.FixableImagesWithCriticalSeverity = 0
 		}
 	}
 	if options.SkipGetTopCVSS {
@@ -586,7 +622,9 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 }
 
 func compileExpectedCountBySeverity(images []*storage.Image, filter *filterImpl) *resourceCountByImageCVESeverity {
-	sevMap := make(map[storage.VulnerabilitySeverity]set.Set[string])
+	sevToCVEsMap := make(map[storage.VulnerabilitySeverity]set.Set[string])
+	sevToFixableCVEsMap := make(map[storage.VulnerabilitySeverity]set.Set[string])
+
 	for _, image := range images {
 		if !filter.matchImage(image) {
 			continue
@@ -601,17 +639,30 @@ func compileExpectedCountBySeverity(images []*storage.Image, filter *filterImpl)
 				if vuln.GetSeverity() == storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY {
 					continue
 				}
-				cves := sevMap[vuln.GetSeverity()]
+				cves := sevToCVEsMap[vuln.GetSeverity()]
 				cves.Add(vuln.GetCve())
-				sevMap[vuln.GetSeverity()] = cves
+				sevToCVEsMap[vuln.GetSeverity()] = cves
+
+				if vuln.GetFixedBy() != "" {
+					cves = sevToFixableCVEsMap[vuln.GetSeverity()]
+					cves.Add(vuln.GetCve())
+					sevToFixableCVEsMap[vuln.GetSeverity()] = cves
+				}
 			}
 		}
 	}
 	return &resourceCountByImageCVESeverity{
-		CriticalSeverityCount:  sevMap[storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY].Cardinality(),
-		ImportantSeverityCount: sevMap[storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY].Cardinality(),
-		ModerateSeverityCount:  sevMap[storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY].Cardinality(),
-		LowSeverityCount:       sevMap[storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY].Cardinality(),
+		CriticalSeverityCount:        sevToCVEsMap[storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY].Cardinality(),
+		FixableCriticalSeverityCount: sevToFixableCVEsMap[storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY].Cardinality(),
+
+		ImportantSeverityCount:        sevToCVEsMap[storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY].Cardinality(),
+		FixableImportantSeverityCount: sevToFixableCVEsMap[storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY].Cardinality(),
+
+		ModerateSeverityCount:        sevToCVEsMap[storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY].Cardinality(),
+		FixableModerateSeverityCount: sevToFixableCVEsMap[storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY].Cardinality(),
+
+		LowSeverityCount:        sevToCVEsMap[storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY].Cardinality(),
+		FixableLowSeverityCount: sevToFixableCVEsMap[storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY].Cardinality(),
 	}
 }
 

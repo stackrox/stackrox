@@ -30,32 +30,30 @@ import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
-import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {
-    ImageVulnerabilityCounter,
-    imageVulnerabilityCounterFragment,
+    ResourceCountByCveSeverityAndStatus,
+    resourceCountByCveSeverityAndStatusFragment,
 } from '../SummaryCards/CvesByStatusSummaryCard';
-import SingleEntityVulnerabilitiesTable, {
+import ImageVulnerabilitiesTable, {
     ImageVulnerability,
     imageVulnerabilitiesFragment,
-} from '../Tables/SingleEntityVulnerabilitiesTable';
+} from '../Tables/ImageVulnerabilitiesTable';
 import { DynamicTableLabel } from '../components/DynamicIcon';
-import { getHiddenSeverities, parseQuerySearchFilter } from '../searchUtils';
-import { QuerySearchFilter, FixableStatus, cveStatusTabValues } from '../types';
-import {
-    ImageMetadataContext,
-    imageMetadataContextFragment,
-} from '../Tables/ComponentVulnerabilitiesTable';
+import { getHiddenSeverities, getHiddenStatuses, parseQuerySearchFilter } from '../searchUtils';
+import { cveStatusTabValues } from '../types';
+import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
+import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/table.utils';
+import { Resource } from '../components/FilterResourceDropdown';
 
 const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
-    ${imageVulnerabilityCounterFragment}
+    ${resourceCountByCveSeverityAndStatusFragment}
     ${imageVulnerabilitiesFragment}
     query getImageCoreVulnerabilities($id: ID!, $query: String!, $pagination: Pagination!) {
         image(id: $id) {
             ...ImageMetadataContext
-            imageVulnerabilityCounter(query: $query) {
-                ...ImageVulnerabilityCounterFields
+            imageCVECountBySeverity(query: $query) {
+                ...ResourceCountsByCVESeverityAndStatus
             }
             imageVulnerabilities(query: $query, pagination: $pagination) {
                 ...ImageVulnerabilityFields
@@ -64,24 +62,9 @@ const imageVulnerabilitiesQuery = gql`
     }
 `;
 
-function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<FixableStatus> {
-    const hiddenStatuses = new Set<FixableStatus>([]);
-    const fixableFilters = querySearchFilter?.Fixable ?? [];
-
-    if (fixableFilters.length > 0) {
-        if (!fixableFilters.includes('true')) {
-            hiddenStatuses.add('Fixable');
-        }
-
-        if (!fixableFilters.includes('false')) {
-            hiddenStatuses.add('Not fixable');
-        }
-    }
-
-    return hiddenStatuses;
-}
-
 const defaultSortFields = ['CVE'];
+
+const imageResourceFilters = new Set<Resource>(['CVE']);
 
 export type ImagePageVulnerabilitiesProps = {
     imageId: string;
@@ -90,7 +73,7 @@ export type ImagePageVulnerabilitiesProps = {
 function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    const { page, perPage, setPage, setPerPage } = useURLPagination(50);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
         defaultSortOption: {
@@ -109,7 +92,7 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
     const { data, previousData, loading, error } = useQuery<
         {
             image: ImageMetadataContext & {
-                imageVulnerabilityCounter: ImageVulnerabilityCounter;
+                imageCVECountBySeverity: ResourceCountByCveSeverityAndStatus;
                 imageVulnerabilities: ImageVulnerability[];
             };
         },
@@ -156,9 +139,10 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
     } else if (vulnerabilityData) {
         const hiddenSeverities = getHiddenSeverities(querySearchFilter);
         const hiddenStatuses = getHiddenStatuses(querySearchFilter);
-        const vulnCounter = vulnerabilityData.image.imageVulnerabilityCounter;
-        const totalVulnerabilityCount = vulnCounter.all.total;
+        const vulnCounter = vulnerabilityData.image.imageCVECountBySeverity;
         const { critical, important, moderate, low } = vulnCounter;
+        const totalVulnerabilityCount =
+            critical.total + important.total + moderate.total + low.total;
 
         mainContent = (
             <>
@@ -167,18 +151,13 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                         <GridItem sm={12} md={6} xl2={4}>
                             <BySeveritySummaryCard
                                 title="CVEs by severity"
-                                severityCounts={{
-                                    CRITICAL_VULNERABILITY_SEVERITY: critical.total,
-                                    IMPORTANT_VULNERABILITY_SEVERITY: important.total,
-                                    MODERATE_VULNERABILITY_SEVERITY: moderate.total,
-                                    LOW_VULNERABILITY_SEVERITY: low.total,
-                                }}
+                                severityCounts={vulnCounter}
                                 hiddenSeverities={hiddenSeverities}
                             />
                         </GridItem>
                         <GridItem sm={12} md={6} xl2={4}>
                             <CvesByStatusSummaryCard
-                                cveStatusCounts={vulnerabilityData.image.imageVulnerabilityCounter}
+                                cveStatusCounts={vulnerabilityData.image.imageCVECountBySeverity}
                                 hiddenStatuses={hiddenStatuses}
                             />
                         </GridItem>
@@ -211,7 +190,7 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                             />
                         </SplitItem>
                     </Split>
-                    <SingleEntityVulnerabilitiesTable
+                    <ImageVulnerabilitiesTable
                         image={vulnerabilityData.image}
                         getSortParams={getSortParams}
                         isFiltered={isFiltered}
@@ -245,7 +224,7 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                         title={<TabTitleText>Observed CVEs</TabTitleText>}
                     >
                         <div className="pf-u-px-sm pf-u-background-color-100">
-                            <WorkloadTableToolbar />
+                            <WorkloadTableToolbar supportedResourceFilters={imageResourceFilters} />
                         </div>
                         <div className="pf-u-flex-grow-1 pf-u-background-color-100">
                             {mainContent}

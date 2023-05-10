@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasOrchestratorFlavor } from '../../helpers/features';
 import { triggerScan } from '../compliance/Compliance.helpers';
 
 import {
@@ -56,7 +57,11 @@ describe('Configuration Management Nodes', () => {
         hasTabsFor(['controls']);
     });
 
-    it('should click on the controls count widget in the entity page and show the controls tab', () => {
+    it('should click on the controls count widget in the entity page and show the controls tab', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         triggerScan(); // because test assumes that scan results are available
 
         const columnIndexForControls = 7;

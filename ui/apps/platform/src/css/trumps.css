@@ -114,7 +114,8 @@ body {
 .pf-c-table__toggle-icon svg,
 .pf-c-expandable-section__toggle-icon svg,
 .chr-c-feedback-modal svg,
-.pf-c-breadcrumb__item-divider svg {
+.pf-c-breadcrumb__item-divider svg,
+.pf-c-modal-box__title-icon svg {
     display: inline;
 }
 
@@ -168,11 +169,13 @@ button.pf-c-tree-view__node {
 /*
  * Override disabled checkbox styles when the input element is in a PF table
  */
-.pf-c-table__check input[type="checkbox"]:disabled {
+.pf-c-table__check input[type="checkbox"]:disabled,
+.pf-c-form__group input[type="checkbox"]:disabled {
     cursor: not-allowed;
     border-color: revert;
 }
-.pf-c-table__check input[type="checkbox"]:checked:disabled {
+.pf-c-table__check input[type="checkbox"]:checked:disabled,
+.pf-c-form__group input[type="checkbox"]:checked:disabled {
     background-color: var(--pf-global--disabled-color--200);
     border-color: transparent;
 }
