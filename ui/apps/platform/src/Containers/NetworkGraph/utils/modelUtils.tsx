@@ -26,6 +26,7 @@ import {
     CustomEdgeModel,
     DeploymentData,
     CIDRBlockData,
+    EdgeData,
 } from '../types/topology.type';
 import { protocolLabel } from './flowUtils';
 
@@ -650,4 +651,57 @@ export function getConnectedNodeIds(edges: CustomEdgeModel[], selectedNodeId: st
         return acc;
     }, [] as string[]);
     return connectedNodeIds;
+}
+
+function dnsFlowsFilter(properties) {
+    return (
+        properties.port !== 53 &&
+        properties.port !== 5353 &&
+        properties.protocol !== 'L4_PROTOCOL_UDP' &&
+        properties.port !== 8443 &&
+        properties.protocol !== 'L4_PROTOCOL_TCP'
+    );
+}
+
+export function removeDNSFlows(edges: CustomEdgeModel[]): CustomEdgeModel[] {
+    const modifiedEdges: CustomEdgeModel[] = [];
+    edges.forEach((edge) => {
+        const filteredSourceToTargetProperties =
+            edge.data.sourceToTargetProperties.filter(dnsFlowsFilter);
+        const filteredTargetToSourceProperties =
+            edge.data?.targetToSourceProperties?.filter(dnsFlowsFilter) || [];
+        const combinedProperties = [
+            ...filteredSourceToTargetProperties,
+            ...filteredTargetToSourceProperties,
+        ];
+
+        if (combinedProperties.length !== 0) {
+            const portProtocolLabel = getPortProtocolEdgeLabel([
+                ...filteredSourceToTargetProperties,
+                ...filteredTargetToSourceProperties,
+            ]);
+            const modifiedData: EdgeData = {
+                sourceToTargetProperties: filteredSourceToTargetProperties,
+                targetToSourceProperties: filteredTargetToSourceProperties,
+                isBidirectional:
+                    filteredTargetToSourceProperties.length !== 0 &&
+                    filteredSourceToTargetProperties.length !== 0,
+                portProtocolLabel,
+                tag: portProtocolLabel,
+            };
+            if (filteredSourceToTargetProperties.length !== 0) {
+                modifiedData.endTerminalType = EdgeTerminalType.directional;
+            }
+            if (filteredTargetToSourceProperties.length !== 0) {
+                modifiedData.startTerminalType = EdgeTerminalType.directional;
+            }
+            const modifiedEdge = {
+                ...edge,
+                data: modifiedData,
+            };
+
+            modifiedEdges.push(modifiedEdge);
+        }
+    });
+    return modifiedEdges;
 }
