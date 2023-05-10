@@ -64,7 +64,7 @@ func (s *postgresPolicyMigratorTestSuite) TestUnrelatedPolicyIsNotUpdated() {
 	}
 
 	s.NoError(s.store.Upsert(s.ctx, policy))
-	s.NoError(MigratePoliciesWithDB(
+	s.NoError(MigratePoliciesWithStore(
 		policiesToMigrate,
 		comparisonPolicies,
 		s.store.Exists,
@@ -91,7 +91,7 @@ func (s *postgresPolicyMigratorTestSuite) TestUnmodifiedAndMatchingPolicyIsUpdat
 	}
 
 	s.NoError(s.store.Upsert(s.ctx, policy))
-	s.NoError(MigratePoliciesWithDB(
+	s.NoError(MigratePoliciesWithStore(
 		policiesToMigrate,
 		comparisonPolicies,
 		s.store.Exists,
@@ -127,7 +127,7 @@ func (s *postgresPolicyMigratorTestSuite) TestAllUnmodifiedPoliciesGetUpdated() 
 
 	s.NoError(s.store.UpsertMany(s.ctx, policiesToTest))
 
-	s.NoError(MigratePoliciesWithDB(
+	s.NoError(MigratePoliciesWithStore(
 		policiesToMigrate,
 		comparisonPolicies,
 		s.store.Exists,
@@ -179,7 +179,7 @@ func (s *postgresPolicyMigratorTestSuite) TestExclusionAreAddedAndRemovedAsNeces
 		},
 	}
 
-	s.NoError(MigratePoliciesWithDB(
+	s.NoError(MigratePoliciesWithStore(
 		policiesToMigrate,
 		comparisonPolicies,
 		s.store.Exists,

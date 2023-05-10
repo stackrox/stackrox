@@ -72,7 +72,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoPolicies(ctx context.Context, batch *pgx.Batch, obj *storage.Policy) error {
+func insertIntoPolicies(_ context.Context, batch *pgx.Batch, obj *storage.Policy) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
