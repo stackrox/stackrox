@@ -9,13 +9,14 @@ import objects.Edge
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass
 import services.DeploymentService
 import services.NetworkGraphService
+import util.Env
 
 @Slf4j
 class NetworkGraphUtil {
 
     // more time is needed on few architectures
     static final NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS =
-        ((System.getenv("REMOTE_CLUSTER_ARCH") == "x86_64" ) ? 30 : 120)
+        ((Env.REMOTE_CLUSTER_ARCH == "x86_64" ) ? 30 : 120)
 
     static int edgeCount(NetworkGraphServiceOuterClass.NetworkGraph graph) {
         int numEdges = 0
