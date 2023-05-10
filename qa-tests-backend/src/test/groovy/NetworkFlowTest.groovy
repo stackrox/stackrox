@@ -489,7 +489,6 @@ class NetworkFlowTest extends BaseSpecification {
         assert edges
     }
 
-    // TODO(ROX-7047): Re-enable this test
     @Tag("NetworkFlowVisualization")
     def "Verify connections from external sources"() {
         given:
