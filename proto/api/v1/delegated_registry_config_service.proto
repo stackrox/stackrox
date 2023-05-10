@@ -6,7 +6,6 @@ option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
 import "api/v1/empty.proto";
-import "storage/delegated_registry_config.proto";
 
 package v1;
 
@@ -20,12 +19,43 @@ message DelegatedRegistryCluster {
     bool   isValid = 3;
 }
 
+// DelegatedRegistryConfig determines if and where scan requests are delegated to, such as kept in 
+// central services or sent to particular secured clusters
+message DelegatedRegistryConfig {
+    enum EnabledFor {
+        // delegate no scans
+        NONE     = 0;
+        // delegate all scans
+        ALL      = 1;
+        // delegate scans that match specific []registries
+        SPECIFIC = 2;
+    }
+
+    message DelegatedRegistry {
+        // registry + optional path, ie: quay.example.com/prod
+        string registry_path = 1;
+        // id of the cluster to delegate requests to
+        string cluster_id    = 2;
+    }
+
+    // determines if delegation is enabled for no registries, all registries, or specific registries
+    EnabledFor enabled_for       = 1;
+
+    // the default cluster to delegate ad-hoc requests to if no match found in []registries, not used
+    // if enabledFor is NONE
+    string default_cluster_id    = 2;
+
+    // list of registries that has different outcome depending on value of enabled_for, allows
+    // for controlling which registries require delegation and how to route ad-hoc requests
+    repeated DelegatedRegistry registries = 3;
+}
+
 // DelegatedRegistryConfigService APIs can be used to control how to route image scans amongst
 // central and secured clusters
 service DelegatedRegistryConfigService {
 
     // GetConfig returns the current delegated registry configuration
-    rpc GetConfig(Empty) returns (storage.DelegatedRegistryConfig) {
+    rpc GetConfig(Empty) returns (DelegatedRegistryConfig) {
         option (google.api.http) = {
             get: "/v1/delegatedregistryconfig"
         };
@@ -40,7 +70,7 @@ service DelegatedRegistryConfigService {
     }
 
     // PutConfig updates the stored delegated registry configuration
-    rpc PutConfig(storage.DelegatedRegistryConfig) returns (storage.DelegatedRegistryConfig) {
+    rpc PutConfig(DelegatedRegistryConfig) returns (DelegatedRegistryConfig) {
         option (google.api.http) = {
             put: "/v1/delegatedregistryconfig"
             body: "*"

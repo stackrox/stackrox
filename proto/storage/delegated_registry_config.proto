@@ -7,6 +7,7 @@ package storage;
 
 // DelegatedRegistryConfig determines if and where scan requests are delegated to, such as kept in 
 // central services or sent to particular secured clusters
+// Note: This message is duplicated in the API proto's to separate storage from API
 message DelegatedRegistryConfig {
     enum EnabledFor {
         // delegate no scans

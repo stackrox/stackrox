@@ -3,7 +3,6 @@ package datastore
 import (
 	pgStore "github.com/stackrox/rox/central/delegatedregistryconfig/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -14,11 +13,6 @@ var (
 )
 
 func initialize() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		// only postgres supported for this datastore
-		return
-	}
-
 	d = New(pgStore.New(globaldb.GetPostgres()))
 }
 

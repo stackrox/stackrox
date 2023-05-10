@@ -19,7 +19,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/storageDelegatedRegistryConfig"
+              "$ref": "#/definitions/v1DelegatedRegistryConfig"
             }
           },
           "default": {
@@ -40,7 +40,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/storageDelegatedRegistryConfig"
+              "$ref": "#/definitions/v1DelegatedRegistryConfig"
             }
           },
           "default": {
@@ -56,7 +56,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/storageDelegatedRegistryConfig"
+              "$ref": "#/definitions/v1DelegatedRegistryConfig"
             }
           }
         ],
@@ -149,27 +149,6 @@
         }
       }
     },
-    "storageDelegatedRegistryConfig": {
-      "type": "object",
-      "properties": {
-        "enabledFor": {
-          "$ref": "#/definitions/DelegatedRegistryConfigEnabledFor",
-          "title": "determines if delegation is enabled for no registries, all registries, or specific registries"
-        },
-        "defaultClusterId": {
-          "type": "string",
-          "title": "the default cluster to delegate ad-hoc requests to if no match found in []registries, not used\nif enabledFor is NONE"
-        },
-        "registries": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/DelegatedRegistryConfigDelegatedRegistry"
-          },
-          "title": "list of registries that has different outcome depending on value of enabled_for, allows\nfor controlling which registries require delegation and how to route ad-hoc requests"
-        }
-      },
-      "title": "DelegatedRegistryConfig determines if and where scan requests are delegated to, such as kept in \ncentral services or sent to particular secured clusters"
-    },
     "v1DelegatedRegistryCluster": {
       "type": "object",
       "properties": {
@@ -194,6 +173,27 @@
           }
         }
       }
+    },
+    "v1DelegatedRegistryConfig": {
+      "type": "object",
+      "properties": {
+        "enabledFor": {
+          "$ref": "#/definitions/DelegatedRegistryConfigEnabledFor",
+          "title": "determines if delegation is enabled for no registries, all registries, or specific registries"
+        },
+        "defaultClusterId": {
+          "type": "string",
+          "title": "the default cluster to delegate ad-hoc requests to if no match found in []registries, not used\nif enabledFor is NONE"
+        },
+        "registries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DelegatedRegistryConfigDelegatedRegistry"
+          },
+          "title": "list of registries that has different outcome depending on value of enabled_for, allows\nfor controlling which registries require delegation and how to route ad-hoc requests"
+        }
+      },
+      "title": "DelegatedRegistryConfig determines if and where scan requests are delegated to, such as kept in \ncentral services or sent to particular secured clusters"
     }
   }
 }

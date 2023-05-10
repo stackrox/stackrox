@@ -55,6 +55,7 @@ func (DelegatedRegistryConfig_EnabledFor) EnumDescriptor() ([]byte, []int) {
 
 // DelegatedRegistryConfig determines if and where scan requests are delegated to, such as kept in
 // central services or sent to particular secured clusters
+// Note: This message is duplicated in the API proto's to separate storage from API
 type DelegatedRegistryConfig struct {
 	// determines if delegation is enabled for no registries, all registries, or specific registries
 	EnabledFor DelegatedRegistryConfig_EnabledFor `protobuf:"varint,1,opt,name=enabled_for,json=enabledFor,proto3,enum=storage.DelegatedRegistryConfig_EnabledFor" json:"enabled_for,omitempty"`
