@@ -15,15 +15,10 @@ const (
 	denyAllAccessScopeID      = "ffffffff-ffff-fff4-f5ff-fffffffffffe"
 )
 
-// DefaultAccessScopeIDFromName returns the default access scope ID for the given name.
-// In case the name is not a default access scope, return an empty string.
-func DefaultAccessScopeIDFromName(name string) string {
-	switch name {
-	case UnrestrictedAccessScope:
-		return unrestrictedAccessScopeID
-	case DenyAllAccessScope:
-		return denyAllAccessScopeID
-	default:
-		return ""
+var (
+	// DefaultAccessScopeIDs holds all UUIDs for default access scopes.
+	DefaultAccessScopeIDs = map[string]string{
+		UnrestrictedAccessScope: unrestrictedAccessScopeID,
+		DenyAllAccessScope:      denyAllAccessScopeID,
 	}
-}
+)

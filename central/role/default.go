@@ -39,14 +39,14 @@ var (
 
 func getAccessScopeExcludeAllID() string {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return accesscontrol.DefaultAccessScopeIDFromName(accesscontrol.DenyAllAccessScope)
+		return accesscontrol.DefaultAccessScopeIDs[accesscontrol.DenyAllAccessScope]
 	}
 	return EnsureValidAccessScopeID("denyall")
 }
 
 func getAccessScopeIncludeAllID() string {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return accesscontrol.DefaultAccessScopeIDFromName(accesscontrol.UnrestrictedAccessScope)
+		return accesscontrol.DefaultAccessScopeIDs[accesscontrol.UnrestrictedAccessScope]
 	}
 	return EnsureValidAccessScopeID("unrestricted")
 }

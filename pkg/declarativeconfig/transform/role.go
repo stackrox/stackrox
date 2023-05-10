@@ -44,7 +44,7 @@ func (r *roleTransform) Transform(configuration declarativeconfig.Configuration)
 		Description: roleConfig.Description,
 		PermissionSetId: stringutils.FirstNonEmpty(accesscontrol.DefaultPermissionSetIDs[roleConfig.PermissionSet],
 			declarativeconfig.NewDeclarativePermissionSetUUID(roleConfig.PermissionSet).String()),
-		AccessScopeId: stringutils.FirstNonEmpty(accesscontrol.DefaultAccessScopeIDFromName(roleConfig.AccessScope),
+		AccessScopeId: stringutils.FirstNonEmpty(accesscontrol.DefaultAccessScopeIDs[roleConfig.AccessScope],
 			declarativeconfig.NewDeclarativeAccessScopeUUID(roleConfig.AccessScope).String()),
 		Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 	}

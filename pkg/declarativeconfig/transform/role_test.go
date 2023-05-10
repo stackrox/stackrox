@@ -106,7 +106,7 @@ func TestTransformRole_DefaultValues(t *testing.T) {
 
 	assert.Equal(t, role.Name, roleProto.GetName())
 	assert.Equal(t, role.Description, roleProto.GetDescription())
-	assert.Equal(t, accesscontrol.DefaultAccessScopeIDFromName(role.AccessScope), roleProto.GetAccessScopeId())
+	assert.Equal(t, accesscontrol.DefaultAccessScopeIDs[role.AccessScope], roleProto.GetAccessScopeId())
 	assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[role.PermissionSet], roleProto.GetPermissionSetId())
 	assert.Equal(t, storage.Traits_DECLARATIVE, roleProto.GetTraits().GetOrigin())
 }
