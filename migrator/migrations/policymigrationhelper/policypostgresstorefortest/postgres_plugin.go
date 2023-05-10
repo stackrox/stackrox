@@ -2,13 +2,10 @@ package postgres
 
 import (
 	"context"
-	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	frozenSchema "github.com/stackrox/rox/migrator/migrations/policymigrationhelper/policypostgresstorefortest/schema"
@@ -40,9 +37,8 @@ const (
 )
 
 var (
-	log            = logging.LoggerForModule()
-	schema         = frozenSchema.PoliciesSchema
-	targetResource = resources.Policy
+	log    = logging.LoggerForModule()
+	schema = frozenSchema.PoliciesSchema
 )
 
 // Store is the interface to interact with the storage for storage.Policy
@@ -210,7 +206,6 @@ func (s *storeImpl) copyFromPolicies(ctx context.Context, tx *postgres.Tx, objs 
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, nil, err
