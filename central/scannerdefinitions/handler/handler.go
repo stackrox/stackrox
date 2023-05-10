@@ -212,9 +212,10 @@ func (h *httpHandler) handleScannerDefsFile(zipF *zip.File) error {
 
 	// POST requests only update the offline feed.
 	b := &storage.Blob{
-		Name:         scannerDefinationBlobName,
+		Name:         scannerDefinitionBlobName,
 		LastUpdated:  timestamp.TimestampNow(),
 		ModifiedTime: timestamp.TimestampNow(),
+		Length:       zipF.FileInfo().Size(),
 	}
 
 	if err := h.blobStore.Upsert(context.Background(), b, r); err != nil {
@@ -224,7 +225,7 @@ func (h *httpHandler) handleScannerDefsFile(zipF *zip.File) error {
 	return nil
 }
 
-func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath string) error {
+func (h *httpHandler) handleZipContentsFromVulnDump(zipPath string) error {
 	zipR, err := zip.OpenReader(zipPath)
 	if err != nil {
 		return errors.Wrap(err, "couldn't open file as zip")
@@ -268,7 +269,7 @@ func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.handleZipContentsFromVulnDump(r.Context(), tempFile); err != nil {
+	if err := h.handleZipContentsFromVulnDump(tempFile); err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
 	}
@@ -313,16 +314,10 @@ func (h *httpHandler) cleanupUpdaters(cleanupAge time.Duration) {
 // online, otherwise fallback to the manually uploaded definitions. The file
 // object can be `nil` if the definitions file does not exist, rather than
 // returning an error.
-func (h *httpHandler) openMostRecentDefinitions(uuid string) (rc io.ReadCloser, modTime time.Time, err error) {
+func (h *httpHandler) openMostRecentDefinitions(uuid string) (rc definitionFileReader, modTime time.Time, err error) {
 	// If in offline mode or uuid is not provided, default to the offline file.
 	if !h.online || uuid == "" {
-		var blob *storage.Blob
-		blob, rc, _, err = h.blobStore.Get(context.Background(), scannerDefinitionBlobName)
-		if err != nil {
-			err = errors.Wrapf(err, "failed to open offline scanner definition bundle")
-			return
-		}
-		modTime = *pgutils.NilOrTime(blob.GetLastUpdated())
+		rc, modTime, err = h.open()
 		return
 	}
 
@@ -408,4 +403,41 @@ func openFromArchive(archiveFile string, fileName string) (*os.File, error) {
 		return nil, errors.Wrap(err, "writing to temporary file")
 	}
 	return tmpFile, nil
+}
+
+func (h *httpHandler) open() (rnc definitionFileReader, modTime time.Time, err error) {
+	var tempDir string
+	tempDir, err = os.MkdirTemp("", "scanner-definitions-")
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err != nil {
+			_ = os.RemoveAll(tempDir)
+		}
+	}()
+
+	tempFile := filepath.Join(tempDir, "tempfile.zip")
+	var writer *os.File
+	writer, err = os.Create(tempFile)
+	if err != nil {
+		return
+	}
+
+	var blob *storage.Blob
+	blob, _, err = h.blobStore.Get(context.Background(), scannerDefinitionBlobName, writer)
+	if err != nil {
+		err = errors.Wrapf(err, "failed to open offline scanner definition bundle")
+		return
+	}
+	err = writer.Close()
+	if err != nil {
+		return
+	}
+	rnc, err = fileutils.CreateTempFile(tempDir, scannerDefsSubZipName)
+	if err != nil {
+		return
+	}
+	modTime = *pgutils.NilOrTime(blob.GetLastUpdated())
+	return
 }
