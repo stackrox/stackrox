@@ -1,7 +1,9 @@
 package login
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
 	"net"
 	"net/http"
 	"net/url"
@@ -14,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common/config"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
@@ -23,6 +26,14 @@ const (
 	loginPath     = "/login"
 	callbackPath  = "/callback"
 	authorizePath = "/authorize-roxctl"
+)
+
+var (
+	//go:embed authorize.html
+	closePage []byte
+
+	//go:embed assets/*
+	assets embed.FS
 )
 
 // Command provides a command that obtains a token valid for a central instance with an authorization flow.
@@ -59,6 +70,10 @@ type loginCommand struct {
 	loginSignal concurrency.ErrorSignal
 
 	centralURL *url.URL
+
+	closePageHTML []byte
+
+	assetsFS fs.FS
 }
 
 func (l *loginCommand) construct(cmd *cobra.Command) error {
@@ -69,6 +84,8 @@ func (l *loginCommand) construct(cmd *cobra.Command) error {
 		return errors.Wrap(err, "retrieving central URL")
 	}
 	l.centralURL = centralURL
+	l.closePageHTML = closePage
+	l.assetsFS = assets
 	return nil
 }
 
@@ -88,9 +105,11 @@ func (l *loginCommand) login() error {
 		return errors.Wrap(err, "constructing callback URL")
 	}
 
+	assetsFS := http.FileServer(http.FS(l.assetsFS))
 	mux := http.NewServeMux()
 	mux.HandleFunc(loginPath, l.loginHandle(callbackURL))
 	mux.HandleFunc(callbackPath, l.callbackHandle)
+	mux.Handle("/assets/", assetsFS)
 
 	server := http.Server{
 		Handler: mux,
@@ -128,6 +147,7 @@ In case you want to increase the timeout, use the --timeout flag.`, l.timeout.St
 		if err := l.loginSignal.Err(); err != nil {
 			return errors.Wrap(err, "error within authorization flow")
 		}
+		time.Sleep(time.Second) // Wait until the page is served successfully, then close the server.
 		return server.Close()
 	}
 }
@@ -138,7 +158,7 @@ func (l *loginCommand) loginHandle(callbackURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		queryParams := make(url.Values)
 		queryParams.Set(authproviders.AuthorizeCallbackQueryParameter, callbackURL)
-		authorizeURL := l.centralURL
+		authorizeURL := *l.centralURL // Copy the URL here, since we do not want to change its original value.
 		authorizeURL.Path = authorizePath
 		authorizeURL.Fragment = queryParams.Encode()
 		w.Header().Set("Location", authorizeURL.String())
@@ -183,11 +203,18 @@ func (l *loginCommand) callbackHandle(w http.ResponseWriter, req *http.Request) 
 
 	// Refresh token is not required, as it may or may not be set depending on the used auth provider.
 	refreshToken := queryParams.Get(authproviders.RefreshTokenQueryParameter)
-	_, _ = fmt.Fprint(w, `Autentication successful!
+	if _, err := w.Write(l.closePageHTML); err != nil {
+		l.env.Logger().ErrfLn("Error loading close page: %v", err)
+	}
 
-You may now close this window.
-`)
+	if err := l.storeConfiguration(token, expiresAt, refreshToken); err != nil {
+		l.loginSignal.SignalWithError(err)
+		return
+	}
+	l.loginSignal.Signal()
+}
 
+func (l *loginCommand) storeConfiguration(token string, expiresAt time.Time, refreshToken string) error {
 	l.env.Logger().InfofLn("Received the following after the authorization flow from Central:")
 	l.env.Logger().InfofLn("Access token: %s", token)
 	if !expiresAt.IsZero() {
@@ -196,7 +223,42 @@ You may now close this window.
 	if refreshToken != "" {
 		l.env.Logger().InfofLn("Refresh token: %s", refreshToken)
 	}
-	l.env.Logger().InfofLn("Storing these values under $HOME/.roxctl/login ...")
-	// TODO: Persisting the login information will be done in a follow-up PR.
-	l.loginSignal.Signal()
+
+	cfgStore, err := l.env.ConfigStore()
+	if err != nil {
+		return errors.Wrap(err, "retrieving config store")
+	}
+
+	cfg, err := cfgStore.Read()
+	if err != nil {
+		return errors.Wrap(err, "reading configuration")
+	}
+
+	// We store the config under <endpoint>:<port> and omit the scheme. This way it's agnostic to use either HTTP or
+	// HTTPS.
+	centralURL := l.centralURL.Hostname() + ":" + l.centralURL.Port()
+
+	centralCfg := cfg.GetCentralConfigs().GetCentralConfig(centralURL)
+	if centralCfg == nil {
+		centralCfg = &config.CentralConfig{}
+		cfg.CentralConfigs[centralURL] = centralCfg
+	}
+	now := time.Now()
+	centralCfg.AccessConfig = &config.CentralAccessConfig{
+		AccessToken:  token,
+		IssuedAt:     &now,
+		ExpiresAt:    utils.IfThenElse(expiresAt.IsZero(), nil, &expiresAt),
+		RefreshToken: refreshToken,
+	}
+
+	if err := cfgStore.Write(cfg); err != nil {
+		return errors.Wrap(err, "writing configuration")
+	}
+
+	l.env.Logger().InfofLn(`Successfully persisted the authentication information for central %s.
+
+You can now use the retrieved access token for all other roxctl commands!
+
+In case the access token is expired and cannot be refreshed, you have to run "roxctl central login" again.`, centralURL)
+	return nil
 }
