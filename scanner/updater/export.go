@@ -34,9 +34,9 @@ func ExportAction() error {
 			}
 		}
 	}()
-
+	os.Mkdir("tmp", 0700)
 	// Write the gzip data to a file.
-	f, err := os.Create("/tmp-vuln-dump/updates.gz")
+	f, err := os.Create("tmp/updates.json.gz")
 	if err != nil {
 		return err
 	}
