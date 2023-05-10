@@ -78,19 +78,19 @@ func TestDetermineConfigPath(t *testing.T) {
 	t.Setenv("XDG_RUNTIME_DIR", runtimeDir)
 
 	// ROX_CONFIG_DIR should be used instead of XDG_RUNTIME_DIR.
-	dir, err := determineConfigPath()
+	dir, err := determineConfigDir()
 	assert.NoError(t, err)
 	assert.Equal(t, configDir, dir)
 
 	// If only XDF_RUNTIME_DIR is set, it should be used.
 	t.Setenv(env.ConfigDirEnv.EnvVar(), "")
-	dir, err = determineConfigPath()
+	dir, err = determineConfigDir()
 	assert.NoError(t, err)
 	assert.Equal(t, runtimeDir, dir)
 
-	// If no environment variable is set, the homedir should be used.
+	// If no environment variable is set, the .roxctl dir within the homedir should be used.
 	t.Setenv("XDG_RUNTIME_DIR", "")
-	dir, err = determineConfigPath()
+	dir, err = determineConfigDir()
 	assert.NoError(t, err)
 	assert.Equal(t, homeDir, dir)
 }

@@ -53,13 +53,13 @@ func TestRetrieveToken_NonExpiredAccessToken(t *testing.T) {
 	env, _ := newMockEnvironment(t, nil, cfgStore, false)
 	cm := &configMethod{env: env}
 
-	now := time.Now().UTC().Add(24 * time.Hour)
+	tomorrow := time.Now().UTC().Add(24 * time.Hour)
 	cfgStore.EXPECT().Read().Return(
 		&config.RoxctlConfig{
 			CentralConfigs: map[config.CentralURL]*config.CentralConfig{
 				"some-url": {AccessConfig: &config.CentralAccessConfig{
 					AccessToken: "some-token",
-					ExpiresAt:   &now,
+					ExpiresAt:   &tomorrow,
 				}},
 			},
 		}, nil,
@@ -107,12 +107,14 @@ func TestRetrieveToken_RefreshAccessToken(t *testing.T) {
 	cfg := &config.CentralAccessConfig{
 		RefreshToken: "some-refresh-token",
 	}
+	initialCfg := *cfg
 
 	// 1. Fail on obtaining the HTTP client.
 	env, _ := newMockEnvironment(t, nil, nil, true)
 	cm := &configMethod{env: env}
 	err := cm.refreshAccessToken("some-url", cfg)
 	assert.ErrorIs(t, err, errClient)
+	assert.Equal(t, &initialCfg, cfg)
 
 	// 2. Fail on creating the HTTP request.
 	client := &mockRoxctlHTTPClient{t: t, failNew: true}
@@ -120,6 +122,7 @@ func TestRetrieveToken_RefreshAccessToken(t *testing.T) {
 	cm = &configMethod{env: env}
 	err = cm.refreshAccessToken("some-url", cfg)
 	assert.ErrorIs(t, err, errNewReq)
+	assert.Equal(t, &initialCfg, cfg)
 
 	// 3. Fail executing the HTTP request.
 	client = &mockRoxctlHTTPClient{t: t, failRequest: true}
@@ -127,6 +130,7 @@ func TestRetrieveToken_RefreshAccessToken(t *testing.T) {
 	cm = &configMethod{env: env}
 	err = cm.refreshAccessToken("some-url", cfg)
 	assert.ErrorIs(t, err, errReq)
+	assert.Equal(t, &initialCfg, cfg)
 
 	// 4. Succeed in token refresh request.
 	expiry := time.Now().UTC()
