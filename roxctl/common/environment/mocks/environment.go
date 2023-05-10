@@ -11,6 +11,8 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/stackrox/rox/roxctl/common"
+	auth "github.com/stackrox/rox/roxctl/common/auth"
+	config "github.com/stackrox/rox/roxctl/common/config"
 	io "github.com/stackrox/rox/roxctl/common/io"
 	logger "github.com/stackrox/rox/roxctl/common/logger"
 	grpc "google.golang.org/grpc"
@@ -53,6 +55,21 @@ func (mr *MockEnvironmentMockRecorder) ColorWriter() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ColorWriter", reflect.TypeOf((*MockEnvironment)(nil).ColorWriter))
 }
 
+// ConfigStore mocks base method.
+func (m *MockEnvironment) ConfigStore() (config.Store, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConfigStore")
+	ret0, _ := ret[0].(config.Store)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConfigStore indicates an expected call of ConfigStore.
+func (mr *MockEnvironmentMockRecorder) ConfigStore() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigStore", reflect.TypeOf((*MockEnvironment)(nil).ConfigStore))
+}
+
 // ConnectNames mocks base method.
 func (m *MockEnvironment) ConnectNames() (string, string, error) {
 	m.ctrl.T.Helper()
@@ -85,18 +102,23 @@ func (mr *MockEnvironmentMockRecorder) GRPCConnection() *gomock.Call {
 }
 
 // HTTPClient mocks base method.
-func (m *MockEnvironment) HTTPClient(timeout time.Duration) (common.RoxctlHTTPClient, error) {
+func (m *MockEnvironment) HTTPClient(timeout time.Duration, method ...auth.Method) (common.RoxctlHTTPClient, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HTTPClient", timeout)
+	varargs := []interface{}{timeout}
+	for _, a := range method {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "HTTPClient", varargs...)
 	ret0, _ := ret[0].(common.RoxctlHTTPClient)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // HTTPClient indicates an expected call of HTTPClient.
-func (mr *MockEnvironmentMockRecorder) HTTPClient(timeout interface{}) *gomock.Call {
+func (mr *MockEnvironmentMockRecorder) HTTPClient(timeout interface{}, method ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HTTPClient", reflect.TypeOf((*MockEnvironment)(nil).HTTPClient), timeout)
+	varargs := append([]interface{}{timeout}, method...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HTTPClient", reflect.TypeOf((*MockEnvironment)(nil).HTTPClient), varargs...)
 }
 
 // InputOutput mocks base method.

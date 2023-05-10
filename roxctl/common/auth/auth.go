@@ -12,30 +12,29 @@ type Method interface {
 	GetCredentials(url string) (credentials.PerRPCCredentials, error)
 }
 
-type anonymous struct{}
+type anonymousMethod struct{}
 
 var (
-	_ Method                        = (*anonymous)(nil)
-	_ credentials.PerRPCCredentials = (*anonymous)(nil)
+	_ Method = (*anonymousMethod)(nil)
 )
 
-// AnonymousAuth provides an auth.Method for anonymous access.
-func AnonymousAuth() Method {
-	return &anonymous{}
+// Anonymous provides an anonymous auth.Method, in case no authentication is desired.
+func Anonymous() Method {
+	return &anonymousMethod{}
 }
 
-func (a anonymous) Type() string {
+func (a anonymousMethod) Type() string {
 	return "anonymous"
 }
 
-func (a anonymous) GetCredentials(_ string) (credentials.PerRPCCredentials, error) {
+func (a anonymousMethod) GetCredentials(_ string) (credentials.PerRPCCredentials, error) {
 	return &a, nil
 }
 
-func (a anonymous) RequireTransportSecurity() bool {
+func (a anonymousMethod) RequireTransportSecurity() bool {
 	return false
 }
 
-func (a anonymous) GetRequestMetadata(_ context.Context, _ ...string) (map[string]string, error) {
+func (a anonymousMethod) GetRequestMetadata(_ context.Context, _ ...string) (map[string]string, error) {
 	return nil, nil
 }

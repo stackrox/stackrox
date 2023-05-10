@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/roxctl/common/mocks"
+	"github.com/stackrox/rox/roxctl/common/environment/mocks"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -116,7 +116,7 @@ func (client *roxctlClientImpl) NewReq(method string, path string, body io.Reade
 		req.ProtoMajor, req.ProtoMinor, req.Proto = 1, 1, "HTTP/1.1"
 	}
 
-	creds, err := client.am.GetCredentials(reqURL)
+	creds, err := client.am.GetCredentials(req.URL.Hostname() + ":" + req.URL.Port())
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not obtain credentials for %s", reqURL)
 	}
