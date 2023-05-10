@@ -523,8 +523,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: ContainerRuntime!",
 		"version: String!",
 	}))
-	utils.Must(builder.AddType("CosignSignature", []string{
-	}))
+	utils.Must(builder.AddType("CosignSignature", []string{}))
 	utils.Must(builder.AddType("DataSource", []string{
 		"id: ID!",
 		"name: String!",
@@ -601,8 +600,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Exclusion_Image", []string{
 		"name: String!",
 	}))
-	utils.Must(builder.AddType("FalsePositiveRequest", []string{
-	}))
+	utils.Must(builder.AddType("FalsePositiveRequest", []string{}))
 	utils.Must(builder.AddInput("FalsePositiveVulnRequest", []string{
 		"comment: String",
 		"cve: String",
@@ -626,8 +624,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"invalidRunIds: [String!]!",
 		"runs: [ComplianceRun]!",
 	}))
-	utils.Must(builder.AddType("GetPermissionsResponse", []string{
-	}))
+	utils.Must(builder.AddType("GetPermissionsResponse", []string{}))
 	utils.Must(builder.AddType("GoogleProviderMetadata", []string{
 		"clusterName: String!",
 		"project: String!",
@@ -930,6 +927,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"splunk: Splunk",
 		"sumologic: SumoLogic",
 		"syslog: Syslog",
+		"traits: Traits",
 		"type: String!",
 		"uiEndpoint: String!",
 		"config: NotifierConfig",
@@ -1431,8 +1429,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"VulnerabilityRequest_Scope_Image",
 		"VulnerabilityRequest_Scope_Global",
 	}))
-	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Global", []string{
-	}))
+	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Global", []string{}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Image", []string{
 		"registry: String!",
 		"remote: String!",
@@ -10570,6 +10567,11 @@ func (resolver *notifierResolver) Sumologic(ctx context.Context) (*sumoLogicReso
 func (resolver *notifierResolver) Syslog(ctx context.Context) (*syslogResolver, error) {
 	value := resolver.data.GetSyslog()
 	return resolver.root.wrapSyslog(value, true, nil)
+}
+
+func (resolver *notifierResolver) Traits(ctx context.Context) (*traitsResolver, error) {
+	value := resolver.data.GetTraits()
+	return resolver.root.wrapTraits(value, true, nil)
 }
 
 func (resolver *notifierResolver) Type(ctx context.Context) string {

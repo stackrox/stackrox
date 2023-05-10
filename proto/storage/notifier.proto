@@ -6,6 +6,7 @@ option java_package = "io.stackrox.proto.storage";
 import "gogoproto/gogo.proto";
 import "storage/common.proto";
 import "storage/policy.proto";
+import "storage/traits.proto";
 
 package storage;
 
@@ -27,6 +28,7 @@ message Notifier {
         AWSSecurityHub aws_security_hub  = 17;
         Syslog syslog                    = 18;
     }
+    Traits traits = 50;
 
     // These fields should be safe to un-reserve after a few releases. evan@
     // just isn't familiar enough yet to determine whether they can be deleted
