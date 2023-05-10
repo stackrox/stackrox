@@ -411,6 +411,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 	}
 
 	if features.VulnMgmtReportingEnhancements.Enabled() {
+		// TODO Remove (deprecated) v1 report configuration service when Reporting enhancements are enabled by default.
 		servicesToRegister = append(servicesToRegister, reportConfigurationServiceV2.Singleton())
 	}
 

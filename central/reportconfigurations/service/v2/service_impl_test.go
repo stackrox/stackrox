@@ -51,7 +51,7 @@ func (s *ReportConfigurationServiceTestSuite) SetupTest() {
 	s.notifierDatastore = notifierMocks.NewMockDataStore(s.mockCtrl)
 	s.collectionDatastore = collectionMocks.NewMockDataStore(s.mockCtrl)
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
-	s.service = New(s.reportConfigDatastore, s.notifierDatastore, nil, s.collectionDatastore, s.manager)
+	s.service = New(s.reportConfigDatastore, s.notifierDatastore, s.collectionDatastore, s.manager)
 }
 
 func (s *ReportConfigurationServiceTestSuite) TearDownTest() {

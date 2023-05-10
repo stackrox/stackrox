@@ -10,42 +10,57 @@ import (
 	accessScopeDS "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 )
 
+// Validator is used to validate storage.ReportConfiguration instances
+type Validator struct {
+	accessScopeDatastore accessScopeDS.DataStore
+	collectionDatastore  collectionDS.DataStore
+	notifierDatastore    notifierDS.DataStore
+}
+
+// NewValidator returns a new validator
+func NewValidator(accessScopeDatastore accessScopeDS.DataStore,
+	collectionDatastore collectionDS.DataStore,
+	notifierDatastore notifierDS.DataStore) *Validator {
+	return &Validator{
+		accessScopeDatastore: accessScopeDatastore,
+		collectionDatastore:  collectionDatastore,
+		notifierDatastore:    notifierDatastore,
+	}
+}
+
 // ValidateReportConfiguration validates the given report configuration object
-func ValidateReportConfiguration(ctx context.Context, config *storage.ReportConfiguration,
-	accessScopeDatastore accessScopeDS.DataStore, collectionDatastore collectionDS.DataStore,
-	notifierDatastore notifierDS.DataStore) error {
+func (validator *Validator) ValidateReportConfiguration(ctx context.Context, config *storage.ReportConfiguration) error {
 	if config.GetName() == "" {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration name empty")
 	}
 
-	if err := validateSchedule(config); err != nil {
+	if err := validator.validateSchedule(config); err != nil {
 		return err
 	}
-	if err := validateNotifiers(ctx, config, notifierDatastore); err != nil {
+	if err := validator.validateNotifiers(ctx, config); err != nil {
 		return err
 	}
-	if err := validateResourceScope(ctx, config, collectionDatastore, accessScopeDatastore); err != nil {
+	if err := validator.validateResourceScope(ctx, config); err != nil {
 		return err
 	}
-	if err := validateReportFilters(config); err != nil {
+	if err := validator.validateReportFilters(config); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func validateSchedule(config *storage.ReportConfiguration) error {
-	if !features.VulnMgmtReportingEnhancements.Enabled() {
-		if config.GetSchedule() == nil {
-			return errors.Wrap(errox.InvalidArgs, "Report configuration must have a schedule")
-		}
-	}
+func (validator *Validator) validateSchedule(config *storage.ReportConfiguration) error {
 	schedule := config.GetSchedule()
 	if schedule == nil {
+		if !features.VulnMgmtReportingEnhancements.Enabled() {
+			return errors.Wrap(errox.InvalidArgs, "Report configuration must have a schedule")
+		}
 		return nil
 	}
 	switch schedule.GetIntervalType() {
@@ -74,13 +89,12 @@ func validateSchedule(config *storage.ReportConfiguration) error {
 	return nil
 }
 
-func validateNotifiers(ctx context.Context, config *storage.ReportConfiguration,
-	notifierDatastore notifierDS.DataStore) error {
+func (validator *Validator) validateNotifiers(ctx context.Context, config *storage.ReportConfiguration) error {
 	if !features.VulnMgmtReportingEnhancements.Enabled() {
 		if config.GetEmailConfig() == nil {
 			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify an email notifier configuration")
 		}
-		return validateEmailConfig(ctx, config.GetEmailConfig(), notifierDatastore)
+		return validator.validateEmailConfig(ctx, config.GetEmailConfig())
 	}
 
 	notifiers := config.GetNotifiers()
@@ -91,43 +105,45 @@ func validateNotifiers(ctx context.Context, config *storage.ReportConfiguration,
 		if notifier.GetEmailConfig() == nil {
 			return errors.Wrap(errox.InvalidArgs, "Notifier must specify an email notifier configuration")
 		}
-		if err := validateEmailConfig(ctx, notifier.GetEmailConfig(), notifierDatastore); err != nil {
+		if err := validator.validateEmailConfig(ctx, notifier.GetEmailConfig()); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func validateEmailConfig(ctx context.Context, emailConfig *storage.EmailNotifierConfiguration,
-	notifierDatastore notifierDS.DataStore) error {
+func (validator *Validator) validateEmailConfig(ctx context.Context, emailConfig *storage.EmailNotifierConfiguration) error {
 	if emailConfig.GetNotifierId() == "" {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid email notifier")
 	}
 	if len(emailConfig.GetMailingLists()) == 0 {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify one more recipients to send the report to")
+		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify at least one email recipient to send the report to")
 	}
 
+	errorList := errorhelpers.NewErrorList("Invalid email addresses in mailing list: ")
 	for _, addr := range emailConfig.GetMailingLists() {
 		if _, err := mail.ParseAddress(addr); err != nil {
-			return errors.Wrapf(errox.InvalidArgs, "Invalid mailing list address: %s", addr)
+			errorList.AddError(errors.Wrapf(errox.InvalidArgs, "Invalid email recipient address: %s", addr))
 		}
 	}
+	if !errorList.Empty() {
+		return errorList.ToError()
+	}
 
-	_, found, err := notifierDatastore.GetNotifier(ctx, emailConfig.GetNotifierId())
-	if !found || err != nil {
+	_, exists, err := validator.notifierDatastore.GetNotifier(ctx, emailConfig.GetNotifierId())
+	if !exists || err != nil {
 		return errors.Wrapf(errox.NotFound, "Notifier %s not found. Error: %s", emailConfig.GetNotifierId(), err)
 	}
 	return nil
 }
 
-func validateResourceScope(ctx context.Context, config *storage.ReportConfiguration,
-	collectionDatastore collectionDS.DataStore, accessScopeDatastore accessScopeDS.DataStore) error {
+func (validator *Validator) validateResourceScope(ctx context.Context, config *storage.ReportConfiguration) error {
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		if config.GetScopeId() == "" {
 			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid scope ID")
 		}
-		_, found, err := accessScopeDatastore.GetAccessScope(ctx, config.GetScopeId())
-		if !found || err != nil {
+		_, exists, err := validator.accessScopeDatastore.GetAccessScope(ctx, config.GetScopeId())
+		if !exists || err != nil {
 			return errors.Wrapf(errox.NotFound, "Access scope %s not found. Error: %s", config.GetScopeId(), err)
 		}
 		return nil
@@ -146,14 +162,14 @@ func validateResourceScope(ctx context.Context, config *storage.ReportConfigurat
 		collectionID = config.GetScopeId()
 	}
 
-	_, found, err := collectionDatastore.Get(ctx, collectionID)
-	if !found || err != nil {
+	_, exists, err := validator.collectionDatastore.Get(ctx, collectionID)
+	if !exists || err != nil {
 		return errors.Wrapf(errox.NotFound, "Collection %s not found. Error: %s", collectionID, err)
 	}
 	return nil
 }
 
-func validateReportFilters(config *storage.ReportConfiguration) error {
+func (validator *Validator) validateReportFilters(config *storage.ReportConfiguration) error {
 	if !features.VulnMgmtReportingEnhancements.Enabled() {
 		return nil
 	}
