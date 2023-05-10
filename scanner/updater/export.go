@@ -1,6 +1,7 @@
 package updater
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"fmt"
@@ -21,18 +22,34 @@ func ExportAction() error {
 	ctx := context.Background()
 	var out io.Writer
 
+	// Initialize out with a buffer.
+	buf := new(bytes.Buffer)
+	out = gzip.NewWriter(buf)
+
+	// Close the gzip writer at the end of the function.
+	defer func() {
+		if gw, ok := out.(*gzip.Writer); ok {
+			if err := gw.Close(); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+			}
+		}
+	}()
+
+	// Write the gzip data to a file.
+	f, err := os.Create("/tmp-vuln-dump/updates.gz")
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = io.Copy(f, buf)
+	if err != nil {
+		return err
+	}
+
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTeapot)
 	}))
 	defer srv.Close()
-
-	enc := gzip.NewWriter(out)
-	defer func() {
-		if err := enc.Close(); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-		}
-	}()
-	out = enc
 
 	cfgs := make(map[string]driver.ConfigUnmarshaler, 1)
 	cfgs["osv"] = func(v interface{}) error {
@@ -64,4 +81,5 @@ func ExportAction() error {
 		return err
 	}
 	return nil
+
 }
