@@ -75,9 +75,10 @@ func (cmd *centralWhoAmICommand) whoami() error {
 	}
 	sort.Strings(resources)
 
-	// Print user information.
-	cmd.env.Logger().PrintfLn("User:")
-	cmd.env.Logger().PrintfLn("  %s", auth.GetUserId())
+	cmd.env.Logger().PrintfLn(`UserID:
+	%s
+User name:
+	%s`, auth.GetUserId(), auth.GetUserInfo().GetFriendlyName())
 
 	// Print resource access information
 	cmd.printRoles(roles.GetRoles())
