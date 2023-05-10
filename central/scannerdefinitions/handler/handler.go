@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -78,13 +79,13 @@ type httpHandler struct {
 }
 
 // New creates a new http.Handler to handle vulnerability data.
-func New(cveManager fetcher.OrchestratorIstioCVEManager, opts handlerOpts) http.Handler {
+func New(cveManager fetcher.OrchestratorIstioCVEManager, blobStore blob.Datastore, opts handlerOpts) http.Handler {
 	h := &httpHandler{
 		cveManager: cveManager,
 
 		online:    !env.OfflineModeEnv.BooleanSetting(),
 		interval:  env.ScannerVulnUpdateInterval.DurationSetting(),
-		blobStore: blob.Singleton(),
+		blobStore: blobStore,
 	}
 
 	if h.online {
@@ -119,7 +120,7 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	// Open the most recent definitions file for the provided `uuid`.
 	uuid := r.URL.Query().Get(`uuid`)
-	f, modTime, err := h.openMostRecentDefinitions(uuid)
+	f, modTime, err := h.openMostRecentDefinitions(r.Context(), uuid)
 	if err != nil {
 		writeErrorForFile(w, err, uuid)
 		return
@@ -156,12 +157,12 @@ func writeErrorNotFound(w http.ResponseWriter) {
 }
 
 func writeErrorForFile(w http.ResponseWriter, err error, path string) {
-	if errors.Is(err, fs.ErrNotExist) {
+	if errorhelpers.IsAny(err, fs.ErrNotExist, snapshot.ErrBlobNotExist) {
 		writeErrorNotFound(w)
 		return
 	}
 
-	httputil.WriteGRPCStyleErrorf(w, codes.Internal, "could not read file %s: %v", filepath.Base(path), err)
+	httputil.WriteGRPCStyleErrorf(w, codes.Internal, "could not read vulnerability definition %s: %v", filepath.Base(path), err)
 }
 
 func serveContent(w http.ResponseWriter, r *http.Request, name string, modTime time.Time, content io.ReadSeeker) {
@@ -203,7 +204,7 @@ func (h *httpHandler) updateK8sIstioCVEs(zipPath string) {
 	}
 }
 
-func (h *httpHandler) handleScannerDefsFile(zipF *zip.File) error {
+func (h *httpHandler) handleScannerDefsFile(zipF *zip.File, ctx context.Context) error {
 	r, err := zipF.Open()
 	if err != nil {
 		return errors.Wrap(err, "opening ZIP reader")
@@ -218,14 +219,14 @@ func (h *httpHandler) handleScannerDefsFile(zipF *zip.File) error {
 		Length:       zipF.FileInfo().Size(),
 	}
 
-	if err := h.blobStore.Upsert(context.Background(), b, r); err != nil {
+	if err := h.blobStore.Upsert(ctx, b, r); err != nil {
 		return errors.Wrap(err, "writing scanner definitions")
 	}
 
 	return nil
 }
 
-func (h *httpHandler) handleZipContentsFromVulnDump(zipPath string) error {
+func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath string) error {
 	zipR, err := zip.OpenReader(zipPath)
 	if err != nil {
 		return errors.Wrap(err, "couldn't open file as zip")
@@ -235,7 +236,7 @@ func (h *httpHandler) handleZipContentsFromVulnDump(zipPath string) error {
 	var scannerDefsFileFound bool
 	for _, zipF := range zipR.File {
 		if zipF.Name == scannerDefsSubZipName {
-			if err := h.handleScannerDefsFile(zipF); err != nil {
+			if err := h.handleScannerDefsFile(zipF, ctx); err != nil {
 				return errors.Wrap(err, "couldn't handle scanner-defs sub file")
 			}
 			scannerDefsFileFound = true
@@ -269,7 +270,7 @@ func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.handleZipContentsFromVulnDump(tempFile); err != nil {
+	if err := h.handleZipContentsFromVulnDump(r.Context(), tempFile); err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
 	}
@@ -309,13 +310,20 @@ func (h *httpHandler) cleanupUpdaters(cleanupAge time.Duration) {
 	}
 }
 
-func (h *httpHandler) openOfflineBlob() (definitionFileReader, time.Time, error) {
-	snapshot, err := snapshot.TakeBlobSnapshot(h.blobStore, offlineScannerDefsName)
+func (h *httpHandler) openOfflineBlob(ctx context.Context) (*os.File, time.Time, error) {
+	snap, err := snapshot.TakeBlobSnapshot(ctx, h.blobStore, offlineScannerDefsName)
 	if err != nil {
+		// If the blob does not exist, return no reader.
+		if errors.Is(err, snapshot.ErrBlobNotExist) {
+			return nil, time.Time{}, nil
+		}
 		return nil, time.Time{}, err
 	}
-	modTime := *pgutils.NilOrTime(snapshot.GetBlob().ModifiedTime)
-	return snapshot, modTime, nil
+	modTime := time.Time{}
+	if t := pgutils.NilOrTime(snap.GetBlob().ModifiedTime); t != nil {
+		modTime = *t
+	}
+	return snap.File, modTime, nil
 }
 
 // openMostRecentDefinitions opens the latest Scanner Definitions based on
@@ -323,10 +331,10 @@ func (h *httpHandler) openOfflineBlob() (definitionFileReader, time.Time, error)
 // online, otherwise fallback to the manually uploaded definitions. The file
 // object can be `nil` if the definitions file does not exist, rather than
 // returning an error.
-func (h *httpHandler) openMostRecentDefinitions(uuid string) (rc definitionFileReader, modTime time.Time, err error) {
+func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string) (file *os.File, modTime time.Time, err error) {
 	// If in offline mode or uuid is not provided, default to the offline file.
 	if !h.online || uuid == "" {
-		rc, modTime, err = h.openOfflineBlob()
+		file, modTime, err = h.openOfflineBlob(ctx)
 		return
 	}
 
@@ -336,28 +344,32 @@ func (h *httpHandler) openMostRecentDefinitions(uuid string) (rc definitionFileR
 	u := h.getUpdater(uuid)
 	u.Start()
 
+	toClose := func(f *os.File) {
+		if file != f && f != nil {
+			utils.IgnoreError(f.Close)
+		}
+	}
+
 	// Open both the "online" and "offline", and save their modification times.
 	onlineFile, onlineTime, err := u.file.Open()
 	if err != nil {
 		return
 	}
-	offlineFile, offlineTime, err := h.openOfflineBlob()
+	defer toClose(onlineFile)
+	offlineFile, offlineTime, err := h.openOfflineBlob(ctx)
 	if err != nil {
-		utils.IgnoreError(onlineFile.Close)
 		return
 	}
+	defer toClose(offlineFile)
 
 	// Return the most recent file, notice that if both don't exist, nil is returned
 	// since modification time will be zero.
 
 	if offlineTime.After(onlineTime) {
-		rc, modTime = offlineFile, offlineTime
-		utils.IgnoreError(onlineFile.Close)
+		file, modTime = offlineFile, offlineTime
 	} else {
-		rc, modTime = onlineFile, onlineTime
-		utils.IgnoreError(offlineFile.Close)
+		file, modTime = onlineFile, onlineTime
 	}
-
 	return
 }
 

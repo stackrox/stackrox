@@ -64,6 +64,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Blob, reader io.Rea
 		if err := lo.Truncate(0); err != nil {
 			return wrapRollback(ctx, tx, errors.Wrapf(err, "truncating blob with oid %d", existingBlob.GetOid()))
 		}
+		obj.Oid = existingBlob.GetOid()
 	} else {
 		oid, err := los.Create(ctx, 0)
 		if err != nil {
@@ -138,6 +139,7 @@ func (s *storeImpl) Get(ctx context.Context, name string, writer io.Writer) (*st
 			if err == io.EOF {
 				break
 			}
+			return nil, false, wrapRollback(ctx, tx, errors.Wrap(err, "reading blob"))
 		}
 	}
 	if err := lo.Close(); err != nil {
