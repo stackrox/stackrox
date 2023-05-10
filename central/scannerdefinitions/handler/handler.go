@@ -14,6 +14,7 @@ import (
 
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/blob/blobfile"
 	blob "github.com/stackrox/rox/central/blob/datastore"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
@@ -73,7 +74,6 @@ type httpHandler struct {
 	lock          sync.Mutex
 	updaters      map[string]*requestedUpdater
 	onlineVulnDir string
-	offlineFile   *file.File
 	blobStore     blob.Datastore
 }
 
@@ -309,6 +309,15 @@ func (h *httpHandler) cleanupUpdaters(cleanupAge time.Duration) {
 	}
 }
 
+func (h *httpHandler) openOfflineBlob() (definitionFileReader, time.Time, error) {
+	snapshot, err := blobfile.BlobSnapshot(h.blobStore, offlineScannerDefsName)
+	if err != nil {
+		return nil, time.Time{}, err
+	}
+	modTime := *pgutils.NilOrTime(snapshot.GetBlob().ModifiedTime)
+	return snapshot, modTime, nil
+}
+
 // openMostRecentDefinitions opens the latest Scanner Definitions based on
 // modification time. It's either the one selected by `uuid` if present and
 // online, otherwise fallback to the manually uploaded definitions. The file
@@ -317,7 +326,7 @@ func (h *httpHandler) cleanupUpdaters(cleanupAge time.Duration) {
 func (h *httpHandler) openMostRecentDefinitions(uuid string) (rc definitionFileReader, modTime time.Time, err error) {
 	// If in offline mode or uuid is not provided, default to the offline file.
 	if !h.online || uuid == "" {
-		rc, modTime, err = h.open()
+		rc, modTime, err = h.openOfflineBlob()
 		return
 	}
 
@@ -332,7 +341,7 @@ func (h *httpHandler) openMostRecentDefinitions(uuid string) (rc definitionFileR
 	if err != nil {
 		return
 	}
-	offlineFile, offlineTime, err := h.offlineFile.Open()
+	offlineFile, offlineTime, err := h.openOfflineBlob()
 	if err != nil {
 		utils.IgnoreError(onlineFile.Close)
 		return
@@ -403,41 +412,4 @@ func openFromArchive(archiveFile string, fileName string) (*os.File, error) {
 		return nil, errors.Wrap(err, "writing to temporary file")
 	}
 	return tmpFile, nil
-}
-
-func (h *httpHandler) open() (rnc definitionFileReader, modTime time.Time, err error) {
-	var tempDir string
-	tempDir, err = os.MkdirTemp("", "scanner-definitions-")
-	if err != nil {
-		return
-	}
-	defer func() {
-		if err != nil {
-			_ = os.RemoveAll(tempDir)
-		}
-	}()
-
-	tempFile := filepath.Join(tempDir, "tempfile.zip")
-	var writer *os.File
-	writer, err = os.Create(tempFile)
-	if err != nil {
-		return
-	}
-
-	var blob *storage.Blob
-	blob, _, err = h.blobStore.Get(context.Background(), scannerDefinitionBlobName, writer)
-	if err != nil {
-		err = errors.Wrapf(err, "failed to open offline scanner definition bundle")
-		return
-	}
-	err = writer.Close()
-	if err != nil {
-		return
-	}
-	rnc, err = fileutils.CreateTempFile(tempDir, scannerDefsSubZipName)
-	if err != nil {
-		return
-	}
-	modTime = *pgutils.NilOrTime(blob.GetLastUpdated())
-	return
 }
