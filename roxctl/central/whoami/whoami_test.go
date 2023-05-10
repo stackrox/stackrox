@@ -12,7 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/mocks"
+	"github.com/stackrox/rox/roxctl/common/environment/mocks"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -103,12 +103,15 @@ func (c *centralWhoAmITestSuite) TestWhoAmIEmpty() {
 
 	cbr.SetArgs([]string{"--timeout", "5s"})
 	c.Require().NoError(cbr.Execute())
-	c.Assert().Equal(stdout.String(), "User:\n  \nRoles:\n \nAccess:\n")
+	c.Assert().Equal("UserID:\n\t\nUser name:\n\t\nRoles:\n \nAccess:\n", stdout.String())
 }
 
 func (c *centralWhoAmITestSuite) TestWhoIsHarald() {
 	mockServer := &mockAuthServiceServer{
-		userInfo: &storage.UserInfo{Username: "Harald"},
+		userInfo: &storage.UserInfo{
+			Username:     "Harald",
+			FriendlyName: "Harald the second",
+		},
 		resourceToAccess: map[string]storage.Access{
 			"Smartphone": storage.Access_READ_WRITE_ACCESS,
 			"Library":    storage.Access_READ_ACCESS,
@@ -122,6 +125,7 @@ func (c *centralWhoAmITestSuite) TestWhoIsHarald() {
 
 	cbr.SetArgs([]string{"--timeout", "5s"})
 	c.Require().NoError(cbr.Execute())
-	c.Assert().Equal(stdout.String(),
-		"User:\n  Harald\nRoles:\n Warrior, Engineer\nAccess:\n  r- Library\n  rw Smartphone\n  -- Valhalla\n")
+	c.Assert().Equal(
+		"UserID:\n\tHarald\nUser name:\n\tHarald the second\nRoles:\n Warrior, Engineer\nAccess:\n  r- Library\n  rw Smartphone\n  -- Valhalla\n",
+		stdout.String())
 }
