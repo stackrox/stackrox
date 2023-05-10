@@ -4,6 +4,7 @@ import {
     AuthProviderRequiredAttributes,
     Group,
 } from 'services/AuthService';
+import { isUserResource } from '../traits';
 
 export type DisplayedAuthProvider = AuthProvider & {
     do_not_use_client_secret?: boolean;
@@ -197,6 +198,19 @@ export function mergeGroupsWithAuthProviders(
 }
 
 export function getDefaultRoleByAuthProviderId(groups: Group[], id: string): string {
+    const defaultGroup = getDefaultGroupByAuthProviderId(groups, id);
+    if (defaultGroup) {
+        return defaultGroup.roleName;
+    }
+    return id ? 'None' : 'Admin';
+}
+
+export function isDefaultGroupModifiable(groups: Group[], id: string): boolean {
+    const defaultGroup = getDefaultGroupByAuthProviderId(groups, id);
+    return isUserResource(defaultGroup?.props?.traits);
+}
+
+export function getDefaultGroupByAuthProviderId(groups: Group[], id: string): Group | undefined {
     const defaultRoleGroups = groups.filter(
         (group) =>
             group.props &&
@@ -206,7 +220,7 @@ export function getDefaultRoleByAuthProviderId(groups: Group[], id: string): str
             group.props.value === ''
     );
     if (defaultRoleGroups.length) {
-        return defaultRoleGroups[0].roleName;
+        return defaultRoleGroups[0];
     }
-    return id ? 'None' : 'Admin';
+    return undefined;
 }
