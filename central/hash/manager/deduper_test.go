@@ -57,6 +57,41 @@ func TestDeduper(t *testing.T) {
 			},
 		},
 		{
+			testName: "duplicate runtime alerts",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "abc",
+								Resource: &central.SensorEvent_AlertResults{
+									AlertResults: &central.AlertResults{
+										Stage: storage.LifecycleStage_RUNTIME,
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "abc",
+								Resource: &central.SensorEvent_AlertResults{
+									AlertResults: &central.AlertResults{
+										Stage: storage.LifecycleStage_RUNTIME,
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
 			testName: "process indicator",
 			testEvents: []testEvents{
 				{
