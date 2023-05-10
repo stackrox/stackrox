@@ -704,35 +704,35 @@ class NetworkFlowTest extends BaseSpecification {
         }
         yamls.findAll {
             deployedNamespaces.contains(it."metadata"."namespace")
-        }.each {
+        }.each { yaml ->
             // Make sure that we have enough time to populate the graph: 30s for sensor + some extra.
             // On the first run, this test benefits from the state left over by previous tests.
             // However, if the first run fails, the env is recreated and the test is run immediately afterwards.
             // The system requires time for the changes to propagate to sensor, thus we have an additional retry here.
-            Helpers.withRetry(6, 20) {
+            Helpers.withRetry(6, 20) { retry ->
                 // The graph needs to be re-retrieved on each retry (we assume that the yaml policies remain unchanged.
                 NetworkGraph currentGraph = NetworkGraphService.getNetworkGraph()
 
                 String deploymentName =
-                    it."metadata"."name"["stackrox-generated-".length()..it."metadata"."name".length() - 1]
+                    yaml."metadata"."name"["stackrox-generated-".length()..yaml."metadata"."name".length() - 1]
                 assert deploymentName != NOCONNECTIONSOURCE
-                assert it."metadata"."labels"."network-policy-generator.stackrox.io/generated"
-                assert it."metadata"."namespace"
+                assert yaml."metadata"."labels"."network-policy-generator.stackrox.io/generated"
+                assert yaml."metadata"."namespace"
                 def index = currentGraph.nodesList.findIndexOf { node -> node.deploymentName == deploymentName }
                 def allowAllIngress = deployments.find { it.name == deploymentName }?.createLoadBalancer ||
                     currentGraph.nodesList.find { it.entity.type == Type.INTERNET }.outEdgesMap.containsKey(index)
                 List<NetworkNode> outNodes = currentGraph.nodesList.findAll { node ->
                     node.outEdgesMap.containsKey(index)
                 }
-                def ingressPodSelectors = it."spec"."ingress".find { it.containsKey("from") } ?
-                    it."spec"."ingress".get(0)."from".findAll { it.containsKey("podSelector") } :
+                def ingressPodSelectors = yaml."spec"."ingress".find { it.containsKey("from") } ?
+                    yaml."spec"."ingress".get(0)."from".findAll { it.containsKey("podSelector") } :
                     null
-                def ingressNamespaceSelectors = it."spec"."ingress".find { it.containsKey("from") } ?
-                    it."spec"."ingress".get(0)."from".findAll { it.containsKey("namespaceSelector") } :
+                def ingressNamespaceSelectors = yaml."spec"."ingress".find { it.containsKey("from") } ?
+                    yaml."spec"."ingress".get(0)."from".findAll { it.containsKey("namespaceSelector") } :
                     null
                 if (allowAllIngress) {
                     log.info "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
-                    assert it."spec"."ingress" == [[:]]
+                    assert yaml."spec"."ingress" == [[:]]
                 } else if (outNodes.size() > 0) {
                     log.info "${deploymentName} has incoming connections - " +
                         "ensure podSelectors/namespaceSelectors match sources from graph"
@@ -772,7 +772,7 @@ class NetworkFlowTest extends BaseSpecification {
                     assert deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)
                 } else {
                     log.info "${deploymentName} has no incoming connections - ensure ingress spec is empty"
-                    assert it."spec"."ingress" == [] || it."spec"."ingress" == null
+                    assert yaml."spec"."ingress" == [] || yaml."spec"."ingress" == null
                 }
             }
         }
