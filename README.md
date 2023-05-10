@@ -256,7 +256,7 @@ MAIN_IMAGE_TAG=latest ./deploy/deploy-local.sh
 
 After a few minutes, all resources should be deployed.
 
-**Credentials for the 'admin' user can be found in the `./deploy/k8s/deploy-local/password` file.**
+**Credentials for the 'admin' user can be found in the `./deploy/k8s/central-deploy/password` file.**
 
 </details>
 
@@ -467,18 +467,17 @@ $ smart-diff                    # check diff relative to parent branch
 
 If you're using GoLand for development, the following can help improve the experience.
 
-
 Make sure the `Protocol Buffers` plugin is installed. The plugin comes installed by default in GoLand.  
 If it isn't, use `Help | Find Action...`, type `Plugins` and hit enter, then switch to `Marketplace`, type its name and install the plugin.
 
 This plugin does not know where to look for `.proto` imports by default in GoLand therefore you need to explicitly
-configure paths for this plugin. See <https://github.com/jvolkman/intellij-protobuf-editor#path-settings>.
+configure paths for this plugin. See <https://plugins.jetbrains.com/plugin/14004-protocol-buffers>.
 
-* Go to `GoLand | Preferences | Languages & Frameworks | Protocol Buffers`.
+* Go to `GoLand | File | Settings | Languages & Frameworks | Protocol Buffers`.
 * Uncheck `Configure automatically`.
 * Click on `+` button, navigate and select `./proto` directory in the root of the repo.
-* Optionally, also add `$HOME/go/pkg/mod/github.com/gogo/googleapis@1.1.0`
-  and `$HOME/go/pkg/mod/github.com/gogo/protobuf@v1.3.1/`.
+* Optionally, also add `$HOME/go/pkg/mod/github.com/gogo/googleapis@1.4.0/`
+  and `$HOME/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/`.
 * To verify: use menu `Navigate | File...` type any `.proto` file name, e.g. `alert_service.proto`, and check that all
   import strings are shown green, not red.
 

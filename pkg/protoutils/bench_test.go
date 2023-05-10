@@ -3,6 +3,7 @@ package protoutils
 import (
 	"testing"
 
+	_ "github.com/gogo/googleapis/google/api"
 	"github.com/gogo/protobuf/proto"
 	golangProto "github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/pkg/fixtures"
