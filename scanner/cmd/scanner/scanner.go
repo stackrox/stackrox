@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/quay/zlog"
-	"github.com/stackrox/scanner/v4/updater"
 	"github.com/stackrox/scanner/v4/version"
 )
 
@@ -17,9 +16,4 @@ func main() {
 
 	// Step 1. Read configuration file. This will determine how to contact DB and which mode to run in
 	// Step 2. Initialize API services and create ClairCore structs based on configuration settings
-
-	err := updater.ExportAction()
-	if err != nil {
-		zlog.Error(context.Background()).Msg(err.Error())
-	}
 }
