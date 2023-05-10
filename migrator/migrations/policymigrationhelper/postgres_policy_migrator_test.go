@@ -117,7 +117,7 @@ func (s *postgresPolicyMigratorTestSuite) TestAllUnmodifiedPoliciesGetUpdated() 
 		policy.Name = fmt.Sprintf("policy-name%d", i) // name is a unique key
 		policy.Description = "sfasdf"
 
-		comparisonPolicy := policy.Clone() //testPolicy(policy.Id)
+		comparisonPolicy := policy.Clone()
 		comparisonPolicies[policy.Id] = comparisonPolicy
 		policiesToMigrate[policy.Id] = PolicyChanges{
 			FieldsToCompare: []FieldComparator{PolicySectionComparator, ExclusionComparator, RemediationComparator, RationaleComparator},
