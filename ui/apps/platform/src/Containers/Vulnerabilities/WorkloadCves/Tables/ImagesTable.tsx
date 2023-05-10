@@ -12,6 +12,7 @@ import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
 import DatePhraseTd from '../components/DatePhraseTd';
+import TooltipTh from '../components/TooltipTh';
 
 export const imageListQuery = gql`
     query getImageList($query: String, $pagination: Pagination) {
@@ -86,10 +87,10 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th sort={getSortParams('Image')}>Image</Th>
-                    <Th tooltip="CVEs by severity across this image">
+                    <TooltipTh tooltip="CVEs by severity across this image">
                         CVEs by severity
                         {isFiltered && <DynamicColumnIcon />}
-                    </Th>
+                    </TooltipTh>
                     <Th sort={getSortParams('Operating System')}>Operating system</Th>
                     <Th sort={getSortParams('Deployment Count')}>
                         Deployments
@@ -132,6 +133,7 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                                         important={imageCVECountBySeverity.important.total}
                                         moderate={imageCVECountBySeverity.moderate.total}
                                         low={imageCVECountBySeverity.low.total}
+                                        entity="image"
                                     />
                                 </Td>
                                 <Td>{operatingSystem}</Td>
