@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
@@ -397,4 +398,17 @@ func FilterFieldFromRawQuery(rq RawQuery, label search.FieldLabel) RawQuery {
 		})),
 		ScopeQuery: rq.ScopeQuery,
 	}
+}
+
+// processWithAuditLog runs handler and logs to the audit log pipeline (assuming there is a notifier setup for audit logging).
+// It logs details of the request and if there was an error. processWithAuditLog will return the response and error directly
+// from handler. You may need to cast it back to your desired type.
+// This is required because currently audit logs are only automatically added for GRPC calls and not GraphQL.
+// However, mutating calls should also log. This is a workaround for this limitation.
+func (resolver *Resolver) processWithAuditLog(ctx context.Context, req interface{}, method string, handler func() (interface{}, error)) (interface{}, error) {
+	resp, err := handler()
+	if resolver.AuditLogger != nil {
+		go resolver.AuditLogger.SendAuditMessage(ctx, req, method, interceptor.AuthStatus{}, err)
+	}
+	return resp, err
 }

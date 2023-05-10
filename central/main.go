@@ -823,7 +823,6 @@ func debugRoutes() []routes.CustomRoute {
 			Authorizer:    user.WithRole(role.Admin),
 			ServerHandler: h,
 			Compression:   true,
-			EnableAudit:   true,
 		})
 	}
 	return customRoutes
