@@ -175,7 +175,7 @@ func TestPutConfigError(t *testing.T) {
 		{"enabled for all missing default id", genCfg(all, "", nil), nil, nil, "default cluster id required", nil},
 		{"enabled for specific missing default id", genCfg(specific, "", nil), nil, nil, "default cluster id required", nil},
 		{"cluster ds error", genCfg(specific, "fake", nil), nil, errBroken, "broken", nil},
-		{"multi cluster invalid default id", genCfg(specific, "fake", nil), nil, nil, "not a valid cluster", multiClusters},
+		{"multi cluster invalid default id", genCfg(specific, "fake", nil), nil, nil, "is not valid", multiClusters},
 		{"multi cluster invalid registry id and path", genCfg(specific, "fake", []string{"fake"}), nil, nil, "is not valid", multiClusters},
 		{"multi cluster invalid registry id and path", genCfg(specific, "fake", []string{"fake"}), nil, nil, "missing registry path", multiClusters},
 		{"multi cluster invalid registry path", genCfg(specific, "fake", []string{"id1"}), nil, nil, "missing registry path", multiClusters},
