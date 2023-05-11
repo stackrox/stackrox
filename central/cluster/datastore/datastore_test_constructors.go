@@ -12,6 +12,8 @@ import (
 	clusterHealthRocksDBStore "github.com/stackrox/rox/central/cluster/store/clusterhealth/rocksdb"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/hash/datastore"
+	hashManager "github.com/stackrox/rox/central/hash/manager"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
@@ -94,7 +96,12 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 		return nil, err
 	}
 
-	sensorCnxMgr := connection.ManagerSingleton()
+	hashStore, err := datastore.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
+
+	sensorCnxMgr := connection.NewManager(hashManager.NewManager(hashStore))
 	clusterRanker := ranking.ClusterRanker()
 
 	return New(clusterdbstore, clusterhealthdbstore, clusterCVEStore,

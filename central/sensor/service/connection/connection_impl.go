@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/localscanner"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
@@ -65,7 +66,8 @@ type sensorConnection struct {
 	capabilities set.Set[centralsensor.SensorCapability]
 }
 
-func newConnection(sensorHello *central.SensorHello,
+func newConnection(ctx context.Context,
+	sensorHello *central.SensorHello,
 	cluster *storage.Cluster,
 	eventPipeline pipeline.ClusterPipeline,
 	clusterMgr common.ClusterManager,
@@ -74,7 +76,7 @@ func newConnection(sensorHello *central.SensorHello,
 	baselineMgr common.ProcessBaselineManager,
 	networkBaselineMgr common.NetworkBaselineManager,
 	notifierProcessor notifierProcessor.Processor,
-	msgDeduper *deduper,
+	hashMgr hashManager.Manager,
 ) *sensorConnection {
 
 	conn := &sensorConnection{
@@ -97,7 +99,10 @@ func newConnection(sensorHello *central.SensorHello,
 	}
 
 	// Need a reference to conn for injector
-	conn.sensorEventHandler = newSensorEventHandler(eventPipeline, conn, &conn.stopSig, msgDeduper)
+	deduper := hashMgr.GetDeduper(ctx, cluster.GetId())
+	deduper.StartSync()
+
+	conn.sensorEventHandler = newSensorEventHandler(eventPipeline, conn, &conn.stopSig, deduper)
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
 	conn.networkEntitiesCtrl = networkentities.NewController(cluster.GetId(), networkEntityMgr, graph.Singleton(), conn, &conn.stopSig)

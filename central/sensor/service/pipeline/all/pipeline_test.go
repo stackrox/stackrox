@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -29,7 +30,7 @@ func (suite *PipelineTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.depMock = mocks.NewMockFragment(suite.mockCtrl)
 
-	suite.tested = NewClusterPipeline("clusterID", suite.depMock)
+	suite.tested = NewClusterPipeline("clusterID", manager.NewDeduper(make(map[string]uint64)), suite.depMock)
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
