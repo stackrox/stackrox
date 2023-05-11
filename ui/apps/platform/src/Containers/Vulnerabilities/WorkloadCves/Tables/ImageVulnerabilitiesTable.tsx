@@ -76,7 +76,7 @@ function ImageVulnerabilitiesTable({
 
     return (
         <TableComposable variant="compact">
-            <Thead>
+            <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('CVE')}>CVE</Th>
@@ -135,7 +135,7 @@ function ImageVulnerabilitiesTable({
                                         {cve}
                                     </Button>
                                 </Td>
-                                <Td dataLabel="Severity">
+                                <Td modifier="nowrap" dataLabel="Severity">
                                     <span>
                                         {SeverityIcon && (
                                             <SeverityIcon className="pf-u-display-inline" />
@@ -145,7 +145,7 @@ function ImageVulnerabilitiesTable({
                                         )}
                                     </span>
                                 </Td>
-                                <Td dataLabel="CVE Status">
+                                <Td modifier="nowrap" dataLabel="CVE Status">
                                     <span>
                                         <FixabilityIcon className="pf-u-display-inline" />
                                         <span className="pf-u-pl-sm">
@@ -153,7 +153,7 @@ function ImageVulnerabilitiesTable({
                                         </span>
                                     </span>
                                 </Td>
-                                <Td dataLabel="CVSS">
+                                <Td modifier="nowrap" dataLabel="CVSS">
                                     <CvssTd cvss={cvss} scoreVersion={scoreVersion} />
                                 </Td>
                                 <Td dataLabel="Affected components">

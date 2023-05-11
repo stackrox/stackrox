@@ -395,7 +395,7 @@ function ImageCvePage() {
                             {tableDataAvailable && (
                                 <>
                                     <Divider />
-                                    <div className="pf-u-px-lg">
+                                    <div className="pf-u-px-lg workload-cves-table-container">
                                         {entityTab === 'Image' && (
                                             <AffectedImagesTable
                                                 images={imageData?.images ?? []}
