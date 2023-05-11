@@ -131,7 +131,7 @@ func isScopeManagerRoleReferenced(ctx context.Context, apiTokenStorage apiTokenS
 		}
 		return nil
 	})
-	if err != nil {
+	if tokenWalkErr != nil {
 		err = multierror.Append(err, tokenWalkErr)
 	}
 	if roleReferenceFound {
