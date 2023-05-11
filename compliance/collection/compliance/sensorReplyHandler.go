@@ -8,11 +8,13 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
+// SensorReplyHandlerImpl handles ACK/NACK messages from Sensor
 type SensorReplyHandlerImpl struct {
 	log         *logging.Logger
 	nodeScanner NodeScanner
 }
 
+// NewSensorReplyHandlerImpl returns new SensorReplyHandler
 func NewSensorReplyHandlerImpl(log *logging.Logger, nodeScanner NodeScanner) *SensorReplyHandlerImpl {
 	return &SensorReplyHandlerImpl{
 		log:         log,
@@ -20,10 +22,12 @@ func NewSensorReplyHandlerImpl(log *logging.Logger, nodeScanner NodeScanner) *Se
 	}
 }
 
-func (s *SensorReplyHandlerImpl) HandleACK(ctx context.Context, client sensor.ComplianceService_CommunicateClient) {
+// HandleACK handles ACK message from Sensor
+func (s *SensorReplyHandlerImpl) HandleACK(_ context.Context, _ sensor.ComplianceService_CommunicateClient) {
 	s.log.Debugf("Received ACK from Sensor.")
 }
 
+// HandleNACK handles NACK message from Sensor
 func (s *SensorReplyHandlerImpl) HandleNACK(ctx context.Context, client sensor.ComplianceService_CommunicateClient) {
 	s.log.Infof("Received NACK from Sensor, resending NodeInventory in 10 seconds.")
 	go func() {

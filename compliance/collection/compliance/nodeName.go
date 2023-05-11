@@ -8,11 +8,13 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+// EnvNodeNameProvider gets the node name from Env Variable
 type EnvNodeNameProvider struct {
 	once sync.Once
 	log  *logging.Logger
 }
 
+// GetNodeName gets the node name
 func (np *EnvNodeNameProvider) GetNodeName() string {
 	var node string
 	np.once.Do(func() {

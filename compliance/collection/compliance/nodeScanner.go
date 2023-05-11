@@ -16,12 +16,14 @@ import (
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
+// NodeInventoryComponentScanner connects to node-inventory container to provide node-inventory object
 type NodeInventoryComponentScanner struct {
 	log              *logging.Logger
 	nodeNameProvider NodeNameProvider
 	client           scannerV1.NodeInventoryServiceClient
 }
 
+// NewNodeInventoryComponentScanner builds new NodeInventoryComponentScanner
 func NewNodeInventoryComponentScanner(log *logging.Logger, nnp NodeNameProvider) *NodeInventoryComponentScanner {
 	return &NodeInventoryComponentScanner{
 		log:              log,
@@ -29,10 +31,12 @@ func NewNodeInventoryComponentScanner(log *logging.Logger, nnp NodeNameProvider)
 	}
 }
 
+// IsActive returns true if the connection to node-inventory is ready
 func (n *NodeInventoryComponentScanner) IsActive() bool {
 	return n.client != nil
 }
 
+// Connect connects to node-inventory and stores an active client
 func (n *NodeInventoryComponentScanner) Connect(address string) {
 	if !env.NodeInventoryContainerEnabled.BooleanSetting() {
 		n.log.Infof("Compliance will not call the node-inventory container, because this is not Openshift 4 cluster")
@@ -53,6 +57,7 @@ func (n *NodeInventoryComponentScanner) Connect(address string) {
 	}
 }
 
+// ManageNodeScanLoop is here but maybe it should be refactored? TODO(17011): refactor this!
 func (n *NodeInventoryComponentScanner) ManageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals) <-chan *sensor.MsgFromCompliance {
 	nodeInventoriesC := make(chan *sensor.MsgFromCompliance)
 	nodeName := n.nodeNameProvider.GetNodeName()
@@ -80,6 +85,7 @@ func (n *NodeInventoryComponentScanner) ManageNodeScanLoop(ctx context.Context, 
 	return nodeInventoriesC
 }
 
+// ScanNode returns a message with node-inventory
 func (n *NodeInventoryComponentScanner) ScanNode(ctx context.Context) (*sensor.MsgFromCompliance, error) {
 	ctx, cancel := context.WithTimeout(ctx, env.NodeAnalysisDeadline.DurationSetting())
 	defer cancel()
