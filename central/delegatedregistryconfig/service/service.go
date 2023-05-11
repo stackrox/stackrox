@@ -5,16 +5,16 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	cluster "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/convert"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errox"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -118,49 +118,50 @@ func (s *serviceImpl) GetClusters(ctx context.Context, _ *v1.Empty) (*v1.Delegat
 
 // PutConfig updates Central's delegated registry config
 func (s *serviceImpl) PutConfig(ctx context.Context, config *v1.DelegatedRegistryConfig) (*v1.DelegatedRegistryConfig, error) {
-	if err := s.validate(ctx, config); err != nil {
+	if config == nil {
+		return nil, fmt.Errorf("%w: %v", errox.InvalidArgs, "config missing")
+	}
+
+	// get the clusters ids for validation and broadcast
+	clusterIds, err := s.getValidClusterIds(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("obtaining valid cluster %w", err)
+	}
+
+	// validate the config
+	if err := s.validate(ctx, config, clusterIds); err != nil {
 		return nil, fmt.Errorf("%w: %v", errox.InvalidArgs, err.Error())
 	}
 
+	// persist the config
 	if err := s.dataStore.UpsertConfig(ctx, convert.APIToStorage(config)); err != nil {
 		return nil, fmt.Errorf("upserting config %w", err)
 	}
 
-	// TODO: change to send only to eligible clusters
-	log.Debugf("Broadcasting delegated registry config to all sensors: %+v", config)
-	s.connManager.BroadcastMessage(&central.MsgToSensor{
+	// broadcast the config
+	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_UpdatedDelegatedRegistryConfig{
 			UpdatedDelegatedRegistryConfig: convert.APIToInternalAPI(config),
 		},
-	})
+	}
+
+	for clusterId := range clusterIds {
+		if err := s.connManager.SendMessage(clusterId, msg); err != nil {
+			log.Errorf("Failed to send updated delegated registry config to cluster %q: %v", clusterId, err)
+		}
+	}
 
 	return config, nil
 }
 
-func (s *serviceImpl) validate(ctx context.Context, config *v1.DelegatedRegistryConfig) error {
-	if config == nil {
-		// this block not reachable via GRPC-gateway invocations
-		return errors.New("config missing")
-	}
-
+func (s *serviceImpl) validate(ctx context.Context, config *v1.DelegatedRegistryConfig, validClusters set.Set[string]) error {
 	if config.EnabledFor == v1.DelegatedRegistryConfig_NONE {
-		// ignore rest of config
+		// ignore rest of config, values will not be used
 		return nil
 	}
 
-	// validate the default cluster id
-	if config.DefaultClusterId == "" {
-		return errors.New("default cluster id required if enabled is not NONE")
-	}
-
-	// get the valid clusters
-	validClusters, err := s.getValidClusterIds(ctx)
-	if err != nil {
-		return fmt.Errorf("unable to validate config %w", err)
-	}
-
 	var errorList []error
-	if !validClusters.Contains(config.DefaultClusterId) {
+	if config.DefaultClusterId != "" && !validClusters.Contains(config.DefaultClusterId) {
 		errorList = append(errorList, fmt.Errorf("default cluster %q is not valid", config.DefaultClusterId))
 	}
 
@@ -196,9 +197,9 @@ func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryC
 
 	res := make([]*v1.DelegatedRegistryCluster, len(clusters))
 	for i, c := range clusters {
+		conn := s.connManager.GetConnection(c.Id)
 
-		// TODO (ROX-16970): change this to use sensor capability instead
-		valid := c.GetHealthStatus().GetScannerHealthStatus() == storage.ClusterHealthStatus_HEALTHY
+		valid := conn != nil && conn.HasCapability(centralsensor.DelegatedScanningCap)
 
 		res[i] = &v1.DelegatedRegistryCluster{
 			Id:      c.Id,

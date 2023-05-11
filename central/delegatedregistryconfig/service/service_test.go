@@ -8,17 +8,24 @@ import (
 	"github.com/pkg/errors"
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	deleDSMocks "github.com/stackrox/rox/central/delegatedregistryconfig/datastore/mocks"
+	"github.com/stackrox/rox/central/scrape"
+	"github.com/stackrox/rox/central/sensor/networkentities"
+	"github.com/stackrox/rox/central/sensor/networkpolicies"
+	sensorConn "github.com/stackrox/rox/central/sensor/service/connection"
 	connMgrMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
+	"github.com/stackrox/rox/central/sensor/telemetry"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	clusterHealthStatusScannerHealthy  = &storage.ClusterHealthStatus{ScannerHealthStatus: storage.ClusterHealthStatus_HEALTHY}
-	clusterHealthStatusScannerDegraded = &storage.ClusterHealthStatus{ScannerHealthStatus: storage.ClusterHealthStatus_DEGRADED}
-	clusterHealthStatusEmpty           = &storage.ClusterHealthStatus{}
+	fakeConnWithCap    = &fakeSensorConn{hasCap: true}
+	fakeConnWithOutCap = &fakeSensorConn{hasCap: false}
 
 	none     = v1.DelegatedRegistryConfig_NONE
 	all      = v1.DelegatedRegistryConfig_ALL
@@ -66,25 +73,24 @@ func TestGetClustersSuccess(t *testing.T) {
 
 	clustersDS := clusterDSMocks.NewMockDataStore(gomock.NewController(t))
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
-	s := New(deleClusterDS, clustersDS, nil)
+	connMgr := connMgrMocks.NewMockManager(gomock.NewController(t))
 
-	genClusters := func(healthStatus *storage.ClusterHealthStatus) []*storage.Cluster {
-		return []*storage.Cluster{{Id: "id", Name: "fake", HealthStatus: healthStatus}}
-	}
+	s := New(deleClusterDS, clustersDS, connMgr)
+
+	clusters := []*storage.Cluster{{Id: "id", Name: "fake"}}
 
 	tt := map[string]struct {
-		clusters []*storage.Cluster
-		valid    bool
+		conn  *fakeSensorConn
+		valid bool
 	}{
-		"missing health": {genClusters(nil), false},
-		"empty health":   {genClusters(clusterHealthStatusEmpty), false},
-		"degraded":       {genClusters(clusterHealthStatusScannerDegraded), false},
-		"healthy":        {genClusters(clusterHealthStatusScannerHealthy), true}, // only healthy scanners are valid
+		"without cap": {fakeConnWithOutCap, false},
+		"with cap":    {fakeConnWithCap, true}, // only healthy scanners are valid
 	}
 
 	for name, test := range tt {
 		tf := func(t *testing.T) {
-			clustersDS.EXPECT().GetClusters(gomock.Any()).Return(test.clusters, nil)
+			clustersDS.EXPECT().GetClusters(gomock.Any()).Return(clusters, nil)
+			connMgr.EXPECT().GetConnection(gomock.Any()).Return(test.conn)
 			resp, err = s.GetClusters(context.Background(), empty)
 			assert.NoError(t, err)
 			require.Len(t, resp.Clusters, 1)
@@ -95,9 +101,11 @@ func TestGetClustersSuccess(t *testing.T) {
 	}
 
 	t.Run("multi cluster", func(t *testing.T) {
-		cluster1 := &storage.Cluster{Id: "id1", HealthStatus: clusterHealthStatusScannerHealthy}
-		cluster2 := &storage.Cluster{Id: "id2", HealthStatus: clusterHealthStatusScannerDegraded}
+		cluster1 := &storage.Cluster{Id: "id1"}
+		cluster2 := &storage.Cluster{Id: "id2"}
 		clustersDS.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{cluster1, cluster2}, nil)
+		connMgr.EXPECT().GetConnection("id1").Return(fakeConnWithCap)
+		connMgr.EXPECT().GetConnection("id2").Return(fakeConnWithOutCap)
 		resp, err = s.GetClusters(context.Background(), empty)
 		assert.NoError(t, err)
 		require.Len(t, resp.Clusters, 2)
@@ -155,41 +163,48 @@ func TestPutConfigError(t *testing.T) {
 			Registries:       regs,
 		}
 	}
+	_ = genCfg
 
 	multiClusters := []*storage.Cluster{
-		{Id: "id1", HealthStatus: clusterHealthStatusScannerHealthy},
-		{Id: "id2", HealthStatus: clusterHealthStatusScannerDegraded},
+		{Id: "id1"},
+		{Id: "id2"},
 	}
+	_ = multiClusters
 
 	tt := map[string]struct {
-		cfg            *v1.DelegatedRegistryConfig
-		deleDSErr      error
-		clusterDSErr   error
-		expectedErrMsg string
-		clusters       []*storage.Cluster
+		cfg                 *v1.DelegatedRegistryConfig
+		clusters            []*storage.Cluster
+		expectedErrMsg      string
+		upsertExpected      bool
+		upsertErr           error
+		getClustersExpected bool
+		getClustersErr      error
 	}{
-		"nil config":                                            {nil, nil, nil, "config missing", nil},
-		"upsert failed":                                         {genCfg(none, "", nil), errBroken, nil, "upserting config", nil},
-		"enabled for all missing default id":                    {genCfg(all, "", nil), nil, nil, "default cluster id required", nil},
-		"enabled for specific missing default id":               {genCfg(specific, "", nil), nil, nil, "default cluster id required", nil},
-		"cluster ds error":                                      {genCfg(specific, "fake", nil), nil, errBroken, "broken", nil},
-		"multi cluster invalid default id":                      {genCfg(specific, "fake", nil), nil, nil, "is not valid", multiClusters},
-		"multi cluster invalid registry id and path (id msg)":   {genCfg(specific, "fake", []string{"fake"}), nil, nil, "is not valid", multiClusters},
-		"multi cluster invalid registry id and path (path msg)": {genCfg(specific, "fake", []string{"fake"}), nil, nil, "missing registry path", multiClusters},
-		"multi cluster invalid registry path":                   {genCfg(specific, "fake", []string{"id1"}), nil, nil, "missing registry path", multiClusters},
+		"nil config":                                            {nil, nil, "config missing", false, nil, false, nil},
+		"upsert failed":                                         {genCfg(none, "", nil), nil, "upserting config", true, errBroken, true, nil},
+		"get clusters error":                                    {genCfg(all, "fake", nil), nil, "broken", false, nil, true, errBroken},
+		"multi cluster invalid default id":                      {genCfg(specific, "fake", nil), multiClusters, "is not valid", false, nil, true, nil},
+		"multi cluster invalid registry path":                   {genCfg(specific, "fake", []string{"id1"}), multiClusters, "missing registry path", false, nil, true, nil},
+		"multi cluster invalid registry id and path (id msg)":   {genCfg(specific, "fake", []string{"fake"}), multiClusters, "is not valid", false, nil, true, nil},
+		"multi cluster invalid registry id and path (path msg)": {genCfg(specific, "fake", []string{"fake"}), multiClusters, "missing registry path", false, nil, true, nil},
+		// "enabled for all missing default id": {genCfg(all, "", nil), nil, "default cluster id required", true, nil, true, nil},
+		// "enabled for specific missing default id": {genCfg(specific, "", nil), nil, "default cluster id required", true, nil, true, nil},
 	}
 
 	clustersDS := clusterDSMocks.NewMockDataStore(gomock.NewController(t))
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
-	s := New(deleClusterDS, clustersDS, nil)
+	connMgr := connMgrMocks.NewMockManager(gomock.NewController(t))
+	connMgr.EXPECT().GetConnection(gomock.Any()).AnyTimes()
+	s := New(deleClusterDS, clustersDS, connMgr)
+
 	for name, test := range tt {
 		tf := func(t *testing.T) {
-			if test.deleDSErr != nil {
-				deleClusterDS.EXPECT().UpsertConfig(gomock.Any(), gomock.Any()).Return(test.deleDSErr)
+			if test.upsertExpected {
+				deleClusterDS.EXPECT().UpsertConfig(gomock.Any(), gomock.Any()).Return(test.upsertErr)
 			}
 
-			if len(test.clusters) > 0 || test.clusterDSErr != nil {
-				clustersDS.EXPECT().GetClusters(gomock.Any()).Return(test.clusters, test.clusterDSErr)
+			if test.getClustersExpected {
+				clustersDS.EXPECT().GetClusters(gomock.Any()).Return(test.clusters, test.getClustersErr)
 			}
 
 			_, err = s.PutConfig(context.Background(), test.cfg)
@@ -207,16 +222,16 @@ func TestPutConfigSuccess(t *testing.T) {
 	clustersDS := clusterDSMocks.NewMockDataStore(gomock.NewController(t))
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
 	connMgr := connMgrMocks.NewMockManager(gomock.NewController(t))
-	connMgr.EXPECT().BroadcastMessage(gomock.Any()).AnyTimes()
+	connMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any()).AnyTimes()
+	connMgr.EXPECT().GetConnection("id1").Return(fakeConnWithCap).AnyTimes()
+	connMgr.EXPECT().GetConnection("id2").Return(fakeConnWithOutCap).AnyTimes()
 
 	s := New(deleClusterDS, clustersDS, connMgr)
-	cluster1 := &storage.Cluster{Id: "id1", HealthStatus: clusterHealthStatusScannerHealthy}
-	cluster2 := &storage.Cluster{Id: "id2", HealthStatus: clusterHealthStatusScannerDegraded}
-	clustersDS.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{cluster1, cluster2}, nil).AnyTimes()
+	clustersDS.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{{Id: "id1"}, {Id: "id2"}}, nil).AnyTimes()
 
 	cfg = &v1.DelegatedRegistryConfig{EnabledFor: specific, DefaultClusterId: "id1"}
-	deleClusterDS.EXPECT().UpsertConfig(gomock.Any(), gomock.Any())
 	cfg.DefaultClusterId = "id1"
+	deleClusterDS.EXPECT().UpsertConfig(gomock.Any(), gomock.Any())
 	_, err = s.PutConfig(context.Background(), cfg)
 	assert.NoError(t, err)
 
@@ -224,4 +239,27 @@ func TestPutConfigSuccess(t *testing.T) {
 	cfg.Registries = []*v1.DelegatedRegistryConfig_DelegatedRegistry{{ClusterId: "id1", RegistryPath: "something"}}
 	_, err = s.PutConfig(context.Background(), cfg)
 	assert.NoError(t, err)
+}
+
+type fakeSensorConn struct {
+	hasCap bool
+}
+
+var _ sensorConn.SensorConnection = (*fakeSensorConn)(nil)
+
+func (f *fakeSensorConn) HasCapability(capability centralsensor.SensorCapability) bool {
+	return f.hasCap
+}
+func (*fakeSensorConn) InjectMessageIntoQueue(msg *central.MsgFromSensor)      {}
+func (*fakeSensorConn) CheckAutoUpgradeSupport() error                         { return nil }
+func (*fakeSensorConn) ClusterID() string                                      { return "" }
+func (*fakeSensorConn) NetworkEntities() networkentities.Controller            { return nil }
+func (*fakeSensorConn) NetworkPolicies() networkpolicies.Controller            { return nil }
+func (*fakeSensorConn) ObjectsDeletedByReconciliation() (map[string]int, bool) { return nil, false }
+func (*fakeSensorConn) Scrapes() scrape.Controller                             { return nil }
+func (*fakeSensorConn) Stopped() concurrency.ReadOnlyErrorSignal               { return nil }
+func (*fakeSensorConn) Telemetry() telemetry.Controller                        { return nil }
+func (*fakeSensorConn) Terminate(err error) bool                               { return false }
+func (*fakeSensorConn) InjectMessage(ctx concurrency.Waitable, msg *central.MsgToSensor) error {
+	return nil
 }
