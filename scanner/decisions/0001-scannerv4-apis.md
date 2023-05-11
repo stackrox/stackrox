@@ -1,7 +1,7 @@
 # 0001 - ScannerV4 APIs definition
 
-**Status:** Accepted
-**Created:** [2023-05-09 Tue]
+- **Status:** Accepted
+- **Created:** [2023-05-09 Tue]
 
 ## Context
 

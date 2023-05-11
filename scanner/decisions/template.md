@@ -1,7 +1,7 @@
 # Number - Title
 
-**Author(s):** J. Victor Martins <jvdm@sdf.org>
-**Created:** [2023-05-09 Tue]
+- **Author(s):** name <email>
+- **Created:** <date>
 
 ## Status
 
