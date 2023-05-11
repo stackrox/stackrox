@@ -224,6 +224,21 @@ func TestReconciliation(t *testing.T) {
 	d4 := getDeploymentEvent(central.ResourceAction_SYNC_RESOURCE, "4", "4", 0)
 	d5 := getDeploymentEvent(central.ResourceAction_SYNC_RESOURCE, "5", "5", 0)
 
+	d1Alert := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id: d1.GetEvent().GetId(),
+				Resource: &central.SensorEvent_AlertResults{
+					AlertResults: &central.AlertResults{
+						DeploymentId: d1.GetEvent().GetId(),
+						Stage:        storage.LifecycleStage_DEPLOY,
+					},
+				},
+				Action: central.ResourceAction_SYNC_RESOURCE,
+			},
+		},
+	}
+
 	// Basic case
 	deduper.StartSync()
 	deduper.ShouldProcess(d1)
@@ -264,4 +279,19 @@ func TestReconciliation(t *testing.T) {
 	deduper.ProcessSync()
 	assert.Len(t, deduper.successfullyProcessed, 1)
 	assert.Contains(t, deduper.successfullyProcessed, getKey(d1))
+
+	deduper.StartSync()
+	deduper.ProcessSync()
+	assert.Len(t, deduper.successfullyProcessed, 0)
+
+	// Ensure alert is removed when reconcile occurs
+	deduper.StartSync()
+	deduper.ShouldProcess(d1)
+	deduper.MarkSuccessful(d1)
+	deduper.ShouldProcess(d1Alert)
+	deduper.MarkSuccessful(d1Alert)
+	assert.Len(t, deduper.successfullyProcessed, 2)
+	deduper.StartSync()
+	deduper.ProcessSync()
+	assert.Len(t, deduper.successfullyProcessed, 0)
 }
