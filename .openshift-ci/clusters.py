@@ -131,7 +131,7 @@ class OpenShiftScaleWorkersCluster:
     def provision(self):
         print("Scaling worker nodes")
         subprocess.run(
-            ["scripts/ci/openshift.sh", "scale_worker_nodes", str(self.increment), str(self.expected_initial_worker_count)],
+            ["scripts/ci/openshift.sh", "scale_worker_nodes", str(self.expected_initial_worker_count), str(self.increment)],
             check=True,
             timeout=OpenShiftScaleWorkersCluster.SCALE_CHANGE_TIMEOUT,
         )
