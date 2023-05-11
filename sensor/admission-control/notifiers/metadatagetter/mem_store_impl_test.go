@@ -5,19 +5,19 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/pkg/errors"
-	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/sensor/admission-control/resources/deployments"
+	"github.com/stackrox/rox/sensor/admission-control/resources/namespaces"
+	"github.com/stackrox/rox/sensor/admission-control/resources/pods"
 	"github.com/stretchr/testify/assert"
 )
 
 func namespaceWithAnnotation(annotationKey, annotationValue string) *storage.NamespaceMetadata {
 	ns := &storage.NamespaceMetadata{
 		Id:          fixtureconsts.Namespace1,
-		Name:        "name",
+		Name:        "stackrox",
 		ClusterId:   fixtureconsts.Cluster1,
 		ClusterName: "cluster-name",
 	}
@@ -62,101 +62,77 @@ func TestGetAnnotationValue(t *testing.T) {
 
 	cases := []struct {
 		name          string
-		namespace     []*storage.NamespaceMetadata
+		nsMetadata    *storage.NamespaceMetadata
 		annotationKey string
 		alert         *storage.Alert
 		expectedValue string
 	}{
 		{
 			name:          "Get from deployment if it exists in both",
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
+			nsMetadata:    namespaceWithAnnotation("annotKey", "nsValue"),
 			annotationKey: "annotKey",
 			alert:         alertWithDeploymentAnnotation("annotKey", "deployValue"),
 			expectedValue: "deployValue",
 		},
 		{
 			name:          "Get from deployment if it exists but not in namespace",
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("", "")},
+			nsMetadata:    nil,
 			annotationKey: "annotKey",
 			alert:         alertWithDeploymentAnnotation("annotKey", "deployValue"),
 			expectedValue: "deployValue",
 		},
 		{
 			name:          "Get from deployment label if it exists",
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("", "")},
+			nsMetadata:    nil,
 			annotationKey: "annotKey",
 			alert:         alertWithDeploymentLabel("annotKey", "labelVal"),
 			expectedValue: "labelVal",
 		},
 		{
 			name:          "Get from namespace when not in deployment and exists in namespace",
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
+			nsMetadata:    namespaceWithAnnotation("annotKey", "nsValue"),
 			annotationKey: "annotKey",
 			alert:         alertWithDeploymentAnnotation("", ""),
 			expectedValue: "nsValue",
 		},
 		{
 			name:          "Get from namespace for resource alert if it exists in namespace",
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
+			nsMetadata:    namespaceWithAnnotation("annotKey", "nsValue"),
 			annotationKey: "annotKey",
 			alert:         fixtures.GetResourceAlert(),
 			expectedValue: "nsValue",
 		},
 		{
 			name:          "Get default when not in deployment or namespace",
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("", "")},
+			nsMetadata:    namespaceWithAnnotation("", ""),
 			annotationKey: "annotKey",
 			alert:         alertWithDeploymentAnnotation("", ""),
 			expectedValue: "default",
 		},
 		{
-			name:          "Get default when no cluster id available to lookup namespace",
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
-			annotationKey: "annotKey",
-			alert:         alertWithNoClusterID,
-			expectedValue: "default",
-		},
-		{
 			name:          "Get default when no namespace name available to lookup namespace",
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
+			nsMetadata:    namespaceWithAnnotation("annotKey", "nsValue"),
 			annotationKey: "annotKey",
 			alert:         alertWithNoNamespace,
 			expectedValue: "default",
 		},
 		{
 			name:          "Get default when nil namespace found",
-			namespace:     []*storage.NamespaceMetadata{nil},
-			annotationKey: "annotKey",
-			alert:         alertWithDeploymentAnnotation("", ""),
-			expectedValue: "default",
-		},
-		{
-			name:          "Get default when no namespaces found",
-			namespace:     []*storage.NamespaceMetadata{},
-			annotationKey: "annotKey",
-			alert:         alertWithDeploymentAnnotation("", ""),
-			expectedValue: "default",
-		},
-		{
-			name: "Get default when multiple namespaces found",
-			namespace: []*storage.NamespaceMetadata{
-				namespaceWithAnnotation("annotKey", "nsValue"),
-				namespaceWithAnnotation("", ""),
-			},
+			nsMetadata:    nil,
 			annotationKey: "annotKey",
 			alert:         alertWithDeploymentAnnotation("", ""),
 			expectedValue: "default",
 		},
 		{
 			name:          "Get default when key is incorrect",
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("altKey", "altNsValue")},
+			nsMetadata:    namespaceWithAnnotation("altKey", "altNsValue"),
 			annotationKey: "annotKey",
 			alert:         alertWithDeploymentAnnotation("altKey", "altDeployValue"),
 			expectedValue: "default",
 		},
 		{
 			name:          "Get default if key is not provided",
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
+			nsMetadata:    namespaceWithAnnotation("annotKey", "nsValue"),
 			annotationKey: "",
 			alert:         alertWithDeploymentAnnotation("annotKey", "deployValue"),
 			expectedValue: "default",
@@ -166,10 +142,10 @@ func TestGetAnnotationValue(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
-			nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
-			metadataGetter := newTestMetadataGetter(t, nsStore)
+			nsStore := namespaces.NewNamespaceStore(deployments.Singleton(), pods.Singleton())
+			nsStore.AddNamespace(c.nsMetadata)
+			metadataGetter := newMetadataGetter(nsStore)
 
-			nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(c.namespace, nil).AnyTimes()
 			value := metadataGetter.GetAnnotationValue(context.Background(), c.alert, c.annotationKey, "default")
 
 			assert.Equal(t, c.expectedValue, value)
@@ -177,18 +153,16 @@ func TestGetAnnotationValue(t *testing.T) {
 	}
 }
 
-func TestGetAnnotationValueCorrectlyQueriesForNamespace(t *testing.T) {
+func TestGetAnnotationValueCorrectlyLooksForNamespace(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
-	metadataGetter := newTestMetadataGetter(t, nsStore)
+
+	namespace := namespaceWithAnnotation("somekey", "somevalue")
+	nsStore := namespaces.NewNamespaceStore(deployments.Singleton(), pods.Singleton())
+	nsStore.AddNamespace(namespace)
+	metadataGetter := newMetadataGetter(nsStore)
 
 	alert := fixtures.GetAlert()
-	ns := namespaceWithAnnotation("somekey", "somevalue")
-
-	expectedQuery := search.NewQueryBuilder().AddExactMatches(search.Namespace, alert.GetDeployment().GetNamespace()).AddExactMatches(search.ClusterID, alert.GetDeployment().GetClusterId()).ProtoQuery()
-
-	nsStore.EXPECT().SearchNamespaces(gomock.Any(), expectedQuery).Return([]*storage.NamespaceMetadata{ns}, nil)
 	value := metadataGetter.GetAnnotationValue(context.Background(), alert, "somekey", "default")
 
 	assert.Equal(t, "somevalue", value)
@@ -197,12 +171,12 @@ func TestGetAnnotationValueCorrectlyQueriesForNamespace(t *testing.T) {
 func TestGetAnnotationValueReturnsDefaultIfNoStoreReturnsError(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
-	metadataGetter := newTestMetadataGetter(t, nsStore)
+
+	nsStore := namespaces.NewNamespaceStore(deployments.Singleton(), pods.Singleton())
+	metadataGetter := newMetadataGetter(nsStore)
 
 	alert := fixtures.GetAlert()
 
-	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(nil, errors.New(fixtureconsts.Cluster1))
 	value := metadataGetter.GetAnnotationValue(context.Background(), alert, "somekey", "default")
 
 	assert.Equal(t, "default", value)
