@@ -26,6 +26,7 @@ type CustomRoute struct {
 	Authorizer    authz.Authorizer
 	ServerHandler http.Handler
 	Compression   bool
+	EnableAudit   bool
 }
 
 // RPCNameForHTTP returns the RPCName to be used for this HTTP route.
