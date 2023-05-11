@@ -1,4 +1,4 @@
-package connection
+package manager
 
 import (
 	"testing"
@@ -50,6 +50,41 @@ func TestDeduper(t *testing.T) {
 					event: &central.MsgFromSensor{
 						Msg: &central.MsgFromSensor_NetworkFlowUpdate{
 							NetworkFlowUpdate: &central.NetworkFlowUpdate{},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "duplicate runtime alerts",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "abc",
+								Resource: &central.SensorEvent_AlertResults{
+									AlertResults: &central.AlertResults{
+										Stage: storage.LifecycleStage_RUNTIME,
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "abc",
+								Resource: &central.SensorEvent_AlertResults{
+									AlertResults: &central.AlertResults{
+										Stage: storage.LifecycleStage_RUNTIME,
+									},
+								},
+							},
 						},
 					},
 					result: true,
@@ -170,11 +205,93 @@ func TestDeduper(t *testing.T) {
 	for _, c := range cases {
 		testCase := c
 		t.Run(c.testName, func(t *testing.T) {
-			deduper := newDeduper()
+			deduper := NewDeduper(make(map[string]uint64)).(*deduperImpl)
 			for _, testEvent := range testCase.testEvents {
-				assert.Equal(t, testEvent.result, deduper.shouldProcess(testEvent.event))
+				assert.Equal(t, testEvent.result, deduper.ShouldProcess(testEvent.event))
 			}
-			assert.Len(t, deduper.lastReceived, 0)
+			assert.Len(t, deduper.successfullyProcessed, 0)
+			assert.Len(t, deduper.received, 0)
 		})
 	}
+}
+
+func TestReconciliation(t *testing.T) {
+	deduper := NewDeduper(make(map[string]uint64)).(*deduperImpl)
+
+	d1 := getDeploymentEvent(central.ResourceAction_SYNC_RESOURCE, "1", "1", 0)
+	d2 := getDeploymentEvent(central.ResourceAction_SYNC_RESOURCE, "2", "2", 0)
+	d3 := getDeploymentEvent(central.ResourceAction_UPDATE_RESOURCE, "3", "3", 0)
+	d4 := getDeploymentEvent(central.ResourceAction_SYNC_RESOURCE, "4", "4", 0)
+	d5 := getDeploymentEvent(central.ResourceAction_SYNC_RESOURCE, "5", "5", 0)
+
+	d1Alert := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id: d1.GetEvent().GetId(),
+				Resource: &central.SensorEvent_AlertResults{
+					AlertResults: &central.AlertResults{
+						DeploymentId: d1.GetEvent().GetId(),
+						Stage:        storage.LifecycleStage_DEPLOY,
+					},
+				},
+				Action: central.ResourceAction_SYNC_RESOURCE,
+			},
+		},
+	}
+
+	// Basic case
+	deduper.StartSync()
+	deduper.ShouldProcess(d1)
+	deduper.MarkSuccessful(d1)
+	deduper.ShouldProcess(d2)
+	deduper.MarkSuccessful(d2)
+	deduper.ProcessSync()
+	assert.Len(t, deduper.successfullyProcessed, 2)
+	assert.Contains(t, deduper.successfullyProcessed, getKey(d1))
+	assert.Contains(t, deduper.successfullyProcessed, getKey(d2))
+
+	// Values in successfully processed that should be removed
+	deduper.ShouldProcess(d3)
+	deduper.MarkSuccessful(d3)
+
+	deduper.StartSync()
+	deduper.ShouldProcess(d4)
+	deduper.ShouldProcess(d5)
+	deduper.MarkSuccessful(d4)
+	deduper.MarkSuccessful(d5)
+	deduper.ProcessSync()
+	assert.Len(t, deduper.successfullyProcessed, 2)
+	assert.Contains(t, deduper.successfullyProcessed, getKey(d4))
+	assert.Contains(t, deduper.successfullyProcessed, getKey(d5))
+
+	// Should clear out successfully processed
+	deduper.StartSync()
+	deduper.ProcessSync()
+	assert.Len(t, deduper.successfullyProcessed, 0)
+
+	// Add d1 to successfully processed map, call start sync again, and only put d1 in the received map
+	// and not in successfully processed. Ensure it is not reconciled away
+	deduper.StartSync()
+	deduper.ShouldProcess(d1)
+	deduper.MarkSuccessful(d1)
+	deduper.StartSync()
+	deduper.ShouldProcess(d1)
+	deduper.ProcessSync()
+	assert.Len(t, deduper.successfullyProcessed, 1)
+	assert.Contains(t, deduper.successfullyProcessed, getKey(d1))
+
+	deduper.StartSync()
+	deduper.ProcessSync()
+	assert.Len(t, deduper.successfullyProcessed, 0)
+
+	// Ensure alert is removed when reconcile occurs
+	deduper.StartSync()
+	deduper.ShouldProcess(d1)
+	deduper.MarkSuccessful(d1)
+	deduper.ShouldProcess(d1Alert)
+	deduper.MarkSuccessful(d1Alert)
+	assert.Len(t, deduper.successfullyProcessed, 2)
+	deduper.StartSync()
+	deduper.ProcessSync()
+	assert.Len(t, deduper.successfullyProcessed, 0)
 }
