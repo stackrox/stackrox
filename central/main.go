@@ -48,6 +48,7 @@ import (
 	"github.com/stackrox/rox/central/cve/suppress"
 	debugService "github.com/stackrox/rox/central/debug/service"
 	"github.com/stackrox/rox/central/declarativeconfig"
+	delegatedRegistryConfigDataStore "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	delegatedRegistryConfigService "github.com/stackrox/rox/central/delegatedregistryconfig/service"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
@@ -417,6 +418,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		policyDataStore.Singleton(),
 		processBaselineDataStore.Singleton(),
 		networkBaselineDataStore.Singleton(),
+		delegatedRegistryConfigDataStore.Singleton(),
 		notifierProcessor.Singleton(),
 		autoTriggerUpgrades,
 	); err != nil {

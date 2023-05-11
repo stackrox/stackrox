@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,12 +20,21 @@ var (
 	apiEnabledForSpecific = v1.DelegatedRegistryConfig_SPECIFIC
 	apiEnabledForInvalid  = v1.DelegatedRegistryConfig_EnabledFor(99)
 
+	innerAPIEnabledForNone     = central.DelegatedRegistryConfig_NONE
+	innerAPIEnabledForAll      = central.DelegatedRegistryConfig_ALL
+	innerAPIEnabledForSpecific = central.DelegatedRegistryConfig_SPECIFIC
+
 	multiStorageRegs = []*storage.DelegatedRegistryConfig_DelegatedRegistry{
 		{ClusterId: "id1", RegistryPath: "reg.example.com/dev"},
 		{ClusterId: "id2", RegistryPath: "reg.example.com/prod"},
 	}
 
 	multiAPIRegs = []*v1.DelegatedRegistryConfig_DelegatedRegistry{
+		{ClusterId: "id1", RegistryPath: "reg.example.com/dev"},
+		{ClusterId: "id2", RegistryPath: "reg.example.com/prod"},
+	}
+
+	multiInnerAPIRegs = []*central.DelegatedRegistryConfig_DelegatedRegistry{
 		{ClusterId: "id1", RegistryPath: "reg.example.com/dev"},
 		{ClusterId: "id2", RegistryPath: "reg.example.com/prod"},
 	}
@@ -39,6 +49,14 @@ func genStorage(enabledFor storage.DelegatedRegistryConfig_EnabledFor, defID str
 }
 func genAPI(enabledFor v1.DelegatedRegistryConfig_EnabledFor, defID string, regs []*v1.DelegatedRegistryConfig_DelegatedRegistry) *v1.DelegatedRegistryConfig {
 	return &v1.DelegatedRegistryConfig{
+		EnabledFor:       enabledFor,
+		DefaultClusterId: defID,
+		Registries:       regs,
+	}
+}
+
+func genInnerAPI(enabledFor central.DelegatedRegistryConfig_EnabledFor, defID string, regs []*central.DelegatedRegistryConfig_DelegatedRegistry) *central.DelegatedRegistryConfig {
+	return &central.DelegatedRegistryConfig{
 		EnabledFor:       enabledFor,
 		DefaultClusterId: defID,
 		Registries:       regs,
@@ -84,6 +102,54 @@ func TestAPIToStorage(t *testing.T) {
 	for name, test := range tt {
 		tf := func(t *testing.T) {
 			got := APIToStorage(test.in)
+			assert.Equal(t, test.want.GetEnabledFor(), got.GetEnabledFor())
+			assert.Equal(t, test.want.GetDefaultClusterId(), got.GetDefaultClusterId())
+			assert.Equal(t, test.want.GetRegistries(), got.GetRegistries())
+		}
+
+		t.Run(name, tf)
+	}
+}
+
+func TestAPIToInnerAPI(t *testing.T) {
+	tt := map[string]struct {
+		in   *v1.DelegatedRegistryConfig
+		want *central.DelegatedRegistryConfig
+	}{
+		"full":            {genAPI(apiEnabledForNone, "fake", multiAPIRegs), genInnerAPI(innerAPIEnabledForNone, "fake", multiInnerAPIRegs)},
+		"all":             {genAPI(apiEnabledForAll, "fake", nil), genInnerAPI(innerAPIEnabledForAll, "fake", nil)},
+		"specific":        {genAPI(apiEnabledForSpecific, "fake", nil), genInnerAPI(innerAPIEnabledForSpecific, "fake", nil)},
+		"invalid to none": {genAPI(apiEnabledForInvalid, "fake", nil), genInnerAPI(innerAPIEnabledForNone, "fake", nil)},
+		"nil":             {nil, nil},
+	}
+
+	for name, test := range tt {
+		tf := func(t *testing.T) {
+			got := APIToInternalAPI(test.in)
+			assert.Equal(t, test.want.GetEnabledFor(), got.GetEnabledFor())
+			assert.Equal(t, test.want.GetDefaultClusterId(), got.GetDefaultClusterId())
+			assert.Equal(t, test.want.GetRegistries(), got.GetRegistries())
+		}
+
+		t.Run(name, tf)
+	}
+}
+
+func TestStorageToInnerAPIJj(t *testing.T) {
+	tt := map[string]struct {
+		in   *storage.DelegatedRegistryConfig
+		want *central.DelegatedRegistryConfig
+	}{
+		"full":            {genStorage(storageEnabledForNone, "fake", multiStorageRegs), genInnerAPI(innerAPIEnabledForNone, "fake", multiInnerAPIRegs)},
+		"all":             {genStorage(storageEnabledForAll, "fake", nil), genInnerAPI(innerAPIEnabledForAll, "fake", nil)},
+		"specific":        {genStorage(storageEnabledForSpecific, "fake", nil), genInnerAPI(innerAPIEnabledForSpecific, "fake", nil)},
+		"invalid to none": {genStorage(storageEnabledForInvalid, "fake", nil), genInnerAPI(innerAPIEnabledForNone, "fake", nil)},
+		"nil":             {nil, nil},
+	}
+
+	for name, test := range tt {
+		tf := func(t *testing.T) {
+			got := StorageToInternalAPI(test.in)
 			assert.Equal(t, test.want.GetEnabledFor(), got.GetEnabledFor())
 			assert.Equal(t, test.want.GetDefaultClusterId(), got.GetDefaultClusterId())
 			assert.Equal(t, test.want.GetRegistries(), got.GetRegistries())

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	delegatedRegistryConfigConvert "github.com/stackrox/rox/central/delegatedregistryconfig/convert"
 	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/localscanner"
 	"github.com/stackrox/rox/central/metrics"
@@ -55,12 +56,13 @@ type sensorConnection struct {
 
 	eventPipeline pipeline.ClusterPipeline
 
-	clusterMgr         common.ClusterManager
-	networkEntityMgr   common.NetworkEntityManager
-	policyMgr          common.PolicyManager
-	baselineMgr        common.ProcessBaselineManager
-	networkBaselineMgr common.NetworkBaselineManager
-	notifierProcessor  notifierProcessor.Processor
+	clusterMgr                 common.ClusterManager
+	networkEntityMgr           common.NetworkEntityManager
+	policyMgr                  common.PolicyManager
+	baselineMgr                common.ProcessBaselineManager
+	networkBaselineMgr         common.NetworkBaselineManager
+	delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager
+	notifierProcessor          notifierProcessor.Processor
 
 	sensorHello  *central.SensorHello
 	capabilities set.Set[centralsensor.SensorCapability]
@@ -75,6 +77,7 @@ func newConnection(ctx context.Context,
 	policyMgr common.PolicyManager,
 	baselineMgr common.ProcessBaselineManager,
 	networkBaselineMgr common.NetworkBaselineManager,
+	delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager,
 	notifierProcessor notifierProcessor.Processor,
 	hashMgr hashManager.Manager,
 ) *sensorConnection {
@@ -86,13 +89,14 @@ func newConnection(ctx context.Context,
 		eventPipeline: eventPipeline,
 		queues:        make(map[string]*dedupingQueue),
 
-		clusterID:          cluster.GetId(),
-		clusterMgr:         clusterMgr,
-		policyMgr:          policyMgr,
-		networkEntityMgr:   networkEntityMgr,
-		baselineMgr:        baselineMgr,
-		networkBaselineMgr: networkBaselineMgr,
-		notifierProcessor:  notifierProcessor,
+		clusterID:                  cluster.GetId(),
+		clusterMgr:                 clusterMgr,
+		policyMgr:                  policyMgr,
+		networkEntityMgr:           networkEntityMgr,
+		baselineMgr:                baselineMgr,
+		networkBaselineMgr:         networkBaselineMgr,
+		delegatedRegistryConfigMgr: delegatedRegistryConfigMgr,
+		notifierProcessor:          notifierProcessor,
 
 		sensorHello:  sensorHello,
 		capabilities: centralsensor.CapSetFromStringSlice(sensorHello.GetCapabilities()...),
@@ -476,6 +480,26 @@ func (c *sensorConnection) getAuditLogSyncMsg(ctx context.Context) (*central.Msg
 	}, nil
 }
 
+func (c *sensorConnection) getDelegatedRegistryConfigMsg(ctx context.Context) (*central.MsgToSensor, error) {
+	config, err := c.delegatedRegistryConfigMgr.GetConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		// Sensor's ProcessMessage handler will ignore a nil config, so send nothing
+		log.Debugf("Not sending nil delegated registry config to cluster %q", c.clusterID)
+		return nil, nil
+	}
+
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_UpdatedDelegatedRegistryConfig{
+			UpdatedDelegatedRegistryConfig: delegatedRegistryConfigConvert.StorageToInternalAPI(config),
+		},
+	}, nil
+
+}
+
 func (c *sensorConnection) Run(ctx context.Context, server central.SensorService_CommunicateServer, connectionCapabilities set.Set[centralsensor.SensorCapability]) error {
 	// Synchronously send the config to ensure syncing before Sensor marks the connection as Central reachable
 	msg, err := c.getClusterConfigMsg(ctx)
@@ -520,6 +544,20 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		}
 		if err := server.Send(msg); err != nil {
 			return errors.Wrapf(err, "unable to sync initial notifiers to cluster %q", c.clusterID)
+		}
+	}
+
+	if connectionCapabilities.Contains(centralsensor.DelegatedScanningCap) {
+		msg, err := c.getDelegatedRegistryConfigMsg(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "unable to get delegated registry config msg for %q", c.clusterID)
+		}
+		if msg != nil {
+			if err := server.Send(msg); err != nil {
+				return errors.Wrapf(err, "unable to sync initial delegated registry config to cluster %q", c.clusterID)
+			}
+
+			log.Debugf("Sent delegated registry config %q to cluster %q", msg.GetUpdatedDelegatedRegistryConfig(), c.clusterID)
 		}
 	}
 

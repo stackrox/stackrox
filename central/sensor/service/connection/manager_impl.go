@@ -58,14 +58,15 @@ type manager struct {
 	connectionsByClusterID      map[string]connectionAndUpgradeController
 	connectionsByClusterIDMutex sync.RWMutex
 
-	clusters            common.ClusterManager
-	networkEntities     common.NetworkEntityManager
-	policies            common.PolicyManager
-	baselines           common.ProcessBaselineManager
-	networkBaselines    common.NetworkBaselineManager
-	notifierProcessor   notifierProcessor.Processor
-	manager             hashManager.Manager
-	autoTriggerUpgrades *concurrency.Flag
+	clusters                   common.ClusterManager
+	networkEntities            common.NetworkEntityManager
+	policies                   common.PolicyManager
+	baselines                  common.ProcessBaselineManager
+	networkBaselines           common.NetworkBaselineManager
+	delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager
+	notifierProcessor          notifierProcessor.Processor
+	manager                    hashManager.Manager
+	autoTriggerUpgrades        *concurrency.Flag
 }
 
 // NewManager returns a new connection manager
@@ -101,6 +102,7 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 	policyManager common.PolicyManager,
 	baselineManager common.ProcessBaselineManager,
 	networkBaselineManager common.NetworkBaselineManager,
+	delegatedRegistryConfigManager common.DelegatedRegistryConfigManager,
 	notifierProcessor notifierProcessor.Processor,
 	autoTriggerUpgrades *concurrency.Flag,
 ) error {
@@ -109,6 +111,7 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 	m.policies = policyManager
 	m.baselines = baselineManager
 	m.networkBaselines = networkBaselineManager
+	m.delegatedRegistryConfigMgr = delegatedRegistryConfigManager
 	m.notifierProcessor = notifierProcessor
 	m.autoTriggerUpgrades = autoTriggerUpgrades
 	err := m.initializeUpgradeControllers()
@@ -255,6 +258,7 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 			m.policies,
 			m.baselines,
 			m.networkBaselines,
+			m.delegatedRegistryConfigMgr,
 			m.notifierProcessor,
 			m.manager)
 	ctx = withConnection(ctx, conn)
@@ -430,6 +434,8 @@ func (m *manager) BroadcastMessage(msg *central.MsgToSensor) {
 		if err := connAndUpgradeCtrl.connection.InjectMessage(concurrency.Never(), msg); err != nil {
 			log.Errorf("error broadcasting message to cluster %q", clusterID)
 		}
+
+		log.Debugf("DAVE: broadcast successful to: %q", clusterID)
 	}
 }
 

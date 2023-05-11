@@ -22,6 +22,7 @@ type Manager interface {
 		policyMgr common.PolicyManager,
 		baselineMgr common.ProcessBaselineManager,
 		networkBaselineMgr common.NetworkBaselineManager,
+		delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager,
 		notifierProcessor notifierProcessor.Processor,
 		autoTriggerUpgrades *concurrency.Flag) error
 

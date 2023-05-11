@@ -220,6 +220,44 @@ func (mr *MockNetworkBaselineManagerMockRecorder) Walk(ctx, fn interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockNetworkBaselineManager)(nil).Walk), ctx, fn)
 }
 
+// MockDelegatedRegistryConfigManager is a mock of DelegatedRegistryConfigManager interface.
+type MockDelegatedRegistryConfigManager struct {
+	ctrl     *gomock.Controller
+	recorder *MockDelegatedRegistryConfigManagerMockRecorder
+}
+
+// MockDelegatedRegistryConfigManagerMockRecorder is the mock recorder for MockDelegatedRegistryConfigManager.
+type MockDelegatedRegistryConfigManagerMockRecorder struct {
+	mock *MockDelegatedRegistryConfigManager
+}
+
+// NewMockDelegatedRegistryConfigManager creates a new mock instance.
+func NewMockDelegatedRegistryConfigManager(ctrl *gomock.Controller) *MockDelegatedRegistryConfigManager {
+	mock := &MockDelegatedRegistryConfigManager{ctrl: ctrl}
+	mock.recorder = &MockDelegatedRegistryConfigManagerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockDelegatedRegistryConfigManager) EXPECT() *MockDelegatedRegistryConfigManagerMockRecorder {
+	return m.recorder
+}
+
+// GetConfig mocks base method.
+func (m *MockDelegatedRegistryConfigManager) GetConfig(ctx context.Context) (*storage.DelegatedRegistryConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConfig", ctx)
+	ret0, _ := ret[0].(*storage.DelegatedRegistryConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetConfig indicates an expected call of GetConfig.
+func (mr *MockDelegatedRegistryConfigManagerMockRecorder) GetConfig(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockDelegatedRegistryConfigManager)(nil).GetConfig), ctx)
+}
+
 // MockNetworkEntityManager is a mock of NetworkEntityManager interface.
 type MockNetworkEntityManager struct {
 	ctrl     *gomock.Controller

@@ -2,8 +2,10 @@ package registry
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -35,6 +37,11 @@ type Store struct {
 	mutex sync.RWMutex
 
 	checkTLS CheckTLS
+
+	// delegatedRegistryConfig is used to determine if scanning images from a registry
+	// should be done via local scanner or sent to central
+	delegatedRegistryConfig      *central.DelegatedRegistryConfig
+	delegatedRegistryConfigMutex sync.RWMutex
 }
 
 // CheckTLS defines a function which checks if the given address is using TLS.
@@ -200,4 +207,44 @@ func (rs *Store) GetGlobalRegistryForImage(image *storage.ImageName) (registryTy
 	}
 
 	return nil, errors.Errorf("unknown image registry: %q", reg)
+}
+
+// SetDelegatedRegistryConfig sets a new delegated registry config for use in determining
+// if a particular image is from a registry that should be accessed local to this cluster
+func (rs *Store) SetDelegatedRegistryConfig(config *central.DelegatedRegistryConfig) {
+	rs.delegatedRegistryConfigMutex.Lock()
+	defer rs.delegatedRegistryConfigMutex.Unlock()
+	rs.delegatedRegistryConfig = config
+}
+
+// IsLocal determines if an image is from a registry that should be accessed
+// local to this secured cluster
+func (rs *Store) IsLocal(image *storage.ImageName) bool {
+	if rs.HasRegistryForImage(image) {
+		// image is cluster local (ie: from OCP internal registry)
+		return true
+	}
+
+	rs.delegatedRegistryConfigMutex.RLock()
+	defer rs.delegatedRegistryConfigMutex.RUnlock()
+
+	config := rs.delegatedRegistryConfig
+	if config == nil || config.EnabledFor == central.DelegatedRegistryConfig_NONE {
+		return false
+	}
+
+	if config.EnabledFor == central.DelegatedRegistryConfig_ALL {
+		return true
+	}
+
+	// if image matches a delegated registry prefix, it is local
+	imageFullName := urlfmt.TrimHTTPPrefixes(image.FullName)
+	for _, r := range config.Registries {
+		regPath := urlfmt.TrimHTTPPrefixes(r.RegistryPath)
+		if strings.HasPrefix(imageFullName, regPath) {
+			return true
+		}
+	}
+
+	return false
 }

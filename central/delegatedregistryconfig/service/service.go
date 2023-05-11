@@ -5,12 +5,15 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/stackrox/rox/central/sensor/service/connection"
+
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	cluster "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/convert"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
@@ -19,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -26,6 +30,8 @@ import (
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		or.SensorOrAuthorizer(user.With(permissions.View(resources.Administration))): {
 			"/v1.DelegatedRegistryConfigService/GetConfig",
@@ -49,10 +55,11 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(dataStore datastore.DataStore, clusterDataStore cluster.DataStore) Service {
+func New(dataStore datastore.DataStore, clusterDataStore cluster.DataStore, connManager connection.Manager) Service {
 	return &serviceImpl{
 		dataStore:        dataStore,
 		clusterDataStore: clusterDataStore,
+		connManager:      connManager,
 	}
 }
 
@@ -61,6 +68,7 @@ type serviceImpl struct {
 
 	dataStore        datastore.DataStore
 	clusterDataStore cluster.DataStore
+	connManager      connection.Manager
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -118,6 +126,14 @@ func (s *serviceImpl) PutConfig(ctx context.Context, config *v1.DelegatedRegistr
 	if err := s.dataStore.UpsertConfig(ctx, convert.APIToStorage(config)); err != nil {
 		return nil, fmt.Errorf("upserting config %w", err)
 	}
+
+	// TODO: change to send only to eligible clusters
+	log.Debugf("Broadcasting delegated registry config to all sensors: %+v", config)
+	s.connManager.BroadcastMessage(&central.MsgToSensor{
+		Msg: &central.MsgToSensor_UpdatedDelegatedRegistryConfig{
+			UpdatedDelegatedRegistryConfig: convert.APIToInternalAPI(config),
+		},
+	})
 
 	return config, nil
 }

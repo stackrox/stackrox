@@ -30,6 +30,10 @@ type NetworkBaselineManager interface {
 	Walk(ctx context.Context, fn func(baseline *storage.NetworkBaseline) error) error
 }
 
+type DelegatedRegistryConfigManager interface {
+	GetConfig(ctx context.Context) (*storage.DelegatedRegistryConfig, error)
+}
+
 // NetworkEntityManager implements an interface to retrieve network entities.
 //
 //go:generate mockgen-wrapper

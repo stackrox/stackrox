@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	deleDSMocks "github.com/stackrox/rox/central/delegatedregistryconfig/datastore/mocks"
+	connMgrMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,7 @@ func TestGetConfigSuccess(t *testing.T) {
 	var cfg *v1.DelegatedRegistryConfig
 
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
-	s := New(deleClusterDS, nil)
+	s := New(deleClusterDS, nil, nil)
 
 	deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(nil, nil)
 	cfg, err = s.GetConfig(context.Background(), empty)
@@ -52,7 +53,7 @@ func TestGetConfigError(t *testing.T) {
 	var err error
 
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
-	s := New(deleClusterDS, nil)
+	s := New(deleClusterDS, nil, nil)
 
 	deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(nil, errBroken)
 	_, err = s.GetConfig(context.Background(), empty)
@@ -65,24 +66,23 @@ func TestGetClustersSuccess(t *testing.T) {
 
 	clustersDS := clusterDSMocks.NewMockDataStore(gomock.NewController(t))
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
-	s := New(deleClusterDS, clustersDS)
+	s := New(deleClusterDS, clustersDS, nil)
 
 	genClusters := func(healthStatus *storage.ClusterHealthStatus) []*storage.Cluster {
 		return []*storage.Cluster{{Id: "id", Name: "fake", HealthStatus: healthStatus}}
 	}
 
-	tt := []struct {
-		name     string
+	tt := map[string]struct {
 		clusters []*storage.Cluster
 		valid    bool
 	}{
-		{"missing health", genClusters(nil), false},
-		{"empty health", genClusters(clusterHealthStatusEmpty), false},
-		{"degraded", genClusters(clusterHealthStatusScannerDegraded), false},
-		{"healthy", genClusters(clusterHealthStatusScannerHealthy), true}, // only healthy scanners are valid
+		"missing health": {genClusters(nil), false},
+		"empty health":   {genClusters(clusterHealthStatusEmpty), false},
+		"degraded":       {genClusters(clusterHealthStatusScannerDegraded), false},
+		"healthy":        {genClusters(clusterHealthStatusScannerHealthy), true}, // only healthy scanners are valid
 	}
 
-	for _, test := range tt {
+	for name, test := range tt {
 		tf := func(t *testing.T) {
 			clustersDS.EXPECT().GetClusters(gomock.Any()).Return(test.clusters, nil)
 			resp, err = s.GetClusters(context.Background(), empty)
@@ -91,7 +91,7 @@ func TestGetClustersSuccess(t *testing.T) {
 			assert.Equal(t, resp.Clusters[0].IsValid, test.valid)
 		}
 
-		t.Run(test.name, tf)
+		t.Run(name, tf)
 	}
 
 	t.Run("multi cluster", func(t *testing.T) {
@@ -116,20 +116,19 @@ func TestGetClustersError(t *testing.T) {
 	clustersDS := clusterDSMocks.NewMockDataStore(gomock.NewController(t))
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
 
-	s := New(deleClusterDS, clustersDS)
+	s := New(deleClusterDS, clustersDS, nil)
 
-	tt := []struct {
-		name           string
+	tt := map[string]struct {
 		clusters       []*storage.Cluster
 		err            error
 		expectedErrMsg string
 	}{
-		{"cluster ds error", nil, errBroken, "retrieving clusters"},
-		{"nil cluster ds response ", nil, nil, "no valid clusters"},
-		{"empty cluster ds response ", []*storage.Cluster{}, nil, "no valid clusters"},
+		"cluster ds error":           {nil, errBroken, "retrieving clusters"},
+		"nil cluster ds response ":   {nil, nil, "no valid clusters"},
+		"empty cluster ds response ": {[]*storage.Cluster{}, nil, "no valid clusters"},
 	}
 
-	for _, test := range tt {
+	for name, test := range tt {
 		tf := func(t *testing.T) {
 			clustersDS.EXPECT().GetClusters(gomock.Any()).Return(test.clusters, test.err)
 			resp, err = s.GetClusters(context.Background(), empty)
@@ -137,7 +136,7 @@ func TestGetClustersError(t *testing.T) {
 			assert.ErrorContains(t, err, test.expectedErrMsg)
 		}
 
-		t.Run(test.name, tf)
+		t.Run(name, tf)
 	}
 }
 
@@ -162,29 +161,28 @@ func TestPutConfigError(t *testing.T) {
 		{Id: "id2", HealthStatus: clusterHealthStatusScannerDegraded},
 	}
 
-	tt := []struct {
-		name           string
+	tt := map[string]struct {
 		cfg            *v1.DelegatedRegistryConfig
 		deleDSErr      error
 		clusterDSErr   error
 		expectedErrMsg string
 		clusters       []*storage.Cluster
 	}{
-		{"nil config", nil, nil, nil, "config missing", nil},
-		{"upsert failed", genCfg(none, "", nil), errBroken, nil, "upserting config", nil},
-		{"enabled for all missing default id", genCfg(all, "", nil), nil, nil, "default cluster id required", nil},
-		{"enabled for specific missing default id", genCfg(specific, "", nil), nil, nil, "default cluster id required", nil},
-		{"cluster ds error", genCfg(specific, "fake", nil), nil, errBroken, "broken", nil},
-		{"multi cluster invalid default id", genCfg(specific, "fake", nil), nil, nil, "is not valid", multiClusters},
-		{"multi cluster invalid registry id and path", genCfg(specific, "fake", []string{"fake"}), nil, nil, "is not valid", multiClusters},
-		{"multi cluster invalid registry id and path", genCfg(specific, "fake", []string{"fake"}), nil, nil, "missing registry path", multiClusters},
-		{"multi cluster invalid registry path", genCfg(specific, "fake", []string{"id1"}), nil, nil, "missing registry path", multiClusters},
+		"nil config":                                            {nil, nil, nil, "config missing", nil},
+		"upsert failed":                                         {genCfg(none, "", nil), errBroken, nil, "upserting config", nil},
+		"enabled for all missing default id":                    {genCfg(all, "", nil), nil, nil, "default cluster id required", nil},
+		"enabled for specific missing default id":               {genCfg(specific, "", nil), nil, nil, "default cluster id required", nil},
+		"cluster ds error":                                      {genCfg(specific, "fake", nil), nil, errBroken, "broken", nil},
+		"multi cluster invalid default id":                      {genCfg(specific, "fake", nil), nil, nil, "is not valid", multiClusters},
+		"multi cluster invalid registry id and path (id msg)":   {genCfg(specific, "fake", []string{"fake"}), nil, nil, "is not valid", multiClusters},
+		"multi cluster invalid registry id and path (path msg)": {genCfg(specific, "fake", []string{"fake"}), nil, nil, "missing registry path", multiClusters},
+		"multi cluster invalid registry path":                   {genCfg(specific, "fake", []string{"id1"}), nil, nil, "missing registry path", multiClusters},
 	}
 
 	clustersDS := clusterDSMocks.NewMockDataStore(gomock.NewController(t))
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
-	s := New(deleClusterDS, clustersDS)
-	for _, test := range tt {
+	s := New(deleClusterDS, clustersDS, nil)
+	for name, test := range tt {
 		tf := func(t *testing.T) {
 			if test.deleDSErr != nil {
 				deleClusterDS.EXPECT().UpsertConfig(gomock.Any(), gomock.Any()).Return(test.deleDSErr)
@@ -198,7 +196,7 @@ func TestPutConfigError(t *testing.T) {
 			assert.ErrorContains(t, err, test.expectedErrMsg)
 		}
 
-		t.Run(test.name, tf)
+		t.Run(name, tf)
 	}
 }
 
@@ -208,7 +206,10 @@ func TestPutConfigSuccess(t *testing.T) {
 
 	clustersDS := clusterDSMocks.NewMockDataStore(gomock.NewController(t))
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
-	s := New(deleClusterDS, clustersDS)
+	connMgr := connMgrMocks.NewMockManager(gomock.NewController(t))
+	connMgr.EXPECT().BroadcastMessage(gomock.Any()).AnyTimes()
+
+	s := New(deleClusterDS, clustersDS, connMgr)
 	cluster1 := &storage.Cluster{Id: "id1", HealthStatus: clusterHealthStatusScannerHealthy}
 	cluster2 := &storage.Cluster{Id: "id2", HealthStatus: clusterHealthStatusScannerDegraded}
 	clustersDS.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{cluster1, cluster2}, nil).AnyTimes()

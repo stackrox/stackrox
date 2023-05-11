@@ -204,17 +204,17 @@ func (mr *MockManagerMockRecorder) SendMessage(clusterID, msg interface{}) *gomo
 }
 
 // Start mocks base method.
-func (m *MockManager) Start(mgr common.ClusterManager, netEntitiesMgr common.NetworkEntityManager, policyMgr common.PolicyManager, baselineMgr common.ProcessBaselineManager, networkBaselineMgr common.NetworkBaselineManager, notifierProcessor processor.Processor, autoTriggerUpgrades *concurrency.Flag) error {
+func (m *MockManager) Start(mgr common.ClusterManager, netEntitiesMgr common.NetworkEntityManager, policyMgr common.PolicyManager, baselineMgr common.ProcessBaselineManager, networkBaselineMgr common.NetworkBaselineManager, delegatedRegistryconfigMgr common.DelegatedRegistryConfigManager, notifierProcessor processor.Processor, autoTriggerUpgrades *concurrency.Flag) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Start", mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, notifierProcessor, autoTriggerUpgrades)
+	ret := m.ctrl.Call(m, "Start", mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryconfigMgr, notifierProcessor, autoTriggerUpgrades)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Start indicates an expected call of Start.
-func (mr *MockManagerMockRecorder) Start(mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, notifierProcessor, autoTriggerUpgrades interface{}) *gomock.Call {
+func (mr *MockManagerMockRecorder) Start(mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryconfigMgr, notifierProcessor, autoTriggerUpgrades interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockManager)(nil).Start), mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, notifierProcessor, autoTriggerUpgrades)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockManager)(nil).Start), mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryconfigMgr, notifierProcessor, autoTriggerUpgrades)
 }
 
 // TriggerCertRotation mocks base method.

@@ -4,6 +4,7 @@ option go_package = "central";
 
 import "internalapi/central/cluster_config.proto";
 import "internalapi/central/cluster_status.proto";
+import "internalapi/central/delegated_registry_config.proto";
 import "internalapi/central/network_flow.proto";
 import "internalapi/central/policy_sync.proto";
 import "internalapi/central/sensor_events.proto";
@@ -70,6 +71,7 @@ message MsgToSensor {
         NotifierSync                    notifier_sync                      = 20;
         TestNotifierRequest             test_notifier_request              = 21;
         SendNetworkPolicyYamlRequest    send_network_policy_yaml           = 22;
+        DelegatedRegistryConfig         updated_delegated_registry_config  = 23;
     }
 }
 

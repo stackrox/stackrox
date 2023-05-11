@@ -2,10 +2,12 @@
 // DelegatedRegistryConfig types.
 //   - "Storage"     (storage.DelegatedRegistryConfig) - for persistance
 //   - "API"         (v1.DelegatedRegistryConfig)      - for exposed REST/GRPC API
+//   - "InternalAPI" (central.DelegatedRegistryConfig) - for central/sensor inner API
 package convert
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -64,6 +66,66 @@ func APIToStorage(from *v1.DelegatedRegistryConfig) *storage.DelegatedRegistryCo
 
 	return &storage.DelegatedRegistryConfig{
 		EnabledFor:       storage.DelegatedRegistryConfig_EnabledFor(enabledFor),
+		DefaultClusterId: from.DefaultClusterId,
+		Registries:       regs,
+	}
+}
+
+// APIToInnerAPI converts a delegated registry config from the type used by the GRPC/REST API
+// to the type used by central/sensor inner apis
+func APIToInternalAPI(from *v1.DelegatedRegistryConfig) *central.DelegatedRegistryConfig {
+	if from == nil {
+		return nil
+	}
+
+	var regs []*central.DelegatedRegistryConfig_DelegatedRegistry
+
+	if len(from.Registries) > 0 {
+		regs = make([]*central.DelegatedRegistryConfig_DelegatedRegistry, len(from.Registries))
+
+		for i, reg := range from.Registries {
+			regs[i] = &central.DelegatedRegistryConfig_DelegatedRegistry{
+				ClusterId:    reg.ClusterId,
+				RegistryPath: reg.RegistryPath,
+			}
+		}
+	}
+
+	// defaults to 0 (NONE) if not found in map
+	enabledFor := storage.DelegatedRegistryConfig_EnabledFor_value[from.EnabledFor.String()]
+
+	return &central.DelegatedRegistryConfig{
+		EnabledFor:       central.DelegatedRegistryConfig_EnabledFor(enabledFor),
+		DefaultClusterId: from.DefaultClusterId,
+		Registries:       regs,
+	}
+}
+
+// StorageToInnerAPI converts a delegated registry config from the type used by the storage (db) to
+// the type used by central/sensor inner apis
+func StorageToInternalAPI(from *storage.DelegatedRegistryConfig) *central.DelegatedRegistryConfig {
+	if from == nil {
+		return nil
+	}
+
+	var regs []*central.DelegatedRegistryConfig_DelegatedRegistry
+
+	if len(from.Registries) > 0 {
+		regs = make([]*central.DelegatedRegistryConfig_DelegatedRegistry, len(from.Registries))
+
+		for i, reg := range from.Registries {
+			regs[i] = &central.DelegatedRegistryConfig_DelegatedRegistry{
+				ClusterId:    reg.ClusterId,
+				RegistryPath: reg.RegistryPath,
+			}
+		}
+	}
+
+	// defaults to 0 (NONE) if not found in map
+	enabledFor := v1.DelegatedRegistryConfig_EnabledFor_value[from.EnabledFor.String()]
+
+	return &central.DelegatedRegistryConfig{
+		EnabledFor:       central.DelegatedRegistryConfig_EnabledFor(enabledFor),
 		DefaultClusterId: from.DefaultClusterId,
 		Registries:       regs,
 	}
