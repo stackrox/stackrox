@@ -124,7 +124,7 @@ class AutomationFlavorsCluster:
 class OpenShiftScaleWorkersCluster:
     SCALE_CHANGE_TIMEOUT = 15 * 60
 
-    def __init__(self, increment=1, expected_initial_worker_count=6):
+    def __init__(self, increment=1, expected_initial_worker_count=3):
         self.increment = increment
         self.expected_initial_worker_count = expected_initial_worker_count
 
