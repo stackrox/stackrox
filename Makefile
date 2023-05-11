@@ -89,8 +89,10 @@ endif
 
 ifeq ($(UNAME_S),Linux)
 PLATFORM := linux/$(TARGET_ARCH)
+endif
 ifeq ($(UNAME_S),Darwin)
 PLATFORM := darwin/$(TARGET_ARCH)
+endif
 
 ifeq ($(BIND_GOCACHE),1)
 GOCACHE_VOLUME_SRC := $(CURDIR)/linux-gocache
@@ -581,7 +583,7 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image cent
                          $(CURDIR)/image/rhel/bundle.tar.gz
 	docker build \
 		-t stackrox/main:$(TAG) \
-		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
+		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG)) \
 		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
 		--build-arg TARGET_ARCH=$(TARGET_ARCH) \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
@@ -595,7 +597,7 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image cent
 
 .PHONY: docker-build-data-image
 docker-build-data-image:
-	docker build -t stackrox-data:$(TAG) \
+	docker buildx build --load --platform ${PLATFORM} -t stackrox-data:$(TAG) \
 		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
 		image/ \
 		--file image/stackrox-data.Dockerfile

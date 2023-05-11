@@ -92,6 +92,10 @@ cp -pr "${INPUT_ROOT}/ui/build/"*           "${bundle_root}/ui/"
 
 arch="x86_64"
 goarch="amd64"
+if [[ $TARGET_ARCH == "ppc64le" ]]; then
+    arch="ppc64le"
+    goarch="ppc64le"
+fi
 if [[ $(uname -m) == "arm64" ]]; then
   arch="aarch64"
   goarch="arm64"
