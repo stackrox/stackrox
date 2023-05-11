@@ -5,9 +5,12 @@ package schema
 import (
 	"reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -24,7 +27,9 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Blob)(nil)), "blobs")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_BLOB, "blob", (*storage.Blob)(nil)))
 		RegisterTable(schema, CreateTableBlobsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_BLOB, schema)
 		return schema
 	}()
 )
@@ -36,5 +41,6 @@ const (
 // Blobs holds the Gorm model for Postgres table `blobs`.
 type Blobs struct {
 	Name       string `gorm:"column:name;type:varchar;primaryKey"`
+	Length     int64  `gorm:"column:length;type:bigint"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

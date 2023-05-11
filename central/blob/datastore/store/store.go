@@ -19,6 +19,7 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error
 	Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error)
 	Delete(ctx context.Context, name string) error
+	GetNames(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
@@ -186,4 +187,9 @@ func (s *storeImpl) Delete(ctx context.Context, name string) error {
 	}
 
 	return tx.Commit(ctx)
+}
+
+// GetNames all blob names
+func (s *storeImpl) GetNames(ctx context.Context) ([]string, error) {
+	return s.store.GetIDs(ctx)
 }

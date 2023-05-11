@@ -309,6 +309,11 @@ var (
 	CurrentSequenceNumber = newFieldLabel("Current Sequence Number")
 	LastPersistedTime     = newFieldLabel("Last Persisted")
 
+	// Blob store fields
+	BlobName             = newFieldLabel("Blob Name")
+	BlobLength           = newFieldLabel("Blob Length")
+	BlobModificationTime = newFieldLabel("Blob Modified On")
+
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
 	TestKey2              = newFieldLabel("Test Key 2")
