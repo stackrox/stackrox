@@ -1,0 +1,39 @@
+on:
+  push:
+    branches:
+    - 'yli3/**'
+  workflow_dispatch: {}
+  schedule:
+  # Run every 3 hours
+  - cron: '0 */3 * * *'
+
+jobs:
+  test_schedule:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '>=1.20.0'
+
+    - name: Run update script
+      run: |
+        cd scanner
+        go run cmd/updater/update.go
+        ls -l --block-size=M tmp
+        gsutil cp -r tmp gs://scanner-v4-test/
+        echo "${GITHUB_REF_NAME}"
+
+    env:
+      GOMEMLIMIT: 500MiB
