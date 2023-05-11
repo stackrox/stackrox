@@ -190,11 +190,13 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                             />
                         </SplitItem>
                     </Split>
-                    <ImageVulnerabilitiesTable
-                        image={vulnerabilityData.image}
-                        getSortParams={getSortParams}
-                        isFiltered={isFiltered}
-                    />
+                    <div className="workload-cves-table-container">
+                        <ImageVulnerabilitiesTable
+                            image={vulnerabilityData.image}
+                            getSortParams={getSortParams}
+                            isFiltered={isFiltered}
+                        />
+                    </div>
                 </div>
             </>
         );
