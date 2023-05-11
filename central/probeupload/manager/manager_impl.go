@@ -49,7 +49,6 @@ type manager struct {
 
 func newManager(persistenceRoot string) *manager {
 	return &manager{
-		rootDir:           filepath.Join(persistenceRoot, rootDirName),
 		freeDiskThreshold: defaultFreeDiskThreshold,
 	}
 }
