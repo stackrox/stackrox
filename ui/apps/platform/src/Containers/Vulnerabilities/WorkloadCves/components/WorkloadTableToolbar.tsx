@@ -96,7 +96,7 @@ function WorkloadTableToolbar({
                     <CVESeverityDropdown searchFilter={searchFilter} onSelect={onSelect} />
                     <CVEStatusDropdown searchFilter={searchFilter} onSelect={onSelect} />
                 </ToolbarGroup>
-                <ToolbarGroup>
+                <ToolbarGroup className="pf-u-w-100">
                     <FilterChips
                         defaultFilters={defaultFilters}
                         searchFilter={searchFilter}

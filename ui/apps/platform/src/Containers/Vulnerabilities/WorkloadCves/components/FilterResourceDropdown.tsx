@@ -52,7 +52,7 @@ function FilterResourceDropdown({
             onSelect={onResourceSelect}
             selections={resource}
             isOpen={isOpen}
-            className="pf-u-w-25"
+            className="pf-u-flex-none"
         >
             {supportedResourceFilters
                 ? resourceOptions.filter((res) => supportedResourceFilters.has(res.key as Resource))
