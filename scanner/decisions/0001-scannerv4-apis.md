@@ -86,6 +86,8 @@ Using gRPC exclusively increases complexity for load balancing ScannerV4 for hor
 
 The client-managed `hash_id` approach for identifying manifests may lead to duplicated index reports for locators pointing to the same resource. While this simplifies the API to support future resource types (orchestrator, nodes), it may lead to client misuse.
 
+Always re-indexing upon `Indexer/CreateIndex` calls is sub-optimal. There are [interfaces in ClairCore's Indexer`](https://github.com/quay/clair/blob/8174e950186c03bee10a9174643bca0f173710c2/indexer/service.go#L47) that allows check to not trigger re-indexing. This could potentially be leveraged by ScannerV4 to optimize re-indexing, a transparent change for customers.
+
 ## References
 
 1. gRPC Load Balancing on Kubernetes without Tears: https://kubernetes.io/blog/2018/11/07/grpc-load-balancing-on-kubernetes-without-tears/
