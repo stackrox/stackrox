@@ -434,8 +434,6 @@ func (m *manager) BroadcastMessage(msg *central.MsgToSensor) {
 		if err := connAndUpgradeCtrl.connection.InjectMessage(concurrency.Never(), msg); err != nil {
 			log.Errorf("error broadcasting message to cluster %q", clusterID)
 		}
-
-		log.Debugf("DAVE: broadcast successful to: %q", clusterID)
 	}
 }
 
