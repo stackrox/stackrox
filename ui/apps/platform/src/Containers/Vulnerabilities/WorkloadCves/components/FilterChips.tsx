@@ -3,6 +3,7 @@ import { Globe } from 'react-feather';
 import { Flex, FlexItem, ChipGroup, Chip, Button } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
+import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilitySeverityLabel, FixableStatus, DefaultFilters } from '../types';
 
 import './FilterChips.css';
@@ -46,6 +47,8 @@ function FilterChips({
     const clusters = (searchFilter.CLUSTER as string[]) || [];
     const severities = (searchFilter.Severity as VulnerabilitySeverityLabel[]) || [];
     const fixables = (searchFilter.Fixable as FixableStatus[]) || [];
+
+    const hasSearchApplied = getHasSearchApplied(searchFilter);
 
     return (
         <Flex spaceItems={{ default: 'spaceItemsXs' }}>
@@ -162,9 +165,11 @@ function FilterChips({
                     </ChipGroup>
                 </FlexItem>
             )}
-            <Button variant="link" onClick={onDeleteAll}>
-                Clear filters
-            </Button>
+            {hasSearchApplied && (
+                <Button variant="link" onClick={onDeleteAll}>
+                    Clear filters
+                </Button>
+            )}
         </Flex>
     );
 }
