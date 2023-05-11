@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/central/sensor/service/connection"
-
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	cluster "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/convert"

@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 )
 
+// DelegatedRegistryConfigHandler is responsible for processing delegated
+// registry config updates from central
 type DelegatedRegistryConfigHandler interface {
 	common.SensorComponent
 }
@@ -19,6 +21,7 @@ type delegatedRegistryConfigImpl struct {
 	stopSig       concurrency.Signal
 }
 
+// NewDelegatedRegistryConfigHandler returns a new instance of DelegatedRegistryConfigHandler
 func NewDelegatedRegistryConfigHandler(registryStore *Store) DelegatedRegistryConfigHandler {
 	return &delegatedRegistryConfigImpl{
 		registryStore: registryStore,
@@ -35,7 +38,7 @@ func (d *delegatedRegistryConfigImpl) Capabilities() []centralsensor.SensorCapab
 	return []centralsensor.SensorCapability{centralsensor.DelegatedScanningCap}
 }
 
-func (d *delegatedRegistryConfigImpl) Notify(e common.SensorComponentEvent) {}
+func (d *delegatedRegistryConfigImpl) Notify(_ common.SensorComponentEvent) {}
 
 func (d *delegatedRegistryConfigImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	if !env.LocalImageScanningEnabled.BooleanSetting() {
@@ -67,6 +70,6 @@ func (d *delegatedRegistryConfigImpl) Start() error {
 	return nil
 }
 
-func (d *delegatedRegistryConfigImpl) Stop(err error) {
+func (d *delegatedRegistryConfigImpl) Stop(_ error) {
 	d.stopSig.Signal()
 }
