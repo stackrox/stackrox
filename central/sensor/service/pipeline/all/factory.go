@@ -3,6 +3,7 @@ package all
 import (
 	"context"
 
+	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/alerts"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/auditlogstateupdate"
@@ -34,11 +35,15 @@ import (
 )
 
 // NewFactory returns a new instance of a Factory that produces a pipeline handling all message types.
-func NewFactory() pipeline.Factory {
-	return &factoryImpl{}
+func NewFactory(manager hashManager.Manager) pipeline.Factory {
+	return &factoryImpl{
+		manager: manager,
+	}
 }
 
-type factoryImpl struct{}
+type factoryImpl struct {
+	manager hashManager.Manager
+}
 
 // PipelineForCluster grabs items from the queue, processes them, and potentially sends them back to sensor.
 func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) (pipeline.ClusterPipeline, error) {
@@ -80,6 +85,6 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 			complianceoperatorscans.GetPipeline(),
 		)
 	}
-
-	return NewClusterPipeline(clusterID, pipelines...), nil
+	deduper := s.manager.GetDeduper(ctx, clusterID)
+	return NewClusterPipeline(clusterID, deduper, pipelines...), nil
 }

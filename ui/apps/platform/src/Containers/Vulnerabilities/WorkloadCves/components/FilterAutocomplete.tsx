@@ -83,7 +83,7 @@ function FilterAutocompleteSelect({
     );
 
     return (
-        <ToolbarGroup variant="filter-group" className="pf-u-flex-grow-1">
+        <ToolbarGroup variant="filter-group" className="pf-u-display-flex pf-u-flex-grow-1">
             <FilterResourceDropdown
                 setResource={setResource}
                 resource={resource}
@@ -105,7 +105,7 @@ function FilterAutocompleteSelect({
                 onTypeaheadInputChanged={(val: string) => {
                     updateTypeahead(val);
                 }}
-                className="pf-u-w-100"
+                className="pf-u-flex-grow-1"
             >
                 {getOptions(data?.searchAutocomplete)}
             </Select>

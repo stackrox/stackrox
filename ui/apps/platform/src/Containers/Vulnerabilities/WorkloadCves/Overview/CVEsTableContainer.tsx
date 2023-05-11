@@ -67,12 +67,14 @@ function CVEsTableContainer({ defaultFilters, countsData }: CVEsTableContainerPr
                 <TableErrorComponent error={error} message="Adjust your filters and try again" />
             )}
             {tableData && (
-                <CVEsTable
-                    cves={tableData.imageCVEs}
-                    unfilteredImageCount={imageCountData?.imageCount || 0}
-                    getSortParams={getSortParams}
-                    isFiltered={isFiltered}
-                />
+                <div className="workload-cves-table-container">
+                    <CVEsTable
+                        cves={tableData.imageCVEs}
+                        unfilteredImageCount={imageCountData?.imageCount || 0}
+                        getSortParams={getSortParams}
+                        isFiltered={isFiltered}
+                    />
+                </div>
             )}
         </>
     );

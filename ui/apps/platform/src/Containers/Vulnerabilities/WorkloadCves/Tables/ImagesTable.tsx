@@ -83,7 +83,7 @@ type ImagesTableProps = {
 function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
     return (
         <TableComposable borders={false} variant="compact">
-            <Thead>
+            <Thead noWrap>
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th sort={getSortParams('Image')}>Image</Th>
