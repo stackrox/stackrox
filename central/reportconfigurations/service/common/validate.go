@@ -130,9 +130,12 @@ func (validator *Validator) validateEmailConfig(ctx context.Context, emailConfig
 		return errorList.ToError()
 	}
 
-	_, exists, err := validator.notifierDatastore.GetNotifier(ctx, emailConfig.GetNotifierId())
-	if !exists || err != nil {
-		return errors.Wrapf(errox.NotFound, "Notifier %s not found. Error: %s", emailConfig.GetNotifierId(), err)
+	exists, err := validator.notifierDatastore.Exists(ctx, emailConfig.GetNotifierId())
+	if err != nil {
+		return errors.Errorf("Error trying to lookup attached notofier, Notifier: %s, Error: %s", emailConfig.GetNotifierId(), err)
+	}
+	if !exists {
+		return errors.Wrapf(errox.NotFound, "Notifier %s not found.", emailConfig.GetNotifierId())
 	}
 	return nil
 }
@@ -142,9 +145,12 @@ func (validator *Validator) validateResourceScope(ctx context.Context, config *s
 		if config.GetScopeId() == "" {
 			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid scope ID")
 		}
-		_, exists, err := validator.accessScopeDatastore.GetAccessScope(ctx, config.GetScopeId())
-		if !exists || err != nil {
-			return errors.Wrapf(errox.NotFound, "Access scope %s not found. Error: %s", config.GetScopeId(), err)
+		exists, err := validator.accessScopeDatastore.AccessScopeExists(ctx, config.GetScopeId())
+		if err != nil {
+			return errors.Errorf("Error trying to lookup attached scope, Scope: %s, Error: %s", config.GetScopeId(), err)
+		}
+		if !exists {
+			return errors.Wrapf(errox.NotFound, "Access scope %s not found.", config.GetScopeId())
 		}
 		return nil
 	}
@@ -162,9 +168,12 @@ func (validator *Validator) validateResourceScope(ctx context.Context, config *s
 		collectionID = config.GetScopeId()
 	}
 
-	_, exists, err := validator.collectionDatastore.Get(ctx, collectionID)
-	if !exists || err != nil {
-		return errors.Wrapf(errox.NotFound, "Collection %s not found. Error: %s", collectionID, err)
+	exists, err := validator.collectionDatastore.Exists(ctx, collectionID)
+	if err != nil {
+		return errors.Errorf("Error trying to lookup attached collection, Collection: %s, Error: %s", collectionID, err)
+	}
+	if !exists {
+		return errors.Wrapf(errox.NotFound, "Collection %s not found.", collectionID)
 	}
 	return nil
 }

@@ -36,6 +36,21 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
+// AccessScopeExists mocks base method.
+func (m *MockDataStore) AccessScopeExists(ctx context.Context, id string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AccessScopeExists", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AccessScopeExists indicates an expected call of AccessScopeExists.
+func (mr *MockDataStoreMockRecorder) AccessScopeExists(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccessScopeExists", reflect.TypeOf((*MockDataStore)(nil).AccessScopeExists), ctx, id)
+}
+
 // AddAccessScope mocks base method.
 func (m *MockDataStore) AddAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error {
 	m.ctrl.T.Helper()

@@ -93,8 +93,8 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []up
 			},
 			isValidationError: false,
 			setMocks: func() {
-				s.notifierDatastore.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(2)
-				s.collectionDatastore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(1)
+				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(2)
+				s.collectionDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 			},
 		},
 		{
@@ -111,7 +111,7 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []up
 			},
 			isValidationError: false,
 			setMocks: func() {
-				s.collectionDatastore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(1)
+				s.collectionDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 			},
 		},
 		{
@@ -191,7 +191,7 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []up
 			},
 			isValidationError: true,
 			setMocks: func() {
-				s.notifierDatastore.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(1)
+				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 			},
 		},
 		{
@@ -203,7 +203,7 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []up
 			},
 			isValidationError: true,
 			setMocks: func() {
-				s.notifierDatastore.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(1)
+				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 			},
 		},
 		{
@@ -215,7 +215,7 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []up
 			},
 			isValidationError: true,
 			setMocks: func() {
-				s.notifierDatastore.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(1)
+				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 			},
 		},
 		{
@@ -227,7 +227,7 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []up
 			},
 			isValidationError: true,
 			setMocks: func() {
-				s.notifierDatastore.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(1)
+				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 			},
 		},
 		{
@@ -237,9 +237,9 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []up
 			},
 			isValidationError: true,
 			setMocks: func() {
-				s.notifierDatastore.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).
-					Times(1).Return(nil, true, nil).
-					Times(1).Return(nil, false, nil)
+				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).
+					Times(1).Return(true, nil).
+					Times(1).Return(false, nil)
 			},
 		},
 		{
@@ -251,7 +251,7 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []up
 			},
 			isValidationError: true,
 			setMocks: func() {
-				s.notifierDatastore.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(2)
+				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(2)
 			},
 		},
 		{
@@ -263,7 +263,7 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []up
 			},
 			isValidationError: true,
 			setMocks: func() {
-				s.notifierDatastore.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(2)
+				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(2)
 			},
 		},
 		{
@@ -273,8 +273,8 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []up
 			},
 			isValidationError: true,
 			setMocks: func() {
-				s.notifierDatastore.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(2)
-				s.collectionDatastore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
+				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(2)
+				s.collectionDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
 			},
 		},
 		{
@@ -286,8 +286,8 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []up
 			},
 			isValidationError: true,
 			setMocks: func() {
-				s.notifierDatastore.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(2)
-				s.collectionDatastore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(1)
+				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(2)
+				s.collectionDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 			},
 		},
 		{
@@ -299,8 +299,8 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []up
 			},
 			isValidationError: true,
 			setMocks: func() {
-				s.notifierDatastore.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(2)
-				s.collectionDatastore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(1)
+				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(2)
+				s.collectionDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 			},
 		},
 	}
