@@ -182,7 +182,7 @@ func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryC
 	res := make([]*v1.DelegatedRegistryCluster, len(clusters))
 	for i, c := range clusters {
 
-		// TODO: change this to use sensor capability instead
+		// TODO (ROX-16970): change this to use sensor capability instead
 		valid := c.GetHealthStatus().GetScannerHealthStatus() == storage.ClusterHealthStatus_HEALTHY
 
 		res[i] = &v1.DelegatedRegistryCluster{
