@@ -33,15 +33,15 @@ import spock.lang.Tag
 import spock.lang.Unroll
 
 class PolicyConfigurationTest extends BaseSpecification {
-    static final private String DEPLOYMENTNGINX = "deploymentnginx"
-    static final private String DNS = "qaapachedns"
-    static final private String STRUTS = "qadefpolstruts"
-    static final private String DEPLOYMENTNGINX_LB = "deploymentnginx-lb"
-    static final private String DEPLOYMENTNGINX_NP = "deploymentnginx-np"
-    static final private String DEPLOYMENT_RBAC = "deployment-rbac"
+    static final private String DEPLOYMENTNGINX = "policy-config-deploymentnginx"
+    static final private String DNS = "policy-config-qaapachedns"
+    static final private String STRUTS = "policy-config-qadefpolstruts"
+    static final private String DEPLOYMENTNGINX_LB = "policy-config-deploymentnginx-lb"
+    static final private String DEPLOYMENTNGINX_NP = "policy-config-deploymentnginx-np"
+    static final private String DEPLOYMENT_RBAC = "policy-config-deployment-rbac"
     static final private String SERVICE_ACCOUNT_NAME = "policy-config-sa"
-    static final private String NGINX_LATEST_WITH_DIGEST_NAME = "nginx-1-17-with-tag-and-digest"
-    static final private String NGINX_LATEST_NAME = "nginx-latest"
+    static final private String NGINX_LATEST_WITH_DIGEST_NAME = "policy-config-nginx-1-17-with-tag-and-digest"
+    static final private String NGINX_LATEST_NAME = "policy-config-nginx-latest"
     private static final String CLUSTER_ROLE_NAME = "policy-config-role"
 
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = isRaceBuild() ? 450 : 90

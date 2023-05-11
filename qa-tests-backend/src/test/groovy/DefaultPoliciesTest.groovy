@@ -42,6 +42,7 @@ import org.junit.Assume
 import org.junit.Rule
 import org.junit.rules.Timeout
 import spock.lang.IgnoreIf
+import spock.lang.Isolated
 import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Stepwise
@@ -49,6 +50,7 @@ import spock.lang.Tag
 import spock.lang.Unroll
 
 // TODO(ROX-13738): Re-enable these tests in compatibility-test step
+@Isolated // Cannot run in parallel with other tests because it clears the image cache
 @Stepwise // We need to verify all of the expected alerts are present before other tests.
 class DefaultPoliciesTest extends BaseSpecification {
     // Deployment names

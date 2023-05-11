@@ -168,13 +168,6 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
-    def setup() {
-        ensureNamespaceExists(this.namespace)
-    }
-
-    def cleanup() {
-    }
-
     /*
         Deployment Methods
     */

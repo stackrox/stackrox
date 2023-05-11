@@ -70,7 +70,9 @@ class BaseSpecification extends Specification {
 
     Map<String, List<String>> resourceRecord = [:]
 
-    private static globalSetup() {
+    private static String coreImageIntegrationId = null
+
+    private static synchronized void globalSetup() {
         if (globalSetupDone) {
             return
         }
@@ -158,6 +160,8 @@ class BaseSpecification extends Specification {
             }
         }
 
+        setupCoreImageIntegration()
+
         globalSetupDone = true
     }
 
@@ -182,9 +186,6 @@ class BaseSpecification extends Specification {
     long orchestratorCreateTime = System.currentTimeSeconds()
 
     @Shared
-    String coreImageIntegrationId = null
-
-    @Shared
     private long testStartTimeMillis
 
     def setupSpec() {
@@ -203,43 +204,6 @@ class BaseSpecification extends Specification {
         }
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
-
-        setupCoreImageIntegration()
-
-        recordResourcesAtSpecStart()
-    }
-
-    protected void setupCoreImageIntegration() {
-        coreImageIntegrationId = ImageIntegrationService.getImageIntegrationByName(
-                Constants.CORE_IMAGE_INTEGRATION_NAME)
-        if (!coreImageIntegrationId) {
-            log.info "Adding core image integration"
-            coreImageIntegrationId = ImageIntegrationService.createImageIntegration(
-                    ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                            .setName(Constants.CORE_IMAGE_INTEGRATION_NAME)
-                            .setType("docker")
-                            .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
-                            .setDocker(
-                                    ImageIntegrationOuterClass.DockerConfig.newBuilder()
-                                            .setEndpoint("https://quay.io")
-                                            .setUsername(Env.mustGetInCI("REGISTRY_USERNAME", "fakeUsername"))
-                                            .setPassword(Env.mustGetInCI("REGISTRY_PASSWORD", "fakePassword"))
-                                            .build()
-                            ).build()
-            )
-        }
-        if (!coreImageIntegrationId) {
-            log.warn "Could not create the core image integration."
-            log.warn "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
-        }
-    }
-
-    def recordResourcesAtSpecStart() {
-        resourceRecord = [
-                "namespaces": orchestrator.getNamespaces(),
-                "deployments": orchestrator.getDeployments("default") +
-                        orchestrator.getDeployments(Constants.ORCHESTRATOR_NAMESPACE),
-        ]
     }
 
     def resetAuth() {
@@ -273,46 +237,11 @@ class BaseSpecification extends Specification {
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
 
-        log.info "Removing integration"
-        if (coreImageIntegrationId != null) {
-            ImageIntegrationService.deleteImageIntegration(coreImageIntegrationId)
-        }
-
         try {
             orchestrator.cleanup()
         } catch (Exception e) {
             log.error("Failed to clean up orchestrator", e)
             throw e
-        }
-
-        // https://issues.redhat.com/browse/ROX-9950 -- fails on OSD-on-AWS
-        if (orchestrator.isGKE()) {
-            compareResourcesAtSpecEnd()
-        }
-    }
-
-    def compareResourcesAtSpecEnd() {
-        Javers javers = JaversBuilder.javers()
-                .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
-                .build()
-
-        List<String> namespaces = orchestrator.getNamespaces()
-        Diff diff = javers.compare(resourceRecord["namespaces"], namespaces)
-        if (diff.hasChanges()) {
-            log.info "There is a difference in namespaces between the start and end of this test spec:"
-            log.info diff.prettyPrint()
-            throw new TestSpecRuntimeException("Namespaces have changed. Ensure that any namespace created " +
-                    "in a test spec is deleted in that test spec.")
-        }
-
-        List<String> deployments = orchestrator.getDeployments("default") +
-                orchestrator.getDeployments(Constants.ORCHESTRATOR_NAMESPACE)
-        diff = javers.compare(resourceRecord["deployments"], deployments)
-        if (diff.hasChanges()) {
-            log.info "There is a difference in deployments between the start and end of this test spec"
-            log.info diff.prettyPrint()
-            throw new TestSpecRuntimeException("Deployments have changed. Ensure that any deployments created " +
-                    "in a test spec are destroyed in that test spec.")
         }
     }
 
@@ -359,6 +288,31 @@ class BaseSpecification extends Specification {
                 imagePullSecrets: ["quay", "public-dockerhub"]
         )
         orchestrator.createServiceAccount(sa)
+    }
+
+    static setupCoreImageIntegration() {
+        coreImageIntegrationId = ImageIntegrationService.getImageIntegrationByName(
+                Constants.CORE_IMAGE_INTEGRATION_NAME)
+        if (!coreImageIntegrationId) {
+            LOG.info "Adding core image integration"
+            coreImageIntegrationId = ImageIntegrationService.createImageIntegration(
+                    ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+                            .setName(Constants.CORE_IMAGE_INTEGRATION_NAME)
+                            .setType("docker")
+                            .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
+                            .setDocker(
+                                    ImageIntegrationOuterClass.DockerConfig.newBuilder()
+                                            .setEndpoint("https://quay.io")
+                                            .setUsername(Env.mustGetInCI("REGISTRY_USERNAME", "fakeUsername"))
+                                            .setPassword(Env.mustGetInCI("REGISTRY_PASSWORD", "fakePassword"))
+                                            .build()
+                            ).build()
+            )
+        }
+        if (!coreImageIntegrationId) {
+            LOG.warn "Could not create the core image integration."
+            LOG.warn "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
+        }
     }
 
     static addGCRImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {

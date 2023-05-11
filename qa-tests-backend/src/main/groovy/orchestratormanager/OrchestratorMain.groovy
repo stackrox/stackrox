@@ -17,9 +17,6 @@ import objects.Secret
 import objects.Service
 
 interface OrchestratorMain {
-    def setup()
-    def cleanup()
-
     // Pods
     List<Pod> getPods(String ns, String appName)
     List<Pod> getPodsByLabel(String ns, Map<String, String> label)
