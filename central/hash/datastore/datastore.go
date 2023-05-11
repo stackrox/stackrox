@@ -9,7 +9,7 @@ import (
 
 // Datastore implements the datastore interface for Hash objects
 type Datastore interface {
-	UpsertHashes(ctx context.Context, flush []*storage.Hash) error
+	UpsertHash(ctx context.Context, hash *storage.Hash) error
 	GetHashes(ctx context.Context, clusterID string) (*storage.Hash, bool, error)
 	DeleteHashes(ctx context.Context, clusterID string) error
 }
@@ -25,9 +25,9 @@ type datastoreImpl struct {
 	store postgres.Store
 }
 
-// UpsertHashes inserts the hashes into the database
-func (d *datastoreImpl) UpsertHashes(ctx context.Context, hashes []*storage.Hash) error {
-	return d.store.UpsertMany(ctx, hashes)
+// UpsertHash inserts the hash into the database
+func (d *datastoreImpl) UpsertHash(ctx context.Context, hash *storage.Hash) error {
+	return d.store.Upsert(ctx, hash)
 }
 
 // GetHashes gets the hashes for a particular cluster

@@ -696,17 +696,20 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/db/v2/restore",
 			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
 			ServerHandler: backupRestoreService.Singleton().RestoreHandler(),
+			EnableAudit:   true,
 		},
 		{
 			Route:         "/db/v2/resumerestore",
 			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
 			ServerHandler: backupRestoreService.Singleton().ResumeRestoreHandler(),
+			EnableAudit:   true,
 		},
 		{
 			Route:         "/api/logimbue",
 			Authorizer:    user.With(),
 			ServerHandler: logimbueHandler.Singleton(),
 			Compression:   false,
+			EnableAudit:   true,
 		},
 	}
 
@@ -764,6 +767,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/db/restore",
 			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
 			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB()),
+			EnableAudit:   true,
 		})
 	}
 
@@ -798,6 +802,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 				},
 			}),
 			ServerHandler: definitionsFileGzipHandler(scannerDefinitionsHandler.Singleton()),
+			EnableAudit:   true,
 		},
 	)
 

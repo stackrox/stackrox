@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/reflectutils"
+	"github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -200,7 +201,7 @@ var (
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "sensor_event_deduper",
 		Help:      "A counter that tracks objects that has passed the sensor event deduper in the connection stream",
-	}, []string{"status"})
+	}, []string{"status", "type"})
 
 	pipelinePanicCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -338,10 +339,14 @@ func ModifyProcessQueueLength(delta int) {
 }
 
 // IncSensorEventsDeduper increments the sensor events deduper on whether or not it was deduped or not
-func IncSensorEventsDeduper(deduped bool) {
+func IncSensorEventsDeduper(deduped bool, msg *central.MsgFromSensor) {
+	if msg.GetEvent() == nil {
+		return
+	}
 	label := "passed"
 	if deduped {
 		label = "deduped"
 	}
-	sensorEventsDeduperCounter.With(prometheus.Labels{"status": label}).Inc()
+	typ := event.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource())
+	sensorEventsDeduperCounter.With(prometheus.Labels{"status": label, "type": typ}).Inc()
 }
