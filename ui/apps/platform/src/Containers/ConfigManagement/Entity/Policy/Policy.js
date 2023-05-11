@@ -220,7 +220,7 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext, paginatio
                                     </div>
                                     <div className="p-4">
                                         <span className="font-700">Rationale:&nbsp;</span>
-                                        <span className="italic">{rationale}</span>
+                                        <span>{rationale}</span>
                                     </div>
                                 </Widget>
                             </div>
