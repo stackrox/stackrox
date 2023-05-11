@@ -89,7 +89,7 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*v1.Delegated
 		return &v1.DelegatedRegistryConfig{}, nil
 	}
 
-	return convert.ConfigToAPI(config), nil
+	return convert.StorageToAPI(config), nil
 }
 
 // GetClusters returns the list of clusters (id + name) that are eligible for delegating scanning
@@ -115,7 +115,7 @@ func (s *serviceImpl) PutConfig(ctx context.Context, config *v1.DelegatedRegistr
 		return nil, fmt.Errorf("%w: %v", errox.InvalidArgs, err.Error())
 	}
 
-	if err := s.dataStore.UpsertConfig(ctx, convert.ConfigToStorage(config)); err != nil {
+	if err := s.dataStore.UpsertConfig(ctx, convert.APIToStorage(config)); err != nil {
 		return nil, fmt.Errorf("upserting config %w", err)
 	}
 

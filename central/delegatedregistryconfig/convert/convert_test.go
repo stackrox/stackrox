@@ -45,50 +45,50 @@ func genAPI(enabledFor v1.DelegatedRegistryConfig_EnabledFor, defID string, regs
 	}
 }
 
-func TestConfigToAPI(t *testing.T) {
-	tt := []struct {
-		name string
+func TestStorageToAPI(t *testing.T) {
+	tt := map[string]struct {
 		in   *storage.DelegatedRegistryConfig
 		want *v1.DelegatedRegistryConfig
 	}{
-		{"full", genStorage(storageEnabledForNone, "fake", multiStorageRegs), genAPI(apiEnabledForNone, "fake", multiAPIRegs)},
-		{"all", genStorage(storageEnabledForAll, "fake", nil), genAPI(apiEnabledForAll, "fake", nil)},
-		{"specific", genStorage(storageEnabledForSpecific, "fake", nil), genAPI(apiEnabledForSpecific, "fake", nil)},
-		{"invalid to none", genStorage(storageEnabledForInvalid, "fake", nil), genAPI(apiEnabledForNone, "fake", nil)},
+		"full":            {genStorage(storageEnabledForNone, "fake", multiStorageRegs), genAPI(apiEnabledForNone, "fake", multiAPIRegs)},
+		"all":             {genStorage(storageEnabledForAll, "fake", nil), genAPI(apiEnabledForAll, "fake", nil)},
+		"specific":        {genStorage(storageEnabledForSpecific, "fake", nil), genAPI(apiEnabledForSpecific, "fake", nil)},
+		"invalid to none": {genStorage(storageEnabledForInvalid, "fake", nil), genAPI(apiEnabledForNone, "fake", nil)},
+		"nil":             {nil, nil},
 	}
 
-	for _, test := range tt {
+	for name, test := range tt {
 		tf := func(t *testing.T) {
-			got := ConfigToAPI(test.in)
-			assert.Equal(t, test.want.EnabledFor, got.EnabledFor)
-			assert.Equal(t, test.want.DefaultClusterId, got.DefaultClusterId)
-			assert.Equal(t, test.want.Registries, got.Registries)
+			got := StorageToAPI(test.in)
+			assert.Equal(t, test.want.GetEnabledFor(), got.GetEnabledFor())
+			assert.Equal(t, test.want.GetDefaultClusterId(), got.GetDefaultClusterId())
+			assert.Equal(t, test.want.GetRegistries(), got.GetRegistries())
 		}
 
-		t.Run(test.name, tf)
+		t.Run(name, tf)
 	}
 }
 
-func TestConfigToStorage(t *testing.T) {
-	tt := []struct {
-		name string
+func TestAPIToStorage(t *testing.T) {
+	tt := map[string]struct {
 		in   *v1.DelegatedRegistryConfig
 		want *storage.DelegatedRegistryConfig
 	}{
-		{"full", genAPI(apiEnabledForNone, "fake", multiAPIRegs), genStorage(storageEnabledForNone, "fake", multiStorageRegs)},
-		{"all", genAPI(apiEnabledForAll, "fake", nil), genStorage(storageEnabledForAll, "fake", nil)},
-		{"specific", genAPI(apiEnabledForSpecific, "fake", nil), genStorage(storageEnabledForSpecific, "fake", nil)},
-		{"invalid to none", genAPI(apiEnabledForInvalid, "fake", nil), genStorage(storageEnabledForNone, "fake", nil)},
+		"full":            {genAPI(apiEnabledForNone, "fake", multiAPIRegs), genStorage(storageEnabledForNone, "fake", multiStorageRegs)},
+		"all":             {genAPI(apiEnabledForAll, "fake", nil), genStorage(storageEnabledForAll, "fake", nil)},
+		"specific":        {genAPI(apiEnabledForSpecific, "fake", nil), genStorage(storageEnabledForSpecific, "fake", nil)},
+		"invalid to none": {genAPI(apiEnabledForInvalid, "fake", nil), genStorage(storageEnabledForNone, "fake", nil)},
+		"nil":             {nil, nil},
 	}
 
-	for _, test := range tt {
+	for name, test := range tt {
 		tf := func(t *testing.T) {
-			got := ConfigToStorage(test.in)
-			assert.Equal(t, test.want.EnabledFor, got.EnabledFor)
-			assert.Equal(t, test.want.DefaultClusterId, got.DefaultClusterId)
-			assert.Equal(t, test.want.Registries, got.Registries)
+			got := APIToStorage(test.in)
+			assert.Equal(t, test.want.GetEnabledFor(), got.GetEnabledFor())
+			assert.Equal(t, test.want.GetDefaultClusterId(), got.GetDefaultClusterId())
+			assert.Equal(t, test.want.GetRegistries(), got.GetRegistries())
 		}
 
-		t.Run(test.name, tf)
+		t.Run(name, tf)
 	}
 }

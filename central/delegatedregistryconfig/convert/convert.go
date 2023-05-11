@@ -1,3 +1,7 @@
+// Package convert provides utility functions for converting between the various
+// DelegatedRegistryConfig types.
+//   - "Storage"     (storage.DelegatedRegistryConfig) - for persistance
+//   - "API"         (v1.DelegatedRegistryConfig)      - for exposed REST/GRPC API
 package convert
 
 import (
@@ -5,9 +9,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// ConfigToAPI converts a delegated registry config from the type used by storage (db) to
-// the type used by the REST API
-func ConfigToAPI(from *storage.DelegatedRegistryConfig) *v1.DelegatedRegistryConfig {
+// StorageToAPI converts a delegated registry config from the type used by storage (db) to
+// the type used by the GRPC/REST API
+func StorageToAPI(from *storage.DelegatedRegistryConfig) *v1.DelegatedRegistryConfig {
+	if from == nil {
+		return nil
+	}
+
 	var regs []*v1.DelegatedRegistryConfig_DelegatedRegistry
 
 	if len(from.Registries) > 0 {
@@ -31,9 +39,13 @@ func ConfigToAPI(from *storage.DelegatedRegistryConfig) *v1.DelegatedRegistryCon
 	}
 }
 
-// ConfigToStorage converts a delegated registry config from the type used by the REST API to
-// the type used by storage (db)
-func ConfigToStorage(from *v1.DelegatedRegistryConfig) *storage.DelegatedRegistryConfig {
+// APIToStorage converts a delegated registry config from the type used by the GRPC/REST API
+// to the type used by storage (db)
+func APIToStorage(from *v1.DelegatedRegistryConfig) *storage.DelegatedRegistryConfig {
+	if from == nil {
+		return nil
+	}
+
 	var regs []*storage.DelegatedRegistryConfig_DelegatedRegistry
 
 	if len(from.Registries) > 0 {
