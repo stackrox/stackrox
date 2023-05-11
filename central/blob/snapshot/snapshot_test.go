@@ -69,11 +69,11 @@ func (s *snapshotTestSuite) TestSnapshot() {
 	s.NoError(err)
 	defer func() {
 		s.NoError(snap.Close())
-		s.NoFileExists(snap.path)
+		s.NoFileExists(snap.Name())
 	}()
 	bytes, err := io.ReadAll(snap)
 	s.Require().NoError(err)
 	s.Equal(randomData, bytes)
 	s.Equal(insertBlob, snap.GetBlob())
-	s.FileExists(snap.path)
+	s.FileExists(snap.Name())
 }

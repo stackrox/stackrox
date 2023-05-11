@@ -13,26 +13,19 @@ import (
 )
 
 var (
-	log             = logging.LoggerForModule()
+	log = logging.LoggerForModule()
+
+	// ErrBlobNotExist is Blob does not exist error
 	ErrBlobNotExist = errors.New("cannot find blob")
 )
-
-// NewBlobSnapshot creates a snapshot of the blob backed up by a temp dir with the blob data stored.
-// The temp dir is removed on snapshot closure.
-func NewBlobSnapshot(p string, blob *storage.Blob) (*Snapshot, error) {
-	file, err := os.Open(p)
-	if err != nil {
-		return nil, err
-	}
-	return &Snapshot{File: file, blob: blob, path: p}, nil
-}
 
 // Snapshot contains a Blob with its data backed by a temp file.
 // The temp file will be removed on close.
 type Snapshot struct {
 	*os.File
-	blob *storage.Blob
-	path string
+	blob     *storage.Blob
+	tmpDir   string
+	baseName string
 }
 
 // Close temp file and remove its temp dir.
@@ -41,12 +34,13 @@ func (s *Snapshot) Close() error {
 		return nil
 	}
 	err := s.File.Close()
-	if removeErr := os.RemoveAll(s.path); err != nil {
-		log.Errorf("failed to remove %q: %v", s.path, removeErr)
+	if removeErr := os.RemoveAll(s.tmpDir); removeErr != nil {
+		log.Errorf("failed to remove %q: %v", s.tmpDir, removeErr)
 	}
 	return err
 }
 
+// GetBlob returns Blob
 func (s *Snapshot) GetBlob() *storage.Blob {
 	return s.blob
 }
@@ -90,5 +84,10 @@ func TakeBlobSnapshot(ctx context.Context, blobStore datastore.Datastore, name s
 		err = ErrBlobNotExist
 		return
 	}
-	return NewBlobSnapshot(tempFile, blob)
+
+	file, err := os.Open(tempFile)
+	if err != nil {
+		return nil, err
+	}
+	return &Snapshot{File: file, blob: blob, tmpDir: tempDir, baseName: baseName}, nil
 }

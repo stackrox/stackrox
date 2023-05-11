@@ -1,5 +1,3 @@
-//go:build sql_integration
-
 package handler
 
 import (
@@ -8,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -19,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil/mock"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -34,6 +34,7 @@ type handlerTestSuite struct {
 	ctx       context.Context
 	datastore datastore.Datastore
 	testDB    *pgtest.TestPostgres
+	tmpDir    string
 }
 
 func TestHandler(t *testing.T) {
@@ -45,6 +46,10 @@ func (s *handlerTestSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 	blobStore := store.New(s.testDB.DB)
 	s.datastore = datastore.NewDatastore(blobStore)
+	var err error
+	s.tmpDir, err = os.MkdirTemp("", "handler-test")
+	s.Require().NoError(err)
+	s.T().Setenv("TMPDIR", s.tmpDir)
 }
 
 func (s *handlerTestSuite) SetupTest() {
@@ -54,7 +59,13 @@ func (s *handlerTestSuite) SetupTest() {
 }
 
 func (s *handlerTestSuite) TearDownSuite() {
+	entries, err := os.ReadDir(s.tmpDir)
+	s.NoError(err)
+	s.Len(entries, 1)
+	s.True(strings.HasPrefix(entries[0].Name(), definitionsBaseDir))
+
 	s.testDB.Teardown(s.T())
+	utils.IgnoreError(func() error { return os.RemoveAll(s.tmpDir) })
 }
 
 func (s *handlerTestSuite) mustGetRequest(t *testing.T) *http.Request {

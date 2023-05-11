@@ -120,7 +120,7 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	// Open the most recent definitions file for the provided `uuid`.
 	uuid := r.URL.Query().Get(`uuid`)
-	f, modTime, err := h.openMostRecentDefinitions(r.Context(), uuid)
+	f, err := h.openMostRecentDefinitions(r.Context(), uuid)
 	if err != nil {
 		writeErrorForFile(w, err, uuid)
 		return
@@ -136,19 +136,21 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 
 	defer utils.IgnoreError(f.Close)
 
-	// If `file` was provided, extract from definitions' bundle to a
-	// temporary file and serve that instead.
 	fileName := r.URL.Query().Get(`file`)
-	if fileName != "" {
-		f, err = openFromArchive(f.Name(), fileName)
-		if err != nil {
-			writeErrorForFile(w, err, fileName)
-			return
-		}
-		defer utils.IgnoreError(f.Close)
+	if fileName == "" {
+		serveContent(w, r, f.Name(), f.modTime, f)
+		return
 	}
 
-	serveContent(w, r, f.Name(), modTime, f)
+	// If `file` was provided, extract from definitions' bundle to a
+	// temporary file and serve that instead.
+	namedFile, err := openFromArchive(f.Name(), fileName)
+	if err != nil {
+		writeErrorForFile(w, err, fileName)
+		return
+	}
+	defer utils.IgnoreError(namedFile.Close)
+	serveContent(w, r, namedFile.Name(), f.modTime, namedFile)
 }
 
 func writeErrorNotFound(w http.ResponseWriter) {
@@ -204,7 +206,7 @@ func (h *httpHandler) updateK8sIstioCVEs(zipPath string) {
 	}
 }
 
-func (h *httpHandler) handleScannerDefsFile(zipF *zip.File, ctx context.Context) error {
+func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File) error {
 	r, err := zipF.Open()
 	if err != nil {
 		return errors.Wrap(err, "opening ZIP reader")
@@ -236,7 +238,7 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath
 	var scannerDefsFileFound bool
 	for _, zipF := range zipR.File {
 		if zipF.Name == scannerDefsSubZipName {
-			if err := h.handleScannerDefsFile(zipF, ctx); err != nil {
+			if err := h.handleScannerDefsFile(ctx, zipF); err != nil {
 				return errors.Wrap(err, "couldn't handle scanner-defs sub file")
 			}
 			scannerDefsFileFound = true
@@ -310,20 +312,20 @@ func (h *httpHandler) cleanupUpdaters(cleanupAge time.Duration) {
 	}
 }
 
-func (h *httpHandler) openOfflineBlob(ctx context.Context) (*os.File, time.Time, error) {
+func (h *httpHandler) openOfflineBlob(ctx context.Context) (*vulDefFile, error) {
 	snap, err := snapshot.TakeBlobSnapshot(ctx, h.blobStore, offlineScannerDefsName)
 	if err != nil {
 		// If the blob does not exist, return no reader.
 		if errors.Is(err, snapshot.ErrBlobNotExist) {
-			return nil, time.Time{}, nil
+			return nil, nil
 		}
-		return nil, time.Time{}, err
+		return nil, err
 	}
 	modTime := time.Time{}
 	if t := pgutils.NilOrTime(snap.GetBlob().ModifiedTime); t != nil {
 		modTime = *t
 	}
-	return snap.File, modTime, nil
+	return &vulDefFile{snap.File, modTime, snap.Close}, nil
 }
 
 // openMostRecentDefinitions opens the latest Scanner Definitions based on
@@ -331,10 +333,10 @@ func (h *httpHandler) openOfflineBlob(ctx context.Context) (*os.File, time.Time,
 // online, otherwise fallback to the manually uploaded definitions. The file
 // object can be `nil` if the definitions file does not exist, rather than
 // returning an error.
-func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string) (file *os.File, modTime time.Time, err error) {
+func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string) (file *vulDefFile, err error) {
 	// If in offline mode or uuid is not provided, default to the offline file.
 	if !h.online || uuid == "" {
-		file, modTime, err = h.openOfflineBlob(ctx)
+		file, err = h.openOfflineBlob(ctx)
 		return
 	}
 
@@ -344,19 +346,24 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 	u := h.getUpdater(uuid)
 	u.Start()
 
-	toClose := func(f *os.File) {
+	toClose := func(f *vulDefFile) {
 		if file != f && f != nil {
 			utils.IgnoreError(f.Close)
 		}
 	}
 
 	// Open both the "online" and "offline", and save their modification times.
-	onlineFile, onlineTime, err := u.file.Open()
+	var onlineFile *vulDefFile
+	onlineOsFile, onlineTime, err := u.file.Open()
 	if err != nil {
 		return
 	}
+	if onlineOsFile != nil {
+		onlineFile = &vulDefFile{File: onlineOsFile, modTime: onlineTime}
+	}
+
 	defer toClose(onlineFile)
-	offlineFile, offlineTime, err := h.openOfflineBlob(ctx)
+	offlineFile, err := h.openOfflineBlob(ctx)
 	if err != nil {
 		return
 	}
@@ -364,11 +371,9 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 
 	// Return the most recent file, notice that if both don't exist, nil is returned
 	// since modification time will be zero.
-
-	if offlineTime.After(onlineTime) {
-		file, modTime = offlineFile, offlineTime
-	} else {
-		file, modTime = onlineFile, onlineTime
+	file = onlineFile
+	if offlineFile != nil && offlineFile.modTime.After(onlineTime) {
+		file = offlineFile
 	}
 	return
 }
