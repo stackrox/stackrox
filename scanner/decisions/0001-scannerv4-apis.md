@@ -13,7 +13,7 @@ The move to ClairCore and the adoption of ScannerV4 brings the need for new API 
 
 ScannerV4 APIs will exclusively use gRPC. ScannerV4 APIs are not backward compatible with ScannerV2.
 
-ScannerV4 will offer modes of operation [akin to Clair's deployment models](https://quay.github.io/clair/howto/deployment.html). Each mode will implement different gRPC services, reflecting the underlying separation between ClairCore's [libindex](https://pkg.go.dev/github.com/quay/claircore/libindex#Libindex) and [libvuln](https://pkg.go.dev/github.com/quay/claircore/libvuln#Libvuln). They will be named "indexer" and "matcher".  Both modes can be enabled concurrently.
+ScannerV4 will offer modes of operation [akin to Clair's deployment models](https://quay.github.io/clair/howto/deployment.html). Each mode will implement different gRPC services, reflecting the underlying separation between ClairCore's [libindex](https://pkg.go.dev/github.com/quay/claircore/libindex#Libindex) and [libvuln](https://pkg.go.dev/github.com/quay/claircore/libvuln#Libvuln). They will be named "indexer" and "matcher". Both modes can be enabled concurrently.
 
 ScannerV4 will use "index reports" and "vulnerability reports" data models, similar to ClairCore's. Both types will link to a "scannable resource" (e.g., a container image) using a "hash_id", managed by the clients, that uniquely identifies the resource's manifest.
 
@@ -28,7 +28,7 @@ ScannerV4 will also provide endpoints for health and observability checks, which
 The endpoints are versioned at `v4` to align with Clair:
 
 1. `scanner.v4.Indexer/CreateIndex`: Create a manifest of resource and create an index, or re-index. Idempotent while creation is being executed. Synchronous and tied to the client request. Returns [`IndexReport`](https://github.com/quay/claircore/blob/v1.4.18/indexreport.go#L19)
-2. `scanner.v4.Indexer/GetIndex`: Retrieve or check index existence.  Returns [`IndexReport`](https://github.com/quay/claircore/blob/v1.4.18/indexreport.go#L19).
+2. `scanner.v4.Indexer/GetIndex`: Retrieve or check index existence. Returns [`IndexReport`](https://github.com/quay/claircore/blob/v1.4.18/indexreport.go#L19).
 3. `scanner.v4.Matcher/GetVulnerabilities`: Get vulnerabilities for a given resouce's manifest. Returns [`VulnerabilityReport`](https://github.com/quay/claircore/blob/v1.4.18/vulnerabilityreport.go#L7).
 4. `scanner.v4.Matcher/GetVulnerabilityMetadata`: Get information on vulnerability metadata, e.g. last update timestamp.
 
