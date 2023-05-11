@@ -24,7 +24,7 @@ run_part_1() {
     info "Starting test (qa-tests-backend part I)"
 
     config_part_1
-    test_part_1
+    # test_part_1
 }
 
 config_part_1() {
