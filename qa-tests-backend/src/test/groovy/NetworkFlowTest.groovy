@@ -489,11 +489,8 @@ class NetworkFlowTest extends BaseSpecification {
         assert edges
     }
 
-    // TODO(ROX-7047): Re-enable this test
     @Tag("NetworkFlowVisualization")
     def "Verify connections from external sources"() {
-        Assume.assumeFalse(ClusterService.isOpenShift4())
-
         given:
         "Deployment A, where an external source communicates to A"
         String deploymentUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
