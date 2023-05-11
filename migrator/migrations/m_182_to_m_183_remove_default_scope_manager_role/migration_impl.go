@@ -2,16 +2,17 @@ package m182tom183
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	apiTokenStore "github.com/stackrox/rox/migrator/migrations/m_181_to_m_182_remove_default_scope_manager_role/apitokenstore"
 	groupStore "github.com/stackrox/rox/migrator/migrations/m_181_to_m_182_remove_default_scope_manager_role/groupstore"
 	permissionSetStore "github.com/stackrox/rox/migrator/migrations/m_181_to_m_182_remove_default_scope_manager_role/permissionsetstore"
 	roleStore "github.com/stackrox/rox/migrator/migrations/m_181_to_m_182_remove_default_scope_manager_role/rolestore"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 )
@@ -33,6 +34,8 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	notFoundError = fmt.Errorf("not found")
 )
 
 func migrate(database *types.Databases) error {
@@ -162,7 +165,7 @@ func addDeprecatedScopeManagerRole(ctx context.Context, roleStorage roleStore.St
 		return err
 	}
 	if !oldRoleFound {
-		return errox.NotFound
+		return errors.Wrap(notFoundError, "looking up role")
 	}
 	newRole := oldRole.Clone()
 	newRole.Name = deprecatedPrefix + ScopeManagerRoleName
@@ -307,7 +310,7 @@ func updateScopeManagerPermissionSet(ctx context.Context, permissionSetStorage p
 		return lookupErr
 	}
 	if !psFound {
-		return errox.NotFound
+		return errors.Wrap(notFoundError, "looking up premission set")
 	}
 	newPS := oldPS.Clone()
 	newPS.Traits = &storage.Traits{
