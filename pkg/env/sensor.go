@@ -29,5 +29,5 @@ var (
 	EventPipelineQueueSize = RegisterIntegerSetting("ROX_EVENT_PIPELINE_QUEUE_SIZE", 1000)
 
 	// ResyncDisabled disables the resync behavior of the kubernetes listeners in sensor
-	ResyncDisabled = RegisterBooleanSetting("ROX_RESYNC_DISABLEDD", false)
+	ResyncDisabled = RegisterBooleanSetting("ROX_RESYNC_DISABLED", false)
 )
