@@ -99,7 +99,10 @@ func newConnection(ctx context.Context,
 	}
 
 	// Need a reference to conn for injector
-	conn.sensorEventHandler = newSensorEventHandler(eventPipeline, conn, &conn.stopSig, hashMgr.GetDeduper(ctx, cluster.GetId()))
+	deduper := hashMgr.GetDeduper(ctx, cluster.GetId())
+	deduper.StartSync()
+
+	conn.sensorEventHandler = newSensorEventHandler(eventPipeline, conn, &conn.stopSig, deduper)
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
 	conn.networkEntitiesCtrl = networkentities.NewController(cluster.GetId(), networkEntityMgr, graph.Singleton(), conn, &conn.stopSig)
