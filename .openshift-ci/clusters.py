@@ -124,13 +124,14 @@ class AutomationFlavorsCluster:
 class OpenShiftScaleWorkersCluster:
     SCALE_CHANGE_TIMEOUT = 15 * 60
 
-    def __init__(self, increment=1):
+    def __init__(self, increment=1, expected_initial_worker_count=6):
         self.increment = increment
+        self.expected_initial_worker_count = expected_initial_worker_count
 
     def provision(self):
         print("Scaling worker nodes")
         subprocess.run(
-            ["scripts/ci/openshift.sh", "scale_worker_nodes", str(self.increment)],
+            ["scripts/ci/openshift.sh", "scale_worker_nodes", str(self.increment), str(self.expected_initial_worker_count)],
             check=True,
             timeout=OpenShiftScaleWorkersCluster.SCALE_CHANGE_TIMEOUT,
         )
