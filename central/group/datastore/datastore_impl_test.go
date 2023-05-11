@@ -7,7 +7,6 @@ import (
 	"github.com/golang/mock/gomock"
 	storeMocks "github.com/stackrox/rox/central/group/datastore/internal/store/mocks"
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	authProvidersMocks "github.com/stackrox/rox/pkg/auth/authproviders/mocks"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
