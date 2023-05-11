@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"testing"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
@@ -21,6 +22,7 @@ import (
 // This file is a copy of central/policy/store/postgres/store.go at the time the test was added.
 // It's purely to keep the test consistent regardless of how the policy store is updated. Only functions required for tests are kept.
 // The kept functions are stripped from the scoped access control checks.
+// Furthermore, this store can only be instantiated in tests
 
 const (
 	baseTable = "policies"
@@ -60,7 +62,8 @@ type storeImpl struct {
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(db postgres.DB) Store {
+// Only used for tests
+func New(db postgres.DB, _ *testing.T) Store {
 	return &storeImpl{
 		db: db,
 	}

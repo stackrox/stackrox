@@ -33,7 +33,7 @@ func (s *postgresPolicyMigratorTestSuite) SetupTest() {
 	s.db = pghelper.ForT(s.T(), true)
 	s.ctx = context.Background()
 	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTablePoliciesStmt)
-	s.store = policypostgresstore.New(s.db)
+	s.store = policypostgresstore.New(s.db, s.T())
 }
 
 func (s *postgresPolicyMigratorTestSuite) TearDownTest() {
