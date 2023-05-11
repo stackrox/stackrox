@@ -39,8 +39,7 @@ func New(notifications processor.Processor) auditPkg.Auditor {
 	}
 }
 
-// SendAuditMessage will send an audit message for the specified request. It is done on an adhoc basis as opposed to via the unary interceptor
-// because GraphQL mutation apis won't get intercepted. This will be removed in the future once GraphQL also goes through the same pipeline as other APIs
+// SendAuditMessage will send an audit message for the specified request.
 func (a *audit) SendAuditMessage(ctx context.Context, req interface{}, grpcMethod string, authError interceptor.AuthStatus, requestError error) {
 	if !a.notifications.HasEnabledAuditNotifiers() {
 		return
@@ -136,6 +135,7 @@ func (a *audit) UnaryServerInterceptor() func(ctx context.Context, req interface
 	}
 }
 
+// PostAuthHTTPInterceptor is the interceptor for audit logging after the route authorization handler.
 func (a *audit) PostAuthHTTPInterceptor(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		statusTrackingWriter := httputil.NewStatusTrackingWriter(w)
