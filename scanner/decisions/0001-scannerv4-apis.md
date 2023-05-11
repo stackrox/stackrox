@@ -27,12 +27,12 @@ ScannerV4 will also provide endpoints for health and observability checks, which
 
 The endpoints are versioned at `v4` to align with Clair:
 
-1. `scanner.v4.Indexer/CreateIndex`: Idempotent operation to index or re-index manifests. Idempotent while creation is being executed. Synchronous and tied to the client request. Returns [`IndexReport`](https://github.com/quay/claircore/blob/v1.4.18/indexreport.go#L19)
-2. `scanner.v4.Indexer/GetIndex`: Retrieve or check index existence.  If return, returns [`IndexReport`](https://github.com/quay/claircore/blob/v1.4.18/indexreport.go#L19).
-3. `scanner.v4.Matcher/GetVulnerabilities`: Get vulnerabilities for a given manifest. Return [`VulnerabilityReport`](https://github.com/quay/claircore/blob/v1.4.18/vulnerabilityreport.go#L7).
+1. `scanner.v4.Indexer/CreateIndex`: Create a manifest of resource and create an index, or re-index. Idempotent while creation is being executed. Synchronous and tied to the client request. Returns [`IndexReport`](https://github.com/quay/claircore/blob/v1.4.18/indexreport.go#L19)
+2. `scanner.v4.Indexer/GetIndex`: Retrieve or check index existence.  Returns [`IndexReport`](https://github.com/quay/claircore/blob/v1.4.18/indexreport.go#L19).
+3. `scanner.v4.Matcher/GetVulnerabilities`: Get vulnerabilities for a given resouce's manifest. Returns [`VulnerabilityReport`](https://github.com/quay/claircore/blob/v1.4.18/vulnerabilityreport.go#L7).
 4. `scanner.v4.Matcher/GetVulnerabilityMetadata`: Get information on vulnerability metadata, e.g. last update timestamp.
 
-Example of `hash_id` usage, to create index reports for container images:
+Example of manifest's `hash_id` usage, to create index reports for container images:
 
 ```
 message ContainerImageLocator {
