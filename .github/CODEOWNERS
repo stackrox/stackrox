@@ -30,3 +30,17 @@ pkg/postgres/**/*   @stackrox/data-shepherds
 tests/upgrade/*     @stackrox/data-shepherds
 
 operator/**/* @stackrox/draco
+
+# Scanner team's responsibilities include anything related to the scanner itself and scanning utilities
+# such as vulnerability uploading and image integrations.
+/central/scannerdefinitions/                          @stackrox/scanner
+/central/sensor/service/pipeline/imageintegrations/   @stackrox/scanner
+/pkg/images/enricher/                                 @stackrox/scanner
+/pkg/nodes/                                           @stackrox/scanner
+/pkg/registries/                                      @stackrox/scanner
+/pkg/scanners/                                        @stackrox/scanner
+/pkg/scans/                                           @stackrox/scanner
+/scanner/                                             @stackrox/scanner
+/sensor/common/scannerdefinitions/                    @stackrox/scanner
+/sensor/kubernetes/listener/resources/secrets.go      @stackrox/scanner
+/sensor/kubernetes/listener/resources/secrets_test.go @stackrox/scanner
