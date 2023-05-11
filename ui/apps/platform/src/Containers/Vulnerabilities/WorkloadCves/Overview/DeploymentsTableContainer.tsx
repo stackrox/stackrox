@@ -67,11 +67,13 @@ function DeploymentsTableContainer({ defaultFilters, countsData }: DeploymentsTa
                 <TableErrorComponent error={error} message="Adjust your filters and try again" />
             )}
             {tableData && (
-                <DeploymentsTable
-                    deployments={tableData.deployments}
-                    getSortParams={getSortParams}
-                    isFiltered={isFiltered}
-                />
+                <div className="workload-cves-table-container">
+                    <DeploymentsTable
+                        deployments={tableData.deployments}
+                        getSortParams={getSortParams}
+                        isFiltered={isFiltered}
+                    />
+                </div>
             )}
         </>
     );

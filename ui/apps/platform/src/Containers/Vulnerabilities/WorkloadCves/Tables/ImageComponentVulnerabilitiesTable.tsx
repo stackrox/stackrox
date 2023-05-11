@@ -59,7 +59,7 @@ function ImageComponentVulnerabilitiesTable({
             }}
             borders={false}
         >
-            <Thead>
+            <Thead noWrap>
                 <Tr>
                     <Th sort={getSortParams('Component')}>Component</Th>
                     <Th>Version</Th>
@@ -89,7 +89,7 @@ function ImageComponentVulnerabilitiesTable({
                         <Tr>
                             <Td>{name}</Td>
                             <Td>{version}</Td>
-                            <Td>
+                            <Td modifier="nowrap">
                                 <FixedByVersionTd fixedByVersion={fixedByVersion} />
                             </Td>
                             <Td>

@@ -133,7 +133,7 @@ function DeploymentVulnerabilitiesTable({
 
     return (
         <TableComposable variant="compact">
-            <Thead>
+            <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('CVE')}>CVE</Th>
@@ -184,10 +184,10 @@ function DeploymentVulnerabilitiesTable({
                                     {cve}
                                 </Button>
                             </Td>
-                            <Td dataLabel="Severity">
+                            <Td modifier="nowrap" dataLabel="Severity">
                                 <VulnerabilitySeverityIconText severity={severity} />
                             </Td>
-                            <Td dataLabel="CVE Status">
+                            <Td modifier="nowrap" dataLabel="CVE Status">
                                 <span>
                                     <FixabilityIcon className="pf-u-display-inline" />
                                     <span className="pf-u-pl-sm">
@@ -196,7 +196,7 @@ function DeploymentVulnerabilitiesTable({
                                 </span>
                             </Td>
                             <Td dataLabel="Affected components">{affectedComponentsText}</Td>
-                            <Td dataLabel="First discovered">
+                            <Td modifier="nowrap" dataLabel="First discovered">
                                 <DatePhraseTd date={discoveredAtImage} />
                             </Td>
                         </Tr>

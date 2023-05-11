@@ -34,7 +34,7 @@ function SeverityCountLabels({
     const LowIcon = SeverityIcons.LOW_VULNERABILITY_SEVERITY;
 
     return (
-        <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+        <Flex spaceItems={{ default: 'spaceItemsSm' }} flexWrap={{ default: 'nowrap' }}>
             <Tooltip content={getTooltipContent(critical, 'critical', entity)}>
                 <Label
                     variant="outline"
