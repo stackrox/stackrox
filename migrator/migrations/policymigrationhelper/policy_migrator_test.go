@@ -12,6 +12,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
+// TODO: Remove this file and move all tests to postgres_policy_migrator_test.go once we no longer support migrating from boltdb
 func TestPolicyMigrator(t *testing.T) {
 	suite.Run(t, new(policyMigratorTestSuite))
 }
