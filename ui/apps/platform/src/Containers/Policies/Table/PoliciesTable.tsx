@@ -14,7 +14,6 @@ import {
     ToolbarGroup,
     ToolbarItem,
     Tooltip,
-    Truncate,
 } from '@patternfly/react-core';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import { CaretDownIcon } from '@patternfly/react-icons';
@@ -53,17 +52,16 @@ const columns = [
         Header: 'Policy',
         accessor: 'name',
         sortMethod: (a: ListPolicy, b: ListPolicy) => sortAsciiCaseInsensitive(a.name, b.name),
-        width: 20 as const,
-    },
-    {
-        Header: 'Description',
-        accessor: 'description',
-        width: 40 as const,
+        width: 30 as const,
     },
     {
         Header: 'Status',
         accessor: 'disabled',
-        width: 15 as const,
+    },
+    {
+        Header: 'Origin',
+        accessor: 'isDefault',
+        sortMethod: (a: ListPolicy, b: ListPolicy) => sortPolicyOrigin(a.isDefault, b.isDefault),
     },
     {
         Header: 'Notifiers',
@@ -80,6 +78,16 @@ const columns = [
         accessor: 'lifecycleStages',
     },
 ];
+
+const defaultPolicyLabel = 'System';
+const userPolicyLabel = 'User';
+
+function sortPolicyOrigin(a, b) {
+    const aOrigin = a ? defaultPolicyLabel : userPolicyLabel;
+    const bOrigin = b ? defaultPolicyLabel : userPolicyLabel;
+
+    return sortAsciiCaseInsensitive(aOrigin, bOrigin);
+}
 
 type PoliciesTableProps = {
     notifiers: NotifierIntegration[];
@@ -376,7 +384,6 @@ function PoliciesTable({
                     <Tbody>
                         {rows.map((policy) => {
                             const {
-                                description,
                                 disabled,
                                 id,
                                 isDefault,
@@ -446,14 +453,11 @@ function PoliciesTable({
                                             {name}
                                         </Button>
                                     </Td>
-                                    <Td dataLabel="Description">
-                                        <Truncate
-                                            content={description || '-'}
-                                            tooltipPosition="top"
-                                        />
-                                    </Td>
                                     <Td dataLabel="Status">
                                         <PolicyDisabledIconText isDisabled={disabled} />
+                                    </Td>
+                                    <Td dataLabel="Origin">
+                                        {isDefault ? defaultPolicyLabel : userPolicyLabel}
                                     </Td>
                                     <Td dataLabel="Notifiers">
                                         {notifierCountsWithLabelStrings.length === 0 ? (
