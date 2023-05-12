@@ -60,6 +60,14 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                     .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:8082,fork STDOUT & " +
                             "sleep 90 && pkill socat && sleep 3600)" as String,]),
                     // The 8082 port is opened. 90 seconds later the process is killed. After that we sleep forever
+            new Deployment()
+                    .setName(TCPCONNECTIONTARGET2)
+                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .addPort(8083, "UDP")
+                    .addLabel("app", UDPCONNECTIONTARGET1)
+                    .setExposeAsService(true)
+                    .setCommand(["/bin/sh", "-c",])
+                    .setArgs(["(socat "+SOCAT_DEBUG+" UDP-LISTEN:8083,fork STDOUT)" as String,]),
         ]
     }
 
@@ -118,6 +126,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         String deploymentId1 = targetDeployments.find { it.name == TCPCONNECTIONTARGET1 }?.deploymentUid
         String deploymentId2 = targetDeployments.find { it.name == TCPCONNECTIONTARGET2 }?.deploymentUid
+        String deploymentId3 = targetDeployments.find { it.name == UDPCONNECTIONTARGET1 }?.deploymentUid
 
         def processesListeningOnPorts = waitForResponseToHaveNumElements(2, deploymentId1, 240)
 
@@ -163,6 +172,23 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint.signal.execFilePath == "/usr/bin/socat"
         assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
 
+        processesListeningOnPorts = waitForResponseToHaveNumElements(1, deploymentId3, 240)
+
+        assert processesListeningOnPorts
+
+        list = processesListeningOnPorts.listeningEndpointsList
+        assert list.size() == 1
+
+        def endpoint = list.find { it.endpoint.port == 8083 }
+
+        assert endpoint
+        assert endpoint.deploymentId
+        assert endpoint.podId
+        assert endpoint.containerName == UDPCONNECTIONTARGET1
+        assert endpoint.signal.name == "socat"
+        assert endpoint.signal.execFilePath == "/usr/bin/socat"
+        assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8083,fork STDOUT"
+
         destroyDeployments()
 
         processesListeningOnPorts = waitForResponseToHaveNumElements(0, deploymentId1, 240)
@@ -178,8 +204,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         def list3 = processesListeningOnPorts.listeningEndpointsList
         assert list3.size() == 0
-
-        destroyDeployments()
     }
 
     @Tag("BAT")
