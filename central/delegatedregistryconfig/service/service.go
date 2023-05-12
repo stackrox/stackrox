@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
-	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
@@ -32,10 +31,8 @@ var (
 	log = logging.LoggerForModule()
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		or.SensorOrAuthorizer(user.With(permissions.View(resources.Administration))): {
-			"/v1.DelegatedRegistryConfigService/GetConfig",
-		},
 		user.With(permissions.View(resources.Administration)): {
+			"/v1.DelegatedRegistryConfigService/GetConfig",
 			"/v1.DelegatedRegistryConfigService/GetClusters",
 		},
 		user.With(permissions.Modify(resources.Administration)): {
