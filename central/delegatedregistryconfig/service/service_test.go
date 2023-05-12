@@ -43,17 +43,21 @@ func TestGetConfigSuccess(t *testing.T) {
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
 	s := New(deleClusterDS, nil, nil)
 
-	deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(nil, nil)
-	cfg, err = s.GetConfig(context.Background(), empty)
-	assert.NoError(t, err)
-	assert.Empty(t, cfg)
+	t.Run("empty", func(t *testing.T) {
+		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(nil, nil)
+		cfg, err = s.GetConfig(context.Background(), empty)
+		assert.NoError(t, err)
+		assert.Empty(t, cfg)
+	})
 
-	retVal := &storage.DelegatedRegistryConfig{EnabledFor: storage.DelegatedRegistryConfig_SPECIFIC, DefaultClusterId: "id1"}
-	deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(retVal, nil)
-	cfg, err = s.GetConfig(context.Background(), empty)
-	assert.NoError(t, err)
-	assert.Equal(t, cfg.EnabledFor, specific)
-	assert.Equal(t, cfg.DefaultClusterId, "id1")
+	t.Run("specific and default cluster", func(t *testing.T) {
+		retVal := &storage.DelegatedRegistryConfig{EnabledFor: storage.DelegatedRegistryConfig_SPECIFIC, DefaultClusterId: "id1"}
+		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(retVal, nil)
+		cfg, err = s.GetConfig(context.Background(), empty)
+		assert.NoError(t, err)
+		assert.Equal(t, cfg.EnabledFor, specific)
+		assert.Equal(t, cfg.DefaultClusterId, "id1")
+	})
 }
 
 func TestGetConfigError(t *testing.T) {
@@ -62,9 +66,11 @@ func TestGetConfigError(t *testing.T) {
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
 	s := New(deleClusterDS, nil, nil)
 
-	deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(nil, errBroken)
-	_, err = s.GetConfig(context.Background(), empty)
-	assert.ErrorContains(t, err, "retrieving config")
+	t.Run("expect error", func(t *testing.T) {
+		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(nil, errBroken)
+		_, err = s.GetConfig(context.Background(), empty)
+		assert.ErrorContains(t, err, "retrieving config")
+	})
 }
 
 func TestGetClustersSuccess(t *testing.T) {
@@ -222,23 +228,36 @@ func TestPutConfigSuccess(t *testing.T) {
 	clustersDS := clusterDSMocks.NewMockDataStore(gomock.NewController(t))
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
 	connMgr := connMgrMocks.NewMockManager(gomock.NewController(t))
-	connMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any()).AnyTimes()
 	connMgr.EXPECT().GetConnection("id1").Return(fakeConnWithCap).AnyTimes()
 	connMgr.EXPECT().GetConnection("id2").Return(fakeConnWithOutCap).AnyTimes()
 
 	s := New(deleClusterDS, clustersDS, connMgr)
 	clustersDS.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{{Id: "id1"}, {Id: "id2"}}, nil).AnyTimes()
 
-	cfg = &v1.DelegatedRegistryConfig{EnabledFor: specific, DefaultClusterId: "id1"}
-	cfg.DefaultClusterId = "id1"
-	deleClusterDS.EXPECT().UpsertConfig(gomock.Any(), gomock.Any())
-	_, err = s.PutConfig(context.Background(), cfg)
-	assert.NoError(t, err)
+	t.Run("default cluster id", func(t *testing.T) {
+		deleClusterDS.EXPECT().UpsertConfig(gomock.Any(), gomock.Any())
+		connMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any())
+		cfg = &v1.DelegatedRegistryConfig{EnabledFor: specific, DefaultClusterId: "id1"}
+		_, err = s.PutConfig(context.Background(), cfg)
+		assert.NoError(t, err)
+	})
 
-	deleClusterDS.EXPECT().UpsertConfig(gomock.Any(), gomock.Any())
-	cfg.Registries = []*v1.DelegatedRegistryConfig_DelegatedRegistry{{ClusterId: "id1", RegistryPath: "something"}}
-	_, err = s.PutConfig(context.Background(), cfg)
-	assert.NoError(t, err)
+	t.Run("registries", func(t *testing.T) {
+		deleClusterDS.EXPECT().UpsertConfig(gomock.Any(), gomock.Any())
+		connMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any())
+		cfg.Registries = []*v1.DelegatedRegistryConfig_DelegatedRegistry{{ClusterId: "id1", RegistryPath: "something"}}
+		_, err = s.PutConfig(context.Background(), cfg)
+		assert.NoError(t, err)
+	})
+
+	t.Run("broadcast error allowed", func(t *testing.T) {
+		// expect no error if sending to clusters fails but everything else succeeds
+		deleClusterDS.EXPECT().UpsertConfig(gomock.Any(), gomock.Any())
+		connMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any()).Return(errBroken)
+		_, err = s.PutConfig(context.Background(), cfg)
+		assert.NoError(t, err)
+	})
+
 }
 
 type fakeSensorConn struct {
