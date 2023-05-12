@@ -20,6 +20,7 @@ type analyzeNetpolCommand struct {
 	removeOutputPath      bool
 	outputToFile          bool
 	focusWorkload         string
+	outputFormat          string
 
 	// injected or constructed values
 	env environment.Environment
@@ -56,10 +57,12 @@ For more information about the support scope of Red Hat Technology Preview featu
 	c.Flags().BoolVar(&analyzeNetpolCmd.stopOnFirstError, "fail", false, "fail on the first encountered error")
 	c.Flags().BoolVar(&analyzeNetpolCmd.removeOutputPath, "remove", false, "remove the output path if it already exists")
 	c.Flags().BoolVar(&analyzeNetpolCmd.outputToFile, "save-to-file", false, "whether to save connlist output into default file")
-	c.Flags().StringVarP(&analyzeNetpolCmd.outputFilePath, "output-file", "f", "", "save connlist output into specific txt file")
+	c.Flags().StringVarP(&analyzeNetpolCmd.outputFilePath, "output-file", "f", "", "save connlist output into specific file")
 	c.Flags().StringVarP(&analyzeNetpolCmd.focusWorkload, "focus-workload", "", "", "focus connections of specified workload name in the output")
+	c.Flags().StringVarP(&analyzeNetpolCmd.outputFormat, "output-format", "o", "txt", "configure the connlist in specific format, supported formats: txt|json|md|dot|csv")
 	return c
 }
+
 func (cmd *analyzeNetpolCommand) construct(args []string) (netpolAnalyzer, error) {
 	cmd.inputFolderPath = args[0]
 	var opts []npguard.ConnlistAnalyzerOption
@@ -71,6 +74,9 @@ func (cmd *analyzeNetpolCommand) construct(args []string) (netpolAnalyzer, error
 	}
 	if cmd.focusWorkload != "" {
 		opts = append(opts, npguard.WithFocusWorkload(cmd.focusWorkload))
+	}
+	if cmd.outputFormat != "" {
+		opts = append(opts, npguard.WithOutputFormat(cmd.outputFormat))
 	}
 	if cmd.outputFilePath != "" {
 		cmd.outputToFile = true

@@ -1,6 +1,7 @@
 package netpol
 
 import (
+	"errors"
 	"os"
 	"testing"
 
@@ -21,7 +22,12 @@ type analyzeNetpolTestSuite struct {
 }
 
 func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
-	outFile := d.T().TempDir() + "/out.txt"
+	tmpOutFileName := d.T().TempDir() + "/out"
+	outFileTxt := tmpOutFileName + ".txt"
+	outFileJSON := tmpOutFileName + ".json"
+	outFileMD := tmpOutFileName + ".md"
+	outFileCSV := tmpOutFileName + ".csv"
+	outFileDOT := tmpOutFileName + ".dot"
 	cases := []struct {
 		name                  string
 		inputFolderPath       string
@@ -32,7 +38,9 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 		outFile               string
 		outputToFile          bool
 		focusWorkload         string
+		outputFormat          string
 		removeOutputPath      bool
+		errStringContainment  bool
 	}{
 		{
 			name:                  "not existing inputFolderPath should raise 'os.ErrNotExist' error",
@@ -71,7 +79,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			inputFolderPath:       "testdata/minimal",
 			expectedValidateError: nil,
 			expectedAnalysisError: nil,
-			outFile:               outFile,
+			outFile:               outFileTxt,
 			removeOutputPath:      false,
 		},
 		{
@@ -79,7 +87,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			inputFolderPath:       "testdata/minimal",
 			expectedValidateError: errox.AlreadyExists,
 			expectedAnalysisError: nil,
-			outFile:               outFile,
+			outFile:               outFileTxt,
 			removeOutputPath:      false,
 		},
 		{
@@ -87,7 +95,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			inputFolderPath:       "testdata/minimal",
 			expectedValidateError: nil,
 			expectedAnalysisError: nil,
-			outFile:               outFile,
+			outFile:               outFileTxt,
 			removeOutputPath:      true,
 		},
 		{
@@ -104,6 +112,51 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			expectedValidateError: nil,
 			expectedAnalysisError: nil,
 		},
+		{
+			name:                  "not supported output format",
+			inputFolderPath:       "testdata/minimal",
+			outputFormat:          "docx",
+			errStringContainment:  true,
+			expectedAnalysisError: errors.New("docx output format is not supported."),
+		},
+		{
+			name:                  "generate output in json format",
+			inputFolderPath:       "testdata/minimal",
+			outputFormat:          "json",
+			expectedAnalysisError: nil,
+			expectedValidateError: nil,
+			outFile:               outFileJSON,
+		},
+		{
+			name:                  "generate output in md format",
+			inputFolderPath:       "testdata/minimal",
+			outputFormat:          "md",
+			expectedAnalysisError: nil,
+			expectedValidateError: nil,
+			outFile:               outFileMD,
+		},
+		{
+			name:                  "generate output in csv format",
+			inputFolderPath:       "testdata/minimal",
+			outputFormat:          "csv",
+			expectedAnalysisError: nil,
+			expectedValidateError: nil,
+			outFile:               outFileCSV,
+		},
+		{
+			name:                  "generate output in dot format",
+			inputFolderPath:       "testdata/minimal",
+			outputFormat:          "dot",
+			expectedAnalysisError: nil,
+			expectedValidateError: nil,
+			outFile:               outFileDOT,
+		},
+		{
+			name:                  "openshift resources are recognized by the serializer with k8s resources",
+			inputFolderPath:       "testdata/frontend-security",
+			expectedAnalysisError: nil,
+			expectedValidateError: nil,
+		},
 	}
 
 	for _, tt := range cases {
@@ -112,6 +165,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			testCmd := &cobra.Command{Use: "test"}
 			testCmd.Flags().String("output-file", "", "")
 			testCmd.Flags().String("focus-workload", "", "")
+			testCmd.Flags().String("output-format", "", "")
 
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
 			analyzeNetpolCmd := analyzeNetpolCommand{
@@ -122,6 +176,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 				removeOutputPath:      tt.removeOutputPath,
 				outputToFile:          tt.outputToFile,
 				focusWorkload:         tt.focusWorkload,
+				outputFormat:          tt.outputFormat,
 				env:                   env,
 			}
 
@@ -131,6 +186,9 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 
 			if tt.focusWorkload != "" {
 				d.Assert().NoError(testCmd.Flags().Set("focus-workload", tt.focusWorkload))
+			}
+			if tt.outputFormat != "" {
+				d.Assert().NoError(testCmd.Flags().Set("output-format", tt.outputFormat))
 			}
 
 			analyzer, err := analyzeNetpolCmd.construct([]string{tt.inputFolderPath})
@@ -147,7 +205,11 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			err = analyzeNetpolCmd.analyzeNetpols(analyzer)
 			if tt.expectedAnalysisError != nil {
 				d.Require().Error(err)
-				d.Assert().ErrorIs(err, tt.expectedAnalysisError)
+				if tt.errStringContainment {
+					d.Assert().Contains(err.Error(), tt.expectedAnalysisError.Error())
+				} else {
+					d.Assert().ErrorIs(err, tt.expectedAnalysisError)
+				}
 			} else {
 				d.Assert().NoError(err)
 			}

@@ -10,11 +10,11 @@ import (
 	"github.com/stackrox/rox/roxctl/common/npg"
 )
 
-const defaultOutputFileName = "connlist.txt"
+const defaultOutputFileName = "connlist"
 
 type netpolAnalyzer interface {
 	ConnlistFromDirPath(dirPath string) ([]npguard.Peer2PeerConnection, error)
-	ConnectionsListToString(conns []npguard.Peer2PeerConnection) string
+	ConnectionsListToString(conns []npguard.Peer2PeerConnection) (string, error)
 	Errors() []npguard.ConnlistError
 }
 
@@ -23,7 +23,10 @@ func (cmd *analyzeNetpolCommand) analyzeNetpols(analyzer netpolAnalyzer) error {
 	if err != nil {
 		return errors.Wrap(err, "error in connectivity analysis")
 	}
-	connsStr := analyzer.ConnectionsListToString(conns)
+	connsStr, err := analyzer.ConnectionsListToString(conns)
+	if err != nil {
+		return errors.Wrap(err, "error in formating connectivity list")
+	}
 	if err := cmd.ouputConnList(connsStr); err != nil {
 		return err
 	}
@@ -46,7 +49,7 @@ func (cmd *analyzeNetpolCommand) ouputConnList(connsStr string) error {
 	if cmd.outputToFile {
 		dirpath, filename := filepath.Split(cmd.outputFilePath)
 		if filename == "" {
-			filename = defaultOutputFileName
+			filename = defaultOutputFileName + cmd.outputFormat
 		}
 
 		if err := writeFile(filename, dirpath, connsStr); err != nil {
