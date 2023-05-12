@@ -179,15 +179,15 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         list = processesListeningOnPorts.listeningEndpointsList
         assert list.size() == 1
 
-        def endpoint = list.find { it.endpoint.port == 8083 }
+        def endpoint3 = list.find { it.endpoint.port == 8083 }
 
-        assert endpoint
-        assert endpoint.deploymentId
-        assert endpoint.podId
-        assert endpoint.containerName == UDPCONNECTIONTARGET1
-        assert endpoint.signal.name == "socat"
-        assert endpoint.signal.execFilePath == "/usr/bin/socat"
-        assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8083,fork STDOUT"
+        assert endpoint3
+        assert endpoint3.deploymentId
+        assert endpoint3.podId
+        assert endpoint3.containerName == UDPCONNECTIONTARGET1
+        assert endpoint3.signal.name == "socat"
+        assert endpoint3.signal.execFilePath == "/usr/bin/socat"
+        assert endpoint3.signal.args == "-d -d -v TCP-LISTEN:8083,fork STDOUT"
 
         destroyDeployments()
 
