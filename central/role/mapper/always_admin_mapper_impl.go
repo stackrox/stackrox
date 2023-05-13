@@ -3,9 +3,9 @@ package mapper
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/role"
 	roleDatastore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -24,7 +24,7 @@ func AlwaysAdminRoleMapper() permissions.RoleMapper {
 	// It is only valid to store a reference to the Admin role because it is
 	// immutable, otherwise we would fetch it on every FromUserDescriptor call.
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
-	adminRole, err := roleDatastore.Singleton().GetAndResolveRole(ctx, role.Admin)
+	adminRole, err := roleDatastore.Singleton().GetAndResolveRole(ctx, accesscontrol.Admin)
 	utils.CrashOnError(err)
 
 	return &alwaysAdminMapperImpl{
