@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "gogoproto/gogo.proto";
+
+package storage;
+
+enum ContinuousIntegrationType {
+    UNSUPPORTED_CONTINUOUS_INTEGRATION = 0;
+    GITHUB_ACTIONS                     = 1;
+    // At a later point this should also cover GitLab.
+    //GITLAB_CI_CD                       = 2;
+}
+
+// TODO(dhaus): WIP name, need to find a better one for all of this.
+// ContinuousIntegrationConfig provides configuration with CI of different providers.
+// Specifically, this allows integration with different providers (i.e. GitHub and GitLab) for
+// allowing to receive an access token with a specific role based on the id_token within the respective
+// CI solution.
+message ContinuousIntegrationConfig {
+    string id                      = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+    ContinuousIntegrationType type = 2;
+    repeated RoleMapping mappings  = 3;
+}
+
+// RoleMapping holds the mapping based on a specific claim on the id_token from the CI provider to a specific
+// role.
+// Currently, the supported claims are:
+// * "sub"
+message RoleMapping {
+    enum Claim {
+        SUB = 0;
+    }
+    Claim claim  = 1;
+    string value = 2;
+    string role  = 3;
+}

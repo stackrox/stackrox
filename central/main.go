@@ -35,6 +35,7 @@ import (
 	complianceService "github.com/stackrox/rox/central/compliance/service"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
+	continuousIntegrationService "github.com/stackrox/rox/central/continuousintegration/service"
 	credentialExpiryService "github.com/stackrox/rox/central/credentialexpiry/service"
 	clusterCveCsv "github.com/stackrox/rox/central/cve/cluster/csv"
 	clusterCVEService "github.com/stackrox/rox/central/cve/cluster/service"
@@ -404,6 +405,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, collectionService.Singleton())
 		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
 		servicesToRegister = append(servicesToRegister, processListeningOnPorts.Singleton())
+		servicesToRegister = append(servicesToRegister, continuousIntegrationService.Singleton())
 	} else {
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
 	}

@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+import "api/v1/common.proto";
+import "storage/continuous_integration.proto";
+
+package v1;
+
+message GetContinuousIntegrationConfigsResponse {
+    repeated storage.ContinuousIntegrationConfig configs = 1;
+}
+
+message RetrieveTokenForContinuousIntegrationRequest {
+    string id_token                               = 1;
+    storage.ContinuousIntegrationType ci_provider = 2;
+}
+
+message RetrieveTokenForContinuousIntegrationResponse {
+    string access_token = 1;
+}
+
+service ContinuousIntegrationService {
+    rpc GetContinuousIntegration (ResourceByID) returns (storage.ContinuousIntegrationConfig) {
+        option (google.api.http) = {
+            get: "/v1/continuous-integration/{id}"
+        };
+    }
+
+    rpc ListContinuousIntegrations (Empty) returns (GetContinuousIntegrationConfigsResponse) {
+        option (google.api.http) = {
+            get: "/v1/continuous-integration"
+        };
+    }
+
+    rpc PostContinuousIntegration (storage.ContinuousIntegrationConfig) returns (storage.ContinuousIntegrationConfig) {
+        option (google.api.http) = {
+            post: "/v1/continuous-integration"
+            body: "*"
+        };
+    }
+
+    rpc DeleteContinuousIntegration (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/continuous-integration/{id}"
+        };
+    }
+
+    rpc RetrieveTokenForContinuousIntegration (RetrieveTokenForContinuousIntegrationRequest) returns (RetrieveTokenForContinuousIntegrationResponse) {
+        option (google.api.http) = {
+            post: "/v1/continuous-integration/retrieve-token"
+            body: "*"
+        };
+    }
+}
