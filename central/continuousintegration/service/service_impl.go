@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"google.golang.org/grpc"
@@ -25,6 +26,9 @@ var (
 		user.With(permissions.Modify(resources.Integration)): {
 			"/v1.ContinuousIntegrationService/PostContinuousIntegration",
 			"/v1.ContinuousIntegrationService/DeleteContinuousIntegration",
+		},
+		allow.Anonymous(): {
+			"/v1.ContinuousIntegrationService/RetrieveTokenForContinuousIntegration",
 		},
 	})
 
