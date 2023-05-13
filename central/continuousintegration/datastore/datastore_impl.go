@@ -56,7 +56,7 @@ func (d *dataStoreImpl) AddContinuousIntegrationConfig(ctx context.Context, conf
 	}
 
 	d.lock.Lock()
-	d.lock.Unlock()
+	defer d.lock.Unlock()
 	if err := d.verifyIDDoesNotExist(ctx, config.GetId()); err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (d *dataStoreImpl) UpdateContinuousIntegrationConfig(ctx context.Context, c
 	}
 
 	d.lock.Lock()
-	d.lock.Unlock()
+	defer d.lock.Unlock()
 
 	return d.store.Upsert(ctx, config)
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/continuousintegration/datastore"
+	"github.com/stackrox/rox/central/continuousintegration/token"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -34,6 +35,7 @@ type serviceImpl struct {
 	v1.UnimplementedContinuousIntegrationServiceServer
 
 	dataStore datastore.DataStore
+	exchanger token.Exchanger
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -77,15 +79,11 @@ func (s *serviceImpl) DeleteContinuousIntegration(ctx context.Context, req *v1.R
 
 func (s *serviceImpl) RetrieveTokenForContinuousIntegration(ctx context.Context,
 	req *v1.RetrieveTokenForContinuousIntegrationRequest) (*v1.RetrieveTokenForContinuousIntegrationResponse, error) {
-	// We receive an id_token that is issued by the OIDC provider from the CI solution (in this case GitHub).
-	// The flow to receiving an access token will be the following:
-	// 1. Verify that the ID token is issued by the given CI solution's OIDC provider. This will be inferred by the type
-	// given in the request.
-	// 2. In case the ID token can be verified, query the existing configs for the specific CI solution type and go
-	// through the role mappings. Use the claim values given there to construct the list of roles the associated token
-	// should have.
-	// 3. Finally, issue a token based on the ID token with the given roles. Note that this will token will have a much
-	// shorter expiry since it is meant for a single CI run (we may extend the API / Config with an expiry time).
-
-	return nil, nil
+	accessToken, err := s.exchanger.ExchangeToken(ctx, req.GetIdToken(), req.GetCiProvider())
+	if err != nil {
+		return nil, err
+	}
+	return &v1.RetrieveTokenForContinuousIntegrationResponse{
+		AccessToken: accessToken,
+	}, nil
 }

@@ -24,6 +24,6 @@ var (
 
 // ContinuousIntegrationConfigs holds the Gorm model for Postgres table `continuous_integration_configs`.
 type ContinuousIntegrationConfigs struct {
-	Id         string `gorm:"column:id;type:uuid;primaryKey"`
+	ID         string `gorm:"column:id;type:uuid;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

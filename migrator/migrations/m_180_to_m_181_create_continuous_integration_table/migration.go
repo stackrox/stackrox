@@ -1,4 +1,4 @@
-package m_180_to_m_181_create_continuous_integration_table
+package m180tom181
 
 import (
 	"context"

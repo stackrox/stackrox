@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/stackrox/rox/central/continuousintegration/datastore"
+	"github.com/stackrox/rox/central/continuousintegration/token"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -13,7 +14,7 @@ var (
 // Singleton returns the continuous integration service singleton.
 func Singleton() Service {
 	once.Do(func() {
-		instance = New(datastore.Singleton())
+		instance = New(datastore.Singleton(), token.Singleton())
 	})
 	return instance
 }
