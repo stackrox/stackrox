@@ -8,9 +8,9 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/role"
 	versionUtils "github.com/stackrox/rox/central/version/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/fsutils"
@@ -27,7 +27,7 @@ const (
 )
 
 var (
-	authorizer             = user.WithRole(role.Admin)
+	authorizer             = user.WithRole(accesscontrol.Admin)
 	capacityMarginFraction = migrations.CapacityMarginFraction + 0.05
 )
 
