@@ -49,7 +49,7 @@ func (cmd *analyzeNetpolCommand) ouputConnList(connsStr string) error {
 	if cmd.outputToFile {
 		dirpath, filename := filepath.Split(cmd.outputFilePath)
 		if filename == "" {
-			filename = defaultOutputFileName + cmd.outputFormat
+			filename = defaultOutputFileNamePrefix + cmd.outputFormat
 		}
 
 		if err := writeFile(filename, dirpath, connsStr); err != nil {
