@@ -37,8 +37,12 @@ func (d *dataStoreImpl) GetAllContinuousIntegrationConfigs(ctx context.Context) 
 	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
-
-	return d.GetAllContinuousIntegrationConfigs(ctx)
+	var configs []*storage.ContinuousIntegrationConfig
+	err := d.store.Walk(ctx, func(obj *storage.ContinuousIntegrationConfig) error {
+		configs = append(configs, obj)
+		return nil
+	})
+	return configs, err
 }
 
 func (d *dataStoreImpl) AddContinuousIntegrationConfig(ctx context.Context, config *storage.ContinuousIntegrationConfig) (*storage.ContinuousIntegrationConfig, error) {
