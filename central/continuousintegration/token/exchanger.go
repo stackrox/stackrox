@@ -69,7 +69,7 @@ func (r *retriever) ExchangeToken(ctx context.Context, rawIDToken string, integr
 	log.Infof("Verified the ID token from %s: %+v", integrationType, idToken)
 
 	var claims map[string]interface{}
-	utils.Should(idToken.Claims(claims))
+	utils.Should(idToken.Claims(&claims))
 	log.Infof("Claims of the ID token from %s: %+v", integrationType, claims)
 
 	configsForType, err := r.getConfigsForType(ctx, integrationType)
