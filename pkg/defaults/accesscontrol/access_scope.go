@@ -4,7 +4,7 @@ const (
 	// UnrestrictedAccessScope is the name of the default unrestricted access scope.
 	UnrestrictedAccessScope = "Unrestricted"
 	// DenyAllAccessScope is the name of the default deny all access scope.
-	DenyAllAccessScope = "Deny all"
+	DenyAllAccessScope = "Deny All"
 )
 
 // Postgres IDs for access scopes
