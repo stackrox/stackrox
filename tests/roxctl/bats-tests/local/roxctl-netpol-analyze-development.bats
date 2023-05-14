@@ -213,6 +213,7 @@ teardown() {
   # partial here is used to filter the WARN and INFO messages
   assert_output --partial 'default/backend[Deployment] => default/backend[Deployment] : All Connections
 default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
+  refute_output --partial 'default/frontend[Deployment] => 0.0.0.0-255.255.255.255 : UDP 53'
 }
 
 write_yaml_to_file() {

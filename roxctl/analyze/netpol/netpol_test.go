@@ -220,9 +220,9 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			}
 
 			if tt.outputToFile && tt.outFile == "" && tt.expectedAnalysisError == nil && tt.expectedValidateError == nil {
-				_, err := os.Stat(defaultOutputFileName)
+				_, err := os.Stat(defaultOutputFileNamePrefix + "txt")
 				d.Assert().NoError(err) // default output file should exist
-				d.Assert().NoError(os.Remove(defaultOutputFileName))
+				d.Assert().NoError(os.Remove(defaultOutputFileNamePrefix + "txt"))
 			}
 
 		})
