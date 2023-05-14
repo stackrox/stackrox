@@ -142,7 +142,7 @@ func (r *retriever) getConfigsForType(ctx context.Context, integrationType stora
 	configCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Role, resources.Access)))
+			sac.ResourceScopeKeys(resources.Integration)))
 	configs, err := r.continuousIntegrationDataStore.GetAllContinuousIntegrationConfigs(configCtx)
 	if err != nil {
 		return nil, err
