@@ -144,7 +144,7 @@ if [[ "${NATIVE_PG_INSTALL}" == "true" ]]; then
     echo "PG minor version: ${postgres_minor}"
 else
     build_dir="$(mktemp -d)"
-    docker build -q -t postgres-minor-image "${build_dir}" -f - <<EOF
+    docker buildx build --load --platform "${PLATFORM}" -q -t postgres-minor-image "${build_dir}" -f - <<EOF
 FROM registry.access.redhat.com/ubi8/ubi:${pg_rhel_version}
 RUN dnf install --disablerepo='*' -y "${postgres_repo_url}"
 ENTRYPOINT dnf list ${dnf_list_args[@]+"${dnf_list_args[@]}"} --disablerepo='*' --enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server.$arch | tail -n 1 | awk '{print \$2}'

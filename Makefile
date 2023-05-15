@@ -72,8 +72,12 @@ ifeq ($(UNAME_M),arm64)
 endif
 endif
 
+ifeq ($(ARCH),)
+TARGET_ARCH := "amd64"
+else
 TARGET_ARCH := $(ARCH)
 GOARCH := $(ARCH)
+endif
 
 ifeq ($(UNAME_M),arm64)
 TARGET_ARCH = "arm64"
