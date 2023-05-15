@@ -97,7 +97,7 @@ func (s *serviceImpl) GetUpgradeStatus(_ context.Context, _ *v1.Empty) (*v1.GetU
 				defer pool.Close()
 
 				// Get rollback to version
-				migVer, err := versionUtils.ReadVersionPostgres(pool)
+				migVer, err := versionUtils.ReadPreviousVersionPostgres(pool)
 				if err != nil {
 					log.Infof("Unable to get previous version, leaving ForceRollbackTo empty.  %v", err)
 				}
