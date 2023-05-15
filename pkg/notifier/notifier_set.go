@@ -1,21 +1,16 @@
-package processor
+package notifier
 
 import (
 	"context"
+	"time"
 
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var (
-	integrationSAC = sac.ForResource(resources.Integration)
-)
-
-// NotifierSet is a set that coordinates present policies and notifiers.
-type NotifierSet interface {
+// Set is a set that coordinates present policies and notifiers.
+type Set interface {
 	HasNotifiers() bool
 	HasEnabledAuditNotifiers() bool
 
@@ -27,11 +22,12 @@ type NotifierSet interface {
 	GetNotifiers(ctx context.Context) []notifiers.Notifier
 }
 
-// NewNotifierSet returns a new instance of a NotifierSet
-func NewNotifierSet() NotifierSet {
+// NewNotifierSet returns a new instance of a Set
+func NewNotifierSet(retryAlertsFor time.Duration) Set {
 	return &notifierSetImpl{
-		notifiers: make(map[string]notifiers.Notifier),
-		failures:  make(map[string]AlertSet),
+		retryAlertsFor: retryAlertsFor,
+		notifiers:      make(map[string]notifiers.Notifier),
+		failures:       make(map[string]AlertSet),
 	}
 }
 
@@ -40,6 +36,8 @@ func NewNotifierSet() NotifierSet {
 
 type notifierSetImpl struct {
 	lock sync.RWMutex
+
+	retryAlertsFor time.Duration
 
 	notifiers map[string]notifiers.Notifier
 	failures  map[string]AlertSet
@@ -67,7 +65,7 @@ func (p *notifierSetImpl) HasEnabledAuditNotifiers() bool {
 	return false
 }
 
-// ForEachesFailures performs a function on each notifier.
+// ForEach performs a function on each notifier.
 func (p *notifierSetImpl) ForEach(ctx context.Context, f func(context.Context, notifiers.Notifier, AlertSet)) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
@@ -84,7 +82,7 @@ func (p *notifierSetImpl) UpsertNotifier(ctx context.Context, notifier notifiers
 
 	notifierID := notifier.ProtoNotifier().GetId()
 	if _, exists := p.failures[notifierID]; !exists {
-		p.failures[notifierID] = NewAlertSet()
+		p.failures[notifierID] = NewAlertSet(p.retryAlertsFor)
 	}
 	if knownNotifier := p.notifiers[notifierID]; knownNotifier != nil && knownNotifier != notifier {
 		if err := knownNotifier.Close(ctx); err != nil {
@@ -111,17 +109,13 @@ func (p *notifierSetImpl) RemoveNotifier(ctx context.Context, id string) {
 
 // GetNotifier gets a notifier from the set.
 func (p *notifierSetImpl) GetNotifier(ctx context.Context, id string) notifiers.Notifier {
-	if ok, err := integrationSAC.ReadAllowed(ctx); !ok || err != nil {
-		return nil
-	}
-
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
 	return p.notifiers[id]
 }
 
-// GetNotifies gets notifiers from the set.
+// GetNotifiers gets notifiers from the set.
 func (p *notifierSetImpl) GetNotifiers(_ context.Context) []notifiers.Notifier {
 	p.lock.Lock()
 	defer p.lock.Unlock()

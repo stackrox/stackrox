@@ -1,16 +1,21 @@
-package processor
+package notifier
 
 import (
 	"context"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // Sending alerts.
 //////////////////
 
-func tryToAlert(ctx context.Context, notifier notifiers.Notifier, alert *storage.Alert) error {
+func TryToAlert(ctx context.Context, notifier notifiers.Notifier, alert *storage.Alert) error {
 	if alert.GetState() == storage.ViolationState_ACTIVE || alert.GetState() == storage.ViolationState_ATTEMPTED {
 		alertNotifier, ok := notifier.(notifiers.AlertNotifier)
 		if !ok {
