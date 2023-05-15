@@ -35,7 +35,7 @@ require (
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/georgysavva/scany v1.2.1
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-logr/logr v1.2.3
+	github.com/go-logr/logr v1.2.4
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/gogo/protobuf v1.3.2
@@ -45,7 +45,7 @@ require (
 	github.com/google/certificate-transparency-go v1.1.5
 	github.com/google/gnostic v0.6.9
 	github.com/google/go-cmp v0.5.9
-	github.com/google/go-containerregistry v0.14.0
+	github.com/google/go-containerregistry v0.14.1-0.20230409045903-ed5c185df419
 	github.com/gorilla/schema v1.2.0
 	github.com/graph-gophers/graphql-go v1.5.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
@@ -84,7 +84,7 @@ require (
 	github.com/russellhaering/gosaml2 v0.9.1
 	github.com/russellhaering/goxmldsig v1.4.0
 	github.com/sergi/go-diff v1.3.1
-	github.com/sigstore/cosign v1.13.1
+	github.com/sigstore/cosign/v2 v2.0.2
 	github.com/sigstore/sigstore v1.6.3
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
@@ -180,6 +180,8 @@ require (
 	github.com/cyberphone/json-canonicalization v0.0.0-20220623050100-57a0ce2678a7 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/digitorus/pkcs7 v0.0.0-20221212123742-001c36b64ec3 // indirect
+	github.com/digitorus/timestamp v0.0.0-20221019182153-ef3b63b79b31 // indirect
 	github.com/docker/cli v23.0.1+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
@@ -227,6 +229,7 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/s2a-go v0.1.2 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
+	github.com/google/trillian v1.5.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
 	github.com/googleapis/gax-go/v2 v2.8.0 // indirect
@@ -318,6 +321,7 @@ require (
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/sigstore/rekor v1.1.1 // indirect
+	github.com/sigstore/timestamp-authority v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/skeema/knownhosts v1.1.0 // indirect
 	github.com/spf13/afero v1.9.3 // indirect
@@ -380,8 +384,6 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
-require github.com/google/trillian v1.5.1 // indirect
-
 // To bump the version of a replacement package, use:
 //
 //   $ go mod edit -replace <package>=<replacement>@<branch or commit reference>
@@ -423,6 +425,7 @@ replace (
 	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
 	// we currently depend on.
 	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20221003092512-fbf71229411f
+
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f
 	// Our fork has a change exposing a method to do generic POST requests
