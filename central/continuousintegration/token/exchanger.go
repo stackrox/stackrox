@@ -2,8 +2,6 @@ package token
 
 import (
 	"context"
-	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
@@ -86,7 +84,7 @@ func (r *retriever) ExchangeToken(ctx context.Context, rawIDToken string, integr
 		return "", errox.NotAuthorized.Newf("no roles configured to use for type %s", integrationType)
 	}
 
-	roxClaims, err := r.getRoxClaims(idToken, rolesForIDToken)
+	roxClaims, err := r.getRoxClaims(idToken)
 	if err != nil {
 		return "", errors.Wrap(err, "creating rox claims from ID token")
 	}
@@ -166,44 +164,29 @@ type githubClaims struct {
 	ActorID     string `json:"actor_id,omitempty"`
 }
 
-func (r *retriever) getRoxClaims(idToken *oidc.IDToken, roles []string) (tokens.RoxClaims, error) {
+func (r *retriever) getRoxClaims(idToken *oidc.IDToken) (tokens.RoxClaims, error) {
 	var claims githubClaims
 	if err := idToken.Claims(&claims); err != nil {
 		return tokens.RoxClaims{}, err
 	}
 
-	actorID := utils.IfThenElse(claims.ActorID != "", "|"+claims.ActorID, "")
+	actorWithID := claims.Actor + "|" + claims.ActorID
+
 	userClaims := &tokens.ExternalUserClaim{
-		UserID:   fmt.Sprintf("%s|%s%s", claims.WorkflowRef, idToken.Audience, actorID),
+		UserID:   actorWithID,
 		FullName: stringutils.FirstNonEmpty(claims.Actor, "GitHub Actions"),
 		Attributes: map[string][]string{
 			"run_id":     {claims.RunID},
 			"actor":      {claims.Actor},
 			"actor_id":   {claims.ActorID},
 			"repository": {claims.Repository},
+			"sub":        {idToken.Subject},
+			"aud":        idToken.Audience,
 		},
 	}
 
 	return tokens.RoxClaims{
-		RoleNames:    roles,
 		ExternalUser: userClaims,
-		Name:         fmt.Sprintf("GitHubActions%s", actorID),
+		Name:         actorWithID,
 	}, nil
-}
-
-func checkIfRegexp(expr string) *regexp.Regexp {
-	parsedExpr, err := regexp.Compile(expr)
-	if err != nil {
-		return nil
-	}
-	return parsedExpr
-}
-
-func valuesMatch(claimValue string, expr string) bool {
-	// The expression is either a simple string value or a regular expression.
-	if regExpr := checkIfRegexp(expr); regExpr != nil {
-		return regExpr.MatchString(claimValue)
-	}
-	// Otherwise if it is not a regular expression, fall back to string comparison.
-	return claimValue == expr
 }
