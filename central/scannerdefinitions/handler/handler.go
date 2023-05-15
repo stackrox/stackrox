@@ -35,16 +35,13 @@ import (
 const (
 	definitionsBaseDir = "scannerdefinitions"
 
-	scannerDefinitionBlobName = "offline.scanner.definitions"
-	scannerDefinitionTemp     = "scanner-defs-*.zip"
-
 	// scannerDefsSubZipName represents the offline zip bundle for CVEs for Scanner.
 	scannerDefsSubZipName = "scanner-defs.zip"
 	// K8sIstioCveZipName represents the zip bundle for k8s/istio CVEs.
 	K8sIstioCveZipName = "k8s-istio.zip"
 
-	// offlineScannerDefsName represents the offline/fallback zip bundle for CVEs for Scanner.
-	offlineScannerDefsName = scannerDefsSubZipName
+	// offlineScannerDefinitionBlobName represents the blob name of offline/fallback zip bundle for CVEs for Scanner.
+	offlineScannerDefinitionBlobName = "/offline/scanner/" + scannerDefsSubZipName
 
 	scannerUpdateDomain    = "https://definitions.stackrox.io"
 	scannerUpdateURLSuffix = "diff.zip"
@@ -216,7 +213,7 @@ func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File)
 
 	// POST requests only update the offline feed.
 	b := &storage.Blob{
-		Name:         scannerDefinitionBlobName,
+		Name:         offlineScannerDefinitionBlobName,
 		LastUpdated:  timestamp.TimestampNow(),
 		ModifiedTime: timestamp.TimestampNow(),
 		Length:       zipF.FileInfo().Size(),
@@ -314,14 +311,14 @@ func (h *httpHandler) cleanupUpdaters(cleanupAge time.Duration) {
 }
 
 func (h *httpHandler) openOfflineBlob(ctx context.Context) (*vulDefFile, error) {
-	snap, err := snapshot.TakeBlobSnapshot(sac.WithAllAccess(ctx), h.blobStore, offlineScannerDefsName)
+	snap, err := snapshot.TakeBlobSnapshot(sac.WithAllAccess(ctx), h.blobStore, offlineScannerDefinitionBlobName)
 	if err != nil {
 		// If the blob does not exist, return no reader.
 		if errors.Is(err, snapshot.ErrBlobNotExist) {
-			log.Warnf("Blob %s does not exist", offlineScannerDefsName)
+			log.Warnf("Blob %s does not exist", offlineScannerDefinitionBlobName)
 			return nil, nil
 		}
-		log.Warnf("Cannnot take a snapshot of Blob %q: %v", offlineScannerDefsName, err)
+		log.Warnf("Cannnot take a snapshot of Blob %q: %v", offlineScannerDefinitionBlobName, err)
 		return nil, err
 	}
 	modTime := time.Time{}
