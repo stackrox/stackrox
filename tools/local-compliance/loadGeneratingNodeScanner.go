@@ -13,40 +13,27 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
+// LoadGeneratingNodeScanner is a scanner that generates fake scans with high frequecy of the node-inventory messages.
+// Its main purpose is to generate load for load-testing of Sensor
 type LoadGeneratingNodeScanner struct {
 	log          *logging.Logger
 	nodeProvider compliance.NodeNameProvider
 }
 
+// IsActive returns true if the scanner is ready to be used
 func (n *LoadGeneratingNodeScanner) IsActive() bool {
 	return true
 }
 
-func (n *LoadGeneratingNodeScanner) Connect(address string) {}
+// Connect is a dummy as this scanner does not connect to anything
+func (n *LoadGeneratingNodeScanner) Connect(_ string) {}
 
-func (n *LoadGeneratingNodeScanner) ManageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals) <-chan *sensor.MsgFromCompliance {
-	nodeInventoriesC := make(chan *sensor.MsgFromCompliance)
-	nodeName := n.nodeProvider.GetNodeName()
-	go func() {
-		defer close(nodeInventoriesC)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(1 * time.Second):
-				n.log.Infof("Scanning node %q", nodeName)
-				msg, err := n.ScanNode(ctx)
-				if err != nil {
-					n.log.Errorf("error running node scan: %v", err)
-				} else {
-					nodeInventoriesC <- msg
-				}
-			}
-		}
-	}()
-	return nodeInventoriesC
+// GetIntervals returns an object with delay-intervals between scans
+func (n *LoadGeneratingNodeScanner) GetIntervals() *intervals.NodeScanIntervals {
+	return intervals.NewNodeScanInterval(time.Second, 0.0, time.Second)
 }
 
+// ScanNode generates a MsgFromCompliance with node scan
 func (n *LoadGeneratingNodeScanner) ScanNode(_ context.Context) (*sensor.MsgFromCompliance, error) {
 	msg := &sensor.MsgFromCompliance{
 		Node: n.nodeProvider.GetNodeName(),

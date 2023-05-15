@@ -57,32 +57,10 @@ func (n *NodeInventoryComponentScanner) Connect(address string) {
 	}
 }
 
-// ManageNodeScanLoop is here but maybe it should be refactored? TODO(17011): refactor this!
-func (n *NodeInventoryComponentScanner) ManageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals) <-chan *sensor.MsgFromCompliance {
-	nodeInventoriesC := make(chan *sensor.MsgFromCompliance)
-	nodeName := n.nodeNameProvider.GetNodeName()
-	go func() {
-		defer close(nodeInventoriesC)
-		t := time.NewTicker(i.Initial())
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-t.C:
-				n.log.Infof("Scanning node %q", nodeName)
-				msg, err := n.ScanNode(ctx)
-				if err != nil {
-					n.log.Errorf("error running node scan: %v", err)
-				} else {
-					nodeInventoriesC <- msg
-				}
-				interval := i.Next()
-				cmetrics.ObserveRescanInterval(interval, n.nodeNameProvider.GetNodeName())
-				t.Reset(interval)
-			}
-		}
-	}()
-	return nodeInventoriesC
+// GetIntervals returns node scan intervals (initial scan delay, regular scan delay)
+func (n *NodeInventoryComponentScanner) GetIntervals() *intervals.NodeScanIntervals {
+	i := intervals.NewNodeScanIntervalFromEnv()
+	return &i
 }
 
 // ScanNode returns a message with node-inventory

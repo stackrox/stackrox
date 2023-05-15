@@ -14,7 +14,7 @@ type NodeNameProvider interface {
 
 // NodeScanner provides a way to obtain a node-inventory
 type NodeScanner interface {
-	ManageNodeScanLoop(ctx context.Context, i intervals.NodeScanIntervals) <-chan *sensor.MsgFromCompliance
+	GetIntervals() *intervals.NodeScanIntervals
 	ScanNode(ctx context.Context) (*sensor.MsgFromCompliance, error)
 	IsActive() bool
 }

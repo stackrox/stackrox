@@ -11,7 +11,7 @@ import (
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
-	"github.com/stackrox/rox/compliance/collection/intervals"
+	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+// Compliance represents the Compliance app
 type Compliance struct {
 	log                *logging.Logger
 	nodeNameProvider   NodeNameProvider
@@ -43,6 +44,7 @@ func NewComplianceApp(np NodeNameProvider,
 	}
 }
 
+// Start starts the Compliance app
 func (l *Compliance) Start() {
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 	clientconn.SetUserAgent(clientconn.Compliance)
@@ -77,9 +79,7 @@ func (l *Compliance) Start() {
 	}()
 
 	if env.RHCOSNodeScanning.BooleanSetting() && l.nodeScanner.IsActive() {
-		i := intervals.NewNodeScanIntervalFromEnv()
-		nodeInventoriesC := l.nodeScanner.ManageNodeScanLoop(ctx, i)
-
+		nodeInventoriesC := l.manageNodeScanLoop(ctx)
 		// sending nodeInventories into output toSensorC
 		for n := range nodeInventoriesC {
 			toSensorC <- n
@@ -95,6 +95,34 @@ func (l *Compliance) Start() {
 	cancel()
 	stoppedSig.Wait()
 	log.Info("Successfully closed Sensor communication")
+}
+
+func (l *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgFromCompliance {
+	nodeInventoriesC := make(chan *sensor.MsgFromCompliance)
+	nodeName := l.nodeNameProvider.GetNodeName()
+	go func() {
+		defer close(nodeInventoriesC)
+		i := l.nodeScanner.GetIntervals()
+		t := time.NewTicker(i.Initial())
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				log.Infof("Scanning node %q", nodeName)
+				msg, err := l.nodeScanner.ScanNode(ctx)
+				if err != nil {
+					log.Errorf("error running node scan: %v", err)
+				} else {
+					nodeInventoriesC <- msg
+				}
+				interval := i.Next()
+				cmetrics.ObserveRescanInterval(interval, l.nodeNameProvider.GetNodeName())
+				t.Reset(interval)
+			}
+		}
+	}()
+	return nodeInventoriesC
 }
 
 func (l *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, toSensorC <-chan *sensor.MsgFromCompliance) {
