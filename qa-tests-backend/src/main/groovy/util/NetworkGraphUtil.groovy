@@ -9,7 +9,6 @@ import objects.Edge
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass
 import services.DeploymentService
 import services.NetworkGraphService
-import util.Env
 
 @Slf4j
 class NetworkGraphUtil {
