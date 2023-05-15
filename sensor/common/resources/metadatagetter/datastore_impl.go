@@ -11,6 +11,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// NamespaceAnnotationStore represents the functions needed to resolve notification metadata.
 type NamespaceAnnotationStore interface {
 	GetAnnotationsForNamespace(name string) map[string]string
 }
