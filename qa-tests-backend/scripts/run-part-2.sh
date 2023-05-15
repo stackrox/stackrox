@@ -27,4 +27,4 @@ run_tests_part_2() {
     [[ ! -f FAIL ]] || die "Part 2 tests failed"
 }
 
-# run_tests_part_2
+run_tests_part_2
