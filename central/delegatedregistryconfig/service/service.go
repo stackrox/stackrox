@@ -80,12 +80,12 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetConfig returns Central's delegated registry config
 func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*v1.DelegatedRegistryConfig, error) {
-	config, err := s.dataStore.GetConfig(ctx)
+	config, exists, err := s.dataStore.GetConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("retrieving config %w", err)
 	}
 
-	if config == nil {
+	if !exists {
 		return &v1.DelegatedRegistryConfig{}, nil
 	}
 

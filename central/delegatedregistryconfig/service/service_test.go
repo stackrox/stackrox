@@ -35,13 +35,13 @@ func TestGetConfigSuccess(t *testing.T) {
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
 	s := New(deleClusterDS, nil)
 
-	deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(nil, nil)
+	deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(nil, false, nil)
 	cfg, err = s.GetConfig(context.Background(), empty)
 	assert.NoError(t, err)
 	assert.Empty(t, cfg)
 
 	retVal := &storage.DelegatedRegistryConfig{EnabledFor: storage.DelegatedRegistryConfig_SPECIFIC, DefaultClusterId: "id1"}
-	deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(retVal, nil)
+	deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(retVal, true, nil)
 	cfg, err = s.GetConfig(context.Background(), empty)
 	assert.NoError(t, err)
 	assert.Equal(t, cfg.EnabledFor, specific)
@@ -54,7 +54,7 @@ func TestGetConfigError(t *testing.T) {
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
 	s := New(deleClusterDS, nil)
 
-	deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(nil, errBroken)
+	deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(nil, false, errBroken)
 	_, err = s.GetConfig(context.Background(), empty)
 	assert.ErrorContains(t, err, "retrieving config")
 }
