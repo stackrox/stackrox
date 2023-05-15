@@ -21,7 +21,6 @@ type analyzeNetpolTestSuite struct {
 }
 
 func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
-	defaultOutputFormat := "txt"
 	tmpOutFileName := d.T().TempDir() + "/out"
 	outFileTxt := tmpOutFileName + ".txt"
 	outFileJSON := tmpOutFileName + ".json"
@@ -99,7 +98,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			removeOutputPath:      true,
 		},
 		{
-			name:                  "output should be written to default output file",
+			name:                  "output should be written to default txt output file",
 			inputFolderPath:       "testdata/minimal",
 			expectedValidateError: nil,
 			expectedAnalysisError: nil,
@@ -157,6 +156,14 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			expectedAnalysisError: nil,
 			expectedValidateError: nil,
 		},
+		{
+			name:                  "output should be written to default json output file",
+			inputFolderPath:       "testdata/minimal",
+			expectedValidateError: nil,
+			expectedAnalysisError: nil,
+			outputToFile:          true,
+			outputFormat:          "json",
+		},
 	}
 
 	for _, tt := range cases {
@@ -173,11 +180,6 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 				focusWorkload:         tt.focusWorkload,
 				outputFormat:          tt.outputFormat,
 				env:                   env,
-			}
-
-			// assign default values
-			if tt.outputFormat == "" {
-				analyzeNetpolCmd.outputFormat = defaultOutputFormat
 			}
 
 			analyzer, err := analyzeNetpolCmd.construct([]string{tt.inputFolderPath})
@@ -209,9 +211,13 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			}
 
 			if tt.outputToFile && tt.outFile == "" && tt.expectedAnalysisError == nil && tt.expectedValidateError == nil {
-				_, err := os.Stat(defaultOutputFileNamePrefix + defaultOutputFormat)
+				defaultFile := analyzeNetpolCmd.getDefaultFileName()
+				if tt.outputFormat != "" {
+					d.Assert().Contains(defaultFile, tt.outputFormat)
+				}
+				_, err := os.Stat(defaultFile)
 				d.Assert().NoError(err) // default output file should exist
-				d.Assert().NoError(os.Remove(defaultOutputFileNamePrefix + defaultOutputFormat))
+				d.Assert().NoError(os.Remove(defaultFile))
 			}
 		})
 	}

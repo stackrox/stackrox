@@ -11,6 +11,7 @@ import (
 )
 
 const defaultOutputFileNamePrefix = "connlist."
+const defaultOutputFileNameSuffix = "txt"
 
 type netpolAnalyzer interface {
 	ConnlistFromDirPath(dirPath string) ([]npguard.Peer2PeerConnection, error)
@@ -49,7 +50,7 @@ func (cmd *analyzeNetpolCommand) ouputConnList(connsStr string) error {
 	if cmd.outputToFile {
 		dirpath, filename := filepath.Split(cmd.outputFilePath)
 		if filename == "" {
-			filename = defaultOutputFileNamePrefix + cmd.outputFormat
+			filename = cmd.getDefaultFileName()
 		}
 
 		if err := writeFile(filename, dirpath, connsStr); err != nil {
@@ -71,4 +72,14 @@ func writeFile(filename string, destDir string, content string) error {
 
 func (cmd *analyzeNetpolCommand) printConnList(connlist string) {
 	cmd.env.Logger().PrintfLn(connlist)
+}
+
+func (cmd *analyzeNetpolCommand) getDefaultFileName() string {
+	filename := defaultOutputFileNamePrefix
+	if cmd.outputFormat == "" {
+		filename += defaultOutputFileNameSuffix
+	} else {
+		filename += cmd.outputFormat
+	}
+	return filename
 }
