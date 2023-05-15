@@ -360,6 +360,14 @@
       ],
       "default": "BOTH"
     },
+    "VulnerabilityReportFiltersImageType": {
+      "type": "string",
+      "enum": [
+        "DEPLOYED",
+        "WATCHED"
+      ],
+      "default": "DEPLOYED"
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -410,6 +418,14 @@
         }
       }
     },
+    "storageNotifierConfiguration": {
+      "type": "object",
+      "properties": {
+        "emailConfig": {
+          "$ref": "#/definitions/storageEmailNotifierConfiguration"
+        }
+      }
+    },
     "storageReportConfiguration": {
       "type": "object",
       "properties": {
@@ -443,6 +459,15 @@
         "lastSuccessfulRunTime": {
           "type": "string",
           "format": "date-time"
+        },
+        "resourceScope": {
+          "$ref": "#/definitions/storageResourceScope"
+        },
+        "notifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageNotifierConfiguration"
+          }
         }
       }
     },
@@ -457,6 +482,14 @@
           "format": "date-time"
         },
         "errorMsg": {
+          "type": "string"
+        }
+      }
+    },
+    "storageResourceScope": {
+      "type": "object",
+      "properties": {
+        "collectionId": {
           "type": "string"
         }
       }
@@ -500,6 +533,22 @@
           "items": {
             "$ref": "#/definitions/storageVulnerabilitySeverity"
           }
+        },
+        "imageTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VulnerabilityReportFiltersImageType"
+          }
+        },
+        "allVuln": {
+          "type": "boolean"
+        },
+        "lastSuccessfulReport": {
+          "type": "boolean"
+        },
+        "startDate": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },

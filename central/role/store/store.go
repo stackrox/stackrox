@@ -24,6 +24,7 @@ type PermissionSetStore interface {
 type SimpleAccessScopeStore interface {
 	Get(ctx context.Context, id string) (*storage.SimpleAccessScope, bool, error)
 	Count(ctx context.Context) (int, error)
+	Exists(ctx context.Context, id string) (bool, error)
 	Upsert(ctx context.Context, obj *storage.SimpleAccessScope) error
 	UpsertMany(ctx context.Context, obj []*storage.SimpleAccessScope) error
 	Delete(ctx context.Context, id string) error

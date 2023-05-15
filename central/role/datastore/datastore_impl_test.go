@@ -673,11 +673,19 @@ func (s *roleDataStoreTestSuite) TestAccessScopePermissions() {
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.Empty(scopes)
 
+	exists, err := s.dataStore.AccessScopeExists(s.hasNoneCtx, s.existingScope.GetId())
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "no access for AcessScopeExists yields a permission error")
+	s.False(exists)
+
+	exists, err = s.dataStore.AccessScopeExists(s.hasNoneCtx, goodScope.GetId())
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "still a permission error if the object does not exist")
+	s.False(exists)
+
 	err = s.dataStore.AddAccessScope(s.hasNoneCtx, goodScope)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied, "no access for Add*() yields a permission error")
 
 	err = s.dataStore.AddAccessScope(s.hasReadCtx, goodScope)
-	s.ErrorIs(err, sac.ErrResourceAccessDenied, "READ access for Add*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "still a permission error for invalid scope")
 
 	err = s.dataStore.AddAccessScope(s.hasReadCtx, badScope)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied, "still a permission error for invalid scope")
@@ -713,6 +721,14 @@ func (s *roleDataStoreTestSuite) TestAccessScopeReadOperations() {
 	s.NoError(err)
 	s.True(found)
 	s.Equal(s.existingScope, scope, "with READ access existing object is returned")
+
+	exists, err := s.dataStore.AccessScopeExists(s.hasReadCtx, misplacedScope.GetId())
+	s.NoError(err, "not existing scope for AccessScopeExists() should not return error")
+	s.False(exists)
+
+	exists, err = s.dataStore.AccessScopeExists(s.hasReadCtx, s.existingScope.GetId())
+	s.NoError(err)
+	s.True(exists)
 
 	scopes, err := s.dataStore.GetAllAccessScopes(s.hasReadCtx)
 	s.NoError(err)
