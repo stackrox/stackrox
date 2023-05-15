@@ -481,12 +481,12 @@ func (c *sensorConnection) getAuditLogSyncMsg(ctx context.Context) (*central.Msg
 }
 
 func (c *sensorConnection) getDelegatedRegistryConfigMsg(ctx context.Context) (*central.MsgToSensor, error) {
-	config, err := c.delegatedRegistryConfigMgr.GetConfig(ctx)
+	config, exists, err := c.delegatedRegistryConfigMgr.GetConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if config == nil {
+	if !exists {
 		// Sensor's ProcessMessage handler will ignore a nil config, so send nothing
 		log.Debugf("Not sending nil delegated registry config to cluster %q", c.clusterID)
 		return nil, nil

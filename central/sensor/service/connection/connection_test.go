@@ -204,7 +204,7 @@ func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 		caps := set.NewSet(centralsensor.DelegatedRegistryCap)
 
 		config := &storage.DelegatedRegistryConfig{EnabledFor: storage.DelegatedRegistryConfig_ALL}
-		deleRegMgr.EXPECT().GetConfig(ctx).Return(config, nil)
+		deleRegMgr.EXPECT().GetConfig(ctx).Return(config, true, nil)
 
 		server := &mockServer{sentList: make([]*central.MsgToSensor, 0)}
 		s.NoError(sensorMockConn.Run(ctx, server, caps))
@@ -236,7 +236,7 @@ func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 	s.Run("no send on nil config", func() {
 		caps := set.NewSet(centralsensor.DelegatedRegistryCap)
 
-		deleRegMgr.EXPECT().GetConfig(ctx).Return(nil, nil)
+		deleRegMgr.EXPECT().GetConfig(ctx).Return(nil, false, nil)
 
 		server := &mockServer{sentList: make([]*central.MsgToSensor, 0)}
 		s.NoError(sensorMockConn.Run(ctx, server, caps))
@@ -252,7 +252,7 @@ func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 	s.Run("no send on err", func() {
 		caps := set.NewSet(centralsensor.DelegatedRegistryCap)
 
-		deleRegMgr.EXPECT().GetConfig(ctx).Return(nil, errors.New("fake error"))
+		deleRegMgr.EXPECT().GetConfig(ctx).Return(nil, false, errors.New("fake error"))
 
 		server := &mockServer{sentList: make([]*central.MsgToSensor, 0)}
 		err := sensorMockConn.Run(ctx, server, caps)

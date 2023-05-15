@@ -32,7 +32,7 @@ type NetworkBaselineManager interface {
 
 // DelegatedRegistryConfigManager implements an interface to retrieve the delegated registry config
 type DelegatedRegistryConfigManager interface {
-	GetConfig(ctx context.Context) (*storage.DelegatedRegistryConfig, error)
+	GetConfig(ctx context.Context) (*storage.DelegatedRegistryConfig, bool, error)
 }
 
 // NetworkEntityManager implements an interface to retrieve network entities.
