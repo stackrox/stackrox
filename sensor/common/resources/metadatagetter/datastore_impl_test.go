@@ -140,7 +140,7 @@ func TestGetAnnotationValue(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
-			nsStore := namespaces.Singleton()
+			nsStore := namespaces.NewTestNamespaceStore(t)
 			nsStore.AddNamespace(c.nsMetadata)
 			metadataGetter := newMetadataGetter(nsStore)
 
@@ -156,7 +156,7 @@ func TestGetAnnotationValueCorrectlyLooksForNamespace(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	namespace := namespaceWithAnnotation("somekey", "somevalue")
-	nsStore := namespaces.Singleton()
+	nsStore := namespaces.NewTestNamespaceStore(t)
 	nsStore.AddNamespace(namespace)
 	metadataGetter := newMetadataGetter(nsStore)
 
@@ -170,7 +170,7 @@ func TestGetAnnotationValueReturnsDefaultIfNoStoreReturnsError(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	nsStore := namespaces.Singleton()
+	nsStore := namespaces.NewTestNamespaceStore(t)
 	metadataGetter := newMetadataGetter(nsStore)
 
 	alert := fixtures.GetAlert()

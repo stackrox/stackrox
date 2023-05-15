@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/sensor/common/resources/namespaces"
+	nsStore "github.com/stackrox/rox/sensor/common/resources/namespaces"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/core/v1"
 )
@@ -16,12 +16,12 @@ type NamespaceDeletionListener interface {
 
 // namespaceDispatcher handles namespace resource events.
 type namespaceDispatcher struct {
-	nsStore           *namespaces.NamespaceStore
+	nsStore           *nsStore.NamespaceStore
 	deletionListeners []NamespaceDeletionListener
 }
 
 // newNamespaceDispatcher creates and returns a new namespace handler.
-func newNamespaceDispatcher(nsStore *namespaces.NamespaceStore, deletionListeners ...NamespaceDeletionListener) *namespaceDispatcher {
+func newNamespaceDispatcher(nsStore *nsStore.NamespaceStore, deletionListeners ...NamespaceDeletionListener) *namespaceDispatcher {
 	return &namespaceDispatcher{
 		nsStore:           nsStore,
 		deletionListeners: deletionListeners,

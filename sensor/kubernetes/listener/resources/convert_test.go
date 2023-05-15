@@ -30,14 +30,12 @@ const (
 	testClusterID = "12b1af66-be55-4e54-948d-ac9c311ca4b2"
 )
 
-var (
-	mockNamespaceStore = func() *nsStore.NamespaceStore {
-		s := nsStore.Singleton()
-		s.AddNamespace(&storage.NamespaceMetadata{Id: "FAKENSID", Name: "namespace"})
-		s.AddNamespace(&storage.NamespaceMetadata{Id: "KUBESYSID", Name: "kube-system"})
-		return s
-	}()
-)
+func getMockNamespaceStore(t *testing.T) *nsStore.NamespaceStore {
+	s := nsStore.NewTestNamespaceStore(t)
+	s.AddNamespace(&storage.NamespaceMetadata{Id: "FAKENSID", Name: "namespace"})
+	s.AddNamespace(&storage.NamespaceMetadata{Id: "KUBESYSID", Name: "kube-system"})
+	return s
+}
 
 func hierarchyFromPodLister(l *mockPodLister) references.ParentHierarchy {
 	ph := references.NewParentHierarchy()
@@ -91,7 +89,7 @@ func TestPopulateNonStaticFieldWithPod(t *testing.T) {
 	for _, c := range cases {
 		ph := references.NewParentHierarchy()
 		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", testClusterID, nil,
-			mockNamespaceStore, ph, "", storeProvider.orchestratorNamespaces, storeProvider.Registries())
+			getMockNamespaceStore(t), ph, "", storeProvider.orchestratorNamespaces, storeProvider.Registries())
 		assert.Equal(t, c.expectedAction, c.action)
 	}
 }
@@ -1136,7 +1134,7 @@ func TestConvert(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID,
-				c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "",
+				c.podLister, getMockNamespaceStore(t), hierarchyFromPodLister(c.podLister), "",
 				storeProvider.orchestratorNamespaces, storeProvider.Registries()).GetDeployment()
 			if actual != nil {
 				actual.StateTimestamp = 0

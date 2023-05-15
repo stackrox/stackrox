@@ -1,6 +1,8 @@
 package namespaces
 
 import (
+	"testing"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -23,6 +25,15 @@ func newNamespaceStore() *NamespaceStore {
 	}
 }
 
+// NewTestNamespaceStore returns a namespace store for testing purposes
+func NewTestNamespaceStore(t *testing.T) *NamespaceStore {
+	if t == nil {
+		return nil
+	}
+	return newNamespaceStore()
+}
+
+// AddNamespace adds a namespace to the datastore.
 func (n *NamespaceStore) AddNamespace(ns *storage.NamespaceMetadata) {
 	n.lock.Lock()
 	defer n.lock.Unlock()
@@ -33,6 +44,7 @@ func (n *NamespaceStore) AddNamespace(ns *storage.NamespaceMetadata) {
 	}
 }
 
+// GetAnnotationsForNamespace returns the annotations for the given namespace.
 func (n *NamespaceStore) GetAnnotationsForNamespace(name string) map[string]string {
 	n.lock.RLock()
 	defer n.lock.RUnlock()
@@ -40,6 +52,7 @@ func (n *NamespaceStore) GetAnnotationsForNamespace(name string) map[string]stri
 	return n.namespaceNamesToMetadata[name].annotation
 }
 
+// LookupNamespaceID returns the ID of a given namespace if it exists.
 func (n *NamespaceStore) LookupNamespaceID(name string) (string, bool) {
 	n.lock.RLock()
 	defer n.lock.RUnlock()
