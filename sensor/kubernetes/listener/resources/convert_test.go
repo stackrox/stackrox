@@ -12,6 +12,7 @@ import (
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/sensor/common/registry"
+	nsStore "github.com/stackrox/rox/sensor/common/resources/namespaces"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,10 +31,10 @@ const (
 )
 
 var (
-	mockNamespaceStore = func() *namespaceStore {
-		s := newNamespaceStore()
-		s.addNamespace(&storage.NamespaceMetadata{Id: "FAKENSID", Name: "namespace"})
-		s.addNamespace(&storage.NamespaceMetadata{Id: "KUBESYSID", Name: "kube-system"})
+	mockNamespaceStore = func() *nsStore.NamespaceStore {
+		s := nsStore.Singleton()
+		s.AddNamespace(&storage.NamespaceMetadata{Id: "FAKENSID", Name: "namespace"})
+		s.AddNamespace(&storage.NamespaceMetadata{Id: "KUBESYSID", Name: "kube-system"})
 		return s
 	}()
 )

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/resources/namespaces"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	complianceOperatorDispatchers "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
@@ -70,7 +71,7 @@ func NewDispatcherRegistry(
 	serviceAccountStore := storeProvider.serviceAccountStore
 	deploymentStore := storeProvider.deploymentStore
 	podStore := storeProvider.podStore
-	nsStore := newNamespaceStore()
+	nsStore := namespaces.Singleton()
 	netPolicyStore := storeProvider.networkPolicyStore
 	endpointManager := storeProvider.endpointManager
 	portExposureReconciler := newPortExposureReconciler(deploymentStore, storeProvider.Services())
