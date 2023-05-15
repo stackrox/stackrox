@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc/codes"
@@ -221,7 +222,7 @@ func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File)
 		Length:       zipF.FileInfo().Size(),
 	}
 
-	if err := h.blobStore.Upsert(ctx, b, r); err != nil {
+	if err := h.blobStore.Upsert(sac.WithAllAccess(ctx), b, r); err != nil {
 		return errors.Wrap(err, "writing scanner definitions")
 	}
 
@@ -313,12 +314,14 @@ func (h *httpHandler) cleanupUpdaters(cleanupAge time.Duration) {
 }
 
 func (h *httpHandler) openOfflineBlob(ctx context.Context) (*vulDefFile, error) {
-	snap, err := snapshot.TakeBlobSnapshot(ctx, h.blobStore, offlineScannerDefsName)
+	snap, err := snapshot.TakeBlobSnapshot(sac.WithAllAccess(ctx), h.blobStore, offlineScannerDefsName)
 	if err != nil {
 		// If the blob does not exist, return no reader.
 		if errors.Is(err, snapshot.ErrBlobNotExist) {
+			log.Warnf("Blob %s does not exist", offlineScannerDefsName)
 			return nil, nil
 		}
+		log.Warnf("Cannnot take a snapshot of Blob %q: %v", offlineScannerDefsName, err)
 		return nil, err
 	}
 	modTime := time.Time{}
@@ -336,8 +339,7 @@ func (h *httpHandler) openOfflineBlob(ctx context.Context) (*vulDefFile, error) 
 func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string) (file *vulDefFile, err error) {
 	// If in offline mode or uuid is not provided, default to the offline file.
 	if !h.online || uuid == "" {
-		file, err = h.openOfflineBlob(ctx)
-		return
+		return h.openOfflineBlob(ctx)
 	}
 
 	// Start the updater, can be called multiple times for the same uuid, but will

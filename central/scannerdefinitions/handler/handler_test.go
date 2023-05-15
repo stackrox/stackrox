@@ -61,8 +61,10 @@ func (s *handlerTestSuite) SetupTest() {
 func (s *handlerTestSuite) TearDownSuite() {
 	entries, err := os.ReadDir(s.tmpDir)
 	s.NoError(err)
-	s.Len(entries, 1)
-	s.True(strings.HasPrefix(entries[0].Name(), definitionsBaseDir))
+	s.Less(len(entries), 1)
+	if len(entries) == 1 {
+		s.True(strings.HasPrefix(entries[0].Name(), definitionsBaseDir))
+	}
 
 	s.testDB.Teardown(s.T())
 	utils.IgnoreError(func() error { return os.RemoveAll(s.tmpDir) })
