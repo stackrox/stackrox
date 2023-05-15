@@ -5,7 +5,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/mocks"
 	"github.com/stackrox/rox/roxctl/common/npg"
@@ -22,6 +21,7 @@ type analyzeNetpolTestSuite struct {
 }
 
 func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
+	defaultOutputFormat := "txt"
 	tmpOutFileName := d.T().TempDir() + "/out"
 	outFileTxt := tmpOutFileName + ".txt"
 	outFileJSON := tmpOutFileName + ".json"
@@ -162,12 +162,6 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 	for _, tt := range cases {
 		tt := tt
 		d.Run(tt.name, func() {
-			testCmd := &cobra.Command{Use: "test"}
-			testCmd.Flags().Bool("save-to-file", false, "")
-			testCmd.Flags().String("output-file", "", "")
-			testCmd.Flags().String("focus-workload", "", "")
-			testCmd.Flags().String("output-format", "txt", "")
-
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
 			analyzeNetpolCmd := analyzeNetpolCommand{
 				stopOnFirstError:      tt.stopOnFirstErr,
@@ -180,17 +174,10 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 				outputFormat:          tt.outputFormat,
 				env:                   env,
 			}
-			if tt.outputToFile {
-				d.Assert().NoError(testCmd.Flags().Set("save-to-file", "true"))
-			}
-			if tt.outFile != "" {
-				d.Assert().NoError(testCmd.Flags().Set("output-file", tt.outFile))
-			}
-			if tt.focusWorkload != "" {
-				d.Assert().NoError(testCmd.Flags().Set("focus-workload", tt.focusWorkload))
-			}
-			if tt.outputFormat != "" {
-				d.Assert().NoError(testCmd.Flags().Set("output-format", tt.outputFormat))
+
+			// assign default values
+			if tt.outputFormat == "" {
+				analyzeNetpolCmd.outputFormat = defaultOutputFormat
 			}
 
 			analyzer, err := analyzeNetpolCmd.construct([]string{tt.inputFolderPath})
@@ -222,11 +209,10 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			}
 
 			if tt.outputToFile && tt.outFile == "" && tt.expectedAnalysisError == nil && tt.expectedValidateError == nil {
-				_, err := os.Stat(defaultOutputFileNamePrefix)
+				_, err := os.Stat(defaultOutputFileNamePrefix + defaultOutputFormat)
 				d.Assert().NoError(err) // default output file should exist
-				d.Assert().NoError(os.Remove(defaultOutputFileNamePrefix))
+				d.Assert().NoError(os.Remove(defaultOutputFileNamePrefix + defaultOutputFormat))
 			}
-
 		})
 	}
 
