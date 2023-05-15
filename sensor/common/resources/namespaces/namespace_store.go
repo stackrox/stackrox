@@ -15,8 +15,8 @@ type NamespaceStore struct {
 }
 
 type namespaceMetadata struct {
-	id         string
-	annotation map[string]string
+	id          string
+	annotations map[string]string
 }
 
 func newNamespaceStore() *NamespaceStore {
@@ -39,8 +39,8 @@ func (n *NamespaceStore) AddNamespace(ns *storage.NamespaceMetadata) {
 	defer n.lock.Unlock()
 
 	n.namespaceNamesToMetadata[ns.GetName()] = namespaceMetadata{
-		id:         ns.GetId(),
-		annotation: ns.GetAnnotations(),
+		id:          ns.GetId(),
+		annotations: ns.GetAnnotations(),
 	}
 }
 
@@ -49,7 +49,7 @@ func (n *NamespaceStore) GetAnnotationsForNamespace(name string) map[string]stri
 	n.lock.RLock()
 	defer n.lock.RUnlock()
 
-	return n.namespaceNamesToMetadata[name].annotation
+	return n.namespaceNamesToMetadata[name].annotations
 }
 
 // LookupNamespaceID returns the ID of a given namespace if it exists.
