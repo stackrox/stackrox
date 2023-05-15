@@ -47,6 +47,7 @@ func (s *VersionsStoreSuite) TestStore() {
 
 	version := &storage.Version{}
 	s.NoError(testutils.FullInit(version, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	version.LastPersisted = nil
 
 	foundVersion, exists, err := store.Get(ctx)
 	s.NoError(err)
@@ -76,6 +77,7 @@ func (s *VersionsStoreSuite) TestStore() {
 
 	version = &storage.Version{}
 	s.NoError(testutils.FullInit(version, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	version.LastPersisted = nil
 	s.NoError(store.Upsert(ctx, version))
 
 	foundVersion, exists, err = store.Get(ctx)
@@ -85,6 +87,7 @@ func (s *VersionsStoreSuite) TestStore() {
 
 	version = &storage.Version{}
 	s.NoError(testutils.FullInit(version, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	version.LastPersisted = nil
 	s.NoError(store.Upsert(ctx, version))
 
 	foundVersion, exists, err = store.Get(ctx)
