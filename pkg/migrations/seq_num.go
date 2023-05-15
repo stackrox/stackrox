@@ -23,6 +23,12 @@ func BasePostgresDBVersionSeqNum() int {
 	return internal.LastRocksDBVersionSeqNum - 1
 }
 
+// MinimumSupportedDBVersionSeqNum is the oldest database version supported
+// by the schema at this point in time.
+func MinimumSupportedDBVersionSeqNum() int {
+	return internal.MinimumSupportedDBVersionSeqNum
+}
+
 // LastRocksDBVersionSeqNum is the sequence number for the last RocksDB version.
 func LastRocksDBVersionSeqNum() int {
 	return internal.LastRocksDBVersionSeqNum
