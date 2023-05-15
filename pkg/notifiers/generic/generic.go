@@ -158,6 +158,10 @@ func (g *generic) Test(ctx context.Context) error {
 	return g.AlertNotify(ctx, alert)
 }
 
+func (g *generic) IsSecuredClusterNotifier() bool {
+	return true
+}
+
 func (g *generic) constructJSON(message proto.Message, msgKey string) (io.Reader, error) {
 	msgStr, err := new(jsonpb.Marshaler).MarshalToString(message)
 	if err != nil {

@@ -335,6 +335,10 @@ func (j *jira) Test(ctx context.Context) error {
 	return j.createIssue(ctx, storage.Severity_LOW_SEVERITY, i)
 }
 
+func (j *jira) IsSecuredClusterNotifier() bool {
+	return true
+}
+
 // Optimistically tries to match all of the Jira priorities with the known mapping defined in defaultPriorities
 // If any severity is not matched, then it returns a nil map
 func optimisticMatching(prios []jiraLib.Priority) map[storage.Severity]string {

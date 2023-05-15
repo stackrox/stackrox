@@ -355,6 +355,10 @@ func (e *email) Test(ctx context.Context) error {
 	return err
 }
 
+func (e *email) IsSecuredClusterNotifier() bool {
+	return false
+}
+
 func (e *email) sendEmail(ctx context.Context, recipient, subject, body string) error {
 	var from string
 	if e.config.GetFrom() != "" {
