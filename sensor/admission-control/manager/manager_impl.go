@@ -23,7 +23,9 @@ import (
 	"github.com/stackrox/rox/pkg/sizeboundedcache"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/admission-control/errors"
-	"github.com/stackrox/rox/sensor/admission-control/resources"
+	"github.com/stackrox/rox/sensor/admission-control/resources/deployments"
+	"github.com/stackrox/rox/sensor/admission-control/resources/namespaces"
+	"github.com/stackrox/rox/sensor/admission-control/resources/pods"
 	"google.golang.org/grpc"
 	admission "k8s.io/api/admission/v1"
 )
@@ -77,9 +79,9 @@ type manager struct {
 
 	depClient        sensor.DeploymentServiceClient
 	resourceUpdatesC chan *sensor.AdmCtrlUpdateResourceRequest
-	namespaces       *resources.NamespaceStore
-	deployments      *resources.DeploymentStore
-	pods             *resources.PodStore
+	namespaces       *namespaces.NamespaceStore
+	deployments      *deployments.DeploymentStore
+	pods             *pods.PodStore
 	initialSyncSig   concurrency.Signal
 
 	settingsStream     *concurrency.ValueStream[*sensor.AdmissionControlSettings]
@@ -106,9 +108,9 @@ func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient se
 	})
 	utils.CrashOnError(err)
 
-	podStore := resources.NewPodStore()
-	depStore := resources.NewDeploymentStore(podStore)
-	nsStore := resources.NewNamespaceStore(depStore, podStore)
+	podStore := pods.Singleton()
+	depStore := deployments.Singleton()
+	nsStore := namespaces.Singleton()
 	return &manager{
 		settingsStream: concurrency.NewValueStream[*sensor.AdmissionControlSettings](nil),
 		settingsC:      make(chan *sensor.AdmissionControlSettings),

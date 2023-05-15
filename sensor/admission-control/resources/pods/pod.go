@@ -1,4 +1,4 @@
-package resources
+package pods
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
