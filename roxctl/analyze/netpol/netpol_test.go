@@ -163,9 +163,10 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 		tt := tt
 		d.Run(tt.name, func() {
 			testCmd := &cobra.Command{Use: "test"}
+			testCmd.Flags().Bool("save-to-file", false, "")
 			testCmd.Flags().String("output-file", "", "")
 			testCmd.Flags().String("focus-workload", "", "")
-			testCmd.Flags().String("output-format", "", "")
+			testCmd.Flags().String("output-format", "txt", "")
 
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
 			analyzeNetpolCmd := analyzeNetpolCommand{
@@ -179,11 +180,12 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 				outputFormat:          tt.outputFormat,
 				env:                   env,
 			}
-
+			if tt.outputToFile {
+				d.Assert().NoError(testCmd.Flags().Set("save-to-file", "true"))
+			}
 			if tt.outFile != "" {
 				d.Assert().NoError(testCmd.Flags().Set("output-file", tt.outFile))
 			}
-
 			if tt.focusWorkload != "" {
 				d.Assert().NoError(testCmd.Flags().Set("focus-workload", tt.focusWorkload))
 			}
@@ -220,9 +222,9 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			}
 
 			if tt.outputToFile && tt.outFile == "" && tt.expectedAnalysisError == nil && tt.expectedValidateError == nil {
-				_, err := os.Stat(defaultOutputFileNamePrefix + "txt")
+				_, err := os.Stat(defaultOutputFileNamePrefix)
 				d.Assert().NoError(err) // default output file should exist
-				d.Assert().NoError(os.Remove(defaultOutputFileNamePrefix + "txt"))
+				d.Assert().NoError(os.Remove(defaultOutputFileNamePrefix))
 			}
 
 		})
