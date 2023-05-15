@@ -14,7 +14,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     static final private String STRUTSDEPLOYMENT_VULN_SCAN = "qastruts"
     static final private Deployment STRUTS_DEP = new Deployment()
             .setName (STRUTSDEPLOYMENT_VULN_SCAN)
-            .setImage ("quay.io/rhacs-eng/qa:struts-app")
+            .setImage ("quay.io/rhacs-eng/qa-multi-arch:struts-app")
             .addLabel ("app", "test" )
     static final private List<Deployment> DEPLOYMENTS = [
     STRUTS_DEP,
@@ -173,7 +173,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         where:
         "Data inputs are :"
         depName | vuln_cve
-        STRUTSDEPLOYMENT_VULN_SCAN | 219
+        STRUTSDEPLOYMENT_VULN_SCAN | 138
     }
 
     @Unroll
@@ -190,7 +190,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         where:
         "Data inputs are :"
         CVEID            | OS         | imageToBeVerified
-        "CVE-2017-18190" | "debian:8" | STRUTS_DEP.getImage()
+        "CVE-2017-12611" | "ubuntu:20.04" | STRUTS_DEP.getImage()
     }
 
     private GraphQLService.Response waitForImagesTobeFetched(String cveId, String os,
