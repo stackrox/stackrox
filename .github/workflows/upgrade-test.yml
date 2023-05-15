@@ -78,6 +78,7 @@ jobs:
           flavor: gke-default
           name: upgrade-${{ matrix.name }}-${{ inputs.milestone }}
           lifespan: 48h
+          args: nodes=5,machine-type=e2-standard-8
           wait: true
 
   prepare-clusters:
