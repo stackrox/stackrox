@@ -11,7 +11,7 @@ import (
 // Loop retries all failed alerts for each notifier every hour.
 type Loop interface {
 	Start(context.Context)
-	TestRetryFailures(t *testing.T, ctx context.Context)
+	TestRetryFailures(ctx context.Context, t *testing.T)
 }
 
 // NewLoop returns a new instance of a Loop.
@@ -50,7 +50,7 @@ func (l *loopImpl) retryFailures(ctx context.Context) {
 	})
 }
 
-func (l *loopImpl) TestRetryFailures(t *testing.T, ctx context.Context) {
+func (l *loopImpl) TestRetryFailures(ctx context.Context, t *testing.T) {
 	if t == nil {
 		return
 	}

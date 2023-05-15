@@ -15,6 +15,7 @@ var (
 // Sending alerts.
 //////////////////
 
+// TryToAlert attempts to send the given Alert to the given Notifier.
 func TryToAlert(ctx context.Context, notifier notifiers.Notifier, alert *storage.Alert) error {
 	if alert.GetState() == storage.ViolationState_ACTIVE || alert.GetState() == storage.ViolationState_ATTEMPTED {
 		alertNotifier, ok := notifier.(notifiers.AlertNotifier)

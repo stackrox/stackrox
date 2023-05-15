@@ -108,7 +108,7 @@ func (p *notifierSetImpl) RemoveNotifier(ctx context.Context, id string) {
 }
 
 // GetNotifier gets a notifier from the set.
-func (p *notifierSetImpl) GetNotifier(ctx context.Context, id string) notifiers.Notifier {
+func (p *notifierSetImpl) GetNotifier(_ context.Context, id string) notifiers.Notifier {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 

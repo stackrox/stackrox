@@ -38,7 +38,7 @@ func TestProcessor_LoopDoesNothing(t *testing.T) {
 	processor.UpdateNotifier(ctx, mockResolvableNotifier)
 
 	// Retry previous failures. (None)
-	loop.TestRetryFailures(t, ctx)
+	loop.TestRetryFailures(ctx, t)
 	mockCtrl.Finish()
 }
 
@@ -101,7 +101,7 @@ func TestProcessor_LoopDoesNothingIfAllSucceed(t *testing.T) {
 	processor.processAlertSync(ctx, attemptedAlert)
 
 	// Retry previous failures. (None)
-	loop.TestRetryFailures(t, ctx)
+	loop.TestRetryFailures(ctx, t)
 	mockCtrl.Finish()
 }
 
@@ -181,15 +181,15 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	mockAlertNotifier.EXPECT().AlertNotify(gomock.Any(), attemptedAlert).Return(nil)
 	mockResolvableNotifier.EXPECT().AlertNotify(ctx, attemptedAlert).Return(nil)
 
-	loop.TestRetryFailures(t, ctx)
+	loop.TestRetryFailures(ctx, t)
 
 	// Retry previous failures. (Just the ack on the snoozed)
 	mockResolvableNotifier.EXPECT().AckAlert(context.Background(), snoozedAlert).Return(nil)
 
-	loop.TestRetryFailures(t, ctx)
+	loop.TestRetryFailures(ctx, t)
 
 	// Retry previous failures. (None)
-	loop.TestRetryFailures(t, ctx)
+	loop.TestRetryFailures(ctx, t)
 	mockCtrl.Finish()
 }
 
