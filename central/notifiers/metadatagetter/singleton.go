@@ -8,15 +8,15 @@ import (
 var (
 	once sync.Once
 
-	resolver *datastoreMetadataGetter
+	metadataGetter *datastoreMetadataGetter
 )
 
 func initialize() {
-	resolver = newMetadataGetter()
+	metadataGetter = newMetadataGetter()
 }
 
 // Singleton provides the interface for getting annotation values with a datastore backed implementation.
 func Singleton() notifiers.MetadataGetter {
 	once.Do(initialize)
-	return resolver
+	return metadataGetter
 }

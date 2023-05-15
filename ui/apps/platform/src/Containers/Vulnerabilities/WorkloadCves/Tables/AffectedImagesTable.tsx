@@ -91,7 +91,7 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
         // TODO UX question - Collapse to cards, or allow headers to overflow?
         // <TableComposable gridBreakPoint="grid-xl">
         <TableComposable variant="compact">
-            <Thead>
+            <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('Image')}>Image</Th>
@@ -138,7 +138,7 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                                     'Image name not available'
                                 )}
                             </Td>
-                            <Td dataLabel="Severity">
+                            <Td dataLabel="Severity" modifier="nowrap">
                                 <span>
                                     {SeverityIcon && (
                                         <SeverityIcon className="pf-u-display-inline" />
@@ -148,10 +148,10 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                                     )}
                                 </span>
                             </Td>
-                            <Td dataLabel="CVSS">
+                            <Td dataLabel="CVSS" modifier="nowrap">
                                 <CvssTd cvss={cvss} scoreVersion={scoreVersion} />
                             </Td>
-                            <Td dataLabel="Fix status">
+                            <Td dataLabel="Fix status" modifier="nowrap">
                                 <span>
                                     <FixabilityIcon className="pf-u-display-inline" />
                                     <span className="pf-u-pl-sm">

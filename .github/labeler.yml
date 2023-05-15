@@ -23,6 +23,8 @@ area/sensor:
 - sensor/**/*
 area/central:
 - central/**/*
+area/scanner:
+- scanner/**/*
 area/admission-controller:
 - sensor/admission-control/**/*
 area/postgres:

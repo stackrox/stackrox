@@ -94,10 +94,11 @@ func insertIntoReportConfigurations(ctx context.Context, batch *pgx.Batch, obj *
 		obj.GetName(),
 		obj.GetType(),
 		obj.GetScopeId(),
+		obj.GetResourceScope().GetCollectionId(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO report_configurations (Id, Name, Type, ScopeId, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, ScopeId = EXCLUDED.ScopeId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO report_configurations (Id, Name, Type, ScopeId, ResourceScope_CollectionId, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, ScopeId = EXCLUDED.ScopeId, ResourceScope_CollectionId = EXCLUDED.ResourceScope_CollectionId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -123,6 +124,8 @@ func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx *postgr
 
 		"scopeid",
 
+		"resourcescope_collectionid",
+
 		"serialized",
 	}
 
@@ -146,6 +149,8 @@ func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx *postgr
 			obj.GetType(),
 
 			obj.GetScopeId(),
+
+			obj.GetResourceScope().GetCollectionId(),
 
 			serialized,
 		})

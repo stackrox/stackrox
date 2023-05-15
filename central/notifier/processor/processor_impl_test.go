@@ -200,10 +200,13 @@ func TestProcessor_SkipNotificationsForSecuredClusterNotifiers(t *testing.T) {
 	ns := NewNotifierSet()
 	processor := &processorImpl{ns: ns}
 
-	// Add the notifiers to the processor.
 	mockJiraAlertNotifier.EXPECT().ProtoNotifier().Return(jiraAlertNotfierProto).AnyTimes()
 	mockEmailAlertNotifier.EXPECT().ProtoNotifier().Return(emailAlertNotfierProto).AnyTimes()
 
+	mockJiraAlertNotifier.EXPECT().IsSecuredClusterNotifier().Return(true).AnyTimes()
+	mockEmailAlertNotifier.EXPECT().IsSecuredClusterNotifier().Return(false).AnyTimes()
+
+	// Add the notifiers to the processor.
 	processor.UpdateNotifier(ctx, mockJiraAlertNotifier)
 	processor.UpdateNotifier(ctx, mockEmailAlertNotifier)
 

@@ -6,7 +6,9 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 var (
@@ -38,11 +40,13 @@ func (r *roleTransform) Transform(configuration declarativeconfig.Configuration)
 	}
 
 	roleProto := &storage.Role{
-		Name:            roleConfig.Name,
-		Description:     roleConfig.Description,
-		PermissionSetId: declarativeconfig.NewDeclarativePermissionSetUUID(roleConfig.PermissionSet).String(),
-		AccessScopeId:   declarativeconfig.NewDeclarativeAccessScopeUUID(roleConfig.AccessScope).String(),
-		Traits:          &storage.Traits{Origin: storage.Traits_DECLARATIVE},
+		Name:        roleConfig.Name,
+		Description: roleConfig.Description,
+		PermissionSetId: stringutils.FirstNonEmpty(accesscontrol.DefaultPermissionSetIDs[roleConfig.PermissionSet],
+			declarativeconfig.NewDeclarativePermissionSetUUID(roleConfig.PermissionSet).String()),
+		AccessScopeId: stringutils.FirstNonEmpty(accesscontrol.DefaultAccessScopeIDs[roleConfig.AccessScope],
+			declarativeconfig.NewDeclarativeAccessScopeUUID(roleConfig.AccessScope).String()),
+		Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 	}
 	return map[reflect.Type][]proto.Message{
 		roleType: {roleProto},

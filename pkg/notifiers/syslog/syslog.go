@@ -251,6 +251,10 @@ func (s *syslog) Test(context.Context) error {
 	return s.sendSyslog(testMessageSeverity, time.Now(), "stackroxKubernetesSecurityPlatformIntegrationTest", data)
 }
 
+func (s *syslog) IsSecuredClusterNotifier() bool {
+	return true
+}
+
 func (s *syslog) SendAuditMessage(_ context.Context, msg *v1.Audit_Message) error {
 	unstructuredData := auditLogToCEF(msg, s.Notifier)
 	timestamp, err := types.TimestampFromProto(msg.GetTime())

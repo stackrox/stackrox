@@ -4,13 +4,16 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -47,8 +50,12 @@ func (s *ReportConfigurationPostgresDatastoreTests) SetupSuite() {
 			sac.ResourceScopeKeys(resources.VulnerabilityReports)))
 }
 
-func (s *ReportConfigurationPostgresDatastoreTests) TearDowns() {
+func (s *ReportConfigurationPostgresDatastoreTests) TearDownSuite() {
 	s.testDB.Teardown(s.T())
+}
+
+func (s *ReportConfigurationPostgresDatastoreTests) TearDownTest() {
+	s.truncateTable(postgresSchema.ReportConfigurationsTableName)
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) TestReportsConfigDataStore() {
@@ -97,4 +104,53 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestReportsConfigDataStore()
 	_, found, err = s.datastore.GetReportConfiguration(s.ctx, reportConfig.GetId())
 	s.Require().NoError(err)
 	s.False(found)
+}
+
+func (s *ReportConfigurationPostgresDatastoreTests) TestMultipleReportNotifiers() {
+	s.T().Setenv(features.VulnMgmtReportingEnhancements.EnvVar(), "true")
+
+	if !features.VulnMgmtReportingEnhancements.Enabled() {
+		s.T().Skip("Skip Reporting 2.0 tests")
+		s.T().SkipNow()
+	}
+
+	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiers()
+
+	// Test add
+	_, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig)
+	s.Require().NoError(err)
+
+	// Test get
+	foundReportConfig, found, err := s.datastore.GetReportConfiguration(s.ctx, reportConfig.GetId())
+	s.Require().NoError(err)
+	s.True(found)
+	s.Equal(reportConfig, foundReportConfig)
+}
+
+func (s *ReportConfigurationPostgresDatastoreTests) TestNoNotifiers() {
+	s.T().Setenv(features.VulnMgmtReportingEnhancements.EnvVar(), "true")
+
+	if !features.VulnMgmtReportingEnhancements.Enabled() {
+		s.T().Skip("Skip Reporting 2.0 tests")
+		s.T().SkipNow()
+	}
+
+	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiers()
+	reportConfig.Notifiers = nil
+
+	// Test add
+	_, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig)
+	s.Require().NoError(err)
+
+	// Test get
+	foundReportConfig, found, err := s.datastore.GetReportConfiguration(s.ctx, reportConfig.GetId())
+	s.Require().NoError(err)
+	s.True(found)
+	s.Equal(reportConfig, foundReportConfig)
+}
+
+func (s *ReportConfigurationPostgresDatastoreTests) truncateTable(name string) {
+	sql := fmt.Sprintf("TRUNCATE %s CASCADE", name)
+	_, err := s.testDB.Exec(s.ctx, sql)
+	s.NoError(err)
 }
