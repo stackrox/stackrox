@@ -3,7 +3,21 @@ package reportconfigurations
 import (
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoconv/schedule"
+)
+
+var (
+	v2IntervalTypeToStorage = map[v2.ReportSchedule_IntervalType]storage.Schedule_IntervalType{
+		v2.ReportSchedule_UNSET:   storage.Schedule_UNSET,
+		v2.ReportSchedule_WEEKLY:  storage.Schedule_WEEKLY,
+		v2.ReportSchedule_MONTHLY: storage.Schedule_MONTHLY,
+	}
+
+	storageIntervalTypeToV2 = map[storage.Schedule_IntervalType]v2.ReportSchedule_IntervalType{
+		storage.Schedule_UNSET:   v2.ReportSchedule_UNSET,
+		storage.Schedule_DAILY:   v2.ReportSchedule_UNSET,
+		storage.Schedule_WEEKLY:  v2.ReportSchedule_WEEKLY,
+		storage.Schedule_MONTHLY: v2.ReportSchedule_MONTHLY,
+	}
 )
 
 // ConvertV2ReportConfigurationToProto converts v2.ReportConfiguration to storage.ReportConfiguration
@@ -17,7 +31,7 @@ func ConvertV2ReportConfigurationToProto(config *v2.ReportConfiguration) *storag
 		Name:          config.GetName(),
 		Description:   config.GetDescription(),
 		Type:          storage.ReportConfiguration_ReportType(config.GetType()),
-		Schedule:      schedule.ConvertV2ScheduleToProto(config.GetSchedule()),
+		Schedule:      convertV2ScheduleToProto(config.GetSchedule()),
 		ResourceScope: convertV2ResourceScopeToProto(config.GetResourceScope()),
 	}
 
@@ -113,7 +127,7 @@ func ConvertProtoReportConfigurationToV2(config *storage.ReportConfiguration) *v
 		Name:          config.GetName(),
 		Description:   config.GetDescription(),
 		Type:          v2.ReportConfiguration_ReportType(config.GetType()),
-		Schedule:      schedule.ConvertProtoScheduleToV2(config.GetSchedule()),
+		Schedule:      convertProtoScheduleToV2(config.GetSchedule()),
 		ResourceScope: convertProtoResourceScopeToV2(config.GetResourceScope()),
 	}
 
@@ -195,5 +209,64 @@ func convertProtoNotifierConfigToV2(notifier *storage.NotifierConfiguration) *v2
 			EmailConfig: emailConfig,
 		}
 	}
+	return ret
+}
+
+// convertV2ScheduleToProto converts v2.ReportSchedule to storage.Schedule. Does not validate v2.ReportSchedule
+func convertV2ScheduleToProto(schedule *v2.ReportSchedule) *storage.Schedule {
+	if schedule == nil {
+		return nil
+	}
+	ret := &storage.Schedule{
+		IntervalType: v2IntervalTypeToStorage[schedule.GetIntervalType()],
+		Hour:         schedule.GetHour(),
+		Minute:       schedule.GetMinute(),
+	}
+	switch schedule.Interval.(type) {
+	case *v2.ReportSchedule_DaysOfWeek_:
+		var days []int32
+		// Convert to numbering starting from 0
+		for _, d := range schedule.GetDaysOfWeek().GetDays() {
+			days = append(days, d-1)
+		}
+		ret.Interval = &storage.Schedule_DaysOfWeek_{
+			DaysOfWeek: &storage.Schedule_DaysOfWeek{Days: days},
+		}
+	case *v2.ReportSchedule_DaysOfMonth_:
+		ret.Interval = &storage.Schedule_DaysOfMonth_{
+			DaysOfMonth: &storage.Schedule_DaysOfMonth{Days: schedule.GetDaysOfMonth().GetDays()},
+		}
+	}
+
+	return ret
+}
+
+// convertProtoScheduleToV2 converts storage.Schedule to v2.ReportSchedule. Does not validate storage.Schedule
+func convertProtoScheduleToV2(schedule *storage.Schedule) *v2.ReportSchedule {
+	if schedule == nil {
+		return nil
+	}
+	ret := &v2.ReportSchedule{
+		IntervalType: storageIntervalTypeToV2[schedule.GetIntervalType()],
+		Hour:         schedule.GetHour(),
+		Minute:       schedule.GetMinute(),
+	}
+
+	switch schedule.Interval.(type) {
+	case *storage.Schedule_DaysOfWeek_:
+		var days []int32
+		// Convert to numbering starting from 1
+		for _, d := range schedule.GetDaysOfWeek().GetDays() {
+			days = append(days, d+1)
+		}
+		ret.Interval = &v2.ReportSchedule_DaysOfWeek_{
+			DaysOfWeek: &v2.ReportSchedule_DaysOfWeek{Days: days},
+		}
+	case *storage.Schedule_DaysOfMonth_:
+		ret.Interval = &v2.ReportSchedule_DaysOfMonth_{
+			DaysOfMonth: &v2.ReportSchedule_DaysOfMonth{Days: schedule.GetDaysOfMonth().GetDays()},
+		}
+	}
+
 	return ret
 }

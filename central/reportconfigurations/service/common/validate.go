@@ -36,7 +36,7 @@ func NewValidator(accessScopeDatastore accessScopeDS.DataStore,
 // ValidateReportConfiguration validates the given report configuration object
 func (validator *Validator) ValidateReportConfiguration(ctx context.Context, config *storage.ReportConfiguration) error {
 	if config.GetName() == "" {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration name empty")
+		return errors.Wrap(errox.InvalidArgs, "Report configuration name is empty")
 	}
 
 	if err := validator.validateSchedule(config); err != nil {
@@ -66,14 +66,25 @@ func (validator *Validator) validateSchedule(config *storage.ReportConfiguration
 	switch schedule.GetIntervalType() {
 	case storage.Schedule_UNSET:
 	case storage.Schedule_DAILY:
+		// TODO remove DAILY case when feature 'VulnMgmtReportingEnhancements' is enabled by default
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must have a valid schedule type")
 	case storage.Schedule_WEEKLY:
 		if schedule.GetDaysOfWeek() == nil || len(schedule.GetDaysOfWeek().GetDays()) == 0 {
 			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify days of week for the schedule")
 		}
+		sundayIdx := 0
+		saturdayIdx := 6
+		if features.VulnMgmtReportingEnhancements.Enabled() {
+			// storage.Schedule weekdays still range between 0-6, but the ReportSchedule available through API supports
+			// weekdays numbered 1-7. The conversions from v2.ReportSchedule to storage.Schedule and vice-versa handle
+			// convert the weekday numbering too.
+			sundayIdx = 1
+			saturdayIdx = 7
+		}
 		for _, day := range schedule.GetDaysOfWeek().GetDays() {
 			if day < 0 || day > 6 {
-				return errors.Wrap(errox.InvalidArgs, "Invalid schedule: Days of the week can be Sunday (0) - Saturday(6)")
+				return errors.Wrapf(errox.InvalidArgs, "Invalid schedule: Days of the week can be Sunday (%d) - Saturday(%d)",
+					sundayIdx, saturdayIdx)
 			}
 		}
 	case storage.Schedule_MONTHLY:
@@ -82,7 +93,7 @@ func (validator *Validator) validateSchedule(config *storage.ReportConfiguration
 		}
 		for _, day := range schedule.GetDaysOfMonth().GetDays() {
 			if day != 1 && day != 15 {
-				return errors.Wrap(errox.InvalidArgs, "Reports can be sent out only 1st or 15th of the month")
+				return errors.Wrap(errox.InvalidArgs, "Reports can be sent out only 1st or 15th day of the month")
 			}
 		}
 	}
@@ -132,7 +143,7 @@ func (validator *Validator) validateEmailConfig(ctx context.Context, emailConfig
 
 	exists, err := validator.notifierDatastore.Exists(ctx, emailConfig.GetNotifierId())
 	if err != nil {
-		return errors.Errorf("Error trying to lookup attached notofier, Notifier: %s, Error: %s", emailConfig.GetNotifierId(), err)
+		return errors.Errorf("Error looking up attached notifier, Notifier: %s, Error: %s", emailConfig.GetNotifierId(), err)
 	}
 	if !exists {
 		return errors.Wrapf(errox.NotFound, "Notifier %s not found.", emailConfig.GetNotifierId())
@@ -187,7 +198,7 @@ func (validator *Validator) validateReportFilters(config *storage.ReportConfigur
 	}
 	if config.GetVulnReportFilters().GetCvesSince() == nil {
 		return errors.Wrap(errox.InvalidArgs, "Vulnerability report filters must specify how far back in time to look for CVEs "+
-			"The valid options are since last successful report, all CVEs or since a custom timestamp")
+			"The valid options are 'since last successful report', 'all CVEs', and 'since a custom timestamp'")
 	}
 	return nil
 }

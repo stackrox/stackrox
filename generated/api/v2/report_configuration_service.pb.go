@@ -137,34 +137,31 @@ func (VulnerabilityReportFilters_ImageType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_6a1c7ce27d899a0e, []int{1, 2}
 }
 
-type Schedule_IntervalType int32
+type ReportSchedule_IntervalType int32
 
 const (
-	Schedule_UNSET   Schedule_IntervalType = 0
-	Schedule_DAILY   Schedule_IntervalType = 1
-	Schedule_WEEKLY  Schedule_IntervalType = 2
-	Schedule_MONTHLY Schedule_IntervalType = 3
+	ReportSchedule_UNSET   ReportSchedule_IntervalType = 0
+	ReportSchedule_WEEKLY  ReportSchedule_IntervalType = 1
+	ReportSchedule_MONTHLY ReportSchedule_IntervalType = 2
 )
 
-var Schedule_IntervalType_name = map[int32]string{
+var ReportSchedule_IntervalType_name = map[int32]string{
 	0: "UNSET",
-	1: "DAILY",
-	2: "WEEKLY",
-	3: "MONTHLY",
+	1: "WEEKLY",
+	2: "MONTHLY",
 }
 
-var Schedule_IntervalType_value = map[string]int32{
+var ReportSchedule_IntervalType_value = map[string]int32{
 	"UNSET":   0,
-	"DAILY":   1,
-	"WEEKLY":  2,
-	"MONTHLY": 3,
+	"WEEKLY":  1,
+	"MONTHLY": 2,
 }
 
-func (x Schedule_IntervalType) String() string {
-	return proto.EnumName(Schedule_IntervalType_name, int32(x))
+func (x ReportSchedule_IntervalType) String() string {
+	return proto.EnumName(ReportSchedule_IntervalType_name, int32(x))
 }
 
-func (Schedule_IntervalType) EnumDescriptor() ([]byte, []int) {
+func (ReportSchedule_IntervalType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_6a1c7ce27d899a0e, []int{2, 0}
 }
 
@@ -176,7 +173,7 @@ type ReportConfiguration struct {
 	// Types that are valid to be assigned to Filter:
 	//	*ReportConfiguration_VulnReportFilters
 	Filter               isReportConfiguration_Filter `protobuf_oneof:"filter"`
-	Schedule             *Schedule                    `protobuf:"bytes,6,opt,name=schedule,proto3" json:"schedule,omitempty"`
+	Schedule             *ReportSchedule              `protobuf:"bytes,6,opt,name=schedule,proto3" json:"schedule,omitempty"`
 	ResourceScope        *ResourceScope               `protobuf:"bytes,7,opt,name=resource_scope,json=resourceScope,proto3" json:"resource_scope,omitempty"`
 	Notifiers            []*NotifierConfiguration     `protobuf:"bytes,8,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
@@ -282,7 +279,7 @@ func (m *ReportConfiguration) GetVulnReportFilters() *VulnerabilityReportFilters
 	return nil
 }
 
-func (m *ReportConfiguration) GetSchedule() *Schedule {
+func (m *ReportConfiguration) GetSchedule() *ReportSchedule {
 	if m != nil {
 		return m.Schedule
 	}
@@ -512,32 +509,31 @@ func (m *VulnerabilityReportFilters) Clone() *VulnerabilityReportFilters {
 	return cloned
 }
 
-type Schedule struct {
-	IntervalType Schedule_IntervalType `protobuf:"varint,1,opt,name=interval_type,json=intervalType,proto3,enum=Schedule_IntervalType" json:"interval_type,omitempty"`
-	Hour         int32                 `protobuf:"varint,2,opt,name=hour,proto3" json:"hour,omitempty"`
-	Minute       int32                 `protobuf:"varint,3,opt,name=minute,proto3" json:"minute,omitempty"`
+type ReportSchedule struct {
+	IntervalType ReportSchedule_IntervalType `protobuf:"varint,1,opt,name=interval_type,json=intervalType,proto3,enum=ReportSchedule_IntervalType" json:"interval_type,omitempty"`
+	Hour         int32                       `protobuf:"varint,2,opt,name=hour,proto3" json:"hour,omitempty"`
+	Minute       int32                       `protobuf:"varint,3,opt,name=minute,proto3" json:"minute,omitempty"`
 	// Types that are valid to be assigned to Interval:
-	//	*Schedule_Weekly
-	//	*Schedule_DaysOfWeek_
-	//	*Schedule_DaysOfMonth_
-	Interval             isSchedule_Interval `protobuf_oneof:"Interval"`
-	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
-	XXX_unrecognized     []byte              `json:"-"`
-	XXX_sizecache        int32               `json:"-"`
+	//	*ReportSchedule_DaysOfWeek_
+	//	*ReportSchedule_DaysOfMonth_
+	Interval             isReportSchedule_Interval `protobuf_oneof:"Interval"`
+	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
+	XXX_unrecognized     []byte                    `json:"-"`
+	XXX_sizecache        int32                     `json:"-"`
 }
 
-func (m *Schedule) Reset()         { *m = Schedule{} }
-func (m *Schedule) String() string { return proto.CompactTextString(m) }
-func (*Schedule) ProtoMessage()    {}
-func (*Schedule) Descriptor() ([]byte, []int) {
+func (m *ReportSchedule) Reset()         { *m = ReportSchedule{} }
+func (m *ReportSchedule) String() string { return proto.CompactTextString(m) }
+func (*ReportSchedule) ProtoMessage()    {}
+func (*ReportSchedule) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6a1c7ce27d899a0e, []int{2}
 }
-func (m *Schedule) XXX_Unmarshal(b []byte) error {
+func (m *ReportSchedule) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Schedule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ReportSchedule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Schedule.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ReportSchedule.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -547,135 +543,113 @@ func (m *Schedule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *Schedule) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Schedule.Merge(m, src)
+func (m *ReportSchedule) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReportSchedule.Merge(m, src)
 }
-func (m *Schedule) XXX_Size() int {
+func (m *ReportSchedule) XXX_Size() int {
 	return m.Size()
 }
-func (m *Schedule) XXX_DiscardUnknown() {
-	xxx_messageInfo_Schedule.DiscardUnknown(m)
+func (m *ReportSchedule) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReportSchedule.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Schedule proto.InternalMessageInfo
+var xxx_messageInfo_ReportSchedule proto.InternalMessageInfo
 
-type isSchedule_Interval interface {
-	isSchedule_Interval()
+type isReportSchedule_Interval interface {
+	isReportSchedule_Interval()
 	MarshalTo([]byte) (int, error)
 	Size() int
-	Clone() isSchedule_Interval
+	Clone() isReportSchedule_Interval
 }
 
-type Schedule_Weekly struct {
-	Weekly *Schedule_WeeklyInterval `protobuf:"bytes,4,opt,name=weekly,proto3,oneof" json:"weekly,omitempty"`
+type ReportSchedule_DaysOfWeek_ struct {
+	DaysOfWeek *ReportSchedule_DaysOfWeek `protobuf:"bytes,4,opt,name=days_of_week,json=daysOfWeek,proto3,oneof" json:"days_of_week,omitempty"`
 }
-type Schedule_DaysOfWeek_ struct {
-	DaysOfWeek *Schedule_DaysOfWeek `protobuf:"bytes,5,opt,name=days_of_week,json=daysOfWeek,proto3,oneof" json:"days_of_week,omitempty"`
-}
-type Schedule_DaysOfMonth_ struct {
-	DaysOfMonth *Schedule_DaysOfMonth `protobuf:"bytes,6,opt,name=days_of_month,json=daysOfMonth,proto3,oneof" json:"days_of_month,omitempty"`
+type ReportSchedule_DaysOfMonth_ struct {
+	DaysOfMonth *ReportSchedule_DaysOfMonth `protobuf:"bytes,5,opt,name=days_of_month,json=daysOfMonth,proto3,oneof" json:"days_of_month,omitempty"`
 }
 
-func (*Schedule_Weekly) isSchedule_Interval() {}
-func (m *Schedule_Weekly) Clone() isSchedule_Interval {
+func (*ReportSchedule_DaysOfWeek_) isReportSchedule_Interval() {}
+func (m *ReportSchedule_DaysOfWeek_) Clone() isReportSchedule_Interval {
 	if m == nil {
 		return nil
 	}
-	cloned := new(Schedule_Weekly)
-	*cloned = *m
-
-	cloned.Weekly = m.Weekly.Clone()
-	return cloned
-}
-func (*Schedule_DaysOfWeek_) isSchedule_Interval() {}
-func (m *Schedule_DaysOfWeek_) Clone() isSchedule_Interval {
-	if m == nil {
-		return nil
-	}
-	cloned := new(Schedule_DaysOfWeek_)
+	cloned := new(ReportSchedule_DaysOfWeek_)
 	*cloned = *m
 
 	cloned.DaysOfWeek = m.DaysOfWeek.Clone()
 	return cloned
 }
-func (*Schedule_DaysOfMonth_) isSchedule_Interval() {}
-func (m *Schedule_DaysOfMonth_) Clone() isSchedule_Interval {
+func (*ReportSchedule_DaysOfMonth_) isReportSchedule_Interval() {}
+func (m *ReportSchedule_DaysOfMonth_) Clone() isReportSchedule_Interval {
 	if m == nil {
 		return nil
 	}
-	cloned := new(Schedule_DaysOfMonth_)
+	cloned := new(ReportSchedule_DaysOfMonth_)
 	*cloned = *m
 
 	cloned.DaysOfMonth = m.DaysOfMonth.Clone()
 	return cloned
 }
 
-func (m *Schedule) GetInterval() isSchedule_Interval {
+func (m *ReportSchedule) GetInterval() isReportSchedule_Interval {
 	if m != nil {
 		return m.Interval
 	}
 	return nil
 }
 
-func (m *Schedule) GetIntervalType() Schedule_IntervalType {
+func (m *ReportSchedule) GetIntervalType() ReportSchedule_IntervalType {
 	if m != nil {
 		return m.IntervalType
 	}
-	return Schedule_UNSET
+	return ReportSchedule_UNSET
 }
 
-func (m *Schedule) GetHour() int32 {
+func (m *ReportSchedule) GetHour() int32 {
 	if m != nil {
 		return m.Hour
 	}
 	return 0
 }
 
-func (m *Schedule) GetMinute() int32 {
+func (m *ReportSchedule) GetMinute() int32 {
 	if m != nil {
 		return m.Minute
 	}
 	return 0
 }
 
-func (m *Schedule) GetWeekly() *Schedule_WeeklyInterval {
-	if x, ok := m.GetInterval().(*Schedule_Weekly); ok {
-		return x.Weekly
-	}
-	return nil
-}
-
-func (m *Schedule) GetDaysOfWeek() *Schedule_DaysOfWeek {
-	if x, ok := m.GetInterval().(*Schedule_DaysOfWeek_); ok {
+func (m *ReportSchedule) GetDaysOfWeek() *ReportSchedule_DaysOfWeek {
+	if x, ok := m.GetInterval().(*ReportSchedule_DaysOfWeek_); ok {
 		return x.DaysOfWeek
 	}
 	return nil
 }
 
-func (m *Schedule) GetDaysOfMonth() *Schedule_DaysOfMonth {
-	if x, ok := m.GetInterval().(*Schedule_DaysOfMonth_); ok {
+func (m *ReportSchedule) GetDaysOfMonth() *ReportSchedule_DaysOfMonth {
+	if x, ok := m.GetInterval().(*ReportSchedule_DaysOfMonth_); ok {
 		return x.DaysOfMonth
 	}
 	return nil
 }
 
 // XXX_OneofWrappers is for the internal use of the proto package.
-func (*Schedule) XXX_OneofWrappers() []interface{} {
+func (*ReportSchedule) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
-		(*Schedule_Weekly)(nil),
-		(*Schedule_DaysOfWeek_)(nil),
-		(*Schedule_DaysOfMonth_)(nil),
+		(*ReportSchedule_DaysOfWeek_)(nil),
+		(*ReportSchedule_DaysOfMonth_)(nil),
 	}
 }
 
-func (m *Schedule) MessageClone() proto.Message {
+func (m *ReportSchedule) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *Schedule) Clone() *Schedule {
+func (m *ReportSchedule) Clone() *ReportSchedule {
 	if m == nil {
 		return nil
 	}
-	cloned := new(Schedule)
+	cloned := new(ReportSchedule)
 	*cloned = *m
 
 	if m.Interval != nil {
@@ -684,86 +658,26 @@ func (m *Schedule) Clone() *Schedule {
 	return cloned
 }
 
-type Schedule_WeeklyInterval struct {
-	Day                  int32    `protobuf:"varint,1,opt,name=day,proto3" json:"day,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *Schedule_WeeklyInterval) Reset()         { *m = Schedule_WeeklyInterval{} }
-func (m *Schedule_WeeklyInterval) String() string { return proto.CompactTextString(m) }
-func (*Schedule_WeeklyInterval) ProtoMessage()    {}
-func (*Schedule_WeeklyInterval) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6a1c7ce27d899a0e, []int{2, 0}
-}
-func (m *Schedule_WeeklyInterval) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *Schedule_WeeklyInterval) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_Schedule_WeeklyInterval.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *Schedule_WeeklyInterval) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Schedule_WeeklyInterval.Merge(m, src)
-}
-func (m *Schedule_WeeklyInterval) XXX_Size() int {
-	return m.Size()
-}
-func (m *Schedule_WeeklyInterval) XXX_DiscardUnknown() {
-	xxx_messageInfo_Schedule_WeeklyInterval.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Schedule_WeeklyInterval proto.InternalMessageInfo
-
-func (m *Schedule_WeeklyInterval) GetDay() int32 {
-	if m != nil {
-		return m.Day
-	}
-	return 0
-}
-
-func (m *Schedule_WeeklyInterval) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *Schedule_WeeklyInterval) Clone() *Schedule_WeeklyInterval {
-	if m == nil {
-		return nil
-	}
-	cloned := new(Schedule_WeeklyInterval)
-	*cloned = *m
-
-	return cloned
-}
-
-// Sunday = 0, Monday = 1, .... Saturday =  6
-type Schedule_DaysOfWeek struct {
+// Sunday = 1, Monday = 2, .... Saturday =  7
+type ReportSchedule_DaysOfWeek struct {
 	Days                 []int32  `protobuf:"varint,1,rep,packed,name=days,proto3" json:"days,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Schedule_DaysOfWeek) Reset()         { *m = Schedule_DaysOfWeek{} }
-func (m *Schedule_DaysOfWeek) String() string { return proto.CompactTextString(m) }
-func (*Schedule_DaysOfWeek) ProtoMessage()    {}
-func (*Schedule_DaysOfWeek) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6a1c7ce27d899a0e, []int{2, 1}
+func (m *ReportSchedule_DaysOfWeek) Reset()         { *m = ReportSchedule_DaysOfWeek{} }
+func (m *ReportSchedule_DaysOfWeek) String() string { return proto.CompactTextString(m) }
+func (*ReportSchedule_DaysOfWeek) ProtoMessage()    {}
+func (*ReportSchedule_DaysOfWeek) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6a1c7ce27d899a0e, []int{2, 0}
 }
-func (m *Schedule_DaysOfWeek) XXX_Unmarshal(b []byte) error {
+func (m *ReportSchedule_DaysOfWeek) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Schedule_DaysOfWeek) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ReportSchedule_DaysOfWeek) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Schedule_DaysOfWeek.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ReportSchedule_DaysOfWeek.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -773,33 +687,33 @@ func (m *Schedule_DaysOfWeek) XXX_Marshal(b []byte, deterministic bool) ([]byte,
 		return b[:n], nil
 	}
 }
-func (m *Schedule_DaysOfWeek) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Schedule_DaysOfWeek.Merge(m, src)
+func (m *ReportSchedule_DaysOfWeek) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReportSchedule_DaysOfWeek.Merge(m, src)
 }
-func (m *Schedule_DaysOfWeek) XXX_Size() int {
+func (m *ReportSchedule_DaysOfWeek) XXX_Size() int {
 	return m.Size()
 }
-func (m *Schedule_DaysOfWeek) XXX_DiscardUnknown() {
-	xxx_messageInfo_Schedule_DaysOfWeek.DiscardUnknown(m)
+func (m *ReportSchedule_DaysOfWeek) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReportSchedule_DaysOfWeek.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Schedule_DaysOfWeek proto.InternalMessageInfo
+var xxx_messageInfo_ReportSchedule_DaysOfWeek proto.InternalMessageInfo
 
-func (m *Schedule_DaysOfWeek) GetDays() []int32 {
+func (m *ReportSchedule_DaysOfWeek) GetDays() []int32 {
 	if m != nil {
 		return m.Days
 	}
 	return nil
 }
 
-func (m *Schedule_DaysOfWeek) MessageClone() proto.Message {
+func (m *ReportSchedule_DaysOfWeek) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *Schedule_DaysOfWeek) Clone() *Schedule_DaysOfWeek {
+func (m *ReportSchedule_DaysOfWeek) Clone() *ReportSchedule_DaysOfWeek {
 	if m == nil {
 		return nil
 	}
-	cloned := new(Schedule_DaysOfWeek)
+	cloned := new(ReportSchedule_DaysOfWeek)
 	*cloned = *m
 
 	if m.Days != nil {
@@ -810,25 +724,25 @@ func (m *Schedule_DaysOfWeek) Clone() *Schedule_DaysOfWeek {
 }
 
 // 1 for 1st, 2 for 2nd .... 31 for 31st
-type Schedule_DaysOfMonth struct {
+type ReportSchedule_DaysOfMonth struct {
 	Days                 []int32  `protobuf:"varint,1,rep,packed,name=days,proto3" json:"days,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Schedule_DaysOfMonth) Reset()         { *m = Schedule_DaysOfMonth{} }
-func (m *Schedule_DaysOfMonth) String() string { return proto.CompactTextString(m) }
-func (*Schedule_DaysOfMonth) ProtoMessage()    {}
-func (*Schedule_DaysOfMonth) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6a1c7ce27d899a0e, []int{2, 2}
+func (m *ReportSchedule_DaysOfMonth) Reset()         { *m = ReportSchedule_DaysOfMonth{} }
+func (m *ReportSchedule_DaysOfMonth) String() string { return proto.CompactTextString(m) }
+func (*ReportSchedule_DaysOfMonth) ProtoMessage()    {}
+func (*ReportSchedule_DaysOfMonth) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6a1c7ce27d899a0e, []int{2, 1}
 }
-func (m *Schedule_DaysOfMonth) XXX_Unmarshal(b []byte) error {
+func (m *ReportSchedule_DaysOfMonth) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Schedule_DaysOfMonth) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ReportSchedule_DaysOfMonth) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Schedule_DaysOfMonth.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ReportSchedule_DaysOfMonth.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -838,33 +752,33 @@ func (m *Schedule_DaysOfMonth) XXX_Marshal(b []byte, deterministic bool) ([]byte
 		return b[:n], nil
 	}
 }
-func (m *Schedule_DaysOfMonth) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Schedule_DaysOfMonth.Merge(m, src)
+func (m *ReportSchedule_DaysOfMonth) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReportSchedule_DaysOfMonth.Merge(m, src)
 }
-func (m *Schedule_DaysOfMonth) XXX_Size() int {
+func (m *ReportSchedule_DaysOfMonth) XXX_Size() int {
 	return m.Size()
 }
-func (m *Schedule_DaysOfMonth) XXX_DiscardUnknown() {
-	xxx_messageInfo_Schedule_DaysOfMonth.DiscardUnknown(m)
+func (m *ReportSchedule_DaysOfMonth) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReportSchedule_DaysOfMonth.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Schedule_DaysOfMonth proto.InternalMessageInfo
+var xxx_messageInfo_ReportSchedule_DaysOfMonth proto.InternalMessageInfo
 
-func (m *Schedule_DaysOfMonth) GetDays() []int32 {
+func (m *ReportSchedule_DaysOfMonth) GetDays() []int32 {
 	if m != nil {
 		return m.Days
 	}
 	return nil
 }
 
-func (m *Schedule_DaysOfMonth) MessageClone() proto.Message {
+func (m *ReportSchedule_DaysOfMonth) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *Schedule_DaysOfMonth) Clone() *Schedule_DaysOfMonth {
+func (m *ReportSchedule_DaysOfMonth) Clone() *ReportSchedule_DaysOfMonth {
 	if m == nil {
 		return nil
 	}
-	cloned := new(Schedule_DaysOfMonth)
+	cloned := new(ReportSchedule_DaysOfMonth)
 	*cloned = *m
 
 	if m.Days != nil {
@@ -1154,13 +1068,12 @@ func init() {
 	proto.RegisterEnum("VulnerabilityReportFilters_Fixability", VulnerabilityReportFilters_Fixability_name, VulnerabilityReportFilters_Fixability_value)
 	proto.RegisterEnum("VulnerabilityReportFilters_VulnerabilitySeverity", VulnerabilityReportFilters_VulnerabilitySeverity_name, VulnerabilityReportFilters_VulnerabilitySeverity_value)
 	proto.RegisterEnum("VulnerabilityReportFilters_ImageType", VulnerabilityReportFilters_ImageType_name, VulnerabilityReportFilters_ImageType_value)
-	proto.RegisterEnum("Schedule_IntervalType", Schedule_IntervalType_name, Schedule_IntervalType_value)
+	proto.RegisterEnum("ReportSchedule_IntervalType", ReportSchedule_IntervalType_name, ReportSchedule_IntervalType_value)
 	proto.RegisterType((*ReportConfiguration)(nil), "ReportConfiguration")
 	proto.RegisterType((*VulnerabilityReportFilters)(nil), "VulnerabilityReportFilters")
-	proto.RegisterType((*Schedule)(nil), "Schedule")
-	proto.RegisterType((*Schedule_WeeklyInterval)(nil), "Schedule.WeeklyInterval")
-	proto.RegisterType((*Schedule_DaysOfWeek)(nil), "Schedule.DaysOfWeek")
-	proto.RegisterType((*Schedule_DaysOfMonth)(nil), "Schedule.DaysOfMonth")
+	proto.RegisterType((*ReportSchedule)(nil), "ReportSchedule")
+	proto.RegisterType((*ReportSchedule_DaysOfWeek)(nil), "ReportSchedule.DaysOfWeek")
+	proto.RegisterType((*ReportSchedule_DaysOfMonth)(nil), "ReportSchedule.DaysOfMonth")
 	proto.RegisterType((*ResourceScope)(nil), "ResourceScope")
 	proto.RegisterType((*NotifierConfiguration)(nil), "NotifierConfiguration")
 	proto.RegisterType((*EmailNotifierConfiguration)(nil), "EmailNotifierConfiguration")
@@ -1171,77 +1084,75 @@ func init() {
 }
 
 var fileDescriptor_6a1c7ce27d899a0e = []byte{
-	// 1119 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x56, 0x4f, 0x8f, 0xda, 0x46,
-	0x14, 0xb7, 0x61, 0x61, 0xe1, 0xf1, 0x27, 0x64, 0x92, 0x6c, 0x2d, 0x52, 0x01, 0x75, 0xba, 0xd1,
-	0xb6, 0x07, 0xa3, 0x90, 0xb4, 0xaa, 0x1a, 0x55, 0x2a, 0x2c, 0x5e, 0x61, 0x85, 0x85, 0x74, 0x70,
-	0xb2, 0x49, 0x2f, 0x96, 0xd7, 0x0c, 0xbb, 0xa3, 0x18, 0x1b, 0x79, 0x0c, 0x0d, 0xd7, 0x1e, 0x7b,
-	0xed, 0xa5, 0xa7, 0x7e, 0x9e, 0x4a, 0xb9, 0x54, 0xed, 0x17, 0xa8, 0xb6, 0xfd, 0x20, 0xd5, 0x8c,
-	0x6d, 0xfe, 0x44, 0xb0, 0xb7, 0x99, 0xdf, 0x7b, 0xbf, 0xf7, 0x3c, 0x6f, 0x7e, 0xf3, 0x9e, 0xe1,
-	0x0b, 0x7b, 0x46, 0x9b, 0x8b, 0x56, 0x33, 0x20, 0x33, 0x3f, 0x08, 0x2d, 0xc7, 0xf7, 0x26, 0xf4,
-	0x6a, 0x1e, 0xd8, 0x21, 0xf5, 0x3d, 0x8b, 0x91, 0x60, 0x41, 0x1d, 0xa2, 0xcd, 0x02, 0x3f, 0xf4,
-	0xab, 0x9f, 0x5e, 0xf9, 0xfe, 0x95, 0x4b, 0x9a, 0x9c, 0x61, 0x7b, 0x9e, 0x1f, 0x0a, 0x27, 0x16,
-	0x5b, 0xef, 0x89, 0x40, 0x4f, 0x9a, 0x8e, 0x3f, 0x9d, 0xfa, 0x5e, 0x0c, 0xa2, 0x18, 0x24, 0xd3,
-	0x59, 0xb8, 0x8c, 0xb1, 0x87, 0x31, 0xc6, 0x88, 0x1d, 0x38, 0xd7, 0x1f, 0xe5, 0xa8, 0xc7, 0x39,
-	0xc4, 0xee, 0x72, 0x3e, 0x69, 0x86, 0x74, 0x4a, 0x58, 0x68, 0x4f, 0x67, 0x91, 0x83, 0xfa, 0x7b,
-	0x1a, 0xee, 0x61, 0xf1, 0xad, 0xa7, 0x9b, 0x9f, 0x8a, 0xca, 0x90, 0xa2, 0x63, 0x45, 0x6e, 0xc8,
-	0x27, 0x79, 0x9c, 0xa2, 0x63, 0x84, 0xe0, 0xc0, 0xb3, 0xa7, 0x44, 0x49, 0x09, 0x44, 0xac, 0x51,
-	0x03, 0x0a, 0x63, 0xc2, 0x9c, 0x80, 0xce, 0x38, 0x45, 0x49, 0x0b, 0xd3, 0x26, 0x84, 0x9e, 0xc2,
-	0x41, 0xb8, 0x9c, 0x11, 0xe5, 0xa0, 0x21, 0x9f, 0x94, 0x5b, 0x75, 0x6d, 0x47, 0xa6, 0x18, 0x33,
-	0x97, 0x33, 0x82, 0x85, 0x33, 0x3a, 0x87, 0x7b, 0x8b, 0xb9, 0xeb, 0x59, 0x71, 0x09, 0x27, 0xd4,
-	0x0d, 0x49, 0xc0, 0x94, 0x4c, 0x43, 0x3e, 0x29, 0xb4, 0x1e, 0x6a, 0xaf, 0xe7, 0xae, 0x47, 0x02,
-	0xfb, 0x92, 0xba, 0x34, 0x5c, 0x46, 0xe4, 0xb3, 0xc8, 0xa5, 0x27, 0xe1, 0xbb, 0x9c, 0xb9, 0x05,
-	0xa2, 0x63, 0xc8, 0x31, 0xe7, 0x9a, 0x8c, 0xe7, 0x2e, 0x51, 0xb2, 0x22, 0x46, 0x5e, 0x1b, 0xc5,
-	0x00, 0x5e, 0x99, 0xd0, 0x57, 0x50, 0x0e, 0x08, 0xf3, 0xe7, 0x81, 0x43, 0x2c, 0xe6, 0xf8, 0x33,
-	0xa2, 0x1c, 0x0a, 0xe7, 0xb2, 0x86, 0x63, 0x78, 0xc4, 0x51, 0x5c, 0x0a, 0x36, 0xb7, 0xe8, 0x19,
-	0xe4, 0x3d, 0x3f, 0xa4, 0x13, 0xca, 0x3f, 0x31, 0xd7, 0x48, 0x9f, 0x14, 0x5a, 0x47, 0xda, 0x20,
-	0x46, 0xb6, 0x0e, 0x8a, 0xd7, 0x8e, 0x6a, 0x1d, 0x60, 0x7d, 0x6c, 0x74, 0x17, 0x4a, 0xaf, 0x5f,
-	0xf5, 0x07, 0x3a, 0x6e, 0x77, 0x8c, 0xbe, 0x61, 0xbe, 0xad, 0x48, 0x9d, 0x1c, 0x64, 0xa3, 0x73,
-	0xab, 0x1f, 0x32, 0x50, 0xdd, 0x7f, 0x64, 0x74, 0x06, 0x30, 0xa1, 0xef, 0x63, 0x93, 0xb8, 0xaf,
-	0x72, 0xeb, 0xf1, 0x2d, 0x35, 0xd2, 0xce, 0x56, 0xde, 0x78, 0x83, 0x89, 0x7e, 0x00, 0x60, 0x64,
-	0x41, 0x02, 0x1a, 0x52, 0xc2, 0x94, 0x54, 0x23, 0x7d, 0x52, 0x6e, 0x3d, 0xb9, 0x2d, 0xce, 0x96,
-	0x69, 0x14, 0x51, 0x97, 0x78, 0x23, 0x08, 0x3a, 0x83, 0x02, 0x9d, 0xda, 0x57, 0xc4, 0xe2, 0xb7,
-	0xca, 0x94, 0xb4, 0x88, 0x79, 0x7c, 0x5b, 0x4c, 0x83, 0xbb, 0x0b, 0x25, 0x00, 0x4d, 0x96, 0x0c,
-	0x3d, 0x84, 0x9c, 0xed, 0xba, 0x16, 0xbf, 0x59, 0x21, 0xa4, 0x5c, 0x4f, 0xc2, 0x87, 0xb6, 0xeb,
-	0xf2, 0x40, 0xe8, 0x6b, 0x38, 0x72, 0x6d, 0x16, 0x5a, 0x6c, 0xee, 0x38, 0x84, 0xb1, 0xc9, 0xdc,
-	0x8d, 0x75, 0x23, 0xf4, 0xc2, 0x5d, 0xef, 0x73, 0xfb, 0x68, 0x65, 0x8e, 0x32, 0xa2, 0xe7, 0x00,
-	0x2c, 0xb4, 0x83, 0xd0, 0x1a, 0xdb, 0x61, 0xa2, 0x8b, 0xaa, 0x16, 0xbd, 0x16, 0x2d, 0x79, 0x2d,
-	0x9a, 0x99, 0xbc, 0x96, 0x9e, 0x84, 0xf3, 0xc2, 0xbf, 0x6b, 0x87, 0x44, 0x7d, 0x06, 0xb0, 0x2e,
-	0x23, 0xca, 0xc1, 0x41, 0x67, 0x68, 0xf6, 0x2a, 0x12, 0x2a, 0xc0, 0xe1, 0x99, 0xf1, 0xa6, 0xdd,
-	0xe9, 0xeb, 0x15, 0x19, 0xdd, 0x81, 0xc2, 0x60, 0x68, 0x5a, 0x09, 0x90, 0x52, 0x3f, 0xc8, 0xf0,
-	0x60, 0x67, 0xd5, 0x90, 0x0a, 0xb5, 0x57, 0x83, 0x17, 0x83, 0xe1, 0xc5, 0xc0, 0xda, 0x12, 0x82,
-	0x35, 0xd2, 0x5f, 0xeb, 0x58, 0x28, 0x02, 0xd5, 0xa0, 0xda, 0x1f, 0x5e, 0xec, 0xb3, 0xcb, 0xe8,
-	0x11, 0xd4, 0xcf, 0x87, 0x5d, 0x1d, 0xb7, 0x4d, 0x7d, 0x9f, 0x53, 0x0a, 0x7d, 0x0e, 0x0d, 0xe3,
-	0xfc, 0xe5, 0x10, 0x9b, 0xed, 0x81, 0xb9, 0xcf, 0x2b, 0xcd, 0x43, 0x9d, 0x62, 0xc3, 0x34, 0x4e,
-	0xdb, 0xfd, 0x7d, 0x4e, 0x07, 0xea, 0x63, 0xc8, 0xaf, 0xae, 0x0b, 0x15, 0x21, 0xd7, 0xd5, 0x5f,
-	0xf6, 0x87, 0x6f, 0xf5, 0x6e, 0x54, 0x86, 0x8b, 0xb6, 0x79, 0xda, 0xd3, 0xbb, 0x15, 0xb9, 0x53,
-	0x04, 0x70, 0x16, 0x84, 0x59, 0x8c, 0x7a, 0x0e, 0x51, 0xff, 0x4a, 0x43, 0x2e, 0x79, 0x7c, 0xe8,
-	0x39, 0x94, 0xa8, 0x17, 0x92, 0x60, 0x61, 0xbb, 0x42, 0x23, 0xb1, 0x7c, 0x8f, 0x56, 0xcf, 0x53,
-	0x33, 0x62, 0xb3, 0xd0, 0x44, 0x91, 0x6e, 0xec, 0x78, 0x43, 0xba, 0xf6, 0xe7, 0x81, 0x68, 0x48,
-	0x19, 0x2c, 0xd6, 0xe8, 0x08, 0xb2, 0x53, 0xea, 0xcd, 0x43, 0x22, 0x7a, 0x51, 0x06, 0xc7, 0x3b,
-	0xd4, 0x82, 0xec, 0x4f, 0x84, 0xbc, 0x73, 0x97, 0x42, 0x3f, 0x85, 0x96, 0xb2, 0xce, 0x70, 0x21,
-	0xf0, 0x24, 0x4f, 0x4f, 0xc2, 0xb1, 0x27, 0xfa, 0x06, 0x8a, 0x63, 0x7b, 0xc9, 0x2c, 0x7f, 0x62,
-	0x71, 0x24, 0x6e, 0x3f, 0xf7, 0xd7, 0xcc, 0xae, 0xbd, 0x64, 0xc3, 0x09, 0xe7, 0xf7, 0x24, 0x0c,
-	0xe3, 0xd5, 0x8e, 0x1f, 0x2b, 0x61, 0x4e, 0x7d, 0x2f, 0xbc, 0x8e, 0xd5, 0xf5, 0xe0, 0x63, 0xea,
-	0x39, 0x37, 0xf6, 0x24, 0x5c, 0x18, 0xaf, 0xb7, 0x55, 0x15, 0xca, 0xdb, 0x9f, 0x84, 0x2a, 0x90,
-	0x1e, 0xdb, 0xd1, 0xd3, 0xce, 0x60, 0xbe, 0xac, 0x36, 0x00, 0xd6, 0xc9, 0x79, 0x21, 0x78, 0x00,
-	0x45, 0x6e, 0xa4, 0x79, 0x21, 0xf8, 0xba, 0xfa, 0x19, 0x14, 0x36, 0x72, 0xec, 0x72, 0x51, 0xbf,
-	0x83, 0xe2, 0x66, 0x75, 0x51, 0x1e, 0x32, 0xaf, 0x06, 0x23, 0xdd, 0xac, 0x48, 0x7c, 0xd9, 0x6d,
-	0x1b, 0x7d, 0xae, 0x2a, 0x80, 0xec, 0x85, 0xae, 0xbf, 0xe8, 0x73, 0xf1, 0x14, 0xe0, 0xf0, 0x7c,
-	0x38, 0x30, 0x7b, 0xfd, 0xb7, 0x95, 0x74, 0x07, 0x20, 0x97, 0xd0, 0x55, 0x03, 0x4a, 0x5b, 0x3d,
-	0x12, 0x1d, 0x43, 0xc9, 0xf1, 0x5d, 0x97, 0x38, 0x62, 0xea, 0x25, 0x73, 0xa4, 0x27, 0xe1, 0xe2,
-	0x1a, 0x36, 0xc6, 0x9d, 0xbb, 0x70, 0x47, 0x74, 0x5a, 0x2b, 0x20, 0x13, 0x12, 0x10, 0xae, 0x0f,
-	0x17, 0x1e, 0xec, 0x6c, 0x9e, 0xe8, 0x7b, 0x28, 0x92, 0xa9, 0x4d, 0xdd, 0x78, 0xa2, 0x8a, 0x88,
-	0x7c, 0x1a, 0xe8, 0x1c, 0xdc, 0x49, 0xe1, 0x95, 0x15, 0x94, 0x08, 0xe5, 0xd9, 0x92, 0x06, 0x1c,
-	0x07, 0x51, 0x2f, 0xa1, 0xba, 0x9f, 0x8f, 0xea, 0x50, 0x58, 0x11, 0x56, 0xb3, 0x10, 0x12, 0xc8,
-	0x18, 0xa3, 0x47, 0x50, 0xe2, 0x6c, 0xea, 0x5d, 0x59, 0x2e, 0x65, 0x61, 0xd4, 0x36, 0xf3, 0xb8,
-	0x18, 0x83, 0x7d, 0x8e, 0xb5, 0x7e, 0x91, 0xa1, 0xba, 0x63, 0xec, 0x8d, 0xa2, 0x31, 0x8d, 0x5c,
-	0xf8, 0xe4, 0xa5, 0xcf, 0xc2, 0x5d, 0x23, 0xf8, 0xfe, 0xae, 0x71, 0x59, 0xdd, 0x89, 0xaa, 0xc7,
-	0x3f, 0xff, 0xfd, 0xdf, 0xaf, 0xa9, 0xba, 0x5a, 0x5d, 0xff, 0x7b, 0xb0, 0xe6, 0xd6, 0xcf, 0x07,
-	0xfb, 0x56, 0xfe, 0xb2, 0xa3, 0xfd, 0x71, 0x53, 0x93, 0xff, 0xbc, 0xa9, 0xc9, 0xff, 0xdc, 0xd4,
-	0xe4, 0xdf, 0xfe, 0xad, 0x49, 0xa0, 0x50, 0x5f, 0x63, 0xa1, 0xed, 0xbc, 0x0b, 0xfc, 0xf7, 0x51,
-	0xdf, 0xd3, 0xec, 0x19, 0xd5, 0x16, 0xad, 0x1f, 0x53, 0x8b, 0xd6, 0x1b, 0xe9, 0x32, 0x2b, 0xb0,
-	0xa7, 0xff, 0x07, 0x00, 0x00, 0xff, 0xff, 0x6d, 0xd5, 0xa4, 0x18, 0xd8, 0x08, 0x00, 0x00,
+	// 1081 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x56, 0xdd, 0x6e, 0xe2, 0x46,
+	0x14, 0xc6, 0x90, 0x1f, 0x38, 0xfc, 0x2c, 0x3b, 0xd9, 0x4d, 0x11, 0x59, 0x01, 0xf5, 0x36, 0xab,
+	0xb4, 0x95, 0x8c, 0x96, 0xdd, 0xf6, 0xa2, 0x95, 0xaa, 0x42, 0x70, 0x84, 0xb5, 0x04, 0xd2, 0xc1,
+	0x49, 0x36, 0xbd, 0xb1, 0x1c, 0x33, 0x24, 0xa3, 0x18, 0x1b, 0x79, 0x06, 0xba, 0xdc, 0xf6, 0xa6,
+	0x52, 0x6f, 0x7b, 0xd3, 0x07, 0xe8, 0xc3, 0x54, 0xda, 0x9b, 0x4a, 0x7d, 0x81, 0x2a, 0xed, 0x83,
+	0x54, 0x33, 0x36, 0x7f, 0x11, 0xe4, 0xce, 0xf3, 0x9d, 0xef, 0x3b, 0x67, 0xe6, 0xcc, 0x99, 0x73,
+	0x0c, 0x9f, 0xdb, 0x23, 0x5a, 0x9d, 0xd4, 0xaa, 0x01, 0x19, 0xf9, 0x01, 0xb7, 0x1c, 0xdf, 0x1b,
+	0xd0, 0x9b, 0x71, 0x60, 0x73, 0xea, 0x7b, 0x16, 0x23, 0xc1, 0x84, 0x3a, 0x44, 0x1b, 0x05, 0x3e,
+	0xf7, 0x8b, 0x2f, 0x6e, 0x7c, 0xff, 0xc6, 0x25, 0x55, 0xa1, 0xb0, 0x3d, 0xcf, 0xe7, 0x92, 0xc4,
+	0x22, 0xeb, 0x9e, 0x74, 0xf4, 0xba, 0xea, 0xf8, 0xc3, 0xa1, 0xef, 0x45, 0x20, 0x8a, 0x40, 0x32,
+	0x1c, 0xf1, 0x69, 0x84, 0x1d, 0x44, 0x18, 0x23, 0x76, 0xe0, 0xdc, 0x3e, 0x88, 0x51, 0x8e, 0x62,
+	0xc8, 0xd5, 0xf5, 0x78, 0x50, 0xe5, 0x74, 0x48, 0x18, 0xb7, 0x87, 0xa3, 0x90, 0xa0, 0xfe, 0x91,
+	0x80, 0x3d, 0x2c, 0xf7, 0x7a, 0xbc, 0xbc, 0x55, 0x94, 0x83, 0x38, 0xed, 0x17, 0x94, 0x8a, 0x72,
+	0x94, 0xc2, 0x71, 0xda, 0x47, 0x08, 0xb6, 0x3c, 0x7b, 0x48, 0x0a, 0x71, 0x89, 0xc8, 0x6f, 0x54,
+	0x81, 0x74, 0x9f, 0x30, 0x27, 0xa0, 0x23, 0x21, 0x29, 0x24, 0xa4, 0x69, 0x19, 0x42, 0x6f, 0x60,
+	0x8b, 0x4f, 0x47, 0xa4, 0xb0, 0x55, 0x51, 0x8e, 0x72, 0xb5, 0xb2, 0xb6, 0x26, 0x52, 0x84, 0x99,
+	0xd3, 0x11, 0xc1, 0x92, 0x8c, 0x4e, 0x61, 0x6f, 0x32, 0x76, 0x3d, 0x2b, 0x4a, 0xe1, 0x80, 0xba,
+	0x9c, 0x04, 0xac, 0xb0, 0x5d, 0x51, 0x8e, 0xd2, 0xb5, 0x03, 0xed, 0x62, 0xec, 0x7a, 0x24, 0xb0,
+	0xaf, 0xa9, 0x4b, 0xf9, 0x34, 0x14, 0x9f, 0x84, 0x94, 0x56, 0x0c, 0x3f, 0x15, 0xca, 0x15, 0x10,
+	0x7d, 0x09, 0x49, 0xe6, 0xdc, 0x92, 0xfe, 0xd8, 0x25, 0x85, 0x1d, 0xe9, 0xe3, 0x49, 0x14, 0xb3,
+	0x17, 0xc1, 0x78, 0x4e, 0x40, 0x5f, 0x41, 0x2e, 0x20, 0xcc, 0x1f, 0x07, 0x0e, 0xb1, 0x98, 0xe3,
+	0x8f, 0x48, 0x61, 0x57, 0x4a, 0x72, 0x1a, 0x8e, 0xe0, 0x9e, 0x40, 0x71, 0x36, 0x58, 0x5e, 0xa2,
+	0xb7, 0x90, 0xf2, 0x7c, 0x4e, 0x07, 0x54, 0x6c, 0x34, 0x59, 0x49, 0x1c, 0xa5, 0x6b, 0xfb, 0x5a,
+	0x27, 0x42, 0x56, 0x8e, 0x8b, 0x17, 0x44, 0xb5, 0x0c, 0xb0, 0x38, 0x3c, 0x7a, 0x0a, 0xd9, 0x8b,
+	0xf3, 0x76, 0x47, 0xc7, 0xf5, 0x86, 0xd1, 0x36, 0xcc, 0xab, 0x7c, 0xac, 0x91, 0x84, 0x9d, 0xf0,
+	0xf4, 0xea, 0xc7, 0x6d, 0x28, 0x6e, 0x3e, 0x38, 0x3a, 0x01, 0x18, 0xd0, 0x0f, 0x91, 0x49, 0xde,
+	0x5a, 0xae, 0xf6, 0xea, 0x91, 0x4c, 0x69, 0x27, 0x73, 0x36, 0x5e, 0x52, 0xa2, 0x1f, 0x00, 0x18,
+	0x99, 0x90, 0x80, 0x72, 0x4a, 0x58, 0x21, 0x5e, 0x49, 0x1c, 0xe5, 0x6a, 0xaf, 0x1f, 0xf3, 0xb3,
+	0x62, 0xea, 0x85, 0xd2, 0x29, 0x5e, 0x72, 0x82, 0x4e, 0x20, 0x4d, 0x87, 0xf6, 0x0d, 0xb1, 0xc4,
+	0xdd, 0xb2, 0x42, 0x42, 0xfa, 0x3c, 0x7c, 0xcc, 0xa7, 0x21, 0xe8, 0xb2, 0x1e, 0x80, 0xce, 0x3e,
+	0x19, 0x3a, 0x80, 0xa4, 0xed, 0xba, 0x96, 0xb8, 0x5f, 0x59, 0x4e, 0xc9, 0x56, 0x0c, 0xef, 0xda,
+	0xae, 0x2b, 0x1c, 0xa1, 0xaf, 0x61, 0xdf, 0xb5, 0x19, 0xb7, 0xd8, 0xd8, 0x71, 0x08, 0x63, 0x83,
+	0xb1, 0x1b, 0x55, 0x8f, 0xac, 0x1a, 0x41, 0x7d, 0x26, 0xec, 0xbd, 0xb9, 0x39, 0x8c, 0x88, 0xbe,
+	0x05, 0x60, 0xdc, 0x0e, 0xb8, 0xd5, 0xb7, 0xf9, 0xac, 0x3a, 0x8a, 0x5a, 0xf8, 0x66, 0xb4, 0xd9,
+	0x9b, 0xd1, 0xcc, 0xd9, 0x9b, 0x69, 0xc5, 0x70, 0x4a, 0xf2, 0x9b, 0x36, 0x27, 0xea, 0x5b, 0x80,
+	0x45, 0x1a, 0x51, 0x12, 0xb6, 0x1a, 0x5d, 0xb3, 0x95, 0x8f, 0xa1, 0x34, 0xec, 0x9e, 0x18, 0xef,
+	0xeb, 0x8d, 0xb6, 0x9e, 0x57, 0xd0, 0x13, 0x48, 0x77, 0xba, 0xa6, 0x35, 0x03, 0xe2, 0xea, 0x47,
+	0x05, 0x9e, 0xaf, 0xcd, 0x1a, 0x52, 0xa1, 0x74, 0xde, 0x79, 0xd7, 0xe9, 0x5e, 0x76, 0xac, 0x95,
+	0x42, 0xb0, 0x7a, 0xfa, 0x85, 0x8e, 0x65, 0x45, 0xa0, 0x12, 0x14, 0xdb, 0xdd, 0xcb, 0x4d, 0x76,
+	0x05, 0xbd, 0x84, 0xf2, 0x69, 0xb7, 0xa9, 0xe3, 0xba, 0xa9, 0x6f, 0x22, 0xc5, 0xd1, 0x67, 0x50,
+	0x31, 0x4e, 0xcf, 0xba, 0xd8, 0xac, 0x77, 0xcc, 0x4d, 0xac, 0x84, 0x70, 0x75, 0x8c, 0x0d, 0xd3,
+	0x38, 0xae, 0xb7, 0x37, 0x91, 0xb6, 0xd4, 0x57, 0x90, 0x9a, 0x5f, 0x17, 0xca, 0x40, 0xb2, 0xa9,
+	0x9f, 0xb5, 0xbb, 0x57, 0x7a, 0x33, 0x4c, 0xc3, 0x65, 0xdd, 0x3c, 0x6e, 0xe9, 0xcd, 0xbc, 0xd2,
+	0xc8, 0x00, 0x38, 0x13, 0xc2, 0x2c, 0x46, 0x3d, 0x87, 0xa8, 0xbf, 0x24, 0x20, 0xb7, 0xfa, 0x04,
+	0x51, 0x1d, 0xb2, 0xd4, 0xe3, 0x24, 0x98, 0xd8, 0xae, 0xac, 0x94, 0xa8, 0x88, 0x5f, 0x3c, 0x78,
+	0xaa, 0x9a, 0x11, 0x91, 0x64, 0x7d, 0x64, 0xe8, 0xd2, 0x4a, 0xb4, 0xa8, 0x5b, 0x7f, 0x1c, 0xc8,
+	0x16, 0xb5, 0x8d, 0xe5, 0x37, 0xda, 0x87, 0x9d, 0x21, 0xf5, 0xc6, 0x9c, 0xc8, 0xee, 0xb4, 0x8d,
+	0xa3, 0x15, 0xfa, 0x0e, 0x32, 0x7d, 0x7b, 0xca, 0x2c, 0x7f, 0x60, 0xfd, 0x44, 0xc8, 0x9d, 0xac,
+	0x28, 0x71, 0xf5, 0x0f, 0xa2, 0x35, 0xed, 0x29, 0xeb, 0x0e, 0x2e, 0x09, 0xb9, 0x6b, 0xc5, 0x30,
+	0xf4, 0xe7, 0x2b, 0xb1, 0xdd, 0x99, 0x7e, 0xe8, 0x7b, 0xfc, 0x76, 0xde, 0x9d, 0xd6, 0x3a, 0x38,
+	0x15, 0x94, 0x56, 0x0c, 0xa7, 0xfb, 0x8b, 0x65, 0xb1, 0x02, 0xb0, 0x70, 0x2f, 0x36, 0x2f, 0x8c,
+	0x05, 0xa5, 0x92, 0x10, 0x9b, 0x17, 0xdf, 0xc5, 0x4f, 0x21, 0xbd, 0xa4, 0x5f, 0x47, 0x51, 0x6b,
+	0x90, 0x59, 0xce, 0x08, 0x4a, 0xc1, 0xf6, 0x79, 0xa7, 0xa7, 0x9b, 0xf9, 0x18, 0x02, 0xd8, 0xb9,
+	0xd4, 0xf5, 0x77, 0x6d, 0x51, 0x16, 0x69, 0xd8, 0x3d, 0xed, 0x76, 0xcc, 0x56, 0xfb, 0x2a, 0x1f,
+	0x6f, 0x00, 0x24, 0x67, 0x1a, 0xd5, 0x80, 0xec, 0x4a, 0x63, 0x43, 0x87, 0x90, 0x75, 0x7c, 0xd7,
+	0x25, 0x8e, 0x1c, 0x58, 0xb3, 0x11, 0xd0, 0x8a, 0xe1, 0xcc, 0x02, 0x36, 0xfa, 0x8d, 0xa7, 0xf0,
+	0x44, 0xb6, 0x47, 0x2b, 0x20, 0x03, 0x12, 0x10, 0x71, 0xa9, 0x2e, 0x3c, 0x5f, 0xdb, 0xf1, 0xd0,
+	0xf7, 0x90, 0x21, 0x43, 0x9b, 0xba, 0xd1, 0x30, 0x94, 0x1e, 0x45, 0xaa, 0x74, 0x01, 0xae, 0x95,
+	0x88, 0x54, 0x49, 0x49, 0x88, 0x8a, 0x68, 0xb3, 0xae, 0x19, 0x39, 0x51, 0xaf, 0xa1, 0xb8, 0x59,
+	0x8f, 0xca, 0x90, 0x9e, 0x0b, 0xe6, 0x63, 0x0c, 0x66, 0x90, 0xd1, 0x47, 0x2f, 0x21, 0x2b, 0xd4,
+	0xd4, 0xbb, 0xb1, 0x5c, 0xca, 0x78, 0xd8, 0xeb, 0x52, 0x38, 0x13, 0x81, 0x6d, 0x81, 0xd5, 0x7e,
+	0x55, 0xa0, 0xb8, 0x66, 0x62, 0xf5, 0xc2, 0x09, 0x8b, 0x5c, 0xf8, 0xe4, 0xcc, 0x67, 0x7c, 0xdd,
+	0xf4, 0x7c, 0xb6, 0x6e, 0xd2, 0x15, 0xd7, 0xa2, 0xea, 0xe1, 0xcf, 0x7f, 0xff, 0xf7, 0x5b, 0xbc,
+	0xac, 0x16, 0x17, 0xbf, 0x0d, 0xac, 0xba, 0xf2, 0xdf, 0xc0, 0xbe, 0x51, 0xbe, 0x68, 0x68, 0x7f,
+	0xde, 0x97, 0x94, 0xbf, 0xee, 0x4b, 0xca, 0x3f, 0xf7, 0x25, 0xe5, 0xf7, 0x7f, 0x4b, 0x31, 0x28,
+	0x50, 0x5f, 0x63, 0xdc, 0x76, 0xee, 0x02, 0xff, 0x43, 0xd8, 0xac, 0x34, 0x7b, 0x44, 0xb5, 0x49,
+	0xed, 0xc7, 0xf8, 0xa4, 0xf6, 0x3e, 0x76, 0xbd, 0x23, 0xb1, 0x37, 0xff, 0x07, 0x00, 0x00, 0xff,
+	0xff, 0x17, 0xc8, 0x15, 0xec, 0x93, 0x08, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1579,7 +1490,7 @@ func (m *VulnerabilityReportFilters_StartDate) MarshalToSizedBuffer(dAtA []byte)
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Schedule) Marshal() (dAtA []byte, err error) {
+func (m *ReportSchedule) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1589,12 +1500,12 @@ func (m *Schedule) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Schedule) MarshalTo(dAtA []byte) (int, error) {
+func (m *ReportSchedule) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Schedule) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ReportSchedule) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1630,33 +1541,12 @@ func (m *Schedule) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Schedule_Weekly) MarshalTo(dAtA []byte) (int, error) {
+func (m *ReportSchedule_DaysOfWeek_) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Schedule_Weekly) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.Weekly != nil {
-		{
-			size, err := m.Weekly.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintReportConfigurationService(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x22
-	}
-	return len(dAtA) - i, nil
-}
-func (m *Schedule_DaysOfWeek_) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Schedule_DaysOfWeek_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ReportSchedule_DaysOfWeek_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.DaysOfWeek != nil {
 		{
@@ -1668,16 +1558,16 @@ func (m *Schedule_DaysOfWeek_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i = encodeVarintReportConfigurationService(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x2a
+		dAtA[i] = 0x22
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Schedule_DaysOfMonth_) MarshalTo(dAtA []byte) (int, error) {
+func (m *ReportSchedule_DaysOfMonth_) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Schedule_DaysOfMonth_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ReportSchedule_DaysOfMonth_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.DaysOfMonth != nil {
 		{
@@ -1689,11 +1579,11 @@ func (m *Schedule_DaysOfMonth_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i = encodeVarintReportConfigurationService(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x32
+		dAtA[i] = 0x2a
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Schedule_WeeklyInterval) Marshal() (dAtA []byte, err error) {
+func (m *ReportSchedule_DaysOfWeek) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1703,44 +1593,12 @@ func (m *Schedule_WeeklyInterval) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Schedule_WeeklyInterval) MarshalTo(dAtA []byte) (int, error) {
+func (m *ReportSchedule_DaysOfWeek) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Schedule_WeeklyInterval) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Day != 0 {
-		i = encodeVarintReportConfigurationService(dAtA, i, uint64(m.Day))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *Schedule_DaysOfWeek) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *Schedule_DaysOfWeek) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Schedule_DaysOfWeek) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ReportSchedule_DaysOfWeek) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1750,28 +1608,28 @@ func (m *Schedule_DaysOfWeek) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
 	if len(m.Days) > 0 {
-		dAtA13 := make([]byte, len(m.Days)*10)
-		var j12 int
+		dAtA12 := make([]byte, len(m.Days)*10)
+		var j11 int
 		for _, num1 := range m.Days {
 			num := uint64(num1)
 			for num >= 1<<7 {
-				dAtA13[j12] = uint8(uint64(num)&0x7f | 0x80)
+				dAtA12[j11] = uint8(uint64(num)&0x7f | 0x80)
 				num >>= 7
-				j12++
+				j11++
 			}
-			dAtA13[j12] = uint8(num)
-			j12++
+			dAtA12[j11] = uint8(num)
+			j11++
 		}
-		i -= j12
-		copy(dAtA[i:], dAtA13[:j12])
-		i = encodeVarintReportConfigurationService(dAtA, i, uint64(j12))
+		i -= j11
+		copy(dAtA[i:], dAtA12[:j11])
+		i = encodeVarintReportConfigurationService(dAtA, i, uint64(j11))
 		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *Schedule_DaysOfMonth) Marshal() (dAtA []byte, err error) {
+func (m *ReportSchedule_DaysOfMonth) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1781,12 +1639,12 @@ func (m *Schedule_DaysOfMonth) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Schedule_DaysOfMonth) MarshalTo(dAtA []byte) (int, error) {
+func (m *ReportSchedule_DaysOfMonth) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Schedule_DaysOfMonth) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ReportSchedule_DaysOfMonth) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1796,21 +1654,21 @@ func (m *Schedule_DaysOfMonth) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
 	if len(m.Days) > 0 {
-		dAtA15 := make([]byte, len(m.Days)*10)
-		var j14 int
+		dAtA14 := make([]byte, len(m.Days)*10)
+		var j13 int
 		for _, num1 := range m.Days {
 			num := uint64(num1)
 			for num >= 1<<7 {
-				dAtA15[j14] = uint8(uint64(num)&0x7f | 0x80)
+				dAtA14[j13] = uint8(uint64(num)&0x7f | 0x80)
 				num >>= 7
-				j14++
+				j13++
 			}
-			dAtA15[j14] = uint8(num)
-			j14++
+			dAtA14[j13] = uint8(num)
+			j13++
 		}
-		i -= j14
-		copy(dAtA[i:], dAtA15[:j14])
-		i = encodeVarintReportConfigurationService(dAtA, i, uint64(j14))
+		i -= j13
+		copy(dAtA[i:], dAtA14[:j13])
+		i = encodeVarintReportConfigurationService(dAtA, i, uint64(j13))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -2096,7 +1954,7 @@ func (m *VulnerabilityReportFilters_StartDate) Size() (n int) {
 	}
 	return n
 }
-func (m *Schedule) Size() (n int) {
+func (m *ReportSchedule) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2120,19 +1978,7 @@ func (m *Schedule) Size() (n int) {
 	return n
 }
 
-func (m *Schedule_Weekly) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Weekly != nil {
-		l = m.Weekly.Size()
-		n += 1 + l + sovReportConfigurationService(uint64(l))
-	}
-	return n
-}
-func (m *Schedule_DaysOfWeek_) Size() (n int) {
+func (m *ReportSchedule_DaysOfWeek_) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2144,7 +1990,7 @@ func (m *Schedule_DaysOfWeek_) Size() (n int) {
 	}
 	return n
 }
-func (m *Schedule_DaysOfMonth_) Size() (n int) {
+func (m *ReportSchedule_DaysOfMonth_) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2156,22 +2002,7 @@ func (m *Schedule_DaysOfMonth_) Size() (n int) {
 	}
 	return n
 }
-func (m *Schedule_WeeklyInterval) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Day != 0 {
-		n += 1 + sovReportConfigurationService(uint64(m.Day))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *Schedule_DaysOfWeek) Size() (n int) {
+func (m *ReportSchedule_DaysOfWeek) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2190,7 +2021,7 @@ func (m *Schedule_DaysOfWeek) Size() (n int) {
 	return n
 }
 
-func (m *Schedule_DaysOfMonth) Size() (n int) {
+func (m *ReportSchedule_DaysOfMonth) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2498,7 +2329,7 @@ func (m *ReportConfiguration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Schedule == nil {
-				m.Schedule = &Schedule{}
+				m.Schedule = &ReportSchedule{}
 			}
 			if err := m.Schedule.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2881,7 +2712,7 @@ func (m *VulnerabilityReportFilters) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Schedule) Unmarshal(dAtA []byte) error {
+func (m *ReportSchedule) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2904,10 +2735,10 @@ func (m *Schedule) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Schedule: wiretype end group for non-group")
+			return fmt.Errorf("proto: ReportSchedule: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Schedule: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ReportSchedule: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -2924,7 +2755,7 @@ func (m *Schedule) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.IntervalType |= Schedule_IntervalType(b&0x7F) << shift
+				m.IntervalType |= ReportSchedule_IntervalType(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -2969,41 +2800,6 @@ func (m *Schedule) Unmarshal(dAtA []byte) error {
 			}
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Weekly", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowReportConfigurationService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthReportConfigurationService
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthReportConfigurationService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			v := &Schedule_WeeklyInterval{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			m.Interval = &Schedule_Weekly{v}
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DaysOfWeek", wireType)
 			}
 			var msglen int
@@ -3031,13 +2827,13 @@ func (m *Schedule) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &Schedule_DaysOfWeek{}
+			v := &ReportSchedule_DaysOfWeek{}
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			m.Interval = &Schedule_DaysOfWeek_{v}
+			m.Interval = &ReportSchedule_DaysOfWeek_{v}
 			iNdEx = postIndex
-		case 6:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DaysOfMonth", wireType)
 			}
@@ -3066,11 +2862,11 @@ func (m *Schedule) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &Schedule_DaysOfMonth{}
+			v := &ReportSchedule_DaysOfMonth{}
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			m.Interval = &Schedule_DaysOfMonth_{v}
+			m.Interval = &ReportSchedule_DaysOfMonth_{v}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -3094,77 +2890,7 @@ func (m *Schedule) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Schedule_WeeklyInterval) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowReportConfigurationService
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: WeeklyInterval: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: WeeklyInterval: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Day", wireType)
-			}
-			m.Day = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowReportConfigurationService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Day |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipReportConfigurationService(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthReportConfigurationService
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *Schedule_DaysOfWeek) Unmarshal(dAtA []byte) error {
+func (m *ReportSchedule_DaysOfWeek) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3291,7 +3017,7 @@ func (m *Schedule_DaysOfWeek) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Schedule_DaysOfMonth) Unmarshal(dAtA []byte) error {
+func (m *ReportSchedule_DaysOfMonth) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

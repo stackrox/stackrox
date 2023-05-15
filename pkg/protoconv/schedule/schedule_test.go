@@ -3,7 +3,6 @@ package schedule
 import (
 	"testing"
 
-	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,42 +35,6 @@ func newSchedule(minute int32, hour int32, weekdays []int32, daysOfMonth []int32
 				sched.IntervalType = storage.Schedule_WEEKLY
 				sched.Interval = &storage.Schedule_DaysOfWeek_{
 					DaysOfWeek: &storage.Schedule_DaysOfWeek{
-						Days: weekdays,
-					},
-				}
-			}
-		}
-	}
-	return &sched
-}
-
-func newScheduleV2(minute int32, hour int32, weekdays []int32, daysOfMonth []int32) *v2.Schedule {
-	var sched v2.Schedule
-
-	sched.Hour = hour
-	sched.Minute = minute
-	if len(daysOfMonth) != 0 {
-		sched.IntervalType = v2.Schedule_MONTHLY
-		sched.Interval = &v2.Schedule_DaysOfMonth_{
-			DaysOfMonth: &v2.Schedule_DaysOfMonth{
-				Days: daysOfMonth,
-			},
-		}
-	} else {
-		if len(weekdays) == 0 {
-			sched.IntervalType = v2.Schedule_DAILY
-		} else {
-			if len(weekdays) == 1 {
-				sched.IntervalType = v2.Schedule_WEEKLY
-				sched.Interval = &v2.Schedule_Weekly{
-					Weekly: &v2.Schedule_WeeklyInterval{
-						Day: weekdays[0],
-					},
-				}
-			} else {
-				sched.IntervalType = v2.Schedule_WEEKLY
-				sched.Interval = &v2.Schedule_DaysOfWeek_{
-					DaysOfWeek: &v2.Schedule_DaysOfWeek{
 						Days: weekdays,
 					},
 				}
@@ -139,78 +102,6 @@ func TestSchedule(t *testing.T) {
 			cron, err := ConvertToCronTab(c.schedule)
 			require.Equal(t, c.expectError, err != nil)
 			assert.Equal(t, c.result, cron)
-		})
-	}
-}
-
-func TestConvertProtoScheduleToV2(t *testing.T) {
-	var cases = []struct {
-		testname string
-		schedule *storage.Schedule
-		result   *v2.Schedule
-	}{
-		{
-			testname: "Time UTC Daily",
-			schedule: newSchedule(12, 12, []int32{}, []int32{}),
-			result:   newScheduleV2(12, 12, []int32{}, []int32{}),
-		},
-		{
-			testname: "Time UTC Weekly",
-			schedule: newSchedule(34, 12, []int32{2}, []int32{}),
-			result:   newScheduleV2(34, 12, []int32{2}, []int32{}),
-		},
-		{
-			testname: "Time UTC Weekly Multiple days",
-			schedule: newSchedule(34, 12, []int32{2, 4}, []int32{}),
-			result:   newScheduleV2(34, 12, []int32{2, 4}, []int32{}),
-		},
-		{
-			testname: "Time UTC Monthly",
-			schedule: newSchedule(34, 12, []int32{}, []int32{1}),
-			result:   newScheduleV2(34, 12, []int32{}, []int32{1}),
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.testname, func(t *testing.T) {
-			converted := ConvertProtoScheduleToV2(c.schedule)
-			assert.Equal(t, c.result, converted)
-		})
-	}
-}
-
-func TestConvertV2ScheduleToProto(t *testing.T) {
-	var cases = []struct {
-		testname string
-		schedule *v2.Schedule
-		result   *storage.Schedule
-	}{
-		{
-			testname: "Time UTC Daily",
-			schedule: newScheduleV2(12, 12, []int32{}, []int32{}),
-			result:   newSchedule(12, 12, []int32{}, []int32{}),
-		},
-		{
-			testname: "Time UTC Weekly",
-			schedule: newScheduleV2(34, 12, []int32{2}, []int32{}),
-			result:   newSchedule(34, 12, []int32{2}, []int32{}),
-		},
-		{
-			testname: "Time UTC Weekly Multiple days",
-			schedule: newScheduleV2(34, 12, []int32{2, 4}, []int32{}),
-			result:   newSchedule(34, 12, []int32{2, 4}, []int32{}),
-		},
-		{
-			testname: "Time UTC Monthly",
-			schedule: newScheduleV2(34, 12, []int32{}, []int32{1}),
-			result:   newSchedule(34, 12, []int32{}, []int32{1}),
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.testname, func(t *testing.T) {
-			converted := ConvertV2ScheduleToProto(c.schedule)
-			assert.Equal(t, c.result, converted)
 		})
 	}
 }

@@ -118,10 +118,10 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []up
 			desc: "Report config with invalid schedule : invalid day of week",
 			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Schedule = &apiV2.Schedule{
-					IntervalType: apiV2.Schedule_WEEKLY,
-					Interval: &apiV2.Schedule_DaysOfWeek_{
-						DaysOfWeek: &apiV2.Schedule_DaysOfWeek{
+				ret.Schedule = &apiV2.ReportSchedule{
+					IntervalType: apiV2.ReportSchedule_WEEKLY,
+					Interval: &apiV2.ReportSchedule_DaysOfWeek_{
+						DaysOfWeek: &apiV2.ReportSchedule_DaysOfWeek{
 							Days: []int32{8},
 						},
 					},
@@ -135,10 +135,10 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []up
 			desc: "Report config with invalid schedule : missing days of week",
 			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Schedule = &apiV2.Schedule{
-					IntervalType: apiV2.Schedule_WEEKLY,
-					Interval: &apiV2.Schedule_DaysOfWeek_{
-						DaysOfWeek: &apiV2.Schedule_DaysOfWeek{
+				ret.Schedule = &apiV2.ReportSchedule{
+					IntervalType: apiV2.ReportSchedule_WEEKLY,
+					Interval: &apiV2.ReportSchedule_DaysOfWeek_{
+						DaysOfWeek: &apiV2.ReportSchedule_DaysOfWeek{
 							Days: []int32{},
 						},
 					},
@@ -152,10 +152,10 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []up
 			desc: "Report config with invalid schedule : invalid day of month",
 			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Schedule = &apiV2.Schedule{
-					IntervalType: apiV2.Schedule_MONTHLY,
-					Interval: &apiV2.Schedule_DaysOfMonth_{
-						DaysOfMonth: &apiV2.Schedule_DaysOfMonth{
+				ret.Schedule = &apiV2.ReportSchedule{
+					IntervalType: apiV2.ReportSchedule_MONTHLY,
+					Interval: &apiV2.ReportSchedule_DaysOfMonth_{
+						DaysOfMonth: &apiV2.ReportSchedule_DaysOfMonth{
 							Days: []int32{30},
 						},
 					},
@@ -169,10 +169,10 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []up
 			desc: "Report config with invalid schedule : missing days of month",
 			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Schedule = &apiV2.Schedule{
-					IntervalType: apiV2.Schedule_MONTHLY,
-					Interval: &apiV2.Schedule_DaysOfMonth_{
-						DaysOfMonth: &apiV2.Schedule_DaysOfMonth{
+				ret.Schedule = &apiV2.ReportSchedule{
+					IntervalType: apiV2.ReportSchedule_MONTHLY,
+					Interval: &apiV2.ReportSchedule_DaysOfMonth_{
+						DaysOfMonth: &apiV2.ReportSchedule_DaysOfMonth{
 							Days: nil,
 						},
 					},

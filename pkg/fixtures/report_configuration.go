@@ -151,6 +151,16 @@ func GetInvalidReportConfigurationMissingDaysOfMonth() *storage.ReportConfigurat
 	return rc
 }
 
+// GetInvalidReportConfigurationDailySchedule returns a mock report configuration with daily intervalType in schedule
+func GetInvalidReportConfigurationDailySchedule() *storage.ReportConfiguration {
+	rc := GetValidReportConfiguration()
+	rc.Schedule = &storage.Schedule{
+		IntervalType: storage.Schedule_DAILY,
+		Interval:     nil,
+	}
+	return rc
+}
+
 // GetInvalidReportConfigurationIncorrectEmail returns a mock report configuration with incorrect email
 func GetInvalidReportConfigurationIncorrectEmail() *storage.ReportConfiguration {
 	rc := GetValidReportConfiguration()
@@ -184,11 +194,11 @@ func GetValidV2ReportConfigWithMultipleNotifiers() *v2.ReportConfiguration {
 				},
 			},
 		},
-		Schedule: &v2.Schedule{
-			IntervalType: v2.Schedule_WEEKLY,
-			Interval: &v2.Schedule_DaysOfWeek_{
-				DaysOfWeek: &v2.Schedule_DaysOfWeek{
-					Days: []int32{1},
+		Schedule: &v2.ReportSchedule{
+			IntervalType: v2.ReportSchedule_WEEKLY,
+			Interval: &v2.ReportSchedule_DaysOfWeek_{
+				DaysOfWeek: &v2.ReportSchedule_DaysOfWeek{
+					Days: []int32{2},
 				},
 			},
 		},

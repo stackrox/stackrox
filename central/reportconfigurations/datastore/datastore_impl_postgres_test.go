@@ -50,7 +50,7 @@ func (s *ReportConfigurationPostgresDatastoreTests) SetupSuite() {
 			sac.ResourceScopeKeys(resources.VulnerabilityReports)))
 }
 
-func (s *ReportConfigurationPostgresDatastoreTests) TearDowns() {
+func (s *ReportConfigurationPostgresDatastoreTests) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 

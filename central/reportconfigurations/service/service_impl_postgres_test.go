@@ -99,6 +99,12 @@ func (s *ReportConfigurationServicePostgresTestSuite) TestAddInvalidValidReportC
 	})
 	s.Error(err)
 
+	dailyScheduleReportConfig := fixtures.GetInvalidReportConfigurationDailySchedule()
+	_, err = s.service.PostReportConfiguration(ctx, &v1.PostReportConfigurationRequest{
+		ReportConfig: dailyScheduleReportConfig,
+	})
+	s.Error(err)
+
 	incorrectEmailReportConfig := fixtures.GetInvalidReportConfigurationIncorrectEmail()
 	_, err = s.service.PostReportConfiguration(ctx, &v1.PostReportConfigurationRequest{
 		ReportConfig: incorrectEmailReportConfig,
