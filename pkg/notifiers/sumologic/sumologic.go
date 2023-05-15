@@ -137,6 +137,10 @@ func (s *sumologic) Test(ctx context.Context) error {
 	return s.sendPayload(ctx, bytes.NewBuffer(marshaledPayload))
 }
 
+func (s *sumologic) IsSecuredClusterNotifier() bool {
+	return false
+}
+
 func init() {
 	notifiers.Add("sumologic", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		return newSumoLogic(notifier)
