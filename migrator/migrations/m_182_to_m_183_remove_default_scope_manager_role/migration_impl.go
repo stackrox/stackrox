@@ -2,7 +2,6 @@ package m182tom183
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
@@ -35,7 +34,7 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	notFoundError = fmt.Errorf("not found")
+	errNotFound = errors.New("not found")
 )
 
 func migrate(database *types.Databases) error {
@@ -165,7 +164,7 @@ func addDeprecatedScopeManagerRole(ctx context.Context, roleStorage roleStore.St
 		return err
 	}
 	if !oldRoleFound {
-		return errors.Wrap(notFoundError, "looking up role")
+		return errors.Wrap(errNotFound, "looking up role")
 	}
 	newRole := oldRole.Clone()
 	newRole.Name = deprecatedPrefix + ScopeManagerRoleName
@@ -310,7 +309,7 @@ func updateScopeManagerPermissionSet(ctx context.Context, permissionSetStorage p
 		return lookupErr
 	}
 	if !psFound {
-		return errors.Wrap(notFoundError, "looking up premission set")
+		return errors.Wrap(errNotFound, "looking up premission set")
 	}
 	newPS := oldPS.Clone()
 	newPS.Traits = &storage.Traits{
