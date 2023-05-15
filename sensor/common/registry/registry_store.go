@@ -224,7 +224,8 @@ func (rs *Store) SetDelegatedRegistryConfig(config *central.DelegatedRegistryCon
 }
 
 // IsLocal determines if an image is from a registry that should be accessed
-// local to this secured cluster
+// local to this secured cluster.  Always returns true for image.Registry's that have
+// been added via AddClusterLocalRegistryHost
 func (rs *Store) IsLocal(image *storage.ImageName) bool {
 	if image == nil {
 		return false
@@ -259,6 +260,9 @@ func (rs *Store) IsLocal(image *storage.ImageName) bool {
 	return false
 }
 
+// AddClusterLocalRegistryHost adds host to an internal set of hosts representing
+// registries that are only accessible from this cluster. This hosts will factored
+// into IsLocal decisioning. Is OK to call repeatedly for the same host
 func (rs *Store) AddClusterLocalRegistryHost(host string) {
 	rs.clusterLocalRegistryHostsMutex.Lock()
 	defer rs.clusterLocalRegistryHostsMutex.Unlock()

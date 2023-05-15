@@ -120,13 +120,13 @@ func (s *serviceImpl) PutConfig(ctx context.Context, config *v1.DelegatedRegistr
 	}
 
 	// get the clusters ids for validation and broadcast
-	clusterIds, err := s.getValidClusterIds(ctx)
+	clusterIDs, err := s.getValidClusterIDs(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("obtaining valid cluster %w", err)
 	}
 
 	// validate the config
-	if err := s.validate(ctx, config, clusterIds); err != nil {
+	if err := s.validate(config, clusterIDs); err != nil {
 		return nil, fmt.Errorf("%w: %v", errox.InvalidArgs, err.Error())
 	}
 
@@ -142,17 +142,17 @@ func (s *serviceImpl) PutConfig(ctx context.Context, config *v1.DelegatedRegistr
 		},
 	}
 
-	for clusterId := range clusterIds {
-		log.Debugf("Sending updated delegated registry config to cluster %q", clusterId)
-		if err := s.connManager.SendMessage(clusterId, msg); err != nil {
-			log.Errorf("Failed to send updated delegated registry config to cluster %q: %v", clusterId, err)
+	for clusterID := range clusterIDs {
+		log.Debugf("Sending updated delegated registry config to cluster %q", clusterID)
+		if err := s.connManager.SendMessage(clusterID, msg); err != nil {
+			log.Errorf("Failed to send updated delegated registry config to cluster %q: %v", clusterID, err)
 		}
 	}
 
 	return config, nil
 }
 
-func (s *serviceImpl) validate(ctx context.Context, config *v1.DelegatedRegistryConfig, validClusters set.Set[string]) error {
+func (s *serviceImpl) validate(config *v1.DelegatedRegistryConfig, validClusters set.Set[string]) error {
 	if config.EnabledFor == v1.DelegatedRegistryConfig_NONE {
 		// ignore rest of config, values will not be used
 		return nil
@@ -209,8 +209,8 @@ func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryC
 	return res, nil
 }
 
-// getValidClusterIds returns a set cluster ids that are valid for delegation
-func (s *serviceImpl) getValidClusterIds(ctx context.Context) (set.Set[string], error) {
+// getValidClusterIDs returns a set cluster ids that are valid for delegation
+func (s *serviceImpl) getValidClusterIDs(ctx context.Context) (set.Set[string], error) {
 	clusters, err := s.getClusters(ctx)
 	if err != nil {
 		return nil, err

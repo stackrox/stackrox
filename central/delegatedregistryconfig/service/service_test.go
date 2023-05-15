@@ -138,8 +138,8 @@ func TestGetClustersError(t *testing.T) {
 		expectedErrMsg string
 	}{
 		"cluster ds error":           {nil, errBroken, "retrieving clusters"},
-		"nil cluster ds response ":   {nil, nil, "no valid clusters"},
-		"empty cluster ds response ": {[]*storage.Cluster{}, nil, "no valid clusters"},
+		"nil cluster ds response ":   {nil, nil, "no clusters found"},
+		"empty cluster ds response ": {[]*storage.Cluster{}, nil, "no clusters found"},
 	}
 
 	for name, test := range tt {
@@ -266,10 +266,10 @@ type fakeSensorConn struct {
 
 var _ sensorConn.SensorConnection = (*fakeSensorConn)(nil)
 
-func (f *fakeSensorConn) HasCapability(capability centralsensor.SensorCapability) bool {
+func (f *fakeSensorConn) HasCapability(_ centralsensor.SensorCapability) bool {
 	return f.hasCap
 }
-func (*fakeSensorConn) InjectMessageIntoQueue(msg *central.MsgFromSensor)      {}
+func (*fakeSensorConn) InjectMessageIntoQueue(_ *central.MsgFromSensor)        {}
 func (*fakeSensorConn) CheckAutoUpgradeSupport() error                         { return nil }
 func (*fakeSensorConn) ClusterID() string                                      { return "" }
 func (*fakeSensorConn) NetworkEntities() networkentities.Controller            { return nil }
@@ -278,7 +278,7 @@ func (*fakeSensorConn) ObjectsDeletedByReconciliation() (map[string]int, bool) {
 func (*fakeSensorConn) Scrapes() scrape.Controller                             { return nil }
 func (*fakeSensorConn) Stopped() concurrency.ReadOnlyErrorSignal               { return nil }
 func (*fakeSensorConn) Telemetry() telemetry.Controller                        { return nil }
-func (*fakeSensorConn) Terminate(err error) bool                               { return false }
-func (*fakeSensorConn) InjectMessage(ctx concurrency.Waitable, msg *central.MsgToSensor) error {
+func (*fakeSensorConn) Terminate(_ error) bool                                 { return false }
+func (*fakeSensorConn) InjectMessage(_ concurrency.Waitable, _ *central.MsgToSensor) error {
 	return nil
 }
