@@ -10,7 +10,13 @@
   color: var(--base-600);
 }
 
-/* Universal selector increases specificity of this override style rule */
+/* Universal selector increases specificity of these override style rules */
+
+* .theme-dark {
+    --base-500: #aaabac;
+    --base-600: #ffffff;
+}
+
 * .theme-light {
     --base-500: var(--pf-global--palette--black-600);
     --base-600: var(--pf-global--palette--black-900);
