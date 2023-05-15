@@ -65,7 +65,7 @@ func (p *processorImpl) ProcessAlert(ctx context.Context, alert *storage.Alert) 
 			// If this is a secured cluster notifier the notification for this alert has already been processed in the secured
 			// cluster before the alert reached here for processing. Hence, skip the notifier and continue with the rest
 			// of the notifiers configured for the policy that generated the alert
-			if notifier.IsSecuredClusterNotifier() {
+			if env.SecuredClusterNotifiers.BooleanSetting() && notifier.IsSecuredClusterNotifier() {
 				return
 			}
 			go func() {
