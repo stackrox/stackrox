@@ -516,6 +516,17 @@ func (ds *dataStoreImpl) CountAccessScopes(ctx context.Context) (int, error) {
 	return ds.accessScopeStorage.Count(ctx)
 }
 
+func (ds *dataStoreImpl) AccessScopeExists(ctx context.Context, id string) (bool, error) {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
+		return false, err
+	}
+	found, err := ds.accessScopeStorage.Exists(ctx, id)
+	if err != nil || !found {
+		return false, err
+	}
+	return true, nil
+}
+
 func (ds *dataStoreImpl) AddAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error {
 	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err

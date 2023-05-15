@@ -78,7 +78,7 @@ function CVEsTable({ cves, unfilteredImageCount, getSortParams, isFiltered }: CV
     const expandedRowSet = useSet<string>();
     return (
         <TableComposable borders={false} variant="compact">
-            <Thead>
+            <Thead noWrap>
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>

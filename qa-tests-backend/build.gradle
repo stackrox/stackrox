@@ -20,7 +20,7 @@ def grpcVersion = '1.21.0'
 def protocVersion = '3.22.3'
 def protobufVersion = '3.22.3'
 def nettyTcNativeVersion = '2.0.45.Final'
-def fabric8Version = '6.5.1'
+def fabric8Version = '6.6.1'
 def jacksonVersion = '2.14.2'
 
 protobuf {
@@ -60,7 +60,7 @@ sourceSets.each { ss ->
 dependencies {
     // grpc and protobuf
     implementation 'com.google.code.gson:gson:2.10.1'
-    implementation "com.google.api.grpc:proto-google-common-protos:2.17.0"
+    implementation "com.google.api.grpc:proto-google-common-protos:2.18.0"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
@@ -69,7 +69,7 @@ dependencies {
     implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     implementation "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 
-    implementation platform('org.apache.groovy:groovy-bom:4.0.11')
+    implementation platform('org.apache.groovy:groovy-bom:4.0.12')
     implementation 'org.apache.groovy:groovy'
     implementation platform("org.spockframework:spock-bom:2.3-groovy-4.0")
     implementation "org.spockframework:spock-core"

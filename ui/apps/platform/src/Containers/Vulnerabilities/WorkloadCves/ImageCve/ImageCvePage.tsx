@@ -7,6 +7,8 @@ import {
     Bullseye,
     Divider,
     Flex,
+    Grid,
+    GridItem,
     PageSection,
     Pagination,
     Skeleton,
@@ -49,7 +51,6 @@ import AffectedImages from '../SummaryCards/AffectedImages';
 import BySeveritySummaryCard, {
     ResourceCountsByCveSeverity,
 } from '../SummaryCards/BySeveritySummaryCard';
-import TopCvssScoreBreakdown from '../SummaryCards/TopCvssScoreBreakdown';
 import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
 import { Resource } from '../components/FilterResourceDropdown';
 
@@ -76,8 +77,6 @@ export const imageCveSummaryQuery = gql`
         imageCVE(cve: $cve, subfieldScopeQuery: $query) {
             cve
             affectedImageCount
-            topCVSS
-            # TODO vector
             affectedImageCountBySeverity {
                 ...ResourceCountsByCVESeverityAndStatus
             }
@@ -173,7 +172,6 @@ function ImageCvePage() {
             imageCVE: {
                 affectedImageCountBySeverity: ResourceCountsByCveSeverity;
                 affectedImageCount: number;
-                topCVSS: number;
             };
         },
         { cve: string; query: string }
@@ -329,28 +327,25 @@ function ImageCvePage() {
                             />
                         )}
                         {summaryRequest.data && (
-                            <Flex
-                                direction={{ default: 'column', lg: 'row' }}
-                                alignItems={{ lg: 'alignItemsStretch' }}
-                                justifyContent={{ default: 'justifyContentSpaceBetween' }}
-                            >
-                                <AffectedImages
-                                    className="pf-u-flex-grow-1 pf-u-flex-basis-0"
-                                    affectedImageCount={severitySummary.affectedImageCount}
-                                    totalImagesCount={summaryRequest.data.totalImageCount}
-                                />
-                                <BySeveritySummaryCard
-                                    className="pf-u-flex-grow-1 pf-u-flex-basis-0"
-                                    title="Images by severity"
-                                    severityCounts={severitySummary.affectedImageCountBySeverity}
-                                    hiddenSeverities={hiddenSeverities}
-                                />
-                                <TopCvssScoreBreakdown
-                                    className="pf-u-flex-grow-1 pf-u-flex-basis-0"
-                                    cvssScore={severitySummary.topCVSS}
-                                    vector="TODO - Not implemented"
-                                />
-                            </Flex>
+                            <Grid hasGutter>
+                                <GridItem sm={12} md={6} xl2={4}>
+                                    <AffectedImages
+                                        className="pf-u-h-100"
+                                        affectedImageCount={severitySummary.affectedImageCount}
+                                        totalImagesCount={summaryRequest.data.totalImageCount}
+                                    />
+                                </GridItem>
+                                <GridItem sm={12} md={6} xl2={4}>
+                                    <BySeveritySummaryCard
+                                        className="pf-u-h-100"
+                                        title="Images by severity"
+                                        severityCounts={
+                                            severitySummary.affectedImageCountBySeverity
+                                        }
+                                        hiddenSeverities={hiddenSeverities}
+                                    />
+                                </GridItem>
+                            </Grid>
                         )}
                     </div>
                 </div>
@@ -400,7 +395,7 @@ function ImageCvePage() {
                             {tableDataAvailable && (
                                 <>
                                     <Divider />
-                                    <div className="pf-u-px-lg">
+                                    <div className="pf-u-px-lg workload-cves-table-container">
                                         {entityTab === 'Image' && (
                                             <AffectedImagesTable
                                                 images={imageData?.images ?? []}

@@ -10,8 +10,14 @@ function FixedByVersionTd({ fixedByVersion }: FixedByVersionTdProps) {
     return fixedByVersion !== '' ? (
         <>{fixedByVersion}</>
     ) : (
-        <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
-            <NotFixableIcon />
+        <Flex
+            alignItems={{ default: 'alignItemsCenter' }}
+            spaceItems={{ default: 'spaceItemsSm' }}
+            flexWrap={{ default: 'nowrap' }}
+        >
+            <div className="pf-u-flex-basis-auto">
+                <NotFixableIcon />
+            </div>
             <span>Not fixable</span>
         </Flex>
     );

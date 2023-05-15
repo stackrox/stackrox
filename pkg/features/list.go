@@ -51,4 +51,7 @@ var (
 
 	// DisableComplianceStandards enables Manage standards modal and conditional rendering in Compliance pages
 	DisableComplianceStandards = registerFeature("Disable compliance standards", "ROX_DISABLE_COMPLIANCE_STANDARDS", false)
+
+	// PreventSensorRestartOnDisconnect enables a new behavior in Sensor where it avoids restarting when the gRPC connection with Central ends.
+	PreventSensorRestartOnDisconnect = registerFeature("Prevent Sensor restart on disconnect", "ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT", false)
 )

@@ -258,11 +258,13 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                                     </Bullseye>
                                 )}
                                 {vulnerabilityData && (
-                                    <DeploymentVulnerabilitiesTable
-                                        deployment={vulnerabilityData.deployment}
-                                        getSortParams={getSortParams}
-                                        isFiltered={isFiltered}
-                                    />
+                                    <div className="workload-cves-table-container">
+                                        <DeploymentVulnerabilitiesTable
+                                            deployment={vulnerabilityData.deployment}
+                                            getSortParams={getSortParams}
+                                            isFiltered={isFiltered}
+                                        />
+                                    </div>
                                 )}
                             </div>
                         </div>

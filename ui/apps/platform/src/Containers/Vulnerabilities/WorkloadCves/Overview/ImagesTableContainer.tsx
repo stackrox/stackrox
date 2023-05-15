@@ -66,11 +66,13 @@ function ImagesTableContainer({ defaultFilters, countsData }: ImagesTableContain
                 <TableErrorComponent error={error} message="Adjust your filters and try again" />
             )}
             {tableData && (
-                <ImagesTable
-                    images={tableData.images}
-                    getSortParams={getSortParams}
-                    isFiltered={isFiltered}
-                />
+                <div className="workload-cves-table-container">
+                    <ImagesTable
+                        images={tableData.images}
+                        getSortParams={getSortParams}
+                        isFiltered={isFiltered}
+                    />
+                </div>
             )}
         </>
     );

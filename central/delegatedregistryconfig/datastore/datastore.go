@@ -13,7 +13,7 @@ import (
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
-	GetConfig(context.Context) (*storage.DelegatedRegistryConfig, error)
+	GetConfig(context.Context) (*storage.DelegatedRegistryConfig, bool, error)
 	UpsertConfig(context.Context, *storage.DelegatedRegistryConfig) error
 }
 
@@ -33,15 +33,14 @@ type datastoreImpl struct {
 }
 
 // GetConfig returns Central's delegated registry config
-func (d *datastoreImpl) GetConfig(ctx context.Context) (*storage.DelegatedRegistryConfig, error) {
+func (d *datastoreImpl) GetConfig(ctx context.Context) (*storage.DelegatedRegistryConfig, bool, error) {
 	if ok, err := administrationSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
+		return nil, false, err
 	} else if !ok {
-		return nil, nil
+		return nil, false, nil
 	}
 
-	conf, _, err := d.store.Get(ctx)
-	return conf, err
+	return d.store.Get(ctx)
 }
 
 // UpsertConfig updates Central's delegated registry config

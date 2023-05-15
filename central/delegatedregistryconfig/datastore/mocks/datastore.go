@@ -36,12 +36,13 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // GetConfig mocks base method.
-func (m *MockDataStore) GetConfig(arg0 context.Context) (*storage.DelegatedRegistryConfig, error) {
+func (m *MockDataStore) GetConfig(arg0 context.Context) (*storage.DelegatedRegistryConfig, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetConfig", arg0)
 	ret0, _ := ret[0].(*storage.DelegatedRegistryConfig)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetConfig indicates an expected call of GetConfig.
