@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
@@ -24,21 +23,32 @@ const (
 )
 
 var (
-	once sync.Once
-	log  *logging.RateLimitedLogger
+	// once sync.Once
+	log *logging.RateLimitedLogger
 )
 
-func getRateLimitedLogger() *logging.RateLimitedLogger {
-	once.Do(func() {
-		log = logging.NewRateLimitLogger(
-			logging.LoggerForModule(),
-			cacheSize,
-			1,
-			rateLimitFrequency,
-			logBurstSize,
-		)
-	})
-	return log
+/*
+	func getRateLimitedLogger() *logging.RateLimitedLogger {
+		once.Do(func() {
+			log = logging.NewRateLimitLogger(
+				logging.LoggerForModule(),
+				cacheSize,
+				1,
+				rateLimitFrequency,
+				logBurstSize,
+			)
+		})
+		return log
+	}
+*/
+func init() {
+	log = logging.NewRateLimitLogger(
+		logging.LoggerForModule(),
+		cacheSize,
+		1,
+		rateLimitFrequency,
+		logBurstSize,
+	)
 }
 
 // Extractor is the identity extractor for the basic auth identity.
@@ -77,13 +87,15 @@ func (e *Extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 
 	username, password, err := parseBasicAuthToken(basicAuthToken)
 	if err != nil {
-		getRateLimitedLogger().WarnL(ri.Hostname, "failed to parse basic auth token from %q: %v", ri.Hostname, err)
+		// getRateLimitedLogger().WarnL(ri.Hostname, "failed to parse basic auth token from %q: %v", ri.Hostname, err)
+		log.WarnL(ri.Hostname, "failed to parse basic auth token from %q: %v", ri.Hostname, err)
 		return nil, errors.New("failed to parse basic auth token")
 	}
 
 	id, err := e.manager.IdentityForCreds(ctx, username, password, e.authProvider)
 	if errors.Is(err, errox.NotAuthorized) {
-		getRateLimitedLogger().WarnL(ri.Hostname, "%q: %v", ri.Hostname, err)
+		// getRateLimitedLogger().WarnL(ri.Hostname, "%q: %v", ri.Hostname, err)
+		log.WarnL(ri.Hostname, "%q: %v", ri.Hostname, err)
 		return nil, err
 	}
 	return id, err
