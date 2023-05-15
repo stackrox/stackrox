@@ -34,6 +34,8 @@ type FakeService struct {
 	// channel to inject messages that are sent from FakeCentral to Sensor
 	centralStubMessagesC chan *central.MsgToSensor
 
+	onShutdown func()
+
 	t *testing.T
 }
 
@@ -119,6 +121,11 @@ func (s *FakeService) startInputIngestion(stream central.SensorService_Communica
 
 }
 
+// OnShutdown registers a function to be called when fake central should stop.
+func (s *FakeService) OnShutdown(shutdownFn func()) {
+	s.onShutdown = shutdownFn
+}
+
 // StubMessage sends a fake message to Sensor through the Central<->Sensor gRPC stream.
 func (s *FakeService) StubMessage(msg *central.MsgToSensor) {
 	if !s.KillSwitch.IsDone() {
@@ -160,4 +167,9 @@ func (s *FakeService) OnMessage(callback func(sensor *central.MsgFromSensor)) {
 	s.messageCallbackLock.Lock()
 	s.messageCallback = callback
 	s.messageCallbackLock.Unlock()
+}
+
+// Stop kills fake central.
+func (s *FakeService) Stop() {
+	s.onShutdown()
 }
