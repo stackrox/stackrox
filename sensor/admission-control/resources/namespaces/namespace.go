@@ -32,8 +32,7 @@ type namespaceMetadata struct {
 }
 
 // AddNamespace adds namespace metadata keyed by namespace name to the namespace store
-//
-//	exported func for test only
+// exported func for test only
 func (n *NamespaceStore) AddNamespace(ns *storage.NamespaceMetadata) {
 	n.lock.Lock()
 	defer n.lock.Unlock()
@@ -46,6 +45,7 @@ func (n *NamespaceStore) AddNamespace(ns *storage.NamespaceMetadata) {
 	}
 }
 
+// GetAnnotationsForNamespace gets all the annotations for the namespace from the in memory store
 func (n *NamespaceStore) GetAnnotationsForNamespace(name string) map[string]string {
 	n.lock.Lock()
 	defer n.lock.Unlock()
