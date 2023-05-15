@@ -15,8 +15,6 @@ echo "found Central pod: ${CENTRAL_POD}"
 
 echo -n "Setting up Prometheus port-forwarding..."
 
-pkill -f "kubectl port-forward -n ${NAMESPACE} ${CENTRAL_POD} ${LOCAL_PORT}:9090" || true
-
 # kubectl should be killed whenever this script is killed
 trap 'kill -TERM ${PID}; wait ${PID}' TERM INT
 kubectl port-forward -n "$NAMESPACE" "$CENTRAL_POD" "${LOCAL_PORT}:9090" > /dev/null &
