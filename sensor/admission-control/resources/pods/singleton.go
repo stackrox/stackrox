@@ -1,22 +1,21 @@
-package metadatagetter
+package pods
 
 import (
-	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	once sync.Once
 
-	metadataGetter *datastoreMetadataGetter
+	podStore *PodStore
 )
 
 func initialize() {
-	metadataGetter = newMetadataGetter()
+	podStore = NewPodStore()
 }
 
 // Singleton provides the interface for getting annotation values with a datastore backed implementation.
-func Singleton() notifiers.MetadataGetter {
+func Singleton() *PodStore {
 	once.Do(initialize)
-	return metadataGetter
+	return podStore
 }
