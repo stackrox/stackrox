@@ -35,7 +35,7 @@ func (d *delegatedRegistryConfigImpl) Capabilities() []centralsensor.SensorCapab
 		return nil
 	}
 
-	return []centralsensor.SensorCapability{centralsensor.DelegatedScanningCap}
+	return []centralsensor.SensorCapability{centralsensor.DelegatedRegistryCap}
 }
 
 func (d *delegatedRegistryConfigImpl) Notify(_ common.SensorComponentEvent) {}

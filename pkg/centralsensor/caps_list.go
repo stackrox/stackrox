@@ -40,6 +40,6 @@ const (
 	// SecuredClusterNotifications identifies the capability for sensor to process and send alert notifications to notifiers
 	SecuredClusterNotifications SensorCapability = "SecuredClusterNotifications"
 
-	// DelegatedScanningCap identifies the capability to process delegated registry configs and ad-hoc scan requests
-	DelegatedScanningCap SensorCapability = "DelegatedScanning"
+	// DelegatedRegistryCap identifies the capability for a secured cluster to interact directly with registries (ie: for scanning images in local registries)
+	DelegatedRegistryCap SensorCapability = "DelegatedRegistryCap"
 )

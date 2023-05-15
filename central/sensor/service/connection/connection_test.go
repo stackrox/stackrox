@@ -7,6 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	clusterMgrMock "github.com/stackrox/rox/central/sensor/service/common/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -200,7 +201,7 @@ func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
 
 	s.Run("send", func() {
-		caps := set.NewSet(centralsensor.DelegatedScanningCap)
+		caps := set.NewSet(centralsensor.DelegatedRegistryCap)
 
 		config := &storage.DelegatedRegistryConfig{EnabledFor: storage.DelegatedRegistryConfig_ALL}
 		deleRegMgr.EXPECT().GetConfig(ctx).Return(config, nil)
@@ -218,7 +219,7 @@ func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 		s.FailNow("Delegated registry config msg was not sent")
 	})
 
-	s.Run("no send", func() {
+	s.Run("no send on no cap", func() {
 		caps := set.NewSet[centralsensor.SensorCapability]()
 
 		server := &mockServer{sentList: make([]*central.MsgToSensor, 0)}
@@ -230,5 +231,31 @@ func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 				return
 			}
 		}
+	})
+
+	s.Run("no send on nil config", func() {
+		caps := set.NewSet(centralsensor.DelegatedRegistryCap)
+
+		deleRegMgr.EXPECT().GetConfig(ctx).Return(nil, nil)
+
+		server := &mockServer{sentList: make([]*central.MsgToSensor, 0)}
+		s.NoError(sensorMockConn.Run(ctx, server, caps))
+
+		for _, msg := range server.sentList {
+			if deleConfig := msg.GetUpdatedDelegatedRegistryConfig(); deleConfig != nil {
+				s.FailNow("Delegated registry config msg was sent")
+				return
+			}
+		}
+	})
+
+	s.Run("no send on err", func() {
+		caps := set.NewSet(centralsensor.DelegatedRegistryCap)
+
+		deleRegMgr.EXPECT().GetConfig(ctx).Return(nil, errors.New("fake error"))
+
+		server := &mockServer{sentList: make([]*central.MsgToSensor, 0)}
+		err := sensorMockConn.Run(ctx, server, caps)
+		s.ErrorContains(err, "unable to get delegated registry config")
 	})
 }

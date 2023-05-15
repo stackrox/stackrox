@@ -8,7 +8,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -72,10 +71,10 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 	// it is considered cluster-local.
 	// This is used to determine that an image is from an OCP internal registry and
 	// should not be sent to central for scanning
-	req.Image.IsClusterLocal = s.registryStore.HasRegistryForImage(req.GetImage().GetName())
+	req.Image.IsClusterLocal = s.registryStore.IsLocal(req.GetImage().GetName())
 
-	// Ask Central to scan the image if the image is not internal and local scanning is not forced
-	if !req.GetImage().GetIsClusterLocal() && !env.ForceLocalImageScanning.BooleanSetting() {
+	// Ask Central to scan the image if the image is not internal or local
+	if !req.GetImage().GetIsClusterLocal() {
 		scanResp, err := s.centralClient.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 			Image:      req.GetImage(),
 			CachedOnly: !req.GetScanInline(),
@@ -88,20 +87,13 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 		}, nil
 	}
 
-	var err error
-	var img *storage.Image
-	if req.GetImage().GetIsClusterLocal() {
-		img, err = s.localScan.EnrichLocalImage(ctx, s.centralClient, req.GetImage())
-	} else {
-		// ForceLocalImageScanning must be true
-		img, err = s.localScan.EnrichLocalImageInNamespace(ctx, s.centralClient, req.GetImage(), req.GetNamespace())
-	}
-
+	img, err := s.localScan.EnrichLocalImageInNamespace(ctx, s.centralClient, req.GetImage(), req.GetNamespace())
 	if err != nil {
 		err = errors.Wrap(err, "scanning image via local scanner")
 		log.Error(err)
 		return nil, err
 	}
+
 	return &sensor.GetImageResponse{
 		Image: img,
 	}, nil

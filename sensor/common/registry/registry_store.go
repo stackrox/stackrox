@@ -14,6 +14,7 @@ import (
 	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
 	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -29,6 +30,11 @@ type Store struct {
 	factory registries.Factory
 	// store maps a namespace to the names of registries accessible from within the namespace.
 	store map[string]registries.Set
+
+	// clusterLocalRegistryHosts contains hosts (names and/or IPs) for registries that are local
+	// to this cluster (ie: the OCP internal registry)
+	clusterLocalRegistryHosts      set.StringSet
+	clusterLocalRegistryHostsMutex sync.RWMutex
 
 	// globalRegistries holds registries that are not bound to a namespace and can be used
 	// for processing images from any namespace, example: the OCP Global Pull Secret
@@ -220,8 +226,12 @@ func (rs *Store) SetDelegatedRegistryConfig(config *central.DelegatedRegistryCon
 // IsLocal determines if an image is from a registry that should be accessed
 // local to this secured cluster
 func (rs *Store) IsLocal(image *storage.ImageName) bool {
-	if rs.HasRegistryForImage(image) {
-		// image is cluster local (ie: from OCP internal registry)
+	if image == nil {
+		return false
+	}
+
+	if rs.hasClusterLocalRegistryHost(image.GetRegistry()) {
+		// This host is always cluster local irregardless of the DelegatedRegistryConfig (ie: OCP internal registry).
 		return true
 	}
 
@@ -238,7 +248,7 @@ func (rs *Store) IsLocal(image *storage.ImageName) bool {
 	}
 
 	// if image matches a delegated registry prefix, it is local
-	imageFullName := urlfmt.TrimHTTPPrefixes(image.FullName)
+	imageFullName := urlfmt.TrimHTTPPrefixes(image.GetFullName())
 	for _, r := range config.Registries {
 		regPath := urlfmt.TrimHTTPPrefixes(r.RegistryPath)
 		if strings.HasPrefix(imageFullName, regPath) {
@@ -247,4 +257,21 @@ func (rs *Store) IsLocal(image *storage.ImageName) bool {
 	}
 
 	return false
+}
+
+func (rs *Store) AddClusterLocalRegistryHost(host string) {
+	rs.clusterLocalRegistryHostsMutex.Lock()
+	defer rs.clusterLocalRegistryHostsMutex.Unlock()
+
+	trimmed := urlfmt.TrimHTTPPrefixes(host)
+	rs.clusterLocalRegistryHosts.Add(trimmed)
+
+	log.Debugf("Added cluster local registry host %q", trimmed)
+}
+
+func (rs *Store) hasClusterLocalRegistryHost(host string) bool {
+	rs.clusterLocalRegistryHostsMutex.RLock()
+	defer rs.clusterLocalRegistryHostsMutex.RUnlock()
+
+	return rs.clusterLocalRegistryHosts.Contains(urlfmt.TrimHTTPPrefixes(host))
 }

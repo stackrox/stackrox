@@ -105,7 +105,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, _ *v1.Empty) (*v1.Delegat
 	}
 
 	if len(clusters) == 0 {
-		return nil, status.Error(codes.NotFound, "no valid clusters found")
+		return nil, status.Error(codes.NotFound, "no clusters found")
 	}
 
 	return &v1.DelegatedRegistryClustersResponse{
@@ -143,6 +143,7 @@ func (s *serviceImpl) PutConfig(ctx context.Context, config *v1.DelegatedRegistr
 	}
 
 	for clusterId := range clusterIds {
+		log.Debugf("Sending updated delegated registry config to cluster %q", clusterId)
 		if err := s.connManager.SendMessage(clusterId, msg); err != nil {
 			log.Errorf("Failed to send updated delegated registry config to cluster %q: %v", clusterId, err)
 		}
@@ -196,7 +197,7 @@ func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryC
 	for i, c := range clusters {
 		conn := s.connManager.GetConnection(c.Id)
 
-		valid := conn != nil && conn.HasCapability(centralsensor.DelegatedScanningCap)
+		valid := conn != nil && conn.HasCapability(centralsensor.DelegatedRegistryCap)
 
 		res[i] = &v1.DelegatedRegistryCluster{
 			Id:      c.Id,

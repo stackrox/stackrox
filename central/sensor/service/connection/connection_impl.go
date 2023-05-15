@@ -547,7 +547,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		}
 	}
 
-	if connectionCapabilities.Contains(centralsensor.DelegatedScanningCap) {
+	if connectionCapabilities.Contains(centralsensor.DelegatedRegistryCap) {
 		msg, err := c.getDelegatedRegistryConfigMsg(ctx)
 		if err != nil {
 			return errors.Wrapf(err, "unable to get delegated registry config msg for %q", c.clusterID)
