@@ -25,7 +25,6 @@ var (
 )
 
 // Store stores cluster-internal registries by namespace.
-// It is assumed all the registries are Docker registries.
 type Store struct {
 	factory registries.Factory
 	// store maps a namespace to the names of registries accessible from within the namespace.
@@ -224,7 +223,7 @@ func (rs *Store) SetDelegatedRegistryConfig(config *central.DelegatedRegistryCon
 }
 
 // IsLocal determines if an image is from a registry that should be accessed
-// local to this secured cluster.  Always returns true for image.Registry's that have
+// local to this secured cluster.  Always returns true for image registry's that have
 // been added via AddClusterLocalRegistryHost
 func (rs *Store) IsLocal(image *storage.ImageName) bool {
 	if image == nil {
@@ -261,7 +260,7 @@ func (rs *Store) IsLocal(image *storage.ImageName) bool {
 }
 
 // AddClusterLocalRegistryHost adds host to an internal set of hosts representing
-// registries that are only accessible from this cluster. This hosts will factored
+// registries that are only accessible from this cluster. These hosts will factored
 // into IsLocal decisioning. Is OK to call repeatedly for the same host
 func (rs *Store) AddClusterLocalRegistryHost(host string) {
 	rs.clusterLocalRegistryHostsMutex.Lock()
