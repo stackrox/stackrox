@@ -51,7 +51,7 @@ func (DelegatedRegistryConfig_EnabledFor) EnumDescriptor() ([]byte, []int) {
 }
 
 // DelegatedRegistryConfig determines how to handle scan requests
-// Refer to v1.DelegatedRegistryConfig instead for more detailed docs
+// Refer to v1.DelegatedRegistryConfig for more detailed docs
 type DelegatedRegistryConfig struct {
 	EnabledFor           DelegatedRegistryConfig_EnabledFor           `protobuf:"varint,1,opt,name=enabled_for,json=enabledFor,proto3,enum=storage.DelegatedRegistryConfig_EnabledFor" json:"enabled_for,omitempty"`
 	DefaultClusterId     string                                       `protobuf:"bytes,2,opt,name=default_cluster_id,json=defaultClusterId,proto3" json:"default_cluster_id,omitempty"`
