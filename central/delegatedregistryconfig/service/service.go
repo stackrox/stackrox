@@ -110,7 +110,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, _ *v1.Empty) (*v1.Delegat
 }
 
 // PutConfig updates Central's delegated registry config
-func (s *serviceImpl) PutConfig(ctx context.Context, config *v1.DelegatedRegistryConfig) (*v1.DelegatedRegistryConfig, error) {
+func (s *serviceImpl) UpdateConfig(ctx context.Context, config *v1.DelegatedRegistryConfig) (*v1.DelegatedRegistryConfig, error) {
 	if err := s.validate(ctx, config); err != nil {
 		return nil, fmt.Errorf("%w: %v", errox.InvalidArgs, err.Error())
 	}
@@ -124,7 +124,6 @@ func (s *serviceImpl) PutConfig(ctx context.Context, config *v1.DelegatedRegistr
 
 func (s *serviceImpl) validate(ctx context.Context, config *v1.DelegatedRegistryConfig) error {
 	if config == nil {
-		// this block not reachable via GRPC-gateway invocations
 		return errors.New("config missing")
 	}
 
@@ -165,10 +164,10 @@ func (s *serviceImpl) validate(ctx context.Context, config *v1.DelegatedRegistry
 	return errors.Join(errorList...)
 }
 
-// getClusters returns all clusters annotated with a flag indicating if cluster is valid
-// for use as a delegation target. All clusters are returned instead of just valid clusters
+// getClusters returns all clusters, the clusters with valid set to true can be used as in a
+// DelegatedRegistryConfig. All clusters are returned instead of just valid clusters
 // so that a consumer (ie: the UI) can show the friendly name of clusters that may no longer
-// be valid but once were
+// be valid (but once were)
 func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryCluster, error) {
 	clusters, err := s.clusterDataStore.GetClusters(ctx)
 	if err != nil {
@@ -195,7 +194,7 @@ func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryC
 	return res, nil
 }
 
-// getValidClusterIds returns a set cluster ids that are valid for delegation
+// getValidClusterIds returns a set of cluster ids that are valid for use in a DelegatedRegistryConfig
 func (s *serviceImpl) getValidClusterIds(ctx context.Context) (set.Set[string], error) {
 	clusters, err := s.getClusters(ctx)
 	if err != nil {

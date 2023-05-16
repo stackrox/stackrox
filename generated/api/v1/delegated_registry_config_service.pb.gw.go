@@ -69,7 +69,7 @@ func local_request_DelegatedRegistryConfigService_GetClusters_0(ctx context.Cont
 
 }
 
-func request_DelegatedRegistryConfigService_PutConfig_0(ctx context.Context, marshaler runtime.Marshaler, client DelegatedRegistryConfigServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_DelegatedRegistryConfigService_UpdateConfig_0(ctx context.Context, marshaler runtime.Marshaler, client DelegatedRegistryConfigServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq DelegatedRegistryConfig
 	var metadata runtime.ServerMetadata
 
@@ -81,12 +81,12 @@ func request_DelegatedRegistryConfigService_PutConfig_0(ctx context.Context, mar
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.PutConfig(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.UpdateConfig(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_DelegatedRegistryConfigService_PutConfig_0(ctx context.Context, marshaler runtime.Marshaler, server DelegatedRegistryConfigServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_DelegatedRegistryConfigService_UpdateConfig_0(ctx context.Context, marshaler runtime.Marshaler, server DelegatedRegistryConfigServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq DelegatedRegistryConfig
 	var metadata runtime.ServerMetadata
 
@@ -98,7 +98,7 @@ func local_request_DelegatedRegistryConfigService_PutConfig_0(ctx context.Contex
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.PutConfig(ctx, &protoReq)
+	msg, err := server.UpdateConfig(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -155,7 +155,7 @@ func RegisterDelegatedRegistryConfigServiceHandlerServer(ctx context.Context, mu
 
 	})
 
-	mux.Handle("PUT", pattern_DelegatedRegistryConfigService_PutConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_DelegatedRegistryConfigService_UpdateConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -166,7 +166,7 @@ func RegisterDelegatedRegistryConfigServiceHandlerServer(ctx context.Context, mu
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_DelegatedRegistryConfigService_PutConfig_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_DelegatedRegistryConfigService_UpdateConfig_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -174,7 +174,7 @@ func RegisterDelegatedRegistryConfigServiceHandlerServer(ctx context.Context, mu
 			return
 		}
 
-		forward_DelegatedRegistryConfigService_PutConfig_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_DelegatedRegistryConfigService_UpdateConfig_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -259,7 +259,7 @@ func RegisterDelegatedRegistryConfigServiceHandlerClient(ctx context.Context, mu
 
 	})
 
-	mux.Handle("PUT", pattern_DelegatedRegistryConfigService_PutConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_DelegatedRegistryConfigService_UpdateConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -268,14 +268,14 @@ func RegisterDelegatedRegistryConfigServiceHandlerClient(ctx context.Context, mu
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_DelegatedRegistryConfigService_PutConfig_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_DelegatedRegistryConfigService_UpdateConfig_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_DelegatedRegistryConfigService_PutConfig_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_DelegatedRegistryConfigService_UpdateConfig_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -287,7 +287,7 @@ var (
 
 	pattern_DelegatedRegistryConfigService_GetClusters_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "delegatedregistryconfig", "clusters"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_DelegatedRegistryConfigService_PutConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "delegatedregistryconfig"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_DelegatedRegistryConfigService_UpdateConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "delegatedregistryconfig"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (
@@ -295,5 +295,5 @@ var (
 
 	forward_DelegatedRegistryConfigService_GetClusters_0 = runtime.ForwardResponseMessage
 
-	forward_DelegatedRegistryConfigService_PutConfig_0 = runtime.ForwardResponseMessage
+	forward_DelegatedRegistryConfigService_UpdateConfig_0 = runtime.ForwardResponseMessage
 )

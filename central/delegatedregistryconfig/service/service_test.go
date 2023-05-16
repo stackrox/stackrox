@@ -194,7 +194,7 @@ func TestPutConfigError(t *testing.T) {
 				clustersDS.EXPECT().GetClusters(gomock.Any()).Return(test.clusters, test.clusterDSErr)
 			}
 
-			_, err = s.PutConfig(context.Background(), test.cfg)
+			_, err = s.UpdateConfig(context.Background(), test.cfg)
 			assert.ErrorContains(t, err, test.expectedErrMsg)
 		}
 
@@ -216,11 +216,11 @@ func TestPutConfigSuccess(t *testing.T) {
 	cfg = &v1.DelegatedRegistryConfig{EnabledFor: specific, DefaultClusterId: "id1"}
 	deleClusterDS.EXPECT().UpsertConfig(gomock.Any(), gomock.Any())
 	cfg.DefaultClusterId = "id1"
-	_, err = s.PutConfig(context.Background(), cfg)
+	_, err = s.UpdateConfig(context.Background(), cfg)
 	assert.NoError(t, err)
 
 	deleClusterDS.EXPECT().UpsertConfig(gomock.Any(), gomock.Any())
 	cfg.Registries = []*v1.DelegatedRegistryConfig_DelegatedRegistry{{ClusterId: "id1", RegistryPath: "something"}}
-	_, err = s.PutConfig(context.Background(), cfg)
+	_, err = s.UpdateConfig(context.Background(), cfg)
 	assert.NoError(t, err)
 }
