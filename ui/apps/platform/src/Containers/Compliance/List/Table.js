@@ -6,6 +6,7 @@ import { useQuery } from '@apollo/client';
 import { Message } from '@stackrox/ui-components';
 
 import entityTypes, { standardTypes } from 'constants/entityTypes';
+import { resourceLabels } from 'messages/common';
 import { standardLabels } from 'messages/standards';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 import Table from 'Components/Table';
@@ -274,6 +275,7 @@ const ListTable = ({
         tableColumns = getColumnsByEntity(entityType, standardsData.results);
     }
     let tableData;
+    const entityTypeLabel = resourceLabels[entityType];
 
     return (
         <Query query={gqlQuery} variables={variables}>
@@ -286,18 +288,23 @@ const ListTable = ({
                 if (!loading || (data && data.results)) {
                     const formattedData = formatData(data, entityType);
                     if (!formattedData) {
-                        headerText = `0 ${pluralize(entityType, totalRows)}`;
+                        headerText = `0 ${pluralize(entityTypeLabel, totalRows)}`;
                         contents = <NoResultsMessage message="No data matched your search." />;
                     } else {
                         tableData = filterByComplianceState(formattedData, query, isControlList);
                         totalRows = getTotalRows(tableData, isControlList);
                         const { groupBy } = query;
+                        const groupByLabel =
+                            groupBy === 'STANDARD' ? 'standard' : resourceLabels[groupBy];
 
                         const groupedByText = groupBy
-                            ? `across ${tableData.length} ${pluralize(groupBy, tableData.length)}`
+                            ? `across ${tableData.length} ${pluralize(
+                                  groupByLabel,
+                                  tableData.length
+                              )}`
                             : '';
                         headerText = `${totalRows} ${pluralize(
-                            entityType,
+                            entityTypeLabel,
                             totalRows
                         )} ${groupedByText}`;
 

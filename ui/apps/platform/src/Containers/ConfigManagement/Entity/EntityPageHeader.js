@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import capitalize from 'lodash/capitalize';
 import startCase from 'lodash/startCase';
 
 import PageHeader from 'Components/PageHeader';
@@ -16,7 +17,7 @@ const EntityPageHeader = ({ entityType, entityId, urlParams, isExporting, setIsE
     const { entityName } = useEntityName(entityType, safeEntityId);
 
     const header = entityName || '-';
-    const subHeader = entityLabels[entityType];
+    const subHeader = capitalize(entityLabels[entityType]);
     const exportFilename = `${startCase(subHeader)} Report: "${header}"`;
 
     let pdfId = 'capture-dashboard-stretch';

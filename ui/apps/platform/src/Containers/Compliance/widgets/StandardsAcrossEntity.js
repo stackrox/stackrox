@@ -50,7 +50,8 @@ function setStandardsMapping(data, type) {
 
 const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, className }) => {
     const searchParam = useContext(searchContext);
-    const headerText = `Passing standards across ${entityType}s`;
+    const entityTypeLabel = resourceLabels[entityType];
+    const headerText = `Passing standards across ${entityTypeLabel}s`;
 
     function processData(data, type) {
         if (!data || !data.results || !data.results.results.length) {

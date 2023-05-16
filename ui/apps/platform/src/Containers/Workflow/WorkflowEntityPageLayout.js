@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { withRouter } from 'react-router-dom';
+import capitalize from 'lodash/capitalize';
 import startCase from 'lodash/startCase';
 
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
@@ -20,7 +21,6 @@ import useCaseLabels from 'messages/useCase';
 import useEntityName from 'hooks/useEntityName';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
-import { shouldUseOriginalCase } from 'utils/workflowUtils';
 import entityTypes from 'constants/entityTypes';
 import WorkflowSidePanel from './WorkflowSidePanel';
 import { EntityComponentMap } from './UseCaseComponentMaps';
@@ -85,11 +85,9 @@ const WorkflowEntityPageLayout = ({ location }) => {
               opacity: 0,
           };
 
-    const subheaderText = entityLabels[pageEntityType];
+    const subheaderText = capitalize(entityLabels[pageEntityType]);
     const { entityName = '' } = useEntityName(pageEntityType, pageEntityId);
     const entityContext = {};
-    // const useLowercase = pageEntityType === entityTypes.IMAGE;
-    const useOriginalCase = shouldUseOriginalCase(entityName, pageEntityType);
 
     const exportFilename = `${useCaseLabels[useCase]} ${startCase(
         subheaderText
@@ -124,7 +122,6 @@ const WorkflowEntityPageLayout = ({ location }) => {
                     header={entityName}
                     subHeader={subheaderText}
                     classes="pr-0 ignore-react-onclickoutside"
-                    lowercaseTitle={useOriginalCase}
                 >
                     <div className="flex flex-1 justify-end h-full">
                         <div className="flex items-center pr-2">
