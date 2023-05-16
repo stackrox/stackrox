@@ -29,9 +29,6 @@ import (
 )
 
 const (
-	// cacheDir is the directory in which certificates to be distributed are stored.
-	cacheDir = `/var/cache/stackrox/.certificates`
-
 	maxQueryRate rate.Limit = 1.0
 
 	maxBurstRequests = 10
@@ -116,8 +113,8 @@ func (s *service) verifyToken(ctx context.Context, token string, expectedSubject
 }
 
 func (s *service) loadCertsForService(serviceName string) (certPEM, keyPEM string, err error) {
-	certFileName := filepath.Join(cacheDir, serviceName+"-cert.pem")
-	keyFileName := filepath.Join(cacheDir, serviceName+"-key.pem")
+	certFileName := filepath.Join(cacheDir.Setting(), serviceName+"-cert.pem")
+	keyFileName := filepath.Join(cacheDir.Setting(), serviceName+"-key.pem")
 
 	if allExist, err := fileutils.AllExist(certFileName, keyFileName); err != nil {
 		return "", "", errors.New("failed to check for existence of certificates")
