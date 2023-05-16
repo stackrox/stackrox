@@ -43,7 +43,7 @@ const ContainerImage = ({ image }): ReactElement | null => {
                 <div className="font-700 inline pr-1">Image Name:</div>
                 <div className="font-600">
                     {image.name.fullName}
-                    <span className="italic pl-1">({unavailableText})</span>{' '}
+                    <span className="pl-1">({unavailableText})</span>{' '}
                 </div>
             </div>
         );
@@ -64,7 +64,7 @@ const ContainerImage = ({ image }): ReactElement | null => {
 
 const Resources = ({ resources }): ReactElement => {
     if (!resources) {
-        return <span className="py-3 font-600 italic">None</span>;
+        return <span className="py-3 font-600">None</span>;
     }
     const resourceMap = {
         cpuCoresRequest: { label: 'CPU Request (cores)' },
@@ -80,7 +80,7 @@ type Volume = Record<string, string>;
 
 const ContainerVolumes = ({ volumes }: { volumes: Volume[] }): ReactElement => {
     if (!volumes?.length) {
-        return <span className="py-1 font-600 italic">None</span>;
+        return <span className="py-1 font-600">None</span>;
     }
     return (
         <>
@@ -175,7 +175,7 @@ const ContainerConfigurations = ({ deployment }): ReactElement => {
             );
         });
     } else {
-        containers = <span className="py-3 font-600 italic">None</span>;
+        containers = <span className="py-3 font-600">None</span>;
     }
     return <div className="flex-col h-full px-3">{containers}</div>;
 };
