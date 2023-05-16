@@ -109,7 +109,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, _ *v1.Empty) (*v1.Delegat
 	}, nil
 }
 
-// PutConfig updates Central's delegated registry config
+// UpdateConfig updates Central's delegated registry config
 func (s *serviceImpl) UpdateConfig(ctx context.Context, config *v1.DelegatedRegistryConfig) (*v1.DelegatedRegistryConfig, error) {
 	if err := s.validate(ctx, config); err != nil {
 		return nil, fmt.Errorf("%w: %v", errox.InvalidArgs, err.Error())
