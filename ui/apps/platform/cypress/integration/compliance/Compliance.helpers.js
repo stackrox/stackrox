@@ -177,3 +177,20 @@ export function interactAndWaitForComplianceStandard(interactionCallback) {
     cy.location('pathname').should('eq', getEntitiesPath(entitiesKey));
     cy.get('h1 + div:contains("Standard")');
 }
+
+// verify
+
+/*
+ * For example, verifyDashboardEntityLink('clusters', /^\d+ clusters?/))
+ */
+export function verifyDashboardEntityLink(entitiesKey, entityRegExp) {
+    cy.get('[data-testid="page-header"]')
+        .contains('a', entityRegExp)
+        .then(($a) => {
+            const [, count] = /^(\d+) /.exec($a.text());
+            interactAndWaitForComplianceEntities(() => {
+                cy.wrap($a).click();
+            }, entitiesKey);
+            cy.get(`[data-testid="panel-header"]:contains("${count}")`);
+        });
+}
