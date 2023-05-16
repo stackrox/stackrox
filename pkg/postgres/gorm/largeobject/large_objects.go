@@ -58,18 +58,23 @@ func (o *LargeObjects) Unlink(oid uint32) error {
 }
 
 func (o *LargeObjects) Upsert(oid uint32, r io.Reader) error {
-	obj, err := o.Open(oid, ModeWrite)
+	obj, err := o.Open(oid, ModeWrite|ModeRead)
 	if err != nil {
 		return err
-	} /*
-		err = obj.Truncate(1)
-		if err != nil {
-			return err
-		}
-		if _, err = obj.Seek(0, io.SeekStart); err != nil {
-			return err
-		}*/
+	}
+	_, err = obj.Truncate(0)
+	if err != nil {
+		return err
+	}
+	obj.Close()
+	obj, err = o.Open(oid, ModeWrite)
+	if err != nil {
+		return err
+	}
 	_, err = io.Copy(obj, r)
+	if err != nil {
+		return err
+	}
 
 	return obj.Close()
 }
@@ -98,11 +103,11 @@ type LargeObject struct {
 // Write writes p to the large object and returns the number of bytes written and an error if not all of p was written.
 func (o *LargeObject) Write(p []byte) (int, error) {
 	var n int
-	o.tx = o.tx.Raw("select lowrite($1, $2)", o.fd, p)
+	o.tx = o.tx.Raw("select lowrite(?, ?)", o.fd, p)
 	if err := o.tx.Error; err != nil {
 		return n, err
 	}
-	if err := o.tx.Scan(&n).Error; err != nil {
+	if err := o.tx.Row().Scan(&n); err != nil {
 		return n, err
 	}
 	if err := o.tx.Error; err != nil {
@@ -119,7 +124,7 @@ func (o *LargeObject) Write(p []byte) (int, error) {
 // Read reads up to len(p) bytes into p returning the number of bytes read.
 func (o *LargeObject) Read(p []byte) (n int, err error) {
 	var res []byte = make([]byte, 0, len(p))
-	o.tx = o.tx.Raw("select loread($1, $2)", o.fd, len(p))
+	o.tx = o.tx.Raw("select loread(?, ?)", o.fd, len(p))
 	if err = o.tx.Error; err != nil {
 		return 0, err
 	}
@@ -140,7 +145,15 @@ func (o *LargeObject) Read(p []byte) (n int, err error) {
 // Seek moves the current location pointer to the new location specified by offset.
 func (o *LargeObject) Seek(offset int64, whence int) (int64, error) {
 	var n int64
-	o.tx = o.tx.Raw("select lo_lseek64($1, $2, $3)", o.fd, offset, whence).Scan(&n)
+	result := o.tx.Raw("select lo_lseek64(?, ?, ?)", o.fd, offset, whence)
+	if result.Error != nil {
+		return 0, o.tx.Error
+	}
+	row := o.tx.Row()
+	row.Scan(&n)
+	if result.Error != nil {
+		return 0, result.Error
+	}
 	return n, o.tx.Error
 }
 
@@ -152,13 +165,27 @@ func (o *LargeObject) Tell() (int64, error) {
 }
 
 // Truncate the large object to size.
-func (o *LargeObject) Truncate(size int64) (err error) {
-	o.tx = o.tx.Raw("select lo_truncate64(?, ?)", o.fd, size)
-	return o.tx.Error
+func (o *LargeObject) Truncate(size int64) (n int, err error) {
+	result := o.tx.Raw("select lo_truncate64(?, ?)", o.fd, size).Scan(&n)
+	return n, result.Error
 }
 
 // Close the large object descriptor.
 func (o *LargeObject) Close() error {
-	o.tx = o.tx.Raw("select lo_close(?)", o.fd)
+	var n int
+	o.tx = o.tx.Raw("select lo_close(?)", o.fd).Scan(&n)
 	return o.tx.Error
 }
+
+/*
+{	var n int64
+o.tx = o.tx.Raw("select lo_tell64(?)", o.fd)
+if o.tx.Error != nil {
+return n, o.tx.Error
+}
+row := o.tx.Row()
+if row.Err() != nil {
+return n, row.Err()
+}
+err := row.Scan(&n)
+return n, err}*/
