@@ -31,6 +31,20 @@ func namespaceWithAnnotation(annotationKey, annotationValue string) *storage.Nam
 	return ns
 }
 
+func namespaceWithLabels() *storage.NamespaceMetadata {
+	return &storage.NamespaceMetadata{
+		Id:          fixtureconsts.Namespace1,
+		Name:        "name",
+		ClusterId:   fixtureconsts.Cluster1,
+		ClusterName: "cluster-name",
+		Labels: map[string]string{
+			"x":                           "y",
+			"abc":                         "xyz",
+			"kubernetes.io/metadata.name": "name",
+		},
+	}
+}
+
 func alertWithDeploymentAnnotation(annotationKey, annotationValue string) *storage.Alert {
 	alert := fixtures.GetAlert()
 	if annotationKey != "" {
@@ -177,6 +191,91 @@ func TestGetAnnotationValue(t *testing.T) {
 	}
 }
 
+func TestGetNamespaceLabels(t *testing.T) {
+	alertWithNoClusterID := fixtures.GetResourceAlert()
+	alertWithNoClusterID.GetResource().ClusterId = ""
+
+	alertWithNoNamespace := fixtures.GetResourceAlert()
+	alertWithNoNamespace.GetResource().Namespace = ""
+
+	cases := []struct {
+		name          string
+		namespace     []*storage.NamespaceMetadata
+		alert         *storage.Alert
+		expectedValue map[string]string
+	}{
+		{
+			name:      "Get namespace labels from deployment alerts",
+			namespace: []*storage.NamespaceMetadata{namespaceWithLabels()},
+			alert:     fixtures.GetAlert(),
+			expectedValue: map[string]string{
+				"x":                           "y",
+				"abc":                         "xyz",
+				"kubernetes.io/metadata.name": "name",
+			},
+		},
+		{
+			name:      "Get namespace labels from resource alerts",
+			namespace: []*storage.NamespaceMetadata{namespaceWithLabels()},
+			alert:     fixtures.GetResourceAlert(),
+			expectedValue: map[string]string{
+				"x":                           "y",
+				"abc":                         "xyz",
+				"kubernetes.io/metadata.name": "name",
+			},
+		},
+		{
+			name:          "Get empty for image alerts",
+			namespace:     []*storage.NamespaceMetadata{namespaceWithLabels()},
+			alert:         fixtures.GetImageAlert(),
+			expectedValue: map[string]string{},
+		},
+		{
+			name:          "Get empty when no cluster id available to lookup namespace",
+			namespace:     []*storage.NamespaceMetadata{namespaceWithLabels()},
+			alert:         alertWithNoClusterID,
+			expectedValue: map[string]string{},
+		},
+		{
+			name:          "Get empty when no namespace name available to lookup namespace",
+			namespace:     []*storage.NamespaceMetadata{namespaceWithLabels()},
+			alert:         alertWithNoNamespace,
+			expectedValue: map[string]string{},
+		},
+		{
+			name:          "Get empty when nil namespace found",
+			namespace:     []*storage.NamespaceMetadata{nil},
+			alert:         alertWithDeploymentAnnotation("", ""),
+			expectedValue: map[string]string{},
+		},
+		{
+			name:          "Get empty when no namespaces found",
+			namespace:     []*storage.NamespaceMetadata{},
+			alert:         alertWithDeploymentAnnotation("", ""),
+			expectedValue: map[string]string{},
+		},
+		{
+			name:          "Get empty when multiple namespaces found",
+			namespace:     []*storage.NamespaceMetadata{namespaceWithLabels(), namespaceWithLabels()},
+			alert:         alertWithDeploymentAnnotation("", ""),
+			expectedValue: map[string]string{},
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			mockCtrl := gomock.NewController(t)
+			defer mockCtrl.Finish()
+			nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
+			metadataGetter := newTestMetadataGetter(t, nsStore)
+
+			nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(c.namespace, nil).AnyTimes()
+			value := metadataGetter.GetNamespaceLabels(context.Background(), c.alert)
+
+			assert.Equal(t, c.expectedValue, value)
+		})
+	}
+}
+
 func TestGetAnnotationValueCorrectlyQueriesForNamespace(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -194,7 +293,24 @@ func TestGetAnnotationValueCorrectlyQueriesForNamespace(t *testing.T) {
 	assert.Equal(t, "somevalue", value)
 }
 
-func TestGetAnnotationValueReturnsDefaultIfNoStoreReturnsError(t *testing.T) {
+func TestGetNamespaceLabelsCorrectlyQueriesForNamespace(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
+	metadataGetter := newTestMetadataGetter(t, nsStore)
+
+	alert := fixtures.GetAlert()
+	ns := namespaceWithLabels()
+
+	expectedQuery := search.NewQueryBuilder().AddExactMatches(search.Namespace, alert.GetDeployment().GetNamespace()).AddExactMatches(search.ClusterID, alert.GetDeployment().GetClusterId()).ProtoQuery()
+
+	nsStore.EXPECT().SearchNamespaces(gomock.Any(), expectedQuery).Return([]*storage.NamespaceMetadata{ns}, nil)
+	value := metadataGetter.GetNamespaceLabels(context.Background(), alert)
+
+	assert.Equal(t, ns.GetLabels(), value)
+}
+
+func TestGetAnnotationValueReturnsDefaultIfStoreReturnsError(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
@@ -206,4 +322,18 @@ func TestGetAnnotationValueReturnsDefaultIfNoStoreReturnsError(t *testing.T) {
 	value := metadataGetter.GetAnnotationValue(context.Background(), alert, "somekey", "default")
 
 	assert.Equal(t, "default", value)
+}
+
+func TestGetNamespaceLabelsReturnsEmptyIfStoreReturnsError(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
+	metadataGetter := newTestMetadataGetter(t, nsStore)
+
+	alert := fixtures.GetAlert()
+
+	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(nil, errors.New(fixtureconsts.Cluster1))
+	value := metadataGetter.GetNamespaceLabels(context.Background(), alert)
+
+	assert.Empty(t, value)
 }

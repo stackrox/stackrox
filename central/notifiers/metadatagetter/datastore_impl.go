@@ -108,3 +108,12 @@ func getNamespaceFromAlert(ctx context.Context, alert *storage.Alert, namespaceS
 
 	return namespaces[0]
 }
+
+func (m datastoreMetadataGetter) GetNamespaceLabels(ctx context.Context, alert *storage.Alert) map[string]string {
+	if ns := getNamespaceFromAlert(ctx, alert, m.datastore); ns != nil {
+		if labels := ns.GetLabels(); labels != nil {
+			return labels
+		}
+	}
+	return map[string]string{}
+}
