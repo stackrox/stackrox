@@ -49,7 +49,7 @@ const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
     ${resourceCountByCveSeverityAndStatusFragment}
     ${imageVulnerabilitiesFragment}
-    query getImageCoreVulnerabilities($id: ID!, $query: String!, $pagination: Pagination!) {
+    query getCVEsForImage($id: ID!, $query: String!, $pagination: Pagination!) {
         image(id: $id) {
             ...ImageMetadataContext
             imageCVECountBySeverity(query: $query) {
