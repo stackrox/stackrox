@@ -64,6 +64,8 @@ func TestProcessor_LoopDoesNothingIfAllSucceed(t *testing.T) {
 	// Add the notifiers to the processor. (Called once on insert, and once for each alert processed)
 	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(4)
 	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto).Times(4)
+	mockAlertNotifier.EXPECT().IsSecuredClusterNotifier().Return(false).AnyTimes()
+	mockResolvableNotifier.EXPECT().IsSecuredClusterNotifier().Return(false).AnyTimes()
 
 	processor.UpdateNotifier(ctx, mockAlertNotifier)
 	processor.UpdateNotifier(ctx, mockResolvableNotifier)
@@ -122,10 +124,13 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	processor := &processorImpl{ns: ns}
 	loop := &loopImpl{ns: ns}
 
-	// Add the notifiers to the processor. (Called once on insert, and once for each alert processed)
 	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(4)
 	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto).Times(4)
 
+	mockAlertNotifier.EXPECT().IsSecuredClusterNotifier().Return(false).AnyTimes()
+	mockResolvableNotifier.EXPECT().IsSecuredClusterNotifier().Return(false).AnyTimes()
+
+	// Add the notifiers to the processor. (Called once on insert, and once for each alert processed)
 	processor.UpdateNotifier(ctx, mockAlertNotifier)
 	processor.UpdateNotifier(ctx, mockResolvableNotifier)
 
@@ -135,6 +140,7 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 		State:  storage.ViolationState_ACTIVE,
 		Policy: policy,
 	}
+
 	mockAlertNotifier.EXPECT().AlertNotify(gomock.Any(), activeAlert).Return(errors.New("broke"))
 	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto)
 	mockResolvableNotifier.EXPECT().AlertNotify(gomock.Any(), activeAlert).Return(errors.New("broke"))
@@ -155,6 +161,7 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	}
 	mockAlertNotifier.EXPECT().AlertNotify(gomock.Any(), attemptedAlert).Return(errors.New("broke"))
 	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto)
+
 	mockResolvableNotifier.EXPECT().AlertNotify(gomock.Any(), attemptedAlert).Return(errors.New("broke"))
 	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto)
 
