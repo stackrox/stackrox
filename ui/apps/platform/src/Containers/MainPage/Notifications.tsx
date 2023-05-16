@@ -9,7 +9,7 @@ function Notifications(): ReactElement {
 
     return (
         <ToastContainer
-            toastClassName="toast-selector font-sans text-base-600 text-base-100 font-600 bg-base-100"
+            toastClassName="toast-selector text-base-600 bg-base-100"
             hideProgressBar
             autoClose={8000}
         >
