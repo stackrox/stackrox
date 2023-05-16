@@ -4,6 +4,7 @@ import (
 	"context"
 
 	roleDatastore "github.com/stackrox/rox/central/role/datastore"
+	role "github.com/stackrox/rox/central/role/defaults"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/sac"

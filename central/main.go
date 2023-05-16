@@ -113,6 +113,7 @@ import (
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	role "github.com/stackrox/rox/central/role/defaults"
 	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"

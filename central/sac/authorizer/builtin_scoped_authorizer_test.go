@@ -3,7 +3,7 @@ package authorizer
 import (
 	"testing"
 
-	rolePkg "github.com/stackrox/rox/central/role"
+	rolePkg "github.com/stackrox/rox/central/role/defaults"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"

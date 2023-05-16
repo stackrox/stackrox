@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	roleDatastore "github.com/stackrox/rox/central/role/datastore"
+	role "github.com/stackrox/rox/central/role/defaults"
 	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"

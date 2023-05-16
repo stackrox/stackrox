@@ -8,10 +8,11 @@ import (
 	"github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
-	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/datastore"
+	rolePkg "github.com/stackrox/rox/central/role/defaults"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/sachelper"
+	"github.com/stackrox/rox/central/role/validator"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/accessscope"
@@ -223,7 +224,7 @@ func (s *serviceImpl) PostPermissionSet(ctx context.Context, permissionSet *stor
 	if permissionSet.GetId() != "" {
 		return nil, errox.InvalidArgs.CausedBy("setting id field is not allowed")
 	}
-	permissionSet.Id = rolePkg.GeneratePermissionSetID()
+	permissionSet.Id = validator.GeneratePermissionSetID()
 
 	// Store the augmented permission set; report back on error. Note the
 	// permission set is referenced by its name because that's what the caller
@@ -289,7 +290,7 @@ func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.
 	if scope.GetId() != "" {
 		return nil, errox.InvalidArgs.CausedBy("setting id field is not allowed")
 	}
-	scope.Id = rolePkg.GenerateAccessScopeID()
+	scope.Id = validator.GenerateAccessScopeID()
 
 	// Store the augmented access scope; report back on error. Note the access
 	// scope is referenced by its name because that's what the caller knows.

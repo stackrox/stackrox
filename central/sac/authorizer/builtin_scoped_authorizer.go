@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
-	rolePkg "github.com/stackrox/rox/central/role"
+	rolePkg "github.com/stackrox/rox/central/role/defaults"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
