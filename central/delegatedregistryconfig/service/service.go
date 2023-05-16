@@ -96,8 +96,9 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*v1.Delegated
 	return convert.StorageToAPI(config), nil
 }
 
-// GetClusters returns the list of clusters (id + name) that are eligible for delegating scanning
-// requests (ie: only clusters with scanners that understand the delegated registry config)
+// GetClusters returns the list of all clusters (id + name + valid flag). The valid flag indicates that
+// central can delegate registry interactions (scanning, signature validation, etc.) to that cluster
+// and therefore that cluster is valid for use in the DelegatedRegistryConfig.
 func (s *serviceImpl) GetClusters(ctx context.Context, _ *v1.Empty) (*v1.DelegatedRegistryClustersResponse, error) {
 	clusters, err := s.getClusters(ctx)
 	if err != nil {
@@ -113,8 +114,8 @@ func (s *serviceImpl) GetClusters(ctx context.Context, _ *v1.Empty) (*v1.Delegat
 	}, nil
 }
 
-// PutConfig updates Central's delegated registry config
-func (s *serviceImpl) PutConfig(ctx context.Context, config *v1.DelegatedRegistryConfig) (*v1.DelegatedRegistryConfig, error) {
+// UpdateConfig updates Central's delegated registry config
+func (s *serviceImpl) UpdateConfig(ctx context.Context, config *v1.DelegatedRegistryConfig) (*v1.DelegatedRegistryConfig, error) {
 	if config == nil {
 		return nil, fmt.Errorf("%w: %v", errox.InvalidArgs, "config missing")
 	}
@@ -179,10 +180,10 @@ func (s *serviceImpl) validate(config *v1.DelegatedRegistryConfig, validClusters
 	return errors.Join(errorList...)
 }
 
-// getClusters returns all clusters annotated with a flag indicating if cluster is valid
-// for use as a delegation target. All clusters are returned instead of just valid clusters
+// getClusters returns all clusters, the clusters with valid set to true can be used as in a
+// DelegatedRegistryConfig. All clusters are returned instead of just valid clusters
 // so that a consumer (ie: the UI) can show the friendly name of clusters that may no longer
-// be valid but once were
+// be valid (but once were)
 func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryCluster, error) {
 	clusters, err := s.clusterDataStore.GetClusters(ctx)
 	if err != nil {
@@ -209,19 +210,19 @@ func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryC
 	return res, nil
 }
 
-// getValidClusterIDs returns a set cluster ids that are valid for delegation
+// getValidClusterIDs returns a set of cluster ids that are valid for use in a DelegatedRegistryConfig
 func (s *serviceImpl) getValidClusterIDs(ctx context.Context) (set.Set[string], error) {
 	clusters, err := s.getClusters(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	validClusterIds := set.NewStringSet()
+	validClusterIDs := set.NewStringSet()
 	for _, c := range clusters {
 		if c.IsValid {
-			validClusterIds.Add(c.Id)
+			validClusterIDs.Add(c.Id)
 		}
 	}
 
-	return validClusterIds, nil
+	return validClusterIDs, nil
 }

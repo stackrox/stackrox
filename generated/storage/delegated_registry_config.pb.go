@@ -25,11 +25,8 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 type DelegatedRegistryConfig_EnabledFor int32
 
 const (
-	// delegate no scans
-	DelegatedRegistryConfig_NONE DelegatedRegistryConfig_EnabledFor = 0
-	// delegate all scans
-	DelegatedRegistryConfig_ALL DelegatedRegistryConfig_EnabledFor = 1
-	// delegate scans that match specific []registries
+	DelegatedRegistryConfig_NONE     DelegatedRegistryConfig_EnabledFor = 0
+	DelegatedRegistryConfig_ALL      DelegatedRegistryConfig_EnabledFor = 1
 	DelegatedRegistryConfig_SPECIFIC DelegatedRegistryConfig_EnabledFor = 2
 )
 
@@ -53,17 +50,11 @@ func (DelegatedRegistryConfig_EnabledFor) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e8bf9a7bdbf38232, []int{0, 0}
 }
 
-// DelegatedRegistryConfig determines if and where scan requests are delegated to, such as kept in
-// central services or sent to particular secured clusters
-// Note: This message is duplicated in the API proto's to separate storage from API
+// DelegatedRegistryConfig determines how to handle scan requests
+// Refer to v1.DelegatedRegistryConfig instead for more detailed docs
 type DelegatedRegistryConfig struct {
-	// determines if delegation is enabled for no registries, all registries, or specific registries
-	EnabledFor DelegatedRegistryConfig_EnabledFor `protobuf:"varint,1,opt,name=enabled_for,json=enabledFor,proto3,enum=storage.DelegatedRegistryConfig_EnabledFor" json:"enabled_for,omitempty"`
-	// the default cluster to delegate ad-hoc requests to if no match found in []registries, not used
-	// if enabledFor is NONE
-	DefaultClusterId string `protobuf:"bytes,2,opt,name=default_cluster_id,json=defaultClusterId,proto3" json:"default_cluster_id,omitempty"`
-	// list of registries that has different outcome depending on value of enabled_for, allows
-	// for controlling which registries require delegation and how to route ad-hoc requests
+	EnabledFor           DelegatedRegistryConfig_EnabledFor           `protobuf:"varint,1,opt,name=enabled_for,json=enabledFor,proto3,enum=storage.DelegatedRegistryConfig_EnabledFor" json:"enabled_for,omitempty"`
+	DefaultClusterId     string                                       `protobuf:"bytes,2,opt,name=default_cluster_id,json=defaultClusterId,proto3" json:"default_cluster_id,omitempty"`
 	Registries           []*DelegatedRegistryConfig_DelegatedRegistry `protobuf:"bytes,3,rep,name=registries,proto3" json:"registries,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                                     `json:"-"`
 	XXX_unrecognized     []byte                                       `json:"-"`
@@ -144,9 +135,7 @@ func (m *DelegatedRegistryConfig) Clone() *DelegatedRegistryConfig {
 }
 
 type DelegatedRegistryConfig_DelegatedRegistry struct {
-	// registry + optional path, ie: quay.example.com/prod
-	RegistryPath string `protobuf:"bytes,1,opt,name=registry_path,json=registryPath,proto3" json:"registry_path,omitempty"`
-	// id of the cluster to delegate requests to
+	RegistryPath         string   `protobuf:"bytes,1,opt,name=registry_path,json=registryPath,proto3" json:"registry_path,omitempty"`
 	ClusterId            string   `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
