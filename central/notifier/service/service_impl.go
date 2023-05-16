@@ -65,8 +65,13 @@ type serviceImpl struct {
 
 func (s *serviceImpl) syncNotifiersWithSensors(ctx context.Context) {
 	if env.SecuredClusterNotifiers.BooleanSetting() {
-		notifiers := s.processor.GetNotifiers(ctx)
-		s.connectionManager.PrepareNotifiersAndBroadcast(notifiers)
+		var securedClusterNotifiers []notifiers.Notifier
+		for _, n := range s.processor.GetNotifiers(ctx) {
+			if n.IsSecuredClusterNotifier() {
+				securedClusterNotifiers = append(securedClusterNotifiers, n)
+			}
+		}
+		s.connectionManager.PrepareNotifiersAndBroadcast(securedClusterNotifiers)
 	}
 }
 

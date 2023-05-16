@@ -18,11 +18,14 @@ import (
 	"github.com/stackrox/rox/pkg/detection/runtime"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
+	pkgNotifier "github.com/stackrox/rox/pkg/notifier"
+	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/size"
 	"github.com/stackrox/rox/pkg/sizeboundedcache"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/admission-control/errors"
+	"github.com/stackrox/rox/sensor/admission-control/notifiers/processor"
 	"github.com/stackrox/rox/sensor/admission-control/resources/deployments"
 	"github.com/stackrox/rox/sensor/admission-control/resources/namespaces"
 	"github.com/stackrox/rox/sensor/admission-control/resources/pods"
@@ -77,12 +80,13 @@ type manager struct {
 	client     sensor.ImageServiceClient
 	imageCache sizeboundedcache.Cache[string, imageCacheEntry]
 
-	depClient        sensor.DeploymentServiceClient
-	resourceUpdatesC chan *sensor.AdmCtrlUpdateResourceRequest
-	namespaces       *namespaces.NamespaceStore
-	deployments      *deployments.DeploymentStore
-	pods             *pods.PodStore
-	initialSyncSig   concurrency.Signal
+	depClient         sensor.DeploymentServiceClient
+	resourceUpdatesC  chan *sensor.AdmCtrlUpdateResourceRequest
+	namespaces        *namespaces.NamespaceStore
+	deployments       *deployments.DeploymentStore
+	pods              *pods.PodStore
+	notifierProcessor pkgNotifier.Processor
+	initialSyncSig    concurrency.Signal
 
 	settingsStream     *concurrency.ValueStream[*sensor.AdmissionControlSettings]
 	settingsC          chan *sensor.AdmissionControlSettings
@@ -122,12 +126,13 @@ func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient se
 
 		alertsC: make(chan []*storage.Alert),
 
-		namespaces:       nsStore,
-		deployments:      depStore,
-		pods:             podStore,
-		resourceUpdatesC: make(chan *sensor.AdmCtrlUpdateResourceRequest),
-		initialSyncSig:   concurrency.NewSignal(),
-		depClient:        deploymentServiceClient,
+		namespaces:        nsStore,
+		deployments:       depStore,
+		pods:              podStore,
+		resourceUpdatesC:  make(chan *sensor.AdmCtrlUpdateResourceRequest),
+		initialSyncSig:    concurrency.NewSignal(),
+		depClient:         deploymentServiceClient,
+		notifierProcessor: processor.Singleton(),
 
 		ownNamespace: namespace,
 	}
@@ -285,6 +290,19 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		enforcedOperations[admission.Update] = struct{}{}
 	}
 
+	// Process notifiers
+	for _, n := range newSettings.GetNotifierSync().GetNotifiers() {
+		notifierCreator, ok := notifiers.Registry[n.GetType()]
+		if !ok {
+			log.Errorf("notifier type %v is not a valid notifier type", n.GetType())
+		}
+		notifier, err := notifierCreator(n)
+		if err != nil {
+			log.Errorf("error creating notifier of type %v: %q", n.GetType(), err)
+		}
+		m.notifierProcessor.UpdateNotifier(context.Background(), notifier)
+	}
+
 	oldState := m.currentState()
 	newState := &state{
 		AdmissionControlSettings:                      newSettings,
@@ -341,10 +359,12 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	log.Infof("Applied new admission control settings "+
 		"(enforcing on %d deploy-time policies; "+
 		"detecting on %d run-time policies; "+
-		"enforcing on %d run-time policies).",
+		"enforcing on %d run-time policies)."+
+		"using %d notifiers",
 		len(deployTimePolicySet.GetCompiledPolicies()),
 		len(allRuntimePolicySet.GetCompiledPolicies()),
-		enforceablePolicies)
+		enforceablePolicies,
+		len(m.notifierProcessor.GetNotifiers(context.Background())))
 
 	m.settingsStream.Push(newSettings)
 }
