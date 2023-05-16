@@ -48,12 +48,11 @@ func (cmd *analyzeNetpolCommand) analyzeNetpols(analyzer netpolAnalyzer) error {
 
 func (cmd *analyzeNetpolCommand) ouputConnList(connsStr string) error {
 	if cmd.outputToFile {
-		dirpath, filename := filepath.Split(cmd.outputFilePath)
-		if filename == "" {
-			filename = cmd.getDefaultFileName()
+		if cmd.outputFilePath == "" { // save-to-file is true, but output file path is not provided
+			cmd.outputFilePath = cmd.getDefaultFileName()
 		}
 
-		if err := writeFile(filename, dirpath, connsStr); err != nil {
+		if err := writeFile(cmd.outputFilePath, connsStr); err != nil {
 			return errors.Wrap(err, "error writing connlist output")
 		}
 	}
@@ -62,10 +61,9 @@ func (cmd *analyzeNetpolCommand) ouputConnList(connsStr string) error {
 	return nil
 }
 
-func writeFile(filename string, destDir string, content string) error {
-	outputPath := filepath.Join(destDir, filename)
+func writeFile(outputPath string, content string) error {
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-		return errors.Wrapf(err, "error creating directory for file %q", filename)
+		return errors.Wrapf(err, "error creating directory for file %q", filepath.Base(outputPath))
 	}
 	return errors.Wrap(os.WriteFile(outputPath, []byte(content), os.FileMode(0644)), "error writing file")
 }
