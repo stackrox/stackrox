@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
+	commonSensor "github.com/stackrox/rox/sensor/common/sensor"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/debugger/message"
@@ -219,7 +220,7 @@ func writeMemoryProfile() {
 	log.Printf("Wrote memory profile")
 }
 
-func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, outfile string, outputFormat string, cancelFunc context.CancelFunc) {
+func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, outfile string, outputFormat string, cancelFunc context.CancelFunc, sensor *commonSensor.Sensor) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	<-ctx.Done()
@@ -229,6 +230,7 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 	if writeMemProfile {
 		writeMemoryProfile()
 	}
+	sensor.Stop()
 	pprof.StopCPUProfile()
 	if fakeCentral != nil {
 		allMessages := fakeCentral.GetAllMessages()
@@ -299,7 +301,6 @@ func main() {
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	go registerHostKillSignals(startTime, spyCentral, !localConfig.NoMemProfile, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc)
 
 	sensorConfig := sensor.ConfigWithDefaults().
 		WithK8sClient(fakeClient).
@@ -361,7 +362,7 @@ func main() {
 	}
 
 	go s.Start()
-	defer s.Stop()
+	go registerHostKillSignals(startTime, spyCentral, !localConfig.NoMemProfile, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc, s)
 
 	if spyCentral != nil {
 		spyCentral.ConnectionStarted.Wait()
