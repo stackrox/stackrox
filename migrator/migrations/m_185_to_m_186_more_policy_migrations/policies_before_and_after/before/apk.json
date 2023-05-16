@@ -20,15 +20,6 @@
           "namespace": "kube-system"
         }
       }
-    },
-    {
-      "name": "Don't alert on the token-refresher deployment in namespace openshift-monitoring",
-      "deployment": {
-        "name": "token-refresher",
-        "scope": {
-          "namespace": "openshift-monitoring"
-        }
-      }
     }
   ],
   "severity": "LOW_SEVERITY",
