@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
 	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
+	"github.com/stackrox/rox/pkg/notifier"
 )
 
 // Service provides the interface to the microservice that serves policy data.
@@ -39,7 +39,7 @@ func New(policies datastore.DataStore,
 	reprocessor reprocessor.Loop,
 	buildTimePolicies detection.PolicySet,
 	manager lifecycle.Manager,
-	processor notifierProcessor.Processor,
+	processor notifier.Processor,
 	metadataCache expiringcache.Cache,
 	connectionManager connection.Manager) Service {
 	backgroundTaskManager := backgroundtasks.NewManager()

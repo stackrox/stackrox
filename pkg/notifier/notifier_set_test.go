@@ -1,8 +1,9 @@
-package processor
+package notifier
 
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
@@ -24,7 +25,7 @@ type notifierSetTestSuite struct {
 	mockResolvableAlertN *mocks.MockResolvableAlertNotifier
 	mockAuditN           *mocks.MockAuditNotifier
 
-	ns NotifierSet
+	ns Set
 }
 
 func (s *notifierSetTestSuite) SetupTest() {
@@ -34,7 +35,7 @@ func (s *notifierSetTestSuite) SetupTest() {
 	s.mockResolvableAlertN = mocks.NewMockResolvableAlertNotifier(s.mockCtrl)
 	s.mockAuditN = mocks.NewMockAuditNotifier(s.mockCtrl)
 
-	s.ns = NewNotifierSet()
+	s.ns = NewNotifierSet(1 * time.Hour)
 }
 
 func (s *notifierSetTestSuite) TearDownTest() {

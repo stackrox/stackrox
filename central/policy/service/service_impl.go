@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
@@ -41,6 +40,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
 	mitreUtils "github.com/stackrox/rox/pkg/mitre/utils"
+	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -115,7 +115,7 @@ type serviceImpl struct {
 
 	buildTimePolicies detection.PolicySet
 	lifecycleManager  lifecycle.Manager
-	processor         notifierProcessor.Processor
+	processor         notifier.Processor
 	metadataCache     expiringcache.Cache
 
 	validator *policyValidator

@@ -3,12 +3,12 @@ package connection
 import (
 	"context"
 
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/notifier"
 	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 )
 
@@ -22,7 +22,7 @@ type Manager interface {
 		policyMgr common.PolicyManager,
 		baselineMgr common.ProcessBaselineManager,
 		networkBaselineMgr common.NetworkBaselineManager,
-		notifierProcessor notifierProcessor.Processor,
+		notifierProcessor notifier.Processor,
 		autoTriggerUpgrades *concurrency.Flag) error
 
 	// Connection-related methods.
