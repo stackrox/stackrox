@@ -13,7 +13,9 @@ import services.NetworkGraphService
 @Slf4j
 class NetworkGraphUtil {
 
-    static final NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS = 30 // Network flow data is updated every 30 seconds
+    // more time is needed on few architectures
+    static final NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS =
+        ((Env.REMOTE_CLUSTER_ARCH == "x86_64" ) ? 30 : 120)
 
     static int edgeCount(NetworkGraphServiceOuterClass.NetworkGraph graph) {
         int numEdges = 0
