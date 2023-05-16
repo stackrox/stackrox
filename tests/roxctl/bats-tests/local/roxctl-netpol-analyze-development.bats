@@ -216,6 +216,17 @@ default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
   refute_output --partial 'default/frontend[Deployment] => 0.0.0.0-255.255.255.255 : UDP 53'
 }
 
+@test "roxctl-development analyze netpol generates connlist to specific txt output file" {
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
+  run roxctl-development analyze netpol "${test_data}/np-guard/netpols-analysis-example-minimal" --output-file="$out_dir/out.txt"
+  assert_success
+  
+  assert_file_exist "$out_dir/out.txt"
+  assert_output --partial 'default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
+}
+
 write_yaml_to_file() {
   image="${1}"
   templatedYaml="${2:-/dev/null}"
