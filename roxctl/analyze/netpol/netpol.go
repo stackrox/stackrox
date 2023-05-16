@@ -59,7 +59,7 @@ For more information about the support scope of Red Hat Technology Preview featu
 	c.Flags().BoolVar(&analyzeNetpolCmd.outputToFile, "save-to-file", false, "whether to save connlist output into default file")
 	c.Flags().StringVarP(&analyzeNetpolCmd.outputFilePath, "output-file", "f", "", "save connlist output into specific file")
 	c.Flags().StringVarP(&analyzeNetpolCmd.focusWorkload, "focus-workload", "", "", "focus connections of specified workload name in the output")
-	c.Flags().StringVarP(&analyzeNetpolCmd.outputFormat, "output-format", "o", "txt", "configure the connlist in specific format, supported formats: txt|json|md|dot|csv")
+	c.Flags().StringVarP(&analyzeNetpolCmd.outputFormat, "output-format", "o", defaultOutputFormat, "configure the connlist in specific format, supported formats: txt|json|md|dot|csv")
 	return c
 }
 
