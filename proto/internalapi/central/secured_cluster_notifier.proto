@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+import "storage/notifier.proto";
+
+package central;
+
+message NotifierSync {
+    repeated storage.Notifier notifiers = 1;
+}
+
+message TestNotifierRequest {
+    storage.Notifier notifier = 1;
+}

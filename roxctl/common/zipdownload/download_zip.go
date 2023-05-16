@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -16,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgZip "github.com/stackrox/rox/pkg/zip"
-	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/download"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -107,8 +107,12 @@ func storeZipFile(respBody io.Reader, fileName, outputDir, bundleType string, lo
 
 // GetZip downloads a zip from the given endpoint.
 // bundleType is used for logging.
-func GetZip(opts GetZipOptions, log logger.Logger) error {
-	resp, err := common.DoHTTPRequestAndCheck200(opts.Path, opts.Timeout, opts.Method, bytes.NewBuffer(opts.Body), log)
+func GetZip(opts GetZipOptions, env environment.Environment) error {
+	client, err := env.HTTPClient(opts.Timeout)
+	if err != nil {
+		return errors.Wrap(err, "creating HTTP client")
+	}
+	resp, err := client.DoReqAndVerifyStatusCode(opts.Path, opts.Method, http.StatusOK, bytes.NewBuffer(opts.Body))
 	if err != nil {
 		return errors.Wrap(err, "could not download zip")
 	}
@@ -117,8 +121,8 @@ func GetZip(opts GetZipOptions, log logger.Logger) error {
 	zipFileName, err := download.ParseFilenameFromHeader(resp.Header)
 	if err != nil {
 		zipFileName = fmt.Sprintf("%s.zip", opts.BundleType)
-		log.WarnfLn("could not obtain output file name from HTTP response: %v.", err)
-		log.InfofLn("Defaulting to filename %q", zipFileName)
+		env.Logger().WarnfLn("could not obtain output file name from HTTP response: %v.", err)
+		env.Logger().InfofLn("Defaulting to filename %q", zipFileName)
 	}
 
 	// If containerized, then write a zip file to stdout
@@ -126,12 +130,12 @@ func GetZip(opts GetZipOptions, log logger.Logger) error {
 		if _, err := io.Copy(environment.CLIEnvironment().InputOutput().Out(), resp.Body); err != nil {
 			return errors.Wrap(err, "Error writing out zip file")
 		}
-		log.InfofLn("Successfully wrote %s zip file", opts.BundleType)
+		env.Logger().InfofLn("Successfully wrote %s zip file", opts.BundleType)
 		return nil
 	}
 
 	if !opts.ExpandZip {
-		return storeZipFile(resp.Body, zipFileName, opts.OutputDir, opts.BundleType, log)
+		return storeZipFile(resp.Body, zipFileName, opts.OutputDir, opts.BundleType, env.Logger())
 	}
 
 	buf := ioutils.NewRWBuf(ioutils.RWBufOptions{MemLimit: inMemFileSizeThreshold})
@@ -151,12 +155,16 @@ func GetZip(opts GetZipOptions, log logger.Logger) error {
 		outputDir = strings.TrimSuffix(zipFileName, filepath.Ext(zipFileName))
 	}
 
-	return extractZipToFolder(contents, size, opts.BundleType, outputDir, log)
+	return extractZipToFolder(contents, size, opts.BundleType, outputDir, env.Logger())
 }
 
 // GetZipFiles downloads a zip from the given endpoint and returns a slice of zip Files.
-func GetZipFiles(opts GetZipOptions, log logger.Logger) (map[string]*pkgZip.File, error) {
-	resp, err := common.DoHTTPRequestAndCheck200(opts.Path, opts.Timeout, opts.Method, bytes.NewBuffer(opts.Body), log)
+func GetZipFiles(opts GetZipOptions, env environment.Environment) (map[string]*pkgZip.File, error) {
+	client, err := env.HTTPClient(opts.Timeout)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating HTTP client")
+	}
+	resp, err := client.DoReqAndVerifyStatusCode(opts.Path, opts.Method, http.StatusOK, bytes.NewBuffer(opts.Body))
 	if err != nil {
 		return nil, errors.Wrap(err, "could not download zip")
 	}
@@ -185,7 +193,7 @@ func GetZipFiles(opts GetZipOptions, log logger.Logger) (map[string]*pkgZip.File
 			return nil, errors.Wrapf(err, "read from zip file %s", f.Name)
 		}
 		fileMap[f.Name] = pkgZip.NewFile(f.Name, bytes, pkgZip.Sensitive)
-		log.InfofLn("%s extracted", f.Name)
+		env.Logger().InfofLn("%s extracted", f.Name)
 	}
 	return fileMap, nil
 }

@@ -2,15 +2,16 @@ import React from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Button, ButtonVariant, Tooltip } from '@patternfly/react-core';
+import { Button, ButtonVariant } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
-import { getDistanceStrictAsPhrase, getDateTime } from 'utils/dateUtils';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { getEntityPagePath } from '../searchUtils';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
+import DatePhraseTd from '../components/DatePhraseTd';
+import TooltipTh from '../components/TooltipTh';
 
 export const deploymentListQuery = gql`
     query getDeploymentList($query: String, $pagination: Pagination) {
@@ -51,7 +52,7 @@ export type Deployment = {
     clusterName: string;
     namespace: string;
     imageCount: number;
-    created: Date | null;
+    created: string | null;
 };
 
 type DeploymentsTableProps = {
@@ -63,14 +64,14 @@ type DeploymentsTableProps = {
 function DeploymentsTable({ deployments, getSortParams, isFiltered }: DeploymentsTableProps) {
     return (
         <TableComposable borders={false} variant="compact">
-            <Thead>
+            <Thead noWrap>
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th sort={getSortParams('Deployment')}>Deployment</Th>
-                    <Th tooltip="CVEs by severity across this deployment">
+                    <TooltipTh tooltip="CVEs by severity across this deployment">
                         CVEs by severity
                         {isFiltered && <DynamicColumnIcon />}
-                    </Th>
+                    </TooltipTh>
                     <Th sort={getSortParams('Cluster')}>Cluster</Th>
                     <Th sort={getSortParams('Namespace')}>Namespace</Th>
                     <Th>
@@ -115,25 +116,25 @@ function DeploymentsTable({ deployments, getSortParams, isFiltered }: Deployment
                                         important={imageCVECountBySeverity.important.total}
                                         moderate={imageCVECountBySeverity.moderate.total}
                                         low={imageCVECountBySeverity.low.total}
+                                        entity="deployment"
                                     />
                                 </Td>
                                 <Td>{clusterName}</Td>
                                 <Td>{namespace}</Td>
                                 <Td>
-                                    {/* TODO: add modal */}
                                     <Button
                                         variant={ButtonVariant.link}
                                         isInline
                                         component={LinkShim}
-                                        href={getEntityPagePath('Deployment', id)}
+                                        href={getEntityPagePath('Deployment', id, {
+                                            detailsTab: 'Resources',
+                                        })}
                                     >
                                         {imageCount} {pluralize('image', imageCount)}
                                     </Button>
                                 </Td>
                                 <Td>
-                                    <Tooltip content={getDateTime(created)}>
-                                        <div>{getDistanceStrictAsPhrase(created, new Date())}</div>
-                                    </Tooltip>
+                                    <DatePhraseTd date={created} />
                                 </Td>
                             </Tr>
                         </Tbody>

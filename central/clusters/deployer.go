@@ -70,8 +70,11 @@ func MakeClusterImageNames(flavor *defaults.ImageFlavor, c *storage.Cluster) (*s
 
 // deriveScannerRemoteFromMain sets scanner-slim image remote, so that it comes from the same location as the main image
 func deriveScannerRemoteFromMain(mainImage *storage.ImageName, metaValues *charts.MetaValues) {
-	scannerSlimRemote := strings.Replace(mainImage.Remote, "/main", "/"+metaValues.ScannerSlimImageRemote, 1)
-	metaValues.ScannerSlimImageRemote = scannerSlimRemote
+	scannerRemoteSlice := strings.Split(mainImage.Remote, "/")
+	if len(scannerRemoteSlice) > 0 {
+		scannerRemoteSlice[len(scannerRemoteSlice)-1] = metaValues.ScannerSlimImageRemote
+		metaValues.ScannerSlimImageRemote = strings.Join(scannerRemoteSlice, "/")
+	}
 }
 
 // setMainOverride adds main image values to meta values as defined in secured cluster object.

@@ -2,6 +2,7 @@ package imagecve
 
 import (
 	"context"
+	"sort"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/views"
@@ -83,12 +84,19 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 		return nil, err
 	}
 
-	results, err := pgSearch.RunSelectRequestForSchema[imageCVECore](ctx, v.db, v.schema, withSelectQuery(q, options))
+	var err error
+	var results []*imageCVECore
+	results, err = pgSearch.RunSelectRequestForSchema[imageCVECore](ctx, v.db, v.schema, withSelectQuery(q, options))
 	if err != nil {
 		return nil, err
 	}
+
 	ret := make([]CveCore, 0, len(results))
 	for _, r := range results {
+		// For each records, sort the IDs so that result looks consistent.
+		sort.SliceStable(r.CVEIDs, func(i, j int) bool {
+			return r.CVEIDs[i] < r.CVEIDs[j]
+		})
 		ret = append(ret, r)
 	}
 	return ret, nil
@@ -109,6 +117,7 @@ func withSelectQuery(q *v1.Query, options views.ReadOptions) *v1.Query {
 	cloned := q.Clone()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVE).Proto(),
+		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
 	}
 	if !options.SkipGetImagesBySeverity {
 		cloned.Selects = append(cloned.Selects,

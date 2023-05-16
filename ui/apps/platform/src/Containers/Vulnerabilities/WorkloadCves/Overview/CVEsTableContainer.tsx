@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@apollo/client';
-import { Bullseye, Spinner } from '@patternfly/react-core';
+import { Bullseye, Spinner, Divider } from '@patternfly/react-core';
 
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
@@ -8,21 +8,26 @@ import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import CVEsTable, { cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
 import TableErrorComponent from '../components/TableErrorComponent';
+import { EntityCounts } from '../components/EntityTypeToggleGroup';
+import { DefaultFilters } from '../types';
 import { parseQuerySearchFilter } from '../searchUtils';
+import { defaultCVESortFields, CVEsDefaultSort } from '../sortUtils';
+import TableEntityToolbar from '../components/TableEntityToolbar';
 
-const defaultSortFields = ['Deployment', 'Cluster', 'Namespace'];
+type CVEsTableContainerProps = {
+    defaultFilters: DefaultFilters;
+    countsData: EntityCounts;
+};
 
-function CVEsTableContainer() {
+function CVEsTableContainer({ defaultFilters, countsData }: CVEsTableContainerProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
-    const { page, perPage, setPage } = useURLPagination(25);
-    const { sortOption, getSortParams } = useURLSort({
-        sortFields: defaultSortFields,
-        defaultSortOption: {
-            field: 'CVE',
-            direction: 'asc',
-        },
+    const pagination = useURLPagination(20);
+    const { page, perPage, setPage } = pagination;
+    const { sortOption, getSortParams, setSortOption } = useURLSort({
+        sortFields: defaultCVESortFields,
+        defaultSortOption: CVEsDefaultSort,
         onSort: () => setPage(1),
     });
 
@@ -44,6 +49,15 @@ function CVEsTableContainer() {
     const tableData = data ?? previousData;
     return (
         <>
+            <TableEntityToolbar
+                defaultFilters={defaultFilters}
+                countsData={countsData}
+                setSortOption={setSortOption}
+                pagination={pagination}
+                tableRowCount={countsData.imageCVECount}
+                isFiltered={isFiltered}
+            />
+            <Divider component="div" />
             {loading && !tableData && (
                 <Bullseye>
                     <Spinner isSVG />
@@ -53,12 +67,14 @@ function CVEsTableContainer() {
                 <TableErrorComponent error={error} message="Adjust your filters and try again" />
             )}
             {tableData && (
-                <CVEsTable
-                    cves={tableData.imageCVEs}
-                    unfilteredImageCount={imageCountData?.imageCount || 0}
-                    getSortParams={getSortParams}
-                    isFiltered={isFiltered}
-                />
+                <div className="workload-cves-table-container">
+                    <CVEsTable
+                        cves={tableData.imageCVEs}
+                        unfilteredImageCount={imageCountData?.imageCount || 0}
+                        getSortParams={getSortParams}
+                        isFiltered={isFiltered}
+                    />
+                </div>
             )}
         </>
     );

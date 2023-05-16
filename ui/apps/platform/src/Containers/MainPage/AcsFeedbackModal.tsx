@@ -29,7 +29,7 @@ const i18nAcsEnglish = {
     feedback: 'Feedback',
     feedbackSent: 'Feedback Sent',
     helpUsImproveHCC: 'Help us improve Advanced Cluster Security.',
-    howIsConsoleExperience: 'What has your consoleexperience been like so far?',
+    howIsConsoleExperience: 'What has your console experience been like so far?',
     joinMailingList: 'Join mailing list',
     informDirectionDescription:
         'By participating in feedback sessions, usability tests, and interviews with our',

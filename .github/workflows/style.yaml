@@ -20,7 +20,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -47,7 +47,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -75,7 +75,7 @@ jobs:
   style-check:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -91,15 +91,6 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
-      - name: Cache golangci-lint
-        uses: actions/cache@v3
-        with:
-          path: /github/home/.cache/golangci-lint
-          key: go-lint-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            go-lint-${{ hashFiles('**/go.sum') }}
-            go-lint-
-
       - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
 
       - name: Cache UI dependencies
@@ -111,8 +102,46 @@ jobs:
       - name: Fetch UI deps
         run: make -C ui deps
 
-      - name: make style
-        run: make style
+      - name: make style-slim
+        run: make style-slim
+
+  golangci-lint:
+    timeout-minutes: 240
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+
+    - name: Check Cache golangci-lint
+      run: make golangci-lint-cache-status
+
+    - name: Cache golangci-lint
+      uses: actions/cache@v3
+      with:
+        path: /github/home/.cache/golangci-lint
+        key: go-lint-v2-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          go-lint-v2-${{ hashFiles('**/go.sum') }}
+          go-lint-v2-
+
+    - name: Check cache golangci-lint
+      run: make golangci-lint-cache-status
+
+    - name: make golangci-lint
+      run: make golangci-lint
+
+    - name: Check Cache golangci-lint
+      run: make golangci-lint-cache-status
 
   slack-on-style-failure:
     if: github.event_name == 'push' && failure()
@@ -122,6 +151,7 @@ jobs:
       - check-generated-files
       - misc-checks
       - style-check
+      - golangci-lint
     permissions:
       actions: read
     steps:

@@ -53,7 +53,7 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 				BundleType: "diagnostic",
 				ExpandZip:  false,
 				OutputDir:  outputDir,
-			}, cliEnvironment.Logger())
+			}, cliEnvironment)
 			if isTimeoutError(err) {
 				cliEnvironment.Logger().ErrfLn(`Timeout has been reached while creating diagnostic bundle. 
 Timeout value used was %s, while default timeout value is %s. 

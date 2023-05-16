@@ -4,8 +4,23 @@
    We should have a goal of eventually being able to delete this file.
  */
 
-body {
-    font-family: var(--pf-global--FontFamily--sans-serif) !important;
+.ReactModal__Content,
+#main-page-container > div > :not(.pf-c-page__main-section) {
+  font-size: 0.75rem;
+  color: var(--base-600);
+}
+
+/* Universal selector increases specificity of these override style rules */
+
+* .theme-dark {
+    --base-500: #aaabac;
+    --base-600: #ffffff;
+}
+
+* .theme-light {
+    --base-500: var(--pf-global--palette--black-600);
+    --base-600: var(--pf-global--palette--black-900);
+    --base-700: var(--pf-global--palette--black-1000);
 }
 
 /* overrides the default link styling in Tailwind (`inherit`) with PF's default blue */
@@ -114,7 +129,8 @@ body {
 .pf-c-table__toggle-icon svg,
 .pf-c-expandable-section__toggle-icon svg,
 .chr-c-feedback-modal svg,
-.pf-c-breadcrumb__item-divider svg {
+.pf-c-breadcrumb__item-divider svg,
+.pf-c-modal-box__title-icon svg {
     display: inline;
 }
 
@@ -168,11 +184,13 @@ button.pf-c-tree-view__node {
 /*
  * Override disabled checkbox styles when the input element is in a PF table
  */
-.pf-c-table__check input[type="checkbox"]:disabled {
+.pf-c-table__check input[type="checkbox"]:disabled,
+.pf-c-form__group input[type="checkbox"]:disabled {
     cursor: not-allowed;
     border-color: revert;
 }
-.pf-c-table__check input[type="checkbox"]:checked:disabled {
+.pf-c-table__check input[type="checkbox"]:checked:disabled,
+.pf-c-form__group input[type="checkbox"]:checked:disabled {
     background-color: var(--pf-global--disabled-color--200);
     border-color: transparent;
 }

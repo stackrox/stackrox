@@ -11,9 +11,9 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
-	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	http1DowngradeClient "golang.stackrox.io/grpc-http1/client"
@@ -21,16 +21,20 @@ import (
 )
 
 // GetGRPCConnection gets a grpc connection to Central with the correct auth
-func GetGRPCConnection(logger logger.Logger) (*grpc.ClientConn, error) {
+func GetGRPCConnection(am auth.Method, logger logger.Logger) (*grpc.ClientConn, error) {
 	endpoint, serverName, usePlaintext, err := ConnectNames()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get endpoint for gRPC connection")
 	}
-
-	opts, err := getAuthOpts(logger)
+	perRPCCreds, err := am.GetCredentials(endpoint)
+	if err != nil {
+		return nil, errors.Wrapf(err, "obtaining auth information for %s", endpoint)
+	}
+	opts, err := getOpts(logger)
 	if err != nil {
 		return nil, err
 	}
+	opts.PerRPCCreds = perRPCCreds
 
 	return createGRPCConn(grpcConfig{
 		usePlaintext:  usePlaintext,
@@ -98,31 +102,13 @@ func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
 	return connection, errors.WithStack(err)
 }
 
-func getAuthOpts(logger logger.Logger) (clientconn.Options, error) {
+func getOpts(logger logger.Logger) (clientconn.Options, error) {
 	tlsOpts, err := tlsConfigOptsForCentral(logger)
 	if err != nil {
 		return clientconn.Options{}, err
 	}
-	if err := checkAuthParameters(); err != nil {
-		return clientconn.Options{}, err
-	}
-
 	opts := clientconn.Options{
 		TLS: *tlsOpts,
-	}
-
-	password := flags.Password()
-	if password != "" {
-		opts.ConfigureBasicAuth(basic.DefaultUsername, password)
-		return opts, nil
-	}
-	apiToken, err := retrieveAuthToken()
-	if err != nil {
-		printAuthHelp(logger)
-		return clientconn.Options{}, err
-	}
-	if apiToken != "" {
-		opts.ConfigureTokenAuth(apiToken)
 	}
 	return opts, nil
 }

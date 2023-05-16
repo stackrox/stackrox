@@ -8,6 +8,7 @@ export const mainPath = '/main';
 export const loginPath = '/login';
 export const testLoginResultsPath = '/test-login-results';
 export const authResponsePrefix = '/auth/response/';
+export const authorizeRoxctlPath = '/authorize-roxctl';
 
 export const dashboardPath = `${mainPath}/dashboard`;
 export const networkBasePath = `${mainPath}/network`;
@@ -44,7 +45,6 @@ export const complianceBasePath = `${mainPath}/compliance`;
 export const compliancePath = `${mainPath}/:context(compliance)`;
 export const dataRetentionPath = `${mainPath}/retention`;
 export const systemHealthPath = `${mainPath}/system-health`;
-export const systemHealthPathPF = `${mainPath}/system-health-pf`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
 

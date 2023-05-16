@@ -2,16 +2,17 @@ import React from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Button, ButtonVariant, Flex, Tooltip } from '@patternfly/react-core';
+import { Button, ButtonVariant, Flex } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
-import { getDistanceStrictAsPhrase, getDateTime } from 'utils/dateUtils';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import ImageNameTd from '../components/ImageNameTd';
 import { getEntityPagePath } from '../searchUtils';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
+import DatePhraseTd from '../components/DatePhraseTd';
+import TooltipTh from '../components/TooltipTh';
 
 export const imageListQuery = gql`
     query getImageList($query: String, $pagination: Pagination) {
@@ -67,10 +68,10 @@ type Image = {
     watchStatus: 'WATCHED' | 'NOT_WATCHED';
     metadata: {
         v1: {
-            created: Date | null;
+            created: string | null;
         } | null;
     } | null;
-    scanTime: Date | null;
+    scanTime: string | null;
 };
 
 type ImagesTableProps = {
@@ -82,14 +83,14 @@ type ImagesTableProps = {
 function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
     return (
         <TableComposable borders={false} variant="compact">
-            <Thead>
+            <Thead noWrap>
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th sort={getSortParams('Image')}>Image</Th>
-                    <Th tooltip="CVEs by severity across this image">
+                    <TooltipTh tooltip="CVEs by severity across this image">
                         CVEs by severity
                         {isFiltered && <DynamicColumnIcon />}
-                    </Th>
+                    </TooltipTh>
                     <Th sort={getSortParams('Operating System')}>Operating system</Th>
                     <Th sort={getSortParams('Deployment Count')}>
                         Deployments
@@ -132,17 +133,19 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                                         important={imageCVECountBySeverity.important.total}
                                         moderate={imageCVECountBySeverity.moderate.total}
                                         low={imageCVECountBySeverity.low.total}
+                                        entity="image"
                                     />
                                 </Td>
                                 <Td>{operatingSystem}</Td>
                                 <Td>
-                                    {/* TODO: add modal */}
                                     {deploymentCount > 0 ? (
                                         <Button
                                             variant={ButtonVariant.link}
                                             isInline
                                             component={LinkShim}
-                                            href={getEntityPagePath('Deployment', id)}
+                                            href={getEntityPagePath('Image', id, {
+                                                detailsTab: 'Resources',
+                                            })}
                                         >
                                             {deploymentCount}{' '}
                                             {pluralize('deployment', deploymentCount)}
@@ -156,19 +159,10 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                                     )}
                                 </Td>
                                 <Td>
-                                    <Tooltip content={getDateTime(metadata?.v1?.created)}>
-                                        <div>
-                                            {getDistanceStrictAsPhrase(
-                                                metadata?.v1?.created,
-                                                new Date()
-                                            )}
-                                        </div>
-                                    </Tooltip>
+                                    <DatePhraseTd date={metadata?.v1?.created} />
                                 </Td>
                                 <Td>
-                                    <Tooltip content={getDateTime(scanTime)}>
-                                        <div>{getDistanceStrictAsPhrase(scanTime, new Date())}</div>
-                                    </Tooltip>
+                                    <DatePhraseTd date={scanTime} />
                                 </Td>
                             </Tr>
                         </Tbody>

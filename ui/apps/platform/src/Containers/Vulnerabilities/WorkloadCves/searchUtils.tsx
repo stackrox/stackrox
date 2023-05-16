@@ -7,7 +7,7 @@ import { getQueryString } from 'utils/queryStringUtils';
 import { searchValueAsArray } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
-import { CveStatusTab, isValidCveStatusTab, QuerySearchFilter } from './types';
+import { CveStatusTab, FixableStatus, isValidCveStatusTab, QuerySearchFilter } from './types';
 
 export type EntityTab = 'CVE' | 'Image' | 'Deployment';
 
@@ -29,14 +29,19 @@ export function getOverviewCvesPath(workloadCvesSearch: WorkloadCvesSearch): str
     return `${vulnerabilitiesWorkloadCvesPath}${getQueryString(workloadCvesSearch)}`;
 }
 
-export function getEntityPagePath(workloadCveEntity: EntityTab, id: string): string {
+export function getEntityPagePath(
+    workloadCveEntity: EntityTab,
+    id: string,
+    queryOptions?: qs.ParsedQs
+): string {
+    const queryString = getQueryString(queryOptions);
     switch (workloadCveEntity) {
         case 'CVE':
-            return `${vulnerabilitiesWorkloadCvesPath}/cves/${id}`;
+            return `${vulnerabilitiesWorkloadCvesPath}/cves/${id}${queryString}`;
         case 'Image':
-            return `${vulnerabilitiesWorkloadCvesPath}/images/${id}`;
+            return `${vulnerabilitiesWorkloadCvesPath}/images/${id}${queryString}`;
         case 'Deployment':
-            return `${vulnerabilitiesWorkloadCvesPath}/deployments/${id}`;
+            return `${vulnerabilitiesWorkloadCvesPath}/deployments/${id}${queryString}`;
         default:
             return ensureExhaustive(workloadCveEntity);
     }
@@ -99,4 +104,21 @@ export function getHiddenSeverities(
     return querySearchFilter.Severity
         ? new Set(vulnerabilitySeverities.filter((s) => !querySearchFilter.Severity?.includes(s)))
         : new Set([]);
+}
+
+export function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<FixableStatus> {
+    const hiddenStatuses = new Set<FixableStatus>([]);
+    const fixableFilters = querySearchFilter?.Fixable ?? [];
+
+    if (fixableFilters.length > 0) {
+        if (!fixableFilters.includes('true')) {
+            hiddenStatuses.add('Fixable');
+        }
+
+        if (!fixableFilters.includes('false')) {
+            hiddenStatuses.add('Not fixable');
+        }
+    }
+
+    return hiddenStatuses;
 }

@@ -11,8 +11,6 @@ import (
 const testTokenVal = "test-token"
 
 func TestToken(t *testing.T) {
-	t.Parallel()
-
 	suite.Run(t, new(tokenSuite))
 }
 

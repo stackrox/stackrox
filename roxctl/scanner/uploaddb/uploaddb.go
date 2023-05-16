@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
@@ -38,7 +37,11 @@ func (cmd *scannerUploadDbCommand) uploadDd() error {
 	}
 	defer utils.IgnoreError(file.Close)
 
-	resp, err := common.DoHTTPRequestAndCheck200(scannerUploadDbAPIPath, cmd.timeout, http.MethodPost, file, cmd.env.Logger())
+	client, err := cmd.env.HTTPClient(cmd.timeout)
+	if err != nil {
+		return errors.Wrap(err, "creating HTTP client")
+	}
+	resp, err := client.DoReqAndVerifyStatusCode(scannerUploadDbAPIPath, http.MethodPost, http.StatusOK, file)
 	if err != nil {
 		return errors.Wrap(err, "could not connect with scanner definitions API")
 	}

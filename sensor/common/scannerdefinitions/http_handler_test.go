@@ -8,34 +8,13 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/httputil/mock"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ http.ResponseWriter = (*responseWriterMock)(nil)
-
-type responseWriterMock struct {
-	bytes.Buffer
-	statusCode int
-	headers    http.Header
-}
-
-func NewMockResponseWriter() *responseWriterMock {
-	return &responseWriterMock{
-		headers: make(http.Header),
-	}
-}
-
-func (m *responseWriterMock) Header() http.Header {
-	return m.headers
-}
-
-func (m *responseWriterMock) WriteHeader(statusCode int) {
-	m.statusCode = statusCode
-}
-
 func TestServeHTTP_Responses(t *testing.T) {
 	type args struct {
-		writer  *responseWriterMock
+		writer  *mock.ResponseWriter
 		request *http.Request
 		methods []string
 	}
@@ -86,7 +65,7 @@ func TestServeHTTP_Responses(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set args defaults.
 			if tt.args.writer == nil {
-				tt.args.writer = NewMockResponseWriter()
+				tt.args.writer = mock.NewResponseWriter()
 			}
 			if tt.args.methods == nil {
 				// Defaults to GET.
@@ -118,8 +97,8 @@ func TestServeHTTP_Responses(t *testing.T) {
 					},
 				}
 				h.ServeHTTP(tt.args.writer, tt.args.request)
-				assert.Equal(t, tt.responseBody, tt.args.writer.String())
-				assert.Equal(t, tt.statusCode, tt.args.writer.statusCode)
+				assert.Equal(t, tt.responseBody, tt.args.writer.Data.String())
+				assert.Equal(t, tt.statusCode, tt.args.writer.Code)
 			}
 		})
 	}

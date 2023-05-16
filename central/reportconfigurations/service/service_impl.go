@@ -2,56 +2,18 @@ package service
 
 import (
 	"context"
-	"net/mail"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reportconfigurations/datastore"
+	"github.com/stackrox/rox/central/reportconfigurations/service/common"
 	"github.com/stackrox/rox/central/reports/manager"
-	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
-	accessScopeStore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/grpc/authz"
-	"github.com/stackrox/rox/pkg/grpc/authz/or"
-	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
-	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
-)
-
-var (
-	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
-		or.Or(
-			user.With(permissions.View(resources.VulnerabilityReports)),
-			user.With(permissions.View(resources.WorkflowAdministration))): {
-			"/v1.ReportConfigurationService/GetReportConfigurations",
-			"/v1.ReportConfigurationService/GetReportConfiguration",
-			"/v1.ReportConfigurationService/CountReportConfigurations",
-		},
-		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
-		// TODO: ROX-14398 Replace Role with Access
-		or.Or(
-			user.With(permissions.Modify(resources.VulnerabilityReports), permissions.View(resources.Integration), permissions.View(resources.Role)),
-			user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration))): {
-			"/v1.ReportConfigurationService/PostReportConfiguration",
-			"/v1.ReportConfigurationService/UpdateReportConfiguration",
-		},
-		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
-		or.Or(
-			user.With(permissions.Modify(resources.VulnerabilityReports)),
-			user.With(permissions.Modify(resources.WorkflowAdministration))): {
-			"/v1.ReportConfigurationService/DeleteReportConfiguration",
-		},
-	})
 )
 
 var (
@@ -61,11 +23,9 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedReportConfigurationServiceServer
 
-	manager             manager.Manager
-	reportConfigStore   datastore.DataStore
-	notifierStore       notifierDataStore.DataStore
-	accessScopeStore    accessScopeStore.DataStore
-	collectionDatastore collectionDataStore.DataStore
+	manager           manager.Manager
+	reportConfigStore datastore.DataStore
+	validator         *common.Validator
 }
 
 func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *v1.RawQuery) (*v1.GetReportConfigurationsResponse, error) {
@@ -99,7 +59,7 @@ func (s *serviceImpl) GetReportConfiguration(ctx context.Context, id *v1.Resourc
 }
 
 func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *v1.PostReportConfigurationRequest) (*v1.PostReportConfigurationResponse, error) {
-	if err := s.validateReportConfiguration(ctx, request.GetReportConfig()); err != nil {
+	if err := s.validator.ValidateReportConfiguration(ctx, request.GetReportConfig()); err != nil {
 		return nil, err
 	}
 	id, err := s.reportConfigStore.AddReportConfiguration(ctx, request.GetReportConfig())
@@ -118,7 +78,7 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *v1.P
 }
 
 func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *v1.UpdateReportConfigurationRequest) (*v1.Empty, error) {
-	if err := s.validateReportConfiguration(ctx, request.GetReportConfig()); err != nil {
+	if err := s.validator.ValidateReportConfiguration(ctx, request.GetReportConfig()); err != nil {
 		return &v1.Empty{}, err
 	}
 	if err := s.manager.Upsert(ctx, request.GetReportConfig()); err != nil {
@@ -164,78 +124,5 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 }
 
 func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, authorizer.Authorized(ctx, fullMethodName)
-}
-
-func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *storage.ReportConfiguration) error {
-	if config.GetName() == "" {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration name empty")
-	}
-
-	if config.GetSchedule() == nil {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must have a schedule")
-	}
-
-	schedule := config.GetSchedule()
-
-	switch schedule.GetIntervalType() {
-	case storage.Schedule_UNSET:
-	case storage.Schedule_DAILY:
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must have a valid schedule type")
-	case storage.Schedule_WEEKLY:
-		if schedule.GetDaysOfWeek() == nil || len(schedule.GetDaysOfWeek().GetDays()) == 0 {
-			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify days of week for the schedule")
-		}
-		for _, day := range schedule.GetDaysOfWeek().GetDays() {
-			if day < 0 || day > 6 {
-				return errors.Wrap(errox.InvalidArgs, "Invalid schedule: Days of the week can be Sunday (0) - Saturday(6)")
-			}
-		}
-	case storage.Schedule_MONTHLY:
-		if schedule.GetDaysOfMonth() == nil || len(schedule.GetDaysOfMonth().GetDays()) == 0 {
-			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify days of the month for the schedule")
-		}
-		for _, day := range schedule.GetDaysOfMonth().GetDays() {
-			if day != 1 && day != 15 {
-				return errors.Wrap(errox.InvalidArgs, "Reports can be sent out only 1st or 15th of the month")
-			}
-		}
-	}
-	if config.GetEmailConfig() == nil {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify an email notifier configuration")
-	}
-	if config.GetEmailConfig().GetNotifierId() == "" {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid email notifier")
-	}
-	if len(config.GetEmailConfig().GetMailingLists()) == 0 {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify one more recipients to send the report to")
-	}
-
-	for _, addr := range config.GetEmailConfig().GetMailingLists() {
-		if _, err := mail.ParseAddress(addr); err != nil {
-			return errors.Wrapf(errox.InvalidArgs, "Invalid mailing list address: %s", addr)
-		}
-	}
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		_, found, err := s.collectionDatastore.Get(ctx, config.GetScopeId())
-		if !found || err != nil {
-			return errors.Wrapf(errox.NotFound, "Collection %s not found. Error: %s", config.GetScopeId(), err)
-		}
-	} else {
-		_, found, err := s.accessScopeStore.GetAccessScope(ctx, config.GetScopeId())
-		if !found || err != nil {
-			return errors.Wrapf(errox.NotFound, "Access scope %s not found. Error: %s", config.GetScopeId(), err)
-		}
-	}
-
-	_, found, err := s.notifierStore.GetNotifier(ctx, config.GetEmailConfig().GetNotifierId())
-	if err != nil {
-		return errors.Wrapf(errox.NotFound, "Failed to fetch notifier %s with error %s", config.GetEmailConfig().GetNotifierId(), err)
-	}
-	if !found {
-		return errors.Wrapf(errox.NotFound, "Notifier %s not found", config.GetEmailConfig().GetNotifierId())
-	}
-
-	return nil
+	return ctx, common.Authorizer.Authorized(ctx, fullMethodName)
 }

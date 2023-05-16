@@ -48,6 +48,10 @@ const routeMatcherMap = {
         method: 'GET',
         url: api.integrationHealth.vulnDefinitions,
     },
+    'integrationhealth/declarativeconfigs': {
+        method: 'GET',
+        url: '/v1/integrationhealth/declarativeconfigs',
+    },
 };
 
 export function visitSystemHealthFromLeftNav() {

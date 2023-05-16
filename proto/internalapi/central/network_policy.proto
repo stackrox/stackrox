@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+import "storage/network_policy.proto";
+
+package central;
+
+message SendNetworkPolicyYamlRequest {
+    string                              cluster_id   = 1;
+    repeated string                     notifier_ids = 2;
+    storage.NetworkPolicyModification   modification = 3;
+}

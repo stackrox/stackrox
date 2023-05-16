@@ -67,15 +67,14 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 }
 
 func (cmd *generateCommand) populateMTLS() error {
-	envLogger := cmd.env.Logger()
-	envLogger.InfofLn("Populating Central DB Certificate from bundle...")
+	cmd.env.Logger().InfofLn("Populating Central DB Certificate from bundle...")
 	fileMap, err := zipdownload.GetZipFiles(zipdownload.GetZipOptions{
 		Path:       centralDBCertGeneratePath,
 		Method:     http.MethodPost,
 		Timeout:    cmd.timeout,
 		BundleType: "central-db",
 		ExpandZip:  true,
-	}, envLogger)
+	}, cmd.env)
 	if err != nil {
 		return err
 	}

@@ -14,30 +14,35 @@ import { gql } from '@apollo/client';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
-import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { getEntityPagePath } from '../searchUtils';
-import ComponentVulnerabilitiesTable, {
-    ComponentVulnerability,
-    ImageMetadataContext,
-    componentVulnerabilitiesFragment,
-    imageMetadataContextFragment,
-} from './ComponentVulnerabilitiesTable';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
+import DeploymentComponentVulnerabilitiesTable, {
+    DeploymentComponentVulnerability,
+    ImageMetadataContext,
+    deploymentComponentVulnerabilitiesFragment,
+    imageMetadataContextFragment,
+} from './DeploymentComponentVulnerabilitiesTable';
+import SeverityCountLabels from '../components/SeverityCountLabels';
+import DatePhraseTd from '../components/DatePhraseTd';
 
 export type DeploymentForCve = {
     id: string;
     name: string;
     namespace: string;
     clusterName: string;
-    created: Date | null;
+    created: string | null;
     imageCount: number;
-    images: (ImageMetadataContext & { imageComponents: ComponentVulnerability[] })[];
+    lowImageCount: number;
+    moderateImageCount: number;
+    importantImageCount: number;
+    criticalImageCount: number;
+    images: (ImageMetadataContext & { imageComponents: DeploymentComponentVulnerability[] })[];
 };
 
 export const deploymentsForCveFragment = gql`
     ${imageMetadataContextFragment}
-    ${componentVulnerabilitiesFragment}
+    ${deploymentComponentVulnerabilitiesFragment}
     fragment DeploymentsForCVE on Deployment {
         id
         name
@@ -45,10 +50,14 @@ export const deploymentsForCveFragment = gql`
         clusterName
         created
         imageCount(query: $query)
+        lowImageCount: imageCount(query: $lowImageCountQuery)
+        moderateImageCount: imageCount(query: $moderateImageCountQuery)
+        importantImageCount: imageCount(query: $importantImageCountQuery)
+        criticalImageCount: imageCount(query: $criticalImageCountQuery)
         images(query: $query) {
             ...ImageMetadataContext
             imageComponents(query: $query) {
-                ...ComponentVulnerabilities
+                ...DeploymentComponentVulnerabilities
             }
         }
     }
@@ -70,7 +79,7 @@ function AffectedDeploymentsTable({
         // TODO UX question - Collapse to cards, or allow headers to overflow?
         // <TableComposable gridBreakPoint="grid-xl">
         <TableComposable variant="compact">
-            <Thead>
+            <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('Deployment')}>Deployment</Th>
@@ -89,8 +98,19 @@ function AffectedDeploymentsTable({
             </Thead>
             {deployments.length === 0 && <EmptyTableResults colSpan={7} />}
             {deployments.map((deployment, rowIndex) => {
-                const { id, name, namespace, clusterName, imageCount, created, images } =
-                    deployment;
+                const {
+                    id,
+                    name,
+                    namespace,
+                    clusterName,
+                    imageCount,
+                    lowImageCount,
+                    moderateImageCount,
+                    importantImageCount,
+                    criticalImageCount,
+                    created,
+                    images,
+                } = deployment;
                 const isExpanded = expandedRowSet.has(id);
 
                 const imageComponentVulns = images.map((image) => ({
@@ -123,20 +143,29 @@ function AffectedDeploymentsTable({
                                     </Button>{' '}
                                 </Flex>
                             </Td>
-                            <Td dataLabel="Images by severity">TODO</Td>
+                            <Td modifier="nowrap" dataLabel="Images by severity">
+                                <SeverityCountLabels
+                                    critical={criticalImageCount}
+                                    important={importantImageCount}
+                                    moderate={moderateImageCount}
+                                    low={lowImageCount}
+                                />
+                            </Td>
                             <Td dataLabel="Cluster">{clusterName}</Td>
                             <Td dataLabel="Namespace">{namespace}</Td>
-                            <Td dataLabel="Images">{pluralize(imageCount, 'image')}</Td>
-                            <Td dataLabel="First discovered">
-                                {getDistanceStrictAsPhrase(created, new Date())}
+                            <Td modifier="nowrap" dataLabel="Images">
+                                {pluralize(imageCount, 'image')}
+                            </Td>
+
+                            <Td modifier="nowrap" dataLabel="First discovered">
+                                <DatePhraseTd date={created} />
                             </Td>
                         </Tr>
                         <Tr isExpanded={isExpanded}>
                             <Td />
                             <Td colSpan={6}>
                                 <ExpandableRowContent>
-                                    <ComponentVulnerabilitiesTable
-                                        showImage
+                                    <DeploymentComponentVulnerabilitiesTable
                                         images={imageComponentVulns}
                                     />
                                 </ExpandableRowContent>

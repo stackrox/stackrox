@@ -34,7 +34,7 @@ const workloadCveOverviewDeploymentsPath = getOverviewCvesPath({
 
 const deploymentMetadataQuery = gql`
     ${deploymentMetadataFragment}
-    query DeploymentMetadata($id: ID!) {
+    query getDeploymentMetadata($id: ID!) {
         deployment(id: $id) {
             ...DeploymentMetadata
         }
@@ -102,15 +102,14 @@ function DeploymentPage() {
                         eventKey="Vulnerabilities"
                         title={<TabTitleText>Vulnerabilities</TabTitleText>}
                     >
-                        <DeploymentPageVulnerabilities />
+                        <DeploymentPageVulnerabilities deploymentId={deploymentId} />
                     </Tab>
                     <Tab
                         className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                         eventKey="Resources"
                         title={<TabTitleText>Resources</TabTitleText>}
-                        isDisabled
                     >
-                        <DeploymentPageResources />
+                        <DeploymentPageResources deploymentId={deploymentId} />
                     </Tab>
                 </Tabs>
             </PageSection>

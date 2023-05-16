@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/features"
 	grpcTestutils "github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
@@ -107,7 +108,20 @@ type ServiceTestSuite struct {
 
 func (suite *ServiceTestSuite) SetupTest() {
 	// Since all the datastores underneath are mocked, the context of the request doesns't need any permissions.
-	suite.requestContext = context.Background()
+	suite.requestContext = sac.WithGlobalAccessScopeChecker(
+		context.Background(),
+		sac.TestScopeCheckerCoreFromFullScopeMap(
+			suite.T(),
+			sac.TestScopeMap{
+				storage.Access_READ_ACCESS: map[permissions.Resource]*sac.TestResourceScope{
+					resources.NetworkPolicy.GetResource(): {
+						Clusters: nil,
+						Included: true,
+					},
+				},
+			},
+		),
+	)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.networkPolicies = npMocks.NewMockDataStore(suite.mockCtrl)
@@ -141,6 +155,21 @@ func (suite *ServiceTestSuite) TestFailsIfClusterIsNotSet() {
 }
 
 func (suite *ServiceTestSuite) TestFailsIfClusterDoesNotExist() {
+	testCtx := sac.WithGlobalAccessScopeChecker(
+		suite.requestContext,
+		sac.TestScopeCheckerCoreFromFullScopeMap(
+			suite.T(),
+			sac.TestScopeMap{
+				storage.Access_READ_ACCESS: map[permissions.Resource]*sac.TestResourceScope{
+					resources.NetworkPolicy.GetResource(): {
+						Clusters: nil,
+						Included: true,
+					},
+				},
+			},
+		),
+	)
+
 	// Mock that cluster exists.
 	suite.clusters.EXPECT().Exists(gomock.Any(), fakeClusterID).
 		Return(false, nil)
@@ -150,7 +179,7 @@ func (suite *ServiceTestSuite) TestFailsIfClusterDoesNotExist() {
 		ClusterId:       fakeClusterID,
 		IncludeNodeDiff: true,
 	}
-	_, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
+	_, err := suite.tested.SimulateNetworkGraph(testCtx, request)
 	suite.Error(err, "expected graph generation to fail since cluster does not exist")
 }
 

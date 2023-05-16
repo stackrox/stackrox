@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -80,5 +81,32 @@ func TestTransformRole(t *testing.T) {
 	assert.Equal(t, role.Description, roleProto.GetDescription())
 	assert.Equal(t, declarativeconfig.NewDeclarativeAccessScopeUUID(role.AccessScope).String(), roleProto.GetAccessScopeId())
 	assert.Equal(t, declarativeconfig.NewDeclarativePermissionSetUUID(role.PermissionSet).String(), roleProto.GetPermissionSetId())
+	assert.Equal(t, storage.Traits_DECLARATIVE, roleProto.GetTraits().GetOrigin())
+}
+
+func TestTransformRole_DefaultValues(t *testing.T) {
+	role := &declarativeconfig.Role{
+		Name:          "some-role",
+		Description:   "with references to default resources",
+		AccessScope:   accesscontrol.UnrestrictedAccessScope,
+		PermissionSet: accesscontrol.Admin,
+	}
+
+	rt := newRoleTransform()
+
+	protos, err := rt.Transform(role)
+	assert.NoError(t, err)
+
+	require.Len(t, protos, 1)
+	require.Contains(t, protos, roleType)
+	require.Len(t, protos[roleType], 1)
+
+	roleProto, ok := protos[roleType][0].(*storage.Role)
+	require.True(t, ok)
+
+	assert.Equal(t, role.Name, roleProto.GetName())
+	assert.Equal(t, role.Description, roleProto.GetDescription())
+	assert.Equal(t, accesscontrol.DefaultAccessScopeIDs[role.AccessScope], roleProto.GetAccessScopeId())
+	assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[role.PermissionSet], roleProto.GetPermissionSetId())
 	assert.Equal(t, storage.Traits_DECLARATIVE, roleProto.GetTraits().GetOrigin())
 }

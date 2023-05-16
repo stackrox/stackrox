@@ -6,7 +6,11 @@ import { SearchFilter } from 'types/search';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import { searchCategories } from 'constants/entityTypes';
-import FilterResourceDropdown, { Resource } from './FilterResourceDropdown';
+import FilterResourceDropdown, {
+    FilterResourceDropdownProps,
+    Resource,
+    resources,
+} from './FilterResourceDropdown';
 
 function getOptions(data: string[] | undefined): React.ReactElement[] | undefined {
     return data?.map((value) => <SelectOption key={value} value={value} />);
@@ -31,20 +35,22 @@ function getSearchCategoriesForAutocomplete(resource: Resource) {
     return searchCategories[resource];
 }
 
-type FilterAutocompleteSelectProps = {
+export type FilterAutocompleteSelectProps = {
     searchFilter: SearchFilter;
     setSearchFilter: (s) => void;
-    resourceContext?: Resource;
+    supportedResourceFilters?: FilterResourceDropdownProps['supportedResourceFilters'];
     onDeleteGroup: (category) => void;
 };
 
 function FilterAutocompleteSelect({
     searchFilter,
     setSearchFilter,
-    resourceContext,
+    supportedResourceFilters,
     onDeleteGroup,
 }: FilterAutocompleteSelectProps) {
-    const [resource, setResource] = useState<Resource>('DEPLOYMENT');
+    const [resource, setResource] = useState<Resource>(
+        () => resources.find((r) => supportedResourceFilters?.has(r)) ?? 'DEPLOYMENT'
+    );
     const [typeahead, setTypeahead] = useState('');
     const { isOpen, onToggle } = useSelectToggle();
     const variables = {
@@ -77,11 +83,11 @@ function FilterAutocompleteSelect({
     );
 
     return (
-        <ToolbarGroup variant="filter-group" className="pf-u-flex-grow-1">
+        <ToolbarGroup variant="filter-group" className="pf-u-display-flex pf-u-flex-grow-1">
             <FilterResourceDropdown
                 setResource={setResource}
                 resource={resource}
-                resourceContext={resourceContext}
+                supportedResourceFilters={supportedResourceFilters}
             />
             <Select
                 aria-label={`Filter by ${resource as string}`}
@@ -99,7 +105,7 @@ function FilterAutocompleteSelect({
                 onTypeaheadInputChanged={(val: string) => {
                     updateTypeahead(val);
                 }}
-                className="pf-u-w-100"
+                className="pf-u-flex-grow-1"
             >
                 {getOptions(data?.searchAutocomplete)}
             </Select>

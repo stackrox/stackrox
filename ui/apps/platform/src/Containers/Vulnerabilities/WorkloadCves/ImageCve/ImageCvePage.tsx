@@ -7,6 +7,8 @@ import {
     Bullseye,
     Divider,
     Flex,
+    Grid,
+    GridItem,
     PageSection,
     Pagination,
     Skeleton,
@@ -27,18 +29,13 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { Pagination as PaginationParam } from 'services/types';
 
+import { VulnerabilitySeverity } from 'types/cve.proto';
 import { getHiddenSeverities, getOverviewCvesPath, parseQuerySearchFilter } from '../searchUtils';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import ImageCvePageHeader, {
     ImageCveMetadata,
     imageCveMetadataFragment,
 } from './ImageCvePageHeader';
-import ImageCveSummaryCards, {
-    ImageCveSeveritySummary,
-    imageCveSeveritySummaryFragment,
-    ImageCveSummaryCount,
-    imageCveSummaryCountFragment,
-} from './ImageCveSummaryCards';
 import AffectedImagesTable, {
     ImageForCve,
     imagesForCveFragment,
@@ -50,6 +47,12 @@ import AffectedDeploymentsTable, {
     DeploymentForCve,
     deploymentsForCveFragment,
 } from '../Tables/AffectedDeploymentsTable';
+import AffectedImages from '../SummaryCards/AffectedImages';
+import BySeveritySummaryCard, {
+    ResourceCountsByCveSeverity,
+} from '../SummaryCards/BySeveritySummaryCard';
+import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
+import { Resource } from '../components/FilterResourceDropdown';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
@@ -66,15 +69,17 @@ export const imageCveMetadataQuery = gql`
 `;
 
 export const imageCveSummaryQuery = gql`
-    ${imageCveSummaryCountFragment}
-    ${imageCveSeveritySummaryFragment}
+    ${resourceCountByCveSeverityAndStatusFragment}
     query getImageCveSummaryData($cve: String!, $query: String!) {
-        ...ImageCVESummaryCounts
+        totalImageCount: imageCount
         imageCount(query: $query)
         deploymentCount(query: $query)
         imageCVE(cve: $cve, subfieldScopeQuery: $query) {
             cve
-            ...ImageCVESeveritySummary
+            affectedImageCount
+            affectedImageCountBySeverity {
+                ...ResourceCountsByCVESeverityAndStatus
+            }
         }
     }
 `;
@@ -92,7 +97,14 @@ export const imageCveAffectedImagesQuery = gql`
 export const imageCveAffectedDeploymentsQuery = gql`
     ${deploymentsForCveFragment}
     # by default, query must include the CVE id
-    query getDeploymentsForCVE($query: String, $pagination: Pagination) {
+    query getDeploymentsForCVE(
+        $query: String
+        $pagination: Pagination
+        $lowImageCountQuery: String
+        $moderateImageCountQuery: String
+        $importantImageCountQuery: String
+        $criticalImageCountQuery: String
+    ) {
         deployments(query: $query, pagination: $pagination) {
             ...DeploymentsForCVE
         }
@@ -115,6 +127,19 @@ function getDefaultSortOption(entityTab: (typeof imageCveEntities)[number]) {
     return entityTab === 'Image' ? imageDefaultSort : deploymentDefaultSort;
 }
 
+const defaultSeveritySummary = {
+    affectedImageCountBySeverity: {
+        critical: { total: 0 },
+        important: { total: 0 },
+        moderate: { total: 0 },
+        low: { total: 0 },
+    },
+    affectedImageCount: 0,
+    topCVSS: 0,
+};
+
+const imageCveResourceFilters = new Set<Resource>(['IMAGE', 'DEPLOYMENT', 'NAMESPACE', 'CLUSTER']);
+
 function ImageCvePage() {
     const urlParams = useParams();
     const cveId: string = urlParams.cveId ?? '';
@@ -124,7 +149,7 @@ function ImageCvePage() {
         ...querySearchFilter,
         CVE: cveId,
     });
-    const { page, perPage, setPage, setPerPage } = useURLPagination(25);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
 
     const [entityTab] = useURLStringUnion('entityTab', imageCveEntities);
 
@@ -140,10 +165,14 @@ function ImageCvePage() {
     );
 
     const summaryRequest = useQuery<
-        ImageCveSummaryCount & {
+        {
+            totalImageCount: number;
             imageCount: number;
             deploymentCount: number;
-            imageCVE: ImageCveSeveritySummary | null;
+            imageCVE: {
+                affectedImageCountBySeverity: ResourceCountsByCveSeverity;
+                affectedImageCount: number;
+            };
         },
         { cve: string; query: string }
     >(imageCveSummaryQuery, {
@@ -171,18 +200,31 @@ function ImageCvePage() {
         skip: entityTab !== 'Image',
     });
 
+    function getDeploymentSearchQuery(severity?: VulnerabilitySeverity) {
+        const filters = { ...querySearchFilter, CVE: cveId };
+        if (severity) {
+            filters.Severity = [severity];
+        }
+        return getRequestQueryStringForSearchFilter(filters);
+    }
+
     const deploymentDataRequest = useQuery<
         { deploymentCount: number; deployments: DeploymentForCve[] },
         {
             query: string;
+            lowImageCountQuery: string;
+            moderateImageCountQuery: string;
+            importantImageCountQuery: string;
+            criticalImageCountQuery: string;
             pagination: PaginationParam;
         }
     >(imageCveAffectedDeploymentsQuery, {
         variables: {
-            query: getRequestQueryStringForSearchFilter({
-                ...querySearchFilter,
-                CVE: cveId,
-            }),
+            query: getDeploymentSearchQuery(),
+            lowImageCountQuery: getDeploymentSearchQuery('LOW_VULNERABILITY_SEVERITY'),
+            moderateImageCountQuery: getDeploymentSearchQuery('MODERATE_VULNERABILITY_SEVERITY'),
+            importantImageCountQuery: getDeploymentSearchQuery('IMPORTANT_VULNERABILITY_SEVERITY'),
+            criticalImageCountQuery: getDeploymentSearchQuery('CRITICAL_VULNERABILITY_SEVERITY'),
             pagination: {
                 offset: (page - 1) * perPage,
                 limit: perPage,
@@ -230,6 +272,7 @@ function ImageCvePage() {
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
+    const severitySummary = summaryRequest.data?.imageCVE ?? defaultSeveritySummary;
 
     return (
         <>
@@ -265,7 +308,7 @@ function ImageCvePage() {
             <PageSection className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
                 <div className="pf-u-background-color-100">
                     <div className="pf-u-px-sm">
-                        <WorkloadTableToolbar />
+                        <WorkloadTableToolbar supportedResourceFilters={imageCveResourceFilters} />
                     </div>
                     <div className="pf-u-px-lg pf-u-pb-lg">
                         {summaryRequest.error && (
@@ -284,11 +327,25 @@ function ImageCvePage() {
                             />
                         )}
                         {summaryRequest.data && (
-                            <ImageCveSummaryCards
-                                summaryCounts={summaryRequest.data}
-                                severitySummary={summaryRequest.data.imageCVE}
-                                hiddenSeverities={hiddenSeverities}
-                            />
+                            <Grid hasGutter>
+                                <GridItem sm={12} md={6} xl2={4}>
+                                    <AffectedImages
+                                        className="pf-u-h-100"
+                                        affectedImageCount={severitySummary.affectedImageCount}
+                                        totalImagesCount={summaryRequest.data.totalImageCount}
+                                    />
+                                </GridItem>
+                                <GridItem sm={12} md={6} xl2={4}>
+                                    <BySeveritySummaryCard
+                                        className="pf-u-h-100"
+                                        title="Images by severity"
+                                        severityCounts={
+                                            severitySummary.affectedImageCountBySeverity
+                                        }
+                                        hiddenSeverities={hiddenSeverities}
+                                    />
+                                </GridItem>
+                            </Grid>
                         )}
                     </div>
                 </div>
@@ -301,14 +358,8 @@ function ImageCvePage() {
                                     imageCount={imageCount}
                                     deploymentCount={deploymentCount}
                                     entityTabs={imageCveEntities}
-                                    onChange={(entity) => {
-                                        // Ugly type workaround
-                                        if (entity !== 'CVE') {
-                                            // Set the sort and pagination back to the default when changing between entity tabs
-                                            setSortOption(getDefaultSortOption(entity));
-                                            setPage(1);
-                                        }
-                                    }}
+                                    setSortOption={setSortOption}
+                                    setPage={setPage}
                                 />
                                 {isFiltered && <DynamicTableLabel />}
                             </Flex>
@@ -344,7 +395,7 @@ function ImageCvePage() {
                             {tableDataAvailable && (
                                 <>
                                     <Divider />
-                                    <div className="pf-u-px-lg">
+                                    <div className="pf-u-px-lg workload-cves-table-container">
                                         {entityTab === 'Image' && (
                                             <AffectedImagesTable
                                                 images={imageData?.images ?? []}

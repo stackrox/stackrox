@@ -14,7 +14,11 @@ import './PolicyCriteriaForm.css';
 
 const MAX_POLICY_SECTIONS = 16;
 
-function PolicyCriteriaForm() {
+type PolicyBehaviorFormProps = {
+    hasActiveViolations: boolean;
+};
+
+function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
     const { values, setFieldValue } = useFormikContext<Policy>();
     const { criteriaLocked } = values;
     const { isFeatureFlagEnabled } = useFeatureFlags();
@@ -49,7 +53,7 @@ function PolicyCriteriaForm() {
         </>
     );
 
-    if (criteriaLocked) {
+    if (criteriaLocked || hasActiveViolations) {
         return (
             <Flex
                 fullWidth={{ default: 'fullWidth' }}
@@ -60,15 +64,26 @@ function PolicyCriteriaForm() {
                 id="policy-sections-container"
             >
                 {headingElements}
-                <Alert
-                    variant="info"
-                    isInline
-                    title="Editing policy criteria is disabled for system default policies"
-                    className="pf-u-mt-sm pf-u-mb-md"
-                    data-testid="default-policy-alert"
-                >
-                    If you need to edit policy criteria, clone this policy or create a new policy.
-                </Alert>
+                {criteriaLocked ? (
+                    <Alert
+                        variant="info"
+                        isInline
+                        title="Editing policy criteria is disabled for system default policies"
+                        className="pf-u-mt-sm pf-u-mb-md"
+                        data-testid="default-policy-alert"
+                    >
+                        If you need to edit policy criteria, clone this policy or create a new
+                        policy.
+                    </Alert>
+                ) : (
+                    <Alert
+                        variant="warning"
+                        isInline
+                        title="This policy has active violations, and the policy criteria cannot be changed. To update criteria, clone and create a new policy."
+                        className="pf-u-mt-sm pf-u-mb-md"
+                        data-testid="active-violations-policy-alert"
+                    />
+                )}
                 <BooleanPolicyLogicSection readOnly />
             </Flex>
         );

@@ -18,10 +18,11 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/generator"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -35,6 +36,7 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/notifiers"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -95,6 +97,8 @@ type serviceImpl struct {
 	networkPolicies  npDS.DataStore
 	notifierStore    notifierDataStore.DataStore
 	graphEvaluator   graph.Evaluator
+
+	clusterSACHelper sachelper.ClusterSacHelper
 
 	policyGenerator generator.Generator
 }
@@ -319,6 +323,7 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 	}
 
 	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
+	var securedNotifierIds []string
 	for _, notifierID := range request.GetNotifierIds() {
 		notifierProto, exists, err := s.notifierStore.GetNotifier(ctx, notifierID)
 		if err != nil {
@@ -341,12 +346,33 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 			continue
 		}
 
+		if notifier.IsSecuredClusterNotifier() {
+			// for secured cluster notifiers, the network policy modification will be sent out
+			// to the notifiers from the secured cluster
+			securedNotifierIds = append(securedNotifierIds, notifierID)
+			continue
+		}
+
 		err = netpolNotifier.NetworkPolicyYAMLNotify(ctx, request.GetModification().GetApplyYaml(), clusterName)
 		if err != nil {
 			errorList.AddStringf("error sending yaml notification to %s: %v", notifierProto.GetName(), err)
 		}
 	}
 
+	if len(securedNotifierIds) > 0 {
+		err = s.sensorConnMgr.SendMessage(request.GetClusterId(), &central.MsgToSensor{
+			Msg: &central.MsgToSensor_SendNetworkPolicyYaml{
+				SendNetworkPolicyYaml: &central.SendNetworkPolicyYamlRequest{
+					ClusterId:    request.GetClusterId(),
+					NotifierIds:  securedNotifierIds,
+					Modification: request.GetModification(),
+				},
+			},
+		})
+		if err != nil {
+			errorList.AddStringf("error sending yaml notification to cluster %s: %v", clusterName, err)
+		}
+	}
 	err = errorList.ToError()
 	if err != nil {
 		return nil, err
@@ -1126,7 +1152,8 @@ func (s *serviceImpl) clusterExists(ctx context.Context, clusterID string) error
 	if clusterID == "" {
 		return errors.Wrap(errox.InvalidArgs, "cluster ID must be specified")
 	}
-	exists, err := s.clusterStore.Exists(ctx, clusterID)
+	requestedResourcesWithAccess := []permissions.ResourceWithAccess{permissions.View(resources.NetworkPolicy)}
+	exists, err := s.clusterSACHelper.IsClusterVisibleForPermissions(ctx, clusterID, requestedResourcesWithAccess)
 	if err != nil {
 		return err
 	}

@@ -1737,12 +1737,12 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 		out.RawString(prefix)
 		out.Bool(bool(in.SwapLimit))
 	}
-	{
+	if in.KernelMemory {
 		const prefix string = ",\"KernelMemory\":"
 		out.RawString(prefix)
 		out.Bool(bool(in.KernelMemory))
 	}
-	{
+	if in.KernelMemoryTCP {
 		const prefix string = ",\"KernelMemoryTCP\":"
 		out.RawString(prefix)
 		out.Bool(bool(in.KernelMemoryTCP))

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller"
@@ -16,6 +17,8 @@ import (
 	"github.com/stackrox/rox/pkg/clusterhealth"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/notifier"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -54,22 +57,22 @@ type connectionAndUpgradeController struct {
 type manager struct {
 	connectionsByClusterID      map[string]connectionAndUpgradeController
 	connectionsByClusterIDMutex sync.RWMutex
-	// The message dedupers must live beyond an individual connection
-	messageDedupers map[string]*deduper
-	deduperMutex    sync.Mutex
 
 	clusters            common.ClusterManager
 	networkEntities     common.NetworkEntityManager
 	policies            common.PolicyManager
 	baselines           common.ProcessBaselineManager
 	networkBaselines    common.NetworkBaselineManager
+	notifierProcessor   notifier.Processor
+	manager             hashManager.Manager
 	autoTriggerUpgrades *concurrency.Flag
 }
 
-func newManager() *manager {
+// NewManager returns a new connection manager
+func NewManager(mgr hashManager.Manager) Manager {
 	return &manager{
 		connectionsByClusterID: make(map[string]connectionAndUpgradeController),
-		messageDedupers:        make(map[string]*deduper),
+		manager:                mgr,
 	}
 }
 
@@ -98,6 +101,7 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 	policyManager common.PolicyManager,
 	baselineManager common.ProcessBaselineManager,
 	networkBaselineManager common.NetworkBaselineManager,
+	notifierProcessor notifier.Processor,
 	autoTriggerUpgrades *concurrency.Flag,
 ) error {
 	m.clusters = clusterManager
@@ -105,6 +109,7 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 	m.policies = policyManager
 	m.baselines = baselineManager
 	m.networkBaselines = networkBaselineManager
+	m.notifierProcessor = notifierProcessor
 	m.autoTriggerUpgrades = autoTriggerUpgrades
 	err := m.initializeUpgradeControllers()
 	if err != nil {
@@ -220,25 +225,7 @@ func (m *manager) replaceConnection(ctx context.Context, cluster *storage.Cluste
 	return oldConnection, nil
 }
 
-func (m *manager) getDeduper(clusterID string) *deduper {
-	m.deduperMutex.Lock()
-	defer m.deduperMutex.Unlock()
-
-	if d, ok := m.messageDedupers[clusterID]; ok {
-		return d
-	}
-	msgDeduper := newDeduper()
-	m.messageDedupers[clusterID] = msgDeduper
-	return msgDeduper
-}
-
-func (m *manager) deleteDeduper(clusterID string) {
-	m.deduperMutex.Lock()
-	defer m.deduperMutex.Unlock()
-
-	delete(m.messageDedupers, clusterID)
-}
-
+// CloseConnection is only used when deleting a cluster hence the removal of the deduper
 func (m *manager) CloseConnection(clusterID string) {
 	if conn := m.GetConnection(clusterID); conn != nil {
 		conn.Terminate(errors.New("cluster was deleted"))
@@ -247,16 +234,19 @@ func (m *manager) CloseConnection(clusterID string) {
 		}
 	}
 
-	m.deleteDeduper(clusterID)
+	ctx := sac.WithAllAccess(context.Background())
+	if err := m.manager.Delete(ctx, clusterID); err != nil {
+		log.Errorf("deleting cluster id %q from hash manager: %v", clusterID, err)
+	}
 }
 
 func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.SensorHello, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
 	clusterID := cluster.GetId()
 	clusterName := cluster.GetName()
 
-	msgDeduper := m.getDeduper(clusterID)
 	conn :=
 		newConnection(
+			ctx,
 			sensorHello,
 			cluster,
 			eventPipeline,
@@ -265,7 +255,8 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 			m.policies,
 			m.baselines,
 			m.networkBaselines,
-			msgDeduper)
+			m.notifierProcessor,
+			m.manager)
 	ctx = withConnection(ctx, conn)
 
 	oldConnection, err := m.replaceConnection(ctx, cluster, conn)
@@ -400,7 +391,31 @@ func (m *manager) PreparePoliciesAndBroadcast(policies []*storage.Policy) {
 			log.Errorf("error broadcasting message to cluster %q", clusterID)
 		}
 	}
+}
 
+// PrepareNotifiersAndBroadcast prepares and sends NotifierSync message
+// separately for each sensor.
+func (m *manager) PrepareNotifiersAndBroadcast(notifiers []pkgNotifiers.Notifier) {
+	m.connectionsByClusterIDMutex.RLock()
+	defer m.connectionsByClusterIDMutex.RUnlock()
+
+	msg := getNotifierSyncMsgFromNotifiers(notifiers)
+	for clusterID, connAndUpgradeCtrl := range m.connectionsByClusterID {
+		if connAndUpgradeCtrl.connection == nil {
+			log.Debugf("could not broadcast message to cluster %q which has no active connection", clusterID)
+			continue
+		}
+
+		if !connAndUpgradeCtrl.connection.HasCapability(centralsensor.SecuredClusterNotifications) {
+			log.Debugf("did not broadcast notifiersync message to cluster %q since it does not have the %s capapbility",
+				clusterID, centralsensor.SecuredClusterNotifications)
+			continue
+		}
+
+		if err := connAndUpgradeCtrl.connection.InjectMessage(concurrency.Never(), msg); err != nil {
+			log.Errorf("error broadcasting message to cluster %q", clusterID)
+		}
+	}
 }
 
 func (m *manager) BroadcastMessage(msg *central.MsgToSensor) {

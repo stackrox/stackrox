@@ -13,6 +13,25 @@ func TestConfigurationFromRawBytes(t *testing.T) {
 		expectedConfigurations []Configuration
 		fail                   bool
 	}{
+		"invalid access scope shouldn't be unmarshalled successfully": {
+			rawConfigurations: [][]byte{
+				[]byte(`
+name: test-name
+description: test-description
+rules:
+  included:
+    - cluster: clusterA
+      namespaces:
+      - namespaceA1
+  clusterLabelSelectors:
+    - requirements:
+      - key: a
+        operator: BOGUS
+        values: [a, b, c]
+`),
+			},
+			fail: true,
+		},
 		"single raw role configuration should be unmarshalled successfully": {
 			rawConfigurations: [][]byte{
 				[]byte(`

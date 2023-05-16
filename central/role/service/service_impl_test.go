@@ -13,6 +13,7 @@ import (
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	roleDatastore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/role/sachelper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -534,6 +535,8 @@ func (s *serviceImplTestSuite) SetupSuite() {
 			roleDataStore:      roleStore,
 			clusterDataStore:   clusterStore,
 			namespaceDataStore: namespaceStore,
+			clusterSACHelper:   sachelper.NewClusterSacHelper(clusterStore),
+			namespaceSACHelper: sachelper.NewClusterNamespaceSacHelper(clusterStore, namespaceStore),
 		}
 	} else {
 		s.boltEngine, err = boltPkg.NewTemp("roleServiceTestBolt")
@@ -559,6 +562,8 @@ func (s *serviceImplTestSuite) SetupSuite() {
 			roleDataStore:      roleStore,
 			clusterDataStore:   clusterStore,
 			namespaceDataStore: namespaceStore,
+			clusterSACHelper:   sachelper.NewClusterSacHelper(clusterStore),
+			namespaceSACHelper: sachelper.NewClusterNamespaceSacHelper(clusterStore, namespaceStore),
 		}
 	}
 }

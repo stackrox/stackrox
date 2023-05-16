@@ -1,5 +1,11 @@
 import React, { ElementType, ReactElement } from 'react';
-import { AlertTriangle, Check, Info, X } from 'react-feather';
+import { Flex, FlexItem } from '@patternfly/react-core';
+import {
+    BanIcon,
+    CheckIcon,
+    ExclamationTriangleIcon,
+    InfoCircleIcon,
+} from '@patternfly/react-icons';
 import { distanceInWordsStrict } from 'date-fns';
 
 type Style = {
@@ -8,26 +14,26 @@ type Style = {
 };
 
 const styleDefault: Style = {
-    Icon: Info,
-    fgColor: 'text-primary-700',
+    Icon: InfoCircleIcon,
+    fgColor: 'pf-u-info-color-100',
 };
 
 const styleValid: Style = {
-    Icon: Check,
-    fgColor: 'text-success-700',
+    Icon: CheckIcon,
+    fgColor: 'pf-u-success-color-100',
 };
 
 const styleFuture: Style = {
-    Icon: X,
-    fgColor: 'text-alert-700', // alert because it time is complete and incorrect
+    Icon: BanIcon,
+    fgColor: 'pf-u-danger-color-100', // alert because it time is complete and incorrect
 };
 
 const styleInvalid: Style = {
-    Icon: AlertTriangle,
-    fgColor: 'text-warning-700', // warning because time might be incomplete
+    Icon: ExclamationTriangleIcon,
+    fgColor: 'pf-u-warning-color-100', // warning because time might be incomplete
 };
 
-type Props = {
+type FilterByStartingTimeValidationMessageProps = {
     currentTimeObject: Date | null;
     isStartingTimeValid: boolean;
     startingTimeFormat: string;
@@ -40,7 +46,7 @@ const FilterByStartingTimeValidationMessage = ({
     isStartingTimeValid,
     startingTimeFormat,
     startingTimeObject,
-}: Props): ReactElement => {
+}: FilterByStartingTimeValidationMessageProps): ReactElement => {
     let style = styleDefault;
     let message = 'default time: 20 minutes ago';
 
@@ -64,12 +70,10 @@ const FilterByStartingTimeValidationMessage = ({
     const { Icon, fgColor } = style;
 
     return (
-        <div className={`flex flex-row items-start leading-normal ${fgColor}`}>
-            <Icon className="flex-shrink-0 h-4 w-4" />
-            <span className="ml-2" data-testid="starting-time-message">
-                {message}
-            </span>
-        </div>
+        <Flex alignItems={{ default: 'alignItemsCenter' }} className={fgColor}>
+            <Icon />
+            <FlexItem data-testid="starting-time-message">{message}</FlexItem>
+        </Flex>
     );
 };
 

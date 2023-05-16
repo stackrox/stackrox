@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/localscanner"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
@@ -19,7 +20,10 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifier"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -56,12 +60,14 @@ type sensorConnection struct {
 	policyMgr          common.PolicyManager
 	baselineMgr        common.ProcessBaselineManager
 	networkBaselineMgr common.NetworkBaselineManager
+	notifierProcessor  notifier.Processor
 
 	sensorHello  *central.SensorHello
 	capabilities set.Set[centralsensor.SensorCapability]
 }
 
-func newConnection(sensorHello *central.SensorHello,
+func newConnection(ctx context.Context,
+	sensorHello *central.SensorHello,
 	cluster *storage.Cluster,
 	eventPipeline pipeline.ClusterPipeline,
 	clusterMgr common.ClusterManager,
@@ -69,7 +75,8 @@ func newConnection(sensorHello *central.SensorHello,
 	policyMgr common.PolicyManager,
 	baselineMgr common.ProcessBaselineManager,
 	networkBaselineMgr common.NetworkBaselineManager,
-	msgDeduper *deduper,
+	notifierProcessor notifier.Processor,
+	hashMgr hashManager.Manager,
 ) *sensorConnection {
 
 	conn := &sensorConnection{
@@ -85,13 +92,17 @@ func newConnection(sensorHello *central.SensorHello,
 		networkEntityMgr:   networkEntityMgr,
 		baselineMgr:        baselineMgr,
 		networkBaselineMgr: networkBaselineMgr,
+		notifierProcessor:  notifierProcessor,
 
 		sensorHello:  sensorHello,
 		capabilities: centralsensor.CapSetFromStringSlice(sensorHello.GetCapabilities()...),
 	}
 
 	// Need a reference to conn for injector
-	conn.sensorEventHandler = newSensorEventHandler(eventPipeline, conn, &conn.stopSig, msgDeduper)
+	deduper := hashMgr.GetDeduper(ctx, cluster.GetId())
+	deduper.StartSync()
+
+	conn.sensorEventHandler = newSensorEventHandler(eventPipeline, conn, &conn.stopSig, deduper)
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
 	conn.networkEntitiesCtrl = networkentities.NewController(cluster.GetId(), networkEntityMgr, graph.Singleton(), conn, &conn.stopSig)
@@ -289,6 +300,25 @@ func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Cont
 	return nil
 }
 
+// getNotifierSyncMsg fetches stored notifiers and prepares them for delivery to sensor.
+func (c *sensorConnection) getNotifierSyncMsg(ctx context.Context) *central.MsgToSensor {
+	return getNotifierSyncMsgFromNotifiers(c.notifierProcessor.GetNotifiers(ctx))
+}
+
+func getNotifierSyncMsgFromNotifiers(notifiers []pkgNotifiers.Notifier) *central.MsgToSensor {
+	var protoNotifiers []*storage.Notifier
+	for _, notifier := range notifiers {
+		protoNotifiers = append(protoNotifiers, notifier.ProtoNotifier())
+	}
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_NotifierSync{
+			NotifierSync: &central.NotifierSync{
+				Notifiers: protoNotifiers,
+			},
+		},
+	}
+}
+
 // getPolicySyncMsg fetches stored policies and prepares them for delivery to sensor.
 func (c *sensorConnection) getPolicySyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
 	policies, err := c.policyMgr.GetAllPolicies(ctx)
@@ -481,7 +511,16 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		if err := server.Send(msg); err != nil {
 			return errors.Wrapf(err, "unable to sync initial network baselines to cluster %q", c.clusterID)
 		}
+	}
 
+	if env.SecuredClusterNotifiers.BooleanSetting() && connectionCapabilities.Contains(centralsensor.SecuredClusterNotifications) {
+		msg := c.getNotifierSyncMsg(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "unable to get notifier sync msg for %q", c.clusterID)
+		}
+		if err := server.Send(msg); err != nil {
+			return errors.Wrapf(err, "unable to sync initial notifiers to cluster %q", c.clusterID)
+		}
 	}
 
 	go c.runSend(server)

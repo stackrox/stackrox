@@ -6,17 +6,16 @@ import ViewAllButton from 'Components/ViewAllButton';
 import useInterval from 'hooks/useInterval';
 import { clustersBasePath } from 'routePaths';
 import { fetchClustersAsArray } from 'services/ClustersService';
-import { fetchVulnerabilityDefinitionsInfo } from 'services/IntegrationHealthService';
 
 import ClusterOverview from './Components/ClusterOverview';
 import CollectorStatus from './Components/CollectorStatus';
 import AdmissionControlStatus from './Components/AdmissionControlStatus';
 import CredentialExpiration from './Components/CredentialExpiration';
 import DeclarativeConfigurationHealthCard from './Components/DeclarativeConfigurationHealthCard';
-import GenerateDiagnosticBundle from './PatternFly/Components/GenerateDiagnosticBundle';
+import GenerateDiagnosticBundle from './Components/GenerateDiagnosticBundle';
 import SensorStatus from './Components/SensorStatus';
 import SensorUpgrade from './Components/SensorUpgrade';
-import VulnerabilityDefinitions from './Components/VulnerabilityDefinitions';
+import VulnerabilityDefinitionsHealthCard from './Components/VulnerabilityDefinitionsHealthCard';
 import ImageIntegrationHealthWidget from './Components/ImageIntegrationHealthWidget';
 import NotifierIntegrationHealthWidget from './Components/NotifierIntegrationHealthWidget';
 import BackupIntegrationHealthWidget from './Components/BackupIntegrationHealthWidget';
@@ -27,11 +26,8 @@ const SystemHealthDashboardPage = () => {
     const [currentDatetime, setCurrentDatetime] = useState(null);
 
     const [clusters, setClusters] = useState([]);
-    const [vulnerabilityDefinitionsInfo, setVulnerabilityDefinitionsInfo] = useState(null);
 
     const [clustersRequestHasError, setClustersRequestHasError] = useState(false);
-    const [vulnerabilityDefinitionsRequestHasError, setVulnerabilityDefinitionsRequestHasError] =
-        useState(false);
 
     useEffect(() => {
         setCurrentDatetime(new Date());
@@ -45,18 +41,6 @@ const SystemHealthDashboardPage = () => {
                 setClustersRequestHasError(true);
             });
     }, [pollingCountFaster]);
-
-    useEffect(() => {
-        fetchVulnerabilityDefinitionsInfo()
-            .then((info) => {
-                setVulnerabilityDefinitionsInfo(info);
-                setVulnerabilityDefinitionsRequestHasError(false);
-            })
-            .catch(() => {
-                setVulnerabilityDefinitionsInfo(null);
-                setVulnerabilityDefinitionsRequestHasError(true);
-            });
-    }, [pollingCountSlower]);
 
     useInterval(() => {
         setPollingCountFaster(pollingCountFaster + 1);
@@ -80,9 +64,9 @@ const SystemHealthDashboardPage = () => {
             </PageSection>
             <PageSection>
                 <Grid hasGutter>
-                    <GridItem span={8} rowSpan={2}>
+                    <GridItem span={12} rowSpan={2}>
                         <Widget
-                            className="sx-2"
+                            className="sx-2 theme-light"
                             header="Cluster Health"
                             headerComponents={<ViewAllButton url={clustersBasePath} />}
                             id="cluster-health"
@@ -145,29 +129,9 @@ const SystemHealthDashboardPage = () => {
                             )}
                         </Widget>
                     </GridItem>
-                    <GridItem span={4}>
-                        <Widget
-                            className="h-48 text-center text-lg"
-                            header="Vulnerability Definitions"
-                            id="vulnerability-definitions"
-                        >
-                            {vulnerabilityDefinitionsRequestHasError ? (
-                                <Alert
-                                    variant="warning"
-                                    isInline
-                                    className="pf-u-w-100"
-                                    title="Request failed for Vulnerability Definitions"
-                                />
-                            ) : (
-                                <VulnerabilityDefinitions
-                                    currentDatetime={currentDatetime}
-                                    vulnerabilityDefinitionsInfo={vulnerabilityDefinitionsInfo}
-                                />
-                            )}
-                        </Widget>
+                    <GridItem span={12}>
+                        <VulnerabilityDefinitionsHealthCard pollingCount={pollingCountSlower} />
                     </GridItem>
-                </Grid>
-                <Grid hasGutter className="pf-u-mt-lg">
                     <GridItem span={4}>
                         <ImageIntegrationHealthWidget pollingCount={pollingCountFaster} />
                     </GridItem>

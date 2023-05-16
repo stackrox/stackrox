@@ -1,8 +1,6 @@
 import React, { ReactElement, ReactNode } from 'react';
 import { Modal, ModalVariant, Button, ButtonVariant } from '@patternfly/react-core';
 
-import './ConfirmationModal.css';
-
 type ConfirmationModalProps = {
     ariaLabel: string;
     title?: string;
@@ -33,6 +31,7 @@ function ConfirmationModal({
             isOpen={isOpen}
             variant={ModalVariant.small}
             title={title || ''}
+            titleIconVariant="warning"
             actions={[
                 <Button
                     key="confirm"

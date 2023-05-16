@@ -8,7 +8,7 @@ import {
 import {
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
-    verifyFilteredSecondaryEntitiesLink,
+    verifyConditionalCVEs,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
 } from '../../helpers/vulnmanagement/entities';
@@ -88,24 +88,12 @@ describe('Vulnerability Management Components', () => {
     // Argument 3 in verify functions is index of column which has the links.
     // The one-based index includes checkbox, hidden, invisible.
 
-    // Some tests might fail in local deployment.
-
-    it('should display links for all CVEs', () => {
-        verifySecondaryEntities(
+    it('should display either links for CVEs or text for No CVEs', () => {
+        verifyConditionalCVEs(
             entitiesKey,
             'cves',
             3,
-            /^\d+ CVEs?$/,
-            getCountAndNounFromCVEsLinkResults
-        );
-    });
-
-    it('should display links for fixable CVEs', () => {
-        verifyFilteredSecondaryEntitiesLink(
-            entitiesKey,
-            'cves',
-            3,
-            /^\d+ Fixable$/,
+            'vulnCounter',
             getCountAndNounFromCVEsLinkResults
         );
     });

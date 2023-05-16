@@ -11,12 +11,9 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
-	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
-	policyUtils "github.com/stackrox/rox/central/policy/utils"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -41,6 +38,9 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
+	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
+	mitreUtils "github.com/stackrox/rox/pkg/mitre/utils"
+	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -109,13 +109,13 @@ type serviceImpl struct {
 	deployments       deploymentDataStore.DataStore
 	networkPolicies   networkPolicyDS.DataStore
 	notifiers         notifierDataStore.DataStore
-	mitreStore        mitreDataStore.MitreAttackReadOnlyDataStore
+	mitreStore        mitreDS.AttackReadOnlyDataStore
 	reprocessor       reprocessor.Loop
 	connectionManager connection.Manager
 
 	buildTimePolicies detection.PolicySet
 	lifecycleManager  lifecycle.Manager
-	processor         notifierProcessor.Processor
+	processor         notifier.Processor
 	metadataCache     expiringcache.Cache
 
 	validator *policyValidator
@@ -266,7 +266,7 @@ func (s *serviceImpl) GetPolicyMitreVectors(ctx context.Context, request *v1.Get
 		return nil, err
 	}
 
-	fullVectors, err := policyUtils.GetFullMitreAttackVectors(s.mitreStore, policy)
+	fullVectors, err := mitreUtils.GetFullMitreAttackVectors(s.mitreStore, policy)
 	if err != nil {
 		return nil, errors.Wrapf(err, "fetching MITRE ATT&CK vectors for policy %q", request.GetId())
 	}

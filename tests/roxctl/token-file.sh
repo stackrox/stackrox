@@ -50,7 +50,7 @@ test_roxctl_cmd() {
       eecho "Captured output was:"
       eecho "$OUTPUT"
       FAILURES=$((FAILURES + 1))
-  elif echo "$OUTPUT" | grep -q "cannot use password- and token-based authentication at the same time"; then
+  elif echo "$OUTPUT" | grep -q "cannot use basic and token-based authentication at the same time"; then
     echo "[OK] Specifying --token-file and --password produced expected error message"
   else
     eecho "[FAIL] Specifying --token-file and --password produced error did not produce expected error message"
@@ -98,10 +98,10 @@ test_roxctl_cmd() {
     2>&1); then
       eecho "[FAIL] Specifying invalid file with --token-file succeeded"
       FAILURES=$((FAILURES + 1))
-  elif echo "$OUTPUT" | grep -q "ROX_API_TOKEN"; then
-    echo "[OK] Specifying invalid file with --token-file produces error message mentioning ROX_API_TOKEN environment variable"
+  elif echo "$OUTPUT" | grep -q "failed to retrieve token from file"; then
+    echo "[OK] Specifying invalid file with --token-file produces error message with expected output"
   else
-    eecho "[FAIL] Specifying invalid file with --token-file does not produce error message mentioning ROX_API_TOKEN environment variable"
+    eecho "[FAIL] Specifying invalid file with --token-file does not produce error message with expected output"
     eecho "Captured output was:"
     eecho "$OUTPUT"
     FAILURES=$((FAILURES + 1))

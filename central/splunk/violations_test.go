@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
+	"github.com/stackrox/rox/pkg/httputil/mock"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
@@ -1338,22 +1339,8 @@ func (s *violationsTestSuite) TestViolationsHandlerError() {
 	})
 }
 
-// failingResponseWriter is an implementation of http.ResponseWriter that returns error on attempt to write to it
-// to emulate e.g. closed connection.
-type failingResponseWriter struct {
-	header http.Header
-}
-
-func (f failingResponseWriter) Header() http.Header {
-	return f.header
-}
-func (f failingResponseWriter) WriteHeader(_ int) {}
-func (f failingResponseWriter) Write(_ []byte) (int, error) {
-	return 0, errors.New("mock http write error")
-}
-
 func (s *violationsTestSuite) TestViolationsHandlerWriteError() {
-	w := failingResponseWriter{header: map[string][]string{}}
+	w := mock.NewFailingResponseWriter(errors.New("mock http write error"))
 	s.PanicsWithError("net/http: abort Handler", func() {
 		s.prepare().setAlerts(s.processAlert).runRequest(w)
 	})

@@ -309,6 +309,27 @@ class NetworkFlowTest extends BaseSpecification {
         }
     }
 
+    @Tag("BAT")
+    @Tag("RUNTIME")
+    @Tag("NetworkFlowVisualization")
+    // TODO: additional handling may be needed for P/Z, skipping for 1st release
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    @IgnoreIf({ true }) // ROX-16849 this test is flaking in many cluster flavors
+    def "Verify ports are greater than 0"() {
+        given:
+        "ACS is running"
+        def graph = NetworkGraphService.getNetworkGraph(null, null)
+        def nodes = graph.nodesList
+
+        nodes.each { node ->
+            node.outEdges.each { key, value ->
+                value.propertiesList.each { property ->
+                    assert property.port > 0
+                }
+            }
+        }
+    }
+
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
@@ -469,11 +490,8 @@ class NetworkFlowTest extends BaseSpecification {
         assert edges
     }
 
-    // TODO(ROX-7047): Re-enable this test
     @Tag("NetworkFlowVisualization")
     def "Verify connections from external sources"() {
-        Assume.assumeFalse(ClusterService.isOpenShift4())
-
         given:
         "Deployment A, where an external source communicates to A"
         String deploymentUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid

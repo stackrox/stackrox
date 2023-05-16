@@ -287,6 +287,14 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	}
 	for _, route := range allRoutes {
 		handler := preAuthHTTPInterceptors(route.Handler(postAuthHTTPInterceptors))
+
+		if a.config.Auditor != nil && route.EnableAudit {
+			postAuthHTTPInterceptorsWithAudit := httputil.ChainInterceptors(
+				append([]httputil.HTTPInterceptor{a.config.Auditor.PostAuthHTTPInterceptor}, postAuthHTTPInterceptors)...,
+			)
+			handler = preAuthHTTPInterceptors(route.Handler(postAuthHTTPInterceptorsWithAudit))
+		}
+
 		if a.config.HTTPMetrics != nil {
 			handler = a.config.HTTPMetrics.WrapHandler(handler, route.Route)
 		}

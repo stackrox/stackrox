@@ -9,7 +9,7 @@ import {
     getCountAndNounFromImageCVEsLinkResults,
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
-    verifyFilteredSecondaryEntitiesLink,
+    verifyConditionalCVEs,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
 } from '../../helpers/vulnmanagement/entities';
@@ -81,28 +81,16 @@ describe('Vulnerability Management Namespaces', () => {
     // Argument 3 in verify functions is index of column which has the links.
     // The one-based index includes checkbox, hidden, invisible.
 
-    // Some tests might fail in local deployment.
-
-    it('should display links for all image CVEs', () => {
-        verifySecondaryEntities(
-            entitiesKey,
-            'image-cves',
-            3,
-            /^\d+ CVEs?$/,
-            getCountAndNounFromImageCVEsLinkResults
-        );
-    });
-
-    it('should display links for fixable image CVEs', function () {
+    it('should display either links for image CVEs or text for No CVEs', function () {
         if (hasOrchestratorFlavor('openshift')) {
-            this.skip();
+            this.skip(); // TODO verify and remove
         }
 
-        verifyFilteredSecondaryEntitiesLink(
+        verifyConditionalCVEs(
             entitiesKey,
             'image-cves',
             3,
-            /^\d+ Fixable$/,
+            'imageVulnerabilityCounter',
             getCountAndNounFromImageCVEsLinkResults
         );
     });

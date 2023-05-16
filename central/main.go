@@ -89,6 +89,7 @@ import (
 	nodeService "github.com/stackrox/rox/central/node/service"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
 	"github.com/stackrox/rox/central/option"
@@ -105,12 +106,12 @@ import (
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	reportConfigurationService "github.com/stackrox/rox/central/reportconfigurations/service"
+	reportConfigurationServiceV2 "github.com/stackrox/rox/central/reportconfigurations/service/v2"
 	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
 	reportService "github.com/stackrox/rox/central/reports/service"
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
-	"github.com/stackrox/rox/central/role"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/central/role/resources"
@@ -155,9 +156,11 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -407,6 +410,11 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
 	}
 
+	if features.VulnMgmtReportingEnhancements.Enabled() {
+		// TODO Remove (deprecated) v1 report configuration service when Reporting enhancements are enabled by default.
+		servicesToRegister = append(servicesToRegister, reportConfigurationServiceV2.Singleton())
+	}
+
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
 	if err := connection.ManagerSingleton().Start(
 		clusterDataStore.Singleton(),
@@ -414,6 +422,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		policyDataStore.Singleton(),
 		processBaselineDataStore.Singleton(),
 		networkBaselineDataStore.Singleton(),
+		notifierProcessor.Singleton(),
 		autoTriggerUpgrades,
 	); err != nil {
 		log.Panicf("Couldn't start sensor connection manager: %v", err)
@@ -691,17 +700,20 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/db/v2/restore",
 			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
 			ServerHandler: backupRestoreService.Singleton().RestoreHandler(),
+			EnableAudit:   true,
 		},
 		{
 			Route:         "/db/v2/resumerestore",
 			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
 			ServerHandler: backupRestoreService.Singleton().ResumeRestoreHandler(),
+			EnableAudit:   true,
 		},
 		{
 			Route:         "/api/logimbue",
 			Authorizer:    user.With(),
 			ServerHandler: logimbueHandler.Singleton(),
 			Compression:   false,
+			EnableAudit:   true,
 		},
 	}
 
@@ -716,7 +728,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:      "/api/extensions/backup",
-			Authorizer: user.WithRole(role.Admin),
+			Authorizer: user.WithRole(accesscontrol.Admin),
 			ServerHandler: notImplementedOnManagedServices(
 				globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), listener.Singleton(), true),
 			),
@@ -749,7 +761,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/extensions/backup",
-			Authorizer:    user.WithRole(role.Admin),
+			Authorizer:    user.WithRole(accesscontrol.Admin),
 			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, listener.Singleton(), true)),
 			Compression:   true,
 		})
@@ -759,6 +771,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/db/restore",
 			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
 			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB()),
+			EnableAudit:   true,
 		})
 	}
 
@@ -793,6 +806,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 				},
 			}),
 			ServerHandler: definitionsFileGzipHandler(scannerDefinitionsHandler.Singleton()),
+			EnableAudit:   true,
 		},
 	)
 
@@ -812,7 +826,7 @@ func debugRoutes() []routes.CustomRoute {
 	for r, h := range routes.DebugRoutes {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         r,
-			Authorizer:    user.WithRole(role.Admin),
+			Authorizer:    user.WithRole(accesscontrol.Admin),
 			ServerHandler: h,
 			Compression:   true,
 		})

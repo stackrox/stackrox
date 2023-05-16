@@ -9,27 +9,20 @@ import {
     pluralize,
     Text,
 } from '@patternfly/react-core';
-
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 import { gql } from '@apollo/client';
+
 import { FixableStatus } from '../types';
 
-export const resourceCountByCVESeverityKeys = ['low', 'moderate', 'important', 'critical'] as const;
-
-export type ResourceCountByCveSeverityKey = (typeof resourceCountByCVESeverityKeys)[number];
-
-export type ResourceCountByCveSeverity = Record<
-    ResourceCountByCveSeverityKey,
-    { total: number; fixable: number }
->;
-
-export type CvesByStatusSummaryCardProps = {
-    cveStatusCounts: ResourceCountByCveSeverity;
-    hiddenStatuses: Set<FixableStatus>;
+export type ResourceCountByCveSeverityAndStatus = {
+    critical: { total: number; fixable: number };
+    important: { total: number; fixable: number };
+    moderate: { total: number; fixable: number };
+    low: { total: number; fixable: number };
 };
 
-export const resourceCountByCveSeverityFragment = gql`
-    fragment AllResourceCountsByCVESeverity on ResourceCountByCVESeverity {
+export const resourceCountByCveSeverityAndStatusFragment = gql`
+    fragment ResourceCountsByCVESeverityAndStatus on ResourceCountByCVESeverity {
         low {
             total
             fixable
@@ -54,29 +47,31 @@ const statusDisplays = [
         status: 'Fixable',
         Icon: CheckCircleIcon,
         iconColor: 'var(--pf-global--success-color--100)',
-        text: (counts: ResourceCountByCveSeverity) => {
-            let count = 0;
-            resourceCountByCVESeverityKeys.forEach((key) => {
-                count += counts[key].fixable;
-            });
-            return `${pluralize(count, 'vulnerability', 'vulnerabilities')} with available fixes`;
+        text: (counts: ResourceCountByCveSeverityAndStatus) => {
+            const { critical, important, moderate, low } = counts;
+            const fixable = critical.fixable + important.fixable + moderate.fixable + low.fixable;
+            return `${pluralize(fixable, 'vulnerability', 'vulnerabilities')} with available fixes`;
         },
     },
     {
         status: 'Not fixable',
         Icon: ExclamationCircleIcon,
         iconColor: 'var(--pf-global--danger-color--100)',
-        text: (counts: ResourceCountByCveSeverity) => {
-            let count = 0;
-            resourceCountByCVESeverityKeys.forEach((key) => {
-                count += counts[key].total - counts[key].fixable;
-            });
-            return `${count} vulnerabilities without fixes`;
+        text: (counts: ResourceCountByCveSeverityAndStatus) => {
+            const { critical, important, moderate, low } = counts;
+            const total = critical.total + important.total + moderate.total + low.total;
+            const fixable = critical.fixable + important.fixable + moderate.fixable + low.fixable;
+            return `${total - fixable} vulnerabilities without fixes`;
         },
     },
 ] as const;
 
 const disabledColor100 = 'var(--pf-global--disabled-color--100)';
+
+export type CvesByStatusSummaryCardProps = {
+    cveStatusCounts: ResourceCountByCveSeverityAndStatus;
+    hiddenStatuses: Set<FixableStatus>;
+};
 
 function CvesByStatusSummaryCard({
     cveStatusCounts,

@@ -20,15 +20,12 @@ export function filtersToSelections(filters: AdvancedFlowsFilterType): FilterVal
 // expects, into our filters data structure
 export function selectionsToFilters(selections: string[]): AdvancedFlowsFilterType {
     const filters: AdvancedFlowsFilterType = {
-        flows: [],
         directionality: [],
         protocols: [],
         ports: [],
     };
     selections.forEach((selection) => {
-        if (selection === 'anomalous' || selection === 'baseline') {
-            filters.flows.push(selection);
-        } else if (selection === 'ingress' || selection === 'egress') {
+        if (selection === 'ingress' || selection === 'egress') {
             filters.directionality.push(selection);
         } else if (selection === 'L4_PROTOCOL_TCP' || selection === 'L4_PROTOCOL_UDP') {
             filters.protocols.push(selection);

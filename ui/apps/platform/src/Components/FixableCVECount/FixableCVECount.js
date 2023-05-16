@@ -15,7 +15,7 @@ function stopPropagation(e) {
 const CountElement = ({ count, url, fixable, hideLink, individualClasses }) => {
     const classes = fixable
         ? 'text-success-700 hover:text-success-800 underline'
-        : `text-base-700 ${url && !hideLink ? 'underline hover:text-primary-700' : ''}`;
+        : `text-base-600 ${url && !hideLink ? 'underline hover:text-primary-700' : ''}`;
 
     // can't just pluralize() because of special requirements
     //   1 CVE or 2 CVEs

@@ -142,12 +142,23 @@ run_roxctl_bats_tests() {
 run_roxctl_tests() {
     info "Run roxctl tests"
 
-    "$ROOT/tests/roxctl/token-file.sh"
-    "$ROOT/tests/roxctl/slim-collector.sh"
-    "$ROOT/tests/roxctl/authz-trace.sh"
-    "$ROOT/tests/roxctl/istio-support.sh"
-    "$ROOT/tests/roxctl/helm-chart-generation.sh"
-    CA="$SERVICE_CA_FILE" "$ROOT/tests/yamls/roxctl_verification.sh"
+    junit_wrap "roxctl-token-file" "roxctl token-file test" "" \
+        "$ROOT/tests/roxctl/token-file.sh"
+
+    junit_wrap "roxctl-slim-collector" "roxctl slim-collector test" "" \
+        "$ROOT/tests/roxctl/slim-collector.sh"
+
+    junit_wrap "roxctl-authz-trace" "roxctl authz-trace test" "" \
+        "$ROOT/tests/roxctl/authz-trace.sh"
+
+    junit_wrap "roxctl-istio-support" "roxctl istio-support test" "" \
+        "$ROOT/tests/roxctl/istio-support.sh"
+
+    junit_wrap "roxctl-helm-chart-generation" "roxctl helm-chart-generation test" "" \
+        "$ROOT/tests/roxctl/helm-chart-generation.sh"
+
+    CA="$SERVICE_CA_FILE" junit_wrap "roxctl-yaml-verification" "roxctl yaml-verification test" "" \
+        "$ROOT/tests/yamls/roxctl_verification.sh"
 }
 
 setup_proxy_tests() {

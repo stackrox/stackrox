@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/registry"
+	nsStore "github.com/stackrox/rox/sensor/common/resources/namespaces"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -73,7 +74,7 @@ type deploymentHandler struct {
 	deploymentStore        *DeploymentStore
 	podStore               *PodStore
 	endpointManager        endpointManager
-	namespaceStore         *namespaceStore
+	namespaceStore         *nsStore.NamespaceStore
 	processFilter          filter.Filter
 	config                 config.Handler
 	credentialsManager     awscredentials.RegistryCredentialsManager
@@ -92,7 +93,7 @@ func newDeploymentHandler(
 	deploymentStore *DeploymentStore,
 	podStore *PodStore,
 	endpointManager endpointManager,
-	namespaceStore *namespaceStore,
+	namespaceStore *nsStore.NamespaceStore,
 	rbac rbac.Store,
 	podLister v1listers.PodLister,
 	processFilter filter.Filter,

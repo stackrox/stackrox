@@ -348,7 +348,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                                                             } border-base-300 px-4 py-2 leading-normal`}
                                                             key={key}
                                                         >
-                                                            <span className="text-base-700 mr-2 font-700">
+                                                            <span className="text-base-600 mr-2 font-700">
                                                                 {key}:
                                                             </span>
                                                             {value}

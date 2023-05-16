@@ -53,8 +53,8 @@ func (s *TestReportConfigurationServiceTestSuite) TestAddValidReportConfiguratio
 	s.reportConfigDatastore.EXPECT().AddReportConfiguration(ctx, reportConfig).Return(reportConfig.GetId(), nil)
 	s.reportConfigDatastore.EXPECT().GetReportConfiguration(ctx, reportConfig.GetId()).Return(reportConfig, true, nil)
 
-	s.notifierDatastore.EXPECT().GetNotifier(ctx, gomock.Any()).Return(nil, true, nil).AnyTimes()
-	s.accessScopeStore.EXPECT().GetAccessScope(ctx, gomock.Any()).Return(nil, true, nil).AnyTimes()
+	s.notifierDatastore.EXPECT().Exists(ctx, gomock.Any()).Return(true, nil).AnyTimes()
+	s.accessScopeStore.EXPECT().AccessScopeExists(ctx, gomock.Any()).Return(true, nil).AnyTimes()
 
 	s.manager.EXPECT().Upsert(ctx, reportConfig).Return(nil)
 	_, err := s.service.PostReportConfiguration(ctx, &v1.PostReportConfigurationRequest{
@@ -66,8 +66,8 @@ func (s *TestReportConfigurationServiceTestSuite) TestAddValidReportConfiguratio
 func (s *TestReportConfigurationServiceTestSuite) TestAddInvalidValidReportConfigurations() {
 	ctx := context.Background()
 
-	s.notifierDatastore.EXPECT().GetNotifier(ctx, gomock.Any()).Return(nil, true, nil).AnyTimes()
-	s.accessScopeStore.EXPECT().GetAccessScope(ctx, gomock.Any()).Return(nil, true, nil).AnyTimes()
+	s.notifierDatastore.EXPECT().Exists(ctx, gomock.Any()).Return(true, nil).AnyTimes()
+	s.accessScopeStore.EXPECT().AccessScopeExists(ctx, gomock.Any()).Return(true, nil).AnyTimes()
 
 	noNotifierReportConfig := fixtures.GetInvalidReportConfigurationNoNotifier()
 	_, err := s.service.PostReportConfiguration(ctx, &v1.PostReportConfigurationRequest{
@@ -109,8 +109,8 @@ func (s *TestReportConfigurationServiceTestSuite) TestAddInvalidValidReportConfi
 func (s *TestReportConfigurationServiceTestSuite) TestUpdateInvalidValidReportConfigurations() {
 	ctx := context.Background()
 
-	s.notifierDatastore.EXPECT().GetNotifier(ctx, gomock.Any()).Return(nil, true, nil).AnyTimes()
-	s.accessScopeStore.EXPECT().GetAccessScope(ctx, gomock.Any()).Return(nil, true, nil).AnyTimes()
+	s.notifierDatastore.EXPECT().Exists(ctx, gomock.Any()).Return(true, nil).AnyTimes()
+	s.accessScopeStore.EXPECT().AccessScopeExists(ctx, gomock.Any()).Return(true, nil).AnyTimes()
 
 	noNotifierReportConfig := fixtures.GetInvalidReportConfigurationNoNotifier()
 	_, err := s.service.UpdateReportConfiguration(ctx, &v1.UpdateReportConfigurationRequest{
@@ -140,8 +140,8 @@ func (s *TestReportConfigurationServiceTestSuite) TestUpdateInvalidValidReportCo
 func (s *TestReportConfigurationServiceTestSuite) TestNotifierDoesNotExist() {
 	ctx := context.Background()
 
-	s.notifierDatastore.EXPECT().GetNotifier(ctx, gomock.Any()).Return(nil, false, nil)
-	s.accessScopeStore.EXPECT().GetAccessScope(ctx, gomock.Any()).Return(nil, true, nil)
+	s.notifierDatastore.EXPECT().Exists(ctx, gomock.Any()).Return(false, nil)
+	s.accessScopeStore.EXPECT().AccessScopeExists(ctx, gomock.Any()).Return(true, nil)
 
 	reportConfig := fixtures.GetValidReportConfiguration()
 	_, err := s.service.PostReportConfiguration(ctx, &v1.PostReportConfigurationRequest{
@@ -153,8 +153,8 @@ func (s *TestReportConfigurationServiceTestSuite) TestNotifierDoesNotExist() {
 func (s *TestReportConfigurationServiceTestSuite) TestAccessScopeDoesNotExist() {
 	ctx := context.Background()
 
-	s.notifierDatastore.EXPECT().GetNotifier(ctx, gomock.Any()).Return(nil, true, nil).AnyTimes()
-	s.accessScopeStore.EXPECT().GetAccessScope(ctx, gomock.Any()).Return(nil, false, nil)
+	s.notifierDatastore.EXPECT().Exists(ctx, gomock.Any()).Return(true, nil).AnyTimes()
+	s.accessScopeStore.EXPECT().AccessScopeExists(ctx, gomock.Any()).Return(false, nil)
 
 	reportConfig := fixtures.GetValidReportConfiguration()
 	_, err := s.service.PostReportConfiguration(ctx, &v1.PostReportConfigurationRequest{

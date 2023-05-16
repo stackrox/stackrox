@@ -7,8 +7,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/auth"
+	"github.com/stackrox/rox/roxctl/common/config"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	cliIO "github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -59,14 +63,28 @@ func CLIEnvironment() Environment {
 }
 
 // HTTPClient returns the common.RoxctlHTTPClient associated with the CLI Environment
-func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration) (common.RoxctlHTTPClient, error) {
-	client, err := common.GetRoxctlHTTPClient(timeout, flags.ForceHTTP1(), flags.UseInsecure(), c.Logger())
+func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration, authMethod ...auth.Method) (common.RoxctlHTTPClient, error) {
+	var am auth.Method
+	if len(authMethod) > 0 {
+		am = authMethod[0]
+	} else {
+		var err error
+		am, err = determineAuthMethod(c)
+		if err != nil {
+			return nil, errors.Wrap(err, "determining auth method")
+		}
+	}
+	client, err := common.GetRoxctlHTTPClient(am, timeout, flags.ForceHTTP1(), flags.UseInsecure(), c.Logger())
 	return client, errors.WithStack(err)
 }
 
 // GRPCConnection returns the common.GetGRPCConnection
 func (c *cliEnvironmentImpl) GRPCConnection() (*grpc.ClientConn, error) {
-	connection, err := common.GetGRPCConnection(c.Logger())
+	am, err := determineAuthMethod(c)
+	if err != nil {
+		return nil, errors.Wrap(err, "determining auth method")
+	}
+	connection, err := common.GetGRPCConnection(am, c.Logger())
 	return connection, errors.WithStack(err)
 }
 
@@ -92,6 +110,15 @@ func (c *cliEnvironmentImpl) ConnectNames() (string, string, error) {
 	return names, s, errors.Wrap(err, "could not get endpoint")
 }
 
+// ConfigStore returns a config.Store capable of reading / writing configuration for roxctl.
+func (c *cliEnvironmentImpl) ConfigStore() (config.Store, error) {
+	cfgStore, err := config.NewConfigStore()
+	if err != nil {
+		return nil, errors.Wrap(err, "creating config store")
+	}
+	return cfgStore, nil
+}
+
 type colorWriter struct {
 	colorfulPrinter printer.ColorfulPrinter
 	out             io.Writer
@@ -103,4 +130,18 @@ func (w colorWriter) Write(p []byte) (int, error) {
 		return n, errors.Wrap(err, "could not write")
 	}
 	return len(p), nil
+}
+
+func determineAuthMethod(cliEnv Environment) (auth.Method, error) {
+	if flags.APITokenFile() != "" && flags.Password() != "" {
+		return nil, errox.InvalidArgs.New("cannot use basic and token-based authentication at the same time")
+	}
+	switch {
+	case flags.Password() != "":
+		return auth.BasicAuth(), nil
+	case flags.APITokenFile() != "" || env.TokenEnv.Setting() != "":
+		return auth.TokenAuth(), nil
+	default:
+		return ConfigMethod(cliEnv), nil
+	}
 }

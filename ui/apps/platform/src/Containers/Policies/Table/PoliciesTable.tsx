@@ -14,9 +14,16 @@ import {
     ToolbarGroup,
     ToolbarItem,
     Tooltip,
-    Truncate,
 } from '@patternfly/react-core';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import {
+    TableComposable,
+    Thead,
+    Tbody,
+    Tr,
+    Th,
+    Td,
+    ExpandableRowContent,
+} from '@patternfly/react-table';
 import { CaretDownIcon } from '@patternfly/react-icons';
 import orderBy from 'lodash/orderBy';
 import pluralize from 'pluralize';
@@ -33,6 +40,7 @@ import EnableDisableNotificationModal, {
     EnableDisableType,
 } from 'Containers/Policies/Modal/EnableDisableNotificationModal';
 import useTableSelection from 'hooks/useTableSelection';
+import useSet from 'hooks/useSet';
 import { AlertVariantType } from 'hooks/patternfly/useToasts';
 import { policiesBasePath } from 'routePaths';
 import { NotifierIntegration } from 'types/notifier.proto';
@@ -53,17 +61,16 @@ const columns = [
         Header: 'Policy',
         accessor: 'name',
         sortMethod: (a: ListPolicy, b: ListPolicy) => sortAsciiCaseInsensitive(a.name, b.name),
-        width: 20 as const,
-    },
-    {
-        Header: 'Description',
-        accessor: 'description',
-        width: 40 as const,
+        width: 30 as const,
     },
     {
         Header: 'Status',
         accessor: 'disabled',
-        width: 15 as const,
+    },
+    {
+        Header: 'Origin',
+        accessor: 'isDefault',
+        sortMethod: (a: ListPolicy, b: ListPolicy) => sortPolicyOrigin(a.isDefault, b.isDefault),
     },
     {
         Header: 'Notifiers',
@@ -80,6 +87,16 @@ const columns = [
         accessor: 'lifecycleStages',
     },
 ];
+
+const defaultPolicyLabel = 'System';
+const userPolicyLabel = 'User';
+
+function sortPolicyOrigin(a, b) {
+    const aOrigin = a ? defaultPolicyLabel : userPolicyLabel;
+    const bOrigin = b ? defaultPolicyLabel : userPolicyLabel;
+
+    return sortAsciiCaseInsensitive(aOrigin, bOrigin);
+}
 
 type PoliciesTableProps = {
     notifiers: NotifierIntegration[];
@@ -112,6 +129,7 @@ function PoliciesTable({
     searchFilter,
     searchOptions,
 }: PoliciesTableProps): React.ReactElement {
+    const expandedRowSet = useSet<string>();
     const history = useHistory();
     const [labelAndNotifierIdsForTypes, setLabelAndNotifierIdsForTypes] = useState<
         LabelAndNotifierIdsForType[]
@@ -347,6 +365,7 @@ function PoliciesTable({
                 >
                     <Thead>
                         <Tr>
+                            <Th>{/* Header for expanded column */}</Th>
                             <Th
                                 select={{
                                     onSelect: onSelectAll,
@@ -373,62 +392,76 @@ function PoliciesTable({
                             <Td />
                         </Tr>
                     </Thead>
-                    <Tbody>
-                        {rows.map((policy) => {
-                            const {
-                                description,
-                                disabled,
-                                id,
-                                isDefault,
-                                lifecycleStages,
-                                name,
-                                notifiers: notifierIds,
-                                severity,
-                            } = policy;
-                            const notifierCountsWithLabelStrings =
-                                formatNotifierCountsWithLabelStrings(
-                                    labelAndNotifierIdsForTypes,
-                                    notifierIds
-                                );
-                            const exportPolicyAction: ActionItem = {
-                                title: 'Export policy to JSON',
-                                onClick: () => exportPoliciesHandler([id]),
-                            };
-                            const actionItems = hasWriteAccessForPolicy
-                                ? [
-                                      {
-                                          title: 'Edit policy',
-                                          onClick: () => onEditPolicy(id),
-                                      },
-                                      {
-                                          title: 'Clone policy',
-                                          onClick: () => onClonePolicy(id),
-                                      },
-                                      disabled
-                                          ? {
-                                                title: 'Enable policy',
-                                                onClick: () => enablePoliciesHandler([id]),
-                                            }
-                                          : {
-                                                title: 'Disable policy',
-                                                onClick: () => disablePoliciesHandler([id]),
-                                            },
-                                      exportPolicyAction,
-                                      {
-                                          isSeparator: true,
-                                      },
-                                      {
-                                          title: isDefault
-                                              ? 'Cannot delete a default policy'
-                                              : 'Delete policy',
-                                          onClick: () => setDeletingIds([id]),
-                                          isDisabled: isDefault,
-                                      },
-                                  ]
-                                : [exportPolicyAction];
-                            const rowIndex = rowIdToIndex[id];
-                            return (
-                                <Tr key={id}>
+                    {rows.map((policy) => {
+                        const {
+                            description,
+                            disabled,
+                            id,
+                            isDefault,
+                            lifecycleStages,
+                            name,
+                            notifiers: notifierIds,
+                            severity,
+                        } = policy;
+                        const isExpanded = expandedRowSet.has(id);
+
+                        const notifierCountsWithLabelStrings = formatNotifierCountsWithLabelStrings(
+                            labelAndNotifierIdsForTypes,
+                            notifierIds
+                        );
+                        const exportPolicyAction: ActionItem = {
+                            title: 'Export policy to JSON',
+                            onClick: () => exportPoliciesHandler([id]),
+                        };
+                        const actionItems = hasWriteAccessForPolicy
+                            ? [
+                                  {
+                                      title: 'Edit policy',
+                                      onClick: () => onEditPolicy(id),
+                                  },
+                                  {
+                                      title: 'Clone policy',
+                                      onClick: () => onClonePolicy(id),
+                                  },
+                                  disabled
+                                      ? {
+                                            title: 'Enable policy',
+                                            onClick: () => enablePoliciesHandler([id]),
+                                        }
+                                      : {
+                                            title: 'Disable policy',
+                                            onClick: () => disablePoliciesHandler([id]),
+                                        },
+                                  exportPolicyAction,
+                                  {
+                                      isSeparator: true,
+                                  },
+                                  {
+                                      title: isDefault
+                                          ? 'Cannot delete a default policy'
+                                          : 'Delete policy',
+                                      onClick: () => setDeletingIds([id]),
+                                      isDisabled: isDefault,
+                                  },
+                              ]
+                            : [exportPolicyAction];
+                        const rowIndex = rowIdToIndex[id];
+                        return (
+                            <Tbody
+                                key={id}
+                                style={{
+                                    borderBottom: '1px solid var(--pf-c-table--BorderColor)',
+                                }}
+                                isExpanded={isExpanded}
+                            >
+                                <Tr>
+                                    <Td
+                                        expand={{
+                                            rowIndex,
+                                            isExpanded,
+                                            onToggle: () => expandedRowSet.toggle(id),
+                                        }}
+                                    />
                                     <Td
                                         select={{
                                             rowIndex,
@@ -446,14 +479,11 @@ function PoliciesTable({
                                             {name}
                                         </Button>
                                     </Td>
-                                    <Td dataLabel="Description">
-                                        <Truncate
-                                            content={description || '-'}
-                                            tooltipPosition="top"
-                                        />
-                                    </Td>
                                     <Td dataLabel="Status">
                                         <PolicyDisabledIconText isDisabled={disabled} />
+                                    </Td>
+                                    <Td dataLabel="Origin">
+                                        {isDefault ? defaultPolicyLabel : userPolicyLabel}
                                     </Td>
                                     <Td dataLabel="Notifiers">
                                         {notifierCountsWithLabelStrings.length === 0 ? (
@@ -485,9 +515,16 @@ function PoliciesTable({
                                         }}
                                     />
                                 </Tr>
-                            );
-                        })}
-                    </Tbody>
+                                <Tr isExpanded={isExpanded}>
+                                    <Td />
+                                    <Td />
+                                    <Td colSpan={6}>
+                                        <ExpandableRowContent>{description}</ExpandableRowContent>
+                                    </Td>
+                                </Tr>
+                            </Tbody>
+                        );
+                    })}
                 </TableComposable>
             </PageSection>
             <ConfirmationModal

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/views/imagecve"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -24,6 +25,7 @@ func init() {
 				"affectedImageCount: Int!",
 				"affectedImageCountBySeverity: ResourceCountByCVESeverity!",
 				"cve: String!",
+				"distroTuples: [ImageVulnerability!]!",
 				"firstDiscoveredInSystem: Time",
 				"topCVSS: Float!",
 			}),
@@ -112,6 +114,14 @@ func (resolver *imageCVECoreResolver) AffectedImageCountBySeverity(ctx context.C
 
 func (resolver *imageCVECoreResolver) CVE(_ context.Context) string {
 	return resolver.data.GetCVE()
+}
+
+func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "DistroTuples")
+	q := PaginatedQuery{
+		Query: pointers.String(search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetCVEIDs()...).Query()),
+	}
+	return resolver.root.ImageVulnerabilities(ctx, q)
 }
 
 func (resolver *imageCVECoreResolver) FirstDiscoveredInSystem(_ context.Context) *graphql.Time {
