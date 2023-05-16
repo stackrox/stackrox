@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
+	"github.com/stackrox/rox/pkg/protoconvert"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/secrets"
@@ -79,7 +80,7 @@ func scrubImageIntegration(i *storage.ImageIntegration) {
 }
 
 // GetImageIntegration returns the image integration given its ID.
-func (s *serviceImpl) GetImageIntegration(ctx context.Context, request *v1.ResourceByID) (*storage.ImageIntegration, error) {
+func (s *serviceImpl) GetImageIntegration(ctx context.Context, request *v1.ResourceByID) (*v1.ImageIntegration, error) {
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "image integration id must be provided")
 	}
@@ -91,7 +92,7 @@ func (s *serviceImpl) GetImageIntegration(ctx context.Context, request *v1.Resou
 		return nil, errors.Wrapf(errox.NotFound, "image integration %s not found", request.GetId())
 	}
 	scrubImageIntegration(integration)
-	return integration, nil
+	return protoconvert.ConvertStorageImageIntegrationToV1ImageIntegration(integration), nil
 }
 
 // GetImageIntegrations returns all image integrations.
@@ -105,7 +106,7 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, request *v1.GetI
 	if identity != nil {
 		svc := identity.Service()
 		if svc != nil && svc.GetType() == storage.ServiceType_SENSOR_SERVICE {
-			return &v1.GetImageIntegrationsResponse{Integrations: integrations}, nil
+			return &v1.GetImageIntegrationsResponse{Integrations: protoconvert.ConvertSliceStorageImageIntegrationToV1ImageIntegration(integrations)}, nil
 		}
 	}
 
@@ -113,16 +114,16 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, request *v1.GetI
 	for _, i := range integrations {
 		scrubImageIntegration(i)
 	}
-	return &v1.GetImageIntegrationsResponse{Integrations: integrations}, nil
+	return &v1.GetImageIntegrationsResponse{Integrations: protoconvert.ConvertSliceStorageImageIntegrationToV1ImageIntegration(integrations)}, nil
 }
 
-func sortCategories(categories []storage.ImageIntegrationCategory) {
+func sortCategories(categories []v1.ImageIntegrationCategory) {
 	sort.SliceStable(categories, func(i, j int) bool {
 		return int32(categories[i]) < int32(categories[j])
 	})
 }
 
-func (s *serviceImpl) validateTestAndNormalize(ctx context.Context, request *storage.ImageIntegration) error {
+func (s *serviceImpl) validateTestAndNormalize(ctx context.Context, request *v1.ImageIntegration) error {
 	if err := s.validateIntegration(ctx, request); err != nil {
 		return err
 	}
@@ -138,12 +139,12 @@ func (s *serviceImpl) validateTestAndNormalize(ctx context.Context, request *sto
 }
 
 // PutImageIntegration modifies a given image integration, without stored credential reconciliation
-func (s *serviceImpl) PutImageIntegration(ctx context.Context, imageIntegration *storage.ImageIntegration) (*v1.Empty, error) {
+func (s *serviceImpl) PutImageIntegration(ctx context.Context, imageIntegration *v1.ImageIntegration) (*v1.Empty, error) {
 	return s.UpdateImageIntegration(ctx, &v1.UpdateImageIntegrationRequest{Config: imageIntegration, UpdatePassword: true})
 }
 
 // PostImageIntegration creates an image integration.
-func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage.ImageIntegration) (*storage.ImageIntegration, error) {
+func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*v1.ImageIntegration, error) {
 	if request.GetId() != "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "id field should be empty when posting a new image integration")
 	}
@@ -152,14 +153,15 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	id, err := s.datastore.AddImageIntegration(ctx, request)
+	storageIntegration := protoconvert.ConvertV1ImageIntegrationToStorageImageIntegration(request)
+	id, err := s.datastore.AddImageIntegration(ctx, storageIntegration)
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	request.Id = id
 
-	if err := s.integrationManager.Upsert(request); err != nil {
+	if err := s.integrationManager.Upsert(storageIntegration); err != nil {
 		_ = s.datastore.RemoveImageIntegration(ctx, request.GetId())
 		return nil, err
 	}
@@ -193,11 +195,12 @@ func (s *serviceImpl) UpdateImageIntegration(ctx context.Context, request *v1.Up
 	if err := s.validateTestAndNormalize(ctx, request.GetConfig()); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	if err := s.datastore.UpdateImageIntegration(ctx, request.GetConfig()); err != nil {
+	storageIntegration := protoconvert.ConvertV1ImageIntegrationToStorageImageIntegration(request.GetConfig())
+	if err := s.datastore.UpdateImageIntegration(ctx, storageIntegration); err != nil {
 		return nil, err
 	}
 
-	if err := s.integrationManager.Upsert(request.GetConfig()); err != nil {
+	if err := s.integrationManager.Upsert(storageIntegration); err != nil {
 		return nil, err
 	}
 	s.reprocessorLoop.ShortCircuit()
@@ -205,7 +208,7 @@ func (s *serviceImpl) UpdateImageIntegration(ctx context.Context, request *v1.Up
 }
 
 // TestImageIntegration checks if the given image integration is correctly configured, without using stored credential reconciliation.
-func (s *serviceImpl) TestImageIntegration(ctx context.Context, imageIntegration *storage.ImageIntegration) (*v1.Empty, error) {
+func (s *serviceImpl) TestImageIntegration(ctx context.Context, imageIntegration *v1.ImageIntegration) (*v1.Empty, error) {
 	return s.TestUpdatedImageIntegration(ctx, &v1.UpdateImageIntegrationRequest{Config: imageIntegration, UpdatePassword: true})
 }
 
@@ -223,20 +226,20 @@ func (s *serviceImpl) TestUpdatedImageIntegration(ctx context.Context, request *
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) testImageIntegration(request *storage.ImageIntegration) error {
+func (s *serviceImpl) testImageIntegration(request *v1.ImageIntegration) error {
 	for _, category := range request.GetCategories() {
-		if category == storage.ImageIntegrationCategory_REGISTRY {
+		if category == v1.ImageIntegrationCategory_REGISTRY {
 			if err := s.testRegistryIntegration(request); err != nil {
 				return errors.Wrap(errox.InvalidArgs, errors.Wrap(err, "registry integration").Error())
 			}
 		}
-		if category == storage.ImageIntegrationCategory_SCANNER {
+		if category == v1.ImageIntegrationCategory_SCANNER {
 			if err := s.testScannerIntegration(request); err != nil {
 				return errors.Wrap(errox.InvalidArgs, errors.Wrap(err, "image scanner integration").Error())
 			}
 		}
-		if category == storage.ImageIntegrationCategory_NODE_SCANNER {
-			nodeIntegration, err := imageIntegrationToNodeIntegration(request)
+		if category == v1.ImageIntegrationCategory_NODE_SCANNER {
+			nodeIntegration, err := imageIntegrationToNodeIntegration(protoconvert.ConvertV1ImageIntegrationToStorageImageIntegration(request))
 			if err != nil {
 				return errors.Wrap(errox.InvalidArgs, errors.Wrap(err, "node scanner integration").Error())
 			}
@@ -248,8 +251,8 @@ func (s *serviceImpl) testImageIntegration(request *storage.ImageIntegration) er
 	return nil
 }
 
-func (s *serviceImpl) testRegistryIntegration(integration *storage.ImageIntegration) error {
-	registry, err := s.registryFactory.CreateRegistry(integration)
+func (s *serviceImpl) testRegistryIntegration(integration *v1.ImageIntegration) error {
+	registry, err := s.registryFactory.CreateRegistry(protoconvert.ConvertV1ImageIntegrationToStorageImageIntegration(integration))
 	if err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
@@ -259,8 +262,8 @@ func (s *serviceImpl) testRegistryIntegration(integration *storage.ImageIntegrat
 	return nil
 }
 
-func (s *serviceImpl) testScannerIntegration(integration *storage.ImageIntegration) error {
-	scanner, err := s.scannerFactory.CreateScanner(integration)
+func (s *serviceImpl) testScannerIntegration(integration *v1.ImageIntegration) error {
+	scanner, err := s.scannerFactory.CreateScanner(protoconvert.ConvertV1ImageIntegrationToStorageImageIntegration(integration))
 	if err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
@@ -281,7 +284,7 @@ func (s *serviceImpl) testNodeScannerIntegration(integration *storage.NodeIntegr
 	return nil
 }
 
-func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.ImageIntegration) error {
+func (s *serviceImpl) validateIntegration(ctx context.Context, request *v1.ImageIntegration) error {
 	if request == nil {
 		return errors.New("empty integration")
 	}
@@ -326,13 +329,13 @@ func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context
 	if !exists {
 		return errors.Wrapf(errox.NotFound, "image integration %s not found", updateRequest.GetConfig().GetId())
 	}
-	if err := s.reconcileImageIntegrationWithExisting(updateRequest.GetConfig(), integration); err != nil {
+	if err := s.reconcileImageIntegrationWithExisting(updateRequest.GetConfig(), protoconvert.ConvertStorageImageIntegrationToV1ImageIntegration(integration)); err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	return nil
 }
 
-func (s *serviceImpl) reconcileImageIntegrationWithExisting(updatedConfig, storedConfig *storage.ImageIntegration) error {
+func (s *serviceImpl) reconcileImageIntegrationWithExisting(updatedConfig, storedConfig *v1.ImageIntegration) error {
 	if updatedConfig.GetIntegrationConfig() == nil {
 		return errors.New("the request doesn't have a valid integration config type")
 	}

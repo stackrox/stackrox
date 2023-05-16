@@ -44,6 +44,7 @@ func getFilledStruct() *test.TestClone {
 			TypeUrl: "type url",
 			Value:   []byte("123"),
 		},
+		SingleEnum: test.TestClone_Val1,
 	}
 }
 

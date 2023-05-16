@@ -17,7 +17,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/grpc-ecosystem/grpc-gateway/utilities"
-	"github.com/stackrox/rox/generated/storage"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
@@ -125,7 +124,7 @@ func local_request_ImageIntegrationService_GetImageIntegrations_0(ctx context.Co
 }
 
 func request_ImageIntegrationService_PostImageIntegration_0(ctx context.Context, marshaler runtime.Marshaler, client ImageIntegrationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq storage.ImageIntegration
+	var protoReq ImageIntegration
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -142,7 +141,7 @@ func request_ImageIntegrationService_PostImageIntegration_0(ctx context.Context,
 }
 
 func local_request_ImageIntegrationService_PostImageIntegration_0(ctx context.Context, marshaler runtime.Marshaler, server ImageIntegrationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq storage.ImageIntegration
+	var protoReq ImageIntegration
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -159,7 +158,7 @@ func local_request_ImageIntegrationService_PostImageIntegration_0(ctx context.Co
 }
 
 func request_ImageIntegrationService_PutImageIntegration_0(ctx context.Context, marshaler runtime.Marshaler, client ImageIntegrationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq storage.ImageIntegration
+	var protoReq ImageIntegration
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -194,7 +193,7 @@ func request_ImageIntegrationService_PutImageIntegration_0(ctx context.Context, 
 }
 
 func local_request_ImageIntegrationService_PutImageIntegration_0(ctx context.Context, marshaler runtime.Marshaler, server ImageIntegrationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq storage.ImageIntegration
+	var protoReq ImageIntegration
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -229,7 +228,7 @@ func local_request_ImageIntegrationService_PutImageIntegration_0(ctx context.Con
 }
 
 func request_ImageIntegrationService_TestImageIntegration_0(ctx context.Context, marshaler runtime.Marshaler, client ImageIntegrationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq storage.ImageIntegration
+	var protoReq ImageIntegration
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -246,7 +245,7 @@ func request_ImageIntegrationService_TestImageIntegration_0(ctx context.Context,
 }
 
 func local_request_ImageIntegrationService_TestImageIntegration_0(ctx context.Context, marshaler runtime.Marshaler, server ImageIntegrationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq storage.ImageIntegration
+	var protoReq ImageIntegration
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
