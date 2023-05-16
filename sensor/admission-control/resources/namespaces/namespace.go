@@ -50,7 +50,10 @@ func (n *NamespaceStore) GetAnnotationsForNamespace(name string) map[string]stri
 	n.lock.Lock()
 	defer n.lock.Unlock()
 
-	return n.namespaceNamesToMetadata[name].annotations
+	if nm, ok := n.namespaceNamesToMetadata[name]; ok {
+		return nm.annotations
+	}
+	return nil
 }
 
 func (n *NamespaceStore) removeNamespace(ns *storage.NamespaceMetadata) {
