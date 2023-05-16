@@ -7,7 +7,6 @@ import (
 	timestamp "github.com/gogo/protobuf/types"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/set"
@@ -119,7 +118,7 @@ func (p *processorImpl) processAlertSync(ctx context.Context, alert *storage.Ale
 	alertNotifiers := set.NewStringSet(alert.GetPolicy().GetNotifiers()...)
 	p.ns.ForEach(ctx, func(ctx context.Context, notifier notifiers.Notifier, failures AlertSet) {
 		if alertNotifiers.Contains(notifier.ProtoNotifier().GetId()) {
-			if env.SecuredClusterNotifiers.BooleanSetting() && notifier.IsSecuredClusterNotifier() {
+			if notifier.IsSecuredClusterNotifier() {
 				return
 			}
 			err := tryToAlert(ctx, notifier, alert)
