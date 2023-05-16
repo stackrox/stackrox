@@ -25,7 +25,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -347,7 +346,7 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 			continue
 		}
 
-		if env.SecuredClusterNotifiers.BooleanSetting() && notifier.IsSecuredClusterNotifier() {
+		if notifier.IsSecuredClusterNotifier() {
 			// for secured cluster notifiers, the network policy modification will be sent out
 			// to the notifiers from the secured cluster
 			securedNotifierIds = append(securedNotifierIds, notifierID)
