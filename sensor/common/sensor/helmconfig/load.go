@@ -10,14 +10,9 @@ import (
 	"github.com/stackrox/rox/pkg/jsonutil"
 )
 
-const (
-	configFile      = "/run/secrets/stackrox.io/helm-cluster-config/config.yaml"
-	clusterNameFile = "/run/secrets/stackrox.io/helm-effective-cluster-name/cluster-name"
-)
-
 // Load loads the cluster configuration for Helm-managed cluster from its canonical location.
 func Load() (*central.HelmManagedConfigInit, error) {
-	contents, err := os.ReadFile(configFile)
+	contents, err := os.ReadFile(HelmConfigFile.Setting())
 	if err != nil {
 		return nil, errors.Wrap(err, "loading cluster config file")
 	}
@@ -40,7 +35,7 @@ func load(data []byte) (*central.HelmManagedConfigInit, error) {
 
 // getEffectiveClusterName returns the cluster name which is currently used within central.
 func getEffectiveClusterName() (string, error) {
-	name, err := os.ReadFile(clusterNameFile)
+	name, err := os.ReadFile(HelmClusterNameFile.Setting())
 	if err != nil {
 		return "", err
 	}
