@@ -232,7 +232,7 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 		}
 	}()
 
-	if env.SecuredClusterNotifiers.BooleanSetting() && notifier.IsSecuredClusterNotifier() {
+	if notifier.IsSecuredClusterNotifier() {
 		return s.testSecuredClusterNotifier(ctx, notifier)
 	}
 	// if secured cluster notifications are not enabled or if this is not a secured cluster notifier

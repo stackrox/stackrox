@@ -16,6 +16,7 @@ import (
 	jiraLib "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -336,7 +337,7 @@ func (j *jira) Test(ctx context.Context) error {
 }
 
 func (j *jira) IsSecuredClusterNotifier() bool {
-	return true
+	return env.SecuredClusterNotifiers.BooleanSetting()
 }
 
 // Optimistically tries to match all of the Jira priorities with the known mapping defined in defaultPriorities
