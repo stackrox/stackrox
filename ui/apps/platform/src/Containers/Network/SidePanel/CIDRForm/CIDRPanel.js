@@ -36,7 +36,6 @@ const CIDRPanel = ({ selectedClusterId, updateNetworkNodes, onClose }) => {
         <PanelNew testid="network-cidr-form">
             <PanelHead>
                 <PanelTitle
-                    isUpperCase
                     testid="network-cidr-form-header"
                     text="Segment External Entities by CIDR Blocks"
                 />

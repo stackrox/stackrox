@@ -4,15 +4,7 @@ import PropTypes from 'prop-types';
 import { useTheme } from 'Containers/ThemeProvider';
 import SubHeader from 'Components/SubHeader';
 
-const PageHeader = ({
-    header,
-    subHeader,
-    classes,
-    bgStyle,
-    children,
-    // capitalize,
-    // lowercaseTitle,
-}) => {
+const PageHeader = ({ header, subHeader, classes, bgStyle, children }) => {
     const { isDarkMode } = useTheme();
 
     return (
@@ -40,8 +32,6 @@ PageHeader.propTypes = {
     classes: PropTypes.string,
     bgStyle: PropTypes.shape({}),
     children: PropTypes.oneOfType([PropTypes.element, PropTypes.arrayOf(PropTypes.element)]),
-    capitalize: PropTypes.bool,
-    // lowercaseTitle: PropTypes.bool,
 };
 
 PageHeader.defaultProps = {
@@ -49,8 +39,6 @@ PageHeader.defaultProps = {
     subHeader: null,
     classes: '',
     bgStyle: null,
-    capitalize: false,
-    // lowercaseTitle: false,
 };
 
 export default PageHeader;

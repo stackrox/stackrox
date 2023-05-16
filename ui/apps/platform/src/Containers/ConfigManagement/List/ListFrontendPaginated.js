@@ -58,7 +58,7 @@ const ListFrontendPaginated = ({
         return (
             <PanelNew testid="panel">
                 <PanelHead>
-                    <PanelTitle isUpperCase testid="panel-header" text={header} />
+                    <PanelTitle testid="panel-header" text={header} />
                     <PanelHeadEnd>{headerComponents}</PanelHeadEnd>
                 </PanelHead>
                 <PanelBody>

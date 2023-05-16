@@ -358,7 +358,7 @@ const ListTable = ({
                 return (
                     <PanelNew testid="panel">
                         <PanelHead>
-                            <PanelTitle isUpperCase testid="panel-header" text={headerText} />
+                            <PanelTitle testid="panel-header" text={headerText} />
                             <PanelHeadEnd>{headerComponent}</PanelHeadEnd>
                         </PanelHead>
                         <PanelBody>{contents}</PanelBody>

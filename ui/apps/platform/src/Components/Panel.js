@@ -31,7 +31,7 @@ export function PanelHead({ children }) {
     return <div className="border-base-400 border-b flex h-14 w-full">{children}</div>;
 }
 
-export function PanelTitle({ isUpperCase = false, testid = '', breakAll = true, text }) {
+export function PanelTitle({ testid = '', breakAll = true, text }) {
     return (
         <div
             className="flex font-700 items-center leading-normal min-w-24 overflow-hidden px-4 text-base-600"
