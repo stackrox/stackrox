@@ -19,7 +19,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Technical Changes
 - The output of `roxctl central whoami` now includes the username as well.
 
-- Helm setting `collector.nodeInventoryResources` has been renamed to `collector.nodeScanningResources`
+- Helm setting `collector.nodeInventoryResources` has been renamed to `collector.nodeScanningResources`.
+- ROX-16959: Helm setting `admissionController.replicas` has been added to configure admission controller replicas.
 
 ## [4.0.0]
 
