@@ -375,9 +375,8 @@ func main() {
 		break
 	}
 
-	endTime := time.Now()
-
 	if spyCentral != nil {
+		endTime := time.Now()
 		allMessages := spyCentral.GetAllMessages()
 		dumpMessages(allMessages, startTime, endTime, localConfig.CentralOutput, localConfig.OutputFormat)
 
@@ -434,7 +433,6 @@ func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclien
 		})
 	}
 
-	// TODO: use shutdown callback
 	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(fakeCentral)
 	fakeCentral.OnShutdown(shutdownFakeServer)
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
