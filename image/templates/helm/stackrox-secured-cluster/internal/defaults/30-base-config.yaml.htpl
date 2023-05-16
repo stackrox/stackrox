@@ -42,6 +42,7 @@ admissionControl:
     disableBypass: false
     timeout: 20
     enforceOnUpdates: false
+  replicas: 3
 
 collector:
   collectionMethod: "EBPF"

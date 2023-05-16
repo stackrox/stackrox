@@ -18,7 +18,7 @@ repositories {
 def grpcVersion = '1.21.0'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
 def protocVersion = '3.22.3'
-def protobufVersion = '3.22.3'
+def protobufVersion = '3.23.0'
 def nettyTcNativeVersion = '2.0.45.Final'
 def fabric8Version = '6.6.1'
 def jacksonVersion = '2.14.2'
@@ -132,7 +132,7 @@ tasks.withType(Test) {
         exceptionFormat "full"
         events "passed", "skipped", "failed"
     }
-    timeout = Duration.ofHours(3)
+    timeout = Duration.ofMinutes(210)
 
     // This ensures that repeated invocations of tests actually run the tests.
     // Otherwise, if the tests pass, Gradle "caches" the result and doesn't actually run the tests,

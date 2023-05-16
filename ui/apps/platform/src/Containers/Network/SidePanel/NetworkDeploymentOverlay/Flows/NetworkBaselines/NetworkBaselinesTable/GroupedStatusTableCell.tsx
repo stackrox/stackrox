@@ -23,7 +23,7 @@ function GroupedStatusTableCell({ row, colorStyles }: GroupedStatusTableCellProp
 
     const flowText = pluralize('Flow', leafRows.length);
     const text = `${leafRows.length} ${networkFlowStatusLabels[groupByVal]} ${flowText}`;
-    const className = `sticky z-1 top-8 text-left p-2 italic border-b border-t ${bgColor} ${borderColor} ${textColor}`;
+    const className = `sticky z-1 top-8 text-left p-2 border-b border-t ${bgColor} ${borderColor} ${textColor}`;
     const [expanderCell] = cells.filter(isExpanderCell);
     const colSpan = cells.length - (expanderCell ? 1 : 0);
 

@@ -45,9 +45,9 @@ const SecurityContext = ({ deployment }): ReactElement => {
             });
         containerResult = containers.length
             ? containers
-            : (containerResult = <span className="py-3 font-600 italic">None</span>);
+            : (containerResult = <span className="py-3 font-600">None</span>);
     } else {
-        containerResult = <span className="py-3 font-600 italic">None</span>;
+        containerResult = <span className="py-3 font-600">None</span>;
     }
     return <div className="flex h-full px-3">{containerResult}</div>;
 };
