@@ -371,6 +371,7 @@ func main() {
 	log.Printf("Running scenario for %f minutes\n", localConfig.Duration.Minutes())
 	select {
 	case <-time.Tick(localConfig.Duration):
+		s.Stop()
 		break
 	case <-s.Stopped().Done():
 		break
