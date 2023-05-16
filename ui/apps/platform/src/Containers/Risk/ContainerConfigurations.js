@@ -36,7 +36,7 @@ const ContainerImage = ({ image }) => {
                 <div className="pr-1 ">Image Name:</div>
                 <div className="font-500">
                     {image.name.fullName}
-                    <span className="italic pl-1">({unavailableText})</span>{' '}
+                    <span className="pl-1">({unavailableText})</span>{' '}
                 </div>
             </div>
         );
@@ -56,7 +56,7 @@ const ContainerImage = ({ image }) => {
 
 const Resources = ({ resources }) => {
     if (!resources) {
-        return <span className="py-3 font-600 italic">None</span>;
+        return <span className="py-3 font-600">None</span>;
     }
     const resourceMap = {
         cpuCoresRequest: { label: 'CPU Request (cores)' },
@@ -70,7 +70,7 @@ const Resources = ({ resources }) => {
 
 const ContainerVolumes = ({ volumes }) => {
     if (!volumes?.length) {
-        return <span className="py-1 font-600 italic">None</span>;
+        return <span className="py-1 font-600">None</span>;
     }
     return volumes.map((volume, idx) => (
         <li
@@ -92,7 +92,7 @@ const ContainerVolumes = ({ volumes }) => {
 
 const ContainerSecrets = ({ secrets }) => {
     if (!secrets?.length) {
-        return <span className="py-1 font-600 italic">None</span>;
+        return <span className="py-1 font-600">None</span>;
     }
     return secrets.map(({ name, path }) => (
         <div key={name} className="py-2">
@@ -145,7 +145,7 @@ const ContainerConfigurations = ({ deployment }) => {
             );
         });
     } else {
-        containers = <span className="py-1 font-600 italic">None</span>;
+        containers = <span className="py-1 font-600">None</span>;
     }
     return (
         <div className="px-3 pt-5">

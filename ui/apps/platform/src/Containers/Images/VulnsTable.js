@@ -23,7 +23,7 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
                 </div>
             ),
             headerClassName: 'font-600 border-b border-base-300 flex items-end bg-primary-300',
-            className: 'pointer-events-none flex items-center justify-left italic',
+            className: 'pointer-events-none flex items-center justify-left',
         },
         {
             Header: 'CVSS',
@@ -45,7 +45,7 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
             },
             headerClassName:
                 'font-600 border-b border-base-300 flex items-end justify-end bg-primary-300',
-            className: 'flex items-center justify-end italic',
+            className: 'flex items-center justify-end',
         },
     ];
     if (containsFixableCVEs) {
@@ -54,7 +54,7 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
             accessor: 'fixedBy',
             width: 130,
             headerClassName: 'font-600 border-b border-base-300 flex items-end',
-            className: 'pointer-events-none flex items-center justify-end italic',
+            className: 'pointer-events-none flex items-center justify-end',
             Cell: ({ value }) => (value === '' && !isOSPkg ? 'Unknown' : value),
         });
     }
