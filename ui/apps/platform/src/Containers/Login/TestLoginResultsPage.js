@@ -49,16 +49,16 @@ function getMessage(response) {
     const content = (
         <>
             <p className="pb-2 mb-2 border-b border-success-700">
-                <span className="italic" id="user-id-label">
+                <span className="font-700" id="user-id-label">
                     User ID:
                 </span>{' '}
                 <span aria-labelledby="user-id-label">{response?.userID}</span>
             </p>
             <p className="pb-2 mb-2 border-b border-success-700">
-                <h2 className="italic">User Attributes:</h2>
+                <h2 className="font-700">User Attributes:</h2>
                 <ul className="list-none">{displayAttributes}</ul>
             </p>
-            <h2 className="italic">User Roles:</h2>
+            <h2 className="font-700">User Roles:</h2>
             <ul className="list-none">{displayRoles}</ul>
         </>
     );
