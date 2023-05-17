@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // LoadGeneratingNodeScanner is a scanner that generates fake scans with high frequecy of the node-inventory messages.
@@ -39,7 +38,7 @@ func (n *LoadGeneratingNodeScanner) ScanNode(_ context.Context) (*sensor.MsgFrom
 		Node: n.nodeProvider.GetNodeName(),
 		Msg: &sensor.MsgFromCompliance_NodeInventory{
 			NodeInventory: &storage.NodeInventory{
-				NodeId:   uuid.NewDummy().String(),
+				NodeId:   "",
 				NodeName: n.nodeProvider.GetNodeName(),
 				ScanTime: timestamp.TimestampNow(),
 				Components: &storage.NodeInventory_Components{

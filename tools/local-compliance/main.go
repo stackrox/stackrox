@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	mathRand "math/rand"
+	"time"
 
 	"github.com/stackrox/rox/compliance/collection/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -26,7 +28,13 @@ func main() {
 type dummyNodeNameProvider struct{}
 
 func (dnp *dummyNodeNameProvider) GetNodeName() string {
-	return "Foo"
+	var arr = []string{"foo", "bar", "baz"}
+	if len(arr) == 0 {
+		return "foo"
+	}
+	r := mathRand.New(mathRand.NewSource(time.Now().Unix()))
+	idx := r.Intn(len(arr))
+	return arr[idx]
 }
 
 type dummySensorReplyHandlerImpl struct {

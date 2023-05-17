@@ -6,7 +6,8 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 # lsof -i TCP:8443
 
-kubectl -n stackrox port-forward deploy/sensor 8443:8443 > /dev/null &
+# Use less standart local port 8554
+kubectl -n stackrox port-forward deploy/sensor 8554:8443 > /dev/null &
 PID=$!
 
 function ctrl_c() {
@@ -31,5 +32,5 @@ ROX_NODE_SCANNING_INTERVAL="1s" \
 ROX_MTLS_CA_FILE="${DIR}/../certs/ca.pem" \
 ROX_MTLS_CERT_FILE="${DIR}/../certs/collector-cert.pem" \
 ROX_MTLS_KEY_FILE="${DIR}/../certs/collector-key.pem" \
-ROX_ADVERTISED_ENDPOINT="localhost:8443" \
+ROX_ADVERTISED_ENDPOINT="localhost:8554" \
     go run tools/local-compliance/*.go
