@@ -112,7 +112,7 @@ const BreadCrumbLinks = (props) => {
             <div key={`${state.name}--${state.type}`} className={`flex ${maxWidthClass} truncate`}>
                 <span className="flex flex-col max-w-full" data-testid="breadcrumb-link-text">
                     {content}
-                    <span className="italic font-600">{entityTypeLabel}</span>
+                    <span>{entityTypeLabel}</span>
                 </span>
                 <span className="flex items-center">{icon}</span>
             </div>
