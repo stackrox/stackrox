@@ -24,13 +24,8 @@ const (
 )
 
 // Create creates a new large object with an unused OID assigned
-func (o *LargeObjects) Create() (uint32, error) {
-	result := o.tx.Raw("SELECT lo_create($1)", 0)
-	if err := result.Error; err != nil {
-		return 0, err
-	}
-	var oid uint32
-	result = result.Scan(&oid)
+func (o *LargeObjects) Create() (oid uint32, err error) {
+	result := o.tx.Raw("SELECT lo_create($1)", 0).Scan(&oid)
 	return oid, result.Error
 }
 
@@ -38,9 +33,9 @@ func (o *LargeObjects) Create() (uint32, error) {
 // object.
 func (o *LargeObjects) Open(oid uint32, mode Mode) (*LargeObject, error) {
 	var fd int32
-	o.tx = o.tx.Raw("select lo_open($1, $2)", oid, mode).Scan(&fd)
-	if err := o.tx.Error; err != nil {
-		return nil, err
+	result := o.tx.Raw("select lo_open($1, $2)", oid, mode).Scan(&fd)
+	if result.Error != nil {
+		return nil, result.Error
 	}
 	return &LargeObject{fd: fd, tx: o.tx}, nil
 }
@@ -48,9 +43,9 @@ func (o *LargeObjects) Open(oid uint32, mode Mode) (*LargeObject, error) {
 // Unlink removes a large object from the database.
 func (o *LargeObjects) Unlink(oid uint32) error {
 	var count int32
-	o.tx = o.tx.Raw("select lo_unlink($1)", oid).Scan(&count)
-	if err := o.tx.Error; err != nil {
-		return err
+	result := o.tx.Raw("select lo_unlink($1)", oid).Scan(&count)
+	if result.Error != nil {
+		return result.Error
 	}
 	if count != 1 {
 		return errors.New("failed to remove large object")
@@ -58,17 +53,17 @@ func (o *LargeObjects) Unlink(oid uint32) error {
 	return nil
 }
 
+// Upsert insert a large object with oid. If the large object exists,
+// replace it.
 func (o *LargeObjects) Upsert(oid uint32, r io.Reader) error {
-	obj, err := o.Open(oid, ModeWrite|ModeRead)
+	obj, err := o.Open(oid, ModeWrite)
 	if err != nil {
 		return err
 	}
+	defer func() {
+		err = obj.Close()
+	}()
 	_, err = obj.Truncate(0)
-	if err != nil {
-		return err
-	}
-	obj.Close()
-	obj, err = o.Open(oid, ModeWrite)
 	if err != nil {
 		return err
 	}
@@ -77,7 +72,7 @@ func (o *LargeObjects) Upsert(oid uint32, r io.Reader) error {
 		return err
 	}
 
-	return obj.Close()
+	return err
 }
 
 func (o *LargeObjects) Get(oid uint32, w io.Writer) error {
@@ -85,12 +80,15 @@ func (o *LargeObjects) Get(oid uint32, w io.Writer) error {
 	if err != nil {
 		return err
 	}
+
 	_, err = io.Copy(w, obj)
-	return err
+	if err != nil {
+		return obj.wrapClose(err)
+	}
+	return obj.wrapClose(err)
 }
 
-// A LargeObject is a large object stored on the server. It is only valid within the transaction that it was initialized
-// in. It uses the context it was initialized with for all operations. It implements these interfaces:
+// A LargeObject implements the large object interface to Postgres database. It implements these interfaces:
 //
 //	io.Writer
 //	io.Reader
@@ -145,7 +143,7 @@ func (o *LargeObject) Tell() (int64, error) {
 	return n, result.Error
 }
 
-// Truncate the large object to size.
+// Truncate the large object to size and return the resulting size.
 func (o *LargeObject) Truncate(size int64) (n int, err error) {
 	result := o.tx.Raw("select lo_truncate64($1, $2)", o.fd, size).Scan(&n)
 	return n, result.Error
@@ -156,4 +154,13 @@ func (o *LargeObject) Close() error {
 	var n int
 	result := o.tx.Raw("select lo_close($1)", o.fd).Scan(&n)
 	return result.Error
+}
+
+// wrapClose closes the large object and returns error if failed. Otherwise, it
+// returns err
+func (o *LargeObject) wrapClose(err error) error {
+	if closeErr := o.Close(); closeErr != nil {
+		return closeErr
+	}
+	return err
 }
