@@ -21,8 +21,11 @@ export const selectors = {
     filterChipGroupItemRemove: (category, item) =>
         `${selectors.filterChipGroupItem(category, item)} button[aria-label="close"]`,
     clearFiltersButton: '.pf-c-toolbar button:contains("Clear filters")',
+    filteredViewLabel: '.pf-c-label:contains("Filtered view")',
     entityTypeToggleItem: (entityType) =>
         `.pf-c-toggle-group[aria-label="Entity type toggle items"] button:contains("${entityType}")`,
-    summaryCard: (title) => `.pf-c-card:contains("${title}")`,
+    summaryCard: (cardTitle) => `.pf-c-card:contains("${cardTitle}")`,
+    iconText: (textContent) => `svg ~ *:contains("${textContent}")`,
     firstTableRow: 'table tbody:nth-of-type(1) tr:nth-of-type(1)',
+    nonZeroCveSeverityCounts: '*[aria-label*="severity cves"i]:not([aria-label^="0"])',
 };
