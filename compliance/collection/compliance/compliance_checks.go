@@ -23,13 +23,13 @@ var log = logging.LoggerForModule()
 func runChecks(client sensor.ComplianceService_CommunicateClient,
 	scrapeConfig *sensor.MsgToCompliance_ScrapeConfig,
 	run *sensor.MsgToCompliance_TriggerRun,
-	nodeProvider NodeNameProvider,
+	nodeNameProvider NodeNameProvider,
 ) error {
-	complianceData := gatherData(scrapeConfig, run.GetScrapeId(), nodeProvider)
+	complianceData := gatherData(scrapeConfig, run.GetScrapeId(), nodeNameProvider)
 	complianceData.Files = data.FlattenFileMap(complianceData.Files)
 	results := getCheckResults(run, scrapeConfig, complianceData)
 
-	return sendResults(results, client, run.GetScrapeId(), nodeProvider)
+	return sendResults(results, client, run.GetScrapeId(), nodeNameProvider)
 }
 
 func getCheckResults(run *sensor.MsgToCompliance_TriggerRun, scrapeConfig *sensor.MsgToCompliance_ScrapeConfig, complianceData *standards.ComplianceData) map[string]*compliance.ComplianceStandardResult {
@@ -95,17 +95,18 @@ func addCheckResultsToResponse(results map[string]*compliance.ComplianceStandard
 	}
 }
 
-func sendResults(results map[string]*compliance.ComplianceStandardResult, client sensor.ComplianceService_CommunicateClient, runID string, nodeProvider NodeNameProvider) error {
+func sendResults(results map[string]*compliance.ComplianceStandardResult,
+	client sensor.ComplianceService_CommunicateClient, runID string, nodeNameProvider NodeNameProvider) error {
 	compressedResults, err := compressResults(results)
 	if err != nil {
 		return err
 	}
 
 	return client.Send(&sensor.MsgFromCompliance{
-		Node: nodeProvider.GetNodeName(),
+		Node: nodeNameProvider.GetNodeName(),
 		Msg: &sensor.MsgFromCompliance_Return{
 			Return: &compliance.ComplianceReturn{
-				NodeName: nodeProvider.GetNodeName(),
+				NodeName: nodeNameProvider.GetNodeName(),
 				ScrapeId: runID,
 				Time:     types.TimestampNow(),
 				Evidence: compressedResults,
@@ -114,12 +115,13 @@ func sendResults(results map[string]*compliance.ComplianceStandardResult, client
 	})
 }
 
-func gatherData(scrapeConfig *sensor.MsgToCompliance_ScrapeConfig, scrapeID string, nodeProvider NodeNameProvider) *standards.ComplianceData {
+func gatherData(scrapeConfig *sensor.MsgToCompliance_ScrapeConfig,
+	scrapeID string, nodeNameProvider NodeNameProvider) *standards.ComplianceData {
 	complianceData := &standards.ComplianceData{
-		NodeName: nodeProvider.GetNodeName(),
+		NodeName: nodeNameProvider.GetNodeName(),
 	}
 
-	log.Infof("Running compliance scrape %q for node %q", scrapeID, nodeProvider.GetNodeName())
+	log.Infof("Running compliance scrape %q for node %q", scrapeID, nodeNameProvider.GetNodeName())
 
 	var err error
 	log.Infof("Container runtime is %v", scrapeConfig.GetContainerRuntime())
