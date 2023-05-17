@@ -22,7 +22,8 @@ import {
 } from 'types/policy.proto';
 import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
-import { imageSigningCriteriaName } from './Wizard/Step3/policyCriteriaDescriptors';
+import { checkArrayContainsArray } from 'utils/arrayUtils';
+import { imageSigningCriteriaName, Descriptor } from './Wizard/Step3/policyCriteriaDescriptors';
 
 function isValidAction(action: unknown): action is ExtendedPageAction {
     return action === 'clone' || action === 'create' || action === 'edit' || action === 'generate';
@@ -685,4 +686,15 @@ export function getLifeCyclesUpdates(
         );
     }
     return changedValues;
+}
+
+export function getCriteriaAllowedByLifecycle(
+    criteria: Descriptor[],
+    lifecycleStages: LifecycleStage[]
+) {
+    const filteredCriteria = criteria.filter((criterion) =>
+        checkArrayContainsArray(criterion.lifecycleStages, lifecycleStages)
+    );
+
+    return filteredCriteria;
 }
