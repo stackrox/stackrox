@@ -20,6 +20,9 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
     steps:
+    - name: Prevent dubious ownership git error
+      run: chown "$(id -u)":"$(id -g)" .
+
     - name: Checkout
       uses: actions/checkout@v3
       with:
@@ -69,6 +72,9 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
     steps:
+    - name: Prevent dubious ownership git error
+      run: chown "$(id -u)":"$(id -g)" .
+
     - name: Checkout
       uses: actions/checkout@v3
       with:
@@ -110,6 +116,9 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
     steps:
+    - name: Prevent dubious ownership git error
+      run: chown "$(id -u)":"$(id -g)" .
+
     - name: Checkout
       uses: actions/checkout@v3
 
@@ -140,6 +149,9 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
     steps:
+    - name: Prevent dubious ownership git error
+      run: chown "$(id -u)":"$(id -g)" .
+
     - name: Checkout
       uses: actions/checkout@v3
       with:

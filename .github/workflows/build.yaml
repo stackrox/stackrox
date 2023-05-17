@@ -18,6 +18,9 @@ jobs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
     runs-on: ubuntu-latest
     steps:
+      - name: Prevent dubious ownership git error
+        run: chown "$(id -u)":"$(id -g)" .
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -64,6 +67,9 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
     steps:
+      - name: Prevent dubious ownership git error
+        run: chown "$(id -u)":"$(id -g)" .
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -94,6 +100,9 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
     steps:
+      - name: Prevent dubious ownership git error
+        run: chown "$(id -u)":"$(id -g)" .
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -128,6 +137,9 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
     steps:
+      - name: Prevent dubious ownership git error
+        run: chown "$(id -u)":"$(id -g)" .
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -172,6 +184,9 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
     steps:
+      - name: Prevent dubious ownership git error
+        run: chown "$(id -u)":"$(id -g)" .
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -255,6 +270,9 @@ jobs:
             echo "GO_BINARIES_BUILD_ARTIFACT=go-binaries-build-${go_binaries}"
             echo "ROX_PRODUCT_BRANDING=${brand}"
           } >> "$GITHUB_ENV"
+
+      - name: Prevent dubious ownership git error
+        run: chown "$(id -u)":"$(id -g)" .
 
       - name: Checkout
         uses: actions/checkout@v3
@@ -375,6 +393,9 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     steps:
+      - name: Prevent dubious ownership git error
+        run: chown "$(id -u)":"$(id -g)" .
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -440,6 +461,9 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
     steps:
+    - name: Prevent dubious ownership git error
+      run: chown "$(id -u)":"$(id -g)" .
+
     - name: Checkout
       uses: actions/checkout@v3
       with:
@@ -496,6 +520,9 @@ jobs:
         STACKROX_CI_INSTANCE_API_KEY: ${{ secrets.STACKROX_CI_INSTANCE_API_KEY }}
         STACKROX_CI_INSTANCE_CENTRAL_HOST: ${{ secrets.STACKROX_CI_INSTANCE_CENTRAL_HOST }}
     steps:
+      - name: Prevent dubious ownership git error
+        run: chown "$(id -u)":"$(id -g)" .
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
