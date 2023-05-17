@@ -15,11 +15,14 @@ type LargeObjects struct {
 	*gorm.DB
 }
 
+// Mode is the open mode for large object
 type Mode int32
 
 const (
+	// ModeWrite is bitmap for write operation on large object
 	ModeWrite Mode = 0x20000
-	ModeRead  Mode = 0x40000
+	// ModeRead is bitmap for read operation on large object
+	ModeRead Mode = 0x40000
 )
 
 // Create creates a new large object with an unused OID assigned
@@ -74,6 +77,7 @@ func (o *LargeObjects) Upsert(oid uint32, r io.Reader) error {
 	return err
 }
 
+// Get gets the content of the large object and write it to the writer.
 func (o *LargeObjects) Get(oid uint32, w io.Writer) error {
 	obj, err := o.Open(oid, ModeRead)
 	if err != nil {

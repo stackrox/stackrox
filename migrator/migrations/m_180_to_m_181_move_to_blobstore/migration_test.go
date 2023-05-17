@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package m179tom180
 
 import (
@@ -44,6 +46,7 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 	reader := bytes.NewBuffer(randomData)
 
 	file, err := os.CreateTemp("", "move-blob")
+	s.Require().NoError(err)
 	defer func() {
 		s.NoError(file.Close())
 		s.NoError(os.Remove(file.Name()))

@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package largeobject
 
 import (
@@ -110,7 +112,7 @@ func (s *GormUtilsTestSuite) TestLargeObjectSingleTransaction() {
 	s.Require().NoError(err)
 	s.Require().EqualValues(7, pos)
 
-	n, err = obj.Truncate(1)
+	_, err = obj.Truncate(1)
 	s.Require().NoError(err)
 
 	pos, err = obj.Seek(-1, 2)
@@ -154,7 +156,8 @@ func (s *GormUtilsTestSuite) TestLargeObjectMultipleTransactions() {
 	query := `select n from generate_series(1,10) n`
 	rows, err := s.gormDB.Raw(query).Rows()
 	s.Require().NoError(err)
-	rows.Close()
+	s.Require().NoError(rows.Err())
+	s.NoError(rows.Close())
 
 	// Start a new transaction
 	tx2 := s.gormDB.Begin()
@@ -184,7 +187,7 @@ func (s *GormUtilsTestSuite) TestLargeObjectMultipleTransactions() {
 	s.Require().NoError(err)
 	s.Require().EqualValues(7, pos)
 
-	n, err = obj2.Truncate(1)
+	_, err = obj2.Truncate(1)
 	s.Require().NoError(err)
 
 	pos, err = obj2.Seek(-1, 2)
