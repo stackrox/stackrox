@@ -87,7 +87,11 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
         goToPoliciesAndCloneToStep3();
 
         cy.get(selectors.step3.policyCriteria.keyGroup).should((values) => {
-            expect(values).to.have.length(9);
+            // before we began filtering what policy criteria were available,
+            // there were 9 groups of criteria to count
+            // after filtering for Lifecycle was added, the number of groups for a Deploy-only policy is 7
+            const GROUPS_AVAILABLE_FOR_DEPLOY_POLICY = 7;
+            expect(values).to.have.length(GROUPS_AVAILABLE_FOR_DEPLOY_POLICY);
         });
 
         cy.get(`${selectors.step3.policyCriteria.key}:first`).scrollIntoView().should('be.visible');
