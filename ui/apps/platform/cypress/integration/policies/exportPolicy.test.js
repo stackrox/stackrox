@@ -15,7 +15,7 @@ describe('Export policy', () => {
         it('should export policy', () => {
             visitPolicies();
 
-            const trSelector = 'tbody tr:nth-child(1)';
+            const trSelector = 'tbody:nth-child(2) tr:nth-child(1)';
             cy.get(`${trSelector} ${selectors.table.policyLink}`).then(($a) => {
                 const segments = $a.attr('href').split('/');
                 const policyId = segments[segments.length - 1];
@@ -43,7 +43,7 @@ describe('Export policy', () => {
         it('should display toast alert for export request failure', () => {
             visitPolicies();
 
-            const trSelector = 'tbody tr:nth-child(1)';
+            const trSelector = 'tbody:nth-child(2) tr:nth-child(1)';
             const message = 'Some policies could not be retrieved.';
             cy.intercept('POST', api.policies.export, {
                 statusCode: 400,
@@ -62,7 +62,7 @@ describe('Export policy', () => {
         it('should display toast alert for export service failure', () => {
             visitPolicies();
 
-            const trSelector = 'tbody tr:nth-child(1)';
+            const trSelector = 'tbody:nth-child(2) tr:nth-child(1)';
             const message = 'Problem exporting policy data';
             cy.intercept('POST', api.policies.export, {
                 statusCode: 400,

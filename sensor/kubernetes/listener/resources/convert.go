@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/registry"
+	nsStore "github.com/stackrox/rox/sensor/common/resources/namespaces"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -86,7 +87,7 @@ func doesFieldExist(value reflect.Value) bool {
 }
 
 func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAction, deploymentType, clusterID string,
-	lister v1listers.PodLister, namespaceStore *namespaceStore, hierarchy references.ParentHierarchy, registryOverride string,
+	lister v1listers.PodLister, namespaceStore *nsStore.NamespaceStore, hierarchy references.ParentHierarchy, registryOverride string,
 	namespaces *orchestratornamespaces.OrchestratorNamespaces, registryStore *registry.Store) *deploymentWrap {
 	wrap := newWrap(obj, deploymentType, clusterID, registryOverride, registryStore)
 	if wrap == nil {
@@ -159,7 +160,7 @@ func checkIfNewPodSpecRequired(podSpec *v1.PodSpec, pods []*v1.Pod) bool {
 }
 
 func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *central.ResourceAction, lister v1listers.PodLister,
-	namespaceStore *namespaceStore, hierarchy references.ParentHierarchy,
+	namespaceStore *nsStore.NamespaceStore, hierarchy references.ParentHierarchy,
 	namespaces *orchestratornamespaces.OrchestratorNamespaces) (bool, error) {
 	w.original = obj
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
@@ -392,9 +393,9 @@ func (w *deploymentWrap) getLabelSelector(spec reflect.Value) (*metav1.LabelSele
 	return nil, fmt.Errorf("unable to get label selector for %+v", spec.Type())
 }
 
-func (w *deploymentWrap) populateNamespaceID(namespaceStore *namespaceStore,
+func (w *deploymentWrap) populateNamespaceID(namespaceStore *nsStore.NamespaceStore,
 	namespaces *orchestratornamespaces.OrchestratorNamespaces) {
-	if namespaceID, found := namespaceStore.lookupNamespaceID(w.GetNamespace()); found {
+	if namespaceID, found := namespaceStore.LookupNamespaceID(w.GetNamespace()); found {
 		w.NamespaceId = namespaceID
 		w.OrchestratorComponent = namespaces.IsOrchestratorNamespace(w.GetNamespace())
 	} else {

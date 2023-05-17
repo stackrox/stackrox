@@ -7,7 +7,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	hashManager "github.com/stackrox/rox/central/hash/manager"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/clusterhealth"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/notifier"
 	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -64,7 +64,7 @@ type manager struct {
 	baselines                  common.ProcessBaselineManager
 	networkBaselines           common.NetworkBaselineManager
 	delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager
-	notifierProcessor          notifierProcessor.Processor
+	notifierProcessor          notifier.Processor
 	manager                    hashManager.Manager
 	autoTriggerUpgrades        *concurrency.Flag
 }
@@ -103,7 +103,7 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 	baselineManager common.ProcessBaselineManager,
 	networkBaselineManager common.NetworkBaselineManager,
 	delegatedRegistryConfigManager common.DelegatedRegistryConfigManager,
-	notifierProcessor notifierProcessor.Processor,
+	notifierProcessor notifier.Processor,
 	autoTriggerUpgrades *concurrency.Flag,
 ) error {
 	m.clusters = clusterManager

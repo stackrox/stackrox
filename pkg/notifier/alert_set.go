@@ -1,4 +1,4 @@
-package processor
+package notifier
 
 import (
 	"time"
@@ -6,12 +6,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
-)
-
-const (
-	// When we fail to notify on an alert, retry every hour for 4 hours, and only retry up to 100 alerts
-	retryAlertsEvery = 5 * time.Minute
-	retryAlertsFor   = 1 * time.Hour
 )
 
 // AlertSet is a layer over an expiring cache specifically for alerts.
@@ -22,7 +16,7 @@ type AlertSet interface {
 }
 
 // NewAlertSet returns a new AlertSet instance
-func NewAlertSet() AlertSet {
+func NewAlertSet(retryAlertsFor time.Duration) AlertSet {
 	return &alertSetImpl{
 		alerts: expiringcache.NewExpiringCache(retryAlertsFor),
 	}

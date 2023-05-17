@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { ThumbsDown, ThumbsUp } from 'react-feather';
+import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import IconText from './IconText';
 
@@ -10,9 +10,9 @@ export type PolicyStatusIconTextProps = {
 
 function PolicyStatusIconText({ isPass, isTextOnly }: PolicyStatusIconTextProps): ReactElement {
     const icon = isPass ? (
-        <ThumbsUp className="h-4 w-4 pf-u-success-color-100" />
+        <CheckCircleIcon color="var(--pf-global--success-color--100)" />
     ) : (
-        <ThumbsDown className="h-4 w-4 pf-u-danger-color-100" />
+        <ExclamationCircleIcon color="var(--pf-global--danger-color--100)" />
     );
     const text = isPass ? 'Pass' : 'Fail';
 

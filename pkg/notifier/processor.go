@@ -1,17 +1,11 @@
-package processor
+package notifier
 
 import (
 	"context"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/integrationhealth"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // Processor is the interface for processing benchmarks, notifiers, and policies.
@@ -30,12 +24,4 @@ type Processor interface {
 	GetNotifiers(ctx context.Context) []notifiers.Notifier
 
 	UpdateNotifierHealthStatus(notifier notifiers.Notifier, healthStatus storage.IntegrationHealth_Status, errMessage string)
-}
-
-// New returns a new Processor
-func New(ns NotifierSet, reporter integrationhealth.Reporter) Processor {
-	return &processorImpl{
-		ns:       ns,
-		reporter: reporter,
-	}
 }

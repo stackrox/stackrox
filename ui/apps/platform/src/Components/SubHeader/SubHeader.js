@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 const SubHeader = ({ text, capitalize }) => {
-    return <div className={`mt-1 italic ${capitalize ? 'capitalize' : ''}`}>{text}</div>;
+    return <div className={`mt-1 ${capitalize ? 'capitalize' : ''}`}>{text}</div>;
 };
 
 SubHeader.propTypes = {
