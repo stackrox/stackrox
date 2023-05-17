@@ -12,6 +12,7 @@ import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
 import DatePhraseTd from '../components/DatePhraseTd';
 import TooltipTh from '../components/TooltipTh';
+import { VulnerabilitySeverityLabel } from '../types';
 
 export const deploymentListQuery = gql`
     query getDeploymentList($query: String, $pagination: Pagination) {
@@ -59,9 +60,15 @@ type DeploymentsTableProps = {
     deployments: Deployment[];
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
+    filteredSeverities?: VulnerabilitySeverityLabel[];
 };
 
-function DeploymentsTable({ deployments, getSortParams, isFiltered }: DeploymentsTableProps) {
+function DeploymentsTable({
+    deployments,
+    getSortParams,
+    isFiltered,
+    filteredSeverities,
+}: DeploymentsTableProps) {
     return (
         <TableComposable borders={false} variant="compact">
             <Thead noWrap>
@@ -92,6 +99,10 @@ function DeploymentsTable({ deployments, getSortParams, isFiltered }: Deployment
                     imageCount,
                     created,
                 }) => {
+                    const criticalCount = imageCVECountBySeverity.critical.total;
+                    const importantCount = imageCVECountBySeverity.important.total;
+                    const moderateCount = imageCVECountBySeverity.moderate.total;
+                    const lowCount = imageCVECountBySeverity.low.total;
                     return (
                         <Tbody
                             key={id}
@@ -112,11 +123,13 @@ function DeploymentsTable({ deployments, getSortParams, isFiltered }: Deployment
                                 </Td>
                                 <Td>
                                     <SeverityCountLabels
-                                        critical={imageCVECountBySeverity.critical.total}
-                                        important={imageCVECountBySeverity.important.total}
-                                        moderate={imageCVECountBySeverity.moderate.total}
-                                        low={imageCVECountBySeverity.low.total}
+                                        criticalCount={criticalCount}
+                                        importantCount={importantCount}
+                                        moderateCount={moderateCount}
+                                        lowCount={lowCount}
                                         entity="deployment"
+                                        isFiltered={isFiltered}
+                                        filteredSeverities={filteredSeverities}
                                     />
                                 </Td>
                                 <Td>{clusterName}</Td>

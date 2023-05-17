@@ -14,7 +14,7 @@ import { Button, ButtonVariant } from '@patternfly/react-core';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
-
+import { VulnerabilitySeverityLabel } from '../types';
 import { getEntityPagePath } from '../searchUtils';
 import TooltipTh from '../components/TooltipTh';
 import SeverityCountLabels from '../components/SeverityCountLabels';
@@ -72,10 +72,18 @@ type CVEsTableProps = {
     unfilteredImageCount: number;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
+    filteredSeverities?: VulnerabilitySeverityLabel[];
 };
 
-function CVEsTable({ cves, unfilteredImageCount, getSortParams, isFiltered }: CVEsTableProps) {
+function CVEsTable({
+    cves,
+    unfilteredImageCount,
+    getSortParams,
+    isFiltered,
+    filteredSeverities,
+}: CVEsTableProps) {
     const expandedRowSet = useSet<string>();
+
     return (
         <TableComposable borders={false} variant="compact">
             <Thead noWrap>
@@ -113,6 +121,10 @@ function CVEsTable({ cves, unfilteredImageCount, getSortParams, isFiltered }: CV
                     rowIndex
                 ) => {
                     const isExpanded = expandedRowSet.has(cve);
+                    const criticalCount = affectedImageCountBySeverity.critical.total;
+                    const importantCount = affectedImageCountBySeverity.important.total;
+                    const moderateCount = affectedImageCountBySeverity.moderate.total;
+                    const lowCount = affectedImageCountBySeverity.low.total;
 
                     return (
                         <Tbody
@@ -142,10 +154,12 @@ function CVEsTable({ cves, unfilteredImageCount, getSortParams, isFiltered }: CV
                                 </Td>
                                 <Td>
                                     <SeverityCountLabels
-                                        critical={affectedImageCountBySeverity.critical.total}
-                                        important={affectedImageCountBySeverity.important.total}
-                                        moderate={affectedImageCountBySeverity.moderate.total}
-                                        low={affectedImageCountBySeverity.low.total}
+                                        criticalCount={criticalCount}
+                                        importantCount={importantCount}
+                                        moderateCount={moderateCount}
+                                        lowCount={lowCount}
+                                        isFiltered={isFiltered}
+                                        filteredSeverities={filteredSeverities}
                                     />
                                 </Td>
                                 {/* TODO: score version? */}

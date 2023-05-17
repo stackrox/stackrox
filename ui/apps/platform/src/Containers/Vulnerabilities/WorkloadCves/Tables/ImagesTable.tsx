@@ -13,6 +13,7 @@ import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
 import DatePhraseTd from '../components/DatePhraseTd';
 import TooltipTh from '../components/TooltipTh';
+import { VulnerabilitySeverityLabel } from '../types';
 
 export const imageListQuery = gql`
     query getImageList($query: String, $pagination: Pagination) {
@@ -78,9 +79,10 @@ type ImagesTableProps = {
     images: Image[];
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
+    filteredSeverities?: VulnerabilitySeverityLabel[];
 };
 
-function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
+function ImagesTable({ images, getSortParams, isFiltered, filteredSeverities }: ImagesTableProps) {
     return (
         <TableComposable borders={false} variant="compact">
             <Thead noWrap>
@@ -112,6 +114,10 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                     watchStatus,
                     scanTime,
                 }) => {
+                    const criticalCount = imageCVECountBySeverity.critical.total;
+                    const importantCount = imageCVECountBySeverity.important.total;
+                    const moderateCount = imageCVECountBySeverity.moderate.total;
+                    const lowCount = imageCVECountBySeverity.low.total;
                     return (
                         <Tbody
                             key={id}
@@ -129,11 +135,13 @@ function ImagesTable({ images, getSortParams, isFiltered }: ImagesTableProps) {
                                 </Td>
                                 <Td>
                                     <SeverityCountLabels
-                                        critical={imageCVECountBySeverity.critical.total}
-                                        important={imageCVECountBySeverity.important.total}
-                                        moderate={imageCVECountBySeverity.moderate.total}
-                                        low={imageCVECountBySeverity.low.total}
+                                        criticalCount={criticalCount}
+                                        importantCount={importantCount}
+                                        moderateCount={moderateCount}
+                                        lowCount={lowCount}
                                         entity="image"
+                                        isFiltered={isFiltered}
+                                        filteredSeverities={filteredSeverities}
                                     />
                                 </Td>
                                 <Td>{operatingSystem}</Td>

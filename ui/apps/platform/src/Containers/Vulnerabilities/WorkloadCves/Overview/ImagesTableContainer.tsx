@@ -71,6 +71,7 @@ function ImagesTableContainer({ defaultFilters, countsData }: ImagesTableContain
                         images={tableData.images}
                         getSortParams={getSortParams}
                         isFiltered={isFiltered}
+                        filteredSeverities={searchFilter.Severity}
                     />
                 </div>
             )}

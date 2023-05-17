@@ -25,6 +25,7 @@ import DeploymentComponentVulnerabilitiesTable, {
 } from './DeploymentComponentVulnerabilitiesTable';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import DatePhraseTd from '../components/DatePhraseTd';
+import { VulnerabilitySeverityLabel } from '../types';
 
 export type DeploymentForCve = {
     id: string;
@@ -67,12 +68,14 @@ export type AffectedDeploymentsTableProps = {
     deployments: DeploymentForCve[];
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
+    filteredSeverities?: VulnerabilitySeverityLabel[];
 };
 
 function AffectedDeploymentsTable({
     deployments,
     getSortParams,
     isFiltered,
+    filteredSeverities,
 }: AffectedDeploymentsTableProps) {
     const expandedRowSet = useSet<string>();
     return (
@@ -145,10 +148,12 @@ function AffectedDeploymentsTable({
                             </Td>
                             <Td modifier="nowrap" dataLabel="Images by severity">
                                 <SeverityCountLabels
-                                    critical={criticalImageCount}
-                                    important={importantImageCount}
-                                    moderate={moderateImageCount}
-                                    low={lowImageCount}
+                                    criticalCount={criticalImageCount}
+                                    importantCount={importantImageCount}
+                                    moderateCount={moderateImageCount}
+                                    lowCount={lowImageCount}
+                                    isFiltered={isFiltered}
+                                    filteredSeverities={filteredSeverities}
                                 />
                             </Td>
                             <Td dataLabel="Cluster">{clusterName}</Td>
