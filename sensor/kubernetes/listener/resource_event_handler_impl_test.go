@@ -60,7 +60,7 @@ func makeExpectedMap(expectedIDs ...*hasAnID) *map[types.UID]struct{} {
 func (suite *ResourceEventHandlerImplTestSuite) addObj(handler *resourceEventHandlerImpl, obj *hasAnID, expectedMap *map[types.UID]struct{}) {
 	suite.dispatcher.EXPECT().ProcessEvent(obj, nil, central.ResourceAction_SYNC_RESOURCE)
 	suite.resolver.EXPECT().Send(gomock.Any())
-	handler.OnAdd(obj)
+	handler.OnAdd(obj, false)
 	suite.Equal(*expectedMap, handler.seenIDs)
 }
 
@@ -171,7 +171,7 @@ func (suite *ResourceEventHandlerImplTestSuite) TestCompleteSync() {
 
 	suite.dispatcher.EXPECT().ProcessEvent(testMsgTwo, nil, central.ResourceAction_SYNC_RESOURCE)
 	suite.resolver.EXPECT().Send(gomock.Any())
-	handler.OnAdd(testMsgTwo)
+	handler.OnAdd(testMsgTwo, false)
 	suite.assertFinished(handler)
 }
 
