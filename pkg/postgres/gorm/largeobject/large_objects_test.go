@@ -36,6 +36,7 @@ func (s *GormUtilsTestSuite) TearDownTest() {
 }
 
 func (s *GormUtilsTestSuite) TestUpsertGet() {
+	// Write a long file
 	randomData := make([]byte, 90000)
 	_, err := rand.Read(randomData)
 	s.NoError(err)
@@ -49,11 +50,14 @@ func (s *GormUtilsTestSuite) TestUpsertGet() {
 	s.Require().NoError(err)
 	s.Require().NoError(tx.Commit().Error)
 
+	// Read it back and verify
 	tx = s.gormDB.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
 	los = LargeObjects{tx}
 	writer := bytes.NewBuffer([]byte{})
 	s.Require().NoError(los.Get(oid, writer))
+	s.Require().NoError(tx.Commit().Error)
 
+	// Overwrite it
 	s.Require().Equal(randomData, writer.Bytes())
 	reader = bytes.NewBuffer([]byte("hi"))
 	tx = s.gormDB.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
@@ -62,15 +66,17 @@ func (s *GormUtilsTestSuite) TestUpsertGet() {
 	s.Require().NoError(err)
 	s.Require().NoError(tx.Commit().Error)
 
+	// Read it back and verify
 	tx = s.gormDB.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
 	los = LargeObjects{tx}
 	writer = bytes.NewBuffer([]byte{})
 	writer.Reset()
 	s.Require().NoError(los.Get(oid, writer))
 	s.Require().Equal([]byte("hi"), writer.Bytes())
+	s.Require().NoError(tx.Commit().Error)
 }
 
-func (s *GormUtilsTestSuite) TestLargeObject() {
+func (s *GormUtilsTestSuite) TestLargeObjectSingleTransaction() {
 	tx := s.gormDB.Begin()
 	s.Require().NoError(tx.Error)
 
@@ -127,7 +133,7 @@ func (s *GormUtilsTestSuite) TestLargeObject() {
 	s.Require().Contains(err.Error(), "does not exist (SQLSTATE 42704)")
 }
 
-func (s *GormUtilsTestSuite) TestLargeObjectsMultipleTransactions() {
+func (s *GormUtilsTestSuite) TestLargeObjectMultipleTransactions() {
 	tx := s.gormDB.Begin()
 	s.Require().NoError(tx.Error)
 	los := &LargeObjects{tx}
