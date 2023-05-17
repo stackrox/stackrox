@@ -25,11 +25,6 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Ignore dubious repository ownership
-      run: |
-        # Prevent fatal error "detected dubious ownership in repository" from recent git.
-        git config --global --add safe.directory "$(pwd)"
-
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
@@ -79,11 +74,6 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Ignore dubious repository ownership
-      run: |
-        # Prevent fatal error "detected dubious ownership in repository" from recent git.
-        git config --global --add safe.directory "$(pwd)"
-
     - name: Run Postgres
       run: |
         su postgres -c 'initdb -D /tmp/data'
@@ -123,11 +113,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Ignore dubious repository ownership
-      run: |
-        # Prevent fatal error "detected dubious ownership in repository" from recent git.
-        git config --global --add safe.directory "$(pwd)"
-
     - name: Create combined mono repo lock file
       uses: ./.github/actions/create-concatenated-ui-monorepo-lock
 
@@ -160,11 +145,6 @@ jobs:
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
-
-    - name: Ignore dubious repository ownership
-      run: |
-        # Prevent fatal error "detected dubious ownership in repository" from recent git.
-        git config --global --add safe.directory "$(pwd)"
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies

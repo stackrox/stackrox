@@ -1029,9 +1029,6 @@ openshift_ci_mods() {
 
     ensure_writable_home_dir
 
-    # Prevent fatal error "detected dubious ownership in repository" from recent git.
-    git config --global --add safe.directory "$(pwd)"
-
     echo "Git log:" >> "${debug}"
     git log --oneline --decorate -n 20 >> "${debug}" || true
 
