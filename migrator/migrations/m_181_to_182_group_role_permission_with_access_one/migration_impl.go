@@ -46,21 +46,21 @@ func migrate(database *types.Databases) error {
 
 	migratedPermissionSets := make([]*storage.PermissionSet, 0, batchSize)
 	err := store.Walk(ctx, func(obj *storage.PermissionSet) error {
-		changed := false
 		// Copy the permission set, removing the deprecated resource permissions, and keeping the
 		// lowest access level between that of deprecated resource and their replacement
 		// for the replacement resource.
 		newPermissionSet := obj.Clone()
 		newPermissionSet.ResourceToAccess = make(map[string]storage.Access, len(obj.GetResourceToAccess()))
+		newPermissionSetNeedsWriteToDB := false
 		for resource, accessLevel := range obj.GetResourceToAccess() {
 			if replacement, found := replacements[resource]; found {
-				changed = true
+				newPermissionSetNeedsWriteToDB = true
 				resource = replacement
 			}
 			newPermissionSet.ResourceToAccess[resource] =
 				propagateAccessForPermission(resource, accessLevel, newPermissionSet.GetResourceToAccess())
 		}
-		if !changed {
+		if !newPermissionSetNeedsWriteToDB {
 			return nil
 		}
 		migratedPermissionSets = append(migratedPermissionSets, newPermissionSet)
