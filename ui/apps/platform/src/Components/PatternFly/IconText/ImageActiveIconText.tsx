@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { CheckIcon, TimesIcon } from '@patternfly/react-icons';
+import { CheckIcon, MinusIcon } from '@patternfly/react-icons';
 
 import IconText from './IconText';
 
@@ -9,11 +9,7 @@ export type ImageActiveIconTextProps = {
 };
 
 function ImageActiveIconText({ isActive, isTextOnly }: ImageActiveIconTextProps): ReactElement {
-    const icon = isActive ? (
-        <CheckIcon color="var(--pf-global--success-color--100)" />
-    ) : (
-        <TimesIcon />
-    );
+    const icon = isActive ? <CheckIcon /> : <MinusIcon />;
     const text = isActive ? 'Active' : 'Inactive';
 
     return <IconText icon={icon} text={text} isTextOnly={isTextOnly} />;

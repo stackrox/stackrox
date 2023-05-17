@@ -70,7 +70,7 @@ class KeyValuePairs extends Component {
                     data-testid={label}
                 >
                     <div className="pr-1 font-700 inline">{label}:</div>
-                    <span className={`flex-1 min-w-0 font-600 ${className}`}>
+                    <span className={`flex-1 min-w-0 ${className}`}>
                         {isObject(value) || isArray(value) ? (
                             <div className="ml-2">{this.getNestedValue(value)}</div>
                         ) : (

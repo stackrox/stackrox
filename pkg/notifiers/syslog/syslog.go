@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -249,6 +250,10 @@ func (s *syslog) ProtoNotifier() *storage.Notifier {
 func (s *syslog) Test(context.Context) error {
 	data := getCEFHeaderWithExtension("Test", "Test", 0, "stackroxKubernetesSecurityPlatformTestMessage=test")
 	return s.sendSyslog(testMessageSeverity, time.Now(), "stackroxKubernetesSecurityPlatformIntegrationTest", data)
+}
+
+func (s *syslog) IsSecuredClusterNotifier() bool {
+	return env.SecuredClusterNotifiers.BooleanSetting()
 }
 
 func (s *syslog) SendAuditMessage(_ context.Context, msg *v1.Audit_Message) error {

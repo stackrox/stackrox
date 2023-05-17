@@ -91,8 +91,8 @@ const CVEStackedPill = ({
                             subtitle={scanMessage?.header}
                             body={
                                 <div className="">
-                                    <h3 className="text-font-700">Reason:</h3>
-                                    <p className="font-600">{scanMessage?.body}</p>
+                                    <h3 className="font-700">Reason:</h3>
+                                    <p>{scanMessage?.body}</p>
                                 </div>
                             }
                         />

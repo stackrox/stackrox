@@ -83,9 +83,7 @@ const ClusterHealth = ({
             </div>
             {healthyCount !== 0 && (
                 <div className="leading-normal p-2 text-center">
-                    <span className="italic" data-testid="healthy-subtext">
-                        {healthySubtext}
-                    </span>
+                    <span data-testid="healthy-subtext">{healthySubtext}</span>
                 </div>
             )}
         </div>

@@ -72,6 +72,24 @@ func (s *notifierDataStoreTestSuite) TestAllowsGet() {
 	s.True(exists, "expected exists to be set to false")
 }
 
+func (s *notifierDataStoreTestSuite) TestExists() {
+	exists, err := s.dataStore.Exists(s.hasNoneCtx, "notifier")
+	s.NoError(err, "expected no error, should return nil without access")
+	s.False(exists, "expected exists to be set to false")
+
+	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
+
+	exists, err = s.dataStore.Exists(s.hasReadCtx, "notifier")
+	s.NoError(err, "expected no error trying to read with permissions")
+	s.False(exists, "expected exists to be set to false")
+
+	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
+
+	exists, err = s.dataStore.Exists(s.hasReadCtx, "notifier")
+	s.NoError(err, "expected no error trying to read with permissions")
+	s.True(exists, "expected exists to be set to true")
+}
+
 func (s *notifierDataStoreTestSuite) TestGetScrubbedNotifier() {
 	testNotifier := &storage.Notifier{
 		Config: &storage.Notifier_Generic{

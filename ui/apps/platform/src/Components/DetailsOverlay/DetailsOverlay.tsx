@@ -42,9 +42,7 @@ function DetailsOverlay({
                     </div>
                     <div className="flex flex-1 flex-col" data-testid={`${dataTestId}-header`}>
                         <div className="text-base">{headerText}</div>
-                        <div className="italic text-primary-200 text-xs capitalize">
-                            {subHeaderText}
-                        </div>
+                        <div className="text-primary-200 text-xs capitalize">{subHeaderText}</div>
                     </div>
                 </div>
 

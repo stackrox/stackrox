@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -24,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/notifiers/splunk"
 	"github.com/stackrox/rox/pkg/secrets"
@@ -54,7 +54,7 @@ type serviceImpl struct {
 	v1.UnimplementedNotifierServiceServer
 
 	storage           datastore.DataStore
-	processor         processor.Processor
+	processor         notifier.Processor
 	reporter          integrationhealth.Reporter
 	connectionManager connection.Manager
 
@@ -232,7 +232,7 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 		}
 	}()
 
-	if env.SecuredClusterNotifiers.BooleanSetting() && s.processor.IsSecuredClusterNotifier(notifier) {
+	if notifier.IsSecuredClusterNotifier() {
 		return s.testSecuredClusterNotifier(ctx, notifier)
 	}
 	// if secured cluster notifications are not enabled or if this is not a secured cluster notifier

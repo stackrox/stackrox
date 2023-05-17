@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers/mocks"
 	notifierMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
 )
@@ -24,9 +26,9 @@ func TestProcessor_LoopDoesNothing(t *testing.T) {
 	mockResolvableNotifier := notifierMocks.NewMockResolvableAlertNotifier(mockCtrl)
 
 	// Create our tested objects.
-	ns := NewNotifierSet()
+	ns := notifier.NewNotifierSet(time.Hour)
 	processor := &processorImpl{ns: ns}
-	loop := &loopImpl{ns: ns}
+	loop := notifier.NewLoop(ns, time.Hour)
 
 	// Add the notifiers to the processor.
 	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto)
@@ -36,7 +38,7 @@ func TestProcessor_LoopDoesNothing(t *testing.T) {
 	processor.UpdateNotifier(ctx, mockResolvableNotifier)
 
 	// Retry previous failures. (None)
-	loop.retryFailures(ctx)
+	loop.TestRetryFailures(ctx, t)
 	mockCtrl.Finish()
 }
 
@@ -57,13 +59,15 @@ func TestProcessor_LoopDoesNothingIfAllSucceed(t *testing.T) {
 	}
 
 	// Create our tested objects.
-	ns := NewNotifierSet()
+	ns := notifier.NewNotifierSet(time.Hour)
 	processor := &processorImpl{ns: ns}
-	loop := &loopImpl{ns: ns}
+	loop := notifier.NewLoop(ns, time.Hour)
 
 	// Add the notifiers to the processor. (Called once on insert, and once for each alert processed)
 	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(4)
 	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto).Times(4)
+	mockAlertNotifier.EXPECT().IsSecuredClusterNotifier().Return(false).AnyTimes()
+	mockResolvableNotifier.EXPECT().IsSecuredClusterNotifier().Return(false).AnyTimes()
 
 	processor.UpdateNotifier(ctx, mockAlertNotifier)
 	processor.UpdateNotifier(ctx, mockResolvableNotifier)
@@ -97,7 +101,7 @@ func TestProcessor_LoopDoesNothingIfAllSucceed(t *testing.T) {
 	processor.processAlertSync(ctx, attemptedAlert)
 
 	// Retry previous failures. (None)
-	loop.retryFailures(ctx)
+	loop.TestRetryFailures(ctx, t)
 	mockCtrl.Finish()
 }
 
@@ -118,14 +122,17 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	}
 
 	// Create our tested objects.
-	ns := NewNotifierSet()
+	ns := notifier.NewNotifierSet(time.Hour)
 	processor := &processorImpl{ns: ns}
-	loop := &loopImpl{ns: ns}
+	loop := notifier.NewLoop(ns, time.Hour)
 
-	// Add the notifiers to the processor. (Called once on insert, and once for each alert processed)
 	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(4)
 	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto).Times(4)
 
+	mockAlertNotifier.EXPECT().IsSecuredClusterNotifier().Return(false).AnyTimes()
+	mockResolvableNotifier.EXPECT().IsSecuredClusterNotifier().Return(false).AnyTimes()
+
+	// Add the notifiers to the processor. (Called once on insert, and once for each alert processed)
 	processor.UpdateNotifier(ctx, mockAlertNotifier)
 	processor.UpdateNotifier(ctx, mockResolvableNotifier)
 
@@ -135,6 +142,7 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 		State:  storage.ViolationState_ACTIVE,
 		Policy: policy,
 	}
+
 	mockAlertNotifier.EXPECT().AlertNotify(gomock.Any(), activeAlert).Return(errors.New("broke"))
 	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto)
 	mockResolvableNotifier.EXPECT().AlertNotify(gomock.Any(), activeAlert).Return(errors.New("broke"))
@@ -155,6 +163,7 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	}
 	mockAlertNotifier.EXPECT().AlertNotify(gomock.Any(), attemptedAlert).Return(errors.New("broke"))
 	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto)
+
 	mockResolvableNotifier.EXPECT().AlertNotify(gomock.Any(), attemptedAlert).Return(errors.New("broke"))
 	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto)
 
@@ -172,15 +181,15 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	mockAlertNotifier.EXPECT().AlertNotify(gomock.Any(), attemptedAlert).Return(nil)
 	mockResolvableNotifier.EXPECT().AlertNotify(ctx, attemptedAlert).Return(nil)
 
-	loop.retryFailures(ctx)
+	loop.TestRetryFailures(ctx, t)
 
 	// Retry previous failures. (Just the ack on the snoozed)
 	mockResolvableNotifier.EXPECT().AckAlert(context.Background(), snoozedAlert).Return(nil)
 
-	loop.retryFailures(ctx)
+	loop.TestRetryFailures(ctx, t)
 
 	// Retry previous failures. (None)
-	loop.retryFailures(ctx)
+	loop.TestRetryFailures(ctx, t)
 	mockCtrl.Finish()
 }
 
@@ -197,13 +206,16 @@ func TestProcessor_SkipNotificationsForSecuredClusterNotifiers(t *testing.T) {
 	mockEmailAlertNotifier := mocks.NewMockAlertNotifier(mockCtrl)
 
 	// Create our tested objects.
-	ns := NewNotifierSet()
+	ns := notifier.NewNotifierSet(time.Hour)
 	processor := &processorImpl{ns: ns}
 
-	// Add the notifiers to the processor.
 	mockJiraAlertNotifier.EXPECT().ProtoNotifier().Return(jiraAlertNotfierProto).AnyTimes()
 	mockEmailAlertNotifier.EXPECT().ProtoNotifier().Return(emailAlertNotfierProto).AnyTimes()
 
+	mockJiraAlertNotifier.EXPECT().IsSecuredClusterNotifier().Return(true).AnyTimes()
+	mockEmailAlertNotifier.EXPECT().IsSecuredClusterNotifier().Return(false).AnyTimes()
+
+	// Add the notifiers to the processor.
 	processor.UpdateNotifier(ctx, mockJiraAlertNotifier)
 	processor.UpdateNotifier(ctx, mockEmailAlertNotifier)
 

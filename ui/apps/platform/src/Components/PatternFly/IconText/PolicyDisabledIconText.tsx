@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { BanIcon, CheckIcon } from '@patternfly/react-icons';
+import { CheckIcon, MinusIcon } from '@patternfly/react-icons';
 
 import IconText from './IconText';
 
@@ -12,11 +12,7 @@ function PolicyDisabledIconText({
     isDisabled,
     isTextOnly,
 }: PolicyDisabledIconTextProps): ReactElement {
-    const icon = isDisabled ? (
-        <BanIcon />
-    ) : (
-        <CheckIcon color="var(--pf-global--success-color--100)" />
-    );
+    const icon = isDisabled ? <MinusIcon /> : <CheckIcon />;
     const text = isDisabled ? 'Disabled' : 'Enabled';
 
     return <IconText icon={icon} text={text} isTextOnly={isTextOnly} />;

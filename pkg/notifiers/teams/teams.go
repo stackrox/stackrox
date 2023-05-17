@@ -372,6 +372,10 @@ func (t *teams) Test(ctx context.Context) error {
 	)
 }
 
+func (t *teams) IsSecuredClusterNotifier() bool {
+	return false
+}
+
 func postMessage(ctx context.Context, url string, jsonPayload []byte) error {
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonPayload))
 	if err != nil {

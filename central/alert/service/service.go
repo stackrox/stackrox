@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/alert/datastore"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	baselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
+	pkgNotifier "github.com/stackrox/rox/pkg/notifier"
 )
 
 var (
@@ -25,7 +25,7 @@ type Service interface {
 }
 
 // New returns a new Service soleInstance using the given DataStore.
-func New(datastore datastore.DataStore, baselines baselineDatastore.DataStore, notifier notifierProcessor.Processor, connectionManager connection.Manager) Service {
+func New(datastore datastore.DataStore, baselines baselineDatastore.DataStore, notifier pkgNotifier.Processor, connectionManager connection.Manager) Service {
 	return &serviceImpl{
 		dataStore:         datastore,
 		notifier:          notifier,

@@ -16,4 +16,6 @@ type Notifier interface {
 	ProtoNotifier() *storage.Notifier
 	// Test sends a test message
 	Test(context.Context) error
+	// IsSecuredClusterNotifier returns true if this notifier can be used in the secured cluster
+	IsSecuredClusterNotifier() bool
 }

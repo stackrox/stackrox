@@ -67,13 +67,13 @@ function PermissionsTable({
                         }
                     >
                         <Td dataLabel="Resource">
-                            <p>{resource}</p>
-                            <p style={{ fontStyle: 'italic' }}>
+                            <p className="pf-u-font-weight-bold">{resource}</p>
+                            <p>
                                 {resourceSubstitutions[resource] && (
                                     <>Replaces {resourceSubstitutions[resource].join(', ')}</>
                                 )}
                             </p>
-                            <p style={{ fontStyle: 'italic' }}>
+                            <p>
                                 {resourceRemovalReleaseVersions.has(resource as ResourceName) && (
                                     <>
                                         Will be removed in{' '}
@@ -84,7 +84,7 @@ function PermissionsTable({
                                     </>
                                 )}
                             </p>
-                            <p style={{ fontStyle: 'italic' }}>
+                            <p>
                                 {replacedResourceMapping.has(resource as ResourceName) && (
                                     <>
                                         Will be replaced by{' '}

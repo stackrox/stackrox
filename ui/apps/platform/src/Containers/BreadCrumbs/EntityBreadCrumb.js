@@ -31,7 +31,7 @@ const EntityBreadCrumb = ({ workflowEntity, url }) => {
                     <span className={extraClasses}>{title}</span>
                 </span>
             )}
-            <span className="capitalize italic font-600">{subTitle}</span>
+            <span className="capitalize font-600">{subTitle}</span>
         </span>
     );
 };

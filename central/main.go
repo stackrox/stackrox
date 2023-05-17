@@ -48,6 +48,7 @@ import (
 	"github.com/stackrox/rox/central/cve/suppress"
 	debugService "github.com/stackrox/rox/central/debug/service"
 	"github.com/stackrox/rox/central/declarativeconfig"
+	delegatedRegistryConfigService "github.com/stackrox/rox/central/delegatedregistryconfig/service"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
 	detectionService "github.com/stackrox/rox/central/detection/service"
@@ -106,12 +107,12 @@ import (
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	reportConfigurationService "github.com/stackrox/rox/central/reportconfigurations/service"
+	reportConfigurationServiceV2 "github.com/stackrox/rox/central/reportconfigurations/service/v2"
 	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
 	reportService "github.com/stackrox/rox/central/reports/service"
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
-	"github.com/stackrox/rox/central/role"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/central/role/resources"
@@ -156,9 +157,11 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -357,6 +360,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 			configDS.Singleton(),
 			notifierDS.Singleton(),
 		),
+		delegatedRegistryConfigService.Singleton(),
 		deploymentService.Singleton(),
 		detectionService.Singleton(),
 		featureFlagService.Singleton(),
@@ -406,6 +410,11 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, processListeningOnPorts.Singleton())
 	} else {
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
+	}
+
+	if features.VulnMgmtReportingEnhancements.Enabled() {
+		// TODO Remove (deprecated) v1 report configuration service when Reporting enhancements are enabled by default.
+		servicesToRegister = append(servicesToRegister, reportConfigurationServiceV2.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
@@ -722,7 +731,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:      "/api/extensions/backup",
-			Authorizer: user.WithRole(role.Admin),
+			Authorizer: user.WithRole(accesscontrol.Admin),
 			ServerHandler: notImplementedOnManagedServices(
 				globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), listener.Singleton(), true),
 			),
@@ -755,7 +764,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		})
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/extensions/backup",
-			Authorizer:    user.WithRole(role.Admin),
+			Authorizer:    user.WithRole(accesscontrol.Admin),
 			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, listener.Singleton(), true)),
 			Compression:   true,
 		})
@@ -820,7 +829,7 @@ func debugRoutes() []routes.CustomRoute {
 	for r, h := range routes.DebugRoutes {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         r,
-			Authorizer:    user.WithRole(role.Admin),
+			Authorizer:    user.WithRole(accesscontrol.Admin),
 			ServerHandler: h,
 			Compression:   true,
 		})
