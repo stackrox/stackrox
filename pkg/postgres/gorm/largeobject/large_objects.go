@@ -12,20 +12,19 @@ import (
 // This is originally created with similar API with existing github.com/jackc/pgx
 // For more details see: http://www.postgresql.org/docs/current/static/largeobjects.html
 type LargeObjects struct {
-	tx *gorm.DB
+	*gorm.DB
 }
 
 type Mode int32
 
 const (
-	ModeWrite     Mode = 0x20000
-	ModeRead      Mode = 0x40000
-	ModeReadWrite Mode = ModeRead | ModeRead
+	ModeWrite Mode = 0x20000
+	ModeRead  Mode = 0x40000
 )
 
 // Create creates a new large object with an unused OID assigned
 func (o *LargeObjects) Create() (oid uint32, err error) {
-	result := o.tx.Raw("SELECT lo_create($1)", 0).Scan(&oid)
+	result := o.Raw("SELECT lo_create($1)", 0).Scan(&oid)
 	return oid, result.Error
 }
 
@@ -33,17 +32,17 @@ func (o *LargeObjects) Create() (oid uint32, err error) {
 // object.
 func (o *LargeObjects) Open(oid uint32, mode Mode) (*LargeObject, error) {
 	var fd int32
-	result := o.tx.Raw("select lo_open($1, $2)", oid, mode).Scan(&fd)
+	result := o.Raw("select lo_open($1, $2)", oid, mode).Scan(&fd)
 	if result.Error != nil {
 		return nil, result.Error
 	}
-	return &LargeObject{fd: fd, tx: o.tx}, nil
+	return &LargeObject{fd: fd, tx: o.DB}, nil
 }
 
 // Unlink removes a large object from the database.
 func (o *LargeObjects) Unlink(oid uint32) error {
 	var count int32
-	result := o.tx.Raw("select lo_unlink($1)", oid).Scan(&count)
+	result := o.Raw("select lo_unlink($1)", oid).Scan(&count)
 	if result.Error != nil {
 		return result.Error
 	}

@@ -5,19 +5,25 @@ import (
 	"database/sql"
 	"os"
 
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/m_180_to_m_181_move_to_blobstore/schema"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/gorm/largeobject"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
 
 const (
 	scannerDefBlobName = "/offline/scanner/scanner-defs.zip"
-	scannerDefPath     = "/var/lib/stackrox/scannerdefinitions/scanner-defs.zip"
+)
+
+var (
+	scannerDefPath = "/var/lib/stackrox/scannerdefinitions/scanner-defs.zip"
 )
 
 var (
@@ -27,78 +33,90 @@ var (
 		Run: func(databases *types.Databases) error {
 			err := moveToBlobs(databases.GormDB)
 			if err != nil {
-				return errors.Wrap(err, "updating policies")
+				return errors.Wrap(err, "moving persistent files to blobs")
 			}
 			return nil
 		},
 	}
-	log          = logging.LoggerForModule()
-	toBeMigrated = map[string]string{
-		scannerDefPath: scannerDefBlobName,
-	}
+	log = logging.LoggerForModule()
 )
 
 func moveToBlobs(db *gorm.DB) (err error) {
 	ctx := sac.WithAllAccess(context.Background())
 	db = db.WithContext(ctx).Table(schema.BlobsTableName)
-	if err := db.WithContext(ctx).AutoMigrate(schema.CreateTableBlobsStmt.GormModel); err != nil {
-		return err
-	}
-	tx := db.Model(schema.CreateTableBlobsStmt.GormModel).Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		}
-	}()
+	pgutils.CreateTableFromModel(context.Background(), db, schema.CreateTableBlobsStmt)
 
-	for p, blobName := range toBeMigrated {
-		f, err := os.Open(p)
-		if errors.Is(err, os.ErrNotExist) {
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		target := &schema.Blobs{Name: blobName}
-		result := tx.Take(target)
+	tx := db.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
+	if err = moveScannerDefination(tx); err != nil {
+		result := tx.Rollback()
 		if result.Error != nil {
 			return result.Error
 		}
-		var blob *storage.Blob
-		if result.RowsAffected == 0 {
-			// Create
-			// err := o.tx.QueryRow(ctx, "select lo_create($1)", oid).Scan(&oid)
-			var oid int
-			tx.Select("lo_create(0)").Find()
-			tx.Exec("SELECT lo_create(0)").Find(&oid)
-			blob = &storage.Blob{
-				Name:         blobName,
-				Oid:          0,
-				Length:       0,
-				ModifiedTime: nil,
-			}
-		} else {
-			// Update
-			existingBlob, err := schema.ConvertBlobToProto(target)
-			if err != nil {
-				return err
-			}
-			blob = &storage.Blob{
-				Name:         blobName,
-				Oid:          existingBlob.Oid,
-				Length:       0,
-				ModifiedTime: nil,
-			}
-		}
-		blobModel, err := schema.ConvertBlobFromProto(blob)
-		if err != nil {
-			return err
-		}
-		tx.Exec("")
-		tx = tx.FirstOrCreate(blobModel)
-
+		return err
 	}
+
 	return tx.Commit().Error
+}
+
+func moveScannerDefination(tx *gorm.DB) error {
+	stat, err := os.Stat(scannerDefPath)
+	if err != nil {
+		if os.IsNotExist(err) || stat.IsDir() {
+			return nil
+		}
+		return err
+	}
+	modTime, err := timestamp.TimestampProto(stat.ModTime())
+	if err != nil {
+		return errors.Wrapf(err, "invalid timestamp %v", stat.ModTime())
+	}
+	fd, err := os.Open(scannerDefPath)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return errors.Wrapf(err, "failed to open %s", scannerDefPath)
+	}
+
+	// Prepare blob
+	blob := &storage.Blob{
+		Name:         scannerDefBlobName,
+		Oid:          0,
+		Length:       stat.Size(),
+		LastUpdated:  timestamp.TimestampNow(),
+		ModifiedTime: modTime,
+	}
+	los := largeobject.LargeObjects{DB: tx}
+
+	// Find the blob if it exists
+	var targets []schema.Blobs
+	result := tx.Limit(1).Where(&schema.Blobs{Name: scannerDefBlobName}).Find(&targets)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if len(targets) == 0 {
+		blob.Oid, err = los.Create()
+		if err != nil {
+			return errors.Wrap(err, "failed to create large object")
+		}
+	} else {
+		// Update
+		existingBlob, err := schema.ConvertBlobToProto(&targets[0])
+		if err != nil {
+			return errors.Wrapf(err, "existing blob is not valid %+v", targets[0])
+		}
+		blob.Oid = existingBlob.Oid
+	}
+	blobModel, err := schema.ConvertBlobFromProto(blob)
+	if err != nil {
+		return errors.Wrapf(err, "failed to convert blob to blob model %+v", blob)
+	}
+	tx = tx.FirstOrCreate(blobModel)
+	if tx.Error != nil {
+		return errors.Wrap(tx.Error, "failed to create blob metadata")
+	}
+	return los.Upsert(blob.Oid, fd)
 }
 
 func init() {
