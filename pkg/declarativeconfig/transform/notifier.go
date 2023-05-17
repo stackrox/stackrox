@@ -25,7 +25,7 @@ func newNotifierTransform() *notifierTransform {
 func (r *notifierTransform) Transform(configuration declarativeconfig.Configuration) (map[reflect.Type][]proto.Message, error) {
 	notifierConfig, ok := configuration.(*declarativeconfig.Notifier)
 	if !ok {
-		return nil, errox.InvalidArgs.Newf("invalid configuration type received for role: %T", configuration)
+		return nil, errox.InvalidArgs.Newf("invalid configuration type received for notifier: %T", configuration)
 	}
 
 	if notifierConfig.Name == "" {
