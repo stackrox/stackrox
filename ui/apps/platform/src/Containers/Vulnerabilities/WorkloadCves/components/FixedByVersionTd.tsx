@@ -1,6 +1,6 @@
 import React from 'react';
 import { Flex } from '@patternfly/react-core';
-import { NotFixableIcon } from 'Components/PatternFly/FixabilityIcons';
+import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 
 export type FixedByVersionTdProps = {
     fixedByVersion: string;
@@ -15,10 +15,7 @@ function FixedByVersionTd({ fixedByVersion }: FixedByVersionTdProps) {
             spaceItems={{ default: 'spaceItemsSm' }}
             flexWrap={{ default: 'nowrap' }}
         >
-            <div className="pf-u-flex-basis-auto">
-                <NotFixableIcon />
-            </div>
-            <span>Not fixable</span>
+            <VulnerabilityFixableIconText isFixable={false} />
         </Flex>
     );
 }

@@ -9,7 +9,7 @@ import {
     pluralize,
     Text,
 } from '@patternfly/react-core';
-import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
+import { MinusIcon, WrenchIcon } from '@patternfly/react-icons';
 import { gql } from '@apollo/client';
 
 import { FixableStatus } from '../types';
@@ -45,8 +45,7 @@ export const resourceCountByCveSeverityAndStatusFragment = gql`
 const statusDisplays = [
     {
         status: 'Fixable',
-        Icon: CheckCircleIcon,
-        iconColor: 'var(--pf-global--success-color--100)',
+        Icon: WrenchIcon,
         text: (counts: ResourceCountByCveSeverityAndStatus) => {
             const { critical, important, moderate, low } = counts;
             const fixable = critical.fixable + important.fixable + moderate.fixable + low.fixable;
@@ -55,8 +54,7 @@ const statusDisplays = [
     },
     {
         status: 'Not fixable',
-        Icon: ExclamationCircleIcon,
-        iconColor: 'var(--pf-global--danger-color--100)',
+        Icon: MinusIcon,
         text: (counts: ResourceCountByCveSeverityAndStatus) => {
             const { critical, important, moderate, low } = counts;
             const total = critical.total + important.total + moderate.total + low.total;
@@ -82,7 +80,7 @@ function CvesByStatusSummaryCard({
             <CardTitle>CVEs by status</CardTitle>
             <CardBody>
                 <Grid className="pf-u-pl-sm">
-                    {statusDisplays.map(({ status, Icon, iconColor, text }) => {
+                    {statusDisplays.map(({ status, Icon, text }) => {
                         const isHidden = hiddenStatuses.has(status);
                         return (
                             <GridItem key={status} span={12}>
@@ -91,7 +89,7 @@ function CvesByStatusSummaryCard({
                                     spaceItems={{ default: 'spaceItemsSm' }}
                                     alignItems={{ default: 'alignItemsCenter' }}
                                 >
-                                    <Icon color={iconColor} />
+                                    <Icon />
                                     <Text
                                         style={{
                                             color: isHidden ? disabledColor100 : 'inherit',
