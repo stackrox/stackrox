@@ -18,19 +18,20 @@ type LargeObjects struct {
 type Mode int32
 
 const (
-	ModeWrite Mode = 0x20000
-	ModeRead  Mode = 0x40000
+	ModeWrite     Mode = 0x20000
+	ModeRead      Mode = 0x40000
+	ModeReadWrite Mode = ModeRead | ModeRead
 )
 
 // Create creates a new large object with an unused OID assigned
 func (o *LargeObjects) Create() (uint32, error) {
-	o.tx = o.tx.Raw("SELECT lo_create($1)", 0)
-	if err := o.tx.Error; err != nil {
+	result := o.tx.Raw("SELECT lo_create($1)", 0)
+	if err := result.Error; err != nil {
 		return 0, err
 	}
 	var oid uint32
-	o.tx = o.tx.Scan(&oid)
-	return oid, o.tx.Error
+	result = result.Scan(&oid)
+	return oid, result.Error
 }
 
 // Open opens an existing large object with the given mode. ctx will also be used for all operations on the opened large
@@ -103,14 +104,8 @@ type LargeObject struct {
 // Write writes p to the large object and returns the number of bytes written and an error if not all of p was written.
 func (o *LargeObject) Write(p []byte) (int, error) {
 	var n int
-	o.tx = o.tx.Raw("select lowrite($1, $2)", o.fd, p)
-	if err := o.tx.Error; err != nil {
-		return n, err
-	}
-	if err := o.tx.Row().Scan(&n); err != nil {
-		return n, err
-	}
-	if err := o.tx.Error; err != nil {
+	err := o.tx.Raw("select lowrite($1, $2)", o.fd, p).Row().Scan(&n)
+	if err != nil {
 		return n, err
 	}
 
@@ -123,16 +118,10 @@ func (o *LargeObject) Write(p []byte) (int, error) {
 
 // Read reads up to len(p) bytes into p returning the number of bytes read.
 func (o *LargeObject) Read(p []byte) (n int, err error) {
-	var res []byte = make([]byte, 0, len(p))
-	o.tx = o.tx.Raw("select loread($1, $2)", o.fd, len(p))
-	if err = o.tx.Error; err != nil {
-		return 0, err
-	}
-	if err = o.tx.Row().Scan(&res); err != nil {
-		return 0, err
-	}
+	var res []byte
+	err = o.tx.Raw("select loread($1, $2)", o.fd, len(p)).Row().Scan(&res)
 	copy(p, res)
-	if err = o.tx.Error; err != nil {
+	if err != nil {
 		return len(res), err
 	}
 
