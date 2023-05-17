@@ -12,16 +12,16 @@ import (
 type EnvNodeNameProvider struct {
 	once sync.Once
 	log  *logging.Logger
+	name string
 }
 
 // GetNodeName gets the node name
 func (np *EnvNodeNameProvider) GetNodeName() string {
-	var node string
 	np.once.Do(func() {
-		node = os.Getenv(string(orchestrators.NodeName))
-		if node == "" {
+		np.name = os.Getenv(string(orchestrators.NodeName))
+		if np.name == "" {
 			np.log.Fatal("No node name found in the environment")
 		}
 	})
-	return node
+	return np.name
 }
