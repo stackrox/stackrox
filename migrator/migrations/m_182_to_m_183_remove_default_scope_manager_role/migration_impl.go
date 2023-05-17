@@ -45,47 +45,53 @@ func migrate(database *types.Databases) error {
 	permissionSetStorage := permissionSetStore.New(database.PostgresDB)
 	roleStorage := roleStore.New(database.PostgresDB)
 
-	var err *multierror.Error
+	var migrateErrors *multierror.Error
 	canRemoveRole := true
-	canRemovePermissionSet := true
 	// Check whether the old default role is used
-	usesScopeManagerRole, useRoleCheckErr := isScopeManagerRoleReferenced(ctx, apiTokenStorage, groupStorage)
+	usesScopeManagerRole, referencingTokenIDs, useRoleCheckErr := isScopeManagerRoleReferenced(ctx, apiTokenStorage, groupStorage)
 	if useRoleCheckErr != nil {
 		canRemoveRole = false
-		err = multierror.Append(err, useRoleCheckErr)
+		migrateErrors = multierror.Append(migrateErrors, useRoleCheckErr)
 	}
 	if usesScopeManagerRole {
-		addRoleErr := addDeprecatedScopeManagerRole(ctx, roleStorage)
-		if addRoleErr != nil {
+		if addRoleErr := addDeprecatedScopeManagerRole(ctx, roleStorage); addRoleErr != nil {
+			// It is safe to fail fast here. The remaining work is:
+			// - Update of the references to the role (not possible as the replacement is not available).
+			// - Removal of the old role (not possible as the replacement is not available).
+			// - Update of the permission set to flag it as `[DEPRECATED]` (would be misleading
+			// without further recovery instructions).
+			migrateErrors = multierror.Append(migrateErrors, addRoleErr)
+			return migrateErrors.ErrorOrNil()
+		}
+		tokenUpdateErr := updateScopeManagerRoleReferencesInAPITokens(ctx, apiTokenStorage, referencingTokenIDs)
+		if tokenUpdateErr != nil {
 			canRemoveRole = false
-			err = multierror.Append(err, addRoleErr)
-		} else {
-			tokenUpdateErr := updateScopeManagerRoleReferencesInAPITokens(ctx, apiTokenStorage)
-			if tokenUpdateErr != nil {
-				canRemoveRole = false
-				err = multierror.Append(err, tokenUpdateErr)
-			}
-			groupUpdateErr := updateScopeManagerRoleReferencesInGroups(ctx, groupStorage)
-			if groupUpdateErr != nil {
-				canRemoveRole = false
-				err = multierror.Append(err, tokenUpdateErr)
-			}
+			migrateErrors = multierror.Append(migrateErrors, tokenUpdateErr)
+		}
+		groupUpdateErr := updateScopeManagerRoleReferencesInGroups(ctx, groupStorage)
+		if groupUpdateErr != nil {
+			canRemoveRole = false
+			migrateErrors = multierror.Append(migrateErrors, tokenUpdateErr)
 		}
 	}
 	if canRemoveRole {
-		roleRemoveErr := removeDefaultScopeManagerRole(ctx, roleStorage)
-		if roleRemoveErr != nil {
-			canRemovePermissionSet = false
-			err = multierror.Append(err, roleRemoveErr)
+		if roleRemoveErr := removeDefaultScopeManagerRole(ctx, roleStorage); roleRemoveErr != nil {
+			// It is safe to fail fast here. The remaining work is around the default permission set,
+			// which cannot be removed (remaining reference). It would also be misleading to flag it
+			// as deprecated without further recovery instructions.
+			migrateErrors = multierror.Append(migrateErrors, roleRemoveErr)
+			return migrateErrors.ErrorOrNil()
 		}
-	} else {
-		canRemovePermissionSet = false
 	}
+	// If the role cannot be removed, neither can the permission set.
+	// Otherwise, the ability to remove the permission set depends on
+	// potential references from other roles.
+	canRemovePermissionSet := canRemoveRole
 	// Check for permission set references
 	usesScopeManagerPermissionSet, usePermissionSetCheckErr := isScopeManagerPermissionSetReferenced(ctx, roleStorage)
 	if usePermissionSetCheckErr != nil {
 		canRemovePermissionSet = false
-		err = multierror.Append(err, usePermissionSetCheckErr)
+		migrateErrors = multierror.Append(migrateErrors, usePermissionSetCheckErr)
 	}
 	if usesScopeManagerPermissionSet {
 		// The Role -> PermissionSet reference is using the PermissionSet ID which will be left untouched.
@@ -93,17 +99,15 @@ func migrate(database *types.Databases) error {
 		// The permission set Name and Description will be updated.
 		updatePermissionSetErr := updateScopeManagerPermissionSet(ctx, permissionSetStorage)
 		if updatePermissionSetErr != nil {
-			err = multierror.Append(err, updatePermissionSetErr)
+			migrateErrors = multierror.Append(migrateErrors, updatePermissionSetErr)
 		}
-	} else {
-		if canRemovePermissionSet {
-			deletePermissionSetErr := removeDefaultScopeManagerPermissionSet(ctx, permissionSetStorage)
-			if deletePermissionSetErr != nil {
-				err = multierror.Append(err, deletePermissionSetErr)
-			}
+	} else if canRemovePermissionSet {
+		deletePermissionSetErr := removeDefaultScopeManagerPermissionSet(ctx, permissionSetStorage)
+		if deletePermissionSetErr != nil {
+			migrateErrors = multierror.Append(migrateErrors, deletePermissionSetErr)
 		}
 	}
-	return err.ErrorOrNil()
+	return migrateErrors.ErrorOrNil()
 }
 
 func apiTokenHasScopeManagerRole(obj *storage.TokenMetadata) bool {
@@ -120,16 +124,15 @@ func groupHasScopeManagerRole(obj *storage.Group) bool {
 	return obj.GetRoleName() == ScopeManagerRoleName
 }
 
-func isScopeManagerRoleReferenced(ctx context.Context, apiTokenStorage apiTokenStore.Store, groupStorage groupStore.Store) (bool, error) {
+func isScopeManagerRoleReferenced(ctx context.Context, apiTokenStorage apiTokenStore.Store, groupStorage groupStore.Store) (bool, []string, error) {
 	roleReferenceFound := false
 	var err *multierror.Error
+	referencingTokenIDs := make([]string, 0)
 	tokenWalkErr := apiTokenStorage.Walk(ctx, func(obj *storage.TokenMetadata) error {
-		if roleReferenceFound {
-			return nil
-		}
 		hasScopeManagerRole := apiTokenHasScopeManagerRole(obj)
 		if hasScopeManagerRole {
 			roleReferenceFound = true
+			referencingTokenIDs = append(referencingTokenIDs, obj.GetId())
 		}
 		return nil
 	})
@@ -137,7 +140,7 @@ func isScopeManagerRoleReferenced(ctx context.Context, apiTokenStorage apiTokenS
 		err = multierror.Append(err, tokenWalkErr)
 	}
 	if roleReferenceFound {
-		return true, nil
+		return true, referencingTokenIDs, nil
 	}
 	groupWalkErr := groupStorage.Walk(ctx, func(obj *storage.Group) error {
 		if roleReferenceFound {
@@ -153,9 +156,9 @@ func isScopeManagerRoleReferenced(ctx context.Context, apiTokenStorage apiTokenS
 	}
 	multiErr := err.ErrorOrNil()
 	if multiErr != nil {
-		return false, multiErr
+		return false, nil, multiErr
 	}
-	return roleReferenceFound, nil
+	return roleReferenceFound, nil, nil
 }
 
 func addDeprecatedScopeManagerRole(ctx context.Context, roleStorage roleStore.Store) error {
@@ -199,18 +202,19 @@ func updateScopeManagerRoleReferencesInGroups(ctx context.Context, groupStorage 
 	var err *multierror.Error
 	groupsToUpdate := make([]*storage.Group, 0, batchSize)
 	walkErr := groupStorage.Walk(ctx, func(obj *storage.Group) error {
-		if groupHasScopeManagerRole(obj) {
-			updatedGroup := obj.Clone()
-			updatedGroup.RoleName = deprecatedPrefix + ScopeManagerRoleName
-			groupsToUpdate = append(groupsToUpdate, updatedGroup)
-			if len(groupsToUpdate) >= batchSize {
-				upsertErr := groupStorage.UpsertMany(ctx, groupsToUpdate)
-				if upsertErr != nil {
-					logGroupUpdateFailure(groupsToUpdate, upsertErr)
-					err = multierror.Append(err, upsertErr)
-				}
-				groupsToUpdate = groupsToUpdate[:0]
+		if !groupHasScopeManagerRole(obj) {
+			return nil
+		}
+		updatedGroup := obj.Clone()
+		updatedGroup.RoleName = deprecatedPrefix + ScopeManagerRoleName
+		groupsToUpdate = append(groupsToUpdate, updatedGroup)
+		if len(groupsToUpdate) >= batchSize {
+			upsertErr := groupStorage.UpsertMany(ctx, groupsToUpdate)
+			if upsertErr != nil {
+				logGroupUpdateFailure(groupsToUpdate, upsertErr)
+				err = multierror.Append(err, upsertErr)
 			}
+			groupsToUpdate = groupsToUpdate[:0]
 		}
 		return nil
 	})
@@ -228,11 +232,7 @@ func updateScopeManagerRoleReferencesInGroups(ctx context.Context, groupStorage 
 	return err.ErrorOrNil()
 }
 
-func logAPITokenUpdateFailure(tokens []*storage.TokenMetadata, err error) {
-	tokenIDs := make([]string, 0, len(tokens))
-	for _, t := range tokens {
-		tokenIDs = append(tokenIDs, t.GetId())
-	}
+func logAPITokenUpdateFailure(tokenIDs []string, err error) {
 	log.Errorf(
 		"Failed to update %q role reference for API Tokens %q (error: %v)",
 		ScopeManagerRoleName,
@@ -241,43 +241,47 @@ func logAPITokenUpdateFailure(tokens []*storage.TokenMetadata, err error) {
 	)
 }
 
-func updateScopeManagerRoleReferencesInAPITokens(ctx context.Context, apiTokenStorage apiTokenStore.Store) error {
-	var err *multierror.Error
-	tokensToUpdate := make([]*storage.TokenMetadata, 0, batchSize)
-	walkErr := apiTokenStorage.Walk(ctx, func(obj *storage.TokenMetadata) error {
-		if apiTokenHasScopeManagerRole(obj) {
-			updatedToken := obj.Clone()
-			updatedRoles := make([]string, 0, len(obj.GetRoles()))
-			for _, roleName := range obj.GetRoles() {
-				if roleName == ScopeManagerRoleName {
-					updatedRoles = append(updatedRoles, deprecatedPrefix+ScopeManagerRoleName)
-				} else {
-					updatedRoles = append(updatedRoles, roleName)
-				}
-			}
-			updatedToken.Roles = updatedRoles
-			tokensToUpdate = append(tokensToUpdate, updatedToken)
-		}
-		if len(tokensToUpdate) >= batchSize {
-			upsertErr := apiTokenStorage.UpsertMany(ctx, tokensToUpdate)
-			if upsertErr != nil {
-				logAPITokenUpdateFailure(tokensToUpdate, upsertErr)
-				err = multierror.Append(err, upsertErr)
-			}
-			tokensToUpdate = tokensToUpdate[:0]
-		}
-		return nil
-	})
-	if walkErr != nil {
-		err = multierror.Append(walkErr)
+func batchUpdateScopeManagerRoleReferencesInAPITokens(ctx context.Context, apiTokenStorage apiTokenStore.Store, tokenIDBatch []string) error {
+	fetchedTokens, _, fetchErr := apiTokenStorage.GetMany(ctx, tokenIDBatch)
+	if fetchErr != nil {
+		return fetchErr
 	}
-	if len(tokensToUpdate) >= batchSize {
-		upsertErr := apiTokenStorage.UpsertMany(ctx, tokensToUpdate)
-		if upsertErr != nil {
-			logAPITokenUpdateFailure(tokensToUpdate, upsertErr)
-			err = multierror.Append(err, upsertErr)
+	tokensToUpdate := make([]*storage.TokenMetadata, 0, len(fetchedTokens))
+	for _, token := range fetchedTokens {
+		updatedToken := token.Clone()
+		updatedRoles := make([]string, 0, len(token.GetRoles()))
+		for _, roleName := range token.GetRoles() {
+			if roleName == ScopeManagerRoleName {
+				roleName = deprecatedPrefix + ScopeManagerRoleName
+			}
+			updatedRoles = append(updatedRoles, roleName)
 		}
-		tokensToUpdate = tokensToUpdate[:0]
+		updatedToken.Roles = updatedRoles
+		tokensToUpdate = append(tokensToUpdate, updatedToken)
+	}
+	return apiTokenStorage.UpsertMany(ctx, tokensToUpdate)
+}
+
+func updateScopeManagerRoleReferencesInAPITokens(ctx context.Context, apiTokenStorage apiTokenStore.Store, referencingTokenIDs []string) error {
+	var err *multierror.Error
+	tokenIDsToFetch := make([]string, 0, batchSize)
+	for _, tokenID := range referencingTokenIDs {
+		tokenIDsToFetch = append(tokenIDsToFetch, tokenID)
+		if len(tokenIDsToFetch) >= batchSize {
+			batchErr := batchUpdateScopeManagerRoleReferencesInAPITokens(ctx, apiTokenStorage, tokenIDsToFetch)
+			if batchErr != nil {
+				logAPITokenUpdateFailure(tokenIDsToFetch, batchErr)
+				err = multierror.Append(err, batchErr)
+			}
+			tokenIDsToFetch = tokenIDsToFetch[:0]
+		}
+	}
+	if len(tokenIDsToFetch) >= batchSize {
+		batchErr := batchUpdateScopeManagerRoleReferencesInAPITokens(ctx, apiTokenStorage, tokenIDsToFetch)
+		if batchErr != nil {
+			logAPITokenUpdateFailure(tokenIDsToFetch, batchErr)
+			err = multierror.Append(err, batchErr)
+		}
 	}
 	return err.ErrorOrNil()
 }
