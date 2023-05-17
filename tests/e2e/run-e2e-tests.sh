@@ -19,14 +19,14 @@ usage() {
     cat <<_EOH_
 Usage:
 $script [Options...] [E2e flavor]
- 
+
    Configures the cluster and runs all suites.
- 
+
 $script [Options...] [E2e flavor] Suite [Case]
- 
-   Expects a previously configured cluster and runs only selected 
+
+   Expects a previously configured cluster and runs only selected
    suite/case. [qa flavor only].
- 
+
 Run e2e tests using the working directory code via the rox-ci-image /
 stackrox-test container, against the cluster defined in the calling
 environment.
@@ -137,7 +137,7 @@ if [[ ! -f "/i-am-rox-ci-image" ]]; then
       --platform linux/amd64 \
       --rm -it \
       --entrypoint="$0" \
-      quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.55 "$@"
+      quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57.1 "$@"
     exit 0
 fi
 
