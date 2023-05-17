@@ -78,17 +78,9 @@ TARGET_ARCH = "arm64"
 endif
 
 ifeq ($(UNAME_S),Darwin)
-BIND_GOCACHE ?= 0
 BIND_GOPATH ?= 0
 else
-BIND_GOCACHE ?= 1
 BIND_GOPATH ?= 1
-endif
-
-ifeq ($(BIND_GOCACHE),1)
-GOCACHE_VOLUME_SRC := $(CURDIR)/linux-gocache
-else
-GOCACHE_VOLUME_SRC := $(GOCACHE_VOLUME_NAME)
 endif
 
 ifeq ($(BIND_GOPATH),1)
@@ -97,7 +89,7 @@ else
 GOPATH_VOLUME_SRC := $(GOPATH_VOLUME_NAME)
 endif
 
-LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v $(GOCACHE_VOLUME_SRC):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated
+LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v $(GOCACHE_VOLUME_NAME):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated
 GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go -e GOCACHE=/linux-gocache -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0='/src'
 
 null :=
@@ -379,12 +371,14 @@ bin/$(HOST_OS)_$(GOARCH)/admission-control: build-prep
 
 .PHONY: build-volumes
 build-volumes:
-	$(SILENT)mkdir -p $(CURDIR)/linux-gocache
 	$(SILENT)docker volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOPATH_VOLUME_NAME)
 	$(SILENT)docker volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOCACHE_VOLUME_NAME)
 ifneq ($(DOCKER_USER),)
-	@echo "Restoring user's ownership of linux-gocache and go directories after previous runs which could set it to root..."
-	$(SILENT)docker run --rm $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) chown -R "$(shell id -u)" /linux-gocache /go
+# There's no option to specify user permissions or ownership of volume upon creation or mounting in docker.
+# Therefore, we assign user ownership of gocache volume with the following command.
+# Note that podman runs as user differently and doesn't have such problem.
+	@echo "Fixing user ownership of linux-gocache directory..."
+	$(SILENT)docker run --rm $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) chown -R "$(shell id -u)" /linux-gocache
 endif
 
 .PHONY: main-builder-image
