@@ -41,7 +41,7 @@ const ContainerImage = ({ image }): ReactElement | null => {
         return (
             <div className="flex py-3">
                 <div className="font-700 inline pr-1">Image Name:</div>
-                <div className="font-600">
+                <div>
                     {image.name.fullName}
                     <span className="pl-1">({unavailableText})</span>{' '}
                 </div>
@@ -53,7 +53,7 @@ const ContainerImage = ({ image }): ReactElement | null => {
         <div className="py-3 pb-2 leading-normal border-b border-base-300">
             <div className="font-700 inline">Image Name: </div>
             <Link
-                className="font-600 text-primary-600 hover:text-primary-800 leading-normal word-break"
+                className="text-primary-600 hover:text-primary-800 leading-normal word-break"
                 to={`${vulnManagementPath}/image/${image.id as string}`}
             >
                 {image.name.fullName}
@@ -64,7 +64,7 @@ const ContainerImage = ({ image }): ReactElement | null => {
 
 const Resources = ({ resources }): ReactElement => {
     if (!resources) {
-        return <span className="py-3 font-600">None</span>;
+        return <span className="py-3">None</span>;
     }
     const resourceMap = {
         cpuCoresRequest: { label: 'CPU Request (cores)' },
@@ -80,7 +80,7 @@ type Volume = Record<string, string>;
 
 const ContainerVolumes = ({ volumes }: { volumes: Volume[] }): ReactElement => {
     if (!volumes?.length) {
-        return <span className="py-1 font-600">None</span>;
+        return <span className="py-1">None</span>;
     }
     return (
         <>
@@ -98,7 +98,7 @@ const ContainerVolumes = ({ volumes }: { volumes: Volume[] }): ReactElement => {
                                     <span className="font-700 pr-1">
                                         {capitalize(lowerCase(key))}:
                                     </span>
-                                    <span className="font-600">{volume[key].toString()}</span>
+                                    <span>{volume[key].toString()}</span>
                                 </div>
                             )
                     )}
@@ -114,7 +114,7 @@ type Secret = {
 };
 const ContainerSecrets = ({ secrets }: { secrets: Secret[] }): ReactElement => {
     if (!secrets?.length) {
-        return <span className="py-1 font-600">None</span>;
+        return <span className="py-1">None</span>;
     }
     return (
         <>
@@ -122,11 +122,11 @@ const ContainerSecrets = ({ secrets }: { secrets: Secret[] }): ReactElement => {
                 <div key={`${name}-${path}`} className="py-2">
                     <div className="py-1">
                         <span className="font-700 pr-1">Name:</span>
-                        <span className="font-600">{name}</span>
+                        <span>{name}</span>
                     </div>
                     <div className="py-1">
                         <span className="font-700 pr-1">Container Path:</span>
-                        <span className="font-600">{path}</span>
+                        <span>{path}</span>
                     </div>
                 </div>
             ))}
@@ -175,7 +175,7 @@ const ContainerConfigurations = ({ deployment }): ReactElement => {
             );
         });
     } else {
-        containers = <span className="py-3 font-600">None</span>;
+        containers = <span className="py-3">None</span>;
     }
     return <div className="flex-col h-full px-3">{containers}</div>;
 };
