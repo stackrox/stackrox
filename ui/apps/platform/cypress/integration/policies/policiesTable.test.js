@@ -66,8 +66,8 @@ describe('Policies table', () => {
         visitPolicies();
 
         cy.get('th[scope="col"]:contains("Policy")');
-        cy.get('th[scope="col"]:contains("Description")');
         cy.get('th[scope="col"]:contains("Status")');
+        cy.get('th[scope="col"]:contains("Origin")');
         cy.get('th[scope="col"]:contains("Notifiers")');
         cy.get('th[scope="col"]:contains("Severity")');
         cy.get('th[scope="col"]:contains("Lifecycle")');
@@ -131,6 +131,15 @@ describe('Policies table', () => {
         // The following assertions assume that the table is not paginated.
         cy.get(`${selectors.table.statusCell}:contains("Disabled")`);
         cy.get(`${selectors.table.statusCell}:contains("Enabled")`);
+    });
+
+    it('should have expected origin values', () => {
+        visitPolicies();
+
+        // The following assertions assume that the table is not paginated.
+        cy.get(`${selectors.table.originCell}:contains("System")`);
+
+        // TODO: create a User policy and check for its presence in the table
     });
 
     it('should filter policies by disabled status', () => {

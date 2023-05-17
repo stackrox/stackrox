@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/localscanner"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/central/sensor/networkentities"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
@@ -23,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifier"
 	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/reflectutils"
@@ -60,7 +60,7 @@ type sensorConnection struct {
 	policyMgr          common.PolicyManager
 	baselineMgr        common.ProcessBaselineManager
 	networkBaselineMgr common.NetworkBaselineManager
-	notifierProcessor  notifierProcessor.Processor
+	notifierProcessor  notifier.Processor
 
 	sensorHello  *central.SensorHello
 	capabilities set.Set[centralsensor.SensorCapability]
@@ -75,7 +75,7 @@ func newConnection(ctx context.Context,
 	policyMgr common.PolicyManager,
 	baselineMgr common.ProcessBaselineManager,
 	networkBaselineMgr common.NetworkBaselineManager,
-	notifierProcessor notifierProcessor.Processor,
+	notifierProcessor notifier.Processor,
 	hashMgr hashManager.Manager,
 ) *sensorConnection {
 

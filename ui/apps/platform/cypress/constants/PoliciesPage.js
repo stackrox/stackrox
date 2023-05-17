@@ -12,6 +12,7 @@ export const selectors = {
         reassessButton: 'button:contains("Reassess all")',
         policyLink: 'td[data-label="Policy"] a',
         statusCell: 'td[data-label="Status"]',
+        originCell: 'td[data-label="Origin"]',
         severityCell: 'td[data-label="Severity"]',
         lifecycleCell: 'td[data-label="Lifecycle"]',
         selectCheckbox: '.pf-c-table__check input[type="checkbox"]',

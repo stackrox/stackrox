@@ -66,6 +66,20 @@ func (b *datastoreImpl) GetScrubbedNotifiers(ctx context.Context) ([]*storage.No
 	return notifiers, nil
 }
 
+func (b *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
+		return false, err
+	} else if !ok {
+		return false, nil
+	}
+
+	found, err := b.storage.Exists(ctx, id)
+	if err != nil || !found {
+		return false, err
+	}
+	return true, nil
+}
+
 func (b *datastoreImpl) AddNotifier(ctx context.Context, notifier *storage.Notifier) (string, error) {
 	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
 		return "", err

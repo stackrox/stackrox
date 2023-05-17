@@ -279,3 +279,7 @@ func (c *cscc) ProtoNotifier() *storage.Notifier {
 func (c *cscc) Test(context.Context) error {
 	return errors.New("Test is not yet implemented for Cloud SCC")
 }
+
+func (c *cscc) IsSecuredClusterNotifier() bool {
+	return false
+}

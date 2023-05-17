@@ -8,14 +8,6 @@
   font-style: normal;
 }
 
-.ReactModal__Content,
-#main-page-container > div > :not(.pf-c-page__main-section) {
-  font-family: Open Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--base-600);
-}
-
 /* Document assumptions for layout that are specified in PatternFly base.css file. */
 
 /*

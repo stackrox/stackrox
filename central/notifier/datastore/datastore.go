@@ -15,6 +15,7 @@ type DataStore interface {
 	GetScrubbedNotifier(ctx context.Context, id string) (*storage.Notifier, bool, error)
 	GetNotifiers(ctx context.Context) ([]*storage.Notifier, error)
 	GetScrubbedNotifiers(ctx context.Context) ([]*storage.Notifier, error)
+	Exists(ctx context.Context, id string) (bool, error)
 	AddNotifier(ctx context.Context, notifier *storage.Notifier) (string, error)
 	UpdateNotifier(ctx context.Context, notifier *storage.Notifier) error
 	RemoveNotifier(ctx context.Context, id string) error
