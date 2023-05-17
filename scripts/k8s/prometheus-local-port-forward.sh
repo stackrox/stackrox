@@ -9,7 +9,7 @@ echo -n "Waiting for a running Central pod"
 until [ -n "${CENTRAL_POD}" ]; do
   echo -n '.'
   sleep 2
-  CENTRAL_POD="$(kubectl get pod -n $NAMESPACE --selector 'app=central' | grep Running | awk '{print $1}')"
+  CENTRAL_POD="$(kubectl get pod -n "$NAMESPACE" --selector 'app=central' | grep Running | awk '{print $1}')"
 done
 echo "found Central pod: ${CENTRAL_POD}"
 
@@ -20,7 +20,7 @@ trap 'kill -TERM ${PID}; wait ${PID}' TERM INT
 kubectl port-forward -n "$NAMESPACE" "$CENTRAL_POD" "${LOCAL_PORT}:9090" > /dev/null &
 PID=$!
 
-until $(curl --output /dev/null --silent --fail -k "http://localhost:${LOCAL_PORT}/metrics"); do
+until curl --output /dev/null --silent --fail -k "http://localhost:${LOCAL_PORT}/metrics"; do
     echo -n '.'
     sleep 1
 done
