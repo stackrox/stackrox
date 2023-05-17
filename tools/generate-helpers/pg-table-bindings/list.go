@@ -35,6 +35,7 @@ func init() {
 		&storage.ComplianceRunResults{}:                         resources.Compliance,
 		&storage.ComponentCVEEdge{}:                             resources.Image,
 		&storage.Config{}:                                       resources.Administration,
+		&storage.DelegatedRegistryConfig{}:                      resources.Administration,
 		&storage.ExternalBackup{}:                               resources.Integration,
 		&storage.Group{}:                                        resources.Access,
 		&storage.Hash{}:                                         resources.Hash,
