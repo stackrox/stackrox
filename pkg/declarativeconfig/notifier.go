@@ -10,7 +10,7 @@ type KeyValuePair struct {
 type GenericConfig struct {
 	Endpoint            string         `yaml:"endpoint,omitempty"`
 	SkipTLSVerify       bool           `yaml:"skipTLSVerify,omitempty"`
-	CACert              string         `yaml:"caCert,omitempty"`
+	CACertPEM           string         `yaml:"caCertPEM,omitempty"`
 	Username            string         `yaml:"username,omitempty"`
 	Password            string         `yaml:"password,omitempty"`
 	Headers             []KeyValuePair `yaml:"headers,omitempty"`
@@ -26,9 +26,9 @@ type SourceTypePair struct {
 
 // SplunkConfig is representation of storage.Notifier_Splunk that supports transformation from YAML.
 type SplunkConfig struct {
-	HTTPToken           string           `yaml:"httpToken,omitempty"`
-	HTTPEndpoint        string           `yaml:"httpEndpoint,omitempty"`
-	Insecure            bool             `yaml:"disableTLSCertificateValidation,omitempty"`
+	HTTPToken           string           `yaml:"token,omitempty"`
+	HTTPEndpoint        string           `yaml:"endpoint,omitempty"`
+	Insecure            bool             `yaml:"skipTLSVerify,omitempty"`
 	AuditLoggingEnabled bool             `yaml:"auditLoggingEnabled,omitempty"`
 	Truncate            int64            `yaml:"hecTruncateLimit,omitempty"`
 	SourceTypes         []SourceTypePair `yaml:"sourceTypes,omitempty"`

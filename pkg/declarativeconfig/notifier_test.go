@@ -12,7 +12,7 @@ func TestNotifierYAMLTransformation_Generic(t *testing.T) {
 generic:
     endpoint: https://stackrox.com
     skipTLSVerify: true
-    caCert: stackrox-ca-cert
+    caCertPEM: stackrox-ca-cert
     username: Safest Password Generator
     password: qwerty
     headers:
@@ -32,7 +32,7 @@ generic:
 	assert.Equal(t, "test-name", notifier.Name)
 	assert.NotNil(t, notifier.GenericConfig)
 	assert.Equal(t, "https://stackrox.com", notifier.GenericConfig.Endpoint)
-	assert.Equal(t, "stackrox-ca-cert", notifier.GenericConfig.CACert)
+	assert.Equal(t, "stackrox-ca-cert", notifier.GenericConfig.CACertPEM)
 	assert.Equal(t, "Safest Password Generator", notifier.GenericConfig.Username)
 	assert.Equal(t, "qwerty", notifier.GenericConfig.Password)
 	assert.Len(t, notifier.GenericConfig.Headers, 2)
@@ -54,9 +54,9 @@ generic:
 func TestNotifierYAMLTransformation_Splunk(t *testing.T) {
 	data := []byte(`name: test-name
 splunk:
-    httpToken: stackrox-token
-    httpEndpoint: stackrox-endpoint
-    disableTLSCertificateValidation: true
+    token: stackrox-token
+    endpoint: stackrox-endpoint
+    skipTLSVerify: true
     auditLoggingEnabled: true
     hecTruncateLimit: 100
     sourceTypes:
