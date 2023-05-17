@@ -170,13 +170,9 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get() {
 	assert.Empty(t, w.Data.String())
 }
 
-func mustSetModTime(t *testing.T, path string, modTime time.Time) {
-	require.NoError(t, os.Chtimes(path, time.Now(), modTime))
-}
-
 func (s *handlerTestSuite) mustWriteOffline(content string, modTime time.Time) {
 	modifiedTime, err := types.TimestampProto(modTime)
-	s.NoError(err)
+	s.Require().NoError(err)
 	blob := &storage.Blob{
 		Name:         offlineScannerDefinitionBlobName,
 		ModifiedTime: modifiedTime,

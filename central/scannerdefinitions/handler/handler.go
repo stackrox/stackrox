@@ -353,12 +353,12 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 
 	// Open both the "online" and "offline", and save their modification times.
 	var onlineFile *vulDefFile
-	onlineOsFile, onlineTime, err := u.file.Open()
+	onlineOSFile, onlineTime, err := u.file.Open()
 	if err != nil {
 		return
 	}
-	if onlineOsFile != nil {
-		onlineFile = &vulDefFile{File: onlineOsFile, modTime: onlineTime}
+	if onlineOSFile != nil {
+		onlineFile = &vulDefFile{File: onlineOSFile, modTime: onlineTime}
 	}
 
 	defer toClose(onlineFile)
