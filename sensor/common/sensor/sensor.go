@@ -221,13 +221,18 @@ func (s *Sensor) Start() {
 		s.stoppedSig.SignalWithErrorWrap(errSig.Err(), "getting connection from connection factory")
 		return
 	case <-okSig.Done():
-		for _, component := range s.components {
-			component.Notify(common.SensorComponentEventCentralReachable)
-		}
+		s.notifyAllComponents(common.SensorComponentEventCentralReachable)
 	case <-s.stoppedSig.Done():
 		return
 	}
 	go s.communicationWithCentral(&centralReachable)
+}
+
+func (s *Sensor) notifyAllComponents(notification common.SensorComponentEvent) {
+	for _, component := range s.components {
+		// Non-blocking call to each component
+		go component.Notify(notification)
+	}
 }
 
 // newScannerDefinitionsRoute returns a custom route that serves scanner
