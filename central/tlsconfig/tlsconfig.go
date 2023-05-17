@@ -75,7 +75,7 @@ func GetAdditionalCAFilePaths() ([]string, error) {
 		}
 
 		if !isValidAdditionalCAFileName(entryName) {
-			log.Infof(skipAdditionalCAFileMsg, entryName)
+			log.Info(skipAdditionalCAFileMsg(entryName))
 			continue
 		}
 
@@ -263,7 +263,9 @@ func init() {
 	}
 }
 
-var skipAdditionalCAFileMsg = fmt.Sprintf("skipping additional-ca file %%q because it has an invalid extension; allowed file extensions for additional ca certificates are %v", allowedAdditionalCAExtensionList)
+func skipAdditionalCAFileMsg(fileName string) string {
+	return fmt.Sprintf("skipping additional-ca file %q because it has an invalid extension; allowed file extensions for additional ca certificates are %v", fileName, allowedAdditionalCAExtensionList)
+}
 
 func isValidAdditionalCAFileName(fileName string) bool {
 	_, ok := allowedAdditionalCAExtensionMap[path.Ext(fileName)]
