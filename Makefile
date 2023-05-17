@@ -77,19 +77,7 @@ ifeq ($(UNAME_M),arm64)
 TARGET_ARCH = "arm64"
 endif
 
-ifeq ($(UNAME_S),Darwin)
-BIND_GOPATH ?= 0
-else
-BIND_GOPATH ?= 1
-endif
-
-ifeq ($(BIND_GOPATH),1)
-GOPATH_VOLUME_SRC := $(GOPATH)
-else
-GOPATH_VOLUME_SRC := $(GOPATH_VOLUME_NAME)
-endif
-
-LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v $(GOCACHE_VOLUME_NAME):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated
+LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v $(GOCACHE_VOLUME_NAME):/linux-gocache:delegated -v $(GOPATH_VOLUME_NAME):/go:delegated
 GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go -e GOCACHE=/linux-gocache -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0='/src'
 
 null :=
