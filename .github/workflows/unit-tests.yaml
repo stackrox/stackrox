@@ -60,7 +60,7 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report test failures to Jira
-      if: always() && github.event_name == 'push'
+      if: (!cancelled()) && github.event_name == 'push'
       uses: ./.github/actions/junit2jira
       with:
         jira-token: ${{ secrets.JIRA_TOKEN }}
@@ -109,7 +109,7 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report junit failures in jira
-      if: always() && github.event_name == 'push'
+      if: (!cancelled()) && github.event_name == 'push'
       uses: ./.github/actions/junit2jira
       with:
         jira-token: ${{ secrets.JIRA_TOKEN }}
@@ -144,7 +144,7 @@ jobs:
         paths: 'ui/test-results/reports/*.xml'
 
     - name: Report junit failures in jira
-      if: always() && github.event_name == 'push'
+      if: (!cancelled()) && github.event_name == 'push'
       uses: ./.github/actions/junit2jira
       with:
         jira-token: ${{ secrets.JIRA_TOKEN }}
@@ -181,7 +181,7 @@ jobs:
         paths: 'roxctl-test-output/*.xml'
 
     - name: Report junit failures in jira
-      if: always() && github.event_name == 'push'
+      if: (!cancelled()) && github.event_name == 'push'
       uses: ./.github/actions/junit2jira
       with:
         jira-token: ${{ secrets.JIRA_TOKEN }}
