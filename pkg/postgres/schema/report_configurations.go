@@ -40,9 +40,10 @@ const (
 
 // ReportConfigurations holds the Gorm model for Postgres table `report_configurations`.
 type ReportConfigurations struct {
-	Id         string                                 `gorm:"column:id;type:varchar;primaryKey"`
-	Name       string                                 `gorm:"column:name;type:varchar"`
-	Type       storage.ReportConfiguration_ReportType `gorm:"column:type;type:integer"`
-	ScopeId    string                                 `gorm:"column:scopeid;type:varchar"`
-	Serialized []byte                                 `gorm:"column:serialized;type:bytea"`
+	Id                        string                                 `gorm:"column:id;type:varchar;primaryKey"`
+	Name                      string                                 `gorm:"column:name;type:varchar"`
+	Type                      storage.ReportConfiguration_ReportType `gorm:"column:type;type:integer"`
+	ScopeId                   string                                 `gorm:"column:scopeid;type:varchar"`
+	ResourceScopeCollectionId string                                 `gorm:"column:resourcescope_collectionid;type:varchar"`
+	Serialized                []byte                                 `gorm:"column:serialized;type:bytea"`
 }

@@ -32,6 +32,7 @@ type MigrationVersion struct {
 	dbPath        string
 	MainVersion   string `yaml:"image"`
 	SeqNum        int    `yaml:"database"`
+	MinimumSeqNum int    `yaml:"mindatabase"`
 	LastPersisted time.Time
 }
 

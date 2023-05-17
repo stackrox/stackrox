@@ -61,7 +61,7 @@ func (s *handlerTestSuite) SetupTest() {
 func (s *handlerTestSuite) TearDownSuite() {
 	entries, err := os.ReadDir(s.tmpDir)
 	s.NoError(err)
-	s.Less(len(entries), 1)
+	s.LessOrEqual(len(entries), 1)
 	if len(entries) == 1 {
 		s.True(strings.HasPrefix(entries[0].Name(), definitionsBaseDir))
 	}
@@ -176,7 +176,7 @@ func (s *handlerTestSuite) mustWriteOffline(content string, modTime time.Time) {
 	modifiedTime, err := types.TimestampProto(modTime)
 	s.NoError(err)
 	blob := &storage.Blob{
-		Name:         offlineScannerDefsName,
+		Name:         offlineScannerDefinitionBlobName,
 		ModifiedTime: modifiedTime,
 	}
 	s.Require().NoError(s.datastore.Upsert(s.ctx, blob, bytes.NewBuffer([]byte(content))))

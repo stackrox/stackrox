@@ -33,6 +33,7 @@ type DataStore interface {
 	GetAllAccessScopes(ctx context.Context) ([]*storage.SimpleAccessScope, error)
 	GetAccessScopesFiltered(ctx context.Context, filter func(accessScope *storage.SimpleAccessScope) bool) ([]*storage.SimpleAccessScope, error)
 	CountAccessScopes(ctx context.Context) (int, error)
+	AccessScopeExists(ctx context.Context, id string) (bool, error)
 	AddAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error
 	UpdateAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error
 	UpsertAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error

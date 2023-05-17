@@ -33,7 +33,7 @@ const TableHeader = (props) => {
         component = (
             <div className="pt-2">
                 {component}
-                <div className="pl-4 opacity-75 italic">
+                <div className="pl-4 opacity-75">
                     Please add a filter to narrow down your results.
                 </div>
             </div>

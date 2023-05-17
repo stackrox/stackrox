@@ -84,6 +84,10 @@ func (s *splunk) Test(ctx context.Context) error {
 	return s.postAlert(ctx, alert)
 }
 
+func (s *splunk) IsSecuredClusterNotifier() bool {
+	return false
+}
+
 func (s *splunk) postAlert(ctx context.Context, alert *storage.Alert) error {
 	clonedAlert := alert.Clone()
 	// Splunk's HEC by default has a limitation of data size == 10KB

@@ -8,8 +8,8 @@ import (
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusterinit/backend"
 	"github.com/stackrox/rox/central/clusterinit/store"
-	"github.com/stackrox/rox/central/role"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	authorizer = user.WithRole(role.Admin)
+	authorizer = user.WithRole(accesscontrol.Admin)
 )
 
 var _ v1.ClusterInitServiceServer = (*serviceImpl)(nil)

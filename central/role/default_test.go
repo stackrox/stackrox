@@ -4,12 +4,13 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestIsDefaultRole(t *testing.T) {
-	defaultRoleWithTraits := &storage.Role{Name: Admin, Traits: &storage.Traits{Origin: storage.Traits_DEFAULT}}
-	defaultRoleWithoutTraits := &storage.Role{Name: Admin}
+	defaultRoleWithTraits := &storage.Role{Name: accesscontrol.Admin, Traits: &storage.Traits{Origin: storage.Traits_DEFAULT}}
+	defaultRoleWithoutTraits := &storage.Role{Name: accesscontrol.Admin}
 	nonDefaultRole := &storage.Role{Name: "some-random-role"}
 
 	assert.True(t, IsDefaultRole(defaultRoleWithTraits))
@@ -29,9 +30,9 @@ func TestIsDefaultAccessScope(t *testing.T) {
 }
 
 func TestIsDefaultPermissionSet(t *testing.T) {
-	defaultPermissionSetWithTraits := &storage.PermissionSet{Name: Admin,
+	defaultPermissionSetWithTraits := &storage.PermissionSet{Name: accesscontrol.Admin,
 		Traits: &storage.Traits{Origin: storage.Traits_DEFAULT}}
-	defaultPermissionSetWithoutTraits := &storage.PermissionSet{Name: Admin}
+	defaultPermissionSetWithoutTraits := &storage.PermissionSet{Name: accesscontrol.Admin}
 	nonDefaultPermissionSet := &storage.PermissionSet{Name: "some-random-permission-set"}
 
 	assert.True(t, IsDefaultPermissionSet(defaultPermissionSetWithTraits))

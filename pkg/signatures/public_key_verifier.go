@@ -13,9 +13,9 @@ import (
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sigstore/cosign/pkg/cosign"
-	"github.com/sigstore/cosign/pkg/oci"
-	"github.com/sigstore/cosign/pkg/oci/static"
+	"github.com/sigstore/cosign/v2/pkg/cosign"
+	"github.com/sigstore/cosign/v2/pkg/oci"
+	"github.com/sigstore/cosign/v2/pkg/oci/static"
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/sigstore/sigstore/pkg/signature/payload"
 	"github.com/stackrox/rox/generated/storage"
@@ -85,6 +85,13 @@ func (c *cosignPublicKeyVerifier) VerifySignature(ctx context.Context,
 	// By default, verify the claim within the payload that is specified with the simple signing format.
 	// Right now, we are not supporting any additional annotations within the claim.
 	opts.ClaimVerifier = cosign.SimpleClaimVerifier
+
+	// With the latest version of cosign, by default signatures will be uploaded to rekor. This means that also during
+	// verification, an entry in the transparency log will be expected and verified.
+	// Since currently this is not the case in what we support / offer, explicitly disable this for now until we enable
+	// and expect this to be the case.
+	opts.IgnoreTlog = true
+	opts.IgnoreSCT = true
 
 	sigs, hash, err := retrieveVerificationDataFromImage(image)
 	if err != nil {

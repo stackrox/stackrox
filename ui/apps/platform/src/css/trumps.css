@@ -4,8 +4,23 @@
    We should have a goal of eventually being able to delete this file.
  */
 
-body {
-    font-family: var(--pf-global--FontFamily--sans-serif) !important;
+.ReactModal__Content,
+#main-page-container > div > :not(.pf-c-page__main-section) {
+  font-size: 0.75rem;
+  color: var(--base-600);
+}
+
+/* Universal selector increases specificity of these override style rules */
+
+* .theme-dark {
+    --base-500: #aaabac;
+    --base-600: #ffffff;
+}
+
+* .theme-light {
+    --base-500: var(--pf-global--palette--black-600);
+    --base-600: var(--pf-global--palette--black-900);
+    --base-700: var(--pf-global--palette--black-1000);
 }
 
 /* overrides the default link styling in Tailwind (`inherit`) with PF's default blue */

@@ -1,5 +1,43 @@
 # Local-sensor
 
+Local Sensor is a binary entrypoint for Sensor to run it outside of a Kubernetes cluster. This can be helpful for development and debugging. Local sensor can be run in two modes:
+
+- **Fake Central**: No Central installation needed. Messages can be output to terminal or a file.
+- **Connected**: Connects to a real Central installation.
+
+## Build local-sensor
+
+```bash
+go build -o local-sensor ./tools/local-sensor/
+```
+
+## Running local-sensor
+
+To run local-sensor using **Fake Central** and writing Sensor Events to `local_sensor_output.json` file:
+
+```bash
+./local-sensor -central-out ./local_sensor_output.json
+```
+
+To run local-sensor against a real cluster, make sure you first have a cluster with ACS installed.
+
+**(!)**: This method only works for secured clusters installed using Helm Charts.
+
+```bash
+# Scale down sensor running on the cluster
+kubectl -n stackrox scale deployment sensor --replicas 0
+
+# Fetch authentication certificates (this will store all files in ./tmp folder)
+./tools/local-sensor/scripts/fetch-certs.sh
+
+# Export helm fingerprint before running sensor (the value will be displayed in stdout after running the command above)
+export ROX_HELM_CLUSTER_CONFIG_FP="<Helm fingerprint>"
+
+# Make sure you have central's port forward to localhost (e.g. at port 8000)
+# Run local-sensor using connected mode
+./local-sensor -connect-central "localhost:8000"
+```
+
 ## How to reproduce the performance tests
 
 ### Using the `local-sensor.sh` script

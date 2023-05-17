@@ -11,8 +11,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore"
-	mappings "github.com/stackrox/rox/central/alert/mappings"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	"github.com/stackrox/rox/central/alert/mappings"
 	baselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -27,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	pkgNotifier "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -85,7 +85,7 @@ type serviceImpl struct {
 	v1.UnimplementedAlertServiceServer
 
 	dataStore         datastore.DataStore
-	notifier          notifierProcessor.Processor
+	notifier          pkgNotifier.Processor
 	baselines         baselineDatastore.DataStore
 	connectionManager connection.Manager
 }
