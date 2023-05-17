@@ -8,7 +8,7 @@ import (
 	"io"
 	"testing"
 
-	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -16,7 +16,7 @@ import (
 type GormUtilsTestSuite struct {
 	suite.Suite
 
-	db     *pghelper.TestPostgres
+	db     *pgtest.TestPostgres
 	ctx    context.Context
 	gormDB *gorm.DB
 }
@@ -26,9 +26,9 @@ func TestLargeObjects(t *testing.T) {
 }
 
 func (s *GormUtilsTestSuite) SetupTest() {
-	s.db = pghelper.ForT(s.T(), true)
+	s.db = pgtest.ForT(s.T())
 	s.ctx = context.Background()
-	s.gormDB = s.db.GetGormDB().WithContext(s.ctx)
+	s.gormDB = s.db.GetGormDB(s.T()).WithContext(s.ctx)
 }
 
 func (s *GormUtilsTestSuite) TearDownTest() {
