@@ -94,6 +94,7 @@ func (Syslog_LocalFacility) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_2e3e7b397b1162ec, []int{9, 0}
 }
 
+// Next Tag: 19
 type Notifier struct {
 	Id           string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`
 	Name         string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"`

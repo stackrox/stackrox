@@ -588,7 +588,8 @@
         "traits": {
           "$ref": "#/definitions/storageTraits"
         }
-      }
+      },
+      "title": "Next Tag: 19"
     },
     "storagePagerDuty": {
       "type": "object",
