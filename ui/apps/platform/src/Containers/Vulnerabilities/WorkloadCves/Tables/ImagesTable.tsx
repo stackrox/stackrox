@@ -140,7 +140,6 @@ function ImagesTable({ images, getSortParams, isFiltered, filteredSeverities }: 
                                         moderateCount={moderateCount}
                                         lowCount={lowCount}
                                         entity="image"
-                                        isFiltered={isFiltered}
                                         filteredSeverities={filteredSeverities}
                                     />
                                 </Td>

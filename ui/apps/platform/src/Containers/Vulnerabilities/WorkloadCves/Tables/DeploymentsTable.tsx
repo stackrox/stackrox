@@ -128,7 +128,6 @@ function DeploymentsTable({
                                         moderateCount={moderateCount}
                                         lowCount={lowCount}
                                         entity="deployment"
-                                        isFiltered={isFiltered}
                                         filteredSeverities={filteredSeverities}
                                     />
                                 </Td>

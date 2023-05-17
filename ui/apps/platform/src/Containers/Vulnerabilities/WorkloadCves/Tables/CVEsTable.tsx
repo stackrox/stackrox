@@ -158,7 +158,6 @@ function CVEsTable({
                                         importantCount={importantCount}
                                         moderateCount={moderateCount}
                                         lowCount={lowCount}
-                                        isFiltered={isFiltered}
                                         filteredSeverities={filteredSeverities}
                                     />
                                 </Td>

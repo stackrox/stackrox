@@ -14,7 +14,6 @@ type SeverityCountLabelsProps = {
     moderateCount: number;
     lowCount: number;
     entity?: string;
-    isFiltered: boolean;
     filteredSeverities?: VulnerabilitySeverityLabel[];
 };
 
@@ -34,7 +33,6 @@ function SeverityCountLabels({
     moderateCount,
     lowCount,
     entity,
-    isFiltered,
     filteredSeverities,
 }: SeverityCountLabelsProps) {
     const CriticalIcon = SeverityIcons.CRITICAL_VULNERABILITY_SEVERITY;
@@ -42,10 +40,10 @@ function SeverityCountLabels({
     const ModerateIcon = SeverityIcons.MODERATE_VULNERABILITY_SEVERITY;
     const LowIcon = SeverityIcons.LOW_VULNERABILITY_SEVERITY;
 
-    const isCriticalHidden = isFiltered && !filteredSeverities?.includes('Critical');
-    const isImportantHidden = isFiltered && !filteredSeverities?.includes('Important');
-    const isModerateHidden = isFiltered && !filteredSeverities?.includes('Moderate');
-    const isLowHidden = isFiltered && !filteredSeverities?.includes('Low');
+    const isCriticalHidden = !!filteredSeverities && !filteredSeverities.includes('Critical');
+    const isImportantHidden = !!filteredSeverities && !filteredSeverities.includes('Important');
+    const isModerateHidden = !!filteredSeverities && !filteredSeverities.includes('Moderate');
+    const isLowHidden = !!filteredSeverities && !filteredSeverities.includes('Low');
 
     const critical = isCriticalHidden ? undefined : criticalCount;
     const important = isImportantHidden ? undefined : importantCount;

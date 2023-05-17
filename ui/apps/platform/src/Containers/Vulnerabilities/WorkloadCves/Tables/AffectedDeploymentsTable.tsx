@@ -152,7 +152,6 @@ function AffectedDeploymentsTable({
                                     importantCount={importantImageCount}
                                     moderateCount={moderateImageCount}
                                     lowCount={lowImageCount}
-                                    isFiltered={isFiltered}
                                     filteredSeverities={filteredSeverities}
                                 />
                             </Td>
