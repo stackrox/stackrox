@@ -16,8 +16,9 @@ import (
 type GormUtilsTestSuite struct {
 	suite.Suite
 
-	db  *pghelper.TestPostgres
-	ctx context.Context
+	db     *pghelper.TestPostgres
+	ctx    context.Context
+	gormDB *gorm.DB
 }
 
 func TestLargeObjects(t *testing.T) {
@@ -27,6 +28,7 @@ func TestLargeObjects(t *testing.T) {
 func (s *GormUtilsTestSuite) SetupTest() {
 	s.db = pghelper.ForT(s.T(), true)
 	s.ctx = context.Background()
+	s.gormDB = s.db.GetGormDB().WithContext(s.ctx)
 }
 
 func (s *GormUtilsTestSuite) TearDownTest() {
@@ -34,14 +36,12 @@ func (s *GormUtilsTestSuite) TearDownTest() {
 }
 
 func (s *GormUtilsTestSuite) TestUpsertGet() {
-	randomData := make([]byte, 100)
+	randomData := make([]byte, 90000)
 	_, err := rand.Read(randomData)
 	s.NoError(err)
 
-	gormDB := s.db.GetGormDB()
-
 	reader := bytes.NewBuffer(randomData)
-	tx := gormDB.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
+	tx := s.gormDB.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
 	los := LargeObjects{tx}
 	oid, err := los.Create()
 	s.Require().NoError(err)
@@ -49,20 +49,20 @@ func (s *GormUtilsTestSuite) TestUpsertGet() {
 	s.Require().NoError(err)
 	s.Require().NoError(tx.Commit().Error)
 
-	tx = gormDB.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
+	tx = s.gormDB.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
 	los = LargeObjects{tx}
 	writer := bytes.NewBuffer([]byte{})
 	s.Require().NoError(los.Get(oid, writer))
 
 	s.Require().Equal(randomData, writer.Bytes())
 	reader = bytes.NewBuffer([]byte("hi"))
-	tx = gormDB.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
+	tx = s.gormDB.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
 	los = LargeObjects{tx}
 	err = los.Upsert(oid, reader)
 	s.Require().NoError(err)
 	s.Require().NoError(tx.Commit().Error)
 
-	tx = gormDB.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
+	tx = s.gormDB.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
 	los = LargeObjects{tx}
 	writer = bytes.NewBuffer([]byte{})
 	writer.Reset()
@@ -71,17 +71,9 @@ func (s *GormUtilsTestSuite) TestUpsertGet() {
 }
 
 func (s *GormUtilsTestSuite) TestLargeObject() {
-	ctx := context.Background()
-
-	gormDB := s.db.GetGormDB().WithContext(ctx)
-
-	tx := gormDB.Begin()
+	tx := s.gormDB.Begin()
 	s.Require().NoError(tx.Error)
 
-	s.testLargeObject(tx)
-}
-
-func (s *GormUtilsTestSuite) testLargeObject(tx *gorm.DB) {
 	los := &LargeObjects{tx}
 
 	id, err := los.Create()
@@ -136,12 +128,7 @@ func (s *GormUtilsTestSuite) testLargeObject(tx *gorm.DB) {
 }
 
 func (s *GormUtilsTestSuite) TestLargeObjectsMultipleTransactions() {
-	ctx := context.Background()
-
-	gormDB := s.db.GetGormDB().WithContext(ctx)
-
-	tx := gormDB.Begin()
-	// tx := gormDB.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
+	tx := s.gormDB.Begin()
 	s.Require().NoError(tx.Error)
 	los := &LargeObjects{tx}
 
@@ -159,12 +146,12 @@ func (s *GormUtilsTestSuite) TestLargeObjectsMultipleTransactions() {
 
 	// IMPORTANT: Use the same connection for another query
 	query := `select n from generate_series(1,10) n`
-	rows, err := gormDB.Raw(query).Rows()
+	rows, err := s.gormDB.Raw(query).Rows()
 	s.Require().NoError(err)
 	rows.Close()
 
 	// Start a new transaction
-	tx2 := gormDB.Begin()
+	tx2 := s.gormDB.Begin()
 	// tx := gormDB.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
 	s.Require().NoError(tx.Error)
 	los2 := &LargeObjects{tx2}
