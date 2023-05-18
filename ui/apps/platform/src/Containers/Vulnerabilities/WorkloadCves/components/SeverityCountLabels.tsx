@@ -1,6 +1,6 @@
 import React from 'react';
 import { Flex, Label, Tooltip, pluralize, capitalize } from '@patternfly/react-core';
-import { EyeSlashIcon } from '@patternfly/react-icons';
+import { EllipsisHIcon } from '@patternfly/react-icons';
 
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 import { vulnSeverityTextColors } from 'constants/visuals/colors';
@@ -19,7 +19,7 @@ type SeverityCountLabelsProps = {
 
 function getTooltipContent(severity: string, severityCount?: number, entity?: string) {
     if (!severityCount && severityCount !== 0) {
-        return `${capitalize(severity)} severity is hidden by the filter`;
+        return `${capitalize(severity)} severity is hidden by the applied filter`;
     }
     if (entity) {
         return `${pluralize(severityCount, `${severity} CVE`)} across this ${entity}`;
@@ -66,7 +66,7 @@ function SeverityCountLabels({
                         }}
                     >
                         {!critical && critical !== 0 ? (
-                            <EyeSlashIcon className="pf-u-my-xs pf-u-ml-xs" />
+                            <EllipsisHIcon className="pf-u-my-xs" />
                         ) : (
                             critical
                         )}
@@ -87,7 +87,7 @@ function SeverityCountLabels({
                         }}
                     >
                         {!important && important !== 0 ? (
-                            <EyeSlashIcon className="pf-u-my-xs pf-u-ml-xs" />
+                            <EllipsisHIcon className="pf-u-my-xs" />
                         ) : (
                             important
                         )}
@@ -108,7 +108,7 @@ function SeverityCountLabels({
                         }}
                     >
                         {!moderate && moderate !== 0 ? (
-                            <EyeSlashIcon className="pf-u-my-xs pf-u-ml-xs" />
+                            <EllipsisHIcon className="pf-u-my-xs" />
                         ) : (
                             moderate
                         )}
@@ -128,11 +128,7 @@ function SeverityCountLabels({
                                 : fadedTextColor,
                         }}
                     >
-                        {!low && low !== 0 ? (
-                            <EyeSlashIcon className="pf-u-my-xs pf-u-ml-xs" />
-                        ) : (
-                            low
-                        )}
+                        {!low && low !== 0 ? <EllipsisHIcon className="pf-u-my-xs" /> : low}
                     </span>
                 </Label>
             </Tooltip>
