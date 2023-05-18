@@ -11,7 +11,7 @@ import TableErrorComponent from '../components/TableErrorComponent';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
 import { parseQuerySearchFilter } from '../searchUtils';
 import { defaultImageSortFields, imagesDefaultSort } from '../sortUtils';
-import { DefaultFilters } from '../types';
+import { DefaultFilters, VulnerabilitySeverityLabel } from '../types';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 
 type ImagesTableContainerProps = {
