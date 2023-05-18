@@ -6,6 +6,7 @@ import { useFormikContext } from 'formik';
 
 import { Policy } from 'types/policy.proto';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import { getCriteriaAllowedByLifecycle } from 'Containers/Policies/policies.utils';
 import { policyConfigurationDescriptor, auditLogDescriptor } from './policyCriteriaDescriptors';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
 import BooleanPolicyLogicSection from './BooleanPolicyLogicSection';
@@ -45,6 +46,10 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
         }
         return true;
     });
+    const descriptorsFilteredByLifecycle = getCriteriaAllowedByLifecycle(
+        descriptors,
+        values.lifecycleStages
+    );
 
     const headingElements = (
         <>
@@ -125,7 +130,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                 </Flex>
                 <Divider component="div" isVertical />
                 <Flex className="pf-u-h-100 pf-u-pt-lg" id="policy-criteria-keys-container">
-                    <PolicyCriteriaKeys keys={descriptors} />
+                    <PolicyCriteriaKeys keys={descriptorsFilteredByLifecycle} />
                 </Flex>
             </Flex>
         </DndProvider>
