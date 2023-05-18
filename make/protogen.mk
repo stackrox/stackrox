@@ -108,10 +108,12 @@ ROX_M_ARGS = $(foreach proto,$(ALL_PROTOS_REL),M$(proto)=github.com/stackrox/rox
 SCANNER_M_ARGS = $(foreach proto,$(ALL_SCANNER_PROTOS_REL),M$(proto)=github.com/stackrox/scanner/generated/$(patsubst %/,%,$(dir $(proto))))
 # Combine the *_M_ARGS.
 M_ARGS = $(ROX_M_ARGS) $(SCANNER_M_ARGS)
-# This is the M_ARGS used for the grpc-gateway invocation. We only map the storage protos, because
+# This is the M_ARGS used for the grpc-gateway invocation. We only map the storage and api/v1 protos, because
 # - the gateway code produces no output (possibly because of a bug) if we pass M_ARGS_STR to it.
-# - the gateway code doesn't need access to anything outside api/v1 except storage. In particular, it should NOT import internalapi protos.
-GATEWAY_M_ARGS = $(foreach proto,$(STORAGE_PROTOS),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto))))
+# - the gateway code only needs access to api/v1, api/v2 and storage/. In particular, it should NOT import internalapi protos.
+GATEWAY_M_ARGS := $(foreach proto,$(STORAGE_PROTOS),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto))))
+GATEWAY_M_ARGS += $(foreach proto,$(API_SERVICE_PROTOS),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto))))
+
 
 # Hack: there's no straightforward way to escape a comma in a $(subst ...) command, so we have to resort to this little
 # trick.
@@ -208,6 +210,7 @@ $(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(
 ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
+#	@echo GATEWAY_M_ARGS IS $(GATEWAY_M_ARGS)
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
@@ -217,6 +220,8 @@ endif
 		--proto_path=$(PROTO_BASE_PATH) \
 		--grpc-gateway_out=$(GATEWAY_M_ARGS_STR:%=%,)allow_colon_final_segments=true,logtostderr=true:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
+	# Workaround for https://github.com/grpc-ecosystem/grpc-gateway/issues/229.
+	-$(SILENT)(sed -i.bak -e '/"api\/v1"/ d' -e 's/v1_0 //' -e 's/v1_0/v1/' $@ 2>/dev/null && rm $@.bak) || true
 
 # Generate all of the swagger specifications with one invocation of protoc
 # when any of the .swagger.json sources don't exist or when any of the

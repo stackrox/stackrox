@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/reportconfigurations/datastore/mocks"
 	managerMocks "github.com/stackrox/rox/central/reports/manager/mocks"
 	collectionMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -58,7 +59,7 @@ func (s *ReportConfigurationServiceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
-func (s *ReportConfigurationServiceTestSuite) TestAddConfiguration() {
+func (s *ReportConfigurationServiceTestSuite) TestCreateReportConfiguration() {
 	ctx := context.Background()
 
 	for _, tc := range s.upsertReportConfigTestCases() {
@@ -76,6 +77,28 @@ func (s *ReportConfigurationServiceTestSuite) TestAddConfiguration() {
 			} else {
 				s.NoError(err)
 				s.Equal(requestConfig, result)
+			}
+		})
+	}
+}
+
+func (s *ReportConfigurationServiceTestSuite) TestUpdateReportConfiguration() {
+	ctx := context.Background()
+
+	for _, tc := range s.upsertReportConfigTestCases() {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			requestConfig := tc.v2ReprtConfigGen()
+			tc.setMocks()
+			if !tc.isValidationError {
+				protoReportConfig := tc.reportConfigGen()
+				s.reportConfigDatastore.EXPECT().UpdateReportConfiguration(ctx, protoReportConfig).Return(nil).Times(1)
+			}
+			result, err := s.service.UpdateReportConfiguration(ctx, requestConfig)
+			if tc.isValidationError {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+				s.Equal(&v1.Empty{}, result)
 			}
 		})
 	}
