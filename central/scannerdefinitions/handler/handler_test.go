@@ -175,7 +175,9 @@ func (s *handlerTestSuite) mustWriteOffline(content string, modTime time.Time) {
 	s.Require().NoError(err)
 	blob := &storage.Blob{
 		Name:         offlineScannerDefinitionBlobName,
+		Length:       int64(len(content)),
 		ModifiedTime: modifiedTime,
+		LastUpdated:  types.TimestampNow(),
 	}
 	s.Require().NoError(s.datastore.Upsert(s.ctx, blob, bytes.NewBuffer([]byte(content))))
 }
