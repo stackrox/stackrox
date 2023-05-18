@@ -39,7 +39,7 @@ const RiskDetails = ({ risk }) => {
 
     return risk.results.map((result) => (
         <div className="px-3 pt-5" key={result.name}>
-            <div className="alert-preview bg-base-100 text-primary-600" key={result.name}>
+            <div className="alert-preview bg-base-100 text-primary-600">
                 <CollapsibleCard title={result.name}>
                     {result.factors.map((factor, index) => (
                         // eslint-disable-next-line react/no-array-index-key
