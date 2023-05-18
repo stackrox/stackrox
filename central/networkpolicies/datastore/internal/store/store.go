@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -12,7 +11,6 @@ import (
 //go:generate mockgen-wrapper
 type Store interface {
 	Get(ctx context.Context, id string) (*storage.NetworkPolicy, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkPolicy, error)
 	Upsert(ctx context.Context, obj *storage.NetworkPolicy) error
 	Delete(ctx context.Context, id string) error
 
