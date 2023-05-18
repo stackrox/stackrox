@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/gorm/largeobject"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -74,6 +75,7 @@ func moveScannerDefination(tx *gorm.DB) error {
 	if os.IsNotExist(err) {
 		return nil
 	}
+	defer utils.IgnoreError(fd.Close)
 	if err != nil {
 		return errors.Wrapf(err, "failed to open %s", scannerDefPath)
 	}
