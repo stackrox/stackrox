@@ -13,10 +13,8 @@ import "internalapi/central/telemetry.proto";
 import "internalapi/central/baseline_sync.proto";
 import "internalapi/central/hello.proto";
 import "internalapi/central/network_baseline_sync.proto";
-import "internalapi/central/network_policy.proto";
 import "internalapi/central/local_scanner.proto";
 import "internalapi/central/process_listening_on_ports_update.proto";
-import "internalapi/central/secured_cluster_notifier.proto";
 import "storage/cluster.proto";
 import "storage/image.proto";
 
@@ -48,28 +46,25 @@ message ReprocessDeployments {}
 
 message MsgToSensor {
     oneof msg {
-        SensorEnforcement               enforcement                        =  1;
-        ScrapeCommand                   scrape_command                     =  2;
-        NetworkPoliciesCommand          network_policies_command           =  3;
-        ClusterConfig                   cluster_config                     =  4;
-        SensorUpgradeTrigger            sensor_upgrade_trigger             =  5;
-        PullTelemetryDataRequest        telemetry_data_request             =  6;
-        PolicySync                      policy_sync                        =  7;
-        ReassessPolicies                reassess_policies                  =  8;
-        BaselineSync                    baseline_sync                      =  9;
-        CancelPullTelemetryDataRequest  cancel_pull_telemetry_data_request = 10;
-        PushNetworkEntitiesRequest      push_network_entities_request      = 11;
-        CentralHello                    hello                              = 12;
-        NetworkBaselineSync             network_baseline_sync              = 13;
-        AuditLogSync                    audit_log_sync                     = 14;
-        ReprocessDeployment             reprocess_deployment               = 15;
-        InvalidateImageCache            invalidate_image_cache             = 16;
-        IssueLocalScannerCertsResponse  issue_local_scanner_certs_response = 17;
-        storage.Image                   updated_image                      = 18;
-        ReprocessDeployments            reprocess_deployments              = 19;
-        NotifierSync                    notifier_sync                      = 20;
-        TestNotifierRequest             test_notifier_request              = 21;
-        SendNetworkPolicyYamlRequest    send_network_policy_yaml           = 22;
+        SensorEnforcement              enforcement                        =  1;
+        ScrapeCommand                  scrape_command                     =  2;
+        NetworkPoliciesCommand         network_policies_command           =  3;
+        ClusterConfig                  cluster_config                     =  4;
+        SensorUpgradeTrigger           sensor_upgrade_trigger             =  5;
+        PullTelemetryDataRequest       telemetry_data_request             =  6;
+        PolicySync                     policy_sync                        =  7;
+        ReassessPolicies               reassess_policies                  =  8;
+        BaselineSync                   baseline_sync                      =  9;
+        CancelPullTelemetryDataRequest cancel_pull_telemetry_data_request = 10;
+        PushNetworkEntitiesRequest     push_network_entities_request      = 11;
+        CentralHello                   hello                              = 12;
+        NetworkBaselineSync            network_baseline_sync              = 13;
+        AuditLogSync                   audit_log_sync                     = 14;
+        ReprocessDeployment            reprocess_deployment               = 15;
+        InvalidateImageCache           invalidate_image_cache             = 16;
+        IssueLocalScannerCertsResponse issue_local_scanner_certs_response = 17;
+        storage.Image                  updated_image                      = 18;
+        ReprocessDeployments           reprocess_deployments              = 19;
     }
 }
 

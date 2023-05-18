@@ -426,10 +426,6 @@ func (n *notifier) AlertNotify(ctx context.Context, alert *storage.Alert) error 
 	}
 }
 
-func (n *notifier) IsSecuredClusterNotifier() bool {
-	return false
-}
-
 func (n *notifier) AckAlert(_ context.Context, _ *storage.Alert) error {
 	return nil
 }

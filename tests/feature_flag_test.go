@@ -48,7 +48,6 @@ func TestFeatureFlagSettings(t *testing.T) {
 	// TODO(ROX-14939): Refactor feature flag logic to include environment variables
 	delete(actualFlagVals, env.PostgresDatastoreEnabled.EnvVar())
 	delete(actualFlagVals, env.ActiveVulnMgmt.EnvVar())
-	delete(actualFlagVals, env.SecuredClusterNotifiers.EnvVar())
 
 	assert.Equal(t, expectedFlagVals, actualFlagVals, "mismatch between expected and actual feature flag settings")
 }

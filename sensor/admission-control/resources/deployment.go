@@ -1,14 +1,13 @@
-package deployments
+package resources
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/admission-control/resources/pods"
 )
 
 // NewDeploymentStore returns new instance of DeploymentStore.
-func NewDeploymentStore(pods *pods.PodStore) *DeploymentStore {
+func NewDeploymentStore(pods *PodStore) *DeploymentStore {
 	return &DeploymentStore{
 		deployments: make(map[string]map[string]*storage.Deployment),
 		pods:        pods,
@@ -18,7 +17,7 @@ func NewDeploymentStore(pods *pods.PodStore) *DeploymentStore {
 // DeploymentStore stores the deployments.
 type DeploymentStore struct {
 	deployments map[string]map[string]*storage.Deployment
-	pods        *pods.PodStore
+	pods        *PodStore
 
 	mutex sync.RWMutex
 }

@@ -9,13 +9,10 @@ import (
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/endpoints"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -53,41 +50,13 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedNotifierServiceServer
 
-	storage           datastore.DataStore
-	processor         notifier.Processor
-	reporter          integrationhealth.Reporter
-	connectionManager connection.Manager
+	storage   datastore.DataStore
+	processor processor.Processor
+	reporter  integrationhealth.Reporter
 
 	buildTimePolicies  detection.PolicySet
 	deployTimePolicies detection.PolicySet
 	runTimePolicies    detection.PolicySet
-}
-
-func (s *serviceImpl) syncNotifiersWithSensors(ctx context.Context) {
-	if env.SecuredClusterNotifiers.BooleanSetting() {
-		notifiers := s.processor.GetNotifiers(ctx)
-		s.connectionManager.PrepareNotifiersAndBroadcast(notifiers)
-	}
-}
-
-func (s *serviceImpl) testSecuredClusterNotifier(ctx context.Context, notifier notifiers.Notifier) (*v1.Empty, error) {
-	// send Test notifier request to all secured clusters
-	s.connectionManager.BroadcastMessage(&central.MsgToSensor{
-		Msg: &central.MsgToSensor_TestNotifierRequest{
-			TestNotifierRequest: &central.TestNotifierRequest{
-				Notifier: notifier.ProtoNotifier(),
-			},
-		},
-	})
-
-	// If audit logging is enabled on the secured cluster notifier, send test message to
-	// notifier endpoint from Central as well
-	if auditN, ok := notifier.(notifiers.AuditNotifier); ok && auditN.AuditLoggingEnabled() {
-		if err := notifier.Test(ctx); err != nil {
-			return nil, errors.Wrap(errox.InvalidArgs, err.Error())
-		}
-	}
-	return &v1.Empty{}, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -177,9 +146,6 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 		return nil, err
 	}
 	s.processor.UpdateNotifier(ctx, notifier)
-
-	s.syncNotifiersWithSensors(ctx)
-
 	return &v1.Empty{}, nil
 }
 
@@ -232,10 +198,6 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 		}
 	}()
 
-	if notifier.IsSecuredClusterNotifier() {
-		return s.testSecuredClusterNotifier(ctx, notifier)
-	}
-	// if secured cluster notifications are not enabled or if this is not a secured cluster notifier
 	if err := notifier.Test(ctx); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
@@ -264,8 +226,6 @@ func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNoti
 	}
 
 	s.processor.RemoveNotifier(ctx, request.GetId())
-	s.syncNotifiersWithSensors(ctx)
-
 	if err := s.reporter.RemoveIntegrationHealth(request.GetId()); err != nil {
 		return nil, err
 	}

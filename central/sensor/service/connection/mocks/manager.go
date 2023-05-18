@@ -15,8 +15,6 @@ import (
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
-	notifier "github.com/stackrox/rox/pkg/notifier"
-	notifiers "github.com/stackrox/rox/pkg/notifiers"
 )
 
 // MockManager is a mock of Manager interface.
@@ -108,18 +106,6 @@ func (mr *MockManagerMockRecorder) HandleConnection(ctx, sensorHello, cluster, e
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleConnection", reflect.TypeOf((*MockManager)(nil).HandleConnection), ctx, sensorHello, cluster, eventPipeline, server)
 }
 
-// PrepareNotifiersAndBroadcast mocks base method.
-func (m *MockManager) PrepareNotifiersAndBroadcast(notifiers []notifiers.Notifier) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "PrepareNotifiersAndBroadcast", notifiers)
-}
-
-// PrepareNotifiersAndBroadcast indicates an expected call of PrepareNotifiersAndBroadcast.
-func (mr *MockManagerMockRecorder) PrepareNotifiersAndBroadcast(notifiers interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareNotifiersAndBroadcast", reflect.TypeOf((*MockManager)(nil).PrepareNotifiersAndBroadcast), notifiers)
-}
-
 // PreparePoliciesAndBroadcast mocks base method.
 func (m *MockManager) PreparePoliciesAndBroadcast(policies []*storage.Policy) {
 	m.ctrl.T.Helper()
@@ -204,17 +190,17 @@ func (mr *MockManagerMockRecorder) SendMessage(clusterID, msg interface{}) *gomo
 }
 
 // Start mocks base method.
-func (m *MockManager) Start(mgr common.ClusterManager, netEntitiesMgr common.NetworkEntityManager, policyMgr common.PolicyManager, baselineMgr common.ProcessBaselineManager, networkBaselineMgr common.NetworkBaselineManager, notifierProcessor notifier.Processor, autoTriggerUpgrades *concurrency.Flag) error {
+func (m *MockManager) Start(mgr common.ClusterManager, netEntitiesMgr common.NetworkEntityManager, policyMgr common.PolicyManager, baselineMgr common.ProcessBaselineManager, networkBaselineMgr common.NetworkBaselineManager, autoTriggerUpgrades *concurrency.Flag) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Start", mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, notifierProcessor, autoTriggerUpgrades)
+	ret := m.ctrl.Call(m, "Start", mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, autoTriggerUpgrades)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Start indicates an expected call of Start.
-func (mr *MockManagerMockRecorder) Start(mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, notifierProcessor, autoTriggerUpgrades interface{}) *gomock.Call {
+func (mr *MockManagerMockRecorder) Start(mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, autoTriggerUpgrades interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockManager)(nil).Start), mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, notifierProcessor, autoTriggerUpgrades)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockManager)(nil).Start), mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, autoTriggerUpgrades)
 }
 
 // TriggerCertRotation mocks base method.
