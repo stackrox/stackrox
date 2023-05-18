@@ -99,7 +99,6 @@ function CVEsTable({
     return (
         <TableComposable borders={false} variant="compact">
             <Thead noWrap>
-                {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('CVE')}>CVE</Th>
@@ -107,14 +106,23 @@ function CVEsTable({
                         Images by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
-                    <TooltipTh tooltip="Highest CVSS score of this CVE across images">
+                    <TooltipTh
+                        sort={getSortParams('CVSS')}
+                        tooltip="Highest CVSS score of this CVE across images"
+                    >
                         Top CVSS
                     </TooltipTh>
-                    <TooltipTh tooltip="Ratio of total environment affect by this CVE">
+                    <TooltipTh
+                        // sort={getSortParams('Image sha')} TBD
+                        tooltip="Ratio of total environment affect by this CVE"
+                    >
                         Affected images
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
-                    <TooltipTh tooltip="Time since this CVE first affected an entity">
+                    <TooltipTh
+                        // sort={getSortParams('CVE Created Time')} TBD
+                        tooltip="Time since this CVE first affected an entity"
+                    >
                         First discovered
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>

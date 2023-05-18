@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import useURLParameter from 'hooks/useURLParameter';
-import { SortDirection, SortOption, ThProps } from 'types/table';
+import { SortAggregate, SortDirection, SortOption, ThProps } from 'types/table';
 import { ApiSortOption } from 'types/search';
 import { isParsedQs } from 'utils/queryStringUtils';
 
@@ -60,7 +60,7 @@ function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps):
         setFieldToIndexMap(newFieldToIndexMap);
     }, [sortFields]);
 
-    function getSortParams(field: string): ThProps['sort'] {
+    function getSortParams(field: string, aggregateBy?: SortAggregate): ThProps['sort'] {
         const index = fieldToIndexMap[field];
         const activeSortIndex = activeSortField ? fieldToIndexMap[activeSortField] : undefined;
 
@@ -74,6 +74,7 @@ function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps):
                 // modify the URL based on the new sort
                 const newSortOption: SortOption = {
                     field,
+                    aggregateBy,
                     direction,
                 };
                 if (onSort) {

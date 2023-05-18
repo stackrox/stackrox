@@ -15,7 +15,7 @@ export const imagesDefaultSort = {
     direction: 'desc',
 } as const;
 
-export const defaultCVESortFields = ['Deployment', 'Cluster', 'Namespace'];
+export const defaultCVESortFields = ['CVE', 'CVSS', 'Image Sha', 'CVE Created Time'];
 
 export const CVEsDefaultSort = {
     field: 'CVE',
