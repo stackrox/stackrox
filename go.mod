@@ -66,7 +66,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/np-guard/cluster-topology-analyzer v1.7.0
-	github.com/np-guard/netpol-analyzer v0.2.1
+	github.com/np-guard/netpol-analyzer v0.2.2
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/opencontainers/go-digest v1.0.0
@@ -445,11 +445,3 @@ replace (
 exclude k8s.io/client-go v12.0.0+incompatible
 
 exclude github.com/openshift/client-go v3.9.0+incompatible
-
-exclude github.com/openshift/api v3.9.0+incompatible
-
-exclude github.com/openshift/api v0.0.0-20230503133300-8bbcb7ca7183
-
-exclude k8s.io/client-go v0.27.1
-
-exclude k8s.io/api v0.27.1
