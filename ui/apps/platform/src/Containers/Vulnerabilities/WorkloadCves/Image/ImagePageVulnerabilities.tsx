@@ -26,7 +26,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
-import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getHasSearchApplied } from 'utils/searchUtils';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
@@ -39,7 +39,12 @@ import ImageVulnerabilitiesTable, {
     imageVulnerabilitiesFragment,
 } from '../Tables/ImageVulnerabilitiesTable';
 import { DynamicTableLabel } from '../components/DynamicIcon';
-import { getHiddenSeverities, getHiddenStatuses, parseQuerySearchFilter } from '../searchUtils';
+import {
+    getHiddenSeverities,
+    getHiddenStatuses,
+    getCveStatusScopedQueryString,
+    parseQuerySearchFilter,
+} from '../searchUtils';
 import { cveStatusTabValues } from '../types';
 import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/table.utils';
@@ -71,6 +76,8 @@ export type ImagePageVulnerabilitiesProps = {
 };
 
 function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
+    const [activeTabKey, setActiveTabKey] = useURLStringUnion('cveStatus', cveStatusTabValues);
+
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const { page, perPage, setPage, setPerPage } = useURLPagination(20);
@@ -104,12 +111,10 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
     >(imageVulnerabilitiesQuery, {
         variables: {
             id: imageId,
-            query: getRequestQueryStringForSearchFilter(querySearchFilter),
+            query: getCveStatusScopedQueryString(querySearchFilter, activeTabKey),
             pagination,
         },
     });
-
-    const [activeTabKey, setActiveTabKey] = useURLStringUnion('cveStatus', cveStatusTabValues);
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
 

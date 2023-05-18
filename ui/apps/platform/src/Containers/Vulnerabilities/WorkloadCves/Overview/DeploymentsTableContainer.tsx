@@ -5,21 +5,26 @@ import { Bullseye, Spinner, Divider } from '@patternfly/react-core';
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
-import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getHasSearchApplied } from 'utils/searchUtils';
 import DeploymentsTable, { Deployment, deploymentListQuery } from '../Tables/DeploymentsTable';
 import TableErrorComponent from '../components/TableErrorComponent';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
-import { parseQuerySearchFilter } from '../searchUtils';
+import { getCveStatusScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
 import { defaultDeploymentSortFields, deploymentsDefaultSort } from '../sortUtils';
-import { DefaultFilters, VulnerabilitySeverityLabel } from '../types';
+import { DefaultFilters, VulnerabilitySeverityLabel, CveStatusTab } from '../types';
 
 type DeploymentsTableContainerProps = {
     defaultFilters: DefaultFilters;
     countsData: EntityCounts;
+    cveStatusTab: CveStatusTab;
 };
 
-function DeploymentsTableContainer({ defaultFilters, countsData }: DeploymentsTableContainerProps) {
+function DeploymentsTableContainer({
+    defaultFilters,
+    countsData,
+    cveStatusTab,
+}: DeploymentsTableContainerProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
@@ -35,9 +40,7 @@ function DeploymentsTableContainer({ defaultFilters, countsData }: DeploymentsTa
         deployments: Deployment[];
     }>(deploymentListQuery, {
         variables: {
-            query: getRequestQueryStringForSearchFilter({
-                ...querySearchFilter,
-            }),
+            query: getCveStatusScopedQueryString(querySearchFilter, cveStatusTab),
             pagination: {
                 offset: (page - 1) * perPage,
                 limit: perPage,
