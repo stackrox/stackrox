@@ -121,11 +121,11 @@ require (
 	gorm.io/driver/postgres v1.5.0
 	gorm.io/gorm v1.25.0
 	helm.sh/helm/v3 v3.11.3
-	k8s.io/api v0.26.4
+	k8s.io/api v0.26.5
 	k8s.io/apimachinery v0.27.1
 	k8s.io/apiserver v0.26.4
 	k8s.io/cli-runtime v0.26.4
-	k8s.io/client-go v0.26.4
+	k8s.io/client-go v0.26.5
 	k8s.io/kubectl v0.26.4
 	k8s.io/kubelet v0.26.4
 	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5
