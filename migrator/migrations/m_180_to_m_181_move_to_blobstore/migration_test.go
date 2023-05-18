@@ -56,6 +56,8 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 	s.Require().NoError(err)
 
 	s.Require().EqualValues(size, n)
+	fileInfo, err := file.Stat()
+	s.Require().NoError(err)
 
 	// Migrate
 	s.Require().NoError(moveToBlobs(s.db.GetGormDB()))
@@ -69,8 +71,6 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 	s.Equal(scannerDefBlobName, blob.GetName())
 	s.EqualValues(size, blob.GetLength())
 
-	fileInfo, err := file.Stat()
-	s.Require().NoError(err)
 	modTime := pgutils.NilOrTime(blob.GetModifiedTime())
 	s.Equal(fileInfo.ModTime().UTC(), modTime.UTC())
 
