@@ -26,7 +26,7 @@ type snapshotTestSuite struct {
 	testDB    *pgtest.TestPostgres
 }
 
-func TestBlobsStore(t *testing.T) {
+func TestBlobsStoreSnapshot(t *testing.T) {
 	suite.Run(t, new(snapshotTestSuite))
 }
 
