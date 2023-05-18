@@ -5,10 +5,6 @@
 set -euo pipefail
 
 fetch_stackrox_data() {
-    mkdir -p /stackrox-data/cve/istio
-    wget -O /stackrox-data/cve/istio/checksum "https://definitions.stackrox.io/cve2/istio/checksum"
-    wget -O /stackrox-data/cve/istio/cve-list.json "https://definitions.stackrox.io/cve2/istio/cve-list.json"
-
     mkdir -p /tmp/external-networks
     local latest_prefix
     latest_prefix="$(wget -q https://definitions.stackrox.io/external-networks/latest_prefix -O -)"

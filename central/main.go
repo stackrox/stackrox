@@ -430,9 +430,8 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		log.Panicf("Couldn't start sensor connection manager: %v", err)
 	}
 
-	if !env.OfflineModeEnv.BooleanSetting() {
-		go fetcher.SingletonManager().Start()
-	}
+	// Start cluster-level (Kubernetes, OpenShift, Istio) vulnerability data fetcher.
+	fetcher.SingletonManager().Start()
 
 	if devbuild.IsEnabled() {
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
