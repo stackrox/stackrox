@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import pluralize from 'pluralize';
-import capitalize from 'lodash/capitalize';
+import upperFirst from 'lodash/upperFirst';
 import startCase from 'lodash/startCase';
 
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
@@ -66,7 +66,7 @@ const WorkflowListPageLayout = ({ location }) => {
     const sidePanelPaging = workflowState.paging[pagingParams.sidePanel];
     const selectedRow = workflowState.getSelectedTableRow();
 
-    const header = capitalize(pluralize(entityLabels[pageListType]));
+    const header = upperFirst(pluralize(entityLabels[pageListType]));
     const exportFilename = `${useCaseLabels[useCase]} ${startCase(header)} Report`;
     const entityContext = {};
 

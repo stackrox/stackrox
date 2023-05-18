@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
-import capitalize from 'lodash/capitalize';
+import upperFirst from 'lodash/upperFirst';
 
 import PageHeader from 'Components/PageHeader';
 import ScanButton from 'Containers/Compliance/ScanButton';
@@ -20,7 +20,7 @@ const EntityHeader = ({
     setIsExporting,
 }) => {
     const header = entityName || 'Loading...';
-    const subHeader = capitalize(resourceLabels[entityType]);
+    const subHeader = upperFirst(resourceLabels[entityType]);
     let exportFilename = listEntityType
         ? `${pluralize(listEntityType)} ACROSS ${entityType} "${entityName.toUpperCase()}"`
         : `${entityType} "${entityId}"`;

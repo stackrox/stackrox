@@ -86,9 +86,9 @@ const headingPlural = {
     'image-components': 'Image components',
     'node-components': 'Node components',
     cves: 'CVES',
-    'image-cves': 'Image cves', // TODO cves is inconsistent
-    'node-cves': 'Node cves', // TODO cves is inconsistent
-    'cluster-cves': 'Platform cves', // TODO cves is inconsistent
+    'image-cves': 'Image CVES', // TODO uppercase S from pluralize
+    'node-cves': 'Node CVES', // TODO uppercase S from pluralize
+    'cluster-cves': 'Platform CVES', // TODO uppercase S from pluralize
     deployments: 'Deployments',
     images: 'Images',
     namespaces: 'Namespaces',

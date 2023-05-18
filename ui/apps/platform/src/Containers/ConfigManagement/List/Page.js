@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import pluralize from 'pluralize';
-import capitalize from 'lodash/capitalize';
+import upperFirst from 'lodash/upperFirst';
 import startCase from 'lodash/startCase';
 
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
@@ -51,7 +51,7 @@ const ListPage = ({ match, location, history }) => {
         history.push(urlBuilder.url());
     }
 
-    const header = capitalize(pluralize(entityLabels[pageEntityListType]));
+    const header = upperFirst(pluralize(entityLabels[pageEntityListType]));
     const exportFilename = `${pluralize(startCase(header))} Report`;
     return (
         <workflowStateContext.Provider value={pageState}>

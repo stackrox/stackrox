@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { withRouter } from 'react-router-dom';
-import capitalize from 'lodash/capitalize';
+import upperFirst from 'lodash/upperFirst';
 import startCase from 'lodash/startCase';
 
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
@@ -85,7 +85,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
               opacity: 0,
           };
 
-    const subheaderText = capitalize(entityLabels[pageEntityType]);
+    const subheaderText = upperFirst(entityLabels[pageEntityType]);
     const { entityName = '' } = useEntityName(pageEntityType, pageEntityId);
     const entityContext = {};
 

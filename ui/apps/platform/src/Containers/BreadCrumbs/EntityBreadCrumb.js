@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import capitalize from 'lodash/capitalize';
+import upperFirst from 'lodash/upperFirst';
 import pluralize from 'pluralize';
 
 import entityLabels from 'messages/entity';
@@ -9,7 +9,7 @@ import useEntityName from 'hooks/useEntityName';
 const EntityBreadCrumb = ({ workflowEntity, url }) => {
     const { entityId, entityType } = workflowEntity;
     const typeLabel = entityLabels[entityType];
-    const subTitle = capitalize(entityId ? typeLabel : 'entity list');
+    const subTitle = entityId ? upperFirst(typeLabel) : 'Entity list';
     const { entityName } = useEntityName(entityType, entityId, !entityId);
     const title = entityName || pluralize(typeLabel);
 

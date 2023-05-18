@@ -2,7 +2,7 @@ import React from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
-import capitalize from 'lodash/capitalize';
+import upperFirst from 'lodash/upperFirst';
 import { ChevronRight } from 'react-feather';
 import { Link, withRouter } from 'react-router-dom';
 
@@ -94,7 +94,7 @@ const BreadCrumbLinks = (props) => {
     const breadCrumbLinks = breadCrumbStates.map((state, i, { length }) => {
         const icon = i !== length - 1 ? Icon : null;
         const link = getLink(match, location, i, length);
-        const name = state.type === 'entity list' ? capitalize(state.name) : state.name;
+        const name = state.type === 'entity list' ? upperFirst(state.name) : state.name;
         const content = link ? (
             <Link className="text-primary-700 underline truncate" title={state.name} to={link}>
                 {name}
@@ -107,7 +107,7 @@ const BreadCrumbLinks = (props) => {
         if (!state) {
             return null;
         }
-        const entityTypeLabel = capitalize(state.type);
+        const entityTypeLabel = upperFirst(state.type);
         return (
             <div key={`${state.name}--${state.type}`} className={`flex ${maxWidthClass} truncate`}>
                 <span className="flex flex-col max-w-full" data-testid="breadcrumb-link-text">
