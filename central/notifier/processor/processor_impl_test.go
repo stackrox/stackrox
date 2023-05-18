@@ -184,4 +184,3 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	loop.TestRetryFailures(ctx, t)
 	mockCtrl.Finish()
 }
-
