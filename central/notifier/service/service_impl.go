@@ -51,7 +51,7 @@ type serviceImpl struct {
 	v1.UnimplementedNotifierServiceServer
 
 	storage   datastore.DataStore
-	processor processor.Processor
+	processor notifier.Processor
 	reporter  integrationhealth.Reporter
 
 	buildTimePolicies  detection.PolicySet

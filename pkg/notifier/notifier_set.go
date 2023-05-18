@@ -19,6 +19,7 @@ type Set interface {
 	UpsertNotifier(ctx context.Context, notifier notifiers.Notifier)
 	RemoveNotifier(ctx context.Context, id string)
 	GetNotifier(ctx context.Context, id string) notifiers.Notifier
+	GetNotifiers(ctx context.Context) []notifiers.Notifier
 }
 
 // NewNotifierSet returns a new instance of a Set
@@ -125,4 +126,3 @@ func (p *notifierSetImpl) GetNotifiers(_ context.Context) []notifiers.Notifier {
 	}
 	return notifiers
 }
-
