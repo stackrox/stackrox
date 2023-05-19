@@ -10,9 +10,12 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -56,6 +59,16 @@ func (ds *datastoreImpl) doForMatching(ctx context.Context, clusterID, namespace
 }
 
 func (ds *datastoreImpl) GetNetworkPolicies(ctx context.Context, clusterID, namespace string) ([]*storage.NetworkPolicy, error) {
+	if env.PostgresDatastoreEnabled.BooleanSetting() && !stringutils.AllEmpty(clusterID, namespace) {
+		query := search.NewQueryBuilder()
+		if clusterID != "" {
+			query = query.AddExactMatches(search.ClusterID, clusterID)
+		}
+		if namespace != "" {
+			query = query.AddExactMatches(search.Namespace, namespace)
+		}
+		return ds.storage.GetByQuery(ctx, query.ProtoQuery())
+	}
 	var netPols []*storage.NetworkPolicy
 	err := pgutils.RetryIfPostgres(
 		func() error {
