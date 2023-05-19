@@ -2,10 +2,13 @@ package store
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/index"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
+	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/bolt"
+	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore"
-	pgStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/postgres"
-	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/rocksdb"
+	undoPGStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/postgres"
+	undoRocksDB "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/rocksdb"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
@@ -20,15 +23,20 @@ var (
 
 func initialize() {
 	var undoDeploymentStorage undodeploymentstore.UndoDeploymentStore
+	var networkPolicyStorage store.Store
+	var networkPolicyIndex index.Indexer
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		undoDeploymentStorage = pgStore.New(globaldb.GetPostgres())
+		undoDeploymentStorage = undoPGStore.New(globaldb.GetPostgres())
+		networkPolicyStorage = postgres.New(globaldb.GetPostgres())
+		networkPolicyIndex = postgres.NewIndexer(globaldb.GetPostgres())
 	} else {
 		var err error
-		undoDeploymentStorage, err = rocksdb.New(globaldb.GetRocksDB())
+		undoDeploymentStorage, err = undoRocksDB.New(globaldb.GetRocksDB())
 		utils.CrashOnError(err)
+		networkPolicyStorage = bolt.New(globaldb.GetGlobalDB())
 	}
 
-	as = New(store.Singleton(), undostore.Singleton(), undoDeploymentStorage)
+	as = New(networkPolicyStorage, networkPolicyIndex, undostore.Singleton(), undoDeploymentStorage)
 }
 
 // Singleton provides the interface for non-service external interaction.

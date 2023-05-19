@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/index"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
 	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -25,6 +27,7 @@ var (
 
 type datastoreImpl struct {
 	storage store.Store
+	indexer index.Indexer
 
 	undoStorageLock       sync.Mutex
 	undoStorage           undostore.UndoStore
@@ -58,16 +61,20 @@ func (ds *datastoreImpl) doForMatching(ctx context.Context, clusterID, namespace
 	})
 }
 
+func getQuery(clusterID, namespace string) *v1.Query {
+	query := search.NewQueryBuilder()
+	if clusterID != "" {
+		query = query.AddExactMatches(search.ClusterID, clusterID)
+	}
+	if namespace != "" {
+		query = query.AddExactMatches(search.Namespace, namespace)
+	}
+	return query.ProtoQuery()
+}
+
 func (ds *datastoreImpl) GetNetworkPolicies(ctx context.Context, clusterID, namespace string) ([]*storage.NetworkPolicy, error) {
 	if env.PostgresDatastoreEnabled.BooleanSetting() && !stringutils.AllEmpty(clusterID, namespace) {
-		query := search.NewQueryBuilder()
-		if clusterID != "" {
-			query = query.AddExactMatches(search.ClusterID, clusterID)
-		}
-		if namespace != "" {
-			query = query.AddExactMatches(search.Namespace, namespace)
-		}
-		return ds.storage.GetByQuery(ctx, query.ProtoQuery())
+		return ds.storage.GetByQuery(ctx, getQuery(clusterID, namespace))
 	}
 	var netPols []*storage.NetworkPolicy
 	err := pgutils.RetryIfPostgres(
@@ -94,6 +101,12 @@ func (ds *datastoreImpl) GetNetworkPolicies(ctx context.Context, clusterID, name
 }
 
 func (ds *datastoreImpl) CountMatchingNetworkPolicies(ctx context.Context, clusterID, namespace string) (int, error) {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		if stringutils.AllEmpty(clusterID, namespace) {
+			return ds.storage.Count(ctx)
+		}
+		return ds.indexer.Count(ctx, getQuery(clusterID, namespace))
+	}
 	if namespace == "" {
 		netPols, err := ds.GetNetworkPolicies(ctx, clusterID, "")
 		if err != nil {

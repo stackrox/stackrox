@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/index"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/bolt"
 	pgStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
@@ -57,9 +58,10 @@ type UndoDeploymentDataStore interface {
 }
 
 // New returns a new Store instance using the provided bolt DB instance.
-func New(storage store.Store, undoStorage undostore.UndoStore, undoDeploymentStorage undodeploymentstore.UndoDeploymentStore) DataStore {
+func New(storage store.Store, indexer index.Indexer, undoStorage undostore.UndoStore, undoDeploymentStorage undodeploymentstore.UndoDeploymentStore) DataStore {
 	return &datastoreImpl{
 		storage:               storage,
+		indexer:               indexer,
 		undoStorage:           undoStorage,
 		undoDeploymentStorage: undoDeploymentStorage,
 	}
@@ -68,9 +70,10 @@ func New(storage store.Store, undoStorage undostore.UndoStore, undoDeploymentSto
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
 	dbstore := pgStore.New(pool)
+	indexer := pgStore.NewIndexer(pool)
 	undodbstore := undopostgres.New(pool)
 	undodeploymentdbstore := undoDeploymentPostgres.New(pool)
-	return New(dbstore, undodbstore, undodeploymentdbstore), nil
+	return New(dbstore, indexer, undodbstore, undodeploymentdbstore), nil
 }
 
 // GetBenchPostgresDataStore provides a datastore connected to postgres for testing purposes.
@@ -89,5 +92,5 @@ func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	if err != nil {
 		return nil, err
 	}
-	return New(dbstore, undodbstore, undodeploymentdbstore), nil
+	return New(dbstore, nil, undodbstore, undodeploymentdbstore), nil
 }
