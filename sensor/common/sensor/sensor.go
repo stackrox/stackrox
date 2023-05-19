@@ -228,7 +228,11 @@ func (s *Sensor) Start() {
 	case <-s.stoppedSig.Done():
 		return
 	}
-	go s.communicationWithCentral(&centralReachable)
+	if features.PreventSensorRestartOnDisconnect.Enabled() {
+		go s.communicationWithCentralWithRetries(&centralReachable)
+	} else {
+		go s.communicationWithCentral(&centralReachable)
+	}
 }
 
 func (s *Sensor) notifyAllComponents(notification common.SensorComponentEvent) {
@@ -278,65 +282,65 @@ func (s *Sensor) Stop() {
 }
 
 func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
-	if features.PreventSensorRestartOnDisconnect.Enabled() {
-		// Attempt a simple restart strategy: if connection broke, re-establish the connection with exponential back-offs.
-		// This approach does not consider messages that were already sent to central_sender but weren't written to the stream.
-		// This re-creates the entire gRPC communication stack, and assumes that a reconciliation should be made once the
-		// connection is up again.
-		exponential := backoff.NewExponentialBackOff()
-		exponential.MaxElapsedTime = 0 // It never stops if set to 0
-		exponential.InitialInterval = 1 * time.Minute
-		exponential.MaxInterval = 10 * time.Minute
+	s.centralCommunication = NewCentralCommunication(s.components...)
 
-		err := backoff.RetryNotify(func() error {
-			select {
-			case <-s.centralConnectionFactory.OkSignal().WaitC():
-				// Connection if up, we can try to create a new central communication
-				s.notifyAllComponents(common.SensorComponentEventCentralReachable)
-				break
-			case <-s.centralConnectionFactory.StopSignal().WaitC():
-				// Connection is still broken, report and try again
-				return errors.Wrap(s.centralConnectionFactory.StopSignal().Err(), "connection couldn't be re-established")
-			}
+	s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
 
-			// At this point, we know that connection factory reported that connection if up.
-			// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
-			// suddenly broke.
-			s.centralCommunication = NewCentralCommunication(s.components...)
-			s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
-			select {
-			case <-s.centralCommunication.Stopped().WaitC():
-				// Communication either ended or there was an error. Either way we should retry.
-				// Send notification to all components that we are running in offline mode
-				s.notifyAllComponents(common.SensorComponentEventOfflineMode)
-				s.centralConnectionFactory.Reset()
-				// Trigger goroutine that will attempt the connection. s.centralConnectionFactory.*Signal() should be
-				// checked to probe connection state.
-				go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection)
-				return s.centralCommunication.Stopped().Err()
-			case <-s.stoppedSig.WaitC():
-				// This means sensor was signaled to finish, this error shouldn't be retried
-				return backoff.Permanent(s.stoppedSig.Err())
-			}
-		}, exponential, func(err error, d time.Duration) {
-			log.Infof("Central communication stoppped: %s. Retrying after %s...", err, d.Round(time.Second))
-		})
-
-		if err != nil {
-			log.Warnf("backoff returned error: %s", err)
-		}
+	if err := s.centralCommunication.Stopped().Wait(); err != nil {
+		log.Errorf("Sensor reported an error: %v", err)
+		s.stoppedSig.SignalWithError(err)
 	} else {
-		s.centralCommunication = NewCentralCommunication(s.components...)
+		log.Info("Terminating central connection.")
+		s.stoppedSig.Signal()
+	}
+}
 
-		s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
+func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurrency.Flag) {
+	// Attempt a simple restart strategy: if connection broke, re-establish the connection with exponential back-offs.
+	// This approach does not consider messages that were already sent to central_sender but weren't written to the stream.
+	// This re-creates the entire gRPC communication stack, and assumes that a reconciliation should be made once the
+	// connection is up again.
+	exponential := backoff.NewExponentialBackOff()
+	exponential.MaxElapsedTime = 0 // It never stops if set to 0
+	exponential.InitialInterval = 1 * time.Minute
+	exponential.MaxInterval = 10 * time.Minute
 
-		if err := s.centralCommunication.Stopped().Wait(); err != nil {
-			log.Errorf("Sensor reported an error: %v", err)
-			s.stoppedSig.SignalWithError(err)
-		} else {
-			log.Info("Terminating central connection.")
-			s.stoppedSig.Signal()
+	err := backoff.RetryNotify(func() error {
+		select {
+		case <-s.centralConnectionFactory.OkSignal().WaitC():
+			// Connection if up, we can try to create a new central communication
+			s.notifyAllComponents(common.SensorComponentEventCentralReachable)
+			break
+		case <-s.centralConnectionFactory.StopSignal().WaitC():
+			// Connection is still broken, report and try again
+			return errors.Wrap(s.centralConnectionFactory.StopSignal().Err(), "connection couldn't be re-established")
 		}
+
+		// At this point, we know that connection factory reported that connection if up.
+		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
+		// suddenly broke.
+		s.centralCommunication = NewCentralCommunication(s.components...)
+		s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
+		select {
+		case <-s.centralCommunication.Stopped().WaitC():
+			// Communication either ended or there was an error. Either way we should retry.
+			// Send notification to all components that we are running in offline mode
+			s.notifyAllComponents(common.SensorComponentEventOfflineMode)
+			s.centralConnectionFactory.Reset()
+			// Trigger goroutine that will attempt the connection. s.centralConnectionFactory.*Signal() should be
+			// checked to probe connection state.
+			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection)
+			return s.centralCommunication.Stopped().Err()
+		case <-s.stoppedSig.WaitC():
+			// This means sensor was signaled to finish, this error shouldn't be retried
+			return backoff.Permanent(s.stoppedSig.Err())
+		}
+	}, exponential, func(err error, d time.Duration) {
+		log.Infof("Central communication stoppped: %s. Retrying after %s...", err, d.Round(time.Second))
+	})
+
+	if err != nil {
+		log.Warnf("backoff returned error: %s", err)
 	}
 }
 
