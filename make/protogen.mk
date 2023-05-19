@@ -210,7 +210,6 @@ $(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(
 ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
-#	@echo GATEWAY_M_ARGS IS $(GATEWAY_M_ARGS)
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
@@ -220,7 +219,10 @@ endif
 		--proto_path=$(PROTO_BASE_PATH) \
 		--grpc-gateway_out=$(GATEWAY_M_ARGS_STR:%=%,)allow_colon_final_segments=true,logtostderr=true:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
-	# Workaround for https://github.com/grpc-ecosystem/grpc-gateway/issues/229.
+	# Even though Mapi/v1/<type>=<import_path_for_v1_pkg> args in GATEWAY_M_ARGS_STR tell protoc-gen-grpc-gateway to import the custom path for
+    # v1 package, the generated code ends up importing 'api/v1' package which doesn't exist. It also imports the specified <import_path_for_v1_pkg>
+    # but with an alias 'v1_0' . This is due to an open issue with the generator script https://github.com/grpc-ecosystem/grpc-gateway/issues/229The
+    # Below workaround removes the incorrect 'api/v1' import and replaces v1 usages as v1_0.RawQuery to v1.RawQuery
 	-$(SILENT)(sed -i.bak -e '/"api\/v1"/ d' -e 's/v1_0 //' -e 's/v1_0/v1/' $@ 2>/dev/null && rm $@.bak) || true
 
 # Generate all of the swagger specifications with one invocation of protoc

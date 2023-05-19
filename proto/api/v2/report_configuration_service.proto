@@ -130,7 +130,7 @@ service ReportConfigurationService {
     // ListReportConfigurations returns report configurations matching given query
     rpc GetReportConfigurations (v1.RawQuery) returns (GetReportConfigurationsResponse) {
         option (google.api.http) = {
-            get: "/v1/reports/configurations"
+            get: "/v2/reports/configurations"
         };
     }
 

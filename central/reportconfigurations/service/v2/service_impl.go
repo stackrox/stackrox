@@ -73,7 +73,11 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 }
 
 func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *apiV2.ReportConfiguration) (*v1.Empty, error) {
+	if request.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required")
+	}
 	protoReportConfig := reportConfigConverter.ConvertV2ReportConfigurationToProto(request)
+
 	if err := s.validator.ValidateReportConfiguration(ctx, protoReportConfig); err != nil {
 		return nil, errors.Errorf("Report config validation failed : %s", err)
 	}

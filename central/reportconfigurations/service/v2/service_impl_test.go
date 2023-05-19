@@ -63,7 +63,7 @@ func (s *ReportConfigurationServiceTestSuite) TearDownTest() {
 func (s *ReportConfigurationServiceTestSuite) TestCreateReportConfiguration() {
 	ctx := context.Background()
 
-	for _, tc := range s.upsertReportConfigTestCases() {
+	for _, tc := range s.upsertReportConfigTestCases(false) {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			requestConfig := tc.v2ReprtConfigGen()
 			tc.setMocks()
@@ -86,7 +86,7 @@ func (s *ReportConfigurationServiceTestSuite) TestCreateReportConfiguration() {
 func (s *ReportConfigurationServiceTestSuite) TestUpdateReportConfiguration() {
 	ctx := context.Background()
 
-	for _, tc := range s.upsertReportConfigTestCases() {
+	for _, tc := range s.upsertReportConfigTestCases(true) {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			requestConfig := tc.v2ReprtConfigGen()
 			tc.setMocks()
@@ -258,7 +258,7 @@ func (s *ReportConfigurationServiceTestSuite) TestDeleteReportConfiguration() {
 	}
 }
 
-func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []upsertTestCase {
+func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []upsertTestCase {
 	cases := []upsertTestCase{
 		{
 			desc: "Valid report config with multiple notifiers",
@@ -480,6 +480,19 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases() []up
 				s.collectionDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 			},
 		},
+	}
+
+	if isUpdate {
+		cases = append(cases, upsertTestCase{
+			desc: "Report config with empty id",
+			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
+				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+				ret.Id = ""
+				return ret
+			},
+			isValidationError: true,
+			setMocks:          noMocks,
+		})
 	}
 
 	return cases
