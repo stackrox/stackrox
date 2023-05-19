@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/probeupload"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralclient"
@@ -60,6 +61,9 @@ type Sensor struct {
 	server          pkgGRPC.API
 	profilingServer *http.Server
 
+	currentState    common.SensorComponentEvent
+	currentStateMtx *sync.Mutex
+
 	centralConnection        *grpcUtil.LazyClientConn
 	centralCommunication     CentralCommunication
 	centralConnectionFactory centralclient.CentralConnectionFactory
@@ -80,6 +84,9 @@ func NewSensor(configHandler config.Handler, detector detector.Detector, imageSe
 
 		centralConnectionFactory: centralConnectionFactory,
 		centralConnection:        grpcUtil.NewLazyClientConn(),
+
+		currentState:    common.SensorComponentEventOfflineMode,
+		currentStateMtx: &sync.Mutex{},
 
 		stoppedSig: concurrency.NewErrorSignal(),
 	}
@@ -219,12 +226,13 @@ func (s *Sensor) Start() {
 	okSig := s.centralConnectionFactory.OkSignal()
 	errSig := s.centralConnectionFactory.StopSignal()
 
+	// TODO: Retry on first try as well. If connection is not available one first
 	select {
 	case <-errSig.Done():
 		s.stoppedSig.SignalWithErrorWrap(errSig.Err(), "getting connection from connection factory")
 		return
 	case <-okSig.Done():
-		s.notifyAllComponents(common.SensorComponentEventCentralReachable)
+		s.changeState(common.SensorComponentEventCentralReachable)
 	case <-s.stoppedSig.Done():
 		return
 	}
@@ -232,13 +240,6 @@ func (s *Sensor) Start() {
 		go s.communicationWithCentralWithRetries(&centralReachable)
 	} else {
 		go s.communicationWithCentral(&centralReachable)
-	}
-}
-
-func (s *Sensor) notifyAllComponents(notification common.SensorComponentEvent) {
-	for _, component := range s.components {
-		// Non-blocking call to each component
-		go component.Notify(notification)
 	}
 }
 
@@ -295,6 +296,21 @@ func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
 	}
 }
 
+func (s *Sensor) changeState(state common.SensorComponentEvent) {
+	s.currentStateMtx.Lock()
+	defer s.currentStateMtx.Unlock()
+	if s.currentState != state {
+		s.currentState = state
+		s.notifyAllComponents(s.currentState)
+	}
+}
+
+func (s *Sensor) notifyAllComponents(notification common.SensorComponentEvent) {
+	for _, component := range s.components {
+		component.Notify(notification)
+	}
+}
+
 func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurrency.Flag) {
 	// Attempt a simple restart strategy: if connection broke, re-establish the connection with exponential back-offs.
 	// This approach does not consider messages that were already sent to central_sender but weren't written to the stream.
@@ -310,10 +326,11 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		select {
 		case <-s.centralConnectionFactory.OkSignal().WaitC():
 			// Connection if up, we can try to create a new central communication
-			s.notifyAllComponents(common.SensorComponentEventCentralReachable)
+			s.changeState(common.SensorComponentEventCentralReachable)
 			break
 		case <-s.centralConnectionFactory.StopSignal().WaitC():
 			// Connection is still broken, report and try again
+			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection)
 			return errors.Wrap(s.centralConnectionFactory.StopSignal().Err(), "connection couldn't be re-established")
 		}
 
@@ -326,7 +343,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		case <-s.centralCommunication.Stopped().WaitC():
 			// Communication either ended or there was an error. Either way we should retry.
 			// Send notification to all components that we are running in offline mode
-			s.notifyAllComponents(common.SensorComponentEventOfflineMode)
+			s.changeState(common.SensorComponentEventOfflineMode)
 			s.centralConnectionFactory.Reset()
 			// Trigger goroutine that will attempt the connection. s.centralConnectionFactory.*Signal() should be
 			// checked to probe connection state.
