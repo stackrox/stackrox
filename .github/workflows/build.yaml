@@ -280,10 +280,6 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Checkout submodules
-        run: |
-            git submodule update --init
-
       - uses: ./.github/actions/handle-tagged-build
 
       - uses: actions/download-artifact@v3
@@ -528,10 +524,6 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Checkout submodules
-        run: |
-            git submodule update --init
 
       - uses: ./.github/actions/handle-tagged-build
 
