@@ -1244,7 +1244,6 @@ store_test_results() {
             -junit-reports-dir "$from" \
             -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
             -threshold 5 \
-            -dry-run \
             -csv-output "${csv_output}"
         bq load --skip_leading_rows=1 ci_metrics.stackrox_tests "${csv_output}"
     } || true
