@@ -7,7 +7,7 @@ function GraphLoader(): ReactElement {
             <div className="w-10 rounded-full p-2 bg-base-100 shadow-lg mb-4">
                 <Loader loading size={20} color="currentColor" />
             </div>
-            <div className="uppercase text-sm tracking-widest font-700">Generating Graph...</div>
+            <div className="uppercase text-sm font-700">Generating Graph...</div>
         </div>
     );
 }

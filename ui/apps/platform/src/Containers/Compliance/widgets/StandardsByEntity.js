@@ -101,7 +101,7 @@ function getLabelLinks(match, location, data, entityType) {
 
 const StandardsByEntity = ({ match, location, entityType, bodyClassName, className }) => {
     const searchParam = useContext(searchContext);
-    const headerText = `Passing standards by ${entityType}`;
+    const headerText = `Passing standards by ${resourceLabels[entityType]}`;
 
     const variables = {
         groupBy: [entityTypes.STANDARD, entityType],

@@ -79,21 +79,21 @@ const opnameForEntities = {
     policies: 'getPolicies',
 };
 
-// Headings on entities pages: uppercase style hides the inconsistencies.
+// Headings on entities pages has sentence case for entity type.
 const headingPlural = {
-    clusters: 'clusters',
-    components: 'components',
-    'image-components': 'image components',
-    'node-components': 'node components',
+    clusters: 'Clusters',
+    components: 'Components',
+    'image-components': 'Image components',
+    'node-components': 'Node components',
     cves: 'CVES',
-    'image-cves': 'Image CVES',
-    'node-cves': 'Node CVES',
-    'cluster-cves': 'Platform CVES',
-    deployments: 'deployments',
-    images: 'images',
-    namespaces: 'namespaces',
-    nodes: 'nodes',
-    policies: 'policies',
+    'image-cves': 'Image CVES', // TODO uppercase S from pluralize
+    'node-cves': 'Node CVES', // TODO uppercase S from pluralize
+    'cluster-cves': 'Platform CVES', // TODO uppercase S from pluralize
+    deployments: 'Deployments',
+    images: 'Images',
+    namespaces: 'Namespaces',
+    nodes: 'Nodes',
+    policies: 'Policies',
 };
 
 const typeOfEntity = {

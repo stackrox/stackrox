@@ -101,7 +101,7 @@ const BreadCrumbLinks = ({ workflowEntities }) => {
     return (
         <span
             style={{ flex: '10 1' }}
-            className="flex items-center font-700 leading-normal text-base-600 tracking-wide truncate"
+            className="flex items-center font-700 leading-normal text-base-600 truncate"
         >
             <BackLink workflowState={workflowState} enabled={backButtonEnabled} />
             {breadCrumbLinks}
