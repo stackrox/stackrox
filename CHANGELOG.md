@@ -13,7 +13,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - A new command `roxctl central login` has been added that allows to use a user's token within roxctl instead of an API token or admin password.
 
 ### Removed Features
-- ROX-12316: As announced in 3.74, the permission `Access` replaces the deprecated permission `Role`.
+- ROX-14398: As announced in 3.74, the permission `Access` replaces the deprecated permission `Role`.
 
 ### Deprecated Fatures
 
