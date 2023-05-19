@@ -38,7 +38,6 @@ function Simulator({
             <PanelNew testid="network-simulator-panel">
                 <PanelHead>
                     <PanelTitle
-                        isUpperCase
                         testid="network-simulator-panel-header"
                         text="Network Policy Simulator"
                     />

@@ -9,9 +9,7 @@ function ScanDataMessage({ header = '', body = '' }: ScanMessage): ReactElement 
             <Message type="error">
                 <div className="w-full">
                     <header className="text-lg pb-2 border-b border-alert-300 mb-2 w-full">
-                        <h2 className="mb-1 font-700 tracking-wide uppercase">
-                            CVE Data May Be Inaccurate
-                        </h2>
+                        <h2 className="mb-1 font-700">CVE Data May Be Inaccurate</h2>
                         <span>{header}</span>
                     </header>
                     <p>{body}</p>

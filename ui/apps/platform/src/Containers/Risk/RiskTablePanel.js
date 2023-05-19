@@ -94,7 +94,7 @@ function RiskTablePanel({
             <PanelHead>
                 <TableHeader
                     length={deploymentCount}
-                    type="Deployment"
+                    type="deployment"
                     isViewFiltered={isViewFiltered}
                 />
                 <PanelHeadEnd>

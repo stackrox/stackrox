@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { useRouteMatch, useLocation, useHistory } from 'react-router-dom';
+import upperFirst from 'lodash/upperFirst';
 
 import Widget from 'Components/Widget';
 import VerticalBarChart from 'Components/visuals/VerticalBarChart';
@@ -17,7 +18,7 @@ import { standardLabels } from 'messages/standards';
 import searchContext from 'Containers/searchContext';
 
 const EntityCompliance = ({ entityType, entityName, clusterName }) => {
-    const entityTypeLabel = resourceLabels[entityType];
+    const entityTypeLabel = upperFirst(resourceLabels[entityType]);
     const searchParam = useContext(searchContext);
     const match = useRouteMatch();
     const location = useLocation();

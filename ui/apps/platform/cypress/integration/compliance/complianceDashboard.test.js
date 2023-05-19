@@ -61,7 +61,7 @@ describe('Compliance Dashboard', () => {
             cy.get(selectors.widget.passingStandardsAcrossClusters.axisLinks).first().click();
         });
         cy.location('search').should('contain', '?s[groupBy]=CLUSTER'); // followed by a standard
-        cy.get('[data-testid="panel-header"]').contains('CLUSTER');
+        cy.get('[data-testid="panel-header"]').contains('cluster');
         cy.get(selectors.list.table.firstGroup).should('be.visible');
     });
 
@@ -72,7 +72,7 @@ describe('Compliance Dashboard', () => {
             cy.get(selectors.widget.passingStandardsAcrossNamespaces.axisLinks).first().click();
         });
         cy.location('search').should('contain', '?s[groupBy]=NAMESPACE'); // followed by a standard
-        cy.get('[data-testid="panel-header"]').contains('NAMESPACE');
+        cy.get('[data-testid="panel-header"]').contains('namespace');
         cy.get(selectors.list.table.firstGroup).should('be.visible');
     });
 
@@ -83,7 +83,7 @@ describe('Compliance Dashboard', () => {
             cy.get(selectors.widget.passingStandardsAcrossNodes.axisLinks).first().click();
         });
         cy.location('search').should('contain', '?s[groupBy]=NODE'); // followed by a standard
-        cy.get('[data-testid="panel-header"]').contains('NODE');
+        cy.get('[data-testid="panel-header"]').contains('node');
         cy.get(selectors.list.table.firstGroup).should('be.visible');
     });
 

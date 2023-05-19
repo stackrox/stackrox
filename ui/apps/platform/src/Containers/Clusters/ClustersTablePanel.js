@@ -207,7 +207,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     const headerComponent = (
         <TableHeader
             length={currentClusters?.length || 0}
-            type="Cluster"
+            type="cluster"
             isViewFiltered={isViewFiltered}
         />
     );
