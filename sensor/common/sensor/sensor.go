@@ -226,19 +226,21 @@ func (s *Sensor) Start() {
 	okSig := s.centralConnectionFactory.OkSignal()
 	errSig := s.centralConnectionFactory.StopSignal()
 
-	// TODO: Retry on first try as well. If connection is not available one first
-	select {
-	case <-errSig.Done():
-		s.stoppedSig.SignalWithErrorWrap(errSig.Err(), "getting connection from connection factory")
-		return
-	case <-okSig.Done():
-		s.changeState(common.SensorComponentEventCentralReachable)
-	case <-s.stoppedSig.Done():
-		return
-	}
 	if features.PreventSensorRestartOnDisconnect.Enabled() {
 		go s.communicationWithCentralWithRetries(&centralReachable)
 	} else {
+		// This has to be checked only if retries are not enabled. With retries, this signal will be checked
+		// inside communicationWithCentralWithRetries since it has to be re-checked on reconnects, and not
+		// crash if it fails.
+		select {
+		case <-errSig.Done():
+			s.stoppedSig.SignalWithErrorWrap(errSig.Err(), "getting connection from connection factory")
+			return
+		case <-okSig.Done():
+			s.changeState(common.SensorComponentEventCentralReachable)
+		case <-s.stoppedSig.Done():
+			return
+		}
 		go s.communicationWithCentral(&centralReachable)
 	}
 }
