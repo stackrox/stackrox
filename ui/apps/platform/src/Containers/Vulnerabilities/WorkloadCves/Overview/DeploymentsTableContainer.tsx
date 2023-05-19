@@ -12,7 +12,7 @@ import TableEntityToolbar from '../components/TableEntityToolbar';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
 import { parseQuerySearchFilter } from '../searchUtils';
 import { defaultDeploymentSortFields, deploymentsDefaultSort } from '../sortUtils';
-import { DefaultFilters } from '../types';
+import { DefaultFilters, VulnerabilitySeverityLabel } from '../types';
 
 type DeploymentsTableContainerProps = {
     defaultFilters: DefaultFilters;
@@ -72,6 +72,7 @@ function DeploymentsTableContainer({ defaultFilters, countsData }: DeploymentsTa
                         deployments={tableData.deployments}
                         getSortParams={getSortParams}
                         isFiltered={isFiltered}
+                        filteredSeverities={searchFilter.Severity as VulnerabilitySeverityLabel[]}
                     />
                 </div>
             )}
