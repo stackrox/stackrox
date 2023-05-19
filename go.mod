@@ -10,7 +10,7 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/PagerDuty/go-pagerduty v1.6.0
+	github.com/PagerDuty/go-pagerduty v1.7.0
 	github.com/RoaringBitmap/roaring v1.2.3
 	github.com/VividCortex/ewma v1.2.0
 	github.com/andygrunwald/go-jira v1.16.0
