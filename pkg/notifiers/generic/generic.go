@@ -16,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -157,10 +156,6 @@ func (g *generic) Test(ctx context.Context) error {
 		},
 	}
 	return g.AlertNotify(ctx, alert)
-}
-
-func (g *generic) IsSecuredClusterNotifier() bool {
-	return env.SecuredClusterNotifiers.BooleanSetting()
 }
 
 func (g *generic) constructJSON(message proto.Message, msgKey string) (io.Reader, error) {

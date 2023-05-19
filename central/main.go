@@ -90,7 +90,6 @@ import (
 	nodeService "github.com/stackrox/rox/central/node/service"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
 	"github.com/stackrox/rox/central/option"
@@ -424,7 +423,6 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		policyDataStore.Singleton(),
 		processBaselineDataStore.Singleton(),
 		networkBaselineDataStore.Singleton(),
-		notifierProcessor.Singleton(),
 		autoTriggerUpgrades,
 	); err != nil {
 		log.Panicf("Couldn't start sensor connection manager: %v", err)

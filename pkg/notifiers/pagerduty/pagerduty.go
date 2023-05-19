@@ -109,10 +109,6 @@ func (p *pagerDuty) Test(_ context.Context) error {
 	}, newAlert)
 }
 
-func (p *pagerDuty) IsSecuredClusterNotifier() bool {
-	return false
-}
-
 func (p *pagerDuty) AckAlert(_ context.Context, alert *storage.Alert) error {
 	return p.postAlert(alert, ackAlert)
 }
