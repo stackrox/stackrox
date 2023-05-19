@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -101,6 +102,159 @@ func (s *ReportConfigurationServiceTestSuite) TestUpdateReportConfiguration() {
 				s.Equal(&v1.Empty{}, result)
 			}
 		})
+	}
+}
+
+func (s *ReportConfigurationServiceTestSuite) TestGetReportConfigurations() {
+	ctx := context.Background()
+	testCases := []struct {
+		desc      string
+		query     *v1.RawQuery
+		expectedQ *v1.Query
+	}{
+		{
+			desc:      "Empty query",
+			query:     &v1.RawQuery{Query: ""},
+			expectedQ: search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+		},
+		{
+			desc:  "Query with search field",
+			query: &v1.RawQuery{Query: "Report Name:name"},
+			expectedQ: search.NewQueryBuilder().AddStrings(search.ReportName, "name").
+				WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+		},
+		{
+			desc: "Query with custom pagination",
+			query: &v1.RawQuery{
+				Query:      "",
+				Pagination: &v1.Pagination{Limit: 25},
+			},
+			expectedQ: search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(25)).ProtoQuery(),
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			expectedConfigs := &apiV2.GetReportConfigurationsResponse{
+				ReportConfigs: []*apiV2.ReportConfiguration{fixtures.GetValidV2ReportConfigWithMultipleNotifiers()},
+			}
+
+			s.reportConfigDatastore.EXPECT().GetReportConfigurations(ctx, tc.expectedQ).
+				Return([]*storage.ReportConfiguration{fixtures.GetValidReportConfigWithMultipleNotifiers()}, nil).Times(1)
+			configs, err := s.service.GetReportConfigurations(ctx, tc.query)
+			s.NoError(err)
+			s.Equal(expectedConfigs, configs)
+		})
+	}
+}
+
+func (s *ReportConfigurationServiceTestSuite) TestGetReportConfigurationByID() {
+	ctx := context.Background()
+	testCases := []struct {
+		desc                string
+		id                  string
+		isValidationError   bool
+		isDataNotFoundError bool
+	}{
+		{
+			desc:                "Empty ID",
+			id:                  "",
+			isValidationError:   true,
+			isDataNotFoundError: false,
+		},
+		{
+			desc:                "Config not found in datastore",
+			id:                  "absent-id",
+			isValidationError:   false,
+			isDataNotFoundError: true,
+		},
+		{
+			desc:                "valid ID",
+			id:                  "present-id",
+			isValidationError:   false,
+			isDataNotFoundError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			if !tc.isValidationError {
+				if !tc.isDataNotFoundError {
+					s.reportConfigDatastore.EXPECT().GetReportConfiguration(ctx, tc.id).
+						Return(fixtures.GetValidReportConfigWithMultipleNotifiers(), true, nil).Times(1)
+				} else {
+					s.reportConfigDatastore.EXPECT().GetReportConfiguration(ctx, tc.id).
+						Return(nil, false, nil)
+				}
+			}
+			config, err := s.service.GetReportConfiguration(ctx, &v1.ResourceByID{Id: tc.id})
+			if tc.isValidationError || tc.isDataNotFoundError {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+				s.Equal(fixtures.GetValidV2ReportConfigWithMultipleNotifiers(), config)
+			}
+		})
+	}
+}
+
+func (s *ReportConfigurationServiceTestSuite) TestCountReportConfigurations() {
+	ctx := context.Background()
+	testCases := []struct {
+		desc      string
+		query     *v1.RawQuery
+		expectedQ *v1.Query
+	}{
+		{
+			desc:      "Empty query",
+			query:     &v1.RawQuery{Query: ""},
+			expectedQ: search.NewQueryBuilder().ProtoQuery(),
+		},
+		{
+			desc:      "Query with search field",
+			query:     &v1.RawQuery{Query: "Report Name:name"},
+			expectedQ: search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			s.reportConfigDatastore.EXPECT().Count(ctx, tc.expectedQ).Return(1, nil).Times(1)
+			_, err := s.service.CountReportConfigurations(ctx, tc.query)
+			s.NoError(err)
+		})
+	}
+}
+
+func (s *ReportConfigurationServiceTestSuite) TestDeleteReportConfiguration() {
+	ctx := context.Background()
+	testCases := []struct {
+		desc    string
+		id      string
+		isError bool
+	}{
+		{
+			desc:    "Empty ID",
+			id:      "",
+			isError: true,
+		},
+		{
+			desc:    "valid ID",
+			id:      "config-id",
+			isError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		if !tc.isError {
+			s.reportConfigDatastore.EXPECT().RemoveReportConfiguration(ctx, tc.id).Return(nil).Times(1)
+		}
+		_, err := s.service.DeleteReportConfiguration(ctx, &v1.ResourceByID{Id: tc.id})
+		if tc.isError {
+			s.Error(err)
+		} else {
+			s.NoError(err)
+		}
 	}
 }
 

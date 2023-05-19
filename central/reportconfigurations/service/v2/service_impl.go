@@ -79,7 +79,7 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 	}
 
 	// TODO ROX-16567 : Integrate with report manager when new reporting is implemented
-	//if err := s.manager.Upsert(ctx, protoReportConfig); err != nil {
+	// if err := s.manager.Upsert(ctx, protoReportConfig); err != nil {
 	//	return nil, err
 	//}
 
@@ -112,6 +112,9 @@ func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *v1.Raw
 }
 
 func (s *serviceImpl) GetReportConfiguration(ctx context.Context, id *v1.ResourceByID) (*apiV2.ReportConfiguration, error) {
+	if id.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required")
+	}
 	reportConfig, exists, err := s.reportConfigStore.GetReportConfiguration(ctx, id.GetId())
 	if err != nil {
 		return nil, err
