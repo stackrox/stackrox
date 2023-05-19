@@ -9,7 +9,6 @@ import org.yaml.snakeyaml.Yaml
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraph
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkNode
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest.DeleteExistingPoliciesMode
-import io.stackrox.proto.api.v1.PaginationOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass.L4Protocol
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.Type
@@ -496,7 +495,6 @@ class NetworkFlowTest extends BaseSpecification {
 
     @Tag("NetworkFlowVisualization")
     def "Verify connections from external sources"() {
-
         given:
         "Deployment A, where an external source communicates to A"
         String deploymentUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
@@ -531,7 +529,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         then:
         "Check for edge in network graph"
-        withRetry(5, 1) {
+        withRetry(5, 20) {
             log.info "Checking for edge from external to ${NGINXCONNECTIONTARGET}"
 
             // Only on OpenShift 4.12, the edge will not show from EXTERNAL_SOURCE, but instead from
@@ -542,17 +540,18 @@ class NetworkFlowTest extends BaseSpecification {
                         .setQuery("Namespace:openshift-ingress")
                         .build()
                 def ingressDeployments = DeploymentService.listDeploymentsSearch(query).deploymentsList
-                def defaultRouterId = ingressDeployments.find {it.getName() == "router-default"}.id
+                def defaultRouterId = ingressDeployments.find { it.getName() == "router-default" }.id
                 routerDefaultEdges = NetworkGraphUtil.checkForEdge(defaultRouterId, deploymentUid, null, 180)
+                if (routerDefaultEdges != null) {
+                    log.info("Found edge coming from OpenShift ingress router")
+                    return
+                }
             }
             List<Edge> edges =
                     NetworkGraphUtil.checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
 
-            // We should find either an edge from external sources or from router-default
-            log.info "Found ${routerDefaultEdges.size()} flows from OpenShift 'router-default' and ${edges.size()} flows from internet"
-            assert edges || routerDefaultEdges
+            assert edges
         }
-
     }
 
     // TODO(ROX-7046): Re-enable this test
