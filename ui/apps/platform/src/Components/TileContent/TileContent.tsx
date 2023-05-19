@@ -25,11 +25,11 @@ const TileContent = ({
 }: TileContentProps): ReactElement => {
     return (
         <div
-            className={`flex flex-col text-center justify-around ${textColorClass} ${className}`}
+            className={`flex flex-col text-center justify-around font-600 ${textColorClass} ${className}`}
             data-testid={dataTestId}
         >
             {superText !== '' && (
-                <div className="text-2xl tracking-widest pb-1" data-testid="tileLinkSuperText">
+                <div className="text-2xl pb-1" data-testid="tileLinkSuperText">
                     {superText}
                 </div>
             )}
@@ -37,20 +37,12 @@ const TileContent = ({
             <div
                 className={`flex ${
                     !textWrap ? 'whitespace-nowrap' : ''
-                } items-center font-600 font-condensed uppercase justify-center text-base`}
+                } items-center justify-center text-base`}
                 data-testid="tile-link-value"
             >
                 {text}
             </div>
-            {subText && (
-                <div
-                    className={`${
-                        short ? 'text-xs' : 'text-sm pt-1'
-                    } tracking-wide font-condensed font-600`}
-                >
-                    {subText}
-                </div>
-            )}
+            {subText && <div className={`${short ? 'text-xs' : 'text-sm pt-1'}`}>{subText}</div>}
         </div>
     );
 };

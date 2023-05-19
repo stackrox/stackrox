@@ -45,11 +45,6 @@ func (p *processorImpl) GetNotifier(ctx context.Context, id string) (notifier no
 	return p.ns.GetNotifier(ctx, id)
 }
 
-// GetNotifiers gets the in memory copies of all notifiers
-func (p *processorImpl) GetNotifiers(ctx context.Context) (notifiers []notifiers.Notifier) {
-	return p.ns.GetNotifiers(ctx)
-}
-
 // UpdateNotifier updates or adds the passed notifier into memory
 func (p *processorImpl) UpdateNotifier(ctx context.Context, notifier notifiers.Notifier) {
 	p.ns.UpsertNotifier(ctx, notifier)
@@ -64,12 +59,6 @@ func (p *processorImpl) ProcessAlert(ctx context.Context, alert *storage.Alert) 
 
 	p.ns.ForEach(ctx, func(ctx context.Context, notifier notifiers.Notifier, failures pkgNotifier.AlertSet) {
 		if alertNotifiers.Contains(notifier.ProtoNotifier().GetId()) {
-			// If this is a secured cluster notifier the notification for this alert has already been processed in the secured
-			// cluster before the alert reached here for processing. Hence, skip the notifier and continue with the rest
-			// of the notifiers configured for the policy that generated the alert
-			if notifier.IsSecuredClusterNotifier() {
-				return
-			}
 			go func() {
 				err := pkgNotifier.TryToAlert(ctx, notifier, alert)
 				if err != nil {
@@ -121,9 +110,6 @@ func (p *processorImpl) processAlertSync(ctx context.Context, alert *storage.Ale
 	alertNotifiers := set.NewStringSet(alert.GetPolicy().GetNotifiers()...)
 	p.ns.ForEach(ctx, func(ctx context.Context, notifier notifiers.Notifier, failures pkgNotifier.AlertSet) {
 		if alertNotifiers.Contains(notifier.ProtoNotifier().GetId()) {
-			if notifier.IsSecuredClusterNotifier() {
-				return
-			}
 			err := pkgNotifier.TryToAlert(ctx, notifier, alert)
 			if err != nil {
 				failures.Add(alert)

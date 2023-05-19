@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -323,7 +322,6 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 	}
 
 	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
-	var securedNotifierIds []string
 	for _, notifierID := range request.GetNotifierIds() {
 		notifierProto, exists, err := s.notifierStore.GetNotifier(ctx, notifierID)
 		if err != nil {
@@ -346,33 +344,12 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 			continue
 		}
 
-		if notifier.IsSecuredClusterNotifier() {
-			// for secured cluster notifiers, the network policy modification will be sent out
-			// to the notifiers from the secured cluster
-			securedNotifierIds = append(securedNotifierIds, notifierID)
-			continue
-		}
-
 		err = netpolNotifier.NetworkPolicyYAMLNotify(ctx, request.GetModification().GetApplyYaml(), clusterName)
 		if err != nil {
 			errorList.AddStringf("error sending yaml notification to %s: %v", notifierProto.GetName(), err)
 		}
 	}
 
-	if len(securedNotifierIds) > 0 {
-		err = s.sensorConnMgr.SendMessage(request.GetClusterId(), &central.MsgToSensor{
-			Msg: &central.MsgToSensor_SendNetworkPolicyYaml{
-				SendNetworkPolicyYaml: &central.SendNetworkPolicyYamlRequest{
-					ClusterId:    request.GetClusterId(),
-					NotifierIds:  securedNotifierIds,
-					Modification: request.GetModification(),
-				},
-			},
-		})
-		if err != nil {
-			errorList.AddStringf("error sending yaml notification to cluster %s: %v", clusterName, err)
-		}
-	}
 	err = errorList.ToError()
 	if err != nil {
 		return nil, err

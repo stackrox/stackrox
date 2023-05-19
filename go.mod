@@ -10,7 +10,7 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/PagerDuty/go-pagerduty v1.6.0
+	github.com/PagerDuty/go-pagerduty v1.7.0
 	github.com/RoaringBitmap/roaring v1.2.3
 	github.com/VividCortex/ewma v1.2.0
 	github.com/andygrunwald/go-jira v1.16.0
@@ -124,9 +124,9 @@ require (
 	k8s.io/api v0.26.5
 	k8s.io/apimachinery v0.27.1
 	k8s.io/apiserver v0.26.4
-	k8s.io/cli-runtime v0.26.4
+	k8s.io/cli-runtime v0.26.5
 	k8s.io/client-go v0.26.5
-	k8s.io/kubectl v0.26.4
+	k8s.io/kubectl v0.26.5
 	k8s.io/kubelet v0.26.4
 	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5
 	sigs.k8s.io/controller-runtime v0.14.5
@@ -372,7 +372,7 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/apiextensions-apiserver v0.26.1 // indirect
-	k8s.io/component-base v0.26.4 // indirect
+	k8s.io/component-base v0.26.5 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230308215209-15aac26d736a // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
