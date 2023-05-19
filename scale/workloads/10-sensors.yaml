@@ -23,3 +23,9 @@ rbacWorkload:
   numRoles: 3000
   numServiceAccounts: 3000
 numNamespaces: 1000
+networkPolicyWorkload:
+- lifecycleDuration: 30m0s
+  numNetworkPolicies: 5000
+  numLifecycles: 0
+  numLabels: 5
+  updateInterval: 10m0s
