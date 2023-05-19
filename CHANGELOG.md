@@ -14,6 +14,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Removed Features
 - ROX-14398: As announced in 3.74, the permission `Access` replaces the deprecated permission `Role`.
+- ROX-14398: As announced in 3.74, the `Scope Manager` system role and permission set will be removed. If existing product instances do have customer references to either the system role or the system permission set, then the referenced object will be renamed and kept in its renamed form.
 
 ### Deprecated Fatures
 
