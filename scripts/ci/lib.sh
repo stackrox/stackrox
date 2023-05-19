@@ -1229,7 +1229,7 @@ store_test_results() {
     local csv_output
 
     set +u
-    if is_in_PR_context; then
+    if ! is_in_PR_context; then
     {
         info "Creating JIRA task for failures found in $from"
         csv_output="$(mktemp --suffix=.csv)"
