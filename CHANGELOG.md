@@ -14,7 +14,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Removed Features
 
-### Deprecated Fatures
+- KernelModule collection has been removed, following deprecation in 4.0.
+    - Secured clusters configured to use KernelModule collection will automatically switch to EBPF
+
+### Deprecated Features
 
 ### Technical Changes
 - The output of `roxctl central whoami` now includes the username as well.
