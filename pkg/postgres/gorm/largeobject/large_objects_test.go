@@ -161,7 +161,6 @@ func (s *GormUtilsTestSuite) TestLargeObjectMultipleTransactions() {
 
 	// Start a new transaction
 	tx2 := s.gormDB.Begin()
-	// tx := gormDB.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
 	s.Require().NoError(tx.Error)
 	los2 := &LargeObjects{tx2}
 

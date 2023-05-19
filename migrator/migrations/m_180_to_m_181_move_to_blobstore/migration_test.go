@@ -16,25 +16,25 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type categoriesMigrationTestSuite struct {
+type blobMigrationTestSuite struct {
 	suite.Suite
 
 	db *pghelper.TestPostgres
 }
 
 func TestMigration(t *testing.T) {
-	suite.Run(t, new(categoriesMigrationTestSuite))
+	suite.Run(t, new(blobMigrationTestSuite))
 }
 
-func (s *categoriesMigrationTestSuite) SetupTest() {
+func (s *blobMigrationTestSuite) SetupTest() {
 	s.db = pghelper.ForT(s.T(), true)
 }
 
-func (s *categoriesMigrationTestSuite) TearDownTest() {
+func (s *blobMigrationTestSuite) TearDownTest() {
 	s.db.Teardown(s.T())
 }
 
-func (s *categoriesMigrationTestSuite) TestMigration() {
+func (s *blobMigrationTestSuite) TestMigration() {
 	// Nothing to migrate
 	s.Require().NoError(moveToBlobs(s.db.GetGormDB()))
 

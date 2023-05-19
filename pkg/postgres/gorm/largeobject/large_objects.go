@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// LargeObjects is used to access the large objects API with gorm CRM.
+// LargeObjects is used to access the large objects API with gorm ORM.
 //
 // This is originally created with similar API with existing github.com/jackc/pgx
 // For more details see: http://www.postgresql.org/docs/current/static/largeobjects.html
@@ -62,19 +62,12 @@ func (o *LargeObjects) Upsert(oid uint32, r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		err = obj.Close()
-	}()
-	_, err = obj.Truncate(0)
-	if err != nil {
-		return err
+	if _, err = obj.Truncate(0); err != nil {
+		return errors.Join(err, obj.Close())
 	}
 	_, err = io.Copy(obj, r)
-	if err != nil {
-		return err
-	}
 
-	return err
+	return errors.Join(err, obj.Close())
 }
 
 // Get gets the content of the large object and write it to the writer.
@@ -162,8 +155,5 @@ func (o *LargeObject) Close() error {
 // wrapClose closes the large object and returns error if failed. Otherwise, it
 // returns err
 func (o *LargeObject) wrapClose(err error) error {
-	if closeErr := o.Close(); closeErr != nil {
-		return closeErr
-	}
-	return err
+	return errors.Join(err, o.Close())
 }

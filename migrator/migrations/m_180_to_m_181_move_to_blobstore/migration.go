@@ -48,42 +48,41 @@ func moveToBlobs(db *gorm.DB) (err error) {
 	pgutils.CreateTableFromModel(context.Background(), db, schema.CreateTableBlobsStmt)
 
 	tx := db.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
-	if err = moveScannerDefination(tx); err != nil {
+	if err = moveScannerDefinitions(tx); err != nil {
 		result := tx.Rollback()
 		if result.Error != nil {
-			return result.Error
+			log.Warnf("failed to rollback with error %v", result.Error)
 		}
-		return err
+		return errors.Wrap(err, "failed to move scanner definition to blob store.")
 	}
 
 	return tx.Commit().Error
 }
 
-func moveScannerDefination(tx *gorm.DB) error {
-	stat, err := os.Stat(scannerDefPath)
+func moveScannerDefinitions(tx *gorm.DB) error {
+	fd, err := os.Open(scannerDefPath)
+	if os.IsNotExist(err) {
+		return nil
+	}
 	if err != nil {
-		if os.IsNotExist(err) || stat.IsDir() {
-			return nil
-		}
+		return errors.Wrapf(err, "failed to open %s", scannerDefPath)
+	}
+	defer utils.IgnoreError(fd.Close)
+	stat, err := fd.Stat()
+	if err != nil {
 		return err
+	}
+	if stat.IsDir() {
+		return nil
 	}
 	modTime, err := timestamp.TimestampProto(stat.ModTime())
 	if err != nil {
 		return errors.Wrapf(err, "invalid timestamp %v", stat.ModTime())
 	}
-	fd, err := os.Open(scannerDefPath)
-	if os.IsNotExist(err) {
-		return nil
-	}
-	defer utils.IgnoreError(fd.Close)
-	if err != nil {
-		return errors.Wrapf(err, "failed to open %s", scannerDefPath)
-	}
 
 	// Prepare blob
 	blob := &storage.Blob{
 		Name:         scannerDefBlobName,
-		Oid:          0,
 		Length:       stat.Size(),
 		LastUpdated:  timestamp.TimestampNow(),
 		ModifiedTime: modTime,
