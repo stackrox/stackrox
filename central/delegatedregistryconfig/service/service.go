@@ -36,7 +36,7 @@ var (
 			"/v1.DelegatedRegistryConfigService/GetClusters",
 		},
 		user.With(permissions.Modify(resources.Administration)): {
-			"/v1.DelegatedRegistryConfigService/PutConfig",
+			"/v1.DelegatedRegistryConfigService/UpdateConfig",
 		},
 	})
 )

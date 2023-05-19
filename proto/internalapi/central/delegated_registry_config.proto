@@ -4,36 +4,21 @@ option go_package = "central";
 
 package central;
 
-// DelegatedRegistryConfig determines where scans are handled, this message is
-// intended to be recieved by sensor and will help determine if sensor should
-// scan an image locally or send to central
-//
-// See storage.DelegatedRegistryConfig or v1.DelegatedRegistryConfig for more details
+// DelegatedRegistryConfig determines how to handle scan requests
+// Refer to v1.DelegatedRegistryConfig instead for more detailed docs
 message DelegatedRegistryConfig {
     enum EnabledFor {
-        // delegate no scans
         NONE     = 0;
-        // delegate all scans
         ALL      = 1;
-        // delegate scans that match specific []registries
         SPECIFIC = 2;
     }
 
     message DelegatedRegistry {
-        // registry + optional path, ie: quay.example.com/prod
         string registry_path = 1;
-        // id of the cluster to delegate requests to
         string cluster_id    = 2;
     }
 
-    // determines if delegation is enabled for no registries, all registries, or specific registries
-    EnabledFor enabled_for       = 1;
-
-    // the default cluster to delegate ad-hoc requests to if no match found in []registries, not used
-    // if enabledFor is NONE
-    string default_cluster_id    = 2;
-
-    // list of registries that has different outcome depending on value of enabled_for, allows
-    // for controlling which registries require delegation and how to route ad-hoc requests
+    EnabledFor enabled_for                = 1;
+    string default_cluster_id             = 2;
     repeated DelegatedRegistry registries = 3;
 }

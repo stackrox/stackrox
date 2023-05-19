@@ -526,7 +526,7 @@ func TestZeroIntegrations(t *testing.T) {
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		emptyImageGetter,
-		mockReporter, emptySignatureIntegrationGetter)
+		mockReporter, emptySignatureIntegrationGetter, nil)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
@@ -556,7 +556,7 @@ func TestZeroIntegrationsInternal(t *testing.T) {
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		emptyImageGetter,
-		mockReporter, emptySignatureIntegrationGetter)
+		mockReporter, emptySignatureIntegrationGetter, nil)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{Internal: true}, img)
@@ -585,7 +585,7 @@ func TestRegistryMissingFromImage(t *testing.T) {
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		emptyImageGetter,
-		mockReporter, emptySignatureIntegrationGetter)
+		mockReporter, emptySignatureIntegrationGetter, nil)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{FullName: "testimage"}}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
@@ -619,7 +619,7 @@ func TestZeroRegistryIntegrations(t *testing.T) {
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		emptyImageGetter,
-		mockReporter, emptySignatureIntegrationGetter)
+		mockReporter, emptySignatureIntegrationGetter, nil)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
@@ -653,7 +653,7 @@ func TestNoMatchingRegistryIntegration(t *testing.T) {
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		emptyImageGetter,
-		mockReporter, emptySignatureIntegrationGetter)
+		mockReporter, emptySignatureIntegrationGetter, nil)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
@@ -686,7 +686,7 @@ func TestZeroScannerIntegrations(t *testing.T) {
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		emptyImageGetter,
-		mockReporter, emptySignatureIntegrationGetter)
+		mockReporter, emptySignatureIntegrationGetter, nil)
 
 	img := &storage.Image{
 		Id:    "id",

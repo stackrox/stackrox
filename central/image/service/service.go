@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/delegatedregistryconfig/scanwaiter"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -33,12 +34,13 @@ type Service interface {
 func New(datastore datastore.DataStore, watchedImages watchedImageDataStore.DataStore, riskManager manager.Manager,
 	connManager connection.Manager, enricher enricher.ImageEnricher, metadataCache expiringcache.Cache) Service {
 	return &serviceImpl{
-		datastore:     datastore,
-		watchedImages: watchedImages,
-		riskManager:   riskManager,
-		enricher:      enricher,
-		metadataCache: metadataCache,
-		connManager:   connManager,
+		datastore:         datastore,
+		watchedImages:     watchedImages,
+		riskManager:       riskManager,
+		enricher:          enricher,
+		metadataCache:     metadataCache,
+		connManager:       connManager,
+		scanWaiterManager: scanwaiter.Singleton(),
 
 		internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
 	}

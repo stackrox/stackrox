@@ -91,7 +91,7 @@ func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanIma
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
-	img, err := localScan.EnrichLocalImageInNamespace(ctx, svc, req.containerImage, req.namespace)
+	img, err := localScan.EnrichLocalImageInNamespace(ctx, svc, req.containerImage, req.namespace, "")
 
 	return &v1.ScanImageInternalResponse{
 		Image: img,
@@ -168,14 +168,15 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	c.image = scannedImage.GetImage()
 }
 
-func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store) *enricher {
+func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
 	return &enricher{
 		scanResultChan:      make(chan scanResult),
 		serviceAccountStore: serviceAccountStore,
 		imageCache:          cache,
 		stopSig:             concurrency.NewSignal(),
-		localScan:           scan.NewLocalScan(registryStore),
-		regStore:            registryStore,
+		// localScan:           scan.NewLocalScan(registryStore),
+		localScan: localScan,
+		regStore:  registryStore,
 	}
 }
 

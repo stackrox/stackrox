@@ -42,7 +42,7 @@ func (s *enricherSuite) SetupTest() {
 	s.mockRegistryStore = registry.NewRegistryStore(nil)
 	s.enricher = newEnricher(s.mockCache,
 		s.mockServiceAccountStore,
-		s.mockRegistryStore)
+		s.mockRegistryStore, nil)
 }
 
 func (s *enricherSuite) TearDownTest() {

@@ -8,10 +8,14 @@ import (
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
+	delegatedRegistryConfigDS "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
+	"github.com/stackrox/rox/central/delegatedregistryconfig/delegator"
+	"github.com/stackrox/rox/central/delegatedregistryconfig/scanwaiter"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
 	imageIntegrationDS "github.com/stackrox/rox/central/imageintegration/datastore"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	signatureIntegrationDataStore "github.com/stackrox/rox/central/signatureintegration/datastore"
 	"github.com/stackrox/rox/central/vulnerabilityrequest/suppressor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -51,9 +55,11 @@ func initialize() {
 		nodeCVESuppressor = cveDataStore.Singleton()
 	}
 
+	scanDelegator := delegator.New(delegatedRegistryConfigDS.Singleton(), connection.ManagerSingleton(), scanwaiter.Singleton())
+
 	ie = imageEnricher.New(imageCVESuppressor, suppressor.Singleton(), imageintegration.Set(),
 		metrics.CentralSubsystem, ImageMetadataCacheSingleton(), datastore.Singleton().GetImage, reporter.Singleton(),
-		signatureIntegrationDataStore.Singleton().GetAllSignatureIntegrations)
+		signatureIntegrationDataStore.Singleton().GetAllSignatureIntegrations, scanDelegator)
 	ne = nodeEnricher.New(nodeCVESuppressor, metrics.CentralSubsystem)
 	en = New(datastore.Singleton(), ie)
 	cf = fetcher.SingletonManager()

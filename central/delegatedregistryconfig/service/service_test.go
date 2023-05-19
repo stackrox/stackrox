@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -35,6 +36,10 @@ var (
 
 	errBroken = errors.New("broken")
 )
+
+func TestAuthz(t *testing.T) {
+	testutils.AssertAuthzWorks(t, &serviceImpl{})
+}
 
 func TestGetConfigSuccess(t *testing.T) {
 	var err error

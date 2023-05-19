@@ -36,6 +36,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/timestamp"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/waiter"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -97,6 +98,8 @@ type serviceImpl struct {
 	watchedImages watchedImageDataStore.DataStore
 
 	internalScanSemaphore *semaphore.Weighted
+
+	scanWaiterManager waiter.Manager[*storage.Image]
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -292,8 +295,10 @@ func (s *serviceImpl) enrichImage(ctx context.Context, img *storage.Image, fetch
 
 // ScanImage scans an image and returns the result
 func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageRequest) (*storage.Image, error) {
+
 	enrichmentCtx := enricher.EnrichmentContext{
 		FetchOpt: enricher.IgnoreExistingImages,
+		AdHoc:    true,
 	}
 	if request.GetForce() {
 		enrichmentCtx.FetchOpt = enricher.ForceRefetch
@@ -382,6 +387,10 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	defer s.internalScanSemaphore.Release(1)
 
+	if request.GetRequestId() != "" {
+		log.Debugf("Received enrich request for id %q: %q", request.GetRequestId(), request)
+	}
+
 	var hasErrors bool
 	if request.Error != "" {
 		// If errors occurred we continue processing so that the failed image scan may be saved in
@@ -423,6 +432,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		// If the image exists and scan / signature verification results do not need an update yet, return it.
 		// Otherwise, reprocess the image.
 		if imgExists && !forceScanUpdate && !forceSigVerificationUpdate {
+			s.informScanWaiter(request.GetRequestId(), existingImg, nil)
 			return internalScanRespFromImage(existingImg), nil
 		}
 	}
@@ -443,12 +453,14 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 			if _, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes()); err != nil && imgExists {
 				// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
 				// central, since it could lead to us overriding an enriched image with a non-enriched image.
+				s.informScanWaiter(request.GetRequestId(), nil, err)
 				return nil, err
 			}
 		}
 
 		if forceSigVerificationUpdate {
 			if _, err := s.enricher.EnrichWithSignatureVerificationData(ctx, img); err != nil && imgExists {
+				s.informScanWaiter(request.GetRequestId(), nil, err)
 				return nil, err
 			}
 		}
@@ -461,7 +473,19 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		_ = s.saveImage(img)
 	}
 
+	s.informScanWaiter(request.GetRequestId(), img, nil)
 	return internalScanRespFromImage(img), nil
+}
+
+func (s *serviceImpl) informScanWaiter(reqID string, img *storage.Image, scanErr error) {
+	if reqID == "" {
+		// do nothing if request ID is missing (no waiter)
+		return
+	}
+
+	if err := s.scanWaiterManager.Send(reqID, img, scanErr); err != nil {
+		log.Errorf("Failed to send result to scan waiter %q: %v", err)
+	}
 }
 
 // DeleteImages deletes images based on query

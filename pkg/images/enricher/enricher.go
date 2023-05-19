@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/stackrox/rox/central/delegatedregistryconfig"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/integration"
@@ -61,6 +62,10 @@ type EnrichmentContext struct {
 	// Internal is used to indicate when the caller is internal.
 	// This is used to indicate that we do not want to fail upon failing to find integrations.
 	Internal bool
+
+	// AdHoc indicates that this enrichment request is adhoc (ie: roxctl image scan) and therefore is eligble for
+	// for delegation to a secured cluster for enrichment
+	AdHoc bool
 
 	Source *RequestSource
 }
@@ -132,7 +137,7 @@ type signatureVerifierForIntegrations func(ctx context.Context, integrations []*
 // (The subsystem is just used for Prometheus metrics.)
 func New(cvesSuppressor CVESuppressor, cvesSuppressorV2 CVESuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache expiringcache.Cache,
 	imageGetter ImageGetter, healthReporter integrationhealth.Reporter,
-	signatureIntegrationGetter SignatureIntegrationGetter) ImageEnricher {
+	signatureIntegrationGetter SignatureIntegrationGetter, scanDelegator delegatedregistryconfig.Delegator) ImageEnricher {
 	enricher := &enricherImpl{
 		cvesSuppressor:   cvesSuppressor,
 		cvesSuppressorV2: cvesSuppressorV2,
@@ -155,6 +160,8 @@ func New(cvesSuppressor CVESuppressor, cvesSuppressorV2 CVESuppressor, is integr
 		asyncRateLimiter: rate.NewLimiter(rate.Every(1*time.Second), 5),
 
 		metrics: newMetrics(subsystem),
+
+		scanDelegator: scanDelegator,
 	}
 	return enricher
 }

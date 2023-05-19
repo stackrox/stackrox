@@ -8,6 +8,7 @@ import (
 
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/delegatedregistryconfig"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cvss"
@@ -65,6 +66,8 @@ type enricherImpl struct {
 	asyncRateLimiter *rate.Limiter
 
 	metrics metrics
+
+	scanDelegator delegatedregistryconfig.Delegator
 }
 
 // EnrichWithVulnerabilities enriches the given image with vulnerabilities.
@@ -129,6 +132,20 @@ func (e *enricherImpl) EnrichWithSignatureVerificationData(ctx context.Context, 
 // EnrichImage enriches an image with the integration set present.
 func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
 	errorList := errorhelpers.NewErrorList("image enrichment")
+
+	if enrichContext.AdHoc && e.scanDelegator != nil {
+		shouldDelegate, err := e.scanDelegator.DelegateEnrichImage(ctx, image)
+		if shouldDelegate {
+			if err != nil {
+				return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, err
+			}
+			return EnrichmentResult{ImageUpdated: true, ScanResult: ScanSucceeded}, nil
+		}
+
+		if err != nil {
+			log.Warnf("Error occurred determining if enrichment should be delegated: %v", err)
+		}
+	}
 
 	imageNoteSet := make(map[storage.Image_Note]struct{}, len(image.Notes))
 	for _, note := range image.Notes {
