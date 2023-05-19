@@ -1,3 +1,5 @@
+import com.google.gson.Gson
+
 import common.Constants
 import groups.BAT
 import groups.SensorBounceNext
@@ -292,6 +294,12 @@ class AdmissionControllerTest extends BaseSpecification {
 
         and:
         "Create the deployment with a harmless image"
+
+        System.err.println("%%%%%%%%%%%%%%% What's up here?")
+        System.err.println("Deployment dump is ${deployment.dump()}")
+        System.err.println("Deployment class is ${deployment.getClass()}")
+        System.err.println("Deployment json dump is: " + new Gson().toJson(deployment))
+
         def modDeployment = deployment.clone()
         modDeployment.image = "quay.io/rhacs-eng/qa:busybox-1-28"
         def created = orchestrator.createDeploymentNoWait(modDeployment)
