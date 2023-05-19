@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/registry"
-	nsStore "github.com/stackrox/rox/sensor/common/resources/namespaces"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -24,7 +23,7 @@ import (
 type deploymentStoreSuite struct {
 	suite.Suite
 	deploymentStore *DeploymentStore
-	namespaceStore  *nsStore.NamespaceStore
+	namespaceStore  *namespaceStore
 	mockPodLister   *mockPodLister
 }
 
@@ -35,8 +34,8 @@ func TestDeploymentStoreSuite(t *testing.T) {
 var _ suite.SetupTestSuite = &deploymentStoreSuite{}
 
 func (s *deploymentStoreSuite) SetupTest() {
-	s.namespaceStore = nsStore.Singleton()
-	s.namespaceStore.AddNamespace(&storage.NamespaceMetadata{Name: "test-ns", Id: "1"})
+	s.namespaceStore = newNamespaceStore()
+	s.namespaceStore.addNamespace(&storage.NamespaceMetadata{Name: "test-ns", Id: "1"})
 	s.deploymentStore = newDeploymentStore()
 	s.mockPodLister = &mockPodLister{}
 }

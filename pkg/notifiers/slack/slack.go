@@ -253,10 +253,6 @@ func (s *slack) Test(ctx context.Context) error {
 	)
 }
 
-func (s *slack) IsSecuredClusterNotifier() bool {
-	return false
-}
-
 func (s *slack) postMessage(ctx context.Context, url string, jsonPayload []byte) error {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
