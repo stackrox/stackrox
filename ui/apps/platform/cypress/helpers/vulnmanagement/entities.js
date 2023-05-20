@@ -243,6 +243,23 @@ export function interactAndWaitForVulnerabilityManagementSecondaryEntities(
  * for example, /^\d+ deployments?$/
  */
 
+// ROX-17001: to solve problems where count and singular/plural of noun might have changed,
+// the second and third properties are not used.
+
+// After accessibility-related changes to case of entity types,
+// getCountAndNoun functions might become obsolete, as follows:
+
+// 1. TODO because panelHeaderText theoretically has similar problem.
+//    Replace contains pseudo-selector for panelHeaderText
+//    with contains method and RegExp for exact match:
+//    of digits (not necessarily same as from the link) and
+//    correct case entity type noun with optional plural suffix.
+
+// 2. TODO because visible text is better than data-testid attribute.
+//    Replace selector which has data-testid attribute
+//    with contains method and RegExp for exact match:
+//    correct case entity type noun with optional plural suffix.
+
 function getCountAndNounFromSecondaryEntitiesLinkResults(resultsFromRegExp) {
     return {
         panelHeaderText: resultsFromRegExp[0],
@@ -318,8 +335,9 @@ function verifyLinkCountDeep(
     cy.get(selectors.getTableDataColumnSelector(columnIndex))
         .contains('a', entitiesRegExp2)
         .then(($a) => {
-            const { panelHeaderText, relatedEntitiesCount, relatedEntitiesNoun } =
-                getCountAndNounFromLinkResults(/^(\d+) (\D+)$/.exec($a.text()));
+            const { panelHeaderText } = getCountAndNounFromLinkResults(
+                /^(\d+) (\D+)$/.exec($a.text())
+            );
 
             // 2. Visit secondary entities side panel.
             interactAndWaitForResponses(() => {
@@ -335,7 +353,8 @@ function verifyLinkCountDeep(
 
             // Tilde because link might be under either Contains or Matches.
             // Match data-testid attribute of link to distinguish 1 IMAGE from 114 IMAGE COMPONENTS.
-            const relatedEntitiesSelector = `h2:contains("Related entities") ~ div ul li a[data-testid="${typeOfEntity[entitiesKey2]}-tile-link"]:has('[data-testid="tileLinkSuperText"]:contains("${relatedEntitiesCount}")'):has('[data-testid="tile-link-value"]:contains("${relatedEntitiesNoun}")')`;
+            // Omit has for visible text of count or name of entity because it might have changed (especially for deployments).
+            const relatedEntitiesSelector = `h2:contains("Related entities") ~ div ul li a[data-testid="${typeOfEntity[entitiesKey2]}-tile-link"]`;
             cy.get(relatedEntitiesSelector);
 
             // 4. Visit single page for primary entity.
