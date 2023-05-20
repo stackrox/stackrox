@@ -112,7 +112,7 @@ teardown() {
   assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
   run roxctl-development analyze netpol "${test_data}/np-guard/netpols-analysis-example-minimal" --output-format=docx 
   assert_failure
-  assert_line --partial "error in formating connectivity list"
+  assert_line --partial "error in formatting connectivity list"
   assert_line --partial "docx output format is not supported."
 }
 
