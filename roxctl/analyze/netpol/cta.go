@@ -26,7 +26,7 @@ func (cmd *analyzeNetpolCommand) analyzeNetpols(analyzer netpolAnalyzer) error {
 	}
 	connsStr, err := analyzer.ConnectionsListToString(conns)
 	if err != nil {
-		return errors.Wrap(err, "error in formating connectivity list")
+		return errors.Wrap(err, "error in formatting connectivity list")
 	}
 	if err := cmd.ouputConnList(connsStr); err != nil {
 		return err
