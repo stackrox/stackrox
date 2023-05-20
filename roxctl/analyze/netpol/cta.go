@@ -10,8 +10,10 @@ import (
 	"github.com/stackrox/rox/roxctl/common/npg"
 )
 
-const defaultOutputFileNamePrefix = "connlist."
-const defaultOutputFormat = "txt"
+const (
+	defaultOutputFileNamePrefix = "connlist."
+	defaultOutputFormat         = "txt"
+)
 
 type netpolAnalyzer interface {
 	ConnlistFromDirPath(dirPath string) ([]npguard.Peer2PeerConnection, error)
