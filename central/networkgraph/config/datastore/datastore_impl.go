@@ -55,6 +55,12 @@ func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error)
 	return New(dbstore), nil
 }
 
+// GetBenchPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetBenchPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
+	dbstore := pgStore.New(pool)
+	return New(dbstore), nil
+}
+
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
 func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB) (DataStore, error) {
 	dbstore := rocksdb.New(rocksengine)
