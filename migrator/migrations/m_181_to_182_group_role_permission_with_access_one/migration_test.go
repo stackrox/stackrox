@@ -49,15 +49,63 @@ const (
 	VulnerabilityReports = "VulnerabilityReports"
 )
 
+type testItem struct {
+	ID                            string
+	Name                          string
+	Description                   string
+	ResourceToAccessPreMigration  map[string]storage.Access
+	ResourceToAccessPostMigration map[string]storage.Access
+}
+
+func GetPreMigrationPermissionSet(item *testItem) *storage.PermissionSet {
+	return &storage.PermissionSet{
+		Id:               item.ID,
+		Name:             item.Name,
+		Description:      item.Description,
+		ResourceToAccess: item.ResourceToAccessPreMigration,
+		Traits:           nil,
+	}
+}
+
+func GetPostMigrationPermissionSet(item *testItem) *storage.PermissionSet {
+	return &storage.PermissionSet{
+		Id:               item.ID,
+		Name:             item.Name,
+		Description:      item.Description,
+		ResourceToAccess: item.ResourceToAccessPostMigration,
+		Traits:           nil,
+	}
+}
+
+func GetDataSetPreMigration() []*storage.PermissionSet {
+	res := make([]*storage.PermissionSet, 0, len(testData))
+	for _, item := range testData {
+		res = append(res, GetPreMigrationPermissionSet(item))
+	}
+	return res
+}
+
+func GetDataSetPostMigration() []*storage.PermissionSet {
+	res := make([]*storage.PermissionSet, 0, len(testData))
+	for _, item := range testData {
+		res = append(res, GetPostMigrationPermissionSet(item))
+	}
+	return res
+}
+
 var (
 	ctx = sac.WithAllAccess(context.Background())
 
-	unmigratedPermissionSets = []*storage.PermissionSet{
+	testData = []*testItem{
 		{
 			Id:          "AA4618AC-EDD7-4756-828F-FA8424DE138E",
 			Name:        "TestSet01",
 			Description: "PermissionSet with no resource that requires replacement",
-			ResourceToAccess: map[string]storage.Access{
+			ResourceToAccessPreMigration: map[string]storage.Access{
+				Administration: storage.Access_READ_ACCESS,
+				Alert:          storage.Access_READ_WRITE_ACCESS,
+			},
+			ResourceToAccessPostMigration: map[string]storage.Access{
 				Administration: storage.Access_READ_ACCESS,
 				Alert:          storage.Access_READ_WRITE_ACCESS,
 			},
@@ -66,35 +114,49 @@ var (
 			Id:          "6C618B1C-8919-4939-8A90-082EC9A90DA4",
 			Name:        "TestSet02",
 			Description: "PermissionSet with a replaced resource for which the replacement resource is not yet set",
-			ResourceToAccess: map[string]storage.Access{
+			ResourceToAccessPreMigration: map[string]storage.Access{
 				Role: storage.Access_READ_ACCESS,
+			},
+			ResourceToAccessPostMigration: map[string]storage.Access{
+				Access: storage.Access_READ_ACCESS,
 			},
 		},
 		{
 			Id:          "97A38C2D-D11D-4355-AD80-732F3661EC4B",
 			Name:        "TestSet03",
 			Description: "PermissionSet with a replaced resource for which the replacement resource is set with lower access",
-			ResourceToAccess: map[string]storage.Access{
+			ResourceToAccessPreMigration: map[string]storage.Access{
 				Access: storage.Access_NO_ACCESS,
 				Role:   storage.Access_READ_ACCESS,
+			},
+			ResourceToAccessPostMigration: map[string]storage.Access{
+				// Keeps the access of the replacing resource which is lower
+				Access: storage.Access_NO_ACCESS,
 			},
 		},
 		{
 			Id:          "7035AD8F-E811-484B-AE36-E5877325B3F0",
 			Name:        "TestSet04",
 			Description: "PermissionSet with a replaced resource for which the replacement resource is set with same access",
-			ResourceToAccess: map[string]storage.Access{
+			ResourceToAccessPreMigration: map[string]storage.Access{
 				Access: storage.Access_READ_ACCESS,
 				Role:   storage.Access_READ_ACCESS,
+			},
+			ResourceToAccessPostMigration: map[string]storage.Access{
+				Access: storage.Access_READ_ACCESS,
 			},
 		},
 		{
 			Id:          "589ADE2F-BD33-4BA7-9821-3818832C5A79",
 			Name:        "TestSet05",
 			Description: "PermissionSet with a replaced resource for which the replacement resource is set with higher access",
-			ResourceToAccess: map[string]storage.Access{
+			ResourceToAccessPreMigration: map[string]storage.Access{
 				Access: storage.Access_READ_WRITE_ACCESS,
 				Role:   storage.Access_READ_ACCESS,
+			},
+			ResourceToAccessPostMigration: map[string]storage.Access{
+				// Keep the access of the replaced resource which is lower
+				Access: storage.Access_READ_ACCESS,
 			},
 		},
 
@@ -102,7 +164,7 @@ var (
 			Id:          "E0F50165-9914-4D0E-8C37-E8C8D482C904",
 			Name:        "TestSet11",
 			Description: "PermissionSet with access defined for all existing resource types",
-			ResourceToAccess: map[string]storage.Access{
+			ResourceToAccessPreMigration: map[string]storage.Access{
 				// Replacing resources
 				Access: storage.Access_READ_ACCESS,
 				// Replaced resources
@@ -137,99 +199,7 @@ var (
 				InstallationInfo:   storage.Access_READ_ACCESS,
 				Version:            storage.Access_READ_WRITE_ACCESS,
 			},
-		},
-		{
-			Id:          "E79F2114-F949-411B-9F6D-4D38C1404642",
-			Name:        "TestSet12",
-			Description: "PermissionSet with access defined to read for all existing resource types except DebugLogs (Analyst)",
-			ResourceToAccess: map[string]storage.Access{
-				// Replacing resources
-				Access: storage.Access_READ_ACCESS,
-				// Replaced resources
-				Role: storage.Access_READ_ACCESS,
-				// Non-replaced resources
-				Administration:                   storage.Access_READ_ACCESS,
-				Alert:                            storage.Access_READ_ACCESS,
-				CVE:                              storage.Access_READ_ACCESS,
-				Cluster:                          storage.Access_READ_ACCESS,
-				Compliance:                       storage.Access_READ_ACCESS,
-				Deployment:                       storage.Access_READ_ACCESS,
-				DeploymentExtension:              storage.Access_READ_ACCESS,
-				Detection:                        storage.Access_READ_ACCESS,
-				Image:                            storage.Access_READ_ACCESS,
-				Integration:                      storage.Access_READ_ACCESS,
-				K8sRole:                          storage.Access_READ_ACCESS,
-				K8sRoleBinding:                   storage.Access_READ_ACCESS,
-				K8sSubject:                       storage.Access_READ_ACCESS,
-				Namespace:                        storage.Access_READ_ACCESS,
-				NetworkGraph:                     storage.Access_READ_ACCESS,
-				NetworkPolicy:                    storage.Access_READ_ACCESS,
-				Node:                             storage.Access_READ_ACCESS,
-				Policy:                           storage.Access_READ_ACCESS,
-				Secret:                           storage.Access_READ_ACCESS,
-				ServiceAccount:                   storage.Access_READ_ACCESS,
-				VulnerabilityManagementApprovals: storage.Access_READ_ACCESS,
-				VulnerabilityManagementRequests:  storage.Access_READ_ACCESS,
-				VulnerabilityReports:             storage.Access_READ_ACCESS,
-				WatchedImage:                     storage.Access_READ_ACCESS,
-				// Internal resources
-				ComplianceOperator: storage.Access_READ_ACCESS,
-				InstallationInfo:   storage.Access_READ_ACCESS,
-				Version:            storage.Access_READ_ACCESS,
-			},
-		},
-	}
-
-	migratedPermissionSets = []*storage.PermissionSet{
-		{
-			Id:          "AA4618AC-EDD7-4756-828F-FA8424DE138E",
-			Name:        "TestSet01",
-			Description: "PermissionSet with no resource that requires replacement",
-			ResourceToAccess: map[string]storage.Access{
-				Administration: storage.Access_READ_ACCESS,
-				Alert:          storage.Access_READ_WRITE_ACCESS,
-			},
-		},
-		{
-			Id:          "6C618B1C-8919-4939-8A90-082EC9A90DA4",
-			Name:        "TestSet02",
-			Description: "PermissionSet with a replaced resource for which the replacement resource is not yet set",
-			ResourceToAccess: map[string]storage.Access{
-				Access: storage.Access_READ_ACCESS,
-			},
-		},
-		{
-			Id:          "97A38C2D-D11D-4355-AD80-732F3661EC4B",
-			Name:        "TestSet03",
-			Description: "PermissionSet with a replaced resource for which the replacement resource is set with lower access",
-			ResourceToAccess: map[string]storage.Access{
-				// Keeps the access of the replacing resource which is lower
-				Access: storage.Access_NO_ACCESS,
-			},
-		},
-		{
-			Id:          "7035AD8F-E811-484B-AE36-E5877325B3F0",
-			Name:        "TestSet04",
-			Description: "PermissionSet with a replaced resource for which the replacement resource is set with same access",
-			ResourceToAccess: map[string]storage.Access{
-				Access: storage.Access_READ_ACCESS,
-			},
-		},
-		{
-			Id:          "589ADE2F-BD33-4BA7-9821-3818832C5A79",
-			Name:        "TestSet05",
-			Description: "PermissionSet with a replaced resource for which the replacement resource is set with higher access",
-			ResourceToAccess: map[string]storage.Access{
-				// Keep the access of the replaced resource which is lower
-				Access: storage.Access_READ_ACCESS,
-			},
-		},
-
-		{
-			Id:          "E0F50165-9914-4D0E-8C37-E8C8D482C904",
-			Name:        "TestSet11",
-			Description: "PermissionSet with access defined for all existing resource types",
-			ResourceToAccess: map[string]storage.Access{
+			ResourceToAccessPostMigration: map[string]storage.Access{
 				// Replacing resources
 				Access: storage.Access_READ_ACCESS,
 				// Non-replaced resources
@@ -268,7 +238,42 @@ var (
 			Id:          "E79F2114-F949-411B-9F6D-4D38C1404642",
 			Name:        "TestSet12",
 			Description: "PermissionSet with access defined to read for all existing resource types except DebugLogs (Analyst)",
-			ResourceToAccess: map[string]storage.Access{
+			ResourceToAccessPreMigration: map[string]storage.Access{
+				// Replacing resources
+				Access: storage.Access_READ_ACCESS,
+				// Replaced resources
+				Role: storage.Access_READ_ACCESS,
+				// Non-replaced resources
+				Administration:                   storage.Access_READ_ACCESS,
+				Alert:                            storage.Access_READ_ACCESS,
+				CVE:                              storage.Access_READ_ACCESS,
+				Cluster:                          storage.Access_READ_ACCESS,
+				Compliance:                       storage.Access_READ_ACCESS,
+				Deployment:                       storage.Access_READ_ACCESS,
+				DeploymentExtension:              storage.Access_READ_ACCESS,
+				Detection:                        storage.Access_READ_ACCESS,
+				Image:                            storage.Access_READ_ACCESS,
+				Integration:                      storage.Access_READ_ACCESS,
+				K8sRole:                          storage.Access_READ_ACCESS,
+				K8sRoleBinding:                   storage.Access_READ_ACCESS,
+				K8sSubject:                       storage.Access_READ_ACCESS,
+				Namespace:                        storage.Access_READ_ACCESS,
+				NetworkGraph:                     storage.Access_READ_ACCESS,
+				NetworkPolicy:                    storage.Access_READ_ACCESS,
+				Node:                             storage.Access_READ_ACCESS,
+				Policy:                           storage.Access_READ_ACCESS,
+				Secret:                           storage.Access_READ_ACCESS,
+				ServiceAccount:                   storage.Access_READ_ACCESS,
+				VulnerabilityManagementApprovals: storage.Access_READ_ACCESS,
+				VulnerabilityManagementRequests:  storage.Access_READ_ACCESS,
+				VulnerabilityReports:             storage.Access_READ_ACCESS,
+				WatchedImage:                     storage.Access_READ_ACCESS,
+				// Internal resources
+				ComplianceOperator: storage.Access_READ_ACCESS,
+				InstallationInfo:   storage.Access_READ_ACCESS,
+				Version:            storage.Access_READ_ACCESS,
+			},
+			ResourceToAccessPostMigration: map[string]storage.Access{
 				// Replacing resources
 				Access: storage.Access_READ_ACCESS,
 				// Non-replaced resources
@@ -303,6 +308,10 @@ var (
 			},
 		},
 	}
+
+	unmigratedPermissionSets = GetDataSetPreMigration()
+
+	migratedPermissionSets = GetDataSetPostMigration()
 )
 
 type psMigrationTestSuite struct {
