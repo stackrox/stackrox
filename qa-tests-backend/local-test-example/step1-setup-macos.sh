@@ -4,7 +4,7 @@ source "local-test-example/common.sh"
 source "local-test-example/config.sh"
 
 function install_golang {
-  GO_VERSION="1.18.4"
+  GO_VERSION="1.19.9"
   # Default path to 'go' is /usr/local/go/bin/go
   # But ACS requires $GO_VERSION which will be installed at $HOME/go/bin/go$GO_VERSION
   if ! go version | grep "go$GO_VERSION" &> /dev/null; then
