@@ -1,0 +1,99 @@
+{
+  "id": "f95ff08d-130a-465a-a27e-32ed1fb05555",
+  "name": "Red Hat Package Manager in Image",
+  "description": "Alert on deployments with components of the Red Hat/Fedora/CentOS package management system.",
+  "rationale": "Package managers make it easier for attackers to use compromised containers, since they can easily add software.",
+  "remediation": "Run `rpm -e --nodeps $(rpm -qa '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*')` in the image build for production containers.",
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on deployment collector",
+      "deployment": {
+        "name": "",
+        "scope": {
+          "label": {
+            "key": "app.kubernetes.io/component",
+            "value": "collector"
+          }
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment sensor",
+      "deployment": {
+        "scope": {
+          "label": {
+            "key": "app.kubernetes.io/component",
+            "value": "sensor"
+          }
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment central",
+      "deployment": {
+        "scope": {
+          "label": {
+            "key": "app.kubernetes.io/component",
+            "value": "central"
+          }
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment admission-control",
+      "deployment": {
+        "scope": {
+          "label": {
+            "key": "app.kubernetes.io/component",
+            "value": "scanner"
+          }
+        }
+      }
+    },
+    {
+      "name": "Don't alert on StackRox scanner",
+      "deployment": {
+        "scope": {
+          "label": {
+            "key": "app.kubernetes.io/component",
+            "value": "admission-control"
+          }
+        }
+      }
+    },
+    {
+      "name": "Don't alert on system namespaces",
+      "deployment": {
+        "scope": {
+          "namespace": "^kube.*|^openshift.*|^redhat.*|^istio-system$"
+        }
+      }
+    }
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Image Component",
+          "values": [
+            {
+              "value": "rpm|microdnf|dnf|yum="
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}
