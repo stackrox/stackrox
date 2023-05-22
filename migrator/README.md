@@ -35,6 +35,10 @@ A migration can read from any of the databases, make changes to the data or to t
 
    All migrations again have the form `m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migrations}`.
 
+4. Starting in 4.2, all migrations MUST be backwards compatible, at least while previous releases are supported.  
+
+   Rollbacks from 4.2 to 4.1 will NO LONGER use the `central_previous` database.  These rollbacks will use `central_active` and as such all schema changes and migrations must be backwards compatible.  This means no destructive changes like deleting columns or fields and ensuring that any data changes either work with previous versions or occur within a new field.  When a breaking change is made the `MinimumSupportedDBVersionSeqNum` will need to be updated to the minimum database version that will work with the breaking change.
+
 ## How to write new migration script
 
 Script should correspond to single change. Script should be part of the same release as this change.
@@ -87,7 +91,9 @@ Here are the steps to write migration script:
 
 6. Increment the `CurrentDBVersionSeqNum` sequence number variable used from `pkg/migrations/internal/seq_num.go` by one.
 
-7. To better understand how to write the `migration.go` and `migration_test.go` files, look at existing examples
+7. Determine if this change breaks a previous releases database.  If so increment the `MinimumSupportedDBVersionSeqNum` to the `CurrentDBVersionSeqNum` of the release immediately following the release that cannot tolerate the change.  For example, in 4.2 a column `column_v2` is added to replace the `column_v1` column in 4.1.  All the code from 4.2 onward will not reference `column_v1`.  At some point in the future a rollback to 4.1 will not longer be supported and we want to remove `column_v1`.  To do so, we will upgrade the schema to remove the column and update the `MinimumSupportedDBVersionSeqNum` to be the value of `CurrentDBVersionSeqNum` in 4.2 as 4.1 will no longer be supported.  The migration process will inform the user of an error when trying to migrate to a software version that can no longer be supported by the database.
+
+8. To better understand how to write the `migration.go` and `migration_test.go` files, look at existing examples
 in `migrations` directory, or at the examples listed below.
 
     - [#1](https://github.com/stackrox/rox/pull/8609)
