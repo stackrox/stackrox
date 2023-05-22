@@ -39,3 +39,9 @@ func (f *fakeGRPCClient) StopSignal() *concurrency.ErrorSignal {
 func (f *fakeGRPCClient) OkSignal() *concurrency.Signal {
 	return &f.okSig
 }
+
+// Reset signals
+func (f *fakeGRPCClient) Reset() {
+	f.stopSig.Reset()
+	f.okSig.Reset()
+}
