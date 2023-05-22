@@ -1,6 +1,6 @@
 module github.com/stackrox/stackrox/tools/linters
 
-go 1.18
+go 1.19
 
 require (
 	// TODO: remove the github.com/sourcegraph/go-diff replacement once updated.
