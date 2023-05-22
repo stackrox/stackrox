@@ -15,9 +15,22 @@
     {
       "name": "Don't alert on StackRox scanner",
       "deployment": {
-        "name": "scanner",
         "scope": {
-          "namespace": "stackrox"
+          "label": {
+            "key": "app.kubernetes.io/component",
+            "value": "scanner"
+          }
+        }
+      }
+    },
+    {
+      "name": "Don't alert on StackRox collector",
+      "deployment": {
+        "scope": {
+          "label": {
+            "key": "app.kubernetes.io/component",
+            "value": "collector"
+          }
         }
       }
     },

@@ -13,47 +13,58 @@
   ],
   "exclusions": [
     {
-      "name": "Don't alert on deployment collector in namespace stackrox",
+      "name": "Don't alert on deployment collector",
       "deployment": {
-        "name": "collector",
+        "name": "",
         "scope": {
-          "namespace": "stackrox"
+          "label": {
+            "key": "app.kubernetes.io/component",
+            "value": "collector"
+          }
         }
       }
     },
     {
-      "name": "Don't alert on deployment sensor in namespace stackrox",
+      "name": "Don't alert on deployment sensor",
       "deployment": {
-        "name": "sensor",
         "scope": {
-          "namespace": "stackrox"
+          "label": {
+            "key": "app.kubernetes.io/component",
+            "value": "sensor"
+          }
         }
       }
     },
     {
-      "name": "Don't alert on deployment central in namespace stackrox",
+      "name": "Don't alert on deployment central",
       "deployment": {
-        "name": "central",
         "scope": {
-          "namespace": "stackrox"
+          "label": {
+            "key": "app.kubernetes.io/component",
+            "value": "central"
+          }
         }
       }
     },
     {
-      "name": "Don't alert on deployment admission-control in namespace stackrox",
+      "name": "Don't alert on deployment admission-control",
       "deployment": {
-        "name": "admission-control",
         "scope": {
-          "namespace": "stackrox"
+          "label": {
+            "key": "app.kubernetes.io/component",
+            "value": "scanner"
+          }
         }
       }
     },
     {
       "name": "Don't alert on StackRox scanner",
       "deployment": {
-        "name": "scanner",
         "scope": {
-          "namespace": "stackrox"
+          "label": {
+            "key": "app.kubernetes.io/component",
+            "value": "admission-control"
+          }
         }
       }
     },
