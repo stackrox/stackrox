@@ -33,7 +33,7 @@ func ExportAction() error {
 	}))
 	defer srv.Close()
 
-	store, err := jsonblob.New()
+	updaterStore, err := jsonblob.New()
 	if err != nil {
 		return err
 	}
@@ -101,29 +101,40 @@ func ExportAction() error {
 		"ubuntu": ubuntuFac,
 	}
 
-	mgr, err := updates.NewManager(ctx, store, updates.NewLocalLockSource(), srv.Client(),
-		updates.WithConfigs(cfgs),
-		updates.WithFactories(facs),
-		updates.WithOutOfTree(updaterList),
-	)
-	if err != nil {
-		return err
-	}
-	if err := mgr.Run(ctx); err != nil {
-		return err
-	}
-
 	os.Mkdir("tmp", 0700)
 	outputFile, err := os.Create("tmp/output.json.gz")
 	if err != nil {
 		return err
 	}
 	defer outputFile.Close()
-
 	gzipWriter := gzip.NewWriter(outputFile)
 	defer gzipWriter.Close()
 
-	err = store.Store(gzipWriter)
+	updaterSetMgr, err := updates.NewManager(ctx, updaterStore, updates.NewLocalLockSource(), srv.Client(),
+		updates.WithOutOfTree(updaterList),
+	)
+	if err != nil {
+		return err
+	}
+	if err := updaterSetMgr.Run(ctx); err != nil {
+		return err
+	}
+	err = updaterStore.Store(gzipWriter)
+	if err != nil {
+		return err
+	}
+	updaterStore = nil
+
+	configStore, err := jsonblob.New()
+	configMgr, err := updates.NewManager(ctx, configStore, updates.NewLocalLockSource(), srv.Client(),
+		updates.WithConfigs(cfgs),
+		updates.WithFactories(facs),
+	)
+	if err := configMgr.Run(ctx); err != nil {
+		return err
+	}
+
+	err = configStore.Store(gzipWriter)
 	if err != nil {
 		return err
 	}
