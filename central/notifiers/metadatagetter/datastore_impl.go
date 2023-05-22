@@ -39,7 +39,7 @@ func newTestMetadataGetter(t *testing.T, store namespaceDataStore.DataStore) not
 // It will attempt to get it from the deployment, but if it doesn't exist it will get it from the namespace. If neither exists, it will return the default value.
 // This value from the annotation is used by certain notifiers to redirect notifications to other channels. For example, the email notifier can send to an alternate email depending on the annotation value.
 // NOTE: It is possible that this will pull the value from a deployment label instead of annotation. This remains for backwards compatibility purposes, because versions <63.0 supported this on labels and annotations.
-func (resolver datastoreMetadataGetter) GetAnnotationValue(ctx context.Context, alert *storage.Alert, annotationKey, defaultValue string) string {
+func (m datastoreMetadataGetter) GetAnnotationValue(ctx context.Context, alert *storage.Alert, annotationKey, defaultValue string) string {
 	// Skip entire processing if the label key is not even set
 	if annotationKey == "" {
 		return defaultValue
@@ -60,7 +60,7 @@ func (resolver datastoreMetadataGetter) GetAnnotationValue(ctx context.Context, 
 	}
 
 	// Otherwise get annotation from namespace
-	if ns := getNamespaceFromAlert(ctx, alert, resolver.datastore); ns != nil {
+	if ns := getNamespaceFromAlert(ctx, alert, m.datastore); ns != nil {
 		if value, ok := ns.GetAnnotations()[annotationKey]; ok {
 			return value
 		}
