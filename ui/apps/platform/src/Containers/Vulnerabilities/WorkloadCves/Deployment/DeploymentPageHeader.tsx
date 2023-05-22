@@ -24,7 +24,7 @@ export const deploymentMetadataFragment = gql`
 `;
 
 export type DeploymentPageHeaderProps = {
-    data: DeploymentMetadata | undefined;
+    data: DeploymentMetadata | null | undefined;
 };
 
 function DeploymentPageHeader({ data }: DeploymentPageHeaderProps) {

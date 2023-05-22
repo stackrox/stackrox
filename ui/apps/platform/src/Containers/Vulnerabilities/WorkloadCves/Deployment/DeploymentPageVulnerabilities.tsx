@@ -30,6 +30,7 @@ import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
+import NotFoundMessage from 'Components/NotFoundMessage';
 import { DynamicTableLabel } from '../components/DynamicIcon';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import TableErrorComponent from '../components/TableErrorComponent';
@@ -102,7 +103,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
             deployment: {
                 id: string;
                 imageCVECountBySeverity: ResourceCountByCveSeverityAndStatus;
-            };
+            } | null;
         },
         { id: string; query: string }
     >(summaryQuery, {
@@ -122,9 +123,11 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
 
     const vulnerabilityRequest = useQuery<
         {
-            deployment: DeploymentWithVulnerabilities & {
-                imageVulnerabilityCount: number;
-            };
+            deployment:
+                | (DeploymentWithVulnerabilities & {
+                      imageVulnerabilityCount: number;
+                  })
+                | null;
         },
         {
             id: string;
@@ -141,6 +144,19 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
 
     const vulnerabilityData = vulnerabilityRequest.data ?? vulnerabilityRequest.previousData;
     const totalVulnerabilityCount = vulnerabilityData?.deployment?.imageVulnerabilityCount ?? 0;
+
+    const deploymentNotFound =
+        (vulnerabilityData && !vulnerabilityData.deployment) ||
+        (summaryData && !summaryData.deployment);
+
+    if (deploymentNotFound) {
+        return (
+            <NotFoundMessage
+                title="404: We couldn't find that page"
+                message={`A deployment with ID ${deploymentId} could not be found.`}
+            />
+        );
+    }
 
     return (
         <>
@@ -189,7 +205,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                                         screenreaderText="Loading deployment summary data"
                                     />
                                 )}
-                                {summaryData && (
+                                {summaryData && summaryData.deployment && (
                                     <Grid hasGutter>
                                         <GridItem sm={12} md={6} xl2={4}>
                                             <BySeveritySummaryCard
@@ -257,7 +273,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                                         <Spinner isSVG />
                                     </Bullseye>
                                 )}
-                                {vulnerabilityData && (
+                                {vulnerabilityData && vulnerabilityData.deployment && (
                                     <div className="workload-cves-table-container">
                                         <DeploymentVulnerabilitiesTable
                                             deployment={vulnerabilityData.deployment}
