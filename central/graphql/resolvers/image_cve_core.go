@@ -25,8 +25,10 @@ func init() {
 				"affectedImageCount: Int!",
 				"affectedImageCountBySeverity: ResourceCountByCVESeverity!",
 				"cve: String!",
+				"deployments(query: String, pagination: Pagination): [Deployment!]!",
 				"distroTuples: [ImageVulnerability!]!",
 				"firstDiscoveredInSystem: Time",
+				"images(query: String, pagination: Pagination): [Image!]!",
 				"topCVSS: Float!",
 			}),
 		schema.AddQuery("imageCVECount(query: String): Int!"),
@@ -105,7 +107,7 @@ func (resolver *Resolver) ImageCVEs(ctx context.Context, q PaginatedQuery) ([]*i
 }
 
 func (resolver *imageCVECoreResolver) AffectedImageCount(_ context.Context) int32 {
-	return int32(resolver.data.GetAffectedImages())
+	return int32(resolver.data.GetAffectedImageCount())
 }
 
 func (resolver *imageCVECoreResolver) AffectedImageCountBySeverity(ctx context.Context) (*resourceCountBySeverityResolver, error) {
@@ -114,6 +116,29 @@ func (resolver *imageCVECoreResolver) AffectedImageCountBySeverity(ctx context.C
 
 func (resolver *imageCVECoreResolver) CVE(_ context.Context) string {
 	return resolver.data.GetCVE()
+}
+
+func (resolver *imageCVECoreResolver) Deployments(ctx context.Context, q PaginatedQuery) ([]*deploymentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "Deployments")
+
+	if err := readDeployments(ctx); err != nil {
+		return nil, err
+	}
+	query, err := q.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	query = search.ConjunctionQuery(query, search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetCVE()).ProtoQuery())
+	deploymentIDs, err := resolver.root.ImageCVEView.GetDeploymentIDs(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	// The IDs are already paginated, so skip the pagination portion.
+	depQ := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentIDs...).Query()
+	return resolver.root.Deployments(ctx, PaginatedQuery{
+		Query: pointers.String(depQ),
+	})
 }
 
 func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]ImageVulnerabilityResolver, error) {
@@ -128,6 +153,29 @@ func (resolver *imageCVECoreResolver) FirstDiscoveredInSystem(_ context.Context)
 	return &graphql.Time{
 		Time: resolver.data.GetFirstDiscoveredInSystem(),
 	}
+}
+
+func (resolver *imageCVECoreResolver) Images(ctx context.Context, q PaginatedQuery) ([]*imageResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "Images")
+
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+	query, err := q.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	query = search.ConjunctionQuery(query, search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetCVE()).ProtoQuery())
+	imageIDs, err := resolver.root.ImageCVEView.GetImageIDs(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	// The IDs are already paginated, so skip the pagination portion.
+	imageQ := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageIDs...).Query()
+	return resolver.root.Images(ctx, PaginatedQuery{
+		Query: pointers.String(imageQ),
+	})
 }
 
 func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {

@@ -85,19 +85,59 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	}
 
 	var err error
-	var results []*imageCVECore
-	results, err = pgSearch.RunSelectRequestForSchema[imageCVECore](ctx, v.db, v.schema, withSelectQuery(q, options))
+	var results []*imageCVECoreResponse
+	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreResponse](ctx, v.db, v.schema, withSelectQuery(q, options))
 	if err != nil {
 		return nil, err
 	}
 
 	ret := make([]CveCore, 0, len(results))
 	for _, r := range results {
-		// For each records, sort the IDs so that result looks consistent.
+		// For each record, sort the IDs so that result looks consistent.
 		sort.SliceStable(r.CVEIDs, func(i, j int) bool {
 			return r.CVEIDs[i] < r.CVEIDs[j]
 		})
 		ret = append(ret, r)
+	}
+	return ret, nil
+}
+
+func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query) ([]string, error) {
+	cloned := q.Clone()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.DeploymentID).Distinct().Proto(),
+	}
+
+	var err error
+	var results []*deploymentResponse
+	results, err = pgSearch.RunSelectRequestForSchema[deploymentResponse](ctx, v.db, v.schema, cloned)
+	if err != nil || len(results) == 0 {
+		return nil, err
+	}
+
+	ret := make([]string, 0, len(results))
+	for _, r := range results {
+		ret = append(ret, r.DeploymentID)
+	}
+	return ret, nil
+}
+
+func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]string, error) {
+	cloned := q.Clone()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ImageSHA).Distinct().Proto(),
+	}
+
+	var err error
+	var results []*imageResponse
+	results, err = pgSearch.RunSelectRequestForSchema[imageResponse](ctx, v.db, v.schema, cloned)
+	if err != nil || len(results) == 0 {
+		return nil, err
+	}
+
+	ret := make([]string, 0, len(results))
+	for _, r := range results {
+		ret = append(ret, r.ImageID)
 	}
 	return ret, nil
 }
