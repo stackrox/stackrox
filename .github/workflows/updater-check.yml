@@ -3,6 +3,7 @@ on:
   push:
     branches:
     - 'yli3/**'
+    - 'davd/**'
   workflow_dispatch: {}
   schedule:
     # Run hourly
