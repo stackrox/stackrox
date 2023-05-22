@@ -6,7 +6,6 @@ import (
 )
 
 // ReportNotifier is a notifier for sending reports
-//
 //go:generate mockgen-wrapper ReportNotifier
 type ReportNotifier interface {
 	Notifier

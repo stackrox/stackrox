@@ -56,7 +56,6 @@ func (i *NameConflictError) Error() string {
 }
 
 // Store provides storage functionality for policies.
-//
 //go:generate mockgen-wrapper
 type Store interface {
 	Get(ctx context.Context, id string) (*storage.Policy, bool, error)

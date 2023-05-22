@@ -11,7 +11,6 @@ import (
 )
 
 // Indexer encapsulates the deployment indexer
-//
 //go:generate mockgen-wrapper
 type Indexer interface {
 	AddDeployment(deployment *storage.Deployment) error

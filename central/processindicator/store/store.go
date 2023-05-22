@@ -8,7 +8,6 @@ import (
 )
 
 // Store provides storage functionality for process indicators.
-//
 //go:generate mockgen-wrapper
 type Store interface {
 	Get(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error)

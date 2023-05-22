@@ -10,7 +10,6 @@ import (
 )
 
 // Indexer provides functionality to index node cves.
-//
 //go:generate mockgen-wrapper
 type Indexer interface {
 	AddNodeCVE(cve *storage.NodeCVE) error

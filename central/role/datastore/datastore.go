@@ -9,7 +9,6 @@ import (
 )
 
 // DataStore is the datastore for roles.
-//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetRole(ctx context.Context, name string) (*storage.Role, bool, error)

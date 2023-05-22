@@ -32,7 +32,6 @@ import (
 )
 
 // DataStore is an intermediary to CVE storage.
-//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)

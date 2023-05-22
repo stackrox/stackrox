@@ -29,7 +29,6 @@ var (
 )
 
 // Backend is the backend for the cluster-init component.
-//
 //go:generate mockgen-wrapper
 type Backend interface {
 	GetAll(ctx context.Context) ([]*storage.InitBundleMeta, error)

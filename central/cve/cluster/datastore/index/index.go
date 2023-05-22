@@ -10,7 +10,6 @@ import (
 )
 
 // Indexer provides functionality to index cluster cves.
-//
 //go:generate mockgen-wrapper
 type Indexer interface {
 	AddClusterCVE(cve *storage.ClusterCVE) error

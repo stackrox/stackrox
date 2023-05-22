@@ -10,7 +10,6 @@ import (
 )
 
 // FileGenerator is a generator that produces a backup in the form of a file.
-//
 //go:generate mockgen-wrapper
 type FileGenerator interface {
 	WriteFile(ctx context.Context, path string) error

@@ -7,7 +7,6 @@ import (
 )
 
 // EntityStore stores network graph entities.
-//
 //go:generate mockgen-wrapper
 type EntityStore interface {
 	Exists(ctx context.Context, id string) (bool, error)

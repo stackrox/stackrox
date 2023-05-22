@@ -6,7 +6,6 @@ import (
 )
 
 // ProcessAggregator combines the incoming process indicators and generates updates for each <deployment, container>.
-//
 //go:generate mockgen-wrapper
 type ProcessAggregator interface {
 	Add(indicators []*storage.ProcessIndicator)

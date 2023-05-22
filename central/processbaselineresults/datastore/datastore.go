@@ -13,7 +13,6 @@ import (
 )
 
 // DataStore wraps storage, indexer, and searcher for ProcessBaselineResults.
-//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	UpsertBaselineResults(ctx context.Context, results *storage.ProcessBaselineResults) error

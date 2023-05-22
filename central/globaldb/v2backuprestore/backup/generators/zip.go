@@ -10,7 +10,6 @@ import (
 )
 
 // ZipGenerator writes a backup directly to a writer.
-//
 //go:generate mockgen-wrapper
 type ZipGenerator interface {
 	WriteTo(ctx context.Context, writer *zip.Writer) error

@@ -13,7 +13,6 @@ import (
 )
 
 // DataStore is an intermediary to Node/Component edge storage.
-//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)

@@ -7,7 +7,6 @@ import (
 )
 
 // DataStore provides functionality to interact with network graph configuration.
-//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetNetworkGraphConfig(ctx context.Context) (*storage.NetworkGraphConfig, error)

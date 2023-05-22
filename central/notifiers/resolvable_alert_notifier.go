@@ -7,7 +7,6 @@ import (
 )
 
 // ResolvableAlertNotifier is the interface for notifiers that support the alert workflow
-//
 //go:generate mockgen-wrapper ResolvableAlertNotifier
 type ResolvableAlertNotifier interface {
 	AlertNotifier

@@ -7,7 +7,6 @@ import (
 )
 
 // Manager implements the interface for scheduled reports
-//
 //go:generate mockgen-wrapper
 type Manager interface {
 	// Upsert adds/updates a report configuration into the scheduler

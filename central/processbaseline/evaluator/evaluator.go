@@ -8,7 +8,6 @@ import (
 )
 
 // An Evaluator evaluates process baselines, and stores their cached results.
-//
 //go:generate mockgen-wrapper
 type Evaluator interface {
 	EvaluateBaselinesAndPersistResult(deployment *storage.Deployment) (violatingProcesses []*storage.ProcessIndicator, err error)
