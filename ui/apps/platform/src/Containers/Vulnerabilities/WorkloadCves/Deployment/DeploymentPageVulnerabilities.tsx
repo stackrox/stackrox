@@ -169,6 +169,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                             'Deployment ID': deploymentId,
                         }}
                         supportedResourceFilters={deploymentResourceFilters}
+                        onFilterChange={() => setPage(1)}
                     />
                 </div>
                 <div className="pf-u-flex-grow-1 pf-u-background-color-100">
