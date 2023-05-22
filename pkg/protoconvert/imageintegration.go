@@ -5,123 +5,12 @@ import (
     "github.com/stackrox/rox/generated/api/v1"
 )
 
-// ConvertSliceStorageImageIntegration_ClairV4ToV1ImageIntegration_ClairV4 converts a slice of *storage.ImageIntegration_ClairV4 to a slice of *v1.ImageIntegration_ClairV4
-func ConvertSliceStorageImageIntegration_ClairV4ToV1ImageIntegration_ClairV4(p1 []*storage.ImageIntegration_ClairV4) []*v1.ImageIntegration_ClairV4 {
-  if p1 == nil {
-    return nil
-  }
-  p2 := make([]*v1.ImageIntegration_ClairV4, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertStorageImageIntegration_ClairV4ToV1ImageIntegration_ClairV4(v))
-  }
-  return p2
-}
-
-// ConvertStorageImageIntegration_ClairV4ToV1ImageIntegration_ClairV4 converts from *storage.ImageIntegration_ClairV4 to *v1.ImageIntegration_ClairV4
-func ConvertStorageImageIntegration_ClairV4ToV1ImageIntegration_ClairV4(p1 *storage.ImageIntegration_ClairV4) *v1.ImageIntegration_ClairV4 {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(v1.ImageIntegration_ClairV4)
-  p2.ClairV4 = ConvertStorageClairV4ConfigToV1ClairV4Config(p1.ClairV4)
-  return p2
-}
-
-// ConvertSliceStorageImageIntegration_IbmToV1ImageIntegration_Ibm converts a slice of *storage.ImageIntegration_Ibm to a slice of *v1.ImageIntegration_Ibm
-func ConvertSliceStorageImageIntegration_IbmToV1ImageIntegration_Ibm(p1 []*storage.ImageIntegration_Ibm) []*v1.ImageIntegration_Ibm {
-  if p1 == nil {
-    return nil
-  }
-  p2 := make([]*v1.ImageIntegration_Ibm, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertStorageImageIntegration_IbmToV1ImageIntegration_Ibm(v))
-  }
-  return p2
-}
-
-// ConvertStorageImageIntegration_IbmToV1ImageIntegration_Ibm converts from *storage.ImageIntegration_Ibm to *v1.ImageIntegration_Ibm
-func ConvertStorageImageIntegration_IbmToV1ImageIntegration_Ibm(p1 *storage.ImageIntegration_Ibm) *v1.ImageIntegration_Ibm {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(v1.ImageIntegration_Ibm)
-  p2.Ibm = ConvertStorageIBMRegistryConfigToV1IBMRegistryConfig(p1.Ibm)
-  return p2
-}
-
-// ConvertSliceStorageIBMRegistryConfigToV1IBMRegistryConfig converts a slice of *storage.IBMRegistryConfig to a slice of *v1.IBMRegistryConfig
-func ConvertSliceStorageIBMRegistryConfigToV1IBMRegistryConfig(p1 []*storage.IBMRegistryConfig) []*v1.IBMRegistryConfig {
-  if p1 == nil {
-    return nil
-  }
-  p2 := make([]*v1.IBMRegistryConfig, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertStorageIBMRegistryConfigToV1IBMRegistryConfig(v))
-  }
-  return p2
-}
-
-// ConvertStorageIBMRegistryConfigToV1IBMRegistryConfig converts from *storage.IBMRegistryConfig to *v1.IBMRegistryConfig
-func ConvertStorageIBMRegistryConfigToV1IBMRegistryConfig(p1 *storage.IBMRegistryConfig) *v1.IBMRegistryConfig {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(v1.IBMRegistryConfig)
-  p2.Endpoint = p1.Endpoint
-  p2.ApiKey = p1.ApiKey
-  return p2
-}
-
-// ConvertSliceStorageImageIntegration_QuayToV1ImageIntegration_Quay converts a slice of *storage.ImageIntegration_Quay to a slice of *v1.ImageIntegration_Quay
-func ConvertSliceStorageImageIntegration_QuayToV1ImageIntegration_Quay(p1 []*storage.ImageIntegration_Quay) []*v1.ImageIntegration_Quay {
-  if p1 == nil {
-    return nil
-  }
-  p2 := make([]*v1.ImageIntegration_Quay, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertStorageImageIntegration_QuayToV1ImageIntegration_Quay(v))
-  }
-  return p2
-}
-
-// ConvertStorageImageIntegration_QuayToV1ImageIntegration_Quay converts from *storage.ImageIntegration_Quay to *v1.ImageIntegration_Quay
-func ConvertStorageImageIntegration_QuayToV1ImageIntegration_Quay(p1 *storage.ImageIntegration_Quay) *v1.ImageIntegration_Quay {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(v1.ImageIntegration_Quay)
-  p2.Quay = ConvertStorageQuayConfigToV1QuayConfig(p1.Quay)
-  return p2
-}
-
-// ConvertSliceStorageImageIntegration_GoogleToV1ImageIntegration_Google converts a slice of *storage.ImageIntegration_Google to a slice of *v1.ImageIntegration_Google
-func ConvertSliceStorageImageIntegration_GoogleToV1ImageIntegration_Google(p1 []*storage.ImageIntegration_Google) []*v1.ImageIntegration_Google {
-  if p1 == nil {
-    return nil
-  }
-  p2 := make([]*v1.ImageIntegration_Google, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertStorageImageIntegration_GoogleToV1ImageIntegration_Google(v))
-  }
-  return p2
-}
-
-// ConvertStorageImageIntegration_GoogleToV1ImageIntegration_Google converts from *storage.ImageIntegration_Google to *v1.ImageIntegration_Google
-func ConvertStorageImageIntegration_GoogleToV1ImageIntegration_Google(p1 *storage.ImageIntegration_Google) *v1.ImageIntegration_Google {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(v1.ImageIntegration_Google)
-  p2.Google = ConvertStorageGoogleConfigToV1GoogleConfig(p1.Google)
-  return p2
-}
-
 // ConvertSliceStorageImageIntegration_ClairToV1ImageIntegration_Clair converts a slice of *storage.ImageIntegration_Clair to a slice of *v1.ImageIntegration_Clair
 func ConvertSliceStorageImageIntegration_ClairToV1ImageIntegration_Clair(p1 []*storage.ImageIntegration_Clair) []*v1.ImageIntegration_Clair {
   if p1 == nil {
     return nil
   }
-  p2 := make([]*v1.ImageIntegration_Clair, len(p1))
+  p2 := make([]*v1.ImageIntegration_Clair, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertStorageImageIntegration_ClairToV1ImageIntegration_Clair(v))
   }
@@ -131,57 +20,32 @@ func ConvertSliceStorageImageIntegration_ClairToV1ImageIntegration_Clair(p1 []*s
 // ConvertStorageImageIntegration_ClairToV1ImageIntegration_Clair converts from *storage.ImageIntegration_Clair to *v1.ImageIntegration_Clair
 func ConvertStorageImageIntegration_ClairToV1ImageIntegration_Clair(p1 *storage.ImageIntegration_Clair) *v1.ImageIntegration_Clair {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(v1.ImageIntegration_Clair)
   p2.Clair = ConvertStorageClairConfigToV1ClairConfig(p1.Clair)
   return p2
 }
 
-// ConvertSliceStorageImageIntegration_SourceToV1ImageIntegration_Source converts a slice of *storage.ImageIntegration_Source to a slice of *v1.ImageIntegration_Source
-func ConvertSliceStorageImageIntegration_SourceToV1ImageIntegration_Source(p1 []*storage.ImageIntegration_Source) []*v1.ImageIntegration_Source {
+// ConvertSliceStorageImageIntegration_ClairV4ToV1ImageIntegration_ClairV4 converts a slice of *storage.ImageIntegration_ClairV4 to a slice of *v1.ImageIntegration_ClairV4
+func ConvertSliceStorageImageIntegration_ClairV4ToV1ImageIntegration_ClairV4(p1 []*storage.ImageIntegration_ClairV4) []*v1.ImageIntegration_ClairV4 {
   if p1 == nil {
     return nil
   }
-  p2 := make([]*v1.ImageIntegration_Source, len(p1))
+  p2 := make([]*v1.ImageIntegration_ClairV4, 0, len(p1))
   for _, v := range p1 {
-    p2 = append(p2, ConvertStorageImageIntegration_SourceToV1ImageIntegration_Source(v))
+    p2 = append(p2, ConvertStorageImageIntegration_ClairV4ToV1ImageIntegration_ClairV4(v))
   }
   return p2
 }
 
-// ConvertStorageImageIntegration_SourceToV1ImageIntegration_Source converts from *storage.ImageIntegration_Source to *v1.ImageIntegration_Source
-func ConvertStorageImageIntegration_SourceToV1ImageIntegration_Source(p1 *storage.ImageIntegration_Source) *v1.ImageIntegration_Source {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(v1.ImageIntegration_Source)
-  p2.ClusterId = p1.ClusterId
-  p2.Namespace = p1.Namespace
-  p2.ImagePullSecretName = p1.ImagePullSecretName
-  return p2
-}
-
-// ConvertSliceStorageClairV4ConfigToV1ClairV4Config converts a slice of *storage.ClairV4Config to a slice of *v1.ClairV4Config
-func ConvertSliceStorageClairV4ConfigToV1ClairV4Config(p1 []*storage.ClairV4Config) []*v1.ClairV4Config {
+// ConvertStorageImageIntegration_ClairV4ToV1ImageIntegration_ClairV4 converts from *storage.ImageIntegration_ClairV4 to *v1.ImageIntegration_ClairV4
+func ConvertStorageImageIntegration_ClairV4ToV1ImageIntegration_ClairV4(p1 *storage.ImageIntegration_ClairV4) *v1.ImageIntegration_ClairV4 {
   if p1 == nil {
     return nil
   }
-  p2 := make([]*v1.ClairV4Config, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertStorageClairV4ConfigToV1ClairV4Config(v))
-  }
-  return p2
-}
-
-// ConvertStorageClairV4ConfigToV1ClairV4Config converts from *storage.ClairV4Config to *v1.ClairV4Config
-func ConvertStorageClairV4ConfigToV1ClairV4Config(p1 *storage.ClairV4Config) *v1.ClairV4Config {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(v1.ClairV4Config)
-  p2.Endpoint = p1.Endpoint
-  p2.Insecure = p1.Insecure
+  p2 := new(v1.ImageIntegration_ClairV4)
+  p2.ClairV4 = ConvertStorageClairV4ConfigToV1ClairV4Config(p1.ClairV4)
   return p2
 }
 
@@ -190,7 +54,7 @@ func ConvertSliceStorageImageIntegration_ClairifyToV1ImageIntegration_Clairify(p
   if p1 == nil {
     return nil
   }
-  p2 := make([]*v1.ImageIntegration_Clairify, len(p1))
+  p2 := make([]*v1.ImageIntegration_Clairify, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertStorageImageIntegration_ClairifyToV1ImageIntegration_Clairify(v))
   }
@@ -200,7 +64,7 @@ func ConvertSliceStorageImageIntegration_ClairifyToV1ImageIntegration_Clairify(p
 // ConvertStorageImageIntegration_ClairifyToV1ImageIntegration_Clairify converts from *storage.ImageIntegration_Clairify to *v1.ImageIntegration_Clairify
 func ConvertStorageImageIntegration_ClairifyToV1ImageIntegration_Clairify(p1 *storage.ImageIntegration_Clairify) *v1.ImageIntegration_Clairify {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(v1.ImageIntegration_Clairify)
   p2.Clairify = ConvertStorageClairifyConfigToV1ClairifyConfig(p1.Clairify)
@@ -212,7 +76,7 @@ func ConvertSliceStorageImageIntegration_DockerToV1ImageIntegration_Docker(p1 []
   if p1 == nil {
     return nil
   }
-  p2 := make([]*v1.ImageIntegration_Docker, len(p1))
+  p2 := make([]*v1.ImageIntegration_Docker, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertStorageImageIntegration_DockerToV1ImageIntegration_Docker(v))
   }
@@ -222,7 +86,7 @@ func ConvertSliceStorageImageIntegration_DockerToV1ImageIntegration_Docker(p1 []
 // ConvertStorageImageIntegration_DockerToV1ImageIntegration_Docker converts from *storage.ImageIntegration_Docker to *v1.ImageIntegration_Docker
 func ConvertStorageImageIntegration_DockerToV1ImageIntegration_Docker(p1 *storage.ImageIntegration_Docker) *v1.ImageIntegration_Docker {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(v1.ImageIntegration_Docker)
   p2.Docker = ConvertStorageDockerConfigToV1DockerConfig(p1.Docker)
@@ -234,7 +98,7 @@ func ConvertSliceStorageImageIntegration_EcrToV1ImageIntegration_Ecr(p1 []*stora
   if p1 == nil {
     return nil
   }
-  p2 := make([]*v1.ImageIntegration_Ecr, len(p1))
+  p2 := make([]*v1.ImageIntegration_Ecr, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertStorageImageIntegration_EcrToV1ImageIntegration_Ecr(v))
   }
@@ -244,34 +108,195 @@ func ConvertSliceStorageImageIntegration_EcrToV1ImageIntegration_Ecr(p1 []*stora
 // ConvertStorageImageIntegration_EcrToV1ImageIntegration_Ecr converts from *storage.ImageIntegration_Ecr to *v1.ImageIntegration_Ecr
 func ConvertStorageImageIntegration_EcrToV1ImageIntegration_Ecr(p1 *storage.ImageIntegration_Ecr) *v1.ImageIntegration_Ecr {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(v1.ImageIntegration_Ecr)
   p2.Ecr = ConvertStorageECRConfigToV1ECRConfig(p1.Ecr)
   return p2
 }
 
-// ConvertSliceStorageGoogleConfigToV1GoogleConfig converts a slice of *storage.GoogleConfig to a slice of *v1.GoogleConfig
-func ConvertSliceStorageGoogleConfigToV1GoogleConfig(p1 []*storage.GoogleConfig) []*v1.GoogleConfig {
+// ConvertSliceStorageImageIntegration_GoogleToV1ImageIntegration_Google converts a slice of *storage.ImageIntegration_Google to a slice of *v1.ImageIntegration_Google
+func ConvertSliceStorageImageIntegration_GoogleToV1ImageIntegration_Google(p1 []*storage.ImageIntegration_Google) []*v1.ImageIntegration_Google {
   if p1 == nil {
     return nil
   }
-  p2 := make([]*v1.GoogleConfig, len(p1))
+  p2 := make([]*v1.ImageIntegration_Google, 0, len(p1))
   for _, v := range p1 {
-    p2 = append(p2, ConvertStorageGoogleConfigToV1GoogleConfig(v))
+    p2 = append(p2, ConvertStorageImageIntegration_GoogleToV1ImageIntegration_Google(v))
   }
   return p2
 }
 
-// ConvertStorageGoogleConfigToV1GoogleConfig converts from *storage.GoogleConfig to *v1.GoogleConfig
-func ConvertStorageGoogleConfigToV1GoogleConfig(p1 *storage.GoogleConfig) *v1.GoogleConfig {
+// ConvertStorageImageIntegration_GoogleToV1ImageIntegration_Google converts from *storage.ImageIntegration_Google to *v1.ImageIntegration_Google
+func ConvertStorageImageIntegration_GoogleToV1ImageIntegration_Google(p1 *storage.ImageIntegration_Google) *v1.ImageIntegration_Google {
   if p1 == nil {
-  	return nil
+    return nil
   }
-  p2 := new(v1.GoogleConfig)
+  p2 := new(v1.ImageIntegration_Google)
+  p2.Google = ConvertStorageGoogleConfigToV1GoogleConfig(p1.Google)
+  return p2
+}
+
+// ConvertSliceStorageImageIntegration_IbmToV1ImageIntegration_Ibm converts a slice of *storage.ImageIntegration_Ibm to a slice of *v1.ImageIntegration_Ibm
+func ConvertSliceStorageImageIntegration_IbmToV1ImageIntegration_Ibm(p1 []*storage.ImageIntegration_Ibm) []*v1.ImageIntegration_Ibm {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*v1.ImageIntegration_Ibm, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertStorageImageIntegration_IbmToV1ImageIntegration_Ibm(v))
+  }
+  return p2
+}
+
+// ConvertStorageImageIntegration_IbmToV1ImageIntegration_Ibm converts from *storage.ImageIntegration_Ibm to *v1.ImageIntegration_Ibm
+func ConvertStorageImageIntegration_IbmToV1ImageIntegration_Ibm(p1 *storage.ImageIntegration_Ibm) *v1.ImageIntegration_Ibm {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(v1.ImageIntegration_Ibm)
+  p2.Ibm = ConvertStorageIBMRegistryConfigToV1IBMRegistryConfig(p1.Ibm)
+  return p2
+}
+
+// ConvertSliceStorageImageIntegration_QuayToV1ImageIntegration_Quay converts a slice of *storage.ImageIntegration_Quay to a slice of *v1.ImageIntegration_Quay
+func ConvertSliceStorageImageIntegration_QuayToV1ImageIntegration_Quay(p1 []*storage.ImageIntegration_Quay) []*v1.ImageIntegration_Quay {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*v1.ImageIntegration_Quay, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertStorageImageIntegration_QuayToV1ImageIntegration_Quay(v))
+  }
+  return p2
+}
+
+// ConvertStorageImageIntegration_QuayToV1ImageIntegration_Quay converts from *storage.ImageIntegration_Quay to *v1.ImageIntegration_Quay
+func ConvertStorageImageIntegration_QuayToV1ImageIntegration_Quay(p1 *storage.ImageIntegration_Quay) *v1.ImageIntegration_Quay {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(v1.ImageIntegration_Quay)
+  p2.Quay = ConvertStorageQuayConfigToV1QuayConfig(p1.Quay)
+  return p2
+}
+
+// ConvertSliceStorageImageIntegration_SourceToV1ImageIntegration_Source converts a slice of *storage.ImageIntegration_Source to a slice of *v1.ImageIntegration_Source
+func ConvertSliceStorageImageIntegration_SourceToV1ImageIntegration_Source(p1 []*storage.ImageIntegration_Source) []*v1.ImageIntegration_Source {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*v1.ImageIntegration_Source, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertStorageImageIntegration_SourceToV1ImageIntegration_Source(v))
+  }
+  return p2
+}
+
+// ConvertStorageImageIntegration_SourceToV1ImageIntegration_Source converts from *storage.ImageIntegration_Source to *v1.ImageIntegration_Source
+func ConvertStorageImageIntegration_SourceToV1ImageIntegration_Source(p1 *storage.ImageIntegration_Source) *v1.ImageIntegration_Source {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(v1.ImageIntegration_Source)
+  p2.ClusterId = p1.ClusterId
+  p2.Namespace = p1.Namespace
+  p2.ImagePullSecretName = p1.ImagePullSecretName
+  return p2
+}
+
+// ConvertSliceStorageClairConfigToV1ClairConfig converts a slice of *storage.ClairConfig to a slice of *v1.ClairConfig
+func ConvertSliceStorageClairConfigToV1ClairConfig(p1 []*storage.ClairConfig) []*v1.ClairConfig {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*v1.ClairConfig, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertStorageClairConfigToV1ClairConfig(v))
+  }
+  return p2
+}
+
+// ConvertStorageClairConfigToV1ClairConfig converts from *storage.ClairConfig to *v1.ClairConfig
+func ConvertStorageClairConfigToV1ClairConfig(p1 *storage.ClairConfig) *v1.ClairConfig {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(v1.ClairConfig)
   p2.Endpoint = p1.Endpoint
-  p2.ServiceAccount = p1.ServiceAccount
-  p2.Project = p1.Project
+  p2.Insecure = p1.Insecure
+  return p2
+}
+
+// ConvertSliceStorageClairV4ConfigToV1ClairV4Config converts a slice of *storage.ClairV4Config to a slice of *v1.ClairV4Config
+func ConvertSliceStorageClairV4ConfigToV1ClairV4Config(p1 []*storage.ClairV4Config) []*v1.ClairV4Config {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*v1.ClairV4Config, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertStorageClairV4ConfigToV1ClairV4Config(v))
+  }
+  return p2
+}
+
+// ConvertStorageClairV4ConfigToV1ClairV4Config converts from *storage.ClairV4Config to *v1.ClairV4Config
+func ConvertStorageClairV4ConfigToV1ClairV4Config(p1 *storage.ClairV4Config) *v1.ClairV4Config {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(v1.ClairV4Config)
+  p2.Endpoint = p1.Endpoint
+  p2.Insecure = p1.Insecure
+  return p2
+}
+
+// ConvertSliceStorageClairifyConfigToV1ClairifyConfig converts a slice of *storage.ClairifyConfig to a slice of *v1.ClairifyConfig
+func ConvertSliceStorageClairifyConfigToV1ClairifyConfig(p1 []*storage.ClairifyConfig) []*v1.ClairifyConfig {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*v1.ClairifyConfig, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertStorageClairifyConfigToV1ClairifyConfig(v))
+  }
+  return p2
+}
+
+// ConvertStorageClairifyConfigToV1ClairifyConfig converts from *storage.ClairifyConfig to *v1.ClairifyConfig
+func ConvertStorageClairifyConfigToV1ClairifyConfig(p1 *storage.ClairifyConfig) *v1.ClairifyConfig {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(v1.ClairifyConfig)
+  p2.Endpoint = p1.Endpoint
+  p2.GrpcEndpoint = p1.GrpcEndpoint
+  p2.NumConcurrentScans = p1.NumConcurrentScans
+  return p2
+}
+
+// ConvertSliceStorageDockerConfigToV1DockerConfig converts a slice of *storage.DockerConfig to a slice of *v1.DockerConfig
+func ConvertSliceStorageDockerConfigToV1DockerConfig(p1 []*storage.DockerConfig) []*v1.DockerConfig {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*v1.DockerConfig, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertStorageDockerConfigToV1DockerConfig(v))
+  }
+  return p2
+}
+
+// ConvertStorageDockerConfigToV1DockerConfig converts from *storage.DockerConfig to *v1.DockerConfig
+func ConvertStorageDockerConfigToV1DockerConfig(p1 *storage.DockerConfig) *v1.DockerConfig {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(v1.DockerConfig)
+  p2.Endpoint = p1.Endpoint
+  p2.Username = p1.Username
+  p2.Password = p1.Password
+  p2.Insecure = p1.Insecure
   return p2
 }
 
@@ -280,7 +305,7 @@ func ConvertSliceStorageECRConfigToV1ECRConfig(p1 []*storage.ECRConfig) []*v1.EC
   if p1 == nil {
     return nil
   }
-  p2 := make([]*v1.ECRConfig, len(p1))
+  p2 := make([]*v1.ECRConfig, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertStorageECRConfigToV1ECRConfig(v))
   }
@@ -290,7 +315,7 @@ func ConvertSliceStorageECRConfigToV1ECRConfig(p1 []*storage.ECRConfig) []*v1.EC
 // ConvertStorageECRConfigToV1ECRConfig converts from *storage.ECRConfig to *v1.ECRConfig
 func ConvertStorageECRConfigToV1ECRConfig(p1 *storage.ECRConfig) *v1.ECRConfig {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(v1.ECRConfig)
   p2.RegistryId = p1.RegistryId
@@ -306,50 +331,50 @@ func ConvertStorageECRConfigToV1ECRConfig(p1 *storage.ECRConfig) *v1.ECRConfig {
   return p2
 }
 
-// ConvertSliceStorageECRConfig_AuthorizationDataToV1ECRConfig_AuthorizationData converts a slice of *storage.ECRConfig_AuthorizationData to a slice of *v1.ECRConfig_AuthorizationData
-func ConvertSliceStorageECRConfig_AuthorizationDataToV1ECRConfig_AuthorizationData(p1 []*storage.ECRConfig_AuthorizationData) []*v1.ECRConfig_AuthorizationData {
+// ConvertSliceStorageGoogleConfigToV1GoogleConfig converts a slice of *storage.GoogleConfig to a slice of *v1.GoogleConfig
+func ConvertSliceStorageGoogleConfigToV1GoogleConfig(p1 []*storage.GoogleConfig) []*v1.GoogleConfig {
   if p1 == nil {
     return nil
   }
-  p2 := make([]*v1.ECRConfig_AuthorizationData, len(p1))
+  p2 := make([]*v1.GoogleConfig, 0, len(p1))
   for _, v := range p1 {
-    p2 = append(p2, ConvertStorageECRConfig_AuthorizationDataToV1ECRConfig_AuthorizationData(v))
+    p2 = append(p2, ConvertStorageGoogleConfigToV1GoogleConfig(v))
   }
   return p2
 }
 
-// ConvertStorageECRConfig_AuthorizationDataToV1ECRConfig_AuthorizationData converts from *storage.ECRConfig_AuthorizationData to *v1.ECRConfig_AuthorizationData
-func ConvertStorageECRConfig_AuthorizationDataToV1ECRConfig_AuthorizationData(p1 *storage.ECRConfig_AuthorizationData) *v1.ECRConfig_AuthorizationData {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(v1.ECRConfig_AuthorizationData)
-  p2.Username = p1.Username
-  p2.Password = p1.Password
-  p2.ExpiresAt = p1.ExpiresAt.Clone()
-  return p2
-}
-
-// ConvertSliceStorageClairConfigToV1ClairConfig converts a slice of *storage.ClairConfig to a slice of *v1.ClairConfig
-func ConvertSliceStorageClairConfigToV1ClairConfig(p1 []*storage.ClairConfig) []*v1.ClairConfig {
+// ConvertStorageGoogleConfigToV1GoogleConfig converts from *storage.GoogleConfig to *v1.GoogleConfig
+func ConvertStorageGoogleConfigToV1GoogleConfig(p1 *storage.GoogleConfig) *v1.GoogleConfig {
   if p1 == nil {
     return nil
   }
-  p2 := make([]*v1.ClairConfig, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertStorageClairConfigToV1ClairConfig(v))
-  }
-  return p2
-}
-
-// ConvertStorageClairConfigToV1ClairConfig converts from *storage.ClairConfig to *v1.ClairConfig
-func ConvertStorageClairConfigToV1ClairConfig(p1 *storage.ClairConfig) *v1.ClairConfig {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(v1.ClairConfig)
+  p2 := new(v1.GoogleConfig)
   p2.Endpoint = p1.Endpoint
-  p2.Insecure = p1.Insecure
+  p2.ServiceAccount = p1.ServiceAccount
+  p2.Project = p1.Project
+  return p2
+}
+
+// ConvertSliceStorageIBMRegistryConfigToV1IBMRegistryConfig converts a slice of *storage.IBMRegistryConfig to a slice of *v1.IBMRegistryConfig
+func ConvertSliceStorageIBMRegistryConfigToV1IBMRegistryConfig(p1 []*storage.IBMRegistryConfig) []*v1.IBMRegistryConfig {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*v1.IBMRegistryConfig, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertStorageIBMRegistryConfigToV1IBMRegistryConfig(v))
+  }
+  return p2
+}
+
+// ConvertStorageIBMRegistryConfigToV1IBMRegistryConfig converts from *storage.IBMRegistryConfig to *v1.IBMRegistryConfig
+func ConvertStorageIBMRegistryConfigToV1IBMRegistryConfig(p1 *storage.IBMRegistryConfig) *v1.IBMRegistryConfig {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(v1.IBMRegistryConfig)
+  p2.Endpoint = p1.Endpoint
+  p2.ApiKey = p1.ApiKey
   return p2
 }
 
@@ -358,7 +383,7 @@ func ConvertSliceStorageQuayConfigToV1QuayConfig(p1 []*storage.QuayConfig) []*v1
   if p1 == nil {
     return nil
   }
-  p2 := make([]*v1.QuayConfig, len(p1))
+  p2 := make([]*v1.QuayConfig, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertStorageQuayConfigToV1QuayConfig(v))
   }
@@ -368,7 +393,7 @@ func ConvertSliceStorageQuayConfigToV1QuayConfig(p1 []*storage.QuayConfig) []*v1
 // ConvertStorageQuayConfigToV1QuayConfig converts from *storage.QuayConfig to *v1.QuayConfig
 func ConvertStorageQuayConfigToV1QuayConfig(p1 *storage.QuayConfig) *v1.QuayConfig {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(v1.QuayConfig)
   p2.Endpoint = p1.Endpoint
@@ -378,52 +403,27 @@ func ConvertStorageQuayConfigToV1QuayConfig(p1 *storage.QuayConfig) *v1.QuayConf
   return p2
 }
 
-// ConvertSliceStorageClairifyConfigToV1ClairifyConfig converts a slice of *storage.ClairifyConfig to a slice of *v1.ClairifyConfig
-func ConvertSliceStorageClairifyConfigToV1ClairifyConfig(p1 []*storage.ClairifyConfig) []*v1.ClairifyConfig {
+// ConvertSliceStorageECRConfig_AuthorizationDataToV1ECRConfig_AuthorizationData converts a slice of *storage.ECRConfig_AuthorizationData to a slice of *v1.ECRConfig_AuthorizationData
+func ConvertSliceStorageECRConfig_AuthorizationDataToV1ECRConfig_AuthorizationData(p1 []*storage.ECRConfig_AuthorizationData) []*v1.ECRConfig_AuthorizationData {
   if p1 == nil {
     return nil
   }
-  p2 := make([]*v1.ClairifyConfig, len(p1))
+  p2 := make([]*v1.ECRConfig_AuthorizationData, 0, len(p1))
   for _, v := range p1 {
-    p2 = append(p2, ConvertStorageClairifyConfigToV1ClairifyConfig(v))
+    p2 = append(p2, ConvertStorageECRConfig_AuthorizationDataToV1ECRConfig_AuthorizationData(v))
   }
   return p2
 }
 
-// ConvertStorageClairifyConfigToV1ClairifyConfig converts from *storage.ClairifyConfig to *v1.ClairifyConfig
-func ConvertStorageClairifyConfigToV1ClairifyConfig(p1 *storage.ClairifyConfig) *v1.ClairifyConfig {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(v1.ClairifyConfig)
-  p2.Endpoint = p1.Endpoint
-  p2.GrpcEndpoint = p1.GrpcEndpoint
-  p2.NumConcurrentScans = p1.NumConcurrentScans
-  return p2
-}
-
-// ConvertSliceStorageDockerConfigToV1DockerConfig converts a slice of *storage.DockerConfig to a slice of *v1.DockerConfig
-func ConvertSliceStorageDockerConfigToV1DockerConfig(p1 []*storage.DockerConfig) []*v1.DockerConfig {
+// ConvertStorageECRConfig_AuthorizationDataToV1ECRConfig_AuthorizationData converts from *storage.ECRConfig_AuthorizationData to *v1.ECRConfig_AuthorizationData
+func ConvertStorageECRConfig_AuthorizationDataToV1ECRConfig_AuthorizationData(p1 *storage.ECRConfig_AuthorizationData) *v1.ECRConfig_AuthorizationData {
   if p1 == nil {
     return nil
   }
-  p2 := make([]*v1.DockerConfig, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertStorageDockerConfigToV1DockerConfig(v))
-  }
-  return p2
-}
-
-// ConvertStorageDockerConfigToV1DockerConfig converts from *storage.DockerConfig to *v1.DockerConfig
-func ConvertStorageDockerConfigToV1DockerConfig(p1 *storage.DockerConfig) *v1.DockerConfig {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(v1.DockerConfig)
-  p2.Endpoint = p1.Endpoint
+  p2 := new(v1.ECRConfig_AuthorizationData)
   p2.Username = p1.Username
   p2.Password = p1.Password
-  p2.Insecure = p1.Insecure
+  p2.ExpiresAt = p1.ExpiresAt.Clone()
   return p2
 }
 
@@ -432,7 +432,7 @@ func ConvertSliceStorageQuayConfig_RobotAccountToV1QuayConfig_RobotAccount(p1 []
   if p1 == nil {
     return nil
   }
-  p2 := make([]*v1.QuayConfig_RobotAccount, len(p1))
+  p2 := make([]*v1.QuayConfig_RobotAccount, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertStorageQuayConfig_RobotAccountToV1QuayConfig_RobotAccount(v))
   }
@@ -442,7 +442,7 @@ func ConvertSliceStorageQuayConfig_RobotAccountToV1QuayConfig_RobotAccount(p1 []
 // ConvertStorageQuayConfig_RobotAccountToV1QuayConfig_RobotAccount converts from *storage.QuayConfig_RobotAccount to *v1.QuayConfig_RobotAccount
 func ConvertStorageQuayConfig_RobotAccountToV1QuayConfig_RobotAccount(p1 *storage.QuayConfig_RobotAccount) *v1.QuayConfig_RobotAccount {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(v1.QuayConfig_RobotAccount)
   p2.Username = p1.Username
@@ -455,7 +455,7 @@ func ConvertSliceStorageImageIntegrationToV1ImageIntegration(p1 []*storage.Image
   if p1 == nil {
     return nil
   }
-  p2 := make([]*v1.ImageIntegration, len(p1))
+  p2 := make([]*v1.ImageIntegration, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertStorageImageIntegrationToV1ImageIntegration(v))
   }
@@ -465,7 +465,7 @@ func ConvertSliceStorageImageIntegrationToV1ImageIntegration(p1 []*storage.Image
 // ConvertStorageImageIntegrationToV1ImageIntegration converts from *storage.ImageIntegration to *v1.ImageIntegration
 func ConvertStorageImageIntegrationToV1ImageIntegration(p1 *storage.ImageIntegration) *v1.ImageIntegration {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(v1.ImageIntegration)
   p2.Id = p1.Id
@@ -515,7 +515,7 @@ func ConvertSliceV1ImageIntegration_ClairToStorageImageIntegration_Clair(p1 []*v
   if p1 == nil {
     return nil
   }
-  p2 := make([]*storage.ImageIntegration_Clair, len(p1))
+  p2 := make([]*storage.ImageIntegration_Clair, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertV1ImageIntegration_ClairToStorageImageIntegration_Clair(v))
   }
@@ -525,100 +525,10 @@ func ConvertSliceV1ImageIntegration_ClairToStorageImageIntegration_Clair(p1 []*v
 // ConvertV1ImageIntegration_ClairToStorageImageIntegration_Clair converts from *v1.ImageIntegration_Clair to *storage.ImageIntegration_Clair
 func ConvertV1ImageIntegration_ClairToStorageImageIntegration_Clair(p1 *v1.ImageIntegration_Clair) *storage.ImageIntegration_Clair {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(storage.ImageIntegration_Clair)
   p2.Clair = ConvertV1ClairConfigToStorageClairConfig(p1.Clair)
-  return p2
-}
-
-// ConvertSliceV1ImageIntegration_IbmToStorageImageIntegration_Ibm converts a slice of *v1.ImageIntegration_Ibm to a slice of *storage.ImageIntegration_Ibm
-func ConvertSliceV1ImageIntegration_IbmToStorageImageIntegration_Ibm(p1 []*v1.ImageIntegration_Ibm) []*storage.ImageIntegration_Ibm {
-  if p1 == nil {
-    return nil
-  }
-  p2 := make([]*storage.ImageIntegration_Ibm, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertV1ImageIntegration_IbmToStorageImageIntegration_Ibm(v))
-  }
-  return p2
-}
-
-// ConvertV1ImageIntegration_IbmToStorageImageIntegration_Ibm converts from *v1.ImageIntegration_Ibm to *storage.ImageIntegration_Ibm
-func ConvertV1ImageIntegration_IbmToStorageImageIntegration_Ibm(p1 *v1.ImageIntegration_Ibm) *storage.ImageIntegration_Ibm {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(storage.ImageIntegration_Ibm)
-  p2.Ibm = ConvertV1IBMRegistryConfigToStorageIBMRegistryConfig(p1.Ibm)
-  return p2
-}
-
-// ConvertSliceV1ClairConfigToStorageClairConfig converts a slice of *v1.ClairConfig to a slice of *storage.ClairConfig
-func ConvertSliceV1ClairConfigToStorageClairConfig(p1 []*v1.ClairConfig) []*storage.ClairConfig {
-  if p1 == nil {
-    return nil
-  }
-  p2 := make([]*storage.ClairConfig, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertV1ClairConfigToStorageClairConfig(v))
-  }
-  return p2
-}
-
-// ConvertV1ClairConfigToStorageClairConfig converts from *v1.ClairConfig to *storage.ClairConfig
-func ConvertV1ClairConfigToStorageClairConfig(p1 *v1.ClairConfig) *storage.ClairConfig {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(storage.ClairConfig)
-  p2.Endpoint = p1.Endpoint
-  p2.Insecure = p1.Insecure
-  return p2
-}
-
-// ConvertSliceV1IBMRegistryConfigToStorageIBMRegistryConfig converts a slice of *v1.IBMRegistryConfig to a slice of *storage.IBMRegistryConfig
-func ConvertSliceV1IBMRegistryConfigToStorageIBMRegistryConfig(p1 []*v1.IBMRegistryConfig) []*storage.IBMRegistryConfig {
-  if p1 == nil {
-    return nil
-  }
-  p2 := make([]*storage.IBMRegistryConfig, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertV1IBMRegistryConfigToStorageIBMRegistryConfig(v))
-  }
-  return p2
-}
-
-// ConvertV1IBMRegistryConfigToStorageIBMRegistryConfig converts from *v1.IBMRegistryConfig to *storage.IBMRegistryConfig
-func ConvertV1IBMRegistryConfigToStorageIBMRegistryConfig(p1 *v1.IBMRegistryConfig) *storage.IBMRegistryConfig {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(storage.IBMRegistryConfig)
-  p2.Endpoint = p1.Endpoint
-  p2.ApiKey = p1.ApiKey
-  return p2
-}
-
-// ConvertSliceV1ImageIntegration_GoogleToStorageImageIntegration_Google converts a slice of *v1.ImageIntegration_Google to a slice of *storage.ImageIntegration_Google
-func ConvertSliceV1ImageIntegration_GoogleToStorageImageIntegration_Google(p1 []*v1.ImageIntegration_Google) []*storage.ImageIntegration_Google {
-  if p1 == nil {
-    return nil
-  }
-  p2 := make([]*storage.ImageIntegration_Google, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertV1ImageIntegration_GoogleToStorageImageIntegration_Google(v))
-  }
-  return p2
-}
-
-// ConvertV1ImageIntegration_GoogleToStorageImageIntegration_Google converts from *v1.ImageIntegration_Google to *storage.ImageIntegration_Google
-func ConvertV1ImageIntegration_GoogleToStorageImageIntegration_Google(p1 *v1.ImageIntegration_Google) *storage.ImageIntegration_Google {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(storage.ImageIntegration_Google)
-  p2.Google = ConvertV1GoogleConfigToStorageGoogleConfig(p1.Google)
   return p2
 }
 
@@ -627,7 +537,7 @@ func ConvertSliceV1ImageIntegration_ClairV4ToStorageImageIntegration_ClairV4(p1 
   if p1 == nil {
     return nil
   }
-  p2 := make([]*storage.ImageIntegration_ClairV4, len(p1))
+  p2 := make([]*storage.ImageIntegration_ClairV4, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertV1ImageIntegration_ClairV4ToStorageImageIntegration_ClairV4(v))
   }
@@ -637,57 +547,10 @@ func ConvertSliceV1ImageIntegration_ClairV4ToStorageImageIntegration_ClairV4(p1 
 // ConvertV1ImageIntegration_ClairV4ToStorageImageIntegration_ClairV4 converts from *v1.ImageIntegration_ClairV4 to *storage.ImageIntegration_ClairV4
 func ConvertV1ImageIntegration_ClairV4ToStorageImageIntegration_ClairV4(p1 *v1.ImageIntegration_ClairV4) *storage.ImageIntegration_ClairV4 {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(storage.ImageIntegration_ClairV4)
   p2.ClairV4 = ConvertV1ClairV4ConfigToStorageClairV4Config(p1.ClairV4)
-  return p2
-}
-
-// ConvertSliceV1ImageIntegration_SourceToStorageImageIntegration_Source converts a slice of *v1.ImageIntegration_Source to a slice of *storage.ImageIntegration_Source
-func ConvertSliceV1ImageIntegration_SourceToStorageImageIntegration_Source(p1 []*v1.ImageIntegration_Source) []*storage.ImageIntegration_Source {
-  if p1 == nil {
-    return nil
-  }
-  p2 := make([]*storage.ImageIntegration_Source, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertV1ImageIntegration_SourceToStorageImageIntegration_Source(v))
-  }
-  return p2
-}
-
-// ConvertV1ImageIntegration_SourceToStorageImageIntegration_Source converts from *v1.ImageIntegration_Source to *storage.ImageIntegration_Source
-func ConvertV1ImageIntegration_SourceToStorageImageIntegration_Source(p1 *v1.ImageIntegration_Source) *storage.ImageIntegration_Source {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(storage.ImageIntegration_Source)
-  p2.ClusterId = p1.ClusterId
-  p2.Namespace = p1.Namespace
-  p2.ImagePullSecretName = p1.ImagePullSecretName
-  return p2
-}
-
-// ConvertSliceV1ClairV4ConfigToStorageClairV4Config converts a slice of *v1.ClairV4Config to a slice of *storage.ClairV4Config
-func ConvertSliceV1ClairV4ConfigToStorageClairV4Config(p1 []*v1.ClairV4Config) []*storage.ClairV4Config {
-  if p1 == nil {
-    return nil
-  }
-  p2 := make([]*storage.ClairV4Config, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertV1ClairV4ConfigToStorageClairV4Config(v))
-  }
-  return p2
-}
-
-// ConvertV1ClairV4ConfigToStorageClairV4Config converts from *v1.ClairV4Config to *storage.ClairV4Config
-func ConvertV1ClairV4ConfigToStorageClairV4Config(p1 *v1.ClairV4Config) *storage.ClairV4Config {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(storage.ClairV4Config)
-  p2.Endpoint = p1.Endpoint
-  p2.Insecure = p1.Insecure
   return p2
 }
 
@@ -696,7 +559,7 @@ func ConvertSliceV1ImageIntegration_ClairifyToStorageImageIntegration_Clairify(p
   if p1 == nil {
     return nil
   }
-  p2 := make([]*storage.ImageIntegration_Clairify, len(p1))
+  p2 := make([]*storage.ImageIntegration_Clairify, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertV1ImageIntegration_ClairifyToStorageImageIntegration_Clairify(v))
   }
@@ -706,7 +569,7 @@ func ConvertSliceV1ImageIntegration_ClairifyToStorageImageIntegration_Clairify(p
 // ConvertV1ImageIntegration_ClairifyToStorageImageIntegration_Clairify converts from *v1.ImageIntegration_Clairify to *storage.ImageIntegration_Clairify
 func ConvertV1ImageIntegration_ClairifyToStorageImageIntegration_Clairify(p1 *v1.ImageIntegration_Clairify) *storage.ImageIntegration_Clairify {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(storage.ImageIntegration_Clairify)
   p2.Clairify = ConvertV1ClairifyConfigToStorageClairifyConfig(p1.Clairify)
@@ -718,7 +581,7 @@ func ConvertSliceV1ImageIntegration_DockerToStorageImageIntegration_Docker(p1 []
   if p1 == nil {
     return nil
   }
-  p2 := make([]*storage.ImageIntegration_Docker, len(p1))
+  p2 := make([]*storage.ImageIntegration_Docker, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertV1ImageIntegration_DockerToStorageImageIntegration_Docker(v))
   }
@@ -728,32 +591,10 @@ func ConvertSliceV1ImageIntegration_DockerToStorageImageIntegration_Docker(p1 []
 // ConvertV1ImageIntegration_DockerToStorageImageIntegration_Docker converts from *v1.ImageIntegration_Docker to *storage.ImageIntegration_Docker
 func ConvertV1ImageIntegration_DockerToStorageImageIntegration_Docker(p1 *v1.ImageIntegration_Docker) *storage.ImageIntegration_Docker {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(storage.ImageIntegration_Docker)
   p2.Docker = ConvertV1DockerConfigToStorageDockerConfig(p1.Docker)
-  return p2
-}
-
-// ConvertSliceV1ImageIntegration_QuayToStorageImageIntegration_Quay converts a slice of *v1.ImageIntegration_Quay to a slice of *storage.ImageIntegration_Quay
-func ConvertSliceV1ImageIntegration_QuayToStorageImageIntegration_Quay(p1 []*v1.ImageIntegration_Quay) []*storage.ImageIntegration_Quay {
-  if p1 == nil {
-    return nil
-  }
-  p2 := make([]*storage.ImageIntegration_Quay, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertV1ImageIntegration_QuayToStorageImageIntegration_Quay(v))
-  }
-  return p2
-}
-
-// ConvertV1ImageIntegration_QuayToStorageImageIntegration_Quay converts from *v1.ImageIntegration_Quay to *storage.ImageIntegration_Quay
-func ConvertV1ImageIntegration_QuayToStorageImageIntegration_Quay(p1 *v1.ImageIntegration_Quay) *storage.ImageIntegration_Quay {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(storage.ImageIntegration_Quay)
-  p2.Quay = ConvertV1QuayConfigToStorageQuayConfig(p1.Quay)
   return p2
 }
 
@@ -762,7 +603,7 @@ func ConvertSliceV1ImageIntegration_EcrToStorageImageIntegration_Ecr(p1 []*v1.Im
   if p1 == nil {
     return nil
   }
-  p2 := make([]*storage.ImageIntegration_Ecr, len(p1))
+  p2 := make([]*storage.ImageIntegration_Ecr, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertV1ImageIntegration_EcrToStorageImageIntegration_Ecr(v))
   }
@@ -772,10 +613,146 @@ func ConvertSliceV1ImageIntegration_EcrToStorageImageIntegration_Ecr(p1 []*v1.Im
 // ConvertV1ImageIntegration_EcrToStorageImageIntegration_Ecr converts from *v1.ImageIntegration_Ecr to *storage.ImageIntegration_Ecr
 func ConvertV1ImageIntegration_EcrToStorageImageIntegration_Ecr(p1 *v1.ImageIntegration_Ecr) *storage.ImageIntegration_Ecr {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(storage.ImageIntegration_Ecr)
   p2.Ecr = ConvertV1ECRConfigToStorageECRConfig(p1.Ecr)
+  return p2
+}
+
+// ConvertSliceV1ImageIntegration_GoogleToStorageImageIntegration_Google converts a slice of *v1.ImageIntegration_Google to a slice of *storage.ImageIntegration_Google
+func ConvertSliceV1ImageIntegration_GoogleToStorageImageIntegration_Google(p1 []*v1.ImageIntegration_Google) []*storage.ImageIntegration_Google {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*storage.ImageIntegration_Google, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertV1ImageIntegration_GoogleToStorageImageIntegration_Google(v))
+  }
+  return p2
+}
+
+// ConvertV1ImageIntegration_GoogleToStorageImageIntegration_Google converts from *v1.ImageIntegration_Google to *storage.ImageIntegration_Google
+func ConvertV1ImageIntegration_GoogleToStorageImageIntegration_Google(p1 *v1.ImageIntegration_Google) *storage.ImageIntegration_Google {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(storage.ImageIntegration_Google)
+  p2.Google = ConvertV1GoogleConfigToStorageGoogleConfig(p1.Google)
+  return p2
+}
+
+// ConvertSliceV1ImageIntegration_IbmToStorageImageIntegration_Ibm converts a slice of *v1.ImageIntegration_Ibm to a slice of *storage.ImageIntegration_Ibm
+func ConvertSliceV1ImageIntegration_IbmToStorageImageIntegration_Ibm(p1 []*v1.ImageIntegration_Ibm) []*storage.ImageIntegration_Ibm {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*storage.ImageIntegration_Ibm, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertV1ImageIntegration_IbmToStorageImageIntegration_Ibm(v))
+  }
+  return p2
+}
+
+// ConvertV1ImageIntegration_IbmToStorageImageIntegration_Ibm converts from *v1.ImageIntegration_Ibm to *storage.ImageIntegration_Ibm
+func ConvertV1ImageIntegration_IbmToStorageImageIntegration_Ibm(p1 *v1.ImageIntegration_Ibm) *storage.ImageIntegration_Ibm {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(storage.ImageIntegration_Ibm)
+  p2.Ibm = ConvertV1IBMRegistryConfigToStorageIBMRegistryConfig(p1.Ibm)
+  return p2
+}
+
+// ConvertSliceV1ImageIntegration_QuayToStorageImageIntegration_Quay converts a slice of *v1.ImageIntegration_Quay to a slice of *storage.ImageIntegration_Quay
+func ConvertSliceV1ImageIntegration_QuayToStorageImageIntegration_Quay(p1 []*v1.ImageIntegration_Quay) []*storage.ImageIntegration_Quay {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*storage.ImageIntegration_Quay, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertV1ImageIntegration_QuayToStorageImageIntegration_Quay(v))
+  }
+  return p2
+}
+
+// ConvertV1ImageIntegration_QuayToStorageImageIntegration_Quay converts from *v1.ImageIntegration_Quay to *storage.ImageIntegration_Quay
+func ConvertV1ImageIntegration_QuayToStorageImageIntegration_Quay(p1 *v1.ImageIntegration_Quay) *storage.ImageIntegration_Quay {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(storage.ImageIntegration_Quay)
+  p2.Quay = ConvertV1QuayConfigToStorageQuayConfig(p1.Quay)
+  return p2
+}
+
+// ConvertSliceV1ImageIntegration_SourceToStorageImageIntegration_Source converts a slice of *v1.ImageIntegration_Source to a slice of *storage.ImageIntegration_Source
+func ConvertSliceV1ImageIntegration_SourceToStorageImageIntegration_Source(p1 []*v1.ImageIntegration_Source) []*storage.ImageIntegration_Source {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*storage.ImageIntegration_Source, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertV1ImageIntegration_SourceToStorageImageIntegration_Source(v))
+  }
+  return p2
+}
+
+// ConvertV1ImageIntegration_SourceToStorageImageIntegration_Source converts from *v1.ImageIntegration_Source to *storage.ImageIntegration_Source
+func ConvertV1ImageIntegration_SourceToStorageImageIntegration_Source(p1 *v1.ImageIntegration_Source) *storage.ImageIntegration_Source {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(storage.ImageIntegration_Source)
+  p2.ClusterId = p1.ClusterId
+  p2.Namespace = p1.Namespace
+  p2.ImagePullSecretName = p1.ImagePullSecretName
+  return p2
+}
+
+// ConvertSliceV1ClairConfigToStorageClairConfig converts a slice of *v1.ClairConfig to a slice of *storage.ClairConfig
+func ConvertSliceV1ClairConfigToStorageClairConfig(p1 []*v1.ClairConfig) []*storage.ClairConfig {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*storage.ClairConfig, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertV1ClairConfigToStorageClairConfig(v))
+  }
+  return p2
+}
+
+// ConvertV1ClairConfigToStorageClairConfig converts from *v1.ClairConfig to *storage.ClairConfig
+func ConvertV1ClairConfigToStorageClairConfig(p1 *v1.ClairConfig) *storage.ClairConfig {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(storage.ClairConfig)
+  p2.Endpoint = p1.Endpoint
+  p2.Insecure = p1.Insecure
+  return p2
+}
+
+// ConvertSliceV1ClairV4ConfigToStorageClairV4Config converts a slice of *v1.ClairV4Config to a slice of *storage.ClairV4Config
+func ConvertSliceV1ClairV4ConfigToStorageClairV4Config(p1 []*v1.ClairV4Config) []*storage.ClairV4Config {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*storage.ClairV4Config, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertV1ClairV4ConfigToStorageClairV4Config(v))
+  }
+  return p2
+}
+
+// ConvertV1ClairV4ConfigToStorageClairV4Config converts from *v1.ClairV4Config to *storage.ClairV4Config
+func ConvertV1ClairV4ConfigToStorageClairV4Config(p1 *v1.ClairV4Config) *storage.ClairV4Config {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(storage.ClairV4Config)
+  p2.Endpoint = p1.Endpoint
+  p2.Insecure = p1.Insecure
   return p2
 }
 
@@ -784,7 +761,7 @@ func ConvertSliceV1ClairifyConfigToStorageClairifyConfig(p1 []*v1.ClairifyConfig
   if p1 == nil {
     return nil
   }
-  p2 := make([]*storage.ClairifyConfig, len(p1))
+  p2 := make([]*storage.ClairifyConfig, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertV1ClairifyConfigToStorageClairifyConfig(v))
   }
@@ -794,7 +771,7 @@ func ConvertSliceV1ClairifyConfigToStorageClairifyConfig(p1 []*v1.ClairifyConfig
 // ConvertV1ClairifyConfigToStorageClairifyConfig converts from *v1.ClairifyConfig to *storage.ClairifyConfig
 func ConvertV1ClairifyConfigToStorageClairifyConfig(p1 *v1.ClairifyConfig) *storage.ClairifyConfig {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(storage.ClairifyConfig)
   p2.Endpoint = p1.Endpoint
@@ -808,7 +785,7 @@ func ConvertSliceV1DockerConfigToStorageDockerConfig(p1 []*v1.DockerConfig) []*s
   if p1 == nil {
     return nil
   }
-  p2 := make([]*storage.DockerConfig, len(p1))
+  p2 := make([]*storage.DockerConfig, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertV1DockerConfigToStorageDockerConfig(v))
   }
@@ -818,7 +795,7 @@ func ConvertSliceV1DockerConfigToStorageDockerConfig(p1 []*v1.DockerConfig) []*s
 // ConvertV1DockerConfigToStorageDockerConfig converts from *v1.DockerConfig to *storage.DockerConfig
 func ConvertV1DockerConfigToStorageDockerConfig(p1 *v1.DockerConfig) *storage.DockerConfig {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(storage.DockerConfig)
   p2.Endpoint = p1.Endpoint
@@ -833,7 +810,7 @@ func ConvertSliceV1ECRConfigToStorageECRConfig(p1 []*v1.ECRConfig) []*storage.EC
   if p1 == nil {
     return nil
   }
-  p2 := make([]*storage.ECRConfig, len(p1))
+  p2 := make([]*storage.ECRConfig, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertV1ECRConfigToStorageECRConfig(v))
   }
@@ -843,7 +820,7 @@ func ConvertSliceV1ECRConfigToStorageECRConfig(p1 []*v1.ECRConfig) []*storage.EC
 // ConvertV1ECRConfigToStorageECRConfig converts from *v1.ECRConfig to *storage.ECRConfig
 func ConvertV1ECRConfigToStorageECRConfig(p1 *v1.ECRConfig) *storage.ECRConfig {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(storage.ECRConfig)
   p2.RegistryId = p1.RegistryId
@@ -859,36 +836,12 @@ func ConvertV1ECRConfigToStorageECRConfig(p1 *v1.ECRConfig) *storage.ECRConfig {
   return p2
 }
 
-// ConvertSliceV1ECRConfig_AuthorizationDataToStorageECRConfig_AuthorizationData converts a slice of *v1.ECRConfig_AuthorizationData to a slice of *storage.ECRConfig_AuthorizationData
-func ConvertSliceV1ECRConfig_AuthorizationDataToStorageECRConfig_AuthorizationData(p1 []*v1.ECRConfig_AuthorizationData) []*storage.ECRConfig_AuthorizationData {
-  if p1 == nil {
-    return nil
-  }
-  p2 := make([]*storage.ECRConfig_AuthorizationData, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertV1ECRConfig_AuthorizationDataToStorageECRConfig_AuthorizationData(v))
-  }
-  return p2
-}
-
-// ConvertV1ECRConfig_AuthorizationDataToStorageECRConfig_AuthorizationData converts from *v1.ECRConfig_AuthorizationData to *storage.ECRConfig_AuthorizationData
-func ConvertV1ECRConfig_AuthorizationDataToStorageECRConfig_AuthorizationData(p1 *v1.ECRConfig_AuthorizationData) *storage.ECRConfig_AuthorizationData {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(storage.ECRConfig_AuthorizationData)
-  p2.Username = p1.Username
-  p2.Password = p1.Password
-  p2.ExpiresAt = p1.ExpiresAt.Clone()
-  return p2
-}
-
 // ConvertSliceV1GoogleConfigToStorageGoogleConfig converts a slice of *v1.GoogleConfig to a slice of *storage.GoogleConfig
 func ConvertSliceV1GoogleConfigToStorageGoogleConfig(p1 []*v1.GoogleConfig) []*storage.GoogleConfig {
   if p1 == nil {
     return nil
   }
-  p2 := make([]*storage.GoogleConfig, len(p1))
+  p2 := make([]*storage.GoogleConfig, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertV1GoogleConfigToStorageGoogleConfig(v))
   }
@@ -898,7 +851,7 @@ func ConvertSliceV1GoogleConfigToStorageGoogleConfig(p1 []*v1.GoogleConfig) []*s
 // ConvertV1GoogleConfigToStorageGoogleConfig converts from *v1.GoogleConfig to *storage.GoogleConfig
 func ConvertV1GoogleConfigToStorageGoogleConfig(p1 *v1.GoogleConfig) *storage.GoogleConfig {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(storage.GoogleConfig)
   p2.Endpoint = p1.Endpoint
@@ -907,12 +860,35 @@ func ConvertV1GoogleConfigToStorageGoogleConfig(p1 *v1.GoogleConfig) *storage.Go
   return p2
 }
 
+// ConvertSliceV1IBMRegistryConfigToStorageIBMRegistryConfig converts a slice of *v1.IBMRegistryConfig to a slice of *storage.IBMRegistryConfig
+func ConvertSliceV1IBMRegistryConfigToStorageIBMRegistryConfig(p1 []*v1.IBMRegistryConfig) []*storage.IBMRegistryConfig {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*storage.IBMRegistryConfig, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertV1IBMRegistryConfigToStorageIBMRegistryConfig(v))
+  }
+  return p2
+}
+
+// ConvertV1IBMRegistryConfigToStorageIBMRegistryConfig converts from *v1.IBMRegistryConfig to *storage.IBMRegistryConfig
+func ConvertV1IBMRegistryConfigToStorageIBMRegistryConfig(p1 *v1.IBMRegistryConfig) *storage.IBMRegistryConfig {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(storage.IBMRegistryConfig)
+  p2.Endpoint = p1.Endpoint
+  p2.ApiKey = p1.ApiKey
+  return p2
+}
+
 // ConvertSliceV1QuayConfigToStorageQuayConfig converts a slice of *v1.QuayConfig to a slice of *storage.QuayConfig
 func ConvertSliceV1QuayConfigToStorageQuayConfig(p1 []*v1.QuayConfig) []*storage.QuayConfig {
   if p1 == nil {
     return nil
   }
-  p2 := make([]*storage.QuayConfig, len(p1))
+  p2 := make([]*storage.QuayConfig, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertV1QuayConfigToStorageQuayConfig(v))
   }
@@ -922,7 +898,7 @@ func ConvertSliceV1QuayConfigToStorageQuayConfig(p1 []*v1.QuayConfig) []*storage
 // ConvertV1QuayConfigToStorageQuayConfig converts from *v1.QuayConfig to *storage.QuayConfig
 func ConvertV1QuayConfigToStorageQuayConfig(p1 *v1.QuayConfig) *storage.QuayConfig {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(storage.QuayConfig)
   p2.Endpoint = p1.Endpoint
@@ -932,12 +908,36 @@ func ConvertV1QuayConfigToStorageQuayConfig(p1 *v1.QuayConfig) *storage.QuayConf
   return p2
 }
 
+// ConvertSliceV1ECRConfig_AuthorizationDataToStorageECRConfig_AuthorizationData converts a slice of *v1.ECRConfig_AuthorizationData to a slice of *storage.ECRConfig_AuthorizationData
+func ConvertSliceV1ECRConfig_AuthorizationDataToStorageECRConfig_AuthorizationData(p1 []*v1.ECRConfig_AuthorizationData) []*storage.ECRConfig_AuthorizationData {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*storage.ECRConfig_AuthorizationData, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertV1ECRConfig_AuthorizationDataToStorageECRConfig_AuthorizationData(v))
+  }
+  return p2
+}
+
+// ConvertV1ECRConfig_AuthorizationDataToStorageECRConfig_AuthorizationData converts from *v1.ECRConfig_AuthorizationData to *storage.ECRConfig_AuthorizationData
+func ConvertV1ECRConfig_AuthorizationDataToStorageECRConfig_AuthorizationData(p1 *v1.ECRConfig_AuthorizationData) *storage.ECRConfig_AuthorizationData {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(storage.ECRConfig_AuthorizationData)
+  p2.Username = p1.Username
+  p2.Password = p1.Password
+  p2.ExpiresAt = p1.ExpiresAt.Clone()
+  return p2
+}
+
 // ConvertSliceV1QuayConfig_RobotAccountToStorageQuayConfig_RobotAccount converts a slice of *v1.QuayConfig_RobotAccount to a slice of *storage.QuayConfig_RobotAccount
 func ConvertSliceV1QuayConfig_RobotAccountToStorageQuayConfig_RobotAccount(p1 []*v1.QuayConfig_RobotAccount) []*storage.QuayConfig_RobotAccount {
   if p1 == nil {
     return nil
   }
-  p2 := make([]*storage.QuayConfig_RobotAccount, len(p1))
+  p2 := make([]*storage.QuayConfig_RobotAccount, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertV1QuayConfig_RobotAccountToStorageQuayConfig_RobotAccount(v))
   }
@@ -947,7 +947,7 @@ func ConvertSliceV1QuayConfig_RobotAccountToStorageQuayConfig_RobotAccount(p1 []
 // ConvertV1QuayConfig_RobotAccountToStorageQuayConfig_RobotAccount converts from *v1.QuayConfig_RobotAccount to *storage.QuayConfig_RobotAccount
 func ConvertV1QuayConfig_RobotAccountToStorageQuayConfig_RobotAccount(p1 *v1.QuayConfig_RobotAccount) *storage.QuayConfig_RobotAccount {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(storage.QuayConfig_RobotAccount)
   p2.Username = p1.Username
@@ -960,7 +960,7 @@ func ConvertSliceV1ImageIntegrationToStorageImageIntegration(p1 []*v1.ImageInteg
   if p1 == nil {
     return nil
   }
-  p2 := make([]*storage.ImageIntegration, len(p1))
+  p2 := make([]*storage.ImageIntegration, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertV1ImageIntegrationToStorageImageIntegration(v))
   }
@@ -970,7 +970,7 @@ func ConvertSliceV1ImageIntegrationToStorageImageIntegration(p1 []*v1.ImageInteg
 // ConvertV1ImageIntegrationToStorageImageIntegration converts from *v1.ImageIntegration to *storage.ImageIntegration
 func ConvertV1ImageIntegrationToStorageImageIntegration(p1 *v1.ImageIntegration) *storage.ImageIntegration {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(storage.ImageIntegration)
   p2.Id = p1.Id

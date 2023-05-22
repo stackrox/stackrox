@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/protoreflect"
@@ -41,6 +42,15 @@ type converter struct {
 	neededFunctions map[string]*function
 }
 
+func (s *converter) sortedFunctions() []string {
+	var names []string
+	for k := range s.neededFunctions {
+		names = append(names, k)
+	}
+	sort.Strings(names)
+	return names
+}
+
 // walk iterates over the obj and creates the necessary functions to properly convert
 func walk(w io.Writer, t1, t2 reflect.Type) {
 	sw := converter{
@@ -55,7 +65,8 @@ func walk(w io.Writer, t1, t2 reflect.Type) {
 	// Keep iterating until all required functions are written
 	for {
 		allWritten := true
-		for _, v := range sw.neededFunctions {
+		for _, k := range sw.sortedFunctions() {
+			v := sw.neededFunctions[k]
 			if v.written {
 				continue
 			}
@@ -92,7 +103,7 @@ func (s *converter) createSliceFunc(w io.Writer, t1, t2 reflect.Type) {
 	s.printf(w, "return nil")
 	s.unindent()
 	s.printf(w, "}")
-	s.printf(w, "p2 := make([]%s, len(p1))", t2.String())
+	s.printf(w, "p2 := make([]%s, 0, len(p1))", t2.String())
 	s.printf(w, "for _, v := range p1 {")
 	s.indent()
 	s.printf(w, "p2 = append(p2, %s(v))", singleFuncName)
@@ -111,7 +122,9 @@ func (s *converter) createFunc(w io.Writer, t1, t2 reflect.Type) {
 	s.printf(w, "func %s(p1 %s) %s {", name, src, dst)
 	s.indent()
 	s.printf(w, "if p1 == nil {")
-	s.printf(w, "	return nil")
+	s.indent()
+	s.printf(w, "return nil")
+	s.unindent()
 	s.printf(w, "}")
 	s.printf(w, "p2 := new(%s)", t2.Elem().String())
 	s.handleStruct(w, t1.Elem(), t2.Elem())

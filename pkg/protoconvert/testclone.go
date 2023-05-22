@@ -10,7 +10,7 @@ func ConvertSliceTestTestCloneSubMessageToTest2TestCloneSubMessage(p1 []*test.Te
   if p1 == nil {
     return nil
   }
-  p2 := make([]*test2.TestCloneSubMessage, len(p1))
+  p2 := make([]*test2.TestCloneSubMessage, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertTestTestCloneSubMessageToTest2TestCloneSubMessage(v))
   }
@@ -20,7 +20,7 @@ func ConvertSliceTestTestCloneSubMessageToTest2TestCloneSubMessage(p1 []*test.Te
 // ConvertTestTestCloneSubMessageToTest2TestCloneSubMessage converts from *test.TestCloneSubMessage to *test2.TestCloneSubMessage
 func ConvertTestTestCloneSubMessageToTest2TestCloneSubMessage(p1 *test.TestCloneSubMessage) *test2.TestCloneSubMessage {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(test2.TestCloneSubMessage)
   p2.Int32 = p1.Int32
@@ -33,7 +33,7 @@ func ConvertSliceTestTestClone_Int32ToTest2TestClone_Int32(p1 []*test.TestClone_
   if p1 == nil {
     return nil
   }
-  p2 := make([]*test2.TestClone_Int32, len(p1))
+  p2 := make([]*test2.TestClone_Int32, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertTestTestClone_Int32ToTest2TestClone_Int32(v))
   }
@@ -43,32 +43,10 @@ func ConvertSliceTestTestClone_Int32ToTest2TestClone_Int32(p1 []*test.TestClone_
 // ConvertTestTestClone_Int32ToTest2TestClone_Int32 converts from *test.TestClone_Int32 to *test2.TestClone_Int32
 func ConvertTestTestClone_Int32ToTest2TestClone_Int32(p1 *test.TestClone_Int32) *test2.TestClone_Int32 {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(test2.TestClone_Int32)
   p2.Int32 = p1.Int32
-  return p2
-}
-
-// ConvertSliceTestTestClone_String_ToTest2TestClone_String_ converts a slice of *test.TestClone_String_ to a slice of *test2.TestClone_String_
-func ConvertSliceTestTestClone_String_ToTest2TestClone_String_(p1 []*test.TestClone_String_) []*test2.TestClone_String_ {
-  if p1 == nil {
-    return nil
-  }
-  p2 := make([]*test2.TestClone_String_, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertTestTestClone_String_ToTest2TestClone_String_(v))
-  }
-  return p2
-}
-
-// ConvertTestTestClone_String_ToTest2TestClone_String_ converts from *test.TestClone_String_ to *test2.TestClone_String_
-func ConvertTestTestClone_String_ToTest2TestClone_String_(p1 *test.TestClone_String_) *test2.TestClone_String_ {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(test2.TestClone_String_)
-  p2.String_ = p1.String_
   return p2
 }
 
@@ -77,7 +55,7 @@ func ConvertSliceTestTestClone_MsgToTest2TestClone_Msg(p1 []*test.TestClone_Msg)
   if p1 == nil {
     return nil
   }
-  p2 := make([]*test2.TestClone_Msg, len(p1))
+  p2 := make([]*test2.TestClone_Msg, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertTestTestClone_MsgToTest2TestClone_Msg(v))
   }
@@ -87,10 +65,32 @@ func ConvertSliceTestTestClone_MsgToTest2TestClone_Msg(p1 []*test.TestClone_Msg)
 // ConvertTestTestClone_MsgToTest2TestClone_Msg converts from *test.TestClone_Msg to *test2.TestClone_Msg
 func ConvertTestTestClone_MsgToTest2TestClone_Msg(p1 *test.TestClone_Msg) *test2.TestClone_Msg {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(test2.TestClone_Msg)
   p2.Msg = ConvertTestTestCloneSubMessageToTest2TestCloneSubMessage(p1.Msg)
+  return p2
+}
+
+// ConvertSliceTestTestClone_String_ToTest2TestClone_String_ converts a slice of *test.TestClone_String_ to a slice of *test2.TestClone_String_
+func ConvertSliceTestTestClone_String_ToTest2TestClone_String_(p1 []*test.TestClone_String_) []*test2.TestClone_String_ {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*test2.TestClone_String_, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertTestTestClone_String_ToTest2TestClone_String_(v))
+  }
+  return p2
+}
+
+// ConvertTestTestClone_String_ToTest2TestClone_String_ converts from *test.TestClone_String_ to *test2.TestClone_String_
+func ConvertTestTestClone_String_ToTest2TestClone_String_(p1 *test.TestClone_String_) *test2.TestClone_String_ {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(test2.TestClone_String_)
+  p2.String_ = p1.String_
   return p2
 }
 
@@ -99,7 +99,7 @@ func ConvertSliceTestTestCloneToTest2TestClone(p1 []*test.TestClone) []*test2.Te
   if p1 == nil {
     return nil
   }
-  p2 := make([]*test2.TestClone, len(p1))
+  p2 := make([]*test2.TestClone, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertTestTestCloneToTest2TestClone(v))
   }
@@ -109,7 +109,7 @@ func ConvertSliceTestTestCloneToTest2TestClone(p1 []*test.TestClone) []*test2.Te
 // ConvertTestTestCloneToTest2TestClone converts from *test.TestClone to *test2.TestClone
 func ConvertTestTestCloneToTest2TestClone(p1 *test.TestClone) *test2.TestClone {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(test2.TestClone)
   if p1.IntSlice != nil {
@@ -186,34 +186,12 @@ func ConvertTestTestCloneToTest2TestClone(p1 *test.TestClone) *test2.TestClone {
   return p2
 }
 
-// ConvertSliceTest2TestClone_MsgToTestTestClone_Msg converts a slice of *test2.TestClone_Msg to a slice of *test.TestClone_Msg
-func ConvertSliceTest2TestClone_MsgToTestTestClone_Msg(p1 []*test2.TestClone_Msg) []*test.TestClone_Msg {
-  if p1 == nil {
-    return nil
-  }
-  p2 := make([]*test.TestClone_Msg, len(p1))
-  for _, v := range p1 {
-    p2 = append(p2, ConvertTest2TestClone_MsgToTestTestClone_Msg(v))
-  }
-  return p2
-}
-
-// ConvertTest2TestClone_MsgToTestTestClone_Msg converts from *test2.TestClone_Msg to *test.TestClone_Msg
-func ConvertTest2TestClone_MsgToTestTestClone_Msg(p1 *test2.TestClone_Msg) *test.TestClone_Msg {
-  if p1 == nil {
-  	return nil
-  }
-  p2 := new(test.TestClone_Msg)
-  p2.Msg = ConvertTest2TestCloneSubMessageToTestTestCloneSubMessage(p1.Msg)
-  return p2
-}
-
 // ConvertSliceTest2TestCloneSubMessageToTestTestCloneSubMessage converts a slice of *test2.TestCloneSubMessage to a slice of *test.TestCloneSubMessage
 func ConvertSliceTest2TestCloneSubMessageToTestTestCloneSubMessage(p1 []*test2.TestCloneSubMessage) []*test.TestCloneSubMessage {
   if p1 == nil {
     return nil
   }
-  p2 := make([]*test.TestCloneSubMessage, len(p1))
+  p2 := make([]*test.TestCloneSubMessage, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertTest2TestCloneSubMessageToTestTestCloneSubMessage(v))
   }
@@ -223,7 +201,7 @@ func ConvertSliceTest2TestCloneSubMessageToTestTestCloneSubMessage(p1 []*test2.T
 // ConvertTest2TestCloneSubMessageToTestTestCloneSubMessage converts from *test2.TestCloneSubMessage to *test.TestCloneSubMessage
 func ConvertTest2TestCloneSubMessageToTestTestCloneSubMessage(p1 *test2.TestCloneSubMessage) *test.TestCloneSubMessage {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(test.TestCloneSubMessage)
   p2.Int32 = p1.Int32
@@ -236,7 +214,7 @@ func ConvertSliceTest2TestClone_Int32ToTestTestClone_Int32(p1 []*test2.TestClone
   if p1 == nil {
     return nil
   }
-  p2 := make([]*test.TestClone_Int32, len(p1))
+  p2 := make([]*test.TestClone_Int32, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertTest2TestClone_Int32ToTestTestClone_Int32(v))
   }
@@ -246,10 +224,32 @@ func ConvertSliceTest2TestClone_Int32ToTestTestClone_Int32(p1 []*test2.TestClone
 // ConvertTest2TestClone_Int32ToTestTestClone_Int32 converts from *test2.TestClone_Int32 to *test.TestClone_Int32
 func ConvertTest2TestClone_Int32ToTestTestClone_Int32(p1 *test2.TestClone_Int32) *test.TestClone_Int32 {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(test.TestClone_Int32)
   p2.Int32 = p1.Int32
+  return p2
+}
+
+// ConvertSliceTest2TestClone_MsgToTestTestClone_Msg converts a slice of *test2.TestClone_Msg to a slice of *test.TestClone_Msg
+func ConvertSliceTest2TestClone_MsgToTestTestClone_Msg(p1 []*test2.TestClone_Msg) []*test.TestClone_Msg {
+  if p1 == nil {
+    return nil
+  }
+  p2 := make([]*test.TestClone_Msg, 0, len(p1))
+  for _, v := range p1 {
+    p2 = append(p2, ConvertTest2TestClone_MsgToTestTestClone_Msg(v))
+  }
+  return p2
+}
+
+// ConvertTest2TestClone_MsgToTestTestClone_Msg converts from *test2.TestClone_Msg to *test.TestClone_Msg
+func ConvertTest2TestClone_MsgToTestTestClone_Msg(p1 *test2.TestClone_Msg) *test.TestClone_Msg {
+  if p1 == nil {
+    return nil
+  }
+  p2 := new(test.TestClone_Msg)
+  p2.Msg = ConvertTest2TestCloneSubMessageToTestTestCloneSubMessage(p1.Msg)
   return p2
 }
 
@@ -258,7 +258,7 @@ func ConvertSliceTest2TestClone_String_ToTestTestClone_String_(p1 []*test2.TestC
   if p1 == nil {
     return nil
   }
-  p2 := make([]*test.TestClone_String_, len(p1))
+  p2 := make([]*test.TestClone_String_, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertTest2TestClone_String_ToTestTestClone_String_(v))
   }
@@ -268,7 +268,7 @@ func ConvertSliceTest2TestClone_String_ToTestTestClone_String_(p1 []*test2.TestC
 // ConvertTest2TestClone_String_ToTestTestClone_String_ converts from *test2.TestClone_String_ to *test.TestClone_String_
 func ConvertTest2TestClone_String_ToTestTestClone_String_(p1 *test2.TestClone_String_) *test.TestClone_String_ {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(test.TestClone_String_)
   p2.String_ = p1.String_
@@ -280,7 +280,7 @@ func ConvertSliceTest2TestCloneToTestTestClone(p1 []*test2.TestClone) []*test.Te
   if p1 == nil {
     return nil
   }
-  p2 := make([]*test.TestClone, len(p1))
+  p2 := make([]*test.TestClone, 0, len(p1))
   for _, v := range p1 {
     p2 = append(p2, ConvertTest2TestCloneToTestTestClone(v))
   }
@@ -290,7 +290,7 @@ func ConvertSliceTest2TestCloneToTestTestClone(p1 []*test2.TestClone) []*test.Te
 // ConvertTest2TestCloneToTestTestClone converts from *test2.TestClone to *test.TestClone
 func ConvertTest2TestCloneToTestTestClone(p1 *test2.TestClone) *test.TestClone {
   if p1 == nil {
-  	return nil
+    return nil
   }
   p2 := new(test.TestClone)
   if p1.IntSlice != nil {
