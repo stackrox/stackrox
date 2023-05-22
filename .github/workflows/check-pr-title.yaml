@@ -7,5 +7,6 @@ jobs:
   check-title:
     runs-on: ubuntu-latest
     steps:
-    - run: |
-        echo "{{ github.event.pull_request.title }}" | grep "^(((build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\([\w\-\.]+\))?(!)?)|((ROX-[0-9]+,)*ROX-[0-9]+))(: .*)$"
+    - name: Check if the PR title matches the good PR regex
+      run: |
+        echo "${{ github.event.pull_request.title }}" | grep -E '^(((build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\([\w\-\.]+\))?(!)?)|((ROX-[0-9]+,)*ROX-[0-9]+))(: .*)$'
