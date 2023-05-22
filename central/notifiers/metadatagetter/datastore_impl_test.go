@@ -181,7 +181,7 @@ func TestGetAnnotationValue(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
 			nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
-			metadataGetter := NewTestMetadataGetter(t, nsStore)
+			metadataGetter := newTestMetadataGetter(t, nsStore)
 
 			nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(c.namespace, nil).AnyTimes()
 			value := metadataGetter.GetAnnotationValue(context.Background(), c.alert, c.annotationKey, "default")
@@ -280,7 +280,7 @@ func TestGetAnnotationValueCorrectlyQueriesForNamespace(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
-	metadataGetter := NewTestMetadataGetter(t, nsStore)
+	metadataGetter := newTestMetadataGetter(t, nsStore)
 
 	alert := fixtures.GetAlert()
 	ns := namespaceWithAnnotation("somekey", "somevalue")
@@ -314,7 +314,7 @@ func TestGetAnnotationValueReturnsDefaultIfStoreReturnsError(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
-	metadataGetter := NewTestMetadataGetter(t, nsStore)
+	metadataGetter := newTestMetadataGetter(t, nsStore)
 
 	alert := fixtures.GetAlert()
 

@@ -25,8 +25,8 @@ func newMetadataGetter() *datastoreMetadataGetter {
 	}
 }
 
-// NewTestMetadataGetter returns an instance of notifiers.MetadataGetter for testing purposes
-func NewTestMetadataGetter(t *testing.T, store namespaceDataStore.DataStore) notifiers.MetadataGetter {
+// newTestMetadataGetter returns an instance of notifiers.MetadataGetter for testing purposes
+func newTestMetadataGetter(t *testing.T, store namespaceDataStore.DataStore) notifiers.MetadataGetter {
 	if t == nil {
 		return nil
 	}
