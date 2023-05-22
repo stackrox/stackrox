@@ -47,14 +47,17 @@ func doTestBackup(t *testing.T, includeCerts bool) {
 	require.NoError(t, err)
 
 	client := centralgrpc.HTTPClientForCentral(t)
+
+	// Backup could be long depend on the size of current database.
+	// Allow up to 3 minutes.
+	backupTimeout := 3 * time.Minute
+	client.Timeout = backupTimeout
 	endpoint := "/db/backup"
 	if includeCerts {
 		endpoint = "/api/extensions/backup"
 	}
 
-	// Backup could be long depend on the size of current database.
-	// Allow up to 5 minutes to backup.
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), backupTimeout)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", endpoint, nil)
