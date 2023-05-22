@@ -88,14 +88,16 @@ func (j *JUnitPrinterFactory) SupportedFormats() []string {
 //					}
 //
 // Map of GJSON expressions:
+//
 //   - specify "#" to visit each element of an array
+//
 //   - the expressions for failed test cases and error messages MUST be equal and correlated
 //
-//	expressions := map[string]{
-//						JUnitFailedTestCasesExpressionKey: "data.failedPolicies.#.name",
-//						JUnitFailedTestCaseErrMsgExpressionKey: "data.failedPolicies.#.error",
-//						JUnitTestCasesExpressionKey: "data.policies.#.name",
-//					}
+//     expressions := map[string]{
+//     JUnitFailedTestCasesExpressionKey: "data.failedPolicies.#.name",
+//     JUnitFailedTestCaseErrMsgExpressionKey: "data.failedPolicies.#.error",
+//     JUnitTestCasesExpressionKey: "data.policies.#.name",
+//     }
 //
 // This would result in the following test cases and failed test cases:
 // Amount of test cases: 3
