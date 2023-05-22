@@ -9,6 +9,7 @@ import (
 )
 
 // Manager provides a centralized location for creating and fetching network trees for clusters.
+//
 //go:generate mockgen-wrapper
 type Manager interface {
 	Initialize(entitiesByCluster map[string][]*storage.NetworkEntityInfo) error

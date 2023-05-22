@@ -16,6 +16,7 @@ import (
 )
 
 // Searcher provides search functionality on existing nodes
+//
 //go:generate mockgen-wrapper
 type Searcher interface {
 	SearchNodes(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)

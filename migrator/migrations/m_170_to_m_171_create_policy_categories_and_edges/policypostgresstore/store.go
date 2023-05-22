@@ -54,7 +54,7 @@ func New(db *pgxpool.Pool) Store {
 	}
 }
 
-//// Helper functions
+// // Helper functions
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Policy) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Policy")
 	if err != nil {
