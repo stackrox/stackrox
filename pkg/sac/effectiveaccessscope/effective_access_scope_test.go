@@ -1114,8 +1114,8 @@ func TestUnrestrictedEffectiveAccessScope(t *testing.T) {
 }
 
 // TestNewUnvalidatedRequirement covers both use cases we currently have:
-//   * label value contains a forbidden token (scope separator);
-//   * label value length exceeds 63 characters.
+//   - label value contains a forbidden token (scope separator);
+//   - label value length exceeds 63 characters.
 func TestNewUnvalidatedRequirement(t *testing.T) {
 	validKey := "stackrox.io/authz.metadata.test.valid.key"
 	operatorIn := selection.In

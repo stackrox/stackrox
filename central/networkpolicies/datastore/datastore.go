@@ -25,6 +25,7 @@ var (
 )
 
 // UndoDataStore provides storage functionality for the undo records resulting from policy application.
+//
 //go:generate mockgen-wrapper
 type UndoDataStore interface {
 	GetUndoRecord(ctx context.Context, clusterID string) (*storage.NetworkPolicyApplicationUndoRecord, bool, error)
@@ -32,6 +33,7 @@ type UndoDataStore interface {
 }
 
 // DataStore provides storage functionality for network policies.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetNetworkPolicy(ctx context.Context, id string) (*storage.NetworkPolicy, bool, error)
@@ -47,6 +49,7 @@ type DataStore interface {
 
 // UndoDeploymentDataStore provides storage functionality for the undo deployment records resulting
 // from policy application.
+//
 //go:generate mockgen-wrapper
 type UndoDeploymentDataStore interface {
 	GetUndoDeploymentRecord(ctx context.Context, deploymentID string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error)
