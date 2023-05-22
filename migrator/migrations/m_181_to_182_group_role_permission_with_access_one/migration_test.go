@@ -55,6 +55,7 @@ type testItem struct {
 	Description                   string
 	ResourceToAccessPreMigration  map[string]storage.Access
 	ResourceToAccessPostMigration map[string]storage.Access
+	Traits                        *storage.Traits
 }
 
 func GetPreMigrationPermissionSet(item *testItem) *storage.PermissionSet {
@@ -63,7 +64,7 @@ func GetPreMigrationPermissionSet(item *testItem) *storage.PermissionSet {
 		Name:             item.Name,
 		Description:      item.Description,
 		ResourceToAccess: item.ResourceToAccessPreMigration,
-		Traits:           nil,
+		Traits:           item.Traits,
 	}
 }
 
@@ -73,7 +74,7 @@ func GetPostMigrationPermissionSet(item *testItem) *storage.PermissionSet {
 		Name:             item.Name,
 		Description:      item.Description,
 		ResourceToAccess: item.ResourceToAccessPostMigration,
-		Traits:           nil,
+		Traits:           item.Traits,
 	}
 }
 
@@ -98,7 +99,7 @@ var (
 
 	testData = []*testItem{
 		{
-			Id:          "AA4618AC-EDD7-4756-828F-FA8424DE138E",
+			ID:          "AA4618AC-EDD7-4756-828F-FA8424DE138E",
 			Name:        "TestSet01",
 			Description: "PermissionSet with no resource that requires replacement",
 			ResourceToAccessPreMigration: map[string]storage.Access{
@@ -111,7 +112,7 @@ var (
 			},
 		},
 		{
-			Id:          "6C618B1C-8919-4939-8A90-082EC9A90DA4",
+			ID:          "6C618B1C-8919-4939-8A90-082EC9A90DA4",
 			Name:        "TestSet02",
 			Description: "PermissionSet with a replaced resource for which the replacement resource is not yet set",
 			ResourceToAccessPreMigration: map[string]storage.Access{
@@ -122,7 +123,7 @@ var (
 			},
 		},
 		{
-			Id:          "97A38C2D-D11D-4355-AD80-732F3661EC4B",
+			ID:          "97A38C2D-D11D-4355-AD80-732F3661EC4B",
 			Name:        "TestSet03",
 			Description: "PermissionSet with a replaced resource for which the replacement resource is set with lower access",
 			ResourceToAccessPreMigration: map[string]storage.Access{
@@ -135,7 +136,7 @@ var (
 			},
 		},
 		{
-			Id:          "7035AD8F-E811-484B-AE36-E5877325B3F0",
+			ID:          "7035AD8F-E811-484B-AE36-E5877325B3F0",
 			Name:        "TestSet04",
 			Description: "PermissionSet with a replaced resource for which the replacement resource is set with same access",
 			ResourceToAccessPreMigration: map[string]storage.Access{
@@ -147,7 +148,7 @@ var (
 			},
 		},
 		{
-			Id:          "589ADE2F-BD33-4BA7-9821-3818832C5A79",
+			ID:          "589ADE2F-BD33-4BA7-9821-3818832C5A79",
 			Name:        "TestSet05",
 			Description: "PermissionSet with a replaced resource for which the replacement resource is set with higher access",
 			ResourceToAccessPreMigration: map[string]storage.Access{
@@ -161,7 +162,7 @@ var (
 		},
 
 		{
-			Id:          "E0F50165-9914-4D0E-8C37-E8C8D482C904",
+			ID:          "E0F50165-9914-4D0E-8C37-E8C8D482C904",
 			Name:        "TestSet11",
 			Description: "PermissionSet with access defined for all existing resource types",
 			ResourceToAccessPreMigration: map[string]storage.Access{
@@ -235,7 +236,7 @@ var (
 			},
 		},
 		{
-			Id:          "E79F2114-F949-411B-9F6D-4D38C1404642",
+			ID:          "E79F2114-F949-411B-9F6D-4D38C1404642",
 			Name:        "TestSet12",
 			Description: "PermissionSet with access defined to read for all existing resource types except DebugLogs (Analyst)",
 			ResourceToAccessPreMigration: map[string]storage.Access{
@@ -305,6 +306,25 @@ var (
 				ComplianceOperator: storage.Access_READ_ACCESS,
 				InstallationInfo:   storage.Access_READ_ACCESS,
 				Version:            storage.Access_READ_ACCESS,
+			},
+		},
+		{
+			ID:          "ffffffff-ffff-fff4-f5ff-fffffffffffb",
+			Name:        "Scope Manager",
+			Description: "For users: use it to create and modify scopes for the purpose of access control or vulnerability reporting",
+			ResourceToAccessPreMigration: map[string]storage.Access{
+				Access:    storage.Access_READ_ACCESS,
+				Cluster:   storage.Access_READ_ACCESS,
+				Namespace: storage.Access_READ_ACCESS,
+				Role:      storage.Access_READ_WRITE_ACCESS,
+			},
+			ResourceToAccessPostMigration: map[string]storage.Access{
+				Access:    storage.Access_READ_ACCESS,
+				Cluster:   storage.Access_READ_ACCESS,
+				Namespace: storage.Access_READ_ACCESS,
+			},
+			Traits: &storage.Traits{
+				Origin: storage.Traits_DEFAULT,
 			},
 		},
 	}
