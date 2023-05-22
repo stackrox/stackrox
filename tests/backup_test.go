@@ -2,12 +2,15 @@ package tests
 
 import (
 	"archive/zip"
+	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/pkg/backup"
 	"github.com/stackrox/rox/pkg/env"
@@ -48,7 +51,15 @@ func doTestBackup(t *testing.T, includeCerts bool) {
 	if includeCerts {
 		endpoint = "/api/extensions/backup"
 	}
-	resp, err := client.Get(endpoint)
+
+	// Backup could be long depend on the size of current database.
+	// Allow up to 5 minutes to backup.
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", endpoint, nil)
+	require.NoError(t, err)
+	resp, err := client.Do(req)
 	require.NoError(t, err)
 	defer utils.IgnoreError(resp.Body.Close)
 	_, err = io.Copy(out, resp.Body)
