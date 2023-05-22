@@ -164,7 +164,7 @@ type ScannerAnalyzerScaling struct {
 }
 
 // AutoScalingPolicy is a type for values of spec.scanner.analyzer.replicas.autoScaling.
-//+kubebuilder:validation:Enum=Enabled;Disabled
+// +kubebuilder:validation:Enum=Enabled;Disabled
 type AutoScalingPolicy string
 
 const (
@@ -194,7 +194,7 @@ func (s *Monitoring) IsEnabled() bool {
 }
 
 // ExposeEndpoint is a type for monitoring sub-struct.
-//+kubebuilder:validation:Enum=Enabled;Disabled
+// +kubebuilder:validation:Enum=Enabled;Disabled
 type ExposeEndpoint string
 
 const (

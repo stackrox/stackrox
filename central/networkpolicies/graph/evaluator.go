@@ -25,6 +25,7 @@ var (
 )
 
 // Evaluator implements the interface for the network graph generator
+//
 //go:generate mockgen-wrapper
 type Evaluator interface {
 	// GetGraph returns the network policy graph. If `queryDeploymentIDs` is nil, it is assumed that all deployments are queried/relevant.

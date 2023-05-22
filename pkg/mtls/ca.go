@@ -13,6 +13,7 @@ import (
 )
 
 // CA represents a StackRox service certificate authority.
+//
 //go:generate mockgen-wrapper
 type CA interface {
 	// CheckProperties checks that the underlying CA certificate is indeed one
