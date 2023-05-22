@@ -822,7 +822,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         expect:
         "actual policies should exist in generated response depending on delete mode"
-        def modification = NetworkPolicyService.generateNetworkPolicies(deleteMode, "Namespace:r/qa.*")
+        def modification = NetworkPolicyService.generateNetworkPolicies(deleteMode, 'Namespace:r/^qa2?$')
         assert !(NetworkPolicyService.applyGeneratedNetworkPolicy(modification) instanceof StatusRuntimeException)
         def appliedNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
         log.info "${appliedNetworkPolicies}"
