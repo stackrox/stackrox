@@ -33,10 +33,11 @@ func GetMitreBundle() (*storage.MitreAttackBundle, error) {
 
 // FlattenMitreMatrices flattens multiple matrices such as container, network, etc. into one enterprise matrix.
 // For example,
-//   matrix1: tactic1: technique1, technique2
-//   matrix2: tactic1: technique2; tactic2: technique3
-//   result:
-//     tactic1: technique1, technique2; tactic2: technique3
+//
+//	matrix1: tactic1: technique1, technique2
+//	matrix2: tactic1: technique2; tactic2: technique3
+//	result:
+//	  tactic1: technique1, technique2; tactic2: technique3
 func FlattenMitreMatrices(matrices ...*storage.MitreAttackMatrix) []*storage.MitreAttackVector {
 	tactics := make(map[string]*storage.MitreTactic)
 	techniques := make(map[string]*storage.MitreTechnique)
