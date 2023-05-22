@@ -42,7 +42,7 @@ func BenchmarkExpirableLRU_Rand_NoExpire(b *testing.B) {
 			}
 		}
 	}
-	b.Logf("hit: %d miss: %d ratio: %f", hit, miss, float64(hit)/float64(miss))
+	b.Logf("hit: %d miss: %d ratio: %f", hit, miss, float64(hit)/float64(hit+miss))
 }
 
 func BenchmarkExpirableLRU_Freq_NoExpire(b *testing.B) {

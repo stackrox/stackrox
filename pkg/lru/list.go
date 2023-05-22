@@ -99,7 +99,7 @@ func (l *lruList[K, V]) insertValue(k K, v V, expiresAt time.Time, at *entry[K, 
 	return l.insert(&entry[K, V]{value: v, key: k, expiresAt: expiresAt}, at)
 }
 
-// remove removes e from its list, decrements l.len
+// remove removes e from its list, decrements l.len.
 func (l *lruList[K, V]) remove(e *entry[K, V]) V {
 	e.prev.next = e.next
 	e.next.prev = e.prev
