@@ -6,7 +6,6 @@ import (
 )
 
 // Set provides an interface for reading the active set of image integrations.
-//
 //go:generate mockgen-wrapper
 type Set interface {
 	GetAll() []types.ImageRegistry

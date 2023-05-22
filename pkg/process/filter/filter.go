@@ -36,7 +36,6 @@ var (
 )
 
 // Filter takes in a process indicator via add and determines if should be filtered or not
-//
 //go:generate mockgen-wrapper
 type Filter interface {
 	Add(indicator *storage.ProcessIndicator) bool

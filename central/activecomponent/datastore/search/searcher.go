@@ -15,7 +15,6 @@ import (
 )
 
 // Searcher provides search functionality on active components
-//
 //go:generate mockgen-wrapper
 type Searcher interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)

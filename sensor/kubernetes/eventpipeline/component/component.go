@@ -10,7 +10,6 @@ type PipelineComponent interface {
 }
 
 // OutputQueue component that redirects Resource Events and Alerts to the output channel
-//
 //go:generate mockgen-wrapper
 type OutputQueue interface {
 	PipelineComponent

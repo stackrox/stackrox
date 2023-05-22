@@ -7,7 +7,6 @@ import (
 )
 
 // PermissionSetStore provides storage functionality for permission sets.
-//
 //go:generate mockgen-wrapper
 type PermissionSetStore interface {
 	Get(ctx context.Context, id string) (*storage.PermissionSet, bool, error)
@@ -18,7 +17,6 @@ type PermissionSetStore interface {
 }
 
 // SimpleAccessScopeStore provides storage functionality for simple access scopes.
-//
 //go:generate mockgen-wrapper
 type SimpleAccessScopeStore interface {
 	Get(ctx context.Context, id string) (*storage.SimpleAccessScope, bool, error)
@@ -29,7 +27,6 @@ type SimpleAccessScopeStore interface {
 }
 
 // RoleStore provides storage functionality for roles.
-//
 //go:generate mockgen-wrapper
 type RoleStore interface {
 	Get(ctx context.Context, id string) (*storage.Role, bool, error)

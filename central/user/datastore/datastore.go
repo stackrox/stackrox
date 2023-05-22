@@ -8,7 +8,6 @@ import (
 )
 
 // DataStore is the datastore for users.
-//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetUser(ctx context.Context, name string) (*storage.User, error)

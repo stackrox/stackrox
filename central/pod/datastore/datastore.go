@@ -22,7 +22,6 @@ import (
 )
 
 // DataStore is an intermediary to PodStorage.
-//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)

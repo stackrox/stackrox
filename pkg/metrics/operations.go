@@ -1,7 +1,6 @@
 package metrics
 
 // Op represents a bolt operation that we want to time.
-//
 //go:generate stringer -type=Op
 type Op int
 

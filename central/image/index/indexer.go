@@ -11,7 +11,6 @@ import (
 )
 
 // Indexer is the image indexer.
-//
 //go:generate mockgen-wrapper
 type Indexer interface {
 	AddImage(image *storage.Image) error

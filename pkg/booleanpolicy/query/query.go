@@ -8,7 +8,6 @@ import (
 )
 
 // An Operator denotes how to combine multiple values.
-//
 //go:generate stringer -type=Operator
 type Operator int
 

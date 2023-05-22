@@ -10,7 +10,6 @@ import (
 )
 
 // StreamGenerator writes a backup directly to a writer.
-//
 //go:generate mockgen-wrapper
 type StreamGenerator interface {
 	WriteTo(ctx context.Context, writer io.Writer) error

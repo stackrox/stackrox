@@ -12,7 +12,6 @@ type AcceptsKeyValue interface {
 }
 
 // WaitableQueue is a thread safe queue with an extra provided function that allows you to wait for a value to pop.
-//
 //go:generate mockgen-wrapper
 type WaitableQueue interface {
 	Push(key []byte, value proto.Message)
