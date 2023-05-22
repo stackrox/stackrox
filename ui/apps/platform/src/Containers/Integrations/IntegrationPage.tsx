@@ -25,10 +25,11 @@ import usePageState from './hooks/usePageState';
 
 export type IntegrationPageProps = {
     title: string;
+    name: string;
     children: ReactElement | ReactElement[];
 };
 
-function IntegrationPage({ title, children }: IntegrationPageProps): ReactElement {
+function IntegrationPage({ title, name, children }: IntegrationPageProps): ReactElement {
     const permissions = useIntegrationPermissions();
     const {
         pageState,
@@ -55,9 +56,7 @@ function IntegrationPage({ title, children }: IntegrationPageProps): ReactElemen
             <PageSection variant="light">
                 <Flex>
                     <FlexItem>
-                        <Title headingLevel="h1">{`${
-                            pageState === 'VIEW_DETAILS' ? '' : 'Configure'
-                        } ${typeLabel} Integration`}</Title>
+                        <Title headingLevel="h1">{name}</Title>
                     </FlexItem>
                     {pageState === 'VIEW_DETAILS' && permissions[source].write && (
                         <FlexItem align={{ default: 'alignRight' }}>
