@@ -23,47 +23,34 @@ const (
 	Access = "Access"
 )
 
-var (
-	replacements = map[string]string{
-		Role: Access,
-	}
-)
-
-func propagateAccessForPermission(permission string, accessLevel storage.Access, permissionSet map[string]storage.Access) storage.Access {
-	oldLevel, found := permissionSet[permission]
-	if !found {
-		return accessLevel
-	}
-	if accessLevel > oldLevel {
-		return oldLevel
-	}
-	return accessLevel
-}
-
 func migrate(database *types.Databases) error {
 	ctx := sac.WithAllAccess(context.Background())
 	store := permissionsetstore.New(database.PostgresDB)
 
 	migratedPermissionSets := make([]*storage.PermissionSet, 0, batchSize)
 	err := store.Walk(ctx, func(obj *storage.PermissionSet) error {
-		// Copy the permission set, removing the deprecated resource permissions, and keeping the
-		// lowest access level between that of deprecated resource and their replacement
-		// for the replacement resource.
-		newPermissionSet := obj.Clone()
-		newPermissionSet.ResourceToAccess = make(map[string]storage.Access, len(obj.GetResourceToAccess()))
-		newPermissionSetNeedsWriteToDB := false
+		needsRewrite := false
 		for resource, accessLevel := range obj.GetResourceToAccess() {
-			if replacement, found := replacements[resource]; found {
-				newPermissionSetNeedsWriteToDB = true
-				resource = replacement
+			// If Role permission found, merge with Access one (keep lowest access of the two),
+			// remove role permission and batch for DB update.
+			if resource == Role {
+				needsRewrite = true
+				accessLevelForPermissionAccess, entryFound := obj.GetResourceToAccess()[Access]
+				if !entryFound {
+					// Access not set, Role level propagated
+					accessLevelForPermissionAccess = accessLevel
+				} else if accessLevel < accessLevelForPermissionAccess {
+					// Access set with les restrictive level than Role, propagate minimum level
+					accessLevelForPermissionAccess = accessLevel
+				}
+				obj.ResourceToAccess[Access] = accessLevelForPermissionAccess
+				delete(obj.ResourceToAccess, Role)
 			}
-			newPermissionSet.ResourceToAccess[resource] =
-				propagateAccessForPermission(resource, accessLevel, newPermissionSet.GetResourceToAccess())
 		}
-		if !newPermissionSetNeedsWriteToDB {
+		if !needsRewrite {
 			return nil
 		}
-		migratedPermissionSets = append(migratedPermissionSets, newPermissionSet)
+		migratedPermissionSets = append(migratedPermissionSets, obj)
 		if len(migratedPermissionSets) >= batchSize {
 			err := store.UpsertMany(ctx, migratedPermissionSets)
 			if err != nil {
