@@ -77,6 +77,6 @@ func (cmd *analyzeNetpolCommand) printConnList(connlist string) {
 func (cmd *analyzeNetpolCommand) getDefaultFileName() string {
 	if cmd.outputFormat == "" {
 		return defaultOutputFileNamePrefix + defaultOutputFormat
-	} 
+	}
 	return defaultOutputFileNamePrefix + cmd.outputFormat
 }
