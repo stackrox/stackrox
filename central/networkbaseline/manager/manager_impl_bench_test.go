@@ -62,7 +62,6 @@ func BenchmarkInitFromStore(b *testing.B) {
 		networkPolicy := &storage.NetworkPolicy{}
 		require.NoError(b, testutils.FullInit(networkPolicy, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkPolicys = append(networkPolicys, networkPolicy)
-		networkPolicyIDs = append(networkPolicyIDs, networkPolicy.GetId())
 		require.NoError(b, npStore.UpsertNetworkPolicy(ctx, networkPolicy))
 	}
 
