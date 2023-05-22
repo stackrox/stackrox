@@ -55,9 +55,9 @@ import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/Cve
 import { Resource } from '../components/FilterResourceDropdown';
 import { VulnerabilitySeverityLabel } from '../types';
 
-const workloadCveOverviewImagePath = getOverviewCvesPath({
+const workloadCveOverviewCvePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
-    entityTab: 'Image',
+    entityTab: 'CVE',
 });
 
 export const imageCveMetadataQuery = gql`
@@ -282,7 +282,7 @@ function ImageCvePage() {
             />
             <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={workloadCveOverviewImagePath}>CVEs</BreadcrumbItemLink>
+                    <BreadcrumbItemLink to={workloadCveOverviewCvePath}>CVEs</BreadcrumbItemLink>
                     {!metadataRequest.error && (
                         <BreadcrumbItem isActive>
                             {cveName ?? (
