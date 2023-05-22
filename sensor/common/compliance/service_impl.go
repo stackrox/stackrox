@@ -96,7 +96,11 @@ func (s *serviceImpl) startSendingLoop() {
 				}
 			})
 		} else {
-			con := s.connectionManager.connectionMap[msg.Hostname]
+			con, ok := s.connectionManager.connectionMap[msg.Hostname]
+			if !ok {
+				log.Errorf("unable to find connection to compliance: %q", msg.Hostname)
+				return
+			}
 			err := con.Send(msg.Msg)
 			if err != nil {
 				log.Errorf("error sending MessageToComplianceWithAddress to node %q: %v", msg.Hostname, err)
