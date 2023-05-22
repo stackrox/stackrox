@@ -1245,7 +1245,10 @@ store_test_results() {
             -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
             -threshold 5 \
             -csv-output "${csv_output}"
-        bq load --skip_leading_rows=1 ci_metrics.stackrox_tests "${csv_output}"
+        bq load \
+            --skip_leading_rows=1 \
+            --allow_quoted_newlines \
+            ci_metrics.stackrox_tests "${csv_output}"
     } || true
     fi
     set -u
