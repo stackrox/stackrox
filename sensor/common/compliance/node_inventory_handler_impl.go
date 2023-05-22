@@ -74,9 +74,10 @@ func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
 	}
 }
 
-func (c *nodeInventoryHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
-	// This component doesn't actually process or handle any messages sent from Central to Sensor (yet).
-	// It uses the sensor component so that the lifecycle (start, stop) can be handled when Sensor starts up.
+func (c *nodeInventoryHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+	if msg.GetNodeInventoryAck() != nil {
+		return errors.New("this is not a nInvACK")
+	}
 	return nil
 }
 
