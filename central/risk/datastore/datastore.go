@@ -22,6 +22,7 @@ import (
 )
 
 // DataStore is an intermediary to RiskStorage.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
