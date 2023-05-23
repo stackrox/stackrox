@@ -388,7 +388,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	defer s.internalScanSemaphore.Release(1)
 
 	if request.GetRequestId() != "" {
-		log.Debugf("Received enrich request for id %q: %q", request.GetRequestId(), request)
+		log.Debugf("Received enrich request for id %q: %q", request.GetRequestId(), request.GetImageName().GetFullName())
 	}
 
 	var hasErrors bool
@@ -560,7 +560,8 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 
 	img := types.ToImage(containerImage)
 
-	enrichmentResult, err := s.enricher.EnrichImage(ctx, enricher.EnrichmentContext{FetchOpt: enricher.IgnoreExistingImages}, img)
+	enrichCtx := enricher.EnrichmentContext{FetchOpt: enricher.IgnoreExistingImages, AdHoc: true}
+	enrichmentResult, err := s.enricher.EnrichImage(ctx, enrichCtx, img)
 	if err != nil {
 		return &v1.WatchImageResponse{
 			ErrorMessage: fmt.Sprintf("failed to scan image: %v", err),

@@ -3,6 +3,7 @@ package delegatedregistry
 import (
 	"context"
 	"errors"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -19,6 +20,8 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+
+	scanTimeout = 6 * time.Minute
 )
 
 // Handler is responsible for processing delegated
@@ -64,7 +67,7 @@ func (d *delegatedRegistryImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	case msg.GetUpdatedDelegatedRegistryConfig() != nil:
 		return d.processUpdatedDelegatedRegistryConfig(msg.GetUpdatedDelegatedRegistryConfig())
 	case msg.GetScanImage() != nil:
-		// TODO: Change scan image so that it doesn't hold up processing other receivers, consider spawning a go routine like in
+		// TODO: Change scan image so that it doesn't hold up processing other receivers, consider spawning a go routine
 		return d.processScanImage(msg.GetScanImage())
 	}
 
@@ -100,7 +103,7 @@ func (d *delegatedRegistryImpl) processScanImage(scanReq *central.ScanImage) err
 		return errors.New("could not process scan image request, stop requested")
 	default:
 		log.Debugf("Received scan request: %q", scanReq)
-		// TODO: set context with appropriate timeout
+
 		// TODO: perhaps spawn a go-routine so that do not hold up sensor processing other msgs
 		ci, err := utils.GenerateImageFromString(scanReq.GetImageName())
 		if err != nil {
@@ -109,8 +112,11 @@ func (d *delegatedRegistryImpl) processScanImage(scanReq *central.ScanImage) err
 
 		log.Debugf("Created container image %q from %q", ci, scanReq.GetImageName())
 
+		ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
+		defer cancel()
+
 		// TODO: create another method or change this method so that does not 'include' namespace
-		_, err = d.localScan.EnrichLocalImageInNamespace(context.Background(), d.imageSvc, ci, "", scanReq.GetRequestId())
+		_, err = d.localScan.EnrichLocalImageInNamespace(ctx, d.imageSvc, ci, "", scanReq.GetRequestId())
 		if err != nil {
 			// TODO: send response to central indicating that a failure occurred, but only want to do this for those immediate errors
 		}

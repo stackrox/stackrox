@@ -129,24 +129,50 @@ func (e *enricherImpl) EnrichWithSignatureVerificationData(ctx context.Context, 
 	}, err
 }
 
-// EnrichImage enriches an image with the integration set present.
-func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
-	errorList := errorhelpers.NewErrorList("image enrichment")
+func (e *enricherImpl) delegateEnrich(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (bool, error) {
+	if !enrichContext.AdHoc {
+		// If this is not an ad-hoc request do not be attempt to delegate to a secured cluster
+		return false, nil
+	}
 
-	if enrichContext.AdHoc && e.scanDelegator != nil {
-		shouldDelegate, err := e.scanDelegator.DelegateEnrichImage(ctx, image)
-		if shouldDelegate {
-			if err != nil {
-				return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, err
-			}
-			return EnrichmentResult{ImageUpdated: true, ScanResult: ScanSucceeded}, nil
+	clusterID, err := e.scanDelegator.GetDelegateClusterID(ctx, image)
+	if err != nil {
+		if errors.Is(err, delegatedregistryconfig.ErrInvalidCluster) {
+			return true, err
 		}
+		// On any other error we assume should not delegate
+		return false, err
+	}
 
-		if err != nil {
-			log.Warnf("Error occurred determining if enrichment should be delegated: %v", err)
+	if clusterID == "" {
+		// if no cluster id, then this should not delegate
+		return false, nil
+	}
+
+	if enrichContext.FetchOpt != ForceRefetch {
+		// If not forcing a refetch attempt to enrich image central's cache / db
+		// (should not interact with the registry)
+		if e.enrichWithMetadataFromCache(image) && e.updateImageFromDatabase(ctx, image, enrichContext.FetchOpt) {
+			return true, nil
 		}
 	}
 
+	// Send the image to the secured cluster for enrichment
+	err = e.scanDelegator.DelegateEnrichImage(ctx, image, clusterID)
+	return true, err
+}
+
+// EnrichImage enriches an image with the integration set present.
+func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
+	if shouldDelegate, err := e.delegateEnrich(ctx, enrichContext, image); shouldDelegate {
+		// This enrichment should have been delegated, do not process further
+		if err != nil {
+			return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, err
+		}
+		return EnrichmentResult{ImageUpdated: true, ScanResult: ScanSucceeded}, nil
+	}
+
+	errorList := errorhelpers.NewErrorList("image enrichment")
 	imageNoteSet := make(map[storage.Image_Note]struct{}, len(image.Notes))
 	for _, note := range image.Notes {
 		imageNoteSet[note] = struct{}{}
@@ -248,6 +274,16 @@ func (e *enricherImpl) updateImageFromDatabase(ctx context.Context, img *storage
 	return usesExistingScan
 }
 
+func (e *enricherImpl) enrichWithMetadataFromCache(image *storage.Image) bool {
+	if metadataValue := e.metadataCache.Get(getRef(image)); metadataValue != nil {
+		e.metrics.IncrementMetadataCacheHit()
+		image.Metadata = metadataValue.(*storage.ImageMetadata).Clone()
+		return true
+	}
+	e.metrics.IncrementMetadataCacheMiss()
+	return false
+}
+
 func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext EnrichmentContext, image *storage.Image) (bool, error) {
 	// Attempt to short-circuit before checking registries.
 	metadataOutOfDate := metadataIsOutOfDate(image.GetMetadata())
@@ -257,12 +293,9 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 
 	if enrichmentContext.FetchOpt != ForceRefetch {
 		// The metadata in the cache is always up-to-date with respect to the current metadataVersion
-		if metadataValue := e.metadataCache.Get(getRef(image)); metadataValue != nil {
-			e.metrics.IncrementMetadataCacheHit()
-			image.Metadata = metadataValue.(*storage.ImageMetadata).Clone()
+		if enriched := e.enrichWithMetadataFromCache(image); enriched {
 			return true, nil
 		}
-		e.metrics.IncrementMetadataCacheMiss()
 	}
 	if enrichmentContext.FetchOpt == NoExternalMetadata {
 		return false, nil

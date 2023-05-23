@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/stackrox/rox/central/delegatedregistryconfig"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -33,29 +34,36 @@ type delegatorImpl struct {
 	scanWaiterManager waiter.Manager[*storage.Image]
 }
 
-func (d *delegatorImpl) DelegateEnrichImage(ctx context.Context, image *storage.Image) (bool, error) {
+// GetDelegateClusterID returns the cluster id that should enrich this image (if any)
+//
+// If cluster id is populated and/or ErrInvalidCluster returned then enrichment of this
+// image is meant to be delegated
+//
+// Any other error indicates an issue to obtain the config
+func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, image *storage.Image) (string, error) {
 	config, err := d.getConfig(ctx)
 	if err != nil {
-		return false, err
+		return "", err
 	}
-	log.Debugf("Got delegated registry config %q", config)
 
-	should, clusterID := d.shouldDelegate(image, config)
-	if !should {
-		return false, nil
+	shouldDelegate, clusterID := d.shouldDelegate(image, config)
+	if !shouldDelegate {
+		return "", nil
 	}
-	log.Debugf("Should delegate %v to clsuter %q", should, clusterID)
 
-	// if got here enrichment should be delegated to a secured cluster
 	err = d.validateCluster(clusterID)
 	if err != nil {
-		return true, err
+		return clusterID, err
 	}
 
-	// cluster valid, create the waiter and send the scan request
+	return clusterID, nil
+}
+
+// DelegateEnrichImage sends an enrichment request to the cluster represented by cluster id
+func (d *delegatorImpl) DelegateEnrichImage(ctx context.Context, image *storage.Image, clusterID string) error {
 	w, err := d.scanWaiterManager.NewWaiter()
 	if err != nil {
-		return true, err
+		return err
 	}
 	log.Debugf("Scan waiter created with id %q", w.ID())
 
@@ -71,21 +79,20 @@ func (d *delegatorImpl) DelegateEnrichImage(ctx context.Context, image *storage.
 	err = d.connManager.SendMessage(clusterID, msg)
 	if err != nil {
 		w.Close()
-		return true, err
+		return err
 	}
 
 	log.Debugf("Successful sent scan request to cluster %q", clusterID)
 
 	img, err := w.Wait(ctx)
 	if err != nil {
-		return true, err
+		return err
 	}
 
 	log.Debugf("Scan response received for image %q", img)
-	// assign the values from the returned image to this image
 	*image = *img
 
-	return true, nil
+	return nil
 }
 
 func (d *delegatorImpl) getConfig(ctx context.Context) (*storage.DelegatedRegistryConfig, error) {
@@ -99,12 +106,11 @@ func (d *delegatorImpl) shouldDelegate(image *storage.Image, config *storage.Del
 	}
 
 	var should bool
-	clusterID := config.GetDefaultClusterId()
-
 	if config.GetEnabledFor() == storage.DelegatedRegistryConfig_ALL {
 		should = true
 	}
 
+	clusterID := config.GetDefaultClusterId()
 	imageFullName := urlfmt.TrimHTTPPrefixes(image.GetName().GetFullName())
 	for _, reg := range config.GetRegistries() {
 		regPath := urlfmt.TrimHTTPPrefixes(reg.GetRegistryPath())
@@ -121,11 +127,10 @@ func (d *delegatorImpl) shouldDelegate(image *storage.Image, config *storage.Del
 
 func (d *delegatorImpl) validateCluster(clusterID string) error {
 	if clusterID == "" {
-		return fmt.Errorf("no ad-hoc cluster specified in delegation config")
+		return fmt.Errorf("%w: no ad-hoc cluster specified in delegation config", delegatedregistryconfig.ErrInvalidCluster)
 	}
 
 	conn := d.connManager.GetConnection(clusterID)
-
 	if conn == nil {
 		return fmt.Errorf("no connection to %q", clusterID)
 	}
