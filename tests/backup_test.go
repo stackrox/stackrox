@@ -2,12 +2,15 @@ package tests
 
 import (
 	"archive/zip"
+	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/pkg/backup"
 	"github.com/stackrox/rox/pkg/env"
@@ -44,11 +47,22 @@ func doTestBackup(t *testing.T, includeCerts bool) {
 	require.NoError(t, err)
 
 	client := centralgrpc.HTTPClientForCentral(t)
+
+	// Backup could be long depend on the size of current database.
+	// Allow up to 3 minutes.
+	backupTimeout := 3 * time.Minute
+	client.Timeout = backupTimeout
 	endpoint := "/db/backup"
 	if includeCerts {
 		endpoint = "/api/extensions/backup"
 	}
-	resp, err := client.Get(endpoint)
+
+	ctx, cancel := context.WithTimeout(context.Background(), backupTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", endpoint, nil)
+	require.NoError(t, err)
+	resp, err := client.Do(req)
 	require.NoError(t, err)
 	defer utils.IgnoreError(resp.Body.Close)
 	_, err = io.Copy(out, resp.Body)
