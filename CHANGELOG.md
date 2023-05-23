@@ -8,7 +8,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [NEXT RELEASE]
 
 ### Added Features
-- A default role `Vulnerability Manager` has been added that provides sufficient privileges to analyze and manage system vulnerabilities.
+- Two new default permission sets `Vulnerability Management Consumer` and `Vulnerability Management Admin` have been added for vulnerability management.
+  - `Vulnerability Management Consumer` provides sufficient privileges to analyze system vulnerabilities.
+  - `Vulnerability Management Admin` provides sufficient privileges to analyze and manage system vulnerabilities.
 - A default role `Network Graph Viewer` has been added that provides sufficient privileges to display network graphs.
 - A new command `roxctl central login` has been added that allows to use a user's token within roxctl instead of an API token or admin password.
 - ROX-15447: A new `DelegatedRegistryConfig` API at `/v1/delegatedregistryconfig` has been added that provides dynamic configuration for local registry scanning (replaces `ROX_FORCE_LOCAL_IMAGE_SCANNING`).
