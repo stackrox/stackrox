@@ -34,8 +34,6 @@ ci_exit_trap() {
     info "Executing a general purpose exit trap for CI"
     echo "Exit code is: ${exit_code}"
 
-    (send_slack_notice_for_failures_on_merge "${exit_code}") || { echo "ERROR: Could not slack a test failure message"; }
-
     while [[ -e /tmp/hold ]]; do
         info "Holding this job for debug"
         sleep 60
