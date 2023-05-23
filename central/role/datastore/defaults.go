@@ -128,7 +128,7 @@ var defaultPermissionSets = map[string]permSetAttributes{
 	accesscontrol.VulnerabilityManagementConsumer: {
 		idSuffix:    "vulnmgmtconsumer",
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.VulnerabilityManagementConsumer],
-		description: "For users: use it to provide access to analyze system vulnerabilities",
+		description: "For users: use it to provide read-only access to analyze vulnerabilities and initiate risk acceptance process",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Node),
 			permissions.View(resources.Deployment),
@@ -142,7 +142,7 @@ var defaultPermissionSets = map[string]permSetAttributes{
 	accesscontrol.VulnerabilityManagementAdmin: {
 		idSuffix:    "vulnmgmtadmin",
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.VulnerabilityManagementAdmin],
-		description: "This provides administrative access to vulnerability management. For users: Use it to provide access to analyze and manage system vulnerabilities",
+		description: "For users: Use it to provide administrative access to analyze vulnerabilities, generate reports, and manage risk acceptance process",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Cluster),
 			permissions.View(resources.Node),
