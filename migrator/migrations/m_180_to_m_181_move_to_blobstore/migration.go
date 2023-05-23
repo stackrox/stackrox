@@ -202,7 +202,6 @@ func moveModVersion(tx *gorm.DB, modVer string) error {
 		}
 		if probeupload.IsValidProbeName(subDirEnt.Name()) {
 			// Read CRC file
-
 			modPath := filepath.Join(subDir, subDirEnt.Name())
 			crc32FilePath := filepath.Join(modPath, crc32FileName)
 			crc32Data, err := os.ReadFile(crc32FilePath)

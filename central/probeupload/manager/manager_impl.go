@@ -59,6 +59,7 @@ func (m *manager) getAllProbeBlobs() ([]string, error) {
 		return nil, err
 	}
 	var blobs []string
+	// TODO(ROX-17285): Replace this with search
 	for _, name := range names {
 		if strings.HasPrefix(name, rootBlobPathPrefix) {
 			blobs = append(blobs, name)
@@ -158,6 +159,7 @@ func (m *manager) StoreFile(ctx context.Context, file string, data io.Reader, si
 	}
 
 	// When using managed services, Postgres space is not a concern.
+	// TODO(ROX-16407): Use flag to guard space calculating
 	if !env.ManagedCentral.BooleanSetting() {
 		requiredBytes := uint64(size) + uint64(metadataSizeOverhead) + uint64(m.freeStorageThreshold)
 		if freeBytes, err := availableBytes(); err == nil && uint64(freeBytes) < requiredBytes {
