@@ -73,7 +73,7 @@ function ClusterStatusTable({
                         <TheadClustersHealth />
                         <Tbody>
                             <Tr>
-                                <Td>Clusters</Td>
+                                <Td>Clusters because any of the following</Td>
                                 <TdHealthy counts={counts} />
                                 <TdUnhealthy counts={counts} />
                                 <TdDegraded counts={counts} />
@@ -82,7 +82,7 @@ function ClusterStatusTable({
                                 <TdTotal clusters={clusters} />
                             </Tr>
                             <Tr>
-                                <Td>Clusters because of sensor</Td>
+                                <Td>Clusters because sensor status</Td>
                                 <TdHealthy counts={countsSensor} />
                                 <TdUnhealthy counts={countsSensor} />
                                 <TdDegraded counts={countsSensor} />
@@ -91,7 +91,7 @@ function ClusterStatusTable({
                                 <TdTotal clusters={clusters} />
                             </Tr>
                             <Tr>
-                                <Td>Clusters because of collector</Td>
+                                <Td>Clusters because collector status</Td>
                                 <TdHealthy counts={countsCollector} />
                                 <TdUnhealthy counts={countsCollector} />
                                 <TdDegraded counts={countsCollector} />
@@ -100,7 +100,7 @@ function ClusterStatusTable({
                                 <TdTotal clusters={clusters} />
                             </Tr>
                             <Tr>
-                                <Td>Clusters because of admission control</Td>
+                                <Td>Clusters because admission control status</Td>
                                 <TdHealthy counts={countsAdmissionControl} />
                                 <TdUnhealthy counts={countsAdmissionControl} />
                                 <TdDegraded counts={countsAdmissionControl} />
