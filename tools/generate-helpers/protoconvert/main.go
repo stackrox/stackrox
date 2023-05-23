@@ -77,11 +77,8 @@ func main() {
 
 func setupFile(w io.Writer, p1Path, p2Path string) {
 	if p1Path > p2Path {
-		tmp := p1Path
-		p1Path = p2Path
-		p2Path = tmp
+		p1Path, p2Path = p2Path, p1Path
 	}
-
 	if _, err := w.Write([]byte(fmt.Sprintf(header, p1Path, p2Path))); err != nil {
 		panic(err)
 	}
