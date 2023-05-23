@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/central/views/common"
 )
 
-type imageCVECore struct {
+type imageCVECoreResponse struct {
 	CVE                                string    `db:"cve"`
 	CVEIDs                             []string  `db:"cve_id"`
 	ImagesWithCriticalSeverity         int       `db:"critical_severity_count"`
@@ -18,19 +18,19 @@ type imageCVECore struct {
 	ImagesWithLowSeverity              int       `db:"low_severity_count"`
 	FixableImagesWithLowSeverity       int       `db:"fixable_low_severity_count"`
 	TopCVSS                            float32   `db:"cvss_max"`
-	AffectedImages                     int       `db:"image_sha_count"`
+	AffectedImageCount                 int       `db:"image_sha_count"`
 	FirstDiscoveredInSystem            time.Time `db:"cve_created_time_min"`
 }
 
-func (c *imageCVECore) GetCVE() string {
+func (c *imageCVECoreResponse) GetCVE() string {
 	return c.CVE
 }
 
-func (c *imageCVECore) GetCVEIDs() []string {
+func (c *imageCVECoreResponse) GetCVEIDs() []string {
 	return c.CVEIDs
 }
 
-func (c *imageCVECore) GetImagesBySeverity() common.ResourceCountByCVESeverity {
+func (c *imageCVECoreResponse) GetImagesBySeverity() common.ResourceCountByCVESeverity {
 	return &resourceCountByImageCVESeverity{
 		CriticalSeverityCount:         c.ImagesWithCriticalSeverity,
 		FixableCriticalSeverityCount:  c.FixableImagesWithCriticalSeverity,
@@ -43,15 +43,15 @@ func (c *imageCVECore) GetImagesBySeverity() common.ResourceCountByCVESeverity {
 	}
 }
 
-func (c *imageCVECore) GetTopCVSS() float32 {
+func (c *imageCVECoreResponse) GetTopCVSS() float32 {
 	return c.TopCVSS
 }
 
-func (c *imageCVECore) GetAffectedImages() int {
-	return c.AffectedImages
+func (c *imageCVECoreResponse) GetAffectedImageCount() int {
+	return c.AffectedImageCount
 }
 
-func (c *imageCVECore) GetFirstDiscoveredInSystem() time.Time {
+func (c *imageCVECoreResponse) GetFirstDiscoveredInSystem() time.Time {
 	return c.FirstDiscoveredInSystem
 }
 
@@ -109,4 +109,18 @@ func (r *resourceCountByImageCVESeverity) GetLowSeverityCount() common.ResourceC
 		total:   r.LowSeverityCount,
 		fixable: r.FixableLowSeverityCount,
 	}
+}
+
+type imageResponse struct {
+	ImageID         string    `db:"image_sha"`
+	ImageFullName   string    `db:"image"`
+	OperatingSystem string    `db:"image_os"`
+	ScanTime        time.Time `db:"image_scan_time"`
+}
+
+type deploymentResponse struct {
+	DeploymentID   string `db:"deployment_id"`
+	DeploymentName string `db:"deployment"`
+	Cluster        string `db:"cluster"`
+	Namespace      string `db:"namespace"`
 }
