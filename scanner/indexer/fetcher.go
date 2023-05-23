@@ -286,8 +286,8 @@ type localFetcher struct {
 // It is assumed the layer's URI is the local filesystem path to the layer.
 func (f *localFetcher) Realize(_ context.Context, ls []*claircore.Layer) error {
 	f.clean = make([]string, len(ls))
-	for _, l := range ls {
-		f.clean = append(f.clean, l.Hash.String())
+	for i, l := range ls {
+		f.clean[i] = l.Hash.String()
 		if err := l.SetLocal(l.URI); err != nil {
 			return err
 		}
