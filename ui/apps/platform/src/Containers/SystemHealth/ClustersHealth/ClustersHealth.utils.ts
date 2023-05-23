@@ -9,7 +9,7 @@ export type ClusterStatus = 'HEALTHY' | 'UNHEALTHY' | 'DEGRADED' | 'UNAVAILABLE'
 
 export type ClusterStatusCounts = Record<ClusterStatus, number>;
 
-function getCounts0(): ClusterStatusCounts {
+function getClusterStatusCountsObject(): ClusterStatusCounts {
     return {
         HEALTHY: 0,
         UNHEALTHY: 0,
@@ -23,7 +23,7 @@ export function getCertificateExpirationCounts(
     clusters: Cluster[],
     currentDatetime: Date
 ): ClusterStatusCounts {
-    const counts = getCounts0();
+    const counts = getClusterStatusCountsObject();
 
     clusters.forEach((cluster) => {
         switch (cluster.healthStatus.overallHealthStatus) {
@@ -47,7 +47,7 @@ export function getCertificateExpirationCounts(
 }
 
 export function getSensorUpgradeCounts(clusters: Cluster[]): ClusterStatusCounts {
-    const counts = getCounts0();
+    const counts = getClusterStatusCountsObject();
 
     clusters.forEach((cluster) => {
         switch (cluster.healthStatus.overallHealthStatus) {
@@ -76,7 +76,7 @@ export function getSensorUpgradeCounts(clusters: Cluster[]): ClusterStatusCounts
 }
 
 export function getClusterStatusCounts(clusters: Cluster[]): ClusterStatusCounts {
-    const counts = getCounts0();
+    const counts = getClusterStatusCountsObject();
 
     clusters.forEach((cluster) => {
         counts[cluster.healthStatus.overallHealthStatus] += 1;
@@ -94,7 +94,7 @@ export function getClusterBecauseOfStatusCounts(
     clusters: Cluster[],
     key: ClusterHealthStatusKey
 ): ClusterStatusCounts {
-    const counts = getCounts0();
+    const counts = getClusterStatusCountsObject();
 
     clusters.forEach((cluster) => {
         counts[cluster.healthStatus[key]] += 1;
