@@ -33,7 +33,7 @@ func (b *storeImpl) Get(_ context.Context, id string) (np *storage.NetworkPolicy
 }
 
 // Count is unimplemented
-func (b *storeImpl) Count(ctx context.Context) (int, error) {
+func (b *storeImpl) Count(_ context.Context) (int, error) {
 	panic("unimplemented")
 }
 
