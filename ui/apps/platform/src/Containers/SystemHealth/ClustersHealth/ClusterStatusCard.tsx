@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { Alert, Card, CardBody } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Tr } from '@patternfly/react-table';
+import { TableComposable, Tbody, Th, Tr } from '@patternfly/react-table';
 
 import { Cluster } from 'types/cluster.proto';
 
@@ -74,7 +74,7 @@ function ClusterStatusTable({
                         <TheadClustersHealth />
                         <Tbody>
                             <Tr>
-                                <Td>Clusters because any of the following</Td>
+                                <Th scope="row">Clusters: overall status</Th>
                                 <TdHealthy counts={counts} />
                                 <TdUnhealthy counts={counts} />
                                 <TdDegraded counts={counts} />
@@ -83,7 +83,7 @@ function ClusterStatusTable({
                                 <TdTotal clusters={clusters} />
                             </Tr>
                             <Tr>
-                                <Td>Clusters because sensor status</Td>
+                                <Th scope="row">Clusters: sensor status</Th>
                                 <TdHealthy counts={countsSensor} />
                                 <TdUnhealthy counts={countsSensor} />
                                 <TdDegraded counts={countsSensor} />
@@ -92,7 +92,7 @@ function ClusterStatusTable({
                                 <TdTotal clusters={clusters} />
                             </Tr>
                             <Tr>
-                                <Td>Clusters because collector status</Td>
+                                <Th scope="row">Clusters: collector status</Th>
                                 <TdHealthy counts={countsCollector} />
                                 <TdUnhealthy counts={countsCollector} />
                                 <TdDegraded counts={countsCollector} />
@@ -101,7 +101,7 @@ function ClusterStatusTable({
                                 <TdTotal clusters={clusters} />
                             </Tr>
                             <Tr>
-                                <Td>Clusters because admission control status</Td>
+                                <Th scope="row">Clusters: admission control status</Th>
                                 <TdHealthy counts={countsAdmissionControl} />
                                 <TdUnhealthy counts={countsAdmissionControl} />
                                 <TdDegraded counts={countsAdmissionControl} />
