@@ -136,7 +136,7 @@ func (resolver *imageCVECoreResolver) CVE(_ context.Context) string {
 	return resolver.data.GetCVE()
 }
 
-func (resolver *imageCVECoreResolver) Deployments(ctx context.Context, pagination inputtypes.Pagination) ([]*deploymentResolver, error) {
+func (resolver *imageCVECoreResolver) Deployments(ctx context.Context, args struct{ Pagination *inputtypes.Pagination }) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "Deployments")
 
 	if err := readDeployments(ctx); err != nil {
@@ -148,7 +148,9 @@ func (resolver *imageCVECoreResolver) Deployments(ctx context.Context, paginatio
 	if resolver.subFieldQuery != nil {
 		query = search.ConjunctionQuery(query, resolver.subFieldQuery)
 	}
-	paginated.FillPagination(query, pagination.AsV1Pagination(), maxDeployments)
+	if args.Pagination != nil {
+		paginated.FillPagination(query, args.Pagination.AsV1Pagination(), maxDeployments)
+	}
 
 	// ROX-17254: Because of the incompatibility between
 	// the data model and search framework, run the query through on CVE datastore through SQF.
@@ -181,7 +183,7 @@ func (resolver *imageCVECoreResolver) FirstDiscoveredInSystem(_ context.Context)
 	}
 }
 
-func (resolver *imageCVECoreResolver) Images(ctx context.Context, pagination inputtypes.Pagination) ([]*imageResolver, error) {
+func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ Pagination *inputtypes.Pagination }) ([]*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "Images")
 
 	if err := readImages(ctx); err != nil {
@@ -193,7 +195,9 @@ func (resolver *imageCVECoreResolver) Images(ctx context.Context, pagination inp
 	if resolver.subFieldQuery != nil {
 		query = search.ConjunctionQuery(query, resolver.subFieldQuery)
 	}
-	paginated.FillPagination(query, pagination.AsV1Pagination(), maxImages)
+	if args.Pagination != nil {
+		paginated.FillPagination(query, args.Pagination.AsV1Pagination(), maxImages)
+	}
 
 	// ROX-17254: Because of the incompatibility between
 	// the data model and search framework, run the query through on CVE datastore through SQF.
