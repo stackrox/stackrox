@@ -27,6 +27,7 @@ import {
     daysOfWeek,
     timesOfDay,
 } from './integrationUtils';
+import { getOriginLabel } from '../../AccessControl/traits';
 
 const { getCategoriesText: getCategoriesTextForClairifyScanner } =
     categoriesUtilsForClairifyScanner;
@@ -73,6 +74,13 @@ type IntegrationTableColumnDescriptorMap = {
         SignatureIntegrationType,
         IntegrationTableColumnDescriptor<SignatureIntegration>[]
     >;
+};
+
+const originColumnDescriptor = {
+    accessor: (integration) => {
+        return getOriginLabel(integration.traits);
+    },
+    Header: 'Origin',
 };
 
 const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
@@ -123,6 +131,7 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         ],
         splunk: [
             { accessor: 'name', Header: 'Name' },
+            originColumnDescriptor,
             {
                 accessor: 'splunk.httpEndpoint',
                 Header: 'URL',
@@ -132,6 +141,7 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         pagerduty: [{ accessor: 'name', Header: 'Name' }],
         generic: [
             { accessor: 'name', Header: 'Name' },
+            originColumnDescriptor,
             { accessor: 'generic.endpoint', Header: 'Endpoint' },
         ],
         sumologic: [

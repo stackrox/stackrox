@@ -23,6 +23,7 @@ import usePageState from '../hooks/usePageState';
 import { Integration, getIsAPIToken, getIsClusterInitBundle } from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
 import DownloadCAConfigBundle from './DownloadCAConfigBundle';
+import { isUserResource } from '../../AccessControl/traits';
 
 function getNewButtonText(type) {
     if (type === 'apitoken') {
@@ -222,7 +223,9 @@ function IntegrationsTable({
                                         <Td
                                             actions={{
                                                 items: actionItems,
-                                                disable: !permissions[source].write,
+                                                disable:
+                                                    !permissions[source].write ||
+                                                    !isUserResource(integration.traits),
                                             }}
                                             className="pf-u-text-align-right"
                                         />

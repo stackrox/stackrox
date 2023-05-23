@@ -1,14 +1,14 @@
 import React, { ReactElement } from 'react';
 import {
+    Breadcrumb,
+    BreadcrumbItem,
     Button,
     ButtonVariant,
+    Divider,
     Flex,
     FlexItem,
     PageSection,
     Title,
-    Breadcrumb,
-    BreadcrumbItem,
-    Divider,
     Tooltip,
 } from '@patternfly/react-core';
 
@@ -22,14 +22,18 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useIntegrationPermissions from './hooks/useIntegrationPermissions';
 import usePageState from './hooks/usePageState';
+import { Traits } from '../../types/traits.proto';
+import { TraitsOriginLabel } from '../AccessControl/TraitsOriginLabel';
+import { isUserResource } from '../AccessControl/traits';
 
 export type IntegrationPageProps = {
     title: string;
     name: string;
+    traits?: Traits;
     children: ReactElement | ReactElement[];
 };
 
-function IntegrationPage({ title, name, children }: IntegrationPageProps): ReactElement {
+function IntegrationPage({ title, name, traits, children }: IntegrationPageProps): ReactElement {
     const permissions = useIntegrationPermissions();
     const {
         pageState,
@@ -58,30 +62,37 @@ function IntegrationPage({ title, name, children }: IntegrationPageProps): React
                     <FlexItem>
                         <Title headingLevel="h1">{name}</Title>
                     </FlexItem>
-                    {pageState === 'VIEW_DETAILS' && permissions[source].write && (
-                        <FlexItem align={{ default: 'alignRight' }}>
-                            {editDisabledMessage ? (
-                                <Tooltip content={editDisabledMessage}>
+                    {pageState !== 'CREATE' &&
+                        pageState !== 'LIST' &&
+                        (type === 'generic' || type === 'splunk') && (
+                            <TraitsOriginLabel traits={traits} />
+                        )}
+                    {pageState === 'VIEW_DETAILS' &&
+                        permissions[source].write &&
+                        isUserResource(traits) && (
+                            <FlexItem align={{ default: 'alignRight' }}>
+                                {editDisabledMessage ? (
+                                    <Tooltip content={editDisabledMessage}>
+                                        <Button
+                                            variant={ButtonVariant.secondary}
+                                            component={LinkShim}
+                                            href={integrationEditPath}
+                                            isAriaDisabled={!!editDisabledMessage}
+                                        >
+                                            Edit
+                                        </Button>
+                                    </Tooltip>
+                                ) : (
                                     <Button
                                         variant={ButtonVariant.secondary}
                                         component={LinkShim}
                                         href={integrationEditPath}
-                                        isAriaDisabled={!!editDisabledMessage}
                                     >
                                         Edit
                                     </Button>
-                                </Tooltip>
-                            ) : (
-                                <Button
-                                    variant={ButtonVariant.secondary}
-                                    component={LinkShim}
-                                    href={integrationEditPath}
-                                >
-                                    Edit
-                                </Button>
-                            )}
-                        </FlexItem>
-                    )}
+                                )}
+                            </FlexItem>
+                        )}
                 </Flex>
             </PageSection>
             {children}

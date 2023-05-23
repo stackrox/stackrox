@@ -37,6 +37,7 @@ import ClusterInitBundleIntegrationForm from './Forms/ClusterInitBundleIntegrati
 import SignatureIntegrationForm from './Forms/SignatureIntegrationForm';
 
 import './IntegrationForm.css';
+import { isUserResource } from '../../AccessControl/traits';
 
 type IntegrationFormProps = {
     source: IntegrationSource;
@@ -104,7 +105,12 @@ function IntegrationForm({
             `There are no integration form components for source (${source}) and type (${type})`
         );
     }
-    return <Form initialValues={initialValues} isEditable={isEditable} />;
+    return (
+        <Form
+            initialValues={initialValues}
+            isEditable={isEditable && isUserResource(initialValues?.traits)}
+        />
+    );
 }
 
 export default IntegrationForm;
