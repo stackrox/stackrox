@@ -9,7 +9,7 @@ import {
     Tr,
     ExpandableRowContent,
 } from '@patternfly/react-table';
-import { Button, ButtonVariant } from '@patternfly/react-core';
+import { Button, ButtonVariant, Text } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { UseURLSortResult } from 'hooks/useURLSort';
@@ -21,6 +21,7 @@ import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import DatePhraseTd from '../components/DatePhraseTd';
 import CvssTd from '../components/CvssTd';
+import { getScoreVersionsForTopCVSS, sortCveDistroList } from '../sortUtils';
 
 export const cveListQuery = gql`
     query getImageCVEList($query: String, $pagination: Pagination) {
@@ -43,6 +44,12 @@ export const cveListQuery = gql`
             topCVSS
             affectedImageCount
             firstDiscoveredInSystem
+            distroTuples {
+                summary
+                operatingSystem
+                cvss
+                scoreVersion
+            }
         }
     }
 `;
@@ -55,7 +62,6 @@ export const unfilteredImageCountQuery = gql`
 
 type ImageCVE = {
     cve: string;
-    // summary: string;
     affectedImageCountBySeverity: {
         critical: { total: number };
         important: { total: number };
@@ -65,6 +71,12 @@ type ImageCVE = {
     topCVSS: number;
     affectedImageCount: number;
     firstDiscoveredInSystem: string | null;
+    distroTuples: {
+        summary: string;
+        operatingSystem: string;
+        cvss: number;
+        scoreVersion: string;
+    }[];
 };
 
 type CVEsTableProps = {
@@ -112,11 +124,11 @@ function CVEsTable({
                 (
                     {
                         cve,
-                        // summary,
                         affectedImageCountBySeverity,
                         topCVSS,
                         affectedImageCount,
                         firstDiscoveredInSystem,
+                        distroTuples,
                     },
                     rowIndex
                 ) => {
@@ -125,6 +137,9 @@ function CVEsTable({
                     const importantCount = affectedImageCountBySeverity.important.total;
                     const moderateCount = affectedImageCountBySeverity.moderate.total;
                     const lowCount = affectedImageCountBySeverity.low.total;
+
+                    const prioritizedDistros = sortCveDistroList(distroTuples);
+                    const scoreVersions = getScoreVersionsForTopCVSS(topCVSS, distroTuples);
 
                     return (
                         <Tbody
@@ -161,9 +176,15 @@ function CVEsTable({
                                         filteredSeverities={filteredSeverities}
                                     />
                                 </Td>
-                                {/* TODO: score version? */}
                                 <Td>
-                                    <CvssTd cvss={topCVSS} />
+                                    <CvssTd
+                                        cvss={topCVSS}
+                                        scoreVersion={
+                                            scoreVersions.length > 0
+                                                ? scoreVersions.join('/')
+                                                : undefined
+                                        }
+                                    />
                                 </Td>
                                 <Td>
                                     {/* TODO: fix upon PM feedback */}
@@ -177,15 +198,9 @@ function CVEsTable({
                                 <Td />
                                 <Td colSpan={6}>
                                     <ExpandableRowContent>
-                                        {/* TODO: add summary once it's in */}
-                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. In
-                                        a vehicula nisl. Interdum et malesuada fames ac ante ipsum
-                                        primis in faucibus. Duis mollis nisi eget augue rhoncus, a
-                                        consectetur magna tincidunt. Nam est diam, aliquet at
-                                        hendrerit at, venenatis eu est. Integer pulvinar diam ac dui
-                                        efficitur finibus. Vestibulum ante ipsum primis in faucibus
-                                        orci luctus et ultrices posuere cubilia curae; Cras eu ex
-                                        sit amet enim lacinia placerat eget vitae arcu.
+                                        {prioritizedDistros.length > 0 && (
+                                            <Text>{prioritizedDistros[0].summary}</Text>
+                                        )}
                                     </ExpandableRowContent>
                                 </Td>
                             </Tr>
