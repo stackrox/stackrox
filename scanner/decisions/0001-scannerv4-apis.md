@@ -5,7 +5,7 @@
 
 ## Context
 
-We are transitioning Stackrox Scanner to use [ClairCore](https://github.com/quay/claircore) as its underlying scanning engine. The goal is to align vulnerability scanning results between Quay/Clair and Stackrox. The transition will be gradual, starting with container image scanning. During this period, the existing Scanner (ScannerV2) and the new ClairCore-based Scanner (ScannerV4) will be simultaneously deployed.
+We are transitioning StackRox Scanner to use [ClairCore](https://github.com/quay/claircore) as its underlying scanning engine. The goal is to align vulnerability scanning results between Quay/Clair and StackRox. The transition will be gradual, starting with container image scanning. During this period, the existing Scanner (ScannerV2) and the new ClairCore-based Scanner (ScannerV4) will be simultaneously deployed.
 
 The move to ClairCore and the adoption of ScannerV4 bring the need for new API definitions. Also, ClairCore allows for Clair deployment modes that better support the secured cluster use-case (local scanning), horizontal scalability, and high-availability scenarios. The new APIs ideally should align with ClairCore's capabilities while minimizing changes in Central.
 
@@ -15,7 +15,9 @@ ScannerV4 APIs will exclusively use gRPC. ScannerV4 APIs are not backward compat
 
 ScannerV4 will offer modes of operation [akin to Clair's deployment models](https://quay.github.io/clair/howto/deployment.html). Each mode will implement different gRPC services, reflecting the underlying separation between ClairCore's [libindex](https://pkg.go.dev/github.com/quay/claircore/libindex#Libindex) and [libvuln](https://pkg.go.dev/github.com/quay/claircore/libvuln#Libvuln). They will be named "indexer" and "matcher". Both modes can be enabled concurrently.
 
-ScannerV4 will use "index reports" and "vulnerability reports" data models, similar to ClairCore's. Both types will link to a "scannable resource" (e.g., a container image) using a "hash_id" managed by the clients. It uniquely identifies the resource's manifest.
+ScannerV4 will use "index reports" and "vulnerability reports" data models, similar to ClairCore's. Both types will link to a "scannable resource" (e.g., a container image) using an ID created by Central. This is a string that uniquely identifies the resource's manifest. To avoid conflicts between different resources, and allow changes to how the IDs are generated, Central will namespace them with `/v1/<resource>/`.  Initially, `/v1/containerimage/<image-digest>` will be supported for container images.
+
+Index Reports are persisted, and their lifecycle is managed by Scanner. Central and Sensor create reports on demand. Scanner is responsible for deleting least-recently used reports.
 
 ScannerV4 will replace ScannerV2 as the container image scanner in Central. A new image integration for ScannerV4 will be created and replace ScannerV2's integration (type "clarify"), activated by the feature flag: `ROX_SCANNER_V4_ENABLED`. The "clarify" type will continue to be used for orchestrator and node scanning.
 
@@ -76,7 +78,7 @@ All APIs are idempotent, hence retriable on timeouts and temporary errors.
 
 ## Consequences
 
-Leveraging gRPC-only helps maintain service contracts and enhances performance. It also aligns with other Stackrox services. Scanner gRPC service will configured using [=stackrox/pkg/grpc=](https://github.com/stackrox/stackrox/blob/74476b76b39dfe2e9cdaeecc3e9eaf262097389f/pkg/grpc), which offers certificate management, defaul service configuration (e.g., max payload sizer, timeouts), and metrics.
+Leveraging gRPC-only helps maintain service contracts and enhances performance. It also aligns with other StackRox services. Scanner gRPC service will configured using [=stackrox/pkg/grpc=](https://github.com/stackrox/stackrox/blob/74476b76b39dfe2e9cdaeecc3e9eaf262097389f/pkg/grpc), which offers certificate management, defaul service configuration (e.g., max payload sizer, timeouts), and metrics.
 
 The new image integration for ScannerV4 ensures minimal changes are necessary for Central to switch between ScannerV2 and ScannerV4 using a feature flag.
 
