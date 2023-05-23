@@ -1190,17 +1190,6 @@ handle_nightly_binary_version_mismatch() {
     fi
 }
 
-validate_expected_go_version() {
-    info "Validating the expected go version against what was used to build roxctl"
-
-    roxctl_go_version="$(roxctl version --json | jq '.GoVersion' -r)"
-    expected_go_version="$(head -n 1 EXPECTED_GO_VERSION)"
-    if [[ "${roxctl_go_version}" != "${expected_go_version}" ]]; then
-        echo "Got unexpected go version ${roxctl_go_version} (wanted ${expected_go_version})"
-        exit 1
-    fi
-}
-
 store_qa_test_results() {
     if ! is_OPENSHIFT_CI; then
         return
