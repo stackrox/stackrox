@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.3
-	cloud.google.com/go/containeranalysis v0.9.1
+	cloud.google.com/go/containeranalysis v0.9.2
 	cloud.google.com/go/storage v1.30.1
 	github.com/BurntSushi/toml v1.2.1
 	github.com/Masterminds/semver v1.5.0
@@ -112,7 +112,7 @@ require (
 	golang.stackrox.io/grpc-http1 v0.2.6
 	google.golang.org/api v0.121.0
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
-	google.golang.org/grpc v1.54.0
+	google.golang.org/grpc v1.55.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
@@ -220,7 +220,7 @@ require (
 	github.com/go-playground/validator/v10 v10.13.0 // indirect
 	github.com/gobuffalo/flect v0.2.5 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
-	github.com/golang/glog v1.0.0 // indirect
+	github.com/golang/glog v1.1.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.2 // indirect
