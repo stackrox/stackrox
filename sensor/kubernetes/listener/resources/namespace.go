@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
-	nsStore "github.com/stackrox/rox/sensor/common/resources/namespaces"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/core/v1"
 )
@@ -16,12 +15,12 @@ type NamespaceDeletionListener interface {
 
 // namespaceDispatcher handles namespace resource events.
 type namespaceDispatcher struct {
-	nsStore           *nsStore.NamespaceStore
+	nsStore           *namespaceStore
 	deletionListeners []NamespaceDeletionListener
 }
 
 // newNamespaceDispatcher creates and returns a new namespace handler.
-func newNamespaceDispatcher(nsStore *nsStore.NamespaceStore, deletionListeners ...NamespaceDeletionListener) *namespaceDispatcher {
+func newNamespaceDispatcher(nsStore *namespaceStore, deletionListeners ...NamespaceDeletionListener) *namespaceDispatcher {
 	return &namespaceDispatcher{
 		nsStore:           nsStore,
 		deletionListeners: deletionListeners,
@@ -46,7 +45,7 @@ func (h *namespaceDispatcher) ProcessEvent(obj, _ interface{}, action central.Re
 		CreationTime: protoconv.ConvertTimeToTimestamp(ns.GetCreationTimestamp().Time),
 	}
 
-	h.nsStore.AddNamespace(roxNamespace)
+	h.nsStore.addNamespace(roxNamespace)
 
 	return component.NewEvent(&central.SensorEvent{
 		Id:     string(ns.GetUID()),

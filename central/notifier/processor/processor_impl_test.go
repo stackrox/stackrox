@@ -8,7 +8,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers/mocks"
 	notifierMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
@@ -66,8 +65,6 @@ func TestProcessor_LoopDoesNothingIfAllSucceed(t *testing.T) {
 	// Add the notifiers to the processor. (Called once on insert, and once for each alert processed)
 	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(4)
 	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto).Times(4)
-	mockAlertNotifier.EXPECT().IsSecuredClusterNotifier().Return(false).AnyTimes()
-	mockResolvableNotifier.EXPECT().IsSecuredClusterNotifier().Return(false).AnyTimes()
 
 	processor.UpdateNotifier(ctx, mockAlertNotifier)
 	processor.UpdateNotifier(ctx, mockResolvableNotifier)
@@ -126,13 +123,10 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	processor := &processorImpl{ns: ns}
 	loop := notifier.NewLoop(ns, time.Hour)
 
+	// Add the notifiers to the processor. (Called once on insert, and once for each alert processed)
 	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(4)
 	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto).Times(4)
 
-	mockAlertNotifier.EXPECT().IsSecuredClusterNotifier().Return(false).AnyTimes()
-	mockResolvableNotifier.EXPECT().IsSecuredClusterNotifier().Return(false).AnyTimes()
-
-	// Add the notifiers to the processor. (Called once on insert, and once for each alert processed)
 	processor.UpdateNotifier(ctx, mockAlertNotifier)
 	processor.UpdateNotifier(ctx, mockResolvableNotifier)
 
@@ -142,7 +136,6 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 		State:  storage.ViolationState_ACTIVE,
 		Policy: policy,
 	}
-
 	mockAlertNotifier.EXPECT().AlertNotify(gomock.Any(), activeAlert).Return(errors.New("broke"))
 	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto)
 	mockResolvableNotifier.EXPECT().AlertNotify(gomock.Any(), activeAlert).Return(errors.New("broke"))
@@ -163,7 +156,6 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	}
 	mockAlertNotifier.EXPECT().AlertNotify(gomock.Any(), attemptedAlert).Return(errors.New("broke"))
 	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto)
-
 	mockResolvableNotifier.EXPECT().AlertNotify(gomock.Any(), attemptedAlert).Return(errors.New("broke"))
 	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto)
 
@@ -191,49 +183,4 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	// Retry previous failures. (None)
 	loop.TestRetryFailures(ctx, t)
 	mockCtrl.Finish()
-}
-
-func TestProcessor_SkipNotificationsForSecuredClusterNotifiers(t *testing.T) {
-	t.Setenv(env.SecuredClusterNotifiers.EnvVar(), "true")
-	ctx := context.Background()
-	// Create mocks.
-	mockCtrl := gomock.NewController(t)
-
-	jiraAlertNotfierProto := &storage.Notifier{Id: "n1", Config: &storage.Notifier_Jira{Jira: &storage.Jira{}}}
-	mockJiraAlertNotifier := mocks.NewMockAlertNotifier(mockCtrl)
-
-	emailAlertNotfierProto := &storage.Notifier{Id: "n2", Config: &storage.Notifier_Email{Email: &storage.Email{}}}
-	mockEmailAlertNotifier := mocks.NewMockAlertNotifier(mockCtrl)
-
-	// Create our tested objects.
-	ns := notifier.NewNotifierSet(time.Hour)
-	processor := &processorImpl{ns: ns}
-
-	mockJiraAlertNotifier.EXPECT().ProtoNotifier().Return(jiraAlertNotfierProto).AnyTimes()
-	mockEmailAlertNotifier.EXPECT().ProtoNotifier().Return(emailAlertNotfierProto).AnyTimes()
-
-	mockJiraAlertNotifier.EXPECT().IsSecuredClusterNotifier().Return(true).AnyTimes()
-	mockEmailAlertNotifier.EXPECT().IsSecuredClusterNotifier().Return(false).AnyTimes()
-
-	// Add the notifiers to the processor.
-	processor.UpdateNotifier(ctx, mockJiraAlertNotifier)
-	processor.UpdateNotifier(ctx, mockEmailAlertNotifier)
-
-	policy := &storage.Policy{
-		Id:        "p1",
-		Notifiers: []string{"n1", "n2"},
-	}
-
-	// Running the loop should do anything if all of the alerts succeed.
-	activeAlert := &storage.Alert{
-		Id:     "a1",
-		State:  storage.ViolationState_ACTIVE,
-		Policy: policy,
-	}
-
-	// Since JIRA is a secured cluster notifier, notifications to it will not be processed in Central
-	mockEmailAlertNotifier.EXPECT().AlertNotify(gomock.Any(), activeAlert).Return(nil)
-
-	processor.processAlertSync(ctx, activeAlert)
-
 }

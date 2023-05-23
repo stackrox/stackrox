@@ -18,9 +18,12 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Technical Changes
 - The output of `roxctl central whoami` now includes the username as well.
-
 - Helm setting `collector.nodeInventoryResources` has been renamed to `collector.nodeScanningResources`.
 - ROX-16959: Helm setting `admissionController.replicas` has been added to configure admission controller replicas.
+- The k8s-istio.zip file inside of scanner-vuln-updates.zip (the file downloaded from https://install.stackrox.io/scanner/scanner-vuln-updates.zip for updating Scanner vulnerabilities in offline-mode)
+  is no longer needed. We will continue to populate it to support older versions of the product, but it will be ignored.
+- The time interval used to determine the frequency to scan orchestrator-level components (Kubernetes, OpenShift, Istio) is now configurable
+  via ROX_ORCHESTRATOR_VULN_SCAN_INTERVAL.
 
 ## [4.0.0]
 

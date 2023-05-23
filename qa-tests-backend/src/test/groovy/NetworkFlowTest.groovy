@@ -1,4 +1,5 @@
 import static io.restassured.RestAssured.given
+import static util.Helpers.withRetry
 
 import io.grpc.StatusRuntimeException
 import io.restassured.response.Response
@@ -8,6 +9,7 @@ import org.yaml.snakeyaml.Yaml
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraph
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkNode
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest.DeleteExistingPoliciesMode
+import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass.L4Protocol
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.Type
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
@@ -21,6 +23,7 @@ import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Service
 import services.ClusterService
+import services.DeploymentService
 import services.NetworkGraphService
 import services.NetworkPolicyService
 import util.Env
@@ -526,10 +529,29 @@ class NetworkFlowTest extends BaseSpecification {
 
         then:
         "Check for edge in network graph"
-        log.info "Checking for edge from external to ${NGINXCONNECTIONTARGET}"
-        List<Edge> edges =
-                NetworkGraphUtil.checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
-        assert edges
+        withRetry(5, 20) {
+            log.info "Checking for edge from external to ${NGINXCONNECTIONTARGET}"
+
+            // Only on OpenShift 4.12, the edge will not show from EXTERNAL_SOURCE, but instead from
+            // router-default deployment in openshift-ingress namespace.
+            List<Edge> routerDefaultEdges = null
+            if (ClusterService.isOpenShift4()) {
+                SearchServiceOuterClass.RawQuery query = SearchServiceOuterClass.RawQuery.newBuilder()
+                        .setQuery("Namespace:openshift-ingress")
+                        .build()
+                def ingressDeployments = DeploymentService.listDeploymentsSearch(query).deploymentsList
+                def defaultRouterId = ingressDeployments.find { it.getName() == "router-default" }.id
+                routerDefaultEdges = NetworkGraphUtil.checkForEdge(defaultRouterId, deploymentUid, null, 180)
+                if (routerDefaultEdges != null) {
+                    log.info("Found edge coming from OpenShift ingress router")
+                    return
+                }
+            }
+            List<Edge> edges =
+                    NetworkGraphUtil.checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
+
+            assert edges
+        }
     }
 
     // TODO(ROX-7046): Re-enable this test
@@ -819,7 +841,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         expect:
         "actual policies should exist in generated response depending on delete mode"
-        def modification = NetworkPolicyService.generateNetworkPolicies(deleteMode, "Namespace:r/qa.*")
+        def modification = NetworkPolicyService.generateNetworkPolicies(deleteMode, 'Namespace:r/^qa2?$')
         assert !(NetworkPolicyService.applyGeneratedNetworkPolicy(modification) instanceof StatusRuntimeException)
         def appliedNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
         log.info "${appliedNetworkPolicies}"

@@ -66,11 +66,11 @@ export const headingPlural = {
     nodes: 'Nodes',
 };
 
-export const headingSingularLower = {
-    clusters: 'cluster',
-    deployments: 'deployment',
-    namespaces: 'namespace',
-    nodes: 'node',
+export const headingSingular = {
+    clusters: 'Cluster',
+    deployments: 'Deployment',
+    namespaces: 'Namespace',
+    nodes: 'Node',
 };
 
 // assert
@@ -78,7 +78,7 @@ export const headingSingularLower = {
 // assert instead of interact because query might be cached.
 export function assertComplianceEntityPage(entitiesKey) {
     cy.location('pathname').should('contain', getEntityPagePath(entitiesKey)); // contain because pathname has id
-    cy.get(`h1 + div:contains("${headingSingularLower[entitiesKey]}")`);
+    cy.get(`h1 + div:contains("${headingSingular[entitiesKey]}")`);
 }
 
 // visit

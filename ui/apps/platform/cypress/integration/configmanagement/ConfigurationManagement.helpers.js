@@ -31,34 +31,34 @@ function getEntityPagePath(entitiesKey, id = '') {
     return `${basePath}/${segmentForEntity[entitiesKey]}${id && `/${id}`}`;
 }
 
-// Heading on entities page has uppercase style.
+// Heading on entities page has sentence case for entity type.
 const headingForEntities = {
-    clusters: 'clusters',
-    controls: 'controls',
-    deployments: 'deployments',
-    images: 'images',
-    namespaces: 'namespaces',
-    nodes: 'nodes',
-    policies: 'policies',
-    roles: 'roles',
-    secrets: 'secrets',
-    serviceaccounts: 'service accounts',
-    subjects: 'users and groups',
+    clusters: 'Clusters',
+    controls: 'Controls',
+    deployments: 'Deployments',
+    images: 'Images',
+    namespaces: 'Namespaces',
+    nodes: 'Nodes',
+    policies: 'Policies',
+    roles: 'Roles',
+    secrets: 'Secrets',
+    serviceaccounts: 'Service accounts',
+    subjects: 'Users and groups',
 };
 
-// Heading on entity page or side panel has uppercase style.
+// Heading on entity page or side panel has sentence case for entity type.
 const headingForEntity = {
-    clusters: 'cluster',
-    controls: 'control',
-    deployments: 'deployment',
-    images: 'image',
-    namespaces: 'namespace',
-    nodes: 'node',
-    policies: 'policy',
-    roles: 'role',
-    secrets: 'secret',
-    serviceaccounts: 'service account',
-    subjects: 'users and groups', // plural
+    clusters: 'Cluster',
+    controls: 'Control',
+    deployments: 'Deployment',
+    images: 'Image',
+    namespaces: 'Namespace',
+    nodes: 'Node',
+    policies: 'Policy',
+    roles: 'Role',
+    secrets: 'Secret',
+    serviceaccounts: 'Service account',
+    subjects: 'Users and groups', // plural
 };
 
 function tableHeaderNoun(entitiesKey, countString) {
@@ -66,7 +66,9 @@ function tableHeaderNoun(entitiesKey, countString) {
         return countString === '1' ? 'CIS Control' : 'CIS Controls';
     }
 
-    return countString === '1' ? headingForEntity[entitiesKey] : headingForEntities[entitiesKey];
+    return countString === '1'
+        ? headingForEntity[entitiesKey].toLowerCase()
+        : headingForEntities[entitiesKey].toLowerCase();
 }
 
 // Title of widget is title case but has uppercase style.
@@ -258,7 +260,7 @@ export function clickOnCountWidget(entitiesKey, type) {
 
     if (type === 'side-panel') {
         cy.get(
-            `[data-testid="side-panel"] [data-testid="breadcrumb-link-text"]:contains("${entitiesKey}")`
+            `[data-testid="side-panel"] [data-testid="breadcrumb-link-text"]:contains("${headingForEntity[entitiesKey]}")`
         );
     }
 

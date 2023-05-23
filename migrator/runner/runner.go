@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	versionStorage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
@@ -58,6 +59,14 @@ func Run(databases *types.Databases) error {
 		}
 	} else {
 		log.WriteToStderrf("DB is up to date at version %d. Nothing to do here.", dbSeqNum)
+	}
+
+	// Make sure version is up to date after migrations to ensure latest version schema is used in the event
+	// there are no migrations executed.
+	currentVersion := &versionStorage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNum())}
+	err = updateVersion(databases, currentVersion)
+	if err != nil {
+		return errors.Wrapf(err, "failed to update version after migrations %d", currentVersion.SeqNum)
 	}
 
 	return nil

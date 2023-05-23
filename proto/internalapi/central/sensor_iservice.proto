@@ -14,10 +14,8 @@ import "internalapi/central/telemetry.proto";
 import "internalapi/central/baseline_sync.proto";
 import "internalapi/central/hello.proto";
 import "internalapi/central/network_baseline_sync.proto";
-import "internalapi/central/network_policy.proto";
 import "internalapi/central/local_scanner.proto";
 import "internalapi/central/process_listening_on_ports_update.proto";
-import "internalapi/central/secured_cluster_notifier.proto";
 import "storage/cluster.proto";
 import "storage/image.proto";
 
@@ -68,10 +66,7 @@ message MsgToSensor {
         IssueLocalScannerCertsResponse  issue_local_scanner_certs_response = 17;
         storage.Image                   updated_image                      = 18;
         ReprocessDeployments            reprocess_deployments              = 19;
-        NotifierSync                    notifier_sync                      = 20;
-        TestNotifierRequest             test_notifier_request              = 21;
-        SendNetworkPolicyYamlRequest    send_network_policy_yaml           = 22;
-        DelegatedRegistryConfig         updated_delegated_registry_config  = 23;
+        DelegatedRegistryConfig         updated_delegated_registry_config  = 20;
     }
 }
 

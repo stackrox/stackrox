@@ -37,9 +37,6 @@ const (
 	// ListeningEndpointsWithProcessesCap identifies the capability for sensor to process and send information about listening endpoints and their processes, AKA processes listening on ports
 	ListeningEndpointsWithProcessesCap SensorCapability = "ListeningEndpointsWithProcesses"
 
-	// SecuredClusterNotifications identifies the capability for sensor to process and send alert notifications to notifiers
-	SecuredClusterNotifications SensorCapability = "SecuredClusterNotifications"
-
 	// DelegatedRegistryCap identifies the capability for a secured cluster to interact directly with registries (ie: for scanning images in local registries)
 	DelegatedRegistryCap SensorCapability = "DelegatedRegistryCap"
 )

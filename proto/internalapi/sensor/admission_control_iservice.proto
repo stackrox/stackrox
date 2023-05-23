@@ -3,7 +3,6 @@ syntax = "proto3";
 option go_package = "sensor";
 
 import "internalapi/sensor/admission_control.proto";
-import "internalapi/central/secured_cluster_notifier.proto";
 import "google/protobuf/empty.proto";
 
 package sensor;
@@ -14,7 +13,6 @@ message MsgToAdmissionControl {
     oneof msg {
         AdmissionControlSettings     settings_push           = 1;
         AdmCtrlUpdateResourceRequest update_resource_request = 2;
-        central.TestNotifierRequest  test_notifier_request   = 3;
     }
 }
 

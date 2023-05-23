@@ -22,6 +22,7 @@ type CentralConnectionFactory interface {
 	SetCentralConnectionWithRetries(ptr *util.LazyClientConn)
 	StopSignal() *concurrency.ErrorSignal
 	OkSignal() *concurrency.Signal
+	Reset()
 }
 
 type centralConnectionFactoryImpl struct {
@@ -56,6 +57,12 @@ func (f *centralConnectionFactoryImpl) OkSignal() *concurrency.Signal {
 // StopSignal returns a concurrency.Signal that alerts if there is an error trying to establish gRPC connection.
 func (f *centralConnectionFactoryImpl) StopSignal() *concurrency.ErrorSignal {
 	return &f.stopSignal
+}
+
+// Reset signals. This should be used when re-attempting the connection in case it was broken.
+func (f *centralConnectionFactoryImpl) Reset() {
+	f.stopSignal.Reset()
+	f.okSignal.Reset()
 }
 
 func (f *centralConnectionFactoryImpl) pollMetadata() error {

@@ -53,6 +53,7 @@ import BySeveritySummaryCard, {
 } from '../SummaryCards/BySeveritySummaryCard';
 import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
 import { Resource } from '../components/FilterResourceDropdown';
+import { VulnerabilitySeverityLabel } from '../types';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     cveStatusTab: 'Observed',
@@ -408,6 +409,9 @@ function ImageCvePage() {
                                                 deployments={deploymentData?.deployments ?? []}
                                                 getSortParams={getSortParams}
                                                 isFiltered={isFiltered}
+                                                filteredSeverities={
+                                                    searchFilter.Severity as VulnerabilitySeverityLabel[]
+                                                }
                                             />
                                         )}
                                     </div>

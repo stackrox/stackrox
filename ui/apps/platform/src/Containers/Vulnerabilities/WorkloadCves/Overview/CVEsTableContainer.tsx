@@ -9,7 +9,7 @@ import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils
 import CVEsTable, { cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
 import TableErrorComponent from '../components/TableErrorComponent';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
-import { DefaultFilters } from '../types';
+import { DefaultFilters, VulnerabilitySeverityLabel } from '../types';
 import { parseQuerySearchFilter } from '../searchUtils';
 import { defaultCVESortFields, CVEsDefaultSort } from '../sortUtils';
 import TableEntityToolbar from '../components/TableEntityToolbar';
@@ -73,6 +73,7 @@ function CVEsTableContainer({ defaultFilters, countsData }: CVEsTableContainerPr
                         unfilteredImageCount={imageCountData?.imageCount || 0}
                         getSortParams={getSortParams}
                         isFiltered={isFiltered}
+                        filteredSeverities={searchFilter.Severity as VulnerabilitySeverityLabel[]}
                     />
                 </div>
             )}
