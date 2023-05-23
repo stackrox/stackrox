@@ -5,7 +5,7 @@ import io.grpc.StatusRuntimeException
 import orchestratormanager.OrchestratorTypes
 
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
-import io.stackrox.proto.storage.ImageIntegrationOuterClass
+import io.stackrox.proto.api.v1.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.Vulnerability
 

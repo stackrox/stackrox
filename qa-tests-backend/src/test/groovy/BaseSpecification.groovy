@@ -15,7 +15,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import io.stackrox.proto.api.v1.ApiTokenService
-import io.stackrox.proto.storage.ImageIntegrationOuterClass
+import io.stackrox.proto.api.v1.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
 
 import common.Constants

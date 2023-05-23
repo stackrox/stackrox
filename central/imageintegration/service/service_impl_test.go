@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	nodeMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
+	"github.com/stackrox/rox/pkg/protoconvert"
 	"github.com/stackrox/rox/pkg/sac"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -125,41 +126,41 @@ func TestValidateIntegration(t *testing.T) {
 	s := &serviceImpl{clusterDatastore: clusterDatastore, datastore: integrationDatastore}
 
 	// Test name and categories validation
-	assert.Error(t, s.validateIntegration(testCtx, &storage.ImageIntegration{}))
+	assert.Error(t, s.validateIntegration(testCtx, &v1.ImageIntegration{}))
 
-	assert.Error(t, s.validateIntegration(testCtx, &storage.ImageIntegration{
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+	assert.Error(t, s.validateIntegration(testCtx, &v1.ImageIntegration{
+		Categories: []v1.ImageIntegrationCategory{v1.ImageIntegrationCategory_REGISTRY},
 	}))
 
 	// Test should be successful
 	integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), &v1.GetImageIntegrationsRequest{Name: "name"}).Return([]*storage.ImageIntegration{}, nil)
-	assert.NoError(t, s.validateIntegration(testCtx, &storage.ImageIntegration{
+	assert.NoError(t, s.validateIntegration(testCtx, &v1.ImageIntegration{
 		Name:       "name",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		Categories: []v1.ImageIntegrationCategory{v1.ImageIntegrationCategory_REGISTRY},
 	}))
 
 	// Test name scenarios
 
 	integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), &v1.GetImageIntegrationsRequest{Name: "name"}).Return([]*storage.ImageIntegration{{Id: "id", Name: "name"}}, nil).AnyTimes()
 	// Duplicate name with different ID should fail
-	assert.Error(t, s.validateIntegration(testCtx, &storage.ImageIntegration{
+	assert.Error(t, s.validateIntegration(testCtx, &v1.ImageIntegration{
 		Id:         "diff",
 		Name:       "name",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		Categories: []v1.ImageIntegrationCategory{v1.ImageIntegrationCategory_REGISTRY},
 	}))
 
 	// Duplicate name with same ID should succeed
-	assert.NoError(t, s.validateIntegration(testCtx, &storage.ImageIntegration{
+	assert.NoError(t, s.validateIntegration(testCtx, &v1.ImageIntegration{
 		Id:         "id",
 		Name:       "name",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		Categories: []v1.ImageIntegrationCategory{v1.ImageIntegrationCategory_REGISTRY},
 	}))
 
 	request := &v1.UpdateImageIntegrationRequest{
-		Config: &storage.ImageIntegration{
+		Config: &v1.ImageIntegration{
 			Id:                  "id",
 			Name:                "name",
-			Categories:          []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+			Categories:          []v1.ImageIntegrationCategory{v1.ImageIntegrationCategory_REGISTRY},
 			IntegrationConfig:   nil,
 			SkipTestIntegration: true,
 		},
@@ -205,7 +206,7 @@ func TestValidateIntegration(t *testing.T) {
 	dockerImageIntegrationConfigScrubbed := dockerImageIntegrationConfig.Clone()
 	dockerImageIntegrationConfigScrubbed.IntegrationConfig = &storage.ImageIntegration_Docker{Docker: dockerConfigScrubbed}
 	requestWithADockerConfig := &v1.UpdateImageIntegrationRequest{
-		Config:         dockerImageIntegrationConfigScrubbed,
+		Config:         protoconvert.ConvertStorageImageIntegrationToV1ImageIntegration(dockerImageIntegrationConfigScrubbed),
 		UpdatePassword: false,
 	}
 
@@ -216,9 +217,9 @@ func TestValidateIntegration(t *testing.T) {
 
 	// Ensure successfully pulled credentials from storedConfig
 	assert.NotEqual(t, dockerConfig, requestWithADockerConfig.GetConfig().GetDocker())
-	err = s.reconcileImageIntegrationWithExisting(requestWithADockerConfig.GetConfig(), storedConfig)
+	err = s.reconcileImageIntegrationWithExisting(requestWithADockerConfig.GetConfig(), protoconvert.ConvertStorageImageIntegrationToV1ImageIntegration(storedConfig))
 	assert.NoError(t, err)
-	assert.Equal(t, dockerConfig, requestWithADockerConfig.GetConfig().GetDocker())
+	assert.Equal(t, dockerConfig, protoconvert.ConvertV1DockerConfigToStorageDockerConfig(requestWithADockerConfig.GetConfig().GetDocker()))
 
 	// Test case: config request with a different endpoint
 	dockerConfigDiffEndpoint := dockerConfig.Clone()
@@ -227,14 +228,14 @@ func TestValidateIntegration(t *testing.T) {
 	dockerImageIntegrationConfigDiffEndpoint := dockerImageIntegrationConfig.Clone()
 	dockerImageIntegrationConfigDiffEndpoint.IntegrationConfig = &storage.ImageIntegration_Docker{Docker: dockerConfigDiffEndpoint}
 	requestWithDifferentEndpoint := &v1.UpdateImageIntegrationRequest{
-		Config:         dockerImageIntegrationConfigDiffEndpoint,
+		Config:         protoconvert.ConvertStorageImageIntegrationToV1ImageIntegration(dockerImageIntegrationConfigDiffEndpoint),
 		UpdatePassword: false,
 	}
 
 	storedConfig, exists, err = s.datastore.GetImageIntegration(testCtx, requestWithDifferentEndpoint.GetConfig().GetId())
 	assert.NoError(t, err)
 	assert.True(t, exists)
-	err = s.reconcileImageIntegrationWithExisting(requestWithDifferentEndpoint.GetConfig(), storedConfig)
+	err = s.reconcileImageIntegrationWithExisting(requestWithDifferentEndpoint.GetConfig(), protoconvert.ConvertStorageImageIntegrationToV1ImageIntegration(storedConfig))
 	assert.Error(t, err)
 	assert.EqualError(t, err, "credentials required to update field 'ImageIntegration.ImageIntegration_Docker.DockerConfig.Endpoint'")
 
@@ -244,14 +245,15 @@ func TestValidateIntegration(t *testing.T) {
 	secrets.ScrubSecretsFromStructWithReplacement(dockerConfigDiffUsername, secrets.ScrubReplacementStr)
 	dockerImageIntegrationConfigDiffUsername := dockerImageIntegrationConfig.Clone()
 	dockerImageIntegrationConfigDiffUsername.IntegrationConfig = &storage.ImageIntegration_Docker{Docker: dockerConfigDiffUsername}
+	dockerImageIntegrationConfigDiffUsernameV1 := protoconvert.ConvertStorageImageIntegrationToV1ImageIntegration(dockerImageIntegrationConfigDiffUsername)
 	requestWithDifferentUsername := &v1.UpdateImageIntegrationRequest{
-		Config:         dockerImageIntegrationConfigDiffUsername,
+		Config:         dockerImageIntegrationConfigDiffUsernameV1,
 		UpdatePassword: false,
 	}
 	storedConfig, exists, err = s.datastore.GetImageIntegration(testCtx, requestWithDifferentEndpoint.GetConfig().GetId())
 	assert.NoError(t, err)
 	assert.True(t, exists)
-	err = s.reconcileImageIntegrationWithExisting(requestWithDifferentUsername.GetConfig(), storedConfig)
+	err = s.reconcileImageIntegrationWithExisting(requestWithDifferentUsername.GetConfig(), protoconvert.ConvertStorageImageIntegrationToV1ImageIntegration(storedConfig))
 	assert.Error(t, err)
 	assert.EqualError(t, err, "credentials required to update field 'ImageIntegration.ImageIntegration_Docker.DockerConfig.Username'")
 }
@@ -283,9 +285,9 @@ func TestValidateNodeIntegration(t *testing.T) {
 
 	// Test should be successful
 	integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), &v1.GetImageIntegrationsRequest{Name: "name"}).Return([]*storage.ImageIntegration{}, nil)
-	assert.NoError(t, s.validateIntegration(testCtx, &storage.ImageIntegration{
+	assert.NoError(t, s.validateIntegration(testCtx, &v1.ImageIntegration{
 		Name:       "name",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_NODE_SCANNER},
+		Categories: []v1.ImageIntegrationCategory{v1.ImageIntegrationCategory_NODE_SCANNER},
 	}))
 
 	clairifyConfig := &storage.ClairifyConfig{
@@ -315,7 +317,7 @@ func TestValidateNodeIntegration(t *testing.T) {
 	).Return([]*storage.ImageIntegration{clairifyIntegrationConfigStored}, nil).AnyTimes()
 	scannerFactory.EXPECT().CreateScanner(clairifyIntegrationConfig).Return(newFakeImageAndNodeScanner(), nil).Times(1)
 	nodeEnricher.EXPECT().CreateNodeScanner(clairifyNodeIntegrationConfig).Return(newFakeImageAndNodeScanner(), nil).Times(1)
-	_, err := s.TestImageIntegration(testCtx, clairifyIntegrationConfig)
+	_, err := s.TestImageIntegration(testCtx, protoconvert.ConvertStorageImageIntegrationToV1ImageIntegration(clairifyIntegrationConfig))
 	assert.NoError(t, err)
 
 	// Put.
@@ -326,6 +328,6 @@ func TestValidateNodeIntegration(t *testing.T) {
 	integrationDatastore.EXPECT().UpdateImageIntegration(gomock.Any(), clairifyIntegrationConfig).Return(nil).Times(1)
 	integrationManager.EXPECT().Upsert(clairifyIntegrationConfig).Return(nil)
 	reprocessorLoop.EXPECT().ShortCircuit().Times(1)
-	_, err = s.PutImageIntegration(testCtx, clairifyIntegrationConfig)
+	_, err = s.PutImageIntegration(testCtx, protoconvert.ConvertStorageImageIntegrationToV1ImageIntegration(clairifyIntegrationConfig))
 	assert.NoError(t, err)
 }
