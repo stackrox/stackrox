@@ -1,8 +1,8 @@
 package protoconvert
 
 import (
-    "github.com/stackrox/rox/generated/storage"
-    "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // ConvertSliceStorageImageIntegrationClairToV1ImageIntegrationClair converts a slice of *storage.ImageIntegration_Clair to a slice of *v1.ImageIntegration_Clair

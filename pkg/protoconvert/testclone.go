@@ -1,8 +1,8 @@
 package protoconvert
 
 import (
-    "github.com/stackrox/rox/generated/test"
-    "github.com/stackrox/rox/generated/test2"
+	"github.com/stackrox/rox/generated/test"
+	"github.com/stackrox/rox/generated/test2"
 )
 
 // ConvertSliceTestTestCloneInt32ToTest2TestCloneInt32 converts a slice of *test.TestClone_Int32 to a slice of *test2.TestClone_Int32

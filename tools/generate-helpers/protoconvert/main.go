@@ -18,8 +18,8 @@ import (
 const header = `package protoconvert
 
 import (
-    "%s"
-    "%s"
+	"%s"
+	"%s"
 )
 
 `
