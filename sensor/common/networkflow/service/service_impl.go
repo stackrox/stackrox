@@ -177,7 +177,7 @@ func (s *serviceImpl) sendPublicIPList(stream sensor.NetworkConnectionInfoServic
 	}
 
 	controlMsg := &sensor.NetworkFlowsControlMessage{
-		PublicIpAddresses: listProto,
+		// PublicIpAddresses: listProto,
 	}
 
 	if err := stream.Send(controlMsg); err != nil {
@@ -193,7 +193,7 @@ func (s *serviceImpl) sendExternalSrcsList(stream sensor.NetworkConnectionInfoSe
 	}
 
 	controlMsg := &sensor.NetworkFlowsControlMessage{
-		IpNetworks: listProto,
+		// IpNetworks: listProto,
 	}
 
 	if err := stream.Send(controlMsg); err != nil {
