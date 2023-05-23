@@ -33,16 +33,16 @@ type Compliance struct {
 }
 
 // NewComplianceApp contsructs the Compliance app object
-func NewComplianceApp(np NodeNameProvider, scanner NodeScanner, srh SensorReplyHandler) *Compliance {
+func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner, srh SensorReplyHandler) *Compliance {
 	return &Compliance{
-		nodeNameProvider:   np,
+		nodeNameProvider:   nnp,
 		nodeScanner:        scanner,
 		sensorReplyHandler: srh,
 	}
 }
 
 // Start starts the Compliance app
-func (l *Compliance) Start() {
+func (c *Compliance) Start() {
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 	clientconn.SetUserAgent(clientconn.Compliance)
 
@@ -64,7 +64,7 @@ func (l *Compliance) Start() {
 	cli := sensor.NewComplianceServiceClient(conn)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	ctx = metadata.AppendToOutgoingContext(ctx, "rox-compliance-nodename", l.nodeNameProvider.GetNodeName())
+	ctx = metadata.AppendToOutgoingContext(ctx, "rox-compliance-nodename", c.nodeNameProvider.GetNodeName())
 
 	stoppedSig := concurrency.NewSignal()
 
@@ -72,11 +72,11 @@ func (l *Compliance) Start() {
 	defer close(toSensorC)
 	// the anonymous go func will read from toSensorC and send it using the client
 	go func() {
-		l.manageStream(ctx, cli, &stoppedSig, toSensorC)
+		c.manageStream(ctx, cli, &stoppedSig, toSensorC)
 	}()
 
-	if env.RHCOSNodeScanning.BooleanSetting() && l.nodeScanner.IsActive() {
-		nodeInventoriesC := l.manageNodeScanLoop(ctx)
+	if env.RHCOSNodeScanning.BooleanSetting() && c.nodeScanner.IsActive() {
+		nodeInventoriesC := c.manageNodeScanLoop(ctx)
 		// sending nodeInventories into output toSensorC
 		for n := range nodeInventoriesC {
 			toSensorC <- n
@@ -94,12 +94,12 @@ func (l *Compliance) Start() {
 	log.Info("Successfully closed Sensor communication")
 }
 
-func (l *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgFromCompliance {
+func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgFromCompliance {
 	nodeInventoriesC := make(chan *sensor.MsgFromCompliance)
-	nodeName := l.nodeNameProvider.GetNodeName()
+	nodeName := c.nodeNameProvider.GetNodeName()
 	go func() {
 		defer close(nodeInventoriesC)
-		i := l.nodeScanner.GetIntervals()
+		i := c.nodeScanner.GetIntervals()
 		t := time.NewTicker(i.Initial())
 		for {
 			select {
@@ -107,14 +107,14 @@ func (l *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 				return
 			case <-t.C:
 				log.Infof("Scanning node %q", nodeName)
-				msg, err := l.nodeScanner.ScanNode(ctx)
+				msg, err := c.nodeScanner.ScanNode(ctx)
 				if err != nil {
 					log.Errorf("error running node scan: %v", err)
 				} else {
 					nodeInventoriesC <- msg
 				}
 				interval := i.Next()
-				cmetrics.ObserveRescanInterval(interval, l.nodeNameProvider.GetNodeName())
+				cmetrics.ObserveRescanInterval(interval, c.nodeNameProvider.GetNodeName())
 				t.Reset(interval)
 			}
 		}
@@ -122,7 +122,7 @@ func (l *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 	return nodeInventoriesC
 }
 
-func (l *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, toSensorC <-chan *sensor.MsgFromCompliance) {
+func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, toSensorC <-chan *sensor.MsgFromCompliance) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -131,7 +131,7 @@ func (l *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServ
 		default:
 			// initializeStream must only be called once across all Compliance components,
 			// as multiple calls would overwrite associations on the Sensor side.
-			client, config, err := l.initializeStream(ctx, cli)
+			client, config, err := c.initializeStream(ctx, cli)
 			if err != nil {
 				if ctx.Err() != nil {
 					// continue and the <-ctx.Done() path should be taken next iteration
@@ -144,9 +144,9 @@ func (l *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServ
 			// orphaning manageSendToSensor in the process.
 			ctx2, cancelFn := context.WithCancel(ctx)
 			if toSensorC != nil {
-				go l.manageSendToSensor(ctx2, client, toSensorC)
+				go c.manageSendToSensor(ctx2, client, toSensorC)
 			}
-			if err := l.runRecv(ctx, client, config); err != nil {
+			if err := c.runRecv(ctx, client, config); err != nil {
 				log.Errorf("error running recv: %v", err)
 			}
 			cancelFn() // runRecv is blocking, so the context is safely cancelled before the next  call to initializeStream
@@ -154,7 +154,7 @@ func (l *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServ
 	}
 }
 
-func (l *Compliance) runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig) error {
+func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig) error {
 	var auditReader auditlog.Reader
 	defer func() {
 		if auditReader != nil {
@@ -170,7 +170,7 @@ func (l *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 		}
 		switch t := msg.Msg.(type) {
 		case *sensor.MsgToCompliance_Trigger:
-			if err := runChecks(client, config, t.Trigger, l.nodeNameProvider); err != nil {
+			if err := runChecks(client, config, t.Trigger, c.nodeNameProvider); err != nil {
 				return errors.Wrap(err, "error running checks")
 			}
 		case *sensor.MsgToCompliance_AuditLogCollectionRequest_:
@@ -180,10 +180,10 @@ func (l *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 					log.Info("Audit log reader is being restarted")
 					auditReader.StopReader() // stop the old one
 				}
-				auditReader = l.startAuditLogCollection(ctx, client, r.StartReq)
+				auditReader = c.startAuditLogCollection(ctx, client, r.StartReq)
 			case *sensor.MsgToCompliance_AuditLogCollectionRequest_StopReq:
 				if auditReader != nil {
-					log.Infof("Stopping audit log reader on node %s.", l.nodeNameProvider.GetNodeName())
+					log.Infof("Stopping audit log reader on node %s.", c.nodeNameProvider.GetNodeName())
 					auditReader.StopReader()
 					auditReader = nil
 				} else {
@@ -195,9 +195,9 @@ func (l *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 			case sensor.MsgToCompliance_NodeInventoryACK_ACK:
 				// TODO(ROX-16687): Implement behavior when receiving Ack here
 				// TODO(ROX-16549): Add metric to see the ratio of Ack/Nack(?)
-				l.sensorReplyHandler.HandleACK(ctx, client)
+				c.sensorReplyHandler.HandleACK(ctx, client)
 			case sensor.MsgToCompliance_NodeInventoryACK_NACK:
-				l.sensorReplyHandler.HandleNACK(ctx, client)
+				c.sensorReplyHandler.HandleNACK(ctx, client)
 			}
 		default:
 			utils.Should(errors.Errorf("Unhandled msg type: %T", t))
@@ -205,15 +205,15 @@ func (l *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 	}
 }
 
-func (l *Compliance) startAuditLogCollection(ctx context.Context, client sensor.ComplianceService_CommunicateClient, request *sensor.MsgToCompliance_AuditLogCollectionRequest_StartRequest) auditlog.Reader {
+func (c *Compliance) startAuditLogCollection(ctx context.Context, client sensor.ComplianceService_CommunicateClient, request *sensor.MsgToCompliance_AuditLogCollectionRequest_StartRequest) auditlog.Reader {
 	if request.GetCollectStartState() == nil {
-		log.Infof("Starting audit log reader on node %s in cluster %s with no saved state", l.nodeNameProvider.GetNodeName(), request.GetClusterId())
+		log.Infof("Starting audit log reader on node %s in cluster %s with no saved state", c.nodeNameProvider.GetNodeName(), request.GetClusterId())
 	} else {
 		log.Infof("Starting audit log reader on node %s in cluster %s using previously saved state: %s)",
-			l.nodeNameProvider.GetNodeName(), request.GetClusterId(), protoutils.NewWrapper(request.GetCollectStartState()))
+			c.nodeNameProvider.GetNodeName(), request.GetClusterId(), protoutils.NewWrapper(request.GetCollectStartState()))
 	}
 
-	auditReader := auditlog.NewReader(client, l.nodeNameProvider.GetNodeName(), request.GetClusterId(), request.GetCollectStartState())
+	auditReader := auditlog.NewReader(client, c.nodeNameProvider.GetNodeName(), request.GetClusterId(), request.GetCollectStartState())
 	start, err := auditReader.StartReader(ctx)
 	if err != nil {
 		log.Errorf("Failed to start audit log reader %v", err)
@@ -225,7 +225,7 @@ func (l *Compliance) startAuditLogCollection(ctx context.Context, client sensor.
 	return auditReader
 }
 
-func (l *Compliance) manageSendToSensor(ctx context.Context, cli sensor.ComplianceService_CommunicateClient, toSensorC <-chan *sensor.MsgFromCompliance) {
+func (c *Compliance) manageSendToSensor(ctx context.Context, cli sensor.ComplianceService_CommunicateClient, toSensorC <-chan *sensor.MsgFromCompliance) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -238,7 +238,7 @@ func (l *Compliance) manageSendToSensor(ctx context.Context, cli sensor.Complian
 	}
 }
 
-func (l *Compliance) initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
+func (c *Compliance) initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
 	eb := backoff.NewExponentialBackOff()
 	eb.MaxInterval = 30 * time.Second
 	eb.MaxElapsedTime = 3 * time.Minute
@@ -248,7 +248,7 @@ func (l *Compliance) initializeStream(ctx context.Context, cli sensor.Compliance
 
 	operation := func() error {
 		var err error
-		client, config, err = l.initialClientAndConfig(ctx, cli)
+		client, config, err = c.initialClientAndConfig(ctx, cli)
 		if err != nil && ctx.Err() != nil {
 			return backoff.Permanent(err)
 		}
@@ -265,7 +265,7 @@ func (l *Compliance) initializeStream(ctx context.Context, cli sensor.Compliance
 	return client, config, nil
 }
 
-func (l *Compliance) initialClientAndConfig(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
+func (c *Compliance) initialClientAndConfig(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
 	client, err := cli.Communicate(ctx)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "error communicating with sensor")
