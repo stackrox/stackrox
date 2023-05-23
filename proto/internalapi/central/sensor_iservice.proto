@@ -47,26 +47,26 @@ message ReprocessDeployments {}
 
 message MsgToSensor {
     oneof msg {
-        SensorEnforcement               enforcement                        =  1;
-        ScrapeCommand                   scrape_command                     =  2;
-        NetworkPoliciesCommand          network_policies_command           =  3;
-        ClusterConfig                   cluster_config                     =  4;
-        SensorUpgradeTrigger            sensor_upgrade_trigger             =  5;
-        PullTelemetryDataRequest        telemetry_data_request             =  6;
-        PolicySync                      policy_sync                        =  7;
-        ReassessPolicies                reassess_policies                  =  8;
-        BaselineSync                    baseline_sync                      =  9;
-        CancelPullTelemetryDataRequest  cancel_pull_telemetry_data_request = 10;
-        PushNetworkEntitiesRequest      push_network_entities_request      = 11;
-        CentralHello                    hello                              = 12;
-        NetworkBaselineSync             network_baseline_sync              = 13;
-        AuditLogSync                    audit_log_sync                     = 14;
-        ReprocessDeployment             reprocess_deployment               = 15;
-        InvalidateImageCache            invalidate_image_cache             = 16;
-        IssueLocalScannerCertsResponse  issue_local_scanner_certs_response = 17;
-        storage.Image                   updated_image                      = 18;
-        ReprocessDeployments            reprocess_deployments              = 19;
-        DelegatedRegistryConfig         delegated_registry_config          = 20;
+        SensorEnforcement              enforcement                        =  1;
+        ScrapeCommand                  scrape_command                     =  2;
+        NetworkPoliciesCommand         network_policies_command           =  3;
+        ClusterConfig                  cluster_config                     =  4;
+        SensorUpgradeTrigger           sensor_upgrade_trigger             =  5;
+        PullTelemetryDataRequest       telemetry_data_request             =  6;
+        PolicySync                     policy_sync                        =  7;
+        ReassessPolicies               reassess_policies                  =  8;
+        BaselineSync                   baseline_sync                      =  9;
+        CancelPullTelemetryDataRequest cancel_pull_telemetry_data_request = 10;
+        PushNetworkEntitiesRequest     push_network_entities_request      = 11;
+        CentralHello                   hello                              = 12;
+        NetworkBaselineSync            network_baseline_sync              = 13;
+        AuditLogSync                   audit_log_sync                     = 14;
+        ReprocessDeployment            reprocess_deployment               = 15;
+        InvalidateImageCache           invalidate_image_cache             = 16;
+        IssueLocalScannerCertsResponse issue_local_scanner_certs_response = 17;
+        storage.Image                  updated_image                      = 18;
+        ReprocessDeployments           reprocess_deployments              = 19;
+        DelegatedRegistryConfig        delegated_registry_config          = 20;
     }
 }
 
