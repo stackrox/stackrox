@@ -17,7 +17,7 @@ import { DefaultFilters, VulnerabilitySeverityLabel, CveStatusTab } from '../typ
 type DeploymentsTableContainerProps = {
     defaultFilters: DefaultFilters;
     countsData: EntityCounts;
-    cveStatusTab: CveStatusTab;
+    cveStatusTab?: CveStatusTab; // TODO Make this required once Observed/Deferred/FP states are re-implemented
 };
 
 function DeploymentsTableContainer({

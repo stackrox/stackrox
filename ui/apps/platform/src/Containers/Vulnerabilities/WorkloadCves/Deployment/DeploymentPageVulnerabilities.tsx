@@ -13,17 +13,12 @@ import {
     Spinner,
     Split,
     SplitItem,
-    Tab,
-    Tabs,
-    TabsComponent,
-    TabTitleText,
     Text,
     Title,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 
 import useURLPagination from 'hooks/useURLPagination';
-import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
@@ -34,7 +29,6 @@ import NotFoundMessage from 'Components/NotFoundMessage';
 import { DynamicTableLabel } from '../components/DynamicIcon';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import TableErrorComponent from '../components/TableErrorComponent';
-import { cveStatusTabValues } from '../types';
 import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {
     resourceCountByCveSeverityAndStatusFragment,
@@ -87,7 +81,6 @@ export type DeploymentPageVulnerabilitiesProps = {
 function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabilitiesProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    const [activeTabKey, setActiveTabKey] = useURLStringUnion('cveStatus', cveStatusTabValues);
 
     const { page, setPage, perPage, setPerPage } = useURLPagination(20);
     const { sortOption, getSortParams } = useURLSort({
@@ -103,7 +96,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
 
-    const query = getCveStatusScopedQueryString(querySearchFilter, activeTabKey);
+    const query = getCveStatusScopedQueryString(querySearchFilter);
 
     const summaryRequest = useQuery<
         {
@@ -170,134 +163,98 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                 className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                 component="div"
             >
-                <Tabs
-                    activeKey={activeTabKey}
-                    onSelect={(e, key) => setActiveTabKey(key)}
-                    component={TabsComponent.nav}
-                    mountOnEnter
-                    unmountOnExit
-                    isBox
-                >
-                    <Tab
-                        className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
-                        eventKey="Observed"
-                        title={<TabTitleText>Observed CVEs</TabTitleText>}
-                    >
-                        <div className="pf-u-px-sm pf-u-background-color-100">
-                            <WorkloadTableToolbar
-                                supportedResourceFilters={deploymentResourceFilters}
+                <div className="pf-u-px-sm pf-u-background-color-100">
+                    <WorkloadTableToolbar supportedResourceFilters={deploymentResourceFilters} />
+                </div>
+                <div className="pf-u-flex-grow-1 pf-u-background-color-100">
+                    <div className="pf-u-px-lg pf-u-pb-lg">
+                        {summaryRequest.error && (
+                            <Alert
+                                title="There was an error loading the summary data for this deployment"
+                                isInline
+                                variant="danger"
+                            >
+                                {getAxiosErrorMessage(summaryRequest.error)}
+                            </Alert>
+                        )}
+                        {summaryRequest.loading && !summaryData && (
+                            <Skeleton
+                                style={{ height: '120px' }}
+                                screenreaderText="Loading deployment summary data"
                             />
-                        </div>
-                        <div className="pf-u-flex-grow-1 pf-u-background-color-100">
-                            <div className="pf-u-px-lg pf-u-pb-lg">
-                                {summaryRequest.error && (
-                                    <Alert
-                                        title="There was an error loading the summary data for this deployment"
-                                        isInline
-                                        variant="danger"
-                                    >
-                                        {getAxiosErrorMessage(summaryRequest.error)}
-                                    </Alert>
-                                )}
-                                {summaryRequest.loading && !summaryData && (
-                                    <Skeleton
-                                        style={{ height: '120px' }}
-                                        screenreaderText="Loading deployment summary data"
+                        )}
+                        {summaryData && summaryData.deployment && (
+                            <Grid hasGutter>
+                                <GridItem sm={12} md={6} xl2={4}>
+                                    <BySeveritySummaryCard
+                                        title="CVEs by severity"
+                                        severityCounts={
+                                            summaryData.deployment.imageCVECountBySeverity
+                                        }
+                                        hiddenSeverities={hiddenSeverities}
                                     />
-                                )}
-                                {summaryData && summaryData.deployment && (
-                                    <Grid hasGutter>
-                                        <GridItem sm={12} md={6} xl2={4}>
-                                            <BySeveritySummaryCard
-                                                title="CVEs by severity"
-                                                severityCounts={
-                                                    summaryData.deployment.imageCVECountBySeverity
-                                                }
-                                                hiddenSeverities={hiddenSeverities}
-                                            />
-                                        </GridItem>
-                                        <GridItem sm={12} md={6} xl2={4}>
-                                            <CvesByStatusSummaryCard
-                                                cveStatusCounts={
-                                                    summaryData.deployment.imageCVECountBySeverity
-                                                }
-                                                hiddenStatuses={hiddenStatuses}
-                                            />
-                                        </GridItem>
-                                    </Grid>
-                                )}
-                            </div>
-                            <Divider />
-                            <div className="pf-u-p-lg">
-                                <Split className="pf-u-pb-lg pf-u-align-items-baseline">
-                                    <SplitItem isFilled>
-                                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                                            <Title headingLevel="h2">
-                                                {pluralize(
-                                                    totalVulnerabilityCount,
-                                                    'result',
-                                                    'results'
-                                                )}{' '}
-                                                found
-                                            </Title>
-                                            {isFiltered && <DynamicTableLabel />}
-                                        </Flex>
-                                    </SplitItem>
-                                    <SplitItem>
-                                        <Pagination
-                                            isCompact
-                                            itemCount={totalVulnerabilityCount}
-                                            page={page}
-                                            perPage={perPage}
-                                            onSetPage={(_, newPage) => setPage(newPage)}
-                                            onPerPageSelect={(_, newPerPage) => {
-                                                if (
-                                                    totalVulnerabilityCount <
-                                                    (page - 1) * newPerPage
-                                                ) {
-                                                    setPage(1);
-                                                }
-                                                setPerPage(newPerPage);
-                                            }}
-                                        />
-                                    </SplitItem>
-                                </Split>
-                                {vulnerabilityRequest.error && (
-                                    <TableErrorComponent
-                                        error={vulnerabilityRequest.error}
-                                        message="Adjust your filters and try again"
+                                </GridItem>
+                                <GridItem sm={12} md={6} xl2={4}>
+                                    <CvesByStatusSummaryCard
+                                        cveStatusCounts={
+                                            summaryData.deployment.imageCVECountBySeverity
+                                        }
+                                        hiddenStatuses={hiddenStatuses}
                                     />
-                                )}
-                                {vulnerabilityRequest.loading && !vulnerabilityData && (
-                                    <Bullseye>
-                                        <Spinner isSVG />
-                                    </Bullseye>
-                                )}
-                                {vulnerabilityData && vulnerabilityData.deployment && (
-                                    <div className="workload-cves-table-container">
-                                        <DeploymentVulnerabilitiesTable
-                                            deployment={vulnerabilityData.deployment}
-                                            getSortParams={getSortParams}
-                                            isFiltered={isFiltered}
-                                        />
-                                    </div>
-                                )}
+                                </GridItem>
+                            </Grid>
+                        )}
+                    </div>
+                    <Divider />
+                    <div className="pf-u-p-lg">
+                        <Split className="pf-u-pb-lg pf-u-align-items-baseline">
+                            <SplitItem isFilled>
+                                <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                                    <Title headingLevel="h2">
+                                        {pluralize(totalVulnerabilityCount, 'result', 'results')}{' '}
+                                        found
+                                    </Title>
+                                    {isFiltered && <DynamicTableLabel />}
+                                </Flex>
+                            </SplitItem>
+                            <SplitItem>
+                                <Pagination
+                                    isCompact
+                                    itemCount={totalVulnerabilityCount}
+                                    page={page}
+                                    perPage={perPage}
+                                    onSetPage={(_, newPage) => setPage(newPage)}
+                                    onPerPageSelect={(_, newPerPage) => {
+                                        if (totalVulnerabilityCount < (page - 1) * newPerPage) {
+                                            setPage(1);
+                                        }
+                                        setPerPage(newPerPage);
+                                    }}
+                                />
+                            </SplitItem>
+                        </Split>
+                        {vulnerabilityRequest.error && (
+                            <TableErrorComponent
+                                error={vulnerabilityRequest.error}
+                                message="Adjust your filters and try again"
+                            />
+                        )}
+                        {vulnerabilityRequest.loading && !vulnerabilityData && (
+                            <Bullseye>
+                                <Spinner isSVG />
+                            </Bullseye>
+                        )}
+                        {vulnerabilityData && vulnerabilityData.deployment && (
+                            <div className="workload-cves-table-container">
+                                <DeploymentVulnerabilitiesTable
+                                    deployment={vulnerabilityData.deployment}
+                                    getSortParams={getSortParams}
+                                    isFiltered={isFiltered}
+                                />
                             </div>
-                        </div>
-                    </Tab>
-                    <Tab
-                        className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
-                        eventKey="Deferred"
-                        title={<TabTitleText>Deferrals</TabTitleText>}
-                        isDisabled
-                    />
-                    <Tab
-                        className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
-                        eventKey="False Positive"
-                        title={<TabTitleText>False positives</TabTitleText>}
-                        isDisabled
-                    />
-                </Tabs>
+                        )}
+                    </div>
+                </div>
             </PageSection>
         </>
     );
