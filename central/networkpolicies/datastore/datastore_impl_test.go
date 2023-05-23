@@ -11,6 +11,7 @@ import (
 	undoStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -125,13 +126,21 @@ func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
 	s.Equal(result, netPolNm2)
 
 	// Test we cannot do the opposite.
-	s.storage.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Return(nil, nil)
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		s.storage.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Return(nil, nil)
+	} else {
+		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
+	}
 
 	netPols, err := s.dataStore.GetNetworkPolicies(s.hasNS1ReadCtx, FakeClusterID, FakeNamespace2)
 	s.NoError(err)
 	s.Equal(0, len(netPols))
 
-	s.storage.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Return(nil, nil)
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		s.storage.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Return(nil, nil)
+	} else {
+		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
+	}
 
 	netPols, err = s.dataStore.GetNetworkPolicies(s.hasNS2ReadCtx, FakeClusterID, FakeNamespace1)
 	s.NoError(err)
