@@ -1,4 +1,4 @@
-////go:build sql_integration
+//go:build sql_integration
 
 package manager
 
@@ -100,4 +100,7 @@ func (s *managerTestSuite) TestLoadProbeFile() {
 	s.EqualValues(n, len(data))
 	s.Equal(data, buf.Bytes())
 	s.NoError(reader.Close())
+
+	// Reboot
+	s.Require().NoError(s.mgr.Initialize())
 }

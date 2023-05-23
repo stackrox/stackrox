@@ -76,7 +76,7 @@ func (m *manager) checkRootDir() error {
 
 	for _, blobName := range probeBlobs {
 		moduleVer := strings.TrimPrefix(blobName, rootBlobPathPrefix)
-		if !probeupload.IsValidModuleVersion(moduleVer) {
+		if !probeupload.IsValidFilePath(moduleVer) {
 			log.Warnf("Unexpected non-module-version entry %q in probe upload blobs", blobName)
 			continue
 		}

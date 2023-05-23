@@ -145,7 +145,12 @@ func moveFileToBlob(tx *gorm.DB, blobName string, file string, crc32Data []byte)
 	if tx.Error != nil {
 		return errors.Wrap(tx.Error, "failed to create blob metadata")
 	}
-	return los.Upsert(blob.Oid, dataReader)
+	err = los.Upsert(blob.Oid, dataReader)
+	if err != nil {
+		return err
+	}
+	log.Infof("Migrate %s to blob %s successfully", file, blobName)
+	return nil
 }
 
 func moveProbesToBlob(tx *gorm.DB) error {
