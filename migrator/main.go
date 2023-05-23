@@ -73,17 +73,13 @@ func run() error {
 
 	var dbm cloneMgr.DBCloneManager
 	// Create the clone manager
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		sourceMap, adminConfig, err := pgconfig.GetPostgresConfig()
-		if err != nil {
-			return errors.Wrap(err, "unable to get Postgres DB config")
-		}
-		dbm = cloneMgr.NewPostgres(migrations.DBMountPath(), rollbackVersion, adminConfig, sourceMap)
-	} else {
-		dbm = cloneMgr.New(migrations.DBMountPath(), rollbackVersion)
+	sourceMap, adminConfig, err := pgconfig.GetPostgresConfig()
+	if err != nil {
+		return errors.Wrap(err, "unable to get Postgres DB config")
 	}
+	dbm = cloneMgr.NewPostgres(migrations.DBMountPath(), rollbackVersion, adminConfig, sourceMap)
 
-	err := dbm.Scan()
+	err = dbm.Scan()
 	if err != nil {
 		return errors.Wrap(err, "failed to scan clones")
 	}
@@ -152,29 +148,27 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 
 	var gormDB *gorm.DB
 	var pgPool postgres.DB
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgPool, gormDB, err = postgreshelper.Load(dbClone)
-		if err != nil {
-			return errors.Wrap(err, "failed to connect to postgres DB")
-		}
-		// Close when needed
-		defer postgreshelper.Close()
-
-		ctx := sac.WithAllAccess(context.Background())
-		ver, err := migVer.ReadVersionGormDB(ctx, gormDB)
-		if err != nil {
-			return errors.Wrap(err, "failed to get version from the database")
-		}
-
-		// If Postgres has no version and we have no bolt then we have no populated databases at all and thus don't
-		// need to migrate
-		if ver.SeqNum == 0 && ver.MainVersion == "0" && (!processBoth || boltDB == nil) {
-			log.WriteToStderr("Fresh install of the database. There is no data to migrate...")
-			pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
-			return nil
-		}
-		log.WriteToStderrf("version for %q is %v", dbClone, ver)
+	pgPool, gormDB, err = postgreshelper.Load(dbClone)
+	if err != nil {
+		return errors.Wrap(err, "failed to connect to postgres DB")
 	}
+	// Close when needed
+	defer postgreshelper.Close()
+
+	ctx := sac.WithAllAccess(context.Background())
+	ver, err := migVer.ReadVersionGormDB(ctx, gormDB)
+	if err != nil {
+		return errors.Wrap(err, "failed to get version from the database")
+	}
+
+	// If Postgres has no version and we have no bolt then we have no populated databases at all and thus don't
+	// need to migrate
+	if ver.SeqNum == 0 && ver.MainVersion == "0" && (!processBoth || boltDB == nil) {
+		log.WriteToStderr("Fresh install of the database. There is no data to migrate...")
+		pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
+		return nil
+	}
+	log.WriteToStderrf("version for %q is %v", dbClone, ver)
 
 	if boltDB == nil && !env.PostgresDatastoreEnabled.BooleanSetting() {
 		log.WriteToStderr("No DB found. Nothing to migrate...")

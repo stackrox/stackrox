@@ -11,7 +11,6 @@ import (
 	rocksdbIntegrationStore "github.com/stackrox/rox/central/integrationhealth/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -41,14 +40,9 @@ type integrationHealthDatastoreTestSuite struct {
 func (s *integrationHealthDatastoreTestSuite) SetupTest() {
 	var integrationStore store.Store
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.postgresTest = pgtest.ForT(s.T())
-		s.Require().NotNil(s.postgresTest)
-		integrationStore = postgresIntegrationStore.New(s.postgresTest.DB)
-	} else {
-		s.rocksie = rocksdbtest.RocksDBForT(s.T())
-		integrationStore = rocksdbIntegrationStore.New(s.rocksie)
-	}
+	s.postgresTest = pgtest.ForT(s.T())
+	s.Require().NotNil(s.postgresTest)
+	integrationStore = postgresIntegrationStore.New(s.postgresTest.DB)
 	s.datastore = New(integrationStore)
 
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
@@ -68,11 +62,7 @@ func (s *integrationHealthDatastoreTestSuite) SetupTest() {
 }
 
 func (s *integrationHealthDatastoreTestSuite) TearDownTest() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.postgresTest.Close()
-	} else {
-		rocksdbtest.TearDownRocksDB(s.rocksie)
-	}
+	s.postgresTest.Close()
 }
 
 func (s *integrationHealthDatastoreTestSuite) TestGetRegistriesAndScanners() {

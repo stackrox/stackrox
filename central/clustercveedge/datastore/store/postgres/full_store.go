@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/clustercveedge/store"
 	"github.com/stackrox/rox/central/cve/converter"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -31,15 +30,9 @@ type fullStoreImpl struct {
 }
 
 func (f *fullStoreImpl) Upsert(_ context.Context, _ ...converter.ClusterCVEParts) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return utils.ShouldErr(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
-	}
-	return nil
+	return utils.ShouldErr(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
 }
 
 func (f *fullStoreImpl) Delete(_ context.Context, _ ...string) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return utils.ShouldErr(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
-	}
-	return nil
+	return utils.ShouldErr(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
 }

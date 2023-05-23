@@ -48,30 +48,26 @@ func setVersion(t *testing.T, ver *versionPair) {
 }
 
 func TestCloneMigration(t *testing.T) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		currVer = releaseVer
-		doTestCloneMigration(t, false)
-		currVer = devVer
-		doTestCloneMigration(t, false)
-		currVer = rcVer
-		doTestCloneMigration(t, false)
-		currVer = nightlyVer
-		doTestCloneMigration(t, false)
-	}
+	currVer = releaseVer
+	doTestCloneMigration(t, false)
+	currVer = devVer
+	doTestCloneMigration(t, false)
+	currVer = rcVer
+	doTestCloneMigration(t, false)
+	currVer = nightlyVer
+	doTestCloneMigration(t, false)
 }
 
 func TestCloneMigrationRocksToPostgres(t *testing.T) {
 	// Run tests with both Rocks and Postgres to make sure migration clone is correctly determined.
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		currVer = releaseVer
-		doTestCloneMigrationToPostgres(t, true)
-		currVer = devVer
-		doTestCloneMigrationToPostgres(t, true)
-		currVer = rcVer
-		doTestCloneMigrationToPostgres(t, true)
-		currVer = nightlyVer
-		doTestCloneMigrationToPostgres(t, true)
-	}
+	currVer = releaseVer
+	doTestCloneMigrationToPostgres(t, true)
+	currVer = devVer
+	doTestCloneMigrationToPostgres(t, true)
+	currVer = rcVer
+	doTestCloneMigrationToPostgres(t, true)
+	currVer = nightlyVer
+	doTestCloneMigrationToPostgres(t, true)
 }
 
 func doTestCloneMigration(t *testing.T, runBoth bool) {
@@ -277,9 +273,7 @@ func TestCloneRestore(t *testing.T) {
 	testCloneRestore(t, false)
 
 	// Test restore again for the case of restoring Rocks -> Postgres
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		testCloneRestore(t, true)
-	}
+	testCloneRestore(t, true)
 }
 
 func testCloneRestore(t *testing.T, rocksToPostgres bool) {
@@ -372,11 +366,7 @@ func doTestForceRollbackFailure(t *testing.T) {
 		return
 	}
 	var forceRollbackClone string
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		forceRollbackClone = pgClone.CurrentClone
-	} else {
-		forceRollbackClone = rocksdb.CurrentClone
-	}
+	forceRollbackClone = pgClone.CurrentClone
 	testCases := []struct {
 		description             string
 		forceRollback           string
@@ -438,21 +428,17 @@ func doTestForceRollbackFailure(t *testing.T) {
 			var dbm DBCloneManager
 
 			expectedError := c.expectedErrorMessage
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				source := pgtest.GetConnectionString(t)
-				sourceMap, _ := pgconfig.ParseSource(source)
-				config, err := postgres.ParseConfig(source)
-				require.NoError(t, err)
+			source := pgtest.GetConnectionString(t)
+			sourceMap, _ := pgconfig.ParseSource(source)
+			config, err := postgres.ParseConfig(source)
+			require.NoError(t, err)
 
-				dbm = NewPostgres(mock.mountPath, c.forceRollback, config, sourceMap)
+			dbm = NewPostgres(mock.mountPath, c.forceRollback, config, sourceMap)
 
-				// Since postgres version no longer makes a previous if the sequence number doesn't change
-				// the error message for a dev build may differ
-				if c.postgresDevErrorMessage != "" && currVer != releaseVer {
-					expectedError = c.postgresDevErrorMessage
-				}
-			} else {
-				dbm = New(mock.mountPath, c.forceRollback)
+			// Since postgres version no longer makes a previous if the sequence number doesn't change
+			// the error message for a dev build may differ
+			if c.postgresDevErrorMessage != "" && currVer != releaseVer {
+				expectedError = c.postgresDevErrorMessage
 			}
 
 			err := dbm.Scan()
@@ -467,16 +453,14 @@ func doTestForceRollbackFailure(t *testing.T) {
 }
 
 func TestForceRollbackRocksToPostgresFailure(t *testing.T) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		currVer = releaseVer
-		doTestForceRollbackRocksToPostgresFailure(t)
-		currVer = devVer
-		doTestForceRollbackRocksToPostgresFailure(t)
-		currVer = rcVer
-		doTestForceRollbackRocksToPostgresFailure(t)
-		currVer = nightlyVer
-		doTestForceRollbackRocksToPostgresFailure(t)
-	}
+	currVer = releaseVer
+	doTestForceRollbackRocksToPostgresFailure(t)
+	currVer = devVer
+	doTestForceRollbackRocksToPostgresFailure(t)
+	currVer = rcVer
+	doTestForceRollbackRocksToPostgresFailure(t)
+	currVer = nightlyVer
+	doTestForceRollbackRocksToPostgresFailure(t)
 }
 
 func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
@@ -484,11 +468,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 		return
 	}
 	var forceRollbackClone string
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		forceRollbackClone = pgClone.CurrentClone
-	} else {
-		forceRollbackClone = rocksdb.CurrentClone
-	}
+	forceRollbackClone = pgClone.CurrentClone
 	testCases := []struct {
 		description             string
 		forceRollback           string
@@ -551,19 +531,15 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 
 			expectedError := c.expectedErrorMessage
 
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				source := pgtest.GetConnectionString(t)
-				sourceMap, _ := pgconfig.ParseSource(source)
-				config, err := postgres.ParseConfig(source)
-				require.NoError(t, err)
+			source := pgtest.GetConnectionString(t)
+			sourceMap, _ := pgconfig.ParseSource(source)
+			config, err := postgres.ParseConfig(source)
+			require.NoError(t, err)
 
-				dbm = NewPostgres(mock.mountPath, c.forceRollback, config, sourceMap)
+			dbm = NewPostgres(mock.mountPath, c.forceRollback, config, sourceMap)
 
-				if c.postgresDevErrorMessage != "" && currVer != releaseVer {
-					expectedError = c.postgresDevErrorMessage
-				}
-			} else {
-				dbm = New(mock.mountPath, c.forceRollback)
+			if c.postgresDevErrorMessage != "" && currVer != releaseVer {
+				expectedError = c.postgresDevErrorMessage
 			}
 
 			err := dbm.Scan()
@@ -669,16 +645,14 @@ func doTestRollback(t *testing.T) {
 // TestRollbackPostgresToRocks - set of tests that will test rolling back to Rocks from Postgres.
 func TestRollbackPostgresToRocks(t *testing.T) {
 	// Run tests with both Rocks and Postgres to make sure migration clone is correctly determined.
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		currVer = releaseVer
-		doTestRollbackPostgresToRocks(t)
-		currVer = devVer
-		doTestRollbackPostgresToRocks(t)
-		currVer = rcVer
-		doTestRollbackPostgresToRocks(t)
-		currVer = nightlyVer
-		doTestRollbackPostgresToRocks(t)
-	}
+	currVer = releaseVer
+	doTestRollbackPostgresToRocks(t)
+	currVer = devVer
+	doTestRollbackPostgresToRocks(t)
+	currVer = rcVer
+	doTestRollbackPostgresToRocks(t)
+	currVer = nightlyVer
+	doTestRollbackPostgresToRocks(t)
 }
 
 func doTestRollbackPostgresToRocks(t *testing.T) {

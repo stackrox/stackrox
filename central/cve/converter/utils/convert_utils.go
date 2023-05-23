@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/cve"
 	pkgCVSSV2 "github.com/stackrox/rox/pkg/cvss/cvssv2"
 	pkgCVSSV3 "github.com/stackrox/rox/pkg/cvss/cvssv3"
-	"github.com/stackrox/rox/pkg/env"
 	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scans"
@@ -323,25 +322,7 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
 	}
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		ret.Severity = from.GetSeverity()
-		return ret
-	}
-
-	// If the OS is empty, then the OS is unknown and we don't need to save
-	// any distro specific settings
-	if os == "" {
-		return ret
-	}
-	ret.DistroSpecifics = map[string]*storage.CVE_DistroSpecific{
-		os: {
-			Severity:     from.GetSeverity(),
-			Cvss:         ret.Cvss,
-			CvssV2:       ret.CvssV2,
-			CvssV3:       ret.CvssV3,
-			ScoreVersion: ret.ScoreVersion,
-		},
-	}
+	ret.Severity = from.GetSeverity()
 	return ret
 }
 

@@ -8,7 +8,6 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/imageintegration/index"
 	indexMocks "github.com/stackrox/rox/central/imageintegration/index/mocks"
 	"github.com/stackrox/rox/central/imageintegration/search"
@@ -20,7 +19,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -76,37 +74,18 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 	suite.mockIndexer = indexMocks.NewMockIndexer(suite.mockCtrl)
 	suite.mockSearcher = searchMocks.NewMockSearcher(suite.mockCtrl)
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.testDB = pgtest.ForT(suite.T())
-		suite.NotNil(suite.testDB)
+	suite.testDB = pgtest.ForT(suite.T())
+	suite.NotNil(suite.testDB)
 
-		suite.store = postgresStore.New(suite.testDB.DB)
-		suite.indexer = postgresStore.NewIndexer(suite.testDB.DB)
-	} else {
-		db, err := bolthelper.NewTemp(testutils.DBFileName(suite))
-		if err != nil {
-			suite.FailNow("Failed to make BoltDB", err.Error())
-		}
-		suite.db = db
-		suite.store = boltStore.New(db)
-
-		// test bleveIndex and search
-		suite.bleveIndex, err = globalindex.MemOnlyIndex()
-		suite.NoError(err)
-		suite.indexer = index.New(suite.bleveIndex)
-	}
+	suite.store = postgresStore.New(suite.testDB.DB)
+	suite.indexer = postgresStore.NewIndexer(suite.testDB.DB)
 
 	// test formattedSearcher
 	suite.datastore = NewForTestOnly(suite.store, suite.mockIndexer, suite.mockSearcher)
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TearDownTest() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.testDB.Teardown(suite.T())
-	} else {
-		testutils.TearDownDB(suite.db)
-		suite.NoError(suite.bleveIndex.Close())
-	}
+	suite.testDB.Teardown(suite.T())
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsPersistence() {

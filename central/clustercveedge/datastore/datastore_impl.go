@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/clustercveedge/index"
-	sacFilters "github.com/stackrox/rox/central/clustercveedge/sac"
 	"github.com/stackrox/rox/central/clustercveedge/search"
 	"github.com/stackrox/rox/central/clustercveedge/store"
 	"github.com/stackrox/rox/central/cve/converter"
@@ -13,10 +12,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/filtered"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -90,44 +87,13 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 }
 
 func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]string, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return ids, nil
-	}
-	var filteredIDs []string
-	var err error
-	graph.Context(ctx, ds.graphProvider, func(graphContext context.Context) {
-		filteredIDs, err = filtered.ApplySACFilter(graphContext, ids, sacFilters.GetSACFilter())
-	})
-	return filteredIDs, err
+	return ids, nil
 }
 
 func (ds *datastoreImpl) Upsert(ctx context.Context, parts ...converter.ClusterCVEParts) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return utils.ShouldErr(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
-	}
-	if len(parts) == 0 {
-		return nil
-	}
-
-	if ok, err := clustersSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	// Store the new CVE data.
-	return ds.storage.Upsert(ctx, parts...)
+	return utils.ShouldErr(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
 }
 
 func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return utils.ShouldErr(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
-	}
-	if ok, err := clustersSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	return ds.storage.Delete(ctx, ids...)
+	return utils.ShouldErr(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -43,16 +42,9 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) SetupSuite() {
 	var err error
 	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
 	s.Require().NoError(err)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pool := s.dackboxTestStore.GetPostgresPool()
-		s.datastore, err = GetTestPostgresDataStore(s.T(), pool)
-		s.Require().NoError(err)
-	} else {
-		bleveIndex := s.dackboxTestStore.GetBleveIndex()
-		dacky := s.dackboxTestStore.GetDackbox()
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), bleveIndex, dacky)
-		s.Require().NoError(err)
-	}
+	pool := s.dackboxTestStore.GetPostgresPool()
+	s.datastore, err = GetTestPostgresDataStore(s.T(), pool)
+	s.Require().NoError(err)
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Node)
 }
 
@@ -70,9 +62,7 @@ func getComponentID(component *storage.EmbeddedNodeScanComponent, os string) str
 
 func getEdgeID(nodeID string, component *storage.EmbeddedNodeScanComponent, os string) string {
 	componentID := getComponentID(component, os)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return pgSearch.IDFromPks([]string{nodeID, componentID})
-	}
+	return pgSearch.IDFromPks([]string{nodeID, componentID})
 	return edges.EdgeID{ParentID: nodeID, ChildID: componentID}.ToString()
 }
 
@@ -296,10 +286,6 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestCount() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("graph.Context wrapper missing in NodeComponentEdge searcher",
-			"to enable Search test case in non-postgres mode")
-	}
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanupNodeToVulnerabilityGraph(waitForIndexing)
 	s.Require().NoError(err)
@@ -324,10 +310,6 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestCount() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearch() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("graph.Context wrapper missing in NodeComponentEdge searcher",
-			"to enable Search test case in non-postgres mode")
-	}
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanupNodeToVulnerabilityGraph(waitForIndexing)
 	s.Require().NoError(err)
@@ -357,10 +339,6 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearch() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("graph.Context wrapper missing in NodeComponentEdge searcher",
-			"to enable Search test case in non-postgres mode")
-	}
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanupNodeToVulnerabilityGraph(waitForIndexing)
 	s.Require().NoError(err)
@@ -390,10 +368,6 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("graph.Context wrapper missing in NodeComponentEdge searcher",
-			"to enable Search test case in non-postgres mode")
-	}
 	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanupNodeToVulnerabilityGraph(waitForIndexing)
 	s.Require().NoError(err)

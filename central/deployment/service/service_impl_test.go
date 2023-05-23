@@ -22,7 +22,6 @@ import (
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -123,21 +122,11 @@ func TestLabelsMap(t *testing.T) {
 			var ds datastore.DataStore
 			var indexingQ queue.WaitableQueue
 			var closer func()
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				ds, closer = setupPostgresDatastore(t)
-			} else {
-				ds, indexingQ, closer = setupRocksDB(t)
-			}
+			ds, closer = setupPostgresDatastore(t)
 			defer closer()
 
 			for _, deployment := range c.deployments {
 				assert.NoError(t, ds.UpsertDeployment(ctx, deployment))
-			}
-
-			if !env.PostgresDatastoreEnabled.BooleanSetting() {
-				indexingDone := concurrency.NewSignal()
-				indexingQ.PushSignal(&indexingDone)
-				indexingDone.Wait()
 			}
 
 			results, err := ds.Search(ctx, queryForLabels())

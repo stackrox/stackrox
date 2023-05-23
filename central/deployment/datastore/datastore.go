@@ -6,19 +6,12 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
-	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/deployment/store/cache"
-	dackBoxStore "github.com/stackrox/rox/central/deployment/store/dackbox"
 	pgStore "github.com/stackrox/rox/central/deployment/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
-	imageIndexer "github.com/stackrox/rox/central/image/index"
-	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
-	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
-	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	pbDS "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorFilter "github.com/stackrox/rox/central/processindicator/filter"
@@ -29,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -73,21 +65,8 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, pool postgr
 	}
 	var deploymentIndexer index.Indexer
 	var searcher search.Searcher
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		deploymentIndexer = pgStore.NewIndexer(pool)
-		searcher = search.NewV2(storage, deploymentIndexer)
-	} else {
-		deploymentIndexer = index.New(bleveIndex, processIndex)
-		searcher = search.New(storage,
-			graphProvider,
-			cveIndexer.New(bleveIndex),
-			componentCVEEdgeIndexer.New(bleveIndex),
-			componentIndexer.New(bleveIndex),
-			imageComponentEdgeIndexer.New(bleveIndex),
-			imageIndexer.New(bleveIndex),
-			deploymentIndexer,
-			imageCVEEdgeIndexer.New(bleveIndex))
-	}
+	deploymentIndexer = pgStore.NewIndexer(pool)
+	searcher = search.NewV2(storage, deploymentIndexer)
 	ds := newDatastoreImpl(storage, deploymentIndexer, searcher, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 
 	ds.initializeRanker()
@@ -101,11 +80,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool postgres.DB
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
 	var storage store.Store
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage = pgStore.NewFullStore(pool)
-	} else {
-		storage = dackBoxStore.New(dacky, keyFence)
-	}
+	storage = pgStore.NewFullStore(pool)
 	return newDataStore(storage, dacky, pool, bleveIndex, processIndex, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 }
 
@@ -124,21 +99,8 @@ func NewTestDataStore(t testing.TB, storage store.Store, graphProvider graph.Pro
 	}
 	var deploymentIndexer index.Indexer
 	var searcher search.Searcher
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		deploymentIndexer = pgStore.NewIndexer(pool)
-		searcher = search.NewV2(storage, deploymentIndexer)
-	} else {
-		deploymentIndexer = index.New(bleveIndex, processIndex)
-		searcher = search.New(storage,
-			graphProvider,
-			cveIndexer.New(bleveIndex),
-			componentCVEEdgeIndexer.New(bleveIndex),
-			componentIndexer.New(bleveIndex),
-			imageComponentEdgeIndexer.New(bleveIndex),
-			imageIndexer.New(bleveIndex),
-			deploymentIndexer,
-			imageCVEEdgeIndexer.New(bleveIndex))
-	}
+	deploymentIndexer = pgStore.NewIndexer(pool)
+	searcher = search.NewV2(storage, deploymentIndexer)
 	ds := newDatastoreImpl(storage, deploymentIndexer, searcher, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 
 	ds.initializeRanker()

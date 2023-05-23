@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -61,13 +60,8 @@ func (suite *ImageLoaderTestSuite) TestFromID() {
 
 	// Get a non-preloaded image from id.
 	thirdImage := &storage.Image{Id: sha3}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.mockDataStore.EXPECT().GetManyImageMetadata(suite.ctx, []string{sha3}).
-			Return([]*storage.Image{thirdImage}, nil)
-	} else {
-		suite.mockDataStore.EXPECT().GetImagesBatch(suite.ctx, []string{sha3}).
-			Return([]*storage.Image{thirdImage}, nil)
-	}
+	suite.mockDataStore.EXPECT().GetManyImageMetadata(suite.ctx, []string{sha3}).
+		Return([]*storage.Image{thirdImage}, nil)
 
 	image, err = loader.FromID(suite.ctx, sha3)
 	suite.NoError(err)
@@ -140,13 +134,8 @@ func (suite *ImageLoaderTestSuite) TestFromIDs() {
 
 	// Get a non-preloaded image from id.
 	thirdImage := &storage.Image{Id: "sha3"}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.mockDataStore.EXPECT().GetManyImageMetadata(suite.ctx, []string{sha3}).
-			Return([]*storage.Image{thirdImage}, nil)
-	} else {
-		suite.mockDataStore.EXPECT().GetImagesBatch(suite.ctx, []string{sha3}).
-			Return([]*storage.Image{thirdImage}, nil)
-	}
+	suite.mockDataStore.EXPECT().GetManyImageMetadata(suite.ctx, []string{sha3}).
+		Return([]*storage.Image{thirdImage}, nil)
 
 	images, err = loader.FromIDs(suite.ctx, []string{sha1, sha2, sha3})
 	suite.NoError(err)
@@ -210,13 +199,8 @@ func (suite *ImageLoaderTestSuite) TestFromQuery() {
 	suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
 
 	thirdImage := &storage.Image{Id: "sha3"}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.mockDataStore.EXPECT().GetManyImageMetadata(suite.ctx, []string{sha3}).
-			Return([]*storage.Image{thirdImage}, nil)
-	} else {
-		suite.mockDataStore.EXPECT().GetImagesBatch(suite.ctx, []string{sha3}).
-			Return([]*storage.Image{thirdImage}, nil)
-	}
+	suite.mockDataStore.EXPECT().GetManyImageMetadata(suite.ctx, []string{sha3}).
+		Return([]*storage.Image{thirdImage}, nil)
 
 	images, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)

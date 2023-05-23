@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/cryptoutils"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -149,16 +148,14 @@ func (s *serviceImpl) GetDatabaseStatus(ctx context.Context, _ *v1.Empty) (*v1.D
 
 	dbType := v1.DatabaseStatus_RocksDB
 	var dbVersion string
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		dbType = v1.DatabaseStatus_PostgresDB
-		if err := s.db.Ping(ctx); err != nil {
-			dbStatus.DatabaseAvailable = false
-			log.Warn("central is unable to communicate with the database.")
-			return dbStatus, nil
-		}
-
-		dbVersion = globaldb.GetPostgresVersion(ctx, s.db)
+	dbType = v1.DatabaseStatus_PostgresDB
+	if err := s.db.Ping(ctx); err != nil {
+		dbStatus.DatabaseAvailable = false
+		log.Warn("central is unable to communicate with the database.")
+		return dbStatus, nil
 	}
+
+	dbVersion = globaldb.GetPostgresVersion(ctx, s.db)
 
 	// Only return the database type and version to logged in users, not anonymous users.
 	if authn.IdentityFromContextOrNil(ctx) != nil {
@@ -171,9 +168,6 @@ func (s *serviceImpl) GetDatabaseStatus(ctx context.Context, _ *v1.Empty) (*v1.D
 
 // GetDatabaseBackupStatus return the database backup status.
 func (s *serviceImpl) GetDatabaseBackupStatus(ctx context.Context, _ *v1.Empty) (*v1.DatabaseBackupStatus, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.New("database backup status check is not supported")
-	}
 
 	sysInfo, found, err := s.systemInfoStore.Get(ctx)
 	if err != nil {

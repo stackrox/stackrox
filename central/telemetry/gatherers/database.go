@@ -3,7 +3,6 @@ package gatherers
 import (
 	"context"
 
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/fsutils"
 	"github.com/stackrox/rox/pkg/migrations"
@@ -40,14 +39,7 @@ func (d *databaseGatherer) Gather(ctx context.Context) *data.StorageInfo {
 		Errors:            errList.ErrorStrings(),
 	}
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storageInfo.Databases = append(storageInfo.Databases, d.postgres.Gather(ctx))
-	} else {
-		storageInfo.Databases = append(storageInfo.Databases, d.bolt.Gather())
-		storageInfo.Databases = append(storageInfo.Databases, d.rocks.Gather())
-		databaseStats := d.bleve.Gather()
-		storageInfo.Databases = append(storageInfo.Databases, databaseStats...)
-	}
+	storageInfo.Databases = append(storageInfo.Databases, d.postgres.Gather(ctx))
 
 	return storageInfo
 }

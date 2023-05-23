@@ -2,7 +2,6 @@ package search
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -25,8 +24,6 @@ func GetGlobalSearchCategories() set.Set[v1.SearchCategory] {
 		v1.SearchCategory_IMAGE_INTEGRATIONS,
 	)
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		globalSearchCategories.Add(v1.SearchCategory_POLICY_CATEGORIES)
-	}
+	globalSearchCategories.Add(v1.SearchCategory_POLICY_CATEGORIES)
 	return globalSearchCategories
 }

@@ -20,7 +20,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
@@ -161,10 +160,6 @@ func cveCSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQuery,
 	if _, ok := storage.CVE_CVEType_value[cveType]; !ok || cveType == storage.CVE_UNKNOWN_CVE.String() {
 		return nil, errors.Errorf("Unexpected value for 'CVE Type' filter. Value should be one of '%s', '%s', '%s', '%s', '%s'",
 			storage.CVE_IMAGE_CVE.String(), storage.CVE_NODE_CVE.String(), storage.CVE_K8S_CVE.String(), storage.CVE_OPENSHIFT_CVE.String(), storage.CVE_ISTIO_CVE.String())
-	}
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return cveCSVRowsFromLegacyVulnResolver(c, query, rawQuery, paginatedQuery)
 	}
 
 	switch cveType {

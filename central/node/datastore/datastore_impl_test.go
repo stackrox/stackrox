@@ -29,7 +29,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -55,10 +54,8 @@ type NodeDataStoreTestSuite struct {
 }
 
 func (suite *NodeDataStoreTestSuite) SetupSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.T().Skip("Skip dackbox tests if postgres is enabled")
-		suite.T().SkipNow()
-	}
+	suite.T().Skip("Skip dackbox tests if postgres is enabled")
+	suite.T().SkipNow()
 
 	suite.db = rocksdbtest.RocksDBForT(suite.T())
 

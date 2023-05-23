@@ -9,7 +9,6 @@ import (
 
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -49,30 +48,17 @@ func (s *networkBaselineDatastoreSACTestSuite) SetupSuite() {
 	var err error
 	networkBaselineObj := "networkBaselineSACTest"
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(s.T())
-		s.Require().NotNil(pgtestbase)
-		s.pool = pgtestbase.DB
-		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
-		s.Require().NoError(err)
-	} else {
-		s.engine, err = rocksdb.NewTemp(networkBaselineObj)
-		s.NoError(err)
-
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine)
-		s.Require().NoError(err)
-	}
+	pgtestbase := pgtest.ForT(s.T())
+	s.Require().NotNil(pgtestbase)
+	s.pool = pgtestbase.DB
+	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
+	s.Require().NoError(err)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.DeploymentExtension)
 }
 
 func (s *networkBaselineDatastoreSACTestSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	} else {
-		err := rocksdb.CloseAndRemove(s.engine)
-		s.NoError(err)
-	}
+	s.pool.Close()
 }
 
 func (s *networkBaselineDatastoreSACTestSuite) SetupTest() {

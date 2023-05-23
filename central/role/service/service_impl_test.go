@@ -9,7 +9,6 @@ import (
 
 	"github.com/blevesearch/bleve"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/globalindex"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	roleDatastore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
@@ -22,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -521,61 +519,26 @@ type serviceImplTestSuite struct {
 
 func (s *serviceImplTestSuite) SetupSuite() {
 	var err error
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.postgres = pgtest.ForT(s.T())
-		s.Require().NotNil(s.postgres)
-		roleStore, err := roleDatastore.GetTestPostgresDataStore(s.T(), s.postgres.DB)
-		s.Require().NoError(err)
-		clusterStore, err := clusterDataStore.GetTestPostgresDataStore(s.T(), s.postgres.DB)
-		s.Require().NoError(err)
-		namespaceStore, err := namespaceDataStore.GetTestPostgresDataStore(s.T(), s.postgres.DB)
-		s.Require().NoError(err)
+	s.postgres = pgtest.ForT(s.T())
+	s.Require().NotNil(s.postgres)
+	roleStore, err := roleDatastore.GetTestPostgresDataStore(s.T(), s.postgres.DB)
+	s.Require().NoError(err)
+	clusterStore, err := clusterDataStore.GetTestPostgresDataStore(s.T(), s.postgres.DB)
+	s.Require().NoError(err)
+	namespaceStore, err := namespaceDataStore.GetTestPostgresDataStore(s.T(), s.postgres.DB)
+	s.Require().NoError(err)
 
-		s.service = &serviceImpl{
-			roleDataStore:      roleStore,
-			clusterDataStore:   clusterStore,
-			namespaceDataStore: namespaceStore,
-			clusterSACHelper:   sachelper.NewClusterSacHelper(clusterStore),
-			namespaceSACHelper: sachelper.NewClusterNamespaceSacHelper(clusterStore, namespaceStore),
-		}
-	} else {
-		s.boltEngine, err = boltPkg.NewTemp("roleServiceTestBolt")
-		s.Require().NoError(err)
-		s.rocksEngine, err = rocksdb.NewTemp("roleServiceTest")
-		s.Require().NoError(err)
-		s.bleveIndex, err = globalindex.MemOnlyIndex()
-		s.Require().NoError(err)
-
-		keyFence := dackboxConcurrency.NewKeyFence()
-		indexQ := queue.NewWaitableQueue()
-		dacky, err := dackbox.NewRocksDBDackBox(s.rocksEngine, indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
-		s.Require().NoError(err)
-
-		roleStore, err := roleDatastore.GetTestRocksBleveDataStore(s.T(), s.rocksEngine)
-		s.Require().NoError(err)
-		clusterStore, err := clusterDataStore.GetTestRocksBleveDataStore(s.T(), s.rocksEngine, s.bleveIndex, dacky, keyFence, s.boltEngine)
-		s.Require().NoError(err)
-		namespaceStore, err := namespaceDataStore.GetTestRocksBleveDataStore(s.T(), s.rocksEngine, s.bleveIndex, dacky, keyFence)
-		s.Require().NoError(err)
-
-		s.service = &serviceImpl{
-			roleDataStore:      roleStore,
-			clusterDataStore:   clusterStore,
-			namespaceDataStore: namespaceStore,
-			clusterSACHelper:   sachelper.NewClusterSacHelper(clusterStore),
-			namespaceSACHelper: sachelper.NewClusterNamespaceSacHelper(clusterStore, namespaceStore),
-		}
+	s.service = &serviceImpl{
+		roleDataStore:      roleStore,
+		clusterDataStore:   clusterStore,
+		namespaceDataStore: namespaceStore,
+		clusterSACHelper:   sachelper.NewClusterSacHelper(clusterStore),
+		namespaceSACHelper: sachelper.NewClusterNamespaceSacHelper(clusterStore, namespaceStore),
 	}
 }
 
 func (s *serviceImplTestSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.postgres.Teardown(s.T())
-	} else {
-		s.Require().NoError(s.boltEngine.Close())
-		s.Require().NoError(rocksdb.CloseAndRemove(s.rocksEngine))
-		s.Require().NoError(s.bleveIndex.Close())
-	}
+	s.postgres.Teardown(s.T())
 }
 
 func (s *serviceImplTestSuite) SetupTest() {

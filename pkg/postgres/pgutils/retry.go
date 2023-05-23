@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/stackrox/rox/pkg/env"
 )
 
 const (
@@ -38,10 +37,7 @@ func Retry2[T any](fn func() (T, error)) (T, error) {
 // RetryIfPostgres is same as Retry except that it retries iff postgres is enabled.
 // that fails with transient errors
 func RetryIfPostgres(fn func() error) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return Retry(fn)
-	}
-	return fn()
+	return Retry(fn)
 }
 
 // Retry3 is used to specify how long to retry to successfully run a query with 3 return values

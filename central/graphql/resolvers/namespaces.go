@@ -13,7 +13,6 @@ import (
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -328,21 +327,11 @@ func (resolver *namespaceResolver) K8sRoles(ctx context.Context, args PaginatedQ
 
 func (resolver *namespaceResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Images")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
-
-		return resolver.root.Images(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
 	return resolver.root.Images(resolver.namespaceScopeContext(ctx), args)
 }
 
 func (resolver *namespaceResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageCount")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
-
-		return resolver.root.ImageCount(ctx, RawQuery{Query: &query})
-	}
 	return resolver.root.ImageCount(resolver.namespaceScopeContext(ctx), args)
 }
 
@@ -634,26 +623,11 @@ func (resolver *namespaceResolver) Secrets(ctx context.Context, args PaginatedQu
 
 func (resolver *namespaceResolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Deployments")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readDeployments(ctx); err != nil {
-			return nil, err
-		}
-
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
-
-		return resolver.root.Deployments(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
 	return resolver.root.Deployments(resolver.namespaceScopeContext(ctx), args)
 }
 
 func (resolver *namespaceResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Cluster")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readClusters(ctx); err != nil {
-			return nil, err
-		}
-		return resolver.root.wrapCluster(resolver.root.ClusterDataStore.GetCluster(ctx, resolver.data.GetMetadata().GetClusterId()))
-	}
 	return resolver.root.Cluster(resolver.namespaceScopeContext(ctx), struct{ graphql.ID }{graphql.ID(resolver.data.GetMetadata().GetClusterId())})
 }
 
@@ -670,15 +644,6 @@ func (resolver *namespaceResolver) SecretCount(ctx context.Context, args RawQuer
 
 func (resolver *namespaceResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "DeploymentCount")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readDeployments(ctx); err != nil {
-			return 0, err
-		}
-
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
-
-		return resolver.root.DeploymentCount(ctx, RawQuery{Query: &query})
-	}
 	return resolver.root.DeploymentCount(resolver.namespaceScopeContext(ctx), args)
 }
 
@@ -761,9 +726,7 @@ func (resolver *namespaceResolver) LatestViolation(ctx context.Context, args Raw
 
 func (resolver *namespaceResolver) PlottedVulns(ctx context.Context, args PaginatedQuery) (*PlottedVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PlottedVulns")
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedImageVulnerabilities.")
-	}
+	return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedImageVulnerabilities.")
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
 	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
 }

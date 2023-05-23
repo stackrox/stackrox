@@ -13,7 +13,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -47,17 +46,8 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) SetupSuite() {
 	var err error
 	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
 	s.Require().NoError(err)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pool := s.dackboxTestStore.GetPostgresPool()
-		s.datastore = GetTestPostgresDataStore(s.T(), pool)
-	} else {
-		rocksengine := s.dackboxTestStore.GetRocksEngine()
-		bleveIndex := s.dackboxTestStore.GetBleveIndex()
-		dacky := s.dackboxTestStore.GetDackbox()
-		genericStore, err := componentCVEEdgeDataStore.GetTestRocksBleveDataStore(s.T(), rocksengine, bleveIndex, dacky)
-		s.Require().NoError(err)
-		s.datastore = nodeComponentCVEEdgeFromGenericStore{genericStore: genericStore}
-	}
+	pool := s.dackboxTestStore.GetPostgresPool()
+	s.datastore = GetTestPostgresDataStore(s.T(), pool)
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Node)
 }
 
@@ -80,9 +70,7 @@ func getVulnerabilityID(vulnerability *storage.EmbeddedVulnerability, os string)
 func getEdgeID(component *storage.EmbeddedNodeScanComponent, vulnerability *storage.EmbeddedVulnerability, os string) string {
 	componentID := getComponentID(component, os)
 	vulnerabilityID := getVulnerabilityID(vulnerability, os)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return pgSearch.IDFromPks([]string{componentID, vulnerabilityID})
-	}
+	return pgSearch.IDFromPks([]string{componentID, vulnerabilityID})
 	return edges.EdgeID{ParentID: componentID, ChildID: vulnerabilityID}.ToString()
 }
 

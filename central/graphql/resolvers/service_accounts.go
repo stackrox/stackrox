@@ -9,7 +9,6 @@ import (
 	rbacUtils "github.com/stackrox/rox/central/rbac/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -245,12 +244,10 @@ func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[
 		rbacUtils.NewClusterPermissionEvaluator(saClusterID,
 			resolver.root.K8sRoleStore, resolver.root.K8sRoleBindingStore)
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		ctx = scoped.Context(ctx, scoped.Scope{
-			Level: v1.SearchCategory_CLUSTERS,
-			ID:    saClusterID,
-		})
-	}
+	ctx = scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_CLUSTERS,
+		ID:    saClusterID,
+	})
 	namespaces, err := resolver.root.Namespaces(ctx, PaginatedQuery{})
 
 	if err != nil {

@@ -193,30 +193,11 @@ func (resolver *cVEResolver) CvssV3(_ context.Context) (*cVSSV3Resolver, error) 
 }
 
 func (resolver *Resolver) vulnerabilityV2(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.New("vulnerabilityV2 not supported on postgres.")
-	}
-	vulnResolver, err := resolver.unwrappedVulnerabilityV2(ctx, args)
-	if err != nil {
-		return nil, err
-	}
-	return vulnResolver, nil
+	return nil, errors.New("vulnerabilityV2 not supported on postgres.")
 }
 
 func (resolver *Resolver) vulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.New("vulnerabilitiesV2 not supported on postgres.")
-	}
-	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2(ctx, args)
-	if err != nil {
-		return nil, err
-	}
-	ret := make([]VulnerabilityResolver, 0, len(vulnResolvers))
-	for _, res := range vulnResolvers {
-		res.ctx = ctx
-		ret = append(ret, res)
-	}
-	return ret, nil
+	return nil, errors.New("vulnerabilitiesV2 not supported on postgres.")
 }
 
 func (resolver *Resolver) imageVulnerabilityV2(ctx context.Context, args IDQuery) (ImageVulnerabilityResolver, error) {
@@ -303,27 +284,7 @@ func (resolver *Resolver) unwrappedVulnerabilityV2(ctx context.Context, args IDQ
 }
 
 func (resolver *Resolver) unwrappedVulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]*cVEResolver, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
-	}
-	if err := readCVEs(ctx); err != nil {
-		return nil, err
-	}
-	query, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-
-	scopeQuery, err := args.AsV1ScopeQueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-
-	ctx, err = resolver.AddDistroContext(ctx, query, scopeQuery)
-	if err != nil {
-		return nil, err
-	}
-	return resolver.unwrappedVulnerabilitiesV2Query(ctx, query)
+	return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
 }
 
 func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.Query) ([]VulnerabilityResolver, error) {
@@ -340,56 +301,7 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 }
 
 func (resolver *Resolver) unwrappedVulnerabilitiesV2Query(ctx context.Context, query *v1.Query) ([]*cVEResolver, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
-	}
-	vulnLoader, err := loaders.GetCVELoader(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	query = tryUnsuppressedQuery(query)
-
-	originalQuery := query.Clone()
-	var queryModified, postSortingNeeded bool
-
-	if distroctx.IsImageScoped(ctx) {
-		query, queryModified = search.InverseFilterQueryWithMap(query, cvePostFilteringOptionsMap) // CVE queryModified
-		postSortingNeeded = needsPostSorting(originalQuery)
-		// We remove pagination since we want to ensure that result is correct by pushing the pagination to happen after the post sorting.
-		if postSortingNeeded {
-			query.Pagination = nil
-		}
-	}
-
-	vulns, err := vulnLoader.FromQuery(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	if queryModified {
-		vulns, err = filterNamespacedFields(originalQuery, vulns)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if postSortingNeeded {
-		vulns, err = sortNamespacedFields(originalQuery, vulns)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// If query was modified, it means the result was not paginated since the filtering removes pagination.
-	// If post sorting was needed, which means pagination was not performed because it was removed above.
-	if queryModified || postSortingNeeded {
-		vulns, err = paginate(originalQuery.GetPagination(), vulns, nil)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	vulnResolvers, err := resolver.wrapCVEs(vulns, err)
-	return vulnResolvers, err
+	return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
 }
 
 func (resolver *Resolver) vulnerabilityCountV2(ctx context.Context, args RawQuery) (int32, error) {
@@ -405,27 +317,7 @@ func (resolver *Resolver) vulnerabilityCountV2(ctx context.Context, args RawQuer
 }
 
 func (resolver *Resolver) vulnerabilityCountV2Query(ctx context.Context, query *v1.Query) (int32, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return 0, errors.New("attempted to invoke legacy datastores with postgres enabled")
-	}
-	vulnLoader, err := loaders.GetCVELoader(ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	if distroctx.IsImageScoped(ctx) {
-		_, queryModified := search.InverseFilterQueryWithMap(query, cvePostFilteringOptionsMap)
-		if queryModified {
-			vulns, err := resolver.vulnerabilitiesV2Query(ctx, query)
-			if err != nil {
-				return 0, err
-			}
-			return int32(len(vulns)), nil
-		}
-	}
-
-	query = tryUnsuppressedQuery(query)
-	return vulnLoader.CountFromQuery(ctx, query)
+	return 0, errors.New("attempted to invoke legacy datastores with postgres enabled")
 }
 
 func (resolver *Resolver) vulnCounterV2(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
@@ -440,27 +332,7 @@ func (resolver *Resolver) vulnCounterV2(ctx context.Context, args RawQuery) (*Vu
 }
 
 func (resolver *Resolver) vulnCounterV2Query(ctx context.Context, query *v1.Query) (*VulnerabilityCounterResolver, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
-	}
-	vulnLoader, err := loaders.GetCVELoader(ctx)
-	if err != nil {
-		return nil, err
-	}
-	query = tryUnsuppressedQuery(query)
-	fixableVulnsQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
-	fixableVulns, err := vulnLoader.FromQuery(ctx, fixableVulnsQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	unFixableVulnsQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, false).ProtoQuery())
-	unFixableCVEs, err := vulnLoader.FromQuery(ctx, unFixableVulnsQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	return mapCVEsToVulnerabilityCounter(cveToVulnerabilityWithSeverity(fixableVulns), cveToVulnerabilityWithSeverity(unFixableCVEs)), nil
+	return nil, errors.New("attempted to invoke legacy datastores with postgres enabled")
 }
 
 func cveToVulnerabilityWithSeverity(in []*storage.CVE) []VulnerabilityWithSeverity {
@@ -761,21 +633,13 @@ func (resolver *cVEResolver) ImageComponentCount(ctx context.Context, args RawQu
 // NodeComponents are the node components that contain the CVE/Vulnerability.
 func (resolver *cVEResolver) NodeComponents(_ context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "NodeComponents")
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.New("unexpected access to legacy component datastore with postgres enabled")
-	}
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
-	return resolver.root.NodeComponents(resolver.withVulnerabilityScope(resolver.ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	return nil, errors.New("unexpected access to legacy component datastore with postgres enabled")
 }
 
 // NodeComponentCount is the number of node components that contain the CVE/Vulnerability.
 func (resolver *cVEResolver) NodeComponentCount(_ context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "NodeComponentCount")
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return 0, errors.New("unexpected access to legacy component datastore with postgres enabled")
-	}
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
-	return resolver.root.NodeComponentCount(resolver.withVulnerabilityScope(resolver.ctx), RawQuery{Query: &query})
+	return 0, errors.New("unexpected access to legacy component datastore with postgres enabled")
 }
 
 // Images are the images that contain the CVE/Vulnerability.

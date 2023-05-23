@@ -7,9 +7,7 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -48,32 +46,17 @@ func (s *secretDatastoreSACTestSuite) SetupSuite() {
 	var err error
 	secretObj := "secretSACTest"
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(s.T())
-		s.Require().NotNil(pgtestbase)
-		s.pool = pgtestbase.DB
-		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
-		s.Require().NoError(err)
-	} else {
-		s.engine, err = rocksdb.NewTemp(secretObj)
-		s.NoError(err)
-		s.index, err = globalindex.TempInitializeIndices(secretObj)
-		s.NoError(err)
-
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index)
-		s.Require().NoError(err)
-	}
+	pgtestbase := pgtest.ForT(s.T())
+	s.Require().NotNil(pgtestbase)
+	s.pool = pgtestbase.DB
+	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
+	s.Require().NoError(err)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Secret)
 }
 
 func (s *secretDatastoreSACTestSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	} else {
-		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
-		s.Require().NoError(s.index.Close())
-	}
+	s.pool.Close()
 }
 
 func (s *secretDatastoreSACTestSuite) SetupTest() {

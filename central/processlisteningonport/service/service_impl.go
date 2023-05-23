@@ -4,12 +4,10 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/pkg/errors"
 	datastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -48,11 +46,6 @@ func (s *serviceImpl) GetListeningEndpoints(
 	ctx context.Context,
 	req *v1.GetProcessesListeningOnPortsRequest,
 ) (*v1.GetProcessesListeningOnPortsResponse, error) {
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		// PLOP is a Postgres-only feature, do nothing.
-		return nil, errors.New("Postgres env var is not enabled, PLOP APIs are disabled")
-	}
 
 	deployment := req.GetDeploymentId()
 	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPort(ctx, deployment)

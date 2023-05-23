@@ -9,16 +9,12 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/store"
 	PermissionSetPGStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
-	permissionSetPGStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
 	postgresRolePGStore "github.com/stackrox/rox/central/role/store/role/postgres"
-	roleStore "github.com/stackrox/rox/central/role/store/role/rocksdb"
 	postgresSimpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
-	simpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -35,19 +31,9 @@ func Singleton() DataStore {
 		var roleStorage store.RoleStore
 		var permissionSetStorage store.PermissionSetStore
 		var accessScopeStorage store.SimpleAccessScopeStore
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			roleStorage = postgresRolePGStore.New(globaldb.GetPostgres())
-			permissionSetStorage = PermissionSetPGStore.New(globaldb.GetPostgres())
-			accessScopeStorage = postgresSimpleAccessScopeStore.New(globaldb.GetPostgres())
-		} else {
-			var err error
-			roleStorage, err = roleStore.New(globaldb.GetRocksDB())
-			utils.CrashOnError(err)
-			permissionSetStorage, err = permissionSetPGStore.New(globaldb.GetRocksDB())
-			utils.CrashOnError(err)
-			accessScopeStorage, err = simpleAccessScopeStore.New(globaldb.GetRocksDB())
-			utils.CrashOnError(err)
-		}
+		roleStorage = postgresRolePGStore.New(globaldb.GetPostgres())
+		permissionSetStorage = PermissionSetPGStore.New(globaldb.GetPostgres())
+		accessScopeStorage = postgresSimpleAccessScopeStore.New(globaldb.GetPostgres())
 		// Which role format is used is determined solely by the feature flag.
 		ds = New(roleStorage, permissionSetStorage, accessScopeStorage, groupFilter.GetFiltered)
 
@@ -71,9 +57,7 @@ type roleAttributes struct {
 }
 
 func (attributes *roleAttributes) getID() string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return attributes.postgresID
-	}
+	return attributes.postgresID
 	return rolePkg.EnsureValidPermissionSetID(attributes.idSuffix)
 }
 
@@ -161,14 +145,6 @@ var defaultRoles = map[string]roleAttributes{
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.VulnReporter],
 		description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
 		resourceWithAccess: func() []permissions.ResourceWithAccess {
-			if !env.PostgresDatastoreEnabled.BooleanSetting() {
-				return []permissions.ResourceWithAccess{
-					permissions.View(resources.Role),                   // required for scopes
-					permissions.View(resources.Integration),            // required for vuln report configurations
-					permissions.View(resources.VulnerabilityReports),   // required for vuln report configurations prior to collections
-					permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations prior to collections
-				}
-			}
 			return []permissions.ResourceWithAccess{
 				permissions.View(resources.WorkflowAdministration),   // required for vuln report configurations
 				permissions.Modify(resources.WorkflowAdministration), // required for vuln report configurations

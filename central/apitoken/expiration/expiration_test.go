@@ -11,7 +11,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	apiTokenDataStore "github.com/stackrox/rox/central/apitoken/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -35,9 +34,6 @@ type apiTokenExpirationNotifierTestSuite struct {
 }
 
 func (s *apiTokenExpirationNotifierTestSuite) SetupSuite() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Notification of expired API tokens is only supported in Postgres mode.")
-	}
 	s.ctx = sac.WithAllAccess(context.Background())
 }
 

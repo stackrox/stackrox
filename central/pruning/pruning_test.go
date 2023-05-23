@@ -13,23 +13,16 @@ import (
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertDatastoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	clusterIndex "github.com/stackrox/rox/central/cluster/index"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
-	clusterRocksDB "github.com/stackrox/rox/central/cluster/store/cluster/rocksdb"
 	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
-	clusterHealthRocksDB "github.com/stackrox/rox/central/cluster/store/clusterhealth/rocksdb"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
-	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/globalindex"
-	imageDackBox "github.com/stackrox/rox/central/image/dackbox"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageDatastoreMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
-	imageIndex "github.com/stackrox/rox/central/image/index"
 	componentsMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	imageIntegrationDatastoreMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
 	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
@@ -62,14 +55,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -127,18 +117,12 @@ type PruningTestSuite struct {
 
 func (s *PruningTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-
-		testingDB := pgtest.ForT(s.T())
-		s.pool = testingDB.DB
-	}
+	testingDB := pgtest.ForT(s.T())
+	s.pool = testingDB.DB
 }
 
 func (s *PruningTestSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	}
+	s.pool.Close()
 }
 
 func TestPruning(t *testing.T) {
@@ -235,9 +219,7 @@ func newPod(live bool, imageIDs ...string) *storage.Pod {
 }
 
 func setupRocksDBAndBleve(t *testing.T) (*rocksdb.RocksDB, bleve.Index) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, nil
-	}
+	return nil, nil
 
 	db := rocksdbtest.RocksDBForT(t)
 	bleveIndex, err := globalindex.MemOnlyIndex()
@@ -268,25 +250,6 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 	mockFilter.EXPECT().DeleteByPod(gomock.Any()).AnyTimes()
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		db, bleveIndex := setupRocksDBAndBleve(s.T())
-
-		dacky, registry, indexingQ := testDackBoxInstance(s.T(), db, bleveIndex)
-		registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
-		registry.RegisterWrapper(imageDackBox.Bucket, imageIndex.Wrapper{})
-
-		// Initialize real datastore
-		images := imageDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), bleveIndex, bleveIndex, true, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker())
-
-		deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-		require.NoError(s.T(), err)
-
-		pods, err := podDatastore.NewRocksDB(db, bleveIndex, mockProcessDataStore, mockFilter)
-		require.NoError(s.T(), err)
-
-		return mockAlertDatastore, mockConfigDatastore, images, deployments, pods, indexingQ
-	}
-
 	deployments, err := deploymentDatastore.New(nil, dackboxConcurrency.NewKeyFence(), s.pool, nil, nil, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(s.T(), err)
 
@@ -309,17 +272,6 @@ func (s *PruningTestSuite) generateNodeDataStructures() testNodeDatastore.DataSt
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 	mockRiskDatastore.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		db, bleveIndex := setupRocksDBAndBleve(s.T())
-
-		dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
-		require.NoError(s.T(), err)
-
-		nodes := testNodeDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), bleveIndex, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker())
-
-		return nodes
-	}
-
 	nodeStore := nodePostgres.New(s.pool, false, dackboxConcurrency.NewKeyFence())
 	nodeIndexer := nodePostgres.NewIndexer(s.pool)
 
@@ -335,8 +287,6 @@ func (s *PruningTestSuite) generateNodeDataStructures() testNodeDatastore.DataSt
 }
 
 func (s *PruningTestSuite) generateAlertDataStructures(ctx context.Context) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore) {
-	db, bleveIndex := setupRocksDBAndBleve(s.T())
-
 	// Initialize real datastore
 	var (
 		alerts alertDatastore.DataStore
@@ -344,15 +294,8 @@ func (s *PruningTestSuite) generateAlertDataStructures(ctx context.Context) (ale
 		err    error
 	)
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		alerts, err = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
-		require.NoError(s.T(), err)
-	} else {
-		dacky, err = dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
-		require.NoError(s.T(), err)
-
-		alerts = alertDatastore.NewWithDb(db, bleveIndex)
-	}
+	alerts, err = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
+	require.NoError(s.T(), err)
 
 	ctrl := gomock.NewController(s.T())
 
@@ -364,7 +307,7 @@ func (s *PruningTestSuite) generateAlertDataStructures(ctx context.Context) (ale
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 
-	deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, nil, nil, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(s.T(), err)
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments
 }
@@ -423,51 +366,6 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	clusterCVEs.EXPECT().DeleteClusterCVEsInternal(gomock.Any(), gomock.Any()).AnyTimes()
 
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		db, bleveIndex := setupRocksDBAndBleve(s.T())
-		clusterIndexer := clusterIndex.New(bleveIndex)
-
-		dacky, registry, indexingQ := testDackBoxInstance(s.T(), db, bleveIndex)
-		registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
-
-		deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, clusterFlows,
-			mockRiskDatastore, expiringcache.NewExpiringCache(1*time.Minute), mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-		require.NoError(s.T(), err)
-
-		clusterStorage, err := clusterRocksDB.New(db)
-		require.NoError(s.T(), err)
-
-		clusterHealthStorage, err := clusterHealthRocksDB.New(db)
-		require.NoError(s.T(), err)
-
-		nodeDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
-		clusterDataStore, err := clusterDatastore.New(
-			clusterStorage,
-			clusterHealthStorage,
-			clusterCVEs,
-			alertDataStore,
-			imageIntegrationDataStore,
-			namespaceDataStore,
-			deployments,
-			nodeDataStore,
-			podDataStore,
-			secretDataStore,
-			flowsDataStore,
-			netEntityDataStore,
-			serviceAccountMockDataStore,
-			roleDataStore,
-			roleBindingDataStore,
-			connMgr,
-			notifierMock,
-			mockProvider,
-			ranking.NewRanker(),
-			clusterIndexer,
-			networkBaselineMgr)
-		require.NoError(s.T(), err)
-
-		return mockConfigDatastore, deployments, clusterDataStore, indexingQ
-	}
 
 	deployments, err := deploymentDatastore.New(nil, dackboxConcurrency.NewKeyFence(), s.pool, nil, nil, nil, mockBaselineDataStore, clusterFlows, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(s.T(), err)
@@ -644,7 +542,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 		s.T().Run(c.name, func(t *testing.T) {
 			// Get all of the image constructs because I update the time within the store
 			// So to test need to update them separately
-			alerts, config, images, deployments, pods, indexQ := s.generateImageDataStructures(ctx)
+			alerts, config, images, deployments, pods, _ := s.generateImageDataStructures(ctx)
 			nodes := s.generateNodeDataStructures()
 
 			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods, nil, nil, nil, nil, config, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
@@ -660,12 +558,6 @@ func (s *PruningTestSuite) TestImagePruning() {
 			for _, image := range c.images {
 				image.Id = types.NewDigest(image.Id).Digest()
 				require.NoError(t, images.UpsertImage(ctx, image))
-			}
-
-			if !env.PostgresDatastoreEnabled.BooleanSetting() {
-				indexingDone := concurrency.NewSignal()
-				indexQ.PushSignal(&indexingDone)
-				indexingDone.Wait()
 			}
 
 			conf, err := config.GetConfig(ctx)
@@ -1003,7 +895,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
-			_, deploymentsDS, clusterDS, indexingQ := s.generateClusterDataStructures()
+			_, deploymentsDS, clusterDS, _ := s.generateClusterDataStructures()
 
 			// Add the unhealthy cluster that is under test
 			cluster := &storage.Cluster{
@@ -1032,13 +924,6 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 				HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
 			})
 			require.NoError(t, err)
-
-			if !env.PostgresDatastoreEnabled.BooleanSetting() {
-				// Wait for deployments to get indexed before continuing
-				newSig := concurrency.NewSignal()
-				indexingQ.PushSignal(&newSig)
-				newSig.Wait()
-			}
 
 			// Run GC
 			lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
@@ -1554,54 +1439,37 @@ func (s *PruningTestSuite) TestMarkOrphanedAlerts() {
 
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
-			if !env.PostgresDatastoreEnabled.BooleanSetting() {
-				ctrl := gomock.NewController(t)
-				alerts := alertDatastoreMocks.NewMockDataStore(ctrl)
-				gci := &garbageCollectorImpl{
-					alerts: alerts,
-				}
-				alerts.EXPECT().WalkAll(pruningCtx, gomock.Any()).DoAndReturn(
-					func(ctx context.Context, fn func(la *storage.ListAlert) error) error {
-						for _, a := range c.initialAlerts {
-							assert.NoError(t, fn(a))
-						}
-						return nil
-					})
-				alerts.EXPECT().MarkAlertStaleBatch(pruningCtx, c.expectedDeletions)
-				gci.markOrphanedAlertsAsResolved(c.deployments)
-			} else {
-				ctrl := gomock.NewController(t)
-				alerts := alertDatastoreMocks.NewMockDataStore(ctrl)
-				db := pgtest.ForT(t)
-				gci := &garbageCollectorImpl{
-					postgres: db.DB,
-					alerts:   alerts,
-				}
-				actualAlertsDS, err := alertDatastore.GetTestPostgresDataStore(t, db.DB)
-				assert.NoError(t, err)
-
-				deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(t, db.DB)
-				assert.NoError(t, err)
-
-				for _, depID := range c.deployments.AsSlice() {
-					assert.NoError(t, deploymentDS.UpsertDeployment(pruningCtx, &storage.Deployment{Id: depID}))
-				}
-				for _, la := range c.initialAlerts {
-					assert.NoError(t, actualAlertsDS.UpsertAlert(pruningCtx, &storage.Alert{
-						Id:             la.GetId(),
-						LifecycleStage: la.GetLifecycleStage(),
-						Entity: &storage.Alert_Deployment_{
-							Deployment: &storage.Alert_Deployment{
-								Id: la.GetDeployment().GetId(),
-							},
-						},
-						Time:  la.GetTime(),
-						State: la.GetState(),
-					}))
-				}
-				alerts.EXPECT().MarkAlertStaleBatch(pruningCtx, c.expectedDeletions)
-				gci.markOrphanedAlertsAsResolved(c.deployments)
+			ctrl := gomock.NewController(t)
+			alerts := alertDatastoreMocks.NewMockDataStore(ctrl)
+			db := pgtest.ForT(t)
+			gci := &garbageCollectorImpl{
+				postgres: db.DB,
+				alerts:   alerts,
 			}
+			actualAlertsDS, err := alertDatastore.GetTestPostgresDataStore(t, db.DB)
+			assert.NoError(t, err)
+
+			deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(t, db.DB)
+			assert.NoError(t, err)
+
+			for _, depID := range c.deployments.AsSlice() {
+				assert.NoError(t, deploymentDS.UpsertDeployment(pruningCtx, &storage.Deployment{Id: depID}))
+			}
+			for _, la := range c.initialAlerts {
+				assert.NoError(t, actualAlertsDS.UpsertAlert(pruningCtx, &storage.Alert{
+					Id:             la.GetId(),
+					LifecycleStage: la.GetLifecycleStage(),
+					Entity: &storage.Alert_Deployment_{
+						Deployment: &storage.Alert_Deployment{
+							Id: la.GetDeployment().GetId(),
+						},
+					},
+					Time:  la.GetTime(),
+					State: la.GetState(),
+				}))
+			}
+			alerts.EXPECT().MarkAlertStaleBatch(pruningCtx, c.expectedDeletions)
+			gci.markOrphanedAlertsAsResolved(c.deployments)
 		})
 	}
 }
@@ -1743,9 +1611,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
 
 			clusterFlows.EXPECT().GetFlowStore(pruningCtx, fixtureconsts.Cluster1).Return(flows, nil)
 
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				flows.EXPECT().RemoveStaleFlows(pruningCtx).Return(nil)
-			}
+			flows.EXPECT().RemoveStaleFlows(pruningCtx).Return(nil)
 			flows.EXPECT().RemoveMatchingFlows(pruningCtx, gomock.Any(), gomock.Any()).DoAndReturn(
 				func(ctx context.Context, keyFn func(props *storage.NetworkFlowProperties) bool, valueFn func(flow *storage.NetworkFlow) bool) error {
 					var deleted bool
@@ -2004,22 +1870,12 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 			var k8sRoles k8sRoleDataStore.DataStore
 			var k8sRoleBindings k8sRoleBindingDataStore.DataStore
 			var err error
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				serviceAccounts, err = serviceAccountDataStore.GetTestPostgresDataStore(t, s.pool)
-				assert.NoError(t, err)
-				k8sRoles, err = k8sRoleDataStore.GetTestPostgresDataStore(t, s.pool)
-				assert.NoError(t, err)
-				k8sRoleBindings, err = k8sRoleBindingDataStore.GetTestPostgresDataStore(t, s.pool)
-				assert.NoError(t, err)
-			} else {
-				db, bleveIndex := setupRocksDBAndBleve(t)
-				serviceAccounts, err = serviceAccountDataStore.NewForTestOnly(t, db, bleveIndex)
-				assert.NoError(t, err)
-				k8sRoles, err = k8sRoleDataStore.NewForTestOnly(t, db, bleveIndex)
-				assert.NoError(t, err)
-				k8sRoleBindings, err = k8sRoleBindingDataStore.NewForTestOnly(t, db, bleveIndex)
-				assert.NoError(t, err)
-			}
+			serviceAccounts, err = serviceAccountDataStore.GetTestPostgresDataStore(t, s.pool)
+			assert.NoError(t, err)
+			k8sRoles, err = k8sRoleDataStore.GetTestPostgresDataStore(t, s.pool)
+			assert.NoError(t, err)
+			k8sRoleBindings, err = k8sRoleBindingDataStore.GetTestPostgresDataStore(t, s.pool)
+			assert.NoError(t, err)
 
 			for _, sa := range c.serviceAccts {
 				assert.NoError(t, serviceAccounts.UpsertServiceAccount(pruningCtx, sa))
@@ -2067,9 +1923,6 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 
 func (s *PruningTestSuite) TestRemoveLogImbues() {
 	// Implemented in Postgres only
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
 
 	cases := []struct {
 		name                 string

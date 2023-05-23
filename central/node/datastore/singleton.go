@@ -9,7 +9,6 @@ import (
 	pgStore "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -20,13 +19,11 @@ var (
 )
 
 func initialize() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage := pgStore.New(globaldb.GetPostgres(), false, keyfence.NodeKeyFenceSingleton())
-		indexer := pgStore.NewIndexer(globaldb.GetPostgres())
-		searcher := search.NewV2(storage, indexer)
-		ad = NewWithPostgres(storage, indexer, searcher, riskDS.Singleton(), ranking.NodeRanker(), ranking.NodeComponentRanker())
-		return
-	}
+	storage := pgStore.New(globaldb.GetPostgres(), false, keyfence.NodeKeyFenceSingleton())
+	indexer := pgStore.NewIndexer(globaldb.GetPostgres())
+	searcher := search.NewV2(storage, indexer)
+	ad = NewWithPostgres(storage, indexer, searcher, riskDS.Singleton(), ranking.NodeRanker(), ranking.NodeComponentRanker())
+	return
 
 	ad = New(dackbox.GetGlobalDackBox(),
 		dackbox.GetKeyFence(),

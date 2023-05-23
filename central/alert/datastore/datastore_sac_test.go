@@ -7,11 +7,8 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/alert/mappings"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -54,34 +51,18 @@ func (s *alertDatastoreSACTestSuite) SetupSuite() {
 	var err error
 	alertObj := "alertSACTest"
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(s.T())
-		s.Require().NotNil(pgtestbase)
-		s.pool = pgtestbase.DB
-		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
-		s.Require().NoError(err)
-		s.optionsMap = schema.AlertsSchema.OptionsMap
-	} else {
-		s.engine, err = rocksdb.NewTemp(alertObj)
-		s.NoError(err)
-		s.index, err = globalindex.TempInitializeIndices(alertObj)
-		s.NoError(err)
-
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index)
-		s.Require().NoError(err)
-		s.optionsMap = mappings.OptionsMap
-	}
+	pgtestbase := pgtest.ForT(s.T())
+	s.Require().NotNil(pgtestbase)
+	s.pool = pgtestbase.DB
+	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
+	s.Require().NoError(err)
+	s.optionsMap = schema.AlertsSchema.OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Alert)
 }
 
 func (s *alertDatastoreSACTestSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	} else {
-		err := rocksdb.CloseAndRemove(s.engine)
-		s.NoError(err)
-	}
+	s.pool.Close()
 }
 
 func (s *alertDatastoreSACTestSuite) SetupTest() {
@@ -208,16 +189,12 @@ func (s *alertDatastoreSACTestSuite) TestMarkAlertStale() {
 				s.NoError(err)
 				// SAC behavior in postgres has changed. Instead of returning error, pg store returns nil result,
 				// hence `missing` var is set indicate that the record is missing.
-			} else if !env.PostgresDatastoreEnabled.BooleanSetting() {
-				s.Equal(c.expectedError, err)
 			}
 			_, err = s.datastore.MarkAlertStaleBatch(ctx, alert2.GetId())
 			if !c.expectError {
 				s.NoError(err)
 				// SAC behavior in postgres has changed. Instead of returning error, pg store returns nil result,
 				// hence `missing` var is set indicate that the record is missing.
-			} else if !env.PostgresDatastoreEnabled.BooleanSetting() {
-				s.Equal(c.expectedError, err)
 			}
 		})
 	}

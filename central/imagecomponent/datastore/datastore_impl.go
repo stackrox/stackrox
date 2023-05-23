@@ -13,7 +13,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -57,12 +56,6 @@ func (ds *datastoreImpl) SearchRawImageComponents(ctx context.Context, q *v1.Que
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageComponent, bool, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		filteredIDs, err := ds.filterReadable(ctx, []string{id})
-		if err != nil || len(filteredIDs) != 1 {
-			return nil, false, err
-		}
-	}
 
 	component, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
@@ -74,12 +67,6 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageComp
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		filteredIDs, err := ds.filterReadable(ctx, []string{id})
-		if err != nil || len(filteredIDs) != 1 {
-			return false, err
-		}
-	}
 
 	found, err := ds.storage.Exists(ctx, id)
 	if err != nil || !found {
@@ -89,13 +76,6 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.ImageComponent, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		var err error
-		ids, err = ds.filterReadable(ctx, ids)
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	components, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {

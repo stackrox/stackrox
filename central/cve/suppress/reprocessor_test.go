@@ -32,7 +32,6 @@ import (
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
@@ -40,9 +39,7 @@ import (
 )
 
 func TestUnsuppressCVEs(t *testing.T) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip non-postgres test")
-	}
+	t.Skip("Skip non-postgres test")
 
 	expiredCVEs := []*storage.CVE{
 		{

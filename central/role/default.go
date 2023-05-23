@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -38,16 +37,12 @@ var (
 )
 
 func getAccessScopeExcludeAllID() string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return accesscontrol.DefaultAccessScopeIDs[accesscontrol.DenyAllAccessScope]
-	}
+	return accesscontrol.DefaultAccessScopeIDs[accesscontrol.DenyAllAccessScope]
 	return EnsureValidAccessScopeID("denyall")
 }
 
 func getAccessScopeIncludeAllID() string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return accesscontrol.DefaultAccessScopeIDs[accesscontrol.UnrestrictedAccessScope]
-	}
+	return accesscontrol.DefaultAccessScopeIDs[accesscontrol.UnrestrictedAccessScope]
 	return EnsureValidAccessScopeID("unrestricted")
 }
 

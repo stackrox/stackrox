@@ -2,11 +2,9 @@ package dackbox
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 	"github.com/stackrox/rox/pkg/dbhelper"
-	"github.com/stackrox/rox/pkg/env"
 )
 
 var (
@@ -61,10 +59,6 @@ func ListAlloc() proto.Message {
 }
 
 func init() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		globaldb.RegisterBucket(Bucket, "Deployment")
-		globaldb.RegisterBucket(ListBucket, "List Deployment")
-	}
 }
 
 // KeyFunc returns the key for a deployment.

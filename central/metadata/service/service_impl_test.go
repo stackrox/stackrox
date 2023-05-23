@@ -17,7 +17,6 @@ import (
 	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
@@ -137,42 +136,30 @@ func (s *serviceImplTestSuite) TestDatabaseStatus() {
 	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
 	ctx := authn.ContextWithIdentity(sac.WithAllAccess(context.Background()), mockID, s.T())
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		tp := pgtest.ForT(s.T())
-		service := serviceImpl{db: tp.DB}
+	tp := pgtest.ForT(s.T())
+	service := serviceImpl{db: tp.DB}
 
-		dbStatus, err := service.GetDatabaseStatus(ctx, nil)
-		s.NoError(err)
-		s.True(dbStatus.DatabaseAvailable)
-		s.Equal(v1.DatabaseStatus_PostgresDB, dbStatus.DatabaseType)
-		s.NotEqual("", dbStatus.DatabaseVersion)
+	dbStatus, err := service.GetDatabaseStatus(ctx, nil)
+	s.NoError(err)
+	s.True(dbStatus.DatabaseAvailable)
+	s.Equal(v1.DatabaseStatus_PostgresDB, dbStatus.DatabaseType)
+	s.NotEqual("", dbStatus.DatabaseVersion)
 
-		dbStatus, err = service.GetDatabaseStatus(context.Background(), nil)
-		s.NoError(err)
-		s.True(dbStatus.DatabaseAvailable)
-		s.Equal(v1.DatabaseStatus_Hidden, dbStatus.DatabaseType)
-		s.Equal("", dbStatus.DatabaseVersion)
+	dbStatus, err = service.GetDatabaseStatus(context.Background(), nil)
+	s.NoError(err)
+	s.True(dbStatus.DatabaseAvailable)
+	s.Equal(v1.DatabaseStatus_Hidden, dbStatus.DatabaseType)
+	s.Equal("", dbStatus.DatabaseVersion)
 
-		tp.Close()
-		dbStatus, err = service.GetDatabaseStatus(context.Background(), nil)
-		s.NoError(err)
-		s.False(dbStatus.DatabaseAvailable)
-		s.Equal(v1.DatabaseStatus_Hidden, dbStatus.DatabaseType)
-		s.Equal("", dbStatus.DatabaseVersion)
-	} else {
-		service := serviceImpl{}
-
-		dbStatus, err := service.GetDatabaseStatus(context.Background(), nil)
-		s.NoError(err)
-		s.True(dbStatus.DatabaseAvailable)
-	}
+	tp.Close()
+	dbStatus, err = service.GetDatabaseStatus(context.Background(), nil)
+	s.NoError(err)
+	s.False(dbStatus.DatabaseAvailable)
+	s.Equal(v1.DatabaseStatus_Hidden, dbStatus.DatabaseType)
+	s.Equal("", dbStatus.DatabaseVersion)
 }
 
 func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 	tp := pgtest.ForT(s.T())
 	defer tp.Teardown(s.T())
 

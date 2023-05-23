@@ -7,7 +7,6 @@ import (
 	timestamp "github.com/gogo/protobuf/types"
 	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -35,9 +34,6 @@ func (l *backupListenerImpl) OnBackupFail(ctx context.Context) {
 	defer l.lock.Unlock()
 
 	// Unless we add rocksDB store, we can only run on postgre.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
 	l.updateSystemInfo(ctx, storage.OperationStatus_FAIL)
 }
 
@@ -46,9 +42,6 @@ func (l *backupListenerImpl) OnBackupSuccess(ctx context.Context) {
 	defer l.lock.Unlock()
 
 	// Unless we add rocksDB store, we can only run on postgre.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
 	l.updateSystemInfo(ctx, storage.OperationStatus_PASS)
 }
 

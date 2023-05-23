@@ -119,11 +119,9 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, nodeInventory *
 	}
 
 	node.Scan = scan
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		converter.FillV2NodeVulnerabilities(node)
-		for _, component := range node.GetScan().GetComponents() {
-			component.Vulns = nil
-		}
+	converter.FillV2NodeVulnerabilities(node)
+	for _, component := range node.GetScan().GetComponents() {
+		component.Vulns = nil
 	}
 	FillScanStats(node)
 
@@ -147,45 +145,23 @@ func FillScanStats(n *storage.Node) {
 		var componentTopCVSS float32
 		var hasVulns bool
 
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			for _, v := range c.GetVulnerabilities() {
-				hasVulns = true
-				if _, ok := vulns[v.GetCveBaseInfo().GetCve()]; !ok {
-					vulns[v.GetCveBaseInfo().GetCve()] = false
-				}
-
-				if v.GetCvss() > componentTopCVSS {
-					componentTopCVSS = v.GetCvss()
-				}
-
-				if v.GetSetFixedBy() == nil {
-					continue
-				}
-
-				fixedByProvided = true
-				if v.GetFixedBy() != "" {
-					vulns[v.GetCveBaseInfo().GetCve()] = true
-				}
+		for _, v := range c.GetVulnerabilities() {
+			hasVulns = true
+			if _, ok := vulns[v.GetCveBaseInfo().GetCve()]; !ok {
+				vulns[v.GetCveBaseInfo().GetCve()] = false
 			}
-		} else {
-			for _, v := range c.GetVulns() {
-				hasVulns = true
-				if _, ok := vulns[v.GetCve()]; !ok {
-					vulns[v.GetCve()] = false
-				}
 
-				if v.GetCvss() > componentTopCVSS {
-					componentTopCVSS = v.GetCvss()
-				}
+			if v.GetCvss() > componentTopCVSS {
+				componentTopCVSS = v.GetCvss()
+			}
 
-				if v.GetSetFixedBy() == nil {
-					continue
-				}
+			if v.GetSetFixedBy() == nil {
+				continue
+			}
 
-				fixedByProvided = true
-				if v.GetFixedBy() != "" {
-					vulns[v.GetCve()] = true
-				}
+			fixedByProvided = true
+			if v.GetFixedBy() != "" {
+				vulns[v.GetCveBaseInfo().GetCve()] = true
 			}
 		}
 

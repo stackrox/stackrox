@@ -298,7 +298,6 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in *jlexer.Lexer
 				if out.Evidence == nil {
 					if !in.IsDelim(']') {
 						out.Evidence = make([]*storage.ComplianceResultValue_Evidence, 0, 8)
-					} else {
 						out.Evidence = []*storage.ComplianceResultValue_Evidence{}
 					}
 				} else {
@@ -309,7 +308,6 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in *jlexer.Lexer
 					if in.IsNull() {
 						in.Skip()
 						v7 = nil
-					} else {
 						if v7 == nil {
 							v7 = new(storage.ComplianceResultValue_Evidence)
 						}

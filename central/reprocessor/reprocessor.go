@@ -8,7 +8,6 @@ import (
 	activeComponentsUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/enrichment"
-	"github.com/stackrox/rox/central/globaldb/dackbox"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
@@ -61,9 +60,6 @@ var (
 func Singleton() Loop {
 	once.Do(func() {
 		var dackboxIndexQueue queue.WaitableQueue
-		if !env.PostgresDatastoreEnabled.BooleanSetting() {
-			dackboxIndexQueue = dackbox.GetIndexQueue()
-		}
 		loop = NewLoop(connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.NodeEnricherSingleton(),
 			deploymentDatastore.Singleton(), imageDatastore.Singleton(), nodeDatastore.Singleton(), manager.Singleton(),
 			watchedImageDataStore.Singleton(), activeComponentsUpdater.Singleton(), dackboxIndexQueue)
@@ -286,9 +282,6 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 			defer wg.Add(-1)
 			if individualReprocessFunc(id) {
 				nReprocessed.Inc()
-				if !env.PostgresDatastoreEnabled.BooleanSetting() {
-					l.waitForIndexing()
-				}
 			}
 		}(id)
 	}
@@ -326,10 +319,6 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 			log.Errorf("error upserting image %q into datastore: %v", image.GetName().GetFullName(), err)
 			return nil, false
 		}
-	}
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		l.waitForIndexing()
 	}
 
 	return image, true

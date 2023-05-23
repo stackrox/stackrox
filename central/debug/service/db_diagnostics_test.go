@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -26,10 +25,6 @@ type DBDiagnosticTestSuite struct {
 }
 
 func (s *DBDiagnosticTestSuite) SetupSuite() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip legacy db test.  Postgres only.")
-		s.T().SkipNow()
-	}
 
 	ctx := sac.WithAllAccess(context.Background())
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
@@ -15,7 +14,6 @@ import (
 	signatureIntegrationDataStore "github.com/stackrox/rox/central/signatureintegration/datastore"
 	"github.com/stackrox/rox/central/vulnerabilityrequest/suppressor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
@@ -43,13 +41,8 @@ var (
 func initialize() {
 	var imageCVESuppressor imageEnricher.CVESuppressor
 	var nodeCVESuppressor nodeEnricher.CVESuppressor
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		imageCVESuppressor = imageCVEDataStore.Singleton()
-		nodeCVESuppressor = nodeCVEDataStore.Singleton()
-	} else {
-		imageCVESuppressor = cveDataStore.Singleton()
-		nodeCVESuppressor = cveDataStore.Singleton()
-	}
+	imageCVESuppressor = imageCVEDataStore.Singleton()
+	nodeCVESuppressor = nodeCVEDataStore.Singleton()
 
 	ie = imageEnricher.New(imageCVESuppressor, suppressor.Singleton(), imageintegration.Set(),
 		metrics.CentralSubsystem, ImageMetadataCacheSingleton(), datastore.Singleton().GetImage, reporter.Singleton(),

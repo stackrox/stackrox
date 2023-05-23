@@ -10,7 +10,6 @@ import (
 	pgStore "github.com/stackrox/rox/central/version/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -37,34 +36,18 @@ type VersionStoreTestSuite struct {
 }
 
 func (suite *VersionStoreTestSuite) SetupTest() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.ctx = sac.WithAllAccess(context.Background())
+	suite.ctx = sac.WithAllAccess(context.Background())
 
-		testDB := pgtest.ForT(suite.T())
-		suite.pool = testDB.DB
+	testDB := pgtest.ForT(suite.T())
+	suite.pool = testDB.DB
 
-		suite.store = NewPostgres(suite.pool)
-	} else {
-		boltDB, err := bolthelper.NewTemp(suite.T().Name() + ".db")
-		suite.Require().NoError(err, "Failed to make BoltDB")
-
-		rocksDB := rocksdbtest.RocksDBForT(suite.T())
-
-		suite.boltDB = boltDB
-		suite.rocksDB = rocksDB
-		suite.store = New(boltDB, rocksDB)
-	}
+	suite.store = NewPostgres(suite.pool)
 }
 
 func (suite *VersionStoreTestSuite) TearDownTest() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		if suite.pool != nil {
-			pgStore.Destroy(suite.ctx, suite.pool)
-			suite.pool.Close()
-		}
-	} else {
-		suite.NoError(suite.boltDB.Close())
-		suite.rocksDB.Close()
+	if suite.pool != nil {
+		pgStore.Destroy(suite.ctx, suite.pool)
+		suite.pool.Close()
 	}
 }
 
@@ -83,10 +66,8 @@ func (suite *VersionStoreTestSuite) TestVersionStore() {
 }
 
 func (suite *VersionStoreTestSuite) TestVersionMismatch() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.T().Skip("Skip TestVersionMismatch as it does not apply to Postgres")
-		suite.T().SkipNow()
-	}
+	suite.T().Skip("Skip TestVersionMismatch as it does not apply to Postgres")
+	suite.T().SkipNow()
 	boltVersion := &storage.Version{SeqNum: 2, Version: "Version 2"}
 	boltVersionBytes, err := boltVersion.Marshal()
 	suite.Require().NoError(err)

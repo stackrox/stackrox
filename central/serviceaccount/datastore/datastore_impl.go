@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/serviceaccount/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
@@ -29,9 +28,7 @@ type datastoreImpl struct {
 }
 
 func (d *datastoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
+	return nil
 	log.Info("[STARTUP] Indexing service accounts")
 	var serviceAccounts []*storage.ServiceAccount
 	var count int

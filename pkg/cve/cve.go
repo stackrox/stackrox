@@ -3,7 +3,6 @@ package cve
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/utils"
@@ -56,24 +55,20 @@ func ContainsClusterCVE(types []storage.CVE_CVEType) bool {
 
 // ID creates a CVE ID from the given cve id (and os if postgres is enabled).
 func ID(cve, os string) string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return pgSearch.IDFromPks([]string{cve, os})
-	}
+	return pgSearch.IDFromPks([]string{cve, os})
 	return cve
 }
 
 // IDToParts return the CVE ID parts—cve and operating system.
 func IDToParts(id string) (string, string) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		parts := pgSearch.IDToParts(id)
-		if len(parts) > 2 {
-			utils.Should(errors.Errorf("unexpected number of parts for CVE ID %s", id))
-			return "", ""
-		}
-		if len(parts) == 2 {
-			return parts[0], parts[1]
-		}
-		return parts[0], ""
+	parts := pgSearch.IDToParts(id)
+	if len(parts) > 2 {
+		utils.Should(errors.Errorf("unexpected number of parts for CVE ID %s", id))
+		return "", ""
 	}
+	if len(parts) == 2 {
+		return parts[0], parts[1]
+	}
+	return parts[0], ""
 	return id, ""
 }

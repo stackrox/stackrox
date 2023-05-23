@@ -6,13 +6,11 @@ import (
 	"time"
 
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
-	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -44,12 +42,8 @@ type vulnsStore interface {
 func Singleton() CVEUnsuppressLoop {
 
 	once.Do(func() {
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			// TODO: Attach cluster CVE store.
-			loop = NewLoop(imageCVEDataStore.Singleton(), nodeCVEDataStore.Singleton(), clusterCVEDataStore.Singleton())
-		} else {
-			loop = NewLoop(legacyImageCVEDataStore.Singleton())
-		}
+		// TODO: Attach cluster CVE store.
+		loop = NewLoop(imageCVEDataStore.Singleton(), nodeCVEDataStore.Singleton(), clusterCVEDataStore.Singleton())
 	})
 	return loop
 }
@@ -130,15 +124,12 @@ func getCVEsWithExpiredSuppressState(cveStore vulnsStore) ([]string, error) {
 		return nil, err
 	}
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		cves := make([]string, 0, len(results))
-		for _, res := range results {
-			cve, _ := cve.IDToParts(res.ID)
-			cves = append(cves, cve)
-		}
-		return cves, nil
+	cves := make([]string, 0, len(results))
+	for _, res := range results {
+		cve, _ := cve.IDToParts(res.ID)
+		cves = append(cves, cve)
 	}
-	return search.ResultsToIDs(results), nil
+	return cves, nil
 }
 
 func (l *cveUnsuppressLoopImpl) loop() {

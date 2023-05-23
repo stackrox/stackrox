@@ -4,8 +4,6 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/deployment/cache"
 	"github.com/stackrox/rox/central/globaldb"
-	globalDackBox "github.com/stackrox/rox/central/globaldb/dackbox"
-	"github.com/stackrox/rox/central/globalindex"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	pbDS "github.com/stackrox/rox/central/processbaseline/datastore"
@@ -14,7 +12,6 @@ import (
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sync"
@@ -33,14 +30,7 @@ func initialize() {
 	var keyFence concurrency.KeyFence
 	var bleveIndex, processIndex bleve.Index
 	var pool postgres.DB
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pool = globaldb.GetPostgres()
-	} else {
-		dackBox = globalDackBox.GetGlobalDackBox()
-		keyFence = globalDackBox.GetKeyFence()
-		bleveIndex = globalindex.GetGlobalIndex()
-		processIndex = globalindex.GetProcessIndex()
-	}
+	pool = globaldb.GetPostgres()
 	var err error
 	ad, err = New(dackBox,
 		keyFence,

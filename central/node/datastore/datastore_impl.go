@@ -16,7 +16,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
@@ -258,11 +257,6 @@ func (ds *datastoreImpl) deleteNodeFromStore(ctx context.Context, ids ...string)
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), typ, "Exists")
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if ok, err := ds.canReadNode(ctx, id); err != nil || !ok {
-			return false, err
-		}
-	}
 	return ds.storage.Exists(ctx, id)
 }
 

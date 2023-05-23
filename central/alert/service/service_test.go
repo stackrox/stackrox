@@ -16,7 +16,6 @@ import (
 	baselineMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
 	"github.com/stackrox/rox/pkg/search"
@@ -474,9 +473,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 }
 
 func flagAwareSeverity(i int) string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return storage.Severity_name[int32(i)]
-	}
+	return storage.Severity_name[int32(i)]
 	return strconv.Itoa(i)
 }
 

@@ -16,8 +16,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/debug"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -62,56 +60,7 @@ func newDatastoreImpl(ctx context.Context, storage podStore.Store, indexer podIn
 	return ds, nil
 }
 
-func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	defer debug.FreeOSMemory()
-
-	needsReindexing, err := ds.podIndexer.NeedsInitialIndexing()
-	if err != nil {
-		return err
-	}
-	if needsReindexing {
-		return ds.fullReindex(ctx)
-	}
-
-	log.Info("[STARTUP] Determining if pod db/indexer reconciliation is needed")
-
-	podsToIndex, err := ds.podStore.GetKeysToIndex(ctx)
-	if err != nil {
-		return errors.Wrap(err, "error retrieving keys to index")
-	}
-
-	log.Infof("[STARTUP] Found %d Pods to index", len(podsToIndex))
-
-	podBatcher := batcher.New(len(podsToIndex), podBatchSize)
-	for start, end, valid := podBatcher.Next(); valid; start, end, valid = podBatcher.Next() {
-		pods, missingIndices, err := ds.podStore.GetMany(ctx, podsToIndex[start:end])
-		if err != nil {
-			return err
-		}
-		if err := ds.podIndexer.AddPods(pods); err != nil {
-			return err
-		}
-		if len(missingIndices) > 0 {
-			idsToRemove := make([]string, 0, len(missingIndices))
-			for _, missingIdx := range missingIndices {
-				idsToRemove = append(idsToRemove, podsToIndex[start:end][missingIdx])
-			}
-			if err := ds.podIndexer.DeletePods(idsToRemove); err != nil {
-				return err
-			}
-		}
-
-		// Ack keys so that even if central restarts, we don't need to reindex them again
-		if err := ds.podStore.AckKeysIndexed(ctx, podsToIndex[start:end]...); err != nil {
-			return err
-		}
-		log.Infof("[STARTUP] Successfully indexed %d/%d pods", end, len(podsToIndex))
-	}
-
-	log.Info("[STARTUP] Successfully indexed all out of sync pods")
+func (ds *datastoreImpl) buildIndex(_ context.Context) error {
 	return nil
 }
 

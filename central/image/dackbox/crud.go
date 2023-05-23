@@ -2,11 +2,9 @@ package dackbox
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 	"github.com/stackrox/rox/pkg/dbhelper"
-	"github.com/stackrox/rox/pkg/env"
 )
 
 var (
@@ -50,10 +48,6 @@ var (
 )
 
 func init() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		globaldb.RegisterBucket(Bucket, "Image")
-		globaldb.RegisterBucket(ListBucket, "List Image")
-	}
 }
 
 // KeyFunc returns the key for an image object

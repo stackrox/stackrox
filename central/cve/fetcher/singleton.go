@@ -6,7 +6,6 @@ import (
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	legacyCVEDS "github.com/stackrox/rox/central/cve/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -22,11 +21,7 @@ func SingletonManager() OrchestratorIstioCVEManager {
 	once.Do(func() {
 		var clusterCVEDatastore clusterCVEDS.DataStore
 		var legacyCVEDatastore legacyCVEDS.DataStore
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			clusterCVEDatastore = clusterCVEDS.Singleton()
-		} else {
-			legacyCVEDatastore = legacyCVEDS.Singleton()
-		}
+		clusterCVEDatastore = clusterCVEDS.Singleton()
 
 		manager, err = NewOrchestratorIstioCVEManagerImpl(clusterDataStore.Singleton(), clusterCVEDatastore, legacyCVEDatastore,
 			clusterCVEEdgeDataStore.Singleton(), cveMatcher.Singleton())

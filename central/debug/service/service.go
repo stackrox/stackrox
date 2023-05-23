@@ -559,10 +559,8 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 			}
 		}
 
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			if err := getCentralDBData(ctx, zipWriter); err != nil {
-				log.Error(err)
-			}
+		if err := getCentralDBData(ctx, zipWriter); err != nil {
+			log.Error(err)
 		}
 	}
 
@@ -728,10 +726,8 @@ func buildVersions(ctx context.Context) version.Versions {
 		versions = version.GetAllVersionsUnified()
 	}
 	// Add the database version if Postgres
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		versions.Database = "PostgresDB"
-		versions.DatabaseServerVersion = globaldb.GetPostgresVersion(ctx, globaldb.GetPostgres())
-	}
+	versions.Database = "PostgresDB"
+	versions.DatabaseServerVersion = globaldb.GetPostgresVersion(ctx, globaldb.GetPostgres())
 
 	return versions
 }

@@ -61,7 +61,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	auditPkg "github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -179,16 +178,12 @@ func New() *Resolver {
 			return nil
 		}(),
 	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		resolver.ClusterCVEDataStore = clusterCVEDataStore.Singleton()
-		resolver.ImageCVEDataStore = imageCVEDataStore.Singleton()
-		resolver.NodeCVEDataStore = nodeCVEDataStore.Singleton()
-		resolver.NodeComponentCVEEdgeDataStore = nodeComponentCVEEdgeDataStore.Singleton()
-		resolver.NodeComponentDataStore = nodeComponentDataStore.Singleton()
-		resolver.PolicyCategoryDataStore = policyCategoryDatastore.Singleton()
-	} else {
-		resolver.CVEDataStore = legacyImageCVEDataStore.Singleton()
-	}
+	resolver.ClusterCVEDataStore = clusterCVEDataStore.Singleton()
+	resolver.ImageCVEDataStore = imageCVEDataStore.Singleton()
+	resolver.NodeCVEDataStore = nodeCVEDataStore.Singleton()
+	resolver.NodeComponentCVEEdgeDataStore = nodeComponentCVEEdgeDataStore.Singleton()
+	resolver.NodeComponentDataStore = nodeComponentDataStore.Singleton()
+	resolver.PolicyCategoryDataStore = policyCategoryDatastore.Singleton()
 	return resolver
 }
 

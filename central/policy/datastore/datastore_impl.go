@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	policiesPkg "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/policyutils"
@@ -51,9 +50,7 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) buildIndex() error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
+	return nil
 	policies, err := ds.storage.GetAll(policyCtx)
 	if err != nil {
 		return err
@@ -87,16 +84,14 @@ func (ds *datastoreImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]
 	if err != nil {
 		return nil, err
 	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		for _, p := range policies {
-			categories, err := ds.categoriesDatastore.GetPolicyCategoriesForPolicy(ctx, p.GetId())
-			if err != nil {
-				log.Errorf("Failed to find categories associated with policy %s: %q. Error: %v", p.GetId(), p.GetName(), err)
-				continue
-			}
-			for _, c := range categories {
-				p.Categories = append(p.Categories, c.GetName())
-			}
+	for _, p := range policies {
+		categories, err := ds.categoriesDatastore.GetPolicyCategoriesForPolicy(ctx, p.GetId())
+		if err != nil {
+			log.Errorf("Failed to find categories associated with policy %s: %q. Error: %v", p.GetId(), p.GetName(), err)
+			continue
+		}
+		for _, c := range categories {
+			p.Categories = append(p.Categories, c.GetName())
 		}
 	}
 	return policies, nil
@@ -121,9 +116,6 @@ func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Pol
 }
 
 func (ds *datastoreImpl) fillCategoryNames(ctx context.Context, policies []*storage.Policy) error {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
 	for _, p := range policies {
 		categories, err := ds.categoriesDatastore.GetPolicyCategoriesForPolicy(ctx, p.GetId())
 		if err != nil {
@@ -227,19 +219,15 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	// Stash away the category names, since they need to be erased on storage. But the policy insert must happen first,
 	// to get an ID, to satisfy foreign key constraints when policy category edges are added.
 	policyCategories := policy.GetCategories()
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		policy.Categories = []string{}
-	}
+	policy.Categories = []string{}
 	err = ds.storage.Upsert(ctx, policy)
 	if err != nil {
 		return policy.Id, err
 	}
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policyCategories)
-		if err != nil {
-			return policy.Id, err
-		}
+	err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policyCategories)
+	if err != nil {
+		return policy.Id, err
 	}
 
 	return policy.Id, ds.indexer.AddPolicy(policy)
@@ -263,12 +251,10 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 	defer ds.policyMutex.Unlock()
 	// if feature flag turned on, check if categories need to be created/new policy category edges need to be created/
 	// existing policy category edges need to be removed?
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policy.GetCategories()); err != nil {
-			return err
-		}
-		policy.Categories = []string{}
+	if err := ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policy.GetCategories()); err != nil {
+		return err
 	}
+	policy.Categories = []string{}
 
 	if err := ds.storage.Upsert(ctx, policy); err != nil {
 		return err
@@ -399,21 +385,17 @@ func (ds *datastoreImpl) importPolicy(ctx context.Context, policy *storage.Polic
 		}
 
 		policyCategories := policy.GetCategories()
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			policy.Categories = []string{}
-		}
+		policy.Categories = []string{}
 		err = ds.storage.Upsert(ctx, policy)
 		if err != nil {
 			result.Errors = getImportErrorsFromError(err)
 			return result
 		}
 
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policyCategories)
-			if err != nil {
-				result.Errors = getImportErrorsFromError(err)
-				return result
-			}
+		err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policyCategories)
+		if err != nil {
+			result.Errors = getImportErrorsFromError(err)
+			return result
 		}
 	}
 
@@ -456,18 +438,14 @@ func (ds *datastoreImpl) importOverwrite(ctx context.Context, policy *storage.Po
 
 	// This should never create a name violation because we just removed any ID/name conflicts
 	policyCategories := policy.GetCategories()
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		policy.Categories = []string{}
-	}
+	policy.Categories = []string{}
 	err := ds.storage.Upsert(ctx, policy)
 	if err != nil {
 		return err
 	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policyCategories)
-		if err != nil {
-			return err
-		}
+	err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policyCategories)
+	if err != nil {
+		return err
 	}
 
 	return nil

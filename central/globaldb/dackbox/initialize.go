@@ -13,21 +13,7 @@ import (
 	componentCVEEdgeIndex "github.com/stackrox/rox/central/componentcveedge/index"
 	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
 	cveIndex "github.com/stackrox/rox/central/cve/index"
-	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
-	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/globalindex"
-	imageDackBox "github.com/stackrox/rox/central/image/dackbox"
-	imageIndex "github.com/stackrox/rox/central/image/index"
-	imagecomponentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
-	imagecomponentIndex "github.com/stackrox/rox/central/imagecomponent/index"
-	imagecomponentEdgeDackBox "github.com/stackrox/rox/central/imagecomponentedge/dackbox"
-	imagecomponentEdgeIndex "github.com/stackrox/rox/central/imagecomponentedge/index"
-	imageCVEEdgeDackbox "github.com/stackrox/rox/central/imagecveedge/dackbox"
-	imageCVEEdgeIndex "github.com/stackrox/rox/central/imagecveedge/index"
-	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
-	nodeIndex "github.com/stackrox/rox/central/node/index"
-	nodeComponentEdgeDackBox "github.com/stackrox/rox/central/nodecomponentedge/dackbox"
-	nodeComponentEdgeIndex "github.com/stackrox/rox/central/nodecomponentedge/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
@@ -37,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/debug"
-	"github.com/stackrox/rox/pkg/env"
 )
 
 type bucketRef struct {
@@ -77,53 +62,6 @@ var (
 )
 
 func init() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		migratedBuckets := []bucketRef{
-			{
-				bucket:   imagecomponentEdgeDackBox.Bucket,
-				reader:   imagecomponentEdgeDackBox.Reader,
-				category: v1.SearchCategory_IMAGE_COMPONENT_EDGE,
-				wrapper:  imagecomponentEdgeIndex.Wrapper{},
-			},
-			{
-				bucket:   imageDackBox.Bucket,
-				reader:   imageDackBox.Reader,
-				category: v1.SearchCategory_IMAGES,
-				wrapper:  imageIndex.Wrapper{},
-			},
-			{
-				bucket:   imagecomponentDackBox.Bucket,
-				reader:   imagecomponentDackBox.Reader,
-				category: v1.SearchCategory_IMAGE_COMPONENTS,
-				wrapper:  imagecomponentIndex.Wrapper{},
-			},
-			{
-				bucket:   deploymentDackBox.Bucket,
-				reader:   deploymentDackBox.Reader,
-				category: v1.SearchCategory_DEPLOYMENTS,
-				wrapper:  deploymentIndex.Wrapper{},
-			},
-			{
-				bucket:   imageCVEEdgeDackbox.Bucket,
-				reader:   imageCVEEdgeDackbox.Reader,
-				category: v1.SearchCategory_IMAGE_VULN_EDGE,
-				wrapper:  imageCVEEdgeIndex.Wrapper{},
-			},
-			{
-				bucket:   nodeDackBox.Bucket,
-				reader:   nodeDackBox.Reader,
-				category: v1.SearchCategory_NODES,
-				wrapper:  nodeIndex.Wrapper{},
-			},
-			{
-				bucket:   nodeComponentEdgeDackBox.Bucket,
-				reader:   nodeComponentEdgeDackBox.Reader,
-				category: v1.SearchCategory_NODE_COMPONENT_EDGE,
-				wrapper:  nodeComponentEdgeIndex.Wrapper{},
-			},
-		}
-		initializedBuckets = append(initializedBuckets, migratedBuckets...)
-	}
 }
 
 // Init runs all registered initialization functions.

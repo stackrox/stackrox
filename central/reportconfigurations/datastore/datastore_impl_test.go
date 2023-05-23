@@ -11,7 +11,6 @@ import (
 	store "github.com/stackrox/rox/central/reportconfigurations/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -41,10 +40,8 @@ type ReportConfigurationDatastoreTestSuite struct {
 }
 
 func (suite *ReportConfigurationDatastoreTestSuite) SetupSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.T().Skip("Skip non-postgres store test")
-		suite.T().SkipNow()
-	}
+	suite.T().Skip("Skip non-postgres store test")
+	suite.T().SkipNow()
 
 	var err error
 	suite.bleveIndex, err = globalindex.TempInitializeIndices("")

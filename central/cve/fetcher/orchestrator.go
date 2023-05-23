@@ -15,7 +15,6 @@ import (
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgScanners "github.com/stackrox/rox/pkg/scanners"
@@ -99,21 +98,12 @@ func (m *orchestratorCVEManager) Scan(version string, cveType utils.CVEType) ([]
 }
 
 func (m *orchestratorCVEManager) updateCVEs(embeddedCVEs []*storage.EmbeddedVulnerability, embeddedCVEToClusters map[string][]*storage.Cluster, cveType utils.CVEType) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		var newCVEs []converterV2.ClusterCVEParts
-		for _, embeddedCVE := range embeddedCVEs {
-			cve := utils.EmbeddedVulnerabilityToClusterCVE(cveType.ToStorageCVEType(), embeddedCVE)
-			newCVEs = append(newCVEs, converterV2.NewClusterCVEParts(cve, embeddedCVEToClusters[embeddedCVE.GetCve()], embeddedCVE.GetFixedBy()))
-		}
-		return m.updateCVEsInPostgres(newCVEs, cveType)
-	}
-
-	var newCVEs []converter.ClusterCVEParts
+	var newCVEs []converterV2.ClusterCVEParts
 	for _, embeddedCVE := range embeddedCVEs {
-		cve := utils.EmbeddedCVEToProtoCVE("", embeddedCVE)
-		newCVEs = append(newCVEs, converter.NewClusterCVEParts(cve, embeddedCVEToClusters[embeddedCVE.GetCve()], embeddedCVE.GetFixedBy()))
+		cve := utils.EmbeddedVulnerabilityToClusterCVE(cveType.ToStorageCVEType(), embeddedCVE)
+		newCVEs = append(newCVEs, converterV2.NewClusterCVEParts(cve, embeddedCVEToClusters[embeddedCVE.GetCve()], embeddedCVE.GetFixedBy()))
 	}
-	return m.updateCVEsInDB(newCVEs, cveType)
+	return m.updateCVEsInPostgres(newCVEs, cveType)
 }
 
 func (m *orchestratorCVEManager) updateCVEsInPostgres(cves []converterV2.ClusterCVEParts, cveType utils.CVEType) error {

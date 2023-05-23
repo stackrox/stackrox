@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processbaseline/index"
 	baselineSearch "github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
@@ -18,7 +17,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -63,25 +61,13 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 	)
 	var err error
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(suite.T())
-		suite.Require().NotNil(pgtestbase)
-		suite.pool = pgtestbase.DB
-		dbStore := postgresStore.New(suite.pool)
-		suite.storage, err = postgresStore.NewWithCache(dbStore)
-		require.NoError(suite.T(), err)
-		suite.indexer = postgresStore.NewIndexer(suite.pool)
-	} else {
-		suite.db, err = rocksdb.NewTemp(suite.T().Name() + ".db")
-		suite.Require().NoError(err)
-
-		suite.storage, err = rocksdbStore.New(suite.db)
-		suite.NoError(err)
-
-		tmpIndex, err := globalindex.TempInitializeIndices("")
-		suite.NoError(err)
-		suite.indexer = index.New(tmpIndex)
-	}
+	pgtestbase := pgtest.ForT(suite.T())
+	suite.Require().NotNil(pgtestbase)
+	suite.pool = pgtestbase.DB
+	dbStore := postgresStore.New(suite.pool)
+	suite.storage, err = postgresStore.NewWithCache(dbStore)
+	require.NoError(suite.T(), err)
+	suite.indexer = postgresStore.NewIndexer(suite.pool)
 
 	suite.searcher, err = baselineSearch.New(suite.storage, suite.indexer)
 	suite.NoError(err)
@@ -95,11 +81,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 
 func (suite *ProcessBaselineDataStoreTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.pool.Close()
-	} else {
-		rocksdbtest.TearDownRocksDB(suite.db)
-	}
+	suite.pool.Close()
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) mustSerializeKey(key *storage.ProcessBaselineKey) string {

@@ -4,11 +4,9 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/imageintegration/index"
 	"github.com/stackrox/rox/central/imageintegration/search"
 	"github.com/stackrox/rox/central/imageintegration/store"
-	"github.com/stackrox/rox/central/imageintegration/store/bolt"
 	pgStore "github.com/stackrox/rox/central/imageintegration/store/postgres"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -64,13 +62,8 @@ func initialize() {
 	var storage store.Store
 	var indexer index.Indexer
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage = pgStore.New(globaldb.GetPostgres())
-		indexer = pgStore.NewIndexer(globaldb.GetPostgres())
-	} else {
-		storage = bolt.New(globaldb.GetGlobalDB())
-		indexer = index.New(globalindex.GetGlobalTmpIndex())
-	}
+	storage = pgStore.New(globaldb.GetPostgres())
+	indexer = pgStore.NewIndexer(globaldb.GetPostgres())
 	initializeIntegrations(storage)
 	searcher := search.New(storage, indexer)
 	dataStore = New(storage, indexer, searcher)

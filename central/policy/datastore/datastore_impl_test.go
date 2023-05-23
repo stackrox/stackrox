@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -47,9 +46,7 @@ type PolicyDatastoreTestSuite struct {
 }
 
 func (s *PolicyDatastoreTestSuite) SetupTest() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Tests are not applicable when ROX_POSTGRES_DATASTORE is set to true")
-	}
+	s.T().Skip("Tests are not applicable when ROX_POSTGRES_DATASTORE is set to true")
 	s.mockCtrl = gomock.NewController(s.T())
 	s.store = storeMocks.NewMockStore(s.mockCtrl)
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)

@@ -10,7 +10,6 @@ import (
 	managerMocks "github.com/stackrox/rox/central/reports/manager/mocks"
 	collectionMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 )
@@ -31,10 +30,6 @@ type ReportConfigurationServicePostgresTestSuite struct {
 
 func (s *ReportConfigurationServicePostgresTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres tests")
-		s.T().SkipNow()
-	}
 	s.reportConfigDatastore = mocks.NewMockDataStore(s.mockCtrl)
 	s.notifierDatastore = notifierMocks.NewMockDataStore(s.mockCtrl)
 	s.collectionDatastore = collectionMocks.NewMockDataStore(s.mockCtrl)

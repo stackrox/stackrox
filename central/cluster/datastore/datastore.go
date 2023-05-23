@@ -28,7 +28,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/sac"
@@ -122,11 +121,7 @@ func New(
 		nameToIDCache:             simplecache.New(),
 	}
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		ds.searcher = search.NewV2(clusterStorage, indexer, clusterRanker)
-	} else {
-		ds.searcher = search.New(clusterStorage, indexer, graphProvider, clusterRanker)
-	}
+	ds.searcher = search.NewV2(clusterStorage, indexer, clusterRanker)
 
 	if err := ds.buildIndex(sac.WithAllAccess(context.Background())); err != nil {
 		return ds, err

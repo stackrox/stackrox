@@ -67,11 +67,7 @@ func New(nsStore store.Store, graphProvider graph.Provider, indexer index.Indexe
 		namespaceRanker: namespaceRanker,
 		idMapStorage:    idMapStorage,
 	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		ds.formattedSearcher = formatSearcherV2(indexer, namespaceRanker)
-	} else {
-		ds.formattedSearcher = formatSearcher(indexer, graphProvider, namespaceRanker)
-	}
+	ds.formattedSearcher = formatSearcherV2(indexer, namespaceRanker)
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
@@ -133,9 +129,7 @@ type datastoreImpl struct {
 }
 
 func (b *datastoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
+	return nil
 	log.Info("[STARTUP] initializing namespaces")
 	var namespaces []*storage.NamespaceMetadata
 	walkFn := func() error {

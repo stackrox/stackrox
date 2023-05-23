@@ -19,7 +19,6 @@ import (
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	deploymentTypes "github.com/stackrox/rox/central/deployment/store/types"
-	"github.com/stackrox/rox/central/globalindex"
 	imageDackbox "github.com/stackrox/rox/central/image/dackbox"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageIndex "github.com/stackrox/rox/central/image/index"
@@ -41,7 +40,6 @@ import (
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -99,50 +97,16 @@ type deploymentDatastoreSACSuite struct {
 
 func (s *deploymentDatastoreSACSuite) SetupSuite() {
 	var err error
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(s.T())
-		s.Require().NotNil(pgtestbase)
-		s.pool = pgtestbase.DB
-		s.datastore, err = dDS.GetTestPostgresDataStore(s.T(), s.pool)
-		s.Require().NoError(err)
-		s.namespaceStore, err = nsDS.GetTestPostgresDataStore(s.T(), s.pool)
-		s.Require().NoError(err)
-		s.imageStore, err = imageDS.GetTestPostgresDataStore(s.T(), s.pool)
-		s.Require().NoError(err)
-		s.optionsMap = schema.DeploymentsSchema.OptionsMap
-	} else {
-		s.engine, err = rocksdb.NewTemp("deploymentSACTest")
-		s.Require().NoError(err)
-		s.index, err = globalindex.MemOnlyIndex()
-		s.Require().NoError(err)
-		s.keyFence = dackboxConcurrency.NewKeyFence()
-		s.indexQ = queue.NewWaitableQueue()
-		s.dacky, err = dackbox.NewRocksDBDackBox(s.engine, s.indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
-		s.Require().NoError(err)
-
-		reg := indexer.NewWrapperRegistry()
-		indexer.NewLazy(s.indexQ, reg, s.index, s.dacky.AckIndexed).Start()
-		reg.RegisterWrapper(activeComponentDackbox.Bucket, activeComponentIndex.Wrapper{})
-		reg.RegisterWrapper(clusterCVEEdgeDackbox.Bucket, clusterCVEEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(componentCVEEdgeDackbox.Bucket, componentCVEEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(cveDackbox.Bucket, cveIndex.Wrapper{})
-		reg.RegisterWrapper(deploymentDackbox.Bucket, deploymentIndex.Wrapper{})
-		reg.RegisterWrapper(imageDackbox.Bucket, imageIndex.Wrapper{})
-		reg.RegisterWrapper(imageComponentDackbox.Bucket, imageComponentIndex.Wrapper{})
-		reg.RegisterWrapper(imageComponentEdgeDackbox.Bucket, imageComponentEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(imageCVEEdgeDackbox.Bucket, imageCVEEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(nodeDackbox.Bucket, nodeIndex.Wrapper{})
-		reg.RegisterWrapper(nodeComponentEdgeDackbox.Bucket, nodeComponentEdgeIndex.Wrapper{})
-
-		s.datastore, err = dDS.GetTestRocksBleveDataStore(s.T(), s.engine, s.index, s.dacky, s.keyFence)
-		s.Require().NoError(err)
-		s.namespaceStore, err = nsDS.GetTestRocksBleveDataStore(s.T(), s.engine, s.index, s.dacky, s.keyFence)
-		s.Require().NoError(err)
-		s.imageStore, err = imageDS.GetTestRocksBleveDataStore(s.T(), s.engine, s.index, s.dacky, s.keyFence)
-		s.Require().NoError(err)
-
-		s.optionsMap = mappings.OptionsMap
-	}
+	pgtestbase := pgtest.ForT(s.T())
+	s.Require().NotNil(pgtestbase)
+	s.pool = pgtestbase.DB
+	s.datastore, err = dDS.GetTestPostgresDataStore(s.T(), s.pool)
+	s.Require().NoError(err)
+	s.namespaceStore, err = nsDS.GetTestPostgresDataStore(s.T(), s.pool)
+	s.Require().NoError(err)
+	s.imageStore, err = imageDS.GetTestPostgresDataStore(s.T(), s.pool)
+	s.Require().NoError(err)
+	s.optionsMap = schema.DeploymentsSchema.OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Deployment)
 	s.testContextsWithImageAccess = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Deployment, resources.Image)
@@ -151,12 +115,7 @@ func (s *deploymentDatastoreSACSuite) SetupSuite() {
 }
 
 func (s *deploymentDatastoreSACSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	} else {
-		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
-		s.Require().NoError(s.index.Close())
-	}
+	s.pool.Close()
 }
 
 func (s *deploymentDatastoreSACSuite) SetupTest() {
@@ -184,12 +143,6 @@ func (s *deploymentDatastoreSACSuite) deleteNamespace(namespaceID string) {
 }
 
 func (s *deploymentDatastoreSACSuite) waitForIndexing() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		// Some cases need to wait for dackbox indexing to complete.
-		doneSignal := concurrency.NewSignal()
-		s.indexQ.PushSignal(&doneSignal)
-		<-doneSignal.Done()
-	}
 }
 
 func (s *deploymentDatastoreSACSuite) pushDeploymentToStore(clusterID string, namespaceName string) *storage.Deployment {
@@ -422,11 +375,7 @@ func (s *deploymentDatastoreSACSuite) TestGetDeploymentIDs() {
 			fetchedIDs, getErr := s.datastore.GetDeploymentIDs(ctx)
 			s.Require().NoError(getErr)
 			// Note: the behaviour change may impact policy dry runs if the requester does not have full namespace scope.
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				s.ElementsMatch(fetchedIDs, c.ExpectedDeploymentIDs)
-			} else {
-				s.ElementsMatch(fetchedIDs, pushedIDs)
-			}
+			s.ElementsMatch(fetchedIDs, c.ExpectedDeploymentIDs)
 		})
 	}
 }

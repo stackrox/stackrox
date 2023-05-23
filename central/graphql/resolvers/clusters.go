@@ -14,7 +14,6 @@ import (
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -238,32 +237,12 @@ func (resolver *clusterResolver) FailingPolicyCounter(ctx context.Context, args 
 func (resolver *clusterResolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Deployments")
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readDeployments(ctx); err != nil {
-			return nil, err
-		}
-
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-		return resolver.root.Deployments(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
-
 	return resolver.root.Deployments(resolver.clusterScopeContext(ctx), args)
 }
 
 // DeploymentCount returns count of all deployments in this cluster
 func (resolver *clusterResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "DeploymentCount")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readDeployments(ctx); err != nil {
-			return 0, err
-		}
-
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-		return resolver.root.DeploymentCount(ctx, RawQuery{Query: &query})
-	}
 
 	return resolver.root.DeploymentCount(resolver.clusterScopeContext(ctx), args)
 }
@@ -272,32 +251,12 @@ func (resolver *clusterResolver) DeploymentCount(ctx context.Context, args RawQu
 func (resolver *clusterResolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Nodes")
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readNodes(ctx); err != nil {
-			return nil, err
-		}
-
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-		return resolver.root.Nodes(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
-
 	return resolver.root.Nodes(resolver.clusterScopeContext(ctx), args)
 }
 
 // NodeCount returns count of all nodes on the cluster
 func (resolver *clusterResolver) NodeCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeCount")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readNodes(ctx); err != nil {
-			return 0, err
-		}
-
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-		return resolver.root.NodeCount(ctx, RawQuery{Query: &query})
-	}
 
 	return resolver.root.NodeCount(resolver.clusterScopeContext(ctx), args)
 }
@@ -306,13 +265,6 @@ func (resolver *clusterResolver) NodeCount(ctx context.Context, args RawQuery) (
 func (resolver *clusterResolver) Node(ctx context.Context, args struct{ Node graphql.ID }) (*nodeResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Node")
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readNodes(ctx); err != nil {
-			return nil, err
-		}
-		return resolver.root.wrapNode(resolver.root.NodeDataStore.GetNode(ctx, string(args.Node)))
-	}
-
 	return resolver.root.Node(resolver.clusterScopeContext(ctx), struct{ graphql.ID }{args.Node})
 }
 
@@ -320,29 +272,12 @@ func (resolver *clusterResolver) Node(ctx context.Context, args struct{ Node gra
 func (resolver *clusterResolver) Namespaces(ctx context.Context, args PaginatedQuery) ([]*namespaceResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Namespaces")
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readNamespaces(ctx); err != nil {
-			return nil, err
-		}
-
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-		return resolver.root.Namespaces(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
-
 	return resolver.root.Namespaces(resolver.clusterScopeContext(ctx), args)
 }
 
 // Namespace returns a given namespace in a cluster.
 func (resolver *clusterResolver) Namespace(ctx context.Context, args struct{ Name string }) (*namespaceResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Namespace")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return resolver.root.NamespaceByClusterIDAndName(ctx, clusterIDAndNameQuery{
-			ClusterID: graphql.ID(resolver.data.GetId()),
-			Name:      args.Name,
-		})
-	}
 
 	return resolver.root.NamespaceByClusterIDAndName(resolver.clusterScopeContext(ctx), clusterIDAndNameQuery{
 		ClusterID: graphql.ID(resolver.data.GetId()),
@@ -353,16 +288,6 @@ func (resolver *clusterResolver) Namespace(ctx context.Context, args struct{ Nam
 // NamespaceCount returns counts of namespaces on a cluster.
 func (resolver *clusterResolver) NamespaceCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NamespaceCount")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readNamespaces(ctx); err != nil {
-			return 0, err
-		}
-
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-		return resolver.root.NamespaceCount(ctx, RawQuery{Query: &query})
-	}
 
 	return resolver.root.NamespaceCount(resolver.clusterScopeContext(ctx), args)
 }
@@ -573,23 +498,11 @@ func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name 
 func (resolver *clusterResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Images")
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-		return resolver.root.Images(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
-
 	return resolver.root.Images(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageCount")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-		return resolver.root.ImageCount(ctx, RawQuery{Query: &query})
-	}
 
 	return resolver.root.ImageCount(resolver.clusterScopeContext(ctx), args)
 }

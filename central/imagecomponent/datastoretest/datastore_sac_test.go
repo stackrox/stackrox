@@ -11,7 +11,6 @@ import (
 	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
@@ -38,24 +37,11 @@ func (s *cveDataStoreSACTestSuite) SetupSuite() {
 	var err error
 	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
 	s.Require().NoError(err)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pool := s.dackboxTestStore.GetPostgresPool()
-		s.imageComponentStore, err = imageComponentDataStore.GetTestPostgresDataStore(s.T(), pool)
-		s.Require().NoError(err)
-		s.nodeComponentStore, err = nodeComponentDataStore.GetTestPostgresDataStore(s.T(), pool)
-		s.Require().NoError(err)
-	} else {
-		dacky := s.dackboxTestStore.GetDackbox()
-		keyFence := s.dackboxTestStore.GetKeyFence()
-		rocksEngine := s.dackboxTestStore.GetRocksEngine()
-		bleveIndex := s.dackboxTestStore.GetBleveIndex()
-		s.imageComponentStore, err = imageComponentDataStore.GetTestRocksBleveDataStore(s.T(), rocksEngine, bleveIndex, dacky,
-			keyFence)
-		s.Require().NoError(err)
-		s.nodeComponentStore = &nodeComponentFromImageComponentDataStore{
-			imageComponentStore: s.imageComponentStore,
-		}
-	}
+	pool := s.dackboxTestStore.GetPostgresPool()
+	s.imageComponentStore, err = imageComponentDataStore.GetTestPostgresDataStore(s.T(), pool)
+	s.Require().NoError(err)
+	s.nodeComponentStore, err = nodeComponentDataStore.GetTestPostgresDataStore(s.T(), pool)
+	s.Require().NoError(err)
 	s.imageTestContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
 	s.nodeTestContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Node)
 }

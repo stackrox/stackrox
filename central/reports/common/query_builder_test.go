@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 )
@@ -69,10 +68,8 @@ var vulnFilters = &storage.VulnerabilityReportFilters{
 }
 
 func TestBuildQuery(t *testing.T) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip test when Postgres (and thus collections) is enabled")
-		t.SkipNow()
-	}
+	t.Skip("Skip test when Postgres (and thus collections) is enabled")
+	t.SkipNow()
 	qb := NewVulnReportQueryBuilder(clusters, namespaces, accessScope, nil, vulnFilters, nil, time.Now())
 	ctx := sac.WithAllAccess(context.Background())
 	rq, err := qb.BuildQuery(ctx)

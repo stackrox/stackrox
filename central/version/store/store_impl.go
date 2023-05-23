@@ -9,7 +9,6 @@ import (
 	pgStore "github.com/stackrox/rox/central/version/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/tecbot/gorocksdb"
@@ -67,14 +66,12 @@ func (s *storeImpl) getRocksDBVersion() (*storage.Version, error) {
 }
 
 func (s *storeImpl) GetVersion() (*storage.Version, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		ctx := sac.WithAllAccess(context.Background())
-		version, exists, err := s.pgStore.Get(ctx)
-		if err != nil || !exists {
-			return nil, err
-		}
-		return version, nil
+	ctx := sac.WithAllAccess(context.Background())
+	version, exists, err := s.pgStore.Get(ctx)
+	if err != nil || !exists {
+		return nil, err
 	}
+	return version, nil
 
 	boltVersion, err := s.getBoltVersion()
 	if err != nil {
@@ -98,10 +95,8 @@ func (s *storeImpl) GetVersion() (*storage.Version, error) {
 }
 
 func (s *storeImpl) UpdateVersion(version *storage.Version) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		ctx := sac.WithAllAccess(context.Background())
-		return s.pgStore.Upsert(ctx, version)
-	}
+	ctx := sac.WithAllAccess(context.Background())
+	return s.pgStore.Upsert(ctx, version)
 	bytes, err := proto.Marshal(version)
 	if err != nil {
 		return errors.Wrapf(err, "marshaling version %+v to proto", version)

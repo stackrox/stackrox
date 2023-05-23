@@ -29,7 +29,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -104,9 +103,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		logimbueStore:   logimbueStore,
 		stopper:         concurrency.NewStopper(),
 	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		gci.postgres = globaldb.GetPostgres()
-	}
+	gci.postgres = globaldb.GetPostgres()
 	return gci
 }
 
@@ -156,12 +153,10 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeOrphanedRisks()
 	g.removeExpiredVulnRequests()
 	g.collectClusters(pvtConfig)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		postgres.PruneActiveComponents(pruningCtx, g.postgres)
-		postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
+	postgres.PruneActiveComponents(pruningCtx, g.postgres)
+	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
 
-		g.pruneLogImbues()
-	}
+	g.pruneLogImbues()
 
 	log.Info("[Pruning] Finished garbage collection cycle")
 }
@@ -301,9 +296,7 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	g.removeOrphanedProcesses(deploymentSet, set.NewFrozenStringSet(podIDs...))
 	g.removeOrphanedProcessBaselines(deploymentSet)
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		g.removeOrphanedPLOP()
-	}
+	g.removeOrphanedPLOP()
 
 	g.markOrphanedAlertsAsResolved(deploymentSet)
 	g.removeOrphanedNetworkFlows(deploymentSet, clusterIDSet)
@@ -468,9 +461,7 @@ func (g *garbageCollectorImpl) removeOrphanedPLOP() {
 }
 
 func (g *garbageCollectorImpl) getOrphanedAlerts(ctx context.Context, deployments set.FrozenStringSet) ([]string, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return postgres.GetOrphanedAlertIDs(ctx, g.postgres, orphanWindow)
-	}
+	return postgres.GetOrphanedAlertIDs(ctx, g.postgres, orphanWindow)
 	now := types.TimestampNow()
 	var alertsToResolve []string
 	err := g.alerts.WalkAll(pruningCtx, func(alert *storage.ListAlert) error {
@@ -522,11 +513,9 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(deployments, clusters 
 		}
 
 		// First remove stale network flows
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			err = store.RemoveStaleFlows(pruningCtx)
-			if err != nil {
-				log.Errorf("error removing stale flows for cluster %q: %v", c, err)
-			}
+		err = store.RemoveStaleFlows(pruningCtx)
+		if err != nil {
+			log.Errorf("error removing stale flows for cluster %q: %v", c, err)
 		}
 
 		now := types.TimestampNow()

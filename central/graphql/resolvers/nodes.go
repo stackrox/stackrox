@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -124,12 +123,6 @@ func (resolver *Resolver) NodeCount(ctx context.Context, args RawQuery) (int32, 
 
 func (resolver *nodeResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "Cluster")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readClusters(ctx); err != nil {
-			return nil, err
-		}
-		return resolver.root.wrapCluster(resolver.root.ClusterDataStore.GetCluster(ctx, resolver.data.GetClusterId()))
-	}
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -382,25 +375,6 @@ func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (Vulne
 func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args RawQuery) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "TopNodeVulnerability")
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readNodes(ctx); err != nil {
-			return nil, err
-		}
-
-		if resolver.data.GetSetTopCvss() == nil {
-			return nil, nil
-		}
-		query, err := resolver.getTopNodeCVEV1Query(args)
-		if err != nil {
-			return nil, err
-		}
-		vulnResolver, err := resolver.unwrappedTopVulnQuery(ctx, query)
-		if err != nil || vulnResolver == nil {
-			return nil, err
-		}
-		return vulnResolver, nil
-	}
-
 	return resolver.root.TopNodeVulnerability(resolver.nodeScopeContext(ctx), args)
 }
 
@@ -506,11 +480,7 @@ func (resolver *nodeResolver) NodeVulnerabilityCounter(ctx context.Context, args
 // PlottedVulns returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *nodeResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "PlottedVulns")
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedNodeVulnerabilities.")
-	}
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
-	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
+	return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedNodeVulnerabilities.")
 }
 
 // PlottedNodeVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
@@ -525,20 +495,18 @@ func (resolver *nodeResolver) PlottedNodeVulnerabilities(ctx context.Context, ar
 func (resolver *nodeResolver) Scan(ctx context.Context) (*nodeScanResolver, error) {
 	// If Postgres is not enabled, node loader always pulls full node along with scan
 	scan := resolver.data.GetScan()
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		// If scan is pulled, it is most likely for the user to fetch all components and vulns contained in node.
-		// Therefore, load the node again with full scan.
-		nodeLoader, err := loaders.GetNodeLoader(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		node, err := nodeLoader.FullNodeWithID(ctx, resolver.data.GetId())
-		if err != nil {
-			return nil, err
-		}
-		scan = node.GetScan()
+	// If scan is pulled, it is most likely for the user to fetch all components and vulns contained in node.
+	// Therefore, load the node again with full scan.
+	nodeLoader, err := loaders.GetNodeLoader(ctx)
+	if err != nil {
+		return nil, err
 	}
+
+	node, err := nodeLoader.FullNodeWithID(ctx, resolver.data.GetId())
+	if err != nil {
+		return nil, err
+	}
+	scan = node.GetScan()
 	res, err := resolver.root.wrapNodeScan(scan, true, nil)
 	if err != nil || res == nil {
 		return nil, err

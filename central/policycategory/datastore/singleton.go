@@ -10,7 +10,6 @@ import (
 	policyCategoryPostgres "github.com/stackrox/rox/central/policycategory/store/postgres"
 	policyCategoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
 	"github.com/stackrox/rox/pkg/defaults/categories"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -27,9 +26,6 @@ func initialize() {
 	var store policyCategoryStore.Store
 	var indexer index.Indexer
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
 	store = policyCategoryPostgres.New(globaldb.GetPostgres())
 	indexer = policyCategoryPostgres.NewIndexer(globaldb.GetPostgres())
 

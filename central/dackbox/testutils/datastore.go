@@ -5,47 +5,19 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	activeComponentDackbox "github.com/stackrox/rox/central/activecomponent/dackbox"
-	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/datastore/index"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	clusterCVEEdgeDackbox "github.com/stackrox/rox/central/clustercveedge/dackbox"
 	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
-	clusterCVEEdgeIndex "github.com/stackrox/rox/central/clustercveedge/index"
-	componentCVEEdgeDackbox "github.com/stackrox/rox/central/componentcveedge/dackbox"
-	componentCVEEdgeIndex "github.com/stackrox/rox/central/componentcveedge/index"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
-	cveConverterV1 "github.com/stackrox/rox/central/cve/converter"
-	cveConverterUtils "github.com/stackrox/rox/central/cve/converter/utils"
 	cveConverterV2 "github.com/stackrox/rox/central/cve/converter/v2"
-	cveDackbox "github.com/stackrox/rox/central/cve/dackbox"
-	cveIndex "github.com/stackrox/rox/central/cve/index"
-	deploymentDackbox "github.com/stackrox/rox/central/deployment/dackbox"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/globalindex"
-	imageDackbox "github.com/stackrox/rox/central/image/dackbox"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	imageIndex "github.com/stackrox/rox/central/image/index"
-	imageComponentDackbox "github.com/stackrox/rox/central/imagecomponent/dackbox"
-	imageComponentIndex "github.com/stackrox/rox/central/imagecomponent/index"
-	imageComponentEdgeDackbox "github.com/stackrox/rox/central/imagecomponentedge/dackbox"
-	imageComponentEdgeIndex "github.com/stackrox/rox/central/imagecomponentedge/index"
-	imageCVEEdgeDackbox "github.com/stackrox/rox/central/imagecveedge/dackbox"
-	imageCVEEdgeIndex "github.com/stackrox/rox/central/imagecveedge/index"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	nodeDackbox "github.com/stackrox/rox/central/node/dackbox"
 	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
-	nodeIndex "github.com/stackrox/rox/central/node/index"
-	nodeComponentEdgeDackbox "github.com/stackrox/rox/central/nodecomponentedge/dackbox"
-	nodeComponentEdgeIndex "github.com/stackrox/rox/central/nodecomponentedge/index"
 	"github.com/stackrox/rox/generated/storage"
-	boltPkg "github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -197,67 +169,28 @@ func (s *dackboxTestDataStoreImpl) PushClusterToVulnerabilitiesGraph(waitForInde
 	cve2FixVersion := embeddedClusterCVE2.GetFixedBy()
 	embeddedClusterCVE3 := fixtures.GetEmbeddedClusterCVE2345x0003()
 	cve3FixVersion := embeddedClusterCVE3.GetFixedBy()
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		clusterCVE1 := embeddedVulnerabilityToClusterCVE(embeddedClusterCVE1)
-		clusterCVE2 := embeddedVulnerabilityToClusterCVE(embeddedClusterCVE2)
-		clusterCVE3 := embeddedVulnerabilityToClusterCVE(embeddedClusterCVE3)
-		clusterCVEParts1x1 := cveConverterV2.NewClusterCVEParts(clusterCVE1, clusters1Only, cve1FixVersion)
-		clusterCVEParts1x2 := cveConverterV2.NewClusterCVEParts(clusterCVE2, clusters1Only, cve2FixVersion)
-		clusterCVEParts2x2 := cveConverterV2.NewClusterCVEParts(clusterCVE2, clusters2Only, cve2FixVersion)
-		clusterCVEParts2x3 := cveConverterV2.NewClusterCVEParts(clusterCVE3, clusters2Only, cve3FixVersion)
-		err = s.clusterCVEStore.UpsertClusterCVEsInternal(ctx, storage.CVE_OPENSHIFT_CVE, clusterCVEParts1x1)
-		if err != nil {
-			return err
-		}
-		err = s.clusterCVEStore.UpsertClusterCVEsInternal(ctx, storage.CVE_OPENSHIFT_CVE, clusterCVEParts1x2)
-		if err != nil {
-			return err
-		}
-		err = s.clusterCVEStore.UpsertClusterCVEsInternal(ctx, storage.CVE_OPENSHIFT_CVE, clusterCVEParts2x2)
-		if err != nil {
-			return err
-		}
-		err = s.clusterCVEStore.UpsertClusterCVEsInternal(ctx, storage.CVE_OPENSHIFT_CVE, clusterCVEParts2x3)
-		if err != nil {
-			return err
-		}
-	} else {
-		// Dackbox mode
-		clusterCVE1 := cveConverterUtils.EmbeddedCVEToProtoCVE("", embeddedClusterCVE1)
-		clusterCVE2 := cveConverterUtils.EmbeddedCVEToProtoCVE("", embeddedClusterCVE2)
-		clusterCVE3 := cveConverterUtils.EmbeddedCVEToProtoCVE("", embeddedClusterCVE3)
-		clusterCVEParts1x1 := cveConverterV1.NewClusterCVEParts(clusterCVE1, clusters1Only, cve1FixVersion)
-		for _, c := range clusterCVEParts1x1.Children {
-			s.storedClusterCVEEdges = append(s.storedClusterCVEEdges, c.Edge.GetId())
-		}
-		clusterCVEParts1x2 := cveConverterV1.NewClusterCVEParts(clusterCVE2, clusters1Only, cve2FixVersion)
-		for _, c := range clusterCVEParts1x2.Children {
-			s.storedClusterCVEEdges = append(s.storedClusterCVEEdges, c.Edge.GetId())
-		}
-		clusterCVEParts2x2 := cveConverterV1.NewClusterCVEParts(clusterCVE2, clusters2Only, cve2FixVersion)
-		for _, c := range clusterCVEParts2x2.Children {
-			s.storedClusterCVEEdges = append(s.storedClusterCVEEdges, c.Edge.GetId())
-		}
-		clusterCVEParts2x3 := cveConverterV1.NewClusterCVEParts(clusterCVE3, clusters2Only, cve3FixVersion)
-		for _, c := range clusterCVEParts2x3.Children {
-			s.storedClusterCVEEdges = append(s.storedClusterCVEEdges, c.Edge.GetId())
-		}
-		err = s.clusterCVEEdgeStore.Upsert(ctx, clusterCVEParts1x1)
-		if err != nil {
-			return err
-		}
-		err = s.clusterCVEEdgeStore.Upsert(ctx, clusterCVEParts1x2)
-		if err != nil {
-			return err
-		}
-		err = s.clusterCVEEdgeStore.Upsert(ctx, clusterCVEParts2x2)
-		if err != nil {
-			return err
-		}
-		err = s.clusterCVEEdgeStore.Upsert(ctx, clusterCVEParts2x3)
-		if err != nil {
-			return err
-		}
+	clusterCVE1 := embeddedVulnerabilityToClusterCVE(embeddedClusterCVE1)
+	clusterCVE2 := embeddedVulnerabilityToClusterCVE(embeddedClusterCVE2)
+	clusterCVE3 := embeddedVulnerabilityToClusterCVE(embeddedClusterCVE3)
+	clusterCVEParts1x1 := cveConverterV2.NewClusterCVEParts(clusterCVE1, clusters1Only, cve1FixVersion)
+	clusterCVEParts1x2 := cveConverterV2.NewClusterCVEParts(clusterCVE2, clusters1Only, cve2FixVersion)
+	clusterCVEParts2x2 := cveConverterV2.NewClusterCVEParts(clusterCVE2, clusters2Only, cve2FixVersion)
+	clusterCVEParts2x3 := cveConverterV2.NewClusterCVEParts(clusterCVE3, clusters2Only, cve3FixVersion)
+	err = s.clusterCVEStore.UpsertClusterCVEsInternal(ctx, storage.CVE_OPENSHIFT_CVE, clusterCVEParts1x1)
+	if err != nil {
+		return err
+	}
+	err = s.clusterCVEStore.UpsertClusterCVEsInternal(ctx, storage.CVE_OPENSHIFT_CVE, clusterCVEParts1x2)
+	if err != nil {
+		return err
+	}
+	err = s.clusterCVEStore.UpsertClusterCVEsInternal(ctx, storage.CVE_OPENSHIFT_CVE, clusterCVEParts2x2)
+	if err != nil {
+		return err
+	}
+	err = s.clusterCVEStore.UpsertClusterCVEsInternal(ctx, storage.CVE_OPENSHIFT_CVE, clusterCVEParts2x3)
+	if err != nil {
+		return err
 	}
 	if waitForIndexing {
 		s.waitForIndexing()
@@ -344,15 +277,8 @@ func (s *dackboxTestDataStoreImpl) PushNodeToVulnerabilitiesGraph(waitForIndexin
 func (s *dackboxTestDataStoreImpl) CleanClusterToVulnerabilitiesGraph(waitForIndexing bool) (err error) {
 	ctx := sac.WithAllAccess(context.Background())
 	storedClusters := s.storedClusters
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		for _, clusterID := range storedClusters {
-			err = s.clusterCVEStore.DeleteClusterCVEsInternal(ctx, clusterID)
-			if err != nil {
-				return err
-			}
-		}
-	} else {
-		err = s.clusterCVEEdgeStore.Delete(ctx, s.storedClusterCVEEdges...)
+	for _, clusterID := range storedClusters {
+		err = s.clusterCVEStore.DeleteClusterCVEsInternal(ctx, clusterID)
 		if err != nil {
 			return err
 		}
@@ -430,31 +356,10 @@ func (s *dackboxTestDataStoreImpl) CleanNodeToVulnerabilitiesGraph(waitForIndexi
 }
 
 func (s *dackboxTestDataStoreImpl) waitForIndexing() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		indexingCompleted := concurrency.NewSignal()
-		s.indexQ.PushSignal(&indexingCompleted)
-		<-indexingCompleted.Done()
-	}
 }
 
 func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) (err error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase.Teardown(t)
-	} else {
-		s.waitForIndexing()
-		err = s.boltengine.Close()
-		if err != nil {
-			return err
-		}
-		err = s.bleveIndex.Close()
-		if err != nil {
-			return err
-		}
-		err = rocksPkg.CloseAndRemove(s.rocksEngine)
-		if err != nil {
-			return err
-		}
-	}
+	s.pgtestbase.Teardown(t)
 	return nil
 }
 
@@ -463,88 +368,30 @@ func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) (err error) {
 func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 	var err error
 	s := &dackboxTestDataStoreImpl{}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase = pgtest.ForT(t)
-		s.nodeStore, err = nodeDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
-		if err != nil {
-			return nil, err
-		}
-		s.imageStore, err = imageDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
-		if err != nil {
-			return nil, err
-		}
-		s.deploymentStore, err = deploymentDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
-		if err != nil {
-			return nil, err
-		}
-		s.namespaceStore, err = namespaceDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
-		if err != nil {
-			return nil, err
-		}
-		s.clusterStore, err = clusterDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
-		if err != nil {
-			return nil, err
-		}
-		s.clusterCVEStore, err = clusterCVEDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		s.boltengine, err = boltPkg.NewTemp("dackboxtestbolt")
-		if err != nil {
-			return nil, err
-		}
-		s.rocksEngine, err = rocksPkg.NewTemp("dackboxtest")
-		if err != nil {
-			return nil, err
-		}
-		s.bleveIndex, err = globalindex.MemOnlyIndex()
-		if err != nil {
-			return nil, err
-		}
-		s.keyFence = dackboxConcurrency.NewKeyFence()
-		s.indexQ = queue.NewWaitableQueue()
-		s.dacky, err = dackbox.NewRocksDBDackBox(s.rocksEngine, s.indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
-		if err != nil {
-			return nil, err
-		}
-		reg := indexer.NewWrapperRegistry()
-		indexer.NewLazy(s.indexQ, reg, s.bleveIndex, s.dacky.AckIndexed).Start()
-		reg.RegisterWrapper(activeComponentDackbox.Bucket, activeComponentIndex.Wrapper{})
-		reg.RegisterWrapper(clusterCVEEdgeDackbox.Bucket, clusterCVEEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(componentCVEEdgeDackbox.Bucket, componentCVEEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(cveDackbox.Bucket, cveIndex.Wrapper{})
-		reg.RegisterWrapper(deploymentDackbox.Bucket, deploymentIndex.Wrapper{})
-		reg.RegisterWrapper(imageDackbox.Bucket, imageIndex.Wrapper{})
-		reg.RegisterWrapper(imageComponentDackbox.Bucket, imageComponentIndex.Wrapper{})
-		reg.RegisterWrapper(imageComponentEdgeDackbox.Bucket, imageComponentEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(imageCVEEdgeDackbox.Bucket, imageCVEEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(nodeDackbox.Bucket, nodeIndex.Wrapper{})
-		reg.RegisterWrapper(nodeComponentEdgeDackbox.Bucket, nodeComponentEdgeIndex.Wrapper{})
-		s.nodeStore, err = nodeDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
-		if err != nil {
-			return nil, err
-		}
-		s.imageStore, err = imageDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
-		if err != nil {
-			return nil, err
-		}
-		s.deploymentStore, err = deploymentDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
-		if err != nil {
-			return nil, err
-		}
-		s.namespaceStore, err = namespaceDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
-		if err != nil {
-			return nil, err
-		}
-		s.clusterStore, err = clusterDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence, s.boltengine)
-		if err != nil {
-			return nil, err
-		}
-		s.clusterCVEEdgeStore, err = clusterCVEEdgeDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
-		if err != nil {
-			return nil, err
-		}
+	s.pgtestbase = pgtest.ForT(t)
+	s.nodeStore, err = nodeDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+	if err != nil {
+		return nil, err
+	}
+	s.imageStore, err = imageDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+	if err != nil {
+		return nil, err
+	}
+	s.deploymentStore, err = deploymentDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+	if err != nil {
+		return nil, err
+	}
+	s.namespaceStore, err = namespaceDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+	if err != nil {
+		return nil, err
+	}
+	s.clusterStore, err = clusterDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+	if err != nil {
+		return nil, err
+	}
+	s.clusterCVEStore, err = clusterCVEDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+	if err != nil {
+		return nil, err
 	}
 	s.storedDeployments = make([]string, 0)
 	s.storedNamespaces = make([]string, 0)

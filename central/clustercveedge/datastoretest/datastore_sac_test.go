@@ -4,8 +4,6 @@ package datastore
 
 import (
 	"context"
-	"encoding/base64"
-	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/central/clustercveedge/datastore"
@@ -14,9 +12,6 @@ import (
 	dackboxTestUtils "github.com/stackrox/rox/central/dackbox/testutils"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -55,19 +50,8 @@ func (s *clusterCVEEdgeDatastoreSACSuite) SetupSuite() {
 	var err error
 	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
 	s.Require().NoError(err)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.datastore, err = datastore.GetTestPostgresDataStore(s.T(), s.dackboxTestStore.GetPostgresPool())
-		s.Require().NoError(err)
-	} else {
-		s.datastore, err = datastore.GetTestRocksBleveDataStore(
-			s.T(),
-			s.dackboxTestStore.GetRocksEngine(),
-			s.dackboxTestStore.GetBleveIndex(),
-			s.dackboxTestStore.GetDackbox(),
-			s.dackboxTestStore.GetKeyFence(),
-		)
-		s.Require().NoError(err)
-	}
+	s.datastore, err = datastore.GetTestPostgresDataStore(s.T(), s.dackboxTestStore.GetPostgresPool())
+	s.Require().NoError(err)
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) TearDownSuite() {
@@ -79,18 +63,11 @@ func (s *clusterCVEEdgeDatastoreSACSuite) cleanImageToVulnerabilitiesGraph(waitF
 }
 
 func getCveID(vulnerability *storage.EmbeddedVulnerability, os string) string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return vulnerability.GetCve()
-	}
-	return utils.EmbeddedCVEToProtoCVE(os, vulnerability).GetId()
+	return vulnerability.GetCve()
 }
 
 func getEdgeID(vulnerability *storage.EmbeddedVulnerability, clusterID, os string) string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return clusterID + "#" + vulnerability.GetCve()
-	}
-	cve := utils.EmbeddedCVEToProtoCVE(os, vulnerability)
-	return edges.EdgeID{ParentID: clusterID, ChildID: cve.GetId()}.ToString()
+	return clusterID + "#" + vulnerability.GetCve()
 }
 
 var (
@@ -375,18 +352,11 @@ func (s *clusterCVEEdgeDatastoreSACSuite) checkClusterCVEEdgePresence(id string,
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) waitForIndexing() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-	deleteDoneSignal := concurrency.NewSignal()
-	s.dackboxTestStore.GetIndexQ().PushSignal(&deleteDoneSignal)
-	<-deleteDoneSignal.Done()
+	return
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) TestUpsert() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("ClusterCVEEdge Upsert is only available in non-postgres mode")
-	}
+	s.T().Skip("ClusterCVEEdge Upsert is only available in non-postgres mode")
 	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
 	s.Require().NoError(err)
@@ -431,9 +401,7 @@ func (s *clusterCVEEdgeDatastoreSACSuite) TestUpsert() {
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) TestDelete() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("ClusterCVEEdge Delete is only available in non-postgres mode")
-	}
+	s.T().Skip("ClusterCVEEdge Delete is only available in non-postgres mode")
 	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
 	s.Require().NoError(err)
@@ -518,20 +486,8 @@ func (s *clusterCVEEdgeDatastoreSACSuite) TestGet() {
 			if c.visibleEdges[cluster1ToCVE1EdgeID] {
 				s.True(exists)
 				s.NotNil(edge)
-				if !env.PostgresDatastoreEnabled.BooleanSetting() {
-					// In dackbox mode, the edge ID is base64(clusterID):base64(cveID)
-					idParts := strings.Split(edge.GetId(), ":")
-					s.Require().Equal(2, len(idParts))
-					edgeClusterID, err := base64.RawURLEncoding.DecodeString(idParts[0])
-					s.NoError(err)
-					edgeCveID, err := base64.RawURLEncoding.DecodeString(idParts[1])
-					s.NoError(err)
-					s.Equal(validClusters[0], string(edgeClusterID))
-					s.Equal(targetEdgeCveID, string(edgeCveID))
-				} else {
-					s.Equal(validClusters[0], edge.GetClusterId())
-					s.Equal(targetEdgeCveID, edge.GetCveId())
-				}
+				s.Equal(validClusters[0], edge.GetClusterId())
+				s.Equal(targetEdgeCveID, edge.GetCveId())
 			} else {
 				s.False(exists)
 				s.Nil(edge)
@@ -579,9 +535,6 @@ func (s *clusterCVEEdgeDatastoreSACSuite) TestGetBatch() {
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) TestCount() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Count panics in non-postgres mode")
-	}
 	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
 	s.Require().NoError(err)
@@ -635,9 +588,6 @@ func (s *clusterCVEEdgeDatastoreSACSuite) TestSearch() {
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) TestSearchEdges() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("SearchEdges panics in non-postgres mode")
-	}
 	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph(waitForIndexing)
 	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
 	s.Require().NoError(err)

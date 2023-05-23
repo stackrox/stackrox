@@ -513,7 +513,6 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesNetwork3(in *jlexer.Lexe
 				if out.Ports == nil {
 					if !in.IsDelim(']') {
 						out.Ports = make([]string, 0, 4)
-					} else {
 						out.Ports = []string{}
 					}
 				} else {
@@ -538,7 +537,6 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesNetwork3(in *jlexer.Lexe
 				if out.Tasks == nil {
 					if !in.IsDelim(']') {
 						out.Tasks = make([]network.Task, 0, 1)
-					} else {
 						out.Tasks = []network.Task{}
 					}
 				} else {

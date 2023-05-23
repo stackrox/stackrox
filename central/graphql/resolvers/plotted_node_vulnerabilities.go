@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -39,15 +38,6 @@ func (resolver *Resolver) wrapPlottedNodeVulnerabilitiesWithContext(ctx context.
 
 // PlottedNodeVulnerabilities - returns node vulns
 func (resolver *Resolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		q := withNodeCveTypeFiltering(args.String())
-		allCveIds, fixableCount, err := getPlottedVulnsIdsAndFixableCount(ctx, resolver, RawQuery{Query: &q})
-		if err != nil {
-			return nil, err
-		}
-
-		return resolver.wrapPlottedNodeVulnerabilitiesWithContext(ctx, allCveIds, fixableCount)
-	}
 
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {

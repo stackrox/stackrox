@@ -5,10 +5,8 @@ import (
 
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/group/datastore/internal/store"
-	"github.com/stackrox/rox/central/group/datastore/internal/store/bolt"
 	"github.com/stackrox/rox/central/group/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -42,11 +40,7 @@ var (
 )
 
 func initialize() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		groupStore = postgres.New(globaldb.GetPostgres())
-	} else {
-		groupStore = bolt.New(globaldb.GetGlobalDB())
-	}
+	groupStore = postgres.New(globaldb.GetPostgres())
 }
 
 // GroupStoreSingleton returns the singleton providing access to the roles store.

@@ -117,10 +117,8 @@ func updateVersion(databases *types.Databases, newVersion *storage.Version) erro
 	// If the sequence number is higher than the sequence number without postgres then
 	// we are migrating postgres and as such need to update the Postgres version.
 	if int(newVersion.GetSeqNum()) > migrations.LastRocksDBVersionSeqNum() {
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			version.SetVersionGormDB(ctx, databases.GormDB, newVersion, false)
-			return nil
-		}
+		version.SetVersionGormDB(ctx, databases.GormDB, newVersion, false)
+		return nil
 		return fmt.Errorf("running migration that rocks does not support: %d", newVersion.GetSeqNum())
 	}
 

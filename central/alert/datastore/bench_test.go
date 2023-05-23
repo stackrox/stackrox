@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	rocksDBStore "github.com/stackrox/rox/central/alert/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -18,10 +17,6 @@ import (
 )
 
 func BenchmarkDBs(b *testing.B) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		b.Skipf("%q not set. Skip postgres test", env.PostgresDatastoreEnabled.EnvVar())
-		b.SkipNow()
-	}
 
 	ctx := sac.WithAllAccess(context.Background())
 	db, err := rocksdb.NewTemp("alert_bench_test")

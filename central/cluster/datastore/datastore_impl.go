@@ -548,10 +548,8 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	ds.removeK8SRoles(ctx, cluster)
 	ds.removeRoleBindings(ctx, cluster)
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := ds.clusterCVEDataStore.DeleteClusterCVEsInternal(ctx, cluster.GetId()); err != nil {
-			log.Errorf("Failed to delete cluster cves for cluster %q: %v ", cluster.GetId(), err)
-		}
+	if err := ds.clusterCVEDataStore.DeleteClusterCVEsInternal(ctx, cluster.GetId()); err != nil {
+		log.Errorf("Failed to delete cluster cves for cluster %q: %v ", cluster.GetId(), err)
 	}
 
 	if done != nil {

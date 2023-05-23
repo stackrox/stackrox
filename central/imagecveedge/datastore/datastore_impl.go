@@ -9,7 +9,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/env"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/filtered"
 )
@@ -37,12 +36,6 @@ func (ds *datastoreImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*st
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageCVEEdge, bool, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		filteredIDs, err := ds.filterReadable(ctx, []string{id})
-		if err != nil || len(filteredIDs) != 1 {
-			return nil, false, err
-		}
-	}
 
 	edge, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {

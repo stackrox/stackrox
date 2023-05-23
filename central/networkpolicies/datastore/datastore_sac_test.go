@@ -9,14 +9,11 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/search"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
-	boltStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/bolt"
 	pgdbStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
 	undodeploymentstoremock "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/mocks"
 	undostoremock "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -49,24 +46,19 @@ type networkPolicySACSuite struct {
 
 func (s *networkPolicySACSuite) SetupSuite() {
 	var err error
-	var searcher search.Searcher
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		ctx := context.Background()
-		src := pgtest.GetConnectionString(s.T())
-		cfg, err := postgres.ParseConfig(src)
-		s.Require().NoError(err)
-		s.pool, err = postgres.New(ctx, cfg)
-		s.Require().NoError(err)
-		pgdbStore.Destroy(ctx, s.pool)
-		gormDB := pgtest.OpenGormDB(s.T(), src)
-		defer pgtest.CloseGormDB(s.T(), gormDB)
-		s.storage = pgdbStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
-		searcher = search.New(pgdbStore.NewIndexer(s.pool))
-	} else {
-		s.engine, err = bolthelper.NewTemp(s.T().Name() + ".db")
-		s.Require().NoError(err)
-		s.storage = boltStore.New(s.engine)
-	}
+
+	ctx := context.Background()
+	src := pgtest.GetConnectionString(s.T())
+	cfg, err := postgres.ParseConfig(src)
+	s.Require().NoError(err)
+	s.pool, err = postgres.New(ctx, cfg)
+	s.Require().NoError(err)
+	pgdbStore.Destroy(ctx, s.pool)
+	gormDB := pgtest.OpenGormDB(s.T(), src)
+	defer pgtest.CloseGormDB(s.T(), gormDB)
+	s.storage = pgdbStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
+	searcher := search.New(pgdbStore.NewIndexer(s.pool))
+
 	mockCtrl := gomock.NewController(s.T())
 	undomock := undostoremock.NewMockUndoStore(mockCtrl)
 	undodeploymentmock := undodeploymentstoremock.NewMockUndoDeploymentStore(mockCtrl)
@@ -77,11 +69,7 @@ func (s *networkPolicySACSuite) SetupSuite() {
 }
 
 func (s *networkPolicySACSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	} else {
-		s.Require().NoError(s.engine.Close())
-	}
+	s.pool.Close()
 }
 
 func (s *networkPolicySACSuite) SetupTest() {

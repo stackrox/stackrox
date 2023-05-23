@@ -4,7 +4,6 @@ import (
 	"context"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -38,10 +37,6 @@ func TransformCategoryNameFields(searcher search.Searcher) search.Searcher {
 
 func handleCategoryNameQuery(q *v1.Query) {
 	if q.GetQuery() == nil {
-		return
-	}
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		return
 	}
 

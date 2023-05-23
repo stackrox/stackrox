@@ -3,21 +3,16 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/stackrox/rox/central/globaldb/export"
 	"github.com/stackrox/rox/central/systeminfo/listener"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/osutils"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/utils"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -33,9 +28,7 @@ const (
 
 // BackupDB is a handler that writes a consistent view of the databases to the HTTP response.
 func BackupDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, postgresDB postgres.DB, backupListener listener.BackupListener, includeCerts bool) http.Handler {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return dumpDB(postgresDB, backupListener, includeCerts)
-	}
+	return dumpDB(postgresDB, backupListener, includeCerts)
 	return serializeDB(rocksDB, boltDB, backupListener, includeCerts)
 }
 
@@ -59,50 +52,7 @@ func RestoreDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		log.Info("Starting DB restore ...")
 		// This is the old v1 API.  No need to support that for Postgres
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			logAndWriteErrorMsg(w, http.StatusInternalServerError, "api is deprecated and does not support Postgres.")
-			return
-		}
-
-		filename := filepath.Join(os.TempDir(), time.Now().Format(restoreFileFormat))
-
-		f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
-		if err != nil {
-			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not create temporary file for DB upload: %v", err)
-			return
-		}
-		defer func() {
-			_ = os.Remove(f.Name())
-		}()
-		defer utils.IgnoreError(f.Close)
-
-		if _, err := io.Copy(f, req.Body); err != nil {
-			_ = req.Body.Close()
-			logAndWriteErrorMsg(w, http.StatusInternalServerError, "error storing upload in temporary location: %v", err)
-			return
-		}
-		_ = req.Body.Close()
-		if _, err := f.Seek(0, 0); err != nil {
-			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not rewind to beginning of temporary file: %v", err)
-			return
-		}
-
-		if err := export.Restore(f); err != nil {
-			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not restore database backup: %v", err)
-			return
-		}
-		log.Info("DB restore completed")
-
-		// Now that we have verified the uploaded DB, close the current DB
-		// and bounce Central
-
-		if err := boltDB.Close(); err != nil {
-			log.Errorf("unable to close bolt DB: %v", err)
-		}
-		rocksDB.Close()
-
-		log.Info("Bouncing Central to pick up newly imported DB")
-		deferredRestart(req.Context())
+		logAndWriteErrorMsg(w, http.StatusInternalServerError, "api is deprecated and does not support Postgres.")
 	})
 }
 

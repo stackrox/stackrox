@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/rbac/service"
 	searchService "github.com/stackrox/rox/central/search/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/utils"
@@ -137,15 +136,11 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 		v1.SearchCategory_IMAGE_COMPONENTS: resolver.ImageComponentDataStore,
 		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(resolver.K8sRoleBindingStore),
 	}
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		searchers[v1.SearchCategory_VULNERABILITIES] = resolver.CVEDataStore
-	} else {
-		searchers[v1.SearchCategory_IMAGE_VULNERABILITIES] = resolver.ImageCVEDataStore
-		searchers[v1.SearchCategory_NODE_VULNERABILITIES] = resolver.NodeCVEDataStore
-		searchers[v1.SearchCategory_CLUSTER_VULNERABILITIES] = resolver.ClusterCVEDataStore
-		searchers[v1.SearchCategory_NODE_COMPONENTS] = resolver.NodeComponentDataStore
-		searchers[v1.SearchCategory_POLICY_CATEGORIES] = resolver.PolicyCategoryDataStore
-	}
+	searchers[v1.SearchCategory_IMAGE_VULNERABILITIES] = resolver.ImageCVEDataStore
+	searchers[v1.SearchCategory_NODE_VULNERABILITIES] = resolver.NodeCVEDataStore
+	searchers[v1.SearchCategory_CLUSTER_VULNERABILITIES] = resolver.ClusterCVEDataStore
+	searchers[v1.SearchCategory_NODE_COMPONENTS] = resolver.NodeComponentDataStore
+	searchers[v1.SearchCategory_POLICY_CATEGORIES] = resolver.PolicyCategoryDataStore
 
 	return searchers
 }
@@ -167,15 +162,11 @@ func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.S
 		v1.SearchCategory_IMAGE_COMPONENTS: resolver.ImageComponentDataStore.SearchImageComponents,
 		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(resolver.K8sRoleBindingStore).SearchSubjects,
 	}
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		searchfuncs[v1.SearchCategory_VULNERABILITIES] = resolver.CVEDataStore.SearchCVEs
-	} else {
-		searchfuncs[v1.SearchCategory_IMAGE_VULNERABILITIES] = resolver.ImageCVEDataStore.SearchImageCVEs
-		searchfuncs[v1.SearchCategory_NODE_VULNERABILITIES] = resolver.NodeCVEDataStore.SearchNodeCVEs
-		searchfuncs[v1.SearchCategory_CLUSTER_VULNERABILITIES] = resolver.ClusterCVEDataStore.SearchClusterCVEs
-		searchfuncs[v1.SearchCategory_NODE_COMPONENTS] = resolver.NodeComponentDataStore.SearchNodeComponents
-		searchfuncs[v1.SearchCategory_POLICY_CATEGORIES] = resolver.PolicyCategoryDataStore.SearchPolicyCategories
-	}
+	searchfuncs[v1.SearchCategory_IMAGE_VULNERABILITIES] = resolver.ImageCVEDataStore.SearchImageCVEs
+	searchfuncs[v1.SearchCategory_NODE_VULNERABILITIES] = resolver.NodeCVEDataStore.SearchNodeCVEs
+	searchfuncs[v1.SearchCategory_CLUSTER_VULNERABILITIES] = resolver.ClusterCVEDataStore.SearchClusterCVEs
+	searchfuncs[v1.SearchCategory_NODE_COMPONENTS] = resolver.NodeComponentDataStore.SearchNodeComponents
+	searchfuncs[v1.SearchCategory_POLICY_CATEGORIES] = resolver.PolicyCategoryDataStore.SearchPolicyCategories
 	return searchfuncs
 }
 

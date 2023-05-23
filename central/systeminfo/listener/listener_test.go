@@ -8,17 +8,12 @@ import (
 
 	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestListener(t *testing.T) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip postgres listener tests")
-		t.SkipNow()
-	}
 
 	testDB := pgtest.ForT(t)
 	defer testDB.Teardown(t)
@@ -50,10 +45,8 @@ func TestListener(t *testing.T) {
 }
 
 func TestListenerWithPostgresDisabled(t *testing.T) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip non-postgres listener tests")
-		t.SkipNow()
-	}
+	t.Skip("Skip non-postgres listener tests")
+	t.SkipNow()
 
 	listener := newBackupListener(nil)
 

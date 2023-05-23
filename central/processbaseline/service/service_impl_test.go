@@ -9,7 +9,6 @@ import (
 	"github.com/golang/mock/gomock"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/processbaseline/index"
 	baselineSearch "github.com/stackrox/rox/central/processbaseline/search"
@@ -23,7 +22,6 @@ import (
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -109,28 +107,14 @@ type ProcessBaselineServiceTestSuite struct {
 func (suite *ProcessBaselineServiceTestSuite) SetupTest() {
 	var store store.Store
 	var indexer index.Indexer
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(suite.T())
-		suite.Require().NotNil(pgtestbase)
-		suite.pool = pgtestbase.DB
-		dbStore := postgresStore.New(suite.pool)
-		cache, err := postgresStore.NewWithCache(dbStore)
-		suite.NoError(err)
-		store = cache
-		indexer = postgresStore.NewIndexer(suite.pool)
-	} else {
-		db, err := rocksdb.NewTemp(suite.T().Name() + ".db")
-		suite.Require().NoError(err)
-
-		suite.db = db
-
-		store, err = rocksdbStore.New(db)
-		suite.NoError(err)
-
-		tmpIndex, err := globalindex.TempInitializeIndices("")
-		suite.NoError(err)
-		indexer = index.New(tmpIndex)
-	}
+	pgtestbase := pgtest.ForT(suite.T())
+	suite.Require().NotNil(pgtestbase)
+	suite.pool = pgtestbase.DB
+	dbStore := postgresStore.New(suite.pool)
+	cache, err := postgresStore.NewWithCache(dbStore)
+	suite.NoError(err)
+	store = cache
+	indexer = postgresStore.NewIndexer(suite.pool)
 
 	searcher, err := baselineSearch.New(store, indexer)
 	suite.NoError(err)
@@ -150,11 +134,7 @@ func (suite *ProcessBaselineServiceTestSuite) SetupTest() {
 
 func (suite *ProcessBaselineServiceTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.pool.Close()
-	} else {
-		rocksdbtest.TearDownRocksDB(suite.db)
-	}
+	suite.pool.Close()
 }
 
 func (suite *ProcessBaselineServiceTestSuite) TestGetProcessBaseline() {

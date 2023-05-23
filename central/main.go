@@ -44,7 +44,6 @@ import (
 	imageCVEService "github.com/stackrox/rox/central/cve/image/service"
 	nodeCveCsv "github.com/stackrox/rox/central/cve/node/csv"
 	nodeCVEService "github.com/stackrox/rox/central/cve/node/service"
-	cveService "github.com/stackrox/rox/central/cve/service"
 	"github.com/stackrox/rox/central/cve/suppress"
 	debugService "github.com/stackrox/rox/central/debug/service"
 	"github.com/stackrox/rox/central/declarativeconfig"
@@ -92,7 +91,6 @@ import (
 	"github.com/stackrox/rox/central/notifier/processor"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
-	"github.com/stackrox/rox/central/option"
 	pingService "github.com/stackrox/rox/central/ping/service"
 	podService "github.com/stackrox/rox/central/pod/service"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -272,21 +270,16 @@ func main() {
 	ensureDB(ctx)
 
 	// Need to remove the backup clone and set the current version
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		sourceMap, config, err := pgconfig.GetPostgresConfig()
-		if err != nil {
-			log.Errorf("Unable to get Postgres DB config: %v", err)
-		}
-
-		err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone())
-		if err != nil {
-			log.Errorf("Failed to remove backup DB: %v", err)
-		}
-		versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
-	} else {
-		// Update last associated software version on DBs.
-		migrations.SetCurrent(option.CentralOptions.DBPathBase)
+	sourceMap, config, err := pgconfig.GetPostgresConfig()
+	if err != nil {
+		log.Errorf("Unable to get Postgres DB config: %v", err)
 	}
+
+	err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone())
+	if err != nil {
+		log.Errorf("Failed to remove backup DB: %v", err)
+	}
+	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 
 	// Now that we verified that the DB can be loaded, remove the .backup directory
 	if err := migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(migrations.DBMountPath(), migrations.GetBackupClone())); err != nil {
@@ -304,11 +297,7 @@ func main() {
 
 func ensureDB(ctx context.Context) {
 	var versionStore vStore.Store
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		versionStore = vStore.NewPostgres(globaldb.InitializePostgres(ctx))
-	} else {
-		versionStore = vStore.New(globaldb.GetGlobalDB(), globaldb.GetRocksDB())
-	}
+	versionStore = vStore.NewPostgres(globaldb.InitializePostgres(ctx))
 
 	err := version.Ensure(versionStore)
 	if err != nil {
@@ -323,9 +312,7 @@ func startServices() {
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		apiTokenExpiration.Singleton().Start()
-	}
+	apiTokenExpiration.Singleton().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -400,16 +387,12 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		userService.Singleton(),
 		vulnRequestService.Singleton(),
 	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		servicesToRegister = append(servicesToRegister, clusterCVEService.Singleton())
-		servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
-		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
-		servicesToRegister = append(servicesToRegister, collectionService.Singleton())
-		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
-		servicesToRegister = append(servicesToRegister, processListeningOnPorts.Singleton())
-	} else {
-		servicesToRegister = append(servicesToRegister, cveService.Singleton())
-	}
+	servicesToRegister = append(servicesToRegister, clusterCVEService.Singleton())
+	servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
+	servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
+	servicesToRegister = append(servicesToRegister, collectionService.Singleton())
+	servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
+	servicesToRegister = append(servicesToRegister, processListeningOnPorts.Singleton())
 
 	if features.VulnMgmtReportingEnhancements.Enabled() {
 		// TODO Remove (deprecated) v1 report configuration service when Reporting enhancements are enabled by default.
@@ -717,63 +700,40 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	}
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:      "/db/backup",
-			Authorizer: dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: notImplementedOnManagedServices(
-				globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), listener.Singleton(), false),
-			),
-			Compression: true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:      "/api/extensions/backup",
-			Authorizer: user.WithRole(accesscontrol.Admin),
-			ServerHandler: notImplementedOnManagedServices(
-				globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), listener.Singleton(), true),
-			),
-			Compression: true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/export/csv/node/cve",
-			Authorizer:    user.With(permissions.View(resources.Node)),
-			ServerHandler: nodeCveCsv.NodeCVECSVHandler(),
-			Compression:   true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/export/csv/image/cve",
-			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
-			ServerHandler: imageCveCsv.ImageCVECSVHandler(),
-			Compression:   true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/export/csv/cluster/cve",
-			Authorizer:    user.With(permissions.View(resources.Cluster)),
-			ServerHandler: clusterCveCsv.ClusterCVECSVHandler(),
-			Compression:   true,
-		})
-	} else {
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/db/backup",
-			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, listener.Singleton(), false)),
-			Compression:   true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/extensions/backup",
-			Authorizer:    user.WithRole(accesscontrol.Admin),
-			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, listener.Singleton(), true)),
-			Compression:   true,
-		})
-
-		// v1 style restore endpoint, not supported for Postgres
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/db/restore",
-			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
-			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB()),
-			EnableAudit:   true,
-		})
-	}
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:      "/db/backup",
+		Authorizer: dbAuthz.DBReadAccessAuthorizer(),
+		ServerHandler: notImplementedOnManagedServices(
+			globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), listener.Singleton(), false),
+		),
+		Compression: true,
+	})
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:      "/api/extensions/backup",
+		Authorizer: user.WithRole(accesscontrol.Admin),
+		ServerHandler: notImplementedOnManagedServices(
+			globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), listener.Singleton(), true),
+		),
+		Compression: true,
+	})
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:         "/api/export/csv/node/cve",
+		Authorizer:    user.With(permissions.View(resources.Node)),
+		ServerHandler: nodeCveCsv.NodeCVECSVHandler(),
+		Compression:   true,
+	})
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:         "/api/export/csv/image/cve",
+		Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
+		ServerHandler: imageCveCsv.ImageCVECSVHandler(),
+		Compression:   true,
+	})
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:         "/api/export/csv/cluster/cve",
+		Authorizer:    user.With(permissions.View(resources.Cluster)),
+		ServerHandler: clusterCveCsv.ClusterCVECSVHandler(),
+		Compression:   true,
+	})
 
 	customRoutes = append(customRoutes, routes.CustomRoute{
 		Route:         "/api/extensions/clusters/helm-config.yaml",
@@ -859,9 +819,7 @@ func waitForTerminationSignal() {
 		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
 	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		stoppables = append(stoppables, stoppableWithName{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"})
-	}
+	stoppables = append(stoppables, stoppableWithName{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"})
 
 	var wg sync.WaitGroup
 	for _, stoppable := range stoppables {
