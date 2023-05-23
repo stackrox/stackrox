@@ -80,7 +80,7 @@ func moveScannerDefinitions(db *gorm.DB) {
 	if err != nil {
 		log.Errorf("Failed to move scanner definition to blob store with error \n%v \nPlease upload the scanner definition again to continue working with offline mode.", err)
 	} else {
-		log.Info("Migrate scanner definition successfully")
+		log.Info("Migrate scanner definitions successfully")
 	}
 }
 
