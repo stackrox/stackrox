@@ -49,12 +49,6 @@ type PolicyPostgresDataStoreTestSuite struct {
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skipping. This test requires postgres and categories flag enabled.")
-		s.T().SkipNow()
-	}
 
 	s.ctx = context.Background()
 

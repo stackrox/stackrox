@@ -14,7 +14,6 @@ import (
 	policyCategoryEdgePostgres "github.com/stackrox/rox/central/policycategoryedge/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -38,12 +37,6 @@ type PolicyCategoryPostgresDataStoreTestSuite struct {
 }
 
 func (s *PolicyCategoryPostgresDataStoreTestSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skipping. This test requires postgres and categories flag enabled.")
-		s.T().SkipNow()
-	}
 
 	s.ctx = context.Background()
 
