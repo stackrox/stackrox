@@ -32,7 +32,7 @@ The endpoints are versioned at `v4` to align with Clair:
 1. `scanner.v4.Indexer/CreateIndex`: Create a manifest of a specified resource and create an index or re-index. Idempotent while creation is being executed. Synchronous and tied to the client's request. Returns [`IndexReport`](https://github.com/quay/claircore/blob/v1.4.18/indexreport.go#L19)
 2. `scanner.v4.Indexer/GetIndex`: Retrieve or check index existence. Returns [`IndexReport`](https://github.com/quay/claircore/blob/v1.4.18/indexreport.go#L19).
 3. `scanner.v4.Matcher/GetVulnerabilities`: Get vulnerabilities for a given resource's manifest. Returns [`VulnerabilityReport`](https://github.com/quay/claircore/blob/v1.4.18/vulnerabilityreport.go#L7).
-4. `scanner.v4.Matcher/GetVulnerabilityMetadata`: Get information on vulnerability metadata, e.g., last update timestamp.
+4. `scanner.v4.Matcher/GetMetadata`: Get information on vulnerability metadata, e.g., last update timestamp.
 
 Example of manifest's `hash_id` usage to create index reports for container images:
 
