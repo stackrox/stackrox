@@ -26,17 +26,24 @@ func (s *SensorReplyHandlerImpl) HandleACK(_ context.Context, _ sensor.Complianc
 
 // HandleNACK handles NACK message from Sensor
 func (s *SensorReplyHandlerImpl) HandleNACK(ctx context.Context, client sensor.ComplianceService_CommunicateClient) {
-	log.Infof("Received NACK from Sensor, resending NodeInventory in 10 seconds.")
 	go func() {
-		time.Sleep(time.Second * 10)
-		msg, err := s.nodeScanner.ScanNode(ctx)
-		if err != nil {
-			log.Errorf("error running ScanNode: %v", err)
-		} else {
-			err := client.Send(msg)
-			if err != nil {
-				log.Errorf("error sending to sensor: %v", err)
-			}
+		log.Infof("Received NACK from Sensor, resending NodeInventory in 10 seconds.")
+		select {
+		case <-time.After(time.Second * 10):
+			s.rescan(ctx, client)
+		case <-client.Context().Done():
+		case <-ctx.Done():
 		}
 	}()
+}
+
+func (s *SensorReplyHandlerImpl) rescan(ctx context.Context, client sensor.ComplianceService_CommunicateClient) {
+	msg, err := s.nodeScanner.ScanNode(ctx)
+	if err != nil {
+		log.Errorf("error running ScanNode: %v", err)
+		return
+	}
+	if err := client.Send(msg); err != nil {
+		log.Errorf("error sending to sensor: %v", err)
+	}
 }
