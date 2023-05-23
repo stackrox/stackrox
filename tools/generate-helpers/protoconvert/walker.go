@@ -98,21 +98,15 @@ func (s *converter) createSliceFunc(w io.Writer, t1, t2 reflect.Type) {
 	src, dst := t1.String(), t2.String()
 	s.printf(w, "// %s converts a slice of %s to a slice of %s", name, src, dst)
 	s.printf(w, "func %s(p1 []%s) []%s {", name, src, dst)
-	s.indent()
 	s.printf(w, "if p1 == nil {")
-	s.indent()
 	s.printf(w, "return nil")
-	s.unindent()
-	s.printf(w, "}")
+	s.closeBracket(w)
 	s.printf(w, "p2 := make([]%s, 0, len(p1))", t2.String())
 	s.printf(w, "for _, v := range p1 {")
-	s.indent()
 	s.printf(w, "p2 = append(p2, %s(v))", singleFuncName)
-	s.unindent()
-	s.printf(w, "}")
+	s.closeBracket(w)
 	s.printf(w, "return p2")
-	s.unindent()
-	s.printf(w, "}")
+	s.closeBracket(w)
 	s.printf(w, "")
 }
 
@@ -121,30 +115,26 @@ func (s *converter) createFunc(w io.Writer, t1, t2 reflect.Type) {
 	src, dst := t1.String(), t2.String()
 	s.printf(w, "// %s converts from %s to %s", name, src, dst)
 	s.printf(w, "func %s(p1 %s) %s {", name, src, dst)
-	s.indent()
 	s.printf(w, "if p1 == nil {")
-	s.indent()
 	s.printf(w, "return nil")
-	s.unindent()
-	s.printf(w, "}")
+	s.closeBracket(w)
 	s.printf(w, "p2 := new(%s)", t2.Elem().String())
 	s.handleStruct(w, t1.Elem(), t2.Elem())
 	s.printf(w, "return p2")
-	s.unindent()
-	s.printf(w, "}")
+	s.closeBracket(w)
 	s.printf(w, "")
 }
 
 func (s *converter) printf(w io.Writer, template string, args ...interface{}) {
 	fmt.Fprintf(w, "%s%s\n", strings.Repeat("\t", s.numIndents), fmt.Sprintf(template, args...))
+	if strings.HasSuffix(strings.TrimSpace(template), "{") {
+		s.numIndents++
+	}
 }
 
-func (s *converter) indent() {
-	s.numIndents += 1
-}
-
-func (s *converter) unindent() {
-	s.numIndents -= 1
+func (s *converter) closeBracket(w io.Writer) {
+	s.numIndents--
+	fmt.Fprintf(w, "%s}\n", strings.Repeat("\t", s.numIndents))
 }
 
 // handleStruct takes in a struct object and properly handles all of the fields
@@ -168,10 +158,8 @@ func (s *converter) handleStruct(w io.Writer, original reflect.Type, new reflect
 			s.printf(w, "p2.%s = %s(p1.%s)", field.Name, s.addFunc(field.Type, newField.Type), field.Name)
 		case reflect.Slice:
 			s.printf(w, "if p1.%s != nil {", field.Name)
-			s.indent()
 			s.printf(w, "p2.%s = make(%s, len(p1.%s))", field.Name, newField.Type, field.Name)
 			s.printf(w, "for idx := range p1.%s {", field.Name)
-			s.indent()
 			switch field.Type.Elem().Kind() {
 			case reflect.Struct:
 				panic("shouldn't be possible in proto")
@@ -195,18 +183,14 @@ func (s *converter) handleStruct(w io.Writer, original reflect.Type, new reflect
 			default:
 				s.printf(w, "p2.%s[idx] = p1.%s[idx]", field.Name, field.Name)
 			}
-			s.unindent()
-			s.printf(w, "}")
-			s.unindent()
-			s.printf(w, "}")
+			s.closeBracket(w)
+			s.closeBracket(w)
 		case reflect.Struct:
 			s.handleStruct(w, field.Type, newField.Type)
 		case reflect.Map:
 			s.printf(w, "if p1.%s != nil {", field.Name)
-			s.indent()
 			s.printf(w, "p2.%s = make(map[%s]%s, len(p1.%s))", field.Name, field.Type.Key().String(), newField.Type.Elem().String(), field.Name)
 			s.printf(w, "for k, v := range p1.%s {", field.Name)
-			s.indent()
 			switch field.Type.Elem().Kind() {
 			case reflect.Ptr:
 				s.printf(w, "p2.%s[k] = %s(v)", field.Name, s.addFunc(field.Type.Elem(), newField.Type.Elem()))
@@ -223,10 +207,8 @@ func (s *converter) handleStruct(w io.Writer, original reflect.Type, new reflect
 			default:
 				s.printf(w, "p2.%s[k] = v", field.Name)
 			}
-			s.unindent()
-			s.printf(w, "}")
-			s.unindent()
-			s.printf(w, "}")
+			s.closeBracket(w)
+			s.closeBracket(w)
 		case reflect.String, reflect.Bool:
 			s.printf(w, "p2.%s = p1.%s", field.Name, field.Name)
 		case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64, reflect.Float32, reflect.Float64:
@@ -241,7 +223,6 @@ func (s *converter) handleStruct(w io.Writer, original reflect.Type, new reflect
 			//The return values is a slice of interfaces that are nil type pointers
 			if field.Tag.Get("protobuf_oneof") != "" {
 				s.printf(w, "if p1.%s != nil {", field.Name)
-				s.indent()
 
 				oneofWrappers := reflect.Zero(reflect.PtrTo(original)).Interface().(interface{ XXX_OneofWrappers() []interface{} }).XXX_OneofWrappers()
 				newOneofWrappers := reflect.Zero(reflect.PtrTo(new)).Interface().(interface{ XXX_OneofWrappers() []interface{} }).XXX_OneofWrappers()
@@ -253,14 +234,10 @@ func (s *converter) handleStruct(w io.Writer, original reflect.Type, new reflect
 					}
 					newWrapperTy := reflect.TypeOf(newOneofWrappers[idx])
 					s.printf(w, "if val, ok := p1.%s.(%s); ok {", field.Name, wrapperTy.String())
-					s.indent()
 					s.printf(w, "p2.%s = %s(val)", field.Name, s.addFunc(wrapperTy, newWrapperTy))
-					s.unindent()
-					s.printf(w, "}")
+					s.closeBracket(w)
 				}
-
-				s.unindent()
-				s.printf(w, "}")
+				s.closeBracket(w)
 			}
 		}
 	}
