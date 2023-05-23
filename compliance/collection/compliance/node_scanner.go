@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
@@ -18,17 +17,13 @@ import (
 
 // NodeInventoryComponentScanner connects to node-inventory container to provide node-inventory object
 type NodeInventoryComponentScanner struct {
-	log              *logging.Logger
 	nodeNameProvider NodeNameProvider
 	client           scannerV1.NodeInventoryServiceClient
 }
 
 // NewNodeInventoryComponentScanner builds new NodeInventoryComponentScanner
-func NewNodeInventoryComponentScanner(log *logging.Logger, nnp NodeNameProvider) *NodeInventoryComponentScanner {
-	return &NodeInventoryComponentScanner{
-		log:              log,
-		nodeNameProvider: nnp,
-	}
+func NewNodeInventoryComponentScanner(nnp NodeNameProvider) *NodeInventoryComponentScanner {
+	return &NodeInventoryComponentScanner{nodeNameProvider: nnp}
 }
 
 // IsActive returns true if the connection to node-inventory is ready
@@ -39,7 +34,7 @@ func (n *NodeInventoryComponentScanner) IsActive() bool {
 // Connect connects to node-inventory and stores an active client
 func (n *NodeInventoryComponentScanner) Connect(address string) {
 	if !env.NodeInventoryContainerEnabled.BooleanSetting() {
-		n.log.Infof("Compliance will not call the node-inventory container, because this is not Openshift 4 cluster")
+		log.Infof("Compliance will not call the node-inventory container, because this is not Openshift 4 cluster")
 	} else if env.RHCOSNodeScanning.BooleanSetting() {
 		// Start the prometheus metrics server
 		metrics.NewDefaultHTTPServer(metrics.ComplianceSubsystem).RunForever()
@@ -48,10 +43,10 @@ func (n *NodeInventoryComponentScanner) Connect(address string) {
 		// Set up Compliance <-> NodeInventory connection
 		niConn, err := clientconn.AuthenticatedGRPCConnection(address, mtls.Subject{}, clientconn.UseInsecureNoTLS(true))
 		if err != nil {
-			n.log.Errorf("Disabling node scanning for this node: could not initialize connection to node-inventory container: %v", err)
+			log.Errorf("Disabling node scanning for this node: could not initialize connection to node-inventory container: %v", err)
 		}
 		if niConn != nil {
-			n.log.Info("Initialized gRPC connection to node-inventory container")
+			log.Info("Initialized gRPC connection to node-inventory container")
 			n.client = scannerV1.NewNodeInventoryServiceClient(niConn)
 		}
 	}

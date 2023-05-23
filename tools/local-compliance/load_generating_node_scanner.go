@@ -9,13 +9,11 @@ import (
 	"github.com/stackrox/rox/compliance/collection/intervals"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
 // LoadGeneratingNodeScanner is a scanner that generates fake scans with high frequecy of the node-inventory messages.
 // Its main purpose is to generate load for load-testing of Sensor
 type LoadGeneratingNodeScanner struct {
-	log          *logging.Logger
 	nodeProvider compliance.NodeNameProvider
 }
 
@@ -59,6 +57,6 @@ func (n *LoadGeneratingNodeScanner) ScanNode(_ context.Context) (*sensor.MsgFrom
 				Notes: nil,
 			}},
 	}
-	n.log.Infof("Generating Node Inventory")
+	log.Infof("Generating Node Inventory")
 	return msg, nil
 }

@@ -10,18 +10,16 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
+var log = logging.LoggerForModule()
+
 // local-compliance is an application that allows you to run compliance in your host machine, while using a
 // gRPC connection to Sensor. This was introduced for intergration-, load-testing, and debugging purposes.
 func main() {
-	log := logging.LoggerForModule()
 	np := &dummyNodeNameProvider{}
-	scanner := &LoadGeneratingNodeScanner{
-		log:          log,
-		nodeProvider: np,
-	}
+	scanner := &LoadGeneratingNodeScanner{nodeProvider: np}
 
-	srh := &dummySensorReplyHandlerImpl{log: log}
-	c := compliance.NewComplianceApp(log, np, scanner, srh)
+	srh := &dummySensorReplyHandlerImpl{}
+	c := compliance.NewComplianceApp(np, scanner, srh)
 	c.Start()
 }
 
@@ -37,16 +35,14 @@ func (dnp *dummyNodeNameProvider) GetNodeName() string {
 	return arr[idx]
 }
 
-type dummySensorReplyHandlerImpl struct {
-	log *logging.Logger
-}
+type dummySensorReplyHandlerImpl struct{}
 
 // HandleACK handles ACK message from Sensor
 func (s *dummySensorReplyHandlerImpl) HandleACK(_ context.Context, _ sensor.ComplianceService_CommunicateClient) {
-	s.log.Debugf("Received ACK from Sensor.")
+	log.Debugf("Received ACK from Sensor.")
 }
 
 // HandleNACK handles NACK message from Sensor
 func (s *dummySensorReplyHandlerImpl) HandleNACK(_ context.Context, _ sensor.ComplianceService_CommunicateClient) {
-	s.log.Infof("Received NACK from Sensor, resending NodeInventory in 10 seconds.")
+	log.Infof("Received NACK from Sensor, resending NodeInventory in 10 seconds.")
 }

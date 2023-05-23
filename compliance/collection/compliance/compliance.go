@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/k8sutil"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/utils"
@@ -28,15 +27,13 @@ import (
 
 // Compliance represents the Compliance app
 type Compliance struct {
-	log                *logging.Logger
 	nodeNameProvider   NodeNameProvider
 	nodeScanner        NodeScanner
 	sensorReplyHandler SensorReplyHandler
 }
 
-func NewComplianceApp(np NodeNameProvider,
-	scanner NodeScanner,
-	srh SensorReplyHandler) *Compliance {
+// NewComplianceApp contsructs the Compliance app object
+func NewComplianceApp(np NodeNameProvider, scanner NodeScanner, srh SensorReplyHandler) *Compliance {
 	return &Compliance{
 		nodeNameProvider:   np,
 		nodeScanner:        scanner,
