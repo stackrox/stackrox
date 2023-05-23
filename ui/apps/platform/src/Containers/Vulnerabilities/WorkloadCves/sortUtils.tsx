@@ -69,3 +69,13 @@ export function sortCveDistroList<Summary extends { operatingSystem: string }>(
     }));
     return sortBy(withDistroKeys, ({ distro }) => distroPriorityMap[distro]);
 }
+
+export function getScoreVersionsForTopCVSS(
+    topCvss: number,
+    scores: { cvss: number; scoreVersion: string }[]
+): string[] {
+    const scoreVersions = scores
+        .filter(({ cvss }) => cvss.toFixed(1) === topCvss.toFixed(1))
+        .map(({ scoreVersion }) => scoreVersion);
+    return Array.from(new Set(scoreVersions)).sort();
+}
