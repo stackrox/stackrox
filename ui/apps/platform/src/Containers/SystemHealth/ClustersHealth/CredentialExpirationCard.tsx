@@ -71,11 +71,14 @@ function CredentialExpirationCard({
                         <Tbody>
                             <Tr>
                                 <Th scope="row">Clusters</Th>
-                                <TdHealthy counts={counts} dataLabel={dataLabelHealthy} />
-                                <TdUnhealthy counts={counts} dataLabel={dataLabelUnhealthy} />
-                                <TdDegraded counts={counts} dataLabel={dataLabelDegraded} />
-                                <TdUnavailable counts={counts} />
-                                <TdUninitialized counts={counts} />
+                                <TdHealthy count={counts.HEALTHY} dataLabel={dataLabelHealthy} />
+                                <TdUnhealthy
+                                    count={counts.UNHEALTHY}
+                                    dataLabel={dataLabelUnhealthy}
+                                />
+                                <TdDegraded count={counts.DEGRADED} dataLabel={dataLabelDegraded} />
+                                <TdUnavailable count={counts.UNAVAILABLE} />
+                                <TdUninitialized count={counts.UNINITIALIZED} />
                                 <TdTotal clusters={clusters} />
                             </Tr>
                         </Tbody>

@@ -27,7 +27,7 @@ function ClusterStatusTable({
     isFetchingInitialRequest,
     requestErrorMessage,
 }: ClusterStatusTableProps): ReactElement {
-    const counts =
+    const countsOverall =
         !isFetchingInitialRequest && !requestErrorMessage ? getClusterStatusCounts(clusters) : null;
     const countsSensor =
         !isFetchingInitialRequest && !requestErrorMessage
@@ -45,18 +45,18 @@ function ClusterStatusTable({
     /*
      * Render card header without body:
      * with spinner, if fetching first request
-     * with check mark, if counts are healthy: HEALTHY !== 0 and UNHEALTHY === 0 && DEGRADED === 0
+     * with check mark, if countsOverall are healthy: HEALTHY !== 0 and UNHEALTHY === 0 && DEGRADED === 0
      *
      * Render card body:
      * for request error
-     * for table of counts if not healthy: HEALTHY === 0 || UNHEALTHY !== 0 || DEGRADED !== 0
+     * for table of countsOverall if not healthy: HEALTHY === 0 || UNHEALTHY !== 0 || DEGRADED !== 0
      */
 
     /* eslint-disable no-nested-ternary */
     return (
         <Card isCompact>
             <ClustersHealthCardHeader
-                counts={counts}
+                counts={countsOverall}
                 isFetchingInitialRequest={isFetchingInitialRequest}
                 title="Cluster status"
             />
@@ -64,49 +64,51 @@ function ClusterStatusTable({
                 <CardBody>
                     <Alert isInline variant="warning" title={requestErrorMessage} />
                 </CardBody>
-            ) : counts !== null &&
+            ) : countsOverall !== null &&
               countsSensor !== null &&
               countsCollector !== null &&
               countsAdmissionControl !== null &&
-              (counts.HEALTHY === 0 || counts.UNHEALTHY !== 0 || counts.DEGRADED !== 0) ? (
+              (countsOverall.HEALTHY === 0 ||
+                  countsOverall.UNHEALTHY !== 0 ||
+                  countsOverall.DEGRADED !== 0) ? (
                 <CardBody>
                     <TableComposable variant="compact">
                         <TheadClustersHealth />
                         <Tbody>
                             <Tr>
                                 <Th scope="row">Clusters: overall status</Th>
-                                <TdHealthy counts={counts} />
-                                <TdUnhealthy counts={counts} />
-                                <TdDegraded counts={counts} />
-                                <TdUnavailable counts={counts} />
-                                <TdUninitialized counts={counts} />
+                                <TdHealthy count={countsOverall.HEALTHY} />
+                                <TdUnhealthy count={countsOverall.UNHEALTHY} />
+                                <TdDegraded count={countsOverall.DEGRADED} />
+                                <TdUnavailable count={countsOverall.UNAVAILABLE} />
+                                <TdUninitialized count={countsOverall.UNINITIALIZED} />
                                 <TdTotal clusters={clusters} />
                             </Tr>
                             <Tr>
                                 <Th scope="row">Clusters: sensor status</Th>
-                                <TdHealthy counts={countsSensor} />
-                                <TdUnhealthy counts={countsSensor} />
-                                <TdDegraded counts={countsSensor} />
-                                <TdUnavailable counts={countsSensor} />
-                                <TdUninitialized counts={countsSensor} />
+                                <TdHealthy count={countsSensor.HEALTHY} />
+                                <TdUnhealthy count={countsSensor.UNHEALTHY} />
+                                <TdDegraded count={countsSensor.DEGRADED} />
+                                <TdUnavailable count={countsSensor.UNAVAILABLE} />
+                                <TdUninitialized count={countsSensor.UNINITIALIZED} />
                                 <TdTotal clusters={clusters} />
                             </Tr>
                             <Tr>
                                 <Th scope="row">Clusters: collector status</Th>
-                                <TdHealthy counts={countsCollector} />
-                                <TdUnhealthy counts={countsCollector} />
-                                <TdDegraded counts={countsCollector} />
-                                <TdUnavailable counts={countsCollector} />
-                                <TdUninitialized counts={countsCollector} />
+                                <TdHealthy count={countsCollector.HEALTHY} />
+                                <TdUnhealthy count={countsCollector.UNHEALTHY} />
+                                <TdDegraded count={countsCollector.DEGRADED} />
+                                <TdUnavailable count={countsCollector.UNAVAILABLE} />
+                                <TdUninitialized count={countsCollector.UNINITIALIZED} />
                                 <TdTotal clusters={clusters} />
                             </Tr>
                             <Tr>
                                 <Th scope="row">Clusters: admission control status</Th>
-                                <TdHealthy counts={countsAdmissionControl} />
-                                <TdUnhealthy counts={countsAdmissionControl} />
-                                <TdDegraded counts={countsAdmissionControl} />
-                                <TdUnavailable counts={countsAdmissionControl} />
-                                <TdUninitialized counts={countsAdmissionControl} />
+                                <TdHealthy count={countsAdmissionControl.HEALTHY} />
+                                <TdUnhealthy count={countsAdmissionControl.UNHEALTHY} />
+                                <TdDegraded count={countsAdmissionControl.DEGRADED} />
+                                <TdUnavailable count={countsAdmissionControl.UNAVAILABLE} />
+                                <TdUninitialized count={countsAdmissionControl.UNINITIALIZED} />
                                 <TdTotal clusters={clusters} />
                             </Tr>
                         </Tbody>

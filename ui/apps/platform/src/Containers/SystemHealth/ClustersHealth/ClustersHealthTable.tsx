@@ -1,14 +1,8 @@
 import React, { ReactElement } from 'react';
-import {
-    CheckCircleIcon,
-    ExclamationCircleIcon,
-    ExclamationTriangleIcon,
-} from '@patternfly/react-icons';
+import { ExclamationCircleIcon, ExclamationTriangleIcon } from '@patternfly/react-icons';
 import { Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
-
-import { ClusterStatusCounts } from './ClustersHealth.utils';
 
 type TheadClustersHealthProps = {
     dataLabelHealthy?: string;
@@ -49,18 +43,24 @@ export function TheadClustersHealth({
 }
 
 type TdStatusWithDataLabelProps = {
-    counts: ClusterStatusCounts;
+    count: number;
     dataLabel?: string;
 };
 
-export function TdHealthy({ counts, dataLabel }: TdStatusWithDataLabelProps): ReactElement {
-    const count = counts.HEALTHY;
-
+export function TdHealthy({ count, dataLabel }: TdStatusWithDataLabelProps): ReactElement {
     return (
         <Td className="pf-u-text-align-right" dataLabel={dataLabel || 'Healthy'}>
-            {count !== 0 && counts.UNHEALTHY === 0 && counts.DEGRADED === 0 ? (
+            {count}
+        </Td>
+    );
+}
+
+export function TdUnhealthy({ count, dataLabel }: TdStatusWithDataLabelProps): ReactElement {
+    return (
+        <Td className="pf-u-text-align-right" dataLabel={dataLabel || 'Unhealthy'}>
+            {count !== 0 ? (
                 <IconText
-                    icon={<CheckCircleIcon color="var(--pf-global--success-color--100)" />}
+                    icon={<ExclamationCircleIcon color="var(--pf-global--danger-color--100)" />}
                     text={String(count)}
                 />
             ) : (
@@ -70,26 +70,7 @@ export function TdHealthy({ counts, dataLabel }: TdStatusWithDataLabelProps): Re
     );
 }
 
-export function TdUnhealthy({ counts, dataLabel }: TdStatusWithDataLabelProps): ReactElement {
-    const count = counts.UNHEALTHY;
-
-    return (
-        <Td className="pf-u-text-align-right" dataLabel={dataLabel || 'Unhealthy'}>
-            {count !== 0 ? (
-                <IconText
-                    icon={<ExclamationCircleIcon color="var(--pf-global--danger-color--100)" />}
-                    text={String(count)}
-                />
-            ) : (
-                <>{counts.UNHEALTHY}</>
-            )}
-        </Td>
-    );
-}
-
-export function TdDegraded({ counts, dataLabel }: TdStatusWithDataLabelProps): ReactElement {
-    const count = counts.DEGRADED;
-
+export function TdDegraded({ count, dataLabel }: TdStatusWithDataLabelProps): ReactElement {
     return (
         <Td className="pf-u-text-align-right" dataLabel={dataLabel || 'Degraded'}>
             {count !== 0 ? (
@@ -105,21 +86,21 @@ export function TdDegraded({ counts, dataLabel }: TdStatusWithDataLabelProps): R
 }
 
 type TdStatusWithoutDataLabelProps = {
-    counts: ClusterStatusCounts;
+    count: number;
 };
 
-export function TdUnavailable({ counts }: TdStatusWithoutDataLabelProps): ReactElement {
+export function TdUnavailable({ count }: TdStatusWithoutDataLabelProps): ReactElement {
     return (
         <Td className="pf-u-text-align-right" dataLabel="Unavailable">
-            {counts.UNAVAILABLE}{' '}
+            {count}
         </Td>
     );
 }
 
-export function TdUninitialized({ counts }: TdStatusWithoutDataLabelProps): ReactElement {
+export function TdUninitialized({ count }: TdStatusWithoutDataLabelProps): ReactElement {
     return (
         <Td className="pf-u-text-align-right" dataLabel="Uninitialized">
-            {counts.UNINITIALIZED}{' '}
+            {count}
         </Td>
     );
 }
