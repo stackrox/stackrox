@@ -138,8 +138,9 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *cen
 				break
 			}
 			if nodeID, err := c.nodeMatcher.GetNodeID(inventory.GetNodeName()); err != nil {
-				log.Warnf("Node unknown to Sensor. Requesting Compliance to resend NodeInventory with ID %q later", inventory.GetNodeId())
+				log.Warnf("Node %q unknown to Sensor. Requesting Compliance to resend NodeInventory later", inventory.GetNodeName())
 				c.sendAckToCompliance(toCompliance, inventory.GetNodeName(), sensor.MsgToCompliance_NodeInventoryACK_NACK)
+
 			} else {
 				inventory.NodeId = nodeID
 				metrics.ObserveReceivedNodeInventory(inventory)
