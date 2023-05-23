@@ -162,10 +162,10 @@ func (resolver *imageCVECoreResolver) Deployments(ctx context.Context, args stru
 		return nil, nil
 	}
 
-	// The IDs are already paginated, so skip the pagination portion.
 	depQ := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentIDs...).Query()
 	return resolver.root.Deployments(ctx, PaginatedQuery{
-		Query: pointers.String(depQ),
+		Query:      pointers.String(depQ),
+		Pagination: args.Pagination,
 	})
 }
 
@@ -209,10 +209,10 @@ func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ P
 		return nil, nil
 	}
 
-	// The IDs are already paginated, so skip the pagination portion.
 	imageQ := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageIDs...).Query()
 	return resolver.root.Images(ctx, PaginatedQuery{
-		Query: pointers.String(imageQ),
+		Query:      pointers.String(imageQ),
+		Pagination: args.Pagination,
 	})
 }
 
