@@ -58,28 +58,30 @@ func moveToBlobs(db *gorm.DB) (err error) {
 	db = db.WithContext(ctx).Table(schema.BlobsTableName)
 	pgutils.CreateTableFromModel(context.Background(), db, schema.CreateTableBlobsStmt)
 
-	tx := db.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
-	if err = moveScannerDefinitions(tx); err != nil {
-		result := tx.Rollback()
-		if result.Error != nil {
-			log.Warnf("failed to rollback with error %v", result.Error)
-		}
-		return errors.Wrap(err, "failed to move scanner definition to blob store.")
-	}
+	moveScannerDefinitions(db)
 
-	if err = moveProbesToBlob(tx); err != nil {
-		result := tx.Rollback()
-		if result.Error != nil {
-			log.Warnf("failed to rollback with error %v", result.Error)
-		}
-		return errors.Wrap(err, "failed to move uploaded probes to blob store.")
-	}
+	moveProbesToBlob(db)
 
-	return tx.Commit().Error
+	return nil
 }
 
-func moveScannerDefinitions(tx *gorm.DB) error {
-	return moveFileToBlob(tx, scannerDefBlobName, scannerDefPath, nil)
+func moveScannerDefinitions(db *gorm.DB) {
+	tx := db.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
+	var err error
+	if err = moveFileToBlob(tx, scannerDefBlobName, scannerDefPath, nil); err != nil {
+		result := tx.Rollback()
+		if result.Error != nil {
+			log.Warnf("failed to rollback with error %v", result.Error)
+		}
+	} else {
+		err = tx.Commit().Error
+	}
+
+	if err != nil {
+		log.Errorf("Failed to move scanner definition to blob store with error \n%v \nPlease upload the scanner definition again to continue working with offline mode.", err)
+	} else {
+		log.Info("Migrate scanner definition successfully")
+	}
 }
 
 func moveFileToBlob(tx *gorm.DB, blobName string, file string, crc32Data []byte) error {
@@ -145,22 +147,17 @@ func moveFileToBlob(tx *gorm.DB, blobName string, file string, crc32Data []byte)
 	if tx.Error != nil {
 		return errors.Wrap(tx.Error, "failed to create blob metadata")
 	}
-	err = los.Upsert(blob.Oid, dataReader)
-	if err != nil {
-		return err
-	}
-	log.Infof("Migrate %s to blob %s successfully", file, blobName)
-	return nil
+	return los.Upsert(blob.Oid, dataReader)
 }
 
-func moveProbesToBlob(tx *gorm.DB) error {
+func moveProbesToBlob(db *gorm.DB) {
 	// Go through all the subdir in upload root and find all probes.
 	entries, err := os.ReadDir(uploadProbeRoot)
-	if os.IsNotExist(err) {
-		return nil
-	}
 	if err != nil {
-		return errors.Wrap(err, "could not read probe upload root directory")
+		if !os.IsNotExist(err) {
+			log.Errorf("could not read probe upload root directory %v", err)
+		}
+		return
 	}
 
 	for _, ent := range entries {
@@ -176,12 +173,23 @@ func moveProbesToBlob(tx *gorm.DB) error {
 			continue
 		}
 
-		if err := moveModVersion(tx, ent.Name()); err != nil {
-			log.Warnf("Failed to move probe for module version %v", ent.Name())
+		// Each bundle are uploaded separately, so they are migrated separately.
+		tx := db.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
+		err = moveModVersion(tx, ent.Name())
+		if err != nil {
+			result := tx.Rollback()
+			if result.Error != nil {
+				log.Warnf("failed to rollback with error %v", result.Error)
+			}
+		} else {
+			err = tx.Commit().Error
+		}
+		if err != nil {
+			log.Errorf("failed to move module probe version %s to blob store with error \n%v \nPlease upload it again to continue working with offline mode.", ent.Name(), err)
+		} else {
+			log.Infof("Migrate module version %s successfully", ent.Name())
 		}
 	}
-
-	return nil
 }
 
 func moveModVersion(tx *gorm.DB, modVer string) error {
