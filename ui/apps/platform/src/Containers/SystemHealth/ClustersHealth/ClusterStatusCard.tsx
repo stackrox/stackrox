@@ -18,26 +18,27 @@ import {
 
 export type ClusterStatusTableProps = {
     clusters: Cluster[];
-    isFetching0: boolean;
+    isFetchingInitialRequest: boolean;
     requestErrorMessage: string;
 };
 
 function ClusterStatusTable({
     clusters,
-    isFetching0,
+    isFetchingInitialRequest,
     requestErrorMessage,
 }: ClusterStatusTableProps): ReactElement {
-    const counts = !isFetching0 && !requestErrorMessage ? getClusterStatusCounts(clusters) : null;
+    const counts =
+        !isFetchingInitialRequest && !requestErrorMessage ? getClusterStatusCounts(clusters) : null;
     const countsSensor =
-        !isFetching0 && !requestErrorMessage
+        !isFetchingInitialRequest && !requestErrorMessage
             ? getClusterBecauseOfStatusCounts(clusters, 'sensorHealthStatus')
             : null;
     const countsCollector =
-        !isFetching0 && !requestErrorMessage
+        !isFetchingInitialRequest && !requestErrorMessage
             ? getClusterBecauseOfStatusCounts(clusters, 'collectorHealthStatus')
             : null;
     const countsAdmissionControl =
-        !isFetching0 && !requestErrorMessage
+        !isFetchingInitialRequest && !requestErrorMessage
             ? getClusterBecauseOfStatusCounts(clusters, 'admissionControlHealthStatus')
             : null;
 
@@ -56,7 +57,7 @@ function ClusterStatusTable({
         <Card isCompact>
             <ClustersHealthCardHeader
                 counts={counts}
-                isFetching0={isFetching0}
+                isFetchingInitialRequest={isFetchingInitialRequest}
                 title="Cluster status"
             />
             {requestErrorMessage ? (

@@ -10,13 +10,13 @@ import { ClusterStatusCounts } from './ClustersHealth.utils';
 
 export type ClustersHealthCardHeaderProps = {
     counts: ClusterStatusCounts | null;
-    isFetching0: boolean;
+    isFetchingInitialRequest: boolean;
     title: string;
 };
 
 function ClustersHealthCardHeader({
     counts,
-    isFetching0,
+    isFetchingInitialRequest,
     title,
 }: ClustersHealthCardHeaderProps): ReactElement {
     const isHealthy =
@@ -28,7 +28,7 @@ function ClustersHealthCardHeader({
                 <FlexItem>
                     <CardTitle component="h2">{title}</CardTitle>
                 </FlexItem>
-                {isFetching0 && <Spinner isSVG size="md" />}
+                {isFetchingInitialRequest && <Spinner isSVG size="md" />}
                 {isHealthy && (
                     <IconText
                         icon={<CheckCircleIcon color="var(--pf-global--success-color--100)" />}

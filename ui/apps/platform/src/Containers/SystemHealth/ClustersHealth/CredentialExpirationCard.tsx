@@ -23,14 +23,14 @@ const dataLabelDegraded = '< 30 days';
 export type CredentialExpirationCardProps = {
     clusters: Cluster[];
     currentDatetime: Date | null;
-    isFetching0: boolean;
+    isFetchingInitialRequest: boolean;
     requestErrorMessage: string;
 };
 
 function CredentialExpirationCard({
     clusters,
     currentDatetime,
-    isFetching0,
+    isFetchingInitialRequest,
     requestErrorMessage,
 }: CredentialExpirationCardProps): ReactElement {
     const counts = currentDatetime
@@ -52,7 +52,7 @@ function CredentialExpirationCard({
         <Card isCompact>
             <ClustersHealthCardHeader
                 counts={counts}
-                isFetching0={isFetching0}
+                isFetchingInitialRequest={isFetchingInitialRequest}
                 title="Credential expiration"
             />
             {requestErrorMessage ? (

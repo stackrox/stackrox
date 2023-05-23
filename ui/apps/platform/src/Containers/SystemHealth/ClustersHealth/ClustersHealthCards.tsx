@@ -41,21 +41,21 @@ const ClustersHealthCards = ({ pollingCount }: ClustersHealthCardsProps): ReactE
             });
     }, [pollingCount]);
 
-    const isFetching0 = isFetching && pollingCount === 0;
+    const isFetchingInitialRequest = isFetching && pollingCount === 0;
 
     return (
         <>
             <GridItem span={12}>
                 <ClusterStatusCard
                     clusters={clusters}
-                    isFetching0={isFetching0}
+                    isFetchingInitialRequest={isFetchingInitialRequest}
                     requestErrorMessage={requestErrorMessage}
                 />
             </GridItem>
             <GridItem span={12}>
                 <SensorUpgradeCard
                     clusters={clusters}
-                    isFetching0={isFetching0}
+                    isFetchingInitialRequest={isFetchingInitialRequest}
                     requestErrorMessage={requestErrorMessage}
                 />
             </GridItem>
@@ -63,7 +63,7 @@ const ClustersHealthCards = ({ pollingCount }: ClustersHealthCardsProps): ReactE
                 <CredentialExpirationCard
                     clusters={clusters}
                     currentDatetime={currentDatetime}
-                    isFetching0={isFetching0}
+                    isFetchingInitialRequest={isFetchingInitialRequest}
                     requestErrorMessage={requestErrorMessage}
                 />
             </GridItem>

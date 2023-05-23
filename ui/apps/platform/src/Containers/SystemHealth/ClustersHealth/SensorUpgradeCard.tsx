@@ -22,16 +22,17 @@ const dataLabelDegraded = 'Out of date';
 
 export type SensorUpgradeCardProps = {
     clusters: Cluster[];
-    isFetching0: boolean;
+    isFetchingInitialRequest: boolean;
     requestErrorMessage: string;
 };
 
 function SensorUpgradeCard({
     clusters,
-    isFetching0,
+    isFetchingInitialRequest,
     requestErrorMessage,
 }: SensorUpgradeCardProps): ReactElement {
-    const counts = !isFetching0 && !requestErrorMessage ? getSensorUpgradeCounts(clusters) : null;
+    const counts =
+        !isFetchingInitialRequest && !requestErrorMessage ? getSensorUpgradeCounts(clusters) : null;
 
     /*
      * Render card header without body:
@@ -48,7 +49,7 @@ function SensorUpgradeCard({
         <Card isCompact>
             <ClustersHealthCardHeader
                 counts={counts}
-                isFetching0={isFetching0}
+                isFetchingInitialRequest={isFetchingInitialRequest}
                 title="Sensor upgrade"
             />
             {requestErrorMessage ? (
