@@ -180,7 +180,7 @@ func (s *notifierDataStoreTestSuite) TestEnforcesUpdate() {
 }
 
 func (s *notifierDataStoreTestSuite) TestAllowsUpdate() {
-	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, &storage.Notifier{Id: "id"})
@@ -188,7 +188,7 @@ func (s *notifierDataStoreTestSuite) TestAllowsUpdate() {
 }
 
 func (s *notifierDataStoreTestSuite) TestErrorOnUpdate() {
-	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
 
 	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, &storage.Notifier{Id: "id"})
 	s.Error(err)
@@ -205,6 +205,7 @@ func (s *notifierDataStoreTestSuite) TestEnforcesRemove() {
 }
 
 func (s *notifierDataStoreTestSuite) TestAllowsRemove() {
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(1)
 	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	err := s.dataStore.RemoveNotifier(s.hasWriteCtx, "notifier")
