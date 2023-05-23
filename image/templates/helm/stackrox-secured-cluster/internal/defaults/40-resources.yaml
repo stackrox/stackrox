@@ -40,5 +40,5 @@ collector:
       memory: "10Mi"
       cpu: "10m"
     limits:
-      memory: "2Gi"
+      memory: "500Mi"
       cpu: "1"
