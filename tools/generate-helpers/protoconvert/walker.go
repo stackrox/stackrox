@@ -88,6 +88,7 @@ func walk(w io.Writer, t1, t2 reflect.Type) {
 func normalizeName(v string) string {
 	v = strings.TrimPrefix(v, "*")
 	v = strings.ReplaceAll(v, ".", "")
+	v = strings.ReplaceAll(v, "_", "")
 	return strings.Title(v)
 }
 
@@ -135,7 +136,7 @@ func (s *converter) createFunc(w io.Writer, t1, t2 reflect.Type) {
 }
 
 func (s *converter) printf(w io.Writer, template string, args ...interface{}) {
-	fmt.Fprintf(w, "%s%s\n", strings.Repeat("  ", s.numIndents), fmt.Sprintf(template, args...))
+	fmt.Fprintf(w, "%s%s\n", strings.Repeat("\t", s.numIndents), fmt.Sprintf(template, args...))
 }
 
 func (s *converter) indent() {

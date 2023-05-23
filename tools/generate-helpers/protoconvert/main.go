@@ -61,7 +61,6 @@ func main() {
 		if err != nil {
 			return err
 		}
-		defer f.Close()
 
 		setupFile(f, fromPath, toPath)
 
@@ -69,7 +68,7 @@ func main() {
 		if bidirectional {
 			walk(f, to, from)
 		}
-		return nil
+		return f.Close()
 	}
 	if err := c.Execute(); err != nil {
 		panic(err)
