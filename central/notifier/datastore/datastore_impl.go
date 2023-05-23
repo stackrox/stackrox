@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -34,7 +33,7 @@ func verifyOrigin(ctx context.Context, n *storage.Notifier) error {
 	return nil
 }
 
-func (b *datastoreImpl) verifyExistsAndMutable(ctx context.Context, id string, force bool) (*storage.Notifier, error) {
+func (b *datastoreImpl) verifyExistsAndMutable(ctx context.Context, id string) (*storage.Notifier, error) {
 	notifier, exists, err := b.storage.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -42,21 +41,10 @@ func (b *datastoreImpl) verifyExistsAndMutable(ctx context.Context, id string, f
 	if !exists {
 		return nil, errox.NotFound.Newf("notifier with id %q was not found", id)
 	}
-
-	switch notifier.GetTraits().GetMutabilityMode() {
-	case storage.Traits_ALLOW_MUTATE:
-		return notifier, nil
-	case storage.Traits_ALLOW_MUTATE_FORCED:
-		if force {
-			return notifier, nil
-		}
-		return nil, errox.InvalidArgs.Newf("notifier %q is immutable "+
-			"and can only be removed via API and specifying the force flag", id)
-	default:
-		utils.Should(errox.InvalidArgs.Newf("unknown mutability mode given: %q",
-			notifier.GetTraits().GetMutabilityMode()))
+	if notifier.GetTraits().GetMutabilityMode() != storage.Traits_ALLOW_MUTATE {
+		return nil, errox.InvalidArgs.Newf("notifier %q is immutable", id)
 	}
-	return nil, errox.InvalidArgs.Newf("notifier %q is immutable", id)
+	return notifier, nil
 }
 
 func (b *datastoreImpl) GetNotifier(ctx context.Context, id string) (*storage.Notifier, bool, error) {
@@ -151,7 +139,7 @@ func (b *datastoreImpl) UpdateNotifier(ctx context.Context, notifier *storage.No
 	b.lock.Lock()
 	defer b.lock.Unlock()
 
-	existing, err := b.verifyExistsAndMutable(ctx, notifier.GetId(), false)
+	existing, err := b.verifyExistsAndMutable(ctx, notifier.GetId())
 	if err != nil {
 		return err
 	}
@@ -170,7 +158,7 @@ func (b *datastoreImpl) RemoveNotifier(ctx context.Context, id string) error {
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	existing, err := b.verifyExistsAndMutable(ctx, id, false)
+	existing, err := b.verifyExistsAndMutable(ctx, id)
 	if err != nil {
 		return err
 	}
