@@ -36,5 +36,5 @@ func (s *dummySensorReplyHandlerImpl) HandleACK(_ context.Context, _ sensor.Comp
 
 // HandleNACK handles NACK message from Sensor
 func (s *dummySensorReplyHandlerImpl) HandleNACK(_ context.Context, _ sensor.ComplianceService_CommunicateClient) {
-	log.Infof("Received NACK from Sensor, resending NodeInventory in 10 seconds.")
+	log.Infof("Received NACK from Sensor.")
 }
