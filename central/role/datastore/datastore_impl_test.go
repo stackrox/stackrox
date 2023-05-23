@@ -33,18 +33,27 @@ import (
 
 func TestAllDefaultRolesAreCovered(t *testing.T) {
 	// Merge the roles for vuln reporting into the defaults
+	defaultRoles := getDefaultRoles()
 	assert.Len(t, defaultRoles, len(accesscontrol.DefaultRoleNames))
-	for r := range defaultRoles {
-		assert.Truef(t, accesscontrol.DefaultRoleNames.Contains(r), "role %s not found in default role names", r)
+	for _, r := range defaultRoles {
+		assert.Truef(t, accesscontrol.DefaultRoleNames.Contains(r.GetName()), "role %s not found in default role names", r)
 	}
 }
 
-func TestAnalystRoleDoesNotContainAdministration(t *testing.T) {
-	analystRole, found := defaultRoles[accesscontrol.Analyst]
+func TestEachDefaultRoleHasDefaultPermSet(t *testing.T) {
+	for _, role := range getDefaultRoles() {
+		permSet := getDefaultPermissionSet(role.GetName())
+		assert.NotNil(t, permSet)
+		assert.Equal(t, permSet.GetId(), role.GetPermissionSetId())
+	}
+}
+
+func TestAnalystPermSetDoesNotContainAdministration(t *testing.T) {
+	analystPermSet, found := defaultPermissionSets[accesscontrol.Analyst]
 	// Analyst is one of the default roles.
 	assert.True(t, found)
 
-	resourceToAccess := analystRole.resourceWithAccess
+	resourceToAccess := analystPermSet.resourceWithAccess
 	// Contains all resources except one.
 	assert.Len(t, resourceToAccess, len(resources.ListAll())-1)
 	// Does not contain Administration resource.
