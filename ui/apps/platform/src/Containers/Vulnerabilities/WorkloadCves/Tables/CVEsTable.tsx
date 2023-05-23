@@ -21,7 +21,13 @@ import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import DatePhraseTd from '../components/DatePhraseTd';
 import CvssTd from '../components/CvssTd';
-import { getScoreVersionsForTopCVSS, sortCveDistroList } from '../sortUtils';
+import {
+    getScoreVersionsForTopCVSS,
+    sortCveDistroList,
+    aggregateByCVSS,
+    aggregateByCreatedTime,
+    aggregateByImageSha,
+} from '../sortUtils';
 
 export const cveListQuery = gql`
     query getImageCVEList($query: String, $pagination: Pagination) {
@@ -107,20 +113,20 @@ function CVEsTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
                     <TooltipTh
-                        sort={getSortParams('CVSS')}
+                        sort={getSortParams('CVSS', aggregateByCVSS)}
                         tooltip="Highest CVSS score of this CVE across images"
                     >
                         Top CVSS
                     </TooltipTh>
                     <TooltipTh
-                        // sort={getSortParams('Image sha')} TBD
+                        sort={getSortParams('Image sha', aggregateByImageSha)}
                         tooltip="Ratio of total environment affect by this CVE"
                     >
                         Affected images
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
                     <TooltipTh
-                        // sort={getSortParams('CVE Created Time')} TBD
+                        sort={getSortParams('CVE Created Time', aggregateByCreatedTime)}
                         tooltip="Time since this CVE first affected an entity"
                     >
                         First discovered

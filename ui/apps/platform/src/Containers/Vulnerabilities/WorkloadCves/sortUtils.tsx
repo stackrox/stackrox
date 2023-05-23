@@ -1,13 +1,13 @@
 import sortBy from 'lodash/sortBy';
 import { ensureExhaustive } from 'utils/type.utils';
+import { SortAggregate } from 'types/table';
 import { EntityTab } from './types';
 
 export const defaultImageSortFields = [
     'Image',
-    'Operating system',
-    'Deployment count',
-    'Age',
-    'Scan time',
+    'Image OS',
+    'Image created time',
+    'Image scan time',
 ];
 
 export const imagesDefaultSort = {
@@ -17,12 +17,25 @@ export const imagesDefaultSort = {
 
 export const defaultCVESortFields = ['CVE', 'CVSS', 'Image Sha', 'CVE Created Time'];
 
+export const aggregateByCVSS: SortAggregate = {
+    aggregateFunc: 'max',
+};
+
+export const aggregateByImageSha: SortAggregate = {
+    aggregateFunc: 'count',
+    distinct: true,
+};
+
+export const aggregateByCreatedTime: SortAggregate = {
+    aggregateFunc: 'min',
+};
+
 export const CVEsDefaultSort = {
     field: 'CVE',
     direction: 'asc',
 } as const;
 
-export const defaultDeploymentSortFields = ['Deployment', 'Cluster', 'Namespace'];
+export const defaultDeploymentSortFields = ['Deployment', 'Cluster', 'Namespace', 'Created'];
 
 export const deploymentsDefaultSort = {
     field: 'Deployment',

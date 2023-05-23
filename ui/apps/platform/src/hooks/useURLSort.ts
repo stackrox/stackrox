@@ -4,7 +4,10 @@ import { SortAggregate, SortDirection, SortOption, ThProps } from 'types/table';
 import { ApiSortOption } from 'types/search';
 import { isParsedQs } from 'utils/queryStringUtils';
 
-export type GetSortParams = (field: string) => ThProps['sort'] | undefined;
+export type GetSortParams = (
+    field: string,
+    aggregateBy?: SortAggregate
+) => ThProps['sort'] | undefined;
 
 export type UseURLSortProps = {
     sortFields: string[];
@@ -18,11 +21,26 @@ export type UseURLSortResult = {
     getSortParams: GetSortParams;
 };
 
-function tableSortOption(field: string, direction: SortDirection): ApiSortOption {
-    return {
+function tableSortOption(
+    field: string,
+    direction: SortDirection,
+    aggregateBy?: SortAggregate
+): ApiSortOption {
+    const sortOption = {
         field,
         reversed: direction === 'desc',
     };
+    if (aggregateBy) {
+        const { aggregateFunc, distinct } = aggregateBy;
+        return {
+            ...sortOption,
+            aggregateBy: {
+                aggregateFunc,
+                distinct: !!distinct,
+            },
+        };
+    }
+    return sortOption;
 }
 
 function isDirection(val: unknown): val is 'asc' | 'desc' {
@@ -44,7 +62,7 @@ function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps):
             : defaultSortOption.direction;
 
     const internalSortResultOption = useRef<ApiSortOption>(
-        tableSortOption(activeSortField, activeSortDirection)
+        tableSortOption(activeSortField, activeSortDirection, sortOption?.aggregateBy)
     );
 
     // we'll use this to map the sort fields to an index PatternFly can use internally
@@ -90,7 +108,11 @@ function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps):
         internalSortResultOption.current.field !== activeSortField ||
         internalSortResultOption.current.reversed !== (activeSortDirection === 'desc')
     ) {
-        internalSortResultOption.current = tableSortOption(activeSortField, activeSortDirection);
+        internalSortResultOption.current = tableSortOption(
+            activeSortField,
+            activeSortDirection,
+            sortOption?.aggregateBy
+        );
     }
 
     return {
