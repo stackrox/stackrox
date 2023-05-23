@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { Alert, Card, CardBody } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Tr } from '@patternfly/react-table';
+import { TableComposable, Tbody, Th, Tr } from '@patternfly/react-table';
 
 import { Cluster } from 'types/cluster.proto';
 
@@ -67,7 +67,7 @@ function SensorUpgradeCard({
                         />
                         <Tbody>
                             <Tr>
-                                <Td>Clusters</Td>
+                                <Th scope="row">Clusters</Th>
                                 <TdHealthy counts={counts} dataLabel={dataLabelHealthy} />
                                 <TdUnhealthy counts={counts} dataLabel={dataLabelUnhealthy} />
                                 <TdDegraded counts={counts} dataLabel={dataLabelDegraded} />
