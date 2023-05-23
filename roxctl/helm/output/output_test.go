@@ -94,47 +94,43 @@ func (suite *helmOutputTestSuite) TestConstruct() {
 
 func (suite *helmOutputTestSuite) TestValidate() {
 	cases := map[string]struct {
-		chartName       string
-		outputDir       string
-		createOutputDir bool
-		removeOutputDir bool
-		errOutRegexp    string
-		shouldFail      bool
-		error           error
-		errorRegexp     string
+		chartName    string
+		outputDir    string
+		createOutDir bool
+		removeOutDir bool
+		errOutRegexp string
+		shouldFail   bool
+		error        error
+		errorRegexp  string
 	}{
 		"should not fail for valid chartName and provided outputDir": {
-			chartName: common.ChartCentralServices,
 			outputDir: "test_output_dir",
 		},
 		"should not fail for valid chartName and non provided outputDir": {
-			chartName: common.ChartCentralServices,
 			errOutRegexp: `WARN:	No output directory specified, using default directory "./stackrox-central-services-chart"`,
 		},
 		"should not fail for valid chartName and existed outputDir": {
-			chartName:       common.ChartCentralServices,
-			createOutputDir: true,
-			removeOutputDir: true,
+			createOutDir: true,
+			removeOutDir: true,
 			errOutRegexp: "WARN:	Removed output directory .*",
 		},
 		"should fail for already existed output directory": {
-			chartName:       common.ChartCentralServices,
-			createOutputDir: true,
-			removeOutputDir: false,
+			error:        errox.AlreadyExists,
+			shouldFail:   true,
+			errorRegexp:  `directory ".*" already exists`,
+			createOutDir: true,
+			removeOutDir: false,
 			errOutRegexp: "ERROR:	Directory .* already exists, use --remove or select a different directory with --output-dir.",
-			shouldFail:  true,
-			error:       errox.AlreadyExists,
-			errorRegexp: `directory ".*" already exists`,
 		},
 	}
 
 	for name, c := range cases {
 		suite.Run(name, func() {
 			helmOutputCmd := suite.helmOutputCommand
-			helmOutputCmd.chartName = c.chartName
-			helmOutputCmd.removeOutputDir = c.removeOutputDir
+			helmOutputCmd.chartName = common.ChartCentralServices
+			helmOutputCmd.removeOutputDir = c.removeOutDir
 			helmOutputCmd.outputDir = c.outputDir
-			if c.createOutputDir {
+			if c.createOutDir {
 				helmOutputCmd.outputDir = suite.T().TempDir()
 			}
 
