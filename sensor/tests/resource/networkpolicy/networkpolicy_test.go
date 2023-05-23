@@ -5,18 +5,18 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/sensor/tests/resource"
+	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stretchr/testify/suite"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 )
 
 var (
-	NginxDeployment = resource.K8sResourceInfo{Kind: "Deployment", YamlFile: "nginx.yaml"}
-	NetpolAllow443  = resource.K8sResourceInfo{Kind: "NetworkPolicy", YamlFile: "netpol-allow-443.yaml"}
+	NginxDeployment = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "nginx.yaml"}
+	NetpolAllow443  = helper.K8sResourceInfo{Kind: "NetworkPolicy", YamlFile: "netpol-allow-443.yaml"}
 )
 
 type NetworkPolicySuite struct {
-	testContext *resource.TestContext
+	testContext *helper.TestContext
 	suite.Suite
 }
 
@@ -29,7 +29,7 @@ var _ suite.TearDownTestSuite = &NetworkPolicySuite{}
 
 func (s *NetworkPolicySuite) SetupSuite() {
 	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
-	if testContext, err := resource.NewContext(s.T()); err != nil {
+	if testContext, err := helper.NewContext(s.T()); err != nil {
 		s.Fail("failed to setup test context: %s", err)
 	} else {
 		s.testContext = testContext
@@ -63,10 +63,10 @@ func checkIfAlertsHaveViolation(result *central.AlertResults, name string) bool 
 
 func (s *NetworkPolicySuite) Test_DeploymentShouldNotHaveViolation() {
 	s.testContext.RunTest(
-		resource.WithResources([]resource.K8sResourceInfo{
+		helper.WithResources([]helper.K8sResourceInfo{
 			NginxDeployment, NetpolAllow443,
 		}),
-		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 			// There's a caveat to this test: the state HAS a violation at the beginning, but
 			// it disappears once re-sync kicks-in and processes the relationship betwee the network policy
 			// and this deployment. Therefore, this test passes as is, but the opposite assertion would also
@@ -83,10 +83,10 @@ func (s *NetworkPolicySuite) Test_DeploymentShouldNotHaveViolation() {
 
 func (s *NetworkPolicySuite) Test_DeploymentShouldHaveViolation() {
 	s.testContext.RunTest(
-		resource.WithResources([]resource.K8sResourceInfo{
+		helper.WithResources([]helper.K8sResourceInfo{
 			NginxDeployment,
 		}),
-		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 			testC.LastViolationState("nginx-deployment", func(result *central.AlertResults) error {
 				if !checkIfAlertsHaveViolation(result, ingressNetpolViolationName) {
 					return errors.Errorf("violation not found for deployment %s and violation name %s", result.GetSource().String(), ingressNetpolViolationName)

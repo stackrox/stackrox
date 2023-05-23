@@ -1,4 +1,4 @@
-package resource
+package helper
 
 import (
 	"context"
@@ -117,12 +117,13 @@ type TestContext struct {
 	fakeCentral     *centralDebug.FakeService
 	centralReceived chan *central.MsgFromSensor
 	stopFn          func()
+	sensorStopped   chan bool
 }
 
 func defaultCentralConfig() CentralConfig {
 	// Uses replayed policies.json file as default policies for tests.
 	// These are all policies in ACS, which means many alerts might be generated.
-	policies, err := testutils.GetPoliciesFromFile("../../replay/data/policies.json")
+	policies, err := testutils.GetPoliciesFromFile("../replay/data/policies.json")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -144,7 +145,7 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 	if err != nil {
 		return nil, err
 	}
-	fakeCentral, startFn, stopFn := startSensorAndFakeCentral(envConfig, config)
+	fakeCentral, startFn, stopFn, sensorStopped := startSensorAndFakeCentral(envConfig, config)
 	ch := make(chan *central.MsgFromSensor, 100)
 	fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
 		ch <- msg
@@ -152,7 +153,7 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 
 	startFn()
 	return &TestContext{
-		t, r, envConfig, fakeCentral, ch, stopFn,
+		t, r, envConfig, fakeCentral, ch, stopFn, sensorStopped,
 	}, nil
 }
 
@@ -216,6 +217,15 @@ func (c *TestContext) deleteNs(ctx context.Context, name string) error {
 		c.t.Logf("failed to wait for namespace %s deletion\n", nsObj.Name)
 	}
 	return nil
+}
+
+func (c *TestContext) SensorStopped() bool {
+	select {
+	case <-c.sensorStopped:
+		return true
+	default:
+		return false
+	}
 }
 
 func (c *TestContext) createTestNs(ctx context.Context, name string) (*v1.Namespace, func() error, error) {
@@ -513,11 +523,11 @@ type CentralConfig struct {
 	InitialSystemPolicies []*storage.Policy
 }
 
-func startSensorAndFakeCentral(env *envconf.Config, config CentralConfig) (*centralDebug.FakeService, func(), func()) {
-	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "../../../../tools/local-sensor/certs/cert.pem"))
-	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "../../../../tools/local-sensor/certs/key.pem"))
-	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "../../../../tools/local-sensor/certs/caCert.pem"))
-	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_KEY_FILE", "../../../../tools/local-sensor/certs/caKey.pem"))
+func startSensorAndFakeCentral(env *envconf.Config, config CentralConfig) (*centralDebug.FakeService, func(), func(), chan bool) {
+	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "../../../tools/local-sensor/certs/cert.pem"))
+	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "../../../tools/local-sensor/certs/key.pem"))
+	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "../../../tools/local-sensor/certs/caCert.pem"))
+	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_KEY_FILE", "../../../tools/local-sensor/certs/caKey.pem"))
 
 	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
 		message.SensorHello("00000000-0000-4000-A000-000000000000"),
@@ -527,6 +537,7 @@ func startSensorAndFakeCentral(env *envconf.Config, config CentralConfig) (*cent
 
 	conn, spyCentral, _ := createConnectionAndStartServer(fakeCentral)
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
+	fakeCentral.ConnectionFactory = fakeConnectionFactory
 
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(client.MustCreateInterfaceFromRest(env.Client().RESTConfig())).
@@ -538,13 +549,20 @@ func startSensorAndFakeCentral(env *envconf.Config, config CentralConfig) (*cent
 		panic(err)
 	}
 
+	sensorStopped := make(chan bool, 1)
+	go func() {
+		s.Stopped().WaitC()
+		sensorStopped <- true
+		close(sensorStopped)
+	}()
+
 	return fakeCentral, func() {
 			go s.Start()
 			spyCentral.ConnectionStarted.Wait()
 		}, func() {
 			go s.Stop()
 			spyCentral.KillSwitch.Done()
-		}
+		}, sensorStopped
 }
 
 func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grpc.ClientConn, *centralDebug.FakeService, func()) {
@@ -553,6 +571,7 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 
 	server := grpc.NewServer()
 	central.RegisterSensorServiceServer(server, fakeCentral)
+	fakeCentral.ServerPointer = server
 
 	go func() {
 		utils.IgnoreError(func() error {
