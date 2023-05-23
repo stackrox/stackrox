@@ -1,6 +1,8 @@
 import axios from './instance';
 import { Empty } from './types';
 
+const standardsUrl = '/v1/compliance/standards';
+
 export type ComplianceStandardScope = 'UNSET' | 'CLUSTER' | 'NAMESPACE' | 'DEPLOYMENT' | 'NODE';
 
 export type ComplianceStandardMetadata = {
@@ -10,19 +12,17 @@ export type ComplianceStandardMetadata = {
     numImplementedChecks: number; // int32
     scopes: ComplianceStandardScope[];
     dynamic: boolean;
-    hideScanResults?: boolean; // TODO optional until backend implements new property
+    hidden: boolean;
 };
 
 export function fetchComplianceStandards(): Promise<ComplianceStandardMetadata[]> {
     return axios
-        .get<{ standards: ComplianceStandardMetadata[] }>('/v1/compliance/standards')
-        .then((response) => {
-            return response.data?.standards ?? [];
-        });
+        .get<{ standards: ComplianceStandardMetadata[] }>(standardsUrl)
+        .then((response) => response.data?.standards ?? []);
 }
 
-export function patchComplianceStandard(id: string, hideScanResults: boolean): Promise<Empty> {
+export function patchComplianceStandard(id: string, hidden: boolean): Promise<Empty> {
     return axios
-        .patch<Empty>(`/v1/compliance/standard/${id}`, { hideScanResults })
+        .patch<Empty>(`${standardsUrl}/${id}`, { hidden })
         .then((response) => response.data);
 }

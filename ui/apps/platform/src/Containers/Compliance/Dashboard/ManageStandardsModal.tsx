@@ -5,7 +5,7 @@ import { useFormik } from 'formik';
 import {
     ComplianceStandardMetadata,
     fetchComplianceStandards,
-    // patchComplianceStandard,
+    patchComplianceStandard,
 } from 'services/ComplianceService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -17,11 +17,11 @@ export type ManageStandardsModalProps = {
 
 /*
  * Formik values have standard id as key and showScanResults as value.
- * Therefore, negate hideScanResults value here and
+ * Therefore, negate hidden value here and
  * showComplianceScanMap[id] value in onSubmit function below.
  */
 function getShowScanResultsMap(standards: ComplianceStandardMetadata[]): Record<string, boolean> {
-    return Object.fromEntries(standards.map(({ id, hideScanResults }) => [id, !hideScanResults]));
+    return Object.fromEntries(standards.map(({ id, hidden }) => [id, !hidden]));
 }
 
 function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
@@ -30,19 +30,13 @@ function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
         Record<string, boolean>
     >({
         initialValues: getShowScanResultsMap(standards),
-        onSubmit: (/* showScanResultsMap */) => {
+        onSubmit: (showScanResultsMap) => {
             setErrorMessage('');
-            const patchRequestPromises = [];
-            /*
-            // Filter standards for which hideScanResults property has changed,
+            // Filter standards for which hidden property has changed,
             // and them map to promises for patch requests.
             const patchRequestPromises = standards
-                .filter(
-                    ({ hideScanResults, id }) =>
-                        Boolean(hideScanResults) !== !showScanResultsMap[id]
-                )
+                .filter(({ hidden, id }) => Boolean(hidden) !== !showScanResultsMap[id])
                 .map(({ id }) => patchComplianceStandard(id, !showScanResultsMap[id]));
-            */
 
             Promise.all(patchRequestPromises)
                 .then(() => {
@@ -68,7 +62,7 @@ function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
     return (
         <Modal
             title="Manage standards"
-            variant="medium"
+            variant="small"
             isOpen
             showClose={false}
             actions={[

@@ -34,7 +34,7 @@ function ComplianceByStandards({
     let standards = data?.results || [];
     if (entityType && Array.isArray(data?.results)) {
         standards = data.results.filter(
-            ({ scopes }): boolean => scopes.includes(entityType) as boolean
+            ({ hidden, scopes }): boolean => !hidden && (scopes.includes(entityType) as boolean)
         );
     }
     return (
