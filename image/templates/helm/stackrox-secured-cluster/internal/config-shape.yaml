@@ -88,6 +88,7 @@ admissionControl:
     timeout: null # natural number
     enforceOnUpdates: null # bool
   imagePullPolicy: null # string
+  replicas: null # int
   resources: null # string | dict
   serviceTLS:
     cert: null # string

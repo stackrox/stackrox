@@ -57,7 +57,7 @@ function NetworkBaselines({
     return (
         <PanelNew testid={panelId}>
             <PanelHead>
-                <PanelTitle isUpperCase testid={`${panelId}-header`} text={header} />
+                <PanelTitle testid={`${panelId}-header`} text={header} />
                 <PanelHeadEnd>
                     {headerComponents}
                     <TablePagination

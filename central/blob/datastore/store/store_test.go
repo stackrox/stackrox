@@ -43,9 +43,11 @@ func (s *BlobsStoreSuite) TearDownSuite() {
 
 func (s *BlobsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
+	size := 1024*1024 + 16
 
 	insertBlob := &storage.Blob{
 		Name:         "test",
+		Length:       int64(size),
 		LastUpdated:  timestamp.TimestampNow(),
 		ModifiedTime: timestamp.TimestampNow(),
 	}
@@ -55,7 +57,6 @@ func (s *BlobsStoreSuite) TestStore() {
 	s.Require().NoError(err)
 	s.Require().False(exists)
 
-	size := 1024*1024 + 16
 	randomData := make([]byte, size)
 	_, err = rand.Read(randomData)
 	s.NoError(err)

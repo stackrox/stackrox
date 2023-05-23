@@ -201,7 +201,7 @@ func (m *DelegatedRegistryCluster) Clone() *DelegatedRegistryCluster {
 }
 
 // DelegatedRegistryConfig determines if and where scan requests are delegated to, such as kept in
-// central services or sent to particular secured clusters
+// central services or sent to particular secured clusters.
 type DelegatedRegistryConfig struct {
 	// Determines if delegation is enabled for no registries, all registries, or specific registries
 	EnabledFor DelegatedRegistryConfig_EnabledFor `protobuf:"varint,1,opt,name=enabled_for,json=enabledFor,proto3,enum=v1.DelegatedRegistryConfig_EnabledFor" json:"enabled_for,omitempty"`

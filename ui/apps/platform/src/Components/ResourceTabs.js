@@ -22,7 +22,7 @@ const ResourceTabs = ({ entityType, entityId, resourceTabs, selectedType, match,
     function processData(data) {
         const tabData = [
             {
-                title: 'overview',
+                title: 'Overview',
                 link: getLinkToListType(),
                 type: null,
             },
@@ -78,7 +78,7 @@ const ResourceTabs = ({ entityType, entityId, resourceTabs, selectedType, match,
                                 <li key={datum.title} className="inline-block">
                                     <Link
                                         style={style}
-                                        className={`no-underline ${textColor} ${borderLeft} ${bgColor} border-r min-w-32 px-3 text-center pt-3 pb-3 uppercase tracking-widest inline-block`}
+                                        className={`no-underline ${textColor} ${borderLeft} ${bgColor} border-r min-w-32 px-3 text-center pt-3 pb-3 font-700 inline-block`}
                                         to={datum.link}
                                     >
                                         {datum.title}

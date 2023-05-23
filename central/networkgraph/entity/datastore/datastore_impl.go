@@ -76,6 +76,18 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (EntityDataStore, 
 	return NewEntityDataStore(dbstore, graphConfigStore, treeMgr, sensorCnxMgr), nil
 }
 
+// GetBenchPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetBenchPostgresDataStore(t testing.TB, pool postgres.DB) (EntityDataStore, error) {
+	dbstore := pgStore.New(pool)
+	graphConfigStore, err := graphConfigDS.GetBenchPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
+	treeMgr := networktree.Singleton()
+	sensorCnxMgr := connection.ManagerSingleton()
+	return NewEntityDataStore(dbstore, graphConfigStore, treeMgr, sensorCnxMgr), nil
+}
+
 // GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
 func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) (EntityDataStore, error) {
 	dbstore, err := rocksdb.New(rocksengine)

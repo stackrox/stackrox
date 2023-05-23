@@ -3,9 +3,9 @@ import { hasOrchestratorFlavor } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import {
-    interactAndWaitForComplianceEntities,
     interactAndWaitForComplianceStandard,
     scanCompliance,
+    verifyDashboardEntityLink,
     visitComplianceDashboard,
 } from './Compliance.helpers';
 import { selectors } from './Compliance.selectors';
@@ -33,57 +33,25 @@ describe('Compliance Dashboard', () => {
     it('should show the same amount of clusters as list', () => {
         visitComplianceDashboard();
 
-        cy.get(selectors.dashboard.tileLinks.cluster.value)
-            .invoke('text')
-            .then((text) => {
-                const count = parseInt(text, 10); // for example, 1 cluster
-                interactAndWaitForComplianceEntities(() => {
-                    cy.get(selectors.dashboard.tileLinks.cluster.tile).click();
-                }, 'clusters');
-                cy.get(`[data-testid="panel-header"]:contains("${count}")`);
-            });
+        verifyDashboardEntityLink('clusters', /^\d+ clusters?/); // include ^ but omit $
     });
 
     it('should show the same amount of namespaces as list', () => {
         visitComplianceDashboard();
 
-        cy.get(selectors.dashboard.tileLinks.namespace.value)
-            .invoke('text')
-            .then((text) => {
-                const count = parseInt(text, 10); // for example, 2 namespaces
-                interactAndWaitForComplianceEntities(() => {
-                    cy.get(selectors.dashboard.tileLinks.namespace.tile).click();
-                }, 'namespaces');
-                cy.get(`[data-testid="panel-header"]:contains("${count}")`);
-            });
+        verifyDashboardEntityLink('namespaces', /^\d+ namespaces?/); // include ^ but omit $
     });
 
     it('should show the same amount of nodes as list', () => {
         visitComplianceDashboard();
 
-        cy.get(selectors.dashboard.tileLinks.node.value)
-            .invoke('text')
-            .then((text) => {
-                const count = parseInt(text, 10); // for example, 2 nodes
-                interactAndWaitForComplianceEntities(() => {
-                    cy.get(selectors.dashboard.tileLinks.node.tile).click();
-                }, 'nodes');
-                cy.get(`[data-testid="panel-header"]:contains("${count}")`);
-            });
+        verifyDashboardEntityLink('nodes', /^\d+ nodes?/); // include ^ but omit $
     });
 
     it('should show the same amount of deployments as list', () => {
         visitComplianceDashboard();
 
-        cy.get(selectors.dashboard.tileLinks.deployment.value)
-            .invoke('text')
-            .then((text) => {
-                const count = parseInt(text, 10); // for example, 2 deployments
-                interactAndWaitForComplianceEntities(() => {
-                    cy.get(selectors.dashboard.tileLinks.deployment.tile).click();
-                }, 'deployments');
-                cy.get(`[data-testid="panel-header"]:contains("${count}")`);
-            });
+        verifyDashboardEntityLink('deployments', /^\d+ deployments?/); // include ^ but omit $
     });
 
     it('should link from Passing Standards Across Clusters widget to standards grouped by clusters list', () => {
@@ -93,7 +61,7 @@ describe('Compliance Dashboard', () => {
             cy.get(selectors.widget.passingStandardsAcrossClusters.axisLinks).first().click();
         });
         cy.location('search').should('contain', '?s[groupBy]=CLUSTER'); // followed by a standard
-        cy.get('[data-testid="panel-header"]').contains('CLUSTER');
+        cy.get('[data-testid="panel-header"]').contains('cluster');
         cy.get(selectors.list.table.firstGroup).should('be.visible');
     });
 
@@ -104,7 +72,7 @@ describe('Compliance Dashboard', () => {
             cy.get(selectors.widget.passingStandardsAcrossNamespaces.axisLinks).first().click();
         });
         cy.location('search').should('contain', '?s[groupBy]=NAMESPACE'); // followed by a standard
-        cy.get('[data-testid="panel-header"]').contains('NAMESPACE');
+        cy.get('[data-testid="panel-header"]').contains('namespace');
         cy.get(selectors.list.table.firstGroup).should('be.visible');
     });
 
@@ -115,7 +83,7 @@ describe('Compliance Dashboard', () => {
             cy.get(selectors.widget.passingStandardsAcrossNodes.axisLinks).first().click();
         });
         cy.location('search').should('contain', '?s[groupBy]=NODE'); // followed by a standard
-        cy.get('[data-testid="panel-header"]').contains('NODE');
+        cy.get('[data-testid="panel-header"]').contains('node');
         cy.get(selectors.list.table.firstGroup).should('be.visible');
     });
 

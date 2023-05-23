@@ -7,13 +7,13 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/notifier/processor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	auditPkg "github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/secrets"
@@ -29,11 +29,11 @@ const (
 // audit handles the creation of auditPkg logs from gRPC requests that aren't GETs
 // currently, it only handles grpc because we do not do anything substantial on HTTP Post
 type audit struct {
-	notifications processor.Processor
+	notifications notifier.Processor
 }
 
 // New takes in a processor and returns an audit struct
-func New(notifications processor.Processor) auditPkg.Auditor {
+func New(notifications notifier.Processor) auditPkg.Auditor {
 	return &audit{
 		notifications: notifications,
 	}

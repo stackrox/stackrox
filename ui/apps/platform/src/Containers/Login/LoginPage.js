@@ -209,7 +209,7 @@ class LoginPage extends Component {
                 <div className="p-6 w-full text-center">
                     <button
                         type="button"
-                        className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 uppercase text-center tracking-wide"
+                        className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 text-center"
                     >
                         <ClipLoader color="white" loading size={15} />
                     </button>
@@ -223,7 +223,7 @@ class LoginPage extends Component {
             return (
                 <div className="p-8 w-full text-center">
                     <Link
-                        className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 uppercase text-center tracking-wide no-underline"
+                        className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 text-center no-underline"
                         to="/main/dashboard"
                     >
                         Go to Dashboard

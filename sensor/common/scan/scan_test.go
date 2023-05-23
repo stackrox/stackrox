@@ -51,8 +51,7 @@ func (suite *scanTestSuite) createMockImageServiceClient(img *storage.Image, fai
 }
 
 func (suite *scanTestSuite) TestLocalEnrichment() {
-
-	getRegistryForImageInNamespaceTriggered := false
+	var getRegistryForImageInNamespaceTriggered bool
 
 	// Use mock functions to avoid having to provide a full registry / scanner.
 	scan := LocalScan{

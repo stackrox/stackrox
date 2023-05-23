@@ -73,7 +73,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 	// should not be sent to central for scanning
 	req.Image.IsClusterLocal = s.registryStore.IsLocal(req.GetImage().GetName())
 
-	// Ask Central to scan the image if the image is not internal or local
+	// Ask Central to scan the image if the image is neither internal nor local
 	if !req.GetImage().GetIsClusterLocal() {
 		scanResp, err := s.centralClient.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 			Image:      req.GetImage(),

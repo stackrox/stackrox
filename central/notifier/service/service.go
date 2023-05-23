@@ -5,12 +5,11 @@ import (
 
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/notifier/processor"
-	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifier"
 )
 
 var (
@@ -28,12 +27,11 @@ type Service interface {
 
 // New returns a new Service instance using the given DataStore.
 func New(storage datastore.DataStore,
-	processor processor.Processor,
+	processor notifier.Processor,
 	buildTimePolicies detection.PolicySet,
 	deployTimePolicies detection.PolicySet,
 	runTimePolicies detection.PolicySet,
-	reporter integrationhealth.Reporter,
-	connectionManager connection.Manager) Service {
+	reporter integrationhealth.Reporter) Service {
 	return &serviceImpl{
 		storage:            storage,
 		processor:          processor,
@@ -41,6 +39,5 @@ func New(storage datastore.DataStore,
 		deployTimePolicies: deployTimePolicies,
 		runTimePolicies:    runTimePolicies,
 		reporter:           reporter,
-		connectionManager:  connectionManager,
 	}
 }

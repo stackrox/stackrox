@@ -210,7 +210,7 @@ func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 		s.NoError(sensorMockConn.Run(ctx, server, caps))
 
 		for _, msg := range server.sentList {
-			if deleConfig := msg.GetUpdatedDelegatedRegistryConfig(); deleConfig != nil {
+			if deleConfig := msg.GetDelegatedRegistryConfig(); deleConfig != nil {
 				s.Equal(central.DelegatedRegistryConfig_ALL, deleConfig.EnabledFor)
 				return
 			}
@@ -226,7 +226,7 @@ func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 		s.NoError(sensorMockConn.Run(ctx, server, caps))
 
 		for _, msg := range server.sentList {
-			if deleConfig := msg.GetUpdatedDelegatedRegistryConfig(); deleConfig != nil {
+			if deleConfig := msg.GetDelegatedRegistryConfig(); deleConfig != nil {
 				s.FailNow("Delegated registry config msg was sent")
 				return
 			}
@@ -242,7 +242,7 @@ func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 		s.NoError(sensorMockConn.Run(ctx, server, caps))
 
 		for _, msg := range server.sentList {
-			if deleConfig := msg.GetUpdatedDelegatedRegistryConfig(); deleConfig != nil {
+			if deleConfig := msg.GetDelegatedRegistryConfig(); deleConfig != nil {
 				s.FailNow("Delegated registry config msg was sent")
 				return
 			}

@@ -15,11 +15,7 @@ function Creator({ onClose }: CreatorProps): ReactElement {
         <div className="h-full w-full shadow-md bg-base-200">
             <PanelNew testid="network-creator-panel">
                 <PanelHead>
-                    <PanelTitle
-                        isUpperCase
-                        testid="network-creator-panel-header"
-                        text="SELECT AN OPTION"
-                    />
+                    <PanelTitle testid="network-creator-panel-header" text="SELECT AN OPTION" />
                     <PanelHeadEnd>
                         <ViewActive />
                         <CloseButton onClose={onClose} className="border-base-400 border-l" />

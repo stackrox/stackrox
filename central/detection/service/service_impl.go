@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
@@ -36,6 +35,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifier"
 	resourcesConv "github.com/stackrox/rox/pkg/protoconv/resources"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -84,7 +84,7 @@ type serviceImpl struct {
 	buildTimeDetector  buildtime.Detector
 	clusters           clusterDatastore.DataStore
 
-	notifications processor.Processor
+	notifications notifier.Processor
 
 	detector deploytime.Detector
 }

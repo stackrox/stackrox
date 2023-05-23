@@ -16,7 +16,7 @@ const TileList = ({ items, title }) => {
         >
             {title !== '' && (
                 <h3
-                    className={`border-b text-xs text-base-600 uppercase text-center tracking-wide p-1 leading-normal font-700 ${
+                    className={`border-b text-base-600 text-center p-1 leading-normal font-700 ${
                         !isDarkMode ? 'border-base-400' : 'border-tertiary-400'
                     }`}
                 >

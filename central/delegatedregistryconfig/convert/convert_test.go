@@ -63,7 +63,7 @@ func genInnerAPI(enabledFor central.DelegatedRegistryConfig_EnabledFor, defID st
 	}
 }
 
-func TestStorageToAPI(t *testing.T) {
+func TestStorageToPublicAPI(t *testing.T) {
 	tt := map[string]struct {
 		in   *storage.DelegatedRegistryConfig
 		want *v1.DelegatedRegistryConfig
@@ -77,7 +77,7 @@ func TestStorageToAPI(t *testing.T) {
 
 	for name, test := range tt {
 		tf := func(t *testing.T) {
-			got := StorageToAPI(test.in)
+			got := StorageToPublicAPI(test.in)
 			assert.Equal(t, test.want.GetEnabledFor(), got.GetEnabledFor())
 			assert.Equal(t, test.want.GetDefaultClusterId(), got.GetDefaultClusterId())
 			assert.Equal(t, test.want.GetRegistries(), got.GetRegistries())
@@ -87,7 +87,7 @@ func TestStorageToAPI(t *testing.T) {
 	}
 }
 
-func TestAPIToStorage(t *testing.T) {
+func TestPublicAPIToStorage(t *testing.T) {
 	tt := map[string]struct {
 		in   *v1.DelegatedRegistryConfig
 		want *storage.DelegatedRegistryConfig
@@ -101,7 +101,7 @@ func TestAPIToStorage(t *testing.T) {
 
 	for name, test := range tt {
 		tf := func(t *testing.T) {
-			got := APIToStorage(test.in)
+			got := PublicAPIToStorage(test.in)
 			assert.Equal(t, test.want.GetEnabledFor(), got.GetEnabledFor())
 			assert.Equal(t, test.want.GetDefaultClusterId(), got.GetDefaultClusterId())
 			assert.Equal(t, test.want.GetRegistries(), got.GetRegistries())
@@ -111,7 +111,7 @@ func TestAPIToStorage(t *testing.T) {
 	}
 }
 
-func TestAPIToInnerAPI(t *testing.T) {
+func TestPublicAPIToInternalAPI(t *testing.T) {
 	tt := map[string]struct {
 		in   *v1.DelegatedRegistryConfig
 		want *central.DelegatedRegistryConfig
@@ -125,7 +125,7 @@ func TestAPIToInnerAPI(t *testing.T) {
 
 	for name, test := range tt {
 		tf := func(t *testing.T) {
-			got := APIToInternalAPI(test.in)
+			got := PublicAPIToInternalAPI(test.in)
 			assert.Equal(t, test.want.GetEnabledFor(), got.GetEnabledFor())
 			assert.Equal(t, test.want.GetDefaultClusterId(), got.GetDefaultClusterId())
 			assert.Equal(t, test.want.GetRegistries(), got.GetRegistries())
@@ -135,7 +135,7 @@ func TestAPIToInnerAPI(t *testing.T) {
 	}
 }
 
-func TestStorageToInnerAPIJj(t *testing.T) {
+func TestStorageToInternalAPI(t *testing.T) {
 	tt := map[string]struct {
 		in   *storage.DelegatedRegistryConfig
 		want *central.DelegatedRegistryConfig

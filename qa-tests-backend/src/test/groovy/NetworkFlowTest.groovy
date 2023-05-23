@@ -1,4 +1,5 @@
 import static io.restassured.RestAssured.given
+import static util.Helpers.withRetry
 
 import io.grpc.StatusRuntimeException
 import io.restassured.response.Response
@@ -8,6 +9,7 @@ import org.yaml.snakeyaml.Yaml
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraph
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkNode
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest.DeleteExistingPoliciesMode
+import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass.L4Protocol
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.Type
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
@@ -21,6 +23,7 @@ import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Service
 import services.ClusterService
+import services.DeploymentService
 import services.NetworkGraphService
 import services.NetworkPolicyService
 import util.Env
@@ -526,10 +529,29 @@ class NetworkFlowTest extends BaseSpecification {
 
         then:
         "Check for edge in network graph"
-        log.info "Checking for edge from external to ${NGINXCONNECTIONTARGET}"
-        List<Edge> edges =
-                NetworkGraphUtil.checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
-        assert edges
+        withRetry(5, 20) {
+            log.info "Checking for edge from external to ${NGINXCONNECTIONTARGET}"
+
+            // Only on OpenShift 4.12, the edge will not show from EXTERNAL_SOURCE, but instead from
+            // router-default deployment in openshift-ingress namespace.
+            List<Edge> routerDefaultEdges = null
+            if (ClusterService.isOpenShift4()) {
+                SearchServiceOuterClass.RawQuery query = SearchServiceOuterClass.RawQuery.newBuilder()
+                        .setQuery("Namespace:openshift-ingress")
+                        .build()
+                def ingressDeployments = DeploymentService.listDeploymentsSearch(query).deploymentsList
+                def defaultRouterId = ingressDeployments.find { it.getName() == "router-default" }.id
+                routerDefaultEdges = NetworkGraphUtil.checkForEdge(defaultRouterId, deploymentUid, null, 180)
+                if (routerDefaultEdges != null) {
+                    log.info("Found edge coming from OpenShift ingress router")
+                    return
+                }
+            }
+            List<Edge> edges =
+                    NetworkGraphUtil.checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
+
+            assert edges
+        }
     }
 
     // TODO(ROX-7046): Re-enable this test
@@ -676,8 +698,7 @@ class NetworkFlowTest extends BaseSpecification {
         Assume.assumeFalse(ClusterService.isEKS())
 
         given:
-        "Get current state of network graph"
-        NetworkGraph currentGraph = NetworkGraphService.getNetworkGraph()
+        "Get current state of deployed namespaces"
         List<String> deployedNamespaces = deployments*.namespace
 
         and:
@@ -687,6 +708,42 @@ class NetworkFlowTest extends BaseSpecification {
         Services.waitForSRDeletion(delete)
 
         when:
+        "Network graph contains all expected targets"
+        NetworkGraph currentGraph = null
+
+        // This is a map of "deploymentName" -> expectedNumberOfEdges.
+        // It allows us to know when the network graph has reached a desired state and the proper assertions can start.
+        def targets = [(TCPCONNECTIONTARGET):3, (UDPCONNECTIONTARGET):1]
+        targets.each { deploymentName, expectedEdges ->
+            // Make sure that we have enough time to populate the graph: 30s for sensor + some extra.
+            // On the first run, this test benefits from the state left over by previous tests.
+            // However, if the first run fails, the env is recreated and the test is run immediately afterwards.
+            // The system requires time for the changes to propagate to sensor, thus we have an additional retry here.
+            log.info "Verifying graph edges of ${deploymentName}"
+            Helpers.withRetry(6, 20) { retry ->
+                // The graph needs to be re-retrieved on each retry
+                currentGraph = NetworkGraphService.getNetworkGraph()
+
+                def index = currentGraph.nodesList.findIndexOf { node -> node.deploymentName == deploymentName }
+                List<NetworkNode> outNodes = currentGraph.nodesList.findAll { node ->
+                    node.outEdgesMap.containsKey(index)
+                }
+                def allowAllIngress = deployments.find { it.name == deploymentName }?.createLoadBalancer ||
+                    currentGraph.nodesList.find { it.entity.type == Type.INTERNET }.outEdgesMap.containsKey(index)
+                if (allowAllIngress) {
+                    log.info "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
+                } else {
+                    assert outNodes.size() > 0 == expectedEdges > 0
+                    log.info "${deploymentName} has incoming connections"
+                    def sourceDeploymentsFromGraph = outNodes.findAll { it.deploymentName }*.deploymentName
+
+                    log.debug("sourceDeploymentsFromGraph: {}", sourceDeploymentsFromGraph)
+                    assert sourceDeploymentsFromGraph.size() == expectedEdges
+                }
+            }
+        }
+
+        and:
         "Generate Network Policies"
         NetworkPolicyModification modification = NetworkPolicyService.generateNetworkPolicies()
         Yaml parser = new Yaml()
@@ -696,37 +753,37 @@ class NetworkFlowTest extends BaseSpecification {
         }
 
         then:
-        "verify generated netpols vs current graph state"
+        "verify generated netpols against the current graph state"
         yamls.each {
             assert it."metadata"."namespace" != "kube-system" &&
                     it."metadata"."namespace" != "kube-public"
         }
         yamls.findAll {
             deployedNamespaces.contains(it."metadata"."namespace")
-        }.each {
+        }.each { yaml ->
             String deploymentName =
-                    it."metadata"."name"["stackrox-generated-".length()..it."metadata"."name".length() - 1]
+                yaml."metadata"."name"["stackrox-generated-".length()..yaml."metadata"."name".length() - 1]
             assert deploymentName != NOCONNECTIONSOURCE
-            assert it."metadata"."labels"."network-policy-generator.stackrox.io/generated"
-            assert it."metadata"."namespace"
+            assert yaml."metadata"."labels"."network-policy-generator.stackrox.io/generated"
+            assert yaml."metadata"."namespace"
             def index = currentGraph.nodesList.findIndexOf { node -> node.deploymentName == deploymentName }
             def allowAllIngress = deployments.find { it.name == deploymentName }?.createLoadBalancer ||
-                    currentGraph.nodesList.find { it.entity.type == Type.INTERNET }.outEdgesMap.containsKey(index)
-            List<NetworkNode> outNodes =  currentGraph.nodesList.findAll { node ->
+                currentGraph.nodesList.find { it.entity.type == Type.INTERNET }.outEdgesMap.containsKey(index)
+            List<NetworkNode> outNodes = currentGraph.nodesList.findAll { node ->
                 node.outEdgesMap.containsKey(index)
             }
-            def ingressPodSelectors = it."spec"."ingress".find { it.containsKey("from") } ?
-                    it."spec"."ingress".get(0)."from".findAll { it.containsKey("podSelector") } :
-                    null
-            def ingressNamespaceSelectors = it."spec"."ingress".find { it.containsKey("from") } ?
-                    it."spec"."ingress".get(0)."from".findAll { it.containsKey("namespaceSelector") } :
-                    null
+            def ingressPodSelectors = yaml."spec"."ingress".find { it.containsKey("from") } ?
+                yaml."spec"."ingress".get(0)."from".findAll { it.containsKey("podSelector") } :
+                null
+            def ingressNamespaceSelectors = yaml."spec"."ingress".find { it.containsKey("from") } ?
+                yaml."spec"."ingress".get(0)."from".findAll { it.containsKey("namespaceSelector") } :
+                null
             if (allowAllIngress) {
                 log.info "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
-                assert it."spec"."ingress" == [[:]]
+                assert yaml."spec"."ingress" == [[:]]
             } else if (outNodes.size() > 0) {
-                log.info "${deploymentName} has incoming connections - ensure podSelectors/namespaceSelectors match " +
-                        "sources from graph"
+                log.info "${deploymentName} has incoming connections - " +
+                    "ensure podSelectors/namespaceSelectors match sources from graph"
                 def sourceDeploymentsFromGraph = outNodes.findAll { it.deploymentName }*.deploymentName
                 def sourceDeploymentsFromNetworkPolicy = ingressPodSelectors.collect {
                     it."podSelector"."matchLabels"."app"
@@ -737,7 +794,11 @@ class NetworkFlowTest extends BaseSpecification {
                 sourceNamespacesFromNetworkPolicy.addAll(ingressNamespaceSelectors.collect {
                     it."namespaceSelector"."matchLabels"."kubernetes.io/metadata.name"
                 }).findAll { it != null }
+
+                log.debug("sourceDeploymentsFromNetworkPolicy: {}", sourceDeploymentsFromNetworkPolicy)
+                log.debug("sourceDeploymentsFromGraph: {}", sourceDeploymentsFromGraph)
                 assert sourceDeploymentsFromNetworkPolicy.sort() == sourceDeploymentsFromGraph.sort()
+
                 if (!deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)) {
                     log.info "Deployed namespaces do not contain all namespaces found in the network policy"
                     log.info "The network policy:"
@@ -746,7 +807,7 @@ class NetworkFlowTest extends BaseSpecification {
                 assert deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)
             } else {
                 log.info "${deploymentName} has no incoming connections - ensure ingress spec is empty"
-                assert it."spec"."ingress" == [] || it."spec"."ingress" == null
+                assert yaml."spec"."ingress" == [] || yaml."spec"."ingress" == null
             }
         }
     }
@@ -780,7 +841,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         expect:
         "actual policies should exist in generated response depending on delete mode"
-        def modification = NetworkPolicyService.generateNetworkPolicies(deleteMode, "Namespace:r/qa.*")
+        def modification = NetworkPolicyService.generateNetworkPolicies(deleteMode, 'Namespace:r/^qa2?$')
         assert !(NetworkPolicyService.applyGeneratedNetworkPolicy(modification) instanceof StatusRuntimeException)
         def appliedNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
         log.info "${appliedNetworkPolicies}"

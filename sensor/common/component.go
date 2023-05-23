@@ -14,6 +14,9 @@ type SensorComponentEvent string
 const (
 	// SensorComponentEventCentralReachable denotes that Sensor-Central connection is up
 	SensorComponentEventCentralReachable SensorComponentEvent = "central-reachable"
+
+	// SensorComponentEventOfflineMode denotes that Sensor-Central connection is broken and sensor should operate in offline mode
+	SensorComponentEventOfflineMode SensorComponentEvent = "offline-mode"
 )
 
 // SensorComponent is one of the components that constitute sensor. It supports for receiving messages from central,

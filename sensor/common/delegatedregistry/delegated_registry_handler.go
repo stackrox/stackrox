@@ -25,7 +25,7 @@ var (
 )
 
 // Handler is responsible for processing delegated
-// registry config updates from central
+// registry config updates from central.
 type Handler interface {
 	common.SensorComponent
 }
@@ -37,7 +37,7 @@ type delegatedRegistryImpl struct {
 	imageSvc      v1.ImageServiceClient
 }
 
-// NewHandler returns a new instance of Handler
+// NewHandler returns a new instance of Handler.
 func NewHandler(registryStore *registry.Store, localScan *scan.LocalScan) Handler {
 	return &delegatedRegistryImpl{
 		registryStore: registryStore,
@@ -64,8 +64,8 @@ func (d *delegatedRegistryImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	}
 
 	switch {
-	case msg.GetUpdatedDelegatedRegistryConfig() != nil:
-		return d.processUpdatedDelegatedRegistryConfig(msg.GetUpdatedDelegatedRegistryConfig())
+	case msg.GetDelegatedRegistryConfig() != nil:
+		return d.processUpdatedDelegatedRegistryConfig(msg.GetDelegatedRegistryConfig())
 	case msg.GetScanImage() != nil:
 		// TODO: Change scan image so that it doesn't hold up processing other receivers, consider spawning a go routine
 		return d.processScanImage(msg.GetScanImage())

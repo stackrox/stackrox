@@ -222,6 +222,9 @@
 #      memory: "500Mi"
 #      cpu: "500m"
 #
+#  # Replicas configures the replicas of the admission controller pod.
+#  replicas: 3
+#
 #  # Settings for the internal service-to-service TLS certificate used by Admission Control.
 #  serviceTLS:
 #    cert: null

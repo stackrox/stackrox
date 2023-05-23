@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/localscanner"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/central/sensor/networkentities"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
@@ -22,9 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
-	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -62,7 +59,6 @@ type sensorConnection struct {
 	baselineMgr                common.ProcessBaselineManager
 	networkBaselineMgr         common.NetworkBaselineManager
 	delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager
-	notifierProcessor          notifierProcessor.Processor
 
 	sensorHello  *central.SensorHello
 	capabilities set.Set[centralsensor.SensorCapability]
@@ -78,7 +74,6 @@ func newConnection(ctx context.Context,
 	baselineMgr common.ProcessBaselineManager,
 	networkBaselineMgr common.NetworkBaselineManager,
 	delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager,
-	notifierProcessor notifierProcessor.Processor,
 	hashMgr hashManager.Manager,
 ) *sensorConnection {
 
@@ -96,7 +91,6 @@ func newConnection(ctx context.Context,
 		baselineMgr:                baselineMgr,
 		networkBaselineMgr:         networkBaselineMgr,
 		delegatedRegistryConfigMgr: delegatedRegistryConfigMgr,
-		notifierProcessor:          notifierProcessor,
 
 		sensorHello:  sensorHello,
 		capabilities: centralsensor.CapSetFromStringSlice(sensorHello.GetCapabilities()...),
@@ -304,25 +298,6 @@ func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Cont
 	return nil
 }
 
-// getNotifierSyncMsg fetches stored notifiers and prepares them for delivery to sensor.
-func (c *sensorConnection) getNotifierSyncMsg(ctx context.Context) *central.MsgToSensor {
-	return getNotifierSyncMsgFromNotifiers(c.notifierProcessor.GetNotifiers(ctx))
-}
-
-func getNotifierSyncMsgFromNotifiers(notifiers []pkgNotifiers.Notifier) *central.MsgToSensor {
-	var protoNotifiers []*storage.Notifier
-	for _, notifier := range notifiers {
-		protoNotifiers = append(protoNotifiers, notifier.ProtoNotifier())
-	}
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_NotifierSync{
-			NotifierSync: &central.NotifierSync{
-				Notifiers: protoNotifiers,
-			},
-		},
-	}
-}
-
 // getPolicySyncMsg fetches stored policies and prepares them for delivery to sensor.
 func (c *sensorConnection) getPolicySyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
 	policies, err := c.policyMgr.GetAllPolicies(ctx)
@@ -493,8 +468,8 @@ func (c *sensorConnection) getDelegatedRegistryConfigMsg(ctx context.Context) (*
 	}
 
 	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_UpdatedDelegatedRegistryConfig{
-			UpdatedDelegatedRegistryConfig: delegatedRegistryConfigConvert.StorageToInternalAPI(config),
+		Msg: &central.MsgToSensor_DelegatedRegistryConfig{
+			DelegatedRegistryConfig: delegatedRegistryConfigConvert.StorageToInternalAPI(config),
 		},
 	}, nil
 
@@ -535,16 +510,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		if err := server.Send(msg); err != nil {
 			return errors.Wrapf(err, "unable to sync initial network baselines to cluster %q", c.clusterID)
 		}
-	}
 
-	if env.SecuredClusterNotifiers.BooleanSetting() && connectionCapabilities.Contains(centralsensor.SecuredClusterNotifications) {
-		msg := c.getNotifierSyncMsg(ctx)
-		if err != nil {
-			return errors.Wrapf(err, "unable to get notifier sync msg for %q", c.clusterID)
-		}
-		if err := server.Send(msg); err != nil {
-			return errors.Wrapf(err, "unable to sync initial notifiers to cluster %q", c.clusterID)
-		}
 	}
 
 	if connectionCapabilities.Contains(centralsensor.DelegatedRegistryCap) {
@@ -557,7 +523,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 				return errors.Wrapf(err, "unable to sync initial delegated registry config to cluster %q", c.clusterID)
 			}
 
-			log.Debugf("Sent delegated registry config %q to cluster %q", msg.GetUpdatedDelegatedRegistryConfig(), c.clusterID)
+			log.Debugf("Sent delegated registry config %q to cluster %q", msg.GetDelegatedRegistryConfig(), c.clusterID)
 		}
 	}
 

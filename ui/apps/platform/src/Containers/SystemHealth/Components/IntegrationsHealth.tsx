@@ -44,10 +44,7 @@ const IntegrationsHealth = ({ integrationsMerged }: Props): ReactElement => {
                                     {name}
                                 </div>
                                 {label && label !== name && (
-                                    <div
-                                        className="italic text-base-500"
-                                        data-testid="integration-label"
-                                    >
+                                    <div className="text-base-500" data-testid="integration-label">
                                         {label}
                                     </div>
                                 )}

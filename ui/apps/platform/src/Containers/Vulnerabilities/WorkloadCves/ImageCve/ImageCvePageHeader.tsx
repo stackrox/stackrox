@@ -1,27 +1,68 @@
 import React from 'react';
 import { gql } from '@apollo/client';
-import { Button, Flex, LabelGroup, Label, Skeleton, Text, Title } from '@patternfly/react-core';
+import {
+    Flex,
+    LabelGroup,
+    Label,
+    Skeleton,
+    Text,
+    Title,
+    List,
+    ListItem,
+} from '@patternfly/react-core';
 import { getDateTime } from 'utils/dateUtils';
+import { ensureExhaustive } from 'utils/type.utils';
+import { Distro, sortCveDistroList } from '../sortUtils';
 
 export type ImageCveMetadata = {
     cve: string;
     firstDiscoveredInSystem: string | null;
+    distroTuples: {
+        summary: string;
+        link: string;
+        operatingSystem: string;
+    }[];
 };
 
 export const imageCveMetadataFragment = gql`
     fragment ImageCVEMetadata on ImageCVECore {
         cve
-        # TODO summary
-        # TODO url
         firstDiscoveredInSystem
+        distroTuples {
+            summary
+            link
+            operatingSystem
+        }
     }
 `;
+
+function getDistroLinkText({ distro }: { distro: Distro }): string {
+    switch (distro) {
+        case 'rhel':
+        case 'centos':
+            return 'View in Red Hat CVE database';
+        case 'ubuntu':
+            return 'View in Ubuntu CVE database';
+        case 'debian':
+            return 'View in Debian CVE database';
+        case 'alpine':
+            return 'View in Alpine Linux CVE database';
+        case 'amzn':
+            return 'View in Amazon Linux CVE database';
+        case 'other':
+            return 'View additional information';
+        default:
+            return ensureExhaustive(distro);
+    }
+}
 
 export type ImageCvePageHeaderProps = {
     data?: ImageCveMetadata;
 };
 
 function ImageCvePageHeader({ data }: ImageCvePageHeaderProps) {
+    const prioritizedDistros = sortCveDistroList(data?.distroTuples ?? []);
+
     return data ? (
         <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexStart' }}>
             <Title headingLevel="h1" className="pf-u-mb-sm">
@@ -34,18 +75,25 @@ function ImageCvePageHeader({ data }: ImageCvePageHeaderProps) {
                     </Label>
                 )}
             </LabelGroup>
-            <Text>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam vel aliquet velit.
-                Nullam quis quam ipsum. Suspendisse sit amet consequat mauris. Nam eget neque dolor.
-                Fusce ultrices, ante ac lobortis maximus, lacus sapien lobortis nunc, eu euismod
-                justo magna in tellus. Sed gravida, nibh ac rhoncus interdum, nunc lacus faucibus
-                tortor, in congue arcu est in est. Pellentesque habitant morbi tristique senectus et
-                netus et malesuada fames ac turpis egestas. Ut in lorem tellus. Aenean at blandit
-                mauris. Phasellus quis mi vitae diam ullamcorper dictum.
-            </Text>
-            <Button className="pf-u-pl-0" variant="link" href="#TODO">
-                View in Red Hat CVE database (TODO)
-            </Button>
+            {prioritizedDistros.length > 0 && (
+                <>
+                    <Text>{prioritizedDistros[0].summary}</Text>
+                    <List isPlain>
+                        {prioritizedDistros.map((distro) => (
+                            <ListItem key={distro.operatingSystem}>
+                                <a
+                                    className="pf-u-pl-0"
+                                    href={distro.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    {getDistroLinkText(distro)}
+                                </a>
+                            </ListItem>
+                        ))}
+                    </List>
+                </>
+            )}
         </Flex>
     ) : (
         <Flex

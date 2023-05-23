@@ -64,6 +64,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Blob, reader io.Rea
 		if err := lo.Truncate(0); err != nil {
 			return wrapRollback(ctx, tx, errors.Wrapf(err, "truncating blob with oid %d", existingBlob.GetOid()))
 		}
+		obj.Oid = existingBlob.GetOid()
 	} else {
 		oid, err := los.Create(ctx, 0)
 		if err != nil {
@@ -76,8 +77,11 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Blob, reader io.Rea
 		obj.Oid = oid
 	}
 	buf := make([]byte, 1024*1024)
+
+	var totalRead int64
 	for {
 		nRead, err := reader.Read(buf)
+		totalRead += int64(nRead)
 
 		if nRead != 0 {
 			if _, err := lo.Write(buf[:nRead]); err != nil {
@@ -95,6 +99,9 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Blob, reader io.Rea
 	}
 	if err := lo.Close(); err != nil {
 		return wrapRollback(ctx, tx, errors.Wrap(err, "closing large object for blob"))
+	}
+	if totalRead != obj.GetLength() {
+		return wrapRollback(ctx, tx, errors.Errorf("Blob metadata mismatch. Blob metadata shows %d in length, but data has length of %d", obj.GetLength(), totalRead))
 	}
 
 	if err := s.store.Upsert(ctx, obj); err != nil {
@@ -124,8 +131,10 @@ func (s *storeImpl) Get(ctx context.Context, name string, writer io.Writer) (*st
 	}
 
 	buf := make([]byte, 1024*1024)
+	var totalRead int64
 	for {
 		nRead, err := lo.Read(buf)
+		totalRead += int64(nRead)
 
 		// nRead can be non-zero when err == io.EOF
 		if nRead != 0 {
@@ -138,11 +147,16 @@ func (s *storeImpl) Get(ctx context.Context, name string, writer io.Writer) (*st
 			if err == io.EOF {
 				break
 			}
+			return nil, false, wrapRollback(ctx, tx, errors.Wrap(err, "reading blob"))
 		}
 	}
 	if err := lo.Close(); err != nil {
 		err = errors.Wrap(err, "closing large object for blob")
 		return nil, false, wrapRollback(ctx, tx, err)
+	}
+
+	if totalRead != existingBlob.GetLength() {
+		return nil, false, wrapRollback(ctx, tx, errors.Errorf("Blob %s corrupted. Blob metadata shows %d in length, but data has length of %d", existingBlob.GetName(), existingBlob.GetLength(), totalRead))
 	}
 
 	return existingBlob, true, tx.Commit(ctx)

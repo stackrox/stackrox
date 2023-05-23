@@ -11,15 +11,21 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - A default role `Vulnerability Manager` has been added that provides sufficient privileges to analyze and manage system vulnerabilities.
 - A default role `Network Graph Viewer` has been added that provides sufficient privileges to display network graphs.
 - A new command `roxctl central login` has been added that allows to use a user's token within roxctl instead of an API token or admin password.
+- ROX-16696: A new DelegatedRegistryConfig API at `/v1/delegatedregistryconfig` has been added that provides dynamic configuration for local registry scanning (replaces `ROX_FORCE_LOCAL_IMAGE_SCANNING`).
 
 ### Removed Features
+- ROX-17031: env var `ROX_FORCE_LOCAL_IMAGE_SCANNING` has been removed and replaced by the DelegatedRegistryConfig API 
 
 ### Deprecated Fatures
 
 ### Technical Changes
 - The output of `roxctl central whoami` now includes the username as well.
-
-- Helm setting `collector.nodeInventoryResources` has been renamed to `collector.nodeScanningResources`
+- Helm setting `collector.nodeInventoryResources` has been renamed to `collector.nodeScanningResources`.
+- ROX-16959: Helm setting `admissionController.replicas` has been added to configure admission controller replicas.
+- The k8s-istio.zip file inside of scanner-vuln-updates.zip (the file downloaded from https://install.stackrox.io/scanner/scanner-vuln-updates.zip for updating Scanner vulnerabilities in offline-mode)
+  is no longer needed. We will continue to populate it to support older versions of the product, but it will be ignored.
+- The time interval used to determine the frequency to scan orchestrator-level components (Kubernetes, OpenShift, Istio) is now configurable
+  via ROX_ORCHESTRATOR_VULN_SCAN_INTERVAL.
 
 ## [4.0.0]
 
