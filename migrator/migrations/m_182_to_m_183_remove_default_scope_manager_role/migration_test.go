@@ -50,19 +50,13 @@ func (s *migrationTestSuite) TearDownTest() {
 }
 
 const (
-	scopeManagerDescription   = "For users: use it to create and modify scopes for the purpose of access control or vulnerability reporting"
-	unrestrictedAccessScopeID = "ffffffff-ffff-fff4-f5ff-ffffffffffff"
-
-	access     = "Access"
-	cluster    = "Cluster"
 	deployment = "Deployment"
-	namespace  = "Namespace"
 )
 
 var (
 	defaultScopeManagerRole = &storage.Role{
-		Name:            ScopeManagerRoleName,
-		Description:     scopeManagerDescription,
+		Name:            scopeManagerObjectName,
+		Description:     oldScopeManagerDescription,
 		PermissionSetId: scopeManagerPermissionSetID,
 		AccessScopeId:   unrestrictedAccessScopeID,
 		Traits: &storage.Traits{
@@ -72,8 +66,8 @@ var (
 
 	defaultScopeManagerPermissionSet = &storage.PermissionSet{
 		Id:          scopeManagerPermissionSetID,
-		Name:        ScopeManagerRoleName,
-		Description: scopeManagerDescription,
+		Name:        scopeManagerObjectName,
+		Description: oldScopeManagerDescription,
 		ResourceToAccess: map[string]storage.Access{
 			access:    storage.Access_READ_ACCESS,
 			cluster:   storage.Access_READ_ACCESS,
@@ -85,27 +79,23 @@ var (
 	}
 
 	migratedScopeManagerRole = &storage.Role{
-		Name:            deprecatedPrefix + ScopeManagerRoleName,
-		Description:     scopeManagerDescription + deprecatedDescriptionSuffix,
+		Name:            scopeManagerObjectName,
+		Description:     oldScopeManagerDescription + updatedDescriptionSuffix,
 		PermissionSetId: scopeManagerPermissionSetID,
 		AccessScopeId:   unrestrictedAccessScopeID,
-		Traits: &storage.Traits{
-			Origin: storage.Traits_IMPERATIVE,
-		},
+		Traits:          imperativeObjectTraits,
 	}
 
 	migratedScopeManagerPermissionSet = &storage.PermissionSet{
 		Id:          scopeManagerPermissionSetID,
-		Name:        deprecatedPrefix + ScopeManagerRoleName,
-		Description: scopeManagerDescription + deprecatedDescriptionSuffix,
+		Name:        scopeManagerObjectName,
+		Description: oldScopeManagerDescription + updatedDescriptionSuffix,
 		ResourceToAccess: map[string]storage.Access{
-			access:    storage.Access_READ_ACCESS,
+			access:    storage.Access_READ_WRITE_ACCESS,
 			cluster:   storage.Access_READ_ACCESS,
 			namespace: storage.Access_READ_ACCESS,
 		},
-		Traits: &storage.Traits{
-			Origin: storage.Traits_IMPERATIVE,
-		},
+		Traits: imperativeObjectTraits,
 	}
 
 	otherPermissionSet = &storage.PermissionSet{
@@ -118,9 +108,7 @@ var (
 			deployment: storage.Access_READ_ACCESS,
 			namespace:  storage.Access_READ_ACCESS,
 		},
-		Traits: &storage.Traits{
-			Origin: storage.Traits_IMPERATIVE,
-		},
+		Traits: imperativeObjectTraits,
 	}
 
 	testRoleNoRef = &storage.Role{
@@ -128,9 +116,7 @@ var (
 		Description:     "A role for testing purpose",
 		PermissionSetId: "12345678-9ABC-DEF0-8888-FFFFFFFFFFFF",
 		AccessScopeId:   unrestrictedAccessScopeID,
-		Traits: &storage.Traits{
-			Origin: storage.Traits_IMPERATIVE,
-		},
+		Traits:          imperativeObjectTraits,
 	}
 
 	testRoleWithReference = &storage.Role{
@@ -138,9 +124,7 @@ var (
 		Description:     "Another role for testing purpose",
 		PermissionSetId: scopeManagerPermissionSetID,
 		AccessScopeId:   unrestrictedAccessScopeID,
-		Traits: &storage.Traits{
-			Origin: storage.Traits_IMPERATIVE,
-		},
+		Traits:          imperativeObjectTraits,
 	}
 
 	testAPITokenNoRef = &storage.TokenMetadata{
@@ -155,16 +139,7 @@ var (
 	testAPITokenWithReference = &storage.TokenMetadata{
 		Id:         "12345678-9ABC-DEF0-AAAA-333333333333",
 		Name:       "Test Token 2",
-		Roles:      []string{ScopeManagerRoleName, "Vulnerability Management Requester"},
-		IssuedAt:   getTime("17/12/2003"),
-		Expiration: getTime("17/12/2004"),
-		Revoked:    false,
-	}
-
-	migratedTestAPITokenWithReference = &storage.TokenMetadata{
-		Id:         "12345678-9ABC-DEF0-AAAA-333333333333",
-		Name:       "Test Token 2",
-		Roles:      []string{deprecatedPrefix + ScopeManagerRoleName, "Vulnerability Management Requester"},
+		Roles:      []string{scopeManagerObjectName, "Vulnerability Management Requester"},
 		IssuedAt:   getTime("17/12/2003"),
 		Expiration: getTime("17/12/2004"),
 		Revoked:    false,
@@ -193,20 +168,7 @@ var (
 			Key:            "Mem",
 			Value:          "Cache",
 		},
-		RoleName: ScopeManagerRoleName,
-	}
-
-	migratedTestGroupWithReference = &storage.Group{
-		Props: &storage.GroupProperties{
-			Id: "12345678-9ABC-DEF0-CCCC-222222222222",
-			Traits: &storage.Traits{
-				Origin: storage.Traits_IMPERATIVE,
-			},
-			AuthProviderId: "12345678-9ABC-DEF0-EEEE-EEEEEEEEEEEE",
-			Key:            "Mem",
-			Value:          "Cache",
-		},
-		RoleName: deprecatedPrefix + ScopeManagerRoleName,
+		RoleName: scopeManagerObjectName,
 	}
 )
 
@@ -231,20 +193,20 @@ func (s *migrationTestSuite) TestMigrationNoReference() {
 		testRoleNoRef,
 	}
 
-	// No change
+	// No change.
 	expectedAPITokens := []*storage.TokenMetadata{
 		testAPITokenNoRef,
 	}
-	// No change
+	// No change.
 	expectedGroups := []*storage.Group{
 		testGroupNoRef,
 	}
 	// No reference to default Scope Manager permission set (except from default role)
-	// leads to permission set deletion
+	// leads to permission set deletion.
 	expectedPermissionSets := []*storage.PermissionSet{
 		otherPermissionSet,
 	}
-	// No reference to default Scope Manager role leads to role deletion
+	// No reference to default Scope Manager role leads to role deletion.
 	expectedRoles := []*storage.Role{
 		testRoleNoRef,
 	}
@@ -278,21 +240,21 @@ func (s *migrationTestSuite) TestMigrationPermissionSetReferenceOnly() {
 		testRoleWithReference,
 	}
 
-	// No change
+	// No change.
 	expectedAPITokens := []*storage.TokenMetadata{
 		testAPITokenNoRef,
 	}
-	// No change
+	// No change.
 	expectedGroups := []*storage.Group{
 		testGroupNoRef,
 	}
 	// Reference from any role (other than default Scope Manager role) to the Scope Manager permission set
-	// leads to permission set migration
+	// leads to permission set migration.
 	expectedPermissionSets := []*storage.PermissionSet{
 		migratedScopeManagerPermissionSet,
 		otherPermissionSet,
 	}
-	// No reference to default Scope Manager role leads to role deletion
+	// No reference to default Scope Manager role leads to role deletion.
 	expectedRoles := []*storage.Role{
 		testRoleNoRef,
 		testRoleWithReference,
@@ -327,22 +289,21 @@ func (s *migrationTestSuite) TestMigrationRoleReferenceFromGroup() {
 		testRoleNoRef,
 	}
 
-	// No change
+	// No change.
 	expectedAPITokens := []*storage.TokenMetadata{
 		testAPITokenNoRef,
 	}
-	// The ScopeManager role is referenced, has to be renamed,
-	// therefore the group holding the reference has to be updated.
+	// No change.
 	expectedGroups := []*storage.Group{
 		testGroupNoRef,
-		migratedTestGroupWithReference,
+		testGroupWithReference,
 	}
 	// As the Scope Manager role is referenced, the permission set is kept in its updated form.
 	expectedPermissionSets := []*storage.PermissionSet{
 		migratedScopeManagerPermissionSet,
 		otherPermissionSet,
 	}
-	// As the Scope Manager role is referenced, it is replaced by the renamed role.
+	// As the Scope Manager role is referenced, it is replaced by the updated role.
 	expectedRoles := []*storage.Role{
 		migratedScopeManagerRole,
 		testRoleNoRef,
@@ -377,13 +338,12 @@ func (s *migrationTestSuite) TestMigrationRoleReferenceFromAPIToken() {
 		testRoleNoRef,
 	}
 
-	// The Scope Manager role is referenced, has to be renamed,
-	// therefore, the API token holding the reference has to be updated.
+	// No change.
 	expectedAPITokens := []*storage.TokenMetadata{
 		testAPITokenNoRef,
-		migratedTestAPITokenWithReference,
+		testAPITokenWithReference,
 	}
-	// No change
+	// No change.
 	expectedGroups := []*storage.Group{
 		testGroupNoRef,
 	}
@@ -392,7 +352,7 @@ func (s *migrationTestSuite) TestMigrationRoleReferenceFromAPIToken() {
 		migratedScopeManagerPermissionSet,
 		otherPermissionSet,
 	}
-	// As the Scope Manager role is referenced, it is replaced by the renamed role.
+	// As the Scope Manager role is referenced, it is replaced by the updated role.
 	expectedRoles := []*storage.Role{
 		migratedScopeManagerRole,
 		testRoleNoRef,
