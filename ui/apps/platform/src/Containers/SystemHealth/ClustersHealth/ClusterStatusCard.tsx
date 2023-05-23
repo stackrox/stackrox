@@ -82,7 +82,7 @@ function ClusterStatusTable({
                                 <TdDegraded count={countsOverall.DEGRADED} />
                                 <TdUnavailable count={countsOverall.UNAVAILABLE} />
                                 <TdUninitialized count={countsOverall.UNINITIALIZED} />
-                                <TdTotal clusters={clusters} />
+                                <TdTotal count={clusters.length} />
                             </Tr>
                             <Tr>
                                 <Th scope="row">Clusters: sensor status</Th>
@@ -91,7 +91,7 @@ function ClusterStatusTable({
                                 <TdDegraded count={countsSensor.DEGRADED} />
                                 <TdUnavailable count={countsSensor.UNAVAILABLE} />
                                 <TdUninitialized count={countsSensor.UNINITIALIZED} />
-                                <TdTotal clusters={clusters} />
+                                <TdTotal count={clusters.length} />
                             </Tr>
                             <Tr>
                                 <Th scope="row">Clusters: collector status</Th>
@@ -100,7 +100,7 @@ function ClusterStatusTable({
                                 <TdDegraded count={countsCollector.DEGRADED} />
                                 <TdUnavailable count={countsCollector.UNAVAILABLE} />
                                 <TdUninitialized count={countsCollector.UNINITIALIZED} />
-                                <TdTotal clusters={clusters} />
+                                <TdTotal count={clusters.length} />
                             </Tr>
                             <Tr>
                                 <Th scope="row">Clusters: admission control status</Th>
@@ -109,7 +109,7 @@ function ClusterStatusTable({
                                 <TdDegraded count={countsAdmissionControl.DEGRADED} />
                                 <TdUnavailable count={countsAdmissionControl.UNAVAILABLE} />
                                 <TdUninitialized count={countsAdmissionControl.UNINITIALIZED} />
-                                <TdTotal clusters={clusters} />
+                                <TdTotal count={clusters.length} />
                             </Tr>
                         </Tbody>
                     </TableComposable>

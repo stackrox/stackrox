@@ -105,14 +105,10 @@ export function TdUninitialized({ count }: TdStatusWithoutDataLabelProps): React
     );
 }
 
-type TdTotalProps = {
-    clusters: unknown[];
-};
-
-export function TdTotal({ clusters }: TdTotalProps): ReactElement {
+export function TdTotal({ count }: TdStatusWithoutDataLabelProps): ReactElement {
     return (
         <Td className="pf-u-text-align-right" dataLabel="Total">
-            {clusters.length}
+            {count}
         </Td>
     );
 }

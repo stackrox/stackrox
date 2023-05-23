@@ -76,7 +76,7 @@ function SensorUpgradeCard({
                                 <TdDegraded count={counts.DEGRADED} dataLabel={dataLabelDegraded} />
                                 <TdUnavailable count={counts.UNAVAILABLE} />
                                 <TdUninitialized count={counts.UNINITIALIZED} />
-                                <TdTotal clusters={clusters} />
+                                <TdTotal count={clusters.length} />
                             </Tr>
                         </Tbody>
                     </TableComposable>
