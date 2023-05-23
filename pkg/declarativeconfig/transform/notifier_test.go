@@ -67,6 +67,7 @@ func TestTransformGenericNotifier(t *testing.T) {
 	assert.Equal(t, notifier.Name, notifierProto.GetName())
 
 	assert.Equal(t, "generic", notifierProto.GetType())
+	assert.Nil(t, notifierProto.GetSplunk())
 	assert.Equal(t, notifier.GenericConfig.Endpoint, notifierProto.GetGeneric().GetEndpoint())
 	assert.Equal(t, notifier.GenericConfig.Password, notifierProto.GetGeneric().GetPassword())
 	assert.Equal(t, notifier.GenericConfig.Username, notifierProto.GetGeneric().GetUsername())
@@ -122,6 +123,7 @@ func TestTransformSplunkNotifier(t *testing.T) {
 	assert.Equal(t, notifier.Name, notifierProto.GetName())
 
 	assert.Equal(t, "splunk", notifierProto.GetType())
+	assert.Nil(t, notifierProto.GetGeneric())
 	assert.Equal(t, notifier.SplunkConfig.HTTPEndpoint, notifierProto.GetSplunk().GetHttpEndpoint())
 	assert.Equal(t, notifier.SplunkConfig.HTTPToken, notifierProto.GetSplunk().GetHttpToken())
 	assert.Equal(t, notifier.SplunkConfig.Truncate, notifierProto.GetSplunk().GetTruncate())
