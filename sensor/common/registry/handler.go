@@ -11,7 +11,7 @@ import (
 )
 
 // DelegatedRegistryConfigHandler is responsible for processing delegated
-// registry config updates from central
+// registry config updates from central.
 type DelegatedRegistryConfigHandler interface {
 	common.SensorComponent
 }
@@ -21,7 +21,7 @@ type delegatedRegistryConfigImpl struct {
 	stopSig       concurrency.Signal
 }
 
-// NewDelegatedRegistryConfigHandler returns a new instance of DelegatedRegistryConfigHandler
+// NewDelegatedRegistryConfigHandler returns a new instance of DelegatedRegistryConfigHandler.
 func NewDelegatedRegistryConfigHandler(registryStore *Store) DelegatedRegistryConfigHandler {
 	return &delegatedRegistryConfigImpl{
 		registryStore: registryStore,
@@ -46,7 +46,7 @@ func (d *delegatedRegistryConfigImpl) ProcessMessage(msg *central.MsgToSensor) e
 		return nil
 	}
 
-	config := msg.GetUpdatedDelegatedRegistryConfig()
+	config := msg.GetDelegatedRegistryConfig()
 	if config == nil {
 		return nil
 	}

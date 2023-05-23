@@ -50,8 +50,11 @@ func (DelegatedRegistryConfig_EnabledFor) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_30d07a7caba3ce27, []int{0, 0}
 }
 
-// DelegatedRegistryConfig determines how to handle scan requests
-// Refer to v1.DelegatedRegistryConfig for more detailed docs
+// DelegatedRegistryConfig determines how to handle scan requests.
+//
+// Refer to v1.DelegatedRegistryConfig for more detailed docs.
+//
+// Any changes made to this message must also be reflected in central/delegatedregistryconfig/convert/convert.go.
 type DelegatedRegistryConfig struct {
 	EnabledFor           DelegatedRegistryConfig_EnabledFor           `protobuf:"varint,1,opt,name=enabled_for,json=enabledFor,proto3,enum=central.DelegatedRegistryConfig_EnabledFor" json:"enabled_for,omitempty"`
 	DefaultClusterId     string                                       `protobuf:"bytes,2,opt,name=default_cluster_id,json=defaultClusterId,proto3" json:"default_cluster_id,omitempty"`

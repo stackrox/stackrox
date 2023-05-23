@@ -468,8 +468,8 @@ func (c *sensorConnection) getDelegatedRegistryConfigMsg(ctx context.Context) (*
 	}
 
 	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_UpdatedDelegatedRegistryConfig{
-			UpdatedDelegatedRegistryConfig: delegatedRegistryConfigConvert.StorageToInternalAPI(config),
+		Msg: &central.MsgToSensor_DelegatedRegistryConfig{
+			DelegatedRegistryConfig: delegatedRegistryConfigConvert.StorageToInternalAPI(config),
 		},
 	}, nil
 
@@ -523,7 +523,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 				return errors.Wrapf(err, "unable to sync initial delegated registry config to cluster %q", c.clusterID)
 			}
 
-			log.Debugf("Sent delegated registry config %q to cluster %q", msg.GetUpdatedDelegatedRegistryConfig(), c.clusterID)
+			log.Debugf("Sent delegated registry config %q to cluster %q", msg.GetDelegatedRegistryConfig(), c.clusterID)
 		}
 	}
 

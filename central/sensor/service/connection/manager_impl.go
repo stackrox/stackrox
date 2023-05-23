@@ -108,6 +108,7 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 	m.baselines = baselineManager
 	m.networkBaselines = networkBaselineManager
 	m.delegatedRegistryConfigMgr = delegatedRegistryConfigManager
+	m.autoTriggerUpgrades = autoTriggerUpgrades
 	err := m.initializeUpgradeControllers()
 	if err != nil {
 		return errors.Wrap(err, "failed to initialize upgrade controllers")

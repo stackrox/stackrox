@@ -41,7 +41,7 @@ var (
 	})
 )
 
-// Service provides the interface to modify the delegated registry config
+// Service provides the interface to modify the delegated registry config.
 type Service interface {
 	pkgGRPC.APIService
 
@@ -82,7 +82,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-// GetConfig returns Central's delegated registry config
+// GetConfig returns Central's delegated registry config.
 func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*v1.DelegatedRegistryConfig, error) {
 	config, exists, err := s.dataStore.GetConfig(ctx)
 	if err != nil {
@@ -93,11 +93,11 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*v1.Delegated
 		return &v1.DelegatedRegistryConfig{}, nil
 	}
 
-	return convert.StorageToAPI(config), nil
+	return convert.StorageToPublicAPI(config), nil
 }
 
 // GetClusters returns the list of all clusters (id + name + valid flag). The valid flag indicates that
-// central can delegate registry interactions (scanning, signature validation, etc.) to that cluster
+// central can delegate registry interactions (scanning, signature verification, etc.) to that cluster
 // and therefore that cluster is valid for use in the DelegatedRegistryConfig.
 func (s *serviceImpl) GetClusters(ctx context.Context, _ *v1.Empty) (*v1.DelegatedRegistryClustersResponse, error) {
 	clusters, err := s.getClusters(ctx)
@@ -114,10 +114,10 @@ func (s *serviceImpl) GetClusters(ctx context.Context, _ *v1.Empty) (*v1.Delegat
 	}, nil
 }
 
-// UpdateConfig updates Central's delegated registry config
+// UpdateConfig updates Central's delegated registry config.
 func (s *serviceImpl) UpdateConfig(ctx context.Context, config *v1.DelegatedRegistryConfig) (*v1.DelegatedRegistryConfig, error) {
 	if config == nil {
-		return nil, fmt.Errorf("%w: %v", errox.InvalidArgs, "config missing")
+		return nil, errox.InvalidArgs.CausedBy("config missing")
 	}
 
 	// get the clusters ids for validation and broadcast
@@ -128,18 +128,18 @@ func (s *serviceImpl) UpdateConfig(ctx context.Context, config *v1.DelegatedRegi
 
 	// validate the config
 	if err := s.validate(config, clusterIDs); err != nil {
-		return nil, fmt.Errorf("%w: %v", errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.CausedBy(err.Error())
 	}
 
 	// persist the config
-	if err := s.dataStore.UpsertConfig(ctx, convert.APIToStorage(config)); err != nil {
+	if err := s.dataStore.UpsertConfig(ctx, convert.PublicAPIToStorage(config)); err != nil {
 		return nil, fmt.Errorf("upserting config %w", err)
 	}
 
 	// broadcast the config
 	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_UpdatedDelegatedRegistryConfig{
-			UpdatedDelegatedRegistryConfig: convert.APIToInternalAPI(config),
+		Msg: &central.MsgToSensor_DelegatedRegistryConfig{
+			DelegatedRegistryConfig: convert.PublicAPIToInternalAPI(config),
 		},
 	}
 
@@ -183,7 +183,7 @@ func (s *serviceImpl) validate(config *v1.DelegatedRegistryConfig, validClusters
 // getClusters returns all clusters, the clusters with valid set to true can be used as in a
 // DelegatedRegistryConfig. All clusters are returned instead of just valid clusters
 // so that a consumer (ie: the UI) can show the friendly name of clusters that may no longer
-// be valid (but once were)
+// be valid (but once were).
 func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryCluster, error) {
 	clusters, err := s.clusterDataStore.GetClusters(ctx)
 	if err != nil {
@@ -210,7 +210,7 @@ func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryC
 	return res, nil
 }
 
-// getValidClusterIDs returns a set of cluster ids that are valid for use in a DelegatedRegistryConfig
+// getValidClusterIDs returns a set of cluster ids that are valid for use in a DelegatedRegistryConfig.
 func (s *serviceImpl) getValidClusterIDs(ctx context.Context) (set.Set[string], error) {
 	clusters, err := s.getClusters(ctx)
 	if err != nil {

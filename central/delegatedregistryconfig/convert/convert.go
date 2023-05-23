@@ -1,7 +1,7 @@
 // Package convert provides utility functions for converting between the various
 // DelegatedRegistryConfig types.
 //   - "Storage"     (storage.DelegatedRegistryConfig) - for persistance
-//   - "API"         (v1.DelegatedRegistryConfig)      - for exposed REST/GRPC API
+//   - "PublicAPI"   (v1.DelegatedRegistryConfig)      - for exposed REST/gRPC API
 //   - "InternalAPI" (central.DelegatedRegistryConfig) - for central/sensor inner API
 package convert
 
@@ -11,9 +11,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// StorageToAPI converts a delegated registry config from the type used by storage (db) to
-// the type used by the GRPC/REST API
-func StorageToAPI(from *storage.DelegatedRegistryConfig) *v1.DelegatedRegistryConfig {
+// StorageToPublicAPI converts a delegated registry config from the type used by storage (db) to
+// the type used by the gRPC/REST API.
+func StorageToPublicAPI(from *storage.DelegatedRegistryConfig) *v1.DelegatedRegistryConfig {
 	if from == nil {
 		return nil
 	}
@@ -41,9 +41,9 @@ func StorageToAPI(from *storage.DelegatedRegistryConfig) *v1.DelegatedRegistryCo
 	}
 }
 
-// APIToStorage converts a delegated registry config from the type used by the GRPC/REST API
-// to the type used by storage (db)
-func APIToStorage(from *v1.DelegatedRegistryConfig) *storage.DelegatedRegistryConfig {
+// PublicAPIToStorage converts a delegated registry config from the type used by the gRPC/REST API
+// to the type used by storage (db).
+func PublicAPIToStorage(from *v1.DelegatedRegistryConfig) *storage.DelegatedRegistryConfig {
 	if from == nil {
 		return nil
 	}
@@ -71,9 +71,9 @@ func APIToStorage(from *v1.DelegatedRegistryConfig) *storage.DelegatedRegistryCo
 	}
 }
 
-// APIToInternalAPI converts a delegated registry config from the type used by the GRPC/REST API
-// to the type used by central/sensor inner apis
-func APIToInternalAPI(from *v1.DelegatedRegistryConfig) *central.DelegatedRegistryConfig {
+// PublicAPIToInternalAPI converts a delegated registry config from the type used by the gRPC/REST API
+// to the type used by central/sensor inner apis.
+func PublicAPIToInternalAPI(from *v1.DelegatedRegistryConfig) *central.DelegatedRegistryConfig {
 	if from == nil {
 		return nil
 	}
@@ -102,7 +102,7 @@ func APIToInternalAPI(from *v1.DelegatedRegistryConfig) *central.DelegatedRegist
 }
 
 // StorageToInternalAPI converts a delegated registry config from the type used by the storage (db) to
-// the type used by central/sensor inner apis
+// the type used by central/sensor inner apis.
 func StorageToInternalAPI(from *storage.DelegatedRegistryConfig) *central.DelegatedRegistryConfig {
 	if from == nil {
 		return nil

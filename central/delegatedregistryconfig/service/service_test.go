@@ -25,7 +25,7 @@ import (
 
 var (
 	fakeConnWithCap    = &fakeSensorConn{hasCap: true}
-	fakeConnWithOutCap = &fakeSensorConn{hasCap: false}
+	fakeConnWithoutCap = &fakeSensorConn{hasCap: false}
 
 	none     = v1.DelegatedRegistryConfig_NONE
 	all      = v1.DelegatedRegistryConfig_ALL
@@ -89,7 +89,7 @@ func TestGetClustersSuccess(t *testing.T) {
 		conn  *fakeSensorConn
 		valid bool
 	}{
-		"without cap": {fakeConnWithOutCap, false},
+		"without cap": {fakeConnWithoutCap, false},
 		"with cap":    {fakeConnWithCap, true}, // only healthy scanners are valid
 	}
 
@@ -111,7 +111,7 @@ func TestGetClustersSuccess(t *testing.T) {
 		cluster2 := &storage.Cluster{Id: "id2"}
 		clustersDS.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{cluster1, cluster2}, nil)
 		connMgr.EXPECT().GetConnection("id1").Return(fakeConnWithCap)
-		connMgr.EXPECT().GetConnection("id2").Return(fakeConnWithOutCap)
+		connMgr.EXPECT().GetConnection("id2").Return(fakeConnWithoutCap)
 		resp, err = s.GetClusters(context.Background(), empty)
 		assert.NoError(t, err)
 		require.Len(t, resp.Clusters, 2)
@@ -169,13 +169,11 @@ func TestPutConfigError(t *testing.T) {
 			Registries:       regs,
 		}
 	}
-	_ = genCfg
 
 	multiClusters := []*storage.Cluster{
 		{Id: "id1"},
 		{Id: "id2"},
 	}
-	_ = multiClusters
 
 	tt := map[string]struct {
 		cfg                 *v1.DelegatedRegistryConfig
@@ -193,8 +191,6 @@ func TestPutConfigError(t *testing.T) {
 		"multi cluster invalid registry path":                   {genCfg(specific, "fake", []string{"id1"}), multiClusters, "missing registry path", false, nil, true, nil},
 		"multi cluster invalid registry id and path (id msg)":   {genCfg(specific, "fake", []string{"fake"}), multiClusters, "is not valid", false, nil, true, nil},
 		"multi cluster invalid registry id and path (path msg)": {genCfg(specific, "fake", []string{"fake"}), multiClusters, "missing registry path", false, nil, true, nil},
-		// "enabled for all missing default id": {genCfg(all, "", nil), nil, "default cluster id required", true, nil, true, nil},
-		// "enabled for specific missing default id": {genCfg(specific, "", nil), nil, "default cluster id required", true, nil, true, nil},
 	}
 
 	clustersDS := clusterDSMocks.NewMockDataStore(gomock.NewController(t))
@@ -229,7 +225,7 @@ func TestUpdateConfigSuccess(t *testing.T) {
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
 	connMgr := connMgrMocks.NewMockManager(gomock.NewController(t))
 	connMgr.EXPECT().GetConnection("id1").Return(fakeConnWithCap).AnyTimes()
-	connMgr.EXPECT().GetConnection("id2").Return(fakeConnWithOutCap).AnyTimes()
+	connMgr.EXPECT().GetConnection("id2").Return(fakeConnWithoutCap).AnyTimes()
 
 	s := New(deleClusterDS, clustersDS, connMgr)
 	clustersDS.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{{Id: "id1"}, {Id: "id2"}}, nil).AnyTimes()
