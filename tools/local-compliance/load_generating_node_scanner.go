@@ -27,7 +27,7 @@ func (n *LoadGeneratingNodeScanner) Connect(_ string) {}
 
 // GetIntervals returns an object with delay-intervals between scans
 func (n *LoadGeneratingNodeScanner) GetIntervals() *intervals.NodeScanIntervals {
-	return intervals.NewNodeScanInterval(100*time.Millisecond, 0.0, time.Second)
+	return intervals.NewNodeScanInterval(1000*time.Millisecond, 0.0, time.Second)
 }
 
 // ScanNode generates a MsgFromCompliance with node scan
