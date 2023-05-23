@@ -34,8 +34,6 @@ ci_exit_trap() {
     info "Executing a general purpose exit trap for CI"
     echo "Exit code is: ${exit_code}"
 
-    (send_slack_notice_for_failures_on_merge "${exit_code}") || { echo "ERROR: Could not slack a test failure message"; }
-
     while [[ -e /tmp/hold ]]; do
         info "Holding this job for debug"
         sleep 60
@@ -1166,15 +1164,6 @@ store_test_results() {
 
     local from="$1"
     local to="$2"
-
-    if ! is_in_PR_context; then
-    {
-        info "Creating JIRA task for failures found in $from"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.3/junit2jira -o junit2jira && \
-        chmod +x junit2jira && \
-        ./junit2jira -junit-reports-dir "$from" -threshold 5
-    } || true
-    fi
 
     info "Copying test results from $from to $to"
 
