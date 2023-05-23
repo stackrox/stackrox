@@ -5,9 +5,7 @@ import (
 	"io"
 
 	"github.com/stackrox/rox/central/blob/datastore/store"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search"
 )
 
 // Datastore provides access to the blob store
@@ -16,20 +14,17 @@ type Datastore interface {
 	Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error
 	Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error)
 	Delete(ctx context.Context, name string) error
-	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)
 }
 
 // NewDatastore creates a new Blob datastore
-func NewDatastore(store store.Store, searcher search.Searcher) Datastore {
+func NewDatastore(store store.Store) Datastore {
 	return &datastoreImpl{
-		store:    store,
-		searcher: searcher,
+		store: store,
 	}
 }
 
 type datastoreImpl struct {
-	store    store.Store
-	searcher search.Searcher
+	store store.Store
 }
 
 // Upsert adds a new blob to the database
@@ -45,11 +40,6 @@ func (d *datastoreImpl) Get(ctx context.Context, name string, writer io.Writer) 
 // Delete removes a blob store from database
 func (d *datastoreImpl) Delete(ctx context.Context, name string) error {
 	return d.store.Delete(ctx, name)
-}
-
-// Search blobs
-func (d *datastoreImpl) Search(ctx context.Context, query *v1.Query) ([]search.Result, error) {
-	return d.searcher.Search(ctx, query)
 }
 
 // GetNames return all blob names
