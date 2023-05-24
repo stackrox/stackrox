@@ -31,9 +31,13 @@ var (
 			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 
-	blobAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+	blobAccessWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
+	blobAccessReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
 )
 
@@ -154,7 +158,7 @@ func (g *defaultExtSrcsGathererImpl) loadLocalChecksum(store blobstore.Datastore
 	if len(g.currentChecksum) > 0 {
 		return g.currentChecksum, nil
 	}
-	buf, _, exists, err := store.GetBlobWithDataInBuffer(blobAccessCtx, defaultexternalsrcs.LocalChecksumBlobPath)
+	buf, _, exists, err := store.GetBlobWithDataInBuffer(blobAccessReadCtx, defaultexternalsrcs.LocalChecksumBlobPath)
 	if err != nil || !exists {
 		return nil, err
 	}
@@ -170,7 +174,7 @@ func (g *defaultExtSrcsGathererImpl) writeChecksumLocally(store blobstore.Datast
 		ModifiedTime: timestamp.TimestampNow(),
 	}
 	buf := bytes.NewBuffer(checksum)
-	if err := store.Upsert(blobAccessCtx, b, buf); err != nil {
+	if err := store.Upsert(blobAccessWriteCtx, b, buf); err != nil {
 		return errors.Wrapf(err, "writing provider networks checksum %s", defaultexternalsrcs.LocalChecksumBlobPath)
 	}
 	g.currentChecksum = checksum
