@@ -89,7 +89,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		log.Errorf("enriching node %s: %v", nodeDatastore.NodeString(node), err)
 		return errors.WithMessagef(err, "enrinching node %s", nodeDatastore.NodeString(node))
 	}
-	log.Infof("scanned inventory from node %s with %d components", nodeDatastore.NodeString(node),
+	log.Infof("Scanned node inventory %s with %d components", nodeDatastore.NodeString(node),
 		len(node.GetScan().GetComponents()))
 
 	// Update the whole node in the database with the new and previous information.
@@ -102,9 +102,9 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	if injector != nil {
 		reply := replyCompliance(node.GetClusterId(), ninv.GetNodeName(), central.NodeInventoryACK_ACK)
 		if err := injector.InjectMessage(ctx, reply); err != nil {
-			log.Warnf("Failed sending node-inventory ACK to Sensor for %s: %v", nodeDatastore.NodeString(node), err)
+			log.Warnf("Failed sending node-scanning-ACK to Sensor for %s: %v", nodeDatastore.NodeString(node), err)
 		} else {
-			log.Debugf("Sent ACK for node-inventory %s", nodeDatastore.NodeString(node))
+			log.Debugf("Sent node-scanning-ACK for %s", nodeDatastore.NodeString(node))
 		}
 	}
 	return nil

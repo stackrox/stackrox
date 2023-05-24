@@ -79,7 +79,7 @@ func (c *nodeInventoryHandlerImpl) ProcessMessage(msg *central.MsgToSensor) erro
 	if ackMsg == nil {
 		return nil
 	}
-	log.Debugf("Received node-inventory ACK message: %v", ackMsg)
+	log.Debugf("Received node-scanning-ACK message: %v", ackMsg)
 	return nil
 }
 
