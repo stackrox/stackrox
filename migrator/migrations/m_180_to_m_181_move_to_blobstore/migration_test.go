@@ -83,7 +83,7 @@ func (s *blobMigrationTestSuite) TestScannerDefinitionMigration() {
 	s.Equal(fileInfo.ModTime().UTC(), modTime.UTC())
 
 	// Verify Data
-	buf := bytes.NewBuffer([]byte{})
+	buf := bytes.NewBuffer(nil)
 
 	tx := s.db.GetGormDB().Begin()
 	s.Require().NoError(err)
@@ -136,7 +136,7 @@ func (s *blobMigrationTestSuite) TestUploadProbeMigration() {
 	s.EqualValues(len(data), blob.GetLength())
 
 	// Verify Data
-	buf := bytes.NewBuffer([]byte{})
+	buf := bytes.NewBuffer(nil)
 
 	tx := s.db.GetGormDB().Begin()
 	s.Require().NoError(err)

@@ -94,7 +94,7 @@ func (s *managerTestSuite) TestLoadProbeFile() {
 	s.NoError(err)
 	s.EqualValues(len(data), length)
 
-	buf := bytes.NewBuffer([]byte{})
+	buf := bytes.NewBuffer(nil)
 	n, err := io.Copy(buf, reader)
 	s.Require().NoError(err)
 	s.EqualValues(n, len(data))
