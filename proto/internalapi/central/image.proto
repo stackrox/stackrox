@@ -1,8 +1,3 @@
-
-// scan image
-// test image integration
-// TOOD: Rename this proto file?
-
 syntax = "proto3";
 
 option go_package = "central";
@@ -10,28 +5,12 @@ option go_package = "central";
 package central;
 
 message ScanImage {
-    // request id to map responses to waiting 'scan'
+    // request id is used to map scan results to a waiting goroutine
     string request_id = 1;
 
     // full image name ie: <registry>/something/nginx:1.2.3
-    string image_name  = 5;
+    string image_name = 2;
 
-    // TBD
-    // bool forced = 6;
+    // force will cause central and sensor caches to be ignored
+    bool   force      = 3;
 }
-
-// message TestImageIntegration {
-
-// }
-
-// message ImageIntegrationsUpdated {
-//     repeated ImageIntegration integrations = 1;
-// }
-
-// from v1/image.proto / whats used by roxctl
-// TODO: Determine if snoozed needs to be sent to sensor
-// message ScanImageRequest {
-//     string image_name      = 1;
-//     bool   force           = 2;
-//     // bool   include_snoozed = 3;
-// }

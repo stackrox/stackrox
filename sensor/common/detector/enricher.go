@@ -91,7 +91,7 @@ func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanIma
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
-	img, err := localScan.EnrichLocalImageInNamespace(ctx, svc, req.containerImage, req.namespace, "")
+	img, err := localScan.EnrichLocalImageInNamespace(ctx, svc, req.containerImage, req.namespace, "", false)
 
 	return &v1.ScanImageInternalResponse{
 		Image: img,

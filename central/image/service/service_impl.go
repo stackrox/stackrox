@@ -388,7 +388,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	defer s.internalScanSemaphore.Release(1)
 
 	if request.GetRequestId() != "" {
-		log.Debugf("Received enrich request for id %q: %q", request.GetRequestId(), request.GetImageName().GetFullName())
+		log.Debugf("Received delegated enrich request for id %q: %q", request.GetRequestId(), request.GetImageName().GetFullName())
 	}
 
 	var hasErrors bool
@@ -404,8 +404,8 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	forceSigVerificationUpdate := true
 	forceScanUpdate := true
 	imgID := request.GetImageId()
-	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the images.
-	if imgID != "" {
+	// Always pull the image from the store if the ID != "" and rescan is not forced. Central will manage the reprocessing over the images.
+	if imgID != "" && !request.GetForce() {
 		var existingImg *storage.Image
 		existingImg, imgExists, err = s.datastore.GetImage(ctx, imgID)
 		if err != nil {

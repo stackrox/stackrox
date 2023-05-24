@@ -129,42 +129,68 @@ func (e *enricherImpl) EnrichWithSignatureVerificationData(ctx context.Context, 
 	}, err
 }
 
-func (e *enricherImpl) delegateEnrich(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (bool, error) {
+// delegateEnrichImage returns true if enrichment for this image should be delegated (not enriched in central). If true
+// and no error image was enriched or obtained from cache successfully
+func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (bool, error) {
 	if !enrichContext.AdHoc {
-		// If this is not an ad-hoc request do not be attempt to delegate to a secured cluster
+		// If this is not an adhoc request do not be attempt to delegate to a secured cluster
 		return false, nil
 	}
 
-	clusterID, err := e.scanDelegator.GetDelegateClusterID(ctx, image)
-	if err != nil {
-		if errors.Is(err, delegatedregistryconfig.ErrInvalidCluster) {
-			return true, err
-		}
-		// On any other error we assume should not delegate
-		return false, err
+	clusterID, shouldDelegate, err := e.scanDelegator.GetDelegateClusterID(ctx, image)
+	if err != nil || !shouldDelegate {
+		// If was an error or should not delegate the request, short-circuit
+		return shouldDelegate, err
 	}
 
-	if clusterID == "" {
-		// if no cluster id, then this should not delegate
-		return false, nil
-	}
+	// Check if image exists in database (will include metadata, sigs, etc.)
+	// Ignores in-mem metadata cache because that is not populated via enrichment requests from
+	// secured clusters. fetchFromDatabase will check if FetchOpt forces refetch.
+	// Assumes signatures are OK as exists in database, standard reprocessing or forcing rescan
+	// will trigger signature update as needed
+	existingImg, exists := e.fetchFromDatabase(ctx, image, enrichContext.FetchOpt)
+	if exists && cachedImageIsValid(existingImg) {
+		image.Metadata = existingImg.GetMetadata()
+		image.Scan = existingImg.GetScan()
+		image.Signature = existingImg.GetSignature()
+		image.SignatureVerificationData = existingImg.GetSignatureVerificationData()
+		image.Notes = existingImg.GetNotes()
 
-	if enrichContext.FetchOpt != ForceRefetch {
-		// If not forcing a refetch attempt to enrich image central's cache / db
-		// (should not interact with the registry)
-		if e.enrichWithMetadataFromCache(image) && e.updateImageFromDatabase(ctx, image, enrichContext.FetchOpt) {
-			return true, nil
-		}
+		e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
+		e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
+
+		log.Debugf("Delegated enrichment returning cached image for %q", image.GetName().GetFullName())
+		return true, nil
 	}
 
 	// Send the image to the secured cluster for enrichment
 	err = e.scanDelegator.DelegateEnrichImage(ctx, image, clusterID)
-	return true, err
+	if err != nil {
+		return true, err
+	}
+
+	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
+	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
+	return true, nil
+}
+
+func cachedImageIsValid(cachedImage *storage.Image) bool {
+	if cachedImage == nil {
+		return false
+	}
+
+	// check if metadata is valid
+	metadataValid := !metadataIsOutOfDate(cachedImage.GetMetadata())
+
+	// check if scan is valid (exists)
+	scanValid := cachedImage.GetScan() != nil
+
+	return metadataValid && scanValid
 }
 
 // EnrichImage enriches an image with the integration set present.
 func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
-	if shouldDelegate, err := e.delegateEnrich(ctx, enrichContext, image); shouldDelegate {
+	if shouldDelegate, err := e.delegateEnrichImage(ctx, enrichContext, image); shouldDelegate {
 		// This enrichment should have been delegated, do not process further
 		if err != nil {
 			return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, err
@@ -274,16 +300,6 @@ func (e *enricherImpl) updateImageFromDatabase(ctx context.Context, img *storage
 	return usesExistingScan
 }
 
-func (e *enricherImpl) enrichWithMetadataFromCache(image *storage.Image) bool {
-	if metadataValue := e.metadataCache.Get(getRef(image)); metadataValue != nil {
-		e.metrics.IncrementMetadataCacheHit()
-		image.Metadata = metadataValue.(*storage.ImageMetadata).Clone()
-		return true
-	}
-	e.metrics.IncrementMetadataCacheMiss()
-	return false
-}
-
 func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext EnrichmentContext, image *storage.Image) (bool, error) {
 	// Attempt to short-circuit before checking registries.
 	metadataOutOfDate := metadataIsOutOfDate(image.GetMetadata())
@@ -293,9 +309,12 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 
 	if enrichmentContext.FetchOpt != ForceRefetch {
 		// The metadata in the cache is always up-to-date with respect to the current metadataVersion
-		if enriched := e.enrichWithMetadataFromCache(image); enriched {
+		if metadataValue := e.metadataCache.Get(getRef(image)); metadataValue != nil {
+			e.metrics.IncrementMetadataCacheHit()
+			image.Metadata = metadataValue.(*storage.ImageMetadata).Clone()
 			return true, nil
 		}
+		e.metrics.IncrementMetadataCacheMiss()
 	}
 	if enrichmentContext.FetchOpt == NoExternalMetadata {
 		return false, nil

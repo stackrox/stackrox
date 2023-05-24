@@ -69,6 +69,7 @@ message EnrichLocalImageInternalRequest {
     repeated storage.Image.Note image_notes      = 7;
     string                      error            = 8;
     string                      request_id       = 9;
+    bool                        force            = 10;
 }
 
 message DeleteImagesRequest {

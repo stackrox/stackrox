@@ -110,13 +110,11 @@ func (d *delegatedRegistryImpl) processScanImage(scanReq *central.ScanImage) err
 			return err
 		}
 
-		log.Debugf("Created container image %q from %q", ci, scanReq.GetImageName())
-
 		ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 		defer cancel()
 
 		// TODO: create another method or change this method so that does not 'include' namespace
-		_, err = d.localScan.EnrichLocalImageInNamespace(ctx, d.imageSvc, ci, "", scanReq.GetRequestId())
+		_, err = d.localScan.EnrichLocalImageInNamespace(ctx, d.imageSvc, ci, "", scanReq.GetRequestId(), scanReq.GetForce())
 		if err != nil {
 			// TODO: send response to central indicating that a failure occurred, but only want to do this for those immediate errors
 		}
