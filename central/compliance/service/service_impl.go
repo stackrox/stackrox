@@ -33,7 +33,7 @@ var (
 			"/v1.ComplianceService/GetAggregatedResults",
 		},
 		user.With(permissions.Modify(resources.Compliance)): {
-			"/v1.ComplianceService/UpdateCompliance",
+			"/v1.ComplianceService/UpdateComplianceStandardConfig",
 		},
 	})
 	log = logging.LoggerForModule()
@@ -150,6 +150,7 @@ func (s *serviceImpl) GetRunResults(ctx context.Context, request *v1.GetComplian
 	}, nil
 }
 
+// UpdateComplianceStandardConfig updates compliance standards config
 func (s *serviceImpl) UpdateComplianceStandardConfig(ctx context.Context, req *v1.UpdateComplianceRequest) (*v1.Empty, error) {
 	_, exists, err := s.standardsRepo.Standard(req.GetId())
 
