@@ -44,3 +44,4 @@ operator/**/* @stackrox/draco
 /sensor/common/scannerdefinitions/                    @stackrox/scanner
 /sensor/kubernetes/listener/resources/secrets.go      @stackrox/scanner
 /sensor/kubernetes/listener/resources/secrets_test.go @stackrox/scanner
+/SCANNER_VERSION                                      @stackrox/scanner
