@@ -2,7 +2,7 @@ package store
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/index"
+	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/search"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/bolt"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
@@ -24,11 +24,11 @@ var (
 func initialize() {
 	var undoDeploymentStorage undodeploymentstore.UndoDeploymentStore
 	var networkPolicyStorage store.Store
-	var networkPolicyIndex index.Indexer
+	var networkPolicySearcher search.Searcher
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		undoDeploymentStorage = undoPGStore.New(globaldb.GetPostgres())
 		networkPolicyStorage = postgres.New(globaldb.GetPostgres())
-		networkPolicyIndex = postgres.NewIndexer(globaldb.GetPostgres())
+		networkPolicySearcher = search.New(postgres.NewIndexer(globaldb.GetPostgres()))
 	} else {
 		var err error
 		undoDeploymentStorage, err = undoRocksDB.New(globaldb.GetRocksDB())
@@ -36,7 +36,7 @@ func initialize() {
 		networkPolicyStorage = bolt.New(globaldb.GetGlobalDB())
 	}
 
-	as = New(networkPolicyStorage, networkPolicyIndex, undostore.Singleton(), undoDeploymentStorage)
+	as = New(networkPolicyStorage, networkPolicySearcher, undostore.Singleton(), undoDeploymentStorage)
 }
 
 // Singleton provides the interface for non-service external interaction.

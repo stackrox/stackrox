@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/index"
+	netPolSearcher "github.com/stackrox/rox/central/networkpolicies/datastore/internal/search"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
@@ -26,8 +26,8 @@ var (
 )
 
 type datastoreImpl struct {
-	storage store.Store
-	indexer index.Indexer
+	storage  store.Store
+	searcher netPolSearcher.Searcher
 
 	undoStorageLock       sync.Mutex
 	undoStorage           undostore.UndoStore
@@ -105,7 +105,7 @@ func (ds *datastoreImpl) CountMatchingNetworkPolicies(ctx context.Context, clust
 		if stringutils.AllEmpty(clusterID, namespace) {
 			return ds.storage.Count(ctx)
 		}
-		return ds.indexer.Count(ctx, getQuery(clusterID, namespace))
+		return ds.searcher.Count(ctx, getQuery(clusterID, namespace))
 	}
 	if namespace == "" {
 		netPols, err := ds.GetNetworkPolicies(ctx, clusterID, "")
