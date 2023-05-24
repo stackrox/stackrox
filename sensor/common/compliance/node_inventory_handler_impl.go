@@ -75,9 +75,11 @@ func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
 }
 
 func (c *nodeInventoryHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	if msg.GetNodeInventoryAck() != nil {
-		return errors.New("this is not a nInvACK")
+	ackMsg := msg.GetNodeInventoryAck()
+	if ackMsg == nil {
+		return nil
 	}
+	log.Debugf("Received node-inventory ACK message: %v", ackMsg)
 	return nil
 }
 

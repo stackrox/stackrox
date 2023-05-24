@@ -54,7 +54,7 @@ func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.NodeInventory)
 
 	// Sanitize input.
@@ -99,7 +99,26 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return err
 	}
 
+	reply := replyCompliance(node.GetClusterId(), ninv.GetNodeName(), central.NodeInventoryACK_ACK)
+	if err := injector.InjectMessage(ctx, reply); err != nil {
+		log.Warnf("Failed sending node-inventory ACK to Sensor for %s: %v", nodeDatastore.NodeString(node), err)
+	} else {
+		log.Debugf("Sent ACK for node-inventory %s", nodeDatastore.NodeString(node))
+	}
+
 	return nil
+}
+
+func replyCompliance(clusterID, nodeName string, t central.NodeInventoryACK_Action) *central.MsgToSensor {
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_NodeInventoryAck{
+			NodeInventoryAck: &central.NodeInventoryACK{
+				ClusterId: clusterID,
+				NodeName:  nodeName,
+				Action:    t,
+			},
+		},
+	}
 }
 
 func (p *pipelineImpl) OnFinish(_ string) {}
