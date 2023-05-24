@@ -99,7 +99,7 @@ func (s *ReportConfigurationServiceTestSuite) TestUpdateReportConfiguration() {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(&v1.Empty{}, result)
+				s.Equal(&apiV2.Empty{}, result)
 			}
 		})
 	}
@@ -109,25 +109,25 @@ func (s *ReportConfigurationServiceTestSuite) TestGetReportConfigurations() {
 	ctx := context.Background()
 	testCases := []struct {
 		desc      string
-		query     *v1.RawQuery
+		query     *apiV2.RawQuery
 		expectedQ *v1.Query
 	}{
 		{
 			desc:      "Empty query",
-			query:     &v1.RawQuery{Query: ""},
+			query:     &apiV2.RawQuery{Query: ""},
 			expectedQ: search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
 		},
 		{
 			desc:  "Query with search field",
-			query: &v1.RawQuery{Query: "Report Name:name"},
+			query: &apiV2.RawQuery{Query: "Report Name:name"},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.ReportName, "name").
 				WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
 		},
 		{
 			desc: "Query with custom pagination",
-			query: &v1.RawQuery{
+			query: &apiV2.RawQuery{
 				Query:      "",
-				Pagination: &v1.Pagination{Limit: 25},
+				Pagination: &apiV2.Pagination{Limit: 25},
 			},
 			expectedQ: search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(25)).ProtoQuery(),
 		},
@@ -187,7 +187,7 @@ func (s *ReportConfigurationServiceTestSuite) TestGetReportConfigurationByID() {
 						Return(nil, false, nil)
 				}
 			}
-			config, err := s.service.GetReportConfiguration(ctx, &v1.ResourceByID{Id: tc.id})
+			config, err := s.service.GetReportConfiguration(ctx, &apiV2.ResourceByID{Id: tc.id})
 			if tc.isValidationError || tc.isDataNotFoundError {
 				s.Error(err)
 			} else {
@@ -202,17 +202,17 @@ func (s *ReportConfigurationServiceTestSuite) TestCountReportConfigurations() {
 	ctx := context.Background()
 	testCases := []struct {
 		desc      string
-		query     *v1.RawQuery
+		query     *apiV2.RawQuery
 		expectedQ *v1.Query
 	}{
 		{
 			desc:      "Empty query",
-			query:     &v1.RawQuery{Query: ""},
+			query:     &apiV2.RawQuery{Query: ""},
 			expectedQ: search.NewQueryBuilder().ProtoQuery(),
 		},
 		{
 			desc:      "Query with search field",
-			query:     &v1.RawQuery{Query: "Report Name:name"},
+			query:     &apiV2.RawQuery{Query: "Report Name:name"},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
 		},
 	}
@@ -249,7 +249,7 @@ func (s *ReportConfigurationServiceTestSuite) TestDeleteReportConfiguration() {
 		if !tc.isError {
 			s.reportConfigDatastore.EXPECT().RemoveReportConfiguration(ctx, tc.id).Return(nil).Times(1)
 		}
-		_, err := s.service.DeleteReportConfiguration(ctx, &v1.ResourceByID{Id: tc.id})
+		_, err := s.service.DeleteReportConfiguration(ctx, &apiV2.ResourceByID{Id: tc.id})
 		if tc.isError {
 			s.Error(err)
 		} else {

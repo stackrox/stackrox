@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reportconfigurations/service/common"
 	"github.com/stackrox/rox/central/reports/manager"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -53,7 +52,7 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV2.ReportConfiguration) (*apiV2.ReportConfiguration, error) {
 	protoReportConfig := reportConfigConverter.ConvertV2ReportConfigurationToProto(request)
 	if err := s.validator.ValidateReportConfiguration(ctx, protoReportConfig); err != nil {
-		return nil, errors.Errorf("Report config validation failed : %s", err)
+		return nil, errors.Wrap(err, "Validating report configuration")
 	}
 	id, err := s.reportConfigStore.AddReportConfiguration(ctx, protoReportConfig)
 	if err != nil {
@@ -72,14 +71,14 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 	return reportConfigConverter.ConvertProtoReportConfigurationToV2(createdReportConfig), nil
 }
 
-func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *apiV2.ReportConfiguration) (*v1.Empty, error) {
+func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *apiV2.ReportConfiguration) (*apiV2.Empty, error) {
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required")
 	}
 	protoReportConfig := reportConfigConverter.ConvertV2ReportConfigurationToProto(request)
 
 	if err := s.validator.ValidateReportConfiguration(ctx, protoReportConfig); err != nil {
-		return nil, errors.Errorf("Report config validation failed : %s", err)
+		return nil, errors.Wrap(err, "Validating report configuration")
 	}
 
 	// TODO ROX-16567 : Integrate with report manager when new reporting is implemented
@@ -91,10 +90,10 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 	if err != nil {
 		return nil, err
 	}
-	return &v1.Empty{}, nil
+	return &apiV2.Empty{}, nil
 }
 
-func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *v1.RawQuery) (*apiV2.GetReportConfigurationsResponse, error) {
+func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *apiV2.RawQuery) (*apiV2.GetReportConfigurationsResponse, error) {
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
@@ -102,7 +101,7 @@ func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *v1.Raw
 	}
 
 	// Fill in pagination.
-	paginated.FillPagination(parsedQuery, query.GetPagination(), maxPaginationLimit)
+	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
 	reportConfigs, err := s.reportConfigStore.GetReportConfigurations(ctx, parsedQuery)
 	if err != nil {
@@ -115,7 +114,7 @@ func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *v1.Raw
 	return &apiV2.GetReportConfigurationsResponse{ReportConfigs: converted}, nil
 }
 
-func (s *serviceImpl) GetReportConfiguration(ctx context.Context, id *v1.ResourceByID) (*apiV2.ReportConfiguration, error) {
+func (s *serviceImpl) GetReportConfiguration(ctx context.Context, id *apiV2.ResourceByID) (*apiV2.ReportConfiguration, error) {
 	if id.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required")
 	}
@@ -129,7 +128,7 @@ func (s *serviceImpl) GetReportConfiguration(ctx context.Context, id *v1.Resourc
 	return reportConfigConverter.ConvertProtoReportConfigurationToV2(reportConfig), nil
 }
 
-func (s *serviceImpl) CountReportConfigurations(ctx context.Context, request *v1.RawQuery) (*apiV2.CountReportConfigurationsResponse, error) {
+func (s *serviceImpl) CountReportConfigurations(ctx context.Context, request *apiV2.RawQuery) (*apiV2.CountReportConfigurationsResponse, error) {
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
@@ -142,15 +141,15 @@ func (s *serviceImpl) CountReportConfigurations(ctx context.Context, request *v1
 	return &apiV2.CountReportConfigurationsResponse{Count: int32(numReportConfigs)}, nil
 }
 
-func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
+func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *apiV2.ResourceByID) (*apiV2.Empty, error) {
 	if id.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required for deletion")
 	}
 	if err := s.reportConfigStore.RemoveReportConfiguration(ctx, id.GetId()); err != nil {
-		return &v1.Empty{}, err
+		return &apiV2.Empty{}, err
 	}
 
 	// TODO ROX-16567 : Integrate with report manager when new reporting is implemented
 	// return &v1.Empty{}, s.manager.Remove(ctx, id.GetId())
-	return &v1.Empty{}, nil
+	return &apiV2.Empty{}, nil
 }
