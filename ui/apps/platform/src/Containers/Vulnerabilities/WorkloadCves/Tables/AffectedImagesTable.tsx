@@ -87,17 +87,15 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
     const expandedRowSet = useSet<string>();
 
     return (
-        // TODO UX question - Collapse to cards, or allow headers to overflow?
-        // <TableComposable gridBreakPoint="grid-xl">
         <TableComposable variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('Image')}>Image</Th>
-                    <Th>Severity</Th>
+                    <Th>CVE severity</Th>
                     <Th>CVSS</Th>
                     <Th>
-                        Fix status
+                        CVE status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th sort={getSortParams('Operating System')}>Operating system</Th>
@@ -134,13 +132,13 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                                     'Image name not available'
                                 )}
                             </Td>
-                            <Td dataLabel="Severity" modifier="nowrap">
+                            <Td dataLabel="CVE severity" modifier="nowrap">
                                 <VulnerabilitySeverityIconText severity={topSeverity} />
                             </Td>
                             <Td dataLabel="CVSS" modifier="nowrap">
                                 <CvssTd cvss={cvss} scoreVersion={scoreVersion} />
                             </Td>
-                            <Td dataLabel="Fix status" modifier="nowrap">
+                            <Td dataLabel="CVE status" modifier="nowrap">
                                 <VulnerabilityFixableIconText isFixable={isFixable} />
                             </Td>
                             <Td dataLabel="Operating system">{operatingSystem}</Td>
