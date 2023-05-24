@@ -19,10 +19,8 @@ load "../../../scripts/test_helpers.bats"
     assert_output --partial tests=\"2\"
     assert_output --partial failures=\"1\"
 
-    # Sensor has a result
-    assert_output --regexp '<testcase name="Check for sensor OOM kills" classname="OOM Check">.+</testcase>'
-    # But not a failure
-    refute_output --regexp '<testcase name="Check for sensor OOM kills" classname="OOM Check">.+failure.+</testcase>'
-    # Central was a failure
-    assert_output --regexp '<testcase name="Check for central OOM kills" classname="OOM Check">.+failure.+</testcase>'
+    # Sensor has a non failure result
+    assert_output --regexp '<testcase name="Check for sensor OOM kills" classname="OOM Check">\s+</testcase>'
+    # Central has a failure result
+    assert_output --regexp '<testcase name="Check for central OOM kills" classname="OOM Check">\s+<failure><..CDATA.A container of central was OOM killed..></failure>\s+</testcase>'
 }
