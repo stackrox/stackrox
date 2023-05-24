@@ -33,7 +33,6 @@ import CvssTd from '../components/CvssTd';
 export const imageVulnerabilitiesFragment = gql`
     ${imageComponentVulnerabilitiesFragment}
     fragment ImageVulnerabilityFields on ImageVulnerability {
-        id
         severity
         isFixable
         cve
@@ -48,7 +47,6 @@ export const imageVulnerabilitiesFragment = gql`
 `;
 
 export type ImageVulnerability = {
-    id: string;
     severity: string;
     isFixable: boolean;
     cve: string;
