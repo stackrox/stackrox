@@ -11,16 +11,18 @@ load "../../../scripts/test_helpers.bats"
     source "${BATS_TEST_DIRNAME}/../lib.sh"
 
     run check_for_stackrox_OOMs "${BATS_TEST_TMPDIR}/oom-test"
-
-    with_oomkilled_test="$(ls ${ARTIFACT_DIR}/junit-misc/junit-OOMCheck-central-84bf956f94-bg6hr.xml)"
-    assert [ -f "$with_oomkilled_test" ]
-    run grep -q "was OOMKilled" "$with_oomkilled_test"
     assert_success
 
-    without_oomkilled_test="$(ls ${ARTIFACT_DIR}/junit-misc/junit-OOMCheck-sensor-67d98c67bf-v688m.xml)"
-    assert [ -f "$without_oomkilled_test" ]
-    run grep -q "was not OOMKilled" "$without_oomkilled_test"
+    run cat "${ARTIFACT_DIR}/junit-misc/junit-OOM Check.xml"
     assert_success
 
-    refute [ -f "${ARTIFACT_DIR}/junit-.xml" ]
+    assert_output --partial tests=\"2\"
+    assert_output --partial failures=\"1\"
+
+    # Sensor has a result
+    assert_output --regexp '<testcase name="Check for sensor OOM kills" classname="OOM Check">.+</testcase>'
+    # But not a failure
+    refute_output --regexp '<testcase name="Check for sensor OOM kills" classname="OOM Check">.+failure.+</testcase>'
+    # Central was a failure
+    assert_output --regexp '<testcase name="Check for central OOM kills" classname="OOM Check">.+failure.+</testcase>'
 }
