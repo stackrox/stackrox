@@ -977,6 +977,7 @@ func (m *SensorEvent_ResourcesSynced) Clone() *SensorEvent_ResourcesSynced {
 type SensorEnforcement struct {
 	Enforcement storage.EnforcementAction `protobuf:"varint,1,opt,name=enforcement,proto3,enum=storage.EnforcementAction" json:"enforcement,omitempty"`
 	// Types that are valid to be assigned to Resource:
+	//
 	//	*SensorEnforcement_Deployment
 	//	*SensorEnforcement_ContainerInstance
 	Resource             isSensorEnforcement_Resource `protobuf_oneof:"resource"`
@@ -1279,6 +1280,7 @@ func (m *ContainerInstanceEnforcement) Clone() *ContainerInstanceEnforcement {
 type ScrapeCommand struct {
 	ScrapeId string `protobuf:"bytes,1,opt,name=scrape_id,json=scrapeId,proto3" json:"scrape_id,omitempty"`
 	// Types that are valid to be assigned to Command:
+	//
 	//	*ScrapeCommand_StartScrape
 	//	*ScrapeCommand_KillScrape
 	Command              isScrapeCommand_Command `protobuf_oneof:"command"`
@@ -1542,6 +1544,7 @@ func (m *KillScrape) Clone() *KillScrape {
 type ScrapeUpdate struct {
 	ScrapeId string `protobuf:"bytes,1,opt,name=scrape_id,json=scrapeId,proto3" json:"scrape_id,omitempty"`
 	// Types that are valid to be assigned to Update:
+	//
 	//	*ScrapeUpdate_ComplianceReturn
 	//	*ScrapeUpdate_ScrapeStarted
 	//	*ScrapeUpdate_ScrapeKilled
@@ -1955,6 +1958,7 @@ func (m *NetworkPoliciesCommand_Apply) Clone() *NetworkPoliciesCommand_Apply {
 
 type NetworkPoliciesCommand_Payload struct {
 	// Types that are valid to be assigned to Cmd:
+	//
 	//	*NetworkPoliciesCommand_Payload_Apply
 	Cmd                  isNetworkPoliciesCommand_Payload_Cmd `protobuf_oneof:"cmd"`
 	XXX_NoUnkeyedLiteral struct{}                             `json:"-"`
@@ -2255,6 +2259,7 @@ func (m *NetworkPoliciesResponse_Error) Clone() *NetworkPoliciesResponse_Error {
 
 type NetworkPoliciesResponse_Payload struct {
 	// Types that are valid to be assigned to Cmd:
+	//
 	//	*NetworkPoliciesResponse_Payload_Error
 	//	*NetworkPoliciesResponse_Payload_Apply
 	Cmd                  isNetworkPoliciesResponse_Payload_Cmd `protobuf_oneof:"cmd"`
