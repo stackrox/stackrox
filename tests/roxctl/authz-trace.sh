@@ -37,7 +37,7 @@ verify_trace_for_endpoint() {
   echo "Verifying trace for endpoint: " "$@"
   target_endpoint="$@"
   # Wait for a record triggered by the request to appear in the trace file.
-  ( tail -f trace.out & ) | grep -q $target_endpoint
+  # ( tail -f trace.out & ) | grep -q $target_endpoint
 
   # Extract the trace triggered by the request.
   target_trace="$(jq <trace.out -cr 'select(.request.endpoint == "'$target_endpoint'") | .trace' | head -n 1)"
@@ -96,4 +96,4 @@ verify_trace_for_endpoint "/api/graphql?opname=getNodes"
 
 # Query Central to get a specific GRPC authz trace.
 curl_central_token "/v1/alertscount" -o /dev/null || die "Failed to query alerts count"
-verify_trace_for_endpoint "/v1/alertscount"
+verify_trace_for_endpoint "/v1/alertscountnot"

@@ -404,7 +404,7 @@ oidc:
         withRetry(5, 60) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             // Expect 6 integration health status for the created resources and one for the config map.
-            assert response.integrationHealthCount == CREATED_RESOURCES + 1
+            assert response.integrationHealthCount == CREATED_RESOURCES + 2
 
             for (integrationHealth in response.getIntegrationHealthList()) {
                 // Config map health will be healthy and do not indicate an error.
