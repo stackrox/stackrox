@@ -114,15 +114,11 @@ func ConvertTestTestCloneToTest2TestClone(p1 *test.TestClone) *test2.TestClone {
 	p2 := new(test2.TestClone)
 	if p1.IntSlice != nil {
 		p2.IntSlice = make([]int32, len(p1.IntSlice))
-		for idx := range p1.IntSlice {
-			p2.IntSlice[idx] = p1.IntSlice[idx]
-		}
+		copy(p2.IntSlice, p1.IntSlice)
 	}
 	if p1.StringSlice != nil {
 		p2.StringSlice = make([]string, len(p1.StringSlice))
-		for idx := range p1.StringSlice {
-			p2.StringSlice[idx] = p1.StringSlice[idx]
-		}
+		copy(p2.StringSlice, p1.StringSlice)
 	}
 	if p1.SubMessages != nil {
 		p2.SubMessages = make([]*test2.TestCloneSubMessage, len(p1.SubMessages))
@@ -177,9 +173,7 @@ func ConvertTestTestCloneToTest2TestClone(p1 *test.TestClone) *test2.TestClone {
 	}
 	if p1.Bytes != nil {
 		p2.Bytes = make([]uint8, len(p1.Bytes))
-		for idx := range p1.Bytes {
-			p2.Bytes[idx] = p1.Bytes[idx]
-		}
+		copy(p2.Bytes, p1.Bytes)
 	}
 	p2.SubMessage = ConvertTestTestCloneSubMessageToTest2TestCloneSubMessage(p1.SubMessage)
 	p2.SingleEnum = test2.TestClone_CloneEnum(p1.SingleEnum)
@@ -295,15 +289,11 @@ func ConvertTest2TestCloneToTestTestClone(p1 *test2.TestClone) *test.TestClone {
 	p2 := new(test.TestClone)
 	if p1.IntSlice != nil {
 		p2.IntSlice = make([]int32, len(p1.IntSlice))
-		for idx := range p1.IntSlice {
-			p2.IntSlice[idx] = p1.IntSlice[idx]
-		}
+		copy(p2.IntSlice, p1.IntSlice)
 	}
 	if p1.StringSlice != nil {
 		p2.StringSlice = make([]string, len(p1.StringSlice))
-		for idx := range p1.StringSlice {
-			p2.StringSlice[idx] = p1.StringSlice[idx]
-		}
+		copy(p2.StringSlice, p1.StringSlice)
 	}
 	if p1.SubMessages != nil {
 		p2.SubMessages = make([]*test.TestCloneSubMessage, len(p1.SubMessages))
@@ -358,9 +348,7 @@ func ConvertTest2TestCloneToTestTestClone(p1 *test2.TestClone) *test.TestClone {
 	}
 	if p1.Bytes != nil {
 		p2.Bytes = make([]uint8, len(p1.Bytes))
-		for idx := range p1.Bytes {
-			p2.Bytes[idx] = p1.Bytes[idx]
-		}
+		copy(p2.Bytes, p1.Bytes)
 	}
 	p2.SubMessage = ConvertTest2TestCloneSubMessageToTestTestCloneSubMessage(p1.SubMessage)
 	p2.SingleEnum = test.TestClone_CloneEnum(p1.SingleEnum)

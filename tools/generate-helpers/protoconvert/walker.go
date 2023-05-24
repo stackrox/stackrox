@@ -159,31 +159,37 @@ func (s *converter) handleStruct(w io.Writer, original reflect.Type, new reflect
 		case reflect.Slice:
 			s.printf(w, "if p1.%s != nil {", field.Name)
 			s.printf(w, "p2.%s = make(%s, len(p1.%s))", field.Name, newField.Type, field.Name)
-			s.printf(w, "for idx := range p1.%s {", field.Name)
 			switch field.Type.Elem().Kind() {
 			case reflect.Struct:
 				panic("shouldn't be possible in proto")
 			case reflect.Ptr:
+				s.printf(w, "for idx := range p1.%s {", field.Name)
 				s.printf(w, "p2.%s[idx] = %s(p1.%s[idx])", field.Name, s.addFunc(field.Type.Elem(), newField.Type.Elem()), field.Name)
+				s.closeBracket(w)
 			case reflect.Int32:
 				_, ok := reflect.Zero(field.Type.Elem()).Interface().(protoreflect.ProtoEnum)
 				if !ok {
-					s.printf(w, "p2.%s[idx] = p1.%s[idx]", field.Name, field.Name)
+					s.printf(w, "copy(p2.%s, p1.%s)", field.Name, field.Name)
 				} else {
+					s.printf(w, "for idx := range p1.%s {", field.Name)
 					s.printf(w, "p2.%s[idx] = %s(p1.%s[idx])", field.Name, newField.Type.Elem().String(), field.Name)
+					s.closeBracket(w)
 				}
+			case reflect.String, reflect.Uint8:
+				s.printf(w, "copy(p2.%s, p1.%s)", field.Name, field.Name)
 			case reflect.Slice:
 				switch field.Type.Elem().Elem().Kind() {
 				case reflect.Uint8:
+					s.printf(w, "for idx := range p1.%s {", field.Name)
 					s.printf(w, "p2.%s[idx] = make([]byte, len(p1.%s[idx]))", field.Name, field.Name)
 					s.printf(w, "copy(p2.%s[idx], p1.%s[idx])", field.Name, field.Name)
+					s.closeBracket(w)
 				default:
 					panic("expect slice of slice to only be uint8 in proto")
 				}
 			default:
 				s.printf(w, "p2.%s[idx] = p1.%s[idx]", field.Name, field.Name)
 			}
-			s.closeBracket(w)
 			s.closeBracket(w)
 		case reflect.Struct:
 			s.handleStruct(w, field.Type, newField.Type)
