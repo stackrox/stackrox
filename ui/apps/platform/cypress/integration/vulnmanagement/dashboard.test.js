@@ -210,19 +210,6 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('clicking the "Frequently Violated Policies" widget\'s "View All" button should take you to the policies list', () => {
-        visitVulnerabilityManagementDashboard();
-
-        const entitiesKey = 'policies';
-        const widgetHeading = 'Frequently Violated Policies';
-
-        interactAndWaitForVulnerabilityManagementEntities(() => {
-            cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
-        }, entitiesKey);
-
-        cy.location('search').should('eq', '?sort[0][id]=Severity&sort[0][desc]=true');
-    });
-
     it('clicking the "Recently Detected Image Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
         visitVulnerabilityManagementDashboard();
 
