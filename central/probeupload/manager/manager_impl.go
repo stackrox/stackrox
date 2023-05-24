@@ -11,7 +11,6 @@ import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	blobstore "github.com/stackrox/rox/central/blob/datastore"
-	"github.com/stackrox/rox/central/blob/snapshot"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/probeupload"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -93,29 +91,29 @@ func (m *manager) getProbeUploadPath(file string) string {
 	return path.Join(m.rootDir, file)
 }
 
-func (m *manager) loadBlob(ctx context.Context, file string) (*snapshot.Snapshot, error) {
+func (m *manager) loadBlob(ctx context.Context, file string) (io.ReadCloser, int64, error) {
 	if !probeupload.IsValidFilePath(file) {
-		return nil, errors.Errorf("%q is not a valid probe file name", file)
+		return nil, 0, errors.Errorf("%q is not a valid probe file name", file)
 	}
 
 	uploadPath := m.getProbeUploadPath(file)
-	snap, err := snapshot.TakeBlobSnapshot(sac.WithAllAccess(ctx), m.blobStore, uploadPath)
-	if err != nil {
-		if errors.Is(err, snapshot.ErrBlobNotExist) {
-			return nil, nil
-		}
+	buf, blob, exists, err := m.blobStore.GetBlobWithDataInBuffer(ctx, uploadPath)
+	if err != nil || !exists {
+		return nil, 0, err
 	}
-	return snap, err
+	return io.NopCloser(buf), blob.GetLength(), err
 }
 
 func (m *manager) getFileInfo(ctx context.Context, file string) (*v1.ProbeUploadManifest_File, error) {
-	snap, err := m.loadBlob(ctx, file)
-	if err != nil || snap == nil {
+	if !probeupload.IsValidFilePath(file) {
+		return nil, errors.Errorf("%q is not a valid probe file name", file)
+	}
+	blob, exists, err := m.blobStore.GetMetadata(ctx, m.getProbeUploadPath(file))
+	if err != nil || !exists {
 		return nil, err
 	}
-	defer utils.IgnoreError(snap.Close)
 
-	crc32Data := []byte(snap.GetBlob().GetChecksum())
+	crc32Data := []byte(blob.GetChecksum())
 	if len(crc32Data) != 4 {
 		return nil, errors.Errorf("probe %s does not have a valid CRC-32 checksum (%d bytes)", file, len(crc32Data))
 	}
@@ -124,7 +122,7 @@ func (m *manager) getFileInfo(ctx context.Context, file string) (*v1.ProbeUpload
 
 	return &v1.ProbeUploadManifest_File{
 		Name:  file,
-		Size_: snap.GetBlob().GetLength(),
+		Size_: blob.GetLength(),
 		Crc32: crc32,
 	}, nil
 }
@@ -189,11 +187,7 @@ func (m *manager) StoreFile(ctx context.Context, file string, data io.Reader, si
 }
 
 func (m *manager) LoadProbe(ctx context.Context, file string) (io.ReadCloser, int64, error) {
-	snap, err := m.loadBlob(ctx, file)
-	if err != nil || snap == nil {
-		return nil, 0, err
-	}
-	return snap, snap.GetBlob().GetLength(), nil
+	return m.loadBlob(ctx, file)
 }
 
 func (m *manager) IsAvailable(_ context.Context) (bool, error) {
