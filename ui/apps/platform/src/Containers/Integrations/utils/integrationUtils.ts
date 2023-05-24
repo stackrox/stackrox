@@ -5,6 +5,7 @@ import { IntegrationBase } from 'services/IntegrationsService';
 import { IntegrationSource, IntegrationType } from 'types/integration';
 import { ImageIntegrationCategory } from 'types/imageIntegration.proto';
 
+import { Traits } from 'types/traits.proto';
 import integrationsList from './integrationsList';
 
 export type { IntegrationSource, IntegrationType };
@@ -13,6 +14,7 @@ export type Integration = {
     type: IntegrationType;
     id: string;
     name: string;
+    traits?: Traits;
 };
 
 export function getIntegrationLabel(source: string, type: string): string {
