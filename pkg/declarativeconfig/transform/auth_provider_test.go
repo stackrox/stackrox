@@ -62,7 +62,7 @@ func TestGetAuthProviderType(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			typ, err := getType(c.cfg)
+			typ, err := getAuthProviderType(c.cfg)
 			if c.err != nil {
 				assert.Error(t, err)
 				assert.ErrorIs(t, err, c.err)
