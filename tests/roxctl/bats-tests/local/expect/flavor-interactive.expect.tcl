@@ -40,8 +40,8 @@ expect "Enter PEM cert bundle file*" { send "\n" }
 expect "Enter Create PodSecurityPolicy resources*" { send "\n" }
 expect "Enter administrator password*" { send "\n" }
 expect "Enter orchestrator (k8s, openshift)*" { send "k8s\n" }
-expect "Enter the directory to output the deployment bundle to*" { send "$out_dir\n" }
 expect "Enter default container images settings*" { send "$flavor\n" }
+expect "Enter the directory to output the deployment bundle to*" { send "$out_dir\n" }
 
 if {[info exists ::env(ROX_POSTGRES_DATASTORE)] && [string equal "$env(ROX_POSTGRES_DATASTORE)" true]} {
   # Enter central-db image to use (default: "docker.io/stackrox/central-db:2.21.0-15-g448f2dc8fa"):
@@ -68,6 +68,7 @@ if {[info exists ::env(ROX_POSTGRES_DATASTORE)] && [string equal "$env(ROX_POSTG
     }
   }
 }
+expect "Enter whether to enable telemetry*" { send "\n" }
 expect "Enter the method of exposing Central*" { send "none\n" }
 
 # Enter main image to use (default: "docker.io/stackrox/main:3.67.x-296-g56df6a892d"):
@@ -94,7 +95,6 @@ expect {
   }
 }
 expect "Enter whether to run StackRox in offline mode, which avoids reaching out to the Internet*" { send "\n" }
-expect "Enter whether to enable telemetry*" { send "\n" }
 expect "Enter the deployment tool to use (kubectl, helm, helm-values)*:" { send "\n" }
 expect "Enter Istio version when deploying into an Istio-enabled cluster*:" { send "\n" }
 

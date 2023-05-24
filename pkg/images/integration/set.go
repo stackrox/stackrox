@@ -8,6 +8,7 @@ import (
 )
 
 // Set provides an interface for reading the active set of image integrations.
+//
 //go:generate mockgen-wrapper
 type Set interface {
 	RegistryFactory() registries.Factory

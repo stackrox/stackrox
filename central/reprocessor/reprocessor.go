@@ -72,6 +72,7 @@ func Singleton() Loop {
 }
 
 // Loop combines periodically (every 4 hours by default) runs enrichment and detection.
+//
 //go:generate mockgen-wrapper
 type Loop interface {
 	Start()

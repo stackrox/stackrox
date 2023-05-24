@@ -11,6 +11,7 @@ import (
 )
 
 // Environment abstracts the interfaces.RoxctlHTTPClient, IO and grpc.ClientConn used within each command of the CLI.
+//
 //go:generate mockgen-wrapper
 type Environment interface {
 	// HTTPClient returns a interfaces.RoxctlHTTPClient
