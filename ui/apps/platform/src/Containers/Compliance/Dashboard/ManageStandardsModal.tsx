@@ -4,7 +4,7 @@ import { useFormik } from 'formik';
 
 import {
     ComplianceStandardMetadata,
-    fetchComplianceStandards,
+    fetchComplianceStandardsSortedByName,
     patchComplianceStandard,
 } from 'services/ComplianceService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -40,7 +40,7 @@ function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
 
             Promise.all(patchRequestPromises)
                 .then(() => {
-                    fetchComplianceStandards()
+                    fetchComplianceStandardsSortedByName()
                         .then((standardsFetchedAfterPatchRequests) => {
                             onSave(standardsFetchedAfterPatchRequests);
                         })
@@ -52,7 +52,7 @@ function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
                         });
                 })
                 .catch((error) => {
-                    // TODO fetchComplianceStandards in case some succeed before one fails?
+                    // TODO fetchComplianceStandardsSortedByName in case some succeed before one fails?
                     setErrorMessage(getAxiosErrorMessage(error));
                     setSubmitting(false);
                 });

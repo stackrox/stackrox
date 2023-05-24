@@ -9,7 +9,10 @@ import useCaseTypes from 'constants/useCaseTypes';
 import { useTheme } from 'Containers/ThemeProvider';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
-import { ComplianceStandardMetadata, fetchComplianceStandards } from 'services/ComplianceService';
+import {
+    ComplianceStandardMetadata,
+    fetchComplianceStandardsSortedByName,
+} from 'services/ComplianceService';
 
 import ScanButton from '../ScanButton';
 import StandardsByEntity from '../widgets/StandardsByEntity';
@@ -40,7 +43,7 @@ function ComplianceDashboardPage(): ReactElement {
         hasWriteAccessForComplianceStandards && isDisableComplianceStandardsEnabled;
 
     useEffect(() => {
-        fetchComplianceStandards()
+        fetchComplianceStandardsSortedByName()
             .then((standardsFetched) => {
                 setStandards(standardsFetched);
             })

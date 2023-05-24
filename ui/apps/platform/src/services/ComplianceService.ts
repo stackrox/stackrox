@@ -21,6 +21,27 @@ export function fetchComplianceStandards(): Promise<ComplianceStandardMetadata[]
         .then((response) => response.data?.standards ?? []);
 }
 
+/*
+ * Temporary frontend work-around for 4.1 version,
+ * because standards are not always sorted in ascending order by name.
+ */
+
+function compareStandardsByName(
+    standardPrev: ComplianceStandardMetadata,
+    standardNext: ComplianceStandardMetadata
+) {
+    const { name: namePrev } = standardPrev;
+    const { name: nameNext } = standardNext;
+
+    /* eslint-disable no-nested-ternary */
+    return namePrev < nameNext ? -1 : namePrev > nameNext ? 1 : 0;
+    /* eslint-enable no-nested-ternary */
+}
+
+export function fetchComplianceStandardsSortedByName(): Promise<ComplianceStandardMetadata[]> {
+    return fetchComplianceStandards().then((standards) => standards.sort(compareStandardsByName));
+}
+
 export function patchComplianceStandard(id: string, hidden: boolean): Promise<Empty> {
     return axios
         .patch<Empty>(`${standardsUrl}/${id}`, { hidden })
