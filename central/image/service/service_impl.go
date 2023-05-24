@@ -62,6 +62,7 @@ var (
 		idcheck.SensorsOnly(): {
 			"/v1.ImageService/GetImageVulnerabilitiesInternal",
 			"/v1.ImageService/EnrichLocalImageInternal",
+			"/v1.ImageService/UpdateLocalScanStatusInternal",
 		},
 		user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
 			"/v1.ImageService/DeleteImages",
@@ -473,7 +474,11 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		_ = s.saveImage(img)
 	}
 
-	s.informScanWaiter(request.GetRequestId(), img, nil)
+	if hasErrors {
+		err = errors.New(request.GetError())
+	}
+
+	s.informScanWaiter(request.GetRequestId(), img, err)
 	return internalScanRespFromImage(img), nil
 }
 
@@ -486,6 +491,13 @@ func (s *serviceImpl) informScanWaiter(reqID string, img *storage.Image, scanErr
 	if err := s.scanWaiterManager.Send(reqID, img, scanErr); err != nil {
 		log.Errorf("Failed to send result to scan waiter %q: %v", err)
 	}
+}
+
+func (s *serviceImpl) UpdateLocalScanStatusInternal(ctx context.Context, req *v1.UpdateLocalScanStatusInternalRequest) (*v1.Empty, error) {
+	log.Debug("Received delegated scan early failure message for %q: %q", req.GetRequestId(), req.GetError())
+	err := errors.New(req.GetError())
+	s.informScanWaiter(req.GetRequestId(), nil, err)
+	return nil, nil
 }
 
 // DeleteImages deletes images based on query

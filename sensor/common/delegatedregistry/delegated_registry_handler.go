@@ -104,6 +104,7 @@ func (d *delegatedRegistryImpl) processScanImage(scanReq *central.ScanImage) err
 	default:
 		log.Debugf("Received scan request: %q", scanReq)
 
+		// TODO: ensure these timeouts OK?
 		// TODO: perhaps spawn a go-routine so that do not hold up sensor processing other msgs
 		ci, err := utils.GenerateImageFromString(scanReq.GetImageName())
 		if err != nil {
@@ -115,8 +116,11 @@ func (d *delegatedRegistryImpl) processScanImage(scanReq *central.ScanImage) err
 
 		// TODO: create another method or change this method so that does not 'include' namespace
 		_, err = d.localScan.EnrichLocalImageInNamespace(ctx, d.imageSvc, ci, "", scanReq.GetRequestId(), scanReq.GetForce())
-		if err != nil {
-			// TODO: send response to central indicating that a failure occurred, but only want to do this for those immediate errors
+		if errors.Is(err, scan.ErrEnrichNotStarted) {
+			d.imageSvc.UpdateScanImageStatusInternal(ctx, &v1.UpdateScanImageStatusInternalRequest{
+				RequestId: scanReq.GetRequestId(),
+				Error:     err.Error(),
+			})
 		}
 	}
 

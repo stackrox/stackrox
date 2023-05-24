@@ -72,6 +72,11 @@ message EnrichLocalImageInternalRequest {
     bool                        force            = 10;
 }
 
+message UpdateLocalScanStatusInternalRequest {
+    string request_id = 1;
+    string error      = 2;
+}
+
 message DeleteImagesRequest {
     RawQuery query   = 1;
     bool     confirm = 2;
@@ -172,6 +177,11 @@ service ImageService {
     // EnrichLocalImageInternal is used solely by the Sensor to send enrichment requests for local images. This
     // includes the image's vulnerabilities as well as the signature verification data.
     rpc EnrichLocalImageInternal (EnrichLocalImageInternalRequest) returns (ScanImageInternalResponse);
+
+    // UpdateLocalScanStatusInternal is used solely by Sensor to send delegated scanning errors to central that
+    // prevent local enrichment from occuring (such as no scanner, thorttled, etc.).
+    rpc UpdateLocalScanStatusInternal (UpdateLocalScanStatusInternalRequest) returns (Empty);
+
     // InvalidateScanAndRegistryCaches removes the image metadata cache.
     rpc InvalidateScanAndRegistryCaches (Empty) returns (Empty) {
         option (google.api.http) = {

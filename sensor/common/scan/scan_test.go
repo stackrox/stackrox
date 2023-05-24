@@ -238,6 +238,7 @@ func (suite *scanTestSuite) TestEnrichErrorNoScanner() {
 
 	_, err := scan.enrichLocalImageFromRegistry(context.Background(), nil, &storage.ContainerImage{}, nil, "", false)
 	suite.Require().ErrorIs(err, ErrNoLocalScanner)
+	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
 }
 
 func (suite *scanTestSuite) TestEnrichErrorNoImage() {
@@ -249,6 +250,7 @@ func (suite *scanTestSuite) TestEnrichErrorNoImage() {
 	_, err := scan.enrichLocalImageFromRegistry(context.Background(), nil, nil, nil, "", false)
 	suite.Require().Error(err)
 	suite.Require().NotErrorIs(err, ErrNoLocalScanner)
+	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
 }
 
 func (suite *scanTestSuite) TestEnrichThrottle() {
@@ -259,6 +261,7 @@ func (suite *scanTestSuite) TestEnrichThrottle() {
 
 	_, err := scan.enrichLocalImageFromRegistry(context.Background(), nil, &storage.ContainerImage{}, nil, "", false)
 	suite.Require().ErrorIs(err, ErrTooManyParallelScans)
+	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
 }
 
 func (suite *scanTestSuite) TestEnrichMultipleRegistries() {
@@ -320,6 +323,24 @@ func (suite *scanTestSuite) TestEnrichNoRegistries() {
 	suite.Require().False(fakeRegStore.getRegistryForImageInvoked)
 }
 
+func (suite *scanTestSuite) TestEnrichNoRegistriesFailure() {
+	scan := LocalScan{
+		scannerClientSingleton:    emptyScannerClientSingleton,
+		scanSemaphore:             semaphore.NewWeighted(10),
+		createNoAuthImageRegistry: failCreateNoAuthImageRegistry,
+	}
+
+	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
+	suite.Require().NoError(err, "failed creating test image")
+
+	img := types.ToImage(containerImg)
+	imageServiceClient := suite.createMockImageServiceClient(img, false)
+
+	_, err = scan.enrichLocalImageFromRegistry(context.Background(), imageServiceClient, containerImg, nil, "", false)
+	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
+	suite.Require().ErrorContains(err, "unable to create no auth registry")
+}
+
 func successfulScan(_ context.Context, _ *storage.Image,
 	reg registryTypes.Registry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
 
@@ -370,6 +391,10 @@ func emptyGetGlobalRegistryForImage(*storage.ImageName) (registryTypes.Registry,
 
 func successCreateNoAuthImageRegistry(context.Context, *storage.ImageName) (registryTypes.Registry, error) {
 	return &fakeRegistry{}, nil
+}
+
+func failCreateNoAuthImageRegistry(context.Context, *storage.ImageName) (registryTypes.Registry, error) {
+	return nil, errors.New("broken")
 }
 
 type fakeRegistry struct {
