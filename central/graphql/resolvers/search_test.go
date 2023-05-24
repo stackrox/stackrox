@@ -359,12 +359,6 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 }
 
 func TestSubjectAutocompleteSearch(t *testing.T) {
-	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip postgres store tests")
-		t.SkipNow()
-	}
 
 	testDB := pgtest.ForT(t)
 	testGormDB := testDB.GetGormDB(t)
