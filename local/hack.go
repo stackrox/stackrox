@@ -6,13 +6,10 @@ import (
 	"github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/option"
-	"github.com/stackrox/rox/pkg/env"
 )
 
 func main() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
+	return
 
 	option.CentralOptions.DBPathBase = "local/database-restore/full"
 

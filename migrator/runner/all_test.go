@@ -9,16 +9,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAllPackagesAreImported(t *testing.T) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
 	migrationDirEntries, err := os.ReadDir("../migrations")
 	require.NoError(t, err, "failed to read migrations directory")
 
