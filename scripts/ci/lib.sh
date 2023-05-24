@@ -1226,7 +1226,7 @@ store_test_results() {
 }
 
 post_process_test_results() {
-    if ! is_OPENSHIFT_CI || is_in_PR_context; then
+    if ! is_OPENSHIFT_CI; then
         return 0
     fi
 
@@ -1241,11 +1241,11 @@ post_process_test_results() {
     {
         info "Creating JIRA issues for failures found in ${ARTIFACT_DIR}"
         csv_output="$(mktemp --suffix=.csv)"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.8/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.0.1/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "$(echo "$JOB_SPEC" | jq ".refs.base_link" -r)" \
-            -build-id "$BUILD_ID" \
+            -build-id "xx${BUILD_ID}xx" \
             -build-link "https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/$JOB_NAME/$BUILD_ID" \
             -build-tag "$STACKROX_BUILD_TAG" \
             -job-name "$JOB_NAME" \
