@@ -310,7 +310,7 @@ class CSVTest extends BaseSpecification {
 
         name                               | id                           | query
         "FIXABLE_CVES_IN_IMAGE_QUERY"      | IMAGE_SHA                    | "Image Sha:${IMAGE_SHA}+Fixable:true"
-        "FIXABLE_CVES_IN_COMPONENT_QUERY"  | componentId                  | componentQuery
+        "FIXABLE_CVES_IN_COMPONENT_QUERY"  | getComponentId()             | getComponentQuery()
         "FIXABLE_CVES_IN_DEPLOYMENT_QUERY" | CVE_DEPLOYMENT.deploymentUid |
                 "Deployment ID:${CVE_DEPLOYMENT.deploymentUid}+Fixable:true"
     }
