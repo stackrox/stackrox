@@ -10,6 +10,7 @@ import (
 )
 
 // TarGenerator writes a backup directly to a writer.
+//
 //go:generate mockgen-wrapper
 type TarGenerator interface {
 	WriteTo(ctx context.Context, writer *tar.Writer) error
