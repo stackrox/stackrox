@@ -1,6 +1,8 @@
 import React, { FunctionComponent, ReactElement } from 'react';
 
+import { isUserResource } from 'Containers/AccessControl/traits';
 import { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
+
 // image integrations
 import ClairifyIntegrationForm from './Forms/ClairifyIntegrationForm';
 import ClairIntegrationForm from './Forms/ClairIntegrationForm';
@@ -37,7 +39,6 @@ import ClusterInitBundleIntegrationForm from './Forms/ClusterInitBundleIntegrati
 import SignatureIntegrationForm from './Forms/SignatureIntegrationForm';
 
 import './IntegrationForm.css';
-import { isUserResource } from '../../AccessControl/traits';
 
 type IntegrationFormProps = {
     source: IntegrationSource;

@@ -1,8 +1,8 @@
+import { Traits } from 'types/traits.proto';
 import axios from './instance';
 
 import { IntegrationBase, IntegrationOptions } from './IntegrationsService';
 import { Empty } from './types';
-import { Traits } from '../types/traits.proto';
 
 const notifierIntegrationsUrl = '/v1/notifiers';
 

@@ -13,18 +13,15 @@ import {
 } from '@patternfly/react-core';
 
 import { integrationsPath } from 'routePaths';
-import {
-    getEditDisabledMessage,
-    getIntegrationLabel,
-} from 'Containers/Integrations/utils/integrationUtils';
 import PageTitle from 'Components/PageTitle';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import useIntegrationPermissions from './hooks/useIntegrationPermissions';
+import { Traits } from 'types/traits.proto';
+import { TraitsOriginLabel } from 'Containers/AccessControl/TraitsOriginLabel';
+import { isUserResource } from 'Containers/AccessControl/traits';
+import { getEditDisabledMessage, getIntegrationLabel } from './utils/integrationUtils';
 import usePageState from './hooks/usePageState';
-import { Traits } from '../../types/traits.proto';
-import { TraitsOriginLabel } from '../AccessControl/TraitsOriginLabel';
-import { isUserResource } from '../AccessControl/traits';
+import useIntegrationPermissions from './hooks/useIntegrationPermissions';
 
 export type IntegrationPageProps = {
     title: string;
@@ -46,6 +43,10 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
 
     const editDisabledMessage = getEditDisabledMessage(type);
 
+    const hasTraitsLabel =
+        pageState !== 'CREATE' && pageState !== 'LIST' && (type === 'generic' || type === 'splunk');
+    const hasEditButton =
+        pageState === 'VIEW_DETAILS' && permissions[source].write && isUserResource(traits);
     return (
         <>
             <PageTitle title={title} />
@@ -62,37 +63,31 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
                     <FlexItem>
                         <Title headingLevel="h1">{name}</Title>
                     </FlexItem>
-                    {pageState !== 'CREATE' &&
-                        pageState !== 'LIST' &&
-                        (type === 'generic' || type === 'splunk') && (
-                            <TraitsOriginLabel traits={traits} />
-                        )}
-                    {pageState === 'VIEW_DETAILS' &&
-                        permissions[source].write &&
-                        isUserResource(traits) && (
-                            <FlexItem align={{ default: 'alignRight' }}>
-                                {editDisabledMessage ? (
-                                    <Tooltip content={editDisabledMessage}>
-                                        <Button
-                                            variant={ButtonVariant.secondary}
-                                            component={LinkShim}
-                                            href={integrationEditPath}
-                                            isAriaDisabled={!!editDisabledMessage}
-                                        >
-                                            Edit
-                                        </Button>
-                                    </Tooltip>
-                                ) : (
+                    {hasTraitsLabel && <TraitsOriginLabel traits={traits} />}
+                    {hasEditButton && (
+                        <FlexItem align={{ default: 'alignRight' }}>
+                            {editDisabledMessage ? (
+                                <Tooltip content={editDisabledMessage}>
                                     <Button
                                         variant={ButtonVariant.secondary}
                                         component={LinkShim}
                                         href={integrationEditPath}
+                                        isAriaDisabled={!!editDisabledMessage}
                                     >
                                         Edit
                                     </Button>
-                                )}
-                            </FlexItem>
-                        )}
+                                </Tooltip>
+                            ) : (
+                                <Button
+                                    variant={ButtonVariant.secondary}
+                                    component={LinkShim}
+                                    href={integrationEditPath}
+                                >
+                                    Edit
+                                </Button>
+                            )}
+                        </FlexItem>
+                    )}
                 </Flex>
             </PageSection>
             {children}

@@ -18,12 +18,12 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
+import { isUserResource } from 'Containers/AccessControl/traits';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
 import { Integration, getIsAPIToken, getIsClusterInitBundle } from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
 import DownloadCAConfigBundle from './DownloadCAConfigBundle';
-import { isUserResource } from '../../AccessControl/traits';
 
 function getNewButtonText(type) {
     if (type === 'apitoken') {

@@ -21,13 +21,13 @@ import {
 } from 'types/notifier.proto';
 import { SignatureIntegration } from 'types/signatureIntegration.proto';
 
+import { getOriginLabel } from 'Containers/AccessControl/traits';
 import {
     categoriesUtilsForClairifyScanner,
     categoriesUtilsForRegistryScanner,
     daysOfWeek,
     timesOfDay,
 } from './integrationUtils';
-import { getOriginLabel } from '../../AccessControl/traits';
 
 const { getCategoriesText: getCategoriesTextForClairifyScanner } =
     categoriesUtilsForClairifyScanner;
