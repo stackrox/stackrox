@@ -224,11 +224,11 @@ class CSVTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-    def "Verify CVE CSV data scoped by entity is correct #name"() {
+    def "Verify CVE CSV data scoped by entity is correct #description"() {
         given:
         def graphQLPayload = payload(id)
         def csvQuery = getCVETypeImageQuery() + query
-        def graphQLQuery = postgresRun ? PG_QUERIES[name] : QUERIES[name]
+        def graphQLQuery = postgresRun ? PG_QUERIES[description] : QUERIES[description]
 
         when:
         "Query fixable CVEs from graphQL"
@@ -308,7 +308,7 @@ class CSVTest extends BaseSpecification {
         where:
         "Data is"
 
-        name                               | id                           | query
+        description                        | id                           | query
         "FIXABLE_CVES_IN_IMAGE_QUERY"      | IMAGE_SHA                    | "Image Sha:${IMAGE_SHA}+Fixable:true"
         "FIXABLE_CVES_IN_COMPONENT_QUERY"  | getComponentId()             | getComponentQuery()
         "FIXABLE_CVES_IN_DEPLOYMENT_QUERY" | CVE_DEPLOYMENT.deploymentUid |
