@@ -220,7 +220,7 @@
         ]
       },
       "patch": {
-        "operationId": "ComplianceService_UpdateCompliance",
+        "operationId": "ComplianceService_UpdateComplianceStandardConfig",
         "responses": {
           "200": {
             "description": "A successful response.",

@@ -127,18 +127,9 @@ func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.Comp
 		return nil, err
 	}
 
-	filteredSources := sources[:0]
-
-	for _, src := range sources {
-		standard, _, _ := s.complianceDataStore.GetConfig(ctx, src.GetStandardId())
-		if standard.HideScanResults != true {
-			filteredSources = append(filteredSources, src)
-		}
-	}
-
 	return &storage.ComplianceAggregation_Response{
 		Results: validResults,
-		Sources: filteredSources,
+		Sources: sources,
 	}, nil
 }
 
