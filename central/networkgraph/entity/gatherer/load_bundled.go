@@ -7,14 +7,42 @@ import (
 	"os"
 	"path"
 
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	blobstore "github.com/stackrox/rox/central/blob/datastore"
 	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph/defaultexternalsrcs"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func loadBundledExternalSrcs(networkEntityDS entityDataStore.EntityDataStore) error {
+// loadLocalChecksum loads local checksum if it exists.
+func loadLocalChecksum(store blobstore.Datastore) (checksum []byte, err error) {
+	buf := bytes.NewBuffer([]byte{})
+	_, exists, err := store.Get(blobAccessCtx, defaultexternalsrcs.LocalChecksumBlobPath, buf)
+	if err != nil || !exists {
+		return
+	}
+	checksum = buf.Bytes()
+	return
+}
+
+func writeChecksumLocally(store blobstore.Datastore, checksum []byte) error {
+	b := &storage.Blob{
+		Name:         defaultexternalsrcs.LocalChecksumBlobPath,
+		Length:       int64(len(checksum)),
+		LastUpdated:  timestamp.TimestampNow(),
+		ModifiedTime: timestamp.TimestampNow(),
+	}
+	buf := bytes.NewBuffer(checksum)
+	if err := store.Upsert(blobAccessCtx, b, buf); err != nil {
+		return errors.Wrapf(err, "writing provider networks checksum %s", defaultexternalsrcs.LocalChecksumBlobPath)
+	}
+	return nil
+}
+
+func loadBundledExternalSrcs(store blobstore.Datastore, networkEntityDS entityDataStore.EntityDataStore) error {
 	// Extract the bundle to temp dir.
 	checksumFile, dataFile, err := extractBundle(defaultexternalsrcs.BundledZip)
 	if err != nil {
@@ -26,13 +54,9 @@ func loadBundledExternalSrcs(networkEntityDS entityDataStore.EntityDataStore) er
 		return errors.Wrapf(err, "reading bundled external networks checksum from %q", checksumFile)
 	}
 
-	var localChecksum []byte
-	_, err = os.Open(defaultexternalsrcs.LocalChecksumFile)
-	if os.IsExist(err) {
-		localChecksum, err = os.ReadFile(defaultexternalsrcs.LocalChecksumFile)
-		if err != nil {
-			return errors.Wrapf(err, "reading local external networks checksum from %q", defaultexternalsrcs.LocalChecksumFile)
-		}
+	localChecksum, err := loadLocalChecksum(store)
+	if err != nil {
+		return errors.Wrapf(err, "reading local external networks checksum from %q", defaultexternalsrcs.LocalChecksumBlobPath)
 	}
 
 	if bytes.Equal(localChecksum, newChecksum) {
@@ -64,7 +88,7 @@ func loadBundledExternalSrcs(networkEntityDS entityDataStore.EntityDataStore) er
 	log.Infof("Found %d external networks in DB. Successfully stored %d/%d new external networks", len(lastSeenIDs), len(inserted), len(entities))
 
 	// Update checksum only if all the pulled data is successfully written.
-	if err := writeChecksumLocally(newChecksum); err != nil {
+	if err := writeChecksumLocally(store, newChecksum); err != nil {
 		return err
 	}
 

@@ -3,10 +3,10 @@ package gatherer
 import (
 	"bytes"
 	"context"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
+	blobstore "github.com/stackrox/rox/central/blob/datastore"
 	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -29,23 +29,30 @@ var (
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
+
+	blobAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
 )
 
 type defaultExtSrcsGathererImpl struct {
 	networkEntityDS entityDataStore.EntityDataStore
 	stopSig         concurrency.Signal
+	blobStore       blobstore.Datastore
 }
 
 // newDefaultExtNetworksGatherer returns an instance of NetworkGraphDefaultExtSrcsGatherer that reaches out internet to fetch the data.
 func newDefaultExtNetworksGatherer(networkEntityDS entityDataStore.EntityDataStore) NetworkGraphDefaultExtSrcsGatherer {
 	return &defaultExtSrcsGathererImpl{
 		networkEntityDS: networkEntityDS,
+		blobStore:       blobstore.Singleton(),
 	}
 }
 
 func (g *defaultExtSrcsGathererImpl) Start() {
 	go func() {
-		if err := loadBundledExternalSrcs(g.networkEntityDS); err != nil {
+		if err := loadBundledExternalSrcs(g.blobStore, g.networkEntityDS); err != nil {
 			log.Errorf("UNEXPECTED: Failed to load pre-bundled external networks data: %v", err)
 		}
 		go g.run()
@@ -91,13 +98,9 @@ func (g *defaultExtSrcsGathererImpl) reconcileDefaultExternalSrcs() error {
 		return errors.Wrap(err, "pulling remote external networks checksum")
 	}
 
-	var localChecksum []byte
-	_, err = os.Open(defaultexternalsrcs.LocalChecksumFile)
-	if os.IsExist(err) {
-		localChecksum, err = os.ReadFile(defaultexternalsrcs.LocalChecksumFile)
-		if err != nil {
-			return errors.Wrapf(err, "reading local external networks checksum from %q", defaultexternalsrcs.LocalChecksumFile)
-		}
+	localChecksum, err := loadLocalChecksum(g.blobStore)
+	if err != nil {
+		return errors.Wrapf(err, "reading local external networks checksum from %q", defaultexternalsrcs.LocalChecksumBlobPath)
 	}
 
 	if bytes.Equal(localChecksum, remoteChecksum) {
@@ -129,7 +132,7 @@ func (g *defaultExtSrcsGathererImpl) reconcileDefaultExternalSrcs() error {
 	log.Infof("Found %d external networks in DB. Successfully stored %d/%d new external networks", len(lastSeenIDs), len(inserted), len(entities))
 
 	// Update checksum only if all the pulled data is successfully written.
-	if err := writeChecksumLocally(remoteChecksum); err != nil {
+	if err := writeChecksumLocally(g.blobStore, remoteChecksum); err != nil {
 		return err
 	}
 

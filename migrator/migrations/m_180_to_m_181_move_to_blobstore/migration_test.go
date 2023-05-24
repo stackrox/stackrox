@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/m_180_to_m_181_move_to_blobstore/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/binenc"
+	"github.com/stackrox/rox/pkg/networkgraph/defaultexternalsrcs"
 	"github.com/stackrox/rox/pkg/postgres/gorm/largeobject"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stretchr/testify/suite"
@@ -157,5 +158,60 @@ func (s *blobMigrationTestSuite) TestUploadProbeMigration() {
 	s.Equal(binenc.BigEndian.EncodeUint32(crc32Sum), []byte(blob.Checksum))
 	s.Equal(len(data), buf.Len())
 	s.Equal(data, buf.Bytes())
+	s.NoError(tx.Commit().Error)
+}
+
+func (s *blobMigrationTestSuite) TestNetworkGraphExternalSourceBundleChecksumMigration() {
+	// Nothing to migrate
+	s.Require().NoError(moveToBlobs(s.db.GetGormDB()))
+
+	// Prepare persistent file
+	checksum := []byte("9d14d96443b95feff4823b6a3ce20df16c822cb35d02dffd7d2f703671272013")
+	reader := bytes.NewBuffer(checksum)
+
+	file, err := os.CreateTemp("", "ng-checksum")
+	s.Require().NoError(err)
+	defer func() {
+		s.NoError(file.Close())
+		s.NoError(os.Remove(file.Name()))
+	}()
+	networkGraphLocalChecksumFile = file.Name()
+	n, err := io.Copy(file, reader)
+	s.Require().NoError(err)
+
+	s.Require().EqualValues(len(checksum), n)
+
+	// Migrate
+	s.Require().NoError(moveToBlobs(s.db.GetGormDB()))
+
+	// Verify Blob
+	blobModel := &schema.Blobs{Name: defaultexternalsrcs.LocalChecksumBlobPath}
+	s.Require().NoError(s.db.GetGormDB().First(&blobModel).Error)
+
+	blob, err := schema.ConvertBlobToProto(blobModel)
+	s.Require().NoError(err)
+	s.Equal(defaultexternalsrcs.LocalChecksumBlobPath, blob.GetName())
+	s.EqualValues(len(checksum), blob.GetLength())
+
+	// Verify Data
+	buf := bytes.NewBuffer([]byte{})
+
+	tx := s.db.GetGormDB().Begin()
+	s.Require().NoError(err)
+	los := &largeobject.LargeObjects{DB: tx}
+	s.Require().NoError(los.Get(blob.Oid, buf))
+	s.Equal(len(checksum), buf.Len())
+	s.Equal(checksum, buf.Bytes())
+	s.NoError(tx.Commit().Error)
+
+	// Test re-entry
+	s.Require().NoError(moveToBlobs(s.db.GetGormDB()))
+	buf.Reset()
+	tx = s.db.GetGormDB().Begin()
+	los = &largeobject.LargeObjects{DB: tx}
+	s.Require().NoError(err)
+	s.Require().NoError(los.Get(blob.Oid, buf))
+	s.Equal(len(checksum), buf.Len())
+	s.Equal(checksum, buf.Bytes())
 	s.NoError(tx.Commit().Error)
 }
