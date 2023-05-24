@@ -727,6 +727,7 @@ type EmbeddedNodeScanComponent struct {
 	Vulnerabilities []*NodeVulnerability     `protobuf:"bytes,7,rep,name=vulnerabilities,proto3" json:"vulnerabilities,omitempty"`
 	Priority        int64                    `protobuf:"varint,4,opt,name=priority,proto3" json:"priority,omitempty"`
 	// Types that are valid to be assigned to SetTopCvss:
+	//
 	//	*EmbeddedNodeScanComponent_TopCvss
 	SetTopCvss           isEmbeddedNodeScanComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
 	RiskScore            float32                                `protobuf:"fixed32,6,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty"`
