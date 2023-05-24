@@ -70,7 +70,9 @@ func (s *managerTestSuite) TestStoreAndGetExistingProbeFile() {
 	crc32Sum := crc32.ChecksumIEEE(data)
 
 	allAccessCtx := sac.WithAllAccess(context.Background())
+	s.False(s.mgr.IsAvailable(allAccessCtx))
 	s.Require().NoError(s.mgr.StoreFile(allAccessCtx, validFilePath, bytes.NewReader(data), int64(len(data)), crc32Sum))
+	s.True(s.mgr.IsAvailable(allAccessCtx))
 
 	fileInfos, err := s.mgr.GetExistingProbeFiles(allAccessCtx, []string{validFilePath})
 	s.NoError(err)
