@@ -42,6 +42,8 @@ ci_exit_trap() {
 
     (send_slack_notice_for_failures_on_merge "${exit_code}") || { echo "ERROR: Could not slack a test failure message"; }
 
+    post_process_test_results
+
     while [[ -e /tmp/hold ]]; do
         info "Holding this job for debug"
         sleep 60
@@ -1215,12 +1217,29 @@ store_test_results() {
 
     local from="$1"
     local to="$2"
+
+    info "Copying test results from $from to $to"
+
+    local dest="${ARTIFACT_DIR}/junit-$to"
+
+    cp -a "$from" "$dest" || true # (best effort)
+}
+
+post_process_test_results() {
+    if ! is_OPENSHIFT_CI || is_in_PR_context; then
+        return 0
+    fi
+
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+        info "ERROR: ARTIFACT_DIR is not set which is expect in openshift CI"
+        return 0
+    fi
+
     local csv_output
 
     set +u
-    if ! is_in_PR_context; then
     {
-        info "Creating JIRA task for failures found in $from"
+        info "Creating JIRA issues for failures found in ${ARTIFACT_DIR}"
         csv_output="$(mktemp --suffix=.csv)"
         curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.8/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
@@ -1230,23 +1249,18 @@ store_test_results() {
             -build-link "https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/$JOB_NAME/$BUILD_ID" \
             -build-tag "$STACKROX_BUILD_TAG" \
             -job-name "$JOB_NAME" \
-            -junit-reports-dir "$from" \
+            -junit-reports-dir "${ARTIFACT_DIR}" \
             -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
             -threshold 5 \
             -csv-output "${csv_output}"
+
+        info "Creating Big Query test records from ${csv_output}"
         bq load \
             --skip_leading_rows=1 \
             --allow_quoted_newlines \
             ci_metrics.stackrox_tests "${csv_output}"
     } || true
-    fi
     set -u
-
-    info "Copying test results from $from to $to"
-
-    local dest="${ARTIFACT_DIR}/junit-$to"
-
-    cp -a "$from" "$dest" || true # (best effort)
 }
 
 send_slack_notice_for_failures_on_merge() {
