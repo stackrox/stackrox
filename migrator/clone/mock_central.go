@@ -206,16 +206,15 @@ func (m *mockCentral) upgradeDB(path, _, pgClone string) {
 }
 
 func (m *mockCentral) downgradeDB(path, _, pgClone string) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		if exists, _ := pgadmin.CheckIfDBExists(m.adminConfig, pgClone); exists {
-			cloneVer, err := migVer.ReadVersionPostgres(m.ctx, pgClone)
-			require.NoError(m.t, err)
-			require.GreaterOrEqual(m.t, cloneVer.SeqNum, migrations.CurrentDBVersionSeqNum())
-		}
-		if !m.runBoth {
-			return
-		}
+	if exists, _ := pgadmin.CheckIfDBExists(m.adminConfig, pgClone); exists {
+		cloneVer, err := migVer.ReadVersionPostgres(m.ctx, pgClone)
+		require.NoError(m.t, err)
+		require.GreaterOrEqual(m.t, cloneVer.SeqNum, migrations.CurrentDBVersionSeqNum())
 	}
+	if !m.runBoth {
+		return
+	}
+
 	if path != "" {
 		// Verify no downgrade
 		if exists, _ := fileutils.Exists(filepath.Join(path, "db")); exists {
