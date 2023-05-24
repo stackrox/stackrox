@@ -38,7 +38,6 @@ export const deploymentWithVulnerabilitiesFragment = gql`
             ...ImageMetadataContext
         }
         imageVulnerabilities(query: $query, pagination: $pagination) {
-            id
             cve
             summary
             images(query: $query) {
@@ -55,7 +54,6 @@ export type DeploymentWithVulnerabilities = {
     id: string;
     images: ImageMetadataContext[];
     imageVulnerabilities: {
-        id: string;
         cve: string;
         summary: string;
         images: {
@@ -66,7 +64,6 @@ export type DeploymentWithVulnerabilities = {
 };
 
 function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
-    id: string;
     cve: string;
     severity: VulnerabilitySeverity;
     isFixable: boolean;
@@ -84,7 +81,7 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
     });
 
     return deployment.imageVulnerabilities.map((vulnerability) => {
-        const { id, cve, summary, images } = vulnerability;
+        const { cve, summary, images } = vulnerability;
         // Severity, Fixability, and Discovered date are all based on the aggregate value of all components
         const allVulnerableComponents = vulnerability.images.flatMap((img) => img.imageComponents);
         const highestVulnSeverity = getHighestVulnerabilitySeverity(allVulnerableComponents);
@@ -101,7 +98,6 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
                 : `${uniqueComponents.size} components`;
 
         return {
-            id,
             cve,
             severity: highestVulnSeverity,
             isFixable: isAnyVulnFixable,

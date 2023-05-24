@@ -28,7 +28,7 @@ export const deploymentComponentVulnerabilitiesFragment = gql`
         source
         layerIndex
         imageVulnerabilities(query: $query) {
-            id
+            vulnerabilityId: id
             severity
             cvss
             scoreVersion
