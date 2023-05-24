@@ -19,7 +19,8 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error
 	Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error)
 	Delete(ctx context.Context, name string) error
-	GetNames(ctx context.Context) ([]string, error)
+	GetIDs(ctx context.Context) ([]string, error)
+	GetMetadata(ctx context.Context, name string) (*storage.Blob, bool, error)
 }
 
 type storeImpl struct {
@@ -189,7 +190,12 @@ func (s *storeImpl) Delete(ctx context.Context, name string) error {
 	return tx.Commit(ctx)
 }
 
-// GetNames all blob names
-func (s *storeImpl) GetNames(ctx context.Context) ([]string, error) {
+// GetIDs all blob names
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	return s.store.GetIDs(ctx)
+}
+
+// GetMetadata all blob names
+func (s *storeImpl) GetMetadata(ctx context.Context, name string) (*storage.Blob, bool, error) {
+	return s.store.Get(ctx, name)
 }
