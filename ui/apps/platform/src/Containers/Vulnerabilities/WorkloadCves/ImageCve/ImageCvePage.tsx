@@ -87,18 +87,20 @@ export const imageCveSummaryQuery = gql`
 
 export const imageCveAffectedImagesQuery = gql`
     ${imagesForCveFragment}
-    # by default, query must include the CVE id
-    query getImagesForCVE($query: String, $pagination: Pagination) {
-        images(query: $query, pagination: $pagination) {
-            ...ImagesForCVE
+    query getImagesForCVE($cve: String!, $query: String, $pagination: Pagination) {
+        imageCVE(cve: $cve, subfieldScopeQuery: $query) {
+            cve
+            images(pagination: $pagination) {
+                ...ImagesForCVE
+            }
         }
     }
 `;
 
 export const imageCveAffectedDeploymentsQuery = gql`
     ${deploymentsForCveFragment}
-    # by default, query must include the CVE id
     query getDeploymentsForCVE(
+        $cve: String!
         $query: String
         $pagination: Pagination
         $lowImageCountQuery: String
@@ -106,8 +108,11 @@ export const imageCveAffectedDeploymentsQuery = gql`
         $importantImageCountQuery: String
         $criticalImageCountQuery: String
     ) {
-        deployments(query: $query, pagination: $pagination) {
-            ...DeploymentsForCVE
+        imageCVE(cve: $cve, subfieldScopeQuery: $query) {
+            cve
+            deployments(pagination: $pagination) {
+                ...DeploymentsForCVE
+            }
         }
     }
 `;
@@ -184,13 +189,15 @@ function ImageCvePage() {
     });
 
     const imageDataRequest = useQuery<
-        { images: ImageForCve[] },
+        { imageCVE: { images: ImageForCve[] } | null },
         {
+            cve: string;
             query: string;
             pagination: PaginationParam;
         }
     >(imageCveAffectedImagesQuery, {
         variables: {
+            cve: cveId,
             query,
             pagination: {
                 offset: (page - 1) * perPage,
@@ -210,8 +217,9 @@ function ImageCvePage() {
     }
 
     const deploymentDataRequest = useQuery<
-        { deploymentCount: number; deployments: DeploymentForCve[] },
+        { imageCVE: { deployments: DeploymentForCve[] } | null },
         {
+            cve: string;
             query: string;
             lowImageCountQuery: string;
             moderateImageCountQuery: string;
@@ -221,6 +229,7 @@ function ImageCvePage() {
         }
     >(imageCveAffectedDeploymentsQuery, {
         variables: {
+            cve: cveId,
             query: getDeploymentSearchQuery(),
             lowImageCountQuery: getDeploymentSearchQuery('LOW_VULNERABILITY_SEVERITY'),
             moderateImageCountQuery: getDeploymentSearchQuery('MODERATE_VULNERABILITY_SEVERITY'),
@@ -399,14 +408,16 @@ function ImageCvePage() {
                                     <div className="pf-u-px-lg workload-cves-table-container">
                                         {entityTab === 'Image' && (
                                             <AffectedImagesTable
-                                                images={imageData?.images ?? []}
+                                                images={imageData?.imageCVE?.images ?? []}
                                                 getSortParams={getSortParams}
                                                 isFiltered={isFiltered}
                                             />
                                         )}
                                         {entityTab === 'Deployment' && (
                                             <AffectedDeploymentsTable
-                                                deployments={deploymentData?.deployments ?? []}
+                                                deployments={
+                                                    deploymentData?.imageCVE?.deployments ?? []
+                                                }
                                                 getSortParams={getSortParams}
                                                 isFiltered={isFiltered}
                                                 filteredSeverities={
