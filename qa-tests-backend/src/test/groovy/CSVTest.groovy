@@ -138,19 +138,19 @@ class CSVTest extends BaseSpecification {
         ${CVE_POSTGRES_FIELDS_FRAGEMENT}
         """
 
-    static final private Map<String, String> QUERIES = [
+    private static final Map<String, String> QUERIES = [
             "FIXABLE_CVES_IN_IMAGE_QUERY"     : FIXABLE_CVES_IN_IMAGE_QUERY,
             "FIXABLE_CVES_IN_COMPONENT_QUERY" : FIXABLE_CVES_IN_COMPONENT_QUERY,
             "FIXABLE_CVES_IN_DEPLOYMENT_QUERY": FIXABLE_CVES_IN_DEPLOYMENT_QUERY,
     ]
 
-    static final private Map<String, String> PG_QUERIES = [
+    private static final Map<String, String> PG_QUERIES = [
             "FIXABLE_CVES_IN_IMAGE_QUERY"     : FIXABLE_CVES_IN_IMAGE_POSTGRES_QUERY,
             "FIXABLE_CVES_IN_COMPONENT_QUERY" : FIXABLE_CVES_IN_COMPONENT_POSTGRES_QUERY,
             "FIXABLE_CVES_IN_DEPLOYMENT_QUERY": FIXABLE_CVES_IN_DEPLOYMENT_POSTGRES_QUERY,
     ]
 
-    static final private Deployment CVE_DEPLOYMENT = new Deployment()
+    private static final Deployment CVE_DEPLOYMENT = new Deployment()
             .setName("nginx-deployment")
             .setImage("quay.io/rhacs-eng/qa:nginx-1-9")
             .addLabel("app", "test")
