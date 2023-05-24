@@ -117,7 +117,7 @@ func (d *delegatedRegistryImpl) processScanImage(scanReq *central.ScanImage) err
 		// TODO: create another method or change this method so that does not 'include' namespace
 		_, err = d.localScan.EnrichLocalImageInNamespace(ctx, d.imageSvc, ci, "", scanReq.GetRequestId(), scanReq.GetForce())
 		if errors.Is(err, scan.ErrEnrichNotStarted) {
-			d.imageSvc.UpdateScanImageStatusInternal(ctx, &v1.UpdateScanImageStatusInternalRequest{
+			d.imageSvc.UpdateLocalScanStatusInternal(ctx, &v1.UpdateLocalScanStatusInternalRequest{
 				RequestId: scanReq.GetRequestId(),
 				Error:     err.Error(),
 			})
