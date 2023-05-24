@@ -11,7 +11,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -44,12 +43,6 @@ func TestSingleUUIDIndex(t *testing.T) {
 }
 
 func (s *SingleUUIDIndexSuite) SetupTest() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres index tests")
-		s.T().SkipNow()
-	}
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := postgres.ParseConfig(source)

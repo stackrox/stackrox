@@ -39,8 +39,6 @@ func (s *PostgresPruningSuite) SetupSuite() {
 		s.T().SkipNow()
 	}
 
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
 	s.testDB = pgtest.ForT(s.T())
 	s.ctx = sac.WithAllAccess(context.Background())
 }

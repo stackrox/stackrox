@@ -15,7 +15,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/env"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -91,12 +90,6 @@ type ImageCVEViewTestSuite struct {
 }
 
 func (s *ImageCVEViewTestSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skipf("Requires %s=true. Skipping the test", env.PostgresDatastoreEnabled.EnvVar())
-		s.T().SkipNow()
-	}
 
 	ctx := sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())

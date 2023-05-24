@@ -16,8 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/sac"
 
-	"github.com/stackrox/rox/pkg/env"
-
 	"github.com/stackrox/rox/pkg/testutils"
 
 	"github.com/stretchr/testify/suite"
@@ -40,12 +38,6 @@ type postgresMigrationSuite struct {
 var _ suite.TearDownTestSuite = (*postgresMigrationSuite)(nil)
 
 func (s *postgresMigrationSuite) SetupTest() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
-
 	var err error
 	s.legacyDB, err = bolthelper.NewTemp(s.T().Name() + ".db")
 	s.NoError(err)
