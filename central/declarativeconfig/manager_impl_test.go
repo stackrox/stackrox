@@ -93,6 +93,15 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 		},
 		RoleName: "Admin",
 	}
+	notifier := &storage.Notifier{
+		Name: "notifierName",
+		Id:   "notifierId",
+		Config: &storage.Notifier_Splunk{
+			Splunk: &storage.Splunk{
+				HttpToken: "http-token",
+			},
+		},
+	}
 
 	gomock.InOrder(
 		mockUpdater.EXPECT().Upsert(gomock.Any(), accessScope),
@@ -101,6 +110,7 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 		mockUpdater.EXPECT().Upsert(gomock.Any(), role),
 		mockUpdater.EXPECT().Upsert(gomock.Any(), authProvider),
 		mockUpdater.EXPECT().Upsert(gomock.Any(), group),
+		mockUpdater.EXPECT().Upsert(gomock.Any(), notifier),
 	)
 
 	gomock.InOrder(
@@ -146,10 +156,18 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 			Status:       storage.IntegrationHealth_HEALTHY,
 			ErrorMessage: "",
 		})),
+		reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
+			Id:           "notifierId",
+			Name:         "notifierName in config map test-handler-2",
+			Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
+			Status:       storage.IntegrationHealth_HEALTHY,
+			ErrorMessage: "",
+		})),
 	)
 
 	// Delete resources should be called in order, ignoring the existing IDs from the previously upserted resources.
 	gomock.InOrder(
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"notifierId"}).Return(nil, nil),
 		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"group"}).Return(nil, nil),
 		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-auth-provider"}).Return(nil, nil),
 		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"role"}).Return(nil, nil),
@@ -164,6 +182,10 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 			{
 				Id:   "some-id",
 				Name: "Config Map some-config-map",
+			},
+			{
+				Id:   "notifierId",
+				Name: "",
 			},
 			{
 				Id:   "group",
@@ -196,6 +218,7 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 		types.RoleType:          mockUpdater,
 		types.AuthProviderType:  mockUpdater,
 		types.GroupType:         mockUpdater,
+		types.NotifierType:      mockUpdater,
 	}
 	m.declarativeConfigErrorReporter = reporter
 
@@ -218,6 +241,9 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 			},
 			types.GroupType: []proto.Message{
 				group,
+			},
+			types.NotifierType: []proto.Message{
+				notifier,
 			},
 		},
 	})

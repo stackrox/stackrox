@@ -79,6 +79,7 @@ var protoTypesOrder = []reflect.Type{
 	types.RoleType,
 	types.AuthProviderType,
 	types.GroupType,
+	types.NotifierType,
 }
 
 // New creates a new instance of Manager.

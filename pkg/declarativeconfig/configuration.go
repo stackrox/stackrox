@@ -28,6 +28,7 @@ func supportedConfigurationTypes() string {
 		AccessScopeConfiguration,
 		PermissionSetConfiguration,
 		RoleConfiguration,
+		NotifierConfiguration,
 	}, ",")
 }
 
@@ -72,7 +73,7 @@ func fromUnstructured(unstructured interface{}) (Configuration, error) {
 		return nil, errors.Wrap(err, "marshalling unstructured configuration")
 	}
 
-	configs := []Configuration{&AuthProvider{}, &AccessScope{}, &PermissionSet{}, &Role{}}
+	configs := []Configuration{&AuthProvider{}, &AccessScope{}, &PermissionSet{}, &Role{}, &Notifier{}}
 	for _, c := range configs {
 		err := decodeYAMLToConfiguration(rawConfiguration, c)
 		if err == nil {

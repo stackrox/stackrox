@@ -13,6 +13,7 @@ import (
 type DataStore interface {
 	GetNotifier(ctx context.Context, id string) (*storage.Notifier, bool, error)
 	GetScrubbedNotifier(ctx context.Context, id string) (*storage.Notifier, bool, error)
+	GetNotifiersFiltered(ctx context.Context, filter func(notifier *storage.Notifier) bool) ([]*storage.Notifier, error)
 	GetNotifiers(ctx context.Context) ([]*storage.Notifier, error)
 	GetScrubbedNotifiers(ctx context.Context) ([]*storage.Notifier, error)
 	Exists(ctx context.Context, id string) (bool, error)

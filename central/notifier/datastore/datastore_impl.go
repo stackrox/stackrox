@@ -34,6 +34,23 @@ func verifyNotifierOrigin(ctx context.Context, n *storage.Notifier) error {
 	return nil
 }
 
+func (b *datastoreImpl) GetNotifiersFiltered(ctx context.Context, filter func(notifier *storage.Notifier) bool) ([]*storage.Notifier, error) {
+	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
+		return nil, err
+	}
+	notifiers, err := b.storage.GetAll(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting notifiers from storage")
+	}
+	result := make([]*storage.Notifier, 0)
+	for _, n := range notifiers {
+		if filter(n) {
+			result = append(result, n)
+		}
+	}
+	return result, nil
+}
+
 func (b *datastoreImpl) GetNotifier(ctx context.Context, id string) (*storage.Notifier, bool, error) {
 	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
 		return nil, false, err
