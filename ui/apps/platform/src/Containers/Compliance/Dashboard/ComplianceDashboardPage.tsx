@@ -1,4 +1,5 @@
 import React, { ReactElement, useEffect, useState } from 'react';
+import { useApolloClient } from '@apollo/client';
 
 import Button from 'Components/Button';
 import ExportButton from 'Components/ExportButton';
@@ -28,6 +29,8 @@ function ComplianceDashboardPage(): ReactElement {
     const [standards, setStandards] = useState<ComplianceStandardMetadata[]>([]);
     const [isManageStandardsModalOpen, setIsManageStandardsModalOpen] = useState(false);
 
+    const client = useApolloClient();
+
     const [isExporting, setIsExporting] = useState(false);
 
     const { isDarkMode } = useTheme();
@@ -52,12 +55,18 @@ function ComplianceDashboardPage(): ReactElement {
             });
     }, []);
 
-    function onSaveFromManageStandardsModal(standardsSaved: ComplianceStandardMetadata[]) {
+    function onSaveManageStandardsModal(standardsSaved: ComplianceStandardMetadata[]) {
         setStandards(standardsSaved);
         setIsManageStandardsModalOpen(false);
+
+        /*
+         * Same method as for Scan button to clear store of any cached query data,
+         * so backend filters out hidden standards in query data according to saved update.
+         */
+        return client.resetStore();
     }
 
-    function onCancelFromManageStandardsModal() {
+    function onCancelManageStandardsModal() {
         setIsManageStandardsModalOpen(false);
     }
 
@@ -141,8 +150,8 @@ function ComplianceDashboardPage(): ReactElement {
             {isManageStandardsModalOpen && (
                 <ManageStandardsModal
                     standards={standards}
-                    onSave={onSaveFromManageStandardsModal}
-                    onCancel={onCancelFromManageStandardsModal}
+                    onSave={onSaveManageStandardsModal}
+                    onCancel={onCancelManageStandardsModal}
                 />
             )}
         </>
