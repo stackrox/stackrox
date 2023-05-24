@@ -131,6 +131,7 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 				continue
 			}
 
+			log.Debugf("Process signal receed: %+v", processSignal)
 			s.processPipeline.Process(processSignal)
 		default:
 			// Currently eat unhandled signals
