@@ -46,8 +46,7 @@ func (u *notifierUpdater) Upsert(ctx context.Context, m proto.Message) error {
 	if !ok {
 		return errox.InvariantViolation.Newf("wrong type passed to role updater: %T", notifierProto)
 	}
-	// TODO: replace with Upsert
-	_, err := u.notifierDS.AddNotifier(ctx, notifierProto)
+	_, err := u.notifierDS.UpsertNotifier(ctx, notifierProto)
 	if err != nil {
 		return err
 	}

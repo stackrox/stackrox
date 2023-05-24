@@ -25,6 +25,18 @@ type datastoreImpl struct {
 	storage store.Store
 }
 
+func (b *datastoreImpl) UpsertNotifier(ctx context.Context, notifier *storage.Notifier) (string, error) {
+	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
+		return "", err
+	}
+
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	// TODO: forbid declarative modifications via API
+	return notifier.GetId(), b.storage.Upsert(ctx, notifier)
+}
+
 func verifyNotifierOrigin(ctx context.Context, n *storage.Notifier) error {
 	if !declarativeconfig.CanModifyResource(ctx, n) {
 		return errox.NotAuthorized.Newf("notifier %q's origin is %s, "+
