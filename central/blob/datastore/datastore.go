@@ -64,7 +64,7 @@ func (s *datastoreImpl) GetMetadata(ctx context.Context, name string) (*storage.
 
 // GetBlobWithDataInBuffer returns the blob with data in a buffer with a size limit
 func (s *datastoreImpl) GetBlobWithDataInBuffer(ctx context.Context, name string) (*bytes.Buffer, *storage.Blob, bool, error) {
-	buf := bytes.NewBuffer([]byte{})
+	buf := bytes.NewBuffer(nil)
 
 	blob, exists, err := s.store.Get(ctx, name, buf)
 	if blob.GetLength() > int64(bufferedBlobDataLimitInBytes) {
