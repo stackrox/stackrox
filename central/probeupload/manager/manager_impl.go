@@ -54,7 +54,7 @@ func newManager(datastore blobstore.Datastore) *manager {
 }
 
 func (m *manager) getAllProbeBlobs() ([]string, error) {
-	names, err := m.blobStore.GetNames(sac.WithAllAccess(context.Background()))
+	names, err := m.blobStore.GetIDs(sac.WithAllAccess(context.Background()))
 	if err != nil {
 		return nil, err
 	}

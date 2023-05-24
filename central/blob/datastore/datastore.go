@@ -10,7 +10,7 @@ import (
 
 // Datastore provides access to the blob store
 type Datastore interface {
-	GetNames(ctx context.Context) ([]string, error)
+	GetIDs(ctx context.Context) ([]string, error)
 	Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error
 	Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error)
 	Delete(ctx context.Context, name string) error
@@ -42,7 +42,7 @@ func (d *datastoreImpl) Delete(ctx context.Context, name string) error {
 	return d.store.Delete(ctx, name)
 }
 
-// GetNames return all blob names
-func (d *datastoreImpl) GetNames(ctx context.Context) ([]string, error) {
-	return d.store.GetNames(ctx)
+// GetIDs return all blob ids
+func (d *datastoreImpl) GetIDs(ctx context.Context) ([]string, error) {
+	return d.store.GetIDs(ctx)
 }
