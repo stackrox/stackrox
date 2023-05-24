@@ -112,14 +112,18 @@ func (r *resourceCountByImageCVESeverity) GetLowSeverityCount() common.ResourceC
 }
 
 type imageResponse struct {
-	ImageID         string    `db:"image_sha"`
+	ImageID string `db:"image_sha"`
+
+	// Following are supported sort options.
 	ImageFullName   string    `db:"image"`
 	OperatingSystem string    `db:"image_os"`
 	ScanTime        time.Time `db:"image_scan_time"`
 }
 
 type deploymentResponse struct {
-	DeploymentID   string `db:"deployment_id"`
+	DeploymentID string `db:"deployment_id"`
+
+	// Following are supported sort options.
 	DeploymentName string `db:"deployment"`
 	Cluster        string `db:"cluster"`
 	Namespace      string `db:"namespace"`
