@@ -32,6 +32,11 @@ func (b *storeImpl) Get(_ context.Context, id string) (np *storage.NetworkPolicy
 	return
 }
 
+// Count is unimplemented
+func (b *storeImpl) Count(_ context.Context) (int, error) {
+	panic("unimplemented")
+}
+
 // GetByQuery is unimplemented
 func (b *storeImpl) GetByQuery(_ context.Context, _ *v1.Query) ([]*storage.NetworkPolicy, error) {
 	panic("unimplemented")
