@@ -14,7 +14,9 @@ import (
 // LoadGeneratingNodeScanner is a scanner that generates fake scans with high frequecy of the node-inventory messages.
 // Its main purpose is to generate load for load-testing of Sensor
 type LoadGeneratingNodeScanner struct {
-	nodeProvider compliance.NodeNameProvider
+	nodeProvider       compliance.NodeNameProvider
+	generationInterval time.Duration
+	initialScanDelay   time.Duration
 }
 
 // IsActive returns true if the scanner is ready to be used
@@ -27,7 +29,7 @@ func (n *LoadGeneratingNodeScanner) Connect(_ string) {}
 
 // GetIntervals returns an object with delay-intervals between scans
 func (n *LoadGeneratingNodeScanner) GetIntervals() *intervals.NodeScanIntervals {
-	return intervals.NewNodeScanInterval(1000*time.Millisecond, 0.0, time.Second)
+	return intervals.NewNodeScanInterval(n.generationInterval, 0.0, n.initialScanDelay)
 }
 
 // ScanNode generates a MsgFromCompliance with node scan

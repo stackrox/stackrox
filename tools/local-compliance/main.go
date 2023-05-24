@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/compliance/collection/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -14,7 +15,11 @@ var log = logging.LoggerForModule()
 // gRPC connection to Sensor. This was introduced for intergration-, load-testing, and debugging purposes.
 func main() {
 	np := &dummyNodeNameProvider{}
-	scanner := &LoadGeneratingNodeScanner{nodeProvider: np}
+	scanner := &LoadGeneratingNodeScanner{
+		nodeProvider:       np,
+		generationInterval: env.NodeScanningInterval.DurationSetting(),
+		initialScanDelay:   env.NodeScanningMaxInitialWait.DurationSetting(),
+	}
 
 	srh := &dummySensorReplyHandlerImpl{}
 	c := compliance.NewComplianceApp(np, scanner, srh)
