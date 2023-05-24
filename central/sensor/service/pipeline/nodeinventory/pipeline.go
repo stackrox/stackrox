@@ -99,11 +99,13 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return err
 	}
 
-	reply := replyCompliance(node.GetClusterId(), ninv.GetNodeName(), central.NodeInventoryACK_ACK)
-	if err := injector.InjectMessage(ctx, reply); err != nil {
-		log.Warnf("Failed sending node-inventory ACK to Sensor for %s: %v", nodeDatastore.NodeString(node), err)
-	} else {
-		log.Debugf("Sent ACK for node-inventory %s", nodeDatastore.NodeString(node))
+	if injector != nil {
+		reply := replyCompliance(node.GetClusterId(), ninv.GetNodeName(), central.NodeInventoryACK_ACK)
+		if err := injector.InjectMessage(ctx, reply); err != nil {
+			log.Warnf("Failed sending node-inventory ACK to Sensor for %s: %v", nodeDatastore.NodeString(node), err)
+		} else {
+			log.Debugf("Sent ACK for node-inventory %s", nodeDatastore.NodeString(node))
+		}
 	}
 	return nil
 }
