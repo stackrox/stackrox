@@ -146,17 +146,10 @@ function ImagesTable({ images, getSortParams, isFiltered, filteredSeverities }: 
                                 <Td>{operatingSystem}</Td>
                                 <Td>
                                     {deploymentCount > 0 ? (
-                                        <Button
-                                            variant={ButtonVariant.link}
-                                            isInline
-                                            component={LinkShim}
-                                            href={getEntityPagePath('Image', id, {
-                                                detailsTab: 'Resources',
-                                            })}
-                                        >
+                                        <>
                                             {deploymentCount}{' '}
                                             {pluralize('deployment', deploymentCount)}
-                                        </Button>
+                                        </>
                                     ) : (
                                         <Flex>
                                             <div>0 deployments</div>

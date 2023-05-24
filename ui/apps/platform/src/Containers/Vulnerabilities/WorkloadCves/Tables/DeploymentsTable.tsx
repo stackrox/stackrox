@@ -134,16 +134,9 @@ function DeploymentsTable({
                                 <Td>{clusterName}</Td>
                                 <Td>{namespace}</Td>
                                 <Td>
-                                    <Button
-                                        variant={ButtonVariant.link}
-                                        isInline
-                                        component={LinkShim}
-                                        href={getEntityPagePath('Deployment', id, {
-                                            detailsTab: 'Resources',
-                                        })}
-                                    >
+                                    <>
                                         {imageCount} {pluralize('image', imageCount)}
-                                    </Button>
+                                    </>
                                 </Td>
                                 <Td>
                                     <DatePhraseTd date={created} />
