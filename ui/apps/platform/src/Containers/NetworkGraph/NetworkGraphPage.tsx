@@ -17,11 +17,7 @@ import { timeWindows } from 'constants/timeWindows';
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import useURLSearch from 'hooks/useURLSearch';
-import {
-    fetchNetworkFlowGraph,
-    fetchNetworkPolicyGraph,
-    fetchNodeUpdates,
-} from 'services/NetworkService';
+import { fetchNetworkFlowGraph, fetchNodeUpdates } from 'services/NetworkService';
 import queryService from 'utils/queryService';
 import timeWindowToDate from 'utils/timeWindows';
 import { isCompleteSearchFilter } from 'utils/searchUtils';
@@ -61,6 +57,9 @@ const includePorts = true;
 
 // for MVP, always show Orchestrator Components
 const ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS = true;
+
+// This is a query param used to add policy data in the response for the network graph data
+const INCLUDE_POLICIES = true;
 
 function NetworkGraphPage() {
     const [edgeState, setEdgeState] = useState<EdgeState>('active');
@@ -158,6 +157,7 @@ function NetworkGraphPage() {
                 const timestampToUse = timeWindowToDate(timeWindow);
 
                 Promise.all([
+                    // fetch the network graph data used for the active graph
                     fetchNetworkFlowGraph(
                         selectedClusterId,
                         namespacesFromUrl,
@@ -167,14 +167,16 @@ function NetworkGraphPage() {
                         includePorts,
                         ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS
                     ),
-                    fetchNetworkPolicyGraph(
+                    // fetch the network graph data, including policies, for the inactive graph
+                    fetchNetworkFlowGraph(
                         selectedClusterId,
                         namespacesFromUrl,
                         deploymentsFromUrl,
                         queryToUse,
                         undefined,
                         includePorts,
-                        ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS
+                        ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS,
+                        INCLUDE_POLICIES
                     ),
                 ])
                     .then((values) => {

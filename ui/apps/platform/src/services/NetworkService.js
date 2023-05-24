@@ -228,7 +228,8 @@ export function fetchNetworkFlowGraph(
     query = '',
     date = null,
     includePorts = false,
-    includeOrchestratorComponents = false
+    includeOrchestratorComponents = false,
+    includePolicies = false
 ) {
     const urlParams = query ? { query } : {};
     const namespaceQuery = namespaces.length > 0 ? `Namespace:${namespaces.join(',')}` : '';
@@ -240,6 +241,9 @@ export function fetchNetworkFlowGraph(
     }
     if (includePorts) {
         urlParams.includePorts = true;
+    }
+    if (includePolicies) {
+        urlParams.include_policies = true;
     }
     // for openshift filtering toggle
     if (
