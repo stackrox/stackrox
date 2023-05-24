@@ -137,6 +137,7 @@ func toQuerySortOption(sortOption *v1.SortOption) *v1.QuerySortOption {
 	return ret
 }
 
+// FillPaginationV2 fills in the pagination information for a query.
 func FillPaginationV2(query *v1.Query, pagination *v2.Pagination, maxLimit int32) {
 	queryPagination := &v1.QueryPagination{}
 

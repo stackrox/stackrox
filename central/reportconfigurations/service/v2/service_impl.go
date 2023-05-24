@@ -146,7 +146,7 @@ func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *apiV2.R
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required for deletion")
 	}
 	if err := s.reportConfigStore.RemoveReportConfiguration(ctx, id.GetId()); err != nil {
-		return &apiV2.Empty{}, err
+		return nil, err
 	}
 
 	// TODO ROX-16567 : Integrate with report manager when new reporting is implemented
