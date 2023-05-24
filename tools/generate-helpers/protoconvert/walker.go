@@ -219,8 +219,8 @@ func (s *converter) handleStruct(w io.Writer, original reflect.Type, new reflect
 			}
 			s.printf(w, "p2.%s = %s(p1.%s)", field.Name, newField.Type.String(), field.Name)
 		case reflect.Interface:
-			//If it is a oneof then call XXX_OneofWrappers to get the types.
-			//The return values is a slice of interfaces that are nil type pointers
+			// If it is an oneof then call XXX_OneofWrappers to get the types.
+			// The return values is a slice of interfaces that are nil type pointers
 			if field.Tag.Get("protobuf_oneof") != "" {
 				s.printf(w, "if p1.%s != nil {", field.Name)
 
