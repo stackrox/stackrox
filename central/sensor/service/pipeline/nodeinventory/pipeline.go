@@ -105,7 +105,6 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	} else {
 		log.Debugf("Sent ACK for node-inventory %s", nodeDatastore.NodeString(node))
 	}
-
 	return nil
 }
 
