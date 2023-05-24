@@ -109,7 +109,7 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 				log.Infof("Scanning node %q", nodeName)
 				msg, err := c.nodeScanner.ScanNode(ctx)
 				if err != nil {
-					log.Errorf("error running node scan: %v", err)
+					log.Errorf("Error running node scan: %v", err)
 				} else {
 					nodeInventoriesC <- msg
 				}
@@ -137,7 +137,7 @@ func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServ
 					// continue and the <-ctx.Done() path should be taken next iteration
 					continue
 				}
-				log.Fatalf("error initializing stream to sensor: %v", err)
+				log.Fatalf("Error initializing stream to sensor: %v", err)
 			}
 			// A second Context is introduced for cancelling the goroutine if runRecv returns.
 			// runRecv only returns on errors, upon which the client will get reinitialized,
@@ -147,7 +147,7 @@ func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServ
 				go c.manageSendToSensor(ctx2, client, toSensorC)
 			}
 			if err := c.runRecv(ctx, client, config); err != nil {
-				log.Errorf("error running recv: %v", err)
+				log.Errorf("Error running recv: %v", err)
 			}
 			cancelFn() // runRecv is blocking, so the context is safely cancelled before the next  call to initializeStream
 		}
@@ -232,7 +232,7 @@ func (c *Compliance) manageSendToSensor(ctx context.Context, cli sensor.Complian
 			return
 		case sc := <-toSensorC:
 			if err := cli.Send(sc); err != nil {
-				log.Errorf("failed sending node scan to sensor: %v", err)
+				log.Errorf("Failed sending node scan to sensor: %v", err)
 			}
 		}
 	}

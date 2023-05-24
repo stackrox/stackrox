@@ -40,10 +40,10 @@ func (s *SensorReplyHandlerImpl) HandleNACK(ctx context.Context, client sensor.C
 func (s *SensorReplyHandlerImpl) rescan(ctx context.Context, client sensor.ComplianceService_CommunicateClient) {
 	msg, err := s.nodeScanner.ScanNode(ctx)
 	if err != nil {
-		log.Errorf("error running ScanNode: %v", err)
+		log.Errorf("Error running ScanNode: %v", err)
 		return
 	}
 	if err := client.Send(msg); err != nil {
-		log.Errorf("error sending to sensor: %v", err)
+		log.Errorf("Error sending to sensor: %v", err)
 	}
 }
