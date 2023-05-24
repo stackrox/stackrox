@@ -78,15 +78,11 @@ func TestSearchCategories(t *testing.T) {
 		ImageComponentDataStore:  components,
 	}
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		resolver.CVEDataStore = cves
-	} else {
-		resolver.PolicyCategoryDataStore = policyCategoryMocks.NewMockDataStore(ctrl)
-		resolver.ImageCVEDataStore = imageCVEMocks.NewMockDataStore(ctrl)
-		resolver.NodeCVEDataStore = nodeCVEMocks.NewMockDataStore(ctrl)
-		resolver.ClusterCVEDataStore = clusterCVEMocks.NewMockDataStore(ctrl)
-		resolver.NodeComponentDataStore = nodeComponentMocks.NewMockDataStore(ctrl)
-	}
+	resolver.PolicyCategoryDataStore = policyCategoryMocks.NewMockDataStore(ctrl)
+	resolver.ImageCVEDataStore = imageCVEMocks.NewMockDataStore(ctrl)
+	resolver.NodeCVEDataStore = nodeCVEMocks.NewMockDataStore(ctrl)
+	resolver.ClusterCVEDataStore = clusterCVEMocks.NewMockDataStore(ctrl)
+	resolver.NodeComponentDataStore = nodeComponentMocks.NewMockDataStore(ctrl)
 
 	searchCategories := resolver.getAutoCompleteSearchers()
 	searchFuncs := resolver.getSearchFuncs()

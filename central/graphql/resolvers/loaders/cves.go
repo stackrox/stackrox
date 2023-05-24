@@ -11,30 +11,11 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cvss"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var cveLoaderType = reflect.TypeOf(storage.CVE{})
-
-func init() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-	// TODO: [ROX-11257, ROX-11258, ROX-11259] Replace this cve loader.
-	RegisterTypeFactory(reflect.TypeOf(storage.CVE{}), func() interface{} {
-		return NewCVELoader(legacyImageCVEDataStore.Singleton())
-	})
-}
-
-// NewCVELoader creates a new loader for cve data.
-func NewCVELoader(ds legacyImageCVEDataStore.DataStore) CVELoader {
-	return &cveLoaderImpl{
-		loaded: make(map[string]*storage.CVE),
-		ds:     ds,
-	}
-}
 
 // GetCVELoader returns the CVELoader from the context if it exists.
 func GetCVELoader(ctx context.Context) (CVELoader, error) {

@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/nodecomponent/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -17,11 +16,9 @@ import (
 var nodeComponentLoaderType = reflect.TypeOf(storage.NodeComponent{})
 
 func init() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		RegisterTypeFactory(reflect.TypeOf(storage.NodeComponent{}), func() interface{} {
-			return NewNodeComponentLoader(datastore.Singleton())
-		})
-	}
+	RegisterTypeFactory(reflect.TypeOf(storage.NodeComponent{}), func() interface{} {
+		return NewNodeComponentLoader(datastore.Singleton())
+	})
 }
 
 // NewNodeComponentLoader creates a new loader for node component data.

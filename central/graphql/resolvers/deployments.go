@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/processindicator/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -126,28 +125,12 @@ func (resolver *Resolver) DeploymentCount(ctx context.Context, args RawQuery) (i
 // Cluster returns a GraphQL resolver for the cluster where this deployment runs
 func (resolver *deploymentResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Cluster")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readClusters(ctx); err != nil {
-			return nil, err
-		}
-
-		clusterID := graphql.ID(resolver.data.GetClusterId())
-		return resolver.root.Cluster(ctx, struct{ graphql.ID }{clusterID})
-	}
 	return resolver.root.Cluster(resolver.withDeploymentScopeContext(ctx), struct{ graphql.ID }{graphql.ID(resolver.data.GetClusterId())})
 }
 
 // NamespaceObject returns a GraphQL resolver for the namespace where this deployment runs
 func (resolver *deploymentResolver) NamespaceObject(ctx context.Context) (*namespaceResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "NamespaceObject")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readNamespaces(ctx); err != nil {
-			return nil, err
-		}
-
-		namespaceID := graphql.ID(resolver.data.GetNamespaceId())
-		return resolver.root.Namespace(ctx, struct{ graphql.ID }{namespaceID})
-	}
 	return resolver.root.Namespace(resolver.withDeploymentScopeContext(ctx), struct{ graphql.ID }{graphql.ID(resolver.data.GetNamespaceId())})
 }
 
@@ -534,11 +517,6 @@ func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (strin
 
 func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Images")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readImages(ctx); err != nil {
-			return nil, err
-		}
-	}
 	if !resolver.hasImages() {
 		return nil, nil
 	}
@@ -547,11 +525,6 @@ func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQu
 
 func (resolver *deploymentResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageCount")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readImages(ctx); err != nil {
-			return 0, err
-		}
-	}
 	return resolver.root.ImageCount(resolver.withDeploymentScopeContext(ctx), args)
 }
 
@@ -822,9 +795,7 @@ func (resolver *deploymentResolver) LatestViolation(ctx context.Context, args Ra
 
 func (resolver *deploymentResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "PlottedVulns")
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedImageVulnerabilities.")
-	}
+	return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedImageVulnerabilities.")
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
 	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
 }
