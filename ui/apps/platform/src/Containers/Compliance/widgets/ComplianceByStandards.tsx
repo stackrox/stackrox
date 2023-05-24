@@ -1,15 +1,25 @@
 import React, { ReactElement } from 'react';
 import { useQuery } from '@apollo/client';
 
-import { ResourceType } from 'constants/entityTypes';
 import Loader from 'Components/Loader';
 import { STANDARDS_QUERY } from 'queries/standard';
+import { ComplianceStandardScope } from 'services/ComplianceService';
+
 import ComplianceByStandard from './ComplianceByStandard';
+
+type StandardsQueryDataType = {
+    results: {
+        id: string;
+        name: string;
+        scopes: ComplianceStandardScope[];
+        hidden: boolean;
+    }[];
+};
 
 type ComplianceByStandardsProps = {
     entityId?: string;
     entityName?: string;
-    entityType?: ResourceType;
+    entityType?: ComplianceStandardScope;
 };
 
 function ComplianceByStandards({
@@ -17,7 +27,7 @@ function ComplianceByStandards({
     entityName,
     entityType,
 }: ComplianceByStandardsProps): ReactElement {
-    const { loading, data, error } = useQuery(STANDARDS_QUERY);
+    const { loading, data, error } = useQuery<StandardsQueryDataType>(STANDARDS_QUERY);
     if (loading) {
         return <Loader />;
     }
@@ -31,12 +41,14 @@ function ComplianceByStandards({
         );
     }
 
-    let standards = data?.results || [];
-    if (entityType && Array.isArray(data?.results)) {
-        standards = data.results.filter(
-            ({ hidden, scopes }): boolean => !hidden && (scopes.includes(entityType) as boolean)
-        );
-    }
+    /* eslint-disable no-nested-ternary */
+    const standards = !data?.results
+        ? []
+        : !entityType
+        ? data.results
+        : data.results.filter(({ scopes }) => scopes.includes(entityType));
+    /* eslint-enable no-nested-ternary */
+
     return (
         <>
             {standards.map(({ name: standardName, id: standardId }) => (
