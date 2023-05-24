@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     Flex,
     FlexItem,
@@ -43,6 +43,7 @@ function NamespaceSideBar({ namespaceId, nodes, edges, onNodeSelect }: Namespace
     const namespaceNode = getNodeById(nodes, namespaceId);
     const deploymentNodes = getDeploymentNodesInNamespace(nodes, namespaceId);
     const cluster = namespaceNode?.data.type === 'NAMESPACE' ? namespaceNode.data.cluster : '';
+    const namespaceName = namespaceNode?.label || '';
 
     const deployments = deploymentNodes.map((deploymentNode) => {
         const numFlows = getNumDeploymentFlows(edges, deploymentNode.id);
@@ -56,7 +57,8 @@ function NamespaceSideBar({ namespaceId, nodes, edges, onNodeSelect }: Namespace
         const policyIds: string[] = curr?.data?.policyIds || [];
         return [...acc, ...policyIds];
     }, [] as string[]);
-    const uniqueNamespacePolicyIds = uniq(namespacePolicyIds);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const uniqueNamespacePolicyIds = useMemo(() => uniq(namespacePolicyIds), [namespaceId, nodes]);
 
     return (
         <Stack>
@@ -68,7 +70,7 @@ function NamespaceSideBar({ namespaceId, nodes, edges, onNodeSelect }: Namespace
                     <FlexItem>
                         <TextContent>
                             <Text component={TextVariants.h1} className="pf-u-font-size-xl">
-                                {namespaceNode?.label}
+                                {namespaceName}
                             </Text>
                         </TextContent>
                         <TextContent>
@@ -113,7 +115,7 @@ function NamespaceSideBar({ namespaceId, nodes, edges, onNodeSelect }: Namespace
                     className="pf-u-h-100"
                 >
                     <NetworkPolicies
-                        entityName={namespaceNode?.label || ''}
+                        entityName={namespaceName}
                         policyIds={uniqueNamespacePolicyIds}
                     />
                 </TabContent>

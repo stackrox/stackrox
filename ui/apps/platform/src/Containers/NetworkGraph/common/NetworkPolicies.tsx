@@ -20,6 +20,7 @@ import download from 'utils/download';
 import SelectSingle from 'Components/SelectSingle';
 import { useTheme } from 'Containers/ThemeProvider';
 import useFetchNetworkPolicies from 'hooks/useFetchNetworkPolicies';
+import useWhyDidYouUpdate from '../hooks/useWhyDidYouUpdate';
 
 type NetworkPoliciesProps = {
     entityName: string;
@@ -33,14 +34,17 @@ type NetworkPolicyYAML = {
 
 const allNetworkPoliciesId = 'network-policy-combined-yaml-pf-key';
 
-function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React.ReactElement {
+function NetworkPolicies(props: NetworkPoliciesProps): React.ReactElement {
+    useWhyDidYouUpdate('NetworkPolicies', props);
+    const { entityName, policyIds } = props;
+
     const { networkPolicies, isLoading, error } = useFetchNetworkPolicies(policyIds);
     const { isDarkMode } = useTheme();
     const [customDarkMode, setCustomDarkMode] = React.useState(isDarkMode);
 
     const allNetworkPoliciesYAML = useMemo(
         () => ({
-            name: allNetworkPoliciesId,
+            name: 'All network policies',
             yaml: networkPolicies.map((networkPolicy) => networkPolicy.yaml).join('---\n'),
         }),
         [networkPolicies]
@@ -126,7 +130,9 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                         handleSelect={handleSelectedNetworkPolicy}
                         placeholderText="Select a network policy"
                     >
-                        <SelectOption value="all">All network policies</SelectOption>
+                        <SelectOption value={allNetworkPoliciesId}>
+                            All network policies
+                        </SelectOption>
                         <Divider component="li" />
                         <>
                             {networkPolicies.map((networkPolicy) => {
@@ -168,4 +174,4 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
     );
 }
 
-export default NetworkPolicies;
+export default React.memo(NetworkPolicies);
