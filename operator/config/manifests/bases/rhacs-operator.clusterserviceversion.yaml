@@ -564,7 +564,7 @@ spec:
         displayName: Environment Variables
         path: customize.envVars
       - description: Settings for the Node-Scanner container, which is responsible
-          for scanning the Nodes' filesystem
+          for scanning the Nodes OS filesystem
         displayName: Node Scanner Settings
         path: perNode.nodescanner
       - displayName: Autoscaling Minimum Replicas
