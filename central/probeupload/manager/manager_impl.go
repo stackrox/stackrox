@@ -35,6 +35,11 @@ var (
 	log = logging.LoggerForModule()
 
 	administrationSAC = sac.ForResource(resources.Administration)
+
+	blobReadAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
 )
 
 type manager struct {
@@ -52,7 +57,7 @@ func newManager(datastore blobstore.Datastore) *manager {
 }
 
 func (m *manager) getAllProbeBlobs() ([]string, error) {
-	names, err := m.blobStore.GetIDs(sac.WithAllAccess(context.Background()))
+	names, err := m.blobStore.GetIDs(blobReadAccessCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +180,7 @@ func (m *manager) StoreFile(ctx context.Context, file string, data io.Reader, si
 		ModifiedTime: timestamp.TimestampNow(),
 	}
 
-	if err := m.blobStore.Upsert(sac.WithAllAccess(ctx), b, verifyingReader); err != nil {
+	if err := m.blobStore.Upsert(ctx, b, verifyingReader); err != nil {
 		return errors.Wrapf(err, "writing probe data blob %s", file)
 	}
 

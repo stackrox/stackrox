@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/blob/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
@@ -58,17 +57,17 @@ func (d *datastoreImpl) GetIDs(ctx context.Context) ([]string, error) {
 }
 
 // GetMetadata returns blob metadata only
-func (s *datastoreImpl) GetMetadata(ctx context.Context, name string) (*storage.Blob, bool, error) {
-	return s.store.GetMetadata(ctx, name)
+func (d *datastoreImpl) GetMetadata(ctx context.Context, name string) (*storage.Blob, bool, error) {
+	return d.store.GetMetadata(ctx, name)
 }
 
 // GetBlobWithDataInBuffer returns the blob with data in a buffer with a size limit
-func (s *datastoreImpl) GetBlobWithDataInBuffer(ctx context.Context, name string) (*bytes.Buffer, *storage.Blob, bool, error) {
+func (d *datastoreImpl) GetBlobWithDataInBuffer(ctx context.Context, name string) (*bytes.Buffer, *storage.Blob, bool, error) {
 	buf := bytes.NewBuffer(nil)
 
-	blob, exists, err := s.store.Get(ctx, name, buf)
+	blob, exists, err := d.store.Get(ctx, name, buf)
 	if blob.GetLength() > int64(bufferedBlobDataLimitInBytes) {
-		utils.Should(errors.New(fmt.Sprintf("Blob %s has %d in length which is beyond buffer limit %d", name, blob.Size(), bufferedBlobDataLimitInBytes)))
+		utils.Should(fmt.Errorf("blob %s has %d in length which is beyond buffer limit %d", name, blob.Size(), bufferedBlobDataLimitInBytes))
 	}
 	return buf, blob, exists, err
 }
