@@ -15,7 +15,7 @@ ScannerV4 APIs will exclusively use gRPC. ScannerV4 APIs are not backward compat
 
 ScannerV4 will offer modes of operation [akin to Clair's deployment models](https://quay.github.io/clair/howto/deployment.html). Each mode will implement different gRPC services, reflecting the underlying separation between ClairCore's [libindex](https://pkg.go.dev/github.com/quay/claircore/libindex#Libindex) and [libvuln](https://pkg.go.dev/github.com/quay/claircore/libvuln#Libvuln). They will be named "indexer" and "matcher". Both modes can be enabled concurrently.
 
-ScannerV4 will use "index reports" and "vulnerability reports" data models, similar to ClairCore's. Both types will link to a "scannable resource" (e.g., a container image) using an ID created by Central. This is a string that uniquely identifies the resource's manifest. To avoid conflicts between different resources, and allow changes to how the IDs are generated, Central will namespace them with `/v1/<resource>/`.  Initially, `/v1/containerimage/<image-digest>` will be supported for container images.
+ScannerV4 will use "index reports" and "vulnerability reports" data models, similar to ClairCore's. Both types will link to a "scannable resource" (e.g., a container image) using an ID created by Scanner clients (i.e. `hash_id`). This is a string that uniquely identifies the resource's manifest. To avoid conflicts between different resources, and allow changes to how the IDs are generated, Central and Sensor (the existing clients) will namespace them with `/v1/<resource>/`.  Initially, `/v1/containerimage/<image-digest>` will be supported for container images.
 
 Index Reports are persisted, and their lifecycle is managed by Scanner. Central and Sensor create reports on demand. Scanner is responsible for deleting least-recently used reports.
 
@@ -87,6 +87,8 @@ The Indexer and Matcher modes allow additional deployment options, enabling Scan
 Using gRPC exclusively increases complexity for load balancing ScannerV4 for horizontal scalability. Additional steps will be necessary to achieve this, including service-mesh tooling or client-side load-balancing, which are not available out of the box and require additional work.
 
 The client-managed `hash_id` approach for identifying manifests may lead to duplicated index reports for locators pointing to the same resource. While this simplifies the API to support future resource types (orchestrator, nodes), it may lead to client misuse.
+
+The use of a version prefix in the `hash_id` opens the door to gracefully modify the ID format without breaking existing IDs, allowing Scanner to parse them, if needed.
 
 Always re-indexing upon `Indexer/CreateIndex` calls is sub-optimal. There are [interfaces in ClairCore's Indexer`](https://github.com/quay/clair/blob/8174e950186c03bee10a9174643bca0f173710c2/indexer/service.go#L47) that allows check to not trigger re-indexing. This could potentially be leveraged by ScannerV4 to optimize re-indexing, a transparent change for customers.
 
