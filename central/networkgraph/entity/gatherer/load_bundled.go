@@ -61,7 +61,7 @@ func (g *defaultExtSrcsGathererImpl) loadBundledExternalSrcs(store blobstore.Dat
 	log.Infof("Found %d external networks in DB. Successfully stored %d/%d new external networks", len(lastSeenIDs), len(inserted), len(entities))
 
 	// Update checksum only if all the pulled data is successfully written.
-	if err := g.writeChecksumLocally(store, newChecksum); err != nil {
+	if err := g.writeLocalChecksum(store, newChecksum); err != nil {
 		return err
 	}
 

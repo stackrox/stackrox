@@ -138,7 +138,7 @@ func (g *defaultExtSrcsGathererImpl) reconcileDefaultExternalSrcs() error {
 	log.Infof("Found %d external networks in DB. Successfully stored %d/%d new external networks", len(lastSeenIDs), len(inserted), len(entities))
 
 	// Update checksum only if all the pulled data is successfully written.
-	if err := g.writeChecksumLocally(g.blobStore, remoteChecksum); err != nil {
+	if err := g.writeLocalChecksum(g.blobStore, remoteChecksum); err != nil {
 		return err
 	}
 
@@ -166,7 +166,7 @@ func (g *defaultExtSrcsGathererImpl) loadLocalChecksum(store blobstore.Datastore
 	return g.currentChecksum, nil
 }
 
-func (g *defaultExtSrcsGathererImpl) writeChecksumLocally(store blobstore.Datastore, checksum []byte) error {
+func (g *defaultExtSrcsGathererImpl) writeLocalChecksum(store blobstore.Datastore, checksum []byte) error {
 	b := &storage.Blob{
 		Name:         defaultexternalsrcs.LocalChecksumBlobPath,
 		Length:       int64(len(checksum)),

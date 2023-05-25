@@ -77,6 +77,7 @@ func moveNetworkGraphExtSrcChecksum(db *gorm.DB) {
 		}
 		return
 	}
+	// It is fine if we fail to migrate the checksum, just rollback.
 	if result := tx.Rollback(); result.Error != nil {
 		log.Warnf("failed to rollback with error %v", result.Error)
 	}
