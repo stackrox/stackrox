@@ -19,7 +19,7 @@ ScannerV4 will use "index reports" and "vulnerability reports" data models, simi
 
 Index Reports are persisted, and their lifecycle is managed by Scanner. Central and Sensor create reports on demand. Scanner is responsible for deleting least-recently used reports.
 
-ScannerV4 gRPC endpoints will use GRPC status codes to communicate the return status in case of non-successful responses.
+ScannerV4 gRPC endpoints will use gRPC status codes to communicate the return status in case of non-successful responses.
 
 ScannerV4 will also provide endpoints for health and observability checks, which are not detailed in this ADR.
 
