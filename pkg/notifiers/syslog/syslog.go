@@ -188,7 +188,7 @@ func alertToCEF(alert *storage.Alert, notifier *storage.Notifier) string {
 
 	severity := alertToCEFSeverityMap[alert.GetPolicy().GetSeverity()]
 
-	return getCEFHeaderWithExtension(fmt.Sprintf("Policy.{%s}", alert.GetPolicy().GetId()), alert.GetPolicy().GetName(), severity, makeExtensionFromPairs(extensionList))
+	return getCEFHeaderWithExtension("Alert", alert.GetPolicy().GetName(), severity, makeExtensionFromPairs(extensionList))
 }
 
 func getCEFHeaderWithExtension(deviceEventClassID, name string, severity int, extension string) string {
