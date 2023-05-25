@@ -68,6 +68,22 @@ func (mr *MockStoreMockRecorder) GetAggregationResult(ctx, queryString, groupBy,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAggregationResult", reflect.TypeOf((*MockStore)(nil).GetAggregationResult), ctx, queryString, groupBy, unit)
 }
 
+// GetConfig mocks base method.
+func (m *MockStore) GetConfig(ctx context.Context, id string) (*storage.ComplianceConfig, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConfig", ctx, id)
+	ret0, _ := ret[0].(*storage.ComplianceConfig)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetConfig indicates an expected call of GetConfig.
+func (mr *MockStoreMockRecorder) GetConfig(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockStore)(nil).GetConfig), ctx, id)
+}
+
 // GetLatestRunMetadataBatch mocks base method.
 func (m *MockStore) GetLatestRunMetadataBatch(ctx context.Context, clusterID string, standardIDs []string) (map[compliance.ClusterStandardPair]types.ComplianceRunsMetadata, error) {
 	m.ctrl.T.Helper()
@@ -182,4 +198,18 @@ func (m *MockStore) StoreRunResults(ctx context.Context, results *storage.Compli
 func (mr *MockStoreMockRecorder) StoreRunResults(ctx, results interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreRunResults", reflect.TypeOf((*MockStore)(nil).StoreRunResults), ctx, results)
+}
+
+// UpdateConfig mocks base method.
+func (m *MockStore) UpdateConfig(ctx context.Context, config *storage.ComplianceConfig) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateConfig", ctx, config)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateConfig indicates an expected call of UpdateConfig.
+func (mr *MockStoreMockRecorder) UpdateConfig(ctx, config interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConfig", reflect.TypeOf((*MockStore)(nil).UpdateConfig), ctx, config)
 }

@@ -26,6 +26,7 @@ func init() {
 		&storage.ComplianceControlResult{}:                      resources.Compliance,
 		&storage.ComplianceDomain{}:                             resources.Compliance,
 		&storage.ComplianceStrings{}:                            resources.Compliance,
+		&storage.ComplianceConfig{}:                             resources.Compliance,
 		&storage.ComplianceOperatorCheckResult{}:                resources.ComplianceOperator,
 		&storage.ComplianceOperatorProfile{}:                    resources.ComplianceOperator,
 		&storage.ComplianceOperatorRule{}:                       resources.ComplianceOperator,
