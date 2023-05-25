@@ -29,7 +29,7 @@ In Central, ScannerV4 will replace ScannerV2 as the container image scanner. A n
 
 The endpoints are versioned at `v4` to align with Clair:
 
-1. `scanner.v4.Indexer/CreateIndex`: Create a manifest of a specified resource and create an index or re-index. Idempotent while creation is being executed. Synchronous and tied to the client's request. Returns [`IndexReport`](https://github.com/quay/claircore/blob/v1.4.18/indexreport.go#L19)
+1. `scanner.v4.Indexer/CreateIndexReport`: Create a manifest of a specified resource and create an index or re-index. Idempotent while creation is being executed. Synchronous and tied to the client's request. Returns [`IndexReport`](https://github.com/quay/claircore/blob/v1.4.18/indexreport.go#L19)
 2. `scanner.v4.Indexer/GetIndex`: Retrieve or check index existence. Returns [`IndexReport`](https://github.com/quay/claircore/blob/v1.4.18/indexreport.go#L19).
 3. `scanner.v4.Matcher/GetVulnerabilities`: Get vulnerabilities for a given resource's manifest. Returns [`VulnerabilityReport`](https://github.com/quay/claircore/blob/v1.4.18/vulnerabilityreport.go#L7).
 4. `scanner.v4.Matcher/GetMetadata`: Get information on vulnerability metadata, e.g., last update timestamp.
@@ -43,7 +43,7 @@ message ContainerImageLocator {
     string password = 3;
 }
 
-message CreateIndexRequest {
+message CreateIndexReportRequest {
     string hash_id = 1;
     oneof resource_locator {
         ContainerImageLocator container_image;
@@ -90,7 +90,7 @@ The client-managed `hash_id` approach for identifying manifests may lead to dupl
 
 The use of a version prefix in the `hash_id` opens the door to gracefully modify the ID format without breaking existing IDs, allowing Scanner to parse them, if needed.
 
-Always re-indexing upon `Indexer/CreateIndex` calls is sub-optimal. There are [interfaces in ClairCore's Indexer`](https://github.com/quay/clair/blob/8174e950186c03bee10a9174643bca0f173710c2/indexer/service.go#L47) that allows check to not trigger re-indexing. This could potentially be leveraged by ScannerV4 to optimize re-indexing, a transparent change for customers.
+Always re-indexing upon `Indexer/CreateIndexReport` calls is sub-optimal. There are [interfaces in ClairCore's Indexer`](https://github.com/quay/clair/blob/8174e950186c03bee10a9174643bca0f173710c2/indexer/service.go#L47) that allows check to not trigger re-indexing. This could potentially be leveraged by ScannerV4 to optimize re-indexing, a transparent change for customers.
 
 ## References
 
