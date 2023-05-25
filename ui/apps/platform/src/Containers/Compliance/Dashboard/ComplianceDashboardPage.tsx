@@ -1,4 +1,5 @@
 import React, { ReactElement, useEffect, useState } from 'react';
+import { useApolloClient } from '@apollo/client';
 
 import Button from 'Components/Button';
 import ExportButton from 'Components/ExportButton';
@@ -9,7 +10,11 @@ import useCaseTypes from 'constants/useCaseTypes';
 import { useTheme } from 'Containers/ThemeProvider';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
-import { ComplianceStandardMetadata, fetchComplianceStandards } from 'services/ComplianceService';
+import {
+    ComplianceStandardMetadata,
+    fetchComplianceStandardsSortedByName,
+} from 'services/ComplianceService';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import ScanButton from '../ScanButton';
 import StandardsByEntity from '../widgets/StandardsByEntity';
@@ -22,8 +27,12 @@ import ComplianceDashboardTile from './ComplianceDashboardTile';
 function ComplianceDashboardPage(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const { isFeatureFlagEnabled } = useFeatureFlags();
+    const [isFetchingStandards, setIsFetchingStandards] = useState(false);
+    const [errorMessageForStandards, setErrorMessageForStandards] = useState('');
     const [standards, setStandards] = useState<ComplianceStandardMetadata[]>([]);
     const [isManageStandardsModalOpen, setIsManageStandardsModalOpen] = useState(false);
+
+    const client = useApolloClient();
 
     const [isExporting, setIsExporting] = useState(false);
 
@@ -40,21 +49,34 @@ function ComplianceDashboardPage(): ReactElement {
         hasWriteAccessForComplianceStandards && isDisableComplianceStandardsEnabled;
 
     useEffect(() => {
-        fetchComplianceStandards()
+        setIsFetchingStandards(true);
+        fetchComplianceStandardsSortedByName()
             .then((standardsFetched) => {
+                setErrorMessageForStandards('');
                 setStandards(standardsFetched);
             })
-            .catch(() => {
-                // TODO
+            .catch((error) => {
+                setErrorMessageForStandards(getAxiosErrorMessage(error));
+                setStandards([]);
+            })
+            .finally(() => {
+                setIsFetchingStandards(false);
             });
     }, []);
 
-    function onSaveFromManageStandardsModal(standardsSaved: ComplianceStandardMetadata[]) {
+    function onSaveManageStandardsModal(standardsSaved: ComplianceStandardMetadata[]) {
         setStandards(standardsSaved);
         setIsManageStandardsModalOpen(false);
+
+        /*
+         * Same method as for Scan button to clear store of any cached query data,
+         * so backend filters out standards in query data according to saved update
+         * to hideScanResults properties.
+         */
+        return client.resetStore();
     }
 
-    function onCancelFromManageStandardsModal() {
+    function onCancelManageStandardsModal() {
         setIsManageStandardsModalOpen(false);
     }
 
@@ -87,7 +109,9 @@ function ComplianceDashboardPage(): ReactElement {
                                         onClick={() => {
                                             setIsManageStandardsModalOpen(true);
                                         }}
-                                        disabled={standards.length === 0}
+                                        disabled={
+                                            isFetchingStandards || Boolean(errorMessageForStandards)
+                                        }
                                     />
                                 </div>
                             )}
@@ -138,8 +162,8 @@ function ComplianceDashboardPage(): ReactElement {
             {isManageStandardsModalOpen && (
                 <ManageStandardsModal
                     standards={standards}
-                    onSave={onSaveFromManageStandardsModal}
-                    onCancel={onCancelFromManageStandardsModal}
+                    onSave={onSaveManageStandardsModal}
+                    onCancel={onCancelManageStandardsModal}
                 />
             )}
         </>
