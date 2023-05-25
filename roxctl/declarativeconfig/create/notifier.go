@@ -28,60 +28,85 @@ func notifierCommand(cliEnvironment environment.Environment) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   notifierCommand.notifier.Type(),
 		Args:  cobra.NoArgs,
-		RunE:  notifierCommand.runE(),
-		Short: "Create a declarative configuration for a notifier",
+		Short: "Commands to create a declarative configuration for a notifier",
 	}
 
-	cmd.Flags().StringVar(&notifierCommand.notifier.Name, "name", "", "Name of the notifier")
+	cmd.PersistentFlags().StringVar(&notifierCommand.notifier.Name, "name", "", "Name of the notifier")
+	cmd.AddCommand(
+		notifierCommand.genericCommand(),
+		notifierCommand.splunkCommand())
 
-	genericFlags := pflag.NewFlagSet("generic", pflag.PanicOnError)
-	notifierCommand.gc = &declarativeconfig.GenericConfig{}
-	genericFlags.BoolVar(&notifierCommand.gc.AuditLoggingEnabled, "audit-logging", false, "Notifier audit logging enabled")
-	genericFlags.StringVar(&notifierCommand.gc.Endpoint, "endpoint", "", "Endpoint URL")
-	genericFlags.StringVar(&notifierCommand.gc.Username, "username", "", "Username for the endpoint basic authentication")
-	genericFlags.StringVar(&notifierCommand.gc.Password, "password", "", "Password for the endpoint basic authentication")
-	genericFlags.StringVar(&notifierCommand.gc.CACertPEM, "cacert", "", "Endpoint CA certificate file name (PEM format)")
-	genericFlags.StringToStringVar(&notifierCommand.gcHeaders, "headers", nil, "Headers (comma separated key=value pairs)")
-	genericFlags.StringToStringVar(&notifierCommand.gcExtraFields, "extra-fields", nil, "Extra fields (comma separated key=value pairs)")
-	genericFlags.BoolVar(&notifierCommand.gc.SkipTLSVerify, "skip-tls-verify", false, "Skip TLS verification")
-	notifierCommand.genericFlagSet = genericFlags
+	utils.Must(cmd.MarkPersistentFlagRequired("name"))
+	return cmd
+}
+
+func (n *notifierCmd) genericCommand() *cobra.Command {
+
+	cmd := &cobra.Command{
+		Use:   "generic",
+		Args:  cobra.NoArgs,
+		RunE:  n.runE(),
+		Short: "Create a declarative configuration for a generic notifier",
+	}
+	genericFlags := cmd.Flags()
+	n.gc = &declarativeconfig.GenericConfig{}
+	genericFlags.BoolVar(&n.gc.AuditLoggingEnabled, "audit-logging", false, "Notifier audit logging enabled")
+	genericFlags.StringVar(&n.gc.Endpoint, "webhook-endpoint", "", "Webhook endpoint URL")
+	genericFlags.StringVar(&n.gc.Username, "webhook-username", "", "Username for the endpoint basic authentication")
+	genericFlags.StringVar(&n.gc.Password, "webhook-password", "", "Password for the endpoint basic authentication")
+	genericFlags.StringVar(&n.gc.CACertPEM, "webhook-cacert-file", "", "Endpoint CA certificate file name (PEM format)")
+	genericFlags.StringToStringVar(&n.gcHeaders, "headers", nil, "Headers (comma separated key=value pairs)")
+	genericFlags.StringToStringVar(&n.gcExtraFields, "extra-fields", nil, "Extra fields (comma separated key=value pairs)")
+	genericFlags.BoolVar(&n.gc.SkipTLSVerify, "webhook-insecure-skip-tls-verify", false, "Skip TLS verification")
+	n.genericFlagSet = genericFlags
+
 	cmd.Flags().AddFlagSet(genericFlags)
 
-	splunkFlags := pflag.NewFlagSet("splunk", pflag.PanicOnError)
-	notifierCommand.sc = &declarativeconfig.SplunkConfig{}
-	splunkFlags.BoolVar(&notifierCommand.sc.AuditLoggingEnabled, "splunk-audit-logging", false, "Splunk audit logging enabled")
-	splunkFlags.StringVar(&notifierCommand.sc.HTTPToken, "splunk-token", "", "Splunk HTTP token")
-	splunkFlags.StringVar(&notifierCommand.sc.HTTPEndpoint, "splunk-endpoint", "", "Splunk HTTP endpoint")
-	splunkFlags.BoolVar(&notifierCommand.sc.Insecure, "splunk-insecure", false, "Insecure connection to Splunk")
-	splunkFlags.Int64Var(&notifierCommand.sc.Truncate, "splunk-truncate", 0, "Splunk truncate limit")
-	splunkFlags.StringToStringVar(&notifierCommand.scSourceTypes, "splunk-source-types", nil, "Splunk source types")
-	notifierCommand.splunkFlagSet = splunkFlags
+	utils.Must(cmd.MarkFlagFilename("webhook-cacert-file"))
+	utils.Must(cmd.MarkFlagRequired("webhook-endpoint"))
+	return cmd
+}
+
+func (n *notifierCmd) splunkCommand() *cobra.Command {
+
+	cmd := &cobra.Command{
+		Use:   "splunk",
+		Args:  cobra.NoArgs,
+		RunE:  n.runE(),
+		Short: "Create a declarative configuration for a Splunk notifier",
+	}
+
+	splunkFlags := cmd.Flags()
+	n.sc = &declarativeconfig.SplunkConfig{}
+	splunkFlags.BoolVar(&n.sc.AuditLoggingEnabled, "audit-logging", false, "Splunk audit logging enabled")
+	splunkFlags.StringVar(&n.sc.HTTPToken, "splunk-token", "", "Splunk HTTP token")
+	splunkFlags.StringVar(&n.sc.HTTPEndpoint, "splunk-endpoint", "", "Splunk HTTP endpoint")
+	splunkFlags.BoolVar(&n.sc.Insecure, "splunk-insecure-skip-tls-verify", false, "Insecure connection to Splunk")
+	splunkFlags.Int64Var(&n.sc.Truncate, "truncate", 0, "Splunk truncate limit")
+	splunkFlags.StringToStringVar(&n.scSourceTypes, "source-types", nil, "Splunk source types (comma separated key=value pairs)")
+	n.splunkFlagSet = splunkFlags
 
 	cmd.Flags().AddFlagSet(splunkFlags)
 
-	utils.Must(cmd.MarkFlagFilename("cacert"))
-	utils.Must(cmd.MarkFlagRequired("name"))
-	utils.Must(cmd.MarkFlagRequired("endpoint"))
 	return cmd
 }
 
 type notifierCmd struct {
 	notifier *declarativeconfig.Notifier
 
-	genericFlagSet *pflag.FlagSet
-	splunkFlagSet  *pflag.FlagSet
-
-	gc *declarativeconfig.GenericConfig
-	sc *declarativeconfig.SplunkConfig
-
-	gcHeaders     map[string]string
-	gcExtraFields map[string]string
-	scSourceTypes map[string]string
-
 	env       environment.Environment
 	configMap string
 	secret    string
 	namespace string
+
+	genericFlagSet *pflag.FlagSet
+	gc             *declarativeconfig.GenericConfig
+	gcHeaders      map[string]string
+	gcExtraFields  map[string]string
+
+	splunkFlagSet *pflag.FlagSet
+	sc            *declarativeconfig.SplunkConfig
+	scSourceTypes map[string]string
 }
 
 func (n *notifierCmd) runE() func(cmd *cobra.Command, args []string) error {
@@ -170,7 +195,7 @@ func (n *notifierCmd) validate() error {
 		return errox.InvalidArgs.New("parsing notifier endpoint URL").CausedBy(err)
 	}
 	if n.sc.HTTPEndpoint == "" && n.sc.HTTPToken != "" {
-		return errox.InvalidArgs.New("missing splunk-endpoint")
+		return errox.InvalidArgs.New("missing endpoint")
 	}
 	return nil
 }

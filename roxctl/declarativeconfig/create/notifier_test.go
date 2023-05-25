@@ -16,16 +16,15 @@ func TestCreateNotifier_Failures(t *testing.T) {
 		err    error
 	}{
 		"missing name flag": {
-			args:   []string{"notifier"},
-			errOut: "Error: required flag(s) \"endpoint\", \"name\" not set\n",
+			args:   []string{"notifier", "generic"},
+			errOut: "Error: required flag(s) \"name\", \"webhook-endpoint\" not set\n",
 		},
 		"splunk flags group": {
-			args: []string{"notifier",
+			args: []string{"notifier", "splunk",
 				"--name=some-name",
-				"--endpoint=some-endpoint",
 				"--splunk-token=token",
 			},
-			errOut: `Error: missing splunk-endpoint
+			errOut: `Error: missing endpoint
 `,
 		},
 	}
@@ -59,9 +58,9 @@ func TestCreateNotifier_Success(t *testing.T) {
 		expectedYAML string
 	}{
 		"only name": {
-			args: []string{"notifier",
+			args: []string{"notifier", "generic",
 				"--name=some-name",
-				"--endpoint=some-endpoint",
+				"--webhook-endpoint=some-endpoint",
 			},
 			expectedYAML: `name: some-name
 generic:
@@ -69,9 +68,9 @@ generic:
 `,
 		},
 		"with headers": {
-			args: []string{"notifier",
+			args: []string{"notifier", "generic",
 				"--name=some-name",
-				"--endpoint=some-endpoint",
+				"--webhook-endpoint=some-endpoint",
 				"--headers=k2=v2,k1=v1",
 			},
 			expectedYAML: `name: some-name
@@ -85,15 +84,14 @@ generic:
 `,
 		},
 		"with splunk types": {
-			args: []string{"notifier",
+			args: []string{"notifier", "splunk",
 				"--name=some-name",
-				"--endpoint=some-endpoint",
-				"--splunk-source-types=k2=v2,k1=v1",
+				"--splunk-endpoint=some-endpoint",
+				"--source-types=k2=v2,k1=v1",
 			},
 			expectedYAML: `name: some-name
-generic:
-    endpoint: some-endpoint
 splunk:
+    endpoint: some-endpoint
     sourceTypes:
         - key: k1
           sourceType: v1
