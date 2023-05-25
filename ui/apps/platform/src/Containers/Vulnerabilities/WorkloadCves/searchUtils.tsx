@@ -137,11 +137,13 @@ const vulnerabilitySearchStateForCveStatus: Record<CveStatusTab, VulnerabilitySt
 // Returns a search filter string that scopes results to a CVE Workflow state (e.g. 'OBSERVED')
 export function getCveStatusScopedQueryString(
     searchFilter: QuerySearchFilter,
-    cveStatusTab: CveStatusTab
+    cveStatusTab?: CveStatusTab /* TODO Make this required once Observed/Deferred/FP states are re-implemented */
 ): string {
-    const vulnerabilityState = vulnerabilitySearchStateForCveStatus[cveStatusTab];
+    const vulnerabilityStateFilter = cveStatusTab
+        ? { 'Vulnerability State': vulnerabilitySearchStateForCveStatus[cveStatusTab] }
+        : {};
     return getRequestQueryStringForSearchFilter({
         ...searchFilter,
-        'Vulnerability State': [vulnerabilityState],
+        ...vulnerabilityStateFilter,
     });
 }
