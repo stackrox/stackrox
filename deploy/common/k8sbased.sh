@@ -329,6 +329,7 @@ function launch_central {
       fi
 
       # set custom central version if the CENTRAL_CHART_VERSION env is set
+      # this has to happen after linting since helm lint does not recognize the --version flag
       if [[ ! -z ${CENTRAL_CHART_VERSION} ]]; then
         helm_args+=(
           --version="${CENTRAL_CHART_VERSION}"
@@ -576,6 +577,7 @@ function launch_sensor {
       fi
       
       # set custom sensor version if the SENSOR_CHART_VERSION env is set
+      # this has to happen after linting since helm lint does not recognize the --version flag
       if [[ ! -z ${SENSOR_CHART_VERSION} ]]; then
         helm_args+=(
           --version="${SENSOR_CHART_VERSION}"

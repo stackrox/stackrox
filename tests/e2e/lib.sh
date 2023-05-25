@@ -44,7 +44,7 @@ deploy_stackrox() {
 
 deploy_stackrox_with_custom_central_and_sensor_versions() {
     if [[ "$#" -ne 2 ]]; then
-        die "expected sensor chart version and central chart version as parameters in deploy_stackrox_with_custom_central_and_sensor_versions: deploy_stackrox_with_custom_central_and_sensor_versions <central chart version> <sensor chart version>"
+        die "expected central chart version and sensor chart version as parameters in deploy_stackrox_with_custom_central_and_sensor_versions: deploy_stackrox_with_custom_central_and_sensor_versions <central chart version> <sensor chart version>"
     fi
     ci_export CENTRAL_CHART_VERSION "$1"
     ci_export SENSOR_CHART_VERSION "$2"
