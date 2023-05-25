@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/generated/storage"
-	permissionsetstore "github.com/stackrox/rox/migrator/migrations/m_180_to_m_181_group_role_permission_with_access_one/permissionsetstore"
+	permissionsetstore "github.com/stackrox/rox/migrator/migrations/m_181_to_m_182_group_role_permission_with_access_one/permissionsetstore"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/sac"
 )
