@@ -139,7 +139,9 @@ func (d *delegatedRegistryImpl) sendScanStatusUpdate(scanReq *central.ScanImage,
 		RequestId: scanReq.GetRequestId(),
 		Error:     enrichErr.Error(),
 	})
-	log.Warnf("Error updating local scan status: %v", err)
+	if err != nil {
+		log.Warnf("Error updating local scan status: %v", err)
+	}
 }
 
 func (d *delegatedRegistryImpl) SetCentralGRPCClient(cc grpc.ClientConnInterface) {
