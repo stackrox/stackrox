@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"net/url"
+	"os"
 	"sort"
 
 	"github.com/pkg/errors"
@@ -131,9 +131,9 @@ func anyFlagChanged(fs *pflag.FlagSet) bool {
 }
 
 func loadCertficate(path string) (string, error) {
-	raw, err := ioutil.ReadFile(path)
+	raw, err := os.ReadFile(path)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "reading certificate file")
 	}
 
 	for {
@@ -163,12 +163,12 @@ func (n *notifierCmd) construct(cmd *cobra.Command) error {
 		keys := maputil.Keys(n.gcHeaders)
 		sort.Strings(keys)
 		for _, k := range keys {
-			n.gc.Headers = append(n.gc.Headers, declarativeconfig.KeyValuePair{k, n.gcHeaders[k]})
+			n.gc.Headers = append(n.gc.Headers, declarativeconfig.KeyValuePair{Key: k, Value: n.gcHeaders[k]})
 		}
 		keys = maputil.Keys(n.gcExtraFields)
 		sort.Strings(keys)
 		for _, k := range keys {
-			n.gc.ExtraFields = append(n.gc.ExtraFields, declarativeconfig.KeyValuePair{k, n.gcExtraFields[k]})
+			n.gc.ExtraFields = append(n.gc.ExtraFields, declarativeconfig.KeyValuePair{Key: k, Value: n.gcExtraFields[k]})
 		}
 
 		if n.gc.CACertPEM != "" {
@@ -183,7 +183,7 @@ func (n *notifierCmd) construct(cmd *cobra.Command) error {
 		keys := maputil.Keys(n.scSourceTypes)
 		sort.Strings(keys)
 		for _, k := range keys {
-			n.sc.SourceTypes = append(n.sc.SourceTypes, declarativeconfig.SourceTypePair{k, n.scSourceTypes[k]})
+			n.sc.SourceTypes = append(n.sc.SourceTypes, declarativeconfig.SourceTypePair{Key: k, Value: n.scSourceTypes[k]})
 		}
 		n.notifier.SplunkConfig = n.sc
 	}
