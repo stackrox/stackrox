@@ -114,7 +114,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 // Will return any errors that may occur during scanning, fetching signatures or during reaching out to central.
 func (s *LocalScan) enrichLocalImageFromRegistry(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage, registries []registryTypes.Registry, requestID string, force bool) (*storage.Image, error) {
 	if ci == nil {
-		return nil, ghErrors.Wrapf(ErrEnrichNotStarted, "missing image, nothing to enrich")
+		return nil, ghErrors.Wrap(ErrEnrichNotStarted, "missing image, nothing to enrich")
 	}
 
 	// Check if there is a local Scanner.
@@ -166,6 +166,7 @@ func (s *LocalScan) enrichLocalImageFromRegistry(ctx context.Context, centralCli
 		ImageNotes:     image.GetNotes(),
 		Error:          errorList.String(),
 		RequestId:      requestID,
+		Force:          force,
 	})
 	if err != nil {
 		log.Debugf("Unable to enrich image %q: %v", image.GetName().GetFullName(), err)

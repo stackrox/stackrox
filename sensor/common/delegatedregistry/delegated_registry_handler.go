@@ -21,7 +21,8 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	scanTimeout = 6 * time.Minute
+	scanTimeout         = 6 * time.Minute
+	statusUpdateTimeout = 10 * time.Second
 )
 
 // Handler is responsible for processing delegated
@@ -67,7 +68,6 @@ func (d *delegatedRegistryImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	case msg.GetDelegatedRegistryConfig() != nil:
 		return d.processUpdatedDelegatedRegistryConfig(msg.GetDelegatedRegistryConfig())
 	case msg.GetScanImage() != nil:
-		// TODO: Change scan image so that it doesn't hold up processing other receivers, consider spawning a go routine
 		return d.processScanImage(msg.GetScanImage())
 	}
 
@@ -104,27 +104,42 @@ func (d *delegatedRegistryImpl) processScanImage(scanReq *central.ScanImage) err
 	default:
 		log.Debugf("Received scan request: %q", scanReq)
 
-		// TODO: ensure these timeouts OK?
-		// TODO: perhaps spawn a go-routine so that do not hold up sensor processing other msgs
-		ci, err := utils.GenerateImageFromString(scanReq.GetImageName())
-		if err != nil {
-			return err
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
-		defer cancel()
-
-		// TODO: create another method or change this method so that does not 'include' namespace
-		_, err = d.localScan.EnrichLocalImageInNamespace(ctx, d.imageSvc, ci, "", scanReq.GetRequestId(), scanReq.GetForce())
-		if errors.Is(err, scan.ErrEnrichNotStarted) {
-			d.imageSvc.UpdateLocalScanStatusInternal(ctx, &v1.UpdateLocalScanStatusInternalRequest{
-				RequestId: scanReq.GetRequestId(),
-				Error:     err.Error(),
-			})
-		}
+		// Spawn a goroutine so that this handler doesn't block other messages from being processed
+		// while waiting for scan to complete
+		go d.executeScan(scanReq)
 	}
 
 	return nil
+}
+
+func (d *delegatedRegistryImpl) executeScan(scanReq *central.ScanImage) {
+	ci, err := utils.GenerateImageFromString(scanReq.GetImageName())
+	if err != nil {
+		d.sendScanStatusUpdate(scanReq, err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
+	defer cancel()
+
+	// Execute the scan
+	_, err = d.localScan.EnrichLocalImageInNamespace(ctx, d.imageSvc, ci, "", scanReq.GetRequestId(), scanReq.GetForce())
+	if errors.Is(err, scan.ErrEnrichNotStarted) {
+		// This error indicates enrichment never started and therefore a message will
+		// not be sent to central for this request id, so send one now to be a good
+		// citizen to the waiting goroutine in central
+		d.sendScanStatusUpdate(scanReq, err)
+	}
+}
+
+func (d *delegatedRegistryImpl) sendScanStatusUpdate(scanReq *central.ScanImage, enrichErr error) {
+	ctx, cancel := context.WithTimeout(context.Background(), statusUpdateTimeout)
+	defer cancel()
+	_, err := d.imageSvc.UpdateLocalScanStatusInternal(ctx, &v1.UpdateLocalScanStatusInternalRequest{
+		RequestId: scanReq.GetRequestId(),
+		Error:     enrichErr.Error(),
+	})
+	log.Warnf("Error updating local scan status: %v", err)
 }
 
 func (d *delegatedRegistryImpl) SetCentralGRPCClient(cc grpc.ClientConnInterface) {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/stackrox/rox/central/delegatedregistryconfig"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/delegatedregistry"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/integrationhealth"
@@ -138,7 +138,7 @@ type signatureVerifierForIntegrations func(ctx context.Context, integrations []*
 // (The subsystem is just used for Prometheus metrics.)
 func New(cvesSuppressor CVESuppressor, cvesSuppressorV2 CVESuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache expiringcache.Cache,
 	imageGetter ImageGetter, healthReporter integrationhealth.Reporter,
-	signatureIntegrationGetter SignatureIntegrationGetter, scanDelegator delegatedregistryconfig.Delegator) ImageEnricher {
+	signatureIntegrationGetter SignatureIntegrationGetter, scanDelegator delegatedregistry.Delegator) ImageEnricher {
 	enricher := &enricherImpl{
 		cvesSuppressor:   cvesSuppressor,
 		cvesSuppressorV2: cvesSuppressorV2,

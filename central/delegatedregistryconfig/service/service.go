@@ -143,6 +143,7 @@ func (s *serviceImpl) UpdateConfig(ctx context.Context, config *v1.DelegatedRegi
 		},
 	}
 
+	log.Debugf("Delegated registry config updated: %q", config)
 	for clusterID := range clusterIDs {
 		log.Debugf("Sending updated delegated registry config to cluster %q", clusterID)
 		if err := s.connManager.SendMessage(clusterID, msg); err != nil {

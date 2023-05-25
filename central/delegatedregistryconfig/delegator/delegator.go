@@ -2,6 +2,7 @@ package delegator
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -19,6 +20,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// New creates a new delegator
 func New(deleRegConfigDS datastore.DataStore, connManager connection.Manager, scanWaiterManager waiter.Manager[*storage.Image]) *delegatorImpl {
 	return &delegatorImpl{
 		deleRegConfigDS:   deleRegConfigDS,
@@ -54,13 +56,12 @@ func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, image *storage
 	return clusterID, true, nil
 }
 
-// DelegateEnrichImage sends an enrichment request the provided cluster
+// DelegateEnrichImage sends an enrichment request to the provided cluster
 func (d *delegatorImpl) DelegateEnrichImage(ctx context.Context, image *storage.Image, clusterID string) error {
 	w, err := d.scanWaiterManager.NewWaiter()
 	if err != nil {
 		return err
 	}
-	log.Debugf("Scan waiter created with id %q", w.ID())
 
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_ScanImage{
@@ -81,11 +82,12 @@ func (d *delegatorImpl) DelegateEnrichImage(ctx context.Context, image *storage.
 
 	img, err := w.Wait(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("error delegating scan to cluster %q for %q: %w", clusterID, image.GetName().GetFullName(), err)
 	}
 
-	log.Debugf("Scan response successfully received for %q and image %q", w.ID(), img.GetName().GetFullName())
+	log.Debugf("Scan response received for %q and image %q", w.ID(), img.GetName().GetFullName())
 
+	// TODO: add tests to ensure this copies values and doesn't change address
 	*image = *img
 
 	return nil
@@ -123,7 +125,7 @@ func (d *delegatorImpl) shouldDelegate(image *storage.Image, config *storage.Del
 
 func (d *delegatorImpl) validateCluster(clusterID string) error {
 	if clusterID == "" {
-		return fmt.Errorf("no ad-hoc cluster specified in delegated registry config")
+		return errors.New("no ad-hoc cluster specified in delegated registry config")
 	}
 
 	conn := d.connManager.GetConnection(clusterID)

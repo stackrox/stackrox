@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"runtime"
-	"sync"
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -251,7 +251,7 @@ func doSends(wm Manager[int32], n int) {
 }
 
 func TestLots(t *testing.T) {
-	t.Skip()
+	// t.Skip()
 	n := 20_000
 	wm := NewManager[int32]()
 	wm.Start(context.Background())

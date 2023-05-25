@@ -3,19 +3,20 @@ package waiter
 import (
 	"context"
 	"errors"
-	"sync"
+
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
-	// The default number of attempts to re-generate an id on collision
+	// The default number of attempts to re-generate an id on collision.
 	defaultMaxCollisions = 5
 )
 
 var (
-	// ErrTooManyCollisions the ID generator produced too many in use IDs
+	// ErrTooManyCollisions the ID generator produced too many in use IDs.
 	ErrTooManyCollisions = errors.New("too many id collisions")
 
-	// ErrManagerShutdown manager has been shutdown and therefore cannot process requests
+	// ErrManagerShutdown manager has been shutdown and therefore cannot process requests.
 	ErrManagerShutdown = errors.New("manager is shutdown")
 
 	errKeyExists = errors.New("id exists")
@@ -33,12 +34,12 @@ type options struct {
 	maxCollisions int
 }
 
-// Option defines a functional option for configuring a manager
+// Option defines a functional option for configuring a manager.
 type Option func(option *options)
 
 func noopOptionFunc(_ *options) {}
 
-// WithIDGenerator is a functional option used to change a managers default ID generator
+// WithIDGenerator is a functional option used to change a managers default ID generator.
 func WithIDGenerator(gen IDGenerator) Option {
 	if gen == nil {
 		return noopOptionFunc
@@ -50,7 +51,7 @@ func WithIDGenerator(gen IDGenerator) Option {
 }
 
 // WithMaxCollisions is a functional option used to change the the max number of collisions
-// that can occur before waiter creation fails
+// that can occur before waiter creation fails.
 func WithMaxCollisions(num int) Option {
 	if num < 1 {
 		return noopOptionFunc
@@ -61,45 +62,45 @@ func WithMaxCollisions(num int) Option {
 	}
 }
 
-// Manager builds waiters and delivers messages to waiters from async publishers
+// Manager builds waiters and delivers messages to waiters from async publishers.
 type Manager[T any] interface {
 	// Start spawns a goroutine that will run forever or until ctx.Done() delivering
-	// messages to waiters
+	// messages to waiters.
 	Start(ctx context.Context)
 
-	// Send sends data and err to the waiter with the provided id
+	// Send sends data and err to the waiter with the provided id.
 	Send(id string, data T, err error) error
 
 	// NewWaiter creates a waiter with a unique ID. A call to Wait() will complete when
-	// a response is published using this ID
+	// a response is published using this ID.
 	NewWaiter() (Waiter[T], error)
 }
 
 type managerImpl[T any] struct {
-	// idGenerator is responsible for generating unique waiter IDs
+	// idGenerator is responsible for generating unique waiter IDs.
 	idGenerator IDGenerator
 
-	// waiters holds a waiter's id and the channel to send responses on
+	// waiters holds a waiter's id and the channel to send responses on.
 	waiters map[string]chan *response[T]
 
-	// waitersMu ensures only one goroutine is manipulating the waiters map at a time
+	// waitersMu ensures only one goroutine is manipulating the waiters map at a time.
 	waitersMu sync.Mutex
 
-	// responseCh is the global channel that receives all responses meant for waiting waiters
+	// responseCh is the global channel that receives all responses meant for waiting waiters.
 	responseCh chan *response[T]
 
-	// doneWaiterCh ids sent on this channel allow the manager to cleanup done waiters
+	// doneWaiterCh ids sent on this channel allow the manager to cleanup done waiters.
 	doneWaiterCh chan string
 
-	// managerShutdownCh will be closed when manager is shutting down and performing cleanup
+	// managerShutdownCh will be closed when manager is shutting down and performing cleanup.
 	managerShutdownCh chan struct{}
 
 	// maxCollisions the max number of id generation collisions allowed prior to error
-	// when creating a new waiter
+	// when creating a new waiter.
 	maxCollisions int
 }
 
-// NewManager creates a new waiter Manager
+// NewManager creates a new waiter Manager.
 func NewManager[T any](opts ...Option) *managerImpl[T] {
 	var options options
 
@@ -124,7 +125,7 @@ func NewManager[T any](opts ...Option) *managerImpl[T] {
 }
 
 // Start spawns a goroutine that will run forever or until ctx.Done() delivering
-// messages to waiters
+// messages to waiters.
 func (w *managerImpl[T]) Start(ctx context.Context) {
 	go func() {
 		for {
@@ -154,7 +155,7 @@ func (w *managerImpl[T]) Start(ctx context.Context) {
 	}()
 }
 
-// Send sends data and err to the waiter with the provided id
+// Send sends data and err to the waiter with the provided id.
 func (w *managerImpl[T]) Send(id string, data T, err error) error {
 	// if the manager is shutdown, return immediately
 	select {
@@ -179,7 +180,7 @@ func (w *managerImpl[T]) Send(id string, data T, err error) error {
 }
 
 // NewWaiter creates a waiter with a unique ID. A call to Wait() will complete when
-// a response is published using this ID
+// a response is published using this ID.
 func (w *managerImpl[T]) NewWaiter() (Waiter[T], error) {
 	// if the manager is shutdown, error out
 	select {

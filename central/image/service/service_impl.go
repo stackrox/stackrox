@@ -296,7 +296,6 @@ func (s *serviceImpl) enrichImage(ctx context.Context, img *storage.Image, fetch
 
 // ScanImage scans an image and returns the result
 func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageRequest) (*storage.Image, error) {
-
 	enrichmentCtx := enricher.EnrichmentContext{
 		FetchOpt: enricher.IgnoreExistingImages,
 		AdHoc:    true,
@@ -388,9 +387,9 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	defer s.internalScanSemaphore.Release(1)
 
-	if request.GetRequestId() != "" {
-		log.Debugf("Received delegated enrich request for id %q: %q", request.GetRequestId(), request.GetImageName().GetFullName())
-	}
+	// if request.GetRequestId() != "" {
+	// 	log.Debugf("Received delegated enrich request for id %q: %q", request.GetRequestId(), request.GetImageName().GetFullName())
+	// }
 
 	var hasErrors bool
 	if request.Error != "" {
@@ -410,6 +409,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		var existingImg *storage.Image
 		existingImg, imgExists, err = s.datastore.GetImage(ctx, imgID)
 		if err != nil {
+			s.informScanWaiter(request.GetRequestId(), nil, err)
 			return nil, err
 		}
 		// This is safe even if img is nil.
@@ -470,11 +470,16 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
 	// contained a digest. Do not upsert if a previous scan exists and there were errors with this scan
 	// since it could lead to us overriding an enriched image with a non-enriched image.
-	if imgID != "" && !(hasErrors && imgExists) {
+	// Also do not upsert if there is a request id, this enables the caller to determine how to handle
+	// the results (and also prevents multiple saves)
+	if imgID != "" && !(hasErrors && imgExists) && request.GetRequestId() == "" {
 		_ = s.saveImage(img)
 	}
 
-	if hasErrors {
+	if hasErrors && request.GetRequestId() != "" {
+		// Send an actual error to the waiter so that error handling can be done (ie: retry)
+		// Without this a bare image is returned that will have notes such as MISSING_METADATA
+		// which will be interpreted as a valid scan result.
 		err = errors.New(request.GetError())
 	}
 
@@ -489,15 +494,16 @@ func (s *serviceImpl) informScanWaiter(reqID string, img *storage.Image, scanErr
 	}
 
 	if err := s.scanWaiterManager.Send(reqID, img, scanErr); err != nil {
-		log.Errorf("Failed to send result to scan waiter %q: %v", err)
+		log.Errorf("Failed to send result to scan waiter %q: %v", reqID, err)
 	}
 }
 
-func (s *serviceImpl) UpdateLocalScanStatusInternal(ctx context.Context, req *v1.UpdateLocalScanStatusInternalRequest) (*v1.Empty, error) {
-	log.Debug("Received delegated scan early failure message for %q: %q", req.GetRequestId(), req.GetError())
-	err := errors.New(req.GetError())
-	s.informScanWaiter(req.GetRequestId(), nil, err)
-	return nil, nil
+func (s *serviceImpl) UpdateLocalScanStatusInternal(_ context.Context, req *v1.UpdateLocalScanStatusInternalRequest) (*v1.Empty, error) {
+	log.Debugf("Received delegated scan early failure message for %q: %q", req.GetRequestId(), req.GetError())
+
+	s.informScanWaiter(req.GetRequestId(), nil, errors.New(req.GetError()))
+
+	return &v1.Empty{}, nil
 }
 
 // DeleteImages deletes images based on query

@@ -8,10 +8,10 @@ import (
 
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/delegatedregistryconfig"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cvss"
+	"github.com/stackrox/rox/pkg/delegatedregistry"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -67,7 +67,7 @@ type enricherImpl struct {
 
 	metrics metrics
 
-	scanDelegator delegatedregistryconfig.Delegator
+	scanDelegator delegatedregistry.Delegator
 }
 
 // EnrichWithVulnerabilities enriches the given image with vulnerabilities.
@@ -146,8 +146,8 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichContext En
 	// Check if image exists in database (will include metadata, sigs, etc.)
 	// Ignores in-mem metadata cache because that is not populated via enrichment requests from
 	// secured clusters. fetchFromDatabase will check if FetchOpt forces refetch.
-	// Assumes signatures are OK as exists in database, standard reprocessing or forcing rescan
-	// will trigger signature update as needed
+	// Assumes signatures are OK as is, standard reprocessing or forcing rescan
+	// will trigger updates as necessary
 	existingImg, exists := e.fetchFromDatabase(ctx, image, enrichContext.FetchOpt)
 	if exists && cachedImageIsValid(existingImg) {
 		image.Metadata = existingImg.GetMetadata()
