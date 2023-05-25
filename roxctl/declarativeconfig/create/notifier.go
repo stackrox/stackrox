@@ -50,7 +50,7 @@ func (n *notifierCmd) genericCommand() *cobra.Command {
 	}
 	genericFlags := cmd.Flags()
 	n.gc = &declarativeconfig.GenericConfig{}
-	genericFlags.BoolVar(&n.gc.AuditLoggingEnabled, "audit-logging", false, "Notifier audit logging enabled")
+	genericFlags.BoolVar(&n.gc.AuditLoggingEnabled, "audit-logging", false, "Audit logging enabled")
 	genericFlags.StringVar(&n.gc.Endpoint, "webhook-endpoint", "", "Webhook endpoint URL")
 	genericFlags.StringVar(&n.gc.Username, "webhook-username", "", "Username for the endpoint basic authentication")
 	genericFlags.StringVar(&n.gc.Password, "webhook-password", "", "Password for the endpoint basic authentication")
@@ -78,7 +78,7 @@ func (n *notifierCmd) splunkCommand() *cobra.Command {
 
 	splunkFlags := cmd.Flags()
 	n.sc = &declarativeconfig.SplunkConfig{}
-	splunkFlags.BoolVar(&n.sc.AuditLoggingEnabled, "audit-logging", false, "Splunk audit logging enabled")
+	splunkFlags.BoolVar(&n.sc.AuditLoggingEnabled, "audit-logging", false, "Audit logging enabled")
 	splunkFlags.StringVar(&n.sc.HTTPToken, "splunk-token", "", "Splunk HTTP token")
 	splunkFlags.StringVar(&n.sc.HTTPEndpoint, "splunk-endpoint", "", "Splunk HTTP endpoint")
 	splunkFlags.BoolVar(&n.sc.Insecure, "splunk-insecure-skip-tls-verify", false, "Insecure connection to Splunk")
