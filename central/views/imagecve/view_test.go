@@ -10,15 +10,20 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/image/datastore"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	imageDS "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/testconsts"
+	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -95,19 +100,21 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
 	// Initialize the datastore.
-	store, err := datastore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	imageStore, err := imageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Require().NoError(err)
+	deploymentStore, err := deploymentDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Require().NoError(err)
 
 	// Upsert test images.
 	images, err := imageSamples.GetTestImages(s.T())
 	s.Require().NoError(err)
 	for _, image := range images {
-		s.Require().NoError(store.UpsertImage(ctx, image))
+		s.Require().NoError(imageStore.UpsertImage(ctx, image))
 	}
 
 	// Ensure that the image is stored and constructed as expected.
 	for idx, image := range images {
-		actual, found, err := store.GetImage(ctx, image.GetId())
+		actual, found, err := imageStore.GetImage(ctx, image.GetId())
 		s.Require().NoError(err)
 		s.Require().True(found)
 
@@ -120,9 +127,18 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 		// This makes dynamic fields matching (e.g. created at) straightforward.
 		images[idx] = actual
 	}
-
 	s.testImages = images
 	s.cveView = NewCVEView(s.testDB.DB)
+
+	s.Require().Len(images, 5)
+	deployments := []*storage.Deployment{
+		fixtures.GetDeploymentWithImage(testconsts.Cluster1, testconsts.NamespaceA, images[1]),
+		fixtures.GetDeploymentWithImage(testconsts.Cluster2, testconsts.NamespaceB, images[1]),
+		fixtures.GetDeploymentWithImage(testconsts.Cluster2, testconsts.NamespaceB, images[2]),
+	}
+	for _, d := range deployments {
+		s.Require().NoError(deploymentStore.UpsertDeployment(ctx, d))
+	}
 }
 
 func (s *ImageCVEViewTestSuite) TearDownSuite() {
@@ -132,7 +148,7 @@ func (s *ImageCVEViewTestSuite) TearDownSuite() {
 func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 	for _, tc := range s.testCases() {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			actual, err := s.cveView.Get(tc.ctx, tc.q, tc.readOptions)
+			actual, err := s.cveView.Get(sac.WithAllAccess(tc.ctx), tc.q, tc.readOptions)
 			if tc.expectedErr != "" {
 				s.ErrorContains(err, tc.expectedErr)
 				return
@@ -162,22 +178,103 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 	}
 }
 
+func (s *ImageCVEViewTestSuite) TestGetImageCVECoreSAC() {
+	for _, tc := range s.testCases() {
+		for key, sacTC := range s.sacTestCases() {
+			s.T().Run(fmt.Sprintf("Image %s %s", key, tc.desc), func(t *testing.T) {
+				testCtxs := testutils.GetNamespaceScopedTestContexts(tc.ctx, s.T(), resources.Image)
+				ctx := testCtxs[key]
+
+				actual, err := s.cveView.Get(ctx, tc.q, tc.readOptions)
+				if tc.expectedErr != "" {
+					s.ErrorContains(err, tc.expectedErr)
+					return
+				}
+				assert.NoError(t, err)
+
+				// Wrap image filter with sac filter.
+				matchFilter := tc.matchFilter
+				baseImageMatchFilter := matchFilter.matchImage
+				matchFilter.withImageFilter(func(image *storage.Image) bool {
+					if sacTC[image.GetId()] {
+						return baseImageMatchFilter(image)
+					}
+					return false
+				})
+
+				expected := compileExpected(s.testImages, matchFilter, tc.readOptions, tc.less)
+				assert.Equal(t, len(expected), len(actual))
+				assert.ElementsMatch(t, expected, actual)
+			})
+		}
+	}
+
+	// Testing one query against deployment access is sufficient.
+	tc := s.testCases()[0]
+	s.T().Run(fmt.Sprintf("Deployment read access %s", tc.desc), func(t *testing.T) {
+		ctx := sac.WithGlobalAccessScopeChecker(tc.ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Deployment)))
+
+		actual, err := s.cveView.Get(ctx, tc.q, tc.readOptions)
+		if tc.expectedErr != "" {
+			s.ErrorContains(err, tc.expectedErr)
+			return
+		}
+		assert.NoError(t, err)
+		assert.Equal(t, []CveCore{}, actual)
+	})
+}
+
 func (s *ImageCVEViewTestSuite) TestGetImageIDs() {
 	for _, tc := range s.testCases() {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			query := tc.q.Clone()
-			query.Pagination = nil
-
 			// Such testcases are meant only for Get().
 			if tc.expectedErr != "" {
 				return
 			}
-			actualAffectedImageIDs, err := s.cveView.GetImageIDs(tc.ctx, query)
 
+			query := tc.q.Clone()
+			query.Pagination = nil
+			actualAffectedImageIDs, err := s.cveView.GetImageIDs(sac.WithAllAccess(tc.ctx), query)
 			assert.NoError(t, err)
 			expectedAffectedImages := compileExpectedAffectedImageIDs(s.testImages, tc.matchFilter)
 			assert.ElementsMatch(t, expectedAffectedImages, actualAffectedImageIDs)
 		})
+	}
+}
+
+func (s *ImageCVEViewTestSuite) TestGetImageIDsSAC() {
+	for _, tc := range s.testCases() {
+		for key, sacTC := range s.sacTestCases() {
+			s.T().Run(fmt.Sprintf("Image %s %s", key, tc.desc), func(t *testing.T) {
+				// Such testcases are meant only for Get().
+				if tc.expectedErr != "" {
+					return
+				}
+
+				testCtxs := testutils.GetNamespaceScopedTestContexts(tc.ctx, s.T(), resources.Image)
+				ctx := testCtxs[key]
+				query := tc.q.Clone()
+				query.Pagination = nil
+				actualAffectedImageIDs, err := s.cveView.GetImageIDs(ctx, query)
+				assert.NoError(t, err)
+
+				// Wrap image filter with sac filter.
+				matchFilter := tc.matchFilter
+				baseImageMatchFilter := matchFilter.matchImage
+				matchFilter.withImageFilter(func(image *storage.Image) bool {
+					if sacTC[image.GetId()] {
+						return baseImageMatchFilter(image)
+					}
+					return false
+				})
+
+				expectedAffectedImages := compileExpectedAffectedImageIDs(s.testImages, tc.matchFilter)
+				assert.ElementsMatch(t, expectedAffectedImages, actualAffectedImageIDs)
+			})
+		}
 	}
 }
 
@@ -192,7 +289,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreWithPagination() {
 			applyPaginationProps(tc, paginationTestCase)
 
 			s.T().Run(tc.desc, func(t *testing.T) {
-				actual, err := s.cveView.Get(tc.ctx, tc.q, tc.readOptions)
+				actual, err := s.cveView.Get(sac.WithAllAccess(tc.ctx), tc.q, tc.readOptions)
 				if tc.expectedErr != "" {
 					s.ErrorContains(err, tc.expectedErr)
 					return
@@ -224,7 +321,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreWithPagination() {
 func (s *ImageCVEViewTestSuite) TestCountImageCVECore() {
 	for _, tc := range s.testCases() {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			actual, err := s.cveView.Count(tc.ctx, tc.q)
+			actual, err := s.cveView.Count(sac.WithAllAccess(tc.ctx), tc.q)
 			if tc.expectedErr != "" {
 				s.ErrorContains(err, tc.expectedErr)
 				return
@@ -237,10 +334,41 @@ func (s *ImageCVEViewTestSuite) TestCountImageCVECore() {
 	}
 }
 
+func (s *ImageCVEViewTestSuite) TestCountImageCVECoreSAC() {
+	for _, tc := range s.testCases() {
+		for key, sacTC := range s.sacTestCases() {
+			s.T().Run(fmt.Sprintf("Image %s %s", key, tc.desc), func(t *testing.T) {
+				testCtxs := testutils.GetNamespaceScopedTestContexts(tc.ctx, s.T(), resources.Image)
+				ctx := testCtxs[key]
+
+				actual, err := s.cveView.Count(ctx, tc.q)
+				if tc.expectedErr != "" {
+					s.ErrorContains(err, tc.expectedErr)
+					return
+				}
+				assert.NoError(t, err)
+
+				// Wrap image filter with sac filter.
+				matchFilter := tc.matchFilter
+				baseImageMatchFilter := matchFilter.matchImage
+				matchFilter.withImageFilter(func(image *storage.Image) bool {
+					if sacTC[image.GetId()] {
+						return baseImageMatchFilter(image)
+					}
+					return false
+				})
+
+				expected := compileExpected(s.testImages, matchFilter, tc.readOptions, tc.less)
+				assert.Equal(t, len(expected), actual)
+			})
+		}
+	}
+}
+
 func (s *ImageCVEViewTestSuite) TestCountBySeverity() {
 	for _, tc := range s.testCases() {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			actual, err := s.cveView.CountBySeverity(tc.ctx, tc.q)
+			actual, err := s.cveView.CountBySeverity(sac.WithAllAccess(tc.ctx), tc.q)
 			if tc.expectedErr != "" {
 				s.ErrorContains(err, tc.expectedErr)
 				return
@@ -502,6 +630,99 @@ func (s *ImageCVEViewTestSuite) paginationTestCases() []testCase {
 					return records[i].FirstDiscoveredInSystem.Before(records[j].FirstDiscoveredInSystem)
 				}
 			},
+		},
+	}
+}
+
+func (s *ImageCVEViewTestSuite) sacTestCases() map[string]map[string]bool {
+	s.Require().Len(s.testImages, 5)
+
+	img1 := s.testImages[0]
+	img2 := s.testImages[1]
+	img3 := s.testImages[2]
+	img4 := s.testImages[3]
+	img5 := s.testImages[4]
+
+	// The map structure is the mapping ScopeKey -> ImageID -> Visible
+	return map[string]map[string]bool{
+		testutils.UnrestrictedReadCtx: {
+			img1.GetId(): true,
+			img2.GetId(): true,
+			img3.GetId(): true,
+			img4.GetId(): true,
+			img5.GetId(): true,
+		},
+		testutils.UnrestrictedReadWriteCtx: {
+			img1.GetId(): true,
+			img2.GetId(): true,
+			img3.GetId(): true,
+			img4.GetId(): true,
+			img5.GetId(): true,
+		},
+		testutils.Cluster1ReadWriteCtx: {
+			img1.GetId(): false,
+			img2.GetId(): true,
+			img3.GetId(): false,
+		},
+		testutils.Cluster1NamespaceAReadWriteCtx: {
+			img1.GetId(): false,
+			img2.GetId(): true,
+			img3.GetId(): false,
+		},
+		testutils.Cluster1NamespaceBReadWriteCtx: {
+			img1.GetId(): false,
+			img2.GetId(): false,
+			img3.GetId(): false,
+		},
+		testutils.Cluster1NamespacesABReadWriteCtx: {
+			img1.GetId(): false,
+			img2.GetId(): true,
+			img3.GetId(): false,
+		},
+		testutils.Cluster1NamespacesBCReadWriteCtx: {
+			img1.GetId(): false,
+			img2.GetId(): false,
+			img3.GetId(): false,
+		},
+		testutils.Cluster2ReadWriteCtx: {
+			img1.GetId(): false,
+			img2.GetId(): true,
+			img3.GetId(): true,
+		},
+		testutils.Cluster2NamespaceAReadWriteCtx: {
+			img1.GetId(): false,
+			img2.GetId(): false,
+			img3.GetId(): false,
+		},
+		testutils.Cluster2NamespaceBReadWriteCtx: {
+			img1.GetId(): false,
+			img2.GetId(): true,
+			img3.GetId(): true,
+		},
+		testutils.Cluster2NamespacesACReadWriteCtx: {
+			img1.GetId(): false,
+			img2.GetId(): false,
+			img3.GetId(): false,
+		},
+		testutils.Cluster2NamespacesBCReadWriteCtx: {
+			img1.GetId(): false,
+			img2.GetId(): true,
+			img3.GetId(): true,
+		},
+		testutils.Cluster3ReadWriteCtx: {
+			img1.GetId(): false,
+			img2.GetId(): false,
+			img3.GetId(): false,
+		},
+		testutils.Cluster3NamespaceAReadWriteCtx: {
+			img1.GetId(): false,
+			img2.GetId(): false,
+			img3.GetId(): false,
+		},
+		testutils.Cluster3NamespaceBReadWriteCtx: {
+			img1.GetId(): false,
+			img2.GetId(): false,
+			img3.GetId(): false,
 		},
 	}
 }
