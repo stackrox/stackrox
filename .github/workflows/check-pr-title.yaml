@@ -1,7 +1,11 @@
-name: 'Check PR title for good'
+name: 'Check PR title for the greater good'
 
 on:
-  pull_request: {}
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
 
 jobs:
   check-title:
