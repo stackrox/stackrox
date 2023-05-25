@@ -12,13 +12,12 @@ import {
 
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import ImagesTableContainer from './ImagesTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
 import CVEsTableContainer from './CVEsTableContainer';
 import { entityTypeCountsQuery } from '../components/EntityTypeToggleGroup';
 import { DefaultFilters, cveStatusTabValues, entityTabValues } from '../types';
-import { parseQuerySearchFilter } from '../searchUtils';
+import { getCveStatusScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
 
 type CveStatusTabNavigationProps = {
     defaultFilters: DefaultFilters;
@@ -41,9 +40,7 @@ function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps)
         entityTypeCountsQuery,
         {
             variables: {
-                query: getRequestQueryStringForSearchFilter({
-                    ...querySearchFilter,
-                }),
+                query: getCveStatusScopedQueryString(querySearchFilter, activeCVEStatusKey),
             },
         }
     );
@@ -65,18 +62,21 @@ function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps)
                                 <CVEsTableContainer
                                     defaultFilters={defaultFilters}
                                     countsData={countsData}
+                                    cveStatusTab={activeCVEStatusKey}
                                 />
                             )}
                             {activeEntityTabKey === 'Image' && (
                                 <ImagesTableContainer
                                     defaultFilters={defaultFilters}
                                     countsData={countsData}
+                                    cveStatusTab={activeCVEStatusKey}
                                 />
                             )}
                             {activeEntityTabKey === 'Deployment' && (
                                 <DeploymentsTableContainer
                                     defaultFilters={defaultFilters}
                                     countsData={countsData}
+                                    cveStatusTab={activeCVEStatusKey}
                                 />
                             )}
                         </CardBody>
