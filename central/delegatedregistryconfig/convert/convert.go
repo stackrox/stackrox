@@ -25,8 +25,8 @@ func StorageToPublicAPI(from *storage.DelegatedRegistryConfig) *v1.DelegatedRegi
 
 		for i, reg := range from.Registries {
 			regs[i] = &v1.DelegatedRegistryConfig_DelegatedRegistry{
-				ClusterId:    reg.ClusterId,
-				RegistryPath: reg.RegistryPath,
+				ClusterId: reg.ClusterId,
+				Path:      reg.Path,
 			}
 		}
 	}
@@ -55,8 +55,8 @@ func PublicAPIToStorage(from *v1.DelegatedRegistryConfig) *storage.DelegatedRegi
 
 		for i, reg := range from.Registries {
 			regs[i] = &storage.DelegatedRegistryConfig_DelegatedRegistry{
-				ClusterId:    reg.ClusterId,
-				RegistryPath: reg.RegistryPath,
+				ClusterId: reg.ClusterId,
+				Path:      reg.Path,
 			}
 		}
 	}
@@ -85,8 +85,8 @@ func PublicAPIToInternalAPI(from *v1.DelegatedRegistryConfig) *central.Delegated
 
 		for i, reg := range from.Registries {
 			regs[i] = &central.DelegatedRegistryConfig_DelegatedRegistry{
-				ClusterId:    reg.ClusterId,
-				RegistryPath: reg.RegistryPath,
+				ClusterId: reg.ClusterId,
+				Path:      reg.Path,
 			}
 		}
 	}
@@ -115,8 +115,8 @@ func StorageToInternalAPI(from *storage.DelegatedRegistryConfig) *central.Delega
 
 		for i, reg := range from.Registries {
 			regs[i] = &central.DelegatedRegistryConfig_DelegatedRegistry{
-				ClusterId:    reg.ClusterId,
-				RegistryPath: reg.RegistryPath,
+				ClusterId: reg.ClusterId,
+				Path:      reg.Path,
 			}
 		}
 	}

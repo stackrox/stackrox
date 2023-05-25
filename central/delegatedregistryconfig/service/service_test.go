@@ -246,7 +246,7 @@ func TestUpdateConfigSuccess(t *testing.T) {
 	t.Run("registries", func(t *testing.T) {
 		deleClusterDS.EXPECT().UpsertConfig(gomock.Any(), gomock.Any())
 		connMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any())
-		cfg.Registries = []*v1.DelegatedRegistryConfig_DelegatedRegistry{{ClusterId: "id1", RegistryPath: "something"}}
+		cfg.Registries = []*v1.DelegatedRegistryConfig_DelegatedRegistry{{ClusterId: "id1", Path: "something"}}
 		_, err = s.UpdateConfig(context.Background(), cfg)
 		assert.NoError(t, err)
 	})

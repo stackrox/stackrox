@@ -25,18 +25,18 @@ var (
 	innerAPIEnabledForSpecific = central.DelegatedRegistryConfig_SPECIFIC
 
 	multiStorageRegs = []*storage.DelegatedRegistryConfig_DelegatedRegistry{
-		{ClusterId: "id1", RegistryPath: "reg.example.com/dev"},
-		{ClusterId: "id2", RegistryPath: "reg.example.com/prod"},
+		{ClusterId: "id1", Path: "reg.example.com/dev"},
+		{ClusterId: "id2", Path: "reg.example.com/prod"},
 	}
 
 	multiAPIRegs = []*v1.DelegatedRegistryConfig_DelegatedRegistry{
-		{ClusterId: "id1", RegistryPath: "reg.example.com/dev"},
-		{ClusterId: "id2", RegistryPath: "reg.example.com/prod"},
+		{ClusterId: "id1", Path: "reg.example.com/dev"},
+		{ClusterId: "id2", Path: "reg.example.com/prod"},
 	}
 
 	multiInnerAPIRegs = []*central.DelegatedRegistryConfig_DelegatedRegistry{
-		{ClusterId: "id1", RegistryPath: "reg.example.com/dev"},
-		{ClusterId: "id2", RegistryPath: "reg.example.com/prod"},
+		{ClusterId: "id1", Path: "reg.example.com/dev"},
+		{ClusterId: "id2", Path: "reg.example.com/prod"},
 	}
 )
 

@@ -173,7 +173,7 @@ func (s *serviceImpl) validate(config *v1.DelegatedRegistryConfig, validClusters
 			errorList = append(errorList, fmt.Errorf("cluster %q is not valid", r.ClusterId))
 		}
 
-		if r.RegistryPath == "" {
+		if r.Path == "" {
 			errorList = append(errorList, errors.New("missing registry path"))
 		}
 	}

@@ -111,7 +111,7 @@ func (d *delegatorImpl) shouldDelegate(image *storage.Image, config *storage.Del
 	clusterID := config.GetDefaultClusterId()
 	imageFullName := urlfmt.TrimHTTPPrefixes(image.GetName().GetFullName())
 	for _, reg := range config.GetRegistries() {
-		regPath := urlfmt.TrimHTTPPrefixes(reg.GetRegistryPath())
+		regPath := urlfmt.TrimHTTPPrefixes(reg.GetPath())
 		if strings.HasPrefix(imageFullName, regPath) {
 			should = true
 			if reg.GetClusterId() != "" {
