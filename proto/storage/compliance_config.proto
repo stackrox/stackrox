@@ -8,7 +8,7 @@ import "gogoproto/gogo.proto";
 package storage;
 
 message ComplianceConfig {
-    string id   = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string standard_id   = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     bool hideScanResults = 2;
 }
 

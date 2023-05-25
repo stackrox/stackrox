@@ -57,7 +57,7 @@ func (s *ComplianceConfigsStoreSuite) TestStore() {
 	complianceConfig := &storage.ComplianceConfig{}
 	s.NoError(testutils.FullInit(complianceConfig, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundComplianceConfig, exists, err := store.Get(ctx, complianceConfig.GetId())
+	foundComplianceConfig, exists, err := store.Get(ctx, complianceConfig.GetStandardId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundComplianceConfig)
@@ -65,7 +65,7 @@ func (s *ComplianceConfigsStoreSuite) TestStore() {
 	withNoAccessCtx := sac.WithNoAccess(ctx)
 
 	s.NoError(store.Upsert(ctx, complianceConfig))
-	foundComplianceConfig, exists, err = store.Get(ctx, complianceConfig.GetId())
+	foundComplianceConfig, exists, err = store.Get(ctx, complianceConfig.GetStandardId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(complianceConfig, foundComplianceConfig)
@@ -77,23 +77,23 @@ func (s *ComplianceConfigsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Zero(complianceConfigCount)
 
-	complianceConfigExists, err := store.Exists(ctx, complianceConfig.GetId())
+	complianceConfigExists, err := store.Exists(ctx, complianceConfig.GetStandardId())
 	s.NoError(err)
 	s.True(complianceConfigExists)
 	s.NoError(store.Upsert(ctx, complianceConfig))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceConfig), sac.ErrResourceAccessDenied)
 
-	foundComplianceConfig, exists, err = store.Get(ctx, complianceConfig.GetId())
+	foundComplianceConfig, exists, err = store.Get(ctx, complianceConfig.GetStandardId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(complianceConfig, foundComplianceConfig)
 
-	s.NoError(store.Delete(ctx, complianceConfig.GetId()))
-	foundComplianceConfig, exists, err = store.Get(ctx, complianceConfig.GetId())
+	s.NoError(store.Delete(ctx, complianceConfig.GetStandardId()))
+	foundComplianceConfig, exists, err = store.Get(ctx, complianceConfig.GetStandardId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundComplianceConfig)
-	s.NoError(store.Delete(withNoAccessCtx, complianceConfig.GetId()))
+	s.NoError(store.Delete(withNoAccessCtx, complianceConfig.GetStandardId()))
 
 	var complianceConfigs []*storage.ComplianceConfig
 	var complianceConfigIDs []string
@@ -101,7 +101,7 @@ func (s *ComplianceConfigsStoreSuite) TestStore() {
 		complianceConfig := &storage.ComplianceConfig{}
 		s.NoError(testutils.FullInit(complianceConfig, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceConfigs = append(complianceConfigs, complianceConfig)
-		complianceConfigIDs = append(complianceConfigIDs, complianceConfig.GetId())
+		complianceConfigIDs = append(complianceConfigIDs, complianceConfig.GetStandardId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceConfigs))

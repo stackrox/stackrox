@@ -701,7 +701,7 @@
         "dynamic": {
           "type": "boolean"
         },
-        "hidden": {
+        "hideScanResults": {
           "type": "boolean"
         }
       }
@@ -809,7 +809,7 @@
         "id": {
           "type": "string"
         },
-        "hidden": {
+        "hideScanResults": {
           "type": "boolean"
         }
       }

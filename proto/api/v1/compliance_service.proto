@@ -35,7 +35,7 @@ message ComplianceStandardMetadata {
     int32  num_implemented_checks = 4;
     repeated Scope scopes         = 5;
     bool   dynamic                = 6;
-    bool hidden                   = 7;
+    bool hideScanResults          = 7;
 }
 
 message ComplianceControlGroup {
@@ -74,7 +74,7 @@ message GetComplianceStandardsResponse {
 message UpdateComplianceRequest {
 
     string id = 1;
-    bool hidden = 2;
+    bool hideScanResults = 2;
 }
 
 message GetComplianceRunResultsRequest {

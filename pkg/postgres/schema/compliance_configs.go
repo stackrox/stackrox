@@ -35,6 +35,6 @@ const (
 
 // ComplianceConfigs holds the Gorm model for Postgres table `compliance_configs`.
 type ComplianceConfigs struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	StandardId string `gorm:"column:standardid;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

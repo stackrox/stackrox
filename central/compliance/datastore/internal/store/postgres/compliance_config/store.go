@@ -50,14 +50,14 @@ var (
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ComplianceConfig) error
 	UpsertMany(ctx context.Context, objs []*storage.ComplianceConfig) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, standardId string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string) (bool, error)
+	Exists(ctx context.Context, standardId string) (bool, error)
 
-	Get(ctx context.Context, id string) (*storage.ComplianceConfig, bool, error)
+	Get(ctx context.Context, standardId string) (*storage.ComplianceConfig, bool, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.ComplianceConfig, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
@@ -90,11 +90,11 @@ func insertIntoComplianceConfigs(ctx context.Context, batch *pgx.Batch, obj *sto
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		obj.GetStandardId(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_configs (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_configs (StandardId, serialized) VALUES($1, $2) ON CONFLICT(StandardId) DO UPDATE SET StandardId = EXCLUDED.StandardId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -112,7 +112,7 @@ func (s *storeImpl) copyFromComplianceConfigs(ctx context.Context, tx *postgres.
 
 	copyCols := []string{
 
-		"id",
+		"standardid",
 
 		"serialized",
 	}
@@ -130,13 +130,13 @@ func (s *storeImpl) copyFromComplianceConfigs(ctx context.Context, tx *postgres.
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			obj.GetStandardId(),
 
 			serialized,
 		})
 
 		// Add the ID to be deleted.
-		deletes = append(deletes, obj.GetId())
+		deletes = append(deletes, obj.GetStandardId())
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
@@ -269,7 +269,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ComplianceCo
 }
 
 // Delete removes the object associated to the specified ID from the store.
-func (s *storeImpl) Delete(ctx context.Context, id string) error {
+func (s *storeImpl) Delete(ctx context.Context, standardId string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ComplianceConfig")
 
 	var sacQueryFilter *v1.Query
@@ -285,7 +285,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(standardId).ProtoQuery(),
 	)
 
 	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
@@ -380,7 +380,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the ID exists in the store.
-func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, standardId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ComplianceConfig")
 
 	var sacQueryFilter *v1.Query
@@ -396,7 +396,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(standardId).ProtoQuery(),
 	)
 
 	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
@@ -406,7 +406,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ComplianceConfig, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, standardId string) (*storage.ComplianceConfig, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ComplianceConfig")
 
 	var sacQueryFilter *v1.Query
@@ -423,7 +423,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ComplianceConf
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(standardId).ProtoQuery(),
 	)
 
 	data, err := pgSearch.RunGetQueryForSchema[storage.ComplianceConfig](ctx, schema, q, s.db)
@@ -474,7 +474,7 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 	}
 	resultsByID := make(map[string]*storage.ComplianceConfig, len(rows))
 	for _, msg := range rows {
-		resultsByID[msg.GetId()] = msg
+		resultsByID[msg.GetStandardId()] = msg
 	}
 	missingIndices := make([]int, 0, len(identifiers)-len(resultsByID))
 	// It is important that the elems are populated in the same order as the input identifiers

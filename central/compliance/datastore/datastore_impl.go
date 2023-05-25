@@ -82,7 +82,7 @@ func (ds *datastoreImpl) GetLatestRunResults(ctx context.Context, clusterID, sta
 func (ds *datastoreImpl) UpdateConfig(ctx context.Context, id string, hide bool) error {
 
 	config := &storage.ComplianceConfig{
-		Id:              id,
+		StandardId:      id,
 		HideScanResults: hide,
 	}
 	return ds.storage.UpdateConfig(ctx, config)
