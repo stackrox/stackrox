@@ -70,7 +70,7 @@ function ImageCvePageHeader({ data }: ImageCvePageHeaderProps) {
             </Title>
             <LabelGroup numLabels={1}>
                 {data.firstDiscoveredInSystem && (
-                    <Label isCompact>
+                    <Label>
                         First discovered in system {getDateTime(data.firstDiscoveredInSystem)}
                     </Label>
                 )}

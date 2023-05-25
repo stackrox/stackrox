@@ -43,15 +43,11 @@ function ImageDetailBadges({ imageData }: ImageDetailBadgesProps) {
 
     return (
         <LabelGroup numLabels={Infinity}>
-            <Label isCompact color={isActive ? 'green' : 'gold'}>
-                {isActive ? 'Active' : 'Inactive'}
-            </Label>
-            {operatingSystem && <Label isCompact>OS: {operatingSystem}</Label>}
-            {created && (
-                <Label isCompact>Age: {getDistanceStrictAsPhrase(created, new Date())}</Label>
-            )}
+            <Label color={isActive ? 'green' : 'gold'}>{isActive ? 'Active' : 'Inactive'}</Label>
+            {operatingSystem && <Label>OS: {operatingSystem}</Label>}
+            {created && <Label>Age: {getDistanceStrictAsPhrase(created, new Date())}</Label>}
             {scanTime && (
-                <Label isCompact>
+                <Label>
                     Scan time: {getDateTime(scanTime)} by {dataSource?.name ?? 'Unknown Scanner'}
                 </Label>
             )}
