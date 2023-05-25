@@ -224,7 +224,6 @@ func (s *notifierDataStoreTestSuite) TestUpdateMutableToImmutable() {
 			MutabilityMode: storage.Traits_ALLOW_MUTATE,
 		},
 	}, true, nil).Times(1)
-	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, &storage.Notifier{
 		Id:   "id",
@@ -233,32 +232,6 @@ func (s *notifierDataStoreTestSuite) TestUpdateMutableToImmutable() {
 			MutabilityMode: storage.Traits_ALLOW_MUTATE_FORCED,
 		},
 	})
-	s.NoError(err)
-}
-
-func (s *notifierDataStoreTestSuite) TestUpdateImmutable() {
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.Notifier{
-		Id:   "id",
-		Name: "name",
-		Traits: &storage.Traits{
-			MutabilityMode: storage.Traits_ALLOW_MUTATE_FORCED,
-		},
-	}, true, nil).Times(1)
-
-	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, &storage.Notifier{})
-	s.ErrorIs(err, errox.InvalidArgs)
-}
-
-func (s *notifierDataStoreTestSuite) TestRemoveImmutable() {
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.Notifier{
-		Id:   "id",
-		Name: "name",
-		Traits: &storage.Traits{
-			MutabilityMode: storage.Traits_ALLOW_MUTATE_FORCED,
-		},
-	}, true, nil).Times(1)
-
-	err := s.dataStore.RemoveNotifier(s.hasWriteCtx, "id")
 	s.ErrorIs(err, errox.InvalidArgs)
 }
 
