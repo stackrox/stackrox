@@ -12,6 +12,7 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "service" "scanner") | nindent 4 }}
 spec:
+  clusterIP: None
   ports:
     - name: https-scanner
       port: 8080
