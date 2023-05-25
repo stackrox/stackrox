@@ -10,7 +10,6 @@ export type ImageDetails = {
     metadata: {
         v1: {
             created: string | null;
-            digest: string;
         } | null;
     } | null;
     dataSource: { name: string } | null;
@@ -24,7 +23,6 @@ export const imageDetailsFragment = gql`
         metadata {
             v1 {
                 created
-                digest
             }
         }
         dataSource {
