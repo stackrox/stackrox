@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/m_181_to_m_182_remove_default_scope_manager_role/schema"
+	pkgSchema "github.com/stackrox/rox/migrator/migrations/m_182_to_m_183_remove_default_scope_manager_role/schema"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
