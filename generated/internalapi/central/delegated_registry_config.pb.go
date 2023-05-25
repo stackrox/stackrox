@@ -53,7 +53,7 @@ func (DelegatedRegistryConfig_EnabledFor) EnumDescriptor() ([]byte, []int) {
 // DelegatedRegistryConfig determines how to handle scan requests.
 //
 // Compared to the Public and Storage variations of this proto, the default cluster id and registry cluster ids
-// are not included here because they are not used by the secured clusters.
+// are not included (not used by the secured clusters).
 //
 // Refer to v1.DelegatedRegistryConfig for more detailed docs.
 //
