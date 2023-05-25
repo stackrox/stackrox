@@ -21,11 +21,11 @@ import (
 
 type notifierUpdater struct {
 	notifierDS    notifierDataStore.DataStore
-	reporter      integrationhealth.Reporter
-	idExtractor   types.IDExtractor
-	nameExtractor types.NameExtractor
-	processor     notifier.Processor
 	policyCleaner policycleaner.PolicyCleaner
+	processor     notifier.Processor
+	reporter      integrationhealth.Reporter
+	nameExtractor types.NameExtractor
+	idExtractor   types.IDExtractor
 }
 
 var _ ResourceUpdater = (*notifierUpdater)(nil)
@@ -80,7 +80,10 @@ func (u *notifierUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip
 			continue
 		}
 
-		if err := u.notifierDS.RemoveNotifier(ctx, n.GetId()); err != nil {
+		// In case of temporary issues with database(for example, connectivity issues)
+		// it is possible that notifier is already deleted from datastore
+		// while integration health isn't.
+		if err := u.notifierDS.RemoveNotifier(ctx, n.GetId()); err != nil && !errors.Is(err, errox.NotFound) {
 			err := errors.Wrap(err, "deleting notifier from database")
 			notifierDeletionErr, notifierIDs = u.processDeletionError(notifierDeletionErr, err, notifierIDs, n)
 			continue
