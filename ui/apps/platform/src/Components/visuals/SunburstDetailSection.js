@@ -131,8 +131,8 @@ class SunburstDetailSection extends Component {
     getLockHint = () => {
         const { clicked } = this.props;
         return (
-            <div className="border-t border-base-300 border-dashed flex justify-end px-2 h-7 text-base-500 text-sm">
-                <div className="flex items-center font-condensed opacity-75">
+            <div className="border-t border-base-300 border-dashed flex justify-end px-2 h-7 text-sm">
+                <div className="flex items-center">
                     <Icon.Info size="16" className="pr-1" />
                     {`click to ${clicked ? 'un' : ''}lock selection`}
                 </div>

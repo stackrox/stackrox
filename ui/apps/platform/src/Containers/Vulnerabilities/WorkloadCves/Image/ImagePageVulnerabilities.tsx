@@ -11,22 +11,17 @@ import {
     Spinner,
     Split,
     SplitItem,
-    Tab,
-    TabTitleText,
-    Tabs,
-    TabsComponent,
     Text,
     Title,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { gql, useQuery } from '@apollo/client';
 
-import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
-import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getHasSearchApplied } from 'utils/searchUtils';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
@@ -39,8 +34,12 @@ import ImageVulnerabilitiesTable, {
     imageVulnerabilitiesFragment,
 } from '../Tables/ImageVulnerabilitiesTable';
 import { DynamicTableLabel } from '../components/DynamicIcon';
-import { getHiddenSeverities, getHiddenStatuses, parseQuerySearchFilter } from '../searchUtils';
-import { cveStatusTabValues } from '../types';
+import {
+    getHiddenSeverities,
+    getHiddenStatuses,
+    getCveStatusScopedQueryString,
+    parseQuerySearchFilter,
+} from '../searchUtils';
 import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/table.utils';
 import { Resource } from '../components/FilterResourceDropdown';
@@ -49,7 +48,7 @@ const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
     ${resourceCountByCveSeverityAndStatusFragment}
     ${imageVulnerabilitiesFragment}
-    query getImageCoreVulnerabilities($id: ID!, $query: String!, $pagination: Pagination!) {
+    query getCVEsForImage($id: ID!, $query: String!, $pagination: Pagination!) {
         image(id: $id) {
             ...ImageMetadataContext
             imageCVECountBySeverity(query: $query) {
@@ -104,12 +103,10 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
     >(imageVulnerabilitiesQuery, {
         variables: {
             id: imageId,
-            query: getRequestQueryStringForSearchFilter(querySearchFilter),
+            query: getCveStatusScopedQueryString(querySearchFilter),
             pagination,
         },
     });
-
-    const [activeTabKey, setActiveTabKey] = useURLStringUnion('cveStatus', cveStatusTabValues);
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
@@ -212,39 +209,10 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                 className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                 component="div"
             >
-                <Tabs
-                    activeKey={activeTabKey}
-                    onSelect={(e, key) => setActiveTabKey(key)}
-                    component={TabsComponent.nav}
-                    mountOnEnter
-                    unmountOnExit
-                    isBox
-                >
-                    <Tab
-                        className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
-                        eventKey="Observed"
-                        title={<TabTitleText>Observed CVEs</TabTitleText>}
-                    >
-                        <div className="pf-u-px-sm pf-u-background-color-100">
-                            <WorkloadTableToolbar supportedResourceFilters={imageResourceFilters} />
-                        </div>
-                        <div className="pf-u-flex-grow-1 pf-u-background-color-100">
-                            {mainContent}
-                        </div>
-                    </Tab>
-                    <Tab
-                        className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
-                        eventKey="Deferred"
-                        title={<TabTitleText>Deferrals</TabTitleText>}
-                        isDisabled
-                    />
-                    <Tab
-                        className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
-                        eventKey="False Positive"
-                        title={<TabTitleText>False positives</TabTitleText>}
-                        isDisabled
-                    />
-                </Tabs>
+                <div className="pf-u-px-sm pf-u-background-color-100">
+                    <WorkloadTableToolbar supportedResourceFilters={imageResourceFilters} />
+                </div>
+                <div className="pf-u-flex-grow-1 pf-u-background-color-100">{mainContent}</div>
             </PageSection>
         </>
     );

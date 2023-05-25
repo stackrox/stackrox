@@ -5,21 +5,22 @@ import { Bullseye, Spinner, Divider } from '@patternfly/react-core';
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
-import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getHasSearchApplied } from 'utils/searchUtils';
 import CVEsTable, { cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
 import TableErrorComponent from '../components/TableErrorComponent';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
-import { DefaultFilters, VulnerabilitySeverityLabel } from '../types';
-import { parseQuerySearchFilter } from '../searchUtils';
+import { DefaultFilters, VulnerabilitySeverityLabel, CveStatusTab } from '../types';
+import { getCveStatusScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
 import { defaultCVESortFields, CVEsDefaultSort } from '../sortUtils';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 
 type CVEsTableContainerProps = {
     defaultFilters: DefaultFilters;
     countsData: EntityCounts;
+    cveStatusTab?: CveStatusTab; // TODO Make this required once Observed/Deferred/FP states are re-implemented
 };
 
-function CVEsTableContainer({ defaultFilters, countsData }: CVEsTableContainerProps) {
+function CVEsTableContainer({ defaultFilters, countsData, cveStatusTab }: CVEsTableContainerProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
@@ -33,9 +34,7 @@ function CVEsTableContainer({ defaultFilters, countsData }: CVEsTableContainerPr
 
     const { error, loading, data, previousData } = useQuery(cveListQuery, {
         variables: {
-            query: getRequestQueryStringForSearchFilter({
-                ...querySearchFilter,
-            }),
+            query: getCveStatusScopedQueryString(querySearchFilter, cveStatusTab),
             pagination: {
                 offset: (page - 1) * perPage,
                 limit: perPage,

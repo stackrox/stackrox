@@ -11,6 +11,7 @@ import (
 //
 //go:generate mockgen-wrapper
 type Store interface {
+	Count(ctx context.Context) (int, error)
 	Get(ctx context.Context, id string) (*storage.NetworkPolicy, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkPolicy, error)
 	Upsert(ctx context.Context, obj *storage.NetworkPolicy) error

@@ -25,7 +25,7 @@ const TileContent = ({
 }: TileContentProps): ReactElement => {
     return (
         <div
-            className={`flex flex-col text-center justify-around font-600 ${textColorClass} ${className}`}
+            className={`flex flex-col text-center justify-around ${textColorClass} ${className}`}
             data-testid={dataTestId}
         >
             {superText !== '' && (

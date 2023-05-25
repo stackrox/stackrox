@@ -10,11 +10,10 @@ import {
     Tr,
 } from '@patternfly/react-table';
 
-import { FixableIcon, NotFixableIcon } from 'Components/PatternFly/FixabilityIcons';
-import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
-import { vulnerabilitySeverityLabels } from 'messages/common';
+import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
+import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import {
     getAnyVulnerabilityIsFixable,
     getHighestCvssScore,
@@ -115,10 +114,7 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                 const topSeverity = getHighestVulnerabilitySeverity(imageComponents);
                 const isFixable = getAnyVulnerabilityIsFixable(imageComponents);
                 const { cvss, scoreVersion } = getHighestCvssScore(imageComponents);
-                const FixabilityIcon = isFixable ? FixableIcon : NotFixableIcon;
 
-                const SeverityIcon = SeverityIcons[topSeverity];
-                const severityLabel = vulnerabilitySeverityLabels[topSeverity];
                 const isExpanded = expandedRowSet.has(id);
 
                 return (
@@ -139,25 +135,13 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                                 )}
                             </Td>
                             <Td dataLabel="Severity" modifier="nowrap">
-                                <span>
-                                    {SeverityIcon && (
-                                        <SeverityIcon className="pf-u-display-inline" />
-                                    )}
-                                    {severityLabel && (
-                                        <span className="pf-u-pl-sm">{severityLabel}</span>
-                                    )}
-                                </span>
+                                <VulnerabilitySeverityIconText severity={topSeverity} />
                             </Td>
                             <Td dataLabel="CVSS" modifier="nowrap">
                                 <CvssTd cvss={cvss} scoreVersion={scoreVersion} />
                             </Td>
                             <Td dataLabel="Fix status" modifier="nowrap">
-                                <span>
-                                    <FixabilityIcon className="pf-u-display-inline" />
-                                    <span className="pf-u-pl-sm">
-                                        {isFixable ? 'Fixable' : 'Not fixable'}
-                                    </span>
-                                </span>
+                                <VulnerabilityFixableIconText isFixable={isFixable} />
                             </Td>
                             <Td dataLabel="Operating system">{operatingSystem}</Td>
                             <Td dataLabel="Affected components">

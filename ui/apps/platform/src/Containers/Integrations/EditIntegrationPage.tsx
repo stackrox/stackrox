@@ -19,7 +19,7 @@ function EditIntegrationPage(): ReactElement {
     }
 
     return (
-        <IntegrationPage title="Edit Integration">
+        <IntegrationPage title="Edit Integration" name={integration.name}>
             <IntegrationForm source={source} type={type} initialValues={integration} isEditable />
         </IntegrationPage>
     );

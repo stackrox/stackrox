@@ -5,21 +5,26 @@ import { Bullseye, Spinner, Divider } from '@patternfly/react-core';
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
-import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getHasSearchApplied } from 'utils/searchUtils';
 import ImagesTable, { imageListQuery } from '../Tables/ImagesTable';
 import TableErrorComponent from '../components/TableErrorComponent';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
-import { parseQuerySearchFilter } from '../searchUtils';
+import { getCveStatusScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
 import { defaultImageSortFields, imagesDefaultSort } from '../sortUtils';
-import { DefaultFilters, VulnerabilitySeverityLabel } from '../types';
+import { DefaultFilters, VulnerabilitySeverityLabel, CveStatusTab } from '../types';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 
 type ImagesTableContainerProps = {
     defaultFilters: DefaultFilters;
     countsData: EntityCounts;
+    cveStatusTab?: CveStatusTab; // TODO Make this required once Observed/Deferred/FP states are re-implemented
 };
 
-function ImagesTableContainer({ defaultFilters, countsData }: ImagesTableContainerProps) {
+function ImagesTableContainer({
+    defaultFilters,
+    countsData,
+    cveStatusTab,
+}: ImagesTableContainerProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
@@ -34,9 +39,7 @@ function ImagesTableContainer({ defaultFilters, countsData }: ImagesTableContain
 
     const { error, loading, data, previousData } = useQuery(imageListQuery, {
         variables: {
-            query: getRequestQueryStringForSearchFilter({
-                ...querySearchFilter,
-            }),
+            query: getCveStatusScopedQueryString(querySearchFilter, cveStatusTab),
             pagination: {
                 offset: (page - 1) * perPage,
                 limit: perPage,

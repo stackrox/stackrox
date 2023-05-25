@@ -160,6 +160,7 @@ func (s *blobMigrationTestSuite) TestUploadProbeMigration() {
 	s.Equal(data, buf.Bytes())
 	s.NoError(tx.Commit().Error)
 }
+<<<<<<< HEAD
 
 func (s *blobMigrationTestSuite) TestNetworkGraphExternalSourceBundleChecksumMigration() {
 	// Nothing to migrate
@@ -215,3 +216,5 @@ func (s *blobMigrationTestSuite) TestNetworkGraphExternalSourceBundleChecksumMig
 	s.Equal(checksum, buf.Bytes())
 	s.NoError(tx.Commit().Error)
 }
+=======
+>>>>>>> master

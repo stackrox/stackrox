@@ -11,7 +11,9 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,11 +45,12 @@ func Test_pipelineImpl_Run(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		mocks   mocks
-		args    args
-		wantErr string
-		setUp   func(t *testing.T, a *args, m *mocks)
+		name                string
+		mocks               mocks
+		args                args
+		wantErr             string
+		wantInjectorContain []*central.NodeInventoryACK
+		setUp               func(t *testing.T, a *args, m *mocks)
 	}{
 		{
 			name:    "when event has no node inventory then error",
@@ -62,11 +65,30 @@ func Test_pipelineImpl_Run(t *testing.T) {
 		},
 		{
 			name: "when event has inventory then enrich and upsert with risk",
+			wantInjectorContain: []*central.NodeInventoryACK{
+				{Action: central.NodeInventoryACK_ACK},
+			},
 			setUp: func(t *testing.T, a *args, m *mocks) {
 				node := storage.Node{
 					Id: "test node id",
 				}
 				a.msg = createMsg(node.GetId())
+				a.injector = &recordingInjector{}
+				gomock.InOrder(
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
+					m.enricher.EXPECT().EnrichNodeWithInventory(gomock.Any(), gomock.Any()).Times(1).Return(nil),
+					m.riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
+				)
+			},
+		},
+		{
+			name: "when injector is nil then handle normally and don't panic",
+			setUp: func(t *testing.T, a *args, m *mocks) {
+				node := storage.Node{
+					Id: "test node id",
+				}
+				a.msg = createMsg(node.GetId())
+				a.injector = nil
 				gomock.InOrder(
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
 					m.enricher.EXPECT().EnrichNodeWithInventory(gomock.Any(), gomock.Any()).Times(1).Return(nil),
@@ -96,6 +118,34 @@ func Test_pipelineImpl_Run(t *testing.T) {
 			if err := p.Run(tt.args.ctx, tt.args.clusterID, tt.args.msg, tt.args.injector); (err != nil) != (tt.wantErr != "") {
 				assert.ErrorContainsf(t, err, tt.wantErr, "Run() error = %v, wantErr = %q", err, tt.wantErr)
 			}
+			if tt.wantInjectorContain != nil {
+				inj := tt.args.injector.(*recordingInjector)
+				assert.Equal(t, tt.wantInjectorContain, inj.getSentACKs())
+			}
 		})
 	}
+}
+
+var _ common.MessageInjector = (*recordingInjector)(nil)
+
+type recordingInjector struct {
+	lock     sync.Mutex
+	messages []*central.NodeInventoryACK
+}
+
+func (r *recordingInjector) InjectMessage(_ concurrency.Waitable, msg *central.MsgToSensor) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	r.messages = append(r.messages, msg.GetNodeInventoryAck().Clone())
+	return nil
+}
+
+func (r *recordingInjector) InjectMessageIntoQueue(_ *central.MsgFromSensor) {}
+
+func (r *recordingInjector) getSentACKs() []*central.NodeInventoryACK {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	copied := make([]*central.NodeInventoryACK, 0, len(r.messages))
+	copied = append(copied, r.messages...)
+	return copied
 }

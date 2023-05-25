@@ -5,12 +5,15 @@ import (
 	"sort"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
@@ -28,6 +31,11 @@ func (v *imageCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, err
 	}
 
 	var err error
+	q, err = withSACFilter(ctx, resources.Image, q)
+	if err != nil {
+		return 0, err
+	}
+
 	var results []*imageCVECoreCount
 	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreCount](ctx, v.db, v.schema, withCountQuery(q))
 	if err != nil {
@@ -50,6 +58,11 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 	}
 
 	var err error
+	q, err = withSACFilter(ctx, resources.Image, q)
+	if err != nil {
+		return nil, err
+	}
+
 	var results []*resourceCountByImageCVESeverity
 	results, err = pgSearch.RunSelectRequestForSchema[resourceCountByImageCVESeverity](ctx, v.db, v.schema, withCountBySeveritySelectQuery(q, search.CVE))
 	if err != nil {
@@ -85,19 +98,72 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	}
 
 	var err error
-	var results []*imageCVECore
-	results, err = pgSearch.RunSelectRequestForSchema[imageCVECore](ctx, v.db, v.schema, withSelectQuery(q, options))
+	q, err = withSACFilter(ctx, resources.Image, q)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []*imageCVECoreResponse
+	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreResponse](ctx, v.db, v.schema, withSelectQuery(q, options))
 	if err != nil {
 		return nil, err
 	}
 
 	ret := make([]CveCore, 0, len(results))
 	for _, r := range results {
-		// For each records, sort the IDs so that result looks consistent.
+		// For each record, sort the IDs so that result looks consistent.
 		sort.SliceStable(r.CVEIDs, func(i, j int) bool {
 			return r.CVEIDs[i] < r.CVEIDs[j]
 		})
 		ret = append(ret, r)
+	}
+	return ret, nil
+}
+
+func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query) ([]string, error) {
+	var err error
+	q, err = withSACFilter(ctx, resources.Deployment, q)
+	if err != nil {
+		return nil, err
+	}
+
+	q.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.DeploymentID).Distinct().Proto(),
+	}
+
+	var results []*deploymentResponse
+	results, err = pgSearch.RunSelectRequestForSchema[deploymentResponse](ctx, v.db, v.schema, q)
+	if err != nil || len(results) == 0 {
+		return nil, err
+	}
+
+	ret := make([]string, 0, len(results))
+	for _, r := range results {
+		ret = append(ret, r.DeploymentID)
+	}
+	return ret, nil
+}
+
+func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]string, error) {
+	var err error
+	q, err = withSACFilter(ctx, resources.Image, q)
+	if err != nil {
+		return nil, err
+	}
+
+	q.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ImageSHA).Distinct().Proto(),
+	}
+
+	var results []*imageResponse
+	results, err = pgSearch.RunSelectRequestForSchema[imageResponse](ctx, v.db, v.schema, q)
+	if err != nil || len(results) == 0 {
+		return nil, err
+	}
+
+	ret := make([]string, 0, len(results))
+	for _, r := range results {
+		ret = append(ret, r.ImageID)
 	}
 	return ret, nil
 }
@@ -236,4 +302,20 @@ func withCountQuery(q *v1.Query) *v1.Query {
 		search.NewQuerySelect(search.CVE).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 	}
 	return cloned
+}
+
+func withSACFilter(ctx context.Context, targetResource permissions.ResourceMetadata, query *v1.Query) (*v1.Query, error) {
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
+		return nil, err
+	}
+	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, err
+	}
+
+	return search.FilterQueryByQuery(query, sacQueryFilter), nil
 }

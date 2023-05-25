@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/alert/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -25,12 +24,6 @@ import (
 )
 
 func BenchmarkAlertDatabaseOps(b *testing.B) {
-	b.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		b.Skipf("%q not set. Skip postgres test", env.PostgresDatastoreEnabled.EnvVar())
-		b.SkipNow()
-	}
-
 	testDB := pgtest.ForT(b)
 	ctx := sac.WithAllAccess(context.Background())
 	datastore, err := GetTestPostgresDataStore(b, testDB.DB)
