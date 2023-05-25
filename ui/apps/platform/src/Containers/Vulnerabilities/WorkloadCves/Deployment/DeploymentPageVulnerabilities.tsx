@@ -27,7 +27,7 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
-import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getHasSearchApplied } from 'utils/searchUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
@@ -40,7 +40,12 @@ import CvesByStatusSummaryCard, {
     resourceCountByCveSeverityAndStatusFragment,
     ResourceCountByCveSeverityAndStatus,
 } from '../SummaryCards/CvesByStatusSummaryCard';
-import { parseQuerySearchFilter, getHiddenSeverities, getHiddenStatuses } from '../searchUtils';
+import {
+    parseQuerySearchFilter,
+    getHiddenSeverities,
+    getHiddenStatuses,
+    getCveStatusScopedQueryString,
+} from '../searchUtils';
 import { imageMetadataContextFragment } from '../Tables/table.utils';
 import DeploymentVulnerabilitiesTable, {
     deploymentWithVulnerabilitiesFragment,
@@ -98,6 +103,8 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
 
+    const query = getCveStatusScopedQueryString(querySearchFilter, activeTabKey);
+
     const summaryRequest = useQuery<
         {
             deployment: {
@@ -107,10 +114,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
         },
         { id: string; query: string }
     >(summaryQuery, {
-        variables: {
-            id: deploymentId,
-            query: getRequestQueryStringForSearchFilter(querySearchFilter),
-        },
+        variables: { id: deploymentId, query },
     });
 
     const summaryData = summaryRequest.data ?? summaryRequest.previousData;
@@ -135,11 +139,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
             pagination: PaginationParam;
         }
     >(vulnerabilityQuery, {
-        variables: {
-            id: deploymentId,
-            query: getRequestQueryStringForSearchFilter(querySearchFilter),
-            pagination,
-        },
+        variables: { id: deploymentId, query, pagination },
     });
 
     const vulnerabilityData = vulnerabilityRequest.data ?? vulnerabilityRequest.previousData;
