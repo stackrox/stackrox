@@ -31,6 +31,9 @@ var (
 			"/v1.ComplianceService/GetRunResults",
 			"/v1.ComplianceService/GetAggregatedResults",
 		},
+		user.With(permissions.Modify(resources.Compliance)): {
+			"/v1.ComplianceService/UpdateCompliance",
+		},
 	})
 )
 
@@ -79,9 +82,11 @@ func (s *serviceImpl) GetStandards(context.Context, *v1.Empty) (*v1.GetComplianc
 	// Filter standards by active
 	filteredStandards := standards[:0]
 	for _, standard := range standards {
+
 		if s.manager.IsStandardActive(standard.GetId()) {
 			filteredStandards = append(filteredStandards, standard)
 		}
+
 	}
 
 	return &v1.GetComplianceStandardsResponse{
@@ -103,6 +108,24 @@ func (s *serviceImpl) GetStandard(_ context.Context, req *v1.ResourceByID) (*v1.
 	}, nil
 }
 
+func (s *serviceImpl) UpdateCompliance(ctx context.Context, req *v1.UpdateComplianceRequest) (*v1.Empty, error) {
+	_, exists, err := s.standardsRepo.Standard(req.GetId())
+
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.Wrap(errox.NotFound, req.GetId())
+	}
+
+	err = s.standardsRepo.SetStandardHidden(req.GetId(), req.GetHidden())
+	if err != nil {
+		return &v1.Empty{}, err
+	}
+
+	return &v1.Empty{}, nil
+}
+
 func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.ComplianceAggregationRequest) (*storage.ComplianceAggregation_Response, error) {
 	if request.GetUnit() == storage.ComplianceAggregation_UNKNOWN {
 		request.Unit = storage.ComplianceAggregation_CHECK
@@ -112,9 +135,17 @@ func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.Comp
 		return nil, err
 	}
 
+	filteredSources := sources[:0]
+
+	for _, res := range sources {
+		if !s.manager.IsStandardHidden(res.StandardId) {
+			filteredSources = append(filteredSources, res)
+		}
+	}
+
 	return &storage.ComplianceAggregation_Response{
 		Results: validResults,
-		Sources: sources,
+		Sources: filteredSources,
 	}, nil
 }
 

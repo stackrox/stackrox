@@ -49,6 +49,7 @@ type Manager interface {
 
 	IsStandardActive(standardID string) bool
 	IsStandardActiveForCluster(standardID, clusterID string) bool
+	IsStandardHidden(standardID string) bool
 
 	GetMachineConfigs(clusterID string) (map[string][]string, error)
 }
@@ -322,6 +323,7 @@ func (m *managerImpl) IsStandardActive(standardID string) bool {
 		log.Errorf("error getting standard ID %s: %v", standardID, err)
 		return false
 	}
+
 	if !ok {
 		return false
 	}
@@ -347,6 +349,25 @@ func (m *managerImpl) IsStandardActive(standardID string) bool {
 		return false
 	}
 	return found
+}
+
+func (m *managerImpl) IsStandardHidden(standardID string) bool {
+
+	standard, ok, err := m.registry.Standard(standardID)
+	if err != nil {
+		log.Errorf("error getting standard ID %s: %v", standardID, err)
+		return true
+	}
+
+	if !ok {
+		return true
+	}
+	if standard.GetMetadata().GetId() == "CIS_Docker_v1_2_0" {
+		return true
+	}
+
+	return false
+
 }
 
 func (m *managerImpl) IsStandardActiveForCluster(standardID, clusterID string) bool {
