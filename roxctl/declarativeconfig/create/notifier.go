@@ -192,7 +192,10 @@ func (n *notifierCmd) construct(cmd *cobra.Command) error {
 
 func (n *notifierCmd) validate() error {
 	if _, err := url.Parse(n.gc.Endpoint); err != nil {
-		return errox.InvalidArgs.New("parsing notifier endpoint URL").CausedBy(err)
+		return errox.InvalidArgs.New("parsing notifier webhook endpoint URL").CausedBy(err)
+	}
+	if _, err := url.Parse(n.sc.HTTPEndpoint); err != nil {
+		return errox.InvalidArgs.New("parsing notifier Splunk endpoint URL").CausedBy(err)
 	}
 	if n.sc.HTTPEndpoint == "" && n.sc.HTTPToken != "" {
 		return errox.InvalidArgs.New("missing endpoint")
