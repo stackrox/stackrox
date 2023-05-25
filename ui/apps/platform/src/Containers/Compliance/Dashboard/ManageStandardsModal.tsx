@@ -17,11 +17,11 @@ export type ManageStandardsModalProps = {
 
 /*
  * Formik values have standard id as key and showScanResults as value.
- * Therefore, negate hidden value here and
+ * Therefore, negate hideScanResults value here and
  * showComplianceScanMap[id] value in onSubmit function below.
  */
 function getShowScanResultsMap(standards: ComplianceStandardMetadata[]): Record<string, boolean> {
-    return Object.fromEntries(standards.map(({ id, hidden }) => [id, !hidden]));
+    return Object.fromEntries(standards.map(({ id, hideScanResults }) => [id, !hideScanResults]));
 }
 
 function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
@@ -32,10 +32,11 @@ function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
         initialValues: getShowScanResultsMap(standards),
         onSubmit: (showScanResultsMap) => {
             setErrorMessage('');
-            // Filter standards for which hidden property has changed,
+            // Filter standards for which hideScanResults property has changed,
             // and them map to promises for patch requests.
+            // Negate hideScanResults is correct even if property is absent.
             const patchRequestPromises = standards
-                .filter(({ hidden, id }) => Boolean(hidden) !== !showScanResultsMap[id])
+                .filter(({ hideScanResults, id }) => !hideScanResults !== showScanResultsMap[id])
                 .map(({ id }) => patchComplianceStandard(id, !showScanResultsMap[id]));
 
             Promise.all(patchRequestPromises)

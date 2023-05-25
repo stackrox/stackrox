@@ -12,7 +12,7 @@ export type ComplianceStandardMetadata = {
     numImplementedChecks: number; // int32
     scopes: ComplianceStandardScope[];
     dynamic: boolean;
-    hidden: boolean;
+    hideScanResults: boolean;
 };
 
 export function fetchComplianceStandards(): Promise<ComplianceStandardMetadata[]> {
@@ -42,8 +42,8 @@ export function fetchComplianceStandardsSortedByName(): Promise<ComplianceStanda
     return fetchComplianceStandards().then((standards) => standards.sort(compareStandardsByName));
 }
 
-export function patchComplianceStandard(id: string, hidden: boolean): Promise<Empty> {
+export function patchComplianceStandard(id: string, hideScanResults: boolean): Promise<Empty> {
     return axios
-        .patch<Empty>(`${standardsUrl}/${id}`, { hidden })
+        .patch<Empty>(`${standardsUrl}/${id}`, { hideScanResults })
         .then((response) => response.data);
 }

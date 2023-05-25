@@ -70,7 +70,8 @@ function ComplianceDashboardPage(): ReactElement {
 
         /*
          * Same method as for Scan button to clear store of any cached query data,
-         * so backend filters out hidden standards in query data according to saved update.
+         * so backend filters out standards in query data according to saved update
+         * to hideScanResults properties.
          */
         return client.resetStore();
     }
