@@ -14,7 +14,7 @@ function setup() {
 @test "without any env" {
     run get_repo_full_name
     assert_failure 1
-    assert_output --partial 'unupported'
+    assert_output --partial 'unsupported'
 }
 
 @test "OPENSHIFT_CI but nothing else" {
