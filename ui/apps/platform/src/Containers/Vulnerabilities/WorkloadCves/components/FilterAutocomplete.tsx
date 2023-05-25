@@ -30,7 +30,7 @@ function getAutocompleteOptionsQueryString(searchFilter: SearchFilter): string {
 
 function getSearchCategoriesForAutocomplete(resource: Resource) {
     if (resource === 'CVE') {
-        return 'IMAGE_CVE';
+        return searchCategories.IMAGE_CVE;
     }
     return searchCategories[resource];
 }

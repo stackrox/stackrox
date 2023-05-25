@@ -33,7 +33,6 @@ export type DeploymentForCve = {
     namespace: string;
     clusterName: string;
     created: string | null;
-    imageCount: number;
     lowImageCount: number;
     moderateImageCount: number;
     importantImageCount: number;
@@ -50,7 +49,6 @@ export const deploymentsForCveFragment = gql`
         namespace
         clusterName
         created
-        imageCount(query: $query)
         lowImageCount: imageCount(query: $lowImageCountQuery)
         moderateImageCount: imageCount(query: $moderateImageCountQuery)
         importantImageCount: imageCount(query: $importantImageCountQuery)
@@ -106,7 +104,6 @@ function AffectedDeploymentsTable({
                     name,
                     namespace,
                     clusterName,
-                    imageCount,
                     lowImageCount,
                     moderateImageCount,
                     importantImageCount,
@@ -158,7 +155,7 @@ function AffectedDeploymentsTable({
                             <Td dataLabel="Cluster">{clusterName}</Td>
                             <Td dataLabel="Namespace">{namespace}</Td>
                             <Td modifier="nowrap" dataLabel="Images">
-                                {pluralize(imageCount, 'image')}
+                                {pluralize(images.length, 'image')}
                             </Td>
 
                             <Td modifier="nowrap" dataLabel="First discovered">
