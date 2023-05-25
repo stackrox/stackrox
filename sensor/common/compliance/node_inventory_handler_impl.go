@@ -65,8 +65,13 @@ func (c *nodeInventoryHandlerImpl) Start() error {
 }
 
 func (c *nodeInventoryHandlerImpl) Stop(_ error) {
+	if !c.stopper.Client().Stopped().IsDone() {
+		defer func() {
+			_ = c.stopper.Client().Stopped().Wait()
+			close(c.acksFromCentral)
+		}()
+	}
 	c.stopper.Client().Stop()
-	close(c.acksFromCentral)
 }
 
 func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
