@@ -6,6 +6,7 @@ Run version compatibility tests
 import logging
 import os
 import sys
+import subprocess
 from clusters import GKECluster
 from compatibility_test import make_compatibility_test_runner
 from get_latest_helm_chart_versions import get_latest_helm_chart_versions
@@ -17,14 +18,15 @@ os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 
 central_chart_versions = get_latest_helm_chart_versions("stackrox-central-services", 2)
 sensor_chart_versions = get_latest_helm_chart_versions("stackrox-secured-cluster-services", 3)
+latest_tag = subprocess.check_output("make tag", shell=True).strip().decode("utf-8")
 
 if len(central_chart_versions) == 0:
     raise RuntimeError("Could not find central chart versions.")
 # Latest central vs last 4 sensor versions
-test_tuples = ["", sensor_chart_versions[i]] for i in range(0, len(sensor_chart_versions))]
+test_tuples = [[latest_tag, sensor_chart_versions[i]] for i in range(0, len(sensor_chart_versions))]
 # Latest sensor vs 1 version older central
 if len(central_chart_versions) > 1:
-    test_tuples.append([central_chart_versions[1], ""])
+    test_tuples.append([central_chart_versions[1], latest_tag])
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
