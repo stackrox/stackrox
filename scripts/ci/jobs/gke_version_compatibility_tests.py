@@ -38,8 +38,8 @@ failing_tuples = []
 for tuple in test_tuples:
     central_version = tuple[0]
     sensor_version = tuple[1]
-    os.environ["SENSOR_CHART_VERSION"] = central_version
-    os.environ["CENTRAL_CHART_VERSION"] = sensor_version
+    os.environ["CENTRAL_CHART_VERSION"] = central_version
+    os.environ["SENSOR_CHART_VERSION"] = sensor_version
     try:
         make_compatibility_test_runner(cluster=gkecluster).run()
     except Exception:
