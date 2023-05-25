@@ -327,6 +327,16 @@ function launch_central {
         helm lint "$unzip_dir/chart" -n stackrox
         helm lint "$unzip_dir/chart" -n stackrox "${helm_args[@]}"
       fi
+
+      # set custom central version if the CENTRAL_CHART_VERSION env is set
+      if [[ ! -z ${CENTRAL_CHART_VERSION} ]]; then
+        helm_args+=(
+          --version="${CENTRAL_CHART_VERSION}"
+        )
+      fi
+
+      echo "Calling: helm upgrade --install -n stackrox stackrox-central-services $unzip_dir/chart \
+                               ${helm_args[@]}"
       helm upgrade --install -n stackrox stackrox-central-services "$unzip_dir/chart" \
           "${helm_args[@]}"
     else
@@ -564,10 +574,22 @@ function launch_sensor {
         helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox
         helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox "${helm_args[@]}" "${extra_helm_config[@]}"
       fi
+      
+      # set custom sensor version if the SENSOR_CHART_VERSION env is set
+      if [[ ! -z ${SENSOR_CHART_VERSION} ]]; then
+        helm_args+=(
+          --version="${SENSOR_CHART_VERSION}"
+        )
+      fi
+
       if [[ "$sensor_namespace" != "stackrox" ]]; then
         kubectl create namespace "$sensor_namespace" &>/dev/null || true
         kubectl -n "$sensor_namespace" get secret stackrox &>/dev/null || kubectl -n "$sensor_namespace" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
       fi
+
+      echo "Calling: helm upgrade --install -n $sensor_namespace --create-namespace stackrox-secured-cluster-services $k8s_dir/sensor-deploy/chart \
+                      ${helm_args[@]} ${extra_helm_config[@]}"
+
       helm upgrade --install -n "$sensor_namespace" --create-namespace stackrox-secured-cluster-services "$k8s_dir/sensor-deploy/chart" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
     else
