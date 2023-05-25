@@ -8,6 +8,7 @@ import { isUserResource } from '../traits';
 
 export type DisplayedAuthProvider = AuthProvider & {
     do_not_use_client_secret?: boolean;
+    disable_offline_access_scope?: boolean;
     defaultRole?: string;
     groups?: Group[];
 };
@@ -63,7 +64,11 @@ function populateDefaultValues(authProvider: AuthProvider): AuthProvider {
     if (authProvider.type === 'oidc') {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        newInitialValues.config = { mode: 'auto', do_not_use_client_secret: false };
+        newInitialValues.config = {
+            mode: 'auto',
+            do_not_use_client_secret: false,
+            disable_offline_access_scope: false,
+        };
     }
     newInitialValues.groups = Array.isArray(authProvider.groups) ? [...authProvider.groups] : [];
     newInitialValues.groups.push({
@@ -126,6 +131,9 @@ export function transformValuesBeforeSaving(
 
         // backend expects only string values for the config
         alteredConfig.do_not_use_client_secret = alteredConfig.do_not_use_client_secret
+            ? 'true'
+            : 'false';
+        alteredConfig.disable_offline_access_scope = alteredConfig.disable_offline_access_scope
             ? 'true'
             : 'false';
 
