@@ -17,7 +17,7 @@ import TableEntityToolbar from '../components/TableEntityToolbar';
 type ImagesTableContainerProps = {
     defaultFilters: DefaultFilters;
     countsData: EntityCounts;
-    cveStatusTab: CveStatusTab;
+    cveStatusTab?: CveStatusTab; // TODO Make this required once Observed/Deferred/FP states are re-implemented
 };
 
 function ImagesTableContainer({
