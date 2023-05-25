@@ -26,7 +26,7 @@ const EntitiesMenu = ({ text, options, grouped }) => {
     }
 
     const buttonClass =
-        'bg-base-100 hover:bg-primary-200 border-base-400 font-weight-600 uppercase font-condensed flex h-full text-base-600 pl-2 border-l border-dashed text-sm';
+        'bg-base-100 hover:bg-primary-200 border-base-400 flex h-full text-base-600 pl-2 border-l border-dashed';
 
     let formattedOptions = [];
     if (!grouped) {
