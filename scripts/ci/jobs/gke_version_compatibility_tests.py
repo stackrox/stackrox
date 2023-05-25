@@ -21,10 +21,10 @@ sensor_chart_versions = get_latest_helm_chart_versions("stackrox-secured-cluster
 if len(central_chart_versions) == 0:
     raise RuntimeError("Could not find central chart versions.")
 # Latest central vs last 4 sensor versions
-test_tuples = [[central_chart_versions[0], sensor_chart_versions[i]] for i in range(0, len(sensor_chart_versions))]
+test_tuples = ["", sensor_chart_versions[i]] for i in range(0, len(sensor_chart_versions))]
 # Latest sensor vs 1 version older central
 if len(central_chart_versions) > 1:
-    test_tuples.append([central_chart_versions[1], sensor_chart_versions[0]])
+    test_tuples.append([central_chart_versions[1], ""])
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
