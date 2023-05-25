@@ -27,7 +27,7 @@ compatibility_test() {
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
 
-    info "Starting test (sensor compatibility test Sensor version - ${SENSOR_CHART_VERSION}, Central version - ${CENTRAL_CHART_VERSION})"
+    info "Starting test (sensor compatibility test Central version - ${CENTRAL_CHART_VERSION}, Sensor version - ${SENSOR_CHART_VERSION})"
 
     export_test_environment
 
@@ -43,7 +43,7 @@ compatibility_test() {
         remove_existing_stackrox_resources
         setup_default_TLS_certs
 
-        deploy_stackrox_with_custom_central_and_sensor_versions "${SENSOR_CHART_VERSION}" "${CENTRAL_CHART_VERSION}"
+        deploy_stackrox_with_custom_central_and_sensor_versions "${CENTRAL_CHART_VERSION}" "${SENSOR_CHART_VERSION}"
         echo "Stackrox deployed"
         kubectl -n stackrox get deploy,ds -o wide
 
@@ -64,15 +64,15 @@ compatibility_test() {
 
     update_junit_prefix_with_sensor_version
 
-    store_qa_test_results "compatibility-test-sensor-v${SENSOR_CHART_VERSION}-central-v${CENTRAL_CHART_VERSION}"
-    [[ ! -f FAIL ]] || die "compatibility-test-sensor-v${SENSOR_CHART_VERSION}-central-v${CENTRAL_CHART_VERSION}"
+    store_qa_test_results "compatibility-central-v${CENTRAL_CHART_VERSION}-test-sensor-v${SENSOR_CHART_VERSION}"
+    [[ ! -f FAIL ]] || die "compatibility-central-v${CENTRAL_CHART_VERSION}-test-sensor-v${SENSOR_CHART_VERSION}"
 }
 
 update_junit_prefix_with_sensor_version() {
     result_folder="${ROOT}/qa-tests-backend/build/test-results/testCOMPATIBILITY"
-    info "Updating all test in $result_folder to have \"Sensor-v${SENSOR_CHART_VERSION}_Central-v${CENTRAL_CHART_VERSION}\" prefix"
+    info "Updating all test in $result_folder to have \"Central-v${CENTRAL_CHART_VERSION}_Sensor-v${SENSOR_CHART_VERSION}_\" prefix"
     for f in "$result_folder"/*.xml; do
-        sed -i "s/testcase name=\"/testcase name=\"[Sensor-v${SENSOR_CHART_VERSION}_Central-v${CENTRAL_CHART_VERSION}] /g" "$f"
+        sed -i "s/testcase name=\"/testcase name=\"[Central-v${CENTRAL_CHART_VERSION}_Sensor-v${SENSOR_CHART_VERSION}] /g" "$f"
     done
 }
 
