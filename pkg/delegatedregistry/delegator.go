@@ -6,8 +6,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// Delegator defines an interface for implementing a component that delegates image enrichment
-// requests to secured clusters.
+// Delegator defines an interface for delegating image enrichment requests to secured clusters.
+//
+//go:generate mockgen-wrapper
 type Delegator interface {
 	// GetDelegateClusterID returns the cluster id that should enrich this image (if any) and
 	// true if enrichment should be delegated to a secured cluster, false otherwise
