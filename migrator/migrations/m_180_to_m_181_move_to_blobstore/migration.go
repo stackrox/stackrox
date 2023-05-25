@@ -71,15 +71,17 @@ func moveToBlobs(db *gorm.DB) (err error) {
 
 func moveNetworkGraphExtSrcChecksum(db *gorm.DB) {
 	tx := db.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
-	if err := moveFileToBlob(tx, defaultexternalsrcs.LocalChecksumBlobPath, networkGraphLocalChecksumFile, nil); err == nil {
-		if err = tx.Commit().Error; err == nil {
-			log.Info("Migrate checksum of network graph external source bundle successfully")
+	err := moveFileToBlob(tx, defaultexternalsrcs.LocalChecksumBlobPath, networkGraphLocalChecksumFile, nil)
+	if err != nil {
+		// It is fine if we fail to migrate the checksum, just rollback.
+		log.Debugf("failed to migrate exteral graph bundle checksum %v", err)
+		if result := tx.Rollback(); result.Error != nil {
+			log.Warnf("failed to rollback with error %v", result.Error)
 		}
 		return
 	}
-	// It is fine if we fail to migrate the checksum, just rollback.
-	if result := tx.Rollback(); result.Error != nil {
-		log.Warnf("failed to rollback with error %v", result.Error)
+	if err = tx.Commit().Error; err == nil {
+		log.Info("Migrate checksum of network graph external source bundle successfully")
 	}
 }
 
