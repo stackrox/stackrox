@@ -15,9 +15,9 @@ import { min } from 'date-fns';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
-import { FixableIcon, NotFixableIcon } from 'Components/PatternFly/FixabilityIcons';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { VulnerabilitySeverity } from 'types/cve.proto';
+import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import { getEntityPagePath } from '../searchUtils';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 
@@ -158,8 +158,6 @@ function DeploymentVulnerabilitiesTable({
                 } = vulnerability;
                 const isExpanded = expandedRowSet.has(cve);
 
-                const FixabilityIcon = isFixable ? FixableIcon : NotFixableIcon;
-
                 return (
                     <Tbody key={cve} isExpanded={isExpanded}>
                         <Tr>
@@ -184,12 +182,7 @@ function DeploymentVulnerabilitiesTable({
                                 <VulnerabilitySeverityIconText severity={severity} />
                             </Td>
                             <Td modifier="nowrap" dataLabel="CVE Status">
-                                <span>
-                                    <FixabilityIcon className="pf-u-display-inline" />
-                                    <span className="pf-u-pl-sm">
-                                        {isFixable ? 'Fixable' : 'Not fixable'}
-                                    </span>
-                                </span>
+                                <VulnerabilityFixableIconText isFixable={isFixable} />
                             </Td>
                             <Td dataLabel="Affected components">{affectedComponentsText}</Td>
                             <Td modifier="nowrap" dataLabel="First discovered">
