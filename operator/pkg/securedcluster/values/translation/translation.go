@@ -260,6 +260,7 @@ func (t Translator) getCollectorValues(perNode *platform.PerNodeSpec) *translati
 
 	cv.AddAllFrom(t.getCollectorContainerValues(perNode.Collector))
 	cv.AddAllFrom(t.getComplianceContainerValues(perNode.Compliance))
+	cv.AddAllFrom(t.getNodeScannerContainerValues(perNode.NodeScanner))
 
 	return &cv
 }
@@ -309,6 +310,17 @@ func (t Translator) getComplianceContainerValues(compliance *platform.ContainerS
 
 	cv := translation.NewValuesBuilder()
 	cv.AddChild("complianceResources", translation.GetResources(compliance.Resources))
+
+	return &cv
+}
+
+func (t Translator) getNodeScannerContainerValues(nodeScanner *platform.ContainerSpec) *translation.ValuesBuilder {
+	if nodeScanner == nil {
+		return nil
+	}
+
+	cv := translation.NewValuesBuilder()
+	cv.AddChild("nodeScanningResources", translation.GetResources(nodeScanner.Resources))
 
 	return &cv
 }
