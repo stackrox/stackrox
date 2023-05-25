@@ -42,43 +42,16 @@ deploy_stackrox() {
     touch "${STATE_DEPLOYED}"
 }
 
-# shellcheck disable=SC2120
-deploy_stackrox_with_custom_sensor() {
-    if [[ "$#" -ne 1 ]]; then
-        die "expected sensor chart version as parameter in deploy_stackrox_with_custom_sensor"
+deploy_stackrox_with_custom_central_and_sensor_versions() {
+    if [[ "$#" -ne 2 ]]; then
+        die "expected sensor chart version and central chart version as parameters in deploy_stackrox_with_custom_central_and_sensor_versions: deploy_stackrox_with_custom_central_and_sensor_versions <central chart version> <sensor chart version>"
     fi
-    target_version="$1"
-    setup_podsecuritypolicies_config
+    ci_export CENTRAL_CHART_VERSION "$1"
+    ci_export SENSOR_CHART_VERSION "$2"
+    ci_export DEPLOY_STACKROX_VIA_OPERATOR "false"
+    ci_export OUTPUT_FORMAT "helm"
 
-    deploy_central
-
-    export_central_basic_auth_creds
-    wait_for_api
-    setup_client_TLS_certs "${2:-}"
-    record_build_info
-
-    # generate init bundle
-    password_file="$ROOT/deploy/$ORCHESTRATOR_FLAVOR/central-deploy/password"
-    if [ ! -f "$password_file" ]; then
-        die "password file $password_file not found after deploying central"
-    fi
-    kubectl -n stackrox exec deploy/central -- roxctl --insecure-skip-tls-verify \
-        --password "$(cat "$password_file")" \
-      central init-bundles generate stackrox-init-bundle --output - 1> stackrox-init-bundle.yaml
-
-    deploy_sensor_from_helm_charts "$target_version" ./stackrox-init-bundle.yaml
-
-    echo "Sensor deployed. Waiting for sensor to be up"
-    sensor_wait
-
-    # Bounce collectors to avoid restarts on initial module pull
-    kubectl -n stackrox delete pod -l app=collector --grace-period=0
-
-    sensor_wait
-
-    wait_for_collectors_to_be_operational
-
-    touch "${STATE_DEPLOYED}"
+    deploy_stackrox
 }
 
 # export_test_environment() - Persist environment variables for the remainder of
@@ -203,28 +176,6 @@ deploy_central_via_operator() {
     kubectl apply -n stackrox -f /tmp/central-cr.yaml
 
     wait_for_object_to_appear stackrox deploy/central 300
-}
-
-deploy_sensor_from_helm_charts() {
-    if [[ "$#" -ne 2 ]]; then
-        die "deploy_sensor_from_helm_charts should receive a helm chart version and an init bundle\nusage: deploy_sensor_from_helm_charts <Chart version> <path to init bundle>"
-    fi
-
-    chart_version="$1"
-    init_bundle="$2"
-
-    info "Deploying secured cluster (v$chart_version) from Helm Charts (init bundle $init_bundle)"
-
-    helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
-    helm repo update
-
-    helm search repo stackrox-oss -l
-
-    helm install -n stackrox stackrox-secured-cluster-services \
-        stackrox-oss/stackrox-secured-cluster-services \
-        -f "$init_bundle" \
-        --set clusterName="remote" \
-        --version "$chart_version"
 }
 
 deploy_sensor() {
