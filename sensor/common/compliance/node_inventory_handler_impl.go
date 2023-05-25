@@ -119,8 +119,7 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *cen
 			return
 		case ackMsg, ok := <-c.acksFromCentral:
 			if !ok {
-				// TODO(ROX-15458): Change this log line to debug
-				log.Warn("Channel for reading node-scanning-ACK messages (acksFromCentral) is closed")
+				log.Debug("Channel for reading node-scanning-ACK messages (acksFromCentral) is closed")
 			}
 			log.Debugf("Forwarding node-scanning-ACK message from Central to Compliance: %v", ackMsg)
 			toCompliance <- ackMsg
