@@ -4,8 +4,8 @@ import { useFormik } from 'formik';
 
 import {
     ComplianceStandardMetadata,
-    fetchComplianceStandards,
-    // patchComplianceStandard,
+    fetchComplianceStandardsSortedByName,
+    patchComplianceStandard,
 } from 'services/ComplianceService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -30,23 +30,21 @@ function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
         Record<string, boolean>
     >({
         initialValues: getShowScanResultsMap(standards),
-        onSubmit: (/* showScanResultsMap */) => {
+        onSubmit: (showScanResultsMap) => {
             setErrorMessage('');
-            const patchRequestPromises = [];
-            /*
             // Filter standards for which hideScanResults property has changed,
             // and them map to promises for patch requests.
+            // Negate hideScanResults is correct even if property is absent.
             const patchRequestPromises = standards
-                .filter(
-                    ({ hideScanResults, id }) =>
-                        Boolean(hideScanResults) !== !showScanResultsMap[id]
-                )
+                .filter(({ hideScanResults, id }) => !hideScanResults !== showScanResultsMap[id])
                 .map(({ id }) => patchComplianceStandard(id, !showScanResultsMap[id]));
-            */
 
+            // TODO rewrite with ES2020 allSettled to solve async problem with all.
+            // TODO decide how to display results and update Formik state
+            // if some requests fail but other requests succeed.
             Promise.all(patchRequestPromises)
                 .then(() => {
-                    fetchComplianceStandards()
+                    fetchComplianceStandardsSortedByName()
                         .then((standardsFetchedAfterPatchRequests) => {
                             onSave(standardsFetchedAfterPatchRequests);
                         })
@@ -58,7 +56,6 @@ function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
                         });
                 })
                 .catch((error) => {
-                    // TODO fetchComplianceStandards in case some succeed before one fails?
                     setErrorMessage(getAxiosErrorMessage(error));
                     setSubmitting(false);
                 });
@@ -68,7 +65,7 @@ function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
     return (
         <Modal
             title="Manage standards"
-            variant="medium"
+            variant="small"
             isOpen
             showClose={false}
             actions={[

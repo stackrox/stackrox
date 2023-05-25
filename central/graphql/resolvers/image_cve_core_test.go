@@ -34,7 +34,6 @@ type ImageCVECoreResolverTestSuite struct {
 }
 
 func (s *ImageCVECoreResolverTestSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 	s.T().Setenv(features.VulnMgmtWorkloadCVEs.EnvVar(), "true")
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() || !features.VulnMgmtWorkloadCVEs.Enabled() {

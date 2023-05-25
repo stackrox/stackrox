@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -20,15 +19,6 @@ type ImagesStoreSuite struct {
 
 func TestImagesStore(t *testing.T) {
 	suite.Run(t, new(ImagesStoreSuite))
-}
-
-func (s *ImagesStoreSuite) SetupTest() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 }
 
 func (s *ImagesStoreSuite) TestStore() {

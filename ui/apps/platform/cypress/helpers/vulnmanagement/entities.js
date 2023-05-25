@@ -13,7 +13,6 @@ let opnamesForDashboard = [
     'topRiskyDeployments',
     'topRiskiestImagesOld',
     'topRiskiestImageVulns',
-    'frequentlyViolatedPolicies',
     'recentlyDetectedVulnerabilities',
     'recentlyDetectedImageVulnerabilities',
     'mostCommonVulnerabilities',

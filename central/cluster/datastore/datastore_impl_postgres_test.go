@@ -10,7 +10,6 @@ import (
 	namespace "github.com/stackrox/rox/central/namespace/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -34,12 +33,6 @@ type ClusterPostgresDataStoreTestSuite struct {
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 
 	s.ctx = sac.WithAllAccess(context.Background())
 

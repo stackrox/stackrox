@@ -13,13 +13,12 @@ export type ImageDetails = {
             digest: string;
         } | null;
     } | null;
-    dataSource: { id: string; name: string } | null;
+    dataSource: { name: string } | null;
     scanTime: string | null;
 };
 
 export const imageDetailsFragment = gql`
     fragment ImageDetails on Image {
-        id
         deploymentCount
         operatingSystem
         metadata {
@@ -29,7 +28,6 @@ export const imageDetailsFragment = gql`
             }
         }
         dataSource {
-            id
             name
         }
         scanTime

@@ -42,8 +42,6 @@ func (s *PostgresRestoreSuite) SetupTest() {
 		s.T().SkipNow()
 	}
 
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())

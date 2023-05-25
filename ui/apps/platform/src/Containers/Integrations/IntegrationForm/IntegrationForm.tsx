@@ -1,6 +1,8 @@
 import React, { FunctionComponent, ReactElement } from 'react';
 
+import { isUserResource } from 'Containers/AccessControl/traits';
 import { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
+
 // image integrations
 import ClairifyIntegrationForm from './Forms/ClairifyIntegrationForm';
 import ClairIntegrationForm from './Forms/ClairIntegrationForm';
@@ -104,7 +106,12 @@ function IntegrationForm({
             `There are no integration form components for source (${source}) and type (${type})`
         );
     }
-    return <Form initialValues={initialValues} isEditable={isEditable} />;
+    return (
+        <Form
+            initialValues={initialValues}
+            isEditable={isEditable && isUserResource(initialValues?.traits)}
+        />
+    );
 }
 
 export default IntegrationForm;

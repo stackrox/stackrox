@@ -1,4 +1,4 @@
-import { sortCveDistroList } from './sortUtils';
+import { getScoreVersionsForTopCVSS, sortCveDistroList } from './sortUtils';
 
 describe('sortCveDistroList', () => {
     it('should return an array of objects sorted by operating system priority', () => {
@@ -71,5 +71,45 @@ describe('sortCveDistroList', () => {
             { distro: 'amzn', operatingSystem: 'amzn:2018.03' },
             { distro: 'other', operatingSystem: 'windows:xp' },
         ]);
+    });
+});
+
+describe('getScoreVersionsForTopCVSS', () => {
+    it('should return the correct score versions for the topCVSS', () => {
+        // Empty list
+        expect(getScoreVersionsForTopCVSS(9.5, [])).toEqual([]);
+
+        // Basic checks
+        expect(
+            getScoreVersionsForTopCVSS(9.4, [
+                { cvss: 9.4300001, scoreVersion: 'V1' },
+                { cvss: 8.0, scoreVersion: 'V2' },
+                { cvss: 9.4, scoreVersion: 'V3' },
+                { cvss: 9.4212, scoreVersion: 'V4' },
+                { cvss: 9.48, scoreVersion: 'V5' },
+                { cvss: -9.4300001, scoreVersion: 'V6' },
+                { cvss: 0.0, scoreVersion: 'V7' },
+                { cvss: NaN, scoreVersion: 'V8' },
+                { cvss: Infinity, scoreVersion: 'V9' },
+                { cvss: -Infinity, scoreVersion: 'V10' },
+            ])
+        ).toEqual(['V1', 'V3', 'V4']);
+
+        // Check that duplicates are removed
+        expect(
+            getScoreVersionsForTopCVSS(9.4, [
+                { cvss: 9.4, scoreVersion: 'V1' },
+                { cvss: 9.4, scoreVersion: 'V1' },
+            ])
+        ).toEqual(['V1']);
+
+        // Check that items are sorted correctly
+        expect(
+            getScoreVersionsForTopCVSS(9.4, [
+                { cvss: 9.4, scoreVersion: 'V3' },
+                { cvss: 9.4, scoreVersion: 'V1' },
+                { cvss: 9.4, scoreVersion: 'V2' },
+            ])
+        ).toEqual(['V1', 'V2', 'V3']);
     });
 });

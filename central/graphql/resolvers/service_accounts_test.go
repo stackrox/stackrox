@@ -129,8 +129,8 @@ func (s *ServiceAccountResolverTestSuite) TestGetSaNamespace() {
 	s.serviceAccountDataStore.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return([]*storage.ServiceAccount{sa}, nil).AnyTimes()
 
 	// Pulled by saNamespace. It's not necessary for this test so mock away
-	s.deployments.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
-	s.secretsDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	s.deployments.EXPECT().Count(gomock.Any(), gomock.Any()).Return(0, nil).AnyTimes()
+	s.secretsDataStore.EXPECT().Count(gomock.Any(), gomock.Any()).Return(0, nil).AnyTimes()
 	// saNamesapce -> namespace resolver -> CountMatchingNetworkPolicies. Yikes
 	s.netPolDataStore.EXPECT().CountMatchingNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).Return(0, nil).AnyTimes()
 	s.namespaceDataStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).AnyTimes().Return([]*storage.NamespaceMetadata{{

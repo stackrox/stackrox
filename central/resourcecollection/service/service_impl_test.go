@@ -13,7 +13,6 @@ import (
 	datastoreMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -40,13 +39,6 @@ type CollectionServiceTestSuite struct {
 }
 
 func (suite *CollectionServiceTestSuite) SetupSuite() {
-	suite.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.T().Skip("Skip postgres store tests")
-		suite.T().SkipNow()
-	}
-
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.dataStore = datastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.queryResolver = datastoreMocks.NewMockQueryResolver(suite.mockCtrl)
@@ -57,13 +49,6 @@ func (suite *CollectionServiceTestSuite) SetupSuite() {
 	suite.resourceConfigDS, err = reportConfigurationDS.GetTestPostgresDataStore(suite.T(), suite.testDB.DB)
 	suite.NoError(err)
 	suite.collectionService = New(suite.dataStore, suite.queryResolver, suite.deploymentDS, suite.resourceConfigDS)
-
-	// Collections requires postgres
-	suite.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	// Release builds might not respect the flag (depending on default value), so skip
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.T().Skip("skipping because env var is not set")
-	}
 
 	testutils.SetExampleVersion(suite.T())
 }

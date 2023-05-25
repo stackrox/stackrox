@@ -305,7 +305,6 @@ func (h *httpHandler) openOfflineBlob(ctx context.Context) (*vulDefFile, error) 
 	if err != nil {
 		// If the blob does not exist, return no reader.
 		if errors.Is(err, snapshot.ErrBlobNotExist) {
-			log.Warnf("Blob %s does not exist", offlineScannerDefinitionBlobName)
 			return nil, nil
 		}
 		log.Warnf("Cannnot take a snapshot of Blob %q: %v", offlineScannerDefinitionBlobName, err)
@@ -326,7 +325,11 @@ func (h *httpHandler) openOfflineBlob(ctx context.Context) (*vulDefFile, error) 
 func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string) (file *vulDefFile, err error) {
 	// If in offline mode or uuid is not provided, default to the offline file.
 	if !h.online || uuid == "" {
-		return h.openOfflineBlob(ctx)
+		file, err = h.openOfflineBlob(ctx)
+		if err == nil && file == nil {
+			log.Warnf("Blob %s does not exist", offlineScannerDefinitionBlobName)
+		}
+		return
 	}
 
 	// Start the updater, can be called multiple times for the same uuid, but will

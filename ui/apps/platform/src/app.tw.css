@@ -365,7 +365,7 @@ h6 {
 }
 
 .btn-class {
-    @apply inline-flex px-2 rounded-sm font-600 uppercase text-center items-center min-w-16 justify-center border-2 !important;
+    @apply inline-flex px-2 rounded-sm text-center items-center min-w-16 justify-center border-2 !important;
     line-height: 14px; /* required because we were relying on the Chrome browser default of 14px earlier */
 }
 

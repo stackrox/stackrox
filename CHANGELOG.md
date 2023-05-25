@@ -14,7 +14,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-16696: A new DelegatedRegistryConfig API at `/v1/delegatedregistryconfig` has been added that provides dynamic configuration for local registry scanning (replaces `ROX_FORCE_LOCAL_IMAGE_SCANNING`).
 
 ### Removed Features
-- ROX-17031: env var `ROX_FORCE_LOCAL_IMAGE_SCANNING` has been removed and replaced by the DelegatedRegistryConfig API 
+- ROX-17031: env var `ROX_FORCE_LOCAL_IMAGE_SCANNING` has been removed and replaced by the DelegatedRegistryConfig API.
 
 ### Deprecated Fatures
 

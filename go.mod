@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.3
-	cloud.google.com/go/containeranalysis v0.9.1
+	cloud.google.com/go/containeranalysis v0.9.2
 	cloud.google.com/go/storage v1.30.1
 	github.com/BurntSushi/toml v1.2.1
 	github.com/Masterminds/semver v1.5.0
@@ -66,12 +66,12 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/np-guard/cluster-topology-analyzer v1.7.0
-	github.com/np-guard/netpol-analyzer v0.1.3
+	github.com/np-guard/netpol-analyzer v0.2.2
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b // indirect
-	github.com/openshift/api v3.9.1-0.20191201231411-9f834e337466+incompatible
+	github.com/openshift/api v0.0.0-20230502160752-c71432710382
 	github.com/openshift/client-go v0.0.0-20200623090625-83993cebb5ae
 	github.com/operator-framework/helm-operator-plugins v0.0.7
 	github.com/owenrumney/go-sarif/v2 v2.1.3
@@ -91,7 +91,7 @@ require (
 	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
 	github.com/stackrox/helmtest v0.0.0-20230216104233-de5e6193716a
 	github.com/stackrox/scanner v0.0.0-20230411230651-f2265de65ce4
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
 	github.com/tidwall/gjson v1.14.1
 	github.com/tkuchiki/go-timezone v0.2.2
@@ -101,7 +101,7 @@ require (
 	go.uber.org/atomic v1.11.0
 	go.uber.org/goleak v1.2.1
 	go.uber.org/zap v1.24.0
-	golang.org/x/crypto v0.8.0
+	golang.org/x/crypto v0.9.0
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	golang.org/x/net v0.10.0
 	golang.org/x/oauth2 v0.7.0
@@ -112,7 +112,7 @@ require (
 	golang.stackrox.io/grpc-http1 v0.2.6
 	google.golang.org/api v0.121.0
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
-	google.golang.org/grpc v1.54.0
+	google.golang.org/grpc v1.55.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
@@ -220,7 +220,7 @@ require (
 	github.com/go-playground/validator/v10 v10.13.0 // indirect
 	github.com/gobuffalo/flect v0.2.5 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
-	github.com/golang/glog v1.0.0 // indirect
+	github.com/golang/glog v1.1.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.2 // indirect

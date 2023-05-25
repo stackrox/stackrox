@@ -42,10 +42,10 @@ export const selectors = {
         applyNetworkPolicies: 'button:contains("Apply Network Policies")',
         apply: 'div[aria-modal="true"] button:contains("Apply")',
         // Select buttons by data-testid attribute and contains text, because "allowed" and "all" are ambiguous:
-        activeFilter: 'button[data-testid="network-connections-filter-active"]:contains("active")',
+        activeFilter: 'button[data-testid="network-connections-filter-active"]:contains("Active")',
         allowedFilter:
-            'button[data-testid="network-connections-filter-allowed"]:contains("allowed")',
-        allFilter: 'button[data-testid="network-connections-filter-all"]:contains("all")',
+            'button[data-testid="network-connections-filter-allowed"]:contains("Allowed")',
+        allFilter: 'button[data-testid="network-connections-filter-all"]:contains("All")',
         hideNsEdgesFilter: '[data-testid="namespace-flows-filter"] button:contains("Hide")',
         stopSimulation: '.simulator-mode button:contains("Stop")',
         confirmationButton: 'button:contains("Yes")',

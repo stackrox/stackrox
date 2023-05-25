@@ -1,10 +1,14 @@
 import qs from 'qs';
 
 import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
-import { VulnerabilitySeverity, vulnerabilitySeverities } from 'types/cve.proto';
+import {
+    VulnerabilitySeverity,
+    VulnerabilityState,
+    vulnerabilitySeverities,
+} from 'types/cve.proto';
 import { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
-import { searchValueAsArray } from 'utils/searchUtils';
+import { searchValueAsArray, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
 import { CveStatusTab, FixableStatus, isValidCveStatusTab, QuerySearchFilter } from './types';
@@ -121,4 +125,25 @@ export function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<Fix
     }
 
     return hiddenStatuses;
+}
+
+// Map from the CVE status tab to the backend equivalent search value
+const vulnerabilitySearchStateForCveStatus: Record<CveStatusTab, VulnerabilityState> = {
+    Observed: 'OBSERVED',
+    Deferred: 'DEFERRED',
+    'False Positive': 'FALSE_POSITIVE',
+} as const;
+
+// Returns a search filter string that scopes results to a CVE Workflow state (e.g. 'OBSERVED')
+export function getCveStatusScopedQueryString(
+    searchFilter: QuerySearchFilter,
+    cveStatusTab?: CveStatusTab /* TODO Make this required once Observed/Deferred/FP states are re-implemented */
+): string {
+    const vulnerabilityStateFilter = cveStatusTab
+        ? { 'Vulnerability State': vulnerabilitySearchStateForCveStatus[cveStatusTab] }
+        : {};
+    return getRequestQueryStringForSearchFilter({
+        ...searchFilter,
+        ...vulnerabilityStateFilter,
+    });
 }

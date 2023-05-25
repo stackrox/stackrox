@@ -34,12 +34,6 @@ func TestAlertsIndex(t *testing.T) {
 }
 
 func (s *AlertsIndexSuite) SetupTest() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres index tests")
-		s.T().SkipNow()
-	}
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := postgres.ParseConfig(source)

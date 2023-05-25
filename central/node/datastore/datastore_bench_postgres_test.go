@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -24,12 +23,6 @@ import (
 )
 
 func BenchmarkGetManyNodes(b *testing.B) {
-	b.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		b.Skip("Skip postgres store tests")
-		b.SkipNow()
-	}
 
 	ctx := sac.WithAllAccess(context.Background())
 

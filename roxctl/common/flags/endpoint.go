@@ -69,7 +69,7 @@ func AddConnectionFlags(c *cobra.Command) {
 	c.PersistentFlags().BoolVar(&insecureSkipTLSVerify, insecureSkipTLSVerifyFlagName, false, "Skip TLS certificate validation. "+
 		"Alternatively, disable TLS certivicate validation by setting the ROX_INSECURE_CLIENT_SKIP_TLS_VERIFY environment variable to true")
 	insecureSkipTLSVerifySet = &c.PersistentFlags().Lookup(insecureSkipTLSVerifyFlagName).Changed
-	c.PersistentFlags().StringVar(&caCertFile, caCertFileFlagName, "", "Custom CA certificate to use (PEM format). "+
+	c.PersistentFlags().StringVar(&caCertFile, caCertFileFlagName, "", "Path to a custom CA certificate to use (PEM format). "+
 		"Alternatively pass the file path using the ROX_CA_CERT_FILE environment variable")
 	caCertFileSet = &c.PersistentFlags().Lookup(caCertFileFlagName).Changed
 }
