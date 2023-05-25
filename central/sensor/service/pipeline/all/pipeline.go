@@ -7,6 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
+	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -22,14 +23,16 @@ var (
 )
 
 // NewClusterPipeline returns a new instance of a ClusterPipeline that handles all event types.
-func NewClusterPipeline(clusterID string, fragments ...pipeline.Fragment) pipeline.ClusterPipeline {
+func NewClusterPipeline(clusterID string, deduper hashManager.Deduper, fragments ...pipeline.Fragment) pipeline.ClusterPipeline {
 	return &pipelineImpl{
+		deduper:   deduper,
 		fragments: fragments,
 		clusterID: clusterID,
 	}
 }
 
 type pipelineImpl struct {
+	deduper   hashManager.Deduper
 	clusterID string
 	fragments []pipeline.Fragment
 }
@@ -74,6 +77,7 @@ func (s *pipelineImpl) Run(ctx context.Context, msg *central.MsgFromSensor, inje
 	if matchCount == 0 {
 		return fmt.Errorf("no pipeline present to process message: %s", proto.MarshalTextString(msg))
 	}
+	s.deduper.MarkSuccessful(msg)
 	return nil
 }
 

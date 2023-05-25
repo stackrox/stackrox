@@ -1,5 +1,5 @@
 import React from 'react';
-import { gql, useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client';
 import {
     Tabs,
     Tab,
@@ -8,56 +8,20 @@ import {
     PageSection,
     Card,
     CardBody,
-    Divider,
-    Toolbar,
-    ToolbarItem,
-    ToolbarContent,
-    Pagination,
 } from '@patternfly/react-core';
 
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLSearch from 'hooks/useURLSearch';
-import useURLPagination from 'hooks/useURLPagination';
-import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import ImagesTableContainer from './ImagesTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
 import CVEsTableContainer from './CVEsTableContainer';
-import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
-import EntityTypeToggleGroup from '../components/EntityTypeToggleGroup';
-import { DynamicTableLabel } from '../components/DynamicIcon';
-import { DefaultFilters, cveStatusTabValues, entityTabValues, EntityTab } from '../types';
-import { parseQuerySearchFilter } from '../searchUtils';
+import { entityTypeCountsQuery } from '../components/EntityTypeToggleGroup';
+import { DefaultFilters, cveStatusTabValues, entityTabValues } from '../types';
+import { getCveStatusScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
 
 type CveStatusTabNavigationProps = {
     defaultFilters: DefaultFilters;
 };
-
-type EntityCounts = {
-    imageCount: number;
-    deploymentCount: number;
-    imageCVECount: number;
-};
-
-const entityTypeCountsQuery = gql`
-    query getEntityTypeCounts($query: String) {
-        imageCount(query: $query)
-        deploymentCount(query: $query)
-        imageCVECount(query: $query)
-    }
-`;
-
-function getTableRowCount(countsData: EntityCounts, entityType: EntityTab): number {
-    switch (entityType) {
-        case 'Image':
-            return countsData?.imageCount;
-        case 'Deployment':
-            return countsData?.deploymentCount;
-        case 'CVE':
-            return countsData?.imageCVECount;
-        default:
-            return 0;
-    }
-}
 
 function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps) {
     const { searchFilter } = useURLSearch();
@@ -67,22 +31,19 @@ function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps)
         cveStatusTabValues
     );
     const [activeEntityTabKey] = useURLStringUnion('entityTab', entityTabValues);
-    const { page, perPage, setPage, setPerPage } = useURLPagination(25);
-    const isFiltered = getHasSearchApplied(querySearchFilter);
 
     function handleTabClick(e, tab) {
         setActiveCVEStatusKey(tab);
     }
 
-    const { data: countsData } = useQuery(entityTypeCountsQuery, {
-        variables: {
-            query: getRequestQueryStringForSearchFilter({
-                ...querySearchFilter,
-            }),
-        },
-    });
-
-    const tableRowCount = getTableRowCount(countsData, activeEntityTabKey);
+    const { data: countsData = { imageCount: 0, imageCVECount: 0, deploymentCount: 0 } } = useQuery(
+        entityTypeCountsQuery,
+        {
+            variables: {
+                query: getCveStatusScopedQueryString(querySearchFilter, activeCVEStatusKey),
+            },
+        }
+    );
 
     return (
         <Tabs
@@ -97,46 +58,27 @@ function CveStatusTabNavigation({ defaultFilters }: CveStatusTabNavigationProps)
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody>
-                            <WorkloadTableToolbar defaultFilters={defaultFilters} />
-                            <Divider component="div" />
-                            <Toolbar>
-                                <ToolbarContent>
-                                    <ToolbarItem>
-                                        <EntityTypeToggleGroup
-                                            imageCount={countsData?.imageCount}
-                                            cveCount={countsData?.imageCVECount}
-                                            deploymentCount={countsData?.deploymentCount}
-                                        />
-                                    </ToolbarItem>
-                                    {isFiltered && (
-                                        <ToolbarItem>
-                                            <DynamicTableLabel />
-                                        </ToolbarItem>
-                                    )}
-                                    <ToolbarItem
-                                        alignment={{ default: 'alignRight' }}
-                                        variant="pagination"
-                                    >
-                                        <Pagination
-                                            isCompact
-                                            itemCount={tableRowCount}
-                                            page={page}
-                                            perPage={perPage}
-                                            onSetPage={(_, newPage) => setPage(newPage)}
-                                            onPerPageSelect={(_, newPerPage) => {
-                                                if (tableRowCount < (page - 1) * newPerPage) {
-                                                    setPage(1);
-                                                }
-                                                setPerPage(newPerPage);
-                                            }}
-                                        />
-                                    </ToolbarItem>
-                                </ToolbarContent>
-                            </Toolbar>
-                            <Divider component="div" />
-                            {activeEntityTabKey === 'CVE' && <CVEsTableContainer />}
-                            {activeEntityTabKey === 'Image' && <ImagesTableContainer />}
-                            {activeEntityTabKey === 'Deployment' && <DeploymentsTableContainer />}
+                            {activeEntityTabKey === 'CVE' && (
+                                <CVEsTableContainer
+                                    defaultFilters={defaultFilters}
+                                    countsData={countsData}
+                                    cveStatusTab={activeCVEStatusKey}
+                                />
+                            )}
+                            {activeEntityTabKey === 'Image' && (
+                                <ImagesTableContainer
+                                    defaultFilters={defaultFilters}
+                                    countsData={countsData}
+                                    cveStatusTab={activeCVEStatusKey}
+                                />
+                            )}
+                            {activeEntityTabKey === 'Deployment' && (
+                                <DeploymentsTableContainer
+                                    defaultFilters={defaultFilters}
+                                    countsData={countsData}
+                                    cveStatusTab={activeCVEStatusKey}
+                                />
+                            )}
                         </CardBody>
                     </Card>
                 </PageSection>

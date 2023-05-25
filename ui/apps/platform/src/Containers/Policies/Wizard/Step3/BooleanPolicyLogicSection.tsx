@@ -4,6 +4,7 @@ import { useFormikContext } from 'formik';
 
 import { Policy } from 'types/policy.proto';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import { getCriteriaAllowedByLifecycle } from 'Containers/Policies/policies.utils';
 import { policyConfigurationDescriptor, auditLogDescriptor } from './policyCriteriaDescriptors';
 import PolicySection from './PolicySection';
 
@@ -27,6 +28,10 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
         }
         return true;
     });
+    const descriptorsFilteredByLifecycle = getCriteriaAllowedByLifecycle(
+        descriptors,
+        values.lifecycleStages
+    );
 
     return (
         <>
@@ -38,7 +43,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                         <GridItem>
                             <PolicySection
                                 sectionIndex={sectionIndex}
-                                descriptors={descriptors}
+                                descriptors={descriptorsFilteredByLifecycle}
                                 readOnly={readOnly}
                             />
                         </GridItem>
@@ -65,7 +70,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                     <React.Fragment key={sectionIndex}>
                         <PolicySection
                             sectionIndex={sectionIndex}
-                            descriptors={descriptors}
+                            descriptors={descriptorsFilteredByLifecycle}
                             readOnly={readOnly}
                         />
                         {sectionIndex !== values.policySections.length - 1 && (

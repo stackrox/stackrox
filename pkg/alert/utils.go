@@ -30,3 +30,13 @@ func AnyAttemptedAlert(alerts ...*storage.Alert) bool {
 func IsRuntimeAlertResult(alert *central.AlertResults) bool {
 	return alert.GetStage() == storage.LifecycleStage_RUNTIME
 }
+
+// IsAlertResultResolved returns if there is a resolved alert within the alert result
+func IsAlertResultResolved(alert *central.AlertResults) bool {
+	for _, a := range alert.GetAlerts() {
+		if a.GetState() == storage.ViolationState_RESOLVED {
+			return true
+		}
+	}
+	return false
+}

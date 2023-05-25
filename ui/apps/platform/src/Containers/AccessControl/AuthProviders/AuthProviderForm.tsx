@@ -37,6 +37,7 @@ import {
     transformValuesBeforeSaving,
     getGroupsByAuthProviderId,
     getDefaultRoleByAuthProviderId,
+    isDefaultGroupModifiable,
 } from './authProviders.utils';
 import { AccessControlQueryAction } from '../accessControlPaths';
 import { TraitsOriginLabel } from '../TraitsOriginLabel';
@@ -95,6 +96,7 @@ function AuthProviderForm({
         : { ...selectedAuthProvider };
     const filteredGroups = getGroupsByAuthProviderId(groups, selectedAuthProvider.id);
     const defaultRole = getDefaultRoleByAuthProviderId(groups, selectedAuthProvider.id);
+    const canChangeDefaultRole = isDefaultGroupModifiable(groups, selectedAuthProvider.id);
 
     const modifiedInitialValues = {
         ...transformInitialValues(initialValues),
@@ -457,7 +459,7 @@ function AuthProviderForm({
                             id="defaultRole"
                             value={values.defaultRole} // TODO see getDefaultRoleByAuthProviderId in classic code
                             handleSelect={setFieldValue}
-                            isDisabled={isViewing}
+                            isDisabled={isViewing || !canChangeDefaultRole}
                         >
                             {roles.map(({ name }) => (
                                 <SelectOption key={name} value={name} />

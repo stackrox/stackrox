@@ -9,9 +9,9 @@ import PropTypes from 'prop-types';
  * If the value is not empty: label color and (assumed) ordinary weight.
  */
 const FormFieldRequired = ({ empty }) => (
-    <i className={empty ? 'text-warning-700' : 'font-600'} data-testid="required">
+    <span className={empty ? 'text-warning-700' : 'font-600'} data-testid="required">
         (required)
-    </i>
+    </span>
 );
 
 FormFieldRequired.propTypes = {

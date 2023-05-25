@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stretchr/testify/require"
 )
 
@@ -71,12 +70,6 @@ const (
 )
 
 func BenchmarkImageResolver(b *testing.B) {
-	b.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		b.Skip("Skip postgres store tests")
-		b.SkipNow()
-	}
 
 	mockCtrl := gomock.NewController(b)
 	testDB := SetupTestPostgresConn(b)

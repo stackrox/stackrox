@@ -164,7 +164,7 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 	configurations, err := declarativeconfig.ConfigurationFromRawBytes(contents...)
 	if err != nil {
 		m.updateHandlerHealth(handlerID, err)
-		log.Errorf("Error during unmarshalling of declarative configuration files: %+v", err)
+		log.Debugf("Error during unmarshalling of declarative configuration files: %+v", err)
 		return
 	}
 
@@ -173,7 +173,7 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 	for _, configuration := range configurations {
 		transformedConfig, err := m.universalTransformer.Transform(configuration)
 		if err != nil {
-			log.Errorf("Error during transforming declarative configuration %+v: %+v", configuration, err)
+			log.Debugf("Error during transforming declarative configuration %+v: %+v", configuration, err)
 			transformationErrors = multierror.Append(transformationErrors, err)
 			continue
 		}

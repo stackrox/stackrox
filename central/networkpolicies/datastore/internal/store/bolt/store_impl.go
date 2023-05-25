@@ -6,6 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	bolt "go.etcd.io/bbolt"
@@ -29,6 +30,16 @@ func (b *storeImpl) Get(_ context.Context, id string) (np *storage.NetworkPolicy
 		return proto.Unmarshal(val, np)
 	})
 	return
+}
+
+// Count is unimplemented
+func (b *storeImpl) Count(_ context.Context) (int, error) {
+	panic("unimplemented")
+}
+
+// GetByQuery is unimplemented
+func (b *storeImpl) GetByQuery(_ context.Context, _ *v1.Query) ([]*storage.NetworkPolicy, error) {
+	panic("unimplemented")
 }
 
 func (b *storeImpl) Walk(_ context.Context, fn func(np *storage.NetworkPolicy) error) error {

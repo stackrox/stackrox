@@ -107,6 +107,7 @@ function IntegrationsListPage({
                     isOpen={deletingIntegrationIds.length !== 0}
                     onConfirm={onConfirmDeletingIntegrationIds}
                     onCancel={onCancelDeleteIntegrationIds}
+                    title="Delete API token"
                 >
                     <DeleteAPITokensConfirmationText
                         numIntegrations={deletingIntegrationIds.length}

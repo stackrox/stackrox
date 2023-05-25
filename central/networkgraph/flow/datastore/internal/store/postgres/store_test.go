@@ -8,7 +8,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -37,13 +36,6 @@ func TestNetworkflowStore(t *testing.T) {
 }
 
 func (s *NetworkflowStoreSuite) SetupSuite() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	} else {
-		s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	}
-
 	s.ctx = context.Background()
 
 	source := pgtest.GetConnectionString(s.T())

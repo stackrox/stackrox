@@ -9,12 +9,12 @@ import (
 	"time"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/notifiers/cscc/client"
 	"github.com/stackrox/rox/central/notifiers/cscc/findings"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"

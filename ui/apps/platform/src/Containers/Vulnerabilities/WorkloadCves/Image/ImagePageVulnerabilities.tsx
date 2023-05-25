@@ -26,36 +26,39 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
-import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getHasSearchApplied } from 'utils/searchUtils';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
-import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {
-    ResourceCountByCveSeverity,
-    resourceCountByCveSeverityFragment,
+    ResourceCountByCveSeverityAndStatus,
+    resourceCountByCveSeverityAndStatusFragment,
 } from '../SummaryCards/CvesByStatusSummaryCard';
-import SingleEntityVulnerabilitiesTable, {
+import ImageVulnerabilitiesTable, {
     ImageVulnerability,
     imageVulnerabilitiesFragment,
-} from '../Tables/SingleEntityVulnerabilitiesTable';
+} from '../Tables/ImageVulnerabilitiesTable';
 import { DynamicTableLabel } from '../components/DynamicIcon';
-import { getHiddenSeverities, parseQuerySearchFilter } from '../searchUtils';
-import { QuerySearchFilter, FixableStatus, cveStatusTabValues } from '../types';
 import {
-    ImageMetadataContext,
-    imageMetadataContextFragment,
-} from '../Tables/ComponentVulnerabilitiesTable';
+    getHiddenSeverities,
+    getHiddenStatuses,
+    getCveStatusScopedQueryString,
+    parseQuerySearchFilter,
+} from '../searchUtils';
+import { cveStatusTabValues } from '../types';
+import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
+import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/table.utils';
+import { Resource } from '../components/FilterResourceDropdown';
 
 const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
-    ${resourceCountByCveSeverityFragment}
+    ${resourceCountByCveSeverityAndStatusFragment}
     ${imageVulnerabilitiesFragment}
-    query getImageCoreVulnerabilities($id: ID!, $query: String!, $pagination: Pagination!) {
+    query getCVEsForImage($id: ID!, $query: String!, $pagination: Pagination!) {
         image(id: $id) {
             ...ImageMetadataContext
             imageCVECountBySeverity(query: $query) {
-                ...AllResourceCountsByCVESeverity
+                ...ResourceCountsByCVESeverityAndStatus
             }
             imageVulnerabilities(query: $query, pagination: $pagination) {
                 ...ImageVulnerabilityFields
@@ -64,33 +67,20 @@ const imageVulnerabilitiesQuery = gql`
     }
 `;
 
-function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<FixableStatus> {
-    const hiddenStatuses = new Set<FixableStatus>([]);
-    const fixableFilters = querySearchFilter?.Fixable ?? [];
-
-    if (fixableFilters.length > 0) {
-        if (!fixableFilters.includes('true')) {
-            hiddenStatuses.add('Fixable');
-        }
-
-        if (!fixableFilters.includes('false')) {
-            hiddenStatuses.add('Not fixable');
-        }
-    }
-
-    return hiddenStatuses;
-}
-
 const defaultSortFields = ['CVE'];
+
+const imageResourceFilters = new Set<Resource>(['CVE']);
 
 export type ImagePageVulnerabilitiesProps = {
     imageId: string;
 };
 
 function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
+    const [activeTabKey, setActiveTabKey] = useURLStringUnion('cveStatus', cveStatusTabValues);
+
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    const { page, perPage, setPage, setPerPage } = useURLPagination(50);
+    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
         defaultSortOption: {
@@ -109,7 +99,7 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
     const { data, previousData, loading, error } = useQuery<
         {
             image: ImageMetadataContext & {
-                imageCVECountBySeverity: ResourceCountByCveSeverity;
+                imageCVECountBySeverity: ResourceCountByCveSeverityAndStatus;
                 imageVulnerabilities: ImageVulnerability[];
             };
         },
@@ -121,12 +111,10 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
     >(imageVulnerabilitiesQuery, {
         variables: {
             id: imageId,
-            query: getRequestQueryStringForSearchFilter(querySearchFilter),
+            query: getCveStatusScopedQueryString(querySearchFilter, activeTabKey),
             pagination,
         },
     });
-
-    const [activeTabKey, setActiveTabKey] = useURLStringUnion('cveStatus', cveStatusTabValues);
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
@@ -168,12 +156,7 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                         <GridItem sm={12} md={6} xl2={4}>
                             <BySeveritySummaryCard
                                 title="CVEs by severity"
-                                severityCounts={{
-                                    CRITICAL_VULNERABILITY_SEVERITY: critical.total,
-                                    IMPORTANT_VULNERABILITY_SEVERITY: important.total,
-                                    MODERATE_VULNERABILITY_SEVERITY: moderate.total,
-                                    LOW_VULNERABILITY_SEVERITY: low.total,
-                                }}
+                                severityCounts={vulnCounter}
                                 hiddenSeverities={hiddenSeverities}
                             />
                         </GridItem>
@@ -212,11 +195,13 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                             />
                         </SplitItem>
                     </Split>
-                    <SingleEntityVulnerabilitiesTable
-                        image={vulnerabilityData.image}
-                        getSortParams={getSortParams}
-                        isFiltered={isFiltered}
-                    />
+                    <div className="workload-cves-table-container">
+                        <ImageVulnerabilitiesTable
+                            image={vulnerabilityData.image}
+                            getSortParams={getSortParams}
+                            isFiltered={isFiltered}
+                        />
+                    </div>
                 </div>
             </>
         );
@@ -246,7 +231,7 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                         title={<TabTitleText>Observed CVEs</TabTitleText>}
                     >
                         <div className="pf-u-px-sm pf-u-background-color-100">
-                            <WorkloadTableToolbar />
+                            <WorkloadTableToolbar supportedResourceFilters={imageResourceFilters} />
                         </div>
                         <div className="pf-u-flex-grow-1 pf-u-background-color-100">
                             {mainContent}

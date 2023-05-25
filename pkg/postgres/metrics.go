@@ -22,7 +22,7 @@ var (
 )
 
 func incQueryErrors(query string, err error) {
-	if err == pgx.ErrNoRows {
+	if err == nil || err == pgx.ErrNoRows {
 		return
 	}
 	queryErrors.With(prometheus.Labels{"query": query, "error": err.Error()}).Inc()

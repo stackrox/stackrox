@@ -1,6 +1,5 @@
 import pluralize from 'pluralize';
 
-import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
 
 const getLabel = (entityType) => pluralize(entityLabels[entityType]);
@@ -27,10 +26,4 @@ export function getOption(type: string, workflowState: WorkflowState): MenuLinkO
         label: getLabel(type),
         link: workflowState.resetPage(type).toUrl(),
     };
-}
-
-export function shouldUseOriginalCase(entityName: string, entityType: string): boolean {
-    return (
-        !!entityName && (entityType === entityTypes.IMAGE || entityType === entityTypes.COMPONENT)
-    );
 }

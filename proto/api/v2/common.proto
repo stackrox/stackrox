@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+package v2;
+
+message ResourceByID {
+    string id = 1;
+}
+
+message Empty {
+}

@@ -20,7 +20,7 @@ const TableHeader = (props) => {
     }
     let component = (
         <div
-            className="overflow-hidden mx-4 flex text-base-600 items-center tracking-wide leading-normal font-700 uppercase"
+            className="overflow-hidden mx-4 flex text-base-600 items-center leading-normal font-700"
             data-testid="filtered-header"
         >
             <Tooltip content={headerText}>
@@ -33,7 +33,7 @@ const TableHeader = (props) => {
         component = (
             <div className="pt-2">
                 {component}
-                <div className="pl-4 opacity-75 italic">
+                <div className="pl-4 opacity-75">
                     Please add a filter to narrow down your results.
                 </div>
             </div>

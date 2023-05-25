@@ -9,7 +9,7 @@ import {
     getCountAndNounFromNodeCVEsLinkResults,
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
-    verifyFilteredSecondaryEntitiesLink,
+    verifyConditionalCVEs,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
 } from '../../helpers/vulnmanagement/entities';
@@ -124,32 +124,16 @@ describe('Vulnerability Management Node Components', () => {
     // Argument 3 in verify functions is index of column which has the links.
     // The one-based index includes checkbox, hidden, invisible.
 
-    // Some tests might fail in local deployment.
-
-    it('should display links for all node CVEs', function () {
+    it('should display either links for node CVEs or text for No CVEs', function () {
         if (hasOrchestratorFlavor('openshift')) {
-            this.skip();
+            this.skip(); // TODO verify and remove
         }
 
-        verifySecondaryEntities(
+        verifyConditionalCVEs(
             entitiesKey,
             'node-cves',
             4,
-            /^\d+ CVEs?$/,
-            getCountAndNounFromNodeCVEsLinkResults
-        );
-    });
-
-    it('should display links for fixable node CVEs', function () {
-        if (hasOrchestratorFlavor('openshift')) {
-            this.skip();
-        }
-
-        verifyFilteredSecondaryEntitiesLink(
-            entitiesKey,
-            'node-cves',
-            4,
-            /^\d+ Fixable$/,
+            'vulnCounter',
             getCountAndNounFromNodeCVEsLinkResults
         );
     });

@@ -49,7 +49,7 @@ func getNode() string {
 	return node
 }
 
-func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig) error {
+func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig, scanner scannerV1.NodeInventoryServiceClient) error {
 	var auditReader auditlog.Reader
 	defer func() {
 		if auditReader != nil {
@@ -85,6 +85,23 @@ func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateCli
 					log.Warn("Attempting to stop an un-started audit log reader - this is a no-op")
 				}
 			}
+		case *sensor.MsgToCompliance_Ack:
+			// TODO(ROX-16687): Implement behavior when receiving Ack here
+			// TODO(ROX-16549): Add metric to see the ratio of Ack/Nack(?)
+		case *sensor.MsgToCompliance_Nack:
+			log.Infof("Received NACK from Sensor, resending NodeInventory in 10 seconds.")
+			go func() {
+				time.Sleep(time.Second * 10)
+				msg, err := scanNode(ctx, scanner)
+				if err != nil {
+					log.Errorf("error running scanNode: %v", err)
+				} else {
+					err := client.Send(msg)
+					if err != nil {
+						log.Errorf("error sending to sensor: %v", err)
+					}
+				}
+			}()
 		default:
 			utils.Should(errors.Errorf("Unhandled msg type: %T", t))
 		}
@@ -111,7 +128,7 @@ func startAuditLogCollection(ctx context.Context, client sensor.ComplianceServic
 	return auditReader
 }
 
-func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, sensorC <-chan *sensor.MsgFromCompliance) {
+func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, toSensorC <-chan *sensor.MsgFromCompliance, scanner scannerV1.NodeInventoryServiceClient) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -132,10 +149,10 @@ func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *
 			// runRecv only returns on errors, upon which the client will get reinitialized,
 			// orphaning manageSendToSensor in the process.
 			ctx2, cancelFn := context.WithCancel(ctx)
-			if sensorC != nil {
-				go manageSendToSensor(ctx2, client, sensorC)
+			if toSensorC != nil {
+				go manageSendToSensor(ctx2, client, toSensorC)
 			}
-			if err := runRecv(ctx, client, config); err != nil {
+			if err := runRecv(ctx, client, config, scanner); err != nil {
 				log.Errorf("error running recv: %v", err)
 			}
 			cancelFn() // runRecv is blocking, so the context is safely cancelled before the next  call to initializeStream
@@ -143,12 +160,12 @@ func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *
 	}
 }
 
-func manageSendToSensor(ctx context.Context, cli sensor.ComplianceService_CommunicateClient, sensorC <-chan *sensor.MsgFromCompliance) {
+func manageSendToSensor(ctx context.Context, cli sensor.ComplianceService_CommunicateClient, toSensorC <-chan *sensor.MsgFromCompliance) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case sc := <-sensorC:
+		case sc := <-toSensorC:
 			if err := cli.Send(sc); err != nil {
 				log.Errorf("failed sending node scan to sensor: %v", err)
 			}
@@ -300,28 +317,21 @@ func main() {
 
 	stoppedSig := concurrency.NewSignal()
 
-	sensorC := make(chan *sensor.MsgFromCompliance)
-	defer close(sensorC)
-	go manageStream(ctx, cli, &stoppedSig, sensorC)
+	toSensorC := make(chan *sensor.MsgFromCompliance)
+	defer close(toSensorC)
+	// the anonymous go func will read from toSensorC and send it using the client
+	go func() {
+		manageStream(ctx, cli, &stoppedSig, toSensorC, nodeInventoryClient)
+	}()
 
 	if env.RHCOSNodeScanning.BooleanSetting() && nodeInventoryClient != nil {
 		i := intervals.NewNodeScanIntervalFromEnv()
 		nodeInventoriesC := manageNodeScanLoop(ctx, i, nodeInventoryClient)
 
-		// multiplex producers (nodeInventoriesC) into the output channel (sensorC)
-		go func() {
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case msg, more := <-nodeInventoriesC:
-					if !more {
-						return
-					}
-					sensorC <- msg
-				}
-			}
-		}()
+		// sending nodeInventories into output toSensorC
+		for n := range nodeInventoriesC {
+			toSensorC <- n
+		}
 	}
 
 	signalsC := make(chan os.Signal, 1)

@@ -179,4 +179,49 @@ describe('System Health Integrations fixtures', () => {
             cy.get(`${itemSelector} ${integrationLabel}`).should('not.exist'); // because redundant
         });
     });
+
+    it('should have a list with 1 declarative configuration error', () => {
+        const healthName = 'Config Map declarative-configuration';
+        const errorMessageText = 'this is error message';
+        const integrationHealth = [
+            {
+                id: '169b0d3f-8277-4900-bbce-1127077defae',
+                name: healthName,
+                type: 'DECLARATIVE_CONFIG',
+                status: 'UNHEALTHY',
+                errorMessage: errorMessageText,
+                lastTimestamp: '2020-12-04T00:38:17.906318735Z',
+            },
+        ];
+
+        visitSystemHealth({
+            'integrationhealth/declarativeconfigs': { body: { integrationHealth } },
+        });
+
+        const { widgets } = selectors.integrations;
+        const itemSelector = `${widgets.declarativeConfigs} tr:first`;
+        cy.get(`${itemSelector} td[data-label="Name"]`).should('have.text', healthName);
+        cy.get(`${itemSelector} td[data-label="Error"]`).should('have.text', errorMessageText);
+    });
+
+    it('should have no declarative configuration errors displayed', () => {
+        const healthName = 'Config Map declarative-configuration';
+        const integrationHealth = [
+            {
+                id: '169b0d3f-8277-4900-bbce-1127077defae',
+                name: healthName,
+                type: 'DECLARATIVE_CONFIG',
+                status: 'HEALTHY',
+                errorMessage: '',
+                lastTimestamp: '2020-12-04T00:38:17.906318735Z',
+            },
+        ];
+
+        visitSystemHealth({
+            'integrationhealth/declarativeconfigs': { body: { integrationHealth } },
+        });
+        const { widgets } = selectors.integrations;
+        const itemSelector = `${widgets.declarativeConfigs} tr:first`;
+        cy.get(`${itemSelector} td[data-label="Name"]`).should('not.exist');
+    });
 });

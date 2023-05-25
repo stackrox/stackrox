@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/rox/central/mitre/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/mitre/datastore"
 	"google.golang.org/grpc"
 )
 
@@ -26,7 +26,7 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedMitreAttackServiceServer
 
-	store datastore.MitreAttackReadOnlyDataStore
+	store datastore.AttackReadOnlyDataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

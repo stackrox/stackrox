@@ -6,13 +6,22 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/imagecve"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+const (
+	maxDeployments = 1000
+	maxImages      = 1000
 )
 
 func init() {
@@ -24,7 +33,10 @@ func init() {
 				"affectedImageCount: Int!",
 				"affectedImageCountBySeverity: ResourceCountByCVESeverity!",
 				"cve: String!",
+				"deployments(pagination: Pagination): [Deployment!]!",
+				"distroTuples: [ImageVulnerability!]!",
 				"firstDiscoveredInSystem: Time",
+				"images(pagination: Pagination): [Image!]!",
 				"topCVSS: Float!",
 			}),
 		schema.AddQuery("imageCVECount(query: String): Int!"),
@@ -39,6 +51,8 @@ type imageCVECoreResolver struct {
 	ctx  context.Context
 	root *Resolver
 	data imagecve.CveCore
+
+	subFieldQuery *v1.Query
 }
 
 func (resolver *Resolver) wrapImageCVECoreWithContext(ctx context.Context, value imagecve.CveCore, err error) (*imageCVECoreResolver, error) {
@@ -99,11 +113,19 @@ func (resolver *Resolver) ImageCVEs(ctx context.Context, q PaginatedQuery) ([]*i
 	}
 
 	cves, err := resolver.ImageCVEView.Get(ctx, query, views.ReadOptions{})
-	return resolver.wrapImageCVECoresWithContext(ctx, cves, err)
+	ret, err := resolver.wrapImageCVECoresWithContext(ctx, cves, err)
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range ret {
+		r.subFieldQuery = query
+	}
+
+	return ret, nil
 }
 
 func (resolver *imageCVECoreResolver) AffectedImageCount(_ context.Context) int32 {
-	return int32(resolver.data.GetAffectedImages())
+	return int32(resolver.data.GetAffectedImageCount())
 }
 
 func (resolver *imageCVECoreResolver) AffectedImageCountBySeverity(ctx context.Context) (*resourceCountBySeverityResolver, error) {
@@ -114,10 +136,84 @@ func (resolver *imageCVECoreResolver) CVE(_ context.Context) string {
 	return resolver.data.GetCVE()
 }
 
+func (resolver *imageCVECoreResolver) Deployments(ctx context.Context, args struct{ Pagination *inputtypes.Pagination }) ([]*deploymentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "Deployments")
+
+	if err := readDeployments(ctx); err != nil {
+		return nil, err
+	}
+
+	// Get full query for deployments
+	query := search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetCVE()).ProtoQuery()
+	if resolver.subFieldQuery != nil {
+		query = search.ConjunctionQuery(query, resolver.subFieldQuery)
+	}
+	if args.Pagination != nil {
+		paginated.FillPagination(query, args.Pagination.AsV1Pagination(), maxDeployments)
+	}
+
+	// ROX-17254: Because of the incompatibility between
+	// the data model and search framework, run the query through on CVE datastore through SQF.
+	deploymentIDs, err := resolver.root.ImageCVEView.GetDeploymentIDs(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	if len(deploymentIDs) == 0 {
+		return nil, nil
+	}
+
+	depQ := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentIDs...).Query()
+	return resolver.root.Deployments(ctx, PaginatedQuery{
+		Query:      pointers.String(depQ),
+		Pagination: args.Pagination,
+	})
+}
+
+func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "DistroTuples")
+	q := PaginatedQuery{
+		Query: pointers.String(search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetCVEIDs()...).Query()),
+	}
+	return resolver.root.ImageVulnerabilities(ctx, q)
+}
+
 func (resolver *imageCVECoreResolver) FirstDiscoveredInSystem(_ context.Context) *graphql.Time {
 	return &graphql.Time{
 		Time: resolver.data.GetFirstDiscoveredInSystem(),
 	}
+}
+
+func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ Pagination *inputtypes.Pagination }) ([]*imageResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "Images")
+
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+
+	// Get full query for deployments
+	query := search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetCVE()).ProtoQuery()
+	if resolver.subFieldQuery != nil {
+		query = search.ConjunctionQuery(query, resolver.subFieldQuery)
+	}
+	if args.Pagination != nil {
+		paginated.FillPagination(query, args.Pagination.AsV1Pagination(), maxImages)
+	}
+
+	// ROX-17254: Because of the incompatibility between
+	// the data model and search framework, run the query through on CVE datastore through SQF.
+	imageIDs, err := resolver.root.ImageCVEView.GetImageIDs(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	if len(imageIDs) == 0 {
+		return nil, nil
+	}
+
+	imageQ := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageIDs...).Query()
+	return resolver.root.Images(ctx, PaginatedQuery{
+		Query:      pointers.String(imageQ),
+		Pagination: args.Pagination,
+	})
 }
 
 func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {
@@ -161,5 +257,11 @@ func (resolver *Resolver) ImageCVE(ctx context.Context, args struct {
 		utils.Should(errors.Errorf("Retrieved multiple rows when only one row is expected for CVE=%s query", *args.Cve))
 		return nil, err
 	}
-	return resolver.wrapImageCVECoreWithContext(ctx, cves[0], err)
+	ret, err := resolver.wrapImageCVECoreWithContext(ctx, cves[0], err)
+	if err != nil {
+		return nil, err
+	}
+	ret.subFieldQuery = query
+
+	return ret, nil
 }

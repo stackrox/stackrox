@@ -68,7 +68,7 @@ ifeq ($(UNAME_S),Darwin)
 ifeq ($(UNAME_M),arm64)
 	# TODO(ROX-12064) build these images in the CI pipeline
 	# Currently built on a GCP ARM instance off the rox-ci-image branch "cgorman-custom-arm"
-	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.56-arm64
+	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.58-arm64
 endif
 endif
 
@@ -126,7 +126,18 @@ $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tool
 ## Style ##
 ###########
 .PHONY: style
-style: golangci-lint roxvet blanks newlines check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style shell-style
+style: golangci-lint style-slim
+
+.PHONY: style-slim
+style-slim: roxvet blanks newlines check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style shell-style
+
+GOLANGCILINT_FLAGS := --verbose --print-resources-usage
+
+.PHONY: golangci-lint-cache-status
+golangci-lint-cache-status: $(GOLANGCILINT_BIN) deps
+	@echo '+ $@'
+	@echo "Checking golangci-lint cache status"
+	$(GOLANGCILINT_BIN) cache status
 
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCILINT_BIN) deps
@@ -134,15 +145,20 @@ ifdef CI
 	@echo '+ $@'
 	@echo 'The environment indicates we are in CI; running linters in check mode.'
 	@echo 'If this fails, run `make style`.'
+	$(GOLANGCILINT_BIN) --version
+	@echo "Running with no tags and no tests..."
+	@# The first run is meant to have limited scope to warmup the cache.
+	@# Adding it as first allowed to shorten the runtime of the following runs to about 5 min each
+	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --tests=false
 	@echo "Running with no tags..."
-	$(GOLANGCILINT_BIN) run
+	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS)
 	@echo "Running with release tags..."
 	@# We use --tests=false because some unit tests don't compile with release tags,
 	@# since they use functions that we don't define in the release build. That's okay.
-	$(GOLANGCILINT_BIN) run --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
+	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
 else
-	$(GOLANGCILINT_BIN) run --fix
-	$(GOLANGCILINT_BIN) run --fix --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
+	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix
+	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
 endif
 
 .PHONY: qa-tests-style

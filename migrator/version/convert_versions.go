@@ -2,17 +2,18 @@ package version
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 // ConvertVersionFromProto converts a `*storage.Version` to Gorm model
 func ConvertVersionFromProto(obj *storage.Version) (*schema.Versions, error) {
-	serialized, err := obj.Marshal()
-	if err != nil {
-		return nil, err
-	}
 	model := &schema.Versions{
-		Serialized: serialized,
+		Version:       obj.GetVersion(),
+		SeqNum:        obj.GetSeqNum(),
+		MinSeqNum:     obj.GetMinSeqNum(),
+		LastPersisted: pgutils.NilOrTime(obj.GetLastPersisted()),
 	}
 	return model, nil
 }
@@ -20,8 +21,25 @@ func ConvertVersionFromProto(obj *storage.Version) (*schema.Versions, error) {
 // ConvertVersionToProto converts Gorm model `Versions` to its protobuf type object
 func ConvertVersionToProto(m *schema.Versions) (*storage.Version, error) {
 	var msg storage.Version
-	if err := msg.Unmarshal(m.Serialized); err != nil {
-		return nil, err
+
+	// During the transition to not use serialized, we may be coming from a database
+	// that uses it.  So if serialized is not nil, we will need to use that
+	if m.Serialized != nil {
+		if err := msg.Unmarshal(m.Serialized); err != nil {
+			return nil, err
+		}
+		return &msg, nil
 	}
+
+	msg = storage.Version{
+		Version:   m.Version,
+		SeqNum:    m.SeqNum,
+		MinSeqNum: m.MinSeqNum,
+	}
+
+	if m.LastPersisted != nil {
+		msg.LastPersisted = protoconv.MustConvertTimeToTimestamp(*m.LastPersisted)
+	}
+
 	return &msg, nil
 }

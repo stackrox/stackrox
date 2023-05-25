@@ -18,7 +18,7 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -60,7 +60,7 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report test failures to Jira
-      if: always() && github.event_name == 'push'
+      if: (!cancelled()) && github.event_name == 'push'
       uses: ./.github/actions/junit2jira
       with:
         jira-token: ${{ secrets.JIRA_TOKEN }}
@@ -72,7 +72,7 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -109,7 +109,7 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report junit failures in jira
-      if: always() && github.event_name == 'push'
+      if: (!cancelled()) && github.event_name == 'push'
       uses: ./.github/actions/junit2jira
       with:
         jira-token: ${{ secrets.JIRA_TOKEN }}
@@ -118,7 +118,7 @@ jobs:
   ui:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -144,7 +144,7 @@ jobs:
         paths: 'ui/test-results/reports/*.xml'
 
     - name: Report junit failures in jira
-      if: always() && github.event_name == 'push'
+      if: (!cancelled()) && github.event_name == 'push'
       uses: ./.github/actions/junit2jira
       with:
         jira-token: ${{ secrets.JIRA_TOKEN }}
@@ -153,7 +153,7 @@ jobs:
   local-roxctl-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.57
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -181,7 +181,7 @@ jobs:
         paths: 'roxctl-test-output/*.xml'
 
     - name: Report junit failures in jira
-      if: always() && github.event_name == 'push'
+      if: (!cancelled()) && github.event_name == 'push'
       uses: ./.github/actions/junit2jira
       with:
         jira-token: ${{ secrets.JIRA_TOKEN }}

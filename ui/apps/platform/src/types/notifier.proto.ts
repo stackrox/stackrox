@@ -1,5 +1,6 @@
 import { KeyValuePair } from './common.proto';
 import { PolicySeverity } from './policy.proto';
+import { Traits } from './traits.proto';
 
 export type NotifierIntegration =
     | AWSSecurityHubNotifierIntegration
@@ -19,6 +20,7 @@ export type BaseNotifierIntegration = {
     uiEndpoint: string;
     labelKey: string;
     labelDefault: string;
+    traits?: Traits;
 };
 
 /*

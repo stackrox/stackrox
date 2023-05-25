@@ -14,9 +14,10 @@ import (
 //go:generate mockgen-wrapper
 type CveCore interface {
 	GetCVE() string
+	GetCVEIDs() []string
 	GetImagesBySeverity() common.ResourceCountByCVESeverity
 	GetTopCVSS() float32
-	GetAffectedImages() int
+	GetAffectedImageCount() int
 	GetFirstDiscoveredInSystem() time.Time
 }
 
@@ -30,4 +31,6 @@ type CveView interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error)
 	Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]CveCore, error)
+	GetImageIDs(ctx context.Context, q *v1.Query) ([]string, error)
+	GetDeploymentIDs(ctx context.Context, q *v1.Query) ([]string, error)
 }

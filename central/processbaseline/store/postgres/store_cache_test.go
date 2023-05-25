@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -24,7 +23,6 @@ func TestProcessBaselinesCacheStore(t *testing.T) {
 }
 
 func (s *ProcessBaselinesCacheSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 	s.testDB = pgtest.ForT(s.T())
 }
 

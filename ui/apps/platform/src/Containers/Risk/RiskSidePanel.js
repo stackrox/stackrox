@@ -56,7 +56,7 @@ function RiskSidePanel({ selectedDeploymentId, setSelectedDeploymentId }) {
     return (
         <PanelNew testid="panel">
             <PanelHead>
-                <PanelTitle isUpperCase={false} testid="panel-header" text={header} />
+                <PanelTitle testid="panel-header" text={header} />
                 <PanelHeadEnd>
                     <CloseButton
                         onClose={unselectDeployment}

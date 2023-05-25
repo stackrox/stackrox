@@ -18,8 +18,6 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/notifier/processor"
-	"github.com/stackrox/rox/central/notifiers"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reports/common"
 	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
@@ -32,6 +30,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mathutil"
+	"github.com/stackrox/rox/pkg/notifier"
+	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
@@ -147,7 +147,7 @@ type scheduler struct {
 	roleDatastore           roleDataStore.DataStore
 	collectionDatastore     collectionDataStore.DataStore
 	collectionQueryResolver collectionDataStore.QueryResolver
-	notificationProcessor   processor.Processor
+	notificationProcessor   notifier.Processor
 
 	reportsToRun chan *ReportRequest
 
@@ -173,7 +173,7 @@ type reportEmailFormat struct {
 func New(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.DataStore,
 	clusterDS clusterDataStore.DataStore, namespaceDS namespaceDataStore.DataStore,
 	deploymentDS deploymentDataStore.DataStore, collectionDS collectionDataStore.DataStore, roleDS roleDataStore.DataStore,
-	collectionQueryRes collectionDataStore.QueryResolver, notificationProcessor processor.Processor) Scheduler {
+	collectionQueryRes collectionDataStore.QueryResolver, notificationProcessor notifier.Processor) Scheduler {
 	cronScheduler := cron.New()
 	cronScheduler.Start()
 
@@ -189,7 +189,7 @@ func New(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.D
 func newSchedulerImpl(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.DataStore,
 	clusterDS clusterDataStore.DataStore, namespaceDS namespaceDataStore.DataStore,
 	deploymentDS deploymentDataStore.DataStore, collectionDS collectionDataStore.DataStore, roleDS roleDataStore.DataStore,
-	collectionQueryRes collectionDataStore.QueryResolver, notificationProcessor processor.Processor,
+	collectionQueryRes collectionDataStore.QueryResolver, notificationProcessor notifier.Processor,
 	cronScheduler *cron.Cron, schema *graphql.Schema) *scheduler {
 	return &scheduler{
 		reportConfigToEntryIDs:  make(map[string]cron.EntryID),

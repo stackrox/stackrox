@@ -19,7 +19,11 @@ function IntegrationDetailsPage(): ReactElement {
     }
 
     return (
-        <IntegrationPage title={integration.name}>
+        <IntegrationPage
+            title={integration.name}
+            name={integration.name}
+            traits={integration.traits}
+        >
             <IntegrationForm source={source} type={type} initialValues={integration} />
         </IntegrationPage>
     );

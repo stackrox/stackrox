@@ -3,18 +3,20 @@ import { Select, SelectOption } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
-export type Resource = 'CVE' | 'IMAGE' | 'DEPLOYMENT' | 'NAMESPACE' | 'CLUSTER';
+export const resources = ['CVE', 'IMAGE', 'DEPLOYMENT', 'NAMESPACE', 'CLUSTER'] as const;
 
-type FilterResourceDropdownProps = {
+export type Resource = (typeof resources)[number];
+
+export type FilterResourceDropdownProps = {
     setResource: (selection) => void;
     resource: Resource;
-    resourceContext?: Resource;
+    supportedResourceFilters?: Set<Resource>;
 };
 
 function FilterResourceDropdown({
     setResource,
     resource,
-    resourceContext,
+    supportedResourceFilters,
 }: FilterResourceDropdownProps) {
     const { isOpen, onToggle } = useSelectToggle();
 
@@ -50,10 +52,10 @@ function FilterResourceDropdown({
             onSelect={onResourceSelect}
             selections={resource}
             isOpen={isOpen}
-            className="pf-u-w-25"
+            className="pf-u-flex-basis-0"
         >
-            {resourceContext
-                ? resourceOptions.filter((res) => res.key !== resourceContext)
+            {supportedResourceFilters
+                ? resourceOptions.filter((res) => supportedResourceFilters.has(res.key as Resource))
                 : resourceOptions}
         </Select>
     );

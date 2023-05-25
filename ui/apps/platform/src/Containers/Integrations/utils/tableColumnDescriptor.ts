@@ -21,6 +21,7 @@ import {
 } from 'types/notifier.proto';
 import { SignatureIntegration } from 'types/signatureIntegration.proto';
 
+import { getOriginLabel } from 'Containers/AccessControl/traits';
 import {
     categoriesUtilsForClairifyScanner,
     categoriesUtilsForRegistryScanner,
@@ -75,6 +76,13 @@ type IntegrationTableColumnDescriptorMap = {
     >;
 };
 
+const originColumnDescriptor = {
+    accessor: (integration) => {
+        return getOriginLabel(integration.traits);
+    },
+    Header: 'Origin',
+};
+
 const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
     authProviders: {
         clusterInitBundle: [{ accessor: 'name', Header: 'Name' }],
@@ -123,6 +131,7 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         ],
         splunk: [
             { accessor: 'name', Header: 'Name' },
+            originColumnDescriptor,
             {
                 accessor: 'splunk.httpEndpoint',
                 Header: 'URL',
@@ -132,6 +141,7 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         pagerduty: [{ accessor: 'name', Header: 'Name' }],
         generic: [
             { accessor: 'name', Header: 'Name' },
+            originColumnDescriptor,
             { accessor: 'generic.endpoint', Header: 'Endpoint' },
         ],
         sumologic: [

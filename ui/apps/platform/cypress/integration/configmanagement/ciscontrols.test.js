@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasOrchestratorFlavor } from '../../helpers/features';
 import { triggerScan } from '../compliance/Compliance.helpers';
 
 import {
@@ -18,6 +19,12 @@ const entitiesKey = 'controls';
 
 describe('Configuration Management Controls', () => {
     withAuth();
+
+    before(function beforeHook() {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+    });
 
     it('should render the controls list and open the side panel when a row is clicked', () => {
         // ROX-13537: See if compliance scan prevents failure of last tests because no Pass or no Fail status.

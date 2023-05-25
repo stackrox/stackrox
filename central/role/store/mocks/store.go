@@ -174,6 +174,21 @@ func (mr *MockSimpleAccessScopeStoreMockRecorder) Delete(ctx, id interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Delete), ctx, id)
 }
 
+// Exists mocks base method.
+func (m *MockSimpleAccessScopeStore) Exists(ctx context.Context, id string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exists", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exists indicates an expected call of Exists.
+func (mr *MockSimpleAccessScopeStoreMockRecorder) Exists(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Exists), ctx, id)
+}
+
 // Get mocks base method.
 func (m *MockSimpleAccessScopeStore) Get(ctx context.Context, id string) (*storage.SimpleAccessScope, bool, error) {
 	m.ctrl.T.Helper()

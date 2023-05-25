@@ -19,7 +19,6 @@ import (
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -46,12 +45,6 @@ type ReprocessorPostgresTestSuite struct {
 }
 
 func (s *ReprocessorPostgresTestSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 
 	s.ctx = context.Background()
 

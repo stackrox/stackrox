@@ -59,6 +59,12 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "includePolicies",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [

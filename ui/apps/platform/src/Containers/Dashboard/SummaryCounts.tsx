@@ -118,10 +118,7 @@ function SummaryCounts() {
                     ))}
                 </Split>
             </SplitItem>
-            <div
-                style={{ fontStyle: 'italic' }}
-                className="pf-u-color-200 pf-u-font-size-sm pf-u-mr-md pf-u-mr-lg-on-lg"
-            >
+            <div className="pf-u-color-200 pf-u-font-size-sm pf-u-mr-md pf-u-mr-lg-on-lg">
                 {`Last updated ${dateFormatter.format(lastUpdate)} at ${timeFormatter.format(
                     lastUpdate
                 )}`}

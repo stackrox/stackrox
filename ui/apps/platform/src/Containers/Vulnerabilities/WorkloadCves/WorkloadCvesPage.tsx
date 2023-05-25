@@ -16,6 +16,8 @@ import ImagePage from './Image/ImagePage';
 import WorkloadCvesOverviewPage from './Overview/WorkloadCvesOverviewPage';
 import ImageCvePage from './ImageCve/ImageCvePage';
 
+import './WorkloadCvesPage.css';
+
 function WorkloadCvesPage() {
     return (
         <Switch>

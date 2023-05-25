@@ -308,7 +308,7 @@ describe('networkGraphUtils', () => {
             function getUnknownNodeNamespace() {
                 return getNodeNamespace(node);
             }
-            expect(getUnknownNodeNamespace).toThrowError(
+            expect(getUnknownNodeNamespace).toThrow(
                 'Node with unexpected type (UNKNOWN) was supplied to function'
             );
         });
@@ -364,7 +364,7 @@ describe('networkGraphUtils', () => {
             function getUnknownNodeName() {
                 return getNodeName(node);
             }
-            expect(getUnknownNodeName).toThrowError(
+            expect(getUnknownNodeName).toThrow(
                 'Node with unexpected type (UNKNOWN) was supplied to function'
             );
         });

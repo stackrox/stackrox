@@ -10,7 +10,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -45,12 +44,6 @@ type GraphQLImageVulnerabilityTestSuite struct {
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())

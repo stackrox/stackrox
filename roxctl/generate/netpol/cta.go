@@ -9,12 +9,8 @@ import (
 	npguard "github.com/np-guard/cluster-topology-analyzer/pkg/controller"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
+	"github.com/stackrox/rox/roxctl/common/npg"
 	v1 "k8s.io/api/networking/v1"
-)
-
-var (
-	errNPGErrorsIndicator   = errors.New("there were errors during execution")
-	errNPGWarningsIndicator = errors.New("there were warnings during execution")
 )
 
 type netpolGenerator interface {
@@ -34,11 +30,11 @@ func (cmd *generateNetpolCommand) generateNetpol(synth netpolGenerator) error {
 	for _, e := range synth.Errors() {
 		if e.IsSevere() {
 			cmd.env.Logger().ErrfLn("%s %s", e.Error(), e.Location())
-			roxerr = errNPGErrorsIndicator
+			roxerr = npg.ErrErrors
 		} else {
 			cmd.env.Logger().WarnfLn("%s %s", e.Error(), e.Location())
 			if cmd.treatWarningsAsErrors && roxerr == nil {
-				roxerr = errNPGWarningsIndicator
+				roxerr = npg.ErrWarnings
 			}
 		}
 	}

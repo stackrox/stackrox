@@ -18,6 +18,7 @@ import {
 import pluralize from 'pluralize';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useModifyBaselineStatuses from '../api/useModifyBaselineStatuses';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import {
     filterNetworkFlows,
@@ -26,7 +27,9 @@ import {
     getNumExtraneousIngressFlows,
     getNumFlows,
 } from '../utils/flowUtils';
-import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
+import { CustomNodeModel } from '../types/topology.type';
+import { EdgeState } from '../components/EdgeStateSelect';
+import { Flow } from '../types/flow.type';
 
 import AdvancedFlowsFilter, {
     defaultAdvancedFlowsFilters,
@@ -37,25 +40,27 @@ import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
 import FlowsBulkActions from '../common/FlowsBulkActions';
 
 import './DeploymentFlows.css';
-import useFetchNetworkFlows from '../api/useFetchNetworkFlows';
-import useModifyBaselineStatuses from '../api/useModifyBaselineStatuses';
-import { Flow } from '../types/flow.type';
-import { EdgeState } from '../components/EdgeStateSelect';
 
 type DeploymentFlowsProps = {
     deploymentId: string;
     nodes: CustomNodeModel[];
-    edges: CustomEdgeModel[];
     edgeState: EdgeState;
     onNodeSelect: (id: string) => void;
+    isLoadingNetworkFlows: boolean;
+    networkFlowsError: string;
+    networkFlows: Flow[];
+    refetchFlows: () => void;
 };
 
 function DeploymentFlows({
     deploymentId,
     nodes,
-    edges,
     edgeState,
     onNodeSelect,
+    isLoadingNetworkFlows,
+    networkFlowsError,
+    networkFlows,
+    refetchFlows,
 }: DeploymentFlowsProps) {
     // component state
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
@@ -67,12 +72,6 @@ function DeploymentFlows({
     const { isOpen: isBaselineFlowsExpanded, onToggle: toggleBaselineFlowsExpandable } =
         useSelectToggle(true);
 
-    const {
-        isLoading,
-        error: fetchError,
-        data: { networkFlows },
-        refetchFlows,
-    } = useFetchNetworkFlows({ nodes, edges, deploymentId, edgeState });
     const {
         isModifying,
         error: modifyError,
@@ -135,7 +134,7 @@ function DeploymentFlows({
         modifyBaselineStatuses(selectedFlows, 'ANOMALOUS', refetchFlows);
     }
 
-    if (isLoading || isModifying) {
+    if (isLoadingNetworkFlows || isModifying) {
         return (
             <Bullseye>
                 <Spinner isSVG size="lg" />
@@ -145,11 +144,11 @@ function DeploymentFlows({
 
     return (
         <div className="pf-u-h-100 pf-u-p-md">
-            {(fetchError || modifyError) && (
+            {(networkFlowsError || modifyError) && (
                 <Alert
                     isInline
                     variant={AlertVariant.danger}
-                    title={fetchError || modifyError}
+                    title={networkFlowsError || modifyError}
                     className="pf-u-mb-sm"
                 />
             )}

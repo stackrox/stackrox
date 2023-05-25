@@ -36,6 +36,8 @@ func RenderSensorTLSSecretsOnly(values charts.MetaValues, certs *sensor.Certs) (
 	// Currently, we rely on Go to copy the struct as it is passed by value, not by pointer.
 	values.CertsOnly = true
 
+	fixEmptyImageTag(&values)
+
 	ch, err := helmImage.GetSensorChart(&values, certs)
 	if err != nil {
 		return nil, errors.Wrap(err, "pre-rendering sensor chart")
@@ -63,6 +65,21 @@ func RenderSensorTLSSecretsOnly(values charts.MetaValues, certs *sensor.Certs) (
 		firstPrinted = true
 	}
 	return out.Bytes(), nil
+}
+
+// fixEmptyImageTag overrides an empty ImageTag in charts.MetaValues to avoid errors when rendering charts.
+// This should only be used when rendering TLS charts, because `ImageTag` will never be needed there. Hence, the
+// tag value that makes explicit that this value should never appear in a user chart. More info on the issue
+// refer to ROX-16212.
+//
+// Ideally, this should not be needed, and it only happens due to the logic necessary to build manifest bundles.
+// Either the logic to render TLS secrets should be decoupled from the manifest bundle, and only the necessary
+// files are rendered. Or we fix the logic in the manifest bundle so that ImageTag is always set, regardless of the
+// cluster configuration.
+func fixEmptyImageTag(values *charts.MetaValues) {
+	if values.ImageTag == "" {
+		values.ImageTag = "should-never-see-this"
+	}
 }
 
 // RenderSensor renders the sensorchart and returns rendered files

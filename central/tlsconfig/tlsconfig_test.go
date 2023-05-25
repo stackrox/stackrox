@@ -292,5 +292,5 @@ func Test_isValidAdditionalCAFileName(t *testing.T) {
 }
 
 func Test_skipAdditionalCAFileMsg(t *testing.T) {
-	assert.Equal(t, `skipping additional-ca file %q because it has an invalid extension; allowed file extensions for additional ca certificates are [.crt .pem]`, skipAdditionalCAFileMsg)
+	assert.Equal(t, `skipping additional-ca file "foo" because it has an invalid extension; allowed file extensions for additional ca certificates are [.crt .pem]`, skipAdditionalCAFileMsg("foo"))
 }

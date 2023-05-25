@@ -930,6 +930,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"splunk: Splunk",
 		"sumologic: SumoLogic",
 		"syslog: Syslog",
+		"traits: Traits",
 		"type: String!",
 		"uiEndpoint: String!",
 		"config: NotifierConfig",
@@ -10570,6 +10571,11 @@ func (resolver *notifierResolver) Sumologic(ctx context.Context) (*sumoLogicReso
 func (resolver *notifierResolver) Syslog(ctx context.Context) (*syslogResolver, error) {
 	value := resolver.data.GetSyslog()
 	return resolver.root.wrapSyslog(value, true, nil)
+}
+
+func (resolver *notifierResolver) Traits(ctx context.Context) (*traitsResolver, error) {
+	value := resolver.data.GetTraits()
+	return resolver.root.wrapTraits(value, true, nil)
 }
 
 func (resolver *notifierResolver) Type(ctx context.Context) string {

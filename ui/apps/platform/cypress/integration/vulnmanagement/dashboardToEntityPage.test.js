@@ -115,19 +115,6 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('has link from Frequently Violated Policies widget to policy page', () => {
-        visitVulnerabilityManagementDashboard();
-
-        const entitiesKey = 'policies';
-        const widgetHeading = 'Frequently Violated Policies';
-
-        verifyItemLinkToEntityPage(
-            entitiesKey,
-            getItemTextSelectorForWidget(widgetHeading, itemTextSelectorForLabelText),
-            getHeaderTextFromItemTextWithSlashSeparators
-        );
-    });
-
     it.skip('has link from Recently Detected Image Vulnerabilities widget to vulnerability page', () => {
         visitVulnerabilityManagementDashboard();
 

@@ -34,7 +34,6 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -47,12 +46,6 @@ import (
 )
 
 func TestReconcileIstioCVEsInPostgres(t *testing.T) {
-	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip postgres store tests")
-		t.SkipNow()
-	}
 
 	cluster := &storage.Cluster{
 		Id:   "test_cluster_id1",
@@ -175,12 +168,6 @@ func TestReconcileIstioCVEsInPostgres(t *testing.T) {
 }
 
 func TestReconcileCVEsInPostgres(t *testing.T) {
-	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip postgres store tests")
-		t.SkipNow()
-	}
 
 	cluster := &storage.Cluster{
 		Id:   "test_cluster_id1",
@@ -473,12 +460,6 @@ type TestClusterCVEOpsInPostgresTestSuite struct {
 }
 
 func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
-
 	s.ctx = sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())

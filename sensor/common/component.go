@@ -2,7 +2,9 @@ package common
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"google.golang.org/grpc"
 )
 
@@ -12,6 +14,9 @@ type SensorComponentEvent string
 const (
 	// SensorComponentEventCentralReachable denotes that Sensor-Central connection is up
 	SensorComponentEventCentralReachable SensorComponentEvent = "central-reachable"
+
+	// SensorComponentEventOfflineMode denotes that Sensor-Central connection is broken and sensor should operate in offline mode
+	SensorComponentEventOfflineMode SensorComponentEvent = "offline-mode"
 )
 
 // SensorComponent is one of the components that constitute sensor. It supports for receiving messages from central,
@@ -24,6 +29,22 @@ type SensorComponent interface {
 
 	ProcessMessage(msg *central.MsgToSensor) error
 	ResponsesC() <-chan *central.MsgFromSensor
+}
+
+// MessageToComplianceWithAddress adds the Hostname to sensor.MsgToCompliance so we know where to send it to.
+type MessageToComplianceWithAddress struct {
+	Msg       *sensor.MsgToCompliance
+	Hostname  string
+	Broadcast bool
+}
+
+// ComplianceComponent is a sensor component that can communicate with compliance. All the messages intended for
+// compliance are returned by ComplianceC(). It must be started before the compliance.Multiplexer or we panic.
+type ComplianceComponent interface {
+	SensorComponent
+	Stopped() concurrency.ReadOnlyErrorSignal
+
+	ComplianceC() <-chan MessageToComplianceWithAddress
 }
 
 // CentralGRPCConnAware allows to set gRPC connections in sensor components.

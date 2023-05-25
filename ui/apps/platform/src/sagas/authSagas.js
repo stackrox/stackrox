@@ -7,6 +7,7 @@ import { Base64 } from 'js-base64';
 
 import { loginPath, testLoginResultsPath, authResponsePrefix } from 'routePaths';
 import { takeEveryLocation } from 'utils/sagaEffects';
+import { parseAndDecodeFragment } from 'utils/parseAndDecodeFragment';
 import * as AuthService from 'services/AuthService';
 import fetchUsersAttributes from 'services/AttributesService';
 import { fetchUserRolePermissions } from 'services/RolesService';
@@ -20,6 +21,9 @@ import { actions as rolesActions } from 'reducers/roles';
 // The unique string indicating auth provider test mode. Do not change!
 // Must be kept in sync with `TestLoginClientState` in `pkg/auth/authproviders/idputil/state.go`.
 const testLoginClientState = `e003ba41-9cc1-48ee-b6a9-2dd7c21da92e`;
+// The unique string indicating auth provider authorize roxctl mode. Do not change!
+// Must be kept in sync with `AuthorizeRoxctlClientState` in `pkg/auth/authproviders/idputil/state.go`.
+const authorizeRoxctlClientState = `2ed17ca6-4b3c-4279-8317-f26f8ba01c52`;
 
 function* getUserPermissions() {
     /*
@@ -112,36 +116,44 @@ function* handleLoginPageRedirect({ location }) {
     }
 }
 
-function parseFragment(location) {
-    const hash = queryString.parse(location.hash.slice(1)); // ignore '#' https://github.com/ljharb/qs/issues/222
-    // The fragment as a whole is URL-encoded, which means that each individual field is doubly URL-encoded. We need
-    // to decode one additional level of URL encoding here.
-    const transformedHash = {};
-    Object.entries(hash).forEach(([key, value]) => {
-        transformedHash[key] = decodeURIComponent(value);
-    });
-    return transformedHash;
-}
-
 // isTestMode returns whether the given client-side state (of the general form
-// `<auth provider ID>:<test prefix or empty>#<client state>`) indicates that we are in test mode).
+// `<auth provider ID>:<test prefix or empty>#<client state>`) indicates that we are in test mode.
 // See `ParseClientState` in `pkg/auth/authproviders/idputil/state.go` for the authoritative implementation.
 function isTestMode(state) {
+    return isGivenMode(state, testLoginClientState);
+}
+
+// isAuthorizeRoxctlMode returns whether the given client-side state (of the general form
+// `<auth provider ID>:<authorize roxctl state or empty>#<client state>`) indicates that we are in authorize
+// roxctl mode.
+// See `ParseClientState` in `pkg/auth/authproviders/idputil/state.go` for the authoritative implementation.
+function isAuthorizeRoxctlMode(state) {
+    return isGivenMode(state, authorizeRoxctlClientState);
+}
+
+function isGivenMode(state, mode) {
     const stateComponents = state?.split(':') || [];
     const origStateComponents = stateComponents[1]?.split('#') || [];
-    return origStateComponents[0] === testLoginClientState;
+    return origStateComponents[0] === mode;
 }
 
 function* handleOidcResponse(location) {
-    const hash = parseFragment(location);
-    if (hash.error) {
-        return { ...hash, test: isTestMode(hash.state) };
+    const parsedFragment = parseAndDecodeFragment(location);
+    if (parsedFragment.has('error')) {
+        const state = parsedFragment.get('state');
+        parsedFragment.set('test', isTestMode(state).toString());
+        parsedFragment.set('authorizeRoxctl', isAuthorizeRoxctlMode(state).toString());
+        return Object.fromEntries(parsedFragment.entries());
     }
 
     try {
-        const { state, ...otherFields } = hash;
+        const state = parsedFragment.get('state');
+        const otherFields = Object.fromEntries(
+            Array.from(parsedFragment.entries()).filter(([key]) => key !== 'state')
+        );
         const pseudoToken = `#${queryString.stringify({ ...otherFields })}`;
         const result = yield call(AuthService.exchangeAuthToken, pseudoToken, 'oidc', state);
+        result.authorizeRoxctl = isAuthorizeRoxctlMode(state);
         return result;
     } catch (error) {
         if (error.response) {
@@ -152,11 +164,14 @@ function* handleOidcResponse(location) {
 }
 
 function handleGenericResponse(location) {
-    const hash = parseFragment(location);
-    if (hash.error || !hash?.token) {
-        return hash;
+    const parsedFragment = parseAndDecodeFragment(location);
+    if (parsedFragment.has('error') || !parsedFragment.has('token')) {
+        return Object.fromEntries(parsedFragment.entries());
     }
-    return { token: hash.token };
+    return {
+        token: parsedFragment.get('token'),
+        authorizeRoxctl: isAuthorizeRoxctlMode(parsedFragment.get('state')),
+    };
 }
 
 function* handleErrAuthResponse(result, defaultErrMsg) {
@@ -192,6 +207,26 @@ function* handleTestLoginAuthResponse(location, type, result) {
     yield call(AuthService.storeRequestedLocation, testLoginResultsPath);
 }
 
+function* handleAuthorizeRoxctlLoginResponse(result) {
+    const query = {
+        error: result?.error || null,
+        errorDescription: result?.error_description || null,
+        token: result?.token || null,
+    };
+    // Verify that the callback URL is pointing to localhost.
+    const parsedCallbackURL = new URL(result.clientState);
+    if (parsedCallbackURL.hostname !== 'localhost' && parsedCallbackURL.hostname !== '127.0.0.1') {
+        yield call(
+            handleErrAuthResponse,
+            result,
+            'Invalid callback URL given for roxctl authorization. Only localhost is allowed as callback'
+        );
+    }
+    // Redirect to the callback URL (i.e. the server opened by roxctl central login) with the token as query parameter
+    // or any error that may have occurred.
+    window.location.assign(`${parsedCallbackURL.toString()}?${queryString.stringify(query)}`);
+}
+
 function* dispatchAuthResponse(type, location) {
     // For every handler registered under `/auth/response/<type>`, add a function that returns the token.
     const responseHandlers = {
@@ -211,6 +246,8 @@ function* dispatchAuthResponse(type, location) {
         // `test` property can be a string or boolean, depending on the type of provider
         //    but if it is present in any form, its a test of the provider and not an actual login
         yield call(handleTestLoginAuthResponse, location, type, result);
+    } else if (result?.authorizeRoxctl === true || result?.authorizeRoxctl === 'true') {
+        yield call(handleAuthorizeRoxctlLoginResponse, result);
     } else if (result?.token) {
         yield call(AuthService.storeAccessToken, result.token);
 
