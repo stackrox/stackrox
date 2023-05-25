@@ -65,6 +65,18 @@ message MsgToSensor {
         IssueLocalScannerCertsResponse issue_local_scanner_certs_response = 17;
         storage.Image                  updated_image                      = 18;
         ReprocessDeployments           reprocess_deployments              = 19;
+        NodeInventoryACK               node_inventory_ack                 = 20;
+    }
+}
+
+message NodeInventoryACK {
+    string  cluster_id   = 1;
+    string  node_name = 2;
+    Action  action = 3;
+
+    enum Action {
+        ACK = 0;
+        NACK = 1;
     }
 }
 
