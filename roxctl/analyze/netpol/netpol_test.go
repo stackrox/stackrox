@@ -1,10 +1,10 @@
 package netpol
 
 import (
+	"errors"
 	"os"
 	"testing"
 
-	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
 	"github.com/stackrox/rox/roxctl/common/npg"
@@ -21,7 +21,12 @@ type analyzeNetpolTestSuite struct {
 }
 
 func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
-	outFile := d.T().TempDir() + "/out.txt"
+	tmpOutFileName := d.T().TempDir() + "/out"
+	outFileTxt := tmpOutFileName + ".txt"
+	outFileJSON := tmpOutFileName + ".json"
+	outFileMD := tmpOutFileName + ".md"
+	outFileCSV := tmpOutFileName + ".csv"
+	outFileDOT := tmpOutFileName + ".dot"
 	cases := []struct {
 		name                  string
 		inputFolderPath       string
@@ -32,7 +37,9 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 		outFile               string
 		outputToFile          bool
 		focusWorkload         string
+		outputFormat          string
 		removeOutputPath      bool
+		errStringContainment  bool
 	}{
 		{
 			name:                  "not existing inputFolderPath should raise 'os.ErrNotExist' error",
@@ -71,7 +78,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			inputFolderPath:       "testdata/minimal",
 			expectedValidateError: nil,
 			expectedAnalysisError: nil,
-			outFile:               outFile,
+			outFile:               outFileTxt,
 			removeOutputPath:      false,
 		},
 		{
@@ -79,7 +86,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			inputFolderPath:       "testdata/minimal",
 			expectedValidateError: errox.AlreadyExists,
 			expectedAnalysisError: nil,
-			outFile:               outFile,
+			outFile:               outFileTxt,
 			removeOutputPath:      false,
 		},
 		{
@@ -87,11 +94,11 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			inputFolderPath:       "testdata/minimal",
 			expectedValidateError: nil,
 			expectedAnalysisError: nil,
-			outFile:               outFile,
+			outFile:               outFileTxt,
 			removeOutputPath:      true,
 		},
 		{
-			name:                  "output should be written to default output file",
+			name:                  "output should be written to default txt output file",
 			inputFolderPath:       "testdata/minimal",
 			expectedValidateError: nil,
 			expectedAnalysisError: nil,
@@ -104,15 +111,64 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			expectedValidateError: nil,
 			expectedAnalysisError: nil,
 		},
+		{
+			name:                  "not supported output format",
+			inputFolderPath:       "testdata/minimal",
+			outputFormat:          "docx",
+			errStringContainment:  true,
+			expectedAnalysisError: errors.New("docx output format is not supported."),
+		},
+		{
+			name:                  "generate output in json format",
+			inputFolderPath:       "testdata/minimal",
+			outputFormat:          "json",
+			expectedAnalysisError: nil,
+			expectedValidateError: nil,
+			outFile:               outFileJSON,
+		},
+		{
+			name:                  "generate output in md format",
+			inputFolderPath:       "testdata/minimal",
+			outputFormat:          "md",
+			expectedAnalysisError: nil,
+			expectedValidateError: nil,
+			outFile:               outFileMD,
+		},
+		{
+			name:                  "generate output in csv format",
+			inputFolderPath:       "testdata/minimal",
+			outputFormat:          "csv",
+			expectedAnalysisError: nil,
+			expectedValidateError: nil,
+			outFile:               outFileCSV,
+		},
+		{
+			name:                  "generate output in dot format",
+			inputFolderPath:       "testdata/minimal",
+			outputFormat:          "dot",
+			expectedAnalysisError: nil,
+			expectedValidateError: nil,
+			outFile:               outFileDOT,
+		},
+		{
+			name:                  "openshift resources are recognized by the serializer with k8s resources",
+			inputFolderPath:       "testdata/frontend-security",
+			expectedAnalysisError: nil,
+			expectedValidateError: nil,
+		},
+		{
+			name:                  "output should be written to default json output file",
+			inputFolderPath:       "testdata/minimal",
+			expectedValidateError: nil,
+			expectedAnalysisError: nil,
+			outputToFile:          true,
+			outputFormat:          "json",
+		},
 	}
 
 	for _, tt := range cases {
 		tt := tt
 		d.Run(tt.name, func() {
-			testCmd := &cobra.Command{Use: "test"}
-			testCmd.Flags().String("output-file", "", "")
-			testCmd.Flags().String("focus-workload", "", "")
-
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
 			analyzeNetpolCmd := analyzeNetpolCommand{
 				stopOnFirstError:      tt.stopOnFirstErr,
@@ -122,15 +178,8 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 				removeOutputPath:      tt.removeOutputPath,
 				outputToFile:          tt.outputToFile,
 				focusWorkload:         tt.focusWorkload,
+				outputFormat:          tt.outputFormat,
 				env:                   env,
-			}
-
-			if tt.outFile != "" {
-				d.Assert().NoError(testCmd.Flags().Set("output-file", tt.outFile))
-			}
-
-			if tt.focusWorkload != "" {
-				d.Assert().NoError(testCmd.Flags().Set("focus-workload", tt.focusWorkload))
 			}
 
 			analyzer, err := analyzeNetpolCmd.construct([]string{tt.inputFolderPath})
@@ -147,7 +196,11 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			err = analyzeNetpolCmd.analyzeNetpols(analyzer)
 			if tt.expectedAnalysisError != nil {
 				d.Require().Error(err)
-				d.Assert().ErrorIs(err, tt.expectedAnalysisError)
+				if tt.errStringContainment {
+					d.Assert().Contains(err.Error(), tt.expectedAnalysisError.Error())
+				} else {
+					d.Assert().ErrorIs(err, tt.expectedAnalysisError)
+				}
 			} else {
 				d.Assert().NoError(err)
 			}
@@ -158,11 +211,14 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			}
 
 			if tt.outputToFile && tt.outFile == "" && tt.expectedAnalysisError == nil && tt.expectedValidateError == nil {
-				_, err := os.Stat(defaultOutputFileName)
+				defaultFile := analyzeNetpolCmd.getDefaultFileName()
+				if tt.outputFormat != "" {
+					d.Assert().Contains(defaultFile, tt.outputFormat)
+				}
+				_, err := os.Stat(defaultFile)
 				d.Assert().NoError(err) // default output file should exist
-				d.Assert().NoError(os.Remove(defaultOutputFileName))
+				d.Assert().NoError(os.Remove(defaultFile))
 			}
-
 		})
 	}
 
