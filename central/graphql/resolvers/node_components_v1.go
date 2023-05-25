@@ -5,7 +5,6 @@ import (
 
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/node/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -33,7 +32,6 @@ func init() {
 			"riskScore: Float!",
 		}),
 		schema.AddExtraResolver("EmbeddedNodeScanComponent", `unusedVarSink(query: String): Int`),
-		schema.AddExtraResolver("EmbeddedNodeScanComponent", "plottedVulns(query: String): PlottedVulnerabilities!"),
 	)
 }
 
@@ -69,11 +67,6 @@ type EmbeddedNodeScanComponentResolver struct {
 	root        *Resolver
 	lastScanned *protoTypes.Timestamp
 	data        *storage.EmbeddedNodeScanComponent
-}
-
-// PlottedVulns returns the data required by top risky component scatter-plot on vuln mgmt dashboard
-func (encr *EmbeddedNodeScanComponentResolver) PlottedVulns(_ context.Context, _ RawQuery) (*PlottedVulnerabilitiesResolver, error) {
-	return nil, errors.New("not implemented")
 }
 
 // UnusedVarSink represents a query sink

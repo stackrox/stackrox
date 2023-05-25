@@ -22,7 +22,6 @@ import (
 	complianceOperatorManager "github.com/stackrox/rox/central/complianceoperator/manager"
 	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
-	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
@@ -61,7 +60,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	auditPkg "github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -83,7 +81,6 @@ type Resolver struct {
 	ComplianceManager             complianceManager.ComplianceManager
 	ClusterCVEEdgeDataStore       clusterCVEEdgeDataStore.DataStore
 	ComponentCVEEdgeDataStore     componentCVEEdgeDataStore.DataStore
-	CVEDataStore                  legacyImageCVEDataStore.DataStore
 	ImageCVEDataStore             imageCVEDataStore.DataStore
 	NodeCVEDataStore              nodeCVEDataStore.DataStore
 	DeploymentDataStore           deploymentDatastore.DataStore
@@ -128,48 +125,54 @@ type Resolver struct {
 // New returns a Resolver wired into the relevant data stores
 func New() *Resolver {
 	resolver := &Resolver{
-		ActiveComponent:             activeComponent.Singleton(),
-		ComplianceAggregator:        aggregation.Singleton(),
-		APITokenBackend:             backend.Singleton(),
-		ComplianceDataStore:         complianceDS.Singleton(),
-		ComplianceStandardStore:     complianceStandards.RegistrySingleton(),
-		ComplianceManagementService: service.Singleton(),
-		ComplianceManager:           complianceManager.Singleton(),
-		ComplianceService:           complianceService.Singleton(),
-		ClusterDataStore:            clusterDatastore.Singleton(),
-		ClusterCVEEdgeDataStore:     clusterCVEEdgeDataStore.Singleton(),
-		ComponentCVEEdgeDataStore:   componentCVEEdgeDataStore.Singleton(),
-		DeploymentDataStore:         deploymentDatastore.Singleton(),
-		PodDataStore:                podDatastore.Singleton(),
-		ImageDataStore:              imageDatastore.Singleton(),
-		ImageComponentDataStore:     imageComponentDataStore.Singleton(),
-		ImageComponentEdgeDataStore: imageComponentEdgeDataStore.Singleton(),
-		ImageCVEEdgeDataStore:       imageCVEEdgeDataStore.Singleton(),
-		GroupDataStore:              groupDataStore.Singleton(),
-		NamespaceDataStore:          namespaceDataStore.Singleton(),
-		NetworkPoliciesStore:        npDS.Singleton(),
-		NetworkFlowDataStore:        nfDS.Singleton(),
-		NodeDataStore:               nodeDataStore.Singleton(),
-		NotifierStore:               notifierDataStore.Singleton(),
-		PolicyDataStore:             policyDatastore.Singleton(),
-		ProcessIndicatorStore:       processIndicatorStore.Singleton(),
-		K8sRoleStore:                k8sroleStore.Singleton(),
-		K8sRoleBindingStore:         k8srolebindingStore.Singleton(),
-		RiskDataStore:               riskDataStore.Singleton(),
-		RoleDataStore:               roleDataStore.Singleton(),
-		SecretsDataStore:            secretDataStore.Singleton(),
-		ServiceAccountsDataStore:    serviceAccountDataStore.Singleton(),
-		ViolationsDataStore:         violationsDatastore.Singleton(),
-		BaselineDataStore:           baselineStore.Singleton(),
-		WatchedImageDataStore:       watchedImageDataStore.Singleton(),
-		orchestratorIstioCVEManager: fetcher.SingletonManager(),
-		cveMatcher:                  cveMatcher.Singleton(),
-		manager:                     complianceOperatorManager.Singleton(),
-		mitreStore:                  mitreDataStore.Singleton(),
-		vulnReqMgr:                  requestmgr.Singleton(),
-		vulnReqQueryMgr:             querymgr.Singleton(),
-		vulnReqStore:                vulnReqDataStore.Singleton(),
-		AuditLogger:                 audit.New(processor.Singleton()),
+		ActiveComponent:               activeComponent.Singleton(),
+		ComplianceAggregator:          aggregation.Singleton(),
+		APITokenBackend:               backend.Singleton(),
+		ComplianceDataStore:           complianceDS.Singleton(),
+		ComplianceStandardStore:       complianceStandards.RegistrySingleton(),
+		ComplianceManagementService:   service.Singleton(),
+		ComplianceManager:             complianceManager.Singleton(),
+		ComplianceService:             complianceService.Singleton(),
+		ClusterDataStore:              clusterDatastore.Singleton(),
+		ClusterCVEEdgeDataStore:       clusterCVEEdgeDataStore.Singleton(),
+		ComponentCVEEdgeDataStore:     componentCVEEdgeDataStore.Singleton(),
+		DeploymentDataStore:           deploymentDatastore.Singleton(),
+		PodDataStore:                  podDatastore.Singleton(),
+		ImageDataStore:                imageDatastore.Singleton(),
+		ImageComponentDataStore:       imageComponentDataStore.Singleton(),
+		ImageComponentEdgeDataStore:   imageComponentEdgeDataStore.Singleton(),
+		ImageCVEEdgeDataStore:         imageCVEEdgeDataStore.Singleton(),
+		GroupDataStore:                groupDataStore.Singleton(),
+		NamespaceDataStore:            namespaceDataStore.Singleton(),
+		NetworkPoliciesStore:          npDS.Singleton(),
+		NetworkFlowDataStore:          nfDS.Singleton(),
+		NodeDataStore:                 nodeDataStore.Singleton(),
+		NotifierStore:                 notifierDataStore.Singleton(),
+		PolicyDataStore:               policyDatastore.Singleton(),
+		ProcessIndicatorStore:         processIndicatorStore.Singleton(),
+		K8sRoleStore:                  k8sroleStore.Singleton(),
+		K8sRoleBindingStore:           k8srolebindingStore.Singleton(),
+		RiskDataStore:                 riskDataStore.Singleton(),
+		RoleDataStore:                 roleDataStore.Singleton(),
+		SecretsDataStore:              secretDataStore.Singleton(),
+		ServiceAccountsDataStore:      serviceAccountDataStore.Singleton(),
+		ViolationsDataStore:           violationsDatastore.Singleton(),
+		BaselineDataStore:             baselineStore.Singleton(),
+		WatchedImageDataStore:         watchedImageDataStore.Singleton(),
+		orchestratorIstioCVEManager:   fetcher.SingletonManager(),
+		cveMatcher:                    cveMatcher.Singleton(),
+		manager:                       complianceOperatorManager.Singleton(),
+		mitreStore:                    mitreDataStore.Singleton(),
+		vulnReqMgr:                    requestmgr.Singleton(),
+		vulnReqQueryMgr:               querymgr.Singleton(),
+		vulnReqStore:                  vulnReqDataStore.Singleton(),
+		AuditLogger:                   audit.New(processor.Singleton()),
+		ClusterCVEDataStore:           clusterCVEDataStore.Singleton(),
+		ImageCVEDataStore:             imageCVEDataStore.Singleton(),
+		NodeCVEDataStore:              nodeCVEDataStore.Singleton(),
+		NodeComponentCVEEdgeDataStore: nodeComponentCVEEdgeDataStore.Singleton(),
+		NodeComponentDataStore:        nodeComponentDataStore.Singleton(),
+		PolicyCategoryDataStore:       policyCategoryDatastore.Singleton(),
 
 		// Views
 		ImageCVEView: func() imagecve.CveView {
@@ -179,16 +182,7 @@ func New() *Resolver {
 			return nil
 		}(),
 	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		resolver.ClusterCVEDataStore = clusterCVEDataStore.Singleton()
-		resolver.ImageCVEDataStore = imageCVEDataStore.Singleton()
-		resolver.NodeCVEDataStore = nodeCVEDataStore.Singleton()
-		resolver.NodeComponentCVEEdgeDataStore = nodeComponentCVEEdgeDataStore.Singleton()
-		resolver.NodeComponentDataStore = nodeComponentDataStore.Singleton()
-		resolver.PolicyCategoryDataStore = policyCategoryDatastore.Singleton()
-	} else {
-		resolver.CVEDataStore = legacyImageCVEDataStore.Singleton()
-	}
+
 	return resolver
 }
 
@@ -198,7 +192,6 @@ var (
 	readAlerts                           = readAuth(resources.Alert)
 	readClusters                         = readAuth(resources.Cluster)
 	readCompliance                       = readAuth(resources.Compliance)
-	readCVEs                             = readAuth(resources.CVE)
 	readDeployments                      = readAuth(resources.Deployment)
 	readDeploymentExtensions             = readAuth(resources.DeploymentExtension)
 	readImages                           = readAuth(resources.Image)

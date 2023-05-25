@@ -141,24 +141,6 @@ func (evr *EmbeddedVulnerabilityResolver) VulnerabilityTypes() []string {
 	return vulnTypes
 }
 
-// Components are the components that contain the CVE/Vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "Components")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), evr.vulnRawQuery())
-
-	return evr.root.Components(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-}
-
-// ComponentCount is the number of components that contain the CVE/Vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
-	components, err := evr.Components(ctx, PaginatedQuery{Query: args.Query})
-	if err != nil {
-		return 0, err
-	}
-	return int32(len(components)), nil
-}
-
 // Images are the images that contain the CVE/Vulnerability.
 func (evr *EmbeddedVulnerabilityResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
 	if err := readImages(ctx); err != nil {
