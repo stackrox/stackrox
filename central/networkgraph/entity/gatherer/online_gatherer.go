@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/defaultexternalsrcs"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -46,6 +47,7 @@ type defaultExtSrcsGathererImpl struct {
 	stopSig         concurrency.Signal
 	blobStore       blobstore.Datastore
 	currentChecksum []byte
+	mutex           sync.RWMutex
 }
 
 // newDefaultExtNetworksGatherer returns an instance of NetworkGraphDefaultExtSrcsGatherer that reaches out internet to fetch the data.
@@ -155,6 +157,9 @@ func (g *defaultExtSrcsGathererImpl) reconcileDefaultExternalSrcs() error {
 
 // loadLocalChecksum loads local checksum if it exists.
 func (g *defaultExtSrcsGathererImpl) loadLocalChecksum(store blobstore.Datastore) ([]byte, error) {
+	g.mutex.RLock()
+	defer g.mutex.RUnlock()
+
 	if len(g.currentChecksum) > 0 {
 		return g.currentChecksum, nil
 	}
@@ -167,6 +172,9 @@ func (g *defaultExtSrcsGathererImpl) loadLocalChecksum(store blobstore.Datastore
 }
 
 func (g *defaultExtSrcsGathererImpl) writeLocalChecksum(store blobstore.Datastore, checksum []byte) error {
+	g.mutex.Lock()
+	defer g.mutex.Unlock()
+
 	b := &storage.Blob{
 		Name:         defaultexternalsrcs.LocalChecksumBlobPath,
 		Length:       int64(len(checksum)),
