@@ -104,7 +104,7 @@ func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateCli
 				}()
 			case sensor.MsgToCompliance_NodeInventoryACK_ACK:
 				// TODO(ROX-16687): Implement behavior when receiving Ack here
-				log.Infof("Received node-scanning-ACK from Sensor")
+				log.Debugf("Received node-scanning-ACK from Sensor")
 			}
 		default:
 			utils.Should(errors.Errorf("Unhandled msg type: %T", t))
