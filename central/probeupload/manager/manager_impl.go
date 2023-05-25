@@ -57,15 +57,15 @@ func newManager(datastore blobstore.Datastore) *manager {
 }
 
 func (m *manager) getAllProbeBlobs() ([]string, error) {
-	names, err := m.blobStore.GetIDs(blobReadAccessCtx)
+	ids, err := m.blobStore.GetIDs(blobReadAccessCtx)
 	if err != nil {
 		return nil, err
 	}
 	var blobs []string
 	// TODO(ROX-17285): Replace this with search
-	for _, name := range names {
-		if strings.HasPrefix(name, rootBlobPathPrefix) {
-			blobs = append(blobs, name)
+	for _, id := range ids {
+		if strings.HasPrefix(id, rootBlobPathPrefix) {
+			blobs = append(blobs, id)
 		}
 	}
 	return blobs, nil
