@@ -85,7 +85,6 @@ func PublicAPIToInternalAPI(from *v1.DelegatedRegistryConfig) *central.Delegated
 
 		for i, reg := range from.Registries {
 			regs[i] = &central.DelegatedRegistryConfig_DelegatedRegistry{
-				ClusterId:    reg.ClusterId,
 				RegistryPath: reg.RegistryPath,
 			}
 		}
@@ -95,9 +94,8 @@ func PublicAPIToInternalAPI(from *v1.DelegatedRegistryConfig) *central.Delegated
 	enabledFor := storage.DelegatedRegistryConfig_EnabledFor_value[from.EnabledFor.String()]
 
 	return &central.DelegatedRegistryConfig{
-		EnabledFor:       central.DelegatedRegistryConfig_EnabledFor(enabledFor),
-		DefaultClusterId: from.DefaultClusterId,
-		Registries:       regs,
+		EnabledFor: central.DelegatedRegistryConfig_EnabledFor(enabledFor),
+		Registries: regs,
 	}
 }
 
@@ -115,7 +113,6 @@ func StorageToInternalAPI(from *storage.DelegatedRegistryConfig) *central.Delega
 
 		for i, reg := range from.Registries {
 			regs[i] = &central.DelegatedRegistryConfig_DelegatedRegistry{
-				ClusterId:    reg.ClusterId,
 				RegistryPath: reg.RegistryPath,
 			}
 		}
@@ -125,8 +122,7 @@ func StorageToInternalAPI(from *storage.DelegatedRegistryConfig) *central.Delega
 	enabledFor := v1.DelegatedRegistryConfig_EnabledFor_value[from.EnabledFor.String()]
 
 	return &central.DelegatedRegistryConfig{
-		EnabledFor:       central.DelegatedRegistryConfig_EnabledFor(enabledFor),
-		DefaultClusterId: from.DefaultClusterId,
-		Registries:       regs,
+		EnabledFor: central.DelegatedRegistryConfig_EnabledFor(enabledFor),
+		Registries: regs,
 	}
 }

@@ -35,8 +35,8 @@ var (
 	}
 
 	multiInnerAPIRegs = []*central.DelegatedRegistryConfig_DelegatedRegistry{
-		{ClusterId: "id1", RegistryPath: "reg.example.com/dev"},
-		{ClusterId: "id2", RegistryPath: "reg.example.com/prod"},
+		{RegistryPath: "reg.example.com/dev"},
+		{RegistryPath: "reg.example.com/prod"},
 	}
 )
 
@@ -55,11 +55,10 @@ func genAPI(enabledFor v1.DelegatedRegistryConfig_EnabledFor, defID string, regs
 	}
 }
 
-func genInnerAPI(enabledFor central.DelegatedRegistryConfig_EnabledFor, defID string, regs []*central.DelegatedRegistryConfig_DelegatedRegistry) *central.DelegatedRegistryConfig {
+func genInnerAPI(enabledFor central.DelegatedRegistryConfig_EnabledFor, regs []*central.DelegatedRegistryConfig_DelegatedRegistry) *central.DelegatedRegistryConfig {
 	return &central.DelegatedRegistryConfig{
-		EnabledFor:       enabledFor,
-		DefaultClusterId: defID,
-		Registries:       regs,
+		EnabledFor: enabledFor,
+		Registries: regs,
 	}
 }
 
@@ -116,10 +115,10 @@ func TestPublicAPIToInternalAPI(t *testing.T) {
 		in   *v1.DelegatedRegistryConfig
 		want *central.DelegatedRegistryConfig
 	}{
-		"full":            {genAPI(apiEnabledForNone, "fake", multiAPIRegs), genInnerAPI(innerAPIEnabledForNone, "fake", multiInnerAPIRegs)},
-		"all":             {genAPI(apiEnabledForAll, "fake", nil), genInnerAPI(innerAPIEnabledForAll, "fake", nil)},
-		"specific":        {genAPI(apiEnabledForSpecific, "fake", nil), genInnerAPI(innerAPIEnabledForSpecific, "fake", nil)},
-		"invalid to none": {genAPI(apiEnabledForInvalid, "fake", nil), genInnerAPI(innerAPIEnabledForNone, "fake", nil)},
+		"full":            {genAPI(apiEnabledForNone, "fake", multiAPIRegs), genInnerAPI(innerAPIEnabledForNone, multiInnerAPIRegs)},
+		"all":             {genAPI(apiEnabledForAll, "fake", nil), genInnerAPI(innerAPIEnabledForAll, nil)},
+		"specific":        {genAPI(apiEnabledForSpecific, "fake", nil), genInnerAPI(innerAPIEnabledForSpecific, nil)},
+		"invalid to none": {genAPI(apiEnabledForInvalid, "fake", nil), genInnerAPI(innerAPIEnabledForNone, nil)},
 		"nil":             {nil, nil},
 	}
 
@@ -127,7 +126,6 @@ func TestPublicAPIToInternalAPI(t *testing.T) {
 		tf := func(t *testing.T) {
 			got := PublicAPIToInternalAPI(test.in)
 			assert.Equal(t, test.want.GetEnabledFor(), got.GetEnabledFor())
-			assert.Equal(t, test.want.GetDefaultClusterId(), got.GetDefaultClusterId())
 			assert.Equal(t, test.want.GetRegistries(), got.GetRegistries())
 		}
 
@@ -140,10 +138,10 @@ func TestStorageToInternalAPI(t *testing.T) {
 		in   *storage.DelegatedRegistryConfig
 		want *central.DelegatedRegistryConfig
 	}{
-		"full":            {genStorage(storageEnabledForNone, "fake", multiStorageRegs), genInnerAPI(innerAPIEnabledForNone, "fake", multiInnerAPIRegs)},
-		"all":             {genStorage(storageEnabledForAll, "fake", nil), genInnerAPI(innerAPIEnabledForAll, "fake", nil)},
-		"specific":        {genStorage(storageEnabledForSpecific, "fake", nil), genInnerAPI(innerAPIEnabledForSpecific, "fake", nil)},
-		"invalid to none": {genStorage(storageEnabledForInvalid, "fake", nil), genInnerAPI(innerAPIEnabledForNone, "fake", nil)},
+		"full":            {genStorage(storageEnabledForNone, "fake", multiStorageRegs), genInnerAPI(innerAPIEnabledForNone, multiInnerAPIRegs)},
+		"all":             {genStorage(storageEnabledForAll, "fake", nil), genInnerAPI(innerAPIEnabledForAll, nil)},
+		"specific":        {genStorage(storageEnabledForSpecific, "fake", nil), genInnerAPI(innerAPIEnabledForSpecific, nil)},
+		"invalid to none": {genStorage(storageEnabledForInvalid, "fake", nil), genInnerAPI(innerAPIEnabledForNone, nil)},
 		"nil":             {nil, nil},
 	}
 
@@ -151,7 +149,6 @@ func TestStorageToInternalAPI(t *testing.T) {
 		tf := func(t *testing.T) {
 			got := StorageToInternalAPI(test.in)
 			assert.Equal(t, test.want.GetEnabledFor(), got.GetEnabledFor())
-			assert.Equal(t, test.want.GetDefaultClusterId(), got.GetDefaultClusterId())
 			assert.Equal(t, test.want.GetRegistries(), got.GetRegistries())
 		}
 
