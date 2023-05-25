@@ -2,6 +2,7 @@ package policycleaner
 
 import "github.com/stackrox/rox/central/detection"
 
+// PolicyCleaner removes notifier from policies.
 type PolicyCleaner struct {
 	buildTimePolicies  detection.PolicySet
 	deployTimePolicies detection.PolicySet
