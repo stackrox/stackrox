@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
+import upperFirst from 'lodash/upperFirst';
 
 import { selectors } from 'reducers';
 import { actions as graphActions } from 'reducers/network/graph';
@@ -8,9 +9,8 @@ import { filterModes, filterLabels } from 'constants/networkFilterModes';
 import NamespaceEdgeFilter, { NamespaceEdgeFilterState } from './NamespaceEdgeFilter';
 
 const baseButtonClassName =
-    'flex-shrink-0 px-2 py-px border-2 rounded-sm uppercase text-xs font-700';
-const buttonClassName = `${baseButtonClassName} border-base-400 hover:bg-primary-200 text-base-600`;
-const activeButtonClassName = `${baseButtonClassName} bg-primary-300 border-primary-400 hover:bg-primary-200 text-primary-700 border-l-2 border-r-2`;
+    'flex-shrink-0 px-2 py-px border-2 border-base-400 rounded-sm text-base-600';
+const activeButtonClassName = `${baseButtonClassName} bg-primary-200 font-700 border-l-2 border-r-2`;
 
 type FiltersProps = {
     setFilterMode: (mode) => void;
@@ -39,8 +39,8 @@ function Filters({
                 sidePanelOpen ? 'flex-col' : ''
             } ml-2 absolute z-1`}
         >
-            <div className="p-2 bg-primary-100 flex items-center text-sm border-base-400 border-2">
-                <span className="text-base-500 font-700 mr-2">Flows:</span>
+            <div className="p-2 bg-base-100 text-base-600 flex items-center text-sm border-base-400 border-2">
+                <span className="mr-2">Flows:</span>
                 <div className="flex items-center">
                     <button
                         type="button"
@@ -48,13 +48,13 @@ function Filters({
                         className={`${
                             filterMode === filterModes.active
                                 ? activeButtonClassName
-                                : buttonClassName
+                                : baseButtonClassName
                         }
                 ${filterMode === filterModes.allowed ? 'border-r-0' : ''}`}
                         onClick={handleChange(filterModes.active)}
                         data-testid="network-connections-filter-active"
                     >
-                        {`${filterLabels[filterModes.active] as string}`}
+                        {upperFirst(filterLabels[filterModes.active])}
                     </button>
                     <button
                         type="button"
@@ -62,29 +62,31 @@ function Filters({
                         className={`${
                             filterMode === filterModes.allowed
                                 ? activeButtonClassName
-                                : `${buttonClassName} border-l-0 border-r-0`
+                                : `${baseButtonClassName} border-l-0 border-r-0`
                         }`}
                         onClick={handleChange(filterModes.allowed)}
                         data-testid="network-connections-filter-allowed"
                     >
-                        {`${filterLabels[filterModes.allowed] as string}`}
+                        {upperFirst(filterLabels[filterModes.allowed])}
                     </button>
                     <button
                         type="button"
                         value={filterMode}
                         className={`${
-                            filterMode === filterModes.all ? activeButtonClassName : buttonClassName
+                            filterMode === filterModes.all
+                                ? activeButtonClassName
+                                : baseButtonClassName
                         }
                 ${filterMode === filterModes.allowed ? 'border-l-0' : ''}`}
                         onClick={handleChange(filterModes.all)}
                         data-testid="network-connections-filter-all"
                     >
-                        {`${filterLabels[filterModes.all] as string}`}
+                        {upperFirst(filterLabels[filterModes.all])}
                     </button>
                 </div>
             </div>
             <div
-                className={`px-2 py-1 bg-primary-100 flex items-center text-sm border-base-400 border-2 ${
+                className={`px-2 py-1 bg-base-100 flex items-center border-base-400 border-2 ${
                     sidePanelOpen ? 'mt-1' : 'ml-1'
                 }`}
             >
