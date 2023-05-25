@@ -5,15 +5,23 @@ package m180tom181
 import (
 	"bytes"
 	"crypto/rand"
+	"hash/crc32"
 	"io"
 	"os"
+	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/stackrox/rox/migrator/migrations/m_180_to_m_181_move_to_blobstore/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
+	"github.com/stackrox/rox/pkg/binenc"
 	"github.com/stackrox/rox/pkg/postgres/gorm/largeobject"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stretchr/testify/suite"
+)
+
+const (
+	validFilePath = "2.4.0/collector-4.9.24-coreos.ko.gz"
 )
 
 type blobMigrationTestSuite struct {
@@ -34,7 +42,7 @@ func (s *blobMigrationTestSuite) TearDownTest() {
 	s.db.Teardown(s.T())
 }
 
-func (s *blobMigrationTestSuite) TestMigration() {
+func (s *blobMigrationTestSuite) TestScannerDefinitionMigration() {
 	// Nothing to migrate
 	s.Require().NoError(moveToBlobs(s.db.GetGormDB()))
 
@@ -75,7 +83,7 @@ func (s *blobMigrationTestSuite) TestMigration() {
 	s.Equal(fileInfo.ModTime().UTC(), modTime.UTC())
 
 	// Verify Data
-	buf := bytes.NewBuffer([]byte{})
+	buf := bytes.NewBuffer(nil)
 
 	tx := s.db.GetGormDB().Begin()
 	s.Require().NoError(err)
@@ -94,5 +102,60 @@ func (s *blobMigrationTestSuite) TestMigration() {
 	s.Require().NoError(los.Get(blob.Oid, buf))
 	s.Equal(len(randomData), buf.Len())
 	s.Equal(randomData, buf.Bytes())
+	s.NoError(tx.Commit().Error)
+}
+
+func (s *blobMigrationTestSuite) TestUploadProbeMigration() {
+	// Nothing to migrate
+	s.Require().NoError(moveToBlobs(s.db.GetGormDB()))
+	rootDir, err := os.MkdirTemp("", "move-blob")
+	s.Require().NoError(err)
+	defer func() { _ = os.RemoveAll(rootDir) }()
+	uploadProbeRoot = rootDir
+
+	// Prepare persistent file
+	data := []byte("foobarbaz")
+	crc32Sum := crc32.ChecksumIEEE(data)
+
+	dir := path.Join(rootDir, validFilePath)
+	s.Require().NoError(os.MkdirAll(dir, 0700))
+	s.Require().NoError(os.WriteFile(filepath.Join(dir, dataFileName), data, 0600))
+	s.Require().NoError(os.WriteFile(filepath.Join(dir, crc32FileName), binenc.BigEndian.EncodeUint32(crc32Sum), 0600))
+
+	// Migrate
+	s.Require().NoError(moveToBlobs(s.db.GetGormDB()))
+
+	// Verify Blob
+	blobName := path.Join(uploadProbeBlobRoot, validFilePath)
+	blobModel := &schema.Blobs{Name: blobName}
+	s.Require().NoError(s.db.GetGormDB().First(&blobModel).Error)
+
+	blob, err := schema.ConvertBlobToProto(blobModel)
+	s.Require().NoError(err)
+	s.Equal(blobName, blob.GetName())
+	s.EqualValues(len(data), blob.GetLength())
+
+	// Verify Data
+	buf := bytes.NewBuffer(nil)
+
+	tx := s.db.GetGormDB().Begin()
+	s.Require().NoError(err)
+	los := &largeobject.LargeObjects{DB: tx}
+	s.Require().NoError(los.Get(blob.Oid, buf))
+	s.Equal(binenc.BigEndian.EncodeUint32(crc32Sum), []byte(blob.Checksum))
+	s.Equal(len(data), buf.Len())
+	s.Equal(data, buf.Bytes())
+	s.NoError(tx.Commit().Error)
+
+	// Test re-entry
+	s.Require().NoError(moveToBlobs(s.db.GetGormDB()))
+	buf.Reset()
+	tx = s.db.GetGormDB().Begin()
+	los = &largeobject.LargeObjects{DB: tx}
+	s.Require().NoError(err)
+	s.Require().NoError(los.Get(blob.Oid, buf))
+	s.Equal(binenc.BigEndian.EncodeUint32(crc32Sum), []byte(blob.Checksum))
+	s.Equal(len(data), buf.Len())
+	s.Equal(data, buf.Bytes())
 	s.NoError(tx.Commit().Error)
 }
