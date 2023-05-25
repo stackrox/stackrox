@@ -124,7 +124,6 @@ class GlobalSearch extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @IgnoreIf({ !Env.CI_JOB_NAME.contains("postgres") })
     def "Verify Global search on policies (#query, #searchCategories)"(
             String query, List<SearchServiceOuterClass.SearchCategory> searchCategories,
             String expectedResultPrefix,
