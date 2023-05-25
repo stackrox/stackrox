@@ -41,7 +41,7 @@ class UpgradeTest(BaseTest):
     TEST_SENSOR_OUTPUT_DIR = "/tmp/postgres-sensor-upgrade-test-logs"
 
     def run(self):
-        print("Executing the Postgres Upgrade Test")
+        print("Executing the Upgrade Test")
 
         def set_dirs_after_start():
             # let post test know where logs are
