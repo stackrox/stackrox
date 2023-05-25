@@ -14,6 +14,7 @@ import {
     ComplianceStandardMetadata,
     fetchComplianceStandardsSortedByName,
 } from 'services/ComplianceService';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import ScanButton from '../ScanButton';
 import StandardsByEntity from '../widgets/StandardsByEntity';
@@ -26,6 +27,8 @@ import ComplianceDashboardTile from './ComplianceDashboardTile';
 function ComplianceDashboardPage(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const { isFeatureFlagEnabled } = useFeatureFlags();
+    const [isFetchingStandards, setIsFetchingStandards] = useState(false);
+    const [errorMessageForStandards, setErrorMessageForStandards] = useState('');
     const [standards, setStandards] = useState<ComplianceStandardMetadata[]>([]);
     const [isManageStandardsModalOpen, setIsManageStandardsModalOpen] = useState(false);
 
@@ -46,12 +49,18 @@ function ComplianceDashboardPage(): ReactElement {
         hasWriteAccessForComplianceStandards && isDisableComplianceStandardsEnabled;
 
     useEffect(() => {
+        setIsFetchingStandards(true);
         fetchComplianceStandardsSortedByName()
             .then((standardsFetched) => {
+                setErrorMessageForStandards('');
                 setStandards(standardsFetched);
             })
-            .catch(() => {
-                // TODO
+            .catch((error) => {
+                setErrorMessageForStandards(getAxiosErrorMessage(error));
+                setStandards([]);
+            })
+            .finally(() => {
+                setIsFetchingStandards(false);
             });
     }, []);
 
@@ -99,7 +108,9 @@ function ComplianceDashboardPage(): ReactElement {
                                         onClick={() => {
                                             setIsManageStandardsModalOpen(true);
                                         }}
-                                        disabled={standards.length === 0}
+                                        disabled={
+                                            isFetchingStandards || Boolean(errorMessageForStandards)
+                                        }
                                     />
                                 </div>
                             )}
