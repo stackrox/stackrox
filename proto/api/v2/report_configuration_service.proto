@@ -1,14 +1,14 @@
 syntax = "proto3";
 
 option go_package = "v2";
-
 option java_package = "io.stackrox.proto.api.v2";
 
 import weak "google/api/annotations.proto";
-import "api/v1/common.proto";
-import "api/v1/empty.proto";
-import "api/v1/search_service.proto";
 import "google/protobuf/timestamp.proto";
+import "api/v2/common.proto";
+import "api/v2/search_query.proto";
+
+package v2;
 
 message ReportConfiguration {
     enum ReportType {
@@ -100,6 +100,14 @@ message EmailNotifierConfiguration  {
     repeated string        mailing_lists  = 2;
 }
 
+message GetReportConfigurationsResponse {
+    repeated ReportConfiguration report_configs = 1;
+}
+
+message CountReportConfigurationsResponse {
+    int32 count = 1;
+}
+
 
 service ReportConfigurationService {
     // PostReportConfiguration creates a report configuration
@@ -107,6 +115,42 @@ service ReportConfigurationService {
         option (google.api.http) = {
             post: "/v2/reports/configurations"
             body: "*"
+        };
+    }
+
+    // UpdateReportConfiguration updates a report configuration
+    rpc UpdateReportConfiguration (ReportConfiguration) returns (Empty) {
+        option (google.api.http) = {
+            put: "/v2/reports/configurations/{id}"
+            body: "*"
+        };
+    }
+
+    // ListReportConfigurations returns report configurations matching given query
+    rpc GetReportConfigurations (RawQuery) returns (GetReportConfigurationsResponse) {
+        option (google.api.http) = {
+            get: "/v2/reports/configurations"
+        };
+    }
+
+    // CountReportConfigurations returns the number of report configurations.
+    rpc CountReportConfigurations (RawQuery) returns (CountReportConfigurationsResponse) {
+        option (google.api.http) = {
+            get: "/v2/reports/configuration-count"
+        };
+    }
+
+    // GetReportConfiguration returns the report configuration with given ID
+    rpc GetReportConfiguration(ResourceByID) returns (ReportConfiguration) {
+        option (google.api.http) = {
+            get: "/v2/reports/configurations/{id}"
+        };
+    }
+
+    // DeleteReportConfiguration removes the report configuration with given ID
+    rpc DeleteReportConfiguration (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v2/reports/configurations/{id}"
         };
     }
 }
