@@ -44,8 +44,9 @@ var (
 )
 
 type versionPair struct {
-	version string
-	seqNum  int
+	version   string
+	seqNum    int
+	minSeqNum int
 }
 
 type mockCentral struct {
@@ -104,10 +105,12 @@ func (m *mockCentral) destroyCentral() {
 func (m *mockCentral) rebootCentral() {
 	curSeq := migrations.CurrentDBVersionSeqNum()
 	curVer := version.GetMainVersion()
+	curMinSeq := migrations.MinimumSupportedDBVersionSeqNum()
 	m.runMigrator("", "")
 	m.runCentral()
 	assert.Equal(m.t, curSeq, migrations.CurrentDBVersionSeqNum())
 	assert.Equal(m.t, curVer, version.GetMainVersion())
+	assert.Equal(m.t, curMinSeq, migrations.MinimumSupportedDBVersionSeqNum())
 }
 
 func (m *mockCentral) migrateWithVersion(ver *versionPair, breakpoint string, forceRollback string) {
@@ -137,7 +140,11 @@ func (m *mockCentral) legacyUpgrade(t *testing.T, ver *versionPair, previousVer 
 }
 
 func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
-	curVer := &versionPair{version: version.GetMainVersion(), seqNum: migrations.CurrentDBVersionSeqNum()}
+	curVer := &versionPair{
+		version:   version.GetMainVersion(),
+		seqNum:    migrations.CurrentDBVersionSeqNum(),
+		minSeqNum: migrations.MinimumSupportedDBVersionSeqNum()}
+
 	m.migrateWithVersion(ver, breakpoint, "")
 	// Re-run migrator if the previous one breaks
 	if breakpoint != "" {
@@ -198,6 +205,30 @@ func (m *mockCentral) upgradeDB(path, _, pgClone string) {
 	}
 }
 
+func (m *mockCentral) downgradeDB(path, _, pgClone string) {
+	if exists, _ := pgadmin.CheckIfDBExists(m.adminConfig, pgClone); exists {
+		cloneVer, err := migVer.ReadVersionPostgres(m.ctx, pgClone)
+		require.NoError(m.t, err)
+		require.GreaterOrEqual(m.t, cloneVer.SeqNum, migrations.CurrentDBVersionSeqNum())
+	}
+	if !m.runBoth {
+		return
+	}
+
+	if path != "" {
+		// Verify no downgrade
+		if exists, _ := fileutils.Exists(filepath.Join(path, "db")); exists {
+			data, err := os.ReadFile(filepath.Join(path, "db"))
+			require.NoError(m.t, err)
+			currDBSeq, err := strconv.Atoi(string(data))
+			require.NoError(m.t, err)
+			require.LessOrEqual(m.t, currDBSeq, migrations.CurrentDBVersionSeqNum())
+		}
+
+		require.NoError(m.t, os.WriteFile(filepath.Join(path, "db"), []byte(fmt.Sprintf("%d", mathutil.MinInt(migrations.LastRocksDBVersionSeqNum(), migrations.CurrentDBVersionSeqNum()))), 0644))
+	}
+}
+
 func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) {
 	var dbm DBCloneManager
 
@@ -238,7 +269,11 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) {
 		return
 	}
 
-	m.upgradeDB(clonePath, clone, pgClone)
+	if forceRollback == "" {
+		m.upgradeDB(clonePath, clone, pgClone)
+	} else {
+		m.downgradeDB(clonePath, clone, pgClone)
+	}
 	if breakPoint == breakBeforePersist {
 		return
 	}
@@ -290,7 +325,11 @@ func (m *mockCentral) runCentral() {
 }
 
 func (m *mockCentral) restoreCentral(ver *versionPair, breakPoint string, rocksToPostgres bool) {
-	curVer := &versionPair{version: version.GetMainVersion(), seqNum: migrations.CurrentDBVersionSeqNum()}
+	curVer := &versionPair{
+		version:   version.GetMainVersion(),
+		seqNum:    migrations.CurrentDBVersionSeqNum(),
+		minSeqNum: migrations.MinimumSupportedDBVersionSeqNum(),
+	}
 	m.restore(ver, rocksToPostgres)
 	if breakPoint == "" {
 		m.runMigrator(breakPoint, "")
@@ -341,7 +380,7 @@ func (m *mockCentral) restore(ver *versionPair, rocksToPostgres bool) {
 
 func (m *mockCentral) verifyCurrent() {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		m.verifyClonePostgres(pgClone.CurrentClone, &versionPair{version: version.GetMainVersion(), seqNum: migrations.CurrentDBVersionSeqNum()})
+		m.verifyClonePostgres(pgClone.CurrentClone, &versionPair{version: version.GetMainVersion(), seqNum: migrations.CurrentDBVersionSeqNum(), minSeqNum: migrations.MinimumSupportedDBVersionSeqNum()})
 	} else {
 		m.verifyClone(rocksdb.CurrentClone, &versionPair{version: version.GetMainVersion(), seqNum: migrations.CurrentDBVersionSeqNum()})
 	}
@@ -361,19 +400,19 @@ func (m *mockCentral) verifyClonePostgres(clone string, ver *versionPair) {
 	if version.CompareVersions(ver.version, "3.0.57.0") >= 0 {
 		m.verifyMigrationVersionPostgres(clone, ver)
 	} else {
-		m.verifyMigrationVersionPostgres(clone, &versionPair{version: "0", seqNum: 0})
+		m.verifyMigrationVersionPostgres(clone, &versionPair{version: "0", seqNum: 0, minSeqNum: 0})
 	}
 }
 
 func (m *mockCentral) setMigrationVersion(path string, ver *versionPair) {
-	migVer := migrations.MigrationVersion{MainVersion: ver.version, SeqNum: ver.seqNum}
+	migVer := migrations.MigrationVersion{MainVersion: ver.version, SeqNum: ver.seqNum, MinimumSeqNum: ver.minSeqNum}
 	bytes, err := yaml.Marshal(migVer)
 	require.NoError(m.t, err)
 	require.NoError(m.t, os.WriteFile(filepath.Join(path, migrations.MigrationVersionFile), bytes, 0644))
 }
 
 func (m *mockCentral) setMigrationVersionPostgres(clone string, ver *versionPair) {
-	migVer.SetVersionPostgres(m.ctx, clone, &storage.Version{SeqNum: int32(ver.seqNum), Version: ver.version})
+	migVer.SetVersionPostgres(m.ctx, clone, &storage.Version{SeqNum: int32(ver.seqNum), Version: ver.version, MinSeqNum: int32(ver.minSeqNum)})
 }
 
 func (m *mockCentral) verifyMigrationVersion(dbPath string, ver *versionPair) {
@@ -388,6 +427,7 @@ func (m *mockCentral) verifyMigrationVersionPostgres(clone string, ver *versionP
 	require.NoError(m.t, err)
 	log.Infof("clone => %q.  Version incoming => %v", clone, ver)
 	assert.Equal(m.t, ver.seqNum, migVer.SeqNum)
+	assert.Equal(m.t, ver.minSeqNum, migVer.MinimumSeqNum)
 	require.Equal(m.t, ver.version, migVer.MainVersion)
 }
 
