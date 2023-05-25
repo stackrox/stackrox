@@ -13,7 +13,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - A new command `roxctl central login` has been added that allows to use a user's token within roxctl instead of an API token or admin password.
 - ROX-16703: Helm setting `scanner.disable=false` now valid for any secured cluster (instead of OpenShift only). This enables scanner slim to be installed in non-OCP secured clusters
 
-
 ### Removed Features
 
 ### Deprecated Fatures
