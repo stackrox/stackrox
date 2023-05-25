@@ -78,7 +78,7 @@ All APIs are idempotent, hence retriable on timeouts and temporary errors.
 
 ## Consequences
 
-Leveraging gRPC-only helps maintain service contracts and enhances performance. It also aligns with other StackRox services. Scanner gRPC service will configured using [=stackrox/pkg/grpc=](https://github.com/stackrox/stackrox/blob/74476b76b39dfe2e9cdaeecc3e9eaf262097389f/pkg/grpc), which offers certificate management, defaul service configuration (e.g., max payload sizer, timeouts), and metrics.
+Leveraging gRPC-only helps maintain service contracts and enhances performance. It also aligns with other StackRox services. Scanner gRPC service will configured using [=stackrox/pkg/grpc=](https://github.com/stackrox/stackrox/blob/74476b76b39dfe2e9cdaeecc3e9eaf262097389f/pkg/grpc), which offers certificate management, default service configuration (e.g., max payload sizer, timeouts), and metrics.
 
 The new image integration for ScannerV4 ensures minimal changes are necessary for Central to switch between ScannerV2 and ScannerV4 using a feature flag.
 
