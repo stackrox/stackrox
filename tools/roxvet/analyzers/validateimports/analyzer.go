@@ -256,7 +256,6 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/mathutil",
 			"pkg/metrics",
 			"pkg/migrations",
-			"pkg/networkgraph/defaultexternalsrcs",
 			"pkg/nodes/converter",
 			"pkg/policyutils",
 			"pkg/postgres/gorm",

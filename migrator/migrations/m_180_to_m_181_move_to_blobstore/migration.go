@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/networkgraph/defaultexternalsrcs"
 	"github.com/stackrox/rox/pkg/postgres/gorm/largeobject"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/probeupload"
@@ -35,9 +34,8 @@ const (
 )
 
 var (
-	scannerDefPath                = "/var/lib/stackrox/scannerdefinitions/scanner-defs.zip"
-	uploadProbeRoot               = "/var/lib/stackrox/probe-uploads"
-	networkGraphLocalChecksumFile = "/var/lib/stackrox/checksum"
+	scannerDefPath  = "/var/lib/stackrox/scannerdefinitions/scanner-defs.zip"
+	uploadProbeRoot = "/var/lib/stackrox/probe-uploads"
 )
 
 var (
@@ -64,25 +62,7 @@ func moveToBlobs(db *gorm.DB) (err error) {
 
 	moveProbesToBlob(db)
 
-	moveNetworkGraphExtSrcChecksum(db)
-
 	return nil
-}
-
-func moveNetworkGraphExtSrcChecksum(db *gorm.DB) {
-	tx := db.Begin(&sql.TxOptions{Isolation: sql.LevelRepeatableRead})
-	err := moveFileToBlob(tx, defaultexternalsrcs.LocalChecksumBlobPath, networkGraphLocalChecksumFile, nil)
-	if err != nil {
-		// It is fine if we fail to migrate the checksum, just rollback.
-		log.Debugf("failed to migrate exteral graph bundle checksum %v", err)
-		if result := tx.Rollback(); result.Error != nil {
-			log.Warnf("failed to rollback with error %v", result.Error)
-		}
-		return
-	}
-	if err = tx.Commit().Error; err == nil {
-		log.Info("Migrate checksum of network graph external source bundle successfully")
-	}
 }
 
 func moveScannerDefinitions(db *gorm.DB) {
