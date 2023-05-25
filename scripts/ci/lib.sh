@@ -1231,7 +1231,7 @@ post_process_test_results() {
     fi
 
     if [[ -z "${ARTIFACT_DIR:-}" ]]; then
-        info "ERROR: ARTIFACT_DIR is not set which is expect in openshift CI"
+        info "ERROR: ARTIFACT_DIR is not set which is expected in openshift CI"
         return 0
     fi
 
