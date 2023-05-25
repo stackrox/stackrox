@@ -2,12 +2,10 @@ import React from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Button, ButtonVariant, Flex } from '@patternfly/react-core';
+import { Flex } from '@patternfly/react-core';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import ImageNameTd from '../components/ImageNameTd';
-import { getEntityPagePath } from '../searchUtils';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';

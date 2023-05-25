@@ -2,7 +2,7 @@ import React from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Button, ButtonVariant } from '@patternfly/react-core';
+import { Button, ButtonVariant, Truncate } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { UseURLSortResult } from 'hooks/useURLSort';
@@ -118,7 +118,7 @@ function DeploymentsTable({
                                         component={LinkShim}
                                         href={getEntityPagePath('Deployment', id)}
                                     >
-                                        {name}
+                                        <Truncate position="middle" content={name} />
                                     </Button>
                                 </Td>
                                 <Td>
