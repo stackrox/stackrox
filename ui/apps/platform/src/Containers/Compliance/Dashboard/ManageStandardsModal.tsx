@@ -39,6 +39,9 @@ function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
                 .filter(({ hideScanResults, id }) => !hideScanResults !== showScanResultsMap[id])
                 .map(({ id }) => patchComplianceStandard(id, !showScanResultsMap[id]));
 
+            // TODO rewrite with ES2020 allSettled to solve async problem with all.
+            // TODO decide how to display results and update Formik state
+            // if some requests fail but other requests succeed.
             Promise.all(patchRequestPromises)
                 .then(() => {
                     fetchComplianceStandardsSortedByName()
@@ -53,7 +56,6 @@ function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
                         });
                 })
                 .catch((error) => {
-                    // TODO fetchComplianceStandardsSortedByName in case some succeed before one fails?
                     setErrorMessage(getAxiosErrorMessage(error));
                     setSubmitting(false);
                 });
