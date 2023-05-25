@@ -32,9 +32,9 @@ var (
 			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 
-	blobAccessWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+	blobAccessAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
 	blobAccessReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -182,7 +182,7 @@ func (g *defaultExtSrcsGathererImpl) writeLocalChecksum(store blobstore.Datastor
 		ModifiedTime: timestamp.TimestampNow(),
 	}
 	buf := bytes.NewBuffer(checksum)
-	if err := store.Upsert(blobAccessWriteCtx, b, buf); err != nil {
+	if err := store.Upsert(blobAccessAccessCtx, b, buf); err != nil {
 		return errors.Wrapf(err, "writing provider networks checksum %s", defaultexternalsrcs.LocalChecksumBlobPath)
 	}
 	g.currentChecksum = checksum
