@@ -153,6 +153,15 @@ func (r *rocksdbResultsFuture) Get(getArgs *getLatestResultsArgs) dsTypes.Result
 	return r.resultsWithStatus
 }
 
+func (r *rocksdbStore) UpdateConfig(context.Context, *storage.ComplianceConfig) error {
+	return errors.New("Not implemented")
+}
+
+func (r *rocksdbStore) GetConfig(context.Context, string) (*storage.ComplianceConfig, bool, error) {
+
+	return nil, false, errors.New("Not implemented")
+}
+
 func (r *rocksdbStore) GetSpecificRunResults(_ context.Context, clusterID, standardID, runID string, flags dsTypes.GetFlags) (dsTypes.ResultsWithStatus, error) {
 	var results dsTypes.ResultsWithStatus
 
