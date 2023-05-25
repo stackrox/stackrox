@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+CA_PATH="/run/secrets/stackrox.io/certs/ca.pem"
+
+cp "${CA_PATH}" /etc/pki/ca-trust/source/anchors/root-ca.pem
+update-ca-trust

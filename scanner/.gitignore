@@ -1,0 +1,16 @@
+# IDE
+.idea
+.vscode
+
+# Mac OS hidden file
+.DS_Store
+
+# Makefile cruft
+deps
+/.gobin/
+
+# Vim swap files
+*.swp
+
+# Go mod
+vendor
