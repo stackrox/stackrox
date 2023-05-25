@@ -19,11 +19,11 @@ ScannerV4 will use "index reports" and "vulnerability reports" data models, simi
 
 Index Reports are persisted, and their lifecycle is managed by Scanner. Central and Sensor create reports on demand. Scanner is responsible for deleting least-recently used reports.
 
-ScannerV4 will replace ScannerV2 as the container image scanner in Central. A new image integration for ScannerV4 will be created and replace ScannerV2's integration (type "clarify"), activated by the feature flag: `ROX_SCANNER_V4_ENABLED`. The "clarify" type will continue to be used for orchestrator and node scanning.
-
 ScannerV4 gRPC endpoints will use GRPC status codes to communicate the return status in case of non-successful responses.
 
 ScannerV4 will also provide endpoints for health and observability checks, which are not detailed in this ADR.
+
+In Central, ScannerV4 will replace ScannerV2 as the container image scanner. A new image integration for ScannerV4 will be created and replace ScannerV2's integration (type "clarify"), activated by the feature flag. The "clarify" type will continue to be used for orchestrator and node scanning.
 
 ### ScannerV4 API Endpoints
 
