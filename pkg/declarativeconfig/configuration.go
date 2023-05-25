@@ -19,6 +19,7 @@ const (
 	AccessScopeConfiguration   ConfigurationType = "access-scope"
 	PermissionSetConfiguration ConfigurationType = "permission-set"
 	RoleConfiguration          ConfigurationType = "role"
+	NotifierConfiguration      ConfigurationType = "notifier"
 )
 
 func supportedConfigurationTypes() string {

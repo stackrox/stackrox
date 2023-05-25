@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -28,12 +27,6 @@ func TestHashesStore(t *testing.T) {
 }
 
 func (s *HashesStoreSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 
 	s.T().Setenv(features.StoreEventHashes.EnvVar(), "true")
 	if !features.StoreEventHashes.Enabled() {

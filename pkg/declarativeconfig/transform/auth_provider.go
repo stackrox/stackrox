@@ -37,7 +37,7 @@ func (a *authProviderTransform) Transform(configuration declarativeconfig.Config
 		return nil, errox.InvalidArgs.Newf("invalid configuration type received for auth provider: %T", configuration)
 	}
 
-	providerType, err := getType(authProviderConfig)
+	providerType, err := getAuthProviderType(authProviderConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "transforming auth provider type")
 	}
@@ -70,7 +70,7 @@ func (a *authProviderTransform) Transform(configuration declarativeconfig.Config
 	}, nil
 }
 
-func getType(authProviderConfig *declarativeconfig.AuthProvider) (string, error) {
+func getAuthProviderType(authProviderConfig *declarativeconfig.AuthProvider) (string, error) {
 	switch {
 	case authProviderConfig.OIDCConfig != nil:
 		return oidc.TypeName, nil
@@ -88,7 +88,7 @@ func getType(authProviderConfig *declarativeconfig.AuthProvider) (string, error)
 }
 
 func getConfig(authProviderConfig *declarativeconfig.AuthProvider) (map[string]string, error) {
-	authProviderType, err := getType(authProviderConfig)
+	authProviderType, err := getAuthProviderType(authProviderConfig)
 	if err != nil {
 		return nil, err
 	}

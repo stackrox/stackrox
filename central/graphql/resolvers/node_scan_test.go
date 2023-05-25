@@ -10,7 +10,6 @@ import (
 	nodeDSMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	nodeComponentsDSMocks "github.com/stackrox/rox/central/nodecomponent/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/search"
@@ -61,15 +60,6 @@ type NodeScanResolverTestSuite struct {
 
 	resolver *Resolver
 	schema   *graphql.Schema
-}
-
-func (s *NodeScanResolverTestSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 }
 
 func (s *NodeScanResolverTestSuite) SetupTest() {

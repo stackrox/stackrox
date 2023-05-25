@@ -18,6 +18,7 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
+import { isUserResource } from 'Containers/AccessControl/traits';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
 import { Integration, getIsAPIToken, getIsClusterInitBundle } from '../utils/integrationUtils';
@@ -222,7 +223,9 @@ function IntegrationsTable({
                                         <Td
                                             actions={{
                                                 items: actionItems,
-                                                disable: !permissions[source].write,
+                                                disable:
+                                                    !permissions[source].write ||
+                                                    !isUserResource(integration.traits),
                                             }}
                                             className="pf-u-text-align-right"
                                         />

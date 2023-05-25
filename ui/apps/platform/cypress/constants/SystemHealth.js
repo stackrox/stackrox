@@ -5,21 +5,6 @@ export const selectors = {
         filterByStartingTime: '#filterByStartingTime',
         startingTimeMessage: '[data-testid="starting-time-message"]',
     },
-    clusters: {
-        categoryCount: '[data-testid="count"]',
-        categoryLabel: '[data-testid="label"]',
-        healthyText: '[data-testid="healthy-text"]',
-        healthySubtext: '[data-testid="healthy-subtext"]',
-        problemCount: '[data-testid="problem-count"]',
-        viewAllButton: '[data-testid="cluster-health"] a:contains("View All")',
-        widgets: {
-            clusterOverview: '[data-testid="cluster-overview"]',
-            collectorStatus: '[data-testid="collector-status"]',
-            sensorStatus: '[data-testid="sensor-status"]',
-            sensorUpgrade: '[data-testid="sensor-upgrade"]',
-            credentialExpiration: '[data-testid="credential-expiration"]',
-        },
-    },
     integrations: {
         errorMessage: '[data-testid="error-message"]',
         healthyText: '[data-testid="healthy-text"]',

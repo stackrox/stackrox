@@ -129,7 +129,6 @@ func (s *PruningTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 		testingDB := pgtest.ForT(s.T())
 		s.pool = testingDB.DB

@@ -1,3 +1,4 @@
+import { Traits } from 'types/traits.proto';
 import axios from './instance';
 
 import { IntegrationBase, IntegrationOptions } from './IntegrationsService';
@@ -13,6 +14,7 @@ export type NotifierIntegrationBase = {
     uiEndpoint: string;
     labelKey: string;
     labelDefault: string;
+    traits?: Traits;
 } & IntegrationBase;
 
 /*

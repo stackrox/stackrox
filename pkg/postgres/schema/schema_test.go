@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgPostgres "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
@@ -41,14 +40,7 @@ func TestSchema(t *testing.T) {
 }
 
 func (s *SchemaTestSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-	}
-
 	ctx := sac.WithAllAccess(context.Background())
-
 	source := conn.GetConnectionStringWithDatabaseName(s.T(), k8sEnv.GetString("POSTGRES_DB", "postgres"))
 
 	config, err := postgres.ParseConfig(source)

@@ -455,14 +455,14 @@ check_for_stackrox_OOMs() {
     objects=$(ls "$dir"/stackrox/pods/*_object.json || true)
     if [[ -n "$objects" ]]; then
         for object in $objects; do
-            local pod_name
+            local app_name
             # This wack jq slurp flag with the if statement is due to https://github.com/stedolan/jq/issues/1142
-            if pod_name=$(jq -ser 'if . == [] then null else .[] | select(.kind=="Pod") | .metadata.name end' "$object"); then
-                info "Checking $pod_name for OOMKilled"
+            if app_name=$(jq -ser 'if . == [] then null else .[] | select(.kind=="Pod") | .metadata.labels["app"] end' "$object"); then
+                info "Checking $object for OOMKilled"
                 if jq -e '. | select(.status.containerStatuses[].lastState.terminated.reason=="OOMKilled")' "$object" >/dev/null 2>&1; then
-                    save_junit_failure "OOMCheck-$pod_name" "OOMCheck" "$pod_name was OOMKilled"
+                    save_junit_failure "OOM Check" "Check for $app_name OOM kills" "A container of $app_name was OOM killed"
                 else
-                    save_junit_success "OOMCheck-$pod_name" "$pod_name was not OOMKilled"
+                    save_junit_success "OOM Check" "Check for $app_name OOM kills"
                 fi
             else
                 echo "found $object that isn't a pod object"

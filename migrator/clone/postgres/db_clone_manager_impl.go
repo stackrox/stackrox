@@ -71,25 +71,20 @@ func (d *dbCloneManagerImpl) Scan() error {
 	if !currExists || currClone.GetMigVersion() == nil {
 		log.Info("Cannot find the current database or it has no version, so we need to let it create and ignore other clones.")
 	} else {
-		if currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0 {
-			// If there is no previous clone or force rollback is not requested, we cannot downgrade.
-			prevClone, prevExists := d.cloneMap[PreviousClone]
-			if !prevExists && currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() {
-				if version.GetVersionKind(currClone.GetVersion()) == version.ReleaseKind && version.GetVersionKind(version.GetMainVersion()) == version.ReleaseKind {
-					return errors.New(metadata.ErrNoPrevious)
-				}
-				return errors.New(metadata.ErrNoPreviousInDevEnv)
-			}
-
+		// If the database version is newer than the software version make the user explicitly state they want to rollback.
+		// TODO:  Do we still want to do this `forceRollbackVersion` check?
+		if version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0 {
 			// Force rollback is not requested.
 			if d.forceRollbackVersion != version.GetMainVersion() {
 				return errors.New(metadata.ErrForceUpgradeDisabled)
 			}
+		}
 
-			// If previous clone does not match
-			if prevExists && prevClone.GetVersion() != version.GetMainVersion() {
-				return errors.Errorf(metadata.ErrPreviousMismatchWithVersions, prevClone.GetVersion(), version.GetMainVersion())
-			}
+		// current sequence number == database sequence number -- All good
+		// current sequence number != database sequence number BUT database min >= current min -- ALL Good
+		// version min < current database min -- DO NOT ROLLBACK
+		if currClone.GetMinimumSeqNum() > migrations.MinimumSupportedDBVersionSeqNum() {
+			return errors.Errorf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.MinimumSupportedDBVersionSeqNum(), currClone.GetMinimumSeqNum())
 		}
 	}
 
@@ -175,20 +170,22 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 		}
 	}
 
-	prevClone, prevExists := d.cloneMap[PreviousClone]
+	// TODO(ROX-16774) -- Remove the use of central_temp and central_previous as all work will be done in
+	// central_active.
 	// Only need to make a copy if the migrations need to be performed
 	if d.rollbackEnabled() && currClone.GetSeqNum() != migrations.CurrentDBVersionSeqNum() {
-		// If previous clone has the same version as current version, the previous upgrade was not completed.
-		// Central could be in a loop of booting up the service. So we should continue to run with current.
-		if prevExists && currClone.GetVersion() == prevClone.GetVersion() {
-			return CurrentClone, false, nil
-		}
+		// This is a rollback.  The minimum sequence number check was performed in the scan, so if we are here, we
+		// can safely assume that passed and we can proceed rolling our version back with a compatible version of the
+		// central database.
 		if version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0 || currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() {
+			log.Infof("rollback to %q", currClone.GetDatabaseName())
 			// Force rollback
-			return PreviousClone, false, nil
+			return CurrentClone, false, nil
 		}
 
 		d.safeRemove(PreviousClone)
+		// This is an upgrade, we are going to use `central_temp` until ROX-16774 so that a rollback to the previous
+		// version works.  At the point of ROX-16774 all upgrades and rollbacks will use a single database.
 		if d.hasSpaceForRollback() {
 			// Create a temp clone for processing of current
 			// If such a clone already exists then we were previously in the middle of processing
@@ -217,11 +214,6 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 
 		// If the space is not enough to make a clone, continue to upgrade with current.
 		return CurrentClone, false, nil
-	}
-
-	// Rollback from previous version.
-	if prevExists && prevClone.GetVersion() == version.GetMainVersion() {
-		return PreviousClone, false, nil
 	}
 
 	log.Info("Fell through all checks to return current.")
@@ -259,8 +251,6 @@ func (d *dbCloneManagerImpl) Persist(cloneName string) error {
 		// No need to persist
 	case TempClone:
 		return d.doPersist(cloneName, PreviousClone)
-	case PreviousClone:
-		return d.doPersist(cloneName, "")
 	default:
 		utils.CrashOnError(errors.Errorf("commit with unknown clone: %s", cloneName))
 	}
@@ -304,6 +294,8 @@ func (d *dbCloneManagerImpl) doPersist(cloneName string, prev string) error {
 	return nil
 }
 
+// TODO(ROX-16774) -- remove this.  At that point all work will be performend in a single database with the possible
+// exception of restores for a ACS hosted Postgres.
 func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) error {
 	// Connect to different database for admin functions
 	connectPool, err := pgadmin.GetAdminPool(d.adminConfig)
@@ -356,6 +348,8 @@ func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) erro
 	return nil
 }
 
+// TODO(ROX-16774) -- remove this.  At that point all work will be performend in a single database with the possible
+// exception of restores for a ACS hosted Postgres.
 func (d *dbCloneManagerImpl) renameClone(ctx context.Context, tx *postgres.Tx, srcClone, destClone string) error {
 	// Move the current to the previous clone
 	err := pgadmin.TerminateConnection(d.adminConfig, srcClone)
@@ -385,6 +379,8 @@ func (d *dbCloneManagerImpl) rollbackEnabled() bool {
 	return currClone.GetSeqNum() != 0
 }
 
+// TODO(ROX-16774) -- remove this.  At that point all work will be performed in a single database with the possible
+// exception of restores for a ACS hosted Postgres.
 func (d *dbCloneManagerImpl) hasSpaceForRollback() bool {
 	currReplica, currExists := d.cloneMap[CurrentClone]
 	if !currExists {

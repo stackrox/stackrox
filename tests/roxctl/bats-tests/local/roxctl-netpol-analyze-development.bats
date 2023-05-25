@@ -38,14 +38,11 @@ teardown() {
   echo "Writing connlist to ${ofile}" >&3
   run roxctl-development analyze netpol "${test_data}/np-guard/netpols-analysis-example-minimal"
   assert_success
-
   
   echo "$output" > "$ofile"
   assert_file_exist "$ofile"
   assert_output --partial 'default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
-
 }
-
 
 @test "roxctl-development analyze netpol stops on first error when run with --fail" {
   mkdir -p "$out_dir"
@@ -58,7 +55,6 @@ teardown() {
   assert_output --partial 'file1.yaml'
   refute_output --partial 'file2.yaml'
 }
-
 
 @test "roxctl-development analyze netpol produces no output when all yamls are templated" {
   mkdir -p "$out_dir"
@@ -87,7 +83,6 @@ teardown() {
   refute_output --partial 'no relevant Kubernetes resources found'
 }
 
-
 @test "roxctl-development analyze netpol produces errors when yamls are not K8s resources" {
   mkdir -p "$out_dir"
   assert_file_exist "${test_data}/np-guard/empty-yamls/empty.yaml"
@@ -111,6 +106,126 @@ teardown() {
   assert_line --partial "selector error"
 }
 
+@test "roxctl-development analyze netpol should return error on not supported output format" {
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
+  run roxctl-development analyze netpol "${test_data}/np-guard/netpols-analysis-example-minimal" --output-format=docx 
+  assert_failure
+  assert_line --partial "error in formatting connectivity list"
+  assert_line --partial "docx output format is not supported."
+}
+
+@test "roxctl-development analyze netpol generates txt connlist output" {
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
+  echo "Writing connlist to ${ofile}" >&3
+  run roxctl-development analyze netpol "${test_data}/np-guard/netpols-analysis-example-minimal" --output-format=txt
+  assert_success
+  
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial 'default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
+}
+
+@test "roxctl-development analyze netpol generates json connlist output" {
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
+  echo "Writing connlist to ${ofile}" >&3
+  run roxctl-development analyze netpol "${test_data}/np-guard/netpols-analysis-example-minimal" --output-format=json
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial '{
+    "src": "0.0.0.0-255.255.255.255",
+    "dst": "default/frontend[Deployment]",
+    "conn": "TCP 8080"
+  },'
+}
+
+@test "roxctl-development analyze netpol generates md connlist output" {
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
+  echo "Writing connlist to ${ofile}" >&3
+  run roxctl-development analyze netpol "${test_data}/np-guard/netpols-analysis-example-minimal" --output-format=md
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial '0.0.0.0-255.255.255.255 | default/frontend[Deployment] | TCP 8080 |'
+}
+
+@test "roxctl-development analyze netpol generates dot connlist output" {
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
+  echo "Writing connlist to ${ofile}" >&3
+  run roxctl-development analyze netpol "${test_data}/np-guard/netpols-analysis-example-minimal" --output-format=dot
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial '"0.0.0.0-255.255.255.255" [label="0.0.0.0-255.255.255.255" color="red2" fontcolor="red2"]'
+}
+
+@test "roxctl-development analyze netpol generates csv connlist output" {
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
+  echo "Writing connlist to ${ofile}" >&3
+  run roxctl-development analyze netpol "${test_data}/np-guard/netpols-analysis-example-minimal" --output-format=csv
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial '0.0.0.0-255.255.255.255,default/frontend[Deployment],TCP 8080'
+}
+
+@test "roxctl-development analyze netpol skips unsupported openshift resources" {
+  assert_file_exist "${test_data}/np-guard/security-frontend-demo/asset-cache-deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/security-frontend-demo/asset-cache-route.yaml"
+  assert_file_exist "${test_data}/np-guard/security-frontend-demo/frontend-netpols.yaml"
+  assert_file_exist "${test_data}/np-guard/security-frontend-demo/webapp-deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/security-frontend-demo/webapp-route.yaml"
+  echo "Writing connlist to ${ofile}" >&3
+  run roxctl-development analyze netpol "${test_data}/np-guard/security-frontend-demo"
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial 'skipping object with type: Route'
+}
+
+@test "roxctl-development analyze netpol generates focused to workload connlist output" {
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
+  echo "Writing connlist to ${ofile}" >&3
+  run roxctl-development analyze netpol "${test_data}/np-guard/netpols-analysis-example-minimal" --focus-workload=backend
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # partial here is used to filter the WARN and INFO messages
+  assert_output --partial 'default/backend[Deployment] => default/backend[Deployment] : All Connections
+default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
+  refute_output --partial 'default/frontend[Deployment] => 0.0.0.0-255.255.255.255 : UDP 53'
+}
+
+@test "roxctl-development analyze netpol generates connlist to specific txt output file" {
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
+  run roxctl-development analyze netpol "${test_data}/np-guard/netpols-analysis-example-minimal" --output-file="$out_dir/out.txt"
+  assert_success
+  
+  assert_file_exist "$out_dir/out.txt"
+  assert_output --partial 'default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
+}
 
 write_yaml_to_file() {
   image="${1}"
