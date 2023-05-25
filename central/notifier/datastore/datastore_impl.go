@@ -33,7 +33,19 @@ func (b *datastoreImpl) UpsertNotifier(ctx context.Context, notifier *storage.No
 	b.lock.Lock()
 	defer b.lock.Unlock()
 
-	// TODO: forbid declarative modifications via API
+	existing, exists, err := b.GetNotifier(ctx, notifier.GetId())
+	if err != nil {
+		return "", err
+	}
+	if exists {
+		if err = verifyNotifierOrigin(ctx, existing); err != nil {
+			return "", errors.Wrap(err, "origin didn't match for existing notifier")
+		}
+	}
+	if err = verifyNotifierOrigin(ctx, notifier); err != nil {
+		return "", errors.Wrap(err, "origin didn't match for new notifier")
+	}
+
 	return notifier.GetId(), b.storage.Upsert(ctx, notifier)
 }
 
