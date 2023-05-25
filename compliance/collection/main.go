@@ -86,22 +86,26 @@ func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateCli
 				}
 			}
 		case *sensor.MsgToCompliance_Ack:
-			// TODO(ROX-16687): Implement behavior when receiving Ack here
 			// TODO(ROX-16549): Add metric to see the ratio of Ack/Nack(?)
-		case *sensor.MsgToCompliance_Nack:
-			log.Infof("Received NACK from Sensor, resending NodeInventory in 10 seconds.")
-			go func() {
-				time.Sleep(time.Second * 10)
-				msg, err := scanNode(ctx, scanner)
-				if err != nil {
-					log.Errorf("error running scanNode: %v", err)
-				} else {
-					err := client.Send(msg)
+			switch t.Ack.GetAction() {
+			case sensor.MsgToCompliance_NodeInventoryACK_NACK:
+				log.Infof("Received NACK from Sensor, resending NodeInventory in 10 seconds.")
+				go func() {
+					time.Sleep(time.Second * 10)
+					msg, err := scanNode(ctx, scanner)
 					if err != nil {
-						log.Errorf("error sending to sensor: %v", err)
+						log.Errorf("error running scanNode: %v", err)
+					} else {
+						err := client.Send(msg)
+						if err != nil {
+							log.Errorf("error sending to sensor: %v", err)
+						}
 					}
-				}
-			}()
+				}()
+			case sensor.MsgToCompliance_NodeInventoryACK_ACK:
+				// TODO(ROX-16687): Implement behavior when receiving Ack here
+				log.Infof("Received node-scanning-ACK from Sensor")
+			}
 		default:
 			utils.Should(errors.Errorf("Unhandled msg type: %T", t))
 		}
