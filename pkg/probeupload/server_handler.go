@@ -34,7 +34,7 @@ type handler struct {
 }
 
 // LogCallback returns an error callback that simply logs.
-func LogCallback(logger *logging.Logger) func(error) {
+func LogCallback(logger logging.Logger) func(error) {
 	return func(err error) {
 		logger.Errorf("Error serving kernel probe: %v", err)
 	}
