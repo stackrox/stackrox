@@ -166,7 +166,7 @@ func loadCertficate(path string) (string, error) {
 		raw = rest
 	}
 
-	return "", errox.InvalidArgs.Newf("no certificate found in \"%s\"", path)
+	return "", errox.InvalidArgs.Newf("no certificate found in %q", path)
 }
 
 func (n *notifierCmd) construct(cmd *cobra.Command) error {
