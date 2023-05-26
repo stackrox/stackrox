@@ -35,51 +35,33 @@ class NullTest(BaseTest):
 
 
 class UpgradeTest(BaseTest):
-    TEST_TIMEOUT = 60 * 60
-    TEST_OUTPUT_DIR = "/tmp/upgrade-test-logs"
-
-    def run(self):
-        print("Executing the Upgrade Test")
-
-        def set_dirs_after_start():
-            # let post test know where logs are
-            self.test_outputs = [UpgradeTest.TEST_OUTPUT_DIR]
-
-        self.run_with_graceful_kill(
-            ["tests/upgrade/run.sh", UpgradeTest.TEST_OUTPUT_DIR],
-            UpgradeTest.TEST_TIMEOUT,
-            post_start_hook=set_dirs_after_start,
-        )
-
-
-class PostgresUpgradeTest(BaseTest):
     TEST_TIMEOUT = 60 * 60 * 2
     TEST_OUTPUT_DIR = "/tmp/postgres-upgrade-test-logs"
     TEST_LEGACY_OUTPUT_DIR = "/tmp/legacy-postgres-upgrade-test-logs"
     TEST_SENSOR_OUTPUT_DIR = "/tmp/postgres-sensor-upgrade-test-logs"
 
     def run(self):
-        print("Executing the Postgres Upgrade Test")
+        print("Executing the Upgrade Test")
 
         def set_dirs_after_start():
             # let post test know where logs are
-            self.test_outputs = [PostgresUpgradeTest.TEST_SENSOR_OUTPUT_DIR, PostgresUpgradeTest.TEST_OUTPUT_DIR]
+            self.test_outputs = [UpgradeTest.TEST_SENSOR_OUTPUT_DIR, UpgradeTest.TEST_OUTPUT_DIR]
 
         self.run_with_graceful_kill(
-            ["tests/upgrade/postgres_sensor_run.sh", PostgresUpgradeTest.TEST_SENSOR_OUTPUT_DIR],
-            PostgresUpgradeTest.TEST_TIMEOUT,
+            ["tests/upgrade/postgres_sensor_run.sh", UpgradeTest.TEST_SENSOR_OUTPUT_DIR],
+            UpgradeTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
 
         self.run_with_graceful_kill(
-            ["tests/upgrade/legacy_to_postgres_run.sh", PostgresUpgradeTest.TEST_LEGACY_OUTPUT_DIR],
-            PostgresUpgradeTest.TEST_TIMEOUT,
+            ["tests/upgrade/legacy_to_postgres_run.sh", UpgradeTest.TEST_LEGACY_OUTPUT_DIR],
+            UpgradeTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
 
         self.run_with_graceful_kill(
-            ["tests/upgrade/postgres_run.sh", PostgresUpgradeTest.TEST_OUTPUT_DIR],
-            PostgresUpgradeTest.TEST_TIMEOUT,
+            ["tests/upgrade/postgres_run.sh", UpgradeTest.TEST_OUTPUT_DIR],
+            UpgradeTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
 
