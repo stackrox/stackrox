@@ -20,6 +20,7 @@ import {
 } from '@patternfly/react-core';
 
 import useTabs from 'hooks/patternfly/useTabs';
+import useURLSearch from 'hooks/useURLSearch';
 import ViewActiveYAMLs from './ViewActiveYAMLs';
 import {
     NetworkPolicySimulator,
@@ -27,6 +28,7 @@ import {
 } from '../hooks/useNetworkPolicySimulator';
 import NetworkPoliciesYAML from './NetworkPoliciesYAML';
 import { getDisplayYAMLFromNetworkPolicyModification } from '../utils/simulatorUtils';
+import { getScopeHierarchyFromSearch } from '../utils/hierarchyUtils';
 import UploadYAMLButton from './UploadYAMLButton';
 import NetworkSimulatorActions from './NetworkSimulatorActions';
 import NotifyYAMLModal from './NotifyYAMLModal';
@@ -53,6 +55,9 @@ function NetworkPolicySimulatorSidePanel({
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
         React.useState<boolean>(false);
     const [isNotifyModalOpen, setIsNotifyModalOpen] = React.useState(false);
+
+    const { searchFilter } = useURLSearch();
+    const { cluster: clusterName } = getScopeHierarchyFromSearch(searchFilter);
 
     function handleFileInputChange(
         _event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>,
@@ -291,8 +296,11 @@ function NetworkPolicySimulatorSidePanel({
                 <Flex direction={{ default: 'row' }} className="pf-u-p-lg pf-u-mb-0">
                     <FlexItem>
                         <TextContent>
-                            <Text component={TextVariants.h2} className="pf-u-font-size-xl">
-                                Simulate network policy
+                            <Text
+                                component={TextVariants.h2}
+                                className="pf-u-font-size-xl pf-u-mr-xl"
+                            >
+                                Simulate network policy for cluster “{clusterName}”
                             </Text>
                         </TextContent>
                     </FlexItem>
