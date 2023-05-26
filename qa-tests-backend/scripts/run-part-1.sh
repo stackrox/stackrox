@@ -44,6 +44,7 @@ config_part_1() {
     setup_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
 
     deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+    deploy_optional_e2e_components
 
     deploy_default_psp
     deploy_webhook_server "$ROOT/$DEPLOY_DIR/webhook_server_certs"
