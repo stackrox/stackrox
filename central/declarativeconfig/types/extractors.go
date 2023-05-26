@@ -9,9 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-// DeclarativeConfigHealthIDPrefix is prefix of all integration health's IDs of declarative configurations.
-const DeclarativeConfigHealthIDPrefix = "declarativeconfig."
-
 // IDExtractor extracts the ID from proto messages.
 type IDExtractor func(m proto.Message) string
 
@@ -20,16 +17,12 @@ type NameExtractor func(m proto.Message) string
 
 // UniversalIDExtractor provides a way to extractIDFromProtoMessage the ID from proto messages.
 func UniversalIDExtractor() IDExtractor {
-	return compileIDFromProtoMessage
+	return extractIDFromProtoMessage
 }
 
 // UniversalNameExtractor provides a way to extractIDFromProtoMessage the name from proto messages.
 func UniversalNameExtractor() NameExtractor {
 	return extractNameFromProtoMessage
-}
-
-func compileIDFromProtoMessage(message proto.Message) string {
-	return DeclarativeConfigHealthIDPrefix + extractIDFromProtoMessage(message)
 }
 
 func extractIDFromProtoMessage(message proto.Message) string {

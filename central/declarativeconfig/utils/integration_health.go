@@ -12,13 +12,16 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
+// DeclarativeConfigHealthIDPrefix is prefix of all integration health's IDs of declarative configurations.
+const DeclarativeConfigHealthIDPrefix = "declarativeconfig."
+
 // IntegrationHealthForProtoMessage returns a storage.IntegrationHealth for the given proto.Message.
 // The integration health will be marked as unhealthy if err != nil, and healthy if err == nil.
 // Note: Handler can be left empty. In this case, the name of the integration health will be updated to not include the
 // handler name.
 func IntegrationHealthForProtoMessage(message proto.Message, handler string, err error, idExtractor types.IDExtractor,
 	nameExtractor types.NameExtractor) *storage.IntegrationHealth {
-	messageID := idExtractor(message)
+	messageID := IDForIntegrationHealthFromProtoMessage(message, idExtractor)
 	messageName := NameForIntegrationHealthFromProtoMessage(message, handler, nameExtractor, idExtractor)
 
 	var errMsg string
@@ -47,4 +50,8 @@ func NameForIntegrationHealthFromProtoMessage(message proto.Message, handler str
 		messageName = fmt.Sprintf("%s in config map %s", messageName, path.Base(handler))
 	}
 	return messageName
+}
+
+func IDForIntegrationHealthFromProtoMessage(message proto.Message, idExtractor types.IDExtractor) string {
+	return DeclarativeConfigHealthIDPrefix + idExtractor(message)
 }

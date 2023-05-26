@@ -320,7 +320,7 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 // In case err != nil _and_ the number of errors for this message is >= the given threshold, the health
 // status will be set to unhealthy.
 func (m *managerImpl) updateHealthForMessage(handler string, message proto.Message, err error, threshold int32) {
-	messageID := m.idExtractor(message)
+	messageID := declarativeConfigUtils.IDForIntegrationHealthFromProtoMessage(message, m.idExtractor)
 	integrationHealth := declarativeConfigUtils.IntegrationHealthForProtoMessage(message, handler, err, m.idExtractor, m.nameExtractor)
 
 	if err != nil {
@@ -355,7 +355,7 @@ func (m *managerImpl) updateHandlerHealth(handlerID string, err error) {
 
 func (m *managerImpl) registerHealthForMessage(handler string, messages ...proto.Message) {
 	for _, message := range messages {
-		messageID := m.idExtractor(message)
+		messageID := declarativeConfigUtils.IDForIntegrationHealthFromProtoMessage(message, m.idExtractor)
 		messageName := declarativeConfigUtils.NameForIntegrationHealthFromProtoMessage(message, handler, m.nameExtractor, m.idExtractor)
 
 		if err := m.declarativeConfigErrorReporter.Register(messageID, messageName,

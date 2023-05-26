@@ -44,7 +44,7 @@ func newNotifierUpdater(notifierDS notifierDataStore.DataStore, policyCleaner po
 func (u *notifierUpdater) Upsert(ctx context.Context, m proto.Message) error {
 	notifierProto, ok := m.(*storage.Notifier)
 	if !ok {
-		return errox.InvariantViolation.Newf("wrong type passed to role updater: %T", notifierProto)
+		return errox.InvariantViolation.Newf("wrong type passed to notifier updater: %T", notifierProto)
 	}
 	_, err := u.notifierDS.UpsertNotifier(ctx, notifierProto)
 	if err != nil {
