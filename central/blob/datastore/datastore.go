@@ -24,11 +24,12 @@ type Datastore interface {
 	Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error
 	Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error)
 	Delete(ctx context.Context, name string) error
-	Search(ctx context.Context, query *v1.Query) ([]pkgSearch.Result, error)
-	SearchBlobsWithoutData(ctx context.Context, q *v1.Query) ([]*storage.Blob, error)
-	SearchIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	GetMetadata(ctx context.Context, name string) (*storage.Blob, bool, error)
 	GetBlobWithDataInBuffer(ctx context.Context, name string) (*bytes.Buffer, *storage.Blob, bool, error)
+
+	Search(ctx context.Context, query *v1.Query) ([]pkgSearch.Result, error)
+	SearchIDs(ctx context.Context, q *v1.Query) ([]string, error)
+	SearchBlobsWithoutData(ctx context.Context, q *v1.Query) ([]*storage.Blob, error)
 }
 
 // NewDatastore creates a new Blob datastore
@@ -59,11 +60,6 @@ func (d *datastoreImpl) Delete(ctx context.Context, name string) error {
 	return d.store.Delete(ctx, name)
 }
 
-// Search blobs
-func (d *datastoreImpl) Search(ctx context.Context, query *v1.Query) ([]pkgSearch.Result, error) {
-	return d.searcher.Search(ctx, query)
-}
-
 // GetIDs return all blob ids
 func (d *datastoreImpl) GetIDs(ctx context.Context) ([]string, error) {
 	return d.store.GetIDs(ctx)
@@ -85,12 +81,17 @@ func (d *datastoreImpl) GetBlobWithDataInBuffer(ctx context.Context, name string
 	return buf, blob, exists, err
 }
 
-// SearchBlobsWithoutData searches and return blob metadata only
-func (d *datastoreImpl) SearchBlobsWithoutData(ctx context.Context, q *v1.Query) ([]*storage.Blob, error) {
-	return d.searcher.SearchBlobsWithoutData(ctx, q)
+// Search blobs
+func (d *datastoreImpl) Search(ctx context.Context, query *v1.Query) ([]pkgSearch.Result, error) {
+	return d.searcher.Search(ctx, query)
 }
 
 // SearchIDs searches and return blob IDs
 func (d *datastoreImpl) SearchIDs(ctx context.Context, q *v1.Query) ([]string, error) {
 	return d.searcher.SearchIDs(ctx, q)
+}
+
+// SearchBlobsWithoutData searches and return blob metadata only
+func (d *datastoreImpl) SearchBlobsWithoutData(ctx context.Context, q *v1.Query) ([]*storage.Blob, error) {
+	return d.searcher.SearchBlobsWithoutData(ctx, q)
 }

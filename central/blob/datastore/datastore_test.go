@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type snapshotTestSuite struct {
+type blobTestSuite struct {
 	suite.Suite
 	ctx       context.Context
 	store     store.Store
@@ -29,28 +29,28 @@ type snapshotTestSuite struct {
 	testDB    *pgtest.TestPostgres
 }
 
-func TestBlobsStoreSnapshot(t *testing.T) {
-	suite.Run(t, new(snapshotTestSuite))
+func TestBlobsStore(t *testing.T) {
+	suite.Run(t, new(blobTestSuite))
 }
 
-func (s *snapshotTestSuite) SetupSuite() {
+func (s *blobTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 	s.store = store.New(s.testDB.DB)
 	s.datastore = NewDatastore(s.store, search.New(s.store, postgres.NewIndexer(s.testDB.DB)))
 }
 
-func (s *snapshotTestSuite) SetupTest() {
+func (s *blobTestSuite) SetupTest() {
 	tag, err := s.testDB.Exec(s.ctx, "TRUNCATE blobs CASCADE")
 	s.T().Log("blobs", tag)
 	s.NoError(err)
 }
 
-func (s *snapshotTestSuite) TearDownSuite() {
+func (s *blobTestSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
-func (s *snapshotTestSuite) createBlobs(prefix string, size int, n int, modTime *timestamp.Timestamp) []*storage.Blob {
+func (s *blobTestSuite) createBlobs(prefix string, size int, n int, modTime *timestamp.Timestamp) []*storage.Blob {
 	var blobs []*storage.Blob
 	for i := 0; i < n; i++ {
 		blob := &storage.Blob{
@@ -71,7 +71,7 @@ func (s *snapshotTestSuite) createBlobs(prefix string, size int, n int, modTime 
 	return blobs
 }
 
-func (s *snapshotTestSuite) TestSearch() {
+func (s *blobTestSuite) TestSearch() {
 	searchTime := protoconv.MustConvertTimeToTimestamp(timeutil.MustParse(time.RFC3339, "2020-03-09T12:00:00Z"))
 	blobs1 := s.createBlobs("/path1", 10, 2, searchTime)
 	blobs2 := s.createBlobs("/path2", 20, 3, timestamp.TimestampNow())
