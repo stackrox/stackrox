@@ -46,8 +46,8 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     if [[ "$#" -ne 2 ]]; then
         die "expected central chart version and sensor chart version as parameters in deploy_stackrox_with_custom_central_and_sensor_versions: deploy_stackrox_with_custom_central_and_sensor_versions <central chart version> <sensor chart version>"
     fi
-    ci_export CENTRAL_CHART_VERSION "$1"
-    ci_export SENSOR_CHART_VERSION "$2"
+    ci_export CENTRAL_CHART_VERSION_OVERRIDE "$1"
+    ci_export SENSOR_CHART_VERSION_OVERRIDE "$2"
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "false"
     ci_export OUTPUT_FORMAT "helm"
 
