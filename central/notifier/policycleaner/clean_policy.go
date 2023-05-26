@@ -11,18 +11,15 @@ type PolicyCleaner struct {
 
 // DeleteNotifierFromPolicies removes notifier from policies.
 func (p *PolicyCleaner) DeleteNotifierFromPolicies(notifierID string) error {
-	err := s.buildTimePolicies.RemoveNotifier(notifierID)
-	if err != nil {
+	if err := p.buildTimePolicies.RemoveNotifier(notifierID); err != nil {
 		return err
 	}
 
-	err = s.deployTimePolicies.RemoveNotifier(notifierID)
-	if err != nil {
+	if err := p.deployTimePolicies.RemoveNotifier(notifierID); err != nil {
 		return err
 	}
 
-	err = s.runTimePolicies.RemoveNotifier(notifierID)
-	if err != nil {
+	if err := p.runTimePolicies.RemoveNotifier(notifierID); err != nil {
 		return err
 	}
 
