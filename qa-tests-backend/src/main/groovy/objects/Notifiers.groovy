@@ -357,6 +357,6 @@ class SyslogNotifier extends Notifier {
     }
 
     def testNotifier() {
-         return NotifierService.testNotifier(notifier)
+        return NotifierService.testNotifier(notifier)
     }
 }
