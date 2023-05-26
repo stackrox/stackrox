@@ -328,18 +328,19 @@ function launch_central {
         helm lint "$unzip_dir/chart" -n stackrox "${helm_args[@]}"
       fi
 
-      # set custom central version if the CENTRAL_CHART_VERSION env is set
+      # set custom central version if the CENTRAL_CHART_VERSION_OVERRIDE env is set
       # this has to happen after linting since helm lint does not recognize the --version flag
-      if [[ ! -z ${CENTRAL_CHART_VERSION} ]]; then
+      if [[ -n "${CENTRAL_CHART_VERSION_OVERRIDE}" ]]; then
         helm_args+=(
-          --version="${CENTRAL_CHART_VERSION}"
+          --version="${CENTRAL_CHART_VERSION_OVERRIDE}"
         )
       fi
 
-      echo "Calling: helm upgrade --install -n stackrox stackrox-central-services $unzip_dir/chart \
-                               ${helm_args[@]}"
+      set -x
       helm upgrade --install -n stackrox stackrox-central-services "$unzip_dir/chart" \
           "${helm_args[@]}"
+      set +x
+
     else
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
         $unzip_dir/central/scripts/setup.sh
@@ -576,11 +577,11 @@ function launch_sensor {
         helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox "${helm_args[@]}" "${extra_helm_config[@]}"
       fi
       
-      # set custom sensor version if the SENSOR_CHART_VERSION env is set
+      # set custom sensor version if the SENSOR_CHART_VERSION_OVERRIDE env is set
       # this has to happen after linting since helm lint does not recognize the --version flag
-      if [[ ! -z ${SENSOR_CHART_VERSION} ]]; then
+      if [[ -n "${SENSOR_CHART_VERSION_OVERRIDE}" ]]; then
         helm_args+=(
-          --version="${SENSOR_CHART_VERSION}"
+          --version="${SENSOR_CHART_VERSION_OVERRIDE}"
         )
       fi
 
@@ -589,11 +590,11 @@ function launch_sensor {
         kubectl -n "$sensor_namespace" get secret stackrox &>/dev/null || kubectl -n "$sensor_namespace" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
       fi
 
-      echo "Calling: helm upgrade --install -n $sensor_namespace --create-namespace stackrox-secured-cluster-services $k8s_dir/sensor-deploy/chart \
-                      ${helm_args[@]} ${extra_helm_config[@]}"
-
+      set -x
       helm upgrade --install -n "$sensor_namespace" --create-namespace stackrox-secured-cluster-services "$k8s_dir/sensor-deploy/chart" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
+      set +x
+
     else
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }

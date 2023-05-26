@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-# Compatibility test installation of ACS using MAIN_IMAGE_TAG for central SENSOR_CHART_VERSION for secured cluster
-# One additional test is run for the second latest central version vs the newest secured cluster
+# Compatibility test installation of ACS using CENTRAL_CHART_VERSION_OVERRIDE for central SENSOR_CHART_VERSION_OVERRIDE for secured cluster
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 # shellcheck source=../../scripts/ci/gcp.sh
@@ -22,12 +21,12 @@ source "$ROOT/qa-tests-backend/scripts/lib.sh"
 set -euo pipefail
 
 compatibility_test() {
-    require_environment "SENSOR_CHART_VERSION"
-    require_environment "CENTRAL_CHART_VERSION"
+    require_environment "CENTRAL_CHART_VERSION_OVERRIDE"
+    require_environment "SENSOR_CHART_VERSION_OVERRIDE"
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
 
-    info "Starting test (sensor compatibility test Central version - ${CENTRAL_CHART_VERSION}, Sensor version - ${SENSOR_CHART_VERSION})"
+    info "Starting test (sensor compatibility test Central version - ${CENTRAL_CHART_VERSION_OVERRIDE}, Sensor version - ${SENSOR_CHART_VERSION_OVERRIDE})"
 
     export_test_environment
 
@@ -43,7 +42,7 @@ compatibility_test() {
         remove_existing_stackrox_resources
         setup_default_TLS_certs
 
-        deploy_stackrox_with_custom_central_and_sensor_versions "${CENTRAL_CHART_VERSION}" "${SENSOR_CHART_VERSION}"
+        deploy_stackrox_with_custom_central_and_sensor_versions "${CENTRAL_CHART_VERSION_OVERRIDE}" "${SENSOR_CHART_VERSION_OVERRIDE}"
         echo "Stackrox deployed"
         kubectl -n stackrox get deploy,ds -o wide
 
@@ -62,17 +61,17 @@ compatibility_test() {
 
     make -C qa-tests-backend compatibility-test || touch FAIL
 
-    update_junit_prefix_with_sensor_version
+    update_junit_prefix_with_central_and_sensor_version
 
-    store_qa_test_results "compatibility-central-v${CENTRAL_CHART_VERSION}-test-sensor-v${SENSOR_CHART_VERSION}"
-    [[ ! -f FAIL ]] || die "compatibility-central-v${CENTRAL_CHART_VERSION}-test-sensor-v${SENSOR_CHART_VERSION}"
+    store_qa_test_results "compatibility-central-v${CENTRAL_CHART_VERSION_OVERRIDE}-test-sensor-v${SENSOR_CHART_VERSION_OVERRIDE}"
+    [[ ! -f FAIL ]] || die "compatibility-central-v${CENTRAL_CHART_VERSION_OVERRIDE}-test-sensor-v${SENSOR_CHART_VERSION_OVERRIDE}"
 }
 
-update_junit_prefix_with_sensor_version() {
+update_junit_prefix_with_central_and_sensor_version() {
     result_folder="${ROOT}/qa-tests-backend/build/test-results/testCOMPATIBILITY"
-    info "Updating all test in $result_folder to have \"Central-v${CENTRAL_CHART_VERSION}_Sensor-v${SENSOR_CHART_VERSION}_\" prefix"
+    info "Updating all test in $result_folder to have \"Central-v${CENTRAL_CHART_VERSION_OVERRIDE}_Sensor-v${SENSOR_CHART_VERSION_OVERRIDE}_\" prefix"
     for f in "$result_folder"/*.xml; do
-        sed -i "s/testcase name=\"/testcase name=\"[Central-v${CENTRAL_CHART_VERSION}_Sensor-v${SENSOR_CHART_VERSION}] /g" "$f"
+        sed -i "s/testcase name=\"/testcase name=\"[Central-v${CENTRAL_CHART_VERSION_OVERRIDE}_Sensor-v${SENSOR_CHART_VERSION_OVERRIDE}] /g" "$f"
     done
 }
 
