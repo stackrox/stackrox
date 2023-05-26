@@ -62,6 +62,10 @@ func matchIntegrationHealth(int *storage.IntegrationHealth) gomock.Matcher {
 	}
 }
 
+func addHealthIDPrefix(s string) string {
+	return types.DeclarativeConfigHealthIDPrefix + s
+}
+
 func TestReconcileTransformedMessages_Success(t *testing.T) {
 	controller := gomock.NewController(t)
 	mockUpdater := updaterMocks.NewMockResourceUpdater(controller)
@@ -117,49 +121,49 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 
 	gomock.InOrder(
 		reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
-			Id:           "id-access-scope",
+			Id:           addHealthIDPrefix("id-access-scope"),
 			Name:         "accessScope in config map test-handler-1",
 			Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 			Status:       storage.IntegrationHealth_HEALTHY,
 			ErrorMessage: "",
 		})),
 		reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
-			Id:           "id-perm-set-1",
+			Id:           addHealthIDPrefix("id-perm-set-1"),
 			Name:         "permission-set-1 in config map test-handler-1",
 			Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 			Status:       storage.IntegrationHealth_HEALTHY,
 			ErrorMessage: "",
 		})),
 		reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
-			Id:           "id-perm-set-2",
+			Id:           addHealthIDPrefix("id-perm-set-2"),
 			Name:         "permission-set-2 in config map test-handler-1",
 			Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 			Status:       storage.IntegrationHealth_HEALTHY,
 			ErrorMessage: "",
 		})),
 		reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
-			Id:           "role",
+			Id:           addHealthIDPrefix("role"),
 			Name:         "role in config map test-handler-2",
 			Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 			Status:       storage.IntegrationHealth_HEALTHY,
 			ErrorMessage: "",
 		})),
 		reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
-			Id:           "id-auth-provider",
+			Id:           addHealthIDPrefix("id-auth-provider"),
 			Name:         "authProvider in config map test-handler-2",
 			Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 			Status:       storage.IntegrationHealth_HEALTHY,
 			ErrorMessage: "",
 		})),
 		reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
-			Id:           "group",
+			Id:           addHealthIDPrefix("group"),
 			Name:         "group email:some@example.com:Admin for auth provider ID some-auth-provider in config map test-handler-2",
 			Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 			Status:       storage.IntegrationHealth_HEALTHY,
 			ErrorMessage: "",
 		})),
 		reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
-			Id:           "notifierId",
+			Id:           addHealthIDPrefix("notifierId"),
 			Name:         "notifierName in config map test-handler-2",
 			Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 			Status:       storage.IntegrationHealth_HEALTHY,
@@ -169,12 +173,12 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 
 	// Delete resources should be called in order, ignoring the existing IDs from the previously upserted resources.
 	gomock.InOrder(
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"notifierId"}).Return(nil, nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"group"}).Return(nil, nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-auth-provider"}).Return(nil, nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"role"}).Return(nil, nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.InAnyOrder([]string{"id-perm-set-1", "id-perm-set-2"})).Return(nil, nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-access-scope"}).Return([]string{"skipping-scope"}, errors.New("some-error")),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{addHealthIDPrefix("notifierId")}).Return(nil, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{addHealthIDPrefix("group")}).Return(nil, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{addHealthIDPrefix("id-auth-provider")}).Return(nil, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{addHealthIDPrefix("role")}).Return(nil, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.InAnyOrder([]string{addHealthIDPrefix("id-perm-set-1"), addHealthIDPrefix("id-perm-set-2")})).Return(nil, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{addHealthIDPrefix("id-access-scope")}).Return([]string{addHealthIDPrefix("skipping-scope")}, errors.New("some-error")),
 	)
 
 	// We retrieve the integration healths on the deletion, only the non-ignored ID that does not have "Config Map"
@@ -182,35 +186,35 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 	gomock.InOrder(
 		reporter.EXPECT().RetrieveIntegrationHealths(storage.IntegrationHealth_DECLARATIVE_CONFIG).Return([]*storage.IntegrationHealth{
 			{
-				Id:   "some-id",
+				Id:   addHealthIDPrefix("some-id"),
 				Name: "Config Map some-config-map",
 			},
 			{
-				Id:   "notifierId",
+				Id:   addHealthIDPrefix("notifierId"),
 				Name: "",
 			},
 			{
-				Id:   "group",
+				Id:   addHealthIDPrefix("group"),
 				Name: "",
 			},
 			{
-				Id:   "id-auth-provider",
+				Id:   addHealthIDPrefix("id-auth-provider"),
 				Name: "",
 			},
 			{
-				Id:   "role",
+				Id:   addHealthIDPrefix("role"),
 				Name: "",
 			},
 			{
-				Id:   "skipping-scope",
+				Id:   addHealthIDPrefix("skipping-scope"),
 				Name: "",
 			},
 			{
-				Id:   "some-non-existent-id",
+				Id:   addHealthIDPrefix("some-non-existent-id"),
 				Name: "I should be deleted",
 			},
 		}, nil),
-		reporter.EXPECT().RemoveIntegrationHealth("some-non-existent-id"),
+		reporter.EXPECT().RemoveIntegrationHealth(addHealthIDPrefix("some-non-existent-id")),
 	)
 
 	m := newTestManager(t)
@@ -265,7 +269,7 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 	mockUpdater.EXPECT().Upsert(gomock.Any(), permissionSet1).Return(testError).Times(3)
 
 	reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
-		Id:           "some-id",
+		Id:           addHealthIDPrefix("some-id"),
 		Name:         "permission-set-1 in config map test-handler-1",
 		Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 		Status:       storage.IntegrationHealth_UNHEALTHY,
@@ -507,7 +511,7 @@ func TestUpdateDeclarativeConfigContents_RegisterHealthStatus(t *testing.T) {
 		},
 	}, nil)
 
-	reporter.EXPECT().Register("test-name", "test-name in config map my-cool-config-map", storage.IntegrationHealth_DECLARATIVE_CONFIG)
+	reporter.EXPECT().Register(addHealthIDPrefix("test-name"), "test-name in config map my-cool-config-map", storage.IntegrationHealth_DECLARATIVE_CONFIG)
 
 	reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
 		Id:           "/some/config/dir/to/my-cool-config-map",
