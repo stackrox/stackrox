@@ -81,19 +81,18 @@ class SunburstDetailSection extends Component {
                         idx
                     ) => {
                         const color = textColor || graphColor;
+                        console.log(idx, parentDatum?.name, text, color, labelValue, labelColor); // eslint-disable-line no-console
                         return (
                             <div
                                 key={text}
-                                className={`widget-detail-bullet border-b border-base-300 pb-3 mb-1 font-600 ${
-                                    parentDatum && parentDatum.name && idx === 0
-                                        ? 'text-base-500'
-                                        : ''
-                                }`}
+                                className="widget-detail-bullet border-b border-base-300 pb-3 mb-1"
                             >
                                 {link && (
                                     <Link
                                         title={text}
-                                        className={`underline leading-normal flex w-full word-break ${className}`}
+                                        className={`underline leading-normal flex w-full word-break ${
+                                            className ?? ''
+                                        }`}
                                         style={color ? { color } : null}
                                         to={link}
                                     >
