@@ -14,6 +14,8 @@ from post_tests import PostClusterTest, FinalPost
 # from RocksDB to Postgres can be executed.  Once RocksDB is
 # out of support those bits can be removed.
 
+os.environ["COLLECTION_METHOD"] = "ebpf"
+
 ClusterTestRunner(
     cluster=GKECluster("upgrade-test", machine_type="e2-standard-8"),
     pre_test=PreSystemTests(),
