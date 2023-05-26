@@ -355,17 +355,13 @@ oidc:
 
         // The previously created permission set should not exist anymore.
         def permissionSetAfterDeletion = RoleService.getRoleService().listPermissionSets()
-                .getPermissionSetsList().find {
-                    it.getName() == VALID_PERMISSION_SET.getName()
-                }
+                .getPermissionSetsList().find { it.getName() == VALID_PERMISSION_SET.getName() }
         assert permissionSetAfterDeletion == null
 
         // The previously created access scope should not exist anymore.
         def accessScopeAfterDeletion = RoleService.getRoleService()
                 .listSimpleAccessScopes()
-                .getAccessScopesList().find {
-                    it.getName() == VALID_ACCESS_SCOPE.getName()
-                }
+                .getAccessScopesList().find { it.getName() == VALID_ACCESS_SCOPE.getName() }
         assert accessScopeAfterDeletion == null
 
         // The previously created role should not exist anymore.
@@ -423,17 +419,13 @@ oidc:
 
         // No permission set should be created.
         def permissionSetAfterDeletion = RoleService.getRoleService().listPermissionSets()
-                .getPermissionSetsList().find {
-            it.getName() == VALID_PERMISSION_SET.getName()
-        }
+                .getPermissionSetsList().find { it.getName() == VALID_PERMISSION_SET.getName() }
         assert permissionSetAfterDeletion == null
 
         // No access scope should be created.
         def accessScopeAfterDeletion = RoleService.getRoleService()
                 .listSimpleAccessScopes()
-                .getAccessScopesList().find {
-            it.getName() == VALID_ACCESS_SCOPE.getName()
-        }
+                .getAccessScopesList().find { it.getName() == VALID_ACCESS_SCOPE.getName() }
         assert accessScopeAfterDeletion == null
 
         // No role should be created.

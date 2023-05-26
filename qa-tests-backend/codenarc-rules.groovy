@@ -176,8 +176,7 @@ ruleset {
     // ClosureStatementOnOpeningLineOfMultipleLineClosure
     ConsecutiveBlankLines 
     FileEndsWithoutNewline
-    //TODO(ROX-7771): Re-enable indentation checks and fix indentation
-    //Indentation
+    Indentation
 
     LineLength 
     MissingBlankLineAfterImports 
