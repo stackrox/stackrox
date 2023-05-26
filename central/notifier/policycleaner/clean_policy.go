@@ -10,7 +10,7 @@ type PolicyCleaner struct {
 }
 
 // DeleteNotifierFromPolicies removes notifier from policies.
-func (s *PolicyCleaner) DeleteNotifierFromPolicies(notifierID string) error {
+func (p *PolicyCleaner) DeleteNotifierFromPolicies(notifierID string) error {
 	err := s.buildTimePolicies.RemoveNotifier(notifierID)
 	if err != nil {
 		return err

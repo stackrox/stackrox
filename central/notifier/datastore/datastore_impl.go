@@ -66,7 +66,7 @@ func (b *datastoreImpl) GetNotifiersFiltered(ctx context.Context, filter func(no
 	if err != nil {
 		return nil, errors.Wrap(err, "getting notifiers from storage")
 	}
-	result := make([]*storage.Notifier, 0)
+	result := make([]*storage.Notifier, 0, len(notifiers))
 	for _, n := range notifiers {
 		if filter(n) {
 			result = append(result, n)

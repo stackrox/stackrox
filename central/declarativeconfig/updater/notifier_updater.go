@@ -52,7 +52,7 @@ func (u *notifierUpdater) Upsert(ctx context.Context, m proto.Message) error {
 	}
 	notifier, err := notifiers.CreateNotifier(notifierProto)
 	if err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.CauseBy(err)
 	}
 	u.processor.UpdateNotifier(ctx, notifier)
 
@@ -73,10 +73,8 @@ func (u *notifierUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip
 	var notifierDeletionErr *multierror.Error
 	var notifierIDs []string
 	for _, n := range notifiers {
-		err = u.policyCleaner.DeleteNotifierFromPolicies(n.GetId())
-		if err != nil {
-			err := errors.Wrap(err, "deleting notifier from policies")
-			notifierDeletionErr, notifierIDs = u.processDeletionError(notifierDeletionErr, err, notifierIDs, n)
+		if err := u.policyCleaner.DeleteNotifierFromPolicies(n.GetId()); err != nil {
+			notifierDeletionErr, notifierIDs = u.processDeletionError(notifierDeletionErr, errors.Wrap(err, "deleting notifier from policies"), notifierIDs, n)
 			continue
 		}
 
