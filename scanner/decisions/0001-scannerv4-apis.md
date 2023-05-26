@@ -23,7 +23,7 @@ ScannerV4 gRPC endpoints will use gRPC status codes to communicate the return st
 
 ScannerV4 will also provide endpoints for health and observability checks, which are not detailed in this ADR.
 
-In Central, ScannerV4 will replace ScannerV2 as the container image scanner. A new image integration for ScannerV4 will be created and replace ScannerV2's integration (type "clarify"), activated by the feature flag. The "clarify" type will continue to be used for orchestrator and node scanning.
+In Central, ScannerV4 will replace ScannerV2 as the container image scanner. A new image integration for ScannerV4 will be created and replace ScannerV2's integration (type "clarify"), activated by a feature flag. The "clarify" type will continue to be used for orchestrator and node scanning.
 
 ### ScannerV4 API Endpoints
 
