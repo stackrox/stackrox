@@ -1,18 +1,20 @@
-name: 'Check PR title for the greater good'
+name: "Check PR title for the greater good"
 
 on:
-  pull_request_target:
-    types:
-      - opened
-      - edited
-      - synchronize
+  pull_request:
+    types: [opened, edited, synchronize]
 
 jobs:
   check-title:
     runs-on: ubuntu-latest
     steps:
-    - name: Check if the PR title matches the good PR regex
-      env:
-        PR_TITLE: ${{ github.event.pull_request.title }}
-      run: |
-        echo "$PR_TITLE" | grep -E '^(((build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\([\w\-\.]+\))?(!)?)|((ROX-[0-9]+,)*ROX-[0-9]+))(: .*)$';
+      - name: Check if the PR title is well dressed
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "$PR_TITLE" | grep -E '^(((build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\([\w\-\.]+\))?(!)?)|((ROX-[0-9]+,)*ROX-[0-9]+))(: .*)$';
+          if [ "$(echo "$PR_TITLE" | wc --chars)" -gt 100 ]
+          then
+            echo "The PR title is longer than 100 characters. Consider rephrasing."
+            exit 1
+          fi
