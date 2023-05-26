@@ -12,10 +12,10 @@ import (
 const (
 	batchSize = 500
 
-	// Role: Replaced resource
+	// Role : Replaced resource
 	Role = "Role"
 
-	// Access: Replacement resource
+	// Access : Replacement resource
 	Access = "Access"
 )
 
