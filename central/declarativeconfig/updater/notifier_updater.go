@@ -52,7 +52,7 @@ func (u *notifierUpdater) Upsert(ctx context.Context, m proto.Message) error {
 	}
 	notifier, err := notifiers.CreateNotifier(notifierProto)
 	if err != nil {
-		return errox.InvalidArgs.CauseBy(err)
+		return errox.InvalidArgs.CausedBy(err)
 	}
 	u.processor.UpdateNotifier(ctx, notifier)
 
