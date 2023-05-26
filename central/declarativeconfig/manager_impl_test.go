@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	"github.com/stackrox/rox/central/declarativeconfig/updater"
 	updaterMocks "github.com/stackrox/rox/central/declarativeconfig/updater/mocks"
+	declarativeConfigUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	transformMocks "github.com/stackrox/rox/pkg/declarativeconfig/transform/mocks"
@@ -63,7 +64,7 @@ func matchIntegrationHealth(int *storage.IntegrationHealth) gomock.Matcher {
 }
 
 func addHealthIDPrefix(s string) string {
-	return types.DeclarativeConfigHealthIDPrefix + s
+	return declarativeConfigUtils.DeclarativeConfigHealthIDPrefix + s
 }
 
 func TestReconcileTransformedMessages_Success(t *testing.T) {
@@ -173,12 +174,12 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 
 	// Delete resources should be called in order, ignoring the existing IDs from the previously upserted resources.
 	gomock.InOrder(
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{addHealthIDPrefix("notifierId")}).Return(nil, nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{addHealthIDPrefix("group")}).Return(nil, nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{addHealthIDPrefix("id-auth-provider")}).Return(nil, nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{addHealthIDPrefix("role")}).Return(nil, nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.InAnyOrder([]string{addHealthIDPrefix("id-perm-set-1"), addHealthIDPrefix("id-perm-set-2")})).Return(nil, nil),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{addHealthIDPrefix("id-access-scope")}).Return([]string{addHealthIDPrefix("skipping-scope")}, errors.New("some-error")),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"notifierId"}).Return(nil, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"group"}).Return(nil, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-auth-provider"}).Return(nil, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"role"}).Return(nil, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.InAnyOrder([]string{"id-perm-set-1", "id-perm-set-2"})).Return(nil, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-access-scope"}).Return([]string{"skipping-scope"}, errors.New("some-error")),
 	)
 
 	// We retrieve the integration healths on the deletion, only the non-ignored ID that does not have "Config Map"

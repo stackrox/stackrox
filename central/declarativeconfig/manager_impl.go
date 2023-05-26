@@ -375,11 +375,14 @@ func (m *managerImpl) removeStaleHealthStatuses(idsToSkip []string) error {
 		return errors.Wrap(err, "retrieving integration health statuses for declarative config")
 	}
 
-	idsToSkipSet := set.NewFrozenStringSet(idsToSkip...)
+	healthIDsToSkip := set.NewStringSet()
+	for _, id := range idsToSkip {
+		healthIDsToSkip.Add(declarativeConfigUtils.DeclarativeConfigHealthIDPrefix + id)
+	}
 
 	var removingIntegrationHealthsErr *multierror.Error
 	for _, health := range healths {
-		if idsToSkipSet.Contains(health.GetId()) {
+		if healthIDsToSkip.Contains(health.GetId()) {
 			continue
 		}
 
