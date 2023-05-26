@@ -44,6 +44,8 @@ func (s *rateLimitedLoggerTestSuite) TearDownTest() {
 	s.rlLogger.stop()
 }
 
+// TODO: ROX-17312: For all tests, test each function (log level) independently.
+
 func (s *rateLimitedLoggerTestSuite) TestBaseFunctions() {
 	errorLog := "This is an error log"
 	warnLog := "This is a warn log"
@@ -151,6 +153,7 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsCooldown() {
 		s.rlLogger.DebugL(limiter, templateWithFields, "debug", 2)
 	}
 
+	// TODO: ROX-17312: Mock timer, clock and synchronization of logs.
 	time.Sleep(LoggingInterval)
 
 	// Burst limit should allow one more trace
@@ -278,6 +281,7 @@ func TestRateLimitedFunctionsTimedFlush(t *testing.T) {
 
 	rlLogger := NewRateLimitLogger(mockLogger, cacheSize, limiterLines, limiterPeriod, burstSize)
 
+	// TODO: ROX-17312: Use timer mock and ad-hoc synchronization to avoid sleeping in tests.
 	// Avoid concurrency with background logging loop
 	time.Sleep(100 * time.Millisecond)
 
