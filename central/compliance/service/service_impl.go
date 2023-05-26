@@ -127,9 +127,16 @@ func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.Comp
 		return nil, err
 	}
 
+	filteredSources := sources[:0]
+	for _, source := range sources {
+		config, exsist, _ := s.complianceDataStore.GetConfig(ctx, source.GetStandardId())
+		if !exsist || !config.HideScanResults {
+			filteredSources = append(filteredSources, source)
+		}
+	}
 	return &storage.ComplianceAggregation_Response{
 		Results: validResults,
-		Sources: sources,
+		Sources: filteredSources,
 	}, nil
 }
 
@@ -144,6 +151,11 @@ func (s *serviceImpl) GetRunResults(ctx context.Context, request *v1.GetComplian
 	if err != nil {
 		return nil, err
 	}
+	config, exsist, _ := s.complianceDataStore.GetConfig(ctx, request.GetStandardId())
+	if exsist && config.GetHideScanResults() {
+		return nil, errors.New("Results are hidden for this stadard")
+	}
+
 	return &v1.GetComplianceRunResultsResponse{
 		Results:    results.LastSuccessfulResults,
 		FailedRuns: results.FailedRuns,
