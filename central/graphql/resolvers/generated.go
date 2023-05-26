@@ -461,6 +461,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("ComplianceStandardMetadata", []string{
 		"description: String!",
 		"dynamic: Boolean!",
+		"hideScanResults: Boolean!",
 		"id: ID!",
 		"name: String!",
 		"numImplementedChecks: Int!",
@@ -930,6 +931,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"splunk: Splunk",
 		"sumologic: SumoLogic",
 		"syslog: Syslog",
+		"traits: Traits",
 		"type: String!",
 		"uiEndpoint: String!",
 		"config: NotifierConfig",
@@ -5855,6 +5857,11 @@ func (resolver *complianceStandardMetadataResolver) Dynamic(ctx context.Context)
 	return value
 }
 
+func (resolver *complianceStandardMetadataResolver) HideScanResults(ctx context.Context) bool {
+	value := resolver.data.GetHideScanResults()
+	return value
+}
+
 func (resolver *complianceStandardMetadataResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
@@ -10570,6 +10577,11 @@ func (resolver *notifierResolver) Sumologic(ctx context.Context) (*sumoLogicReso
 func (resolver *notifierResolver) Syslog(ctx context.Context) (*syslogResolver, error) {
 	value := resolver.data.GetSyslog()
 	return resolver.root.wrapSyslog(value, true, nil)
+}
+
+func (resolver *notifierResolver) Traits(ctx context.Context) (*traitsResolver, error) {
+	value := resolver.data.GetTraits()
+	return resolver.root.wrapTraits(value, true, nil)
 }
 
 func (resolver *notifierResolver) Type(ctx context.Context) string {

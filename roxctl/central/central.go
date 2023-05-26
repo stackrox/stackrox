@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/roxctl/central/debug"
 	"github.com/stackrox/rox/roxctl/central/generate"
 	"github.com/stackrox/rox/roxctl/central/initbundles"
+	"github.com/stackrox/rox/roxctl/central/login"
 	"github.com/stackrox/rox/roxctl/central/userpki"
 	"github.com/stackrox/rox/roxctl/central/whoami"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -29,6 +30,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		userpki.Command(cliEnvironment),
 		whoami.Command(cliEnvironment),
 		initbundles.Command(cliEnvironment),
+		login.Command(cliEnvironment),
 	)
 	return c
 }

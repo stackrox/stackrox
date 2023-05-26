@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+import "api/v2/pagination.proto";
+
+package v2;
+
+// RawQuery represents the search query string.
+// The format of the query string is "<field name>:<value,value,...>+<field name>:<value, value,...>+..."
+// For example:
+// To search for deployments named "central" and "sensor" in the namespace "stackrox", the query string would be
+// "Deployment:central,sensor+Namespace:stackrox"
+// RawQuery is used in ListAPIs to search for a particular object.
+message RawQuery {
+    string     query      = 1;
+    Pagination pagination = 2;
+}

@@ -23,7 +23,7 @@ function NamespaceEdgeFilter({ selectedState, setFilter }: NamespaceEdgeFilterPr
 
     return (
         <div className="flex items-center" data-testid="namespace-flows-filter">
-            <span className="text-base-500 font-700 mr-2">Namespace flows:</span>
+            <span className="text-sm mr-2">Namespace flows:</span>
             <div className="flex items-center">
                 <RadioButtonGroup
                     buttons={buttons}

@@ -62,7 +62,7 @@ const CvesMenu = () => {
 
     return (
         <Menu
-            buttonClass={`bg-base-100 hover:bg-base-200 border border-base-400 btn-class flex font-condensed h-full text-center text-sm text-base-600 ${errorClasses}`}
+            buttonClass={`bg-base-100 hover:bg-base-200 border border-base-400 btn-class flex h-full text-center text-base whitespace-nowrap text-base-600 ${errorClasses}`}
             buttonText={loading ? <Loader className="text-base-100" message="" /> : menuTitle}
             options={options}
             className="h-full min-w-24"

@@ -10,8 +10,6 @@ import { AnyAction, Store } from 'redux';
 import { ConnectedRouter } from 'connected-react-router';
 import { createBrowserHistory as createHistory } from 'history';
 import { ApolloProvider } from '@apollo/client';
-import 'typeface-open-sans';
-import 'typeface-open-sans-condensed';
 import 'react-toastify/dist/ReactToastify.css';
 import 'app.tw.css'; // this file is the main Tailwind entrypoint handled by react-scripts
 import '@patternfly/react-core/dist/styles/base.css';

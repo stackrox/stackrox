@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasOrchestratorFlavor } from '../../helpers/features';
 import searchSelectors from '../../selectors/search';
 
 import {
@@ -13,6 +14,12 @@ import { selectors } from './Compliance.selectors';
 describe('Compliance entities list', () => {
     withAuth();
 
+    before(function beforeHook() {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+    });
+
     it('should filter namespaces table with passing controls', () => {
         visitComplianceEntities('namespaces');
 
@@ -21,7 +28,7 @@ describe('Compliance entities list', () => {
             cy.get(searchSelectors.input).type('Pass').type('{enter}');
         }, 'namespaces');
         cy.get('.rt-tbody .rt-tr').should('not.exist');
-        cy.get('[data-testid="panel-header"]').should('contain', '0 NAMESPACES');
+        cy.get('[data-testid="panel-header"]').should('contain', '0 namespaces');
     });
 
     it('should filter namespaces table with failing controls', () => {
@@ -32,7 +39,7 @@ describe('Compliance entities list', () => {
             cy.get(searchSelectors.input).type('Fail').type('{enter}');
         }, 'namespaces');
         cy.get('.rt-tbody .rt-tr');
-        cy.get('[data-testid="panel-header"]').should('contain', 'NAMESPACE');
+        cy.get('[data-testid="panel-header"]').should('contain', 'namespace');
     });
 
     it('should open/close side panel when clicking on a table row', () => {
@@ -41,14 +48,14 @@ describe('Compliance entities list', () => {
         cy.get(selectors.list.table.firstRowName)
             .invoke('text')
             .then((name) => {
-                cy.get('[data-testid="panel-header"]').should('contain', 'CLUSTER');
+                cy.get('[data-testid="panel-header"]').should('contain', 'cluster');
                 cy.get(selectors.list.table.firstRow).click();
                 cy.get('[data-testid="side-panel"]').should('exist');
                 cy.get('[data-testid="side-panel-header"]').contains(name);
                 cy.get(selectors.widget.relatedEntities).should('not.exist');
                 cy.get('[data-testid="side-panel"] [aria-label="Close"]').click();
                 cy.get('[data-testid="side-panel"]').should('not.exist');
-                cy.get('[data-testid="panel-header"]').should('contain', 'CLUSTER');
+                cy.get('[data-testid="panel-header"]').should('contain', 'cluster');
             });
     });
 

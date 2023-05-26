@@ -117,11 +117,11 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                     >
                                         <li>
                                             <div className="flex flex-row">
-                                                <div className="self-center text-2xl tracking-widest pl-4 pr-4">
+                                                <div className="self-center text-2xl pl-4 pr-4">
                                                     {index + 1}
                                                 </div>
                                                 <div className="flex flex-col truncate pr-4 pb-4 pt-4 text-sm">
-                                                    <span className="text-xs pb-1 italic text-base-500">
+                                                    <span className="text-xs pb-1 text-base-500">
                                                         {item.clusterName}/{item.namespace}
                                                     </span>
                                                     <span className="pb-2">{item.name}</span>
@@ -139,7 +139,7 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                                         }
                                                     >
                                                         {item.deploymentCount > 0 && (
-                                                            <div className="truncate italic">
+                                                            <div className="truncate">
                                                                 {`${
                                                                     item.deploymentCount
                                                                 } ${pluralize(

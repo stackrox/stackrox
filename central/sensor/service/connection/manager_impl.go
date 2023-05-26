@@ -6,6 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller"
@@ -54,22 +55,21 @@ type connectionAndUpgradeController struct {
 type manager struct {
 	connectionsByClusterID      map[string]connectionAndUpgradeController
 	connectionsByClusterIDMutex sync.RWMutex
-	// The message dedupers must live beyond an individual connection
-	messageDedupers map[string]*deduper
-	deduperMutex    sync.Mutex
 
 	clusters            common.ClusterManager
 	networkEntities     common.NetworkEntityManager
 	policies            common.PolicyManager
 	baselines           common.ProcessBaselineManager
 	networkBaselines    common.NetworkBaselineManager
+	manager             hashManager.Manager
 	autoTriggerUpgrades *concurrency.Flag
 }
 
-func newManager() *manager {
+// NewManager returns a new connection manager
+func NewManager(mgr hashManager.Manager) Manager {
 	return &manager{
 		connectionsByClusterID: make(map[string]connectionAndUpgradeController),
-		messageDedupers:        make(map[string]*deduper),
+		manager:                mgr,
 	}
 }
 
@@ -220,25 +220,7 @@ func (m *manager) replaceConnection(ctx context.Context, cluster *storage.Cluste
 	return oldConnection, nil
 }
 
-func (m *manager) getDeduper(clusterID string) *deduper {
-	m.deduperMutex.Lock()
-	defer m.deduperMutex.Unlock()
-
-	if d, ok := m.messageDedupers[clusterID]; ok {
-		return d
-	}
-	msgDeduper := newDeduper()
-	m.messageDedupers[clusterID] = msgDeduper
-	return msgDeduper
-}
-
-func (m *manager) deleteDeduper(clusterID string) {
-	m.deduperMutex.Lock()
-	defer m.deduperMutex.Unlock()
-
-	delete(m.messageDedupers, clusterID)
-}
-
+// CloseConnection is only used when deleting a cluster hence the removal of the deduper
 func (m *manager) CloseConnection(clusterID string) {
 	if conn := m.GetConnection(clusterID); conn != nil {
 		conn.Terminate(errors.New("cluster was deleted"))
@@ -247,16 +229,19 @@ func (m *manager) CloseConnection(clusterID string) {
 		}
 	}
 
-	m.deleteDeduper(clusterID)
+	ctx := sac.WithAllAccess(context.Background())
+	if err := m.manager.Delete(ctx, clusterID); err != nil {
+		log.Errorf("deleting cluster id %q from hash manager: %v", clusterID, err)
+	}
 }
 
 func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.SensorHello, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
 	clusterID := cluster.GetId()
 	clusterName := cluster.GetName()
 
-	msgDeduper := m.getDeduper(clusterID)
 	conn :=
 		newConnection(
+			ctx,
 			sensorHello,
 			cluster,
 			eventPipeline,
@@ -265,7 +250,7 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 			m.policies,
 			m.baselines,
 			m.networkBaselines,
-			msgDeduper)
+			m.manager)
 	ctx = withConnection(ctx, conn)
 
 	oldConnection, err := m.replaceConnection(ctx, cluster, conn)

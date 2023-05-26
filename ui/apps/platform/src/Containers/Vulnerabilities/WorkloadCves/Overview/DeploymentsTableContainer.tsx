@@ -1,28 +1,38 @@
 import React from 'react';
 import { useQuery } from '@apollo/client';
-import { Bullseye, Spinner } from '@patternfly/react-core';
+import { Bullseye, Spinner, Divider } from '@patternfly/react-core';
 
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
-import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getHasSearchApplied } from 'utils/searchUtils';
 import DeploymentsTable, { Deployment, deploymentListQuery } from '../Tables/DeploymentsTable';
 import TableErrorComponent from '../components/TableErrorComponent';
-import { parseQuerySearchFilter } from '../searchUtils';
+import TableEntityToolbar from '../components/TableEntityToolbar';
+import { EntityCounts } from '../components/EntityTypeToggleGroup';
+import { getCveStatusScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
+import { defaultDeploymentSortFields, deploymentsDefaultSort } from '../sortUtils';
+import { DefaultFilters, VulnerabilitySeverityLabel, CveStatusTab } from '../types';
 
-const defaultSortFields = ['Deployment', 'Cluster', 'Namespace'];
+type DeploymentsTableContainerProps = {
+    defaultFilters: DefaultFilters;
+    countsData: EntityCounts;
+    cveStatusTab?: CveStatusTab; // TODO Make this required once Observed/Deferred/FP states are re-implemented
+};
 
-function DeploymentsTableContainer() {
+function DeploymentsTableContainer({
+    defaultFilters,
+    countsData,
+    cveStatusTab,
+}: DeploymentsTableContainerProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
-    const { page, perPage, setPage } = useURLPagination(25);
-    const { sortOption, getSortParams } = useURLSort({
-        sortFields: defaultSortFields,
-        defaultSortOption: {
-            field: 'Deployment',
-            direction: 'asc',
-        },
+    const pagination = useURLPagination(20);
+    const { page, perPage, setPage } = pagination;
+    const { sortOption, getSortParams, setSortOption } = useURLSort({
+        sortFields: defaultDeploymentSortFields,
+        defaultSortOption: deploymentsDefaultSort,
         onSort: () => setPage(1),
     });
 
@@ -30,9 +40,7 @@ function DeploymentsTableContainer() {
         deployments: Deployment[];
     }>(deploymentListQuery, {
         variables: {
-            query: getRequestQueryStringForSearchFilter({
-                ...querySearchFilter,
-            }),
+            query: getCveStatusScopedQueryString(querySearchFilter, cveStatusTab),
             pagination: {
                 offset: (page - 1) * perPage,
                 limit: perPage,
@@ -44,6 +52,15 @@ function DeploymentsTableContainer() {
     const tableData = data ?? previousData;
     return (
         <>
+            <TableEntityToolbar
+                defaultFilters={defaultFilters}
+                countsData={countsData}
+                setSortOption={setSortOption}
+                pagination={pagination}
+                tableRowCount={countsData.deploymentCount}
+                isFiltered={isFiltered}
+            />
+            <Divider component="div" />
             {loading && !tableData && (
                 <Bullseye>
                     <Spinner isSVG />
@@ -53,11 +70,14 @@ function DeploymentsTableContainer() {
                 <TableErrorComponent error={error} message="Adjust your filters and try again" />
             )}
             {tableData && (
-                <DeploymentsTable
-                    deployments={tableData.deployments}
-                    getSortParams={getSortParams}
-                    isFiltered={isFiltered}
-                />
+                <div className="workload-cves-table-container">
+                    <DeploymentsTable
+                        deployments={tableData.deployments}
+                        getSortParams={getSortParams}
+                        isFiltered={isFiltered}
+                        filteredSeverities={searchFilter.Severity as VulnerabilitySeverityLabel[]}
+                    />
+                </div>
             )}
         </>
     );

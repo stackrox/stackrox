@@ -54,6 +54,14 @@ type db struct {
 
 // Begin wraps pgxpool.Pool Begin
 func (d *db) Begin(ctx context.Context) (*Tx, error) {
+	if tx, ok := TxFromContext(ctx); ok {
+		return &Tx{
+			Tx:         tx.Tx,
+			cancelFunc: tx.cancelFunc,
+			mode:       inner,
+		}, nil
+	}
+
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
 	tx, err := d.Pool.Begin(ctx)
@@ -72,7 +80,16 @@ func (d *db) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 	defer cancel()
 
-	ct, err := d.Pool.Exec(ctx, sql, args...)
+	var err error
+	var ct pgconn.CommandTag
+
+	tx, ok := TxFromContext(ctx)
+	if ok {
+		ct, err = tx.Exec(ctx, sql, args...)
+	} else {
+		ct, err = d.Pool.Exec(ctx, sql, args...)
+	}
+
 	if err != nil {
 		incQueryErrors(sql, err)
 		return nil, err
@@ -83,28 +100,39 @@ func (d *db) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.
 // Query wraps pgxpool.Pool Query
 func (d *db) Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
+	rows := &Rows{
+		query:      sql,
+		cancelFunc: cancel,
+	}
+	var err error
+	if tx, ok := TxFromContext(ctx); ok {
+		rows.Rows, err = tx.Query(ctx, sql, args...)
+	} else {
+		rows.Rows, err = d.Pool.Query(ctx, sql, args...)
+	}
 
-	rows, err := d.Pool.Query(ctx, sql, args...)
 	if err != nil {
 		incQueryErrors(sql, err)
 		return nil, err
 	}
-	return &Rows{
-		Rows:       rows,
-		query:      sql,
-		cancelFunc: cancel,
-	}, nil
+	return rows, nil
 }
 
 // QueryRow wraps pgxpool.Pool QueryRow
 func (d *db) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
-	return &Row{
-		Row:        d.Pool.QueryRow(ctx, sql, args...),
+	row := &Row{
 		query:      sql,
 		cancelFunc: cancel,
 	}
+
+	if tx, ok := TxFromContext(ctx); ok {
+		row.Row = tx.QueryRow(ctx, sql, args...)
+	} else {
+		row.Row = d.Pool.QueryRow(ctx, sql, args...)
+	}
+	return row
 }
 
 // Acquire wraps pgxpool.Acquire
@@ -114,7 +142,7 @@ func (d *db) Acquire(ctx context.Context) (*Conn, error) {
 		incQueryErrors("acquire", err)
 		return nil, err
 	}
-	return &Conn{Conn: conn}, nil
+	return &Conn{PgxPoolConn: conn}, nil
 }
 
 // Config wraps pgxpool.Config

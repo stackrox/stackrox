@@ -3,7 +3,7 @@ import entityTypes from 'constants/entityTypes';
 import { getEntityState } from 'test-utils/workflowUtils';
 
 // system under test (SUT)
-import { createOptions, getOption, shouldUseOriginalCase } from './workflowUtils';
+import { createOptions, getOption } from './workflowUtils';
 
 describe('workflowUtils', () => {
     describe('createOptions', () => {
@@ -41,35 +41,6 @@ describe('workflowUtils', () => {
                 label: 'components',
                 link: '/main/configmanagement/components',
             });
-        });
-    });
-
-    describe('shouldUseOriginalCase', () => {
-        it('should be true for a image with a name', () => {
-            const entityName = 'wordpress';
-            const entityType = entityTypes.IMAGE;
-
-            const showInOriginalCase = shouldUseOriginalCase(entityName, entityType);
-
-            expect(showInOriginalCase).toBe(true);
-        });
-
-        it('should be true for a component with a name', () => {
-            const entityName = 'ncurses';
-            const entityType = entityTypes.COMPONENT;
-
-            const showInOriginalCase = shouldUseOriginalCase(entityName, entityType);
-
-            expect(showInOriginalCase).toBe(true);
-        });
-
-        it('should be false for an entity with a name, which is not an image nor compoennt', () => {
-            const entityName = 'ncurses';
-            const entityType = entityTypes.CLUSTER;
-
-            const showInOriginalCase = shouldUseOriginalCase(entityName, entityType);
-
-            expect(showInOriginalCase).toBe(false);
         });
     });
 });

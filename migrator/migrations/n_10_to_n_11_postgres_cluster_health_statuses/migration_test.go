@@ -12,7 +12,6 @@ import (
 	legacy "github.com/stackrox/rox/migrator/migrations/n_10_to_n_11_postgres_cluster_health_statuses/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_10_to_n_11_postgres_cluster_health_statuses/postgres"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
@@ -37,12 +36,6 @@ type postgresMigrationSuite struct {
 var _ suite.TearDownTestSuite = (*postgresMigrationSuite)(nil)
 
 func (s *postgresMigrationSuite) SetupTest() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
-
 	var err error
 	s.legacyDB, err = rocksdb.NewTemp(s.T().Name())
 	s.NoError(err)

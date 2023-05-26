@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/datastore/internal/store"
+	configStore "github.com/stackrox/rox/central/compliance/datastore/internal/store/postgres/compliance_config"
 	domainStore "github.com/stackrox/rox/central/compliance/datastore/internal/store/postgres/domain"
 	metadataStore "github.com/stackrox/rox/central/compliance/datastore/internal/store/postgres/metadata"
 	resultsStore "github.com/stackrox/rox/central/compliance/datastore/internal/store/postgres/results"
@@ -46,6 +47,7 @@ func NewStore(db postgres.DB) store.Store {
 		metadataIndex: metadataStore.NewIndexer(db),
 		results:       resultsStore.New(db),
 		strings:       stringsStore.New(db),
+		config:        configStore.New(db),
 	}
 }
 
@@ -55,6 +57,7 @@ type storeImpl struct {
 	metadataIndex metadataIndex
 	results       resultsStore.Store
 	strings       stringsStore.Store
+	config        configStore.Store
 }
 
 func (s *storeImpl) getDomain(ctx context.Context, domainID string) (*storage.ComplianceDomain, error) {
@@ -75,6 +78,14 @@ func (s *storeImpl) getDomain(ctx context.Context, domainID string) (*storage.Co
 	}
 	domainCache.Add(domainID, domain)
 	return domain, nil
+}
+
+func (s *storeImpl) UpdateConfig(ctx context.Context, config *storage.ComplianceConfig) error {
+	return s.config.Upsert(ctx, config)
+}
+
+func (s *storeImpl) GetConfig(ctx context.Context, id string) (*storage.ComplianceConfig, bool, error) {
+	return s.config.Get(ctx, id)
 }
 
 func (s *storeImpl) getResultsFromMetadata(ctx context.Context, metadata *storage.ComplianceRunMetadata, flags types.GetFlags) (*storage.ComplianceRunResults, error) {

@@ -41,7 +41,6 @@ import (
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	nodeSearch "github.com/stackrox/rox/central/node/datastore/search"
 	nodePostgres "github.com/stackrox/rox/central/node/datastore/store/postgres"
-	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	podMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
 	processBaselineDatastoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
@@ -75,6 +74,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/images/types"
+	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
@@ -129,7 +129,6 @@ func (s *PruningTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 		testingDB := pgtest.ForT(s.T())
 		s.pool = testingDB.DB

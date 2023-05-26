@@ -418,15 +418,13 @@ const processData = (data, entityType, workflowState, showVmUpdates) => {
             const tooltipBody = (
                 <div className="flex-1 border-base-300 overflow-hidden">
                     <div className="mb-2">
-                        <span className="text-base-600 font-700 mr-2 capitalize">
+                        <span className="font-700 mr-2 capitalize">
                             {resourceLabels[entityType]}:
                         </span>
-                        <span className="font-600">{text}</span>
+                        <span>{text}</span>
                     </div>
                     <div>
-                        <span className="text-base-600 font-700 mr-2 mb-1">
-                            Criticality Distribution:
-                        </span>
+                        <span className="font-700 mr-2 mb-1">Criticality Distribution:</span>
                         <div>
                             {critical.total} Critical CVEs ({critical.fixable} Fixable)
                         </div>

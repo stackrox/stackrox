@@ -8,9 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/notifier/processor"
-	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/central/notifiers/splunk"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,6 +20,9 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifier"
+	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/notifiers/splunk"
 	"github.com/stackrox/rox/pkg/secrets"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -51,7 +51,7 @@ type serviceImpl struct {
 	v1.UnimplementedNotifierServiceServer
 
 	storage   datastore.DataStore
-	processor processor.Processor
+	processor notifier.Processor
 	reporter  integrationhealth.Reporter
 
 	buildTimePolicies  detection.PolicySet

@@ -19,12 +19,12 @@ const NumberedGrid = ({ data, history }) => {
         } ${stacked ? 'py-4' : 'py-2 border-r'}`;
         const content = (
             <div className="flex flex-1 items-center">
-                <span className="text-base-600 self-center text-2xl tracking-widest pl-2 pr-4 font-600">
+                <span className="text-base-600 self-center text-2xl pl-2 pr-4 font-600">
                     {index + 1}
                 </span>
                 <div className={`flex flex-1 ${stacked ? 'justify-between' : 'flex-col'}`}>
                     {subText && (
-                        <div className="text-base-500 italic font-600 text-sm mb-1 whitespace-nowrap truncate">
+                        <div className="text-base-500 font-600 text-sm mb-1 whitespace-nowrap truncate">
                             {subText}
                         </div>
                     )}

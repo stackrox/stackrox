@@ -65,7 +65,7 @@ function NetworkPoliciesDetail({ policyIds }: NetworkPoliciesDetailProps): React
                             <Button
                                 className="download uppercase text-primary-600 p-2 text-center text-sm border border-solid bg-primary-200 border-primary-300 hover:bg-primary-100"
                                 onClick={downloadYamlFile(`${name}.yaml`, yaml, 'yaml')}
-                                tabIndex="-1"
+                                tabIndex={-1}
                                 icon={<Download className="h-3 w-3 mr-4" />}
                                 text="Download YAML file"
                             />

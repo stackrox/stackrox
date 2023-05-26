@@ -34,6 +34,7 @@ deploy_central() {
     ./roxctl-"${PREVIOUS_RELEASE}" central generate k8s pvc \
         --lb-type=lb \
         --main-image=quay.io/rhacs-eng/main:"${PREVIOUS_RELEASE}" \
+        --central-db-image=quay.io/rhacs-eng/central-db:"${PREVIOUS_RELEASE}" \
         --scanner-db-image=quay.io/rhacs-eng/scanner-db:"${PREVIOUS_SCANNER_VERSION}" \
         --scanner-image=quay.io/rhacs-eng/scanner:"${PREVIOUS_SCANNER_VERSION}" \
         --output-dir bundle-test1

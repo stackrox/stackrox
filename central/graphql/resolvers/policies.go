@@ -7,10 +7,10 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
-	policyUtils "github.com/stackrox/rox/central/policy/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	mitreUtils "github.com/stackrox/rox/pkg/mitre/utils"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -330,7 +330,7 @@ func (resolver *policyResolver) LatestViolation(ctx context.Context, args RawQue
 
 func (resolver *policyResolver) FullMitreAttackVectors(_ context.Context) ([]*mitreAttackVectorResolver, error) {
 	return resolver.root.wrapMitreAttackVectors(
-		policyUtils.GetFullMitreAttackVectors(resolver.root.mitreStore, resolver.data),
+		mitreUtils.GetFullMitreAttackVectors(resolver.root.mitreStore, resolver.data),
 	)
 }
 

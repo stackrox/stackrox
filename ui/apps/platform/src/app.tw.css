@@ -127,15 +127,12 @@ h6 {
 .react-modal-overlay {
     @apply fixed top-0 left-0 w-full h-full text-base !important;
     background-color: hsla(225, 41%, 32%, 0.82);
-    font-family: Open Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu,
-        Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
     z-index: 9000;
 }
 
 .toast-selector {
     @apply text-base !important;
-    font-family: Open Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu,
-        Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+    font-family: var(--pf-global--FontFamily--sans-serif);
 }
 
 .pill {
@@ -368,7 +365,7 @@ h6 {
 }
 
 .btn-class {
-    @apply inline-flex px-2 rounded-sm font-600 uppercase text-center items-center min-w-16 justify-center border-2 !important;
+    @apply inline-flex px-2 rounded-sm text-center items-center min-w-16 justify-center border-2 !important;
     line-height: 14px; /* required because we were relying on the Chrome browser default of 14px earlier */
 }
 

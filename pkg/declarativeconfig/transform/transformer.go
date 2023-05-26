@@ -24,6 +24,7 @@ func New() Transformer {
 		declarativeconfig.AuthProviderConfiguration:  newAuthProviderTransformer(),
 		declarativeconfig.PermissionSetConfiguration: newPermissionSetTransform(),
 		declarativeconfig.RoleConfiguration:          newRoleTransform(),
+		declarativeconfig.NotifierConfiguration:      newNotifierTransform(),
 	}}
 }
 

@@ -7,16 +7,11 @@ import navSelectors from '../selectors/navigation';
 import { visitMainDashboard } from './main';
 
 const networkGraphClusterAlias = 'networkgraph/cluster/id';
-const networkPoliciesClusterAlias = 'networkpolicies/cluster/id';
 
 const routeMatcherMapForClusterInNetworkGraph = {
     [networkGraphClusterAlias]: {
         method: 'GET',
         url: api.network.networkGraph,
-    },
-    [networkPoliciesClusterAlias]: {
-        method: 'GET',
-        url: api.network.networkPoliciesGraph,
     },
 };
 

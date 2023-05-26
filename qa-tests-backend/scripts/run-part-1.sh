@@ -93,18 +93,9 @@ test_part_1() {
     elif is_in_PR_context; then
         info "In a PR context without ci-all-qa-tests, running BAT tests only..."
         test_target="bat-test"
-    elif is_nightly_run; then
-        info "Nightly tests, running all QA tests..."
-        test_target="test"
-    elif is_tagged; then
-        info "Tagged, running all QA tests..."
-        test_target="test"
-    elif [[ -n "${QA_TEST_TARGET:-}" ]]; then
-        info "Directed to run the '""${QA_TEST_TARGET}""' target..."
-        test_target="${QA_TEST_TARGET}"
     else
-        info "An unexpected context. Defaulting to BAT tests only..."
-        test_target="bat-test"
+        info "Running all QA tests by default..."
+        test_target="test"
     fi
 
     update_job_record "test_target" "${test_target}"

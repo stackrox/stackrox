@@ -20,7 +20,7 @@ import (
 func ReadVersionPostgres(t context.Context, dbName string) (*migrations.MigrationVersion, error) {
 	gc := migGorm.GetConfig()
 
-	ver := migrations.MigrationVersion{MainVersion: "0", SeqNum: 0}
+	ver := migrations.MigrationVersion{MainVersion: "0"}
 	db, err := gc.ConnectWithRetries(dbName)
 	if err != nil {
 		return &ver, nil
@@ -33,7 +33,7 @@ func ReadVersionPostgres(t context.Context, dbName string) (*migrations.Migratio
 func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationVersion, error) {
 	pkgSchema.ApplySchemaForTable(ctx, db, pkgSchema.VersionsSchema.Table)
 	var modelVersion pkgSchema.Versions
-	ver := migrations.MigrationVersion{MainVersion: "0", SeqNum: 0}
+	ver := migrations.MigrationVersion{MainVersion: "0"}
 	result := db.WithContext(ctx).Table(pkgSchema.VersionsSchema.Table).First(&modelVersion)
 	if result.Error != nil {
 		return &ver, nil
@@ -48,6 +48,7 @@ func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationV
 
 	ver.MainVersion = protoVersion.GetVersion()
 	ver.SeqNum = int(protoVersion.GetSeqNum())
+	ver.MinimumSeqNum = int(protoVersion.GetMinSeqNum())
 	ver.LastPersisted = timestamp.FromProtobuf(protoVersion.GetLastPersisted()).GoTime()
 	return &ver, nil
 }
@@ -76,12 +77,7 @@ func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.
 				return err
 			}
 
-			serialized, marshalErr := updatedVersion.Marshal()
-			if marshalErr != nil {
-				return marshalErr
-			}
-
-			result = tx.Exec("INSERT INTO versions (serialized) VALUES($1)", serialized)
+			result = tx.Exec("INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)", updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(), pgutils.NilOrTime(updatedVersion.GetLastPersisted()))
 			return result.Error
 		})
 	})
@@ -95,6 +91,7 @@ func SetCurrentVersionPostgres(ctx context.Context) {
 	newVersion := &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 		Version:       version.GetMainVersion(),
+		MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
 		LastPersisted: timestamp.Now().GogoProtobuf(),
 	}
 	SetVersionPostgres(ctx, migrations.GetCurrentClone(), newVersion)

@@ -6,7 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/roxctl/common/mocks"
+	"github.com/stackrox/rox/roxctl/common/environment/mocks"
+	"github.com/stackrox/rox/roxctl/common/npg"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -40,12 +41,12 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 		},
 		"treating warnings as errors": {
 			inputFolderPath:    "testdata/empty-yamls",
-			expectedSynthError: errNPGWarningsIndicator,
+			expectedSynthError: npg.ErrWarnings,
 			strict:             true,
 		},
 		"stopOnFistError": {
 			inputFolderPath:    "testdata/dirty",
-			expectedSynthError: errNPGErrorsIndicator,
+			expectedSynthError: npg.ErrErrors,
 			stopOnFirstErr:     true,
 		},
 		"output should be written to a single file": {

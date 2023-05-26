@@ -226,6 +226,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 		allowedPackages = appendPackageWithChildren(allowedPackages,
 			"pkg/auth",
 			"pkg/batcher",
+			"pkg/binenc",
 			"pkg/bolthelper",
 			"pkg/booleanpolicy/policyversion",
 			"pkg/buildinfo",
@@ -249,6 +250,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/fsutils",
 			"pkg/grpc/routes",
 			"pkg/images/types",
+			"pkg/ioutils",
 			"pkg/jsonutil",
 			"pkg/logging",
 			"pkg/mathutil",
@@ -256,11 +258,13 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/migrations",
 			"pkg/nodes/converter",
 			"pkg/policyutils",
+			"pkg/postgres/gorm",
 			"pkg/postgres/pgadmin",
 			"pkg/postgres/pgconfig",
 			"pkg/postgres/pgtest",
 			"pkg/postgres/pgutils",
 			"pkg/postgres/walker",
+			"pkg/probeupload",
 			"pkg/process/normalize",
 			"pkg/process/id",
 			"pkg/protoconv",
@@ -302,7 +306,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 
 	if validImportRoot == "tools" {
 		allowedPackages = appendPackageWithChildren(allowedPackages, "central/globaldb", "central/metrics", "central/postgres", "central/role/resources",
-			"sensor/kubernetes/client", "sensor/kubernetes/fake", "sensor/kubernetes/sensor", "sensor/debugger", "sensor/testutils")
+			"sensor/common/sensor", "sensor/common/centralclient", "sensor/kubernetes/client", "sensor/kubernetes/fake", "sensor/kubernetes/sensor", "sensor/debugger", "sensor/testutils")
 	}
 
 	if validImportRoot == "sensor/kubernetes" {

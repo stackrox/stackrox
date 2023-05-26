@@ -511,7 +511,7 @@ func TestUpdateDeclarativeConfigContents_Errors(t *testing.T) {
 		Name:         "Config Map my-cool-config-map",
 		Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 		Status:       storage.IntegrationHealth_UNHEALTHY,
-		ErrorMessage: "unable to unmarshal the configuration: 4 errors occurred:\n\t* yaml: unmarshal errors:\n  line 1: field cool not found in type declarativeconfig.AuthProvider\n  line 2: field value not found in type declarativeconfig.AuthProvider\n\t* yaml: unmarshal errors:\n  line 1: field cool not found in type declarativeconfig.AccessScope\n  line 2: field value not found in type declarativeconfig.AccessScope\n\t* yaml: unmarshal errors:\n  line 1: field cool not found in type declarativeconfig.PermissionSet\n  line 2: field value not found in type declarativeconfig.PermissionSet\n\t* yaml: unmarshal errors:\n  line 1: field cool not found in type declarativeconfig.Role\n  line 2: field value not found in type declarativeconfig.Role\n\n",
+		ErrorMessage: "could not unmarshal configuration into any of the supported types [auth-provider,access-scope,permission-set,role]",
 	}))
 
 	m.UpdateDeclarativeConfigContents("/some/config/dir/to/my-cool-config-map", [][]byte{

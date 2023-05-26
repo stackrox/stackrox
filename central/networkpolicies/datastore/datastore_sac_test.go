@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/search"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
 	boltStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/bolt"
 	pgdbStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
@@ -48,6 +49,7 @@ type networkPolicySACSuite struct {
 
 func (s *networkPolicySACSuite) SetupSuite() {
 	var err error
+	var searcher search.Searcher
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		ctx := context.Background()
 		src := pgtest.GetConnectionString(s.T())
@@ -59,6 +61,7 @@ func (s *networkPolicySACSuite) SetupSuite() {
 		gormDB := pgtest.OpenGormDB(s.T(), src)
 		defer pgtest.CloseGormDB(s.T(), gormDB)
 		s.storage = pgdbStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
+		searcher = search.New(pgdbStore.NewIndexer(s.pool))
 	} else {
 		s.engine, err = bolthelper.NewTemp(s.T().Name() + ".db")
 		s.Require().NoError(err)
@@ -68,7 +71,7 @@ func (s *networkPolicySACSuite) SetupSuite() {
 	undomock := undostoremock.NewMockUndoStore(mockCtrl)
 	undodeploymentmock := undodeploymentstoremock.NewMockUndoDeploymentStore(mockCtrl)
 
-	s.datastore = New(s.storage, undomock, undodeploymentmock)
+	s.datastore = New(s.storage, searcher, undomock, undodeploymentmock)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkPolicy)
 }

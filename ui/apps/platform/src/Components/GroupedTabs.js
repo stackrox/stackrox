@@ -13,7 +13,7 @@ const Tab = ({ text, index, active, to }) => (
             <div
                 className={`${
                     active ? 'text-primary-700' : 'text-base-500 hover:text-base-600'
-                } cursor-pointer uppercase tracking-wide font-700 p-3 flex justify-center`}
+                } cursor-pointer uppercase font-700 p-3 flex justify-center`}
             >
                 {text}
             </div>
@@ -51,7 +51,7 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
                 >
                     {showGroupTab && (
                         <span
-                            className="truncate absolute top-0 z-10 border-l border-t border-r border-base-400 text-2xs tracking-wide py-1 px-2 rounded-t-lg text-base-500 w-full"
+                            className="truncate absolute top-0 z-10 border-l border-t border-r border-base-400 text-2xs py-1 px-2 rounded-t-lg text-base-500 w-full"
                             style={{ transform: 'translateY(-100%)' }}
                         >
                             {group}

@@ -1,6 +1,6 @@
 // styles for forms, until we standardize on UI components for forms
 export const labelClassName = 'block py-2 text-base-600 font-700';
-export const sublabelClassName = 'font-600 italic';
+export const sublabelClassName = 'font-600';
 
 export const wrapperMarginClassName = 'mb-4';
 

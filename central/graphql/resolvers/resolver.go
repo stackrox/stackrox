@@ -33,7 +33,6 @@ import (
 	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentEdgeDataStore "github.com/stackrox/rox/central/imagecomponentedge/datastore"
 	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
-	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
@@ -67,6 +66,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	mitreDataStore "github.com/stackrox/rox/pkg/mitre/datastore"
 )
 
 // Resolver is the root GraphQL resolver
@@ -115,7 +115,7 @@ type Resolver struct {
 	orchestratorIstioCVEManager   fetcher.OrchestratorIstioCVEManager
 	cveMatcher                    *cveMatcher.CVEMatcher
 	manager                       complianceOperatorManager.Manager
-	mitreStore                    mitreDataStore.MitreAttackReadOnlyDataStore
+	mitreStore                    mitreDataStore.AttackReadOnlyDataStore
 	vulnReqMgr                    requestmgr.Manager
 	vulnReqQueryMgr               querymgr.VulnReqQueryManager
 	vulnReqStore                  vulnReqDataStore.DataStore

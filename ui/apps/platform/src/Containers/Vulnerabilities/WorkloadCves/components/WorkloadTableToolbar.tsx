@@ -5,7 +5,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import { uniq } from 'lodash';
 import { DefaultFilters, VulnerabilitySeverityLabel, FixableStatus } from '../types';
 import { Resource } from './FilterResourceDropdown';
-import FilterAutocomplete from './FilterAutocomplete';
+import FilterAutocomplete, { FilterAutocompleteSelectProps } from './FilterAutocomplete';
 import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
 import FilterChips from './FilterChips';
@@ -18,14 +18,17 @@ const emptyDefaultFilters = {
 type FilterType = 'Severity' | 'Fixable';
 type WorkloadTableToolbarProps = {
     defaultFilters?: DefaultFilters;
-    resourceContext?: Resource;
+    supportedResourceFilters?: FilterAutocompleteSelectProps['supportedResourceFilters'];
 };
 
 function WorkloadTableToolbar({
     defaultFilters = emptyDefaultFilters,
-    resourceContext,
+    supportedResourceFilters,
 }: WorkloadTableToolbarProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
+    const searchSeverity = (searchFilter.Severity as VulnerabilitySeverityLabel[]) || [];
+    const searchFixable = (searchFilter.Fixable as FixableStatus[]) || [];
+    const { Severity: defaultSeverity, Fixable: defaultFixable } = defaultFilters;
 
     function onSelect(type: FilterType, e, selection) {
         const { checked } = e.target as HTMLInputElement;
@@ -66,30 +69,19 @@ function WorkloadTableToolbar({
     }
 
     useEffect(() => {
-        if (
-            searchFilter.Severity !== defaultFilters.Severity ||
-            searchFilter.Fixable !== defaultFilters.Fixable
-        ) {
-            const searchSeverity = searchFilter.Severity as VulnerabilitySeverityLabel[];
-            const searchFixable = searchFilter.Fixable as FixableStatus[];
-            const { Severity: defaultSeverity, Fixable: defaultFixable } = defaultFilters;
-            const severityFilter = searchSeverity
-                ? uniq([...defaultSeverity, ...searchSeverity])
-                : defaultSeverity;
-            const fixableFilter = searchFixable
-                ? uniq([...defaultFixable, ...searchFixable])
-                : defaultFixable;
-            setSearchFilter(
-                {
-                    ...defaultFilters,
-                    ...searchFilter,
-                    Severity: severityFilter,
-                    Fixable: fixableFilter,
-                },
-                'replace'
-            );
-        }
-    }, [defaultFilters, searchFilter, setSearchFilter]);
+        const severityFilter = uniq([...defaultSeverity, ...searchSeverity]);
+        const fixableFilter = uniq([...defaultFixable, ...searchFixable]);
+        setSearchFilter(
+            {
+                ...defaultFilters,
+                ...searchFilter,
+                Severity: severityFilter,
+                Fixable: fixableFilter,
+            },
+            'replace'
+        );
+        // unsure how to reset filters with URL filters only on defaultFilter change
+    }, [defaultFilters, setSearchFilter]);
 
     return (
         <Toolbar id="workload-cves-table-toolbar">
@@ -97,14 +89,14 @@ function WorkloadTableToolbar({
                 <FilterAutocomplete
                     searchFilter={searchFilter}
                     setSearchFilter={setSearchFilter}
-                    resourceContext={resourceContext}
+                    supportedResourceFilters={supportedResourceFilters}
                     onDeleteGroup={onDeleteGroup}
                 />
                 <ToolbarGroup>
                     <CVESeverityDropdown searchFilter={searchFilter} onSelect={onSelect} />
                     <CVEStatusDropdown searchFilter={searchFilter} onSelect={onSelect} />
                 </ToolbarGroup>
-                <ToolbarGroup>
+                <ToolbarGroup className="pf-u-w-100">
                     <FilterChips
                         defaultFilters={defaultFilters}
                         searchFilter={searchFilter}

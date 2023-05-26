@@ -38,12 +38,6 @@ func Test{{$namePrefix}}Store(t *testing.T) {
 }
 
 func (s *{{$namePrefix}}StoreSuite) SetupSuite() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 	{{ if .FeatureFlag }}
 	s.T().Setenv(features.{{.FeatureFlag}}.EnvVar(), "true")
 	if !features.{{.FeatureFlag}}.Enabled() {

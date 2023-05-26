@@ -1,13 +1,17 @@
 import qs from 'qs';
 
 import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
-import { VulnerabilitySeverity, vulnerabilitySeverities } from 'types/cve.proto';
+import {
+    VulnerabilitySeverity,
+    VulnerabilityState,
+    vulnerabilitySeverities,
+} from 'types/cve.proto';
 import { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
-import { searchValueAsArray } from 'utils/searchUtils';
+import { searchValueAsArray, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
-import { CveStatusTab, isValidCveStatusTab, QuerySearchFilter } from './types';
+import { CveStatusTab, FixableStatus, isValidCveStatusTab, QuerySearchFilter } from './types';
 
 export type EntityTab = 'CVE' | 'Image' | 'Deployment';
 
@@ -29,14 +33,19 @@ export function getOverviewCvesPath(workloadCvesSearch: WorkloadCvesSearch): str
     return `${vulnerabilitiesWorkloadCvesPath}${getQueryString(workloadCvesSearch)}`;
 }
 
-export function getEntityPagePath(workloadCveEntity: EntityTab, id: string): string {
+export function getEntityPagePath(
+    workloadCveEntity: EntityTab,
+    id: string,
+    queryOptions?: qs.ParsedQs
+): string {
+    const queryString = getQueryString(queryOptions);
     switch (workloadCveEntity) {
         case 'CVE':
-            return `${vulnerabilitiesWorkloadCvesPath}/cves/${id}`;
+            return `${vulnerabilitiesWorkloadCvesPath}/cves/${id}${queryString}`;
         case 'Image':
-            return `${vulnerabilitiesWorkloadCvesPath}/images/${id}`;
+            return `${vulnerabilitiesWorkloadCvesPath}/images/${id}${queryString}`;
         case 'Deployment':
-            return `${vulnerabilitiesWorkloadCvesPath}/deployments/${id}`;
+            return `${vulnerabilitiesWorkloadCvesPath}/deployments/${id}${queryString}`;
         default:
             return ensureExhaustive(workloadCveEntity);
     }
@@ -99,4 +108,42 @@ export function getHiddenSeverities(
     return querySearchFilter.Severity
         ? new Set(vulnerabilitySeverities.filter((s) => !querySearchFilter.Severity?.includes(s)))
         : new Set([]);
+}
+
+export function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<FixableStatus> {
+    const hiddenStatuses = new Set<FixableStatus>([]);
+    const fixableFilters = querySearchFilter?.Fixable ?? [];
+
+    if (fixableFilters.length > 0) {
+        if (!fixableFilters.includes('true')) {
+            hiddenStatuses.add('Fixable');
+        }
+
+        if (!fixableFilters.includes('false')) {
+            hiddenStatuses.add('Not fixable');
+        }
+    }
+
+    return hiddenStatuses;
+}
+
+// Map from the CVE status tab to the backend equivalent search value
+const vulnerabilitySearchStateForCveStatus: Record<CveStatusTab, VulnerabilityState> = {
+    Observed: 'OBSERVED',
+    Deferred: 'DEFERRED',
+    'False Positive': 'FALSE_POSITIVE',
+} as const;
+
+// Returns a search filter string that scopes results to a CVE Workflow state (e.g. 'OBSERVED')
+export function getCveStatusScopedQueryString(
+    searchFilter: QuerySearchFilter,
+    cveStatusTab?: CveStatusTab /* TODO Make this required once Observed/Deferred/FP states are re-implemented */
+): string {
+    const vulnerabilityStateFilter = cveStatusTab
+        ? { 'Vulnerability State': vulnerabilitySearchStateForCveStatus[cveStatusTab] }
+        : {};
+    return getRequestQueryStringForSearchFilter({
+        ...searchFilter,
+        ...vulnerabilityStateFilter,
+    });
 }

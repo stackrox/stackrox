@@ -2,7 +2,11 @@ import static Services.waitForSuspiciousProcessInRiskIndicators
 import static Services.waitForViolation
 import static util.Helpers.evaluateWithRetry
 
+import java.util.concurrent.TimeUnit
+
 import org.apache.commons.lang3.StringUtils
+import org.junit.Rule
+import org.junit.rules.Timeout
 
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass
@@ -91,6 +95,17 @@ class ProcessBaselinesTest extends BaseSpecification {
                      .setEnv(["CLUSTER_NAME": "main"])
                      .addLabel("app", "test"),
             ]
+
+    static final private Integer BASELINE_WAIT_TIME = 100
+    static final private Integer RISK_WAIT_TIME = 240
+
+    // Override the global JUnit test timeout to cover a test instance taking
+    // LONGEST_TEST over three test tries and the appprox. 6
+    // minutes it can take to gather debug when the first test run fails plus
+    // some padding.
+    @Rule
+    @SuppressWarnings(["JUnitPublicProperty"])
+    Timeout globalTimeout = new Timeout(3*(BASELINE_WAIT_TIME + RISK_WAIT_TIME) + 300 + 120, TimeUnit.SECONDS)
 
     def setupSpec() {
         clusterId = ClusterService.getClusterId()
@@ -248,7 +263,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         log.info "Locked Process Baseline after pwd: ${lockProcessBaselines}"
 
         // check for process baseline violation
-        assert waitForViolation(containerName, "Unauthorized Process Execution", 240)
+        assert waitForViolation(containerName, "Unauthorized Process Execution", RISK_WAIT_TIME)
         List<AlertOuterClass.ListAlert> alertList = AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest
                  .newBuilder().build())
         String alertId
@@ -488,7 +503,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         then:
         "verify for suspicious process in risk indicator"
-        RiskOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, 240)
+        RiskOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, RISK_WAIT_TIME)
         assert (result != null)
         // Check that pwd is a risky process
         RiskOuterClass.Risk.Result.Factor pwdFactor =  result.factorsList.find { it.message.contains("pwd") }

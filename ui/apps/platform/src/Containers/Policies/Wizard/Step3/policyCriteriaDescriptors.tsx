@@ -11,6 +11,7 @@ import {
 } from 'messages/common';
 import { FeatureFlagEnvVar } from 'types/featureFlag';
 import ImageSigningTableModal from 'Containers/Policies/Wizard/Step3/ImageSigningTableModal';
+import { LifecycleStage } from 'types/policy.proto';
 
 const equalityOptions: DescriptorOption[] = [
     { label: 'Is greater than', value: '>' },
@@ -47,6 +48,7 @@ const cpuResource = (label: string): GroupDescriptor => ({
         },
     ],
     canBooleanLogic: true,
+    lifecycleStages: ['DEPLOY', 'RUNTIME'],
 });
 
 const capabilities: DescriptorOption[] = [
@@ -115,6 +117,7 @@ const memoryResource = (label: string): GroupDescriptor => ({
         },
     ],
     canBooleanLogic: true,
+    lifecycleStages: ['DEPLOY', 'RUNTIME'],
 });
 
 // TODO Delete after signaturePolicyCriteria type encapsulates its behavior.
@@ -180,6 +183,7 @@ export type BaseDescriptor = {
     canBooleanLogic?: boolean;
     disabled?: boolean;
     featureFlagDependency?: FeatureFlagEnvVar;
+    lifecycleStages: LifecycleStage[];
 };
 
 export type DescriptorType =
@@ -247,6 +251,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: 'docker.io',
         canBooleanLogic: true,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Image remote',
@@ -258,6 +263,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: 'library/nginx',
         canBooleanLogic: true,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Image tag',
@@ -268,6 +274,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: 'latest',
         canBooleanLogic: true,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Not verified by trusted image signers',
@@ -279,6 +286,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         tableType: 'imageSigning',
         component: ImageSigningTableModal,
         canBooleanLogic: true,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Days since image was created',
@@ -289,6 +297,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'number',
         placeholder: '1',
         canBooleanLogic: false,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Days since image was last scanned',
@@ -299,6 +308,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'number',
         placeholder: '1',
         canBooleanLogic: false,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Image user',
@@ -309,6 +319,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: '0',
         canBooleanLogic: false,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Dockerfile line',
@@ -345,6 +356,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             },
         ],
         canBooleanLogic: true,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Image is NOT scanned',
@@ -366,6 +378,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         defaultValue: true,
         disabled: true,
         canBooleanLogic: false,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
         label: 'CVSS',
@@ -389,6 +402,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             },
         ],
         canBooleanLogic: true,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Severity',
@@ -414,6 +428,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         ],
         default: false,
         canBooleanLogic: true,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Fixed by',
@@ -425,6 +440,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: '.*',
         canBooleanLogic: true,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
         label: 'CVE',
@@ -435,6 +451,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: 'CVE-2017-11882',
         canBooleanLogic: true,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Image component',
@@ -457,6 +474,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             },
         ],
         canBooleanLogic: true,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Image OS',
@@ -467,6 +485,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: 'ubuntu:19.04',
         canBooleanLogic: true,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Environment variable',
@@ -499,6 +518,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             },
         ],
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Disallowed annotation',
@@ -521,6 +541,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             },
         ],
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Required label',
@@ -544,6 +565,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             },
         ],
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Required annotation',
@@ -567,6 +589,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             },
         ],
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Runtime class',
@@ -577,6 +600,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: 'kata',
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Volume name',
@@ -587,6 +611,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: 'docker-socket',
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Volume source',
@@ -597,6 +622,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: '/var/run/docker.sock',
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Volume destination',
@@ -607,6 +633,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: '/var/run/docker.sock',
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Volume type',
@@ -617,6 +644,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: 'bind, secret',
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Writable mounted volume',
@@ -638,6 +666,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         defaultValue: false,
         reverse: true,
         canBooleanLogic: false,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         name: 'Mount Propagation',
@@ -650,6 +679,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             value: key,
         })),
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Protocol',
@@ -660,6 +690,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: 'tcp',
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Exposed node port',
@@ -670,6 +701,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: '22',
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Port',
@@ -680,6 +712,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'number',
         placeholder: '22',
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Port Exposure',
@@ -695,6 +728,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
                 value: key,
             })),
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Network baselining enabled',
@@ -710,6 +744,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         defaultValue: false,
         reverse: false,
         canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
     },
     {
         label: 'Ingress Network Policy',
@@ -731,6 +766,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         defaultValue: false,
         canBooleanLogic: false,
         featureFlagDependency: 'ROX_NETPOL_FIELDS',
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Egress Network Policy',
@@ -751,6 +787,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         ],
         defaultValue: false,
         canBooleanLogic: false,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
         featureFlagDependency: 'ROX_NETPOL_FIELDS',
     },
     cpuResource('Container CPU request'),
@@ -777,6 +814,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         defaultValue: true,
         disabled: true,
         canBooleanLogic: false,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Read-only root filesystem',
@@ -798,6 +836,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         defaultValue: false,
         disabled: true,
         canBooleanLogic: false,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Seccomp profile type',
@@ -811,6 +850,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             value: key,
         })),
         canBooleanLogic: false,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Privilege escalation',
@@ -832,6 +872,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         defaultValue: true,
         disabled: true,
         canBooleanLogic: false,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Share host network namespace',
@@ -853,6 +894,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         defaultValue: true,
         disabled: true,
         canBooleanLogic: false,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Share host PID namespace',
@@ -873,6 +915,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         defaultValue: true,
         disabled: true,
         canBooleanLogic: false,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Share host IPC namespace',
@@ -893,6 +936,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         defaultValue: true,
         disabled: true,
         canBooleanLogic: false,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         name: 'Drop Capabilities',
@@ -901,6 +945,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'select',
         options: [...capabilities],
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         name: 'Add Capabilities',
@@ -909,6 +954,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'select',
         options: [...capabilities],
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         name: 'Process Name',
@@ -918,6 +964,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: 'apt-get',
         canBooleanLogic: true,
+        lifecycleStages: ['RUNTIME'],
     },
     {
         name: 'Process Ancestor',
@@ -927,6 +974,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: 'java',
         canBooleanLogic: true,
+        lifecycleStages: ['RUNTIME'],
     },
     {
         name: 'Process Arguments',
@@ -936,6 +984,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: 'install nmap',
         canBooleanLogic: true,
+        lifecycleStages: ['RUNTIME'],
     },
     {
         label: 'Process UID',
@@ -945,6 +994,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: '0',
         canBooleanLogic: true,
+        lifecycleStages: ['RUNTIME'],
     },
     {
         name: 'Writable Host Mount',
@@ -966,6 +1016,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         reverse: true,
         disabled: true,
         canBooleanLogic: false,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Process baselining enabled',
@@ -981,6 +1032,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         defaultValue: false,
         reverse: false,
         canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
     },
     {
         label: 'Service account',
@@ -991,6 +1043,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         category: policyCriteriaCategories.KUBERNETES_ACCESS,
         type: 'text',
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Automount service account token',
@@ -1011,6 +1064,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         ],
         defaultValue: false,
         canBooleanLogic: false,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Minimum RBAC permissions',
@@ -1025,6 +1079,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             value: key,
         })),
         canBooleanLogic: false,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Required image label',
@@ -1047,6 +1102,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             },
         ],
         canBooleanLogic: true,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Disallowed image label',
@@ -1069,6 +1125,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             },
         ],
         canBooleanLogic: true,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Namespace',
@@ -1079,6 +1136,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: 'default',
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Container name',
@@ -1090,6 +1148,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: 'default',
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'AppArmor profile',
@@ -1101,6 +1160,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: 'default',
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Kubernetes action',
@@ -1120,6 +1180,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             },
         ],
         canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
     },
     {
         label: 'Kubernetes user name',
@@ -1129,6 +1190,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
     },
     {
         label: 'Kubernetes user groups',
@@ -1137,6 +1199,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
     },
     {
         label: 'Replicas',
@@ -1160,6 +1223,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             },
         ],
         canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Liveness probe',
@@ -1180,6 +1244,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         ],
         defaultValue: false,
         canBooleanLogic: false,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
         label: 'Readiness probe',
@@ -1200,6 +1265,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         ],
         defaultValue: false,
         canBooleanLogic: false,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
 ];
 
@@ -1222,6 +1288,7 @@ export const auditLogDescriptor: Descriptor[] = [
             },
         ],
         canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
     },
     {
         label: 'Kubernetes API verb',
@@ -1232,6 +1299,7 @@ export const auditLogDescriptor: Descriptor[] = [
         placeholder: 'Select an API verb',
         options: APIVerbs,
         canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
     },
     {
         label: 'Kubernetes resource name',
@@ -1241,6 +1309,7 @@ export const auditLogDescriptor: Descriptor[] = [
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
     },
     {
         label: 'Kubernetes user name',
@@ -1250,6 +1319,7 @@ export const auditLogDescriptor: Descriptor[] = [
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
     },
     {
         label: 'Kubernetes user group',
@@ -1258,6 +1328,7 @@ export const auditLogDescriptor: Descriptor[] = [
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
     },
     {
         label: 'User agent',
@@ -1267,6 +1338,7 @@ export const auditLogDescriptor: Descriptor[] = [
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
     },
     {
         label: 'Source IP address',
@@ -1276,6 +1348,7 @@ export const auditLogDescriptor: Descriptor[] = [
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
     },
     {
         label: 'Is impersonated user',
@@ -1288,5 +1361,6 @@ export const auditLogDescriptor: Descriptor[] = [
             { text: 'False', value: false },
         ],
         canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
     },
 ];

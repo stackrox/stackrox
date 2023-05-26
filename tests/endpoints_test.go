@@ -185,14 +185,15 @@ func (c *endpointsTestCase) runConnectionTest(t *testing.T, testCtx *endpointsTe
 	// Test connecting with all invalid server names
 	invalidServerNames := set.NewStringSet(testCtx.allServerNames...)
 	invalidServerNames.RemoveAll(c.validServerNames...)
+	nameErr := &x509.HostnameError{}
 	for serverName := range invalidServerNames {
 		tlsConf := testCtx.tlsConfig(c.clientCert, serverName, true)
 		conn, err := tls.DialWithDialer(&dialer, "tcp", c.endpoint(), tlsConf)
 		if conn != nil {
 			_ = conn.Close()
 		}
-		_, ok := err.(x509.HostnameError)
-		assert.True(t, ok, "expected error to be of type x509.HostnameError, was: %T (%v)", err, err)
+		require.Error(t, err)
+		assert.ErrorAs(t, err, nameErr, "expected error to be of type x509.HostnameError, was: %T (%v)", err, err)
 	}
 }
 

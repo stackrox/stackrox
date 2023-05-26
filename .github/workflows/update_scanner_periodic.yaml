@@ -36,8 +36,7 @@ jobs:
         labels: |
           ci-all-qa-tests
           dependencies
-        team-reviewers: |
-          scanner-dep-updaters
+        team-reviewers: scanner
         draft: false
     - name: Enable Pull Request Automerge
       if: steps.cpr.outputs.pull-request-operation == 'created'

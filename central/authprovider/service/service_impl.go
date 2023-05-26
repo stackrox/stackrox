@@ -314,7 +314,8 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 		return nil, err
 	}
 
-	clientState, testMode := idputil.ParseClientState(clientState)
+	clientState, mode := idputil.ParseClientState(clientState)
+	testMode := mode == idputil.TestAuthMode
 	response := &v1.ExchangeTokenResponse{
 		ClientState: clientState,
 		Test:        testMode,

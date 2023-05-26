@@ -9,7 +9,6 @@ import (
 	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
-	mitreMocks "github.com/stackrox/rox/central/mitre/datastore/mocks"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	detectionMocks "github.com/stackrox/rox/pkg/detection/mocks"
+	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
@@ -48,7 +48,7 @@ type PolicyServiceTestSuite struct {
 	suite.Suite
 	policies              *mocks.MockDataStore
 	clusters              *clusterMocks.MockDataStore
-	mitreVectorStore      *mitreMocks.MockMitreAttackReadOnlyDataStore
+	mitreVectorStore      *mitreMocks.MockAttackReadOnlyDataStore
 	mockBuildTimePolicies *detectionMocks.MockPolicySet
 	mockLifecycleManager  *lifecycleMocks.MockManager
 	mockConnectionManager *connectionMocks.MockManager
@@ -68,7 +68,7 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 	s.mockBuildTimePolicies = detectionMocks.NewMockPolicySet(s.mockCtrl)
 	s.mockLifecycleManager = lifecycleMocks.NewMockManager(s.mockCtrl)
 	s.mockConnectionManager = connectionMocks.NewMockManager(s.mockCtrl)
-	s.mitreVectorStore = mitreMocks.NewMockMitreAttackReadOnlyDataStore(s.mockCtrl)
+	s.mitreVectorStore = mitreMocks.NewMockAttackReadOnlyDataStore(s.mockCtrl)
 
 	s.tested = New(
 		s.policies,

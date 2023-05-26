@@ -17,10 +17,10 @@ repositories {
 
 def grpcVersion = '1.21.0'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
-def protocVersion = '3.22.3'
-def protobufVersion = '3.22.3'
+def protocVersion = '3.23.1'
+def protobufVersion = '3.23.1'
 def nettyTcNativeVersion = '2.0.45.Final'
-def fabric8Version = '6.5.1'
+def fabric8Version = '6.6.2'
 def jacksonVersion = '2.14.2'
 
 protobuf {
@@ -60,7 +60,7 @@ sourceSets.each { ss ->
 dependencies {
     // grpc and protobuf
     implementation 'com.google.code.gson:gson:2.10.1'
-    implementation "com.google.api.grpc:proto-google-common-protos:2.17.0"
+    implementation "com.google.api.grpc:proto-google-common-protos:2.19.0"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
@@ -69,7 +69,7 @@ dependencies {
     implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     implementation "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 
-    implementation platform('org.apache.groovy:groovy-bom:4.0.11')
+    implementation platform('org.apache.groovy:groovy-bom:4.0.12')
     implementation 'org.apache.groovy:groovy'
     implementation platform("org.spockframework:spock-bom:2.3-groovy-4.0")
     implementation "org.spockframework:spock-core"
@@ -132,7 +132,7 @@ tasks.withType(Test) {
         exceptionFormat "full"
         events "passed", "skipped", "failed"
     }
-    timeout = Duration.ofHours(3)
+    timeout = Duration.ofMinutes(210)
 
     // This ensures that repeated invocations of tests actually run the tests.
     // Otherwise, if the tests pass, Gradle "caches" the result and doesn't actually run the tests,

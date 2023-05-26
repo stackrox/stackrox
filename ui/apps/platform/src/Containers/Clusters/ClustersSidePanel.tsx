@@ -337,11 +337,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!selectedClusterId}>
             <PanelNew testid="clusters-side-panel">
                 <PanelHead>
-                    <PanelTitle
-                        isUpperCase={false}
-                        testid="clusters-side-panel-header"
-                        text={selectedClusterName}
-                    />
+                    <PanelTitle testid="clusters-side-panel-header" text={selectedClusterName} />
                     <PanelHeadEnd>
                         {panelButtons}
                         <CloseButton

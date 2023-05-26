@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import pluralize from 'pluralize';
+import upperFirst from 'lodash/upperFirst';
 import startCase from 'lodash/startCase';
 
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
@@ -65,8 +66,8 @@ const WorkflowListPageLayout = ({ location }) => {
     const sidePanelPaging = workflowState.paging[pagingParams.sidePanel];
     const selectedRow = workflowState.getSelectedTableRow();
 
-    const header = pluralize(entityLabels[pageListType]);
-    const exportFilename = `${useCaseLabels[useCase]} ${pluralize(startCase(header))} Report`;
+    const header = upperFirst(pluralize(entityLabels[pageListType]));
+    const exportFilename = `${useCaseLabels[useCase]} ${startCase(header)} Report`;
     const entityContext = {};
 
     function customCsvExportHandler(fileName) {
@@ -102,7 +103,7 @@ const WorkflowListPageLayout = ({ location }) => {
             <div className="flex flex-col relative h-full">
                 <PageHeader
                     header={header}
-                    subHeader="Entity List"
+                    subHeader="Entity list"
                     classes="pr-0 ignore-react-onclickoutside"
                 >
                     <div className="flex flex-1 justify-end h-full">

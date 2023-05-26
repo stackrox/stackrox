@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/auth"
+	"github.com/stackrox/rox/roxctl/common/config"
 	io2 "github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"google.golang.org/grpc"
@@ -15,7 +17,7 @@ import (
 //go:generate mockgen-wrapper
 type Environment interface {
 	// HTTPClient returns a interfaces.RoxctlHTTPClient
-	HTTPClient(timeout time.Duration) (common.RoxctlHTTPClient, error)
+	HTTPClient(timeout time.Duration, method ...auth.Method) (common.RoxctlHTTPClient, error)
 
 	// GRPCConnection returns an authenticated grpc.ClientConn
 	GRPCConnection() (*grpc.ClientConn, error)
@@ -31,4 +33,7 @@ type Environment interface {
 
 	// ConnectNames returns the endpoint and (SNI) server name
 	ConnectNames() (string, string, error)
+
+	// ConfigStore returns a config.Store which will handle reading / writing configuration from a configuration file.
+	ConfigStore() (config.Store, error)
 }

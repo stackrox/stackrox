@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -19,10 +18,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common/centralclient"
+	commonSensor "github.com/stackrox/rox/sensor/common/sensor"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/debugger/message"
@@ -87,6 +91,7 @@ type localSensorConfig struct {
 	NoCPUProfile       bool
 	NoMemProfile       bool
 	PprofServer        bool
+	CentralEndpoint    string
 }
 
 const (
@@ -155,6 +160,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 		NoCPUProfile:       false,
 		NoMemProfile:       false,
 		PprofServer:        false,
+		CentralEndpoint:    "",
 	}
 	flag.BoolVar(&sensorConfig.NoCPUProfile, "no-cpu-prof", sensorConfig.NoCPUProfile, "disables producing CPU profile for performance analysis")
 	flag.BoolVar(&sensorConfig.NoMemProfile, "no-mem-prof", sensorConfig.NoMemProfile, "disables producing memory profile for performance analysis")
@@ -173,6 +179,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.StringVar(&sensorConfig.FakeWorkloadFile, "with-fakeworkload", sensorConfig.FakeWorkloadFile, " a file containing a FakeWorkload definition")
 	flag.BoolVar(&sensorConfig.WithMetrics, "with-metrics", sensorConfig.WithMetrics, "enables the metric server")
 	flag.BoolVar(&sensorConfig.PprofServer, "with-pprof-server", sensorConfig.PprofServer, "enables the pprof server on port :6060")
+	flag.StringVar(&sensorConfig.CentralEndpoint, "connect-central", sensorConfig.CentralEndpoint, "connects to a Central instance rather than a fake Central")
 	flag.Parse()
 
 	sensorConfig.CentralOutput = path.Clean(sensorConfig.CentralOutput)
@@ -213,7 +220,7 @@ func writeMemoryProfile() {
 	log.Printf("Wrote memory profile")
 }
 
-func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, outfile string, outputFormat string, cancelFunc context.CancelFunc) {
+func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, outfile string, outputFormat string, cancelFunc context.CancelFunc, sensor *commonSensor.Sensor) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	<-ctx.Done()
@@ -223,9 +230,12 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 	if writeMemProfile {
 		writeMemoryProfile()
 	}
+	sensor.Stop()
 	pprof.StopCPUProfile()
-	allMessages := fakeCentral.GetAllMessages()
-	dumpMessages(allMessages, startTime, endTime, outfile, outputFormat)
+	if fakeCentral != nil {
+		allMessages := fakeCentral.GetAllMessages()
+		dumpMessages(allMessages, startTime, endTime, outfile, outputFormat)
+	}
 	os.Exit(0)
 }
 
@@ -278,41 +288,23 @@ func main() {
 	}
 
 	startTime := time.Now()
-	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "tools/local-sensor/certs/cert.pem"))
-	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "tools/local-sensor/certs/key.pem"))
-	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "tools/local-sensor/certs/caCert.pem"))
-	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_KEY_FILE", "tools/local-sensor/certs/caKey.pem"))
 
-	var policies []*storage.Policy
-	if localConfig.PoliciesFile != "" {
-		policies, err = testutils.GetPoliciesFromFile(localConfig.PoliciesFile)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	}
+	isFakeCentral := localConfig.CentralEndpoint == ""
 
-	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
-		message.SensorHello("00000000-0000-4000-A000-000000000000"),
-		message.ClusterConfig(),
-		message.PolicySync(policies),
-		message.BaselineSync([]*storage.ProcessBaseline{}))
-
-	if localConfig.Verbose {
-		fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
-			log.Printf("MESSAGE RECEIVED: %s\n", msg.String())
-		})
+	var connection centralclient.CentralConnectionFactory
+	var spyCentral *centralDebug.FakeService
+	if isFakeCentral {
+		connection, spyCentral = setupCentralWithFakeConnection(localConfig)
+		defer spyCentral.Stop()
+	} else {
+		connection = setupCentralWithRealConnection(localConfig)
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	go registerHostKillSignals(startTime, fakeCentral, !localConfig.NoMemProfile, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc)
-
-	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(fakeCentral)
-	defer shutdownFakeServer()
-	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
 	sensorConfig := sensor.ConfigWithDefaults().
 		WithK8sClient(fakeClient).
-		WithCentralConnectionFactory(fakeConnectionFactory).
+		WithCentralConnectionFactory(connection).
 		WithLocalSensor(true).
 		WithResyncPeriod(localConfig.ResyncPeriod).
 		WithWorkloadManager(workloadManager)
@@ -370,17 +362,84 @@ func main() {
 	}
 
 	go s.Start()
-	defer s.Stop()
+	go registerHostKillSignals(startTime, spyCentral, !localConfig.NoMemProfile, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc, s)
 
-	spyCentral.ConnectionStarted.Wait()
+	if spyCentral != nil {
+		spyCentral.ConnectionStarted.Wait()
+	}
 
 	log.Printf("Running scenario for %f minutes\n", localConfig.Duration.Minutes())
-	<-time.Tick(localConfig.Duration)
-	endTime := time.Now()
-	allMessages := fakeCentral.GetAllMessages()
-	dumpMessages(allMessages, startTime, endTime, localConfig.CentralOutput, localConfig.OutputFormat)
+	select {
+	case <-time.Tick(localConfig.Duration):
+		s.Stop()
+		break
+	case <-s.Stopped().Done():
+		break
+	}
 
-	spyCentral.KillSwitch.Signal()
+	if spyCentral != nil {
+		endTime := time.Now()
+		allMessages := spyCentral.GetAllMessages()
+		dumpMessages(allMessages, startTime, endTime, localConfig.CentralOutput, localConfig.OutputFormat)
+
+		spyCentral.KillSwitch.Signal()
+	}
+}
+
+func setupCentralWithRealConnection(localConfig localSensorConfig) centralclient.CentralConnectionFactory {
+	// These files depend on running `tools/local-sensor/scripts/fetch-certs.sh`.
+	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "tmp/sensor-cert.pem"))
+	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "tmp/sensor-key.pem"))
+	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "tmp/ca.pem"))
+
+	utils.CrashOnError(os.Setenv("ROX_HELM_CONFIG_FILE_OVERRIDE", "tmp/helm-config.yaml"))
+	utils.CrashOnError(os.Setenv("ROX_HELM_CLUSTER_NAME_FILE_OVERRIDE", "tmp/helm-name.yaml"))
+
+	utils.CrashOnError(os.Setenv("ROX_CERTIFICATE_CACHE_DIR", "tmp/.local-sensor-cache"))
+
+	utils.CrashOnError(os.Setenv("ROX_CENTRAL_ENDPOINT", localConfig.CentralEndpoint))
+
+	clientconn.SetUserAgent(clientconn.Sensor)
+	centralConnFactory, err := centralclient.NewCentralConnectionFactory(env.CentralEndpoint.Setting())
+	if err != nil {
+		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing gRPC client to endpoint %s", env.CentralEndpoint.Setting()))
+	}
+
+	return centralConnFactory
+}
+
+func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclient.CentralConnectionFactory, *centralDebug.FakeService) {
+	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "tools/local-sensor/certs/cert.pem"))
+	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "tools/local-sensor/certs/key.pem"))
+	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "tools/local-sensor/certs/caCert.pem"))
+	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_KEY_FILE", "tools/local-sensor/certs/caKey.pem"))
+
+	var policies []*storage.Policy
+	var err error
+	if localConfig.PoliciesFile != "" {
+		policies, err = testutils.GetPoliciesFromFile(localConfig.PoliciesFile)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
+
+	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
+		message.SensorHello("00000000-0000-4000-A000-000000000000"),
+		message.ClusterConfig(),
+		message.PolicySync(policies),
+		message.BaselineSync([]*storage.ProcessBaseline{}))
+
+	if localConfig.Verbose {
+		fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
+			log.Printf("MESSAGE RECEIVED: %s\n", msg.String())
+		})
+	}
+
+	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(fakeCentral)
+	fakeCentral.OnShutdown(shutdownFakeServer)
+	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
+
+	return fakeConnectionFactory, spyCentral
 }
 
 type sensorMessageJSONOutput struct {

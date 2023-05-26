@@ -49,6 +49,7 @@ type Manager interface {
 
 	IsStandardActive(standardID string) bool
 	IsStandardActiveForCluster(standardID, clusterID string) bool
+	IsStandardHidden(ctx context.Context, standardID string) bool
 
 	GetMachineConfigs(clusterID string) (map[string][]string, error)
 }
@@ -347,6 +348,14 @@ func (m *managerImpl) IsStandardActive(standardID string) bool {
 		return false
 	}
 	return found
+}
+
+func (m *managerImpl) IsStandardHidden(ctx context.Context, standardID string) bool {
+	standard, exists, _ := m.compliance.GetConfig(ctx, standardID)
+	if exists {
+		return standard.GetHideScanResults()
+	}
+	return false
 }
 
 func (m *managerImpl) IsStandardActiveForCluster(standardID, clusterID string) bool {

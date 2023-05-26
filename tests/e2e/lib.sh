@@ -96,11 +96,11 @@ export_test_environment() {
 
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
+    ci_export ROX_DISABLE_COMPLIANCE_STANDARDS "${ROX_DISABLE_COMPLIANCE_STANDARDS:-true}"
     ci_export ROX_NETWORK_GRAPH_PATTERNFLY "${ROX_NETWORK_GRAPH_PATTERNFLY:-true}"
     ci_export ROX_QUAY_ROBOT_ACCOUNTS "${ROX_QUAY_ROBOT_ACCOUNTS:-true}"
-    ci_export ROX_SYSTEM_HEALTH_PF "${ROX_SYSTEM_HEALTH_PF:-true}"
     ci_export ROX_SYSLOG_EXTRA_FIELDS "${ROX_SYSLOG_EXTRA_FIELDS:-true}"
-    ci_export ROX_VULN_MGMT_REPORTING_ENHANCEMENTS "${ROX_VULN_MGMT_REPORTING_ENHANCEMENTS:-true}"
+    ci_export ROX_VULN_MGMT_REPORTING_ENHANCEMENTS "${ROX_VULN_MGMT_REPORTING_ENHANCEMENTS:-false}"
     ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
 
     if [[ -z "${BUILD_TAG:-}" ]]; then
@@ -455,14 +455,14 @@ check_for_stackrox_OOMs() {
     objects=$(ls "$dir"/stackrox/pods/*_object.json || true)
     if [[ -n "$objects" ]]; then
         for object in $objects; do
-            local pod_name
+            local app_name
             # This wack jq slurp flag with the if statement is due to https://github.com/stedolan/jq/issues/1142
-            if pod_name=$(jq -ser 'if . == [] then null else .[] | select(.kind=="Pod") | .metadata.name end' "$object"); then
-                info "Checking $pod_name for OOMKilled"
+            if app_name=$(jq -ser 'if . == [] then null else .[] | select(.kind=="Pod") | .metadata.labels["app"] end' "$object"); then
+                info "Checking $object for OOMKilled"
                 if jq -e '. | select(.status.containerStatuses[].lastState.terminated.reason=="OOMKilled")' "$object" >/dev/null 2>&1; then
-                    save_junit_failure "OOMCheck-$pod_name" "OOMCheck" "$pod_name was OOMKilled"
+                    save_junit_failure "OOM Check" "Check for $app_name OOM kills" "A container of $app_name was OOM killed"
                 else
-                    save_junit_success "OOMCheck-$pod_name" "$pod_name was not OOMKilled"
+                    save_junit_success "OOM Check" "Check for $app_name OOM kills"
                 fi
             else
                 echo "found $object that isn't a pod object"

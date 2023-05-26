@@ -177,12 +177,6 @@ func TestEnricherFlow(t *testing.T) {
 }
 
 func TestEnricherFlowWithPostgres(t *testing.T) {
-	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip postgres store tests")
-		t.SkipNow()
-	}
 
 	cases := []struct {
 		name string
@@ -387,12 +381,6 @@ func TestFillScanStats(t *testing.T) {
 }
 
 func TestFillScanStatsWithPostgres(t *testing.T) {
-	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip postgres store tests")
-		t.SkipNow()
-	}
 
 	cases := []struct {
 		node                 *storage.Node

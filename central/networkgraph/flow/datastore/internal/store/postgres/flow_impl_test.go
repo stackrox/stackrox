@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/testcommon"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -17,12 +16,6 @@ import (
 
 func TestFlowStore(t *testing.T) {
 	ctx := context.Background()
-	t.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip postgres store tests")
-		t.SkipNow()
-	}
 
 	source := pgtest.GetConnectionString(t)
 	config, _ := postgres.ParseConfig(source)

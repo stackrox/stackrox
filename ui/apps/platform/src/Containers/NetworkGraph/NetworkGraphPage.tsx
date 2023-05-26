@@ -17,11 +17,7 @@ import { timeWindows } from 'constants/timeWindows';
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import useURLSearch from 'hooks/useURLSearch';
-import {
-    fetchNetworkFlowGraph,
-    fetchNetworkPolicyGraph,
-    fetchNodeUpdates,
-} from 'services/NetworkService';
+import { fetchNetworkFlowGraph, fetchNodeUpdates } from 'services/NetworkService';
 import queryService from 'utils/queryService';
 import timeWindowToDate from 'utils/timeWindows';
 import { isCompleteSearchFilter } from 'utils/searchUtils';
@@ -62,12 +58,17 @@ const includePorts = true;
 // for MVP, always show Orchestrator Components
 const ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS = true;
 
+// This is a query param used to add policy data in the response for the network graph data
+const INCLUDE_POLICIES = true;
+
 function NetworkGraphPage() {
     const [edgeState, setEdgeState] = useState<EdgeState>('active');
     const [displayOptions, setDisplayOptions] = useState<DisplayOption[]>([
         'policyStatusBadge',
         'externalBadge',
         'edgeLabel',
+        'selectionIndicator',
+        'objectTypeLabel',
     ]);
     const [models, setModels] = useState<Models>({
         activeModel: emptyModel,
@@ -156,6 +157,7 @@ function NetworkGraphPage() {
                 const timestampToUse = timeWindowToDate(timeWindow);
 
                 Promise.all([
+                    // fetch the network graph data used for the active graph
                     fetchNetworkFlowGraph(
                         selectedClusterId,
                         namespacesFromUrl,
@@ -165,34 +167,28 @@ function NetworkGraphPage() {
                         includePorts,
                         ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS
                     ),
-                    fetchNetworkPolicyGraph(
+                    // fetch the network graph data, including policies, for the inactive graph
+                    fetchNetworkFlowGraph(
                         selectedClusterId,
                         namespacesFromUrl,
                         deploymentsFromUrl,
                         queryToUse,
                         undefined,
                         includePorts,
-                        ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS
+                        ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS,
+                        INCLUDE_POLICIES
                     ),
                 ])
                     .then((values) => {
                         // get policy nodes, and the starting epoch, from policy graph API response
                         const { nodes: policyNodes, epoch } = values[1].response;
                         // transform policy data to DataModel
-                        const { policyDataModel, policyNodeMap } = transformPolicyData(
-                            policyNodes,
-                            deploymentsFromUrl
-                        );
+                        const { policyDataModel, policyNodeMap } = transformPolicyData(policyNodes);
                         // get active nodes from network flow graph API response
                         const { nodes: activeNodes } = values[0].response;
                         // transform active data to DataModel
                         const { activeDataModel, activeEdgeMap, activeNodeMap } =
-                            transformActiveData(
-                                activeNodes,
-                                policyNodeMap,
-                                namespacesFromUrl,
-                                deploymentsFromUrl
-                            );
+                            transformActiveData(activeNodes, policyNodeMap, namespacesFromUrl);
 
                         // create extraneous flows graph
                         const extraneousFlowsDataModel = createExtraneousFlowsModel(

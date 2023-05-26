@@ -39,12 +39,12 @@ message NetworkNode {
 }
 
 message NetworkGraphRequest {
-    string cluster_id               = 1;
-    string query                    = 2;
-    google.protobuf.Timestamp since = 3;
-
-    bool              include_ports = 4;
-    NetworkGraphScope scope         = 5;
+    string                    cluster_id       = 1;
+    string                    query            = 2;
+    google.protobuf.Timestamp since            = 3;
+    bool                      include_ports    = 4;
+    NetworkGraphScope         scope            = 5;
+    bool                      include_policies = 6;
 }
 
 message NetworkGraph {

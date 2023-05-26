@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 )
 
@@ -33,6 +34,21 @@ func NewMockStore(ctrl *gomock.Controller) *MockStore {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
+}
+
+// Count mocks base method.
+func (m *MockStore) Count(ctx context.Context) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Count", ctx)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Count indicates an expected call of Count.
+func (mr *MockStoreMockRecorder) Count(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStore)(nil).Count), ctx)
 }
 
 // Delete mocks base method.
@@ -63,6 +79,21 @@ func (m *MockStore) Get(ctx context.Context, id string) (*storage.NetworkPolicy,
 func (mr *MockStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
+}
+
+// GetByQuery mocks base method.
+func (m *MockStore) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkPolicy, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByQuery", ctx, query)
+	ret0, _ := ret[0].([]*storage.NetworkPolicy)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByQuery indicates an expected call of GetByQuery.
+func (mr *MockStoreMockRecorder) GetByQuery(ctx, query interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQuery", reflect.TypeOf((*MockStore)(nil).GetByQuery), ctx, query)
 }
 
 // Upsert mocks base method.
