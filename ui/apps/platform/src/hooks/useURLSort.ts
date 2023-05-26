@@ -47,6 +47,10 @@ function isDirection(val: unknown): val is 'asc' | 'desc' {
     return val === 'asc' || val === 'desc';
 }
 
+function isAggregate(val: unknown): val is SortAggregate {
+    return !!(typeof val === 'object' && val !== null && 'aggregateBy' in val);
+}
+
 function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps): UseURLSortResult {
     const [sortOption, setSortOption] = useURLParameter('sortOption', defaultSortOption);
 
@@ -60,9 +64,13 @@ function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps):
         isParsedQs(sortOption) && isDirection(sortOption?.direction)
             ? sortOption.direction
             : defaultSortOption.direction;
+    const activeAggregateBy =
+        isParsedQs(sortOption) && isAggregate(sortOption?.aggregateBy)
+            ? sortOption?.aggregateBy
+            : undefined;
 
     const internalSortResultOption = useRef<ApiSortOption>(
-        tableSortOption(activeSortField, activeSortDirection, sortOption?.aggregateBy)
+        tableSortOption(activeSortField, activeSortDirection, activeAggregateBy)
     );
 
     // we'll use this to map the sort fields to an index PatternFly can use internally
@@ -111,7 +119,7 @@ function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps):
         internalSortResultOption.current = tableSortOption(
             activeSortField,
             activeSortDirection,
-            sortOption?.aggregateBy
+            activeAggregateBy
         );
     }
 

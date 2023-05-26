@@ -1,4 +1,4 @@
-import { SortAggregate } from './table';
+import { AggregateFunc } from './table';
 
 /*
  * Examples of search filter object properties parsed from search query string:
@@ -22,7 +22,10 @@ export type SearchEntry = {
 
 export type ApiSortOption = {
     field: string;
-    aggregateBy?: SortAggregate;
+    aggregateBy?: {
+        aggregateFunc: AggregateFunc;
+        distinct?: boolean;
+    };
     reversed: boolean;
 };
 

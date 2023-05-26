@@ -7,7 +7,7 @@ export type AggregateFunc = 'max' | 'count' | 'min';
 
 export type SortAggregate = {
     aggregateFunc: AggregateFunc;
-    distinct?: boolean;
+    distinct?: 'true' | 'false';
 };
 
 export type SortOption = {
