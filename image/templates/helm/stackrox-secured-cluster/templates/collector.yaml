@@ -67,6 +67,15 @@ spec:
         - mountPath: /host/var/run/docker.sock
           name: var-run-docker-sock
           readOnly: true
+        - mountPath: /host/run/crio/crio.sock
+          name: run-crio-sock
+          readOnly: true
+        - mountPath: /host/run/containerd/containerd.sock
+          name: run-containerd-sock
+          readOnly: true
+        - mountPath: /host/run/k3s/containerd/containerd.sock
+          name: run-k3s-containerd-sock
+          readOnly: true
         - mountPath: /host/proc
           name: proc-ro
           readOnly: true
@@ -175,6 +184,15 @@ spec:
       - hostPath:
           path: /var/run/docker.sock
         name: var-run-docker-sock
+      - hostPath:
+          path: /run/crio/crio.sock
+        name: run-crio-sock
+      - hostPath:
+          path: /run/containerd/containerd.sock
+        name: run-containerd-sock
+      - hostPath:
+          path: /run/k3s/containerd/containerd.sock
+        name: run-k3s-containerd-sock
       - hostPath:
           path: /proc
         name: proc-ro
