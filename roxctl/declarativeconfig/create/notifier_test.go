@@ -24,7 +24,7 @@ func TestCreateNotifier_Failures(t *testing.T) {
 				"--name=some-name",
 				"--splunk-token=token",
 			},
-			errOut: `Error: missing endpoint
+			errOut: `Error: required flag(s) "splunk-endpoint" not set
 `,
 		},
 	}
@@ -87,10 +87,12 @@ generic:
 			args: []string{"notifier", "splunk",
 				"--name=some-name",
 				"--splunk-endpoint=some-endpoint",
+				"--splunk-token=some-token",
 				"--source-types=k2=v2,k1=v1",
 			},
 			expectedYAML: `name: some-name
 splunk:
+    token: some-token
     endpoint: some-endpoint
     sourceTypes:
         - key: k1

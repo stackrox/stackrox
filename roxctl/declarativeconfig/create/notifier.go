@@ -216,9 +216,6 @@ func (n *notifierCmd) validate() error {
 	if _, err := url.Parse(n.sc.HTTPEndpoint); err != nil {
 		return errox.InvalidArgs.New("parsing notifier Splunk endpoint URL").CausedBy(err)
 	}
-	if n.sc.HTTPEndpoint == "" && n.sc.HTTPToken != "" {
-		return errox.InvalidArgs.New("missing endpoint")
-	}
 	return nil
 }
 
