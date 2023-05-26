@@ -26,7 +26,7 @@ function AccessControl(): ReactElement {
                         <List>
                             <ListItem>
                                 <b>Access</b> replaces{' '}
-                                <b>AuthProvider, Group, Licenses, and User</b>
+                                <b>AuthProvider, Group, Licenses, Role, and User</b>
                             </ListItem>
                             <ListItem>
                                 <b>Administration</b> replaces{' '}
@@ -63,9 +63,6 @@ function AccessControl(): ReactElement {
                             versions:
                         </p>
                         <List>
-                            <ListItem>
-                                <b>Access</b> will replace <b>Role</b>
-                            </ListItem>
                             <ListItem>
                                 <b>WorkflowAdministration</b> will replace{' '}
                                 <b>Policy, VulnerabilityReports</b>

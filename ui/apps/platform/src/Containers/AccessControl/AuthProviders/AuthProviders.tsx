@@ -64,8 +64,8 @@ function getNewAuthProviderObj(type) {
 
 function AuthProviders(): ReactElement {
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
-    const hasReadAccessForPage = hasReadAccess('Role') && hasReadAccess('Access');
-    const hasWriteAccessForPage = hasReadWriteAccess('Role') && hasReadWriteAccess('Access');
+    const hasReadAccessForPage = hasReadAccess('Access');
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
     const history = useHistory();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
