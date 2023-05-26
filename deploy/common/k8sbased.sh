@@ -328,16 +328,23 @@ function launch_central {
         helm lint "$unzip_dir/chart" -n stackrox "${helm_args[@]}"
       fi
 
-      # set custom central version if the CENTRAL_CHART_VERSION_OVERRIDE env is set
+      local helm_chart="$unzip_dir/chart"
+
+      # set custom central version if the CENTRAL_CHART_VERSION_OVERRIDE env is set and not equal to the latest tag
       # this has to happen after linting since helm lint does not recognize the --version flag
-      if [[ -n "${CENTRAL_CHART_VERSION_OVERRIDE}" ]]; then
+      if [[ -n "${CENTRAL_CHART_VERSION_OVERRIDE}" && "${CENTRAL_CHART_VERSION_OVERRIDE}"!="${MAIN_IMAGE_TAG}" ]]; then
         helm_args+=(
           --version="${CENTRAL_CHART_VERSION_OVERRIDE}"
         )
+        # make sure the helm chart is available on the cluster
+        helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
+        helm repo update
+        helm search repo stackrox-oss -l
+        helm_chart="stackrox-oss/stackrox-central-services"
       fi
 
       set -x
-      helm upgrade --install -n stackrox stackrox-central-services "$unzip_dir/chart" \
+      helm upgrade --install -n stackrox stackrox-central-services "$helm_chart" \
           "${helm_args[@]}"
       set +x
 
@@ -576,22 +583,29 @@ function launch_sensor {
         helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox
         helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox "${helm_args[@]}" "${extra_helm_config[@]}"
       fi
-      
-      # set custom sensor version if the SENSOR_CHART_VERSION_OVERRIDE env is set
-      # this has to happen after linting since helm lint does not recognize the --version flag
-      if [[ -n "${SENSOR_CHART_VERSION_OVERRIDE}" ]]; then
-        helm_args+=(
-          --version="${SENSOR_CHART_VERSION_OVERRIDE}"
-        )
-      fi
 
       if [[ "$sensor_namespace" != "stackrox" ]]; then
         kubectl create namespace "$sensor_namespace" &>/dev/null || true
         kubectl -n "$sensor_namespace" get secret stackrox &>/dev/null || kubectl -n "$sensor_namespace" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
       fi
 
+
+      local helm_chart="$k8s_dir/sensor-deploy/chart"
+
+      # set custom sensor version if the SENSOR_CHART_VERSION_OVERRIDE env is set and not equal to the latest tag
+      # in this case we need to find the right helm chart from the stackrox-oss repo
+      if [[ -n "${SENSOR_CHART_VERSION_OVERRIDE}" && "${SENSOR_CHART_VERSION_OVERRIDE}"!="${MAIN_IMAGE_TAG}" ]]; then
+        helm_args+=(
+          --version="${SENSOR_CHART_VERSION_OVERRIDE}"
+        )
+        # make sure the helm chart is available on the cluster
+        helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
+        helm repo update
+        helm search repo stackrox-oss -l
+        helm_chart="stackrox-oss/stackrox-secured-cluster-services"
+      fi
       set -x
-      helm upgrade --install -n "$sensor_namespace" --create-namespace stackrox-secured-cluster-services "$k8s_dir/sensor-deploy/chart" \
+      helm upgrade --install -n "$sensor_namespace" --create-namespace stackrox-secured-cluster-services "$helm_chart" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
       set +x
 

@@ -27,7 +27,7 @@ latest_tag = subprocess.check_output(["make", "tag", "-C", makefile_path, "--qui
 if len(central_chart_versions) == 0:
     raise RuntimeError("Could not find central chart versions.")
 if len(sensor_chart_versions) == 0:
-    raise RuntimeError("Could not find central sensor versions.")
+    raise RuntimeError("Could not find sensor chart versions.")
 
 Chart_versions = namedtuple("Chart_versions", ["central_version", "sensor_version"])
 
