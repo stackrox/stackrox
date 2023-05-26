@@ -19,7 +19,6 @@
         "NetworkPolicy": "NO_ACCESS",
         "Node": "NO_ACCESS",
         "Policy": "NO_ACCESS",
-        "Role": "NO_ACCESS",
         "Secret": "NO_ACCESS",
         "ServiceAccount": "NO_ACCESS",
         "VulnerabilityManagementApprovals": "NO_ACCESS",
