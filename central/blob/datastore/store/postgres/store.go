@@ -57,6 +57,7 @@ type Store interface {
 	Exists(ctx context.Context, name string) (bool, error)
 
 	Get(ctx context.Context, name string) (*storage.Blob, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Blob, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.Blob, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
@@ -90,10 +91,12 @@ func insertIntoBlobs(ctx context.Context, batch *pgx.Batch, obj *storage.Blob) e
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetName(),
+		obj.GetLength(),
+		pgutils.NilOrTime(obj.GetModifiedTime()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO blobs (Name, serialized) VALUES($1, $2) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO blobs (Name, Length, ModifiedTime, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, Length = EXCLUDED.Length, ModifiedTime = EXCLUDED.ModifiedTime, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -113,6 +116,10 @@ func (s *storeImpl) copyFromBlobs(ctx context.Context, tx *postgres.Tx, objs ...
 
 		"name",
 
+		"length",
+
+		"modifiedtime",
+
 		"serialized",
 	}
 
@@ -130,6 +137,10 @@ func (s *storeImpl) copyFromBlobs(ctx context.Context, tx *postgres.Tx, objs ...
 		inputRows = append(inputRows, []interface{}{
 
 			obj.GetName(),
+
+			obj.GetLength(),
+
+			pgutils.NilOrTime(obj.GetModifiedTime()),
 
 			serialized,
 		})
@@ -400,6 +411,33 @@ func (s *storeImpl) Get(ctx context.Context, name string) (*storage.Blob, bool, 
 	}
 
 	return data, true, nil
+}
+
+// GetByQuery returns the objects from the store matching the query.
+func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Blob, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "Blob")
+
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if !scopeChecker.IsAllowed() {
+		return nil, nil
+	}
+	pagination := query.GetPagination()
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+	q.Pagination = pagination
+
+	rows, err := pgSearch.RunGetManyQueryForSchema[storage.Blob](ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return rows, nil
 }
 
 // GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.

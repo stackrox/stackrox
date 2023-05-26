@@ -47,7 +47,7 @@ func (s *handlerTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 	blobStore := store.New(s.testDB.DB)
-	s.datastore = datastore.NewDatastore(blobStore)
+	s.datastore = datastore.NewDatastore(blobStore, nil)
 	var err error
 	s.tmpDir, err = os.MkdirTemp("", "handler-test")
 	s.Require().NoError(err)

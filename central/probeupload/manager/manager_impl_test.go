@@ -37,7 +37,7 @@ func TestManager(t *testing.T) {
 func (s *managerTestSuite) SetupTest() {
 	s.testDB = pgtest.ForT(s.T())
 	s.store = store.New(s.testDB.DB)
-	s.datastore = blobstore.NewDatastore(s.store)
+	s.datastore = blobstore.NewDatastore(s.store, nil)
 	s.mgr = newManager(s.datastore)
 	s.mgr.freeStorageThreshold = 0 // not interested in testing this
 }

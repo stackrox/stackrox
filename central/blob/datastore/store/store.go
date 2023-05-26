@@ -15,10 +15,13 @@ import (
 var log = logging.LoggerForModule()
 
 // Store is the interface to interact with the storage for storage.Blob
+//
+//go:generate mockgen-wrapper
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error
 	Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error)
 	Delete(ctx context.Context, name string) error
+	GetManyBlobMetadata(ctx context.Context, identifiers []string) ([]*storage.Blob, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMetadata(ctx context.Context, name string) (*storage.Blob, bool, error)
 }
@@ -193,6 +196,11 @@ func (s *storeImpl) Delete(ctx context.Context, name string) error {
 // GetIDs all blob names
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	return s.store.GetIDs(ctx)
+}
+
+// GetManyBlobMetadata reads many blobs without data
+func (s *storeImpl) GetManyBlobMetadata(ctx context.Context, identifiers []string) ([]*storage.Blob, []int, error) {
+	return s.store.GetMany(ctx, identifiers)
 }
 
 // GetMetadata all blob names

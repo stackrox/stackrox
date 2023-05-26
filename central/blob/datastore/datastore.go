@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/stackrox/rox/central/blob/datastore/search"
 	"github.com/stackrox/rox/central/blob/datastore/store"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -21,19 +24,24 @@ type Datastore interface {
 	Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error
 	Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error)
 	Delete(ctx context.Context, name string) error
+	Search(ctx context.Context, query *v1.Query) ([]pkgSearch.Result, error)
+	SearchBlobsWithoutData(ctx context.Context, q *v1.Query) ([]*storage.Blob, error)
+	SearchIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	GetMetadata(ctx context.Context, name string) (*storage.Blob, bool, error)
 	GetBlobWithDataInBuffer(ctx context.Context, name string) (*bytes.Buffer, *storage.Blob, bool, error)
 }
 
 // NewDatastore creates a new Blob datastore
-func NewDatastore(store store.Store) Datastore {
+func NewDatastore(store store.Store, searcher search.Searcher) Datastore {
 	return &datastoreImpl{
-		store: store,
+		store:    store,
+		searcher: searcher,
 	}
 }
 
 type datastoreImpl struct {
-	store store.Store
+	store    store.Store
+	searcher search.Searcher
 }
 
 // Upsert adds a new blob to the database
@@ -49,6 +57,11 @@ func (d *datastoreImpl) Get(ctx context.Context, name string, writer io.Writer) 
 // Delete removes a blob store from database
 func (d *datastoreImpl) Delete(ctx context.Context, name string) error {
 	return d.store.Delete(ctx, name)
+}
+
+// Search blobs
+func (d *datastoreImpl) Search(ctx context.Context, query *v1.Query) ([]pkgSearch.Result, error) {
+	return d.searcher.Search(ctx, query)
 }
 
 // GetIDs return all blob ids
@@ -70,4 +83,14 @@ func (d *datastoreImpl) GetBlobWithDataInBuffer(ctx context.Context, name string
 		utils.Should(fmt.Errorf("blob %s has %d in length which is beyond buffer limit %d", name, blob.Size(), bufferedBlobDataLimitInBytes))
 	}
 	return buf, blob, exists, err
+}
+
+// SearchBlobsWithoutData searches and return blob metadata only
+func (d *datastoreImpl) SearchBlobsWithoutData(ctx context.Context, q *v1.Query) ([]*storage.Blob, error) {
+	return d.searcher.SearchBlobsWithoutData(ctx, q)
+}
+
+// SearchIDs searches and return blob IDs
+func (d *datastoreImpl) SearchIDs(ctx context.Context, q *v1.Query) ([]string, error) {
+	return d.searcher.SearchIDs(ctx, q)
 }
