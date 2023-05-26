@@ -161,7 +161,9 @@ function NetworkPolicySimulatorSidePanel({
                             title={
                                 simulator.error
                                     ? simulator.error
-                                    : 'Policies generated from all network activity'
+                                    : `Policies generated from the baseline for cluster “${
+                                          clusterName ?? ''
+                                      }”`
                             }
                         />
                     </StackItem>
