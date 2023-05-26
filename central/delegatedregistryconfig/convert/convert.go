@@ -2,7 +2,7 @@
 // DelegatedRegistryConfig types.
 //   - "Storage"     (storage.DelegatedRegistryConfig) - for persistance
 //   - "PublicAPI"   (v1.DelegatedRegistryConfig)      - for exposed REST/gRPC API
-//   - "InternalAPI" (central.DelegatedRegistryConfig) - for central/sensor inner API
+//   - "InternalAPI" (central.DelegatedRegistryConfig) - for Central/Sensor inner API
 package convert
 
 import (

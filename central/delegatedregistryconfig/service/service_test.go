@@ -90,7 +90,7 @@ func TestGetClustersSuccess(t *testing.T) {
 		valid bool
 	}{
 		"without cap": {fakeConnWithoutCap, false},
-		"with cap":    {fakeConnWithCap, true}, // only healthy scanners are valid
+		"with cap":    {fakeConnWithCap, true},
 	}
 
 	for name, test := range tt {

@@ -86,7 +86,7 @@ func TestOpenShiftRegistrySecret_311(t *testing.T) {
 		FullName: "docker-registry.default.svc.cluster.local:5000/stackrox/nginx:1.18.0",
 	}
 
-	reg, err := regStore.GetRegistryForImage(imgName)
+	reg, err := regStore.GetRegistryForImageInNamespace(imgName, "dummy")
 	assert.Nil(t, reg)
 	assert.Error(t, err)
 
@@ -97,7 +97,7 @@ func TestOpenShiftRegistrySecret_311(t *testing.T) {
 		FullName: "docker-registry.default.svc.cluster.local:5000/stackrox/nginx:1.18.0",
 	}
 
-	reg, err = regStore.GetRegistryForImage(imgName)
+	reg, err = regStore.GetRegistryForImageInNamespace(imgName, "test-ns")
 	assert.NotNil(t, reg)
 	assert.NoError(t, err)
 
@@ -127,7 +127,7 @@ func TestOpenShiftRegistrySecret_4x(t *testing.T) {
 		FullName: "image-registry.openshift-image-registry.svc:5000/stackrox/nginx:1.18.0",
 	}
 
-	reg, err := regStore.GetRegistryForImage(imgName)
+	reg, err := regStore.GetRegistryForImageInNamespace(imgName, "dummy")
 	assert.Nil(t, reg)
 	assert.Error(t, err)
 
@@ -138,7 +138,7 @@ func TestOpenShiftRegistrySecret_4x(t *testing.T) {
 		FullName: "image-registry.openshift-image-registry.svc:5000/stackrox/nginx:1.18.0",
 	}
 
-	reg, err = regStore.GetRegistryForImage(imgName)
+	reg, err = regStore.GetRegistryForImageInNamespace(imgName, "test-ns")
 	assert.NotNil(t, reg)
 	assert.NoError(t, err)
 
