@@ -30,9 +30,7 @@ const (
 	access    = "Access"
 	cluster   = "Cluster"
 	namespace = "Namespace"
-)
 
-const (
 	batchSize = 500
 )
 
