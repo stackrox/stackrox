@@ -62,6 +62,7 @@ func (b *datastoreImpl) GetNotifiersFiltered(ctx context.Context, filter func(no
 	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
+	// TODO: ROX-16071 add ability to pass filter to storage
 	notifiers, err := b.storage.GetAll(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting notifiers from storage")
