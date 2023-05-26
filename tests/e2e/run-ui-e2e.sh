@@ -29,6 +29,7 @@ test_ui_e2e() {
     setup_default_TLS_certs
 
     deploy_stackrox
+    deploy_optional_e2e_components
 
     run_ui_e2e_tests
 }
