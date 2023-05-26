@@ -25,7 +25,7 @@ var (
 	datastoresAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Role, resources.Access)))
+			sac.ResourceScopeKeys(resources.Access)))
 )
 
 type dataStoreImpl struct {

@@ -328,16 +328,16 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
 
     // Helper to create a signature integration with given name and public keys.
     private static String createSignatureIntegration(String integrationName, Map<String, String> namedPublicKeys) {
+        List<CosignPublicKeyVerification.PublicKey> publicKeys = namedPublicKeys.collect {
+            CosignPublicKeyVerification.PublicKey.newBuilder()
+                    .setName(it.key).setPublicKeyPemEnc(it.value)
+                    .build()
+        }
         String signatureIntegrationID = SignatureIntegrationService.createSignatureIntegration(
                 SignatureIntegration.newBuilder()
                         .setName(integrationName)
                         .setCosign(CosignPublicKeyVerification.newBuilder()
-                                .addAllPublicKeys(namedPublicKeys.collect
-                                        {
-                                            CosignPublicKeyVerification.PublicKey.newBuilder()
-                                                    .setName(it.key).setPublicKeyPemEnc(it.value)
-                                                    .build()
-                                        })
+                                .addAllPublicKeys(publicKeys)
                                 .build()
                         )
                         .build()

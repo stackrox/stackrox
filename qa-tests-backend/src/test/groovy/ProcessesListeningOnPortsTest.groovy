@@ -246,9 +246,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         sleep 65000 // Sleep for 65 seconds
         processesListeningOnPorts = evaluateWithRetry(10, 10) {
-               def temp = ProcessesListeningOnPortsService
-                       .getProcessesListeningOnPortsResponse(deploymentId2)
-               return temp
+            ProcessesListeningOnPortsService.getProcessesListeningOnPortsResponse(deploymentId2)
         }
 
         // Confirm that the listening endpoint still appears in the API 65 seconds later
