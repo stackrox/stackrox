@@ -16,11 +16,14 @@ import (
 
 // RateLimitedLogger wraps a zap.SugaredLogger that supports rate limiting.
 type RateLimitedLogger struct {
-	logger          Logger
-	frequency       float64
-	burst           int
-	ticker          *time.Ticker
-	stopper         concurrency.Stopper
+	// TODO: ROX-17312: Make sure the internals allow injection of a clock
+	// and mechanisms to allow unit testing of the log consolidation and flush.
+	logger    Logger
+	frequency float64
+	burst     int
+	ticker    *time.Ticker
+	stopper   concurrency.Stopper
+	// TODO: ROX-17312: Use an LRU Cache with expiration and eviction here
 	rateLimitedLogs *lru.Cache[string, *rateLimitedLog]
 }
 
@@ -40,9 +43,9 @@ type RateLimitedLogger struct {
 //		    return logger
 //		}
 func NewRateLimitLogger(l Logger, size int, logLines int, interval time.Duration, burst int) *RateLimitedLogger {
-	logCache, err := lru.NewWithEvict[string, *rateLimitedLog](size, func(key string, value *rateLimitedLog) {
-		if value.count.Load() > 0 {
-			value.log()
+	logCache, err := lru.NewWithEvict[string, *rateLimitedLog](size, func(key string, evictedLog *rateLimitedLog) {
+		if evictedLog.count.Load() > 0 {
+			evictedLog.log()
 		}
 	})
 	if err != nil {
@@ -213,7 +216,9 @@ const (
 )
 
 type rateLimitedLog struct {
-	logger      Logger
+	logger Logger
+	// TODO: ROX-17312: Use log deadline and counter rather than rate limiter
+	// There is no use-case for log bursts
 	rateLimiter *rate.Limiter
 	level       zapcore.Level
 	last        time.Time
@@ -230,6 +235,8 @@ func newRateLimitedLog(
 	limiter string,
 	payload string,
 ) *rateLimitedLog {
+	// TODO: ROX-17312: Use a single rate-limited logger for all logs.
+	// Check how the logger module can be integrated in the logs.
 	return &rateLimitedLog{
 		logger:      logger,
 		rateLimiter: rateLimiter,

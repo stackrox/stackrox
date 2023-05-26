@@ -18,6 +18,7 @@ import (
 )
 
 const (
+	// TODO: ROX-17312: Review and adjust logger parameters
 	cacheSize          = 500
 	rateLimitFrequency = 5 * time.Minute
 	logBurstSize       = 5
@@ -25,11 +26,12 @@ const (
 
 var (
 	once sync.Once
-	log *logging.RateLimitedLogger
+	log  *logging.RateLimitedLogger
 )
 
 func getRateLimitedLogger() *logging.RateLimitedLogger {
 	once.Do(func() {
+		// TODO: ROX-17312: Review and adjust logger parameters
 		log = logging.NewRateLimitLogger(
 			logging.LoggerForModule(),
 			cacheSize,
