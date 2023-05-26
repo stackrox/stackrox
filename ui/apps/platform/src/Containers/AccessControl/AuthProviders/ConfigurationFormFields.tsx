@@ -288,8 +288,8 @@ function ConfigurationFormFields({
                             fieldId="config.disable_offline_access_scope"
                             helperText={
                                 <span className="pf-u-font-size-sm">
-                                    Could be used if identity provider has limit on number of
-                                    offline tokens issued.
+                                    Use if the identity provider has a limit on the number of
+                                    offline tokens that it can issue.
                                 </span>
                             }
                         >
