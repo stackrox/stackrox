@@ -3497,10 +3497,10 @@
     tslib "^2.0.0"
     webcola "3.4.0"
 
-"@patternfly/react-user-feedback@^1.0.9":
-  version "1.0.9"
-  resolved "https://registry.yarnpkg.com/@patternfly/react-user-feedback/-/react-user-feedback-1.0.9.tgz#87ed69561336337d8004caebb8be2ddfbfd27771"
-  integrity sha512-dhYe3CCIltf0wPcnTA8TvzoFkQm77rE8P8OyD3aKIrFGuOGSrj05lwhJuDfpSYLH4RqIP9NDT/eh8wpAsLaA+Q==
+"@patternfly/react-user-feedback@^1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@patternfly/react-user-feedback/-/react-user-feedback-1.1.2.tgz#be7c8b051c983696b5163991ab3c2bbaa2411c5e"
+  integrity sha512-Z7NVUMb1FrbxvUwG6IYRCjQmwIt2T4lDSQKicf1toStZMK+tVezoZX3yiTTmrexOP6wdXLAC61Ur6Ioykuxk5g==
   dependencies:
     "@patternfly/react-core" "^4.276.6"
     "@patternfly/react-icons" "^4.93.6"
