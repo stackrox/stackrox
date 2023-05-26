@@ -8,12 +8,12 @@ import (
 )
 
 const (
-	// The default number of attempts to re-generate an id on collision.
+	// The default number of attempts to re-generate an ID on collision.
 	defaultMaxCollisions = 5
 )
 
 var (
-	// ErrTooManyCollisions the ID generator produced too many in use IDs.
+	// ErrTooManyCollisions the ID generator produced too many non-unique IDs.
 	ErrTooManyCollisions = errors.New("too many id collisions")
 
 	// ErrManagerShutdown manager has been shutdown and therefore cannot process requests.
@@ -63,6 +63,8 @@ func WithMaxCollisions(num int) Option {
 }
 
 // Manager builds waiters and delivers messages to waiters from async publishers.
+//
+//go:generate mockgen-wrapper
 type Manager[T any] interface {
 	// Start spawns a goroutine that will run forever or until ctx.Done() delivering
 	// messages to waiters.
@@ -243,4 +245,12 @@ func (w *managerImpl[T]) closeWaiters() {
 	for _, ch := range w.waiters {
 		close(ch)
 	}
+}
+
+// len is used in tests to verify waiter cleanup
+func (w *managerImpl[T]) len() int {
+	w.waitersMu.Lock()
+	defer w.waitersMu.Unlock()
+
+	return len(w.waiters)
 }

@@ -2,8 +2,6 @@ package waiter
 
 import (
 	"context"
-	"fmt"
-	"runtime"
 	"testing"
 	"time"
 
@@ -88,7 +86,7 @@ func TestWaitCancel(t *testing.T) {
 
 	// allow time for manager to cleanup canceled waiters
 	time.Sleep(100 * time.Millisecond)
-	assert.Len(t, wm.waiters, 0)
+	assert.Equal(t, wm.len(), 0)
 }
 
 func TestWaitClose(t *testing.T) {
@@ -107,27 +105,13 @@ func TestWaitClose(t *testing.T) {
 		assert.ErrorIs(t, err, ErrWaiterClosed)
 	}()
 
-	assert.Len(t, wm.waiters, 1)
+	assert.Equal(t, wm.len(), 1)
 	w.Close()
 	wg.Wait()
 
 	// allow time for manager to cleanup closed waiters
 	time.Sleep(200 * time.Millisecond)
-	assert.Len(t, wm.waiters, 0)
-}
-
-func TestSimpleIDGen(t *testing.T) {
-	want := "1"
-	idgen := IDGeneratorFuncs{
-		GenIDFunc: func() (string, error) {
-			return want, nil
-		},
-	}
-
-	wm := NewManager[string](WithIDGenerator(idgen))
-	w, err := wm.NewWaiter()
-	require.NoError(t, err)
-	assert.Equal(t, want, w.ID())
+	assert.Equal(t, wm.len(), 0)
 }
 
 func TestZeroMaxCollisions(t *testing.T) {
@@ -218,55 +202,4 @@ func TestNewWaiterOnShutdownManager(t *testing.T) {
 
 	_, err = wm.NewWaiter()
 	require.ErrorIs(t, err, ErrManagerShutdown)
-}
-
-// --
-
-func printAlloc() {
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	v := m.Alloc / 1024
-	fmt.Printf("%d KB\n", v)
-}
-
-func printAndGetAlloc() uint64 {
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	v := m.Alloc / 1024
-	fmt.Printf("%d KB\n", v)
-	return v
-
-}
-
-func doSends(wm Manager[int32], n int) {
-	ids := []string{}
-	for i := 0; i < n; i++ {
-		w, _ := wm.NewWaiter()
-		ids = append(ids, w.ID())
-	}
-
-	for _, id := range ids {
-		_ = wm.Send(id, 1, nil)
-	}
-}
-
-func TestLots(t *testing.T) {
-	// t.Skip()
-	n := 20_000
-	wm := NewManager[int32]()
-	wm.Start(context.Background())
-	printAlloc()
-
-	max := uint64(0)
-	for i := 0; i < 2000; i++ {
-		doSends(wm, n)
-		runtime.GC()
-		v := printAndGetAlloc()
-		if v > max {
-			max = v
-		}
-	}
-
-	t.Logf("max: %v KB", max)
-	assert.Less(t, max, uint64(2300))
 }

@@ -17,6 +17,8 @@ var (
 //
 // It is the callers responsibility to ensure that either Wait finishes or Close
 // is invoked so that proper cleanup can be done.
+//
+//go:generate mockgen-wrapper
 type Waiter[T any] interface {
 	// ID returns the unique ID assigned to this waiter by the Managers ID generator.
 	ID() string
@@ -30,7 +32,7 @@ type Waiter[T any] interface {
 	Close()
 }
 
-type genericWaiter[T any] struct {
+type waiterImpl[T any] struct {
 	// the unique ID generated for this waiter.
 	id string
 
@@ -44,10 +46,10 @@ type genericWaiter[T any] struct {
 	doneCh chan struct{}
 }
 
-var _ Waiter[struct{}] = (*genericWaiter[struct{}])(nil)
+var _ Waiter[struct{}] = (*waiterImpl[struct{}])(nil)
 
-func newGenericWaiter[T any](id string, ch chan *response[T], managerDoneCh chan string) *genericWaiter[T] {
-	return &genericWaiter[T]{
+func newGenericWaiter[T any](id string, ch chan *response[T], managerDoneCh chan string) *waiterImpl[T] {
+	return &waiterImpl[T]{
 		id:            id,
 		ch:            ch,
 		managerDoneCh: managerDoneCh,
@@ -55,11 +57,11 @@ func newGenericWaiter[T any](id string, ch chan *response[T], managerDoneCh chan
 	}
 }
 
-func (w *genericWaiter[T]) ID() string {
+func (w *waiterImpl[T]) ID() string {
 	return w.id
 }
 
-func (w *genericWaiter[T]) Wait(ctx context.Context) (T, error) {
+func (w *waiterImpl[T]) Wait(ctx context.Context) (T, error) {
 	var err error
 	var data T
 	select {
@@ -85,6 +87,6 @@ func (w *genericWaiter[T]) Wait(ctx context.Context) (T, error) {
 	return data, err
 }
 
-func (w *genericWaiter[T]) Close() {
+func (w *waiterImpl[T]) Close() {
 	close(w.doneCh)
 }

@@ -110,11 +110,11 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		return nil, errors.Wrap(err, "creating enforcer")
 	}
 
-	// TODO: DAVE - change the initialization of these things so that enabled only if local scanning is enabled?
+	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
+
 	registryStore := storeProvider.Registries()
 	localScan := scan.NewLocalScan(registryStore)
 	delegatedRegistryHandler := delegatedregistry.NewHandler(storeProvider.Registries(), localScan)
-	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), registryStore, localScan)
 	reprocessorHandler := reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache)
 	pipeline := eventpipeline.New(cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.resyncPeriod, cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize)

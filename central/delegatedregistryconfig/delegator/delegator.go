@@ -49,15 +49,15 @@ func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, image *storage
 	}
 
 	err = d.validateCluster(clusterID)
-	if err != nil {
-		return clusterID, true, err
-	}
-
-	return clusterID, true, nil
+	return clusterID, true, err
 }
 
 // DelegateEnrichImage sends an enrichment request to the provided cluster
 func (d *delegatorImpl) DelegateEnrichImage(ctx context.Context, image *storage.Image, clusterID string) error {
+	if clusterID == "" {
+		return errors.New("missing cluster id")
+	}
+
 	w, err := d.scanWaiterManager.NewWaiter()
 	if err != nil {
 		return err
@@ -78,7 +78,7 @@ func (d *delegatorImpl) DelegateEnrichImage(ctx context.Context, image *storage.
 		return err
 	}
 
-	log.Debugf("Sent scan request %q to cluster %q for %q", w.ID(), clusterID, image.GetName().GetFullName())
+	log.Infof("Sent scan request %q to cluster %q for %q", w.ID(), clusterID, image.GetName().GetFullName())
 
 	img, err := w.Wait(ctx)
 	if err != nil {
@@ -87,7 +87,6 @@ func (d *delegatorImpl) DelegateEnrichImage(ctx context.Context, image *storage.
 
 	log.Debugf("Scan response received for %q and image %q", w.ID(), img.GetName().GetFullName())
 
-	// TODO: add tests to ensure this copies values and doesn't change address
 	*image = *img
 
 	return nil

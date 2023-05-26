@@ -5,12 +5,12 @@ option go_package = "central";
 package central;
 
 message ScanImage {
-    // request id is used to map scan results to a waiting goroutine
+    // request id is used to map scan results to a waiting goroutine.
     string request_id = 1;
 
-    // full image name ie: <registry>/something/nginx:1.2.3
+    // full image name ie: <registry>/something/nginx:1.2.3.
     string image_name = 2;
 
-    // force will cause central and sensor caches to be ignored
+    // force will cause central and sensor caches to be ignored.
     bool   force      = 3;
 }

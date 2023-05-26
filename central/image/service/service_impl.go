@@ -387,10 +387,6 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	defer s.internalScanSemaphore.Release(1)
 
-	// if request.GetRequestId() != "" {
-	// 	log.Debugf("Received delegated enrich request for id %q: %q", request.GetRequestId(), request.GetImageName().GetFullName())
-	// }
-
 	var hasErrors bool
 	if request.Error != "" {
 		// If errors occurred we continue processing so that the failed image scan may be saved in
@@ -471,7 +467,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	// contained a digest. Do not upsert if a previous scan exists and there were errors with this scan
 	// since it could lead to us overriding an enriched image with a non-enriched image.
 	// Also do not upsert if there is a request id, this enables the caller to determine how to handle
-	// the results (and also prevents multiple saves)
+	// the results (and also prevents multiple upserts for the same image).
 	if imgID != "" && !(hasErrors && imgExists) && request.GetRequestId() == "" {
 		_ = s.saveImage(img)
 	}
@@ -499,7 +495,7 @@ func (s *serviceImpl) informScanWaiter(reqID string, img *storage.Image, scanErr
 }
 
 func (s *serviceImpl) UpdateLocalScanStatusInternal(_ context.Context, req *v1.UpdateLocalScanStatusInternalRequest) (*v1.Empty, error) {
-	log.Debugf("Received delegated scan early failure message for %q: %q", req.GetRequestId(), req.GetError())
+	log.Debugf("Received early delegated scan failure message for %q: %q", req.GetRequestId(), req.GetError())
 
 	s.informScanWaiter(req.GetRequestId(), nil, errors.New(req.GetError()))
 

@@ -9,18 +9,17 @@ import (
 )
 
 var (
-	once sync.Once
-
-	m waiter.Manager[*storage.Image]
+	once    sync.Once
+	manager waiter.Manager[*storage.Image]
 )
 
 func initialize() {
-	m = waiter.NewManager[*storage.Image]()
-	m.Start(context.Background())
+	manager = waiter.NewManager[*storage.Image]()
+	manager.Start(context.Background())
 }
 
 // Singleton creates a single instance of a scan waiter manager
 func Singleton() waiter.Manager[*storage.Image] {
 	once.Do(initialize)
-	return m
+	return manager
 }

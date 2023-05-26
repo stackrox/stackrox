@@ -34,11 +34,11 @@ var (
 	ErrNoLocalScanner = errors.New("no local Scanner connection")
 
 	// ErrTooManyParallelScans indicates there are too many scans in progress and wait time
-	// has been exceeded
+	// has been exceeded.
 	ErrTooManyParallelScans = errors.New("too many parallel scans to local scanner")
 
-	// ErrEnrichNotStarted will be wrapped by other more specific errors.  It is used to determine
-	// if the enrichment was never started / will be no messages sent to central
+	// ErrEnrichNotStarted will be wrapped by other more specific errors. It is used to determine
+	// if the enrichment was never started and will be no messages sent to Central.
 	ErrEnrichNotStarted = errors.New("enrich was not started")
 
 	log = logging.LoggerForModule()
@@ -106,12 +106,12 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 // from the local registry. Afterwards, missing enriched data such as signature verification results and image
 // vulnerabilities will be fetched from central, returning the fully enriched image. A request is always sent
 // to central even if errors occur pulling metadata, scanning, or fetching signatures so that the error may be
-// recorded
+// recorded.
 //
 // Will use the first registry from registries that succeeds in pulling metadata, or if registries is empty will
-// assume no auth is required
+// assume no auth is required.
 //
-// Will return any errors that may occur during scanning, fetching signatures or during reaching out to central.
+// Will return any errors that may occur during scanning, fetching signatures or during reaching out to Central.
 func (s *LocalScan) enrichLocalImageFromRegistry(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage, registries []registryTypes.Registry, requestID string, force bool) (*storage.Image, error) {
 	if ci == nil {
 		return nil, ghErrors.Wrap(ErrEnrichNotStarted, "missing image, nothing to enrich")

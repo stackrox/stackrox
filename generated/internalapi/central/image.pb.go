@@ -23,11 +23,11 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type ScanImage struct {
-	// request id is used to map scan results to a waiting goroutine
+	// request id is used to map scan results to a waiting goroutine.
 	RequestId string `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	// full image name ie: <registry>/something/nginx:1.2.3
+	// full image name ie: <registry>/something/nginx:1.2.3.
 	ImageName string `protobuf:"bytes,2,opt,name=image_name,json=imageName,proto3" json:"image_name,omitempty"`
-	// force will cause central and sensor caches to be ignored
+	// force will cause central and sensor caches to be ignored.
 	Force                bool     `protobuf:"varint,3,opt,name=force,proto3" json:"force,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

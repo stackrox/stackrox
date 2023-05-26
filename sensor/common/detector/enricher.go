@@ -174,9 +174,8 @@ func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAcc
 		serviceAccountStore: serviceAccountStore,
 		imageCache:          cache,
 		stopSig:             concurrency.NewSignal(),
-		// localScan:           scan.NewLocalScan(registryStore),
-		localScan: localScan,
-		regStore:  registryStore,
+		localScan:           localScan,
+		regStore:            registryStore,
 	}
 }
 

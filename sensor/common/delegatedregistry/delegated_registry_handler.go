@@ -25,8 +25,8 @@ var (
 	statusUpdateTimeout = 10 * time.Second
 )
 
-// Handler is responsible for processing delegated
-// registry config updates from central.
+// Handler is responsible for processing delegated registry related requests
+// from Central.
 type Handler interface {
 	common.SensorComponent
 }
@@ -49,7 +49,7 @@ func NewHandler(registryStore *registry.Store, localScan *scan.LocalScan) Handle
 
 func (d *delegatedRegistryImpl) Capabilities() []centralsensor.SensorCapability {
 	if !env.LocalImageScanningEnabled.BooleanSetting() {
-		// do not advertise the capability if local scanning is disabled
+		// Do not advertise the capability if local scanning is disabled.
 		return nil
 	}
 
@@ -60,7 +60,7 @@ func (d *delegatedRegistryImpl) Notify(_ common.SensorComponentEvent) {}
 
 func (d *delegatedRegistryImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	if !env.LocalImageScanningEnabled.BooleanSetting() {
-		// ignore all messages if local scanning is disabled
+		// Ignore all messages if local scanning is disabled.
 		return nil
 	}
 
@@ -105,7 +105,7 @@ func (d *delegatedRegistryImpl) processScanImage(scanReq *central.ScanImage) err
 		log.Debugf("Received scan request: %q", scanReq)
 
 		// Spawn a goroutine so that this handler doesn't block other messages from being processed
-		// while waiting for scan to complete
+		// while waiting for scan to complete.
 		go d.executeScan(scanReq)
 	}
 
@@ -122,12 +122,12 @@ func (d *delegatedRegistryImpl) executeScan(scanReq *central.ScanImage) {
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 
-	// Execute the scan
+	// Execute the scan.
 	_, err = d.localScan.EnrichLocalImageInNamespace(ctx, d.imageSvc, ci, "", scanReq.GetRequestId(), scanReq.GetForce())
 	if errors.Is(err, scan.ErrEnrichNotStarted) {
 		// This error indicates enrichment never started and therefore a message will
-		// not be sent to central for this request id, so send one now to be a good
-		// citizen to the waiting goroutine in central
+		// not be sent to Central for this request id, so send one now to be a good
+		// citizen to the waiting goroutine in Central.
 		d.sendScanStatusUpdate(scanReq, err)
 	}
 }
