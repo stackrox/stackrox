@@ -42,7 +42,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.RolesSchema
-	targetResource = resources.Role
+	targetResource = resources.Access
 )
 
 // Store is the interface to interact with the storage for storage.Role
