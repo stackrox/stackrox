@@ -52,6 +52,7 @@ func NameForIntegrationHealthFromProtoMessage(message proto.Message, handler str
 	return messageName
 }
 
+// IDForIntegrationHealthFromProtoMessage returns ID for declarative config resource's integration health.
 func IDForIntegrationHealthFromProtoMessage(message proto.Message, idExtractor types.IDExtractor) string {
 	return DeclarativeConfigHealthIDPrefix + idExtractor(message)
 }
