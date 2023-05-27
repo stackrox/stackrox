@@ -53,7 +53,7 @@ func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, image *storage
 }
 
 // DelegateEnrichImage sends an enrichment request to the provided cluster
-func (d *delegatorImpl) DelegateEnrichImage(ctx context.Context, image *storage.Image, clusterID string) error {
+func (d *delegatorImpl) DelegateEnrichImage(ctx context.Context, image *storage.Image, clusterID string, force bool) error {
 	if clusterID == "" {
 		return errors.New("missing cluster id")
 	}
@@ -68,6 +68,7 @@ func (d *delegatorImpl) DelegateEnrichImage(ctx context.Context, image *storage.
 			ScanImage: &central.ScanImage{
 				RequestId: w.ID(),
 				ImageName: image.GetName().GetFullName(),
+				Force:     force,
 			},
 		},
 	}

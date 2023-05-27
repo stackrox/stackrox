@@ -15,5 +15,5 @@ type Delegator interface {
 	GetDelegateClusterID(ctx context.Context, image *storage.Image) (string, bool, error)
 
 	// DelegateEnrichImage sends an enrichment request to the provided cluster
-	DelegateEnrichImage(ctx context.Context, image *storage.Image, clusterID string) error
+	DelegateEnrichImage(ctx context.Context, image *storage.Image, clusterID string, force bool) error
 }

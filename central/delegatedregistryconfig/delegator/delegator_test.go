@@ -195,13 +195,13 @@ func TestDelegateEnrichImage(t *testing.T) {
 	d := New(deleClusterDS, connMgr, waiterMgr)
 
 	t.Run("empty cluster id", func(t *testing.T) {
-		err := d.DelegateEnrichImage(context.Background(), nil, "")
+		err := d.DelegateEnrichImage(context.Background(), nil, "", false)
 		assert.ErrorContains(t, err, "cluster id")
 	})
 
 	t.Run("waiter create error", func(t *testing.T) {
 		waiterMgr.EXPECT().NewWaiter().Return(nil, errBroken)
-		err := d.DelegateEnrichImage(context.Background(), nil, fakeClusterID)
+		err := d.DelegateEnrichImage(context.Background(), nil, fakeClusterID, false)
 		assert.ErrorIs(t, err, errBroken)
 	})
 
@@ -209,7 +209,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 		fakeWaiter.EXPECT().Close()
 		waiterMgr.EXPECT().NewWaiter().Return(fakeWaiter, nil)
 		connMgr.EXPECT().SendMessage(fakeClusterID, gomock.Any()).Return(errBroken)
-		err := d.DelegateEnrichImage(context.Background(), nil, fakeClusterID)
+		err := d.DelegateEnrichImage(context.Background(), nil, fakeClusterID, false)
 		assert.ErrorIs(t, err, errBroken)
 	})
 
@@ -217,7 +217,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 		fakeWaiter.EXPECT().Wait(gomock.Any()).Return(nil, errBroken)
 		waiterMgr.EXPECT().NewWaiter().Return(fakeWaiter, nil)
 		connMgr.EXPECT().SendMessage(fakeClusterID, gomock.Any())
-		err := d.DelegateEnrichImage(context.Background(), nil, fakeClusterID)
+		err := d.DelegateEnrichImage(context.Background(), nil, fakeClusterID, false)
 		assert.ErrorIs(t, err, errBroken)
 	})
 
@@ -226,7 +226,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 		waiterMgr.EXPECT().NewWaiter().Return(fakeWaiter, nil)
 		connMgr.EXPECT().SendMessage(fakeClusterID, gomock.Any())
 		image := &storage.Image{}
-		err := d.DelegateEnrichImage(context.Background(), image, fakeClusterID)
+		err := d.DelegateEnrichImage(context.Background(), image, fakeClusterID, false)
 		assert.NoError(t, err)
 
 		// Ensure the address of image hasn't change and does not match what the waiter returned.

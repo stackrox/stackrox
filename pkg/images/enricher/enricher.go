@@ -63,10 +63,9 @@ type EnrichmentContext struct {
 	// This is used to indicate that we do not want to fail upon failing to find integrations.
 	Internal bool
 
-	// AdHoc indicates that this enrichment request is adhoc, such as from roxctl image scan (examples of non-adhoc
-	// request would from reprocessing or sensor informer events).
-	// This is used to determine if a request is eligible for delegation to a secured cluster
-	AdHoc bool
+	// Delegable indicates enrichment request can be delegated to a secured cluster.
+	// Set via ad-hoc requests such as "roxctl image scan".
+	Delegable bool
 
 	Source *RequestSource
 }

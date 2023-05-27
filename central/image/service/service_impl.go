@@ -297,8 +297,8 @@ func (s *serviceImpl) enrichImage(ctx context.Context, img *storage.Image, fetch
 // ScanImage scans an image and returns the result
 func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageRequest) (*storage.Image, error) {
 	enrichmentCtx := enricher.EnrichmentContext{
-		FetchOpt: enricher.IgnoreExistingImages,
-		AdHoc:    true,
+		FetchOpt:  enricher.IgnoreExistingImages,
+		Delegable: true,
 	}
 	if request.GetForce() {
 		enrichmentCtx.FetchOpt = enricher.ForceRefetch
@@ -574,7 +574,10 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 
 	img := types.ToImage(containerImage)
 
-	enrichCtx := enricher.EnrichmentContext{FetchOpt: enricher.IgnoreExistingImages, AdHoc: true}
+	enrichCtx := enricher.EnrichmentContext{
+		FetchOpt:  enricher.IgnoreExistingImages,
+		Delegable: true,
+	}
 	enrichmentResult, err := s.enricher.EnrichImage(ctx, enrichCtx, img)
 	if err != nil {
 		return &v1.WatchImageResponse{

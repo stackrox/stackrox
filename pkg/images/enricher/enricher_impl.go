@@ -129,11 +129,11 @@ func (e *enricherImpl) EnrichWithSignatureVerificationData(ctx context.Context, 
 	}, err
 }
 
-// delegateEnrichImage returns true if enrichment for this image should be delegated (not enriched in Central). If true
-// and no error image was enriched or obtained from cache successfully.
-func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (bool, error) {
-	if !enrichContext.AdHoc {
-		// If this is not an adhoc request do not be attempt to delegate to a secured cluster.
+// delegateEnrichImage returns true if enrichment for this image should be delegated (enriched via Sensor). If true
+// and no error image was enriched successfully.
+func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx EnrichmentContext, image *storage.Image) (bool, error) {
+	if !enrichCtx.Delegable {
+		// Request should not be delegated.
 		return false, nil
 	}
 
@@ -143,12 +143,12 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichContext En
 		return shouldDelegate, err
 	}
 
-	// Check if image exists in database (will include metadata, sigs, etc.)
+	// Check if image exists in database (will include metadata, sigs, etc.).
 	// Ignores in-mem metadata cache because that is not populated via enrichment requests from
 	// secured clusters. fetchFromDatabase will check if FetchOpt forces refetch.
-	// Assumes signatures are OK as is, standard reprocessing or forcing rescan
+	// Assumes signatures in DB are OK, standard reprocessing or forcing rescan
 	// will trigger updates as necessary.
-	existingImg, exists := e.fetchFromDatabase(ctx, image, enrichContext.FetchOpt)
+	existingImg, exists := e.fetchFromDatabase(ctx, image, enrichCtx.FetchOpt)
 	if exists && cachedImageIsValid(existingImg) {
 		image.Metadata = existingImg.GetMetadata()
 		image.Scan = existingImg.GetScan()
@@ -163,8 +163,8 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichContext En
 		return true, nil
 	}
 
-	// Send the image to the secured cluster for enrichment.
-	err = e.scanDelegator.DelegateEnrichImage(ctx, image, clusterID)
+	// Send image to secured cluster for enrichment.
+	err = e.scanDelegator.DelegateEnrichImage(ctx, image, clusterID, enrichCtx.FetchOpt.forceRefetchCachedValues())
 	if err != nil {
 		return true, err
 	}
@@ -191,14 +191,17 @@ func cachedImageIsValid(cachedImage *storage.Image) bool {
 // EnrichImage enriches an image with the integration set present.
 func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
 	if shouldDelegate, err := e.delegateEnrichImage(ctx, enrichContext, image); shouldDelegate {
-		// This enrichment should have been delegated, do not process further.
+		// This enrichment should have been delegated, short circuit.
 		if err != nil {
 			return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, err
 		}
 		return EnrichmentResult{ImageUpdated: true, ScanResult: ScanSucceeded}, nil
+	} else if err != nil {
+		log.Warnf("Error attempting to delegate: %v", err)
 	}
 
 	errorList := errorhelpers.NewErrorList("image enrichment")
+
 	imageNoteSet := make(map[storage.Image_Note]struct{}, len(image.Notes))
 	for _, note := range image.Notes {
 		imageNoteSet[note] = struct{}{}

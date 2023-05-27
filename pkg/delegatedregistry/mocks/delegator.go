@@ -36,17 +36,17 @@ func (m *MockDelegator) EXPECT() *MockDelegatorMockRecorder {
 }
 
 // DelegateEnrichImage mocks base method.
-func (m *MockDelegator) DelegateEnrichImage(ctx context.Context, image *storage.Image, clusterID string) error {
+func (m *MockDelegator) DelegateEnrichImage(ctx context.Context, image *storage.Image, clusterID string, force bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DelegateEnrichImage", ctx, image, clusterID)
+	ret := m.ctrl.Call(m, "DelegateEnrichImage", ctx, image, clusterID, force)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DelegateEnrichImage indicates an expected call of DelegateEnrichImage.
-func (mr *MockDelegatorMockRecorder) DelegateEnrichImage(ctx, image, clusterID interface{}) *gomock.Call {
+func (mr *MockDelegatorMockRecorder) DelegateEnrichImage(ctx, image, clusterID, force interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelegateEnrichImage", reflect.TypeOf((*MockDelegator)(nil).DelegateEnrichImage), ctx, image, clusterID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelegateEnrichImage", reflect.TypeOf((*MockDelegator)(nil).DelegateEnrichImage), ctx, image, clusterID, force)
 }
 
 // GetDelegateClusterID mocks base method.

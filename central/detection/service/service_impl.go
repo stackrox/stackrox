@@ -141,7 +141,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		return nil, err
 	}
 	enrichmentContext.FetchOpt = fetchOpt
-	enrichmentContext.AdHoc = true
+	enrichmentContext.Delegable = true
 	enrichResult, err := s.imageEnricher.EnrichImage(ctx, enrichmentContext, img)
 	if err != nil {
 		return nil, err
@@ -301,7 +301,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 
 	eCtx := enricher.EnrichmentContext{
 		EnforcementOnly: req.GetEnforcementOnly(),
-		AdHoc:           true,
+		Delegable:       true,
 	}
 	fetchOpt, err := getFetchOptionFromRequest(req)
 	if err != nil {
