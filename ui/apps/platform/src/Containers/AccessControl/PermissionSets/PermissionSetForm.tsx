@@ -48,7 +48,7 @@ function PermissionSetForm({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
     const { hasReadWriteAccess } = usePermissions();
-    const hasWriteAccessForPage = hasReadWriteAccess('Role') && hasReadWriteAccess('Access');
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
     const { dirty, errors, handleChange, isValid, resetForm, setFieldValue, values } = useFormik({
         initialValues: permissionSet,

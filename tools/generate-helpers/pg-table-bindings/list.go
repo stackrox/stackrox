@@ -26,6 +26,7 @@ func init() {
 		&storage.ComplianceControlResult{}:                      resources.Compliance,
 		&storage.ComplianceDomain{}:                             resources.Compliance,
 		&storage.ComplianceStrings{}:                            resources.Compliance,
+		&storage.ComplianceConfig{}:                             resources.Compliance,
 		&storage.ComplianceOperatorCheckResult{}:                resources.ComplianceOperator,
 		&storage.ComplianceOperatorProfile{}:                    resources.ComplianceOperator,
 		&storage.ComplianceOperatorRule{}:                       resources.ComplianceOperator,
@@ -61,9 +62,8 @@ func init() {
 		&storage.NodeCVE{}:                                      resources.Node,
 		&storage.NotificationSchedule{}:                         resources.Notifications,
 		&storage.Notifier{}:                                     resources.Integration,
-		// TODO: ROX-14398 Replace Role with Access
-		&storage.PermissionSet{}: resources.Role,
-		&storage.Pod{}:           resources.Deployment,
+		&storage.PermissionSet{}:                                resources.Access,
+		&storage.Pod{}:                                          resources.Deployment,
 		// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
 		&storage.Policy{}:                        resources.Policy,
 		&storage.PolicyCategory{}:                resources.Policy,
@@ -74,15 +74,13 @@ func init() {
 		&storage.ProcessListeningOnPortStorage{}: resources.DeploymentExtension,
 		&storage.ResourceCollection{}:            resources.WorkflowAdministration,
 		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
-		&storage.ReportConfiguration{}: resources.VulnerabilityReports,
-		&storage.Risk{}:                resources.DeploymentExtension,
-		// TODO: ROX-14398 Replace Role with Access
-		&storage.Role{}:                 resources.Role,
-		&storage.SensorUpgradeConfig{}:  resources.Administration,
-		&storage.ServiceIdentity{}:      resources.Administration,
-		&storage.SignatureIntegration{}: resources.Integration,
-		// TODO: ROX-14398 Replace Role with Access
-		&storage.SimpleAccessScope{}:      resources.Role,
+		&storage.ReportConfiguration{}:    resources.VulnerabilityReports,
+		&storage.Risk{}:                   resources.DeploymentExtension,
+		&storage.Role{}:                   resources.Access,
+		&storage.SensorUpgradeConfig{}:    resources.Administration,
+		&storage.ServiceIdentity{}:        resources.Administration,
+		&storage.SignatureIntegration{}:   resources.Integration,
+		&storage.SimpleAccessScope{}:      resources.Access,
 		&storage.StoredLicenseKey{}:       resources.Access,
 		&storage.TelemetryConfiguration{}: resources.Administration,
 		&storage.TokenMetadata{}:          resources.Integration,

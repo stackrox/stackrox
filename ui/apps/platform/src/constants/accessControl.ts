@@ -74,7 +74,7 @@ export const defaultSelectedRole = {
 
 // TODO: ROX-13888 Remove WorkflowAdministration.
 export const resourceSubstitutions: Record<string, string[]> = {
-    Access: ['AuthProvider', 'Group', 'Licenses', 'User'],
+    Access: ['AuthProvider', 'Group', 'Licenses', 'Role', 'User'],
     Administration: [
         'AllComments',
         'Config',
@@ -103,7 +103,6 @@ export const resourceSubstitutions: Record<string, string[]> = {
 // TODO: ROX-13888 Remove Policy, VulnerabilityReports.
 export const resourceRemovalReleaseVersions = new Map<ResourceName, string>([
     ['Policy', '4.1'],
-    ['Role', '4.1'],
     ['VulnerabilityReports', '4.1'],
 ]);
 
@@ -112,7 +111,6 @@ export const replacedResourceMapping = new Map<ResourceName, string>([
     // TODO: ROX-13888 Remove Policy, VulnerabilityReports.
     ['Policy', 'WorkflowAdministration'],
     ['VulnerabilityReports', 'WorkflowAdministration'],
-    ['Role', 'Access'],
 ]);
 
 export const deprecatedResourceRowStyle = { backgroundColor: 'rgb(255,250,205)' };

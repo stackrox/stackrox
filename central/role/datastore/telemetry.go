@@ -16,8 +16,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	ctx = sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			// TODO: ROX-14398 Replace Role with Access
-			sac.ResourceScopeKeys(resources.Role)))
+			sac.ResourceScopeKeys(resources.Access)))
 
 	totals := make(map[string]any)
 	rs := Singleton()

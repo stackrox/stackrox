@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
 )
 
@@ -31,7 +32,11 @@ var (
 			"/v1.ComplianceService/GetRunResults",
 			"/v1.ComplianceService/GetAggregatedResults",
 		},
+		user.With(permissions.Modify(resources.Compliance)): {
+			"/v1.ComplianceService/UpdateComplianceStandardConfig",
+		},
 	})
+	log = logging.LoggerForModule()
 )
 
 // New returns a service object for registering with grpc.
@@ -71,15 +76,20 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetStandards returns a list of available standardsRepo
-func (s *serviceImpl) GetStandards(context.Context, *v1.Empty) (*v1.GetComplianceStandardsResponse, error) {
+func (s *serviceImpl) GetStandards(ctx context.Context, _ *v1.Empty) (*v1.GetComplianceStandardsResponse, error) {
 	standards, err := s.standardsRepo.Standards()
+
 	if err != nil {
 		return nil, err
 	}
 	// Filter standards by active
 	filteredStandards := standards[:0]
 	for _, standard := range standards {
+		hide, exists, _ := s.complianceDataStore.GetConfig(ctx, standard.GetId())
 		if s.manager.IsStandardActive(standard.GetId()) {
+			if exists {
+				standard.HideScanResults = hide.HideScanResults
+			}
 			filteredStandards = append(filteredStandards, standard)
 		}
 	}
@@ -90,13 +100,18 @@ func (s *serviceImpl) GetStandards(context.Context, *v1.Empty) (*v1.GetComplianc
 }
 
 // GetStandard returns details + controls for a given standard
-func (s *serviceImpl) GetStandard(_ context.Context, req *v1.ResourceByID) (*v1.GetComplianceStandardResponse, error) {
+func (s *serviceImpl) GetStandard(ctx context.Context, req *v1.ResourceByID) (*v1.GetComplianceStandardResponse, error) {
 	standard, exists, err := s.standardsRepo.Standard(req.GetId())
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
 		return nil, errors.Wrap(errox.NotFound, req.GetId())
+	}
+
+	hide, exists, _ := s.complianceDataStore.GetConfig(ctx, req.GetId())
+	if exists {
+		standard.Metadata.HideScanResults = hide.HideScanResults
 	}
 	return &v1.GetComplianceStandardResponse{
 		Standard: standard,
@@ -133,4 +148,22 @@ func (s *serviceImpl) GetRunResults(ctx context.Context, request *v1.GetComplian
 		Results:    results.LastSuccessfulResults,
 		FailedRuns: results.FailedRuns,
 	}, nil
+}
+
+// UpdateComplianceStandardConfig updates compliance standards config
+func (s *serviceImpl) UpdateComplianceStandardConfig(ctx context.Context, req *v1.UpdateComplianceRequest) (*v1.Empty, error) {
+	_, exists, err := s.standardsRepo.Standard(req.GetId())
+
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.Wrap(errox.NotFound, req.GetId())
+	}
+	err = s.complianceDataStore.UpdateConfig(ctx, req.GetId(), req.GetHideScanResults())
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.Empty{}, nil
 }

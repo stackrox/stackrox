@@ -54,7 +54,7 @@ func Singleton() DataStore {
 		ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.Role)))
+				sac.ResourceScopeKeys(resources.Access)))
 		roles, permissionSets, accessScopes := getDefaultObjects()
 		utils.Must(roleStorage.UpsertMany(ctx, roles))
 		utils.Must(permissionSetStorage.UpsertMany(ctx, permissionSets))
@@ -114,19 +114,6 @@ var defaultRoles = map[string]roleAttributes{
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.None],
 		description: "For users: use it to provide no read and write access to any resource",
 	},
-	// TODO: ROX-14398 Remove ScopeManager default role
-	accesscontrol.ScopeManager: {
-		idSuffix:    "scopemanager",
-		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.ScopeManager],
-		description: "For users: use it to create and modify scopes for the purpose of access control or vulnerability reporting",
-		resourceWithAccess: []permissions.ResourceWithAccess{
-			permissions.View(resources.Access),
-			permissions.View(resources.Cluster),
-			permissions.View(resources.Namespace),
-			permissions.View(resources.Role),
-			permissions.Modify(resources.Role),
-		},
-	},
 	accesscontrol.SensorCreator: {
 		idSuffix:    "sensorcreator",
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.SensorCreator],
@@ -163,7 +150,7 @@ var defaultRoles = map[string]roleAttributes{
 		resourceWithAccess: func() []permissions.ResourceWithAccess {
 			if !env.PostgresDatastoreEnabled.BooleanSetting() {
 				return []permissions.ResourceWithAccess{
-					permissions.View(resources.Role),                   // required for scopes
+					permissions.View(resources.Access),                 // required for scopes
 					permissions.View(resources.Integration),            // required for vuln report configurations
 					permissions.View(resources.VulnerabilityReports),   // required for vuln report configurations prior to collections
 					permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations prior to collections

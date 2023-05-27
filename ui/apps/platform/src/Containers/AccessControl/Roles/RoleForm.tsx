@@ -54,7 +54,7 @@ function RoleForm({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
     const { hasReadWriteAccess } = usePermissions();
-    const hasWriteAccessForPage = hasReadWriteAccess('Role') && hasReadWriteAccess('Access');
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
     const { dirty, errors, handleChange, isValid, resetForm, values } = useFormik({
         initialValues: role,
