@@ -79,8 +79,6 @@ var (
 
 	// To-be-deprecated in 4.1 with ROX-13888 (deprecation notice in 3.74).
 	Policy = newDeprecatedResourceMetadata("Policy", permissions.GlobalScope, WorkflowAdministration)
-	// To-be-deprecated in 4.1 with ROX-14398 (deprecation notice in 3.74).
-	Role = newDeprecatedResourceMetadata("Role", permissions.GlobalScope, Access)
 	// To-be-deprecated in 4.1 with ROX-13888 (deprecation notice in 3.74).
 	VulnerabilityReports = newDeprecatedResourceMetadata("VulnerabilityReports", permissions.GlobalScope,
 		WorkflowAdministration)

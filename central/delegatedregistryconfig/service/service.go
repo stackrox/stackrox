@@ -97,7 +97,7 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*v1.Delegated
 }
 
 // GetClusters returns the list of all clusters (id + name + valid flag). The valid flag indicates that
-// central can delegate registry interactions (scanning, signature verification, etc.) to that cluster
+// Central can delegate registry interactions (scanning, signature verification, etc.) to that cluster
 // and therefore that cluster is valid for use in the DelegatedRegistryConfig.
 func (s *serviceImpl) GetClusters(ctx context.Context, _ *v1.Empty) (*v1.DelegatedRegistryClustersResponse, error) {
 	clusters, err := s.getClusters(ctx)

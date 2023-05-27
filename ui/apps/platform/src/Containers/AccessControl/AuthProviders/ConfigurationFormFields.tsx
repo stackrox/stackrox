@@ -12,7 +12,7 @@ import {
 } from '@patternfly/react-core';
 
 import { oidcCallbackModes } from 'constants/accessControl';
-import { AuthProviderType, AuthProviderConfig } from 'services/AuthService';
+import { AuthProviderConfig, AuthProviderType } from 'services/AuthService';
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
 
 export type ConfigurationFormFieldsProps = {
@@ -266,7 +266,7 @@ function ConfigurationFormFields({
                             />
                         </FormGroup>
                     </GridItem>
-                    <GridItem span={12} lg={6}>
+                    <GridItem span={6} lg={6}>
                         <FormGroup fieldId="config.do_not_use_client_secret">
                             <Checkbox
                                 isChecked={
@@ -280,6 +280,29 @@ function ConfigurationFormFields({
                                 aria-label="Do not use Client Secret (not recommended)"
                                 onChange={onChange}
                                 isDisabled={isViewing || doNotUseClientSecretDisabled}
+                            />
+                        </FormGroup>
+                    </GridItem>
+                    <GridItem span={6} lg={6}>
+                        <FormGroup
+                            fieldId="config.disable_offline_access_scope"
+                            helperText={
+                                <span className="pf-u-font-size-sm">
+                                    Use if the identity provider has a limit on the number of
+                                    offline tokens that it can issue.
+                                </span>
+                            }
+                        >
+                            <Checkbox
+                                isChecked={config.disable_offline_access_scope as boolean}
+                                label="Disable 'offline_access' scope"
+                                id="config.disable_offline_access_scope"
+                                name="config.disable_offline_access_scope"
+                                aria-label="Disable 'offline_access' scope"
+                                onChange={(checked) => {
+                                    setFieldValue('config.disable_offline_access_scope', checked);
+                                }}
+                                isDisabled={isViewing}
                             />
                         </FormGroup>
                     </GridItem>

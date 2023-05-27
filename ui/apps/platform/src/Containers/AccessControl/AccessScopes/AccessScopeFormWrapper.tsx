@@ -48,7 +48,7 @@ function AccessScopeFormWrapper({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
     const { hasReadWriteAccess } = usePermissions();
-    const hasWriteAccessForPage = hasReadWriteAccess('Role') && hasReadWriteAccess('Access');
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
     // Disable Save button while editing label selectors.
     const [labelSelectorsEditingState, setLabelSelectorsEditingState] =

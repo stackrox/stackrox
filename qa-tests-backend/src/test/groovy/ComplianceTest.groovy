@@ -1331,7 +1331,6 @@ class ComplianceTest extends BaseSpecification {
                 "Detection"            : READ_WRITE_ACCESS,
                 "Integration"          : READ_WRITE_ACCESS,
                 "Policy"               : READ_WRITE_ACCESS,
-                "Role"                 : READ_WRITE_ACCESS,
                 "Cluster"              : READ_WRITE_ACCESS,
                 "Compliance"           : READ_WRITE_ACCESS,
                 "Node"                 : READ_WRITE_ACCESS,

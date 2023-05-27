@@ -21,9 +21,8 @@ var (
 			"/v1.ReportConfigurationService/CountReportConfigurations",
 		},
 		// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
-		// TODO: ROX-14398 Replace Role with Access
 		or.Or(
-			user.With(permissions.Modify(resources.VulnerabilityReports), permissions.View(resources.Integration), permissions.View(resources.Role)),
+			user.With(permissions.Modify(resources.VulnerabilityReports), permissions.View(resources.Integration), permissions.View(resources.Access)),
 			user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration))): {
 			"/v1.ReportConfigurationService/PostReportConfiguration",
 			"/v1.ReportConfigurationService/UpdateReportConfiguration",
@@ -35,7 +34,7 @@ var (
 			"/v1.ReportConfigurationService/DeleteReportConfiguration",
 		},
 		or.Or(
-			user.With(permissions.Modify(resources.VulnerabilityReports), permissions.View(resources.Integration), permissions.View(resources.Role)),
+			user.With(permissions.Modify(resources.VulnerabilityReports), permissions.View(resources.Integration), permissions.View(resources.Access)),
 			user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration))): {
 			"/v2.ReportConfigurationService/PostReportConfiguration",
 		},

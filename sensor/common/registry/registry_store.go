@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
-	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
 	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
@@ -143,25 +142,6 @@ func (rs *Store) getRegistriesInNamespace(namespace string) registries.Set {
 	return rs.store[namespace]
 }
 
-// GetRegistryForImage returns the relevant image registry for the given image.
-//
-// An error is returned if the registry is unknown.
-//
-// Assumes the image is from an OCP internal registry.
-func (rs *Store) GetRegistryForImage(image *storage.ImageName) (registryTypes.Registry, error) {
-	ns := utils.ExtractOpenShiftProject(image)
-	return rs.GetRegistryForImageInNamespace(image, ns)
-}
-
-// HasRegistryForImage returns true when the registry store has the registry
-// for the given image.
-//
-// Assumes the image is from an OCP internal registry.
-func (rs *Store) HasRegistryForImage(image *storage.ImageName) bool {
-	reg, err := rs.GetRegistryForImage(image)
-	return reg != nil && err == nil
-}
-
 // GetRegistryForImageInNamespace returns the stored registry that matches image.Registry
 // and is associated with namespace.
 //
@@ -235,6 +215,8 @@ func (rs *Store) IsLocal(image *storage.ImageName) bool {
 		return true
 	}
 
+	imageFullName := urlfmt.TrimHTTPPrefixes(image.GetFullName())
+
 	rs.delegatedRegistryConfigMutex.RLock()
 	defer rs.delegatedRegistryConfigMutex.RUnlock()
 
@@ -248,7 +230,6 @@ func (rs *Store) IsLocal(image *storage.ImageName) bool {
 	}
 
 	// if image matches a delegated registry prefix, it is local
-	imageFullName := urlfmt.TrimHTTPPrefixes(image.GetFullName())
 	for _, r := range config.Registries {
 		regPath := urlfmt.TrimHTTPPrefixes(r.GetPath())
 		if strings.HasPrefix(imageFullName, regPath) {
@@ -260,21 +241,24 @@ func (rs *Store) IsLocal(image *storage.ImageName) bool {
 }
 
 // AddClusterLocalRegistryHost adds host to an internal set of hosts representing
-// registries that are only accessible from this cluster. These hosts will factored
-// into IsLocal decisioning. Is OK to call repeatedly for the same host.
+// registries that are only accessible from this cluster. These hosts will be factored
+// into IsLocal decisions. Is OK to call repeatedly for the same host.
 func (rs *Store) AddClusterLocalRegistryHost(host string) {
+	trimmed := urlfmt.TrimHTTPPrefixes(host)
+
 	rs.clusterLocalRegistryHostsMutex.Lock()
 	defer rs.clusterLocalRegistryHostsMutex.Unlock()
 
-	trimmed := urlfmt.TrimHTTPPrefixes(host)
 	rs.clusterLocalRegistryHosts.Add(trimmed)
 
 	log.Debugf("Added cluster local registry host %q", trimmed)
 }
 
 func (rs *Store) hasClusterLocalRegistryHost(host string) bool {
+	trimmed := urlfmt.TrimHTTPPrefixes(host)
+
 	rs.clusterLocalRegistryHostsMutex.RLock()
 	defer rs.clusterLocalRegistryHostsMutex.RUnlock()
 
-	return rs.clusterLocalRegistryHosts.Contains(urlfmt.TrimHTTPPrefixes(host))
+	return rs.clusterLocalRegistryHosts.Contains(trimmed)
 }

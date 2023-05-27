@@ -90,7 +90,7 @@ func (resolver *Resolver) ComplianceStandards(ctx context.Context, query RawQuer
 		if !ok || err != nil {
 			continue
 		}
-		if !resolver.manager.IsStandardActive(standard.GetMetadata().GetId()) {
+		if !resolver.manager.IsStandardActive(standard.GetMetadata().GetId()) || resolver.manager.IsStandardHidden(ctx, standard.GetMetadata().GetId()) {
 			continue
 		}
 		standards = append(standards, standard.GetMetadata())

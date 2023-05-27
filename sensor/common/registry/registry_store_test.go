@@ -52,8 +52,7 @@ func TestRegistryStore_same_namespace(t *testing.T) {
 		Tag:      "nginx:1.18.0",
 		FullName: "image-registry.openshift-image-registry.svc:5000/qa/nginx:1.18.0",
 	}
-	assert.True(t, regStore.HasRegistryForImage(img))
-	reg, err := regStore.GetRegistryForImage(img)
+	reg, err := regStore.GetRegistryForImageInNamespace(img, "qa")
 	require.NoError(t, err)
 	assert.Equal(t, "image-registry.openshift-image-registry.svc:5000", reg.Name())
 
@@ -63,8 +62,7 @@ func TestRegistryStore_same_namespace(t *testing.T) {
 		Tag:      "nginx:1.18.0",
 		FullName: "image-registry.openshift-image-registry.svc.local:5000/qa/nginx:1.18.0",
 	}
-	assert.True(t, regStore.HasRegistryForImage(img))
-	reg, err = regStore.GetRegistryForImage(img)
+	reg, err = regStore.GetRegistryForImageInNamespace(img, "qa")
 	require.NoError(t, err)
 	assert.Equal(t, "image-registry.openshift-image-registry.svc.local:5000", reg.Name())
 
@@ -74,8 +72,7 @@ func TestRegistryStore_same_namespace(t *testing.T) {
 		Tag:      "nginx:1.18.0",
 		FullName: "172.99.12.11:5000/qa/nginx:1.18.0",
 	}
-	assert.True(t, regStore.HasRegistryForImage(img))
-	reg, err = regStore.GetRegistryForImage(img)
+	reg, err = regStore.GetRegistryForImageInNamespace(img, "qa")
 	require.NoError(t, err)
 	assert.Equal(t, "172.99.12.11:5000", reg.Name())
 }
@@ -95,8 +92,7 @@ func TestRegistryStore_SpecificNamespace(t *testing.T) {
 	assert.Equal(t, reg.Config().Username, "username")
 
 	// no registry should exist based on img.Remote
-	assert.False(t, regStore.HasRegistryForImage(fakeImgName))
-	_, err = regStore.GetRegistryForImage(fakeImgName)
+	_, err = regStore.GetRegistryForImageInNamespace(fakeImgName, "qa")
 	assert.Error(t, err)
 }
 

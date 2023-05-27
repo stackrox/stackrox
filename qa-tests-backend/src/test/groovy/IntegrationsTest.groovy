@@ -763,10 +763,10 @@ class IntegrationsTest extends BaseSpecification {
     @Tag("Integration")
     @Tag("BAT")
     def "Verify syslog notifier"() {
-       given:
-       "syslog server is created"
-       def syslog = SyslogServer.createRsyslog(orchestrator, Constants.ORCHESTRATOR_NAMESPACE)
-       sleep 15 * 1000 // wait 15s for service to start
+        given:
+        "syslog server is created"
+        def syslog = SyslogServer.createRsyslog(orchestrator, Constants.ORCHESTRATOR_NAMESPACE)
+        sleep 15 * 1000 // wait 15s for service to start
 
         when:
         "call the grpc API for the syslog notifier integration."
