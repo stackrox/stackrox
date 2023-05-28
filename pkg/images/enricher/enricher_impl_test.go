@@ -34,7 +34,7 @@ var (
 	// emptyCtx used within all tests.
 	emptyCtx = context.Background()
 
-	// errBroken is a generic error
+	// errBroken is a generic error.
 	errBroken = errors.New("broken")
 )
 

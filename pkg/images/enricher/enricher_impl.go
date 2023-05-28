@@ -144,10 +144,10 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 	}
 
 	// Check if image exists in database (will include metadata, sigs, etc.).
-	// Ignores in-mem metadata cache because that is not populated via enrichment requests from
-	// secured clusters. fetchFromDatabase will check if FetchOpt forces refetch.
-	// Assumes signatures in DB are OK, standard reprocessing or forcing rescan
-	// will trigger updates as necessary.
+	// Ignores in-mem metadata cache because that is not populated via
+	// enrichment requests from secured clusters. fetchFromDatabase will check
+	// if FetchOpt forces refetch. Assumes signatures in DB are OK, reprocessing
+	// or forcing re-scan  will trigger updates as necessary.
 	existingImg, exists := e.fetchFromDatabase(ctx, image, enrichCtx.FetchOpt)
 	if exists && cachedImageIsValid(existingImg) {
 		image.Metadata = existingImg.GetMetadata()
@@ -179,10 +179,8 @@ func cachedImageIsValid(cachedImage *storage.Image) bool {
 		return false
 	}
 
-	// check if metadata is valid
 	metadataValid := !metadataIsOutOfDate(cachedImage.GetMetadata())
 
-	// check if scan is valid (exists)
 	scanValid := cachedImage.GetScan() != nil
 
 	return metadataValid && scanValid

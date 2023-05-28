@@ -391,7 +391,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	if request.Error != "" {
 		// If errors occurred we continue processing so that the failed image scan may be saved in
 		// the central datastore. Without this users would not have an indication that scans from
-		// secured clusters are failing
+		// secured clusters are failing.
 		hasErrors = true
 		log.Warnf("Received image enrichment request with errors %q: %v", request.GetImageName().GetFullName(), request.GetError())
 	}
@@ -437,7 +437,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	img := &storage.Image{
 		Id:   imgID,
 		Name: request.GetImageName(),
-		// 'Names' must be populated to enable cache hits in central AND sensor
+		// 'Names' must be populated to enable cache hits in central AND sensor.
 		Names:          []*storage.ImageName{request.GetImageName()},
 		Signature:      request.GetImageSignature(),
 		Metadata:       request.GetMetadata(),
@@ -485,7 +485,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 func (s *serviceImpl) informScanWaiter(reqID string, img *storage.Image, scanErr error) {
 	if reqID == "" {
-		// do nothing if request ID is missing (no waiter)
+		// do nothing if request ID is missing (no waiter).
 		return
 	}
 
@@ -495,7 +495,7 @@ func (s *serviceImpl) informScanWaiter(reqID string, img *storage.Image, scanErr
 }
 
 func (s *serviceImpl) UpdateLocalScanStatusInternal(_ context.Context, req *v1.UpdateLocalScanStatusInternalRequest) (*v1.Empty, error) {
-	log.Debugf("Received early delegated scan failure message for %q: %q", req.GetRequestId(), req.GetError())
+	log.Debugf("Received early delegated scan failure for %q: %q", req.GetRequestId(), req.GetError())
 
 	s.informScanWaiter(req.GetRequestId(), nil, errors.New(req.GetError()))
 

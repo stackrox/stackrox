@@ -92,7 +92,7 @@ func (d *delegatedRegistryImpl) processUpdatedDelegatedRegistryConfig(config *ce
 		return errors.New("could not process updated delegated registry config, stop requested")
 	default:
 		d.registryStore.SetDelegatedRegistryConfig(config)
-		log.Debugf("Stored updated delegated registry config: %q", config)
+		log.Infof("Stored updated delegated registry config: %q", config)
 	}
 	return nil
 }
@@ -102,7 +102,7 @@ func (d *delegatedRegistryImpl) processScanImage(scanReq *central.ScanImage) err
 	case <-d.stopSig.Done():
 		return errors.New("could not process scan image request, stop requested")
 	default:
-		log.Debugf("Received scan request: %q", scanReq)
+		log.Infof("Received scan request: %q", scanReq)
 
 		// Spawn a goroutine so that this handler doesn't block other messages from being processed
 		// while waiting for scan to complete.
@@ -122,25 +122,35 @@ func (d *delegatedRegistryImpl) executeScan(scanReq *central.ScanImage) {
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 
-	// Execute the scan.
+	// Execute the scan, ignore returned image because will be sent to Central during enrichment.
 	_, err = d.localScan.EnrichLocalImageInNamespace(ctx, d.imageSvc, ci, "", scanReq.GetRequestId(), scanReq.GetForce())
-	if errors.Is(err, scan.ErrEnrichNotStarted) {
-		// This error indicates enrichment never started and therefore a message will
-		// not be sent to Central for this request id, so send one now to be a good
-		// citizen to the waiting goroutine in Central.
-		d.sendScanStatusUpdate(scanReq, err)
+	if err != nil {
+		log.Errorf("Scan failed for req %q image %q: %v", scanReq.GetRequestId(), ci.GetName().GetFullName(), err)
+
+		if errors.Is(err, scan.ErrEnrichNotStarted) {
+			// This error indicates enrichment never started and therefore a message will
+			// not be sent to Central for this request.
+
+			// Send an update now to be a good citizen so that the waiting goroutine in
+			// Central is not waiting for the full timeout and the failure reason is
+			// communicated.
+			d.sendScanStatusUpdate(scanReq, err)
+		}
 	}
 }
 
 func (d *delegatedRegistryImpl) sendScanStatusUpdate(scanReq *central.ScanImage, enrichErr error) {
 	ctx, cancel := context.WithTimeout(context.Background(), statusUpdateTimeout)
 	defer cancel()
-	_, err := d.imageSvc.UpdateLocalScanStatusInternal(ctx, &v1.UpdateLocalScanStatusInternalRequest{
+
+	req := &v1.UpdateLocalScanStatusInternalRequest{
 		RequestId: scanReq.GetRequestId(),
 		Error:     enrichErr.Error(),
-	})
+	}
+
+	_, err := d.imageSvc.UpdateLocalScanStatusInternal(ctx, req)
 	if err != nil {
-		log.Warnf("Error updating local scan status: %v", err)
+		log.Warnf("Error sending local scan status update for req %q image %q: %v", scanReq.GetRequestId(), scanReq.GetImageName(), err)
 	}
 }
 

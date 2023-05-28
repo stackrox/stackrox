@@ -112,10 +112,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
 
-	registryStore := storeProvider.Registries()
-	localScan := scan.NewLocalScan(registryStore)
+	localScan := scan.NewLocalScan(storeProvider.Registries())
 	delegatedRegistryHandler := delegatedregistry.NewHandler(storeProvider.Registries(), localScan)
-	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), registryStore, localScan)
+
+	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan)
 	reprocessorHandler := reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache)
 	pipeline := eventpipeline.New(cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.resyncPeriod, cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize)
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)

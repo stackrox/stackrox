@@ -73,8 +73,7 @@ type Manager[T any] interface {
 	// Send sends data and err to the waiter with the provided id.
 	Send(id string, data T, err error) error
 
-	// NewWaiter creates a waiter with a unique ID. A call to Wait() will complete when
-	// a response is published using this ID.
+	// NewWaiter creates a waiter with a unique ID.
 	NewWaiter() (Waiter[T], error)
 }
 
@@ -91,7 +90,7 @@ type managerImpl[T any] struct {
 	// responseCh is the global channel that receives all responses meant for waiting waiters.
 	responseCh chan *response[T]
 
-	// doneWaiterCh ids sent on this channel allow the manager to cleanup done waiters.
+	// doneWaiterCh ids sent on this channel will be cleaned up by the manager.
 	doneWaiterCh chan string
 
 	// managerShutdownCh will be closed when manager is shutting down and performing cleanup.
@@ -126,17 +125,17 @@ func NewManager[T any](opts ...Option) *managerImpl[T] {
 	}
 }
 
-// Start spawns a goroutine that will run forever or until ctx.Done() delivering
+// Start spawns a goroutine that will run forever or until ctx done delivering
 // messages to waiters.
 func (w *managerImpl[T]) Start(ctx context.Context) {
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
-				// ensure are no more sends
+				// ensure are no more sends.
 				close(w.managerShutdownCh)
 
-				// inform the waiters
+				// inform the waiters.
 				w.closeWaiters()
 				return
 			case r := <-w.responseCh:
@@ -147,10 +146,10 @@ func (w *managerImpl[T]) Start(ctx context.Context) {
 
 				// to prevent blocking, waiterCh should be buffered with
 				// size of 1 (each waiterCh should only ever receive 1 msg)
-				// (alternatively use a goroutine)
+				// (alternatively use a goroutine).
 				waiterCh <- r
 			case id := <-w.doneWaiterCh:
-				// the waiter has been closed or canceled
+				// the waiter has been closed or canceled.
 				_, _ = w.removeWaiter(id)
 			}
 		}
@@ -159,7 +158,7 @@ func (w *managerImpl[T]) Start(ctx context.Context) {
 
 // Send sends data and err to the waiter with the provided id.
 func (w *managerImpl[T]) Send(id string, data T, err error) error {
-	// if the manager is shutdown, return immediately
+	// if the manager is shutdown, return immediately.
 	select {
 	case <-w.managerShutdownCh:
 		return ErrManagerShutdown
@@ -167,7 +166,7 @@ func (w *managerImpl[T]) Send(id string, data T, err error) error {
 	}
 
 	// check again if the manager is shutdown, return if so
-	// otherwise write the message to the proper channel
+	// otherwise write the message to the proper channel.
 	select {
 	case <-w.managerShutdownCh:
 		return ErrManagerShutdown
@@ -184,14 +183,14 @@ func (w *managerImpl[T]) Send(id string, data T, err error) error {
 // NewWaiter creates a waiter with a unique ID. A call to Wait() will complete when
 // a response is published using this ID.
 func (w *managerImpl[T]) NewWaiter() (Waiter[T], error) {
-	// if the manager is shutdown, error out
+	// if the manager is shutdown, error out.
 	select {
 	case <-w.managerShutdownCh:
 		return nil, ErrManagerShutdown
 	default:
 	}
 
-	// otherwise setup the new waiter
+	// otherwise setup the new waiter.
 	var waiterCh chan *response[T]
 	for i := 0; i < w.maxCollisions; i++ {
 		id, err := w.idGenerator.GenID()
@@ -217,7 +216,7 @@ func (w *managerImpl[T]) addWaiter(id string) (chan *response[T], error) {
 	}
 
 	// create a buffered channel of size 1 so that the loop initiated by w.Start()
-	// will not have to wait for this channel to be read (making it non-blocking)
+	// will not have to wait for this channel to be read (making it non-blocking).
 	ch := make(chan *response[T], 1)
 
 	w.waiters[id] = ch
@@ -247,7 +246,7 @@ func (w *managerImpl[T]) closeWaiters() {
 	}
 }
 
-// len is used in tests to verify waiter cleanup
+// len is used in tests to verify waiter cleanup, added to avoid race condition.
 func (w *managerImpl[T]) len() int {
 	w.waitersMu.Lock()
 	defer w.waitersMu.Unlock()

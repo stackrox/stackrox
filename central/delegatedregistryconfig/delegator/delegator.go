@@ -20,7 +20,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// New creates a new delegator
+// New creates a new delegator.
 func New(deleRegConfigDS datastore.DataStore, connManager connection.Manager, scanWaiterManager waiter.Manager[*storage.Image]) *delegatorImpl {
 	return &delegatorImpl{
 		deleRegConfigDS:   deleRegConfigDS,
@@ -30,13 +30,18 @@ func New(deleRegConfigDS datastore.DataStore, connManager connection.Manager, sc
 }
 
 type delegatorImpl struct {
-	deleRegConfigDS   datastore.DataStore
-	connManager       connection.Manager
+	// deleRegConfigDS for pulling the current delegated registry config.
+	deleRegConfigDS datastore.DataStore
+
+	// connManager for sending scan requests and ensuring clusters are valid for delegation.
+	connManager connection.Manager
+
+	// scanWaiterManager creates waiters that wait for async scan responses.
 	scanWaiterManager waiter.Manager[*storage.Image]
 }
 
 // GetDelegateClusterID returns the cluster id that should enrich this image (if any) and
-// true if enrichment should be delegated to a secured cluster, false otherwise
+// true if enrichment should be delegated to a secured cluster, false otherwise.
 func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, image *storage.Image) (string, bool, error) {
 	config, err := d.getConfig(ctx)
 	if err != nil {
@@ -52,7 +57,7 @@ func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, image *storage
 	return clusterID, true, err
 }
 
-// DelegateEnrichImage sends an enrichment request to the provided cluster
+// DelegateEnrichImage sends an enrichment request to the provided cluster.
 func (d *delegatorImpl) DelegateEnrichImage(ctx context.Context, image *storage.Image, clusterID string, force bool) error {
 	if clusterID == "" {
 		return errors.New("missing cluster id")
@@ -88,6 +93,7 @@ func (d *delegatorImpl) DelegateEnrichImage(ctx context.Context, image *storage.
 
 	log.Debugf("Scan response received for %q and image %q", w.ID(), img.GetName().GetFullName())
 
+	// Copy the fields from img into image, callers expecting image to be modified in place.
 	*image = *img
 
 	return nil

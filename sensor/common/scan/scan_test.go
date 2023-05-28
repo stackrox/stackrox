@@ -199,9 +199,7 @@ func (suite *scanTestSuite) TestEnrichLocalImageInNamespace() {
 		getGlobalRegistryForImage:      fakeRegStore.GetGlobalRegistryForImage,
 		scannerClientSingleton:         emptyScannerClientSingleton,
 		scanSemaphore:                  semaphore.NewWeighted(10),
-		createNoAuthImageRegistry: func(_ context.Context, in *storage.ImageName) (registryTypes.Registry, error) {
-			return &fakeRegistry{fail: false}, nil
-		},
+		createNoAuthImageRegistry:      successCreateNoAuthImageRegistry,
 	}
 
 	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")

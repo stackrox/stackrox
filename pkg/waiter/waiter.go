@@ -67,16 +67,16 @@ func (w *waiterImpl[T]) Wait(ctx context.Context) (T, error) {
 	select {
 	case r, more := <-w.ch:
 		if !more {
-			// channel has been closed
+			// channel has been closed.
 			err = ErrWaiterClosed
 			break
 		}
 
-		// msg recieved
+		// msg received.
 		data = r.data
 		err = r.err
 	case <-w.doneCh:
-		// close called on this waiter
+		// close called on this waiter.
 		err = ErrWaiterClosed
 		w.managerDoneCh <- w.id
 	case <-ctx.Done():

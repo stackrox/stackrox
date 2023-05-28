@@ -11,9 +11,9 @@ import (
 //go:generate mockgen-wrapper
 type Delegator interface {
 	// GetDelegateClusterID returns the cluster id that should enrich this image (if any) and
-	// true if enrichment should be delegated to a secured cluster, false otherwise
+	// true if enrichment should be delegated to a secured cluster, false otherwise.
 	GetDelegateClusterID(ctx context.Context, image *storage.Image) (string, bool, error)
 
-	// DelegateEnrichImage sends an enrichment request to the provided cluster
+	// DelegateEnrichImage sends an enrichment request to the provided cluster.
 	DelegateEnrichImage(ctx context.Context, image *storage.Image, clusterID string, force bool) error
 }

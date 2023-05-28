@@ -18,7 +18,7 @@ func initialize() {
 	manager.Start(context.Background())
 }
 
-// Singleton creates a single instance of a scan waiter manager
+// Singleton creates a single instance of a scan waiter manager.
 func Singleton() waiter.Manager[*storage.Image] {
 	once.Do(initialize)
 	return manager
