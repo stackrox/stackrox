@@ -33,7 +33,8 @@ type delegatorImpl struct {
 	// deleRegConfigDS for pulling the current delegated registry config.
 	deleRegConfigDS datastore.DataStore
 
-	// connManager for sending scan requests and ensuring clusters are valid for delegation.
+	// connManager for sending scan requests to secured clusters and ensuring
+	// clusters are valid for delegation.
 	connManager connection.Manager
 
 	// scanWaiterManager creates waiters that wait for async scan responses.
