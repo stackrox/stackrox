@@ -141,6 +141,14 @@ jobs:
           name: cli-build
           path: cli-build.tgz
 
+  build-rocksdb-bins-power:
+  runs-on: ubuntu-latest
+  env:
+    ARCH: ppc64le
+  steps:
+    - name: Setup prereqs for building on Power
+      uses: ./.github/actions/build-rocksdb-power  
+
   pre-build-go-binaries:
     strategy:
       # Supports three go binary builds:
@@ -186,15 +194,11 @@ jobs:
           matrix.name == 'race-condition-debug'
         run: echo "RACE=true" >> "$GITHUB_ENV"
 
-      - name: Setup prereqs for building on Power
-        if: ${{ matrix.arch == 'ppc64le' }}
-        uses: ./.github/actions/build-rocksdb-power  
-
       - name: Build Go Binaries
         run: make build-prep main-build-nodeps
 
       - name: Bundle the build to preserve permissions
-        run: tar -cvzf go-binaries-build.tgz bin/linux_amd64
+        run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
 
       - uses: actions/upload-artifact@v3
         with:
