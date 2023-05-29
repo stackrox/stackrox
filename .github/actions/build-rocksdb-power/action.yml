@@ -6,7 +6,7 @@ runs:
     - name: Update sources.list
       shell: bash
       run: |
-        sudo echo "deb https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu focal at15.0
+        echo "deb https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu focal at15.0
                    deb https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu bionic at13.0
                    deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy main restricted
                    deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy-updates main restricted
