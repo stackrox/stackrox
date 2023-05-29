@@ -142,12 +142,12 @@ jobs:
           path: cli-build.tgz
 
   build-rocksdb-bins-power:
-  runs-on: ubuntu-latest
-  env:
-    ARCH: ppc64le
-  steps:
-    - name: Setup prereqs for building on Power
-      uses: ./.github/actions/build-rocksdb-power  
+    runs-on: ubuntu-latest
+    env:
+      ARCH: ppc64le
+    steps:
+      - name: Setup prereqs for building on Power
+        uses: ./.github/actions/build-rocksdb-power  
 
   pre-build-go-binaries:
     strategy:
