@@ -3,13 +3,16 @@ description: Cross-compile rocksdb on Power using IBM Power cross-compiler
 runs:
   using: composite
   steps:
+    - name: Add GPG Key
+      shell: bash
+      run: |
+        wget -qO- https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu/dists/jammy/615d762f.gpg.key | sudo tee -a /etc/apt/trusted.gpg.d/615d762f.asc
+
     - name: Update sources.list
       shell: bash
       run: |
-        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys A5665AC46976A827
-
-        sudo su -c "echo 'deb https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu focal at15.0
-                   deb https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu bionic at13.0
+        sudo su -c "echo 'deb [signed-by=/etc/apt/trusted.gpg.d/615d762f.asc] https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu focal at15.0
+                   deb [signed-by=/etc/apt/trusted.gpg.d/615d762f.asc] https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu bionic at13.0
                    deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy main restricted
                    deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy-updates main restricted
                    deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy universe
@@ -31,8 +34,6 @@ runs:
     - name: Intall IBM Advanced Toolchain Cross Compiler
       shell: bash
       run: |
-        wget https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu/dists/focal/6976a827.gpg.key
-        sudo apt-key add 6976a827.gpg.key
         sudo apt install advance-toolchain-at15.0-cross-ppc64le
 
     - name: Install rocksdb deps
