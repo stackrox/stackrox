@@ -6,6 +6,8 @@ runs:
     - name: Update sources.list
       shell: bash
       run: |
+        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys A5665AC46976A827
+
         sudo su -c "echo 'deb https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu focal at15.0
                    deb https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu bionic at13.0
                    deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy main restricted
