@@ -6,7 +6,7 @@ runs:
     - name: Update sources.list
       shell: bash
       run: |
-        echo "deb https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu focal at15.0
+        sudo su -c "echo 'deb https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu focal at15.0
                    deb https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu bionic at13.0
                    deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy main restricted
                    deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy-updates main restricted
@@ -17,7 +17,7 @@ runs:
                    deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy-backports main restricted universe multiverse
                    deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy-security main restricted
                    deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy-security universe
-                   deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy-security multiverse" >> /etc/apt/sources.list
+                   deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy-security multiverse' >> /etc/apt/sources.list"
 
 
         sudo apt-get update -y;
