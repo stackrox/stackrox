@@ -186,6 +186,10 @@ jobs:
           matrix.name == 'race-condition-debug'
         run: echo "RACE=true" >> "$GITHUB_ENV"
 
+      - name: Setup prereqs for building on Power
+        if: ${{ matrix.arch == 'ppc64le' }}
+        uses: ./.github/actions/build-rocksdb-power  
+
       - name: Build Go Binaries
         run: make build-prep main-build-nodeps
 
