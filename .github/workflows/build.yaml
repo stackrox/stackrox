@@ -146,6 +146,12 @@ jobs:
     env:
       ARCH: ppc64le
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
       - name: Setup prereqs for building on Power
         uses: ./.github/actions/build-rocksdb-power  
 
