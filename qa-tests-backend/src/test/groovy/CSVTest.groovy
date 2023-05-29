@@ -228,7 +228,7 @@ class CSVTest extends BaseSpecification {
         given:
         def graphQLPayload = payload(id)
         def csvQuery = getCVETypeImageQuery() + query
-        def graphQLQuery = postgresRun ? PG_QUERIES[description] : QUERIES[description]
+        def graphQLQuery = isPostgresRun() ? PG_QUERIES[description] : QUERIES[description]
 
         when:
         "Query fixable CVEs from graphQL"
