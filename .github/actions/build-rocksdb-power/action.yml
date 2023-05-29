@@ -7,12 +7,13 @@ runs:
       shell: bash
       run: |
         wget -qO- https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu/dists/jammy/615d762f.gpg.key | sudo tee -a /etc/apt/trusted.gpg.d/615d762f.asc
+        wget -qO- https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu/dists/focal/6976a827.gpg.key | sudo tee -a /etc/apt/trusted.gpg.d/6976a827.asc
 
     - name: Update sources.list
       shell: bash
       run: |
-        sudo su -c "echo 'deb [signed-by=/etc/apt/trusted.gpg.d/615d762f.asc] https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu focal at15.0
-                   deb [signed-by=/etc/apt/trusted.gpg.d/615d762f.asc] https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu bionic at13.0
+        sudo su -c "echo 'deb [signed-by=/etc/apt/trusted.gpg.d/6976a827.asc] https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu focal at15.0
+                   deb [signed-by=/etc/apt/trusted.gpg.d/6976a827.asc] https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu bionic at13.0
                    deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy main restricted
                    deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy-updates main restricted
                    deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy universe
