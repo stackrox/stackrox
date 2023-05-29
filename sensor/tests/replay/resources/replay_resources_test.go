@@ -9,6 +9,9 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+// We need a test file per events file (replay_resources_test and replay_alerts_test).
+// Before we had these two in a table test but, since both were using the same sensor's
+// instance, there was some flakiness due to problems cleaning up sensor's state.
 func TestReplayResourceEvents(t *testing.T) {
 	suite.Run(t, new(ReplayResourcesSuite))
 }

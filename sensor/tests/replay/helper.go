@@ -31,6 +31,7 @@ const (
 	resyncTime = 1 * time.Second
 )
 
+// Suite defines the interface to be used with these helper functions
 type Suite interface {
 	GetFakeClient() *k8s.ClientSet
 	SetFakeClient(*k8s.ClientSet)
@@ -39,6 +40,7 @@ type Suite interface {
 	GetT() *testing.T
 }
 
+// SetupTest sets up the k8s fake client and the central fake service
 func SetupTest(suite Suite) {
 	suite.SetFakeClient(k8s.MakeFakeClient())
 
@@ -59,6 +61,7 @@ func SetupTest(suite Suite) {
 	)
 }
 
+// StartTest starts a sensor instance for the test
 func StartTest(suite Suite) *TraceWriterWithChannel {
 	suite.GetT().Setenv("ROX_RESYNC_DISABLED", "true")
 	conn, spyCentral, _ := createConnectionAndStartServer(suite.GetFakeCentral())
@@ -87,6 +90,10 @@ func StartTest(suite Suite) *TraceWriterWithChannel {
 	return writer
 }
 
+// RunReplayTest this is the body of the replay test.
+// It uses the FakeEventManager to create a bunch of fake k8s events
+// and then compares the messages sent to central with a given
+// pre-recorded output file.
 func RunReplayTest(t *testing.T, suite Suite, writer *TraceWriterWithChannel, k8sEventsFile, sensorOutputFile string) {
 	suite.GetFakeCentral().ClearReceivedBuffer()
 	eventsReader := &k8s.TraceReader{
@@ -209,6 +216,7 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 
 var _ io.Writer = (*TraceWriterWithChannel)(nil)
 
+// TraceWriterWithChannel writes sensor-to-central events to a channel
 type TraceWriterWithChannel struct {
 	destinationChannel chan *central.SensorEvent
 	// mu mutex to avoid multiple goroutines writing at the same time
@@ -217,6 +225,7 @@ type TraceWriterWithChannel struct {
 	enabled bool
 }
 
+// Close closes the TraceWriterWithChannel internal channel
 func (tw *TraceWriterWithChannel) Close() {
 	tw.mu.Lock()
 	defer tw.mu.Unlock()
@@ -235,6 +244,7 @@ func (tw *TraceWriterWithChannel) disable() {
 	tw.enabled = false
 }
 
+// Write writes the sensor-to-central events in the internal channel
 func (tw *TraceWriterWithChannel) Write(_ []byte) (nb int, retErr error) {
 	tw.mu.Lock()
 	defer tw.mu.Unlock()
