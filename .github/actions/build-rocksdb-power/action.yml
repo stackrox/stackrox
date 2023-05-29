@@ -4,6 +4,7 @@ runs:
   using: composite
   steps:
     - name: Update sources.list
+      shell: bash
       run: |
         sudo echo "deb https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu focal at15.0
                    deb https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu bionic at13.0
@@ -21,16 +22,19 @@ runs:
 
         sudo apt-get update -y;
         
-    - name: Add ppc64le package support 
+    - name: Add ppc64le package support
+      shell: bash
       run: sudo dpkg --add-architecture ppc64el
 
     - name: Intall IBM Advanced Toolchain Cross Compiler
+      shell: bash
       run: |
         wget https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu/dists/focal/6976a827.gpg.key
         sudo apt-key add 6976a827.gpg.key
         sudo apt install advance-toolchain-at15.0-cross-ppc64le
 
     - name: Install rocksdb deps
+      shell: bash
       run: |
         sudo apt-get install -y libsnappy-dev:ppc64el
         sudo apt-get install -y zlib1g-dev:ppc64el
@@ -40,11 +44,13 @@ runs:
         sudo apt-get install -y libgflags-dev:ppc64el
 
     - name: Clone rocksdb sources
+      shell: bash
       run: |
         git clone https://github.com/facebook/rocksdb.git
         git checkout v6.15.4
 
     - name: Apply the git patch to make relevant changes
+      shell: bash
       run: |
         cat <<- "EOF" > ppc64le.patch
         diff --git a/Makefile b/Makefile
@@ -78,10 +84,11 @@ runs:
         EOF
 
         cd rocksdb
-        git apply ./ppc64le.patch
+        git apply ../ppc64le.patch
 
 
     - name: Cross compile and install rocksdb
+      shell: bash
       run: |
         make MACHINE=ppc64le TARGET_ARCHITECTURE=ppc64le CC="/opt/at13.0/bin/powerpc64le-linux-gnu-gcc" CXX="/opt/at13.0/bin/powerpc64le-linux-gnu-g++" AR="/opt/at13.0/bin/powerpc64le-linux-gnu-gcc-ar" shared_lib 
 
