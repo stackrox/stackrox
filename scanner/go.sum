@@ -147,8 +147,8 @@ github.com/prometheus/procfs v0.9.0 h1:wzCHvIvM5SxWqYvwgVL7yJY8Lz3PKn49KQtpgMYJf
 github.com/prometheus/procfs v0.9.0/go.mod h1:+pB4zwohETzFnmlpe6yd2lSc+0/46IYZRB/chUwxUZY=
 github.com/quay/alas v1.0.1 h1:MuFpGGXyZlDD7+F/hrnMZmzhS8P2bjRzX9DyGmyLA+0=
 github.com/quay/alas v1.0.1/go.mod h1:pseepSrG9pwry1joG7RO/RNRFJaWqiqx9qeoomeYwEk=
-github.com/quay/claircore v1.5.3 h1:K3FqrouzukeRPU6iHBIqx4eYHQ3yWi0GOD4aWtaLPhw=
-github.com/quay/claircore v1.5.3/go.mod h1:QoKTswHrXysCScSHj9+Ylc1Yl3t25hAyXpBDUcpqS48=
+github.com/quay/claircore v1.5.5 h1:SH3gkJGRo4jSGh/l/OQPoI6DL292VRGk3SF8QIKlEHE=
+github.com/quay/claircore v1.5.5/go.mod h1:QoKTswHrXysCScSHj9+Ylc1Yl3t25hAyXpBDUcpqS48=
 github.com/quay/claircore/toolkit v1.0.0 h1:FiAo/URPMa62D9KN0YhyK+ATObtXl4I8/Jsf69GEHYM=
 github.com/quay/claircore/toolkit v1.0.0/go.mod h1:3ELtgf92x7o1JCTSKVOAqhcnCTXc4s5qiGaEDx62i20=
 github.com/quay/claircore/updater/driver v1.0.0 h1:w7dAUjO3GBK6RjNyTZ2Kwz0l/Wuic3ykKJWPB80uA94=
