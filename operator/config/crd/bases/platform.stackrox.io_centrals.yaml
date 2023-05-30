@@ -365,8 +365,8 @@ spec:
                     description: Configures how Central should store its persistent
                       data. You can choose between using a persistent volume claim,
                       and a host path. Central persistent storage is deprecated for
-                      installation. Existing customers may continue using it for restoration
-                      from legacy RocksDB backups.
+                      new installations. Existing users may continue using it for
+                      restoration from legacy RocksDB backups.
                     properties:
                       hostPath:
                         description: Stores persistent data on a directory on the

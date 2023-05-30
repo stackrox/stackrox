@@ -143,6 +143,7 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 	}
 
 	pvcConfig := r.persistence.GetPersistentVolumeClaim()
+	noCreate := pvcConfig == nil && r.target == PVCTargetCentral
 	if pvcConfig == nil {
 		pvcConfig = &platform.PersistentVolumeClaim{}
 	}
@@ -179,6 +180,13 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 	}
 
 	if pvc == nil {
+		// Starting from 4.1, we do not create new PVCs for central.
+		if noCreate {
+			// TODO(DO NOT MERGE): remove log
+			r.log.Info("Skip reconcile for no pvc")
+			return nil
+		}
+
 		return r.handleCreate(claimName, pvcConfig)
 	}
 

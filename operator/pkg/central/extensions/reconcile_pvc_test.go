@@ -146,9 +146,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 			DefaultClaim: DefaultCentralPVCName,
 			Target:       PVCTargetCentral,
 			ExistingPVCs: nil,
-			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultCentralPVCName: verifyMultiple(ownedBy(emptyNotDeletedCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
-			},
+			ExpectedPVCs: nil,
 		},
 
 		"given-hostpath-and-pvc-should-return-error": {
@@ -307,8 +305,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 			Target:       PVCTargetCentral,
 			ExistingPVCs: []*corev1.PersistentVolumeClaim{{ObjectMeta: metav1.ObjectMeta{Name: testPVCName, Namespace: "stackrox"}}},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				testPVCName:           verifyMultiple(notOwnedBy(emptyNotDeletedCentral)),
-				DefaultCentralPVCName: verifyMultiple(ownedBy(emptyNotDeletedCentral), withSize(resource.MustParse("100Gi")), withStorageClass(emptyStorageClass)),
+				testPVCName: verifyMultiple(notOwnedBy(emptyNotDeletedCentral)),
 			},
 		},
 
