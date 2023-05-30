@@ -1,9 +1,10 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
+import capitalize from 'lodash/capitalize';
+
 import entityTypes from 'constants/entityTypes';
 import URLService from 'utils/URLService';
 import { resourceLabels } from 'messages/common';
-import capitalize from 'lodash/capitalize';
 import Widget from 'Components/Widget';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
@@ -63,7 +64,7 @@ const ResourceCount = ({
     }
 
     const variables = getVariables();
-    const headerText = `${resourceLabels[entityType]} Count`;
+    const headerText = `${capitalize(resourceLabels[entityType])} Count`;
     const url = getUrl();
 
     if (count || count === 0) {
