@@ -1,4 +1,4 @@
-package main
+package compliance
 
 import (
 	"bytes"
@@ -164,7 +164,7 @@ func (s *ComplianceResultsBuilderTestSuite) TestSend() {
 
 	testResults, client, mockData := s.getMockData()
 
-	err := sendResults(testResults, client, "test")
+	err := sendResults(testResults, client, "test", &dummyNodeNameProvider{})
 	s.NoError(err)
 	s.Require().Len(client.sendList, 1)
 	msg := client.sendList[0]
@@ -174,4 +174,10 @@ func (s *ComplianceResultsBuilderTestSuite) TestSend() {
 	s.Require().NotNil(zippedEvidence)
 	unzippedEvidence := s.decompressEvidence(zippedEvidence)
 	s.Equal(mockData, unzippedEvidence)
+}
+
+type dummyNodeNameProvider struct{}
+
+func (dnp *dummyNodeNameProvider) GetNodeName() string {
+	return "Foo"
 }

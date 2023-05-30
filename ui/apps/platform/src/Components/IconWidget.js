@@ -14,7 +14,7 @@ const IconWidget = ({ title, icon, description, linkUrl, loading, textSizeClass 
                 <img src={icon} alt={title} />
             </div>
             <div
-                className={`h-full flex font-600 items-start justify-center pt-3 leading-normal ${textSizeClass}`}
+                className={`h-full flex items-start justify-center pt-3 leading-normal ${textSizeClass}`}
             >
                 <span>{description}</span>
             </div>
@@ -25,7 +25,7 @@ const IconWidget = ({ title, icon, description, linkUrl, loading, textSizeClass 
         <Widget
             header={title}
             className="bg-base-100"
-            bodyClassName="flex-col h-full justify-center text-center text-base-600 font-500 px-3 pt-8 pb-3"
+            bodyClassName="flex-col h-full justify-center text-center text-base-600 px-3 pt-8 pb-3"
         >
             {linkUrl && !loading ? (
                 <Link

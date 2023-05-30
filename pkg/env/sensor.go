@@ -1,5 +1,7 @@
 package env
 
+import "time"
+
 // These environment variables are used in the deployment file
 // Please check the files before deleting
 var (
@@ -26,4 +28,10 @@ var (
 
 	// ResyncDisabled disables the resync behavior of the kubernetes listeners in sensor
 	ResyncDisabled = RegisterBooleanSetting("ROX_RESYNC_DISABLED", false)
+
+	// ConnectionRetryInitialInterval defines how long it takes for sensor to retry gRPC connection when it first disconnects.
+	ConnectionRetryInitialInterval = registerDurationSetting("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", time.Minute)
+
+	// ConnectionRetryMaxInterval defines the maximum interval between retries after the gRPC connection disconnects.
+	ConnectionRetryMaxInterval = registerDurationSetting("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", 10*time.Minute)
 )
