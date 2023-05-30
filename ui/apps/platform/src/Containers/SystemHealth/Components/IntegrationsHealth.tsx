@@ -4,6 +4,8 @@ import { getDateTime } from 'utils/dateUtils';
 
 import { styleHealthy, styleUnhealthy } from 'Containers/Clusters/cluster.helpers';
 
+import { Flex, FlexItem, List, ListItem } from '@patternfly/react-core';
+import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { IntegrationMergedItem } from '../utils/integrations';
 
 type Props = {
@@ -22,35 +24,74 @@ const IntegrationsHealth = ({ integrationsMerged }: Props): ReactElement => {
     if (integrationsFiltered.length !== 0) {
         const { Icon, fgColor } = styleUnhealthy;
         return (
-            <ul className="leading-normal pt-1 w-full">
+            <List isPlain isBordered className="leading-normal pt-1 w-full">
                 {integrationsFiltered.map(({ id, name, label, lastTimestamp }) => (
-                    <li className="border-b border-base-300 px-2 py-1" key={id}>
-                        <div className="flex w-full">
-                            <div className={`flex-shrink-0 ${fgColor}`}>
-                                <Icon className="h-4 w-4" />
-                            </div>
-                            <div className="ml-2 flex-grow">
-                                <div className="font-700" data-testid="integration-name">
+                    <ListItem key={id} className="border-b border-base-300 px-2 py-1">
+                        <Flex className="w-full">
+                            <Flex alignSelf={{ default: 'alignSelfBaseline' }}>
+                                <FlexItem className={`${fgColor}`}>
+                                    <Icon className="h-4 w-4" />
+                                </FlexItem>
+                            </Flex>
+                            <Flex
+                                grow={{ default: 'grow' }}
+                                direction={{ default: 'column' }}
+                                spaceItems={{ default: 'spaceItemsNone' }}
+                                alignSelf={{ default: 'alignSelfStretch' }}
+                            >
+                                <FlexItem className="font-700" data-testid="integration-name">
                                     {name}
-                                </div>
+                                </FlexItem>
                                 {label && label !== name && (
-                                    <div className="text-base-500" data-testid="integration-label">
+                                    <FlexItem
+                                        className="text-base-500"
+                                        data-testid="integration-label"
+                                    >
                                         {label}
-                                    </div>
+                                    </FlexItem>
                                 )}
                                 {lastTimestamp && (
-                                    <div>
+                                    <FlexItem>
                                         <span>Last contact:</span>{' '}
                                         <span data-testid="last-contact">
                                             {getDateTime(lastTimestamp)}
                                         </span>
-                                    </div>
+                                    </FlexItem>
                                 )}
-                            </div>
-                        </div>
-                    </li>
+                            </Flex>
+                        </Flex>
+                    </ListItem>
                 ))}
-            </ul>
+            </List>
+            // <ul className="leading-normal pt-1 w-full">
+            //     {integrationsFiltered.map(({ id, name, label, lastTimestamp }) => (
+            //         <li className="border-b border-base-300 px-2 py-1" key={id}>
+            //             <div className="flex w-full">
+            //                 <div className={`flex-shrink-0 ${fgColor}`}>
+            //                     <Icon className="h-4 w-4" />
+            //                 </div>
+            //                 <div className="ml-2 flex-grow">
+            //                     <div className="font-700" data-testid="integration-name">
+            //                         {name}
+            //                     </div>
+            //                     {label && label !== name && (
+            //                         <div className="text-base-500" data-testid="integration-label">
+            //                             {label}
+            //                         </div>
+            //                     )}
+            //                     {lastTimestamp && (
+            //                         <div>
+            //                             <span>Last contact:</span>{' '}
+            //                             <span data-testid="last-contact">
+            //                                 {getDateTime(lastTimestamp)}
+            //                             </span>
+            //                         </div>
+            //                     )}
+            //                 </div>
+            //             </div>
+            //         </li>
+            //     ))}
+            // </ul>
         );
     }
 
@@ -66,14 +107,16 @@ const IntegrationsHealth = ({ integrationsMerged }: Props): ReactElement => {
     }
 
     return (
-        <div className={`flex flex-col h-full justify-center w-full ${fgColor}`}>
-            <div className="flex justify-center mb-2">
+        <Flex
+            direction={{ default: 'column' }}
+            justifyContent={{ default: 'justifyContentCenter' }}
+            className={`h-full w-full ${fgColor}`}
+        >
+            <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
                 <Icon className="h-6 w-6" />
-            </div>
-            <div className="leading-normal px-2 text-center" data-testid="healthy-text">
-                {text}
-            </div>
-        </div>
+            </FlexItem>
+            <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>{text}</FlexItem>
+        </Flex>
     );
 };
 
