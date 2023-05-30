@@ -116,6 +116,7 @@ function ComplianceDashboardPage(): ReactElement {
                                             clickManageStandardsButton();
                                         }}
                                         disabled={isFetchingStandards}
+                                        isLoading={isFetchingStandards}
                                     />
                                 </div>
                             )}
