@@ -20,7 +20,8 @@ updates:
       - "stackrox/ui-dep-updaters"
     commit-message:
       include: scope
-      prefix: chore(ui-npm)
+      prefix: chore(ui)
+      prefix-development: "chore(ui-dev)"
 
 
   - package-ecosystem: 'gradle'
@@ -36,7 +37,7 @@ updates:
       - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
-      prefix: chore(qa-tests-backend)
+      prefix: chore(qa)
 
   - package-ecosystem: 'gomod'
     directory: '/'
@@ -84,7 +85,7 @@ updates:
       - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
-      prefix: chore(tools-linters)
+      prefix: chore(linters)
 
   - package-ecosystem: 'gomod'
     directory: '/tools/test/'
@@ -99,7 +100,7 @@ updates:
       - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
-      prefix: chore(tools-test)
+      prefix: chore(test-tools)
 
   - package-ecosystem: 'gomod'
     directory: '/operator/tools/'
@@ -146,7 +147,7 @@ updates:
     - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
-      prefix: chore(image-rhel)
+      prefix: chore(rhel)
 
   - package-ecosystem: 'docker'
     directory: 'image/postgres'
@@ -161,7 +162,7 @@ updates:
     - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
-      prefix: chore(image-postgres)
+      prefix: chore(postgres)
 
   - package-ecosystem: "github-actions"
     directory: "/"
