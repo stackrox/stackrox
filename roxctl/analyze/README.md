@@ -44,7 +44,6 @@ $ roxctl analyze netpol  tests/roxctl/bats-tests/test-data/np-guard/netpols-anal
 | default/frontend[Deployment] | default/backend[Deployment] | TCP 9090 |
 | default/frontend[Deployment] | default/frontend[Deployment] | All Connections |
 
-
 #### Understanding the output
 
 The output contains a list of permitted connectivity lines. Each connectivity line is of the format `src => dst : connnectivity-attributes`.
@@ -55,8 +54,6 @@ If one of `src` or `dst` are IP address ranges, it means that only one direction
  
 For example, in the above output, the line: `default/frontend[Deployment] => 0.0.0.0-255.255.255.255 : UDP 53` specifies permitted egress from `frontend` to any IP address.
 It does not mean that a connection from `frontend`  to `backend` is allowed over UDP 53. This connection is actually blocked because of the `backend` workload's network policy, which only allows ingress over TCP 9090. 
-
-
 
 ### Visualization
 
@@ -80,7 +77,6 @@ Use [`Graphviz`](https://graphviz.org/) (locally installed or online viewer) to 
 Produced graph for the above example is depicted below:
 
 ![graph](connectivity-graph-example.svg)
-
 
 ### Parameters 
 
