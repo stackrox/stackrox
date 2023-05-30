@@ -45,7 +45,7 @@ It does not mean that a connection from `frontend`  to `backend` is allowed over
 
 ### Visualization:
 
-Generate output with `dot` output format:
+Generate output in [dot](https://graphviz.org/doc/info/lang.html) format:
 ```shell
 $ roxctl analyze netpol tests/roxctl/bats-tests/test-data/np-guard/netpols-analysis-example-minimal/ -o dot
 digraph {
