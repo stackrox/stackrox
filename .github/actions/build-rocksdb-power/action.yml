@@ -27,7 +27,6 @@ runs:
 
 
         sudo apt-get update -y;
-        sudo apt-get upgrade -y;
         
     - name: Add ppc64le package support
       shell: bash
@@ -41,12 +40,12 @@ runs:
     - name: Install rocksdb deps
       shell: bash
       run: |
-        sudo apt-get install -y libsnappy-dev:ppc64el
-        sudo apt-get install -y zlib1g-dev:ppc64el
-        sudo apt-get install -y libbz2-dev:ppc64el
-        sudo apt-get install -y liblz4-dev:ppc64el
-        sudo apt-get install -y libzstd-dev:ppc64el
-        sudo apt-get install -y libgflags-dev:ppc64el
+        sudo apt-get install -f -y libsnappy-dev:ppc64el
+        sudo apt-get install -f -y zlib1g-dev:ppc64el
+        sudo apt-get install -f -y libbz2-dev:ppc64el
+        sudo apt-get install -f -y liblz4-dev:ppc64el
+        sudo apt-get install -f -y libzstd-dev:ppc64el
+        sudo apt-get install -f -y libgflags-dev:ppc64el
 
     - name: Clone rocksdb sources
       shell: bash
