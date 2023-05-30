@@ -320,9 +320,8 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	// connection is up again.
 	exponential := backoff.NewExponentialBackOff()
 	exponential.MaxElapsedTime = 0 // It never stops if set to 0
-	// TODO(ROX-17209): add configurable time for restart intervals
-	exponential.InitialInterval = 1 * time.Minute
-	exponential.MaxInterval = 10 * time.Minute
+	exponential.InitialInterval = connectionRetryInitialInterval()
+	exponential.MaxInterval = connectionRetryMaxInterval()
 
 	err := backoff.RetryNotify(func() error {
 		select {
