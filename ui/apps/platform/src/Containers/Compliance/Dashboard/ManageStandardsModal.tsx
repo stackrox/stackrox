@@ -2,17 +2,13 @@ import React, { ReactElement, useState } from 'react';
 import { Alert, Button, Checkbox, Form, Modal } from '@patternfly/react-core';
 import { useFormik } from 'formik';
 
-import {
-    ComplianceStandardMetadata,
-    fetchComplianceStandardsSortedByName,
-    patchComplianceStandard,
-} from 'services/ComplianceService';
+import { ComplianceStandardMetadata, patchComplianceStandard } from 'services/ComplianceService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type ManageStandardsModalProps = {
-    standards: ComplianceStandardMetadata[];
     onCancel: () => void;
-    onSave: (standards: ComplianceStandardMetadata[]) => void;
+    onSaveOrClose: () => void;
+    standards: ComplianceStandardMetadata[];
 };
 
 /*
@@ -24,8 +20,13 @@ function getShowScanResultsMap(standards: ComplianceStandardMetadata[]): Record<
     return Object.fromEntries(standards.map(({ id, hideScanResults }) => [id, !hideScanResults]));
 }
 
-function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
+function ManageStandardsModal({
+    onCancel,
+    onSaveOrClose,
+    standards,
+}: ManageStandardsModalProps): ReactElement {
     const [errorMessage, setErrorMessage] = useState('');
+    const [countFulfilledWhenRejected, setCountFulfilledWhenRejected] = useState(0);
     const { dirty, handleSubmit, isSubmitting, setFieldValue, setSubmitting, values } = useFormik<
         Record<string, boolean>
     >({
@@ -39,21 +40,26 @@ function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
                 .filter(({ hideScanResults, id }) => !hideScanResults !== showScanResultsMap[id])
                 .map(({ id }) => patchComplianceStandard(id, !showScanResultsMap[id]));
 
-            // TODO rewrite with ES2020 allSettled to solve async problem with all.
-            // TODO decide how to display results and update Formik state
-            // if some requests fail but other requests succeed.
-            Promise.all(patchRequestPromises)
-                .then(() => {
-                    fetchComplianceStandardsSortedByName()
-                        .then((standardsFetchedAfterPatchRequests) => {
-                            onSave(standardsFetchedAfterPatchRequests);
-                        })
-                        .catch((error) => {
-                            setErrorMessage(getAxiosErrorMessage(error));
-                        })
-                        .finally(() => {
-                            setSubmitting(false);
-                        });
+            Promise.allSettled(patchRequestPromises)
+                .then((results) => {
+                    let nRejected = 0;
+                    let reasonMessage = '';
+                    results.forEach((result) => {
+                        if (result.status === 'rejected') {
+                            if (nRejected === 0) {
+                                reasonMessage = getAxiosErrorMessage(result.reason);
+                            }
+                            nRejected += 1;
+                        }
+                    });
+                    setSubmitting(false);
+
+                    if (nRejected === 0) {
+                        onSaveOrClose();
+                    } else {
+                        setErrorMessage(reasonMessage);
+                        setCountFulfilledWhenRejected(results.length - nRejected);
+                    }
                 })
                 .catch((error) => {
                     setErrorMessage(getAxiosErrorMessage(error));
@@ -80,9 +86,25 @@ function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
                 >
                     Save
                 </Button>,
-                <Button key="Cancel" variant="link" onClick={onCancel} isDisabled={isSubmitting}>
-                    Cancel
-                </Button>,
+                countFulfilledWhenRejected === 0 ? (
+                    <Button
+                        key="Cancel"
+                        variant="secondary"
+                        onClick={onCancel}
+                        isDisabled={isSubmitting}
+                    >
+                        Cancel
+                    </Button>
+                ) : (
+                    <Button
+                        key="Close"
+                        variant="secondary"
+                        onClick={onSaveOrClose}
+                        isDisabled={isSubmitting}
+                    >
+                        Close
+                    </Button>
+                ),
             ]}
         >
             <Form>
@@ -104,7 +126,7 @@ function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
             {errorMessage && (
                 <Alert
                     title="Unable to save changes"
-                    variant="warning"
+                    variant="danger"
                     isInline
                     className="pf-u-mt-lg"
                 >
