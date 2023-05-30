@@ -66,7 +66,7 @@ func (n *notifierCmd) genericCommand() *cobra.Command {
 		"Headers (comma separated key=value pairs)")
 	genericFlags.StringToStringVar(&n.gcExtraFields, "extra-fields", nil,
 		"Extra fields (comma separated key=value pairs)")
-	genericFlags.BoolVar(&n.gc.SkipTLSVerify, "webhook-insecure-skip-tls-verify", false,
+	genericFlags.BoolVar(&n.gc.SkipTLSVerify, "webhook-skip-tls-verify", false,
 		"Skip webhook TLS verification")
 	n.genericFlagSet = genericFlags
 
@@ -95,10 +95,10 @@ func (n *notifierCmd) splunkCommand() *cobra.Command {
 		"Splunk HTTP token (required)")
 	splunkFlags.StringVar(&n.sc.HTTPEndpoint, "splunk-endpoint", "",
 		"Splunk HTTP endpoint (required)")
-	splunkFlags.BoolVar(&n.sc.Insecure, "splunk-insecure-skip-tls-verify", false,
+	splunkFlags.BoolVar(&n.sc.Insecure, "splunk-skip-tls-verify", false,
 		"Insecure connection to Splunk")
 	splunkFlags.Int64Var(&n.sc.Truncate, "truncate", 0,
-		"Splunk truncate limit")
+		"Splunk truncate limit (default 10000)")
 	splunkFlags.StringToStringVar(&n.scSourceTypes, "source-types", nil,
 		"Splunk source types (comma separated key=value pairs)")
 	n.splunkFlagSet = splunkFlags
