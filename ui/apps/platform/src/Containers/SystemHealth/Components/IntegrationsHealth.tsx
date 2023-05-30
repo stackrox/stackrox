@@ -11,21 +11,11 @@ type Props = {
 };
 
 const IntegrationsHealth = ({ integrationsMerged }: Props): ReactElement => {
-    let nHealthy = 0;
+    const nHealthy = 0;
     const integrationsFiltered: IntegrationMergedItem[] = [];
 
     integrationsMerged.forEach((integrationMergedItem) => {
-        switch (integrationMergedItem.status) {
-            case 'HEALTHY':
-                nHealthy += 1;
-                break;
-
-            case 'UNHEALTHY':
-                integrationsFiltered.push(integrationMergedItem);
-                break;
-
-            default:
-        }
+        integrationsFiltered.push(integrationMergedItem);
     });
 
     // The item border matches the widget header border.
