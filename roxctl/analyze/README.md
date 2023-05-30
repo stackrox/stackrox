@@ -73,9 +73,13 @@ digraph {
         "default/frontend[Deployment]" -> "default/frontend[Deployment]" [label="All Connections" color="gold2" fontcolor="darkgreen"]
 }
 ```
-Use `Graphviz` to produce the connectivity graph. 
-For example, use [GraphvizOnline](https://dreampuf.github.io/GraphvizOnline/). <br />
-Produced graph for the above example is [here](https://dreampuf.github.io/GraphvizOnline/#digraph%20%7B%0A%20%20%20%20%20%20%20%20%220.0.0.0-255.255.255.255%22%20%5Blabel%3D%220.0.0.0-255.255.255.255%22%20color%3D%22red2%22%20fontcolor%3D%22red2%22%5D%0A%20%20%20%20%20%20%20%20%22default%2Fbackend%5BDeployment%5D%22%20%5Blabel%3D%22default%2Fbackend%5BDeployment%5D%22%20color%3D%22blue%22%20fontcolor%3D%22blue%22%5D%0A%20%20%20%20%20%20%20%20%22default%2Ffrontend%5BDeployment%5D%22%20%5Blabel%3D%22default%2Ffrontend%5BDeployment%5D%22%20color%3D%22blue%22%20fontcolor%3D%22blue%22%5D%0A%20%20%20%20%20%20%20%20%220.0.0.0-255.255.255.255%22%20-%3E%20%22default%2Ffrontend%5BDeployment%5D%22%20%5Blabel%3D%22TCP%208080%22%20color%3D%22gold2%22%20fontcolor%3D%22darkgreen%22%5D%0A%20%20%20%20%20%20%20%20%22default%2Fbackend%5BDeployment%5D%22%20-%3E%20%22default%2Fbackend%5BDeployment%5D%22%20%5Blabel%3D%22All%20Connections%22%20color%3D%22gold2%22%20fontcolor%3D%22darkgreen%22%5D%0A%20%20%20%20%20%20%20%20%22default%2Ffrontend%5BDeployment%5D%22%20-%3E%20%220.0.0.0-255.255.255.255%22%20%5Blabel%3D%22UDP%2053%22%20color%3D%22gold2%22%20fontcolor%3D%22darkgreen%22%5D%0A%20%20%20%20%20%20%20%20%22default%2Ffrontend%5BDeployment%5D%22%20-%3E%20%22default%2Fbackend%5BDeployment%5D%22%20%5Blabel%3D%22TCP%209090%22%20color%3D%22gold2%22%20fontcolor%3D%22darkgreen%22%5D%0A%20%20%20%20%20%20%20%20%22default%2Ffrontend%5BDeployment%5D%22%20-%3E%20%22default%2Ffrontend%5BDeployment%5D%22%20%5Blabel%3D%22All%20Connections%22%20color%3D%22gold2%22%20fontcolor%3D%22darkgreen%22%5D%0A%7D).
+
+Use [`Graphviz`](https://graphviz.org/) (locally installed or online viewer) to produce the connectivity graph.  <br />
+Produced graph for the above example is depicted below:
+
+![graph](connectivity-graph-example.svg)
+
+
 ### Parameters 
 
 The output can be redirected to a file by using `--output-file` parameter.
