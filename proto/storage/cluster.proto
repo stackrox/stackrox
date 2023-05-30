@@ -55,7 +55,7 @@ message OrchestratorMetadata {
 enum CollectionMethod {
     UNSET_COLLECTION = 0;
     NO_COLLECTION    = 1;
-    KERNEL_MODULE    = 2;
+    KERNEL_MODULE    = 2 [deprecated=true];
     EBPF             = 3;
     CORE_BPF         = 4;
 }

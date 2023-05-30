@@ -594,6 +594,7 @@
       "enum": [
         "UNSET_COLLECTION",
         "NO_COLLECTION",
+        "KERNEL_MODULE",
         "EBPF",
         "CORE_BPF"
       ],
