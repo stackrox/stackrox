@@ -183,7 +183,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                                 screenreaderText="Loading deployment summary data"
                             />
                         )}
-                        {summaryData && summaryData.deployment && (
+                        {!summaryRequest.error && summaryData && summaryData.deployment && (
                             <Grid hasGutter>
                                 <GridItem sm={12} md={6} xl2={4}>
                                     <BySeveritySummaryCard

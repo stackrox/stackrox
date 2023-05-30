@@ -327,7 +327,7 @@ function ImageCvePage() {
                                 screenreaderText="Loading image cve summary data"
                             />
                         )}
-                        {summaryRequest.data && (
+                        {!summaryRequest.error && summaryRequest.data && (
                             <Grid hasGutter>
                                 <GridItem sm={12} md={6} xl2={4}>
                                     <AffectedImages
