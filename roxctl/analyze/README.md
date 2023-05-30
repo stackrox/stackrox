@@ -49,7 +49,8 @@ $ roxctl analyze netpol  tests/roxctl/bats-tests/test-data/np-guard/netpols-anal
 
 The output contains a list of permitted connectivity lines. Each connectivity line is of the format `src => dst : connnectivity-attributes`.
 The `src, dst` can be any of the analyzed cluster workloads or an IP address range.
-If both `src` and `dst` are cluster workloads, it means that both `src` is allowed to send traffic to `dst` and that `dst` is allowed to receive traffic from `src`, over the specified connectivity attributes.
+If both `src` and `dst` are cluster workloads, it means that both `src` is allowed to send traffic to `dst` and that `dst` is allowed to receive traffic from `src` over the specified connectivity attributes.
+
 If one of `src` or `dst` are IP address ranges, it means that only one direction of this connection (either egress from workload or ingress to workload) is explicitly permitted by network policies.
  
 For example, in the above output, the line: `default/frontend[Deployment] => 0.0.0.0-255.255.255.255 : UDP 53` specifies permitted egress from `frontend` to any IP address.
