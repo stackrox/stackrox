@@ -294,9 +294,14 @@ create_log_explorer_links() {
     artifact_file="$ARTIFACT_DIR/gke-logs-summary.html"
 
     cat > "$artifact_file" <<- HEAD
-<html style="background: #fff">
+<html>
     <head>
         <title><h4>GKE Logs Explorer</h4></title>
+        <style>
+          body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
+          a { color: #ff8caa }
+          a:visited { color: #ff8caa }
+        </style>
     </head>
     <body>
     <p>(These links require a 'right-click -> open in new tab'. The authUser is the number for your @stackrox.com account.)</p>
@@ -329,6 +334,7 @@ LINK
 
     cat >> "$artifact_file" <<- FOOT
     </ul>
+  </body>
 </html>
 FOOT
 }

@@ -1509,6 +1509,53 @@ slack_prow_notice() {
 | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 
+highlight_cluster_versions() {
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+        info "No place for artifacts, skipping cluster version dump"
+        return
+    fi
+
+    artifact_file="$ARTIFACT_DIR/cluster-version-summary.html"
+
+    cat > "$artifact_file" <<- HEAD
+<html>
+    <head>
+        <title><h4>Cluster Versions</h4></title>
+        <style>
+          body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
+          a { color: #ff8caa }
+          a:visited { color: #ff8caa }
+        </style>
+    </head>
+    <body>
+HEAD
+
+    local nodes
+    nodes="$(kubectl get nodes -o wide 2>&1 || true)"
+    local kubectl_version
+    kubectl_version="$(kubectl version -o json 2>&1 || true)"
+    local oc_version
+    oc_version="$(oc version -o json 2>&1 || true)"
+
+    cat >> "$artifact_file" << DETAILS
+      <h3>Nodes:</h3>
+      kubectl get nodes -o wide
+      <pre>$nodes</pre>
+      <h3>Versions:</h3>
+      kubectl version -o json
+      <pre>$kubectl_version</pre>
+      oc version -o json
+      <pre>$oc_version</pre>
+DETAILS
+
+    cat >> "$artifact_file" <<- FOOT
+    <br />
+    <br />
+  </body>
+</html>
+FOOT
+}
+
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
         die "When invoked at the command line a method is required."
