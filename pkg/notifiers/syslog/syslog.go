@@ -176,7 +176,6 @@ func (s *syslog) alertToCEF(ctx context.Context, alert *storage.Alert) string {
 		extensionList = append(extensionList, makeTimestampExtensionPair(endTime, alert.GetTime())...)
 	}
 
-	// TODO: Add namespace info
 	if features.SyslogNamespaceLabels.Enabled() {
 		if namespaceName := getNamespaceFromAlert(alert); namespaceName != "" {
 			extensionList = append(extensionList, makeExtensionPair("ns", alert.GetNamespace()))
@@ -286,7 +285,7 @@ func (s *syslog) SendAuditMessage(_ context.Context, msg *v1.Audit_Message) erro
 }
 
 func (s *syslog) AuditLoggingEnabled() bool {
-	return true // TODO: Joseph this will have to change if we allow users to configure which messages are sent to splunk
+	return true // audit logging is always enabled by default for syslog integrations
 }
 
 func (s *syslog) sendSyslog(severity int, timestamp time.Time, messageID, unstructuredData string) error {
