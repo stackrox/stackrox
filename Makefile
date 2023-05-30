@@ -766,7 +766,7 @@ endif
 .PHONY: roxvet
 roxvet: $(ROXVET_BIN)
 	@echo "+ $@"
-	# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
+	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
 	$(SILENT)go vet -vettool "$(ROXVET_BIN)" $(shell go list -e ./... | grep -v 'operator/pkg/clientset')
 
 ##########
