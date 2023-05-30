@@ -564,9 +564,9 @@ spec:
         displayName: Environment Variables
         path: customize.envVars
       - description: Settings for the Node-Scanner container, which is responsible
-          for scanning the Nodes OS filesystem
+          for scanning the Nodes' filesystem
         displayName: Node Scanner Settings
-        path: perNode.nodeScanning
+        path: perNode.nodescanner
       - displayName: Autoscaling Minimum Replicas
         path: scanner.analyzer.scaling.minReplicas
         x-descriptors:
@@ -662,7 +662,7 @@ spec:
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.
         displayName: Resources
-        path: perNode.nodeScanning.resources
+        path: perNode.nodescanner.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: Allows overriding the default resource settings for this component.
