@@ -227,8 +227,10 @@ func (s *Sensor) Start() {
 	errSig := s.centralConnectionFactory.StopSignal()
 
 	if features.PreventSensorRestartOnDisconnect.Enabled() {
+		log.Infof("Running Sensor with connection retry: preventing sensor restart on disconnect")
 		go s.communicationWithCentralWithRetries(&centralReachable)
 	} else {
+		log.Infof("Running Sensor without connection retries: sensor will restart on disconnect")
 		// This has to be checked only if retries are not enabled. With retries, this signal will be checked
 		// inside communicationWithCentralWithRetries since it has to be re-checked on reconnects, and not
 		// crash if it fails.
@@ -324,6 +326,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	exponential.MaxInterval = env.ConnectionRetryMaxInterval.DurationSetting()
 
 	err := backoff.RetryNotify(func() error {
+		log.Infof("Attempting connection setup")
 		select {
 		case <-s.centralConnectionFactory.OkSignal().WaitC():
 			// Connection if up, we can try to create a new central communication
@@ -342,6 +345,11 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
 		select {
 		case <-s.centralCommunication.Stopped().WaitC():
+			if err := s.centralCommunication.Stopped().Err(); err != nil {
+				log.Infof("Communication with Central ended: %s", s.centralCommunication.Stopped().Err())
+			} else {
+				log.Info("Communication with Central ended")
+			}
 			// Communication either ended or there was an error. Either way we should retry.
 			// Send notification to all components that we are running in offline mode
 			s.changeState(common.SensorComponentEventOfflineMode)
@@ -352,6 +360,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			return s.centralCommunication.Stopped().Err()
 		case <-s.stoppedSig.WaitC():
 			// This means sensor was signaled to finish, this error shouldn't be retried
+			log.Infof("Received stop signal from Sensor. Stopping without retrying")
 			return backoff.Permanent(s.stoppedSig.Err())
 		}
 	}, exponential, func(err error, d time.Duration) {

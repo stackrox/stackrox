@@ -221,9 +221,11 @@ func (c *TestContext) deleteNs(ctx context.Context, name string) error {
 
 func (c *TestContext) SensorStopped() bool {
 	select {
-	case <-c.sensorStopped:
-		return true
+	case v, more := <-c.sensorStopped:
+		log.Printf("SENSOR STOPPED: %v,%v\n", v, more)
+		return v
 	default:
+		log.Println("SENSOR STOPPED: default")
 		return false
 	}
 }
@@ -551,7 +553,12 @@ func startSensorAndFakeCentral(env *envconf.Config, config CentralConfig) (*cent
 
 	sensorStopped := make(chan bool, 1)
 	go func() {
-		s.Stopped().WaitC()
+		if err := s.Stopped().Wait(); err != nil {
+			log.Printf("Sensor stopped with err: %s\n", err)
+		} else {
+			log.Printf("Sensor stopped")
+		}
+
 		sensorStopped <- true
 		close(sensorStopped)
 	}()

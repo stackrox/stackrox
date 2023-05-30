@@ -825,7 +825,7 @@ func (m *manager) addBaseline(deploymentID, deploymentName, clusterID, namespace
 		return err
 	}
 
-	// If we have flows then process them.  If we don't persist an empty baseline
+	// If we have flows then process them.  If we don't, persist an empty baseline
 	if len(flows) > 0 {
 		// package them into a map of flows like comes in
 		// when packaging the flows up in that map, I think the timestamp has to be now

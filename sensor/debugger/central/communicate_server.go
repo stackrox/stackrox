@@ -119,7 +119,8 @@ func (s *FakeService) startInputIngestion(stream central.SensorService_Communica
 			if err == io.EOF {
 				break
 			}
-			log.Fatalf("error receiving message from sensor: %s", err)
+			log.Printf("error receiving message from sensor: %s\n", err)
+			break
 		}
 		if s.KillSwitch.IsDone() {
 			return
