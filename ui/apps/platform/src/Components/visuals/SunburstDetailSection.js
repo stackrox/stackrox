@@ -67,21 +67,17 @@ class SunburstDetailSection extends Component {
         return (
             <div className="py-2 px-3 lc:border-none lc:mb-0 lc:pb-0">
                 {bullets.map(
-                    (
-                        {
-                            text,
-                            link,
-                            className,
-                            value,
-                            color: graphColor,
-                            textColor,
-                            labelValue,
-                            labelColor,
-                        },
-                        idx
-                    ) => {
+                    ({
+                        text,
+                        link,
+                        className,
+                        value,
+                        color: graphColor,
+                        textColor,
+                        labelValue,
+                        labelColor,
+                    }) => {
                         const color = textColor || graphColor;
-                        console.log(idx, parentDatum?.name, text, color, labelValue, labelColor); // eslint-disable-line no-console
                         return (
                             <div
                                 key={text}
