@@ -31,6 +31,20 @@ default/frontend[Deployment] => default/backend[Deployment] : TCP 9090
 default/frontend[Deployment] => default/frontend[Deployment] : All Connections
 ```
 
+Example output with `md` output format:
+```shell
+$ roxctl analyze netpol  tests/roxctl/bats-tests/test-data/np-guard/netpols-analysis-example-minimal/ -o md
+```
+
+| src | dst | conn |
+|-----|-----|------|
+| 0.0.0.0-255.255.255.255 | default/frontend[Deployment] | TCP 8080 |
+| default/backend[Deployment] | default/backend[Deployment] | All Connections |
+| default/frontend[Deployment] | 0.0.0.0-255.255.255.255 | UDP 53 |
+| default/frontend[Deployment] | default/backend[Deployment] | TCP 9090 |
+| default/frontend[Deployment] | default/frontend[Deployment] | All Connections |
+
+
 #### Understanding the output
 
 The output contains a list of permitted connectivity lines. Each connectivity line is of the format `src => dst : connnectivity-attributes`.
