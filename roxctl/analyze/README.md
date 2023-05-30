@@ -90,7 +90,7 @@ The output format can be set by using the `--output-format` parameter.
 Supported output formats: `txt, md, csv, json, dot`. The `dot` output format is the one to be used for visualizing the output as a connectivity graph.
 The [`Graphviz` tool](https://graphviz.org/) (locally installed or online viewer) can be used to convert the `dot` output to a graph in a format such as `svg/jpeg/png`.
 
-The `--focus-workload` parameter allows specifying a workload name, such that the output only contains allowed connections of this workload.
+The `--focus-workload` parameter allows specifying a workload name, such that the output only contains allowed connections of this workload, whereas the other workloads are omitted.
 
 When running in a CI pipeline, `roxctl analyze netpol` may benefit from the `--fail` option that stops the processing on the first encountered error.
 
