@@ -4,20 +4,24 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	gcrRemote "github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	dockerRegistry "github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/sigstore/cosign/v2/pkg/cosign"
+	"github.com/sigstore/cosign/v2/pkg/oci"
 	ociremote "github.com/sigstore/cosign/v2/pkg/oci/remote"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	imgUtils "github.com/stackrox/rox/pkg/images/utils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -74,8 +78,9 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, i
 
 	// Fetch the signatures by injecting the registry specific authentication options to the google/go-containerregistry
 	// client.
-	signedPayloads, err := cosign.FetchSignaturesForReference(ctx, imgRef,
-		ociremote.WithRemoteOptions(optionsFromRegistry(registry)...))
+	// Additionally, use a local signed entity to skip fetching the image manifest and only fetch the signature manifest.
+	se := newLocalSignedEntity(image, imgRef, ociremote.WithRemoteOptions(optionsFromRegistry(registry)...))
+	signedPayloads, err := cosign.FetchSignatures(se)
 
 	// Cosign will return an error in case no signature is associated, we don't want to return that error. Since no
 	// error types are exposed need to check for string comparison.
@@ -231,4 +236,43 @@ func checkIfErrorContainsCode(err error, codes ...int) bool {
 	}
 
 	return false
+}
+
+var (
+	_ oci.SignedEntity = (*localSignedEntity)(nil)
+)
+
+// localSignedEntity is an implementation of oci.SignedEntity used for fetching signatures.
+// This implementation skips fetching the manifest of the signed image, since within the image enriching, we already
+// fetched the image manifest beforehand.
+type localSignedEntity struct {
+	oci.SignedEntity
+	opts   []ociremote.Option
+	imgRef name.Reference
+	imgSHA string
+}
+
+func newLocalSignedEntity(img *storage.Image, imgRef name.Reference, opts ...ociremote.Option) *localSignedEntity {
+	imgSHA := imgUtils.GetSHA(img)
+	return &localSignedEntity{
+		opts:   opts,
+		imgRef: imgRef,
+		imgSHA: imgSHA,
+	}
+}
+
+func (s *localSignedEntity) Digest() (v1.Hash, error) {
+	return v1.NewHash(s.imgSHA)
+}
+
+func (s *localSignedEntity) Signatures() (oci.Signatures, error) {
+	h, err := s.Digest()
+	if err != nil {
+		return nil, err
+	}
+	// The name reference of the signature to fetch is going to be:
+	// <registry>/<repository>@<digest>.sig
+	// This is being kept in line with:
+	// https://github.com/sigstore/cosign/blob/65eb28af970d133adeefdc6c48d6e9304dd8cc3a/pkg/oci/remote/remote.go#L87
+	return ociremote.Signatures(s.imgRef.Context().Tag(fmt.Sprint(h.Algorithm, "-", h.Hex, ".sig")), s.opts...)
 }
