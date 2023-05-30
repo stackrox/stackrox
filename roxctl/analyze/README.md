@@ -58,7 +58,7 @@ It does not mean that a connection from `frontend`  to `backend` is allowed over
 
 
 
-### Visualization:
+### Visualization
 
 Generate output in [dot](https://graphviz.org/doc/info/lang.html) format:
 ```shell
