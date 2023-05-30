@@ -80,7 +80,7 @@ func (c *Compliance) Start() {
 	if env.RHCOSNodeScanning.BooleanSetting() && c.nodeScanner.IsActive() {
 		c.scanResend.Run(ctx)
 		c.scanResend.SetOnResend(func(msg *sensor.MsgFromCompliance) {
-			log.Infof("Resending node-inv")
+			log.Infof("OnResend: Resending node-inv")
 			toSensorC <- msg
 		})
 		nodeInventoriesC := c.manageNodeScanLoop(ctx)

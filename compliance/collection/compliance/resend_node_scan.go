@@ -38,6 +38,7 @@ func (s *NodeScanResend) Run(ctx context.Context) {
 		for {
 			select {
 			case <-s.ticker.C:
+				log.Info("NodeScanResend: Tick")
 				s.onResend(s.inventory)
 			case <-ctx.Done():
 				return
@@ -48,12 +49,14 @@ func (s *NodeScanResend) Run(ctx context.Context) {
 
 // RegisterSending should be called when a new node-inventory is sent
 func (s *NodeScanResend) RegisterSending(msg *sensor.MsgFromCompliance) {
+	log.Info("NodeScanResend: RegisterSending")
 	s.inventory = msg
 	s.ticker.Reset(s.resendInterval)
 }
 
 // RegisterACK should be called when an ACK for node-inventory is received
 func (s *NodeScanResend) RegisterACK() {
+	log.Info("NodeScanResend: RegisterACK")
 	s.ticker.Stop()
 	s.inventory = nil
 }
