@@ -7,6 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	clusterMgrMock "github.com/stackrox/rox/central/sensor/service/common/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -179,4 +180,82 @@ func (s *testSuite) TestIssueLocalScannerCerts() {
 			s.NoError(handleErr)
 		})
 	}
+}
+
+func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
+	ctx := context.Background()
+	clusterID := "this-cluster"
+	cluster := &storage.Cluster{
+		Id: clusterID,
+	}
+
+	ctrl := gomock.NewController(s.T())
+	mgrMock := clusterMgrMock.NewMockClusterManager(ctrl)
+	deleRegMgr := clusterMgrMock.NewMockDelegatedRegistryConfigManager(ctrl)
+
+	sensorMockConn := &sensorConnection{
+		clusterID:                  clusterID,
+		clusterMgr:                 mgrMock,
+		delegatedRegistryConfigMgr: deleRegMgr,
+	}
+	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
+
+	s.Run("send", func() {
+		caps := set.NewSet(centralsensor.DelegatedRegistryCap)
+
+		config := &storage.DelegatedRegistryConfig{EnabledFor: storage.DelegatedRegistryConfig_ALL}
+		deleRegMgr.EXPECT().GetConfig(ctx).Return(config, true, nil)
+
+		server := &mockServer{sentList: make([]*central.MsgToSensor, 0)}
+		s.NoError(sensorMockConn.Run(ctx, server, caps))
+
+		for _, msg := range server.sentList {
+			if deleConfig := msg.GetDelegatedRegistryConfig(); deleConfig != nil {
+				s.Equal(central.DelegatedRegistryConfig_ALL, deleConfig.EnabledFor)
+				return
+			}
+		}
+
+		s.FailNow("Delegated registry config msg was not sent")
+	})
+
+	s.Run("no send on no cap", func() {
+		caps := set.NewSet[centralsensor.SensorCapability]()
+
+		server := &mockServer{sentList: make([]*central.MsgToSensor, 0)}
+		s.NoError(sensorMockConn.Run(ctx, server, caps))
+
+		for _, msg := range server.sentList {
+			if deleConfig := msg.GetDelegatedRegistryConfig(); deleConfig != nil {
+				s.FailNow("Delegated registry config msg was sent")
+				return
+			}
+		}
+	})
+
+	s.Run("no send on nil config", func() {
+		caps := set.NewSet(centralsensor.DelegatedRegistryCap)
+
+		deleRegMgr.EXPECT().GetConfig(ctx).Return(nil, false, nil)
+
+		server := &mockServer{sentList: make([]*central.MsgToSensor, 0)}
+		s.NoError(sensorMockConn.Run(ctx, server, caps))
+
+		for _, msg := range server.sentList {
+			if deleConfig := msg.GetDelegatedRegistryConfig(); deleConfig != nil {
+				s.FailNow("Delegated registry config msg was sent")
+				return
+			}
+		}
+	})
+
+	s.Run("no send on err", func() {
+		caps := set.NewSet(centralsensor.DelegatedRegistryCap)
+
+		deleRegMgr.EXPECT().GetConfig(ctx).Return(nil, false, errors.New("fake error"))
+
+		server := &mockServer{sentList: make([]*central.MsgToSensor, 0)}
+		err := sensorMockConn.Run(ctx, server, caps)
+		s.ErrorContains(err, "unable to get delegated registry config")
+	})
 }

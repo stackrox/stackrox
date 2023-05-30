@@ -3,6 +3,7 @@ package service
 import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	dataStore "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -13,7 +14,7 @@ var (
 )
 
 func initialize() {
-	as = New(dataStore.Singleton(), clusterDataStore.Singleton())
+	as = New(dataStore.Singleton(), clusterDataStore.Singleton(), connection.ManagerSingleton())
 
 }
 
