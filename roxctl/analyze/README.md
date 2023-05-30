@@ -75,7 +75,8 @@ digraph {
 }
 ```
 
-Use [`Graphviz`](https://graphviz.org/) (locally installed or online viewer) to produce the connectivity graph.  <br />
+Use [`Graphviz`](https://graphviz.org/) (locally installed or online viewer) to produce the connectivity graph.  
+
 Produced graph for the above example is depicted below:
 
 ![graph](connectivity-graph-example.svg)
