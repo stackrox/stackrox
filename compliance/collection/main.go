@@ -5,10 +5,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 func main() {
 	np := &compliance.EnvNodeNameProvider{}
 
