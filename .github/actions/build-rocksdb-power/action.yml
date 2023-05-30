@@ -40,6 +40,7 @@ runs:
     - name: Install rocksdb deps
       shell: bash
       run: |
+        sudo apt-get install aptitude
         sudo aptitude install -f -y libsnappy-dev:ppc64el
         sudo aptitude install -f -y zlib1g-dev:ppc64el
         sudo aptitude install -f -y libbz2-dev:ppc64el
