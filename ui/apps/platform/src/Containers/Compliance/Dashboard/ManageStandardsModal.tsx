@@ -42,23 +42,23 @@ function ManageStandardsModal({
 
             Promise.allSettled(patchRequestPromises)
                 .then((results) => {
-                    let nRejected = 0;
+                    let numberOfRejectedPromises = 0;
                     let reasonMessage = '';
                     results.forEach((result) => {
                         if (result.status === 'rejected') {
-                            if (nRejected === 0) {
+                            if (numberOfRejectedPromises === 0) {
                                 reasonMessage = getAxiosErrorMessage(result.reason);
                             }
-                            nRejected += 1;
+                            numberOfRejectedPromises += 1;
                         }
                     });
                     setSubmitting(false);
 
-                    if (nRejected === 0) {
+                    if (numberOfRejectedPromises === 0) {
                         onChange();
                     } else {
                         setErrorMessage(reasonMessage);
-                        setCountFulfilledWhenRejected(results.length - nRejected);
+                        setCountFulfilledWhenRejected(results.length - numberOfRejectedPromises);
                     }
                 })
                 .catch((error) => {
