@@ -40,12 +40,12 @@ runs:
     - name: Install rocksdb deps
       shell: bash
       run: |
-        sudo apt-get install -f -y libsnappy-dev:ppc64el
-        sudo apt-get install -f -y zlib1g-dev:ppc64el
-        sudo apt-get install -f -y libbz2-dev:ppc64el
-        sudo apt-get install -f -y liblz4-dev:ppc64el
-        sudo apt-get install -f -y libzstd-dev:ppc64el
-        sudo apt-get install -f -y libgflags-dev:ppc64el
+        sudo aptitude install -f -y libsnappy-dev:ppc64el
+        sudo aptitude install -f -y zlib1g-dev:ppc64el
+        sudo aptitude install -f -y libbz2-dev:ppc64el
+        sudo aptitude install -f -y liblz4-dev:ppc64el
+        sudo aptitude install -f -y libzstd-dev:ppc64el
+        sudo aptitude install -f -y libgflags-dev:ppc64el
 
     - name: Clone rocksdb sources
       shell: bash
