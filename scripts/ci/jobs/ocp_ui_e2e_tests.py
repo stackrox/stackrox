@@ -12,6 +12,7 @@ from post_tests import PostClusterTest, FinalPost
 
 # set required test parameters
 os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
+os.environ["INSTALL_COMPLIANCE_OPERATOR"] = "true"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 

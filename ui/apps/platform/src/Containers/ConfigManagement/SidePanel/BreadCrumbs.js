@@ -96,12 +96,16 @@ const BreadCrumbLinks = (props) => {
         const link = getLink(match, location, i, length);
         const name = state.type === 'entity list' ? upperFirst(state.name) : state.name;
         const content = link ? (
-            <Link className="text-primary-700 underline truncate" title={state.name} to={link}>
+            <Link
+                className="text-primary-700 underline truncate font-700"
+                title={state.name}
+                to={link}
+            >
                 {name}
             </Link>
         ) : (
             <span className="w-full truncate" title={state.name}>
-                <span className="truncate">{name}</span>
+                <span className="truncate font-700">{name}</span>
             </span>
         );
         if (!state) {

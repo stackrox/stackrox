@@ -19,7 +19,7 @@
         "@patternfly/react-styles": "4.92.6",
         "@patternfly/react-table": "4.112.39",
         "@patternfly/react-topology": "4.93.5",
-        "@patternfly/react-user-feedback": "^1.0.9",
+        "@patternfly/react-user-feedback": "^1.1.2",
         "@stackrox/ui-components": "*",
         "axios": "^0.25.0",
         "classnames": "^2.3.2",

@@ -11,10 +11,12 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - A default role `Vulnerability Manager` has been added that provides sufficient privileges to analyze and manage system vulnerabilities.
 - A default role `Network Graph Viewer` has been added that provides sufficient privileges to display network graphs.
 - A new command `roxctl central login` has been added that allows to use a user's token within roxctl instead of an API token or admin password.
+- ROX-15447: A new `DelegatedRegistryConfig` API at `/v1/delegatedregistryconfig` has been added that provides dynamic configuration for local registry scanning (replaces `ROX_FORCE_LOCAL_IMAGE_SCANNING`).
 
 ### Removed Features
 - ROX-14398: As announced in 3.74, the permission `Access` replaces the deprecated permission `Role`.
 - ROX-14398: As announced in 3.74, the `Scope Manager` system role and permission set will be removed. If existing product installations do have customer references to either the `Scope Manager` system role or the `Scope Manager` system permission set, then the referenced object will be adjusted to contain a description mentioning its deprecation. Furthermore, the objects will not be marked as system resources, and will not be supported anymore.
+- ROX-17031: env var `ROX_FORCE_LOCAL_IMAGE_SCANNING` has been removed and replaced by the `DelegatedRegistryConfig` API.
 
 ### Deprecated Fatures
 

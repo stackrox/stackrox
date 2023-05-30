@@ -1,5 +1,7 @@
 package env
 
+import "time"
+
 // These environment variables are used in the deployment file
 // Please check the files before deleting
 var (
@@ -21,13 +23,15 @@ var (
 	// LocalImageScanningEnabled is used to specify if Sensor should attempt to scan images via a local Scanner.
 	LocalImageScanningEnabled = RegisterBooleanSetting("ROX_LOCAL_IMAGE_SCANNING_ENABLED", false)
 
-	// ForceLocalImageScanning expands the scope of `LocalImageScanningEnabled` to have sensor analyze all images
-	// using the local scanner instead of only images from OCP internal registries
-	ForceLocalImageScanning = RegisterBooleanSetting("ROX_FORCE_LOCAL_IMAGE_SCANNING", false)
-
 	// EventPipelineQueueSize is used to specify the size of the eventPipeline's queues
 	EventPipelineQueueSize = RegisterIntegerSetting("ROX_EVENT_PIPELINE_QUEUE_SIZE", 1000)
 
 	// ResyncDisabled disables the resync behavior of the kubernetes listeners in sensor
 	ResyncDisabled = RegisterBooleanSetting("ROX_RESYNC_DISABLED", false)
+
+	// ConnectionRetryInitialInterval defines how long it takes for sensor to retry gRPC connection when it first disconnects.
+	ConnectionRetryInitialInterval = registerDurationSetting("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", time.Minute)
+
+	// ConnectionRetryMaxInterval defines the maximum interval between retries after the gRPC connection disconnects.
+	ConnectionRetryMaxInterval = registerDurationSetting("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", 10*time.Minute)
 )

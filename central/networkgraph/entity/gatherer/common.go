@@ -1,22 +1,12 @@
 package gatherer
 
 import (
-	"os"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/networkgraph/defaultexternalsrcs"
 	"github.com/stackrox/rox/pkg/set"
 )
-
-func writeChecksumLocally(checksum []byte) error {
-	if err := os.WriteFile(defaultexternalsrcs.LocalChecksumFile, checksum, 0644); err != nil {
-		return errors.Wrapf(err, "writing provider networks checksum %s", defaultexternalsrcs.LocalChecksumFile)
-	}
-	return nil
-}
 
 func loadStoredDefaultExtSrcsIDs(entityDS datastore.EntityDataStore) (set.StringSet, error) {
 	entities, err := entityDS.GetAllMatchingEntities(networkGraphReadCtx, func(entity *storage.NetworkEntity) bool {

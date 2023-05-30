@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	metadataGetterMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
 	"github.com/stackrox/rox/pkg/notifiers/syslog/mocks"
 	"github.com/stretchr/testify/suite"
 )
@@ -24,15 +25,18 @@ func TestSyslogNotifier(t *testing.T) {
 type SyslogNotifierTestSuite struct {
 	suite.Suite
 
-	mockCtrl   *gomock.Controller
-	mockSender *mocks.MocksyslogSender
+	mockCtrl           *gomock.Controller
+	mockSender         *mocks.MocksyslogSender
+	mockMetadataGetter *metadataGetterMocks.MockMetadataGetter
 }
 
 func (s *SyslogNotifierTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.mockSender = mocks.NewMocksyslogSender(s.mockCtrl)
+	s.mockMetadataGetter = metadataGetterMocks.NewMockMetadataGetter(s.mockCtrl)
 	s.T().Setenv(features.RoxSyslogExtraFields.EnvVar(), "true")
+	s.T().Setenv(features.SyslogNamespaceLabels.EnvVar(), "true")
 }
 
 func (s *SyslogNotifierTestSuite) TearDownTest() {
@@ -41,10 +45,11 @@ func (s *SyslogNotifierTestSuite) TearDownTest() {
 
 func (s *SyslogNotifierTestSuite) makeSyslog(notifier *storage.Notifier) *syslog {
 	return &syslog{
-		Notifier: notifier,
-		sender:   s.mockSender,
-		pid:      1,
-		facility: (int(notifier.GetSyslog().GetLocalFacility()) + 16) * 8,
+		Notifier:       notifier,
+		metadataGetter: s.mockMetadataGetter,
+		sender:         s.mockSender,
+		pid:            1,
+		facility:       (int(notifier.GetSyslog().GetLocalFacility()) + 16) * 8,
 	}
 }
 
@@ -81,6 +86,19 @@ func makeNotifierExtrafields(keyVals []*storage.KeyValuePair) *storage.Notifier 
 			},
 		},
 	}
+}
+
+func (s *SyslogNotifierTestSuite) setupMockMetadataGetterForAlert(alert *storage.Alert) {
+	if !features.SyslogNamespaceLabels.Enabled() {
+		// No calls to GetNamespaceLabels expected if ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG is disabled
+		return
+	}
+
+	s.mockMetadataGetter.EXPECT().GetNamespaceLabels(gomock.Any(), alert).Return(map[string]string{
+		"x":                           "y",
+		"abc":                         "xyz",
+		"kubernetes.io/metadata.name": "stackrox",
+	})
 }
 
 func (s *SyslogNotifierTestSuite) TestCEFMakeExtensionPair() {
@@ -152,7 +170,8 @@ func (s *SyslogNotifierTestSuite) TestValidateSyslogExtraFieldsEmptyList() {
 	s.NoError(e)
 
 	testAlert := fixtures.GetAlert()
-	a := alertToCEF(testAlert, notifier)
+	s.setupMockMetadataGetterForAlert(testAlert)
+	a := s.makeSyslog(notifier).alertToCEF(context.Background(), testAlert)
 	s.NotEmpty(a)
 }
 
@@ -169,7 +188,7 @@ func (s *SyslogNotifierTestSuite) TestValidateSyslogExtraFields() {
 	s.NoError(e)
 }
 
-func (s *SyslogNotifierTestSuite) TestValidateAlerttoCef() {
+func (s *SyslogNotifierTestSuite) TestValidateAlertToCEFWithExtraFields() {
 	if !features.RoxSyslogExtraFields.Enabled() {
 		s.T().Skip("Skip syslog extra fields tests")
 		s.T().SkipNow()
@@ -178,8 +197,62 @@ func (s *SyslogNotifierTestSuite) TestValidateAlerttoCef() {
 	keyVals := []*storage.KeyValuePair{{Key: "foo", Value: "bar"}}
 	notifier := makeNotifierExtrafields(keyVals)
 	testAlert := fixtures.GetAlert()
-	a := alertToCEF(testAlert, notifier)
+	s.setupMockMetadataGetterForAlert(testAlert)
+	a := s.makeSyslog(notifier).alertToCEF(context.Background(), testAlert)
 	s.Contains(a, "foo=bar")
+}
+
+func (s *SyslogNotifierTestSuite) TestValidateAlertToCEFWithNamespaceLabels() {
+	if !features.SyslogNamespaceLabels.Enabled() {
+		s.T().Skip("Skipping since ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG is not enabled")
+		s.T().SkipNow()
+	}
+
+	cases := []struct {
+		title                  string
+		alert                  *storage.Alert
+		namespaceInNotifcation bool
+		expectedNamespaceProp  string
+		expectedLabelsProp     string
+	}{
+		{
+			title:                  "Namespace and labels should be in included for deployment alert",
+			alert:                  fixtures.GetScopedDeploymentAlert("xyz", "cluster-id", "deployment-namespace"),
+			namespaceInNotifcation: true,
+			expectedNamespaceProp:  "ns=deployment-namespace",
+			expectedLabelsProp:     "nslabels={\"abc\":\"xyz\",\"kubernetes.io/metadata.name\":\"stackrox\",\"x\":\"y\"}",
+		},
+		{
+			title:                  "Namespace and labels should be in included for resource alert",
+			alert:                  fixtures.GetScopedResourceAlert("abcd", "cluser-id", "my-namespace"),
+			namespaceInNotifcation: true,
+			expectedNamespaceProp:  "ns=my-namespace",
+			expectedLabelsProp:     "nslabels={\"abc\":\"xyz\",\"kubernetes.io/metadata.name\":\"stackrox\",\"x\":\"y\"}",
+		},
+		{
+			title: "Namespace and labels should not be in included for image alert",
+			alert: fixtures.GetImageAlert(),
+		},
+		{
+			title: "Namespace and labels should not be in included for alert that's missing a namespace",
+			alert: fixtures.GetScopedDeploymentAlert("xyz", "cluster-id", ""),
+		},
+	}
+
+	notifier := makeNotifier()
+
+	for _, c := range cases {
+		s.T().Run(c.title, func(t *testing.T) {
+			if c.namespaceInNotifcation {
+				s.setupMockMetadataGetterForAlert(c.alert)
+			}
+			cef := s.makeSyslog(notifier).alertToCEF(context.Background(), c.alert)
+			if c.namespaceInNotifcation {
+				s.Contains(cef, c.expectedNamespaceProp)
+				s.Contains(cef, c.expectedLabelsProp)
+			}
+		})
+	}
 }
 
 func (s *SyslogNotifierTestSuite) TestValidateExtraFieldsAuditLog() {
@@ -236,11 +309,13 @@ func (s *SyslogNotifierTestSuite) TestAlerts() {
 	syslog := s.makeSyslog(makeNotifier())
 	testAlert := fixtures.GetAlert()
 	s.mockSender.EXPECT().SendSyslog(gomock.Any()).Return(nil)
+	s.setupMockMetadataGetterForAlert(testAlert)
 	s.Require().NoError(syslog.AlertNotify(context.Background(), testAlert))
 
 	// Ensure it doesn't panic with nil timestamps
 	testAlert.FirstOccurred = nil
 	s.mockSender.EXPECT().SendSyslog(gomock.Any()).Return(nil)
+	s.setupMockMetadataGetterForAlert(testAlert)
 	s.Require().NoError(syslog.AlertNotify(context.Background(), testAlert))
 }
 

@@ -1,14 +1,12 @@
 package resources
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/docker/config"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/sensor/common/registry"
@@ -336,7 +334,7 @@ func TestPopulateImageMetadata(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			registryStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
 			if c.isClusterLocal {
-				require.NoError(t, registryStore.UpsertRegistry(context.Background(), "testdev", "image-registry.openshift-image-registry.svc:5000", config.DockerConfigEntry{}))
+				registryStore.AddClusterLocalRegistryHost("image-registry.openshift-image-registry.svc:5000")
 			}
 
 			wrap := deploymentWrap{
@@ -349,6 +347,7 @@ func TestPopulateImageMetadata(t *testing.T) {
 				wrap.Containers = append(wrap.Containers, &storage.Container{
 					Image: img,
 				})
+
 			}
 
 			pods := make([]*v1.Pod, 0, len(c.pods))

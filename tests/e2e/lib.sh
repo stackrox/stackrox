@@ -89,6 +89,7 @@ export_test_environment() {
     ci_export ADMISSION_CONTROLLER "${ADMISSION_CONTROLLER:-true}"
     ci_export COLLECTION_METHOD "${COLLECTION_METHOD:-ebpf}"
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "${DEPLOY_STACKROX_VIA_OPERATOR:-false}"
+    ci_export INSTALL_COMPLIANCE_OPERATOR "${INSTALL_COMPLIANCE_OPERATOR:-false}"
     ci_export LOAD_BALANCER "${LOAD_BALANCER:-lb}"
     ci_export LOCAL_PORT "${LOCAL_PORT:-443}"
     ci_export MONITORING_SUPPORT "${MONITORING_SUPPORT:-false}"
@@ -102,6 +103,7 @@ export_test_environment() {
     ci_export ROX_SYSLOG_EXTRA_FIELDS "${ROX_SYSLOG_EXTRA_FIELDS:-true}"
     ci_export ROX_VULN_MGMT_REPORTING_ENHANCEMENTS "${ROX_VULN_MGMT_REPORTING_ENHANCEMENTS:-false}"
     ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
+    ci_export ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG "${ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG:-true}"
 
     if [[ -z "${BUILD_TAG:-}" ]]; then
         # TODO(ROX-16008): Remove this once the declarative config feature flag is enabled by default.
@@ -305,6 +307,30 @@ export_central_basic_auth_creds() {
     ROX_USERNAME="admin"
     ci_export "ROX_USERNAME" "$ROX_USERNAME"
     ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
+}
+
+deploy_optional_e2e_components() {
+    info "Installing optional components used in E2E tests"
+
+    if [[ "${INSTALL_COMPLIANCE_OPERATOR:-false}" == "true" ]]; then
+        install_the_compliance_operator
+    else
+        info "Skipping the compliance operator install"
+    fi
+}
+
+install_the_compliance_operator() {
+    info "Installing the compliance operator"
+
+    # ref: https://docs.openshift.com/container-platform/4.13/security/compliance_operator/compliance-operator-installation.html
+
+    oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/namespace.yaml"
+    oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/operator-group.yaml"
+    oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/subscription.yaml"
+
+    wait_for_object_to_appear openshift-compliance deploy/compliance-operator
+
+    oc get csv -n openshift-compliance
 }
 
 setup_client_CA_auth_provider() {

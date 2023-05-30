@@ -85,7 +85,7 @@ function DeploymentsTable({
                         Images
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th>First discovered</Th>
+                    <Th sort={getSortParams('Created')}>First discovered</Th>
                 </Tr>
             </Thead>
             {deployments.length === 0 && <EmptyTableResults colSpan={6} />}
