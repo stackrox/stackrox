@@ -320,8 +320,8 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	// connection is up again.
 	exponential := backoff.NewExponentialBackOff()
 	exponential.MaxElapsedTime = 0 // It never stops if set to 0
-	exponential.InitialInterval = connectionRetryInitialInterval()
-	exponential.MaxInterval = connectionRetryMaxInterval()
+	exponential.InitialInterval = env.ConnectionRetryInitialInterval.DurationSetting()
+	exponential.MaxInterval = env.ConnectionRetryMaxInterval.DurationSetting()
 
 	err := backoff.RetryNotify(func() error {
 		select {
