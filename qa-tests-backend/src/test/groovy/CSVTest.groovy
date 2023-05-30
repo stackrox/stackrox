@@ -22,7 +22,7 @@ import spock.lang.Unroll
 @Tag("BAT")
 class CSVTest extends BaseSpecification {
 
-    private static final IMAGE_SHA = "sha256:a05b0cdd4fc1be3b224ba9662ebdf98fe44c09c0c9215b45f84344c12867002e"
+    private static final IMAGE_SHA = "sha256:e18c5814a9f7ddd5fe410f17417a48d2de562325e9d71337274134f4a6654e3f"
 
     private static final CVE_FIELDS_FRAGEMENT = """
     fragment cveFields on EmbeddedVulnerability {
