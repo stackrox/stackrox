@@ -15,7 +15,7 @@ import (
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
-// NodeInventoryComponentScanner connects to node-inventory container to provide node-inventory object
+// NodeInventoryComponentScanner connects to node-msg container to provide node-msg object
 type NodeInventoryComponentScanner struct {
 	nodeNameProvider NodeNameProvider
 	client           scannerV1.NodeInventoryServiceClient
@@ -26,15 +26,15 @@ func NewNodeInventoryComponentScanner(nnp NodeNameProvider) *NodeInventoryCompon
 	return &NodeInventoryComponentScanner{nodeNameProvider: nnp}
 }
 
-// IsActive returns true if the connection to node-inventory is ready
+// IsActive returns true if the connection to node-msg is ready
 func (n *NodeInventoryComponentScanner) IsActive() bool {
 	return n.client != nil
 }
 
-// Connect connects to node-inventory and stores an active client
+// Connect connects to node-msg and stores an active client
 func (n *NodeInventoryComponentScanner) Connect(address string) {
 	if !env.NodeInventoryContainerEnabled.BooleanSetting() {
-		log.Infof("Compliance will not call the node-inventory container, because this is not Openshift 4 cluster")
+		log.Infof("Compliance will not call the node-msg container, because this is not Openshift 4 cluster")
 	} else if env.RHCOSNodeScanning.BooleanSetting() {
 		// Start the prometheus metrics server
 		metrics.NewDefaultHTTPServer(metrics.ComplianceSubsystem).RunForever()
@@ -43,10 +43,10 @@ func (n *NodeInventoryComponentScanner) Connect(address string) {
 		// Set up Compliance <-> NodeInventory connection
 		niConn, err := clientconn.AuthenticatedGRPCConnection(address, mtls.Subject{}, clientconn.UseInsecureNoTLS(true))
 		if err != nil {
-			log.Errorf("Disabling node scanning for this node: could not initialize connection to node-inventory container: %v", err)
+			log.Errorf("Disabling node scanning for this node: could not initialize connection to node-msg container: %v", err)
 		}
 		if niConn != nil {
-			log.Info("Initialized gRPC connection to node-inventory container")
+			log.Info("Initialized gRPC connection to node-msg container")
 			n.client = scannerV1.NewNodeInventoryServiceClient(niConn)
 		}
 	}
@@ -58,7 +58,7 @@ func (n *NodeInventoryComponentScanner) GetIntervals() *intervals.NodeScanInterv
 	return &i
 }
 
-// ScanNode returns a message with node-inventory
+// ScanNode returns a message with node-msg
 func (n *NodeInventoryComponentScanner) ScanNode(ctx context.Context) (*sensor.MsgFromCompliance, error) {
 	ctx, cancel := context.WithTimeout(ctx, env.NodeAnalysisDeadline.DurationSetting())
 	defer cancel()

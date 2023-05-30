@@ -21,6 +21,7 @@ func main() {
 		generationInterval: env.NodeScanningInterval.DurationSetting(),
 		initialScanDelay:   env.NodeScanningMaxInitialWait.DurationSetting(),
 	}
+	log.Infof("Generation inverval: %v", scanner.generationInterval.String())
 
 	srh := &dummySensorReplyHandlerImpl{}
 	nsr := compliance.NewNodeScanResend(5 * time.Second)

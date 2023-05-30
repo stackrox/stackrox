@@ -79,15 +79,10 @@ func (c *Compliance) Start() {
 
 	if env.RHCOSNodeScanning.BooleanSetting() && c.nodeScanner.IsActive() {
 		c.scanResend.Run(ctx)
-		c.scanResend.SetOnResend(func(msg *sensor.MsgFromCompliance) {
-			log.Infof("OnResend: Resending node-inv")
-			toSensorC <- msg
-		})
 		nodeInventoriesC := c.manageNodeScanLoop(ctx)
 		// sending nodeInventories into output toSensorC
 		for n := range nodeInventoriesC {
 			toSensorC <- n
-			c.scanResend.RegisterSending(n)
 		}
 	}
 
@@ -113,12 +108,17 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 			select {
 			case <-ctx.Done():
 				return
+			case msg, ok := <-c.scanResend.ResendChannel():
+				if ok {
+					nodeInventoriesC <- msg
+				}
 			case <-t.C:
 				log.Infof("Scanning node %q", nodeName)
 				msg, err := c.nodeScanner.ScanNode(ctx)
 				if err != nil {
 					log.Errorf("Error running node scan: %v", err)
 				} else {
+					c.scanResend.RegisterScan(msg)
 					nodeInventoriesC <- msg
 				}
 				interval := i.Next()

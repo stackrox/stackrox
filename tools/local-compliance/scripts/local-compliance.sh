@@ -24,8 +24,8 @@ kubectl -n stackrox get secrets collector-tls -ojsonpath='{.data.collector-cert\
 kubectl -n stackrox get secrets collector-tls -ojsonpath='{.data.collector-key\.pem}' \
     | base64 -D -o "${DIR}/../certs/collector-key.pem"
 
-ROX_NODE_SCANNING_MAX_INITIAL_WAIT="1s" \
-ROX_NODE_SCANNING_INTERVAL="1s" \
+ROX_NODE_SCANNING_MAX_INITIAL_WAIT="${ROX_NODE_SCANNING_MAX_INITIAL_WAIT:-1s}" \
+ROX_NODE_SCANNING_INTERVAL="${ROX_NODE_SCANNING_INTERVAL:-30s}" \
 ROX_MTLS_CA_FILE="${DIR}/../certs/ca.pem" \
 ROX_MTLS_CERT_FILE="${DIR}/../certs/collector-cert.pem" \
 ROX_MTLS_KEY_FILE="${DIR}/../certs/collector-key.pem" \
