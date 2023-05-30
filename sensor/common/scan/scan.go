@@ -44,9 +44,9 @@ type LocalScan struct {
 	scanImg                        func(context.Context, *storage.Image, registryTypes.Registry, *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
 	fetchSignaturesWithRetry       func(context.Context, signatures.SignatureFetcher, *storage.Image, string, registryTypes.Registry) ([]*storage.Signature, error)
 	scannerClientSingleton         func() *scannerclient.Client
-	getMatchingRegistry            func(*storage.ImageName) (registryTypes.Registry, error)
 	getRegistryForImageInNamespace func(*storage.ImageName, string) (registryTypes.Registry, error)
 	getGlobalRegistryForImage      func(*storage.ImageName) (registryTypes.Registry, error)
+	createNoAuthImageRegistry      func(*storage.ImageName) (registryTypes.Registry, error)
 
 	// scanSemaphore limits the number of active scans
 	scanSemaphore        *semaphore.Weighted
@@ -59,31 +59,12 @@ func NewLocalScan(registryStore *registry.Store) *LocalScan {
 		scanImg:                        scanImage,
 		fetchSignaturesWithRetry:       signatures.FetchImageSignaturesWithRetries,
 		scannerClientSingleton:         scannerclient.GRPCClientSingleton,
-		getMatchingRegistry:            registryStore.GetRegistryForImage,
 		getRegistryForImageInNamespace: registryStore.GetRegistryForImageInNamespace,
 		getGlobalRegistryForImage:      registryStore.GetGlobalRegistryForImage,
 		scanSemaphore:                  semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
 		maxSemaphoreWaitTime:           defaultMaxSemaphoreWaitTime,
+		createNoAuthImageRegistry:      createNoAuthImageRegistry,
 	}
-}
-
-// EnrichLocalImage invokes enrichLocalImageFromRegistry with registry credentials from the registryStore based on the remote path
-// of the image (primarily used for enriching images from OCP internal registries where the path represents a namespace)
-//
-// Returns an error if no credentials are found prior to invoking enrichLocalImageFromRegistry. An error is returned
-// instead of passing no registries to enrichLocalImageFromRegistry (for no auth) because the internal OCP registries require auth (by default)
-func (s *LocalScan) EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
-	imgName := ci.GetName().GetFullName()
-
-	// Find the associated registry of the image.
-	matchingRegistry, err := s.getMatchingRegistry(ci.GetName())
-	if err != nil {
-		return nil, errors.Wrapf(err, "determining image registry for image %q", imgName)
-	}
-
-	log.Debugf("Received matching registry for image %q: %q", imgName, matchingRegistry.Name())
-
-	return s.enrichLocalImageFromRegistry(ctx, centralClient, ci, []registryTypes.Registry{matchingRegistry})
 }
 
 // EnrichLocalImageInNamespace invokes enrichLocalImageFromRegistry with a slice of credentials from the registryStore based on namespace as well as
@@ -126,6 +107,10 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 //
 // Will return any errors that may occur during scanning, fetching signatures or during reaching out to central.
 func (s *LocalScan) enrichLocalImageFromRegistry(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage, registries []registryTypes.Registry) (*storage.Image, error) {
+	if ci == nil {
+		return nil, errors.New("missing image, nothing to enrich")
+	}
+
 	// Check if there is a local Scanner.
 	// No need to continue if there is no local Scanner.
 	if s.scannerClientSingleton() == nil {
@@ -142,7 +127,7 @@ func (s *LocalScan) enrichLocalImageFromRegistry(ctx context.Context, centralCli
 
 	if len(registries) == 0 {
 		// no registries provided, try with no auth
-		reg, err := createNoAuthImageRegistry(ci.GetName())
+		reg, err := s.createNoAuthImageRegistry(ci.GetName())
 		if err != nil {
 			return nil, errors.Wrapf(err, "unable to create no auth registry for %q", ci.GetName())
 		}

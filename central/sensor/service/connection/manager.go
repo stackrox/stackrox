@@ -20,6 +20,7 @@ type Manager interface {
 		policyMgr common.PolicyManager,
 		baselineMgr common.ProcessBaselineManager,
 		networkBaselineMgr common.NetworkBaselineManager,
+		delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager,
 		autoTriggerUpgrades *concurrency.Flag) error
 
 	// Connection-related methods.

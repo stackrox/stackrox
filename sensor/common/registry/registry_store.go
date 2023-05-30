@@ -2,16 +2,18 @@ package registry
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
-	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
 	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
 	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -22,19 +24,28 @@ var (
 )
 
 // Store stores cluster-internal registries by namespace.
-// It is assumed all the registries are Docker registries.
 type Store struct {
 	factory registries.Factory
 	// store maps a namespace to the names of registries accessible from within the namespace.
 	store map[string]registries.Set
 
+	// clusterLocalRegistryHosts contains hosts (names and/or IPs) for registries that are local
+	// to this cluster (ie: the OCP internal registry).
+	clusterLocalRegistryHosts      set.StringSet
+	clusterLocalRegistryHostsMutex sync.RWMutex
+
 	// globalRegistries holds registries that are not bound to a namespace and can be used
-	// for processing images from any namespace, example: the OCP Global Pull Secret
+	// for processing images from any namespace, example: the OCP Global Pull Secret.
 	globalRegistries registries.Set
 
 	mutex sync.RWMutex
 
 	checkTLS CheckTLS
+
+	// delegatedRegistryConfig is used to determine if scanning images from a registry
+	// should be done via local scanner or sent to central.
+	delegatedRegistryConfig      *central.DelegatedRegistryConfig
+	delegatedRegistryConfigMutex sync.RWMutex
 }
 
 // CheckTLS defines a function which checks if the given address is using TLS.
@@ -131,29 +142,10 @@ func (rs *Store) getRegistriesInNamespace(namespace string) registries.Set {
 	return rs.store[namespace]
 }
 
-// GetRegistryForImage returns the relevant image registry for the given image.
-//
-// An error is returned if the registry is unknown.
-//
-// Assumes the image is from an OCP internal registry
-func (rs *Store) GetRegistryForImage(image *storage.ImageName) (registryTypes.Registry, error) {
-	ns := utils.ExtractOpenShiftProject(image)
-	return rs.GetRegistryForImageInNamespace(image, ns)
-}
-
-// HasRegistryForImage returns true when the registry store has the registry
-// for the given image.
-//
-// Assumes the image is from an OCP internal registry
-func (rs *Store) HasRegistryForImage(image *storage.ImageName) bool {
-	reg, err := rs.GetRegistryForImage(image)
-	return reg != nil && err == nil
-}
-
 // GetRegistryForImageInNamespace returns the stored registry that matches image.Registry
-// and is associated with namespace
+// and is associated with namespace.
 //
-// An error is returned if no registry found
+// An error is returned if no registry found.
 func (rs *Store) GetRegistryForImageInNamespace(image *storage.ImageName, namespace string) (registryTypes.Registry, error) {
 	reg := image.GetRegistry()
 	regs := rs.getRegistriesInNamespace(namespace)
@@ -168,7 +160,7 @@ func (rs *Store) GetRegistryForImageInNamespace(image *storage.ImageName, namesp
 	return nil, errors.Errorf("unknown image registry: %q", reg)
 }
 
-// UpsertGlobalRegistry will store a new registry with the given credentials into the global registry store
+// UpsertGlobalRegistry will store a new registry with the given credentials into the global registry store.
 func (rs *Store) UpsertGlobalRegistry(ctx context.Context, registry string, dce config.DockerConfigEntry) error {
 	secure, err := rs.checkTLS(ctx, registry)
 	if err != nil {
@@ -185,9 +177,9 @@ func (rs *Store) UpsertGlobalRegistry(ctx context.Context, registry string, dce 
 	return nil
 }
 
-// GetGlobalRegistryForImage returns the relevant global registry for image
+// GetGlobalRegistryForImage returns the relevant global registry for image.
 //
-// An error is returned if the registry is unknown
+// An error is returned if the registry is unknown.
 func (rs *Store) GetGlobalRegistryForImage(image *storage.ImageName) (registryTypes.Registry, error) {
 	reg := image.GetRegistry()
 	regs := rs.globalRegistries
@@ -200,4 +192,73 @@ func (rs *Store) GetGlobalRegistryForImage(image *storage.ImageName) (registryTy
 	}
 
 	return nil, errors.Errorf("unknown image registry: %q", reg)
+}
+
+// SetDelegatedRegistryConfig sets a new delegated registry config for use in determining
+// if a particular image is from a registry that should be accessed local to this cluster.
+func (rs *Store) SetDelegatedRegistryConfig(config *central.DelegatedRegistryConfig) {
+	rs.delegatedRegistryConfigMutex.Lock()
+	defer rs.delegatedRegistryConfigMutex.Unlock()
+	rs.delegatedRegistryConfig = config
+}
+
+// IsLocal determines if an image is from a registry that should be accessed
+// local to this secured cluster.  Always returns true for image registries that have
+// been added via AddClusterLocalRegistryHost.
+func (rs *Store) IsLocal(image *storage.ImageName) bool {
+	if image == nil {
+		return false
+	}
+
+	if rs.hasClusterLocalRegistryHost(image.GetRegistry()) {
+		// This host is always cluster local irregardless of the DelegatedRegistryConfig (ie: OCP internal registry).
+		return true
+	}
+
+	imageFullName := urlfmt.TrimHTTPPrefixes(image.GetFullName())
+
+	rs.delegatedRegistryConfigMutex.RLock()
+	defer rs.delegatedRegistryConfigMutex.RUnlock()
+
+	config := rs.delegatedRegistryConfig
+	if config == nil || config.EnabledFor == central.DelegatedRegistryConfig_NONE {
+		return false
+	}
+
+	if config.EnabledFor == central.DelegatedRegistryConfig_ALL {
+		return true
+	}
+
+	// if image matches a delegated registry prefix, it is local
+	for _, r := range config.Registries {
+		regPath := urlfmt.TrimHTTPPrefixes(r.RegistryPath)
+		if strings.HasPrefix(imageFullName, regPath) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// AddClusterLocalRegistryHost adds host to an internal set of hosts representing
+// registries that are only accessible from this cluster. These hosts will be factored
+// into IsLocal decisions. Is OK to call repeatedly for the same host.
+func (rs *Store) AddClusterLocalRegistryHost(host string) {
+	trimmed := urlfmt.TrimHTTPPrefixes(host)
+
+	rs.clusterLocalRegistryHostsMutex.Lock()
+	defer rs.clusterLocalRegistryHostsMutex.Unlock()
+
+	rs.clusterLocalRegistryHosts.Add(trimmed)
+
+	log.Debugf("Added cluster local registry host %q", trimmed)
+}
+
+func (rs *Store) hasClusterLocalRegistryHost(host string) bool {
+	trimmed := urlfmt.TrimHTTPPrefixes(host)
+
+	rs.clusterLocalRegistryHostsMutex.RLock()
+	defer rs.clusterLocalRegistryHostsMutex.RUnlock()
+
+	return rs.clusterLocalRegistryHosts.Contains(trimmed)
 }

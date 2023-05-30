@@ -1,11 +1,13 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
+option go_package = "central";
 
-package storage;
+package central;
 
 // DelegatedRegistryConfig determines how to handle scan requests.
+//
+// Compared to the Public and Storage variations of this proto, the default cluster id and registry cluster ids
+// are not included (not used by the secured clusters).
 //
 // Refer to v1.DelegatedRegistryConfig for more detailed docs.
 //
@@ -19,10 +21,8 @@ message DelegatedRegistryConfig {
 
     message DelegatedRegistry {
         string registry_path = 1;
-        string cluster_id    = 2;
     }
 
     EnabledFor                 enabled_for        = 1;
-    string                     default_cluster_id = 2;
-    repeated DelegatedRegistry registries         = 3;
+    repeated DelegatedRegistry registries         = 2;
 }
