@@ -93,13 +93,13 @@ function ImagesTable({ images, getSortParams, isFiltered, filteredSeverities }: 
                         CVEs by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
-                    <Th sort={getSortParams('Operating System')}>Operating system</Th>
-                    <Th sort={getSortParams('Deployment Count')}>
+                    <Th sort={getSortParams('Image OS')}>Operating system</Th>
+                    <Th>
                         Deployments
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th sort={getSortParams('Age')}>Age</Th>
-                    <Th sort={getSortParams('Scan Time')}>Scan time</Th>
+                    <Th sort={getSortParams('Image created time')}>Age</Th>
+                    <Th sort={getSortParams('Image scan time')}>Scan time</Th>
                 </Tr>
             </Thead>
             {images.length === 0 && <EmptyTableResults colSpan={6} />}

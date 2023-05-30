@@ -61,7 +61,7 @@ const imageVulnerabilitiesQuery = gql`
     }
 `;
 
-const defaultSortFields = ['CVE'];
+const defaultSortFields = ['CVE', 'CVSS', 'Severity'];
 
 const imageResourceFilters = new Set<Resource>(['CVE']);
 

@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import useURLParameter from 'hooks/useURLParameter';
-import { SortDirection, SortOption, ThProps } from 'types/table';
+import { SortAggregate, SortDirection, SortOption, ThProps } from 'types/table';
 import { ApiSortOption } from 'types/search';
 import { isParsedQs } from 'utils/queryStringUtils';
 
-export type GetSortParams = (field: string) => ThProps['sort'] | undefined;
+export type GetSortParams = (
+    field: string,
+    aggregateBy?: SortAggregate
+) => ThProps['sort'] | undefined;
 
 export type UseURLSortProps = {
     sortFields: string[];
@@ -18,11 +21,26 @@ export type UseURLSortResult = {
     getSortParams: GetSortParams;
 };
 
-function tableSortOption(field: string, direction: SortDirection): ApiSortOption {
-    return {
+function tableSortOption(
+    field: string,
+    direction: SortDirection,
+    aggregateBy?: SortAggregate
+): ApiSortOption {
+    const sortOption = {
         field,
         reversed: direction === 'desc',
     };
+    if (aggregateBy) {
+        const { aggregateFunc, distinct } = aggregateBy;
+        return {
+            ...sortOption,
+            aggregateBy: {
+                aggregateFunc,
+                distinct: !!distinct,
+            },
+        };
+    }
+    return sortOption;
 }
 
 function isDirection(val: unknown): val is 'asc' | 'desc' {
@@ -42,9 +60,13 @@ function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps):
         isParsedQs(sortOption) && isDirection(sortOption?.direction)
             ? sortOption.direction
             : defaultSortOption.direction;
+    const activeAggregateBy =
+        isParsedQs(sortOption) && sortOption?.aggregateBy
+            ? (sortOption?.aggregateBy as SortAggregate)
+            : undefined;
 
     const internalSortResultOption = useRef<ApiSortOption>(
-        tableSortOption(activeSortField, activeSortDirection)
+        tableSortOption(activeSortField, activeSortDirection, activeAggregateBy)
     );
 
     // we'll use this to map the sort fields to an index PatternFly can use internally
@@ -60,7 +82,7 @@ function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps):
         setFieldToIndexMap(newFieldToIndexMap);
     }, [sortFields]);
 
-    function getSortParams(field: string): ThProps['sort'] {
+    function getSortParams(field: string, aggregateBy?: SortAggregate): ThProps['sort'] {
         const index = fieldToIndexMap[field];
         const activeSortIndex = activeSortField ? fieldToIndexMap[activeSortField] : undefined;
 
@@ -74,6 +96,7 @@ function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps):
                 // modify the URL based on the new sort
                 const newSortOption: SortOption = {
                     field,
+                    aggregateBy,
                     direction,
                 };
                 if (onSort) {
@@ -89,7 +112,11 @@ function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps):
         internalSortResultOption.current.field !== activeSortField ||
         internalSortResultOption.current.reversed !== (activeSortDirection === 'desc')
     ) {
-        internalSortResultOption.current = tableSortOption(activeSortField, activeSortDirection);
+        internalSortResultOption.current = tableSortOption(
+            activeSortField,
+            activeSortDirection,
+            activeAggregateBy
+        );
     }
 
     return {
