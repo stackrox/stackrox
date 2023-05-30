@@ -28,6 +28,9 @@ func ValidateSimpleAccessScopeProto(scope *storage.SimpleAccessScope) error {
 // represents valid simple access scope rule.
 func ValidateSimpleAccessScopeRules(rules *storage.SimpleAccessScope_Rules) error {
 	var validationErrs *multierror.Error
+	if rules == nil {
+		validationErrs = multierror.Append(validationErrs, errox.InvalidArgs.New("rules must be set"))
+	}
 	for _, ns := range rules.GetIncludedNamespaces() {
 		if ns.GetClusterName() == "" || ns.GetNamespaceName() == "" {
 			validationErrs = multierror.Append(validationErrs, errox.InvalidArgs.Newf(
