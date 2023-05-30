@@ -28,6 +28,7 @@ func NewMultiplexer() *Multiplexer {
 	multiplexer := Multiplexer{
 		mp:         *channelmultiplexer.NewMultiplexer[common.MessageToComplianceWithAddress](),
 		components: []common.ComplianceComponent{},
+		stopper:    concurrency.NewStopper(),
 	}
 	return &multiplexer
 }
