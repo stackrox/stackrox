@@ -30,14 +30,16 @@ type Compliance struct {
 	nodeNameProvider   NodeNameProvider
 	nodeScanner        NodeScanner
 	sensorReplyHandler SensorReplyHandler
+	scanResend         *NodeScanResend
 }
 
 // NewComplianceApp contsructs the Compliance app object
-func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner, srh SensorReplyHandler) *Compliance {
+func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner, srh SensorReplyHandler, nsr *NodeScanResend) *Compliance {
 	return &Compliance{
 		nodeNameProvider:   nnp,
 		nodeScanner:        scanner,
 		sensorReplyHandler: srh,
+		scanResend:         nsr,
 	}
 }
 
@@ -76,10 +78,16 @@ func (c *Compliance) Start() {
 	}()
 
 	if env.RHCOSNodeScanning.BooleanSetting() && c.nodeScanner.IsActive() {
+		c.scanResend.Run(ctx)
+		c.scanResend.SetOnResend(func(msg *sensor.MsgFromCompliance) {
+			log.Infof("Resending node-inv")
+			toSensorC <- msg
+		})
 		nodeInventoriesC := c.manageNodeScanLoop(ctx)
 		// sending nodeInventories into output toSensorC
 		for n := range nodeInventoriesC {
 			toSensorC <- n
+			c.scanResend.RegisterSending(n)
 		}
 	}
 
