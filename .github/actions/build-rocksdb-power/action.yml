@@ -52,6 +52,7 @@ runs:
       shell: bash
       run: |
         git clone https://github.com/facebook/rocksdb.git
+        cd rocksdb
         git checkout v6.15.4
 
     - name: Apply the git patch to make relevant changes
