@@ -47,10 +47,6 @@ function isDirection(val: unknown): val is 'asc' | 'desc' {
     return val === 'asc' || val === 'desc';
 }
 
-function isAggregate(val: unknown): val is SortAggregate {
-    return !!(typeof val === 'object' && val !== null && 'aggregateBy' in val);
-}
-
 function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps): UseURLSortResult {
     const [sortOption, setSortOption] = useURLParameter('sortOption', defaultSortOption);
 
@@ -65,8 +61,8 @@ function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps):
             ? sortOption.direction
             : defaultSortOption.direction;
     const activeAggregateBy =
-        isParsedQs(sortOption) && isAggregate(sortOption?.aggregateBy)
-            ? sortOption?.aggregateBy
+        isParsedQs(sortOption) && sortOption?.aggregateBy
+            ? (sortOption?.aggregateBy as SortAggregate)
             : undefined;
 
     const internalSortResultOption = useRef<ApiSortOption>(

@@ -23,7 +23,7 @@ export const aggregateByCVSS: SortAggregate = {
 
 export const aggregateByImageSha: SortAggregate = {
     aggregateFunc: 'count',
-    distinct: true,
+    distinct: 'true',
 };
 
 export const aggregateByCreatedTime: SortAggregate = {
