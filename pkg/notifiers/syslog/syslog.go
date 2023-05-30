@@ -70,12 +70,6 @@ var (
 	}
 )
 
-func init() {
-	notifiers.Add("syslog", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		return newSyslog(notifier)
-	})
-}
-
 //go:generate mockgen-wrapper
 type syslogSender interface {
 	SendSyslog(syslogBytes []byte) error
@@ -84,6 +78,8 @@ type syslogSender interface {
 
 type syslog struct {
 	*storage.Notifier
+
+	metadataGetter notifiers.MetadataGetter
 
 	sender   syslogSender
 	pid      int
@@ -112,7 +108,8 @@ func validateSyslog(syslog *storage.Syslog) error {
 	return nil
 }
 
-func newSyslog(notifier *storage.Notifier) (*syslog, error) {
+// NewSyslog exported to allow for usage in various components
+func NewSyslog(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter) (*syslog, error) {
 	if err := validateSyslog(notifier.GetSyslog()); err != nil {
 		return nil, err
 	}
@@ -128,10 +125,11 @@ func newSyslog(notifier *storage.Notifier) (*syslog, error) {
 	facility := 8 * (int(notifier.GetSyslog().GetLocalFacility()) + 16)
 
 	return &syslog{
-		sender:   sender,
-		Notifier: notifier,
-		pid:      pid,
-		facility: facility,
+		sender:         sender,
+		Notifier:       notifier,
+		metadataGetter: metadataGetter,
+		pid:            pid,
+		facility:       facility,
 	}, nil
 }
 
@@ -167,9 +165,9 @@ func joinRoleNames(roles []*storage.UserInfo_Role) string {
 	return strings.Join(roleNames, ",")
 }
 
-func alertToCEF(alert *storage.Alert, notifier *storage.Notifier) string {
-	// There will be  4-5+len(extra fields) different key/value pairs in this message.
-	extensionList := make([]string, 0, 5+len(notifier.GetSyslog().GetExtraFields()))
+func (s *syslog) alertToCEF(ctx context.Context, alert *storage.Alert) string {
+	// There will be  (4 or 5)+(2 namespace)+len(extra fields) different key/value pairs in this message.
+	extensionList := make([]string, 0, 5+2+len(s.Notifier.GetSyslog().GetExtraFields()))
 
 	extensionList = append(extensionList, makeExtensionPair(devicePayloadID, alert.GetId()))
 	extensionList = append(extensionList, makeTimestampExtensionPair(startTime, alert.GetFirstOccurred())...)
@@ -177,11 +175,22 @@ func alertToCEF(alert *storage.Alert, notifier *storage.Notifier) string {
 	if alert.GetState() == storage.ViolationState_RESOLVED {
 		extensionList = append(extensionList, makeTimestampExtensionPair(endTime, alert.GetTime())...)
 	}
+
+	if features.SyslogNamespaceLabels.Enabled() {
+		if namespaceName := getNamespaceFromAlert(alert); namespaceName != "" {
+			extensionList = append(extensionList, makeExtensionPair("ns", alert.GetNamespace()))
+			extensionList = append(extensionList, makeJSONExtensionPair("nslabels", s.metadataGetter.GetNamespaceLabels(ctx, alert)))
+		} else {
+			// The actual error is logged in getNamespaceFromAlert
+			log.Debugf("Alert entity doesn't contain namespace: %+v", alert.GetEntity())
+		}
+	}
+
 	extensionList = append(extensionList, makeJSONExtensionPair(stackroxKubernetesSecurityPlatformAlert, alert))
 
 	if features.RoxSyslogExtraFields.Enabled() {
 		// add custom fields to alert
-		for _, k := range notifier.GetSyslog().GetExtraFields() {
+		for _, k := range s.Notifier.GetSyslog().GetExtraFields() {
 			extensionList = append(extensionList, makeExtensionPair(k.GetKey(), k.GetValue()))
 		}
 	}
@@ -189,6 +198,21 @@ func alertToCEF(alert *storage.Alert, notifier *storage.Notifier) string {
 	severity := alertToCEFSeverityMap[alert.GetPolicy().GetSeverity()]
 
 	return getCEFHeaderWithExtension("Alert", alert.GetPolicy().GetName(), severity, makeExtensionFromPairs(extensionList))
+}
+
+func getNamespaceFromAlert(alert *storage.Alert) string {
+	switch entity := alert.GetEntity().(type) {
+	case *storage.Alert_Deployment_:
+		return entity.Deployment.GetNamespace()
+	case *storage.Alert_Resource_:
+		return entity.Resource.GetNamespace()
+	case *storage.Alert_Image:
+		// An image doesn't have a namespace, but it's not an error so just return
+		return ""
+	default:
+		log.Error("Unexpected entity in alert")
+		return ""
+	}
 }
 
 func getCEFHeaderWithExtension(deviceEventClassID, name string, severity int, extension string) string {
@@ -227,8 +251,8 @@ func (s *syslog) wrapSyslogUnstructuredData(severity int, timestamp time.Time, m
 	return fmt.Sprintf("<%d>%d %s central %s %d %s - %s", priority, syslogVersion, timestamp.Format(time.RFC3339), application, s.pid, messageID, unstructuredData)
 }
 
-func (s *syslog) AlertNotify(_ context.Context, alert *storage.Alert) error {
-	unstructuredData := alertToCEF(alert, s.Notifier)
+func (s *syslog) AlertNotify(ctx context.Context, alert *storage.Alert) error {
+	unstructuredData := s.alertToCEF(ctx, alert)
 	severity := alertToSyslogSeverityMap[alert.GetPolicy().GetSeverity()]
 	timestamp, err := types.TimestampFromProto(alert.GetTime())
 	if err != nil {
@@ -261,7 +285,7 @@ func (s *syslog) SendAuditMessage(_ context.Context, msg *v1.Audit_Message) erro
 }
 
 func (s *syslog) AuditLoggingEnabled() bool {
-	return true // TODO: Joseph this will have to change if we allow users to configure which messages are sent to splunk
+	return true // audit logging is always enabled by default for syslog integrations
 }
 
 func (s *syslog) sendSyslog(severity int, timestamp time.Time, messageID, unstructuredData string) error {
