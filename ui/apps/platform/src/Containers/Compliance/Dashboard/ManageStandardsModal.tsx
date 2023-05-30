@@ -7,7 +7,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type ManageStandardsModalProps = {
     onCancel: () => void;
-    onSaveOrClose: () => void;
+    onChange: () => void;
     standards: ComplianceStandardMetadata[];
 };
 
@@ -22,7 +22,7 @@ function getShowScanResultsMap(standards: ComplianceStandardMetadata[]): Record<
 
 function ManageStandardsModal({
     onCancel,
-    onSaveOrClose,
+    onChange,
     standards,
 }: ManageStandardsModalProps): ReactElement {
     const [errorMessage, setErrorMessage] = useState('');
@@ -55,7 +55,7 @@ function ManageStandardsModal({
                     setSubmitting(false);
 
                     if (nRejected === 0) {
-                        onSaveOrClose();
+                        onChange();
                     } else {
                         setErrorMessage(reasonMessage);
                         setCountFulfilledWhenRejected(results.length - nRejected);
@@ -99,7 +99,7 @@ function ManageStandardsModal({
                     <Button
                         key="Close"
                         variant="secondary"
-                        onClick={onSaveOrClose}
+                        onClick={onChange}
                         isDisabled={isSubmitting}
                     >
                         Close

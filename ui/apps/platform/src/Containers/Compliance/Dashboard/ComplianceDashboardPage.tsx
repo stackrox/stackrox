@@ -70,7 +70,7 @@ function ComplianceDashboardPage(): ReactElement {
         setErrorMessageFetching('');
     }
 
-    function onSaveOrCloseManageStandardsModal() {
+    function onChangeManageStandardsModal() {
         setIsManageStandardsModalOpen(false);
 
         /*
@@ -172,7 +172,7 @@ function ComplianceDashboardPage(): ReactElement {
             ) : isManageStandardsModalOpen ? (
                 <ManageStandardsModal
                     onCancel={onCancelManageStandardsModal}
-                    onSaveOrClose={onSaveOrCloseManageStandardsModal}
+                    onChange={onChangeManageStandardsModal}
                     standards={standards}
                 />
             ) : null}
