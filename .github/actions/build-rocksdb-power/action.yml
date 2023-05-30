@@ -58,7 +58,7 @@ runs:
     - name: Apply the git patch to make relevant changes
       shell: bash
       run: |
-        cat > ppc64le.patch <<EOF
+        cat > ppc64le.patch <<- "EOF"
           diff --git a/Makefile b/Makefile
           index 7cca4929b..552055bf1 100644
           --- a/Makefile

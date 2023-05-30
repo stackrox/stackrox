@@ -162,7 +162,9 @@ jobs:
       # prerelease - built with GOTAGS=release
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
-    needs: define-job-matrix
+    needs: 
+      - define-job-matrix
+      - build-rocksdb-bins-power
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
