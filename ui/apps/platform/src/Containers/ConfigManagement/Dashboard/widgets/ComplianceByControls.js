@@ -24,7 +24,7 @@ const passingColor = COMPLIANCE_PASS_COLOR;
 const failingColor = COMPLIANCE_FAIL_COLOR;
 const NAColor = 'var(--base-400)'; // same as skippedColor in ComplianceByStandards
 
-const linkColor = 'var(--primary-600)'; // TODO might be able to remove after PatternFly dark theme
+const linkColor = 'var(--base-600)';
 const textColor = 'var(--base-600)';
 
 const sunburstLegendData = [
