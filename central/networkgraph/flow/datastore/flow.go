@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,4 +24,6 @@ type FlowDataStore interface {
 	RemoveFlowsForDeployment(ctx context.Context, id string) error
 	RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error
 	RemoveStaleFlows(ctx context.Context) error
+	// RemoveOrphanedFlows - remove flows that have been orphaned by deployments
+	RemoveOrphanedFlows(ctx context.Context, orphanWindow *time.Time) error
 }

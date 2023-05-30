@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -125,6 +127,10 @@ func (fds *flowDataStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id s
 }
 
 func (fds *flowDataStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
+	if env.PostgresDatastoreEnabled.BooleanSetting() {
+		utils.Should(errors.New("No longer supported with Postgres"))
+		return nil
+	}
 	if ok, err := networkGraphSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -140,8 +146,17 @@ func (fds *flowDataStoreImpl) RemoveStaleFlows(ctx context.Context) error {
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return fds.storage.RemoveStaleFlows(ctx)
+
+	return fds.storage.RemoveStaleFlows(ctx)
+}
+
+// RemoveOrphanedFlows - remove orphaned network flows
+func (fds *flowDataStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *time.Time) error {
+	if ok, err := networkGraphSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
 	}
-	return nil
+
+	return fds.storage.RemoveOrphanedFlows(ctx, orphanWindow)
 }
