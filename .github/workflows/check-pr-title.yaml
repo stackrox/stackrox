@@ -1,4 +1,4 @@
-name: "Check PR title for the greater good"
+name: "Check PR title"
 
 on:
   pull_request_target:
