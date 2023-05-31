@@ -565,7 +565,7 @@ spec:
         path: customize.envVars
       - description: Settings for the Node-Inventory container, which is responsible
           for scanning the Nodes' filesystem
-        displayName: Node-Inventory Settings
+        displayName: Node Scanner Settings
         path: perNode.nodeInventory
       - displayName: Autoscaling Minimum Replicas
         path: scanner.analyzer.scaling.minReplicas
