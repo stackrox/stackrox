@@ -623,7 +623,8 @@ spec:
       - description: The method for system-level data collection. EBPF is recommended.
           If you select "NoCollection", you will not be able to see any information
           about network activity and process executions. The remaining settings in
-          these section will not have any effect.
+          these section will not have any effect. Note that CORE_BPF is on Tech Preview
+          stage.
         displayName: Collection
         path: perNode.collector.collection
       - description: The image flavor to use for collector. "Regular" images are bigger
