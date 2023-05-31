@@ -23,7 +23,7 @@ export const runtimeOptions = [
         value: 'NO_COLLECTION',
     },
     {
-        label: 'CORE BPF',
+        label: 'CORE BPF [Tech Preview]',
         tableDisplay: 'CORE BPF',
         value: 'CORE_BPF',
     },
