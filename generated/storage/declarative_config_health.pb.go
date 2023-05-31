@@ -55,7 +55,7 @@ type DeclarativeConfigHealth struct {
 	Status       DeclarativeConfigHealth_Status `protobuf:"varint,4,opt,name=status,proto3,enum=storage.DeclarativeConfigHealth_Status" json:"status,omitempty"`
 	ErrorMessage string                         `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	ResourceName string                         `protobuf:"bytes,6,opt,name=resource_name,json=resourceName,proto3" json:"resource_name,omitempty"`
-	// Timestamp when the status was ascertained
+	// Timestamp when the current status was set.
 	LastTimestamp        *types.Timestamp `protobuf:"bytes,7,opt,name=last_timestamp,json=lastTimestamp,proto3" json:"last_timestamp,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`

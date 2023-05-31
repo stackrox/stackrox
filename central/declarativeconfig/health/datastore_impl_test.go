@@ -62,97 +62,96 @@ func (s *declarativeConfigHealthDatastoreSuite) TearDownTest() {
 }
 
 func (s *declarativeConfigHealthDatastoreSuite) TestGetDeclarativeConfigs() {
-	integrationHealth := newIntegrationHealth()
+	configHealth := newConfigHealth()
 
-	err := s.datastore.UpsertDeclarativeConfig(s.hasWriteCtx, integrationHealth)
+	err := s.datastore.UpsertDeclarativeConfig(s.hasWriteCtx, configHealth)
 	s.NoError(err)
 
-	s.testGetIntegrationHealth(s.datastore.GetDeclarativeConfigs)
+	s.testGetConfigHealth(s.datastore.GetDeclarativeConfigs)
 
-	receivedIntegrationHealths, err := s.datastore.GetDeclarativeConfigs(s.hasReadCtx)
+	receivedConfigHealths, err := s.datastore.GetDeclarativeConfigs(s.hasReadCtx)
 	s.NoError(err)
-	s.ElementsMatch([]*storage.DeclarativeConfigHealth{integrationHealth}, receivedIntegrationHealths)
+	s.ElementsMatch([]*storage.DeclarativeConfigHealth{configHealth}, receivedConfigHealths)
 }
 
-func (s *declarativeConfigHealthDatastoreSuite) TestUpdateIntegrationHealth() {
-	integrationHealth := newIntegrationHealth()
+func (s *declarativeConfigHealthDatastoreSuite) TestUpdateConfigHealth() {
+	configHealth := newConfigHealth()
 
 	// 1. With no access should return no error but should not be added.
-	err := s.datastore.UpsertDeclarativeConfig(s.hasNoAccessCtx, integrationHealth)
+	err := s.datastore.UpsertDeclarativeConfig(s.hasNoAccessCtx, configHealth)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
-	_, exists, err := s.datastore.GetDeclarativeConfig(s.hasReadCtx, integrationHealth.GetId())
+	_, exists, err := s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
 	s.False(exists)
 
 	// 2. With READ access should return no error but should not be added.
-	err = s.datastore.UpsertDeclarativeConfig(s.hasReadCtx, integrationHealth)
+	err = s.datastore.UpsertDeclarativeConfig(s.hasReadCtx, configHealth)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
-	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, integrationHealth.GetId())
+	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
 	s.False(exists)
 
-	// 3. With WRITE access should not return an error and the integration should be retrievable.
-	err = s.datastore.UpsertDeclarativeConfig(s.hasWriteCtx, integrationHealth)
+	// 3. With WRITE access should not return an error and the config health should be retrievable.
+	err = s.datastore.UpsertDeclarativeConfig(s.hasWriteCtx, configHealth)
 	s.NoError(err)
-	receivedIntegrationHealth, exists, err := s.datastore.GetDeclarativeConfig(s.hasReadCtx, integrationHealth.GetId())
+	receivedConfigHealth, exists, err := s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(integrationHealth, receivedIntegrationHealth)
+	s.Equal(configHealth, receivedConfigHealth)
 }
 
-func (s *declarativeConfigHealthDatastoreSuite) TestRemoveIntegrationHealth() {
-	integrationHealth := newIntegrationHealth()
-	err := s.datastore.UpsertDeclarativeConfig(s.hasWriteCtx, integrationHealth)
+func (s *declarativeConfigHealthDatastoreSuite) TestRemoveConfigHealth() {
+	configHealth := newConfigHealth()
+	err := s.datastore.UpsertDeclarativeConfig(s.hasWriteCtx, configHealth)
 	s.NoError(err)
-	_, exists, err := s.datastore.GetDeclarativeConfig(s.hasReadCtx, integrationHealth.GetId())
+	_, exists, err := s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
 	s.True(exists)
 
-	// 1. With no access should not return an error but integration should still exist.
-	err = s.datastore.RemoveDeclarativeConfig(s.hasNoAccessCtx, integrationHealth.GetId())
+	// 1. With no access should return an error + config health should still exist.
+	err = s.datastore.RemoveDeclarativeConfig(s.hasNoAccessCtx, configHealth.GetId())
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
-	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, integrationHealth.GetId())
+	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
 	s.True(exists)
 
-	// 2. With READ access should not return an error but integration should still exist.
-	err = s.datastore.RemoveDeclarativeConfig(s.hasReadCtx, integrationHealth.GetId())
+	// 2. With READ access should return an error + config health should still exist.
+	err = s.datastore.RemoveDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
-	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, integrationHealth.GetId())
+	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
 	s.True(exists)
 
-	// 3. With WRITE access and existing integration health remove should not return an error.
-
-	err = s.datastore.RemoveDeclarativeConfig(s.hasWriteCtx, integrationHealth.GetId())
+	// 3. With WRITE access and existing config health remove should not return an error.
+	err = s.datastore.RemoveDeclarativeConfig(s.hasWriteCtx, configHealth.GetId())
 	s.NoError(err)
-	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, integrationHealth.GetId())
+	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
 	s.False(exists)
 
-	// 4. With WRITE access should return an error if integration health is not found.
-	err = s.datastore.RemoveDeclarativeConfig(s.hasWriteCtx, integrationHealth.GetId())
+	// 4. With WRITE access should return an error if config health is not found.
+	err = s.datastore.RemoveDeclarativeConfig(s.hasWriteCtx, configHealth.GetId())
 	s.Error(err, errox.NotFound)
 }
 
-func (s *declarativeConfigHealthDatastoreSuite) testGetIntegrationHealth(getIntegrationHealth func(ctx context.Context) ([]*storage.DeclarativeConfigHealth, error)) {
-	// 1. With no access should not return an error and no integration.
-	integration, err := getIntegrationHealth(s.hasNoAccessCtx)
+func (s *declarativeConfigHealthDatastoreSuite) testGetConfigHealth(getConfigHealth func(ctx context.Context) ([]*storage.DeclarativeConfigHealth, error)) {
+	// 1. With no access should not return an error and no config health.
+	configHealth, err := getConfigHealth(s.hasNoAccessCtx)
 	s.NoError(err)
-	s.Nil(integration)
+	s.Nil(configHealth)
 
-	// 2. With READ access should return an integration.
-	integration, err = getIntegrationHealth(s.hasReadCtx)
+	// 2. With READ access should return a config health
+	configHealth, err = getConfigHealth(s.hasReadCtx)
 	s.NoError(err)
-	s.NotNil(integration)
+	s.NotNil(configHealth)
 
-	// 3. With WRITE access should return an integration.
-	integration, err = getIntegrationHealth(s.hasWriteCtx)
+	// 3. With WRITE access should return a config health.
+	configHealth, err = getConfigHealth(s.hasWriteCtx)
 	s.NoError(err)
-	s.NotNil(integration)
+	s.NotNil(configHealth)
 }
 
-func newIntegrationHealth() *storage.DeclarativeConfigHealth {
+func newConfigHealth() *storage.DeclarativeConfigHealth {
 	return &storage.DeclarativeConfigHealth{
 		Id:           uuid.NewV4().String(),
 		Name:         "",

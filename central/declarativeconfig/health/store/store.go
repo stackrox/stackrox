@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// Store is the interface to the integration health data layer
+// Store is the interface to the config health data layer
 type Store interface {
 	Get(ctx context.Context, id string) (*storage.DeclarativeConfigHealth, bool, error)
 	Upsert(ctx context.Context, obj *storage.DeclarativeConfigHealth) error

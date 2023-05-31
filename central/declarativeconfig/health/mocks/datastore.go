@@ -81,15 +81,15 @@ func (mr *MockDataStoreMockRecorder) RemoveDeclarativeConfig(ctx, id interface{}
 }
 
 // UpsertDeclarativeConfig mocks base method.
-func (m *MockDataStore) UpsertDeclarativeConfig(ctx context.Context, integrationHealth *storage.DeclarativeConfigHealth) error {
+func (m *MockDataStore) UpsertDeclarativeConfig(ctx context.Context, configHealth *storage.DeclarativeConfigHealth) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertDeclarativeConfig", ctx, integrationHealth)
+	ret := m.ctrl.Call(m, "UpsertDeclarativeConfig", ctx, configHealth)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertDeclarativeConfig indicates an expected call of UpsertDeclarativeConfig.
-func (mr *MockDataStoreMockRecorder) UpsertDeclarativeConfig(ctx, integrationHealth interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) UpsertDeclarativeConfig(ctx, configHealth interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertDeclarativeConfig", reflect.TypeOf((*MockDataStore)(nil).UpsertDeclarativeConfig), ctx, integrationHealth)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertDeclarativeConfig", reflect.TypeOf((*MockDataStore)(nil).UpsertDeclarativeConfig), ctx, configHealth)
 }

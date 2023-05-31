@@ -9,15 +9,15 @@ import (
 var (
 	once sync.Once
 
-	ad DataStore
+	ds DataStore
 )
 
 func initialize() {
-	ad = New(pgStore.New(globaldb.GetPostgres()))
+	ds = New(pgStore.New(globaldb.GetPostgres()))
 }
 
-// Singleton provides the interface for non-service external interaction.
+// Singleton returns datastore instance.
 func Singleton() DataStore {
 	once.Do(initialize)
-	return ad
+	return ds
 }

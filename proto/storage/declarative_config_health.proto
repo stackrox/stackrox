@@ -20,6 +20,6 @@ message DeclarativeConfigHealth {
     string error_message                          = 5;
     string resource_name                          = 6;
 
-    // Timestamp when the status was ascertained
+    // Timestamp when the current status was set.
     google.protobuf.Timestamp last_timestamp      = 7;
 }

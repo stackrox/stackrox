@@ -56,10 +56,10 @@ func (ds *datastoreImpl) RemoveDeclarativeConfig(ctx context.Context, id string)
 	}
 	_, exists, err := ds.GetDeclarativeConfig(ctx, id)
 	if err != nil {
-		return errors.Errorf("failed to retrieve integration health %q", id)
+		return errors.Errorf("failed to retrieve config health %q", id)
 	}
 	if !exists {
-		return errox.NotFound.Newf("unable to find integration health for declarative config %q", id)
+		return errox.NotFound.Newf("unable to find config health for declarative config %q", id)
 	}
 
 	return ds.store.Delete(ctx, id)
