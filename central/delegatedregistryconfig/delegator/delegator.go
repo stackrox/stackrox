@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
+	deleConnection "github.com/stackrox/rox/central/delegatedregistryconfig/util/connection"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/waiter"
@@ -140,7 +140,7 @@ func (d *delegatorImpl) validateCluster(clusterID string) error {
 		return fmt.Errorf("no connection to %q", clusterID)
 	}
 
-	if !conn.HasCapability(centralsensor.DelegatedRegistryCap) {
+	if !deleConnection.ValidForDelegation(conn) {
 		return fmt.Errorf("cluster %q does not support delegated scanning", clusterID)
 	}
 

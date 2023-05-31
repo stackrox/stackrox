@@ -10,7 +10,10 @@ import (
 	"github.com/stackrox/rox/central/enrichment/mocks"
 	integrationMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
 	loopMocks "github.com/stackrox/rox/central/reprocessor/mocks"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	nodeMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
@@ -328,4 +331,54 @@ func TestValidateNodeIntegration(t *testing.T) {
 	reprocessorLoop.EXPECT().ShortCircuit().Times(1)
 	_, err = s.PutImageIntegration(testCtx, clairifyIntegrationConfig)
 	assert.NoError(t, err)
+}
+
+func TestBroadcast(t *testing.T) {
+	var connMgr *connMocks.MockManager
+	var conn *connMocks.MockSensorConnection
+	var s *serviceImpl
+	var msg *central.MsgToSensor
+
+	setup := func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		connMgr = connMocks.NewMockManager(ctrl)
+		conn = connMocks.NewMockSensorConnection(ctrl)
+		s = &serviceImpl{connManager: connMgr}
+		msg = &central.MsgToSensor{}
+	}
+
+	t.Run("success", func(t *testing.T) {
+		setup(t)
+		conn.EXPECT().ClusterID()
+		conn.EXPECT().HasCapability(gomock.Any()).Return(true)
+		conn.EXPECT().InjectMessage(gomock.Any(), msg)
+		connMgr.EXPECT().GetActiveConnections().Return([]connection.SensorConnection{conn})
+
+		s.broadcast(context.Background(), "action", "id", "name", msg)
+	})
+
+	t.Run("noop on no conns", func(t *testing.T) {
+		setup(t)
+		connMgr.EXPECT().GetActiveConnections().Return(nil)
+
+		s.broadcast(context.Background(), "action", "id", "name", msg)
+	})
+
+	t.Run("noop on conns not valid", func(t *testing.T) {
+		setup(t)
+		conn.EXPECT().HasCapability(gomock.Any()).Return(false)
+		connMgr.EXPECT().GetActiveConnections().Return([]connection.SensorConnection{conn})
+
+		s.broadcast(context.Background(), "action", "id", "name", msg)
+	})
+
+	t.Run("noop on inject err", func(t *testing.T) {
+		setup(t)
+		conn.EXPECT().ClusterID()
+		conn.EXPECT().HasCapability(gomock.Any()).Return(true)
+		conn.EXPECT().InjectMessage(gomock.Any(), gomock.Any()).Return(errors.New("broken"))
+		connMgr.EXPECT().GetActiveConnections().Return([]connection.SensorConnection{conn})
+
+		s.broadcast(context.Background(), "action", "id", "name", msg)
+	})
 }
