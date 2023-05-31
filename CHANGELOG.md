@@ -12,6 +12,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - A default role `Network Graph Viewer` has been added that provides sufficient privileges to display network graphs.
 - A new command `roxctl central login` has been added that allows to use a user's token within roxctl instead of an API token or admin password.
 - ROX-15447: A new `DelegatedRegistryConfig` API at `/v1/delegatedregistryconfig` has been added that provides dynamic configuration for local registry scanning (replaces `ROX_FORCE_LOCAL_IMAGE_SCANNING`).
+- A new environment variable `ROX_DISABLE_SIGNATURE_FETCHING` has been added to Central and Sensor which stops fetching image signatures in case the signature verification feature shall not be used.
+  You may set this in case there's too much load on registries due to attempts to fetch image signatures.
+  Note that if the environment variable is set, no signatures will be fetched and thus the signature verification feature cannot be used.
 
 ### Removed Features
 - ROX-14398: As announced in 3.74, the permission `Access` replaces the deprecated permission `Role`.
