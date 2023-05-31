@@ -125,7 +125,7 @@ type CentralComponentSpec struct {
 	Telemetry *Telemetry `json:"telemetry,omitempty"`
 
 	// Configures resources within Central in a declarative manner.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Declarative Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Declarative Configuration"
 	DeclarativeConfiguration *DeclarativeConfiguration `json:"declarativeConfiguration,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99

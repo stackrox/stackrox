@@ -296,8 +296,6 @@ spec:
       - description: Configures resources within Central in a declarative manner.
         displayName: Declarative Configuration
         path: central.declarativeConfiguration
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Stores persistent data on a directory on the host. This is not
           recommended, and should only be used together with a node selector (only
           available in YAML view).

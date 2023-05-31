@@ -118,8 +118,6 @@ spec:
       - description: Configures resources within Central in a declarative manner.
         displayName: Declarative Configuration
         path: central.declarativeConfiguration
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.
