@@ -103,12 +103,11 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
                 </Flex>
             </CardHeader>
             <CardBody>
-                {hasAdministrationWritePermission && (
+                {hasAdministrationWritePermission ? (
                     <Flex>
                         <FlexItem>
-                            {hasAdministrationWritePermission
-                                ? 'To update the certificate, download the YAML file and apply it to your cluster'
-                                : 'To update the certificate, please contact your administrator'}
+                            To update the certificate, download the YAML file and apply it to your
+                            cluster
                         </FlexItem>
                         <FlexItem>
                             <Button
@@ -146,7 +145,15 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
                             </FlexItem>
                         )}
                     </Flex>
-                )}
+                ) : expirationDate &&
+                  currentDatetime &&
+                  getCredentialExpiryVariant(expirationDate, currentDatetime) !== 'success' ? (
+                    <Flex>
+                        <FlexItem>
+                            To update the certificate, please contact your administrator
+                        </FlexItem>
+                    </Flex>
+                ) : null}
                 {errorMessageFetching && (
                     <Alert
                         isInline
