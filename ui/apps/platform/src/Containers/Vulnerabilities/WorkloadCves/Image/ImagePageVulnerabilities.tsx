@@ -215,6 +215,7 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                         autocompleteSearchContext={{
                             'Image SHA': imageId,
                         }}
+                        onFilterChange={() => setPage(1)}
                     />
                 </div>
                 <div className="pf-u-flex-grow-1 pf-u-background-color-100">{mainContent}</div>

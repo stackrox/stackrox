@@ -314,6 +314,7 @@ function ImageCvePage() {
                             autocompleteSearchContext={{
                                 'CVE ID': cveId,
                             }}
+                            onFilterChange={() => setPage(1)}
                         />
                     </div>
                     <div className="pf-u-px-lg pf-u-pb-lg">
