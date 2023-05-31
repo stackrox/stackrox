@@ -9,7 +9,7 @@
             "collectorImage": "stackrox/collector",
             "centralApiEndpoint": "central.stackrox:443",
             "runtimeSupport": false,
-            "collectionMethod": "KERNEL_MODULE",
+            "collectionMethod": "EBPF",
             "admissionController": false,
             "admissionControllerUpdates": false,
             "admissionControllerEvents": true,
@@ -78,7 +78,7 @@
             "collectorImage": "stackrox/collector",
             "centralApiEndpoint": "central.stackrox:443",
             "runtimeSupport": false,
-            "collectionMethod": "KERNEL_MODULE",
+            "collectionMethod": "EBPF",
             "admissionController": false,
             "admissionControllerUpdates": false,
             "admissionControllerEvents": true,
@@ -147,7 +147,7 @@
             "collectorImage": "stackrox/collector",
             "centralApiEndpoint": "central.stackrox:443",
             "runtimeSupport": false,
-            "collectionMethod": "KERNEL_MODULE",
+            "collectionMethod": "EBPF",
             "admissionController": false,
             "admissionControllerUpdates": false,
             "admissionControllerEvents": true,
@@ -251,7 +251,7 @@
                     }
                 },
                 "collector": {
-                    "collectionMethod": "KERNEL_MODULE",
+                    "collectionMethod": "EBPF",
                     "disableTaintTolerations": false,
                     "slimMode": true,
                     "resources": {
@@ -287,7 +287,7 @@
             "collectorImage": "stackrox/collector",
             "centralApiEndpoint": "central.stackrox:443",
             "runtimeSupport": false,
-            "collectionMethod": "KERNEL_MODULE",
+            "collectionMethod": "EBPF",
             "admissionController": false,
             "admissionControllerUpdates": false,
             "admissionControllerEvents": true,
@@ -391,7 +391,7 @@
                     }
                 },
                 "collector": {
-                    "collectionMethod": "KERNEL_MODULE",
+                    "collectionMethod": "EBPF",
                     "disableTaintTolerations": false,
                     "slimMode": true,
                     "resources": {
@@ -427,7 +427,7 @@
             "collectorImage": "stackrox/collector",
             "centralApiEndpoint": "central.stackrox:443",
             "runtimeSupport": false,
-            "collectionMethod": "KERNEL_MODULE",
+            "collectionMethod": "EBPF",
             "admissionController": false,
             "admissionControllerUpdates": false,
             "admissionControllerEvents": true,
@@ -531,7 +531,7 @@
                     }
                 },
                 "collector": {
-                    "collectionMethod": "KERNEL_MODULE",
+                    "collectionMethod": "EBPF",
                     "disableTaintTolerations": false,
                     "slimMode": true,
                     "resources": {

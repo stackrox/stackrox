@@ -22,9 +22,9 @@ function getTooltipContent(severity: string, severityCount?: number, entity?: st
         return `${capitalize(severity)} severity is hidden by the applied filter`;
     }
     if (entity) {
-        return `${pluralize(severityCount, `${severity} CVE`)} across this ${entity}`;
+        return `${pluralize(severityCount, `${severity} severity CVE`)} across this ${entity}`;
     }
-    return `${pluralize(severityCount, 'image')} with ${severity} CVEs`;
+    return `${pluralize(severityCount, 'image')} with ${severity} severity`;
 }
 
 function SeverityCountLabels({

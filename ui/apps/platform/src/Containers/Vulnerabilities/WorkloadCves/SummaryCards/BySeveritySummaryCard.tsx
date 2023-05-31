@@ -43,7 +43,7 @@ function BySeveritySummaryCard({
     hiddenSeverities,
 }: BySeveritySummaryCardProps) {
     return (
-        <Card className={className} isCompact>
+        <Card className={className} isCompact isFlat>
             <CardTitle>{title}</CardTitle>
             <CardBody>
                 <Grid className="pf-u-pl-sm">

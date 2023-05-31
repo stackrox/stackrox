@@ -8,17 +8,15 @@ export function DynamicIcon(props: SVGIconProps) {
 }
 
 export function DynamicColumnIcon() {
-    return (
-        <Tooltip content="Data in this column can change according to the applied filters">
-            <DynamicIcon className="pf-u-display-inline pf-u-ml-sm" />
-        </Tooltip>
-    );
+    return <DynamicIcon className="pf-u-display-inline pf-u-ml-sm" />;
 }
 
 export function DynamicTableLabel() {
     return (
-        <Label isCompact color="blue" icon={<DynamicIcon />}>
-            Filtered view
-        </Label>
+        <Tooltip content="You are viewing a filtered set of table rows. Column values may also be changed to match the applied filters.">
+            <Label color="blue" icon={<DynamicIcon />}>
+                Filtered view
+            </Label>
+        </Tooltip>
     );
 }

@@ -31,6 +31,8 @@ const (
 	sensorTLSSecretName           = "sensor-tls"
 	admissionControlTLSSecretName = "admission-control-tls"
 	collectorTLSSecretName        = "collector-tls"
+
+	legacyCollectionKernelModule = "KernelModule"
 )
 
 var (
@@ -275,12 +277,14 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *platform
 		switch *c {
 		case platform.CollectionEBPF:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_EBPF.String())
-		case platform.CollectionKernelModule:
-			cv.SetStringValue("collectionMethod", storage.CollectionMethod_KERNEL_MODULE.String())
 		case platform.CollectionNone:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_NO_COLLECTION.String())
 		case platform.CollectionCOREBPF:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_CORE_BPF.String())
+		case legacyCollectionKernelModule:
+			// Kernel module collection has been removed, but for the
+			// purposes of upgrades, we translate it to EBPF
+			cv.SetStringValue("collectionMethod", storage.CollectionMethod_EBPF.String())
 		default:
 			return cv.SetError(fmt.Errorf("invalid spec.perNode.collection %q", *c))
 		}

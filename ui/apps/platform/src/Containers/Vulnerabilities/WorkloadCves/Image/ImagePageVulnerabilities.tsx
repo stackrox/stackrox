@@ -210,7 +210,13 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                 component="div"
             >
                 <div className="pf-u-px-sm pf-u-background-color-100">
-                    <WorkloadTableToolbar supportedResourceFilters={imageResourceFilters} />
+                    <WorkloadTableToolbar
+                        supportedResourceFilters={imageResourceFilters}
+                        autocompleteSearchContext={{
+                            'Image SHA': imageId,
+                        }}
+                        onFilterChange={() => setPage(1)}
+                    />
                 </div>
                 <div className="pf-u-flex-grow-1 pf-u-background-color-100">{mainContent}</div>
             </PageSection>

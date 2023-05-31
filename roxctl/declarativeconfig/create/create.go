@@ -18,6 +18,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		authProviderCommand(cliEnvironment),
 		permissionSetCommand(cliEnvironment),
 		roleCommand(cliEnvironment),
+		notifierCommand(cliEnvironment),
 	)
 
 	c.PersistentFlags().String(k8sobject.ConfigMapFlag, "", `Config Map to which the declarative config YAML should be written to.

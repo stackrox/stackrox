@@ -49,7 +49,7 @@ export type ClusterOrchestratorMetadata = {
     apiVersions: string[];
 };
 
-export type CollectionMethod = 'UNSET_COLLECTION' | 'NO_COLLECTION' | 'KERNEL_MODULE' | 'EBPF';
+export type CollectionMethod = 'UNSET_COLLECTION' | 'NO_COLLECTION' | 'EBPF' | 'CORE_BPF';
 
 export type AdmissionControllerConfig = {
     enabled: boolean;

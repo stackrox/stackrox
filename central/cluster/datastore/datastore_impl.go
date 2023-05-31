@@ -996,9 +996,13 @@ func addDefaults(cluster *storage.Cluster) error {
 	if cluster == nil {
 		return errox.InvariantViolation.CausedBy("cannot enrich nil cluster object")
 	}
-	// For backwards compatibility reasons, if Collection Method is not set then honor defaults for runtime support
-	if cluster.GetCollectionMethod() == storage.CollectionMethod_UNSET_COLLECTION {
-		cluster.CollectionMethod = storage.CollectionMethod_KERNEL_MODULE
+
+	collectionMethod := cluster.GetCollectionMethod()
+
+	// For backwards compatibility reasons, if Collection Method is not set, or set
+	// to KERNEL_MODULE (which is unsupported) then honor defaults for runtime support
+	if collectionMethod == storage.CollectionMethod_UNSET_COLLECTION || collectionMethod == storage.CollectionMethod_KERNEL_MODULE {
+		cluster.CollectionMethod = storage.CollectionMethod_EBPF
 	}
 	cluster.RuntimeSupport = cluster.GetCollectionMethod() != storage.CollectionMethod_NO_COLLECTION
 

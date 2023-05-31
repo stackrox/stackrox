@@ -50,6 +50,7 @@ func TestValidateSimpleAccessScopeRules(t *testing.T) {
 	}
 
 	testCasesBad := map[string]*storage.SimpleAccessScope_Rules{
+		"rules are nil": nil,
 		"namespace with missing namespace name": {
 			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
 				mockBadNamespace1,

@@ -56,5 +56,5 @@ var (
 	PreventSensorRestartOnDisconnect = registerFeature("Prevent Sensor restart on disconnect", "ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT", false)
 
 	// SyslogNamespaceLabels enables sending namespace labels as part of the syslog alert notification.
-	SyslogNamespaceLabels = registerFeature("Send namespace labels as part of the syslog alert notification", "ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG", false)
+	SyslogNamespaceLabels = registerFeature("Send namespace labels as part of the syslog alert notification", "ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG", true)
 )

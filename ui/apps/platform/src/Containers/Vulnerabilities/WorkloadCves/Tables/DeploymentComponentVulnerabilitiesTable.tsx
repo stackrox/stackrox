@@ -68,9 +68,9 @@ function DeploymentComponentVulnerabilitiesTable({
             <Thead noWrap>
                 <Tr>
                     <Th sort={getSortParams('Image')}>Image</Th>
-                    <Th sort={getSortParams('Component')}>Component</Th>
                     <Th>CVE severity</Th>
                     <Th>CVSS</Th>
+                    <Th sort={getSortParams('Component')}>Component</Th>
                     <Th>Version</Th>
                     <Th>CVE fixed in</Th>
                     <Th>Location</Th>
@@ -106,13 +106,13 @@ function DeploymentComponentVulnerabilitiesTable({
                                     'Image name not available'
                                 )}
                             </Td>
-                            <Td>{name}</Td>
                             <Td modifier="nowrap">
                                 <VulnerabilitySeverityIconText severity={severity} />
                             </Td>
                             <Td modifier="nowrap">
                                 <CvssTd cvss={cvss} scoreVersion={scoreVersion} />
                             </Td>
+                            <Td>{name}</Td>
                             <Td>{version}</Td>
                             <Td modifier="nowrap">
                                 <FixedByVersionTd fixedByVersion={fixedByVersion} />

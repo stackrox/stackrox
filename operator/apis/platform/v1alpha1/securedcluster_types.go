@@ -190,8 +190,8 @@ type PerNodeSpec struct {
 	TaintToleration *TaintTolerationPolicy `json:"taintToleration,omitempty"`
 }
 
-// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'CORE_BPF', 'KernelModule' or 'None'.
-// +kubebuilder:validation:Enum=EBPF;CORE_BPF;KernelModule;NoCollection
+// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'CORE_BPF' or 'None'.
+// +kubebuilder:validation:Enum=EBPF;CORE_BPF;NoCollection
 type CollectionMethod string
 
 const (
@@ -199,8 +199,6 @@ const (
 	CollectionEBPF CollectionMethod = "EBPF"
 	// CollectionCOREBPF means: use CORE_BPF collection.
 	CollectionCOREBPF CollectionMethod = "CORE_BPF"
-	// CollectionKernelModule means: use KERNEL_MODULE collection.
-	CollectionKernelModule CollectionMethod = "KernelModule"
 	// CollectionNone means: NO_COLLECTION.
 	CollectionNone CollectionMethod = "NoCollection"
 )
@@ -258,8 +256,7 @@ func (t TaintTolerationPolicy) Pointer() *TaintTolerationPolicy {
 
 // CollectorContainerSpec defines settings for the collector container.
 type CollectorContainerSpec struct {
-	// The method for system-level data collection. EBPF is recommended. KernelModule
-	// is deprecated and will be removed in the 4.1 release.
+	// The method for system-level data collection. EBPF is recommended.
 	// If you select "NoCollection", you will not be able to see any information about network activity
 	// and process executions. The remaining settings in these section will not have any effect.
 	//+kubebuilder:validation:Default=EBPF
@@ -267,7 +264,7 @@ type CollectorContainerSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Collection *CollectionMethod `json:"collection,omitempty"`
 
-	// The image flavor to use for collector. "Regular" images are bigger in size, but contain kernel modules
+	// The image flavor to use for collector. "Regular" images are bigger in size, but contain probes
 	// for most kernels. If you use the "Slim" image flavor, you must ensure that your Central instance
 	// is connected to the internet, or regularly receives Collector Support Package updates (for further
 	// instructions, please refer to the documentation).
