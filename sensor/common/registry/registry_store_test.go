@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -153,10 +154,10 @@ func TestRegistryStore_GlobalStoreFailUpsertCheckTLS(t *testing.T) {
 }
 
 func TestRegistryStore_CreateImageIntegrationType(t *testing.T) {
-	ii := createImageIntegration("http://example.com", config.DockerConfigEntry{}, false)
+	ii := createImageIntegration("http://example.com", config.DockerConfigEntry{}, false, "")
 	assert.Equal(t, ii.Type, docker.GenericDockerRegistryType)
 
-	ii = createImageIntegration("https://registry.redhat.io", config.DockerConfigEntry{}, true)
+	ii = createImageIntegration("https://registry.redhat.io", config.DockerConfigEntry{}, true, "")
 	assert.Equal(t, ii.Type, rhel.RedHatRegistryType)
 }
 
@@ -268,4 +269,26 @@ func TestRegistryStore_IsLocal(t *testing.T) {
 		t.Run(name, tf)
 	}
 
+}
+
+func TestRegistryStore_GenImgIntName(t *testing.T) {
+	tt := []struct {
+		prefix    string
+		namespace string
+		registry  string
+		expected  string
+	}{
+		{"", "", "", ""},
+		{"PRE", "", "", "PRE"},
+		{"PRE", "", "REG", "PRE/reg:REG"},
+		{"PRE", "NAME", "", "PRE/ns:NAME"},
+		{"PRE", "NAME", "REG", "PRE/ns:NAME/reg:REG"},
+	}
+
+	for i, test := range tt {
+		t.Run(fmt.Sprintf("%v", i), func(t *testing.T) {
+			actual := genIntegrationName(test.prefix, test.namespace, test.registry)
+			assert.Equal(t, test.expected, actual)
+		})
+	}
 }

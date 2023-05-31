@@ -197,7 +197,7 @@ func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryC
 
 	res := make([]*v1.DelegatedRegistryCluster, len(clusters))
 	for i, c := range clusters {
-		conn := s.connManager.GetConnection(c.Id)
+		conn := s.connManager.GetConnection(c.GetId())
 
 		valid := conn != nil && conn.HasCapability(centralsensor.DelegatedRegistryCap)
 

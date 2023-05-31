@@ -6,6 +6,7 @@ package central
 import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
+	storage "github.com/stackrox/rox/generated/storage"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -102,25 +103,111 @@ func (m *ScanImage) Clone() *ScanImage {
 	return cloned
 }
 
+// ImageIntegration contains a list of integrations sensor should upsert and/or
+// delete.
+type ImageIntegrations struct {
+	UpdatedIntegrations   []*storage.ImageIntegration `protobuf:"bytes,1,rep,name=updated_integrations,json=updatedIntegrations,proto3" json:"updated_integrations,omitempty"`
+	DeletedIntegrationIds []string                    `protobuf:"bytes,2,rep,name=deleted_integration_ids,json=deletedIntegrationIds,proto3" json:"deleted_integration_ids,omitempty"`
+	XXX_NoUnkeyedLiteral  struct{}                    `json:"-"`
+	XXX_unrecognized      []byte                      `json:"-"`
+	XXX_sizecache         int32                       `json:"-"`
+}
+
+func (m *ImageIntegrations) Reset()         { *m = ImageIntegrations{} }
+func (m *ImageIntegrations) String() string { return proto.CompactTextString(m) }
+func (*ImageIntegrations) ProtoMessage()    {}
+func (*ImageIntegrations) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c86f5e4b32c3c8e1, []int{1}
+}
+func (m *ImageIntegrations) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ImageIntegrations) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ImageIntegrations.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ImageIntegrations) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ImageIntegrations.Merge(m, src)
+}
+func (m *ImageIntegrations) XXX_Size() int {
+	return m.Size()
+}
+func (m *ImageIntegrations) XXX_DiscardUnknown() {
+	xxx_messageInfo_ImageIntegrations.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ImageIntegrations proto.InternalMessageInfo
+
+func (m *ImageIntegrations) GetUpdatedIntegrations() []*storage.ImageIntegration {
+	if m != nil {
+		return m.UpdatedIntegrations
+	}
+	return nil
+}
+
+func (m *ImageIntegrations) GetDeletedIntegrationIds() []string {
+	if m != nil {
+		return m.DeletedIntegrationIds
+	}
+	return nil
+}
+
+func (m *ImageIntegrations) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ImageIntegrations) Clone() *ImageIntegrations {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ImageIntegrations)
+	*cloned = *m
+
+	if m.UpdatedIntegrations != nil {
+		cloned.UpdatedIntegrations = make([]*storage.ImageIntegration, len(m.UpdatedIntegrations))
+		for idx, v := range m.UpdatedIntegrations {
+			cloned.UpdatedIntegrations[idx] = v.Clone()
+		}
+	}
+	if m.DeletedIntegrationIds != nil {
+		cloned.DeletedIntegrationIds = make([]string, len(m.DeletedIntegrationIds))
+		copy(cloned.DeletedIntegrationIds, m.DeletedIntegrationIds)
+	}
+	return cloned
+}
+
 func init() {
 	proto.RegisterType((*ScanImage)(nil), "central.ScanImage")
+	proto.RegisterType((*ImageIntegrations)(nil), "central.ImageIntegrations")
 }
 
 func init() { proto.RegisterFile("internalapi/central/image.proto", fileDescriptor_c86f5e4b32c3c8e1) }
 
 var fileDescriptor_c86f5e4b32c3c8e1 = []byte{
-	// 162 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0xcf, 0xcc, 0x2b, 0x49,
-	0x2d, 0xca, 0x4b, 0xcc, 0x49, 0x2c, 0xc8, 0xd4, 0x4f, 0x4e, 0xcd, 0x2b, 0x29, 0x4a, 0xcc, 0xd1,
-	0xcf, 0xcc, 0x4d, 0x4c, 0x4f, 0xd5, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x87, 0x0a, 0x2a,
-	0xc5, 0x73, 0x71, 0x06, 0x27, 0x27, 0xe6, 0x79, 0x82, 0xe4, 0x84, 0x64, 0xb9, 0xb8, 0x8a, 0x52,
-	0x0b, 0x4b, 0x53, 0x8b, 0x4b, 0xe2, 0x33, 0x53, 0x24, 0x18, 0x15, 0x18, 0x35, 0x38, 0x83, 0x38,
-	0xa1, 0x22, 0x9e, 0x29, 0x20, 0x69, 0xb0, 0x19, 0xf1, 0x79, 0x89, 0xb9, 0xa9, 0x12, 0x4c, 0x10,
-	0x69, 0xb0, 0x88, 0x5f, 0x62, 0x6e, 0xaa, 0x90, 0x08, 0x17, 0x6b, 0x5a, 0x7e, 0x51, 0x72, 0xaa,
-	0x04, 0xb3, 0x02, 0xa3, 0x06, 0x47, 0x10, 0x84, 0xe3, 0x24, 0x79, 0xe2, 0x91, 0x1c, 0xe3, 0x85,
-	0x47, 0x72, 0x8c, 0x0f, 0x1e, 0xc9, 0x31, 0xce, 0x78, 0x2c, 0xc7, 0x10, 0x05, 0xb3, 0x3b, 0x89,
-	0x0d, 0xec, 0x16, 0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0x6e, 0x91, 0xe0, 0xde, 0xae, 0x00,
-	0x00, 0x00,
+	// 256 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x90, 0x4f, 0x4a, 0xc4, 0x30,
+	0x14, 0xc6, 0xcd, 0x14, 0xff, 0x34, 0xae, 0xac, 0x23, 0x66, 0x04, 0x3b, 0x65, 0x56, 0x5d, 0x75,
+	0x40, 0xc1, 0x03, 0xb8, 0x2b, 0x88, 0x8b, 0xba, 0x73, 0x13, 0x9e, 0xcd, 0xb3, 0x04, 0xda, 0xa4,
+	0x26, 0x99, 0xbb, 0xe8, 0x8d, 0x5c, 0x7a, 0x04, 0xa9, 0x17, 0x91, 0x36, 0x11, 0x67, 0x66, 0x99,
+	0xef, 0x97, 0xef, 0xf7, 0x1e, 0x8f, 0x2e, 0xa5, 0x72, 0x68, 0x14, 0xb4, 0xd0, 0xcb, 0x75, 0x8d,
+	0xca, 0x19, 0x68, 0xd7, 0xb2, 0x83, 0x06, 0x8b, 0xde, 0x68, 0xa7, 0x93, 0xe3, 0x10, 0x5e, 0x2d,
+	0xad, 0xd3, 0x06, 0x1a, 0xf4, 0x94, 0x8f, 0xbd, 0xc6, 0x80, 0x93, 0x5a, 0xf9, 0x9f, 0x2b, 0x4e,
+	0xe3, 0xa7, 0x1a, 0x54, 0x39, 0xe2, 0xe4, 0x9a, 0x52, 0x83, 0x6f, 0x1b, 0xb4, 0x8e, 0x4b, 0xc1,
+	0x48, 0x46, 0xf2, 0xb8, 0x8a, 0x43, 0x52, 0x8a, 0x11, 0x7b, 0x8d, 0x82, 0x0e, 0xd9, 0xcc, 0xe3,
+	0x29, 0x79, 0x84, 0x0e, 0x93, 0x39, 0x3d, 0x7c, 0xd5, 0xa6, 0x46, 0x16, 0x65, 0x24, 0x3f, 0xa9,
+	0xfc, 0x63, 0xf5, 0x41, 0xe8, 0xd9, 0x64, 0x2f, 0xff, 0x67, 0xdb, 0xe4, 0x81, 0xce, 0x37, 0xbd,
+	0x00, 0x87, 0x62, 0x7b, 0x27, 0xcb, 0x48, 0x16, 0xe5, 0xa7, 0x37, 0x8b, 0x22, 0xac, 0x5d, 0xec,
+	0x37, 0xab, 0xf3, 0x50, 0xdb, 0xb1, 0xdd, 0xd1, 0x4b, 0x81, 0x2d, 0xee, 0xd9, 0xb8, 0x14, 0x96,
+	0xcd, 0xb2, 0x28, 0x8f, 0xab, 0x8b, 0x80, 0xb7, 0x5a, 0xa5, 0xb0, 0xf7, 0x8b, 0xcf, 0x21, 0x25,
+	0x5f, 0x43, 0x4a, 0xbe, 0x87, 0x94, 0xbc, 0xff, 0xa4, 0x07, 0xcf, 0x7f, 0x87, 0x7b, 0x39, 0x9a,
+	0xce, 0x73, 0xfb, 0x1b, 0x00, 0x00, 0xff, 0xff, 0x1a, 0x4d, 0xf2, 0x50, 0x6b, 0x01, 0x00, 0x00,
 }
 
 func (m *ScanImage) Marshal() (dAtA []byte, err error) {
@@ -174,6 +261,56 @@ func (m *ScanImage) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *ImageIntegrations) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ImageIntegrations) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ImageIntegrations) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.DeletedIntegrationIds) > 0 {
+		for iNdEx := len(m.DeletedIntegrationIds) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.DeletedIntegrationIds[iNdEx])
+			copy(dAtA[i:], m.DeletedIntegrationIds[iNdEx])
+			i = encodeVarintImage(dAtA, i, uint64(len(m.DeletedIntegrationIds[iNdEx])))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if len(m.UpdatedIntegrations) > 0 {
+		for iNdEx := len(m.UpdatedIntegrations) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.UpdatedIntegrations[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintImage(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintImage(dAtA []byte, offset int, v uint64) int {
 	offset -= sovImage(v)
 	base := offset
@@ -201,6 +338,30 @@ func (m *ScanImage) Size() (n int) {
 	}
 	if m.Force {
 		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ImageIntegrations) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.UpdatedIntegrations) > 0 {
+		for _, e := range m.UpdatedIntegrations {
+			l = e.Size()
+			n += 1 + l + sovImage(uint64(l))
+		}
+	}
+	if len(m.DeletedIntegrationIds) > 0 {
+		for _, s := range m.DeletedIntegrationIds {
+			l = len(s)
+			n += 1 + l + sovImage(uint64(l))
+		}
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -327,6 +488,123 @@ func (m *ScanImage) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.Force = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipImage(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthImage
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ImageIntegrations) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowImage
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ImageIntegrations: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ImageIntegrations: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UpdatedIntegrations", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowImage
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthImage
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthImage
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.UpdatedIntegrations = append(m.UpdatedIntegrations, &storage.ImageIntegration{})
+			if err := m.UpdatedIntegrations[len(m.UpdatedIntegrations)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DeletedIntegrationIds", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowImage
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthImage
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthImage
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DeletedIntegrationIds = append(m.DeletedIntegrationIds, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipImage(dAtA[iNdEx:])
