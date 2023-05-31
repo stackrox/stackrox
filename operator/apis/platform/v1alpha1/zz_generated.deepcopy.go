@@ -849,8 +849,8 @@ func (in *PerNodeSpec) DeepCopyInto(out *PerNodeSpec) {
 		*out = new(ContainerSpec)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.NodeScanner != nil {
-		in, out := &in.NodeScanner, &out.NodeScanner
+	if in.NodeInventory != nil {
+		in, out := &in.NodeInventory, &out.NodeInventory
 		*out = new(ContainerSpec)
 		(*in).DeepCopyInto(*out)
 	}

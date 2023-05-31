@@ -614,10 +614,10 @@ spec:
           checking host-level configurations.
         displayName: Compliance Settings
         path: perNode.compliance
-      - description: Settings for the Node-Scanner container, which is responsible
+      - description: Settings for the Node-Inventory container, which is responsible
           for scanning the Nodes' filesystem
-        displayName: Node Scanner Settings
-        path: perNode.nodescanner
+        displayName: Node-Inventory Settings
+        path: perNode.nodeInventory
       - description: To ensure comprehensive monitoring of your cluster activity,
           Red Hat Advanced Cluster Security will run services on every node in the
           cluster, including tainted nodes by default. If you do not want this behavior,
@@ -656,7 +656,7 @@ spec:
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.
         displayName: Resources
-        path: perNode.nodescanner.resources
+        path: perNode.nodeInventory.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: If you do not want to deploy the Red Hat Advanced Cluster Security
