@@ -67,6 +67,7 @@ function PolicyCriteriaFieldInput({
                     isDisabled={readOnly}
                     onChange={handleChangeValue}
                     data-testid="policy-criteria-value-text-input"
+                    placeholder={descriptor.placeholder || ''}
                 />
             );
         case 'radioGroup': {
