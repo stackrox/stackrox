@@ -90,18 +90,20 @@ runs:
  
         EOF
         cd rocksdb
-        git apply ppc64le.patch
+        git apply ../ppc64le.patch
 
 
     - name: Cross compile and install rocksdb
       shell: bash
       run: |
-        make MACHINE=ppc64le TARGET_ARCHITECTURE=ppc64le CC="/opt/at13.0/bin/powerpc64le-linux-gnu-gcc" CXX="/opt/at13.0/bin/powerpc64le-linux-gnu-g++" AR="/opt/at13.0/bin/powerpc64le-linux-gnu-gcc-ar" shared_lib 
+        cd rocksdb
+        
+        make MACHINE=ppc64le TARGET_ARCHITECTURE=ppc64le CC="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc" CXX="/opt/at15.0/bin/powerpc64le-linux-gnu-g++" AR="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc-ar" shared_lib 
 
-        make MACHINE=ppc64le TARGET_ARCHITECTURE=ppc64le CC="/opt/at13.0/bin/powerpc64le-linux-gnu-gcc" CXX="/opt/at13.0/bin/powerpc64le-linux-gnu-g++" AR="/opt/at13.0/bin/powerpc64le-linux-gnu-gcc-ar" static_lib 
+        make MACHINE=ppc64le TARGET_ARCHITECTURE=ppc64le CC="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc" CXX="/opt/at15.0/bin/powerpc64le-linux-gnu-g++" AR="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc-ar" static_lib 
 
-        make MACHINE=ppc64le TARGET_ARCHITECTURE=ppc64le CC="/opt/at13.0/bin/powerpc64le-linux-gnu-gcc" CXX="/opt/at13.0/bin/powerpc64le-linux-gnu-g++" AR="/opt/at13.0/bin/powerpc64le-linux-gnu-gcc-ar" install-shared 
+        make MACHINE=ppc64le TARGET_ARCHITECTURE=ppc64le CC="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc" CXX="/opt/at15.0/bin/powerpc64le-linux-gnu-g++" AR="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc-ar" install-shared 
 
-        make MACHINE=ppc64le TARGET_ARCHITECTURE=ppc64le CC="/opt/at13.0/bin/powerpc64le-linux-gnu-gcc" CXX="/opt/at13.0/bin/powerpc64le-linux-gnu-g++" AR="/opt/at13.0/bin/powerpc64le-linux-gnu-gcc-ar" install-static 
+        make MACHINE=ppc64le TARGET_ARCHITECTURE=ppc64le CC="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc" CXX="/opt/at15.0/bin/powerpc64le-linux-gnu-g++" AR="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc-ar" install-static 
 
         cd ..
