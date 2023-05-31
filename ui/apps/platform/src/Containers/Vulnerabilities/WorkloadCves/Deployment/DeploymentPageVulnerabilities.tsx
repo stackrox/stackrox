@@ -164,7 +164,12 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                 component="div"
             >
                 <div className="pf-u-px-sm pf-u-background-color-100">
-                    <WorkloadTableToolbar supportedResourceFilters={deploymentResourceFilters} />
+                    <WorkloadTableToolbar
+                        autocompleteSearchContext={{
+                            'Deployment ID': deploymentId,
+                        }}
+                        supportedResourceFilters={deploymentResourceFilters}
+                    />
                 </div>
                 <div className="pf-u-flex-grow-1 pf-u-background-color-100">
                     <div className="pf-u-px-lg pf-u-pb-lg">
