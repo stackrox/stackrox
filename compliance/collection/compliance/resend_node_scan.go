@@ -75,7 +75,7 @@ func (s *NodeScanResend) incrementTicker() {
 	s.ticker.Reset(s.resendInterval)
 }
 
-// RegisterScan should be called when a new node-msg is sent
+// RegisterScan should be called when a new node-inventory is sent
 func (s *NodeScanResend) RegisterScan(msg *sensor.MsgFromCompliance) {
 	log.Infof("Registering node scan. Waiting for an ACK for %s", s.baseInterval.String())
 	s.retry = 0
@@ -84,7 +84,7 @@ func (s *NodeScanResend) RegisterScan(msg *sensor.MsgFromCompliance) {
 	s.ticker.Reset(s.baseInterval)
 }
 
-// RegisterACK should be called when an ACK for node-msg is received
+// RegisterACK should be called when an ACK for node-inventory is received
 func (s *NodeScanResend) RegisterACK() {
 	log.Info("Node Scan has been acknowledged")
 	s.ticker.Stop()

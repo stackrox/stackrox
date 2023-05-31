@@ -12,7 +12,7 @@ type NodeNameProvider interface {
 	GetNodeName() string
 }
 
-// NodeScanner provides a way to obtain a node-msg
+// NodeScanner provides a way to obtain a node-inventory
 type NodeScanner interface {
 	GetIntervals() *intervals.NodeScanIntervals
 	ScanNode(ctx context.Context) (*sensor.MsgFromCompliance, error)
