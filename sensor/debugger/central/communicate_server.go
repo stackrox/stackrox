@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common/centralclient"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -26,7 +25,7 @@ type FakeService struct {
 	ServerPointer *grpc.Server
 
 	// Connection factory holds the connection factory object that was injected in Sensor
-	ConnectionFactory centralclient.CentralConnectionFactory
+	ConnectionFactory FakeGRPCFactory
 
 	// initialMessages are messages to be sent to sensor once connection is open
 	initialMessages []*central.MsgToSensor
@@ -180,5 +179,7 @@ func (s *FakeService) OnMessage(callback func(sensor *central.MsgFromSensor)) {
 
 // Stop kills fake central.
 func (s *FakeService) Stop() {
-	s.onShutdown()
+	if s.onShutdown != nil {
+		s.onShutdown()
+	}
 }

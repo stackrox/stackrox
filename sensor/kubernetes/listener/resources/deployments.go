@@ -181,6 +181,8 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		return events
 	}
 
+	log.Infof("Processing Deployment with name: %s", deploymentWrap.GetName())
+
 	events = d.appendIntegrationsOnCredentials(action, deploymentWrap.GetContainers(), events)
 
 	if env.ResyncDisabled.BooleanSetting() {

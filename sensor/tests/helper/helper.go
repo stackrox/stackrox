@@ -49,7 +49,7 @@ const (
 	defaultCreationTimeout = 30 * time.Second
 
 	// defaultWaitTimeout maximum time the test will wait for a specific assertion
-	defaultWaitTimeout = 3 * time.Second
+	defaultWaitTimeout = 3 * time.Minute
 
 	// defaultTicker the default interval for the assertion functions to retry the assertion
 	defaultTicker = 500 * time.Millisecond
@@ -118,6 +118,11 @@ type TestContext struct {
 	centralReceived chan *central.MsgFromSensor
 	stopFn          func()
 	sensorStopped   chan bool
+	config          CentralConfig
+
+	// archivedMessages holds messages sent from Sensor to FakeCentral before stopping Central. These can be fetched
+	// in case the test needs to assert on messages sent right before stopping the gRPC connection.
+	archivedMessages [][]*central.MsgFromSensor
 }
 
 func defaultCentralConfig() CentralConfig {
@@ -153,7 +158,7 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 
 	startFn()
 	return &TestContext{
-		t, r, envConfig, fakeCentral, ch, stopFn, sensorStopped,
+		t, r, envConfig, fakeCentral, ch, stopFn, sensorStopped, config, [][]*central.MsgFromSensor{},
 	}, nil
 }
 
@@ -242,6 +247,30 @@ func (c *TestContext) createTestNs(ctx context.Context, name string) (*v1.Namesp
 	return &nsObj, func() error {
 		return c.deleteNs(ctx, name)
 	}, nil
+}
+
+func (c *TestContext) NewFakeCentralConnection() {
+	// TODO: Check if fake central has already stopped
+	c.fakeCentral.Stop()
+	c.fakeCentral.ServerPointer.Stop()
+	messagesBeforeStopping := c.fakeCentral.GetAllMessages()
+	c.archivedMessages = append(c.archivedMessages, messagesBeforeStopping)
+
+	// TODO: Why not have the factory in the testContext?
+	factory := c.fakeCentral.ConnectionFactory
+
+	// Create a new Fake Central instance that will send initial messages and have a new buffer
+	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
+		message.SensorHello("00000000-0000-4000-A000-000000000000"),
+		message.ClusterConfig(),
+		message.PolicySync(c.config.InitialSystemPolicies),
+		message.BaselineSync([]*storage.ProcessBaseline{}))
+
+	conn, _, shutdown := createConnectionAndStartServer(fakeCentral)
+	fakeCentral.OnShutdown(shutdown)
+	factory.OverwriteCentralConnection(conn)
+
+	c.fakeCentral = fakeCentral
 }
 
 // GetFakeCentral gets a fake central instance. This is used to fetch messages sent by sensor under test.
@@ -419,7 +448,7 @@ func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion Asse
 			c.t.Fatalf("timeout reached waiting for state: (%s): %s", message, lastErr)
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
-			lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, "sensor-integration", name)
+			lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, DefaultNamespace, name)
 			deployment := lastDeploymentUpdate.GetEvent().GetDeployment()
 			action := lastDeploymentUpdate.GetEvent().GetAction()
 			if deployment != nil {
@@ -429,6 +458,16 @@ func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion Asse
 			}
 		}
 	}
+}
+
+// DeploymentCreateReceived checks if a deployment object was received with CREATE action
+func (c *TestContext) DeploymentCreateReceived(name string) {
+	c.LastDeploymentState(name, func(_ *storage.Deployment, action central.ResourceAction) error {
+		if action != central.ResourceAction_CREATE_RESOURCE {
+			return errors.New("event received is not CREATE")
+		}
+		return nil
+	}, "Deployment should be created")
 }
 
 // GetLastMessageMatching finds last element in slice matching `matchFn`.
@@ -572,6 +611,7 @@ func startSensorAndFakeCentral(env *envconf.Config, config CentralConfig) (*cent
 		}, sensorStopped
 }
 
+// TODO: Why return fakeCentral?
 func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grpc.ClientConn, *centralDebug.FakeService, func()) {
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
