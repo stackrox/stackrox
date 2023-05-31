@@ -91,11 +91,17 @@ func NewLocalScan(registryStore *registry.Store) *LocalScan {
 //
 // If no registry credentials are found an empty registry slice is passed to enrichLocalImageFromRegistry for enriching with 'no auth'.
 func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage, namespace string, requestID string, force bool) (*storage.Image, error) {
-	var regs []registryTypes.ImageRegistry
-	var reg registryTypes.ImageRegistry
-	var err error
-
 	imgName := ci.GetName()
+
+	regs := s.getRegistries(namespace, imgName)
+
+	log.Debugf("Attempting image enrich for %q in namespace %q with %v regs", ci.GetName().GetFullName(), namespace, len(regs))
+
+	return s.enrichLocalImageFromRegistry(ctx, centralClient, ci, regs, requestID, force)
+}
+
+func (s *LocalScan) getRegistries(namespace string, imgName *storage.ImageName) []registryTypes.ImageRegistry {
+	var regs []registryTypes.ImageRegistry
 
 	// Add registries from Central's image integrations.
 	centralIntegrations := s.getMatchingCentralRegIntegrations(imgName)
@@ -106,21 +112,18 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	// Add registries from k8s pull secrets.
 	if namespace != "" {
 		// if namespace provided pull appropriate registry.
-		reg, err := s.getRegistryForImageInNamespace(imgName, namespace)
-		if err == nil {
+		if reg, err := s.getRegistryForImageInNamespace(imgName, namespace); err == nil {
 			regs = append(regs, reg)
 		}
 	}
 
 	// Add global pull secret registry
-	reg, err = s.getGlobalRegistryForImage(imgName)
+	reg, err := s.getGlobalRegistryForImage(imgName)
 	if err == nil {
 		regs = append(regs, reg)
 	}
 
-	log.Debugf("Attempting image enrich for %q in namespace %q with %v regs", ci.GetName().GetFullName(), namespace, len(regs))
-
-	return s.enrichLocalImageFromRegistry(ctx, centralClient, ci, regs, requestID, force)
+	return regs
 }
 
 // enrichLocalImageFromRegistry will enrich an image with scan results from local scanner as well as signatures
@@ -218,7 +221,8 @@ func (s *LocalScan) enrichImageWithMetadata(errorList *errorhelpers.ErrorList, r
 		// image, the signature will not be attempted to be fetched.
 		// We don't need to do anything on central side, as there the image will correctly have the metadata assigned.
 		image.Metadata = metadata
-		log.Debugf("Received metadata for image %q with id %q using reg %q: %v", image.GetName().GetFullName(), image.GetId(), reg.Name(), metadata)
+		log.Infof("Received metadata for image %q with id %q using reg %q", image.GetName().GetFullName(), image.GetId(), reg.Name())
+		log.Debugf("Metadata for image %q with id %q: %v", image.GetName().GetFullName(), image.GetId(), metadata)
 		return reg
 	}
 

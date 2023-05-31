@@ -142,7 +142,7 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 	suite.Require().NoError(err, "failed creating test image")
 
 	for name, c := range cases {
-		fakeRegStore := &fakeRegistryStore{}
+		fakeRegStore := &fakeRegistryStore{centralNoRegs: true}
 		suite.Run(name, func() {
 			scan := LocalScan{
 				scanImg:                           c.scanImg,
@@ -222,6 +222,7 @@ func (suite *scanTestSuite) TestEnrichLocalImageInNamespace() {
 	suite.Require().NoError(err)
 	suite.Assert().Equal(img, resultImg)
 	suite.Assert().True(imageServiceClient.enrichTriggered)
+	suite.Assert().True(fakeRegStore.getMatchingCentralRegistryIntegrationsInvoked)
 	suite.Assert().False(fakeRegStore.getRegistryForImageInNamespaceInvoked)
 	suite.Assert().True(fakeRegStore.getGlobalRegistryForImageInvoked)
 
@@ -234,6 +235,7 @@ func (suite *scanTestSuite) TestEnrichLocalImageInNamespace() {
 	suite.Require().NoError(err)
 	suite.Assert().Equal(img, resultImg)
 	suite.Assert().True(imageServiceClient.enrichTriggered)
+	suite.Assert().True(fakeRegStore.getMatchingCentralRegistryIntegrationsInvoked)
 	suite.Assert().True(fakeRegStore.getRegistryForImageInNamespaceInvoked)
 	suite.Assert().True(fakeRegStore.getGlobalRegistryForImageInvoked)
 }
@@ -327,7 +329,7 @@ func (suite *scanTestSuite) TestEnrichNoRegistries() {
 	suite.Require().NoError(err, "unexpected error enriching image")
 	suite.Require().False(fakeRegStore.getGlobalRegistryForImageInvoked)
 	suite.Require().False(fakeRegStore.getRegistryForImageInNamespaceInvoked)
-	suite.Require().False(fakeRegStore.getRegistryForImageInvoked)
+	suite.Require().False(fakeRegStore.getMatchingCentralRegistryIntegrationsInvoked)
 }
 
 func (suite *scanTestSuite) TestEnrichNoRegistriesFailure() {
@@ -346,6 +348,63 @@ func (suite *scanTestSuite) TestEnrichNoRegistriesFailure() {
 	_, err = scan.enrichLocalImageFromRegistry(context.Background(), imageServiceClient, containerImg, nil, "", false)
 	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
 	suite.Require().ErrorContains(err, "unable to create no auth registry")
+}
+
+func (suite *scanTestSuite) TestGetRegistries() {
+	scan := &LocalScan{}
+
+	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
+	suite.Require().NoError(err, "failed creating test image")
+
+	setup := func(regStore *fakeRegistryStore) {
+		scan.getGlobalRegistryForImage = regStore.GetGlobalRegistryForImage
+		scan.getMatchingCentralRegIntegrations = regStore.GetMatchingCentralRegistryIntegrations
+		scan.getRegistryForImageInNamespace = regStore.GetRegistryForImageInNamespace
+	}
+
+	suite.Run("no regs", func() {
+		regStore := &fakeRegistryStore{
+			namespaceNoRegs: true,
+			globalNoRegs:    true,
+			centralNoRegs:   true,
+		}
+		setup(regStore)
+
+		regs := scan.getRegistries("fake", containerImg.GetName())
+		suite.Len(regs, 0)
+	})
+
+	suite.Run("namespaces regs", func() {
+		regStore := &fakeRegistryStore{
+			namespaceNoRegs: false,
+			globalNoRegs:    true,
+			centralNoRegs:   true,
+		}
+		setup(regStore)
+
+		regs := scan.getRegistries("", containerImg.GetName())
+		suite.Len(regs, 0)
+		suite.False(regStore.getRegistryForImageInNamespaceInvoked)
+
+		regs = scan.getRegistries("fake", containerImg.GetName())
+		suite.Len(regs, 1)
+		suite.True(regStore.getRegistryForImageInNamespaceInvoked)
+	})
+
+	suite.Run("regs from all", func() {
+		regStore := &fakeRegistryStore{
+			globalReg:    &fakeRegistry{},
+			namespaceReg: &fakeRegistry{},
+			centralRegs:  []registryTypes.ImageRegistry{&fakeRegistry{}, &fakeRegistry{}},
+		}
+
+		setup(regStore)
+		regs := scan.getRegistries("fake", containerImg.GetName())
+		suite.Len(regs, 4)
+		suite.True(regStore.getRegistryForImageInNamespaceInvoked)
+		suite.True(regStore.getGlobalRegistryForImageInvoked)
+		suite.True(regStore.getMatchingCentralRegistryIntegrationsInvoked)
+	})
 }
 
 func successfulScan(_ context.Context, _ *storage.Image,
@@ -396,6 +455,14 @@ func emptyGetGlobalRegistryForImage(*storage.ImageName) (registryTypes.ImageRegi
 	return nil, errors.New("no registry found")
 }
 
+func emptyGetMatchingCentralRegIntegrations(*storage.ImageName) []registryTypes.ImageRegistry {
+	return nil
+}
+
+func emptyGetRegistryForImageInNamespace(*storage.ImageName, string) (registryTypes.ImageRegistry, error) {
+	return nil, errors.New("no registry found")
+}
+
 func successCreateNoAuthImageRegistry(context.Context, *storage.ImageName, registries.Factory) (registryTypes.ImageRegistry, error) {
 	return &fakeRegistry{}, nil
 }
@@ -437,28 +504,48 @@ func (f *fakeRegistry) Source() *storage.ImageIntegration {
 }
 
 type fakeRegistryStore struct {
-	getGlobalRegistryForImageInvoked       bool
-	getRegistryForImageInvoked             bool
-	getRegistryForImageInNamespaceInvoked  bool
-	getMatchingRegistryIntegrationsInvoked bool
-}
+	getGlobalRegistryForImageInvoked              bool
+	getRegistryForImageInNamespaceInvoked         bool
+	getMatchingCentralRegistryIntegrationsInvoked bool
 
-func (f *fakeRegistryStore) GetRegistryForImage(_ *storage.ImageName) (registryTypes.ImageRegistry, error) {
-	f.getRegistryForImageInvoked = true
-	return &fakeRegistry{}, nil
+	globalReg    registryTypes.ImageRegistry
+	namespaceReg registryTypes.ImageRegistry
+	centralRegs  []registryTypes.ImageRegistry
+
+	globalNoRegs    bool
+	centralNoRegs   bool
+	namespaceNoRegs bool
 }
 
 func (f *fakeRegistryStore) GetRegistryForImageInNamespace(_ *storage.ImageName, _ string) (registryTypes.ImageRegistry, error) {
 	f.getRegistryForImageInNamespaceInvoked = true
+	if f.namespaceReg != nil {
+		return f.namespaceReg, nil
+	}
+	if f.namespaceNoRegs {
+		return nil, errors.New("no regs")
+	}
 	return &fakeRegistry{}, nil
 }
 
 func (f *fakeRegistryStore) GetGlobalRegistryForImage(*storage.ImageName) (registryTypes.ImageRegistry, error) {
 	f.getGlobalRegistryForImageInvoked = true
+	if f.globalReg != nil {
+		return f.globalReg, nil
+	}
+	if f.globalNoRegs {
+		return nil, errors.New("no regs")
+	}
 	return &fakeRegistry{}, nil
 }
 
 func (f *fakeRegistryStore) GetMatchingCentralRegistryIntegrations(*storage.ImageName) []registryTypes.ImageRegistry {
-	f.getMatchingRegistryIntegrationsInvoked = true
-	return nil
+	f.getMatchingCentralRegistryIntegrationsInvoked = true
+	if f.centralRegs != nil {
+		return f.centralRegs
+	}
+	if f.centralNoRegs {
+		return nil
+	}
+	return []registryTypes.ImageRegistry{&fakeRegistry{}}
 }

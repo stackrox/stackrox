@@ -507,7 +507,7 @@ func (c *sensorConnection) getImageIntegrationMsg(ctx context.Context) (*central
 		}
 
 		imageIntegrations = append(imageIntegrations, ii)
-		log.Debugf("Sending registry integration %v (%v) to cluster %q", ii.GetName(), ii.GetId(), c.clusterID)
+		log.Debugf("Sending registry integration %q (%v) to cluster %q", ii.GetName(), ii.GetId(), c.clusterID)
 	}
 
 	if len(imageIntegrations) == 0 {
@@ -575,7 +575,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 			log.Infof("Sent delegated registry config %q to cluster %q", msg.GetDelegatedRegistryConfig(), c.clusterID)
 		}
 
-		// Sync registry integrations.
+		// Sync integrations.
 		msg, err = c.getImageIntegrationMsg(ctx)
 		if err != nil {
 			return errors.Wrapf(err, "unable to get image integrations msg for %q", c.clusterID)
