@@ -63,9 +63,33 @@ message DatabaseStatus {
     string database_version = 3;
 }
 
-
 message DatabaseBackupStatus {
     storage.BackupInfo backup_info = 1;
+}
+
+// Provides availability of certain functionality of Central Services in the current configuration.
+// The initial intended use is to disable certain functionality that does not make sense in the Cloud Service context.
+message CentralServicesCapabilities {
+    enum CapabilityStatus {
+        // "Unknown" means "not disabled".
+        // The reason it's not called "Enabled" is that extended checks might be required to confirm true ability to use
+        // e.g. container AWS IAM role or GCP workload identity, and we can't positively say "Enabled" while such checks
+        // aren't implemented.
+        // This means the user should be allowed to use the capability (both via UI and API) but an attempt may not be
+        // successful if the corresponding configuration does not match the actual environment.
+        Unknown = 0;
+
+        // Capability is disabled, meaning the corresponding UI should be disabled and attempts to use related APIs
+        // should lead to errors.
+        Disabled = 1;
+    }
+
+    // Ability to use container IAM role for scanning images from Amazon ECR using Scanner deployed as part of Central
+    // Services.
+    CapabilityStatus use_container_iam_role_for_ecr_scanning = 1;
+
+    // Ability to configure and perform Central backups to Amazon S3 or Google Cloud Storage.
+    CapabilityStatus cloud_backup_integrations = 2;
 }
 
 service MetadataService {
@@ -91,6 +115,12 @@ service MetadataService {
     rpc GetDatabaseBackupStatus(Empty) returns (DatabaseBackupStatus) {
         option (google.api.http) = {
             get: "/v1/backup/status"
+        };
+    }
+
+    rpc GetCentralCapabilities(Empty) returns (CentralServicesCapabilities) {
+        option (google.api.http) = {
+            get: "/v1/central-capabilities"
         };
     }
 }
