@@ -12,7 +12,7 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetDeclarativeConfigs(ctx context.Context) ([]*storage.DeclarativeConfigHealth, error)
-	UpsertDeclarativeConfig(ctx context.Context, integrationHealth *storage.DeclarativeConfigHealth) error
+	UpsertDeclarativeConfig(ctx context.Context, configHealth *storage.DeclarativeConfigHealth) error
 	RemoveDeclarativeConfig(ctx context.Context, id string) error
 	GetDeclarativeConfig(ctx context.Context, id string) (*storage.DeclarativeConfigHealth, bool, error)
 }
