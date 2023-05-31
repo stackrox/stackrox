@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+package storage;
+
+message DeclarativeConfigHealth {
+    enum Status {
+        UNHEALTHY     = 0;
+        HEALTHY       = 1;
+    }
+
+    string id                                     = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string name                                   = 2;
+    Status status                                 = 4;
+    string error_message                          = 5;
+    string resource_name                          = 6;
+
+    // Timestamp when the status was ascertained
+    google.protobuf.Timestamp last_timestamp      = 7;
+}
