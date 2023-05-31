@@ -182,7 +182,7 @@ type PerNodeSpec struct {
 	Compliance *ContainerSpec `json:"compliance,omitempty"`
 
 	// Settings for the Node-Inventory container, which is responsible for scanning the Nodes' filesystem
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Node-Inventory Settings"
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Node Scanner Settings"
 	NodeInventory *ContainerSpec `json:"nodeInventory,omitempty"`
 
 	// To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security
