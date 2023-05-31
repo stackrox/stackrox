@@ -91,7 +91,7 @@ function PolicyGroupCard({
                         </Flex>
                     </CardTitle>
                     <CardActions hasNoOffset className="policy-group-card">
-                        {descriptor.negatedName && (
+                        {descriptor.negatedName && !readOnly && (
                             <>
                                 <Divider component="div" isVertical />
                                 <Checkbox
