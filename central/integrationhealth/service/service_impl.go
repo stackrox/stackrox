@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -87,6 +88,9 @@ func (s *serviceImpl) GetBackupPlugins(ctx context.Context, _ *v1.Empty) (*v1.Ge
 
 // GetDeclarativeConfigs returns the health status for all declarative configurations.
 func (s *serviceImpl) GetDeclarativeConfigs(ctx context.Context, _ *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
+	if env.ManagedCentral.BooleanSetting() {
+		return &v1.GetIntegrationHealthResponse{}, nil
+	}
 	healthData, err := s.datastore.GetDeclarativeConfigs(ctx)
 	if err != nil {
 		return nil, err
