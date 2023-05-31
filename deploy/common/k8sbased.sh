@@ -339,9 +339,9 @@ function launch_central {
       root_dir
       local latest_tag=$(make tag -C "${STACKROX_ROOT_DIR}" --quiet --no-print-directory)
 
-      # set custom central version if the CENTRAL_CHART_VERSION_OVERRIDE env is set and not equal to the latest tag
+      # set custom central version if the CENTRAL_CHART_VERSION_OVERRIDE env is set and equal a release version
       # this has to happen after linting since helm lint does not recognize the --version flag
-      if [[ ( -n "${CENTRAL_CHART_VERSION_OVERRIDE}" ) && "${CENTRAL_CHART_VERSION_OVERRIDE}"!="${latest_tag}" ]]; then
+      if [[ "${CENTRAL_CHART_VERSION_OVERRIDE}" =~ ^v?([0-9]+)\.([0-9]+)\.(x|[0-9]+)$ ]]; then
         helm_args+=(
           --version="${CENTRAL_CHART_VERSION_OVERRIDE}"
         )
@@ -603,9 +603,9 @@ function launch_sensor {
       root_dir
       local latest_tag=$(make tag -C "${STACKROX_ROOT_DIR}" --quiet --no-print-directory)
 
-      # set custom sensor version if the SENSOR_CHART_VERSION_OVERRIDE env is set and not equal to the latest tag
+      # set custom sensor version if the SENSOR_CHART_VERSION_OVERRIDE env is set and equal to a release tag
       # in this case we need to find the right helm chart from the stackrox-oss repo
-      if [[ ( -n "${SENSOR_CHART_VERSION_OVERRIDE}" ) && "${SENSOR_CHART_VERSION_OVERRIDE}"!="${latest_tag}" ]]; then
+      if [[ "${SENSOR_CHART_VERSION_OVERRIDE}" =~ ^v?([0-9]+)\.([0-9]+)\.(x|[0-9]+)$ ]]; then
         helm_args+=(
           --version="${SENSOR_CHART_VERSION_OVERRIDE}"
         )
