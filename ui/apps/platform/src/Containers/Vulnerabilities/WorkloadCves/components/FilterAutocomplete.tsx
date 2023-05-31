@@ -114,7 +114,7 @@ function FilterAutocompleteSelect({
                 onClear={() => onDeleteGroup(resource)}
                 onToggle={onToggle}
                 isOpen={isOpen}
-                placeholder={`Filter by ${resource as string}`}
+                placeholderText={`Filter results by ${resource.toLowerCase()}`}
                 variant="typeaheadmulti"
                 isCreatable
                 createText="Add"

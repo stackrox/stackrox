@@ -65,7 +65,7 @@ function CVEsTableContainer({ defaultFilters, countsData, cveStatusTab }: CVEsTa
             {error && (
                 <TableErrorComponent error={error} message="Adjust your filters and try again" />
             )}
-            {tableData && (
+            {!error && tableData && (
                 <div className="workload-cves-table-container">
                     <CVEsTable
                         cves={tableData.imageCVEs}
