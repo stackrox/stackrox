@@ -89,7 +89,7 @@ runs:
              COMMON_FLAGS="$COMMON_FLAGS -march=z10 "
  
         EOF
-
+        cd rocksdb
         git apply ppc64le.patch
 
 
