@@ -86,10 +86,10 @@ message CentralServicesCapabilities {
 
     // Ability to use container IAM role for scanning images from Amazon ECR using Scanner deployed as part of Central
     // Services.
-    CapabilityStatus use_container_iam_role_for_ecr_scanning = 1;
+    CapabilityStatus central_scanning_use_container_iam_role_for_ecr = 1;
 
     // Ability to configure and perform Central backups to Amazon S3 or Google Cloud Storage.
-    CapabilityStatus cloud_backup_integrations = 2;
+    CapabilityStatus central_cloud_backup_integrations = 2;
 }
 
 service MetadataService {
