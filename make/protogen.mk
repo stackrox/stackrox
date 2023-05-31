@@ -252,6 +252,4 @@ $(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(PROTOC_GEN_GRPC_GATEWAY)
 .PHONY: clean-proto-deps
 clean-proto-deps:
 	@echo "+ $@"
-	rm -f $(PROTOC_FILE)
-	rm -rf $(PROTOC_DIR)
-	rm -rf $(PROTO_GOBIN)
+	rm -rf "$(PROTO_PRIVATE_DIR)"
