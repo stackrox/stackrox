@@ -13,7 +13,7 @@ function AffectedImages({
     totalImagesCount,
 }: AffectedImagesProps) {
     return (
-        <Card className={className} isCompact>
+        <Card className={className} isCompact isFlat>
             <CardTitle>Affected images</CardTitle>
             <CardBody>
                 {affectedImageCount}/{totalImagesCount} images affected

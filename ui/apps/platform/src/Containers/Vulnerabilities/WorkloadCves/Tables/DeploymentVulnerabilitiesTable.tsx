@@ -133,9 +133,9 @@ function DeploymentVulnerabilitiesTable({
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('CVE')}>CVE</Th>
-                    <Th>Severity</Th>
+                    <Th>CVE severity</Th>
                     <Th>
-                        CVE Status
+                        CVE status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th>

@@ -2,12 +2,10 @@ import React from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Button, ButtonVariant, Flex } from '@patternfly/react-core';
+import { Flex } from '@patternfly/react-core';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import ImageNameTd from '../components/ImageNameTd';
-import { getEntityPagePath } from '../searchUtils';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
@@ -146,17 +144,10 @@ function ImagesTable({ images, getSortParams, isFiltered, filteredSeverities }: 
                                 <Td>{operatingSystem}</Td>
                                 <Td>
                                     {deploymentCount > 0 ? (
-                                        <Button
-                                            variant={ButtonVariant.link}
-                                            isInline
-                                            component={LinkShim}
-                                            href={getEntityPagePath('Image', id, {
-                                                detailsTab: 'Resources',
-                                            })}
-                                        >
+                                        <>
                                             {deploymentCount}{' '}
                                             {pluralize('deployment', deploymentCount)}
-                                        </Button>
+                                        </>
                                     ) : (
                                         <Flex>
                                             <div>0 deployments</div>

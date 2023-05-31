@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flex, Button, ButtonVariant } from '@patternfly/react-core';
+import { Flex, Button, ButtonVariant, Truncate } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { getEntityPagePath } from '../searchUtils';
@@ -22,7 +22,7 @@ function ImageNameTd({ name, id }: ImageNameTdProps) {
                 component={LinkShim}
                 href={getEntityPagePath('Image', id)}
             >
-                {name.remote}:{name.tag}
+                <Truncate position="middle" content={`${name.remote}:${name.tag}`} />
             </Button>{' '}
             <span className="pf-u-color-200 pf-u-font-size-sm">in {name.registry}</span>
         </Flex>
