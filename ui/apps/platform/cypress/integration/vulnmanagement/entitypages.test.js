@@ -256,7 +256,7 @@ describe('Entities single views', () => {
 
         // click on the first deployment in the list
         interactAndWaitForVulnerabilityManagementEntity(() => {
-            cy.get(`${selectors.tableBodyRows}:eq(0)`).click();
+            cy.get(`${selectors.tableBodyRows}:eq(0) .rt-td:nth-child(2)`).click();
         }, entitiesKey1);
 
         // now, go to the components for that deployment
