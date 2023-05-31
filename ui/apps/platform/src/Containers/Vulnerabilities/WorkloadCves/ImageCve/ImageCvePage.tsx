@@ -309,7 +309,12 @@ function ImageCvePage() {
             <PageSection className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
                 <div className="pf-u-background-color-100">
                     <div className="pf-u-px-sm">
-                        <WorkloadTableToolbar supportedResourceFilters={imageCveResourceFilters} />
+                        <WorkloadTableToolbar
+                            supportedResourceFilters={imageCveResourceFilters}
+                            autocompleteSearchContext={{
+                                'CVE ID': cveId,
+                            }}
+                        />
                     </div>
                     <div className="pf-u-px-lg pf-u-pb-lg">
                         {summaryRequest.error && (

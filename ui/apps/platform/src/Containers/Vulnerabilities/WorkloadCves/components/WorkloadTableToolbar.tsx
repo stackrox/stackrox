@@ -19,11 +19,13 @@ type FilterType = 'Severity' | 'Fixable';
 type WorkloadTableToolbarProps = {
     defaultFilters?: DefaultFilters;
     supportedResourceFilters?: FilterAutocompleteSelectProps['supportedResourceFilters'];
+    autocompleteSearchContext?: FilterAutocompleteSelectProps['autocompleteSearchContext'];
 };
 
 function WorkloadTableToolbar({
     defaultFilters = emptyDefaultFilters,
     supportedResourceFilters,
+    autocompleteSearchContext,
 }: WorkloadTableToolbarProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
     const searchSeverity = (searchFilter.Severity as VulnerabilitySeverityLabel[]) || [];
@@ -91,6 +93,7 @@ function WorkloadTableToolbar({
                     setSearchFilter={setSearchFilter}
                     supportedResourceFilters={supportedResourceFilters}
                     onDeleteGroup={onDeleteGroup}
+                    autocompleteSearchContext={autocompleteSearchContext}
                 />
                 <ToolbarGroup>
                     <CVESeverityDropdown searchFilter={searchFilter} onSelect={onSelect} />
