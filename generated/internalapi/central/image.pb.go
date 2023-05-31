@@ -103,8 +103,8 @@ func (m *ScanImage) Clone() *ScanImage {
 	return cloned
 }
 
-// ImageIntegration contains a list of integrations sensor should upsert and/or
-// delete.
+// ImageIntegrations contains a list of integrations sensor should upsert and/or
+// delete from its internal store.
 type ImageIntegrations struct {
 	UpdatedIntegrations   []*storage.ImageIntegration `protobuf:"bytes,1,rep,name=updated_integrations,json=updatedIntegrations,proto3" json:"updated_integrations,omitempty"`
 	DeletedIntegrationIds []string                    `protobuf:"bytes,2,rep,name=deleted_integration_ids,json=deletedIntegrationIds,proto3" json:"deleted_integration_ids,omitempty"`
