@@ -181,9 +181,9 @@ type PerNodeSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Compliance Settings"
 	Compliance *ContainerSpec `json:"compliance,omitempty"`
 
-	// Settings for the Node-Scanner container, which is responsible for scanning the Nodes' filesystem
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Node Scanner Settings"
-	NodeScanner *ContainerSpec `json:"nodescanner,omitempty"`
+	// Settings for the Node-Inventory container, which is responsible for scanning the Nodes' filesystem
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Node-Inventory Settings"
+	NodeInventory *ContainerSpec `json:"nodeInventory,omitempty"`
 
 	// To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security
 	// will run services on every node in the cluster, including tainted nodes by default. If you do

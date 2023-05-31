@@ -523,8 +523,8 @@ spec:
                         type: object
                     type: object
                   nodescanner:
-                    description: Settings for the Node-Scanner container, which is
-                      responsible for scanning the Nodes' filesystem
+                    description: Settings for the Node-Inventory container, which is
+                      responsible for scanning the Nodes' filesystem.
                     properties:
                       resources:
                         description: Allows overriding the default resource settings
