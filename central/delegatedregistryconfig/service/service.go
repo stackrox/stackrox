@@ -199,12 +199,10 @@ func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryC
 	for i, c := range clusters {
 		conn := s.connManager.GetConnection(c.GetId())
 
-		valid := deleConnection.ValidForDelegation(conn)
-
 		res[i] = &v1.DelegatedRegistryCluster{
 			Id:      c.Id,
 			Name:    c.Name,
-			IsValid: valid,
+			IsValid: deleConnection.ValidForDelegation(conn),
 		}
 	}
 
