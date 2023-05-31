@@ -33,6 +33,28 @@
         ]
       }
     },
+    "/v1/central-capabilities": {
+      "get": {
+        "operationId": "MetadataService_GetCentralCapabilities",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CentralServicesCapabilities"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "MetadataService"
+        ]
+      }
+    },
     "/v1/database/status": {
       "get": {
         "operationId": "MetadataService_GetDatabaseStatus",
@@ -110,6 +132,15 @@
     }
   },
   "definitions": {
+    "CentralServicesCapabilitiesCapabilityStatus": {
+      "type": "string",
+      "enum": [
+        "Unknown",
+        "Disabled"
+      ],
+      "default": "Unknown",
+      "description": " - Unknown: \"Unknown\" means \"not disabled\".\nThe reason it's not called \"Enabled\" is that extended checks might be required to confirm true ability to use\ne.g. container AWS IAM role or GCP workload identity, and we can't positively say \"Enabled\" while such checks\naren't implemented.\nThis means the user should be allowed to use the capability (both via UI and API) but an attempt may not be\nsuccessful if the corresponding configuration does not match the actual environment.\n - Disabled: Capability is disabled, meaning the corresponding UI should be disabled and attempts to use related APIs\nshould lead to errors."
+    },
     "DatabaseStatusDatabaseType": {
       "type": "string",
       "enum": [
@@ -199,6 +230,20 @@
           "type": "string"
         }
       }
+    },
+    "v1CentralServicesCapabilities": {
+      "type": "object",
+      "properties": {
+        "useContainerIamRoleForEcrScanning": {
+          "$ref": "#/definitions/CentralServicesCapabilitiesCapabilityStatus",
+          "description": "Ability to use container IAM role for scanning images from Amazon ECR using Scanner deployed as part of Central\nServices."
+        },
+        "cloudBackupIntegrations": {
+          "$ref": "#/definitions/CentralServicesCapabilitiesCapabilityStatus",
+          "description": "Ability to configure and perform Central backups to Amazon S3 or Google Cloud Storage."
+        }
+      },
+      "description": "Provides availability of certain functionality of Central Services in the current configuration.\nThe initial intended use is to disable certain functionality that does not make sense in the Cloud Service context."
     },
     "v1DatabaseBackupStatus": {
       "type": "object",
