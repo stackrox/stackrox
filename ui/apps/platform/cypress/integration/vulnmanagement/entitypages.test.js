@@ -198,62 +198,6 @@ describe('Entities single views', () => {
         );
     });
 
-    it('should have filtered deployments list in 3rd level of side panel (namespaces -> policies -> deployments)', () => {
-        const entitiesKey1 = 'namespaces';
-        visitVulnerabilityManagementEntities('namespaces');
-
-        const firstDeploymentCountLinkSelector = `${selectors.deploymentCountLink}:eq(0)`;
-        interactAndWaitForVulnerabilityManagementSecondaryEntities(
-            () => {
-                cy.get(firstDeploymentCountLinkSelector).click();
-            },
-            entitiesKey1,
-            'deployments'
-        );
-
-        interactAndWaitForVulnerabilityManagementEntity(() => {
-            cy.get(selectors.parentEntityInfoHeader).click();
-        }, entitiesKey1);
-
-        interactAndWaitForVulnerabilityManagementSecondaryEntities(
-            () => {
-                cy.get(selectors.policyTileLink).click();
-            },
-            entitiesKey1,
-            'policies'
-        );
-
-        cy.get(firstDeploymentCountLinkSelector)
-            .invoke('text')
-            .then((deploymentCountText) => {
-                interactAndWaitForVulnerabilityManagementEntity(() => {
-                    cy.get(`${selectors.sidePanelTableBodyRows}:eq(0)`).click();
-                }, 'policies');
-
-                cy.get(selectors.deploymentTileLink)
-                    .invoke('text')
-                    .then((relatedDeploymentCountText) => {
-                        expect(relatedDeploymentCountText.toLowerCase().trim()).to.equal(
-                            deploymentCountText.replace(' ', '')
-                        );
-                    });
-
-                interactAndWaitForVulnerabilityManagementSecondaryEntities(
-                    () => {
-                        cy.get(selectors.deploymentTileLink).click();
-                    },
-                    'policies',
-                    'deployments'
-                );
-
-                cy.get(selectors.entityRowHeader)
-                    .invoke('text')
-                    .then((paginationText) => {
-                        expect(paginationText).to.equal(deploymentCountText);
-                    });
-            });
-    });
-
     it('should show a CVE description in overview when coming from cve list', () => {
         const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
         const entitiesKey = usingVMUpdates ? 'image-cves' : 'cves';

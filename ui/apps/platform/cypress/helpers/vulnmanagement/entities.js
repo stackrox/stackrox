@@ -6,7 +6,6 @@ import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from '../re
 import { visit } from '../visit';
 
 let opnamesForDashboard = [
-    'policiesCount',
     'cvesCount',
     'getNodes',
     'getImages',

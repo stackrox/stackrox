@@ -33,7 +33,6 @@ describe('Vulnerability Management Deployments', () => {
             'Deployment',
             'Image CVEs',
             'Latest Violation',
-            'Policy Status',
             'Cluster',
             'Namespace',
             'Images',
@@ -45,7 +44,7 @@ describe('Vulnerability Management Deployments', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
         const thSelector = '.rt-th:contains("Risk Priority")';
-        const tdSelector = '.rt-td:nth-child(9)';
+        const tdSelector = '.rt-td:nth-child(8)';
 
         // 0. Initial table state indicates that the column is sorted ascending.
         cy.get(thSelector).should('have.class', '-sort-asc');
@@ -96,6 +95,6 @@ describe('Vulnerability Management Deployments', () => {
     });
 
     it('should display links for images', () => {
-        verifySecondaryEntities(entitiesKey, 'images', 8, /^\d+ images?$/);
+        verifySecondaryEntities(entitiesKey, 'images', 7, /^\d+ images?$/);
     });
 });
