@@ -166,10 +166,10 @@ func (d *delegatedRegistryImpl) processImageIntegrations(iiReq *central.ImageInt
 	case <-d.stopSig.Done():
 		return errors.New("could not process updated image integrations, stop requested")
 	default:
-		log.Infof("Received %v updated and %v deleted image integrations", len(iiReq.GetUpdatedIntegrations()), len(iiReq.GetDeletedIntegrationIds()))
+		log.Infof("Received %d updated and %d deleted image integrations", len(iiReq.GetUpdatedIntegrations()), len(iiReq.GetDeletedIntegrationIds()))
 
 		// Spawn a goroutine so that this handler doesn't block other messages from being processed
-		// while waiting upserts to occur.
+		// while waiting for upserts to occur.
 		go d.doImageIntegrationUpdates(iiReq)
 	}
 	return nil

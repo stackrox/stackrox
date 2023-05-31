@@ -50,7 +50,7 @@ var (
 type LocalScan struct {
 	// NOTE: If you change these, make sure to also change the respective values within the tests.
 	scanImg                           func(context.Context, *storage.Image, registryTypes.ImageRegistry, *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
-	fetchSignaturesWithRetry          func(context.Context, signatures.SignatureFetcher, *storage.Image, string, registryTypes.ImageRegistry) ([]*storage.Signature, error)
+	fetchSignaturesWithRetry          func(context.Context, signatures.SignatureFetcher, *storage.Image, string, registryTypes.Registry) ([]*storage.Signature, error)
 	scannerClientSingleton            func() *scannerclient.Client
 	getRegistryForImageInNamespace    func(*storage.ImageName, string) (registryTypes.ImageRegistry, error)
 	getGlobalRegistryForImage         func(*storage.ImageName) (registryTypes.ImageRegistry, error)
@@ -98,9 +98,9 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	imgName := ci.GetName()
 
 	// Add registries from Central's image integrations.
-	regIntegrations := s.getMatchingCentralRegIntegrations(imgName)
-	if len(regIntegrations) > 0 {
-		regs = append(regs, regIntegrations...)
+	centralIntegrations := s.getMatchingCentralRegIntegrations(imgName)
+	if len(centralIntegrations) > 0 {
+		regs = append(regs, centralIntegrations...)
 	}
 
 	// Add registries from k8s pull secrets.

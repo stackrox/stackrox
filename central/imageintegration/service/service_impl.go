@@ -361,8 +361,8 @@ func (s *serviceImpl) reconcileImageIntegrationWithExisting(updatedConfig, store
 	return secrets.ReconcileScrubbedStructWithExisting(updatedConfig, storedConfig)
 }
 
-// broadcastUpdate will send the updated image integration to all Sensors that are setup
-// to use image integrations
+// broadcastUpdate will send the updated image integration to all Sensors that can handle
+// the update.
 func (s *serviceImpl) broadcastUpdate(ctx context.Context, ii *storage.ImageIntegration) {
 	if !validIntegrationForBroadcast(ii) {
 		return
@@ -379,8 +379,8 @@ func (s *serviceImpl) broadcastUpdate(ctx context.Context, ii *storage.ImageInte
 	s.broadcast(ctx, "updated", ii.GetId(), ii.GetName(), msg)
 }
 
-// broadcastDelete will send the deleted image integration ID to all Sensors that are setup
-// to use image integrations
+// broadcastDelete will send the deleted image integration to all Sensors that can handle
+// the update.
 func (s *serviceImpl) broadcastDelete(ctx context.Context, id string, name string) {
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_ImageIntegrations{

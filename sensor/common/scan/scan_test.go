@@ -96,7 +96,7 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 		scanImg func(ctx context.Context, image *storage.Image,
 			registry registryTypes.ImageRegistry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
 		fetchSignaturesWithRetry func(ctx context.Context, fetcher signatures.SignatureFetcher, image *storage.Image,
-			fullImageName string, registry registryTypes.ImageRegistry) ([]*storage.Signature, error)
+			fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error)
 		getRegistryForImageInNamespace func(image *storage.ImageName, ns string) (registryTypes.ImageRegistry, error)
 		fakeImageServiceClient         *fakeImageServiceClient
 		enrichmentTriggered            bool
@@ -168,7 +168,7 @@ func (suite *scanTestSuite) TestMetadataBeingSet() {
 	scan := LocalScan{
 		scanImg: successfulScan,
 		fetchSignaturesWithRetry: func(_ context.Context, _ signatures.SignatureFetcher, img *storage.Image, _ string,
-			_ registryTypes.ImageRegistry) ([]*storage.Signature, error) {
+			_ registryTypes.Registry) ([]*storage.Signature, error) {
 			if img.GetMetadata().GetV2() == nil {
 				return nil, errors.New("image metadata missing, not attempting fetch of signatures")
 			}
@@ -369,7 +369,7 @@ func successfulScan(_ context.Context, _ *storage.Image,
 }
 
 func successfulFetchSignatures(_ context.Context, _ signatures.SignatureFetcher, _ *storage.Image, _ string,
-	_ registryTypes.ImageRegistry) ([]*storage.Signature, error) {
+	_ registryTypes.Registry) ([]*storage.Signature, error) {
 	return []*storage.Signature{{
 		Signature: &storage.Signature_Cosign{Cosign: &storage.CosignSignature{
 			RawSignature:     []byte("some-signature"),
@@ -384,7 +384,7 @@ func failingScan(_ context.Context, _ *storage.Image,
 }
 
 func failingFetchSignatures(_ context.Context, _ signatures.SignatureFetcher, _ *storage.Image, _ string,
-	_ registryTypes.ImageRegistry) ([]*storage.Signature, error) {
+	_ registryTypes.Registry) ([]*storage.Signature, error) {
 	return nil, errors.New("failed fetching signatures")
 }
 

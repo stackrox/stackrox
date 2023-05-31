@@ -478,7 +478,7 @@ func (c *sensorConnection) getDelegatedRegistryConfigMsg(ctx context.Context) (*
 	}, nil
 }
 
-// getImageIntegrationMsg builds a MsgToSensor containing registry image integration that should
+// getImageIntegrationMsg builds a MsgToSensor containing registry integrations that should
 // be sent to sensor. Returns nil if are no eligible integrations.
 func (c *sensorConnection) getImageIntegrationMsg(ctx context.Context) (*central.MsgToSensor, error) {
 	iis, err := c.imageIntegrationMgr.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
@@ -507,7 +507,7 @@ func (c *sensorConnection) getImageIntegrationMsg(ctx context.Context) (*central
 		}
 
 		imageIntegrations = append(imageIntegrations, ii)
-		log.Debugf("Found registry integration %+v", ii)
+		log.Debugf("Sending registry integration %v (%v) to cluster %q", ii.GetName(), ii.GetId(), c.clusterID)
 	}
 
 	if len(imageIntegrations) == 0 {
@@ -572,7 +572,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 				return errors.Wrapf(err, "unable to sync initial delegated registry config to cluster %q", c.clusterID)
 			}
 
-			log.Debugf("Sent delegated registry config %q to cluster %q", msg.GetDelegatedRegistryConfig(), c.clusterID)
+			log.Infof("Sent delegated registry config %q to cluster %q", msg.GetDelegatedRegistryConfig(), c.clusterID)
 		}
 
 		// Sync registry integrations.
@@ -585,7 +585,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 				return errors.Wrapf(err, "unable to sync initial image integrations to cluster %q", c.clusterID)
 			}
 
-			log.Debugf("Sent %d image integrations to cluster %q", len(msg.GetImageIntegrations().GetUpdatedIntegrations()), c.clusterID)
+			log.Infof("Sent %d image integrations to cluster %q", len(msg.GetImageIntegrations().GetUpdatedIntegrations()), c.clusterID)
 		}
 	}
 

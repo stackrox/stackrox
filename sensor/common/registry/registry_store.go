@@ -194,7 +194,7 @@ func (rs *Store) UpsertGlobalRegistry(ctx context.Context, registry string, dce 
 		return errors.Wrapf(err, "unable to check TLS for registry %q", registry)
 	}
 
-	name := genIntegrationName(pullSecretNamePrefix, "", registry)
+	name := genIntegrationName(globalRegNamePrefix, "", registry)
 	err = rs.globalRegistries.UpdateImageIntegration(createImageIntegration(registry, dce, secure, name))
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
@@ -319,7 +319,6 @@ func (rs *Store) DeleteCentralRegistryIntegrations(ids []string) {
 // provided image name.
 func (rs *Store) GetMatchingCentralRegistryIntegrations(imgName *storage.ImageName) []registryTypes.ImageRegistry {
 	var regs []registryTypes.ImageRegistry
-
 	for _, ii := range rs.centralRegistryIntegrations.GetAll() {
 		if ii.Match(imgName) {
 			regs = append(regs, ii)
