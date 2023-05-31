@@ -515,7 +515,7 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(clusters set.FrozenStr
 	var wg sync.WaitGroup
 	sema := semaphore.NewWeighted(flowsSemaphoreWeight)
 
-	orphanTime := time.Now().Add(-1 * orphanWindow)
+	orphanTime := time.Now().UTC().Add(-1 * orphanWindow)
 
 	// Each cluster has a separate store thus we can take advantage of doing these deletions concurrently.  If we don't
 	// the entire prune job will be stuck waiting on processing the network flows deletions in cluster sequence.

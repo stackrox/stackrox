@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -111,9 +112,9 @@ var (
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
 
-	deleteTimeout = 3 * time.Minute
+	deleteTimeout = env.PostgresDefaultNetworkFlowDeleteTimeout.DurationSetting()
 
-	queryTimeout = 3 * time.Minute
+	queryTimeout = env.PostgresDefaultNetworkFlowQueryTimeout.DurationSetting()
 )
 
 // FlowStore stores all of the flows for a single cluster.
@@ -612,19 +613,11 @@ func (s *flowStoreImpl) pruneFlows(ctx context.Context, deleteStmt string, orpha
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	tx, err := conn.Begin(ctx)
-	if err != nil {
+	if _, err := conn.Exec(ctx, deleteStmt, s.clusterID, orphanWindow); err != nil {
 		return err
 	}
 
-	if _, err := tx.Exec(ctx, deleteStmt, s.clusterID, orphanWindow); err != nil {
-		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
-			return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
-		}
-		return err
-	}
-
-	return tx.Commit(ctx)
+	return nil
 }
 
 // RemoveStaleFlows - remove stale duplicate network flows
