@@ -17,6 +17,7 @@ type DataStore interface {
 	GetDeclarativeConfig(ctx context.Context, id string) (*storage.DeclarativeConfigHealth, bool, error)
 }
 
+// New returns new instance of declarative config health datastore.
 func New(storage store.Store) DataStore {
 	return &datastoreImpl{
 		store: storage,
