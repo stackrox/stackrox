@@ -30,11 +30,11 @@ type Compliance struct {
 	nodeNameProvider   NodeNameProvider
 	nodeScanner        NodeScanner
 	sensorReplyHandler SensorReplyHandler
-	scanResend         *NodeScanResend
+	scanResend         *NodeScanResend[sensor.MsgFromCompliance]
 }
 
 // NewComplianceApp contsructs the Compliance app object
-func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner, srh SensorReplyHandler, nsr *NodeScanResend) *Compliance {
+func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner, srh SensorReplyHandler, nsr *NodeScanResend[sensor.MsgFromCompliance]) *Compliance {
 	return &Compliance{
 		nodeNameProvider:   nnp,
 		nodeScanner:        scanner,

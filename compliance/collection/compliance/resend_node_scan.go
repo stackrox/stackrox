@@ -4,13 +4,11 @@ import (
 	"context"
 	"fmt"
 	"time"
-
-	"github.com/stackrox/rox/generated/internalapi/sensor"
 )
 
 // NodeScanResend handles resending node scans based on ACK messages from Central
 // Assumption: Time to receive an ACK is generally much shorter than ROX_NODE_SCANNING_INTERVAL.
-type NodeScanResend struct {
+type NodeScanResend[T any] struct {
 	// baseInterval defines the delay after which we resend a message
 	baseInterval time.Duration
 	// resendInterval is a multiply of the baseInterval and defines how much time should pass before the next retry
@@ -18,21 +16,21 @@ type NodeScanResend struct {
 	// ticker controls the delay after which we resend a message
 	ticker *time.Ticker
 	// msg holds message in memory until a tick happens
-	msg *sensor.MsgFromCompliance
+	msg *T
 	// ch will contain a message if msg is not nil and tick happens
-	ch chan *sensor.MsgFromCompliance
+	ch chan *T
 	// retry counts the number of retries for a given message
 	retry int
 }
 
 // NewNodeScanResend returns new NodeScanResend
-func NewNodeScanResend(resendInterval time.Duration) *NodeScanResend {
-	nsr := &NodeScanResend{
+func NewNodeScanResend[T any](resendInterval time.Duration) *NodeScanResend[T] {
+	nsr := &NodeScanResend[T]{
 		baseInterval:   resendInterval,
 		resendInterval: resendInterval,
 		ticker:         time.NewTicker(resendInterval),
 		msg:            nil,
-		ch:             make(chan *sensor.MsgFromCompliance),
+		ch:             make(chan *T),
 		retry:          0,
 	}
 	nsr.ticker.Stop()
@@ -40,12 +38,12 @@ func NewNodeScanResend(resendInterval time.Duration) *NodeScanResend {
 }
 
 // ResendChannel returns a channel with messages that should be resent
-func (s *NodeScanResend) ResendChannel() <-chan *sensor.MsgFromCompliance {
+func (s *NodeScanResend[T]) ResendChannel() <-chan *T {
 	return s.ch
 }
 
 // Run starts the ticker, so that resending can happen after defined time without ACK passes
-func (s *NodeScanResend) Run(ctx context.Context) {
+func (s *NodeScanResend[T]) Run(ctx context.Context) {
 	go func() {
 		defer close(s.ch)
 		for {
@@ -64,7 +62,7 @@ func (s *NodeScanResend) Run(ctx context.Context) {
 	}()
 }
 
-func (s *NodeScanResend) incrementTicker() {
+func (s *NodeScanResend[T]) incrementTicker() {
 	nextIn := s.retry * int(s.baseInterval.Seconds())
 	next, err := time.ParseDuration(fmt.Sprintf("%ds", nextIn))
 	if err != nil {
@@ -76,7 +74,7 @@ func (s *NodeScanResend) incrementTicker() {
 }
 
 // RegisterScan should be called when a new node-inventory is sent
-func (s *NodeScanResend) RegisterScan(msg *sensor.MsgFromCompliance) {
+func (s *NodeScanResend[T]) RegisterScan(msg *T) {
 	log.Infof("Registering node scan. Waiting for an ACK for %s", s.baseInterval.String())
 	s.retry = 0
 	s.msg = msg
@@ -85,7 +83,7 @@ func (s *NodeScanResend) RegisterScan(msg *sensor.MsgFromCompliance) {
 }
 
 // RegisterACK should be called when an ACK for node-inventory is received
-func (s *NodeScanResend) RegisterACK() {
+func (s *NodeScanResend[T]) RegisterACK() {
 	log.Info("Node Scan has been acknowledged")
 	s.ticker.Stop()
 	s.msg = nil
