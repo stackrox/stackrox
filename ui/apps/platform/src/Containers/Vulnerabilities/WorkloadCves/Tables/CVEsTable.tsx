@@ -120,7 +120,7 @@ function CVEsTable({
                     </TooltipTh>
                     <TooltipTh
                         sort={getSortParams('Image sha', aggregateByImageSha)}
-                        tooltip="Ratio of total environment affect by this CVE"
+                        tooltip="Ratio of total images affected by this CVE"
                     >
                         Affected images
                         {isFiltered && <DynamicColumnIcon />}

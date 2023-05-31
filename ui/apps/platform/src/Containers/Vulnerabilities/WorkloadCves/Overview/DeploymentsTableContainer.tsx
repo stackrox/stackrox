@@ -69,7 +69,7 @@ function DeploymentsTableContainer({
             {error && (
                 <TableErrorComponent error={error} message="Adjust your filters and try again" />
             )}
-            {tableData && (
+            {!error && tableData && (
                 <div className="workload-cves-table-container">
                     <DeploymentsTable
                         deployments={tableData.deployments}
