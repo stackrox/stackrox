@@ -18,13 +18,18 @@ type CVEsTableContainerProps = {
     defaultFilters: DefaultFilters;
     countsData: EntityCounts;
     cveStatusTab?: CveStatusTab; // TODO Make this required once Observed/Deferred/FP states are re-implemented
+    pagination: ReturnType<typeof useURLPagination>;
 };
 
-function CVEsTableContainer({ defaultFilters, countsData, cveStatusTab }: CVEsTableContainerProps) {
+function CVEsTableContainer({
+    defaultFilters,
+    countsData,
+    cveStatusTab,
+    pagination,
+}: CVEsTableContainerProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
-    const pagination = useURLPagination(20);
     const { page, perPage, setPage } = pagination;
     const { sortOption, getSortParams, setSortOption } = useURLSort({
         sortFields: defaultCVESortFields,

@@ -18,17 +18,18 @@ type ImagesTableContainerProps = {
     defaultFilters: DefaultFilters;
     countsData: EntityCounts;
     cveStatusTab?: CveStatusTab; // TODO Make this required once Observed/Deferred/FP states are re-implemented
+    pagination: ReturnType<typeof useURLPagination>;
 };
 
 function ImagesTableContainer({
     defaultFilters,
     countsData,
     cveStatusTab,
+    pagination,
 }: ImagesTableContainerProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
-    const pagination = useURLPagination(20);
     const { page, perPage, setPage } = pagination;
     const sort = useURLSort({
         sortFields: defaultImageSortFields,
