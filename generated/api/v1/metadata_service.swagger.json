@@ -234,11 +234,11 @@
     "v1CentralServicesCapabilities": {
       "type": "object",
       "properties": {
-        "useContainerIamRoleForEcrScanning": {
+        "centralScanningUseContainerIamRoleForEcr": {
           "$ref": "#/definitions/CentralServicesCapabilitiesCapabilityStatus",
           "description": "Ability to use container IAM role for scanning images from Amazon ECR using Scanner deployed as part of Central\nServices."
         },
-        "cloudBackupIntegrations": {
+        "centralCloudBackupIntegrations": {
           "$ref": "#/definitions/CentralServicesCapabilitiesCapabilityStatus",
           "description": "Ability to configure and perform Central backups to Amazon S3 or Google Cloud Storage."
         }
