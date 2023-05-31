@@ -131,8 +131,6 @@ function get_cluster_zip {
     COLLECTION_METHOD_ENUM="default"
     if [[ "$COLLECTION_METHOD" == "ebpf" ]]; then
       COLLECTION_METHOD_ENUM="EBPF"
-    elif [[ "$COLLECTION_METHOD" == "kernel-module" ]]; then
-      COLLECTION_METHOD_ENUM="KERNEL_MODULE"
     elif [[ "$COLLECTION_METHOD" == "none" ]]; then
       COLLECTION_METHOD_ENUM="NO_COLLECTION"
     else
