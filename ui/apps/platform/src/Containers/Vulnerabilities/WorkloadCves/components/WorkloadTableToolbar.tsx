@@ -9,7 +9,6 @@ import { DefaultFilters, VulnerabilitySeverityLabel, FixableStatus } from '../ty
 import { Resource } from './FilterResourceDropdown';
 import FilterAutocomplete, { FilterAutocompleteSelectProps } from './FilterAutocomplete';
 import CVESeverityDropdown from './CVESeverityDropdown';
-import CVEStatusDropdown from './CVEStatusDropdown';
 import FilterChips from './FilterChips';
 
 const emptyDefaultFilters = {
@@ -109,7 +108,7 @@ function WorkloadTableToolbar({
                 />
                 <ToolbarGroup>
                     <CVESeverityDropdown searchFilter={searchFilter} onSelect={onSelect} />
-                    <CVEStatusDropdown searchFilter={searchFilter} onSelect={onSelect} />
+                    {/* CVEStatusDropdown is disabled until fixability filters are fixed */}
                 </ToolbarGroup>
                 <ToolbarGroup className="pf-u-w-100">
                     <FilterChips
