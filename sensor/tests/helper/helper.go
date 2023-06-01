@@ -49,7 +49,7 @@ const (
 	defaultCreationTimeout = 30 * time.Second
 
 	// defaultWaitTimeout maximum time the test will wait for a specific assertion
-	defaultWaitTimeout = 3 * time.Minute
+	defaultWaitTimeout = 3 * time.Second
 
 	// defaultTicker the default interval for the assertion functions to retry the assertion
 	defaultTicker = 500 * time.Millisecond
@@ -226,11 +226,9 @@ func (c *TestContext) deleteNs(ctx context.Context, name string) error {
 
 func (c *TestContext) SensorStopped() bool {
 	select {
-	case v, more := <-c.sensorStopped:
-		log.Printf("SENSOR STOPPED: %v,%v\n", v, more)
+	case v := <-c.sensorStopped:
 		return v
 	default:
-		log.Println("SENSOR STOPPED: default")
 		return false
 	}
 }
