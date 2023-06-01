@@ -21,11 +21,11 @@ jobs:
           test_regex() { echo -nE "$1" | grep --perl-regexp --line-regexp "$REGEX" ; }
 
           echo "Examples:"
-          test_regex "ROX-123: text"
-          test_regex "ROX-123, RS-45: text"
-          test_regex "refactor: text"
-          test_regex "fix(ui): text"
-          test_regex "feat(api)\!: text"
+          test_regex 'ROX-123: text'
+          test_regex 'ROX-123, RS-45: text'
+          test_regex 'refactor: text'
+          test_regex 'fix(ui): text'
+          test_regex 'feat(api)!: text'
 
           if ! test_regex "$PR_TITLE"
           then
