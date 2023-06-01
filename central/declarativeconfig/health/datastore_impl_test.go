@@ -77,14 +77,14 @@ func (s *declarativeConfigHealthDatastoreSuite) TestGetDeclarativeConfigs() {
 func (s *declarativeConfigHealthDatastoreSuite) TestUpdateConfigHealth() {
 	configHealth := newConfigHealth()
 
-	// 1. With no access should return no error but should not be added.
+	// 1. With no access should return  error + should not be added.
 	err := s.datastore.UpsertDeclarativeConfig(s.hasNoAccessCtx, configHealth)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	_, exists, err := s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
 	s.False(exists)
 
-	// 2. With READ access should return no error but should not be added.
+	// 2. With READ access should return error + should not be added.
 	err = s.datastore.UpsertDeclarativeConfig(s.hasReadCtx, configHealth)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())

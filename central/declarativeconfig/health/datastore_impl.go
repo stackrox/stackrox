@@ -44,7 +44,7 @@ func (ds *datastoreImpl) GetDeclarativeConfigs(ctx context.Context) ([]*storage.
 
 func (ds *datastoreImpl) UpsertDeclarativeConfig(ctx context.Context, configHealth *storage.DeclarativeConfigHealth) error {
 	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
-		return errors.Wrapf(err, "failed to update health for declarative config %s", configHealth.GetId())
+		return errors.Wrapf(err, "failed to update health for declarative config %q", configHealth.GetId())
 	}
 
 	return ds.store.Upsert(ctx, configHealth)
@@ -52,7 +52,7 @@ func (ds *datastoreImpl) UpsertDeclarativeConfig(ctx context.Context, configHeal
 
 func (ds *datastoreImpl) RemoveDeclarativeConfig(ctx context.Context, id string) error {
 	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
-		return errors.Wrapf(err, "failed to remove health for declarative config %s", id)
+		return errors.Wrapf(err, "failed to remove health for declarative config %q", id)
 	}
 	_, exists, err := ds.GetDeclarativeConfig(ctx, id)
 	if err != nil {
@@ -67,7 +67,7 @@ func (ds *datastoreImpl) RemoveDeclarativeConfig(ctx context.Context, id string)
 
 func (ds *datastoreImpl) GetDeclarativeConfig(ctx context.Context, id string) (*storage.DeclarativeConfigHealth, bool, error) {
 	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
-		return nil, false, errors.Errorf("Failed to get health for declarative config %s: %v", id, err)
+		return nil, false, errors.Errorf("Failed to get health for declarative config %q: %v", id, err)
 	} else if !ok {
 		return nil, false, nil
 	}

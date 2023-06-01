@@ -89,7 +89,7 @@ func insertIntoDeclarativeConfigHealths(ctx context.Context, batch *pgx.Batch, o
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
 		serialized,
 	}
 
@@ -129,7 +129,7 @@ func (s *storeImpl) copyFromDeclarativeConfigHealths(ctx context.Context, tx *po
 
 		inputRows = append(inputRows, []interface{}{
 
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
 
 			serialized,
 		})
