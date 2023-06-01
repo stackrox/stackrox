@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/compliance/collection/compliance"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/retry"
 )
 
 func main() {
@@ -16,7 +17,7 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	nsr := compliance.NewNodeScanResend(ctx, 15*time.Second)
+	nsr := retry.NewUnconfirmedMessageHandler(ctx, 15*time.Second)
 	srh := compliance.NewSensorReplyHandlerImpl(scanner, nsr)
 	c := compliance.NewComplianceApp(np, scanner, srh, nsr)
 	c.Start()

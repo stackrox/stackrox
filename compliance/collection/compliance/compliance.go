@@ -41,12 +41,12 @@ type Compliance struct {
 }
 
 // NewComplianceApp contsructs the Compliance app object
-func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner, srh SensorReplyHandler, nsr unconfirmedMessageHandler) *Compliance {
+func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner, srh SensorReplyHandler, umh unconfirmedMessageHandler) *Compliance {
 	return &Compliance{
 		nodeNameProvider:   nnp,
 		nodeScanner:        scanner,
 		sensorReplyHandler: srh,
-		scanResend:         nsr,
+		scanResend:         umh,
 		cache:              nil,
 	}
 }

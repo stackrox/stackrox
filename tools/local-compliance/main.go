@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/retry"
 )
 
 var log = logging.LoggerForModule()
@@ -26,7 +27,7 @@ func main() {
 	srh := &dummySensorReplyHandlerImpl{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	nsr := compliance.NewNodeScanResend(ctx, 5*time.Second)
+	nsr := retry.NewUnconfirmedMessageHandler(ctx, 5*time.Second)
 	c := compliance.NewComplianceApp(np, scanner, srh, nsr)
 	c.Start()
 }
