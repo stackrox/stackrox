@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"crypto/x509"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -192,4 +193,30 @@ func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
 	actual, err := srv.GetDatabaseBackupStatus(ctx, &v1.Empty{})
 	s.NoError(err)
 	s.EqualValues(expected, actual)
+}
+
+func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
+	s.Run("when managed central", func() {
+		s.T().Setenv("ROX_MANAGED_CENTRAL", "true")
+
+		caps, err := (&serviceImpl{}).GetCentralCapabilities(nil, nil)
+
+		s.NoError(err)
+		s.Equal(v1.CentralServicesCapabilities_Disabled, caps.GetCentralScanningUseContainerIamRoleForEcr())
+		s.Equal(v1.CentralServicesCapabilities_Disabled, caps.GetCentralCloudBackupIntegrations())
+	})
+
+	cases := map[string]string{"false": "false", "<empty>": ""}
+
+	for name, val := range cases {
+		s.Run(fmt.Sprintf("when not manged central (%s)", name), func() {
+			s.T().Setenv("ROX_MANAGED_CENTRAL", val)
+
+			caps, err := (&serviceImpl{}).GetCentralCapabilities(nil, nil)
+
+			s.NoError(err)
+			s.Equal(v1.CentralServicesCapabilities_Unknown, caps.CentralScanningUseContainerIamRoleForEcr)
+			s.Equal(v1.CentralServicesCapabilities_Unknown, caps.CentralCloudBackupIntegrations)
+		})
+	}
 }
