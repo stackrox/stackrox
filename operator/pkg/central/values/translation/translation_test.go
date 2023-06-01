@@ -1,19 +1,25 @@
 package translation
 
 import (
+	"context"
 	"testing"
 
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/central/common"
+	"github.com/stackrox/rox/operator/pkg/central/extensions"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/utils/pointer"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
+	fkClient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestReadBaseValues(t *testing.T) {
@@ -25,6 +31,7 @@ func TestTranslate(t *testing.T) {
 	type args struct {
 		clientSet kubernetes.Interface
 		c         platform.Central
+		pvcs      []*corev1.PersistentVolumeClaim
 	}
 
 	connectivityPolicy := platform.ConnectivityOffline
@@ -44,6 +51,12 @@ func TestTranslate(t *testing.T) {
 	scannerReplicas := int32(7)
 	scannerMinReplicas := int32(6)
 	scannerMaxReplicas := int32(8)
+	defaultPvc := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "stackrox",
+			Name:      extensions.DefaultCentralPVCName,
+		},
+	}
 
 	tests := map[string]struct {
 		args args
@@ -53,7 +66,11 @@ func TestTranslate(t *testing.T) {
 			args: args{
 				c: platform.Central{
 					Spec: platform.CentralSpec{},
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
 				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
 				"central": map[string]interface{}{
@@ -62,6 +79,59 @@ func TestTranslate(t *testing.T) {
 						"persistentVolumeClaim": map[string]interface{}{
 							"createClaim": false,
 						},
+					},
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+
+		"empty spec no pvc": {
+			args: args{
+				c: platform.Central{
+					Spec: platform.CentralSpec{},
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence": map[string]interface{}{
+						"none": true,
+					},
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+
+		"pvc namespace not match": {
+			args: args{
+				c: platform.Central{
+					Spec: platform.CentralSpec{},
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{{ObjectMeta: metav1.ObjectMeta{Name: extensions.DefaultCentralPVCName}}},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence": map[string]interface{}{
+						"none": true,
 					},
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
@@ -436,6 +506,9 @@ func TestTranslate(t *testing.T) {
 		"with configured PVC": {
 			args: args{
 				c: platform.Central{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
 					Spec: platform.CentralSpec{
 						Central: &platform.CentralComponentSpec{
 							Persistence: &platform.Persistence{
@@ -445,6 +518,14 @@ func TestTranslate(t *testing.T) {
 									Size:             pointer.String("50Gi"),
 								},
 							},
+						},
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: "stackrox",
+							Name:      "stackrox-db-test",
 						},
 					},
 				},
@@ -469,9 +550,94 @@ func TestTranslate(t *testing.T) {
 			},
 		},
 
+		"with configured pvc disabled by annotation": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{common.CentralPVCObsoletedAnnotation: "true"},
+						Namespace:   "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							Persistence: &platform.Persistence{
+								PersistentVolumeClaim: &platform.PersistentVolumeClaim{
+									ClaimName:        pointer.String("stackrox-db-test"),
+									StorageClassName: pointer.String("storage-class"),
+									Size:             pointer.String("50Gi"),
+								},
+							},
+						},
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: "stackrox",
+							Name:      "stackrox-db-test",
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence": map[string]interface{}{
+						"none": true,
+					},
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+
+		"configured PVC does not exist": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							Persistence: &platform.Persistence{
+								PersistentVolumeClaim: &platform.PersistentVolumeClaim{
+									ClaimName:        pointer.String("stackrox-db-test"),
+									StorageClassName: pointer.String("storage-class"),
+									Size:             pointer.String("50Gi"),
+								},
+							},
+						},
+					},
+				},
+			},
+
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence": map[string]interface{}{
+						"none": true,
+					},
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+
 		"disabled monitoring endpoint": {
 			args: args{
 				c: platform.Central{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
 					Spec: platform.CentralSpec{
 						Central: &platform.CentralComponentSpec{
 							Monitoring: &platform.Monitoring{
@@ -485,6 +651,7 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
 				"central": map[string]interface{}{
@@ -511,6 +678,9 @@ func TestTranslate(t *testing.T) {
 		"route with custom hostname": {
 			args: args{
 				c: platform.Central{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
 					Spec: platform.CentralSpec{
 						Central: &platform.CentralComponentSpec{
 							Exposure: &platform.Exposure{
@@ -522,6 +692,7 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
 				"central": map[string]interface{}{
@@ -551,8 +722,12 @@ func TestTranslate(t *testing.T) {
 		"add managed service setting": {
 			args: args{
 				c: platform.Central{
-					ObjectMeta: v1.ObjectMeta{Annotations: map[string]string{managedServicesAnnotation: "true"}},
+					ObjectMeta: v1.ObjectMeta{
+						Namespace:   "stackrox",
+						Annotations: map[string]string{managedServicesAnnotation: "true"},
+					},
 				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
 				"central": map[string]interface{}{
@@ -579,6 +754,9 @@ func TestTranslate(t *testing.T) {
 		"disabled telemetry": {
 			args: args{
 				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
 					Spec: platform.CentralSpec{
 						Central: &platform.CentralComponentSpec{
 							Telemetry: &platform.Telemetry{
@@ -587,6 +765,7 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
 				"central": map[string]interface{}{
@@ -609,8 +788,14 @@ func TestTranslate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			wantAsValues, err := translation.ToHelmValues(tt.want)
 			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
+			var allExisting []ctrlClient.Object
+			for _, existingPVC := range tt.args.pvcs {
+				allExisting = append(allExisting, existingPVC)
+			}
+			client := fkClient.NewClientBuilder().WithObjects(allExisting...).Build()
+			translator := Translator{Client: client}
 
-			got, err := translate(tt.args.c)
+			got, err := translator.translate(context.TODO(), tt.args.c)
 			assert.NoError(t, err)
 
 			assert.Equal(t, wantAsValues, got)

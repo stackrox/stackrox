@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/central/common"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -85,6 +86,20 @@ func TestReconcilePVCExtension(t *testing.T) {
 	emptyNotDeletedCentralWithDB := makeCentral(nil)
 	emptyNotDeletedCentralWithDB.Spec.Central.DB = &platform.CentralDBSpec{}
 
+	pvcObsoletedAnnotation := map[string]string{
+		common.CentralPVCObsoletedAnnotation: "true",
+	}
+	centralWithPvcObsoletedAnnotation := makeCentral(nil)
+	centralWithPvcObsoletedAnnotation.Annotations = pvcObsoletedAnnotation
+	centralWithPersistenceAndPvcObsoletedAnnotation := makeCentral(&platform.Persistence{
+		PersistentVolumeClaim: &platform.PersistentVolumeClaim{
+			Size:             pointer.String("500Gi"),
+			StorageClassName: pointer.String("new-storage-class"),
+			ClaimName:        pointer.String(testPVCName),
+		},
+	})
+	centralWithPersistenceAndPvcObsoletedAnnotation.Annotations = pvcObsoletedAnnotation
+
 	externalCentralWithDB := makeCentral(nil)
 	externalCentralWithDB.Spec.Central.DB = &platform.CentralDBSpec{}
 	externalCentralWithDB.Spec.Central.DB.ConnectionStringOverride = pointer.String("foobar")
@@ -141,14 +156,31 @@ func TestReconcilePVCExtension(t *testing.T) {
 	}
 
 	cases := map[string]pvcReconciliationTestCase{
-		"empty-state-create-new-default-pvc": {
+		"empty-state-not-create-new-default-pvc": {
 			Central:      emptyNotDeletedCentral,
 			DefaultClaim: DefaultCentralPVCName,
 			Target:       PVCTargetCentral,
 			ExistingPVCs: nil,
 			ExpectedPVCs: nil,
 		},
-
+		"empty-state-keep-default-pvc": {
+			Central:      emptyNotDeletedCentral,
+			DefaultClaim: DefaultCentralPVCName,
+			Target:       PVCTargetCentral,
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyNotDeletedCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass, nil)},
+			ExpectedPVCs: map[string]pvcVerifyFunc{
+				DefaultCentralPVCName: verifyMultiple(ownedBy(emptyNotDeletedCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+			},
+		},
+		"empty-state-obsolete-default-pvc": {
+			Central:      centralWithPvcObsoletedAnnotation,
+			DefaultClaim: DefaultCentralPVCName,
+			Target:       PVCTargetCentral,
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(centralWithPvcObsoletedAnnotation, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass, nil)},
+			ExpectedPVCs: map[string]pvcVerifyFunc{
+				DefaultCentralPVCName: verifyMultiple(notOwnedBy(emptyNotDeletedCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+			},
+		},
 		"given-hostpath-and-pvc-should-return-error": {
 			Central: makeCentral(&platform.Persistence{
 				HostPath:              makeHostPathSpec("/tmp/hostpath"),
@@ -173,16 +205,32 @@ func TestReconcilePVCExtension(t *testing.T) {
 			},
 		},
 
-		"given-pvc-should-create-pvc-with-config": {
+		"given-pvc-should-not-create-pvc-with-config": {
 			Central:      pvcShouldCreateWithConfigCentral,
 			DefaultClaim: DefaultCentralPVCName,
 			Target:       PVCTargetCentral,
 			ExistingPVCs: nil,
+			ExpectedPVCs: nil,
+		},
+
+		"given-pvc-should-keep-pvc-with-config": {
+			Central:      pvcShouldCreateWithConfigCentral,
+			DefaultClaim: DefaultCentralPVCName,
+			Target:       PVCTargetCentral,
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(pvcShouldCreateWithConfigCentral, testPVCName, defaultPVCSize, emptyStorageClass, nil)},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
 				testPVCName: verifyMultiple(ownedBy(pvcShouldCreateWithConfigCentral), withSize(resource.MustParse("50Gi")), withStorageClass("test-storage-class")),
 			},
 		},
-
+		"given-pvc-should-obsolete-pvc-with-config": {
+			Central:      centralWithPersistenceAndPvcObsoletedAnnotation,
+			DefaultClaim: DefaultCentralPVCName,
+			Target:       PVCTargetCentral,
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(centralWithPersistenceAndPvcObsoletedAnnotation, testPVCName, defaultPVCSize, emptyStorageClass, nil)},
+			ExpectedPVCs: map[string]pvcVerifyFunc{
+				testPVCName: verifyMultiple(notOwnedBy(pvcShouldCreateWithConfigCentral), withSize(resource.MustParse(defaultPVCSize.String())), withStorageClass(emptyStorageClass)),
+			},
+		},
 		"existing-pvc-should-be-reconciled-with-no-annotation": {
 			Central:      changedPVCConfigCentral,
 			DefaultClaim: DefaultCentralPVCName,
@@ -317,14 +365,12 @@ func TestReconcilePVCExtension(t *testing.T) {
 			ExpectedPVCs: nil,
 		},
 
-		"central-db-empty-state-create-new-default-pvc": {
+		"central-db-empty-state-not-create-new-default-pvc": {
 			Central:      emptyNotDeletedCentralWithDB,
 			DefaultClaim: DefaultCentralDBPVCName,
 			Target:       PVCTargetCentralDB,
 			ExistingPVCs: nil,
-			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyNotDeletedCentralWithDB), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
-			},
+			ExpectedPVCs: nil,
 		},
 
 		"central-db-empty-state-create-new-default-pvc-no-annotation-pvc": {

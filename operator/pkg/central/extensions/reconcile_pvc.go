@@ -10,6 +10,7 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/central/common"
 	utils "github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	corev1 "k8s.io/api/core/v1"
@@ -134,6 +135,9 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 	if r.centralObj.DeletionTimestamp != nil || r.persistence == nil {
 		return r.handleDelete()
 	}
+	if value, ok := r.centralObj.GetAnnotations()[common.CentralPVCObsoletedAnnotation]; ok && strings.ToLower(strings.TrimSpace(value)) == "true" {
+		return r.handleDelete()
+	}
 
 	if r.persistence.GetHostPath() != "" {
 		if r.persistence.GetPersistentVolumeClaim() != nil {
@@ -143,7 +147,6 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 	}
 
 	pvcConfig := r.persistence.GetPersistentVolumeClaim()
-	noCreate := pvcConfig == nil && r.target == PVCTargetCentral
 	if pvcConfig == nil {
 		pvcConfig = &platform.PersistentVolumeClaim{}
 	}
@@ -181,9 +184,7 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 
 	if pvc == nil {
 		// Starting from 4.1, we do not create new PVCs for central.
-		if noCreate {
-			// TODO(DO NOT MERGE): remove log
-			r.log.Info("Skip reconcile for no pvc")
+		if r.target == PVCTargetCentral {
 			return nil
 		}
 

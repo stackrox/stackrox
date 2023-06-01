@@ -363,10 +363,8 @@ spec:
                     type: object
                   persistence:
                     description: Configures how Central should store its persistent
-                      data. You can choose between using a persistent volume claim,
-                      and a host path. Central persistent storage is deprecated for
-                      new installations. Existing users may continue using it for
-                      restoration from legacy RocksDB backups.
+                      data. You can choose between using a persistent volume claim
+                      (recommended default), and a host path.
                     properties:
                       hostPath:
                         description: Stores persistent data on a directory on the
@@ -383,9 +381,10 @@ spec:
                           for most users.
                         properties:
                           claimName:
+                            default: stackrox-db
                             description: The name of the PVC to manage persistent
                               data. If no PVC with the given name exists, it will
-                              be created.
+                              be created. Defaults to "stackrox-db" if not set.
                             type: string
                           size:
                             description: The size of the persistent volume when created

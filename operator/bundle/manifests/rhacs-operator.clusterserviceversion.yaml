@@ -102,9 +102,8 @@ spec:
         displayName: Monitoring
         path: central.monitoring
       - description: Configures how Central should store its persistent data. You
-          can choose between using a persistent volume claim, and a host path. Central
-          persistent storage is deprecated for installation. Existing customers may
-          continue using it for restoration from legacy RocksDB backups.
+          can choose between using a persistent volume claim (recommended default),
+          and a host path.
         displayName: Persistence
         path: central.persistence
       - description: Settings for Central DB, which is responsible for data persistence.
@@ -314,7 +313,8 @@ spec:
         displayName: Path
         path: central.persistence.hostPath.path
       - description: The name of the PVC to manage persistent data. If no PVC with
-          the given name exists, it will be created.
+          the given name exists, it will be created. Defaults to "stackrox-db" if
+          not set.
         displayName: Claim Name
         path: central.persistence.persistentVolumeClaim.claimName
       - description: The size of the persistent volume when created through the claim.
