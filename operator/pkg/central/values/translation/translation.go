@@ -87,6 +87,10 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 			key := ctrlClient.ObjectKey{Namespace: c.GetNamespace(), Name: lookupName}
 			pvc := &corev1.PersistentVolumeClaim{}
 			err := t.Client.Get(ctx, key, pvc)
+			// In case of error, we do not know if there is exising pvc there. It would be safer to
+			// assume it is not there. In that case, we may leaving two persistent files not migrated
+			// for offline mode. I am not sure how many customer working with operator in offline mode in the first place,
+			// but that scenario can be corrected by upload them again.
 			return err == nil
 		}, obsoletePvc))
 
