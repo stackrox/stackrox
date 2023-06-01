@@ -45,7 +45,6 @@ describe('Vulnerability Management Clusters', () => {
             'Platform CVEs',
             'K8S Version',
             'Entities',
-            'Policy Status',
             'Latest Violation',
             'Risk Priority',
         ]);
@@ -55,7 +54,7 @@ describe('Vulnerability Management Clusters', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
         const thSelector = '.rt-th:contains("Risk Priority")';
-        const tdSelector = '.rt-td:nth-child(10)';
+        const tdSelector = '.rt-td:nth-child(9)';
 
         // 0. Initial table state indicates that the column is sorted ascending.
         cy.get(thSelector).should('have.class', '-sort-asc');

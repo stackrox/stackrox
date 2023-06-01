@@ -24,7 +24,7 @@ func permissionSetCommand(cliEnvironment environment.Environment) *cobra.Command
 	permSetCmd := &permissionSetCmd{permissionSet: &declarativeconfig.PermissionSet{}, env: cliEnvironment}
 
 	cmd := &cobra.Command{
-		Use:  permSetCmd.permissionSet.Type(),
+		Use:  permSetCmd.permissionSet.ConfigurationType(),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := permSetCmd.Construct(cmd); err != nil {
@@ -111,7 +111,7 @@ func (p *permissionSetCmd) PrintYAML() error {
 	}
 	if p.configMap != "" || p.secret != "" {
 		return errors.Wrap(k8sobject.WriteToK8sObject(context.Background(), p.configMap, p.secret, p.namespace,
-			fmt.Sprintf("%s-%s", p.permissionSet.Type(), p.permissionSet.Name), yamlOutput.Bytes()),
+			fmt.Sprintf("%s-%s", p.permissionSet.ConfigurationType(), p.permissionSet.Name), yamlOutput.Bytes()),
 			"writing the YAML output to config map")
 	}
 

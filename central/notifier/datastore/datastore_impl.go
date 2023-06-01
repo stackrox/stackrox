@@ -25,6 +25,30 @@ type datastoreImpl struct {
 	storage store.Store
 }
 
+func (b *datastoreImpl) UpsertNotifier(ctx context.Context, notifier *storage.Notifier) (string, error) {
+	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
+		return "", err
+	}
+
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	existing, exists, err := b.GetNotifier(ctx, notifier.GetId())
+	if err != nil {
+		return "", err
+	}
+	if exists {
+		if err = verifyNotifierOrigin(ctx, existing); err != nil {
+			return "", errors.Wrap(err, "origin didn't match for existing notifier")
+		}
+	}
+	if err = verifyNotifierOrigin(ctx, notifier); err != nil {
+		return "", errors.Wrap(err, "origin didn't match for new notifier")
+	}
+
+	return notifier.GetId(), b.storage.Upsert(ctx, notifier)
+}
+
 func verifyNotifierOrigin(ctx context.Context, n *storage.Notifier) error {
 	if !declarativeconfig.CanModifyResource(ctx, n) {
 		return errox.NotAuthorized.Newf("notifier %q's origin is %s, "+
@@ -32,6 +56,24 @@ func verifyNotifierOrigin(ctx context.Context, n *storage.Notifier) error {
 			n.GetName(), n.GetTraits().GetOrigin())
 	}
 	return nil
+}
+
+func (b *datastoreImpl) GetNotifiersFiltered(ctx context.Context, filter func(notifier *storage.Notifier) bool) ([]*storage.Notifier, error) {
+	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
+		return nil, err
+	}
+	// TODO: ROX-16071 add ability to pass filter to storage
+	notifiers, err := b.storage.GetAll(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting notifiers from storage")
+	}
+	result := make([]*storage.Notifier, 0, len(notifiers))
+	for _, n := range notifiers {
+		if filter(n) {
+			result = append(result, n)
+		}
+	}
+	return result, nil
 }
 
 func (b *datastoreImpl) GetNotifier(ctx context.Context, id string) (*storage.Notifier, bool, error) {

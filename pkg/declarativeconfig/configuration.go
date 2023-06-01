@@ -34,7 +34,7 @@ func supportedConfigurationTypes() string {
 
 // Configuration specifies a declarative configuration.
 type Configuration interface {
-	Type() ConfigurationType
+	ConfigurationType() ConfigurationType
 }
 
 // ConfigurationFromRawBytes takes in a list of raw bytes, i.e. file contents, and returns the unmarshalled
@@ -108,7 +108,11 @@ func parseToConfiguration(contents []byte) ([]Configuration, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "decoding YAML file contents")
 		}
-		unstructuredObjs = append(unstructuredObjs, obj)
+		// In a multi-line YAML document, in case of a trailing "---", no error will be returned by decode. Instead,
+		// a nil object will be decoded. We should skip these decoded objects.
+		if obj != nil {
+			unstructuredObjs = append(unstructuredObjs, obj)
+		}
 	}
 
 	var configurations []Configuration

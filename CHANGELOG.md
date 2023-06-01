@@ -15,6 +15,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - A new environment variable `ROX_DISABLE_SIGNATURE_FETCHING` has been added to Central and Sensor which stops fetching image signatures in case the signature verification feature shall not be used.
   You may set this in case there's too much load on registries due to attempts to fetch image signatures.
   Note that if the environment variable is set, no signatures will be fetched and thus the signature verification feature cannot be used.
+- ROX-16532: Resource limits and requests for the node-inventory container can now be configured via the operator.
 
 ### Removed Features
 - ROX-14398: As announced in 3.74, the permission `Access` replaces the deprecated permission `Role`.
@@ -25,6 +26,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     - Secured clusters configured to use KernelModule collection will automatically switch to EBPF
 
 ### Deprecated Features
+Vulnerability Management 1.0 sections Image CVEs, Image Components, Images, Deployments, and Namespaces are deprecated and will be removed in the future. Once removed, use Vulnerability Management 2.0 for managing workload vulnerabilities.
 
 ### Technical Changes
 - The output of `roxctl central whoami` now includes the username as well.
