@@ -83,6 +83,9 @@ central:
     {{- end }}
   {{- end }}
 
+  persistence:
+    none: true
+
   {{- if ne .K8sConfig.LoadBalancerType.String "NONE" }}
   exposure:
     {{- if eq .K8sConfig.LoadBalancerType.String "LOAD_BALANCER" }}

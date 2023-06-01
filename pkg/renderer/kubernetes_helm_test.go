@@ -132,7 +132,7 @@ func TestRenderSensorHelm(t *testing.T) {
 				ReleaseOptions: chartutil.ReleaseOptions{
 					Name:      "stackrox-secured-cluster-services",
 					Namespace: "stackrox",
-					IsUpgrade: true,
+					IsInstall: true,
 				},
 			}
 
