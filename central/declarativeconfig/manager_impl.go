@@ -91,7 +91,7 @@ func New(reconciliationTickerDuration, watchIntervalDuration time.Duration, upda
 	writeDeclarativeRoleCtx = sac.WithGlobalAccessScopeChecker(writeDeclarativeRoleCtx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Access)))
+			sac.ResourceScopeKeys(resources.Access, resources.Integration)))
 	return &managerImpl{
 		universalTransformer:           transform.New(),
 		transformedMessagesByHandler:   map[string]protoMessagesByType{},
