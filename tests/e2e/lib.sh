@@ -513,13 +513,17 @@ check_for_stackrox_restarts() {
     local previous_logs
     previous_logs=$(ls "$dir"/stackrox/pods/*-previous.log || true)
     if [[ -n "$previous_logs" ]]; then
-        info "Restarts were found"
+        info "Pod restarts were found"
         local check_out=""
         # shellcheck disable=SC2086
         if ! check_out="$(scripts/ci/logcheck/check-restart-logs.sh "${CI_JOB_NAME}" $previous_logs)"; then
             save_junit_failure "Pod Restarts" "Check for unexplained pod restart" "$check_out"
             die "ERROR: Found at least one unexplained pod restart. ${check_out}"
         fi
+        info "Restarts were considered benign"
+        echo "${check_out}"
+    else
+        info "No pod restarts were found"
     fi
 
     save_junit_success "Pod Restarts" "Check for unexplained pod restart"
