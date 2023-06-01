@@ -31,7 +31,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	analyzeNetpolCmd := &analyzeNetpolCommand{env: cliEnvironment}
 	c := &cobra.Command{
 		Use:   "netpol <folder-path>",
-		Short: "(Technology Preview) Analyze Network Policies based resources information.",
+		Short: "(Technology Preview) Analyze connectivity based on network policies and other resources.",
 		Long: `Based on a given folder containing deployment and netpol YAMLs, will analyze permitted cluster connectivity. Will write to stdout if no output flags are provided.
 
 ** This is a Technology Preview feature **
@@ -56,10 +56,10 @@ For more information about the support scope of Red Hat Technology Preview featu
 	c.Flags().BoolVar(&analyzeNetpolCmd.treatWarningsAsErrors, "strict", false, "treat warnings as errors")
 	c.Flags().BoolVar(&analyzeNetpolCmd.stopOnFirstError, "fail", false, "fail on the first encountered error")
 	c.Flags().BoolVar(&analyzeNetpolCmd.removeOutputPath, "remove", false, "remove the output path if it already exists")
-	c.Flags().BoolVar(&analyzeNetpolCmd.outputToFile, "save-to-file", false, "whether to save connlist output into default file")
-	c.Flags().StringVarP(&analyzeNetpolCmd.outputFilePath, "output-file", "f", "", "save connlist output into specific file")
-	c.Flags().StringVarP(&analyzeNetpolCmd.focusWorkload, "focus-workload", "", "", "focus connections of specified workload name in the output")
-	c.Flags().StringVarP(&analyzeNetpolCmd.outputFormat, "output-format", "o", defaultOutputFormat, "configure the connlist in specific format, supported formats: txt|json|md|dot|csv")
+	c.Flags().BoolVar(&analyzeNetpolCmd.outputToFile, "save-to-file", false, "whether to save connections list output into default file")
+	c.Flags().StringVarP(&analyzeNetpolCmd.outputFilePath, "output-file", "f", "", "save connections list output into specific file")
+	c.Flags().StringVarP(&analyzeNetpolCmd.focusWorkload, "focus-workload", "", "", "focus on connections of specified workload name in the output")
+	c.Flags().StringVarP(&analyzeNetpolCmd.outputFormat, "output-format", "o", defaultOutputFormat, "configure the connections list in specific format, supported formats: txt|json|md|dot|csv")
 	return c
 }
 
