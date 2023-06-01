@@ -248,6 +248,12 @@ func (s *flowStoreImpl) RemoveStaleFlows(_ context.Context) error {
 	return nil
 }
 
+// RemoveOrphanedFlows - remove flows that have been orphaned by deployments
+// Only used for Postgres, needed to satisfy the interface for the datastore.
+func (s *flowStoreImpl) RemoveOrphanedFlows(_ context.Context, _ *time.Time) error {
+	return nil
+}
+
 // Static helper functions.
 // ///////////////////////
 func (s *flowStoreImpl) readFlow(id []byte) (flow *storage.NetworkFlow, err error) {

@@ -7,6 +7,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	types "github.com/gogo/protobuf/types"
 	gomock "github.com/golang/mock/gomock"
@@ -124,6 +125,20 @@ func (m *MockFlowStore) RemoveMatchingFlows(ctx context.Context, keyMatchFn func
 func (mr *MockFlowStoreMockRecorder) RemoveMatchingFlows(ctx, keyMatchFn, valueMatchFn interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveMatchingFlows", reflect.TypeOf((*MockFlowStore)(nil).RemoveMatchingFlows), ctx, keyMatchFn, valueMatchFn)
+}
+
+// RemoveOrphanedFlows mocks base method.
+func (m *MockFlowStore) RemoveOrphanedFlows(ctx context.Context, orphanWindow *time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveOrphanedFlows", ctx, orphanWindow)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveOrphanedFlows indicates an expected call of RemoveOrphanedFlows.
+func (mr *MockFlowStoreMockRecorder) RemoveOrphanedFlows(ctx, orphanWindow interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveOrphanedFlows", reflect.TypeOf((*MockFlowStore)(nil).RemoveOrphanedFlows), ctx, orphanWindow)
 }
 
 // RemoveStaleFlows mocks base method.
