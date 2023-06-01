@@ -26,7 +26,7 @@ func notifierCommand(cliEnvironment environment.Environment) *cobra.Command {
 	notifierCommand := &notifierCmd{notifier: &declarativeconfig.Notifier{}, env: cliEnvironment}
 
 	cmd := &cobra.Command{
-		Use:   notifierCommand.notifier.Type(),
+		Use:   notifierCommand.notifier.ConfigurationType(),
 		Args:  cobra.NoArgs,
 		Short: "Commands to create a declarative configuration for a notifier",
 	}
@@ -230,7 +230,7 @@ func (n *notifierCmd) printYAML() error {
 	}
 	if n.configMap != "" || n.secret != "" {
 		return errors.Wrap(k8sobject.WriteToK8sObject(context.Background(), n.configMap, n.secret, n.namespace,
-			fmt.Sprintf("%s-%s", n.notifier.Type(), n.notifier.Name),
+			fmt.Sprintf("%s-%s", n.notifier.ConfigurationType(), n.notifier.Name),
 			yamlOutput.Bytes()), "writing the YAML output to config map")
 	}
 	if _, err := n.env.InputOutput().Out().Write(yamlOutput.Bytes()); err != nil {

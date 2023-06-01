@@ -33,10 +33,10 @@ type universalTransformer struct {
 }
 
 func (t *universalTransformer) Transform(config declarativeconfig.Configuration) (map[reflect.Type][]proto.Message, error) {
-	ct, exists := t.configurationTransformers[config.Type()]
+	ct, exists := t.configurationTransformers[config.ConfigurationType()]
 	if !exists {
 		return nil, errox.InvariantViolation.Newf("no transformation logic for declarative config type %s found",
-			config.Type())
+			config.ConfigurationType())
 	}
 	return ct.Transform(config)
 }

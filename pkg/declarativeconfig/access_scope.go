@@ -16,8 +16,8 @@ type AccessScope struct {
 	Rules       Rules  `yaml:"rules,omitempty"`
 }
 
-// Type returns the AccessScopeConfiguration type.
-func (a *AccessScope) Type() ConfigurationType {
+// ConfigurationType returns the AccessScopeConfiguration type.
+func (a *AccessScope) ConfigurationType() ConfigurationType {
 	return AccessScopeConfiguration
 }
 

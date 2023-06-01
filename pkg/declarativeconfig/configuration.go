@@ -34,7 +34,7 @@ func supportedConfigurationTypes() string {
 
 // Configuration specifies a declarative configuration.
 type Configuration interface {
-	Type() ConfigurationType
+	ConfigurationType() ConfigurationType
 }
 
 // ConfigurationFromRawBytes takes in a list of raw bytes, i.e. file contents, and returns the unmarshalled
