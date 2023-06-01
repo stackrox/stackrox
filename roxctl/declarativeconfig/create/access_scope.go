@@ -46,7 +46,7 @@ func accessScopeCommand(cliEnvironment environment.Environment) *cobra.Command {
 	accessScopeCmd := accessScopeCmd{accessScope: &declarativeconfig.AccessScope{}, env: cliEnvironment}
 
 	cmd := &cobra.Command{
-		Use:   accessScopeCmd.accessScope.Type(),
+		Use:   accessScopeCmd.accessScope.ConfigurationType(),
 		Short: "Create a declarative configuration for an access scope",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -149,7 +149,7 @@ func (a *accessScopeCmd) PrintYAML() error {
 	}
 	if a.configMap != "" || a.secret != "" {
 		return errors.Wrap(k8sobject.WriteToK8sObject(context.Background(), a.configMap, a.secret, a.namespace,
-			fmt.Sprintf("%s-%s", a.accessScope.Type(), a.accessScope.Name), yamlOut.Bytes()),
+			fmt.Sprintf("%s-%s", a.accessScope.ConfigurationType(), a.accessScope.Name), yamlOut.Bytes()),
 			"writing the YAML output to config map")
 	}
 

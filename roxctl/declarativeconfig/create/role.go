@@ -19,7 +19,7 @@ func roleCommand(cliEnvironment environment.Environment) *cobra.Command {
 	roleCmd := &roleCmd{role: &declarativeconfig.Role{}, env: cliEnvironment}
 
 	cmd := &cobra.Command{
-		Use:  roleCmd.role.Type(),
+		Use:  roleCmd.role.ConfigurationType(),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := roleCmd.Construct(cmd); err != nil {
@@ -75,7 +75,7 @@ func (r *roleCmd) PrintYAML() error {
 	}
 	if r.configMap != "" || r.secret != "" {
 		return errors.Wrap(k8sobject.WriteToK8sObject(context.Background(), r.configMap, r.secret, r.namespace,
-			fmt.Sprintf("%s-%s", r.role.Type(), r.role.Name),
+			fmt.Sprintf("%s-%s", r.role.ConfigurationType(), r.role.Name),
 			yamlOutput.Bytes()), "writing the YAML output to config map")
 	}
 	if _, err := r.env.InputOutput().Out().Write(yamlOutput.Bytes()); err != nil {
