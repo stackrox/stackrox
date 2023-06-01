@@ -22,10 +22,13 @@ function formatAsPercent(x) {
     return `${x}%`;
 }
 
-function setStandardsMapping(data, type) {
+function setStandardsMapping(data, key, type) {
     const mapping = {};
-    data.results.forEach((result) => {
+    data[key].results.forEach((result) => {
         const standardId = result.aggregationKeys[0].id;
+        if (!data.complianceStandards.some(({ id }) => id === standardId)) {
+            return; // because it implies standardId has hideScanResults: true
+        }
         const { numPassing, numFailing } = result;
         if (numPassing === 0 && numFailing === 0) {
             return;
@@ -60,8 +63,8 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
         const { complianceStandards } = data;
         const standardsMapping = merge(
             {},
-            setStandardsMapping(data.results, 'checks'),
-            setStandardsMapping(data.controls, 'controls')
+            setStandardsMapping(data, 'results', 'checks'),
+            setStandardsMapping(data, 'controls', 'controls')
         );
 
         const barData = Object.keys(standardsMapping).map((standardId) => {
