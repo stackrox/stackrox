@@ -131,7 +131,7 @@ func (s *declarativeConfigHealthDatastoreSuite) TestRemoveConfigHealth() {
 
 	// 4. With WRITE access should return an error if config health is not found.
 	err = s.datastore.RemoveDeclarativeConfig(s.hasWriteCtx, configHealth.GetId())
-	s.Error(err, errox.NotFound)
+	s.ErrorIs(err, errox.NotFound)
 }
 
 func (s *declarativeConfigHealthDatastoreSuite) testGetConfigHealth(getConfigHealth func(ctx context.Context) ([]*storage.DeclarativeConfigHealth, error)) {
