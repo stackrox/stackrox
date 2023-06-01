@@ -1,11 +1,9 @@
 package service
 
 import (
-	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
-	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
-	runTimeDetection "github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/central/notifier/datastore"
+	"github.com/stackrox/rox/central/notifier/policycleaner"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -20,9 +18,7 @@ func initialize() {
 	as = New(
 		datastore.Singleton(),
 		processor.Singleton(),
-		buildTimeDetection.SingletonPolicySet(),
-		deployTimeDetection.SingletonPolicySet(),
-		runTimeDetection.SingletonPolicySet(),
+		policycleaner.Singleton(),
 		reporter.Singleton(),
 	)
 }
