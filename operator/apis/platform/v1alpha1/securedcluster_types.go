@@ -190,14 +190,14 @@ type PerNodeSpec struct {
 	TaintToleration *TaintTolerationPolicy `json:"taintToleration,omitempty"`
 }
 
-// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'CORE_BPF' or 'None'.
+// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'CORE_BPF' or 'None'. Note that 'CORE_BPF' is on Tech Preview stage.
 // +kubebuilder:validation:Enum=EBPF;CORE_BPF;NoCollection
 type CollectionMethod string
 
 const (
 	// CollectionEBPF means: use EBPF collection.
 	CollectionEBPF CollectionMethod = "EBPF"
-	// CollectionCOREBPF means: use CORE_BPF collection.
+	// CollectionCOREBPF means: use CORE_BPF collection [Tech Preview].
 	CollectionCOREBPF CollectionMethod = "CORE_BPF"
 	// CollectionNone means: NO_COLLECTION.
 	CollectionNone CollectionMethod = "NoCollection"
@@ -259,6 +259,7 @@ type CollectorContainerSpec struct {
 	// The method for system-level data collection. EBPF is recommended.
 	// If you select "NoCollection", you will not be able to see any information about network activity
 	// and process executions. The remaining settings in these section will not have any effect.
+	// Note that CORE_BPF is on Tech Preview stage.
 	//+kubebuilder:validation:Default=EBPF
 	//+kubebuilder:default=EBPF
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
