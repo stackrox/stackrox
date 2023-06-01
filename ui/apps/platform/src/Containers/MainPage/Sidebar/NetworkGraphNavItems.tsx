@@ -4,7 +4,7 @@ import { networkBasePath, networkBasePathPF } from 'routePaths';
 
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 
-import LeftNavItem from './LeftNavItem';
+import BadgedNavItem from './BadgedNavItem';
 
 type NetworkGraphNavItemsProps = {
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
@@ -14,22 +14,22 @@ function NetworkGraphNavItems({ isFeatureFlagEnabled }: NetworkGraphNavItemsProp
     const location: Location = useLocation();
     const isNetworkGraphPFEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY');
 
-    const networkGraphTitle = isNetworkGraphPFEnabled
-        ? 'Network Graph (1.0 deprecated)'
-        : 'Network Graph';
+    const networkGraphTitle = isNetworkGraphPFEnabled ? 'Network Graph (1.0)' : 'Network Graph';
     const networkGraphPFTitle = 'Network Graph (2.0)';
 
     return (
         <>
             {isNetworkGraphPFEnabled && (
-                <LeftNavItem
+                <BadgedNavItem
+                    variant="TechPreview"
                     isActive={location.pathname.includes(networkBasePathPF)}
                     path={networkBasePathPF}
                     title={networkGraphPFTitle}
                 />
             )}
 
-            <LeftNavItem
+            <BadgedNavItem
+                variant="Deprecated"
                 isActive={
                     location.pathname.includes(networkBasePath) &&
                     !location.pathname.includes(networkBasePathPF)
