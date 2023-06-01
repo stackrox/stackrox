@@ -58,7 +58,7 @@
   {{ end }}
 {{ end }}
 
-{{ if and $.Release.IsInstall (not .Operator) }}
+{{ if and (and $.Release.IsInstall (not .Operator)) (eq .RenderMode "renderAll" )}}
   {{- if not ._rox.central.persistence.none }}
     {{ include "srox.fail" (printf "Starting from 4.1, we stop creating central PVC during installation. Databases and persistent data are stored in Central DB or external databases. You may use `--set central.persistence.none=true` during Helm install to override default persistence config."  $._rox.central.persistence) }}
   {{- end }}
