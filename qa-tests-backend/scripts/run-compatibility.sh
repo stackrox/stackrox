@@ -63,8 +63,8 @@ compatibility_test() {
 
     update_junit_prefix_with_central_and_sensor_version
 
-    store_qa_test_results "compatibility-central-v${CENTRAL_CHART_VERSION_OVERRIDE}-test-sensor-v${SENSOR_CHART_VERSION_OVERRIDE}"
-    [[ ! -f FAIL ]] || die "compatibility-central-v${CENTRAL_CHART_VERSION_OVERRIDE}-test-sensor-v${SENSOR_CHART_VERSION_OVERRIDE}"
+    store_qa_test_results "compatibility-test-central-v${CENTRAL_CHART_VERSION_OVERRIDE}-sensor-v${SENSOR_CHART_VERSION_OVERRIDE}"
+    [[ ! -f FAIL ]] || die "compatibility-test-central-v${CENTRAL_CHART_VERSION_OVERRIDE}-sensor-v${SENSOR_CHART_VERSION_OVERRIDE}"
 }
 
 update_junit_prefix_with_central_and_sensor_version() {
