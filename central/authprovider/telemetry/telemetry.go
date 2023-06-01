@@ -3,7 +3,6 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/authprovider/datastore"
@@ -13,6 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // Gather auth provider names and number of groups per auth provider.
@@ -30,7 +31,12 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 
 	providerIDTypes := make(map[string]string, len(providers))
 	providerTypes := set.NewSet[string]()
-	providerOriginCount := make(map[storage.Traits_Origin]int)
+	providerOriginCount := map[storage.Traits_Origin]int{
+		storage.Traits_DEFAULT:              0,
+		storage.Traits_IMPERATIVE:           0,
+		storage.Traits_DECLARATIVE:          0,
+		storage.Traits_DECLARATIVE_ORPHANED: 0,
+	}
 	for _, provider := range providers {
 		providerIDTypes[provider.GetId()] = provider.GetType()
 		providerTypes.Add(provider.GetType())
@@ -54,7 +60,9 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	}
 
 	for origin, count := range providerOriginCount {
-		props[fmt.Sprintf("Total %s auth providers", strings.ToLower(origin.String()))] = count
+		props[fmt.Sprintf("Total %s auth providers",
+			cases.Title(language.English, cases.Compact).String(origin.String()))] = count
 	}
+	cases.Title(language.English, cases.NoLower)
 	return props, nil
 }

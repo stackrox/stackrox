@@ -37,7 +37,12 @@ func totalPermissionSets(ctx context.Context, props map[string]any, rs DataStore
 		return err
 	}
 
-	permissionSetsByOrigin := make(map[storage.Traits_Origin]int)
+	permissionSetsByOrigin := map[storage.Traits_Origin]int{
+		storage.Traits_DEFAULT:              0,
+		storage.Traits_IMPERATIVE:           0,
+		storage.Traits_DECLARATIVE:          0,
+		storage.Traits_DECLARATIVE_ORPHANED: 0,
+	}
 
 	for _, ps := range permissionSets {
 		permissionSetsByOrigin[ps.GetTraits().GetOrigin()]++
@@ -56,7 +61,12 @@ func totalRoles(ctx context.Context, props map[string]any, rs DataStore) error {
 		return err
 	}
 
-	rolesByOrigin := make(map[storage.Traits_Origin]int)
+	rolesByOrigin := map[storage.Traits_Origin]int{
+		storage.Traits_DEFAULT:              0,
+		storage.Traits_IMPERATIVE:           0,
+		storage.Traits_DECLARATIVE:          0,
+		storage.Traits_DECLARATIVE_ORPHANED: 0,
+	}
 
 	for _, role := range roles {
 		rolesByOrigin[role.GetTraits().GetOrigin()]++
@@ -75,7 +85,12 @@ func totalAccessScopes(ctx context.Context, props map[string]any, rs DataStore) 
 		return err
 	}
 
-	accessScopesByOrigin := make(map[storage.Traits_Origin]int)
+	accessScopesByOrigin := map[storage.Traits_Origin]int{
+		storage.Traits_DEFAULT:              0,
+		storage.Traits_IMPERATIVE:           0,
+		storage.Traits_DECLARATIVE:          0,
+		storage.Traits_DECLARATIVE_ORPHANED: 0,
+	}
 
 	for _, as := range accessScopes {
 		accessScopesByOrigin[as.GetTraits().GetOrigin()]++
