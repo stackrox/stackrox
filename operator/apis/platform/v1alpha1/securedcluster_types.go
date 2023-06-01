@@ -181,7 +181,7 @@ type PerNodeSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Compliance Settings"
 	Compliance *ContainerSpec `json:"compliance,omitempty"`
 
-	// Settings for the Node-Inventory container, which is responsible for scanning the Nodes' filesystem
+	// Settings for the Node-Inventory container, which is responsible for scanning the Nodes' filesystem.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Node Scanner Settings"
 	NodeInventory *ContainerSpec `json:"nodeInventory,omitempty"`
 
