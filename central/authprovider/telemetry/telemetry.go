@@ -63,6 +63,5 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		props[fmt.Sprintf("Total %s Auth Providers",
 			cases.Title(language.English, cases.Compact).String(origin.String()))] = count
 	}
-	cases.Title(language.English, cases.NoLower)
 	return props, nil
 }

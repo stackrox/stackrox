@@ -7,6 +7,7 @@ import (
 	"path"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -73,8 +74,7 @@ type managerImpl struct {
 
 	updaters map[reflect.Type]updater.ResourceUpdater
 
-	numberOfWatchHandlers      int
-	numberOfWatchHandlersMutex sync.RWMutex
+	numberOfWatchHandlers atomic.Int32
 }
 
 var protoTypesOrder = []reflect.Type{
@@ -161,19 +161,14 @@ func (m *managerImpl) ReconcileDeclarativeConfigurations() {
 			log.Info("Start the reconciliation loop for declarative configurations")
 			m.startReconciliationLoop()
 		}
-
-		m.numberOfWatchHandlersMutex.Lock()
-		m.numberOfWatchHandlers = numberOfWatchHandlers
-		m.numberOfWatchHandlersMutex.Unlock()
+		m.numberOfWatchHandlers.Swap(int32(numberOfWatchHandlers))
 	})
 }
 
 func (m *managerImpl) Gather() phonehome.GatherFunc {
 	return func(ctx context.Context) (map[string]any, error) {
-		m.numberOfWatchHandlersMutex.RLock()
-		defer m.numberOfWatchHandlersMutex.RUnlock()
 		return map[string]any{
-			"Total Number of declarative configuration mounts": m.numberOfWatchHandlers,
+			"Total Number of declarative configuration mounts": m.numberOfWatchHandlers.Load(),
 		}, nil
 	}
 }
