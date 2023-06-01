@@ -1,11 +1,12 @@
 import React from 'react';
-import { Route, Switch } from 'react-router-dom';
-import { PageSection } from '@patternfly/react-core';
+import { Link, Route, Switch } from 'react-router-dom';
+import { Alert, PageSection } from '@patternfly/react-core';
 
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 
 import {
+    vulnManagementPath,
     vulnerabilitiesWorkloadCveDeploymentSinglePath,
     vulnerabilitiesWorkloadCveImageSinglePath,
     vulnerabilitiesWorkloadCveSinglePath,
@@ -20,25 +21,38 @@ import './WorkloadCvesPage.css';
 
 function WorkloadCvesPage() {
     return (
-        <Switch>
-            <Route path={vulnerabilitiesWorkloadCveSinglePath} component={ImageCvePage} />
-            <Route path={vulnerabilitiesWorkloadCveImageSinglePath} component={ImagePage} />
-            <Route
-                path={vulnerabilitiesWorkloadCveDeploymentSinglePath}
-                component={DeploymentPage}
+        <>
+            <Alert
+                variant="warning"
+                isInline
+                title={
+                    <span>
+                        This is a Technology Preview of this feature. For all production
+                        requirements we recommend using{' '}
+                        <Link to={vulnManagementPath}>Vulnerability Management (1.0)</Link>
+                    </span>
+                }
             />
-            <Route
-                exact
-                path={vulnerabilitiesWorkloadCvesPath}
-                component={WorkloadCvesOverviewPage}
-            />
-            <Route>
-                <PageSection variant="light">
-                    <PageTitle title="Workload CVEs - Not Found" />
-                    <PageNotFound />
-                </PageSection>
-            </Route>
-        </Switch>
+            <Switch>
+                <Route path={vulnerabilitiesWorkloadCveSinglePath} component={ImageCvePage} />
+                <Route path={vulnerabilitiesWorkloadCveImageSinglePath} component={ImagePage} />
+                <Route
+                    path={vulnerabilitiesWorkloadCveDeploymentSinglePath}
+                    component={DeploymentPage}
+                />
+                <Route
+                    exact
+                    path={vulnerabilitiesWorkloadCvesPath}
+                    component={WorkloadCvesOverviewPage}
+                />
+                <Route>
+                    <PageSection variant="light">
+                        <PageTitle title="Workload CVEs - Not Found" />
+                        <PageNotFound />
+                    </PageSection>
+                </Route>
+            </Switch>
+        </>
     );
 }
 
