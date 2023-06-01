@@ -37,3 +37,7 @@ mkdir -p "${log_dir}"/infrastructure
 curl -s http://localhost:8001/logs/kube-apiserver.log > "${log_dir}"/infrastructure/kube-apiserver.log
 
 kill $proxy_pid
+
+echo "$(date) Attempting to collect kube API server metrics"
+# Ref https://kubernetes.io/docs/tasks/debug/debug-cluster/resource-metrics-pipeline/
+kubectl get --raw /metrics > "${log_dir}"/infrastructure/kube-apiserver-metrics.txt
