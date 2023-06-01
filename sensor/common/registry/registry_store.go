@@ -303,7 +303,7 @@ func (rs *Store) UpsertCentralRegistryIntegrations(iis []*storage.ImageIntegrati
 	}
 }
 
-// DeleteCentralRegistryIntegrations deletes registry integrations from the store
+// DeleteCentralRegistryIntegrations deletes registry integrations from the store.
 func (rs *Store) DeleteCentralRegistryIntegrations(ids []string) {
 	for _, id := range ids {
 		err := rs.centralRegistryIntegrations.RemoveImageIntegration(id)
