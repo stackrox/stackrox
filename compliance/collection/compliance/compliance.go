@@ -25,21 +25,29 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+type unconfirmedMessageHandler interface {
+	ObserveSending()
+	ObserveConfirmation()
+	RetryCommand() <-chan struct{}
+}
+
 // Compliance represents the Compliance app
 type Compliance struct {
 	nodeNameProvider   NodeNameProvider
 	nodeScanner        NodeScanner
 	sensorReplyHandler SensorReplyHandler
-	scanResend         *NodeScanResend[sensor.MsgFromCompliance]
+	scanResend         unconfirmedMessageHandler
+	cache              *sensor.MsgFromCompliance
 }
 
 // NewComplianceApp contsructs the Compliance app object
-func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner, srh SensorReplyHandler, nsr *NodeScanResend[sensor.MsgFromCompliance]) *Compliance {
+func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner, srh SensorReplyHandler, nsr unconfirmedMessageHandler) *Compliance {
 	return &Compliance{
 		nodeNameProvider:   nnp,
 		nodeScanner:        scanner,
 		sensorReplyHandler: srh,
 		scanResend:         nsr,
+		cache:              nil,
 	}
 }
 
@@ -78,7 +86,6 @@ func (c *Compliance) Start() {
 	}()
 
 	if env.RHCOSNodeScanning.BooleanSetting() && c.nodeScanner.IsActive() {
-		c.scanResend.Run(ctx)
 		nodeInventoriesC := c.manageNodeScanLoop(ctx)
 		// sending nodeInventories into output toSensorC
 		for n := range nodeInventoriesC {
@@ -108,9 +115,9 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 			select {
 			case <-ctx.Done():
 				return
-			case msg, ok := <-c.scanResend.ResendChannel():
-				if ok {
-					nodeInventoriesC <- msg
+			case _, ok := <-c.scanResend.RetryCommand():
+				if ok && c.cache != nil {
+					nodeInventoriesC <- c.cache
 				}
 			case <-t.C:
 				log.Infof("Scanning node %q", nodeName)
@@ -118,7 +125,8 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 				if err != nil {
 					log.Errorf("Error running node scan: %v", err)
 				} else {
-					c.scanResend.RegisterScan(msg)
+					c.scanResend.ObserveSending()
+					c.cache = msg.Clone()
 					nodeInventoriesC <- msg
 				}
 				interval := i.Next()

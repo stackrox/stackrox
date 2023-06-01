@@ -7,18 +7,18 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 )
 
-type ackable interface {
-	RegisterACK()
+type confirmationObserver interface {
+	ObserveConfirmation()
 }
 
 // SensorReplyHandlerImpl handles ACK/NACK messages from Sensor
 type SensorReplyHandlerImpl struct {
 	nodeScanner NodeScanner
-	scanResend  ackable
+	scanResend  confirmationObserver
 }
 
 // NewSensorReplyHandlerImpl returns new SensorReplyHandler
-func NewSensorReplyHandlerImpl(nodeScanner NodeScanner, scanResend ackable) *SensorReplyHandlerImpl {
+func NewSensorReplyHandlerImpl(nodeScanner NodeScanner, scanResend confirmationObserver) *SensorReplyHandlerImpl {
 	return &SensorReplyHandlerImpl{
 		nodeScanner: nodeScanner,
 		scanResend:  scanResend,
@@ -29,7 +29,7 @@ func NewSensorReplyHandlerImpl(nodeScanner NodeScanner, scanResend ackable) *Sen
 func (s *SensorReplyHandlerImpl) HandleACK(_ context.Context, _ sensor.ComplianceService_CommunicateClient) {
 	log.Debugf("Received ACK from Sensor.")
 	if s.scanResend != nil {
-		s.scanResend.RegisterACK()
+		s.scanResend.ObserveConfirmation()
 	}
 }
 

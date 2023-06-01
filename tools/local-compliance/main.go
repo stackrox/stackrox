@@ -24,7 +24,9 @@ func main() {
 	log.Infof("Generation inverval: %v", scanner.generationInterval.String())
 
 	srh := &dummySensorReplyHandlerImpl{}
-	nsr := compliance.NewNodeScanResend[sensor.MsgFromCompliance](5 * time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	nsr := compliance.NewNodeScanResend(ctx, 5*time.Second)
 	c := compliance.NewComplianceApp(np, scanner, srh, nsr)
 	c.Start()
 }

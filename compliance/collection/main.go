@@ -1,10 +1,10 @@
 package main
 
 import (
+	"context"
 	"time"
 
 	"github.com/stackrox/rox/compliance/collection/compliance"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/env"
 )
 
@@ -14,7 +14,9 @@ func main() {
 	scanner := compliance.NewNodeInventoryComponentScanner(np)
 	scanner.Connect(env.NodeScanningEndpoint.Setting())
 
-	nsr := compliance.NewNodeScanResend[sensor.MsgFromCompliance](5 * time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	nsr := compliance.NewNodeScanResend(ctx, 15*time.Second)
 	srh := compliance.NewSensorReplyHandlerImpl(scanner, nsr)
 	c := compliance.NewComplianceApp(np, scanner, srh, nsr)
 	c.Start()
