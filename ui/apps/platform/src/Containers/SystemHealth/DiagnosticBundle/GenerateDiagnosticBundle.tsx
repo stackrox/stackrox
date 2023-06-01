@@ -13,7 +13,7 @@ import downloadDiagnostics, { DiagnosticBundleRequest } from 'services/DebugServ
 import useMetadata from 'hooks/useMetadata';
 import { getVersionedDocs } from 'utils/versioning';
 import DiagnosticBundleForm from './DiagnosticBundleForm';
-import { getQueryString, startingTimeRegExp } from '../utils/diagnosticBundleUtils';
+import { getQueryString, startingTimeRegExp } from './diagnosticBundleUtils';
 
 const initialValues: DiagnosticBundleRequest = {
     filterByClusters: [],

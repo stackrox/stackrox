@@ -1,25 +1,14 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { differenceInDays, distanceInWordsStrict, format } from 'date-fns';
 import { Banner, Button } from '@patternfly/react-core';
 
 import { generateCertSecretForComponent } from 'services/CertGenerationService';
 import { fetchCertExpiryForComponent } from 'services/CredentialExpiryService';
 import { CertExpiryComponent } from 'types/credentialExpiryService.proto';
-
-function getExpirationMessageType(daysLeft: number): 'info' | 'danger' | 'warning' {
-    if (daysLeft > 14) {
-        return 'info';
-    }
-    if (daysLeft > 3) {
-        return 'warning';
-    }
-    return 'danger';
-}
-
-const nameOfComponent: Record<CertExpiryComponent, string> = {
-    CENTRAL: 'Central',
-    SCANNER: 'Scanner',
-};
+import {
+    getCredentialExpiryPhrase,
+    getCredentialExpiryVariant,
+    nameOfComponent,
+} from 'utils/credentialExpiry';
 
 type CredentialExpiryProps = {
     component: CertExpiryComponent;
@@ -50,8 +39,8 @@ function CredentialExpiryBanner({
         return null;
     }
     const now = new Date(); // is this an impure side effect?
-    const type = getExpirationMessageType(differenceInDays(expirationDate, now));
-    if (type === 'info') {
+    const type = getCredentialExpiryVariant(expirationDate, now);
+    if (type === 'success') {
         return null;
     }
     const downloadLink = (
@@ -62,8 +51,7 @@ function CredentialExpiryBanner({
     const name = nameOfComponent[component];
     const message = (
         <span className="flex-1 text-center">
-            {name} certificate expires in {distanceInWordsStrict(expirationDate, now)} on{' '}
-            {format(expirationDate, 'MMMM D, YYYY')} (at {format(expirationDate, 'h:mm a')}).{' '}
+            {`${name} certificate ${getCredentialExpiryPhrase(expirationDate, now)}. `}
             {hasAdministrationWritePermission ? (
                 <>To use renewed certificates, {downloadLink} and apply it to your cluster.</>
             ) : (
