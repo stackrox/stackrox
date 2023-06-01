@@ -615,8 +615,8 @@ spec:
         displayName: Compliance Settings
         path: perNode.compliance
       - description: Settings for the Node-Inventory container, which is responsible
-          for scanning the Nodes' filesystem
-        displayName: Node Scanner Settings
+          for scanning the Nodes' filesystem.
+        displayName: Node Scanning Settings
         path: perNode.nodeInventory
       - description: To ensure comprehensive monitoring of your cluster activity,
           Red Hat Advanced Cluster Security will run services on every node in the
