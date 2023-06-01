@@ -129,9 +129,9 @@ func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.Comp
 
 	filteredSources := sources[:0]
 	for _, source := range sources {
-		config, exsist, err_config := s.complianceDataStore.GetConfig(ctx, source.GetStandardId())
-		if err_config != nil {
-			return nil, err_config
+		config, exsist, errConfig := s.complianceDataStore.GetConfig(ctx, source.GetStandardId())
+		if errConfig != nil {
+			return nil, errConfig
 		}
 		if !exsist || !config.GetHideScanResults() {
 			filteredSources = append(filteredSources, source)
@@ -154,9 +154,9 @@ func (s *serviceImpl) GetRunResults(ctx context.Context, request *v1.GetComplian
 	if err != nil {
 		return nil, err
 	}
-	config, exist, err_config := s.complianceDataStore.GetConfig(ctx, request.GetStandardId())
-	if err_config != nil {
-		return nil, err_config
+	config, exist, errConfig := s.complianceDataStore.GetConfig(ctx, request.GetStandardId())
+	if errConfig != nil {
+		return nil, errConfig
 	}
 	if exist && config.GetHideScanResults() {
 		return nil, errors.New("Results are hidden for this standard")
