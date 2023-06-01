@@ -15,12 +15,12 @@ jobs:
         run: |
           if ! printf %s "$PR_TITLE" | grep -E "$REGEX"
           then
-            echo "The PR title doesn't follow the convention."
+            echo "The PR title doesn't follow the convention." >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
 
           if [ "$(printf %s "$PR_TITLE" | wc --chars)" -gt 70 ]
           then
-            echo "The PR title is longer than 70 characters. Consider rephrasing."
+            echo "The PR title is longer than 70 characters." >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
