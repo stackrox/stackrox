@@ -563,12 +563,10 @@ spec:
       - description: Custom environment variables to set on managed pods' containers.
         displayName: Environment Variables
         path: customize.envVars
-      - description: To ensure comprehensive monitoring of your cluster activity,
-          Red Hat Advanced Cluster Security will run services on every node in the
-          cluster, including tainted nodes by default. If you do not want this behavior,
-          please select 'AvoidTaints' here.
-        displayName: Taint Toleration
-        path: perNode.taintToleration
+      - description: Settings for the Node-Inventory container, which is responsible
+          for scanning the Nodes' filesystem.
+        displayName: Node Scanning Settings
+        path: perNode.nodeInventory
       - displayName: Autoscaling Minimum Replicas
         path: scanner.analyzer.scaling.minReplicas
         x-descriptors:
@@ -588,6 +586,12 @@ spec:
           during a deployments admission review.
         displayName: Contact Image Scanners
         path: admissionControl.contactImageScanners
+      - description: To ensure comprehensive monitoring of your cluster activity,
+          Red Hat Advanced Cluster Security will run services on every node in the
+          cluster, including tainted nodes by default. If you do not want this behavior,
+          please select 'AvoidTaints' here.
+        displayName: Taint Toleration
+        path: perNode.taintToleration
       - displayName: Autoscaling Maximum Replicas
         path: scanner.analyzer.scaling.maxReplicas
         x-descriptors:
@@ -652,6 +656,13 @@ spec:
           and a sizing guide.
         displayName: Resources
         path: perNode.compliance.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: Allows overriding the default resource settings for this component.
+          Please consult the documentation for an overview of default resource requirements
+          and a sizing guide.
+        displayName: Resources
+        path: perNode.nodeInventory.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: Allows overriding the default resource settings for this component.
