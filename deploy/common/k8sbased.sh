@@ -5,13 +5,6 @@ function realpath {
 	python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
 }
 
-function root_dir {
-    local script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-    local root_dir="${script_dir}/../../.."
-    local resolved_dir=$(builtin cd $root_dir; pwd)
-    export STACKROX_ROOT_DIR="$resolved_dir"
-}
-
 function launch_service {
     local dir="$1"
     local service="$2"
@@ -336,8 +329,6 @@ function launch_central {
       fi
 
       local helm_chart="$unzip_dir/chart"
-      root_dir
-      local latest_tag=$(make tag -C "${STACKROX_ROOT_DIR}" --quiet --no-print-directory)
 
       # set custom central version if the CENTRAL_CHART_VERSION_OVERRIDE env is set and equal a release version
       # this has to happen after linting since helm lint does not recognize the --version flag
@@ -600,8 +591,6 @@ function launch_sensor {
 
 
       local helm_chart="$k8s_dir/sensor-deploy/chart"
-      root_dir
-      local latest_tag=$(make tag -C "${STACKROX_ROOT_DIR}" --quiet --no-print-directory)
 
       # set custom sensor version if the SENSOR_CHART_VERSION_OVERRIDE env is set and equal to a release tag
       # in this case we need to find the right helm chart from the stackrox-oss repo
