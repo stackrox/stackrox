@@ -12,20 +12,29 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
           CONV: '(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([\w\-\.]+\))?!?'
-          ROX: '(ROX-[0-9]+,)*ROX-[0-9]+'
+          JIRA: '([A-Z]+-[0-9]+, ?)*[A-Z]+-[0-9]+'
           TEXT: ': .+'
           LENGTH: '70'
         run: |
           # Either conventional or ROX-nnn prefix followed by ': ' and random text:
-          REGEX="(($CONV)|($ROX))($TEXT)"
-          if ! printf %s "$PR_TITLE" | grep --perl-regexp --line-regexp "$REGEX"
+          REGEX="(($CONV)|($JIRA))($TEXT)"
+          test_regex() { echo -nE "$1" | grep --perl-regexp --line-regexp "$REGEX" }
+
+          # Examples:
+          test_regex "ROX-123: text"
+          test_regex "ROX-123, RS-45: text"
+          test_regex "refactor: text"
+          text_regex "fix(ui): text"
+          test_regex "feat(api)!: text"
+
+          if ! test_regex "$PR_TITLE"
           then
-            echo "::error::The PR title doesn't follow the convention."
+            echo "::error::Please update the PR title so that it follows the convention."
             exit 1
           fi
 
-          if [ "$(printf %s "$PR_TITLE" | wc --chars)" -gt "$LENGTH" ]
+          if [ "$(echo -nE "$PR_TITLE" | wc --chars)" -gt "$LENGTH" ]
           then
-            echo "::error::The PR title is longer than $LENGTH characters."
+            echo "::error::Please shorten the PR title to be $LENGTH characters or less."
             exit 1
           fi
