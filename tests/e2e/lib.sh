@@ -498,7 +498,9 @@ check_for_stackrox_OOMs() {
 }
 
 check_for_stackrox_restarts() {
-        if [[ "$#" -ne 1 ]]; then
+    info "Checking for unexplained restarts by stackrox pods"
+
+    if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: check_for_stackrox_restarts <dir>"
     fi
 
@@ -511,12 +513,16 @@ check_for_stackrox_restarts() {
     local previous_logs
     previous_logs=$(ls "$dir"/stackrox/pods/*-previous.log || true)
     if [[ -n "$previous_logs" ]]; then
-        echo >&2 "Previous logs found"
+        info "Restarts were found"
+        local check_out=""
         # shellcheck disable=SC2086
-        if ! scripts/ci/logcheck/check-restart-logs.sh "${CI_JOB_NAME}" $previous_logs; then
-            exit 1
+        if ! check_out="$(scripts/ci/logcheck/check-restart-logs.sh "${CI_JOB_NAME}" $previous_logs)"; then
+            save_junit_failure "Pod Restarts" "Check for unexplained pod restart" "$check_out"
+            die "ERROR: Found at least one unexplained pod restart. ${check_out}"
         fi
     fi
+
+    save_junit_success "Pod Restarts" "Check for unexplained pod restart"
 }
 
 check_for_errors_in_stackrox_logs() {
