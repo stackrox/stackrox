@@ -154,6 +154,16 @@
 #      memory: "8Gi"
 #      cpu: "4000m"
 #
+#  persistence:
+#    hostPath: null
+#    persistentVolumeClaim:
+#      claimName: null
+#      createClaim: null
+#      storageClass: null
+#      size: null
+#    none: null
+#
+#
 #  exposure:
 #
 #    # LoadBalancer configuration.
