@@ -162,6 +162,63 @@ resources:
 				},
 			},
 		},
+		"single multi-line configuration of roles should be unmarshalled successfully": {
+			rawConfigurations: [][]byte{
+				[]byte(`name: test-name
+description: test-description
+accessScope: access-scope
+permissionSet: permission-set
+---
+name: another-test-name
+description: another-test-description
+accessScope: another-access-scope
+permissionSet: another-permission-set
+`),
+			},
+			expectedConfigurations: []Configuration{
+				&Role{
+					Name:          "test-name",
+					Description:   "test-description",
+					AccessScope:   "access-scope",
+					PermissionSet: "permission-set",
+				},
+				&Role{
+					Name:          "another-test-name",
+					Description:   "another-test-description",
+					AccessScope:   "another-access-scope",
+					PermissionSet: "another-permission-set",
+				},
+			},
+		},
+		"single multi-line configuration of roles w/ trailing delimiter should be unmarshalled successfully": {
+			rawConfigurations: [][]byte{
+				[]byte(`name: test-name
+description: test-description
+accessScope: access-scope
+permissionSet: permission-set
+---
+name: another-test-name
+description: another-test-description
+accessScope: another-access-scope
+permissionSet: another-permission-set
+---
+`),
+			},
+			expectedConfigurations: []Configuration{
+				&Role{
+					Name:          "test-name",
+					Description:   "test-description",
+					AccessScope:   "access-scope",
+					PermissionSet: "permission-set",
+				},
+				&Role{
+					Name:          "another-test-name",
+					Description:   "another-test-description",
+					AccessScope:   "another-access-scope",
+					PermissionSet: "another-permission-set",
+				},
+			},
+		},
 		"multiple raw role configurations should be unmarshalled successfully": {
 			rawConfigurations: [][]byte{
 				[]byte(`
