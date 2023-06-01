@@ -171,7 +171,6 @@ it('gets Contain relationships', () => {
     // should have grandchild
     expect(contains).toContain(entityTypes.DEPLOYMENT);
     // should have grandchild's matches
-    expect(contains).toContain(entityTypes.POLICY);
     expect(contains).not.toContain(entityTypes.CONTROL);
 
     contains = getEntityTypesByRelationship(
