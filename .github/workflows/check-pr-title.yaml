@@ -18,9 +18,9 @@ jobs:
         run: |
           # Either conventional or ROX-nnn prefix followed by ': ' and random text:
           REGEX="(($CONV)|($JIRA))($TEXT)"
-          test_regex() { echo -nE "$1" | grep --perl-regexp --line-regexp "$REGEX" }
+          test_regex() { echo -nE "$1" | grep --perl-regexp --line-regexp "$REGEX" ; }
 
-          # Examples:
+          echo "Examples:"
           test_regex "ROX-123: text"
           test_regex "ROX-123, RS-45: text"
           test_regex "refactor: text"
