@@ -28,6 +28,9 @@ import {
 import LeftNavItem from './LeftNavItem';
 import NetworkGraphNavItems from './NetworkGraphNavItems';
 
+import './NavigationSidebar.css';
+import BadgedNavItem from './BadgedNavItem';
+
 type NavigationSidebarProps = {
     hasReadAccess: HasReadAccess;
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
@@ -69,6 +72,9 @@ function NavigationSidebar({
     }
 
     const vulnerabilitiesPaths = [vulnerabilitiesWorkloadCvesPath];
+    const isWorkloadCvesEnabled =
+        isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES') &&
+        isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const Navigation = (
         <Nav id="nav-primary-simple">
@@ -89,36 +95,33 @@ function NavigationSidebar({
                     path={complianceBasePath}
                     title={basePathToLabelMap[complianceBasePath]}
                 />
-
-                {isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-                    isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE') && (
-                        // TODO We need to designate this as Tech Preview in a more standard way, based on UX guidance
-                        <NavExpandable
-                            id="Vulnerabilities"
-                            title="Vulnerabilities (preview)"
-                            isActive={vulnerabilitiesPaths.some((path) =>
-                                location.pathname.includes(path)
-                            )}
-                            isExpanded={vulnerabilitiesPaths.some((path) =>
-                                location.pathname.includes(path)
-                            )}
-                        >
-                            {vulnerabilitiesPaths.map((path) => {
-                                const isActive = location.pathname.includes(path);
-                                return (
-                                    <LeftNavItem
-                                        key={path}
-                                        isActive={isActive}
-                                        path={path}
-                                        title={basePathToLabelMap[path]}
-                                    />
-                                );
-                            })}
-                        </NavExpandable>
-                    )}
+                {isWorkloadCvesEnabled && (
+                    <NavExpandable
+                        id="Vulnerabilities"
+                        title="Vulnerability Management (2.0)"
+                        isActive={vulnerabilitiesPaths.some((path) =>
+                            location.pathname.includes(path)
+                        )}
+                        isExpanded={vulnerabilitiesPaths.some((path) =>
+                            location.pathname.includes(path)
+                        )}
+                    >
+                        <BadgedNavItem
+                            variant="TechPreview"
+                            key={vulnerabilitiesWorkloadCvesPath}
+                            isActive={location.pathname.includes(vulnerabilitiesWorkloadCvesPath)}
+                            path={vulnerabilitiesWorkloadCvesPath}
+                            title={basePathToLabelMap[vulnerabilitiesWorkloadCvesPath]}
+                        />
+                    </NavExpandable>
+                )}
                 <NavExpandable
                     id="VulnerabilityManagement"
-                    title="Vulnerability Management"
+                    title={
+                        isWorkloadCvesEnabled
+                            ? 'Vulnerability Management (1.0)'
+                            : 'Vulnerability Management'
+                    }
                     isActive={vulnerabilityManagementPaths.some((path) =>
                         location.pathname.includes(path)
                     )}

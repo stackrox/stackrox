@@ -1,3 +1,4 @@
+import { hasFeatureFlag } from '../../../helpers/features';
 import { visitFromLeftNavExpandable } from '../../../helpers/nav';
 import {
     getRouteMatcherMapForGraphQL,
@@ -54,11 +55,10 @@ export function interactAndVisitVulnerabilityReporting(interactionCallback, stat
 }
 
 export function visitVulnerabilityReportingFromLeftNav() {
-    visitFromLeftNavExpandable(
-        'Vulnerability Management',
-        'Reporting',
-        routeMatcherMapWithSearchOptions
-    );
+    const oldVulnMgmtNavText = hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')
+        ? 'Vulnerability Management (1.0)'
+        : 'Vulnerability Management';
+    visitFromLeftNavExpandable(oldVulnMgmtNavText, 'Reporting', routeMatcherMapWithSearchOptions);
 
     cy.location('pathname').should('eq', basePath);
     cy.location('search').should('eq', '');
