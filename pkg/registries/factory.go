@@ -41,6 +41,7 @@ var AllCreatorFuncs = []CreatorWrapper{
 	ibmFactory.Creator,
 }
 
+// AllCreatorFuncsWithoutRepoList defines all known registry creators with repo list disabled.
 var AllCreatorFuncsWithoutRepoList = []CreatorWrapper{
 	artifactRegistryFactory.CreatorWithoutRepoList,
 	artifactoryFactory.CreatorWithoutRepoList,
