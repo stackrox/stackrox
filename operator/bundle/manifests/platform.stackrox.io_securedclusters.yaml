@@ -523,7 +523,7 @@ spec:
                     type: object
                   nodeInventory:
                     description: Settings for the Node-Inventory container, which
-                      is responsible for scanning the Nodes' filesystem
+                      is responsible for scanning the Nodes' filesystem.
                     properties:
                       resources:
                         description: Allows overriding the default resource settings
