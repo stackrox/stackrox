@@ -16,7 +16,7 @@ jobs:
           TEXT: ': .+'
           LENGTH: '70'
         run: |
-          # Either conventional or ROX-nnn prefix followed by ': ' and random text:
+          # Either conventional or JIRA-nnn prefix followed by ': ' and random text:
           REGEX="(($CONV)|($JIRA))($TEXT)"
           test_regex() { echo -nE "$1" | grep --perl-regexp --line-regexp "$REGEX" ; }
 
@@ -33,8 +33,9 @@ jobs:
             exit 1
           fi
 
-          if [ "$(echo -nE "$PR_TITLE" | wc --chars)" -gt "$LENGTH" ]
+          TITLE_LENGTH="$(echo -nE "$PR_TITLE" | wc --chars)"
+          if [ "$TITLE_LENGTH" -gt "$LENGTH" ]
           then
-            echo "::error::Please shorten the PR title to be $LENGTH characters or less."
+            echo "::error::Please shorten the PR title from $TITLE_LENGTH to at most $LENGTH characters."
             exit 1
           fi
