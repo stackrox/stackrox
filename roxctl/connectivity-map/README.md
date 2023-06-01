@@ -1,11 +1,11 @@
-# Static Network Policy Analysis and Visualization 
+# Static Network Policy Analysis and Visualization
 
 ## Developer Preview Notice
 The static network policy analysis feature is offered as a developer preview feature. While we are open to receiving feedback about this feature, our technical support will not be able to assist and answer questions about it.
 
 ## About
 The static network policy analyzer is a tool that analyzes Kubernetes network policies.
-Based on a given folder containing deployment and network policy YAMLs, it analyzes the permitted cluster connectivity. 
+Based on a given folder containing deployment and network policy YAMLs, it analyzes the permitted cluster connectivity.
 It produces a list of **allowed** connections based on the workloads and network policies defined.
 It is based on [NP-Guard's Network Policy Analyzer](https://github.com/np-guard/netpol-analyzer) component.
 For more details, refer to the [NP-Guard webpage](https://np-guard.github.io/).
@@ -15,15 +15,15 @@ Generate a file that allows users to visualize the connectivity posture induced 
 
 ## Usage
 
-### Analyzing allowed connectivity from YAML manifests (network policies and workload resources) 
-To analyze network policies, `roxctl analyze netpol` requires a folder containing Kubernetes manifests, including network policies.
+### Analyzing allowed connectivity from YAML manifests (network policies and workload resources)
+To analyze network policies, `roxctl connectivity-map` requires a folder containing Kubernetes manifests, including network policies.
 The manifests must not be templated (e.g., Helm charts) to be considered.
-All YAML files that could be accepted by `kubectl apply -f` will be accepted as a valid input and searched by `roxctl analyze netpol`.
+All YAML files that could be accepted by `kubectl apply -f` will be accepted as a valid input and searched by `roxctl connectivity-map`.
 
 Example run with output to `stdout`:
 
 ```shell
-$ roxctl analyze netpol  tests/roxctl/bats-tests/test-data/np-guard/netpols-analysis-example-minimal/
+$ roxctl connectivity-map  tests/roxctl/bats-tests/test-data/np-guard/netpols-analysis-example-minimal/
 0.0.0.0-255.255.255.255 => default/frontend[Deployment] : TCP 8080
 default/backend[Deployment] => default/backend[Deployment] : All Connections
 default/frontend[Deployment] => 0.0.0.0-255.255.255.255 : UDP 53
@@ -33,7 +33,7 @@ default/frontend[Deployment] => default/frontend[Deployment] : All Connections
 
 Example output with `md` output format:
 ```shell
-$ roxctl analyze netpol  tests/roxctl/bats-tests/test-data/np-guard/netpols-analysis-example-minimal/ -o md
+$ roxctl connectivity-map  tests/roxctl/bats-tests/test-data/np-guard/netpols-analysis-example-minimal/ -o md
 ```
 
 | src | dst | conn |
@@ -51,15 +51,15 @@ The `src, dst` can be any of the analyzed cluster workloads or an IP address ran
 If both `src` and `dst` are cluster workloads, it means that both `src` is allowed to send traffic to `dst` and that `dst` is allowed to receive traffic from `src` over the specified connectivity attributes.
 
 If one of `src` or `dst` are IP address ranges, it means that only one direction of this connection (either egress from workload or ingress to workload) is explicitly permitted by network policies.
- 
+
 For example, in the above output, the line: `default/frontend[Deployment] => 0.0.0.0-255.255.255.255 : UDP 53` specifies permitted egress from `frontend` to any IP address.
-It does not mean that a connection from `frontend`  to `backend` is allowed over UDP 53. This connection is actually blocked because of the `backend` workload's network policy, which only allows ingress over TCP 9090. 
+It does not mean that a connection from `frontend`  to `backend` is allowed over UDP 53. This connection is actually blocked because of the `backend` workload's network policy, which only allows ingress over TCP 9090.
 
 ### Visualization
 
 Generate output in [dot](https://graphviz.org/doc/info/lang.html) format:
 ```shell
-$ roxctl analyze netpol tests/roxctl/bats-tests/test-data/np-guard/netpols-analysis-example-minimal/ -o dot
+$ roxctl connectivity-map tests/roxctl/bats-tests/test-data/np-guard/netpols-analysis-example-minimal/ -o dot
 digraph {
         "0.0.0.0-255.255.255.255" [label="0.0.0.0-255.255.255.255" color="red2" fontcolor="red2"]
         "default/backend[Deployment]" [label="default/backend[Deployment]" color="blue" fontcolor="blue"]
@@ -72,13 +72,13 @@ digraph {
 }
 ```
 
-Use [`Graphviz`](https://graphviz.org/) (locally installed or online viewer) to produce the connectivity graph.  
+Use [`Graphviz`](https://graphviz.org/) (locally installed or online viewer) to produce the connectivity graph.
 
 Produced graph for the above example is depicted below:
 
 ![graph](connectivity-graph-example.svg)
 
-### Parameters 
+### Parameters
 
 The output can be redirected to a file by using `--output-file` parameter.
 
@@ -88,6 +88,6 @@ The [`Graphviz` tool](https://graphviz.org/) (locally installed or online viewer
 
 The `--focus-workload` parameter allows specifying a workload name, such that the output only contains allowed connections of this workload, whereas the other workloads are omitted.
 
-When running in a CI pipeline, `roxctl analyze netpol` may benefit from the `--fail` option that stops the processing on the first encountered error.
+When running in a CI pipeline, `roxctl connectivity-map` may benefit from the `--fail` option that stops the processing on the first encountered error.
 
 Using the `--strict` parameter produces an error "_there were errors during execution_" if any warnings appeared during the processing. Note that the combination of `--strict` and `--fail` will not stop on the first warning, as the interpretation of warnings as errors happens at the end of execution.
