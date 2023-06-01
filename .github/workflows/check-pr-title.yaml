@@ -11,16 +11,21 @@ jobs:
       - name: Check if the PR title is well dressed
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
-          REGEX: '^(((build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\([\w\-\.]+\))?(!)?)|((ROX-[0-9]+,)*ROX-[0-9]+))(: .*)$'
+          CONV: '(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([\w\-\.]+\))?!?'
+          ROX: '(ROX-[0-9]+,)*ROX-[0-9]+'
+          TEXT: ': .+'
+          LENGTH: '70'
         run: |
-          if ! printf %s "$PR_TITLE" | grep -E "$REGEX"
+          # Either conventional or ROX-nnn prefix followed by ': ' and random text:
+          REGEX="(($CONV)|($ROX))($TEXT)"
+          if ! printf %s "$PR_TITLE" | grep --perl-regexp --line-regexp "$REGEX"
           then
             echo "::error::The PR title doesn't follow the convention."
             exit 1
           fi
 
-          if [ "$(printf %s "$PR_TITLE" | wc --chars)" -gt 70 ]
+          if [ "$(printf %s "$PR_TITLE" | wc --chars)" -gt "$LENGTH" ]
           then
-            echo "::error::The PR title is longer than 70 characters."
+            echo "::error::The PR title is longer than $LENGTH characters."
             exit 1
           fi
