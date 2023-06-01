@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package testcommon
 
 import (
@@ -33,6 +35,11 @@ type FlowStoreTestSuite struct {
 
 // SetupSuite runs before any tests
 func (suite *FlowStoreTestSuite) SetupSuite() {
+	if !env.PostgresDatastoreEnabled.BooleanSetting() {
+		suite.T().Skip("Skip rocks tests")
+		suite.T().SkipNow()
+	}
+
 	var err error
 	suite.tested, err = suite.store.CreateFlowStore(context.Background(), fixtureconsts.Cluster1)
 	suite.Require().NoError(err)
@@ -173,10 +180,12 @@ func (suite *FlowStoreTestSuite) TestStore() {
 func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 	t1 := time.Now().Add(-5 * time.Minute)
 	t2 := time.Now()
+	t3 := time.Now().Add(15 * time.Minute)
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		// Round the timestamps to the microsecond
 		t1 = t1.Truncate(1000)
 		t2 = t2.Truncate(1000)
+		t3 = t3.Truncate(1000)
 	}
 	flows := []*storage.NetworkFlow{
 		{
@@ -213,37 +222,15 @@ func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 	err := suite.tested.UpsertFlows(context.Background(), flows, updateTS)
 	suite.NoError(err)
 
-	// Match none delete none
-	err = suite.tested.RemoveMatchingFlows(context.Background(), func(props *storage.NetworkFlowProperties) bool {
-		return false
-	}, nil)
-	suite.NoError(err)
-
 	currFlows, _, err := suite.tested.GetAllFlows(context.Background(), nil)
 	suite.NoError(err)
 	suite.ElementsMatch(flows, currFlows)
 
-	// Match dst port 1
-	err = suite.tested.RemoveMatchingFlows(context.Background(), func(props *storage.NetworkFlowProperties) bool {
-		return props.DstPort == 1
-	}, nil)
+	utc := t3.UTC()
+	err = suite.tested.RemoveOrphanedFlows(context.Background(), &utc)
 	suite.NoError(err)
 
 	currFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil)
 	suite.NoError(err)
-	suite.ElementsMatch(flows[1:], currFlows)
-
-	// Skipping this one out for right now.  Currently the only use of that function is to delete flows
-	// outside the orphan time window.  That is much easier more efficient to deal with in SQL than
-	// looping through all the flows and applying that function.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		err = suite.tested.RemoveMatchingFlows(context.Background(), nil, func(flow *storage.NetworkFlow) bool {
-			return flow.LastSeenTimestamp.Compare(protoconv.ConvertTimeToTimestamp(t2)) == 0
-		})
-		suite.NoError(err)
-
-		currFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil)
-		suite.NoError(err)
-		suite.ElementsMatch(flows[2:], currFlows)
-	}
+	suite.ElementsMatch(flows[2:], currFlows)
 }

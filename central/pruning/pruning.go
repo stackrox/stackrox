@@ -38,7 +38,9 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timeutil"
+	"golang.org/x/sync/semaphore"
 )
 
 const (
@@ -50,6 +52,8 @@ const (
 	logImbueWindow     = 24 * 7 * time.Hour
 
 	alertQueryTimeout = 10 * time.Minute
+
+	flowsSemaphoreWeight = 5
 )
 
 var (
@@ -306,7 +310,7 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	}
 
 	g.markOrphanedAlertsAsResolved(deploymentSet)
-	g.removeOrphanedNetworkFlows(deploymentSet, clusterIDSet)
+	g.removeOrphanedNetworkFlows(clusterIDSet)
 
 	// TODO: Convert this from ListSearch to using negation search similar to SAs, roles and role bindings below
 	g.removeOrphanedPods(clusterIDSet)
@@ -507,42 +511,50 @@ func (g *garbageCollectorImpl) markOrphanedAlertsAsResolved(deployments set.Froz
 	}
 }
 
-func isOrphanedDeployment(deployments set.FrozenStringSet, info *storage.NetworkEntityInfo) bool {
-	return info.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && !deployments.Contains(info.GetId())
-}
+func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(clusters set.FrozenStringSet) {
+	var wg sync.WaitGroup
+	sema := semaphore.NewWeighted(flowsSemaphoreWeight)
 
-func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(deployments, clusters set.FrozenStringSet) {
+	orphanTime := time.Now().UTC().Add(-1 * orphanWindow)
+
+	// Each cluster has a separate store thus we can take advantage of doing these deletions concurrently.  If we don't
+	// the entire prune job will be stuck waiting on processing the network flows deletions in cluster sequence.
 	for _, c := range clusters.AsSlice() {
-		store, err := g.networkflows.GetFlowStore(pruningCtx, c)
-		if err != nil {
-			log.Errorf("error getting flow store for cluster %q: %v", c, err)
-			continue
-		} else if store == nil {
-			continue
+		if err := sema.Acquire(pruningCtx, 1); err != nil {
+			log.Errorf("context cancelled via stop: %v", err)
+			return
 		}
 
-		// First remove stale network flows
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			err = store.RemoveStaleFlows(pruningCtx)
+		log.Debugf("[Network Flow pruning] for cluster %q", c)
+		wg.Add(1)
+		go func(c string) {
+			defer sema.Release(1)
+			defer wg.Done()
+			store, err := g.networkflows.GetFlowStore(pruningCtx, c)
 			if err != nil {
-				log.Errorf("error removing stale flows for cluster %q: %v", c, err)
+				log.Errorf("error getting flow store for cluster %q: %v", c, err)
+				return
+			} else if store == nil {
+				return
 			}
-		}
 
-		now := types.TimestampNow()
+			err = store.RemoveOrphanedFlows(pruningCtx, &orphanTime)
+			if err != nil {
+				log.Errorf("error removing orphaned flows for cluster %q: %v", c, err)
+			}
 
-		keyMatchFn := func(props *storage.NetworkFlowProperties) bool {
-			return isOrphanedDeployment(deployments, props.GetSrcEntity()) ||
-				isOrphanedDeployment(deployments, props.GetDstEntity())
-		}
-		valueMatchFn := func(flow *storage.NetworkFlow) bool {
-			return flow.LastSeenTimestamp != nil && protoutils.Sub(now, flow.LastSeenTimestamp) > orphanWindow
-		}
-		err = store.RemoveMatchingFlows(pruningCtx, keyMatchFn, valueMatchFn)
-		if err != nil {
-			log.Errorf("error removing orphaned flows for cluster %q: %v", c, err)
-		}
+			// Second remove stale network flows
+			if env.PostgresDatastoreEnabled.BooleanSetting() {
+				err = store.RemoveStaleFlows(pruningCtx)
+				if err != nil {
+					log.Errorf("error removing stale flows for cluster %q: %v", c, err)
+				}
+			}
+		}(c)
 	}
+	wg.Wait()
+
+	log.Info("[Network Flow pruning] Completed")
 }
 
 func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
