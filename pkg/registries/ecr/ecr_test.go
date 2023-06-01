@@ -39,7 +39,7 @@ func TestECRIntegration(t *testing.T) {
 			},
 		},
 	}
-	ecr, err := newRegistry(integration)
+	ecr, err := newRegistry(integration, false)
 	require.NoError(t, err)
 
 	assert.NoError(t, ecr.Test())

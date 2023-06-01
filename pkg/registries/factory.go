@@ -41,6 +41,19 @@ var AllCreatorFuncs = []CreatorWrapper{
 	ibmFactory.Creator,
 }
 
+var AllCreatorFuncsWithoutRepoList = []CreatorWrapper{
+	artifactRegistryFactory.CreatorWithoutRepoList,
+	artifactoryFactory.CreatorWithoutRepoList,
+	dockerFactory.CreatorWithoutRepoList,
+	ecrFactory.CreatorWithoutRepoList,
+	googleFactory.CreatorWithoutRepoList,
+	quayFactory.CreatorWithoutRepoList,
+	nexusFactory.CreatorWithoutRepoList,
+	azureFactory.CreatorWithoutRepoList,
+	rhelFactory.CreatorWithoutRepoList,
+	ibmFactory.CreatorWithoutRepoList,
+}
+
 // NewFactory creates a new scanner factory.
 func NewFactory(opts FactoryOptions) Factory {
 	reg := &factoryImpl{

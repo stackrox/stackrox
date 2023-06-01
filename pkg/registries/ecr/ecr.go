@@ -34,9 +34,10 @@ type ecr struct {
 	config      *storage.ECRConfig
 	integration *storage.ImageIntegration
 
-	endpoint   string
-	service    *awsECR.ECR
-	expiryTime time.Time
+	endpoint        string
+	service         *awsECR.ECR
+	expiryTime      time.Time
+	disableRepoList bool
 }
 
 // sanitizeConfiguration validates and cleans-up the integration configuration.
@@ -154,12 +155,21 @@ func (e *ecr) Test() error {
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
 	return "ecr", func(integration *storage.ImageIntegration) (types.Registry, error) {
-		reg, err := newRegistry(integration)
+		reg, err := newRegistry(integration, false)
 		return reg, err
 	}
 }
 
-func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
+// CreatorWithoutRepoList provides the type and registries.Creator to add to the registries Registry.
+// Populating the internal repo list will be disabled.
+func CreatorWithoutRepoList() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
+	return "ecr", func(integration *storage.ImageIntegration) (types.Registry, error) {
+		reg, err := newRegistry(integration, true)
+		return reg, err
+	}
+}
+
+func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*ecr, error) {
 	conf := integration.GetEcr()
 	if conf == nil {
 		return nil, errors.New("ECR configuration required")
@@ -171,7 +181,8 @@ func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
 		config:      conf,
 		integration: integration,
 		// docker endpoint
-		endpoint: fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", conf.GetRegistryId(), conf.GetRegion()),
+		endpoint:        fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", conf.GetRegistryId(), conf.GetRegion()),
+		disableRepoList: disableRepoList,
 	}
 	// If the ECR configuration provides Authorization Data, we do not initialize an
 	// ECR client, but instead, we create the registry immediately since the
@@ -202,9 +213,10 @@ func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
 // credentials provided.
 func (e *ecr) setRegistry(username, password string, expiresAt time.Time) error {
 	conf := docker.Config{
-		Endpoint: e.endpoint,
-		Username: username,
-		Password: password,
+		Endpoint:        e.endpoint,
+		Username:        username,
+		Password:        password,
+		DisableRepoList: e.disableRepoList,
 	}
 	client, err := docker.NewDockerRegistryWithConfig(conf, e.integration)
 	if err != nil {

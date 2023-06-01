@@ -68,7 +68,7 @@ type LocalScan struct {
 func NewLocalScan(registryStore *registry.Store) *LocalScan {
 	regFactory := registries.NewFactory(registries.FactoryOptions{
 		CreatorFuncs: []registries.CreatorWrapper{
-			dockerFactory.Creator,
+			dockerFactory.CreatorWithoutRepoList,
 		},
 	})
 

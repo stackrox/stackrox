@@ -24,8 +24,8 @@ type RegistryWithoutManifestCall struct {
 }
 
 // NewRegistryWithoutManifestCall creates a new basic docker registry without a manifest digest call
-func NewRegistryWithoutManifestCall(integration *storage.ImageIntegration) (*RegistryWithoutManifestCall, error) {
-	dockerRegistry, err := NewDockerRegistry(integration)
+func NewRegistryWithoutManifestCall(integration *storage.ImageIntegration, disableRepoList bool) (*RegistryWithoutManifestCall, error) {
+	dockerRegistry, err := NewDockerRegistry(integration, disableRepoList)
 	if err != nil {
 		return nil, err
 	}
