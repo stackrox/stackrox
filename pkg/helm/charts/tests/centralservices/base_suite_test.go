@@ -60,6 +60,8 @@ central:
   exposure:
     loadBalancer:
       enabled: true
+  persistence:
+    none: true
   db:
     enabled: true
     password:
@@ -102,6 +104,8 @@ central:
       enabled: true
   db:
     enabled: true
+  persistence:
+    none: true
 enableOpenShiftMonitoring: true
 system:
     enablePodSecurityPolicies: true
