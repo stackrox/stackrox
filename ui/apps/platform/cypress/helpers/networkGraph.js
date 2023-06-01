@@ -283,7 +283,7 @@ export function interactAndVisitNetworkGraphWithDeploymentSelected(
 
 export function visitOldNetworkGraphFromLeftNav() {
     const oldNetworkGraphNavItemText = hasFeatureFlag('ROX_NETWORK_GRAPH_PATTERNFLY')
-        ? 'Network Graph (1.0 deprecated)'
+        ? 'Network Graph (1.0)'
         : 'Network Graph';
     visitFromLeftNav(oldNetworkGraphNavItemText, routeMatcherMapToVisitNetworkGraph);
 
