@@ -264,6 +264,10 @@ func (c *TestContext) RestartFakeCentralConnection() {
 		message.PolicySync(c.config.InitialSystemPolicies),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
 
+	fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
+		c.centralReceived <- msg
+	})
+
 	conn, _, shutdown := createConnectionAndStartServer(fakeCentral)
 	fakeCentral.OnShutdown(shutdown)
 	factory.OverwriteCentralConnection(conn)
