@@ -1048,16 +1048,6 @@ export const POLICY_LIST_FRAGMENT_CORE = gql`
     }
 `;
 
-export const UNSCOPED_POLICY_LIST_FRAGMENT = gql`
-    fragment unscopedPolicyFields on Policy {
-        ...corePolicyFields
-        deploymentCount: failingDeploymentCount(query: $scopeQuery) # field changed to failingDeploymentCount to improve performance
-        latestViolation
-        policyStatus
-    }
-    ${POLICY_LIST_FRAGMENT_CORE}
-`;
-
 export const POLICY_LIST_FRAGMENT = gql`
     fragment policyFields on Policy {
         ...corePolicyFields

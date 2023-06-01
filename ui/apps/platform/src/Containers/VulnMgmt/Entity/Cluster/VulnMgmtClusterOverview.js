@@ -3,7 +3,6 @@ import React, { useContext } from 'react';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import DateTimeField from 'Components/DateTimeField';
 import Metadata from 'Components/Metadata';
-import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import RiskScore from 'Components/RiskScore';
 import BinderTabs from 'Components/BinderTabs';
 import Tab from 'Components/Tab';
@@ -25,11 +24,6 @@ const emptyCluster = {
     id: '',
     imageCount: 0,
     name: '',
-    policyCount: 0,
-    policyStatus: {
-        status: '',
-        failingPolicies: [],
-    },
     priority: 0,
     status: {
         orchestratorMetadata: {
@@ -48,9 +42,9 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyCluster, ...data };
 
-    const { priority, policyStatus, status, istioEnabled, id } = safeData;
+    const { priority, status, istioEnabled, id } = safeData;
 
-    if (!status || !policyStatus) {
+    if (!status) {
         return null;
     }
 
@@ -79,13 +73,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
         },
     ];
 
-    const clusterStats = [
-        <RiskScore key="risk-score" score={priority} />,
-        <React.Fragment key="policy-status">
-            <span className="pb-2">Policy status:</span>
-            <PolicyStatusIconText isPass={policyStatus.status === 'pass'} isTextOnly={false} />
-        </React.Fragment>,
-    ];
+    const clusterStats = [<RiskScore key="risk-score" score={priority} />];
 
     const currentEntity = { [entityTypes.CLUSTER]: id };
     const newEntityContext = { ...entityContext, ...currentEntity };
