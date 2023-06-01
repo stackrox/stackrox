@@ -52,6 +52,8 @@ func (s *serviceImplTestSuite) SetupTest() {
 
 	err = testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
+
+	s.mockCtrl = gomock.NewController(s.T())
 }
 
 func (s *serviceImplTestSuite) TestTLSChallenge() {
@@ -132,8 +134,6 @@ func verifySignature(cert *x509.Certificate, resp *v1.TLSChallengeResponse) erro
 }
 
 func (s *serviceImplTestSuite) TestDatabaseStatus() {
-	s.mockCtrl = gomock.NewController(s.T())
-
 	// Need to fake being logged in
 	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
 	ctx := authn.ContextWithIdentity(sac.WithAllAccess(context.Background()), mockID, s.T())
@@ -196,10 +196,20 @@ func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
 }
 
 func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
+	s.Run("when not authenticated", func() {
+		caps, err := (&serviceImpl{}).GetCentralCapabilities(context.Background(), nil)
+
+		s.Nil(caps)
+		s.ErrorContains(err, "not authorized")
+	})
+
+	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
+	ctx := authn.ContextWithIdentity(sac.WithNoAccess(context.Background()), mockID, s.T())
+
 	s.Run("when managed central", func() {
 		s.T().Setenv("ROX_MANAGED_CENTRAL", "true")
 
-		caps, err := (&serviceImpl{}).GetCentralCapabilities(nil, nil)
+		caps, err := (&serviceImpl{}).GetCentralCapabilities(ctx, nil)
 
 		s.NoError(err)
 		s.Equal(v1.CentralServicesCapabilities_Disabled, caps.GetCentralScanningUseContainerIamRoleForEcr())
@@ -212,7 +222,7 @@ func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
 		s.Run(fmt.Sprintf("when not manged central (%s)", name), func() {
 			s.T().Setenv("ROX_MANAGED_CENTRAL", val)
 
-			caps, err := (&serviceImpl{}).GetCentralCapabilities(nil, nil)
+			caps, err := (&serviceImpl{}).GetCentralCapabilities(ctx, nil)
 
 			s.NoError(err)
 			s.Equal(v1.CentralServicesCapabilities_Unknown, caps.CentralScanningUseContainerIamRoleForEcr)
