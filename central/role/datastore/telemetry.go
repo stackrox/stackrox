@@ -3,13 +3,14 @@ package datastore
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // Gather the total amount of permission sets, access scopes, and roles for
@@ -50,7 +51,8 @@ func totalPermissionSets(ctx context.Context, props map[string]any, rs DataStore
 
 	props["Total PermissionSets"] = len(permissionSets)
 	for origin, count := range permissionSetsByOrigin {
-		props[fmt.Sprintf("Total %s PermissionSets", strings.ToLower(origin.String()))] = count
+		props[fmt.Sprintf("Total %s PermissionSets",
+			cases.Title(language.English, cases.Compact).String(origin.String()))] = count
 	}
 	return nil
 }
@@ -74,7 +76,8 @@ func totalRoles(ctx context.Context, props map[string]any, rs DataStore) error {
 
 	props["Total Roles"] = len(roles)
 	for origin, count := range rolesByOrigin {
-		props[fmt.Sprintf("Total %s Roles", strings.ToLower(origin.String()))] = count
+		props[fmt.Sprintf("Total %s Roles",
+			cases.Title(language.English, cases.Compact).String(origin.String()))] = count
 	}
 	return nil
 }
@@ -98,7 +101,8 @@ func totalAccessScopes(ctx context.Context, props map[string]any, rs DataStore) 
 
 	props["Total Access Scopes"] = len(accessScopes)
 	for origin, count := range accessScopesByOrigin {
-		props[fmt.Sprintf("Total %s Access Scopes", strings.ToLower(origin.String()))] = count
+		props[fmt.Sprintf("Total %s Access Scopes",
+			cases.Title(language.English, cases.Compact).String(origin.String()))] = count
 	}
 	return nil
 }
