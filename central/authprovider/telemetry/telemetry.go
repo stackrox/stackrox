@@ -2,6 +2,8 @@ package telemetry
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/authprovider/datastore"
@@ -28,9 +30,11 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 
 	providerIDTypes := make(map[string]string, len(providers))
 	providerTypes := set.NewSet[string]()
+	providerOriginCount := make(map[storage.Traits_Origin]int)
 	for _, provider := range providers {
 		providerIDTypes[provider.GetId()] = provider.GetType()
 		providerTypes.Add(provider.GetType())
+		providerOriginCount[provider.GetTraits().GetOrigin()]++
 	}
 	props["Auth Providers"] = providerTypes.AsSlice()
 
@@ -47,6 +51,10 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 
 	for id, n := range providerGroups {
 		props["Total Groups of "+providerIDTypes[id]] = n
+	}
+
+	for origin, count := range providerOriginCount {
+		props[fmt.Sprintf("Total %s auth providers", strings.ToLower(origin.String()))] = count
 	}
 	return props, nil
 }

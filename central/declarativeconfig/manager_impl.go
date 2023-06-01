@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -71,6 +72,9 @@ type managerImpl struct {
 	errorsPerDeclarativeConfig     map[string]int32
 
 	updaters map[reflect.Type]updater.ResourceUpdater
+
+	numberOfWatchHandlers      int
+	numberOfWatchHandlersMutex sync.RWMutex
 }
 
 var protoTypesOrder = []reflect.Type{
@@ -128,6 +132,7 @@ func (m *managerImpl) ReconcileDeclarativeConfigurations() {
 		}
 
 		var startedWatchHandler bool
+		var numberOfWatchHandlers int
 		for _, entry := range entries {
 			if !entry.IsDir() {
 				continue
@@ -143,6 +148,7 @@ func (m *managerImpl) ReconcileDeclarativeConfigurations() {
 			_ = k8scfgwatch.WatchConfigMountDir(context.Background(), dirToWatch,
 				k8scfgwatch.DeduplicateWatchErrors(wh), watchOpts)
 			startedWatchHandler = true
+			numberOfWatchHandlers++
 
 			if err := m.declarativeConfigErrorReporter.Register(dirToWatch, handlerNameForIntegrationHealth(dirToWatch),
 				storage.IntegrationHealth_DECLARATIVE_CONFIG); err != nil {
@@ -155,7 +161,21 @@ func (m *managerImpl) ReconcileDeclarativeConfigurations() {
 			log.Info("Start the reconciliation loop for declarative configurations")
 			m.startReconciliationLoop()
 		}
+
+		m.numberOfWatchHandlersMutex.Lock()
+		m.numberOfWatchHandlers = numberOfWatchHandlers
+		m.numberOfWatchHandlersMutex.Unlock()
 	})
+}
+
+func (m *managerImpl) Gather() phonehome.GatherFunc {
+	return func(ctx context.Context) (map[string]any, error) {
+		m.numberOfWatchHandlersMutex.RLock()
+		defer m.numberOfWatchHandlersMutex.RUnlock()
+		return map[string]any{
+			"Total Number of declarative configuration mounts": m.numberOfWatchHandlers,
+		}, nil
+	}
 }
 
 // UpdateDeclarativeConfigContents will take the file contents and transform these to declarative configurations.
