@@ -3,6 +3,8 @@ package waiter
 import (
 	"context"
 	"errors"
+
+	"github.com/stackrox/rox/pkg/concurrency"
 )
 
 var (
@@ -42,8 +44,8 @@ type waiterImpl[T any] struct {
 	// the chan used to inform the manager that this waiter is done.
 	managerDoneCh chan string
 
-	// when closed indicates this waiter should stop / cleanup.
-	doneCh chan struct{}
+	// when signaled indicates this waiter should stop / cleanup.
+	doneSignal concurrency.Signal
 }
 
 var _ Waiter[struct{}] = (*waiterImpl[struct{}])(nil)
@@ -53,7 +55,7 @@ func newGenericWaiter[T any](id string, ch chan *response[T], managerDoneCh chan
 		id:            id,
 		ch:            ch,
 		managerDoneCh: managerDoneCh,
-		doneCh:        make(chan struct{}),
+		doneSignal:    concurrency.NewSignal(),
 	}
 }
 
@@ -75,7 +77,7 @@ func (w *waiterImpl[T]) Wait(ctx context.Context) (T, error) {
 		// msg received.
 		data = r.data
 		err = r.err
-	case <-w.doneCh:
+	case <-w.doneSignal.Done():
 		// close called on this waiter.
 		err = ErrWaiterClosed
 		w.managerDoneCh <- w.id
@@ -88,5 +90,5 @@ func (w *waiterImpl[T]) Wait(ctx context.Context) (T, error) {
 }
 
 func (w *waiterImpl[T]) Close() {
-	close(w.doneCh)
+	w.doneSignal.Signal()
 }
