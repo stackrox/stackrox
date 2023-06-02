@@ -7,23 +7,16 @@ import (
 	"github.com/jackc/pgx/v4"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	migrationSchema "github.com/stackrox/rox/migrator/migrations/m_183_to_m_184_create_declarative_config_health_table/schema"
+	migrationSchema "github.com/stackrox/rox/migrator/migrations/m_183_to_m_184_move_declarative_config_health/integrationhealth/schema"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
-
-// Store is the interface to the config health data layer
-type Store interface {
-	Get(ctx context.Context, id string) (*storage.DeclarativeConfigHealth, bool, error)
-	Upsert(ctx context.Context, obj *storage.DeclarativeConfigHealth) error
-	Delete(ctx context.Context, id string) error
-	Walk(ctx context.Context, fn func(obj *storage.DeclarativeConfigHealth) error) error
-}
 
 const (
 	cursorBatchSize = 50
@@ -31,8 +24,16 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = migrationSchema.DeclarativeConfigHealthsSchema
+	schema = migrationSchema.IntegrationHealthsSchema
 )
+
+// Store is the interface to interact with the storage for storage.IntegrationHealth
+type Store interface {
+	Upsert(ctx context.Context, obj *storage.IntegrationHealth) error
+	Delete(ctx context.Context, id string) error
+	Get(ctx context.Context, id string) (*storage.IntegrationHealth, bool, error)
+	Walk(ctx context.Context, fn func(obj *storage.IntegrationHealth) error) error
+}
 
 type storeImpl struct {
 	db    postgres.DB
@@ -48,7 +49,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoDeclarativeConfigHealths(_ context.Context, batch *pgx.Batch, obj *storage.DeclarativeConfigHealth) error {
+func insertIntoIntegrationHealths(_ context.Context, batch *pgx.Batch, obj *storage.IntegrationHealth) error {
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
 		return marshalErr
@@ -60,7 +61,7 @@ func insertIntoDeclarativeConfigHealths(_ context.Context, batch *pgx.Batch, obj
 		serialized,
 	}
 
-	finalStr := "INSERT INTO declarative_config_healths (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO integration_healths (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -74,8 +75,8 @@ func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*postg
 	return conn, conn.Release, nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.DeclarativeConfigHealth) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "DeclarativeConfigHealth")
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.IntegrationHealth) error {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "IntegrationHealth")
 	if err != nil {
 		return err
 	}
@@ -83,7 +84,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.DeclarativeConf
 
 	for _, obj := range objs {
 		batch := &pgx.Batch{}
-		if err := insertIntoDeclarativeConfigHealths(ctx, batch, obj); err != nil {
+		if err := insertIntoIntegrationHealths(ctx, batch, obj); err != nil {
 			return err
 		}
 		batchResults := conn.SendBatch(ctx, batch)
@@ -106,8 +107,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.DeclarativeConf
 
 //// Interface functions
 
-// Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.DeclarativeConfigHealth) error {
+func (s *storeImpl) Upsert(ctx context.Context, obj *storage.IntegrationHealth) error {
 	return pgutils.Retry(func() error {
 		return s.upsert(ctx, obj)
 	})
@@ -116,14 +116,15 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.DeclarativeConfigHe
 // Delete removes the object associated to the specified ID from the store.
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
+
 	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 
 // Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, id string) (*storage.DeclarativeConfigHealth, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string) (*storage.IntegrationHealth, bool, error) {
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
 
-	data, err := pgSearch.RunGetQueryForSchema[storage.DeclarativeConfigHealth](ctx, schema, q, s.db)
+	data, err := pgSearch.RunGetQueryForSchema[storage.IntegrationHealth](ctx, schema, q, s.db)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
@@ -132,9 +133,9 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.DeclarativeCon
 }
 
 // Walk iterates over all of the objects in the store and applies the closure.
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.DeclarativeConfigHealth) error) error {
+func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.IntegrationHealth) error) error {
 	var sacQueryFilter *v1.Query
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.DeclarativeConfigHealth](ctx, schema, sacQueryFilter, s.db)
+	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.IntegrationHealth](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
 	}
