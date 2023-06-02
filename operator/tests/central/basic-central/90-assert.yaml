@@ -126,9 +126,6 @@ spec:
           name: central-external-db
           optional: true
         name: central-external-db-volume
-      - name: stackrox-db
-        persistentVolumeClaim:
-          claimName: stackrox-db
       - name: config-map-1
         configMap:
           name: config-map-1
