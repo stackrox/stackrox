@@ -34,13 +34,16 @@ func (d *postgresGatherer) Gather(ctx context.Context) *data.DatabaseStats {
 	dbStats.Type = "postgres"
 	dbStats.UsedBytes = totalSize
 	dbStats.DatabaseDetails = globaldb.CollectPostgresDatabaseSizes(d.adminConfig)
-	dbStats.Errors = errorList.ErrorStrings()
 
 	// Check Postgres remaining capacity
 	if !env.ManagedCentral.BooleanSetting() {
-		availableDBBytes, err := pgadmin.GetRemainingCapacity(d.adminConfig)
-		errorList.AddError(err)
+		availableDBBytes, _ := pgadmin.GetRemainingCapacity(d.adminConfig)
+		//errorList.AddError(err)
 		dbStats.AvailableBytes = availableDBBytes
+	}
+
+	if !errorList.Empty() {
+		dbStats.Errors = errorList.ErrorStrings()
 	}
 
 	return dbStats
