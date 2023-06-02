@@ -1,12 +1,16 @@
 import React, { ReactElement } from 'react';
-import { CheckCircleIcon } from '@patternfly/react-icons';
-import { Button, CardHeader, CardTitle, Flex, FlexItem, Spinner } from '@patternfly/react-core';
+import { Button, CardHeader, CardTitle, Flex, FlexItem } from '@patternfly/react-core';
 
-import IconText from 'Components/PatternFly/IconText/IconText';
 import LinkShim from 'Components/PatternFly/LinkShim/LinkShim';
 import { clustersBasePath } from 'routePaths';
 
-import { ClusterStatusCounts } from './ClustersHealth.utils';
+import { ErrorIcon, healthIconMap, SpinnerIcon } from '../CardHeaderIcons';
+
+import {
+    ClusterStatusCounts,
+    getClustersHealthPhrase,
+    getClustersHealthVariant,
+} from './ClustersHealth.utils';
 
 export type ClustersHealthCardHeaderProps = {
     counts: ClusterStatusCounts | null;
@@ -19,22 +23,24 @@ function ClustersHealthCardHeader({
     isFetchingInitialRequest,
     title,
 }: ClustersHealthCardHeaderProps): ReactElement {
-    const isHealthy =
-        counts !== null && counts.HEALTHY !== 0 && counts.UNHEALTHY === 0 && counts.DEGRADED === 0;
+    /* eslint-disable no-nested-ternary */
+    const icon = isFetchingInitialRequest
+        ? SpinnerIcon
+        : !counts
+        ? ErrorIcon
+        : healthIconMap[getClustersHealthVariant(counts)];
+    /* eslint-enable no-nested-ternary */
+
+    const phrase = counts === null ? '' : getClustersHealthPhrase(counts);
 
     return (
         <CardHeader>
             <Flex className="pf-u-flex-grow-1">
+                <FlexItem>{icon}</FlexItem>
                 <FlexItem>
                     <CardTitle component="h2">{title}</CardTitle>
                 </FlexItem>
-                {isFetchingInitialRequest && <Spinner isSVG size="md" />}
-                {isHealthy && (
-                    <IconText
-                        icon={<CheckCircleIcon color="var(--pf-global--success-color--100)" />}
-                        text="healthy"
-                    />
-                )}
+                {phrase && <FlexItem>{phrase}</FlexItem>}
                 <FlexItem align={{ default: 'alignRight' }}>
                     <Button variant="link" isInline component={LinkShim} href={clustersBasePath}>
                         View clusters

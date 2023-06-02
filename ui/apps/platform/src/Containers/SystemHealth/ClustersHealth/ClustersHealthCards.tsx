@@ -15,7 +15,7 @@ type ClustersHealthCardsProps = {
 
 const ClustersHealthCards = ({ pollingCount }: ClustersHealthCardsProps): ReactElement => {
     const [isFetching, setIsFetching] = useState(false);
-    const [requestErrorMessage, setRequestErrorMessage] = useState('');
+    const [errorMessageFetching, setErrorMessageFetching] = useState('');
     const [clusters, setClusters] = useState<Cluster[]>([]);
 
     const [currentDatetime, setCurrentDatetime] = useState<Date | null>(null);
@@ -24,7 +24,7 @@ const ClustersHealthCards = ({ pollingCount }: ClustersHealthCardsProps): ReactE
         setIsFetching(true);
         fetchClustersAsArray()
             .then((clustersFetched) => {
-                setRequestErrorMessage('');
+                setErrorMessageFetching('');
                 // TODO supersede src/Containers/Clusters/clusterTypes.ts with types/cluster.proto.ts
                 // eslint-disable-next-line
                 // @ts-ignore
@@ -32,7 +32,7 @@ const ClustersHealthCards = ({ pollingCount }: ClustersHealthCardsProps): ReactE
                 setCurrentDatetime(new Date());
             })
             .catch((error) => {
-                setRequestErrorMessage(getAxiosErrorMessage(error));
+                setErrorMessageFetching(getAxiosErrorMessage(error));
                 setClusters([]);
                 setCurrentDatetime(null);
             })
@@ -49,14 +49,14 @@ const ClustersHealthCards = ({ pollingCount }: ClustersHealthCardsProps): ReactE
                 <ClusterStatusCard
                     clusters={clusters}
                     isFetchingInitialRequest={isFetchingInitialRequest}
-                    requestErrorMessage={requestErrorMessage}
+                    errorMessageFetching={errorMessageFetching}
                 />
             </GridItem>
             <GridItem span={12}>
                 <SensorUpgradeCard
                     clusters={clusters}
                     isFetchingInitialRequest={isFetchingInitialRequest}
-                    requestErrorMessage={requestErrorMessage}
+                    errorMessageFetching={errorMessageFetching}
                 />
             </GridItem>
             <GridItem span={12}>
@@ -64,7 +64,7 @@ const ClustersHealthCards = ({ pollingCount }: ClustersHealthCardsProps): ReactE
                     clusters={clusters}
                     currentDatetime={currentDatetime}
                     isFetchingInitialRequest={isFetchingInitialRequest}
-                    requestErrorMessage={requestErrorMessage}
+                    errorMessageFetching={errorMessageFetching}
                 />
             </GridItem>
         </>
