@@ -195,7 +195,6 @@ func getCentralPersistenceValues(p *platform.Persistence, pvcExists func(claimNa
 }
 
 func getCentralComponentValues(c *platform.CentralComponentSpec, pvcExists func(lookupName string) bool, pvcObsoleted bool) *translation.ValuesBuilder {
-	// Change something here.
 	cv := translation.NewValuesBuilder()
 
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
