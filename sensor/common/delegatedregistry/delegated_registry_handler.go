@@ -21,7 +21,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	scanTimeout         = 6 * time.Minute
+	scanTimeout         = env.ScanTimeout.DurationSetting()
 	statusUpdateTimeout = 10 * time.Second
 )
 

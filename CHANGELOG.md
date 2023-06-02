@@ -14,13 +14,22 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-15447: 
   - A new `DelegatedRegistryConfig` API at `/v1/delegatedregistryconfig` has been added that provides dynamic configuration for local registry scanning (replaces `ROX_FORCE_LOCAL_IMAGE_SCANNING`).
   - Image Integrations will now be synced with secured clusters that have local scanning enabled.
+- A new environment variable `ROX_DISABLE_SIGNATURE_FETCHING` has been added to Central and Sensor which stops fetching image signatures in case the signature verification feature shall not be used.
+  You may set this in case there's too much load on registries due to attempts to fetch image signatures.
+  Note that if the environment variable is set, no signatures will be fetched and thus the signature verification feature cannot be used.
+- ROX-16532: Resource limits and requests for the node-inventory container can now be configured via the operator.
+- A new environment variable `ROX_SCAN_TIMEOUT` has been added to Sensor which allows for customizing the image scan timeout used in Sensor initiated scans.
 
 ### Removed Features
 - ROX-14398: As announced in 3.74, the permission `Access` replaces the deprecated permission `Role`.
 - ROX-14398: As announced in 3.74, the `Scope Manager` system role and permission set will be removed. If existing product installations do have customer references to either the `Scope Manager` system role or the `Scope Manager` system permission set, then the referenced object will be adjusted to contain a description mentioning its deprecation. Furthermore, the objects will not be marked as system resources, and will not be supported anymore.
 - ROX-17031: env var `ROX_FORCE_LOCAL_IMAGE_SCANNING` has been removed and replaced by the `DelegatedRegistryConfig` API.
 
-### Deprecated Fatures
+- KernelModule collection has been removed, following deprecation in 4.0.
+    - Secured clusters configured to use KernelModule collection will automatically switch to EBPF
+
+### Deprecated Features
+Vulnerability Management 1.0 sections Image CVEs, Image Components, Images, Deployments, and Namespaces are deprecated and will be removed in the future. Once removed, use Vulnerability Management 2.0 for managing workload vulnerabilities.
 
 ### Technical Changes
 - The output of `roxctl central whoami` now includes the username as well.

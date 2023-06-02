@@ -2,7 +2,6 @@ import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
-import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import RiskScore from 'Components/RiskScore';
 import Metadata from 'Components/Metadata';
 import entityTypes from 'constants/entityTypes';
@@ -27,10 +26,6 @@ const emptyNamespace = {
         labels: [],
         id: '',
     },
-    policyStatus: {
-        status: '',
-        failingPolicies: [],
-    },
     vulnCount: 0,
     vulnerabilities: [],
 };
@@ -47,14 +42,13 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
         ...data,
     };
 
-    const { metadata, policyStatus } = safeData;
+    const { metadata } = safeData;
 
-    if (!metadata || !policyStatus) {
+    if (!metadata) {
         return null;
     }
 
     const { clusterName, clusterId, priority, labels, id } = metadata;
-    const { status } = policyStatus;
     const metadataKeyValuePairs = [];
 
     if (!entityContext[entityTypes.CLUSTER]) {
@@ -65,13 +59,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
         });
     }
 
-    const namespaceStats = [
-        <RiskScore key="risk-score" score={priority} />,
-        <React.Fragment key="policy-status">
-            <span className="pb-2">Policy status:</span>
-            <PolicyStatusIconText isPass={status === 'pass'} isTextOnly={false} />
-        </React.Fragment>,
-    ];
+    const namespaceStats = [<RiskScore key="risk-score" score={priority} />];
 
     const currentEntity = { [entityTypes.NAMESPACE]: id };
     const newEntityContext = { ...entityContext, ...currentEntity };

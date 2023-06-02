@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
+import noop from 'lodash/noop';
+import uniq from 'lodash/uniq';
 import { Toolbar, ToolbarGroup, ToolbarContent, ToolbarChip } from '@patternfly/react-core';
 
 import useURLSearch from 'hooks/useURLSearch';
-import { uniq } from 'lodash';
+import { SearchFilter } from 'types/search';
 import { DefaultFilters, VulnerabilitySeverityLabel, FixableStatus } from '../types';
 import { Resource } from './FilterResourceDropdown';
 import FilterAutocomplete, { FilterAutocompleteSelectProps } from './FilterAutocomplete';
@@ -19,29 +21,38 @@ type FilterType = 'Severity' | 'Fixable';
 type WorkloadTableToolbarProps = {
     defaultFilters?: DefaultFilters;
     supportedResourceFilters?: FilterAutocompleteSelectProps['supportedResourceFilters'];
+    autocompleteSearchContext?: FilterAutocompleteSelectProps['autocompleteSearchContext'];
+    onFilterChange?: (searchFilter: SearchFilter) => void;
 };
 
 function WorkloadTableToolbar({
     defaultFilters = emptyDefaultFilters,
     supportedResourceFilters,
+    autocompleteSearchContext,
+    onFilterChange = noop,
 }: WorkloadTableToolbarProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
     const searchSeverity = (searchFilter.Severity as VulnerabilitySeverityLabel[]) || [];
     const searchFixable = (searchFilter.Fixable as FixableStatus[]) || [];
     const { Severity: defaultSeverity, Fixable: defaultFixable } = defaultFilters;
 
+    function onChangeSearchFilter(newFilter: SearchFilter) {
+        setSearchFilter(newFilter);
+        onFilterChange(newFilter);
+    }
+
     function onSelect(type: FilterType, e, selection) {
         const { checked } = e.target as HTMLInputElement;
         const selectedSearchFilter = searchFilter[type] as string[];
         if (searchFilter[type]) {
-            setSearchFilter({
+            onChangeSearchFilter({
                 ...searchFilter,
                 [type]: checked
                     ? [...selectedSearchFilter, selection]
                     : selectedSearchFilter.filter((value) => value !== selection),
             });
         } else {
-            setSearchFilter({
+            onChangeSearchFilter({
                 ...searchFilter,
                 [type]: checked
                     ? [selection]
@@ -55,19 +66,22 @@ function WorkloadTableToolbar({
         const newResourceFilter = searchFilter[category] as string[];
         const chipKey = typeof chip === 'string' ? chip : chip.key;
         newSearchFilter[category] = newResourceFilter.filter((fil: string) => fil !== chipKey);
-        setSearchFilter(newSearchFilter);
+        onChangeSearchFilter(newSearchFilter);
     }
 
     function onDeleteGroup(category: FilterType | Resource) {
         const newSearchFilter = { ...searchFilter };
         delete newSearchFilter[category];
-        setSearchFilter(newSearchFilter);
+        onChangeSearchFilter(newSearchFilter);
     }
 
     function onDeleteAll() {
-        setSearchFilter({});
+        onChangeSearchFilter({});
     }
 
+    // The `onChangeSearchFilter` function is intentionally not used in place of `setSearchFilter` below since
+    // it is intended to respond to a change via user action, and this useEffect is intended to sync the
+    // state when the page loads or local storage changes.
     useEffect(() => {
         const severityFilter = uniq([...defaultSeverity, ...searchSeverity]);
         const fixableFilter = uniq([...defaultFixable, ...searchFixable]);
@@ -91,6 +105,7 @@ function WorkloadTableToolbar({
                     setSearchFilter={setSearchFilter}
                     supportedResourceFilters={supportedResourceFilters}
                     onDeleteGroup={onDeleteGroup}
+                    autocompleteSearchContext={autocompleteSearchContext}
                 />
                 <ToolbarGroup>
                     <CVESeverityDropdown searchFilter={searchFilter} onSelect={onSelect} />

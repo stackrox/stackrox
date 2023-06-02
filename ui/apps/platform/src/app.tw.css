@@ -964,7 +964,7 @@ h6 {
 /* widget detail */
 .widget-detail-bullet {
     position: relative;
-    @apply font-500 py-2 px-1;
+    @apply py-2 px-1;
 }
 
 .widget-detail-bullet::before {

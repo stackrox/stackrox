@@ -13,7 +13,6 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import { DASHBOARD_LIMIT } from 'constants/workflowPages.constants';
 import DashboardMenu from 'Components/DashboardMenu';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import PoliciesCountTile from '../Components/PoliciesCountTile';
 import CvesCountTile from '../Components/CvesCountTile';
 import ImagesCountTile from '../Components/ImagesCountTile';
 import NodesCountTile from '../Components/NodesCountTile';
@@ -84,7 +83,6 @@ const VulnDashboardPage = ({ history }) => {
                             <CvesMenu />
                         </div>
                     )}
-                    <PoliciesCountTile />
                     {!showVmUpdates && <CvesCountTile entityType={entityTypes.CVE} />}
                     <NodesCountTile />
                     <ImagesCountTile />

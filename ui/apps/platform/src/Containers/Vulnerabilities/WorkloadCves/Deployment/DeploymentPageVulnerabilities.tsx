@@ -164,7 +164,13 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                 component="div"
             >
                 <div className="pf-u-px-sm pf-u-background-color-100">
-                    <WorkloadTableToolbar supportedResourceFilters={deploymentResourceFilters} />
+                    <WorkloadTableToolbar
+                        autocompleteSearchContext={{
+                            'Deployment ID': deploymentId,
+                        }}
+                        supportedResourceFilters={deploymentResourceFilters}
+                        onFilterChange={() => setPage(1)}
+                    />
                 </div>
                 <div className="pf-u-flex-grow-1 pf-u-background-color-100">
                     <div className="pf-u-px-lg pf-u-pb-lg">
@@ -183,7 +189,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                                 screenreaderText="Loading deployment summary data"
                             />
                         )}
-                        {summaryData && summaryData.deployment && (
+                        {!summaryRequest.error && summaryData && summaryData.deployment && (
                             <Grid hasGutter>
                                 <GridItem sm={12} md={6} xl2={4}>
                                     <BySeveritySummaryCard

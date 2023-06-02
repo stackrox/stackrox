@@ -2,10 +2,9 @@ package delegator
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	deleConnection "github.com/stackrox/rox/central/delegatedregistryconfig/util/connection"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -43,37 +42,41 @@ type delegatorImpl struct {
 
 // GetDelegateClusterID returns the cluster id that should enrich this image (if any) and
 // true if enrichment should be delegated to a secured cluster, false otherwise.
-func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, image *storage.Image) (string, bool, error) {
-	config, err := d.getConfig(ctx)
-	if err != nil {
+func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, imgName *storage.ImageName) (string, bool, error) {
+	config, exists, err := d.deleRegConfigDS.GetConfig(ctx)
+	if err != nil || !exists {
 		return "", false, err
 	}
 
-	shouldDelegate, clusterID := d.shouldDelegate(image, config)
+	shouldDelegate, clusterID := d.shouldDelegate(imgName, config)
 	if !shouldDelegate {
 		return "", false, nil
 	}
 
-	err = d.validateCluster(clusterID)
-	return clusterID, true, err
+	if err := d.validateCluster(clusterID); err != nil {
+		return "", true, err
+	}
+
+	return clusterID, true, nil
 }
 
-// DelegateEnrichImage sends an enrichment request to the provided cluster.
-func (d *delegatorImpl) DelegateEnrichImage(ctx context.Context, image *storage.Image, clusterID string, force bool) error {
+// DelegateScanImage sends a scan request to the provided cluster.
+func (d *delegatorImpl) DelegateScanImage(ctx context.Context, imgName *storage.ImageName, clusterID string, force bool) (*storage.Image, error) {
 	if clusterID == "" {
-		return errors.New("missing cluster id")
+		return nil, errors.New("missing cluster id")
 	}
 
 	w, err := d.scanWaiterManager.NewWaiter()
 	if err != nil {
-		return err
+		return nil, err
 	}
+	defer w.Close()
 
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_ScanImage{
 			ScanImage: &central.ScanImage{
 				RequestId: w.ID(),
-				ImageName: image.GetName().GetFullName(),
+				ImageName: imgName.GetFullName(),
 				Force:     force,
 			},
 		},
@@ -81,53 +84,46 @@ func (d *delegatorImpl) DelegateEnrichImage(ctx context.Context, image *storage.
 
 	err = d.connManager.SendMessage(clusterID, msg)
 	if err != nil {
-		w.Close()
-		return err
+		return nil, err
 	}
 
-	log.Infof("Sent scan request %q to cluster %q for %q", w.ID(), clusterID, image.GetName().GetFullName())
+	log.Infof("Sent scan request %q to cluster %q for %q", w.ID(), clusterID, imgName.GetFullName())
 
-	img, err := w.Wait(ctx)
+	image, err := w.Wait(ctx)
 	if err != nil {
-		return fmt.Errorf("error delegating scan to cluster %q for %q: %w", clusterID, image.GetName().GetFullName(), err)
+		return nil, errors.Wrapf(err, "error delegating scan to cluster %q for %q", clusterID, image.GetName().GetFullName())
 	}
 
-	log.Debugf("Scan response received for %q and image %q", w.ID(), img.GetName().GetFullName())
+	log.Debugf("Scan response received for %q and image %q", w.ID(), imgName.GetFullName())
 
-	// Copy the fields from img into image, callers expecting image to be modified in place.
-	*image = *img
-
-	return nil
+	return image, nil
 }
 
-func (d *delegatorImpl) getConfig(ctx context.Context) (*storage.DelegatedRegistryConfig, error) {
-	config, _, err := d.deleRegConfigDS.GetConfig(ctx)
-	return config, err
-}
-
-func (d *delegatorImpl) shouldDelegate(image *storage.Image, config *storage.DelegatedRegistryConfig) (bool, string) {
-	if config == nil || config.GetEnabledFor() == storage.DelegatedRegistryConfig_NONE {
+func (d *delegatorImpl) shouldDelegate(imgName *storage.ImageName, config *storage.DelegatedRegistryConfig) (bool, string) {
+	if config.GetEnabledFor() == storage.DelegatedRegistryConfig_NONE {
 		return false, ""
 	}
 
-	var should bool
-	if config.GetEnabledFor() == storage.DelegatedRegistryConfig_ALL {
-		should = true
-	}
-
 	clusterID := config.GetDefaultClusterId()
-	imageFullName := urlfmt.TrimHTTPPrefixes(image.GetName().GetFullName())
+	imageFullName := urlfmt.TrimHTTPPrefixes(imgName.GetFullName())
+
 	for _, reg := range config.GetRegistries() {
 		regPath := urlfmt.TrimHTTPPrefixes(reg.GetPath())
+
 		if strings.HasPrefix(imageFullName, regPath) {
-			should = true
 			if reg.GetClusterId() != "" {
-				clusterID = reg.GetClusterId()
+				return true, reg.GetClusterId()
 			}
+
+			return true, clusterID
 		}
 	}
 
-	return should, clusterID
+	if config.GetEnabledFor() == storage.DelegatedRegistryConfig_ALL {
+		return true, clusterID
+	}
+
+	return false, ""
 }
 
 func (d *delegatorImpl) validateCluster(clusterID string) error {
@@ -137,11 +133,11 @@ func (d *delegatorImpl) validateCluster(clusterID string) error {
 
 	conn := d.connManager.GetConnection(clusterID)
 	if conn == nil {
-		return fmt.Errorf("no connection to %q", clusterID)
+		return errors.Errorf("no connection to %q", clusterID)
 	}
 
 	if !deleConnection.ValidForDelegation(conn) {
-		return fmt.Errorf("cluster %q does not support delegated scanning", clusterID)
+		return errors.Errorf("cluster %q does not support delegated scanning", clusterID)
 	}
 
 	return nil

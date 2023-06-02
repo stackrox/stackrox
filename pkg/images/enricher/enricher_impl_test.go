@@ -1124,10 +1124,11 @@ func TestDelegateEnrichImage(t *testing.T) {
 
 	t.Run("delegate enrich success", func(t *testing.T) {
 		setup(t)
+		fakeImage := &storage.Image{}
 		dele.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("cluster-id", true, nil)
-		dele.EXPECT().DelegateEnrichImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+		dele.EXPECT().DelegateScanImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(fakeImage, nil)
 
-		should, err := e.delegateEnrichImage(emptyCtx, deleEnrichCtx, nil)
+		should, err := e.delegateEnrichImage(emptyCtx, deleEnrichCtx, fakeImage)
 		assert.True(t, should)
 		assert.NoError(t, err)
 	})
@@ -1135,7 +1136,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 	t.Run("delegate enrich error", func(t *testing.T) {
 		setup(t)
 		dele.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("cluster-id", true, nil)
-		dele.EXPECT().DelegateEnrichImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(errBroken)
+		dele.EXPECT().DelegateScanImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errBroken)
 
 		should, err := e.delegateEnrichImage(emptyCtx, deleEnrichCtx, nil)
 		assert.True(t, should)
@@ -1186,10 +1187,11 @@ func TestEnrichImage_Delegate(t *testing.T) {
 
 	t.Run("delegate enrich success", func(t *testing.T) {
 		setup(t)
+		fakeImage := &storage.Image{}
 		dele.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("cluster-id", true, nil)
-		dele.EXPECT().DelegateEnrichImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+		dele.EXPECT().DelegateScanImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(fakeImage, nil)
 
-		result, err := e.EnrichImage(emptyCtx, deleEnrichCtx, nil)
+		result, err := e.EnrichImage(emptyCtx, deleEnrichCtx, fakeImage)
 		assert.Equal(t, result.ScanResult, ScanSucceeded)
 		assert.True(t, result.ImageUpdated)
 		assert.NoError(t, err)

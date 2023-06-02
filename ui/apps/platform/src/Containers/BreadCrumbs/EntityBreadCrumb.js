@@ -16,11 +16,11 @@ const EntityBreadCrumb = ({ workflowEntity, url }) => {
     return (
         <span className="flex flex-col max-w-full" data-testid="breadcrumb-link-text">
             {url ? (
-                <Link className="text-primary-700 underline" title={title} to={url}>
+                <Link className="text-primary-700 underline font-700" title={title} to={url}>
                     {title}
                 </Link>
             ) : (
-                <span className="w-full truncate" title={title}>
+                <span className="w-full truncate font-700" title={title}>
                     {title}
                 </span>
             )}

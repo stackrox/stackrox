@@ -22,11 +22,7 @@ var (
 
 	fakeRegistry      = "fake-reg"
 	fakeImageFullName = fmt.Sprintf("%v/repo/something", fakeRegistry)
-	fakeImage         = &storage.Image{
-		Name: &storage.ImageName{
-			FullName: fakeImageFullName,
-		},
-	}
+	fakeImgName       = &storage.ImageName{FullName: fakeImageFullName}
 )
 
 func TestGetDelegateClusterID(t *testing.T) {
@@ -79,7 +75,7 @@ func TestGetDelegateClusterID(t *testing.T) {
 	t.Run("none", func(t *testing.T) {
 		setup(t)
 		config := &storage.DelegatedRegistryConfig{EnabledFor: storage.DelegatedRegistryConfig_NONE}
-		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, false, nil)
+		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		clusterID, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
 		assert.Empty(t, clusterID)
 		assert.False(t, shouldDelegate)
@@ -89,7 +85,7 @@ func TestGetDelegateClusterID(t *testing.T) {
 	t.Run("all no default cluster id", func(t *testing.T) {
 		setup(t)
 		config := &storage.DelegatedRegistryConfig{EnabledFor: storage.DelegatedRegistryConfig_ALL}
-		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, false, nil)
+		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		clusterID, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
 		assert.Empty(t, clusterID)
 		assert.True(t, shouldDelegate)
@@ -102,10 +98,9 @@ func TestGetDelegateClusterID(t *testing.T) {
 			EnabledFor:       storage.DelegatedRegistryConfig_ALL,
 			DefaultClusterId: fakeClusterID,
 		}
-		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, false, nil)
+		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
-		clusterID, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
-		assert.Equal(t, fakeClusterID, clusterID)
+		_, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
 		assert.True(t, shouldDelegate)
 		assert.ErrorContains(t, err, "no connection")
 	})
@@ -116,10 +111,9 @@ func TestGetDelegateClusterID(t *testing.T) {
 			EnabledFor:       storage.DelegatedRegistryConfig_ALL,
 			DefaultClusterId: fakeClusterID,
 		}
-		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, false, nil)
+		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(fakeConnWithoutCap)
-		clusterID, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
-		assert.Equal(t, fakeClusterID, clusterID)
+		_, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
 		assert.True(t, shouldDelegate)
 		assert.ErrorContains(t, err, "does not support")
 	})
@@ -130,7 +124,7 @@ func TestGetDelegateClusterID(t *testing.T) {
 			EnabledFor:       storage.DelegatedRegistryConfig_ALL,
 			DefaultClusterId: fakeClusterID,
 		}
-		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, false, nil)
+		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(fakeConnWithCap)
 		clusterID, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
 		assert.Equal(t, fakeClusterID, clusterID)
@@ -146,15 +140,14 @@ func TestGetDelegateClusterID(t *testing.T) {
 				{Path: "", ClusterId: fakeClusterID},
 			},
 		}
-		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, false, nil)
+		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(fakeConnWithoutCap)
-		clusterID, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
-		assert.Equal(t, fakeClusterID, clusterID)
+		_, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
 		assert.True(t, shouldDelegate)
 		assert.ErrorContains(t, err, "does not support")
 	})
 
-	t.Run("all reg cluster id conn no cap", func(t *testing.T) {
+	t.Run("all reg cluster id conn with cap", func(t *testing.T) {
 		setup(t)
 		config := &storage.DelegatedRegistryConfig{
 			EnabledFor: storage.DelegatedRegistryConfig_ALL,
@@ -162,7 +155,7 @@ func TestGetDelegateClusterID(t *testing.T) {
 				{Path: "", ClusterId: fakeClusterID},
 			},
 		}
-		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, false, nil)
+		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(fakeConnWithCap)
 		clusterID, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
 		assert.Equal(t, fakeClusterID, clusterID)
@@ -178,7 +171,7 @@ func TestGetDelegateClusterID(t *testing.T) {
 				{Path: "fake-path", ClusterId: fakeClusterID},
 			},
 		}
-		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, false, nil)
+		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		clusterID, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
 		assert.Empty(t, clusterID)
 		assert.False(t, shouldDelegate)
@@ -194,10 +187,48 @@ func TestGetDelegateClusterID(t *testing.T) {
 			},
 		}
 
-		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, false, nil)
+		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(fakeConnWithCap)
-		clusterID, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, fakeImage)
+		clusterID, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, fakeImgName)
 		assert.Equal(t, fakeClusterID, clusterID)
+		assert.True(t, shouldDelegate)
+		assert.Nil(t, err)
+	})
+
+	t.Run("specific reg match no reg cluster id", func(t *testing.T) {
+		setup(t)
+		config := &storage.DelegatedRegistryConfig{
+			EnabledFor:       storage.DelegatedRegistryConfig_SPECIFIC,
+			DefaultClusterId: fakeClusterID,
+			Registries: []*storage.DelegatedRegistryConfig_DelegatedRegistry{
+				{Path: fakeRegistry},
+			},
+		}
+
+		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
+		connMgr.EXPECT().GetConnection(gomock.Any()).Return(fakeConnWithCap)
+		clusterID, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, fakeImgName)
+		assert.Equal(t, fakeClusterID, clusterID)
+		assert.True(t, shouldDelegate)
+		assert.Nil(t, err)
+	})
+
+	t.Run("specific multiple regs first match", func(t *testing.T) {
+		setup(t)
+		tImgName := &storage.ImageName{FullName: "reg/specific"}
+
+		config := &storage.DelegatedRegistryConfig{
+			EnabledFor: storage.DelegatedRegistryConfig_SPECIFIC,
+			Registries: []*storage.DelegatedRegistryConfig_DelegatedRegistry{
+				{Path: "reg/specific", ClusterId: "id1"},
+				{Path: "reg", ClusterId: "id2"},
+			},
+		}
+
+		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
+		connMgr.EXPECT().GetConnection(gomock.Any()).Return(fakeConnWithCap)
+		clusterID, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, tImgName)
+		assert.Equal(t, "id1", clusterID)
 		assert.True(t, shouldDelegate)
 		assert.Nil(t, err)
 	})
@@ -224,16 +255,18 @@ func TestDelegateEnrichImage(t *testing.T) {
 
 	t.Run("empty cluster id", func(t *testing.T) {
 		setup(t)
-		err := d.DelegateEnrichImage(ctxBG, nil, "", false)
+		image, err := d.DelegateScanImage(ctxBG, nil, "", false)
 		assert.ErrorContains(t, err, "cluster id")
+		assert.Nil(t, image)
 	})
 
 	t.Run("waiter create error", func(t *testing.T) {
 		setup(t)
 		waiterMgr.EXPECT().NewWaiter().Return(nil, errBroken)
 
-		err := d.DelegateEnrichImage(ctxBG, nil, fakeClusterID, false)
+		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, false)
 		assert.ErrorIs(t, err, errBroken)
+		assert.Nil(t, image)
 	})
 
 	t.Run("send msg error", func(t *testing.T) {
@@ -242,35 +275,38 @@ func TestDelegateEnrichImage(t *testing.T) {
 		waiter.EXPECT().Close()
 		connMgr.EXPECT().SendMessage(fakeClusterID, gomock.Any()).Return(errBroken)
 
-		err := d.DelegateEnrichImage(ctxBG, nil, fakeClusterID, false)
+		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, false)
 		assert.ErrorIs(t, err, errBroken)
+		assert.Nil(t, image)
 	})
 
 	t.Run("wait error", func(t *testing.T) {
 		setup(t)
 		waiterMgr.EXPECT().NewWaiter().Return(waiter, nil)
 		waiter.EXPECT().Wait(gomock.Any()).Return(nil, errBroken)
+		waiter.EXPECT().Close()
 		connMgr.EXPECT().SendMessage(fakeClusterID, gomock.Any())
 
-		err := d.DelegateEnrichImage(ctxBG, nil, fakeClusterID, false)
+		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, false)
 		assert.ErrorIs(t, err, errBroken)
+		assert.Nil(t, image)
 	})
 
 	t.Run("success round trip", func(t *testing.T) {
 		setup(t)
+		fakeImage := &storage.Image{
+			Name: &storage.ImageName{
+				FullName: fakeImageFullName,
+			},
+		}
+
 		waiterMgr.EXPECT().NewWaiter().Return(waiter, nil)
 		waiter.EXPECT().Wait(gomock.Any()).Return(fakeImage, nil)
+		waiter.EXPECT().Close()
 		connMgr.EXPECT().SendMessage(fakeClusterID, gomock.Any())
 
-		image := &storage.Image{}
-		err := d.DelegateEnrichImage(ctxBG, image, fakeClusterID, false)
+		image, err := d.DelegateScanImage(ctxBG, fakeImgName, fakeClusterID, false)
 		assert.NoError(t, err)
-
-		// Ensure the address of image hasn't change and does not match what the waiter returned.
-		// The enrichment logic expects the values of the input image to be modified in place.
-		assert.NotEqual(t, fmt.Sprintf("%p", image), fmt.Sprintf("%p", fakeImage))
-
-		// Ensure that value(s) from the fake image returned by the waiter were set on the input image.
-		assert.Equal(t, fakeImage.GetName().GetFullName(), image.GetName().GetFullName())
+		assert.Equal(t, fakeImage, image)
 	})
 }

@@ -76,7 +76,7 @@ function CvesByStatusSummaryCard({
     hiddenStatuses,
 }: CvesByStatusSummaryCardProps) {
     return (
-        <Card isCompact>
+        <Card isCompact isFlat>
             <CardTitle>CVEs by status</CardTitle>
             <CardBody>
                 <Grid className="pf-u-pl-sm">

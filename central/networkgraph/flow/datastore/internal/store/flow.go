@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,4 +26,7 @@ type FlowStore interface {
 
 	// RemoveStaleFlows - remove stale duplicate network flows
 	RemoveStaleFlows(ctx context.Context) error
+
+	// RemoveOrphanedFlows - remove flows that have been orphaned by deployments
+	RemoveOrphanedFlows(ctx context.Context, orphanWindow *time.Time) error
 }

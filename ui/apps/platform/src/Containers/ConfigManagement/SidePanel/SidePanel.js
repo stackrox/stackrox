@@ -98,7 +98,7 @@ const SidePanel = ({
             <PanelNew testid="side-panel">
                 <PanelHead>
                     <BreadCrumbs
-                        className="font-700 leading-normal text-base-600 truncate"
+                        className="leading-normal text-base-600 truncate"
                         entityType1={entityType1 || entityListType1}
                         entityId1={entityId1}
                         entityType2={entityType2}

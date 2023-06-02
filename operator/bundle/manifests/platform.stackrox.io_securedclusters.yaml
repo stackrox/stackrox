@@ -388,25 +388,24 @@ spec:
                       collection:
                         default: EBPF
                         description: The method for system-level data collection.
-                          EBPF is recommended. KernelModule is deprecated and will
-                          be removed in the 4.1 release. If you select "NoCollection",
-                          you will not be able to see any information about network
-                          activity and process executions. The remaining settings
-                          in these section will not have any effect.
+                          EBPF is recommended. If you select "NoCollection", you will
+                          not be able to see any information about network activity
+                          and process executions. The remaining settings in these
+                          section will not have any effect. Note that CORE_BPF is
+                          on Tech Preview stage.
                         enum:
                         - EBPF
                         - CORE_BPF
-                        - KernelModule
                         - NoCollection
                         type: string
                       imageFlavor:
                         default: Regular
                         description: The image flavor to use for collector. "Regular"
-                          images are bigger in size, but contain kernel modules for
-                          most kernels. If you use the "Slim" image flavor, you must
-                          ensure that your Central instance is connected to the internet,
-                          or regularly receives Collector Support Package updates
-                          (for further instructions, please refer to the documentation).
+                          images are bigger in size, but contain probes for most kernels.
+                          If you use the "Slim" image flavor, you must ensure that
+                          your Central instance is connected to the internet, or regularly
+                          receives Collector Support Package updates (for further
+                          instructions, please refer to the documentation).
                         enum:
                         - Regular
                         - Slim
@@ -467,6 +466,63 @@ spec:
                   compliance:
                     description: Settings for the Compliance container, which is responsible
                       for checking host-level configurations.
+                    properties:
+                      resources:
+                        description: Allows overriding the default resource settings
+                          for this component. Please consult the documentation for
+                          an overview of default resource requirements and a sizing
+                          guide.
+                        properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                        type: object
+                    type: object
+                  nodeInventory:
+                    description: Settings for the Node-Inventory container, which
+                      is responsible for scanning the Nodes' filesystem.
                     properties:
                       resources:
                         description: Allows overriding the default resource settings

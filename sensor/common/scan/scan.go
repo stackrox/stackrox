@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	ghErrors "github.com/pkg/errors"
+	pkgErrors "github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -138,7 +138,7 @@ func (s *LocalScan) getRegistries(namespace string, imgName *storage.ImageName) 
 // Will return any errors that may occur during scanning, fetching signatures or during reaching out to Central.
 func (s *LocalScan) enrichLocalImageFromRegistry(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage, registries []registryTypes.ImageRegistry, requestID string, force bool) (*storage.Image, error) {
 	if ci == nil {
-		return nil, ghErrors.Wrap(ErrEnrichNotStarted, "missing image, nothing to enrich")
+		return nil, pkgErrors.Wrap(ErrEnrichNotStarted, "missing image, nothing to enrich")
 	}
 
 	// Check if there is a local Scanner.
@@ -159,7 +159,7 @@ func (s *LocalScan) enrichLocalImageFromRegistry(ctx context.Context, centralCli
 		// no registries provided, try with no auth.
 		reg, err := s.createNoAuthImageRegistry(ctx, ci.GetName(), s.regFactory)
 		if err != nil {
-			return nil, errors.Join(ghErrors.Wrapf(err, "unable to create no auth registry for %q", ci.GetName()), ErrEnrichNotStarted)
+			return nil, errors.Join(pkgErrors.Wrapf(err, "unable to create no auth registry for %q", ci.GetName()), ErrEnrichNotStarted)
 		}
 		registries = append(registries, reg)
 	}
@@ -194,7 +194,7 @@ func (s *LocalScan) enrichLocalImageFromRegistry(ctx context.Context, centralCli
 	})
 	if err != nil {
 		log.Debugf("Unable to enrich image %q: %v", image.GetName().GetFullName(), err)
-		return nil, ghErrors.Wrapf(err, "enriching image %q via central", image.GetName())
+		return nil, pkgErrors.Wrapf(err, "enriching image %q via central", image.GetName())
 	}
 
 	if errorList.Empty() {
@@ -243,7 +243,7 @@ func (s *LocalScan) fetchImageAnalysis(ctx context.Context, errorList *errorhelp
 	if err != nil {
 		log.Debugf("Scan for image %q with id %v failed: %v", image.GetName().GetFullName(), image.GetId(), err)
 		image.Notes = append(image.Notes, storage.Image_MISSING_SCAN_DATA)
-		errorList.AddError(ghErrors.Wrapf(err, "scanning image %q locally", image.GetName()))
+		errorList.AddError(pkgErrors.Wrapf(err, "scanning image %q locally", image.GetName()))
 		return nil
 	}
 
@@ -262,7 +262,7 @@ func (s *LocalScan) fetchSignatures(ctx context.Context, errorList *errorhelpers
 	if err != nil {
 		log.Debugf("Failed fetching signatures for image %q: %v", image.GetName().GetFullName(), err)
 		image.Notes = append(image.Notes, storage.Image_MISSING_SIGNATURE)
-		errorList.AddError(ghErrors.Wrapf(err, "fetching signature for image %q from registry %q", image.GetName(), registry.Name()))
+		errorList.AddError(pkgErrors.Wrapf(err, "fetching signature for image %q from registry %q", image.GetName(), registry.Name()))
 		return nil
 	}
 
@@ -294,7 +294,7 @@ func createNoAuthImageRegistry(ctx context.Context, imgName *storage.ImageName, 
 
 	secure, err := tlscheck.CheckTLS(ctx, registry)
 	if err != nil {
-		return nil, ghErrors.Wrapf(err, "unable to check TLS for registry %q", registry)
+		return nil, pkgErrors.Wrapf(err, "unable to check TLS for registry %q", registry)
 	}
 
 	ii := &storage.ImageIntegration{

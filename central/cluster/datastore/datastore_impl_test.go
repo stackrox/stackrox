@@ -1382,7 +1382,7 @@ func (suite *ClusterDataStoreTestSuite) TestAddDefaults() {
 		suite.Empty(cluster.GetCollectorImage()) // must not be set
 		suite.Equal(centralEndpoint, cluster.GetCentralApiEndpoint())
 		suite.True(cluster.GetRuntimeSupport())
-		suite.Equal(storage.CollectionMethod_KERNEL_MODULE, cluster.GetCollectionMethod())
+		suite.Equal(storage.CollectionMethod_EBPF, cluster.GetCollectionMethod())
 		if tc := cluster.GetTolerationsConfig(); suite.NotNil(tc) {
 			suite.False(tc.GetDisabled())
 		}
@@ -1501,8 +1501,8 @@ func (suite *ClusterDataStoreTestSuite) TestAddDefaults() {
 	for method, runtimeSupport := range map[storage.CollectionMethod]bool{
 		storage.CollectionMethod_UNSET_COLLECTION: true,
 		storage.CollectionMethod_NO_COLLECTION:    false,
-		storage.CollectionMethod_KERNEL_MODULE:    true,
 		storage.CollectionMethod_EBPF:             true,
+		storage.CollectionMethod_CORE_BPF:         true,
 	} {
 		suite.Run(fmt.Sprintf("Runtime support for %s collection method", method), func() {
 			cluster := &storage.Cluster{
