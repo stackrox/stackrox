@@ -455,14 +455,6 @@ func emptyGetGlobalRegistryForImage(*storage.ImageName) (registryTypes.ImageRegi
 	return nil, errors.New("no registry found")
 }
 
-func emptyGetMatchingCentralRegIntegrations(*storage.ImageName) []registryTypes.ImageRegistry {
-	return nil
-}
-
-func emptyGetRegistryForImageInNamespace(*storage.ImageName, string) (registryTypes.ImageRegistry, error) {
-	return nil, errors.New("no registry found")
-}
-
 func successCreateNoAuthImageRegistry(context.Context, *storage.ImageName, registries.Factory) (registryTypes.ImageRegistry, error) {
 	return &fakeRegistry{}, nil
 }

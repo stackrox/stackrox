@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/registries/docker"
-	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/tlscheck"
@@ -68,7 +67,7 @@ type LocalScan struct {
 func NewLocalScan(registryStore *registry.Store) *LocalScan {
 	regFactory := registries.NewFactory(registries.FactoryOptions{
 		CreatorFuncs: []registries.CreatorWrapper{
-			dockerFactory.Creator,
+			docker.Creator,
 		},
 	})
 
@@ -111,15 +110,16 @@ func (s *LocalScan) getRegistries(namespace string, imgName *storage.ImageName) 
 
 	// Add registries from k8s pull secrets.
 	if namespace != "" {
-		// if namespace provided pull appropriate registry.
+		// If namespace provided pull appropriate registry.
+		// An err indicates no registry was found, only append if was no err
 		if reg, err := s.getRegistryForImageInNamespace(imgName, namespace); err == nil {
 			regs = append(regs, reg)
 		}
 	}
 
 	// Add global pull secret registry
-	reg, err := s.getGlobalRegistryForImage(imgName)
-	if err == nil {
+	// An err indicates no registry was found, only append if was no err
+	if reg, err := s.getGlobalRegistryForImage(imgName); err == nil {
 		regs = append(regs, reg)
 	}
 

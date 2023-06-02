@@ -168,14 +168,8 @@ func (d *delegatedRegistryImpl) processImageIntegrations(iiReq *central.ImageInt
 	default:
 		log.Infof("Received %d updated and %d deleted image integrations", len(iiReq.GetUpdatedIntegrations()), len(iiReq.GetDeletedIntegrationIds()))
 
-		// Spawn a goroutine so that this handler doesn't block other messages from being processed
-		// while waiting for upserts to occur.
-		go d.doImageIntegrationUpdates(iiReq)
+		d.registryStore.UpsertCentralRegistryIntegrations(iiReq.GetUpdatedIntegrations())
+		d.registryStore.DeleteCentralRegistryIntegrations(iiReq.GetDeletedIntegrationIds())
 	}
 	return nil
-}
-
-func (d *delegatedRegistryImpl) doImageIntegrationUpdates(iiReq *central.ImageIntegrations) {
-	d.registryStore.UpsertCentralRegistryIntegrations(iiReq.GetUpdatedIntegrations())
-	d.registryStore.DeleteCentralRegistryIntegrations(iiReq.GetDeletedIntegrationIds())
 }

@@ -296,7 +296,7 @@ func (rs *Store) UpsertCentralRegistryIntegrations(iis []*storage.ImageIntegrati
 	for _, ii := range iis {
 		err := rs.centralRegistryIntegrations.UpdateImageIntegration(ii)
 		if err != nil {
-			log.Warnf("Failed to upsert registry integration %q: %v", ii.GetId(), err)
+			log.Errorf("Failed to upsert registry integration %q: %v", ii.GetId(), err)
 		} else {
 			log.Debugf("Upserted registry integration %q (%q)", ii.GetName(), ii.GetId())
 		}
@@ -308,7 +308,7 @@ func (rs *Store) DeleteCentralRegistryIntegrations(ids []string) {
 	for _, id := range ids {
 		err := rs.centralRegistryIntegrations.RemoveImageIntegration(id)
 		if err != nil {
-			log.Warnf("Failed to delete registry integration %q: %v", id, err)
+			log.Errorf("Failed to delete registry integration %q: %v", id, err)
 		} else {
 			log.Debugf("Deleted registry integration %q", id)
 		}
