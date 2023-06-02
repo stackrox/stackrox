@@ -71,13 +71,13 @@ message DatabaseBackupStatus {
 // The initial intended use is to disable certain functionality that does not make sense in the Cloud Service context.
 message CentralServicesCapabilities {
     enum CapabilityStatus {
-        // Available means that UI and APIs should be available for users to use.
+        // CapabilityAvailable means that UI and APIs should be available for users to use.
         // This does not automatically mean that the functionality is 100% available and any calls to APIs will result
         // in successful execution. Rather it means that users should be allowed to leverage the functionality as
         // opposed to CapabilityDisabled when functionality should be blocked.
         CapabilityAvailable = 0;
 
-        // Capability is disabled, meaning the corresponding UI should be disabled and attempts to use related APIs
+        // CapabilityDisabled means the corresponding UI should be disabled and attempts to use related APIs
         // should lead to errors.
         CapabilityDisabled = 1;
     }
