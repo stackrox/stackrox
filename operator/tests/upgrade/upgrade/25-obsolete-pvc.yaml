@@ -3,6 +3,4 @@ kind: Central
 metadata:
   name: stackrox-central-services
   annotations:
-    platform.stackrox.io/central-pvc-obsoleted: "true"
-
-
+    platform.stackrox.io/obsolete-central-pvc: "true"
