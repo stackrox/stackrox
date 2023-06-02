@@ -8,14 +8,14 @@ import (
 // GetCentralCapabilities informs what Central Services cannot do in the current configuration.
 func GetCentralCapabilities() *v1.CentralServicesCapabilities {
 	return &v1.CentralServicesCapabilities{
-		CentralScanningUseContainerIamRoleForEcr: disabledIfManagedCentral(),
-		CentralCloudBackupIntegrations:           disabledIfManagedCentral(),
+		CentralScanningCanUseContainerIamRoleForEcr: disabledIfManagedCentral(),
+		CentralCanUseCloudBackupIntegrations:        disabledIfManagedCentral(),
 	}
 }
 
 func disabledIfManagedCentral() v1.CentralServicesCapabilities_CapabilityStatus {
 	if env.ManagedCentral.BooleanSetting() {
-		return v1.CentralServicesCapabilities_Disabled
+		return v1.CentralServicesCapabilities_CapabilityDisabled
 	}
-	return v1.CentralServicesCapabilities_Unknown
+	return v1.CentralServicesCapabilities_Maybe
 }
