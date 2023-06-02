@@ -236,3 +236,25 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 		}
 	}
 }
+
+// UniqueImageNames returns the unique image names from the two given slices of image names.
+func UniqueImageNames(a, b []*storage.ImageName) []*storage.ImageName {
+	uniqueImageFullNames := set.NewStringSet()
+	uniqueImageNames := make([]*storage.ImageName, 0, len(a)+len(b))
+
+	uniqueImageNames = append(uniqueImageNames, getUniqueImageNames(a, uniqueImageFullNames)...)
+	uniqueImageNames = append(uniqueImageNames, getUniqueImageNames(b, uniqueImageFullNames)...)
+	return uniqueImageNames
+}
+
+func getUniqueImageNames(names []*storage.ImageName, uniqueFullNames set.StringSet) []*storage.ImageName {
+	uniqueImageNames := make([]*storage.ImageName, 0, len(names))
+	for _, name := range names {
+		fullName := name.GetFullName()
+		if !uniqueFullNames.Contains(fullName) {
+			uniqueFullNames.Add(fullName)
+			uniqueImageNames = append(uniqueImageNames, name)
+		}
+	}
+	return uniqueImageNames
+}
