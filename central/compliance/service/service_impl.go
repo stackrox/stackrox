@@ -159,7 +159,7 @@ func (s *serviceImpl) GetRunResults(ctx context.Context, request *v1.GetComplian
 		return nil, errConfig
 	}
 	if exist && config.GetHideScanResults() {
-		return nil, errors.New("Results are hidden for this standard")
+		return nil, errors.Errorf("Results are hidden for standard with ID %s", request.GetStandardId())
 	}
 
 	return &v1.GetComplianceRunResultsResponse{
