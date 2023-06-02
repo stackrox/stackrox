@@ -36,7 +36,6 @@ const ImageIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactEleme
 
     return (
         <IntegrationHealthWidgetVisual
-            id="image-integrations"
             integrationText="Image Integrations"
             integrationsMerged={imageIntegrationsMerged}
             requestHasError={imageIntegrationsRequestHasError}

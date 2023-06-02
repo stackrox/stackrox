@@ -1,122 +1,48 @@
 import React, { ReactElement } from 'react';
-import pluralize from 'pluralize';
 import { getDateTime } from 'utils/dateUtils';
 
-import { styleHealthy, styleUnhealthy } from 'Containers/Clusters/cluster.helpers';
-
-import { Flex, FlexItem, List, ListItem } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { IntegrationMergedItem } from '../utils/integrations';
 
 type Props = {
-    integrationsMerged: IntegrationMergedItem[];
+    integrations: IntegrationMergedItem[];
 };
 
-const IntegrationsHealth = ({ integrationsMerged }: Props): ReactElement => {
-    const nHealthy = 0;
-    const integrationsFiltered: IntegrationMergedItem[] = [];
-
-    integrationsMerged.forEach((integrationMergedItem) => {
-        integrationsFiltered.push(integrationMergedItem);
-    });
-
-    // The item border matches the widget header border.
-    if (integrationsFiltered.length !== 0) {
-        const { Icon, fgColor } = styleUnhealthy;
-        return (
-            <List isPlain isBordered className="leading-normal pt-1 w-full">
-                {integrationsFiltered.map(({ id, name, label, lastTimestamp }) => (
-                    <ListItem key={id} className="border-b border-base-300 px-2 py-1">
-                        <Flex className="w-full">
-                            <Flex alignSelf={{ default: 'alignSelfBaseline' }}>
-                                <FlexItem className={`${fgColor}`}>
-                                    <Icon className="h-4 w-4" />
-                                </FlexItem>
-                            </Flex>
-                            <Flex
-                                grow={{ default: 'grow' }}
-                                direction={{ default: 'column' }}
-                                spaceItems={{ default: 'spaceItemsNone' }}
-                                alignSelf={{ default: 'alignSelfStretch' }}
-                            >
-                                <FlexItem className="font-700" data-testid="integration-name">
-                                    {name}
-                                </FlexItem>
-                                {label && label !== name && (
-                                    <FlexItem
-                                        className="text-base-500"
-                                        data-testid="integration-label"
-                                    >
-                                        {label}
-                                    </FlexItem>
-                                )}
-                                {lastTimestamp && (
-                                    <FlexItem>
-                                        <span>Last contact:</span>{' '}
-                                        <span data-testid="last-contact">
-                                            {getDateTime(lastTimestamp)}
-                                        </span>
-                                    </FlexItem>
-                                )}
-                            </Flex>
-                        </Flex>
-                    </ListItem>
-                ))}
-            </List>
-            // <ul className="leading-normal pt-1 w-full">
-            //     {integrationsFiltered.map(({ id, name, label, lastTimestamp }) => (
-            //         <li className="border-b border-base-300 px-2 py-1" key={id}>
-            //             <div className="flex w-full">
-            //                 <div className={`flex-shrink-0 ${fgColor}`}>
-            //                     <Icon className="h-4 w-4" />
-            //                 </div>
-            //                 <div className="ml-2 flex-grow">
-            //                     <div className="font-700" data-testid="integration-name">
-            //                         {name}
-            //                     </div>
-            //                     {label && label !== name && (
-            //                         <div className="text-base-500" data-testid="integration-label">
-            //                             {label}
-            //                         </div>
-            //                     )}
-            //                     {lastTimestamp && (
-            //                         <div>
-            //                             <span>Last contact:</span>{' '}
-            //                             <span data-testid="last-contact">
-            //                                 {getDateTime(lastTimestamp)}
-            //                             </span>
-            //                         </div>
-            //                     )}
-            //                 </div>
-            //             </div>
-            //         </li>
-            //     ))}
-            // </ul>
-        );
+const IntegrationsHealth = ({ integrations }: Props): ReactElement => {
+    if (integrations.length === 0) {
+        return <></>;
     }
-
-    const { Icon, fgColor } = styleHealthy;
-    const nIntegrations = integrationsMerged.length;
-    let text = 'No configured integrations';
-    if (nIntegrations !== 0) {
-        if (nHealthy === nIntegrations) {
-            text = `${nHealthy} healthy ${pluralize('integration', nHealthy)}`;
-        } else {
-            text = `${nHealthy} / ${nIntegrations} healthy integrations`; // cannot both be singular
-        }
-    }
-
     return (
-        <Flex
-            direction={{ default: 'column' }}
-            justifyContent={{ default: 'justifyContentCenter' }}
-            className={`h-full w-full ${fgColor}`}
-        >
-            <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                <Icon className="h-6 w-6" />
-            </FlexItem>
-            <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>{text}</FlexItem>
-        </Flex>
+        <TableComposable variant="compact">
+            <Thead>
+                <Tr>
+                    <Th width={20}>Name</Th>
+                    <Th width={20}>Label</Th>
+                    <Th width={45}>Error message</Th>
+                    <Th width={15}>Date</Th>
+                </Tr>
+            </Thead>
+            <Tbody data-testid="integration-healths">
+                {integrations.map(({ id, name, label, errorMessage, lastTimestamp }) => (
+                    <Tr key={id}>
+                        <Td dataLabel="Name" modifier="breakWord" data-testid="integration-name">
+                            {name}
+                        </Td>
+                        <Td dataLabel="Label" modifier="breakWord" data-testid="label">
+                            {label}
+                        </Td>
+                        <Td
+                            dataLabel="Error message"
+                            modifier="breakWord"
+                            data-testid="error-message"
+                        >
+                            {errorMessage.length === 0 ? '-' : errorMessage}
+                        </Td>
+                        <Td dataLabel="Date">{getDateTime(lastTimestamp)}</Td>
+                    </Tr>
+                ))}
+            </Tbody>
+        </TableComposable>
     );
 };
 

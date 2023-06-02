@@ -34,7 +34,6 @@ const NotifierIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactEl
 
     return (
         <IntegrationHealthWidgetVisual
-            id="notifier-integrations"
             integrationText="Notifier Integrations"
             integrationsMerged={notifiersMerged}
             requestHasError={notifiersRequestHasError}

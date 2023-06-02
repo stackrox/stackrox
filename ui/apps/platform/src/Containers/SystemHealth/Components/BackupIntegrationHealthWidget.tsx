@@ -34,7 +34,6 @@ const BackupIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactElem
 
     return (
         <IntegrationHealthWidgetVisual
-            id="backup-integrations"
             integrationText="Backup Integrations"
             integrationsMerged={backupsMerged}
             requestHasError={backupsRequestHasError}
