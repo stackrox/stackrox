@@ -135,11 +135,11 @@
     "CentralServicesCapabilitiesCapabilityStatus": {
       "type": "string",
       "enum": [
-        "Unknown",
-        "Disabled"
+        "Maybe",
+        "CapabilityDisabled"
       ],
-      "default": "Unknown",
-      "description": " - Unknown: \"Unknown\" means \"not disabled\".\nThe reason it's not called \"Enabled\" is that extended checks might be required to confirm true ability to use\ne.g. container AWS IAM role or GCP workload identity, and we can't positively say \"Enabled\" while such checks\naren't implemented.\nThis means the user should be allowed to use the capability (both via UI and API) but an attempt may not be\nsuccessful if the corresponding configuration does not match the actual environment.\n - Disabled: Capability is disabled, meaning the corresponding UI should be disabled and attempts to use related APIs\nshould lead to errors."
+      "default": "Maybe",
+      "description": " - Maybe: \"Maybe\" means \"not disabled\".\nThe reason it's not called \"Available\" is that extended checks might be required to confirm true ability to\nuse e.g. container AWS IAM role or GCP workload identity, and we can't positively say \"Available\" while such\nchecks aren't implemented.\n\"Maybe\" means the user should be allowed to use the capability (both via UI and API) but an attempt may not\nbe successful if the corresponding configuration does not match the actual environment.\n - CapabilityDisabled: Capability is disabled, meaning the corresponding UI should be disabled and attempts to use related APIs\nshould lead to errors."
     },
     "DatabaseStatusDatabaseType": {
       "type": "string",
@@ -234,11 +234,11 @@
     "v1CentralServicesCapabilities": {
       "type": "object",
       "properties": {
-        "centralScanningUseContainerIamRoleForEcr": {
+        "centralScanningCanUseContainerIamRoleForEcr": {
           "$ref": "#/definitions/CentralServicesCapabilitiesCapabilityStatus",
           "description": "Ability to use container IAM role for scanning images from Amazon ECR using Scanner deployed as part of Central\nServices."
         },
-        "centralCloudBackupIntegrations": {
+        "centralCanUseCloudBackupIntegrations": {
           "$ref": "#/definitions/CentralServicesCapabilitiesCapabilityStatus",
           "description": "Ability to configure and perform Central backups to Amazon S3 or Google Cloud Storage."
         }
