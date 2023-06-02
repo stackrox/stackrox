@@ -138,10 +138,9 @@ func (s *DeploymentExposureSuite) SetupSuite() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	config := helper.CentralConfig{
-		InitialSystemPolicies: policies,
-	}
-	if testContext, err := helper.NewContextWithConfig(s.T(), config); err != nil {
+	customConfig := helper.DefaultCentralConfig()
+	customConfig.InitialSystemPolicies = policies
+	if testContext, err := helper.NewContextWithConfig(s.T(), customConfig); err != nil {
 		s.Fail("failed to setup test context: %s", err)
 	} else {
 		s.testContext = testContext

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"path"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -128,22 +129,24 @@ type TestContext struct {
 	archivedMessages [][]*central.MsgFromSensor
 }
 
-func defaultCentralConfig() CentralConfig {
+// DefaultCentralConfig hold default values when starting local sensor in tests.
+func DefaultCentralConfig() CentralConfig {
 	// Uses replayed policies.json file as default policies for tests.
 	// These are all policies in ACS, which means many alerts might be generated.
-	policies, err := testutils.GetPoliciesFromFile("../replay/data/policies.json")
+	policies, err := testutils.GetPoliciesFromFile("../../replay/data/policies.json")
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	return CentralConfig{
 		InitialSystemPolicies: policies,
+		CertFilePath:          "../../../../tools/local-sensor/certs/",
 	}
 }
 
 // NewContext creates a new test context with default configuration.
 func NewContext(t *testing.T) (*TestContext, error) {
-	return NewContextWithConfig(t, defaultCentralConfig())
+	return NewContextWithConfig(t, DefaultCentralConfig())
 }
 
 // NewContextWithConfig creates a new test context with custom central configuration.
@@ -590,13 +593,14 @@ func GetAllAlertsForDeploymentName(messages []*central.MsgFromSensor, name strin
 // CentralConfig allows tests to inject ACS policies in the tests
 type CentralConfig struct {
 	InitialSystemPolicies []*storage.Policy
+	CertFilePath          string
 }
 
 func (c *TestContext) startSensorInstance(env *envconf.Config) {
-	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "../../../tools/local-sensor/certs/cert.pem"))
-	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "../../../tools/local-sensor/certs/key.pem"))
-	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "../../../tools/local-sensor/certs/caCert.pem"))
-	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_KEY_FILE", "../../../tools/local-sensor/certs/caKey.pem"))
+	c.t.Setenv("ROX_MTLS_CERT_FILE", path.Join(c.config.CertFilePath, "/cert.pem"))
+	c.t.Setenv("ROX_MTLS_KEY_FILE", path.Join(c.config.CertFilePath, "/key.pem"))
+	c.t.Setenv("ROX_MTLS_CA_FILE", path.Join(c.config.CertFilePath, "/caCert.pem"))
+	c.t.Setenv("ROX_MTLS_CA_KEY_FILE", path.Join(c.config.CertFilePath, "/caKey.pem"))
 
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(client.MustCreateInterfaceFromRest(env.Client().RESTConfig())).
