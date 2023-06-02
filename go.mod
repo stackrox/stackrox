@@ -74,7 +74,7 @@ require (
 	github.com/openshift/api v0.0.0-20230502160752-c71432710382
 	github.com/openshift/client-go v0.0.0-20200623090625-83993cebb5ae
 	github.com/operator-framework/helm-operator-plugins v0.0.7
-	github.com/owenrumney/go-sarif/v2 v2.1.3
+	github.com/owenrumney/go-sarif/v2 v2.2.0
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.15.1
