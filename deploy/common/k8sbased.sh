@@ -339,7 +339,7 @@ function launch_central {
         # make sure the helm chart is available on the cluster
         helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
         helm repo update
-        if [[ helm search repo stackrox-oss -l | grep -E '(stackrox-oss/stackrox-central-services)\s+(\d+\.\d+\.\d+)\s+('${SENSOR_CHART_VERSION_OVERRIDE}')' ]]; then
+        if helm search repo stackrox-oss -l | grep -E '(stackrox-oss/stackrox-central-services)\s+(\d+\.\d+\.\d+)\s+('${SENSOR_CHART_VERSION_OVERRIDE}')'; then
           helm_args+=(
             --version="${SENSOR_CHART_VERSION_OVERRIDE}"
           )
@@ -604,7 +604,7 @@ function launch_sensor {
         # make sure the helm chart is available on the cluster
         helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
         helm repo update
-        if [[ helm search repo stackrox-oss -l | grep -E '(stackrox-oss/stackrox-secured-cluster-services)\s+(\d+\.\d+\.\d+)\s+('${SENSOR_CHART_VERSION_OVERRIDE}')' ]]; then
+        if helm search repo stackrox-oss -l | grep -E '(stackrox-oss/stackrox-secured-cluster-services)\s+(\d+\.\d+\.\d+)\s+('${SENSOR_CHART_VERSION_OVERRIDE}')'; then
           helm_args+=(
             --version="${SENSOR_CHART_VERSION_OVERRIDE}"
           )
