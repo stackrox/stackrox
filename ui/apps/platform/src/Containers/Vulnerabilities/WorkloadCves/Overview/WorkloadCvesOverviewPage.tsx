@@ -16,7 +16,7 @@ import useLocalStorage from 'hooks/useLocalStorage';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import PageTitle from 'Components/PageTitle';
-
+import useURLPagination from 'hooks/useURLPagination';
 import { VulnMgmtLocalStorage, entityTabValues } from '../types';
 import { parseQuerySearchFilter, getCveStatusScopedQueryString } from '../searchUtils';
 import DefaultFilterModal from '../components/DefaultFilterModal';
@@ -49,8 +49,10 @@ function WorkloadCvesOverviewPage() {
     );
 
     const [storedValue, setStoredValue] = useLocalStorage('vulnerabilityManagement', emptyStorage);
+    const pagination = useURLPagination(20);
 
     function setLocalStorage(values) {
+        pagination.setPage(1);
         setStoredValue({
             preferences: {
                 defaultFilters: values,
@@ -90,18 +92,21 @@ function WorkloadCvesOverviewPage() {
                                 <CVEsTableContainer
                                     defaultFilters={storedValue.preferences.defaultFilters}
                                     countsData={countsData}
+                                    pagination={pagination}
                                 />
                             )}
                             {activeEntityTabKey === 'Image' && (
                                 <ImagesTableContainer
                                     defaultFilters={storedValue.preferences.defaultFilters}
                                     countsData={countsData}
+                                    pagination={pagination}
                                 />
                             )}
                             {activeEntityTabKey === 'Deployment' && (
                                 <DeploymentsTableContainer
                                     defaultFilters={storedValue.preferences.defaultFilters}
                                     countsData={countsData}
+                                    pagination={pagination}
                                 />
                             )}
                         </CardBody>

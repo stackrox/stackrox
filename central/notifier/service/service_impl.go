@@ -6,8 +6,8 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/notifier/datastore"
+	"github.com/stackrox/rox/central/notifier/policycleaner"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -54,9 +54,7 @@ type serviceImpl struct {
 	processor notifier.Processor
 	reporter  integrationhealth.Reporter
 
-	buildTimePolicies  detection.PolicySet
-	deployTimePolicies detection.PolicySet
-	runTimePolicies    detection.PolicySet
+	policyCleaner policycleaner.PolicyCleaner
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -215,7 +213,7 @@ func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNoti
 		return nil, err
 	}
 
-	err = s.deleteNotifiersFromPolicies(n.GetId())
+	err = s.policyCleaner.DeleteNotifierFromPolicies(n.GetId())
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("notifier is still in use by policies. Error: %s", err))
@@ -230,26 +228,6 @@ func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNoti
 		return nil, err
 	}
 	return &v1.Empty{}, nil
-}
-
-func (s *serviceImpl) deleteNotifiersFromPolicies(notifierID string) error {
-
-	err := s.buildTimePolicies.RemoveNotifier(notifierID)
-	if err != nil {
-		return err
-	}
-
-	err = s.deployTimePolicies.RemoveNotifier(notifierID)
-	if err != nil {
-		return err
-	}
-
-	err = s.runTimePolicies.RemoveNotifier(notifierID)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (s *serviceImpl) reconcileUpdateNotifierRequest(ctx context.Context, updateRequest *v1.UpdateNotifierRequest) error {

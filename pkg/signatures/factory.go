@@ -6,6 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
@@ -84,6 +85,11 @@ func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage
 // the storage.ImageSignatureVerificationResult.
 func VerifyAgainstSignatureIntegrations(ctx context.Context, integrations []*storage.SignatureIntegration,
 	image *storage.Image) []*storage.ImageSignatureVerificationResult {
+	// If signature fetching is disabled, it also doesn't make much sense to verify signatures, hence skip it.
+	if env.DisableSignatureFetching.BooleanSetting() {
+		return nil
+	}
+
 	var results []*storage.ImageSignatureVerificationResult
 	for _, integration := range integrations {
 		verificationResults := VerifyAgainstSignatureIntegration(ctx, integration, image)
@@ -113,6 +119,11 @@ func createVerifiersFromIntegration(integration *storage.SignatureIntegration) [
 // It will retry on transient errors and return the fetched signatures.
 func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetcher, image *storage.Image,
 	fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error) {
+	// Short-circuit if signature fetching is disabled.
+	if env.DisableSignatureFetching.BooleanSetting() {
+		return nil, nil
+	}
+
 	var fetchedSignatures []*storage.Signature
 	var err error
 	err = retry.WithRetry(func() error {

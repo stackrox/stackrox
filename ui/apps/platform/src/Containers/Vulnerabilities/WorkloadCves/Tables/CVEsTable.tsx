@@ -21,7 +21,13 @@ import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import DatePhraseTd from '../components/DatePhraseTd';
 import CvssTd from '../components/CvssTd';
-import { getScoreVersionsForTopCVSS, sortCveDistroList } from '../sortUtils';
+import {
+    getScoreVersionsForTopCVSS,
+    sortCveDistroList,
+    aggregateByCVSS,
+    aggregateByCreatedTime,
+    aggregateByImageSha,
+} from '../sortUtils';
 
 export const cveListQuery = gql`
     query getImageCVEList($query: String, $pagination: Pagination) {
@@ -99,7 +105,6 @@ function CVEsTable({
     return (
         <TableComposable borders={false} variant="compact">
             <Thead noWrap>
-                {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('CVE')}>CVE</Th>
@@ -107,14 +112,23 @@ function CVEsTable({
                         Images by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
-                    <TooltipTh tooltip="Highest CVSS score of this CVE across images">
+                    <TooltipTh
+                        sort={getSortParams('CVSS', aggregateByCVSS)}
+                        tooltip="Highest CVSS score of this CVE across images"
+                    >
                         Top CVSS
                     </TooltipTh>
-                    <TooltipTh tooltip="Ratio of total environment affect by this CVE">
+                    <TooltipTh
+                        sort={getSortParams('Image sha', aggregateByImageSha)}
+                        tooltip="Ratio of total images affected by this CVE"
+                    >
                         Affected images
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
-                    <TooltipTh tooltip="Time since this CVE first affected an entity">
+                    <TooltipTh
+                        sort={getSortParams('CVE Created Time', aggregateByCreatedTime)}
+                        tooltip="Time since this CVE first affected an entity"
+                    >
                         First discovered
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>

@@ -8,7 +8,6 @@ import {
     defaultColumnClassName,
 } from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
-import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import ClusterTableCountLinks from 'Components/workflow/ClusterTableCountLinks';
 import entityTypes from 'constants/entityTypes';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
@@ -249,24 +248,6 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data, totalResult
             //     sortField: clusterSortFields.POLICY_COUNT,
             //     sortable: false
             // },
-            {
-                Header: `Policy Status`,
-                headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-                className: `w-1/10 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => {
-                    const { policyStatus } = original;
-                    return (
-                        <PolicyStatusIconText
-                            isPass={policyStatus?.status === 'pass'}
-                            isTextOnly={pdf}
-                        />
-                    );
-                },
-                id: clusterSortFields.POLICY_STATUS,
-                accessor: 'policyStatus.status',
-                sortField: clusterSortFields.POLICY_STATUS,
-                sortable: false,
-            },
             {
                 Header: `Latest Violation`,
                 headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,

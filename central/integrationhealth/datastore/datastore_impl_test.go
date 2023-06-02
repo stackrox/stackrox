@@ -132,14 +132,14 @@ func (s *integrationHealthDatastoreTestSuite) TestUpdateIntegrationHealth() {
 
 	// 1. With no access should return no error but should not be added.
 	err := s.datastore.UpsertIntegrationHealth(s.hasNoAccessCtx, integrationHealth)
-	s.NoError(err)
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	_, exists, err := s.datastore.GetIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
 	s.NoError(err)
 	s.False(exists)
 
 	// 2. With READ access should return no error but should not be added.
 	err = s.datastore.UpsertIntegrationHealth(s.hasReadCtx, integrationHealth)
-	s.NoError(err)
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	_, exists, err = s.datastore.GetIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -168,14 +168,14 @@ func (s *integrationHealthDatastoreTestSuite) TestRemoveIntegrationHealth() {
 
 	// 1. With no access should not return an error but integration should still exist.
 	err = s.datastore.RemoveIntegrationHealth(s.hasNoAccessCtx, integrationHealth.GetId())
-	s.NoError(err)
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	_, exists, err = s.datastore.GetIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
 	s.NoError(err)
 	s.True(exists)
 
 	// 2. With READ access should not return an error but integration should still exist.
 	err = s.datastore.RemoveIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
-	s.NoError(err)
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	_, exists, err = s.datastore.GetIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
 	s.NoError(err)
 	s.True(exists)

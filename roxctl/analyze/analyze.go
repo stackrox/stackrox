@@ -10,8 +10,8 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "analyze",
-		Short: "(Technology Preview) Commands related to analyzing different resources.",
-		Long: `Commands related to analyzing different resources.
+		Short: "(Technology Preview) Commands related to analyzing various resources.",
+		Long: `Commands related to analyzing various resources.
 
 ** This is a Technology Preview feature **
 Technology Preview features are not supported with Red Hat production service level agreements (SLAs) and might not be functionally complete.
