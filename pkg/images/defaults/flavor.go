@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/version"
 )
@@ -24,6 +25,19 @@ type imageFlavorDescriptor struct {
 }
 
 var (
+	imageFlavorMainRegistry = env.RegisterSetting(
+		"ROX_MAIN_REGISTRY",
+		env.WithDefault("quay.io/rhacs-eng"),
+	)
+	imageFlavorScannerImageTag = env.RegisterSetting(
+		"ROX_SCANNER_VERSION",
+		env.WithDefault(version.GetAllVersionsDevelopment().ScannerVersion),
+	)
+	imageFlavorMainImageTag = env.RegisterSetting(
+		"ROX_MAIN_VERSION",
+		env.WithDefault(version.GetAllVersionsDevelopment().MainVersion),
+	)
+
 	log = logging.LoggerForModule()
 
 	// allImageFlavors describes all available image flavors.
@@ -113,10 +127,10 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 		collectorSlimTag = v.CollectorVersion
 	}
 	return ImageFlavor{
-		MainRegistry:       "quay.io/rhacs-eng",
+		MainRegistry:       imageFlavorMainRegistry.Setting(),
 		MainImageName:      "main",
-		MainImageTag:       v.MainVersion,
-		CentralDBImageTag:  v.MainVersion,
+		MainImageTag:       imageFlavorMainImageTag.Setting(),
+		CentralDBImageTag:  imageFlavorMainImageTag.Setting(),
 		CentralDBImageName: "central-db",
 
 		CollectorRegistry:      "quay.io/rhacs-eng",
@@ -127,7 +141,7 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 
 		ScannerImageName:       "scanner",
 		ScannerSlimImageName:   "scanner-slim",
-		ScannerImageTag:        v.ScannerVersion,
+		ScannerImageTag:        imageFlavorScannerImageTag.Setting(),
 		ScannerDBImageName:     "scanner-db",
 		ScannerDBSlimImageName: "scanner-db-slim",
 
