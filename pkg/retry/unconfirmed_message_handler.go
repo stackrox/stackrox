@@ -82,7 +82,7 @@ func (s *UnconfirmedMessageHandlerImpl) retryLater() {
 
 // ObserveSending should be called when a new message is sent
 func (s *UnconfirmedMessageHandlerImpl) ObserveSending() {
-	log.Infof("Observing message scan being sent. Waiting for an ACK for %s", s.baseInterval.String())
+	log.Debugf("Observing message being sent. Waiting for an ACK for %s", s.baseInterval.String())
 	s.ticker.Stop()
 	s.retry = 0
 	s.ticker.Reset(s.baseInterval)
@@ -90,7 +90,7 @@ func (s *UnconfirmedMessageHandlerImpl) ObserveSending() {
 
 // ObserveConfirmation should be called when an ACK for the massage is received
 func (s *UnconfirmedMessageHandlerImpl) ObserveConfirmation() {
-	log.Info("Message has been acknowledged")
+	log.Debug("Message has been acknowledged")
 	s.ticker.Stop()
 	s.retry = 0
 }
