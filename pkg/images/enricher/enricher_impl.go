@@ -137,7 +137,7 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 		return false, nil
 	}
 
-	clusterID, shouldDelegate, err := e.scanDelegator.GetDelegateClusterID(ctx, image)
+	clusterID, shouldDelegate, err := e.scanDelegator.GetDelegateClusterID(ctx, image.GetName())
 	if err != nil || !shouldDelegate {
 		// If was an error or should not delegate, short-circuit.
 		return shouldDelegate, err
@@ -164,10 +164,13 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 	}
 
 	// Send image to secured cluster for enrichment.
-	err = e.scanDelegator.DelegateEnrichImage(ctx, image, clusterID, enrichCtx.FetchOpt.forceRefetchCachedValues())
+	scannedImage, err := e.scanDelegator.DelegateScanImage(ctx, image.GetName(), clusterID, enrichCtx.FetchOpt.forceRefetchCachedValues())
 	if err != nil {
 		return true, err
 	}
+
+	// Copy the fields from scannedImage into image, EnrichImage expecting modification in place
+	*image = *scannedImage
 
 	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
@@ -179,11 +182,15 @@ func cachedImageIsValid(cachedImage *storage.Image) bool {
 		return false
 	}
 
-	metadataValid := !metadataIsOutOfDate(cachedImage.GetMetadata())
+	if metadataIsOutOfDate(cachedImage.GetMetadata()) {
+		return false
+	}
 
-	scanValid := cachedImage.GetScan() != nil
+	if cachedImage.GetScan() == nil {
+		return false
+	}
 
-	return metadataValid && scanValid
+	return true
 }
 
 // EnrichImage enriches an image with the integration set present.

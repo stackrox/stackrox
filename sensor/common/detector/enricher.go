@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -26,8 +27,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const (
-	scanTimeout = 6 * time.Minute
+var (
+	scanTimeout = env.ScanTimeout.DurationSetting()
 )
 
 type scanResult struct {

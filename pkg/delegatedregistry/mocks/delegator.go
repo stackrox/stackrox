@@ -35,24 +35,25 @@ func (m *MockDelegator) EXPECT() *MockDelegatorMockRecorder {
 	return m.recorder
 }
 
-// DelegateEnrichImage mocks base method.
-func (m *MockDelegator) DelegateEnrichImage(ctx context.Context, image *storage.Image, clusterID string, force bool) error {
+// DelegateScanImage mocks base method.
+func (m *MockDelegator) DelegateScanImage(ctx context.Context, imgName *storage.ImageName, clusterID string, force bool) (*storage.Image, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DelegateEnrichImage", ctx, image, clusterID, force)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "DelegateScanImage", ctx, imgName, clusterID, force)
+	ret0, _ := ret[0].(*storage.Image)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// DelegateEnrichImage indicates an expected call of DelegateEnrichImage.
-func (mr *MockDelegatorMockRecorder) DelegateEnrichImage(ctx, image, clusterID, force interface{}) *gomock.Call {
+// DelegateScanImage indicates an expected call of DelegateScanImage.
+func (mr *MockDelegatorMockRecorder) DelegateScanImage(ctx, imgName, clusterID, force interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelegateEnrichImage", reflect.TypeOf((*MockDelegator)(nil).DelegateEnrichImage), ctx, image, clusterID, force)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelegateScanImage", reflect.TypeOf((*MockDelegator)(nil).DelegateScanImage), ctx, imgName, clusterID, force)
 }
 
 // GetDelegateClusterID mocks base method.
-func (m *MockDelegator) GetDelegateClusterID(ctx context.Context, image *storage.Image) (string, bool, error) {
+func (m *MockDelegator) GetDelegateClusterID(ctx context.Context, imgName *storage.ImageName) (string, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDelegateClusterID", ctx, image)
+	ret := m.ctrl.Call(m, "GetDelegateClusterID", ctx, imgName)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -60,7 +61,7 @@ func (m *MockDelegator) GetDelegateClusterID(ctx context.Context, image *storage
 }
 
 // GetDelegateClusterID indicates an expected call of GetDelegateClusterID.
-func (mr *MockDelegatorMockRecorder) GetDelegateClusterID(ctx, image interface{}) *gomock.Call {
+func (mr *MockDelegatorMockRecorder) GetDelegateClusterID(ctx, imgName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDelegateClusterID", reflect.TypeOf((*MockDelegator)(nil).GetDelegateClusterID), ctx, image)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDelegateClusterID", reflect.TypeOf((*MockDelegator)(nil).GetDelegateClusterID), ctx, imgName)
 }

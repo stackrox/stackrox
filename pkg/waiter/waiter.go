@@ -20,7 +20,7 @@ var (
 //
 //go:generate mockgen-wrapper
 type Waiter[T any] interface {
-	// ID returns the unique ID assigned to this waiter by the Managers ID generator.
+	// ID returns the unique ID assigned to this waiter.
 	ID() string
 
 	// Wait will block for a value, context expiration, or closed waiter (whichever occurs first)
