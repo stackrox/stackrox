@@ -77,7 +77,7 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 		ScannerImageTag:          imageFlavor.ScannerImageTag,
 		ScannerDBImageRemote:     imageFlavor.ScannerDBImageName,
 		ScannerDBSlimImageRemote: imageFlavor.ScannerDBSlimImageName,
-		RenderMode:               "",
+		RenderMode:               "renderAll",
 		ChartRepo:                imageFlavor.ChartRepo,
 		ImagePullSecrets:         imageFlavor.ImagePullSecrets,
 		Operator:                 false,

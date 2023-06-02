@@ -6,10 +6,12 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"helm.sh/helm/v3/pkg/chartutil"
 )
 
 func getBaseConfig() Config {
@@ -88,12 +90,22 @@ func (suite *renderSuite) testWithLoadBalancers(t *testing.T, c Config) {
 }
 
 func (suite *renderSuite) TestRenderMultiple() {
+	upgradeOpts := helmUtil.Options{
+		ReleaseOptions: chartutil.ReleaseOptions{
+			Name:      "stackrox-secured-cluster-services",
+			Namespace: "stackrox",
+			IsUpgrade: true,
+		},
+	}
 	for _, orch := range []storage.ClusterType{storage.ClusterType_KUBERNETES_CLUSTER, storage.ClusterType_OPENSHIFT_CLUSTER, storage.ClusterType_OPENSHIFT4_CLUSTER} {
 		for _, format := range []v1.DeploymentFormat{v1.DeploymentFormat_KUBECTL, v1.DeploymentFormat_HELM} {
 			suite.T().Run(fmt.Sprintf("%s-%s", orch, format), func(t *testing.T) {
 				conf := getBaseConfig()
 				conf.ClusterType = orch
 				conf.K8sConfig.DeploymentFormat = format
+				// We do not need these tests anymore because this is not used in upgrade.
+				// But still keep it to see if it helps to find other issues.
+				conf.RenderOpts = &upgradeOpts
 
 				suite.testWithHostPath(t, conf)
 				suite.testWithPV(t, conf)

@@ -69,7 +69,10 @@ func TestWithDifferentImageFlavors(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			imageFlavor := imageFlavor
 			helmChartTestUtils.RunHelmTestSuite(t, testDir, image.CentralServicesChartPrefix, helmChartTestUtils.RunHelmTestSuiteOpts{
-				Flavor:       &imageFlavor,
+				Flavor: &imageFlavor,
+				MetaValuesOverridesFunc: func(values *charts.MetaValues) {
+					values.Operator = true
+				},
 				HelmTestOpts: []helmTest.LoaderOpt{helmTest.WithAdditionalTestDirs(path.Join(testDir, name))},
 			})
 		})
