@@ -220,7 +220,7 @@ func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
 	cases := map[string]string{"false": "false", "<empty>": ""}
 
 	for name, val := range cases {
-		s.Run(fmt.Sprintf("when not manged central (%s)", name), func() {
+		s.Run(fmt.Sprintf("when not managed central (%s)", name), func() {
 			s.T().Setenv("ROX_MANAGED_CENTRAL", val)
 
 			caps, err := (&serviceImpl{}).GetCentralCapabilities(ctx, nil)
