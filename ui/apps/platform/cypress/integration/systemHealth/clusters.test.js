@@ -65,6 +65,17 @@ const clustersFixturePath = 'clusters/health.json';
 describe('System Health Clusters with fixture', () => {
     withAuth();
 
+    it('should have phrase in Cluster status card', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealth({
+            clusters: { fixture: clustersFixturePath },
+        });
+
+        const cardTitle = 'Cluster status';
+
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("2 unhealthy")'));
+    });
+
     it('should have counts in row 1 of Cluster status card', () => {
         setClock(currentDatetime); // call before visit
         visitSystemHealth({
@@ -137,6 +148,17 @@ describe('System Health Clusters with fixture', () => {
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 7));
     });
 
+    it('should have phrase in Sensor upgrade card header', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealth({
+            clusters: { fixture: clustersFixturePath },
+        });
+
+        const cardTitle = 'Sensor upgrade';
+
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("2 degraded")'));
+    });
+
     it('should have counts in Sensor upgrade card', () => {
         setClock(currentDatetime); // call before visit
         visitSystemHealth({
@@ -152,6 +174,17 @@ describe('System Health Clusters with fixture', () => {
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 1));
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 7));
+    });
+
+    it('should have phrase in Credential expiration card header', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealth({
+            clusters: { fixture: clustersFixturePath },
+        });
+
+        const cardTitle = 'Credential expiration';
+
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("1 unhealthy")'));
     });
 
     it('should have counts in Credential expiration card', () => {
@@ -176,6 +209,15 @@ describe('System Health Clusters subset 3', () => {
     withAuth();
 
     const clusterNames = ['eta-7', 'kappa-kilogramme-10', 'lambda-liverpool-11'];
+
+    it('should have phrase in Cluster status card header', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
+
+        const cardTitle = 'Cluster status';
+
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("1 unhealthy")'));
+    });
 
     it('should have counts in row 1 of Cluster status card', () => {
         setClock(currentDatetime); // call before visit
@@ -243,8 +285,17 @@ describe('System Health Clusters subset 3', () => {
 
         const cardTitle = 'Sensor upgrade';
 
-        cy.get(getCardHeaderDescendantSelector(cardTitle, 'span:contains("healthy")'));
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("3 healthy")'));
         cy.get(getCardBodyDescendantSelector(cardTitle, 'table')).should('not.exist');
+    });
+
+    it('should have phrase in Credential expiration card header', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
+
+        const cardTitle = 'Credential expiration';
+
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("1 degraded")'));
     });
 
     it('should have counts in Credential expiration card', () => {
@@ -267,6 +318,8 @@ describe('System Health Clusters subset 1 Uninitialized', () => {
     withAuth();
 
     const clusterNames = ['alpha-amsterdam-1']; // which has Uninitialized status
+
+    // No phrases in card header if no unhealthy, degraded, nor healthy.
 
     it('should have counts in row 1 of Cluster status card', () => {
         visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
@@ -366,7 +419,7 @@ describe('System Health Clusters subset 1 Healthy', () => {
 
         const cardTitle = 'Cluster status';
 
-        cy.get(getCardHeaderDescendantSelector(cardTitle, 'span:contains("healthy")'));
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("1 healthy")'));
         cy.get(getCardBodyDescendantSelector(cardTitle, 'table')).should('not.exist');
     });
 
@@ -376,7 +429,7 @@ describe('System Health Clusters subset 1 Healthy', () => {
 
         const cardTitle = 'Sensor upgrade';
 
-        cy.get(getCardHeaderDescendantSelector(cardTitle, 'span:contains("healthy")'));
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("1 healthy")'));
         cy.get(getCardBodyDescendantSelector(cardTitle, 'table')).should('not.exist');
     });
 
@@ -386,7 +439,7 @@ describe('System Health Clusters subset 1 Healthy', () => {
 
         const cardTitle = 'Credential expiration';
 
-        cy.get(getCardHeaderDescendantSelector(cardTitle, 'span:contains("healthy")'));
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("1 healthy")'));
         cy.get(getCardBodyDescendantSelector(cardTitle, 'table')).should('not.exist');
     });
 });
