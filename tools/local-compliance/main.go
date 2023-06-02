@@ -25,8 +25,8 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	nsr := retry.NewUnconfirmedMessageHandler(ctx, 5*time.Second)
-	c := compliance.NewComplianceApp(np, scanner, nsr, nsr)
+	umh := retry.NewUnconfirmedMessageHandler(ctx, 5*time.Second)
+	c := compliance.NewComplianceApp(np, scanner, umh, umh)
 	c.Start()
 }
 
