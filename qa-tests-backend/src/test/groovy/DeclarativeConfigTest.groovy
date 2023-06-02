@@ -16,8 +16,6 @@ import io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope
 import io.stackrox.proto.storage.RoleOuterClass.Role
 import io.stackrox.proto.storage.TraitsOuterClass.Traits
 
-import util.Env
-
 import services.AuthProviderService
 import services.GroupService
 import services.IntegrationHealthService
@@ -25,13 +23,10 @@ import services.RoleService
 
 import org.junit.Rule
 import org.junit.rules.Timeout
-import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Tag
 
 @Retry(count = 0)
-// TODO(ROX-16008): Remove this once the declarative config feature flag is enabled by default.
-@IgnoreIf({ Env.get("ROX_DECLARATIVE_CONFIGURATION", "false") == "false" })
 class DeclarativeConfigTest extends BaseSpecification {
     static final private String DEFAULT_NAMESPACE = "stackrox"
 
