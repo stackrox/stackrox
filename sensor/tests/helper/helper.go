@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -118,7 +119,9 @@ type TestContext struct {
 	centralReceived chan *central.MsgFromSensor
 	stopFn          func()
 	sensorStopped   chan bool
+	centralStopped  atomic.Bool
 	config          CentralConfig
+	grpcFactory     centralDebug.FakeGRPCFactory
 
 	// archivedMessages holds messages sent from Sensor to FakeCentral before stopping Central. These can be fetched
 	// in case the test needs to assert on messages sent right before stopping the gRPC connection.
@@ -150,16 +153,25 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 	if err != nil {
 		return nil, err
 	}
-	fakeCentral, startFn, stopFn, sensorStopped := startSensorAndFakeCentral(envConfig, config)
-	ch := make(chan *central.MsgFromSensor, 100)
-	fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
-		ch <- msg
-	})
 
-	startFn()
-	return &TestContext{
-		t, r, envConfig, fakeCentral, ch, stopFn, sensorStopped, config, [][]*central.MsgFromSensor{},
-	}, nil
+	tc := TestContext{
+		t:                t,
+		r:                r,
+		env:              envConfig,
+		centralReceived:  make(chan *central.MsgFromSensor, 100),
+		centralStopped:   atomic.Bool{},
+		config:           config,
+		archivedMessages: [][]*central.MsgFromSensor{},
+		sensorStopped:    make(chan bool, 1),
+	}
+
+	tc.StartFakeGRPC()
+	tc.startSensorInstance(envConfig)
+
+	return &tc, nil
+	//return &TestContext{
+	//	t, r, envConfig, fakeCentral, ch, stopFn, sensorStopped, atomic.Bool{}, config, [][]*central.MsgFromSensor{},
+	//}, nil
 }
 
 // WithPermutation sets whether the test should run with permutations
@@ -247,31 +259,45 @@ func (c *TestContext) createTestNs(ctx context.Context, name string) (*v1.Namesp
 	}, nil
 }
 
+// StopCentralGRPC will attempt to stop fake central. If it was already stopped, nothing happens
+func (c *TestContext) StopCentralGRPC() {
+	if c.centralStopped.CompareAndSwap(false, true) {
+		c.fakeCentral.Stop()
+		c.fakeCentral.ServerPointer.Stop()
+		messagesBeforeStopping := c.fakeCentral.GetAllMessages()
+		c.archivedMessages = append(c.archivedMessages, messagesBeforeStopping)
+	}
+}
+
+// RestartFakeCentralConnection creates a new fake central connection and updates factory pointers.
+// It calls StopCentralGRPC to make sure current fake central is stopped before creating new instance.
 func (c *TestContext) RestartFakeCentralConnection() {
-	// TODO: Check if fake central has already stopped
-	c.fakeCentral.Stop()
-	c.fakeCentral.ServerPointer.Stop()
-	messagesBeforeStopping := c.fakeCentral.GetAllMessages()
-	c.archivedMessages = append(c.archivedMessages, messagesBeforeStopping)
+	c.StopCentralGRPC()
+	c.StartFakeGRPC()
+}
 
-	// TODO: Why not have the factory in the testContext?
-	factory := c.fakeCentral.ConnectionFactory
-
-	// Create a new Fake Central instance that will send initial messages and have a new buffer
+// StartFakeGRPC will start a gRPC server to act as Central.
+func (c *TestContext) StartFakeGRPC() {
 	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
 		message.SensorHello("00000000-0000-4000-A000-000000000000"),
 		message.ClusterConfig(),
 		message.PolicySync(c.config.InitialSystemPolicies),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
 
+	conn, _, shutdown := createConnectionAndStartServer(fakeCentral)
+
+	// grpcFactory will be nil on the first run of the testContext
+	if c.grpcFactory == nil {
+		fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
+		c.grpcFactory = fakeConnectionFactory
+	} else {
+		c.grpcFactory.OverwriteCentralConnection(conn)
+	}
+
 	fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
 		c.centralReceived <- msg
 	})
-
-	conn, _, shutdown := createConnectionAndStartServer(fakeCentral)
 	fakeCentral.OnShutdown(shutdown)
-	factory.OverwriteCentralConnection(conn)
-
 	c.fakeCentral = fakeCentral
 }
 
@@ -566,33 +592,22 @@ type CentralConfig struct {
 	InitialSystemPolicies []*storage.Policy
 }
 
-func startSensorAndFakeCentral(env *envconf.Config, config CentralConfig) (*centralDebug.FakeService, func(), func(), chan bool) {
+func (c *TestContext) startSensorInstance(env *envconf.Config) {
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "../../../tools/local-sensor/certs/cert.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "../../../tools/local-sensor/certs/key.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "../../../tools/local-sensor/certs/caCert.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_KEY_FILE", "../../../tools/local-sensor/certs/caKey.pem"))
 
-	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
-		message.SensorHello("00000000-0000-4000-A000-000000000000"),
-		message.ClusterConfig(),
-		message.PolicySync(config.InitialSystemPolicies),
-		message.BaselineSync([]*storage.ProcessBaseline{}))
-
-	conn, spyCentral, _ := createConnectionAndStartServer(fakeCentral)
-	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
-	fakeCentral.ConnectionFactory = fakeConnectionFactory
-
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(client.MustCreateInterfaceFromRest(env.Client().RESTConfig())).
 		WithLocalSensor(true).
 		WithResyncPeriod(1 * time.Second).
-		WithCentralConnectionFactory(fakeConnectionFactory))
+		WithCentralConnectionFactory(c.grpcFactory))
 
 	if err != nil {
 		panic(err)
 	}
 
-	sensorStopped := make(chan bool, 1)
 	go func() {
 		if err := s.Stopped().Wait(); err != nil {
 			log.Printf("Sensor stopped with err: %s\n", err)
@@ -600,17 +615,17 @@ func startSensorAndFakeCentral(env *envconf.Config, config CentralConfig) (*cent
 			log.Printf("Sensor stopped")
 		}
 
-		sensorStopped <- true
-		close(sensorStopped)
+		c.sensorStopped <- true
+		close(c.sensorStopped)
 	}()
 
-	return fakeCentral, func() {
-			go s.Start()
-			spyCentral.ConnectionStarted.Wait()
-		}, func() {
-			go s.Stop()
-			spyCentral.KillSwitch.Done()
-		}, sensorStopped
+	c.stopFn = func() {
+		go s.Stop()
+		c.fakeCentral.KillSwitch.Done()
+	}
+
+	go s.Start()
+	c.fakeCentral.ConnectionStarted.Wait()
 }
 
 // TODO: Why return fakeCentral?

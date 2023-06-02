@@ -24,9 +24,6 @@ type FakeService struct {
 	// Server pointer exposes the underlying gRPC server connection
 	ServerPointer *grpc.Server
 
-	// Connection factory holds the connection factory object that was injected in Sensor
-	ConnectionFactory FakeGRPCFactory
-
 	// initialMessages are messages to be sent to sensor once connection is open
 	initialMessages []*central.MsgToSensor
 
