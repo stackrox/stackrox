@@ -9,6 +9,7 @@ import (
 	"context"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
@@ -68,16 +69,6 @@ func (s *postgresMigrationSuite) populateStore(clusterStore store.ClusterStore, 
 	return flowStore, flows
 }
 
-func roundTimestampToMicroseconds(timestamp *types.Timestamp) {
-	if timestamp == nil {
-		return
-	}
-	timestampNanos := timestamp.GetNanos()
-	timestampNanos /= 1000
-	timestampNanos *= 1000
-	timestamp.Nanos = timestampNanos
-}
-
 func (s *postgresMigrationSuite) verify(flowStore store.FlowStore, flows []*storage.NetworkFlow) {
 	fetched, _, err := flowStore.GetAllFlows(s.ctx, &types.Timestamp{})
 	s.NoError(err)
@@ -91,7 +82,7 @@ func (s *postgresMigrationSuite) verify(flowStore store.FlowStore, flows []*stor
 	for i, flow := range flows {
 		// Postgres Datetime columns only have microsecond granularity for timestamps.
 		// Adapt the input data to take this into account.
-		roundTimestampToMicroseconds(flow.GetLastSeenTimestamp())
+		timestamp.RoundTimeStamp(flow.GetLastSeenTimestamp(), time.Microsecond)
 		s.Equal(flow, fetched[i])
 	}
 }

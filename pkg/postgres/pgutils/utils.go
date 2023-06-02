@@ -60,6 +60,7 @@ func NilOrTime(t *types.Timestamp) *time.Time {
 	if err != nil {
 		return nil
 	}
+	ts = ts.Round(time.Microsecond)
 	return &ts
 }
 
