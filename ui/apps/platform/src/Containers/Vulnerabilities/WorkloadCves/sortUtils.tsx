@@ -31,7 +31,8 @@ export const aggregateByCreatedTime: SortAggregate = {
 };
 
 export const CVEsDefaultSort = {
-    field: 'CVE',
+    field: 'CVSS',
+    aggregateBy: aggregateByCVSS,
     direction: 'asc',
 } as const;
 

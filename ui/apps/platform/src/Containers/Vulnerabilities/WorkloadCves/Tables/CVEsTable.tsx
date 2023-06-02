@@ -28,6 +28,7 @@ import {
     aggregateByCreatedTime,
     aggregateByImageSha,
 } from '../sortUtils';
+import EmptyTableResults from '../components/EmptyTableResults';
 
 export const cveListQuery = gql`
     query getImageCVEList($query: String, $pagination: Pagination) {
@@ -134,6 +135,7 @@ function CVEsTable({
                     </TooltipTh>
                 </Tr>
             </Thead>
+            {cves.length === 0 && <EmptyTableResults colSpan={6} />}
             {cves.map(
                 (
                     {
