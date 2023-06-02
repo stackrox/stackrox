@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
@@ -119,7 +120,7 @@ type TestContext struct {
 	fakeCentral     *centralDebug.FakeService
 	centralReceived chan *central.MsgFromSensor
 	stopFn          func()
-	sensorStopped   chan bool
+	sensorStopped   concurrency.ReadOnlyErrorSignal
 	centralStopped  atomic.Bool
 	config          CentralConfig
 	grpcFactory     centralDebug.FakeGRPCFactory
@@ -165,16 +166,12 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 		centralStopped:   atomic.Bool{},
 		config:           config,
 		archivedMessages: [][]*central.MsgFromSensor{},
-		sensorStopped:    make(chan bool, 1),
 	}
 
 	tc.StartFakeGRPC()
 	tc.startSensorInstance(envConfig)
 
 	return &tc, nil
-	//return &TestContext{
-	//	t, r, envConfig, fakeCentral, ch, stopFn, sensorStopped, atomic.Bool{}, config, [][]*central.MsgFromSensor{},
-	//}, nil
 }
 
 // WithPermutation sets whether the test should run with permutations
@@ -240,12 +237,7 @@ func (c *TestContext) deleteNs(ctx context.Context, name string) error {
 }
 
 func (c *TestContext) SensorStopped() bool {
-	select {
-	case v := <-c.sensorStopped:
-		return v
-	default:
-		return false
-	}
+	return c.sensorStopped.IsDone()
 }
 
 func (c *TestContext) createTestNs(ctx context.Context, name string) (*v1.Namespace, func() error, error) {
@@ -612,17 +604,7 @@ func (c *TestContext) startSensorInstance(env *envconf.Config) {
 		panic(err)
 	}
 
-	go func() {
-		if err := s.Stopped().Wait(); err != nil {
-			log.Printf("Sensor stopped with err: %s\n", err)
-		} else {
-			log.Printf("Sensor stopped")
-		}
-
-		c.sensorStopped <- true
-		close(c.sensorStopped)
-	}()
-
+	c.sensorStopped = s.Stopped()
 	c.stopFn = func() {
 		go s.Stop()
 		c.fakeCentral.KillSwitch.Done()
