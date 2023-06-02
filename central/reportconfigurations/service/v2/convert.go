@@ -246,9 +246,8 @@ func convertProtoResourceScopeToV2(scope *storage.ResourceScope,
 		}
 		if !found {
 			return nil, errors.Errorf("Collection with ID %s no longer exists", scope.GetCollectionId())
-		} else {
-			collectionName = collection.GetName()
 		}
+		collectionName = collection.GetName()
 
 		ret.ScopeReference = &apiV2.ResourceScope_CollectionScope{
 			CollectionScope: &apiV2.CollectionReference{
@@ -284,9 +283,8 @@ func convertProtoNotifierConfigToV2(notifierConfig *storage.NotifierConfiguratio
 		}
 		if !found {
 			return nil, errors.Errorf("Notifier with ID %s no longer exists", notifierConfig.GetEmailConfig().GetNotifierId())
-		} else {
-			notifierName = notifier.GetName()
 		}
+		notifierName = notifier.GetName()
 		ret.NotifierName = notifierName
 	}
 	return ret, nil
