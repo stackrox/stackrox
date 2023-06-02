@@ -17,6 +17,6 @@ func Creator() (string, func(integration *storage.ImageIntegration) (types.Regis
 // Populating the internal repo list will be disabled.
 func CreatorWithoutRepoList() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
 	return "artifactregistry", func(integration *storage.ImageIntegration) (types.Registry, error) {
-		return google.NewRegistry(integration, false)
+		return google.NewRegistry(integration, true)
 	}
 }

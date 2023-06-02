@@ -18,7 +18,7 @@ func Creator() (string, func(integration *storage.ImageIntegration) (types.Regis
 // Populating the internal repo list will be disabled.
 func CreatorWithoutRepoList() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
 	return "azure", func(integration *storage.ImageIntegration) (types.Registry, error) {
-		reg, err := docker.NewDockerRegistry(integration, false)
+		reg, err := docker.NewDockerRegistry(integration, true)
 		return reg, err
 	}
 }
