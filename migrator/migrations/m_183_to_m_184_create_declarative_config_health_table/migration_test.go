@@ -1,16 +1,16 @@
 //go:build sql_integration
 
-package m175tom176
+package m183tom184
 
 import (
 	"context"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/m_183_to_m_184_create_declarative_config_health_table/store"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -35,9 +35,10 @@ func TestMigration(t *testing.T) {
 	assert.NoError(t, errPost)
 
 	// Test upsert is possible
+	name := "Club-Mate Zero"
 	declarativeConfigHealth := &storage.DeclarativeConfigHealth{
-		Id:   uuid.New().String(),
-		Name: "Club-Mate Zero",
+		Id:   uuid.NewV5FromNonUUIDs("notifier", name).String(),
+		Name: name,
 	}
 	upsertErr := healthStore.Upsert(ctx, declarativeConfigHealth)
 	assert.NoError(t, upsertErr)
