@@ -90,6 +90,9 @@ message CentralServicesCapabilities {
 
     // Ability to configure and perform Central backups to Amazon S3 or Google Cloud Storage.
     CapabilityStatus central_can_use_cloud_backup_integrations = 2;
+
+    // Ability to accept resources created declaratively by user.
+    CapabilityStatus central_can_accept_user_declarative_resources = 3;
 }
 
 service MetadataService {
