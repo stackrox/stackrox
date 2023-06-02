@@ -26,7 +26,7 @@ const cautionColor = IMPORTANT_HIGH_SEVERITY_COLOR;
 const skippedColor = 'var(--base-400)'; // same as NAColor in ComplianceByControls
 const alertColor = CRITICAL_SEVERITY_COLOR;
 
-const linkColor = 'var(--primary-600)'; // TODO might be able to remove after PatternFly dark theme
+const linkColor = 'var(--base-600)';
 const textColor = 'var(--base-600)';
 
 const getColor = (value) => {

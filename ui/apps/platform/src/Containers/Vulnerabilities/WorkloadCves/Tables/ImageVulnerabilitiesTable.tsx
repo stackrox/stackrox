@@ -77,9 +77,9 @@ function ImageVulnerabilitiesTable({
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('CVE')}>CVE</Th>
-                    <Th>Severity</Th>
+                    <Th sort={getSortParams('Severity')}>CVE Severity</Th>
                     <Th>
-                        CVE Status
+                        CVE status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th sort={getSortParams('CVSS')}>CVSS</Th>
@@ -127,12 +127,12 @@ function ImageVulnerabilitiesTable({
                                         {cve}
                                     </Button>
                                 </Td>
-                                <Td modifier="nowrap" dataLabel="Severity">
+                                <Td modifier="nowrap" dataLabel="CVE severity">
                                     {isVulnerabilitySeverity(severity) && (
                                         <VulnerabilitySeverityIconText severity={severity} />
                                     )}
                                 </Td>
-                                <Td modifier="nowrap" dataLabel="CVE Status">
+                                <Td modifier="nowrap" dataLabel="CVE status">
                                     <VulnerabilityFixableIconText isFixable={isFixable} />
                                 </Td>
                                 <Td modifier="nowrap" dataLabel="CVSS">

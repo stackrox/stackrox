@@ -96,6 +96,21 @@ func (mr *MockDataStoreMockRecorder) GetNotifiers(ctx interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotifiers", reflect.TypeOf((*MockDataStore)(nil).GetNotifiers), ctx)
 }
 
+// GetNotifiersFiltered mocks base method.
+func (m *MockDataStore) GetNotifiersFiltered(ctx context.Context, filter func(*storage.Notifier) bool) ([]*storage.Notifier, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNotifiersFiltered", ctx, filter)
+	ret0, _ := ret[0].([]*storage.Notifier)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNotifiersFiltered indicates an expected call of GetNotifiersFiltered.
+func (mr *MockDataStoreMockRecorder) GetNotifiersFiltered(ctx, filter interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotifiersFiltered", reflect.TypeOf((*MockDataStore)(nil).GetNotifiersFiltered), ctx, filter)
+}
+
 // GetScrubbedNotifier mocks base method.
 func (m *MockDataStore) GetScrubbedNotifier(ctx context.Context, id string) (*storage.Notifier, bool, error) {
 	m.ctrl.T.Helper()
@@ -153,4 +168,19 @@ func (m *MockDataStore) UpdateNotifier(ctx context.Context, notifier *storage.No
 func (mr *MockDataStoreMockRecorder) UpdateNotifier(ctx, notifier interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNotifier", reflect.TypeOf((*MockDataStore)(nil).UpdateNotifier), ctx, notifier)
+}
+
+// UpsertNotifier mocks base method.
+func (m *MockDataStore) UpsertNotifier(ctx context.Context, notifier *storage.Notifier) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertNotifier", ctx, notifier)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpsertNotifier indicates an expected call of UpsertNotifier.
+func (mr *MockDataStoreMockRecorder) UpsertNotifier(ctx, notifier interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertNotifier", reflect.TypeOf((*MockDataStore)(nil).UpsertNotifier), ctx, notifier)
 }

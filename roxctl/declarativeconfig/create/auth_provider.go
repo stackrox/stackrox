@@ -23,7 +23,7 @@ func authProviderCommand(cliEnvironment environment.Environment) *cobra.Command 
 	authProviderCmd := &authProviderCmd{authProvider: &declarativeconfig.AuthProvider{}, env: cliEnvironment}
 
 	cmd := &cobra.Command{
-		Use:   authProviderCmd.authProvider.Type(),
+		Use:   authProviderCmd.authProvider.ConfigurationType(),
 		Short: "Commands to create a declarative configuration for an auth provider",
 	}
 
@@ -325,7 +325,7 @@ func (a *authProviderCmd) PrintYAML() error {
 	}
 	if a.configMap != "" || a.secret != "" {
 		return errors.Wrap(k8sobject.WriteToK8sObject(context.Background(), a.configMap, a.secret, a.namespace,
-			fmt.Sprintf("%s-%s", a.authProvider.Type(), a.authProvider.Name), yamlOut.Bytes()),
+			fmt.Sprintf("%s-%s", a.authProvider.ConfigurationType(), a.authProvider.Name), yamlOut.Bytes()),
 			"writing the YAML output to config map")
 	}
 

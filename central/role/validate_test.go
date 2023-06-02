@@ -187,10 +187,6 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 	}
 
 	testCasesGood := map[string]*storage.SimpleAccessScope{
-		"id and name are set": {
-			Id:   mockGoodID,
-			Name: mockName,
-		},
 		"id, name, and namespace label selector are set": {
 			Id:    mockGoodID,
 			Name:  mockName,
@@ -224,21 +220,22 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 		{
 			name:                   "empty simple access scope",
 			scope:                  &storage.SimpleAccessScope{},
-			expectedNumberOfErrors: 2,
+			expectedNumberOfErrors: 3,
 		},
 		{
 			name:                   "id is missing",
-			scope:                  &storage.SimpleAccessScope{Name: mockName},
+			scope:                  &storage.SimpleAccessScope{Name: mockName, Rules: &storage.SimpleAccessScope_Rules{}},
 			expectedNumberOfErrors: 1,
 		}, {
 			name:                   "name is missing",
-			scope:                  &storage.SimpleAccessScope{Id: mockGoodID},
+			scope:                  &storage.SimpleAccessScope{Id: mockGoodID, Rules: &storage.SimpleAccessScope_Rules{}},
 			expectedNumberOfErrors: 1,
 		}, {
 			name: "bad id",
 			scope: &storage.SimpleAccessScope{
-				Id:   mockBadID,
-				Name: mockName,
+				Id:    mockBadID,
+				Name:  mockName,
+				Rules: &storage.SimpleAccessScope_Rules{},
 			},
 			expectedNumberOfErrors: 1,
 		},

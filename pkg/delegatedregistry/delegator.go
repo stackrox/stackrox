@@ -12,8 +12,8 @@ import (
 type Delegator interface {
 	// GetDelegateClusterID returns the cluster id that should enrich this image (if any) and
 	// true if enrichment should be delegated to a secured cluster, false otherwise.
-	GetDelegateClusterID(ctx context.Context, image *storage.Image) (string, bool, error)
+	GetDelegateClusterID(ctx context.Context, imgName *storage.ImageName) (string, bool, error)
 
-	// DelegateEnrichImage sends an enrichment request to the provided cluster.
-	DelegateEnrichImage(ctx context.Context, image *storage.Image, clusterID string, force bool) error
+	// DelegateScanImage sends a scan request to the provided cluster.
+	DelegateScanImage(ctx context.Context, imgName *storage.ImageName, clusterID string, force bool) (*storage.Image, error)
 }

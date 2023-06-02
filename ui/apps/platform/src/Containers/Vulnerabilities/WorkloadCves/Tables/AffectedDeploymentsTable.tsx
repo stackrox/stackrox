@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flex, Button, ButtonVariant, pluralize } from '@patternfly/react-core';
+import { Flex, Button, ButtonVariant, pluralize, Truncate } from '@patternfly/react-core';
 import {
     TableComposable,
     Thead,
@@ -139,7 +139,7 @@ function AffectedDeploymentsTable({
                                         component={LinkShim}
                                         href={getEntityPagePath('Deployment', id)}
                                     >
-                                        {name}
+                                        <Truncate position="middle" content={name} />
                                     </Button>{' '}
                                 </Flex>
                             </Td>

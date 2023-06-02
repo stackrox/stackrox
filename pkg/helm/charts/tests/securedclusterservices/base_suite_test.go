@@ -73,7 +73,7 @@ admissionControl:
     key: "DUMMY ADMISSION CONTROL KEY"
 
 config:
-  collectionMethod: KERNEL_MODULE
+  collectionMethod: EBPF
   admissionControl:
     listenOnCreates: true
     listenOnUpdates: true

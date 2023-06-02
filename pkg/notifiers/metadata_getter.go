@@ -11,4 +11,5 @@ import (
 //go:generate mockgen-wrapper MetadataGetter
 type MetadataGetter interface {
 	GetAnnotationValue(ctx context.Context, alert *storage.Alert, annotationKey, defaultValue string) string
+	GetNamespaceLabels(ctx context.Context, alert *storage.Alert) map[string]string
 }

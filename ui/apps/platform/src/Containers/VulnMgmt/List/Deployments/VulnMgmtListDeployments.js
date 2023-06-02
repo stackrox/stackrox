@@ -4,7 +4,6 @@ import { gql } from '@apollo/client';
 import queryService from 'utils/queryService';
 import DateTimeField from 'Components/DateTimeField';
 import CVEStackedPill from 'Components/CVEStackedPill';
-import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import TableCellLink from 'Components/TableCellLink';
 import TableCountLink from 'Components/workflow/TableCountLink';
 import {
@@ -170,21 +169,6 @@ export function getCurriedDeploymentTableColumns(isFeatureFlagEnabled) {
             //     sortField: deploymentSortFields.POLICY_COUNT,
             //     sortable: false
             // },
-            {
-                Header: `Policy Status`,
-                headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-                className: `w-1/10 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => {
-                    const { policyStatus } = original;
-                    return (
-                        <PolicyStatusIconText isPass={policyStatus === 'pass'} isTextOnly={pdf} />
-                    );
-                },
-                id: deploymentSortFields.POLICY_STATUS,
-                accessor: 'policyStatus',
-                sortField: deploymentSortFields.POLICY_STATUS,
-                sortable: false,
-            },
             {
                 Header: `Cluster`,
                 entityType: entityTypes.CLUSTER,

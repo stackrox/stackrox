@@ -6,7 +6,6 @@ import TableCellLink from 'Components/TableCellLink';
 import TableCountLink from 'Components/workflow/TableCountLink';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import DateTimeField from 'Components/DateTimeField';
-import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import {
     defaultHeaderClassName,
     nonSortableHeaderClassName,
@@ -196,24 +195,6 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResu
             //     sortField: namespaceSortFields.POLICY_COUNT,
             //     sortable: false
             // },
-            {
-                Header: `Policy Status`,
-                headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-                className: `w-1/10 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => {
-                    const { policyStatusOnly } = original;
-                    return (
-                        <PolicyStatusIconText
-                            isPass={policyStatusOnly === 'pass'}
-                            isTextOnly={pdf}
-                        />
-                    );
-                },
-                id: namespaceSortFields.POLICY_STATUS,
-                accessor: 'policyStatusOnly',
-                sortField: namespaceSortFields.POLICY_STATUS,
-                sortable: false,
-            },
             {
                 Header: `Latest Violation`,
                 headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,

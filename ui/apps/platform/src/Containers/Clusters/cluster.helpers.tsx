@@ -23,9 +23,9 @@ export const runtimeOptions = [
         value: 'NO_COLLECTION',
     },
     {
-        label: 'Kernel Module',
-        tableDisplay: 'Kernel Module',
-        value: 'KERNEL_MODULE',
+        label: 'CORE BPF [Tech Preview]',
+        tableDisplay: 'CORE BPF',
+        value: 'CORE_BPF',
     },
     {
         label: 'eBPF Program',

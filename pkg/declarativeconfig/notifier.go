@@ -41,7 +41,7 @@ type Notifier struct {
 	SplunkConfig  *SplunkConfig  `yaml:"splunk,omitempty"`
 }
 
-// Type returns the NotifierConfiguration type.
-func (r *Notifier) Type() ConfigurationType {
+// ConfigurationType returns the NotifierConfiguration type.
+func (r *Notifier) ConfigurationType() ConfigurationType {
 	return NotifierConfiguration
 }

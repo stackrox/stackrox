@@ -84,7 +84,7 @@ type AuthProvider struct {
 	OpenshiftConfig    *OpenshiftConfig    `yaml:"openshift,omitempty"`
 }
 
-// Type returns the AuthProviderConfiguration type.
-func (a *AuthProvider) Type() ConfigurationType {
+// ConfigurationType returns the AuthProviderConfiguration type.
+func (a *AuthProvider) ConfigurationType() ConfigurationType {
 	return AuthProviderConfiguration
 }

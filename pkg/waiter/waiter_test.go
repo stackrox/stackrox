@@ -114,14 +114,6 @@ func TestWaitClose(t *testing.T) {
 	assert.Equal(t, wm.len(), 0)
 }
 
-func TestZeroMaxCollisions(t *testing.T) {
-	wm := NewManager[string](WithMaxCollisions(0))
-	wm.Start(context.Background())
-
-	_, err := wm.NewWaiter()
-	assert.NoError(t, err)
-}
-
 func TestCloseManager(t *testing.T) {
 	t.Parallel()
 	wm := NewManager[string]()

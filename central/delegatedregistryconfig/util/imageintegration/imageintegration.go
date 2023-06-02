@@ -9,12 +9,11 @@ func ValidForSync(ii *storage.ImageIntegration) bool {
 		return false
 	}
 
-	var isReg bool
 	for _, cat := range ii.GetCategories() {
 		if cat == storage.ImageIntegrationCategory_REGISTRY {
-			isReg = true
+			return true
 		}
 	}
 
-	return isReg
+	return false
 }

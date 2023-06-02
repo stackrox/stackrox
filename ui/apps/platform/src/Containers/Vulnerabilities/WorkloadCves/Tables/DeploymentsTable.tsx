@@ -2,7 +2,7 @@ import React from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Button, ButtonVariant } from '@patternfly/react-core';
+import { Button, ButtonVariant, Truncate } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { UseURLSortResult } from 'hooks/useURLSort';
@@ -85,7 +85,7 @@ function DeploymentsTable({
                         Images
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th>First discovered</Th>
+                    <Th sort={getSortParams('Created')}>First discovered</Th>
                 </Tr>
             </Thead>
             {deployments.length === 0 && <EmptyTableResults colSpan={6} />}
@@ -118,7 +118,7 @@ function DeploymentsTable({
                                         component={LinkShim}
                                         href={getEntityPagePath('Deployment', id)}
                                     >
-                                        {name}
+                                        <Truncate position="middle" content={name} />
                                     </Button>
                                 </Td>
                                 <Td>
@@ -134,16 +134,9 @@ function DeploymentsTable({
                                 <Td>{clusterName}</Td>
                                 <Td>{namespace}</Td>
                                 <Td>
-                                    <Button
-                                        variant={ButtonVariant.link}
-                                        isInline
-                                        component={LinkShim}
-                                        href={getEntityPagePath('Deployment', id, {
-                                            detailsTab: 'Resources',
-                                        })}
-                                    >
+                                    <>
                                         {imageCount} {pluralize('image', imageCount)}
-                                    </Button>
+                                    </>
                                 </Td>
                                 <Td>
                                     <DatePhraseTd date={created} />

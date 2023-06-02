@@ -156,6 +156,6 @@ func (s *suiteImpl) verifyCheckRegistered() framework.Check {
 func (s *suiteImpl) cluster() *storage.Cluster {
 	return &storage.Cluster{
 		Id:               uuid.NewV4().String(),
-		CollectionMethod: storage.CollectionMethod_KERNEL_MODULE,
+		CollectionMethod: storage.CollectionMethod_EBPF,
 	}
 }
