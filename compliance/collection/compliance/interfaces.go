@@ -24,3 +24,9 @@ type SensorReplyHandler interface {
 	HandleACK(ctx context.Context, client sensor.ComplianceService_CommunicateClient)
 	HandleNACK(ctx context.Context, client sensor.ComplianceService_CommunicateClient)
 }
+
+type unconfirmedMessageHandler interface {
+	ObserveSending()
+	ObserveConfirmation()
+	RetryCommand() <-chan struct{}
+}

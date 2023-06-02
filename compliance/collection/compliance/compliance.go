@@ -25,12 +25,6 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-type unconfirmedMessageHandler interface {
-	ObserveSending()
-	ObserveConfirmation()
-	RetryCommand() <-chan struct{}
-}
-
 // Compliance represents the Compliance app
 type Compliance struct {
 	nodeNameProvider   NodeNameProvider
@@ -41,7 +35,8 @@ type Compliance struct {
 }
 
 // NewComplianceApp contsructs the Compliance app object
-func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner, srh SensorReplyHandler, umh unconfirmedMessageHandler) *Compliance {
+func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner,
+	srh SensorReplyHandler, umh unconfirmedMessageHandler) *Compliance {
 	return &Compliance{
 		nodeNameProvider:   nnp,
 		nodeScanner:        scanner,

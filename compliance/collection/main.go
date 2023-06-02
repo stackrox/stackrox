@@ -18,7 +18,6 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	nsr := retry.NewUnconfirmedMessageHandler(ctx, 15*time.Second)
-	srh := compliance.NewSensorReplyHandlerImpl(scanner, nsr)
-	c := compliance.NewComplianceApp(np, scanner, srh, nsr)
+	c := compliance.NewComplianceApp(np, scanner, nsr, nsr)
 	c.Start()
 }

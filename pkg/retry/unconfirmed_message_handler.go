@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -93,4 +94,15 @@ func (s *UnconfirmedMessageHandlerImpl) ObserveConfirmation() {
 	log.Debug("Message has been acknowledged")
 	s.ticker.Stop()
 	s.retry = 0
+}
+
+// HandleACK is called when ACK is received in Compliance (implements SensorReplyHandler interface)
+func (s *UnconfirmedMessageHandlerImpl) HandleACK(_ context.Context, _ sensor.ComplianceService_CommunicateClient) {
+	log.Debugf("Received ACK from Sensor.")
+	s.ObserveConfirmation()
+}
+
+// HandleNACK is called when NACK is received in Compliance (implements SensorReplyHandler interface)
+func (s *UnconfirmedMessageHandlerImpl) HandleNACK(_ context.Context, _ sensor.ComplianceService_CommunicateClient) {
+	log.Debugf("Received NACK from Sensor. Node scan will be resent.")
 }
