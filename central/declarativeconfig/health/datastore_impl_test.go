@@ -110,7 +110,8 @@ func (s *declarativeConfigHealthDatastoreSuite) TestRemoveConfigHealth() {
 
 	// 1. With no access should return an error + config health should still exist.
 	err = s.datastore.RemoveDeclarativeConfig(s.hasNoAccessCtx, configHealth.GetId())
-	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+	// Since user has no access, we can't confirm whether the resource even exists.
+	s.ErrorIs(err, errox.NotFound)
 	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
 	s.True(exists)
