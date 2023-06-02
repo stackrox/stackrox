@@ -115,7 +115,7 @@ func (s *FakeService) startInputIngestion(stream central.SensorService_Communica
 			if err == io.EOF {
 				break
 			}
-			log.Printf("error receiving message from sensor: %s\n", err)
+			log.Printf("grpc stream stopped: %s\n", err)
 			break
 		}
 		if s.KillSwitch.IsDone() {
