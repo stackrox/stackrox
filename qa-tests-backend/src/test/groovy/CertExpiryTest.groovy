@@ -7,8 +7,8 @@ import util.Env
 
 @Tag("BAT")
 @Tag("COMPATIBILITY")
-// ROX-14228 skipping tests for 1st release on power & z
-@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+// skip if executed on a cluster with just secured-cluster deployed i.e. central is not deployed
+@IgnoreIf({ Env.STANDALONE_SECURED_CLUSTER == "true" })
 class CertExpiryTest extends BaseSpecification {
 
     def "Test Central cert expiry"() {
