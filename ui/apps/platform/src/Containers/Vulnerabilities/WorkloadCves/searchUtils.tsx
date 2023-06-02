@@ -78,7 +78,8 @@ export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySear
             }
         });
 
-        cleanSearchFilter.Fixable = cleanFixable;
+        // TODO We are explicitly excluding "Fixable" from the search filter until this functionality is re-enabled
+        // cleanSearchFilter.Fixable = cleanFixable;
     }
 
     if (rawSearchFilter.Severity) {

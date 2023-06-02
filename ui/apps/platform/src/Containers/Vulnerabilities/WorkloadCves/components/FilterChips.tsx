@@ -3,8 +3,7 @@ import { Globe } from 'react-feather';
 import { Flex, FlexItem, ChipGroup, Chip, Button } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
-import { getHasSearchApplied } from 'utils/searchUtils';
-import { VulnerabilitySeverityLabel, FixableStatus, DefaultFilters } from '../types';
+import { VulnerabilitySeverityLabel, DefaultFilters } from '../types';
 
 import './FilterChips.css';
 
@@ -46,9 +45,10 @@ function FilterChips({
     const namespaces = (searchFilter.NAMESPACE as string[]) || [];
     const clusters = (searchFilter.CLUSTER as string[]) || [];
     const severities = (searchFilter.Severity as VulnerabilitySeverityLabel[]) || [];
-    const fixables = (searchFilter.Fixable as FixableStatus[]) || [];
 
-    const hasSearchApplied = getHasSearchApplied(searchFilter);
+    const hasSearchApplied = [deployments, cves, images, namespaces, clusters, severities].some(
+        (filter) => filter.length > 0
+    );
 
     return (
         <Flex spaceItems={{ default: 'spaceItemsXs' }}>
@@ -144,27 +144,7 @@ function FilterChips({
                     </ChipGroup>
                 </FlexItem>
             )}
-            {fixables.length > 0 && (
-                <FlexItem className="pf-u-pt-xs">
-                    <ChipGroup
-                        categoryName="Fixable"
-                        isClosable
-                        onClick={() => onDeleteGroup('Fixable')}
-                    >
-                        {fixables.map((fixableStatus) => (
-                            <Chip
-                                key={fixableStatus}
-                                onClick={() => onDelete('Fixable', fixableStatus)}
-                            >
-                                <FilterChip
-                                    isGlobal={defaultFilters.Fixable?.includes(fixableStatus)}
-                                    name={fixableStatus}
-                                />
-                            </Chip>
-                        ))}
-                    </ChipGroup>
-                </FlexItem>
-            )}
+            {/* Fixability filters are disabled until the backend implementation is updated */}
             {hasSearchApplied && (
                 <Button variant="link" onClick={onDeleteAll}>
                     Clear filters
