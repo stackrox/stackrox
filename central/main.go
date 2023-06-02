@@ -564,6 +564,7 @@ func startGRPCServer() {
 				gs.AddGatherer(signatureIntegrationDS.Gather)
 				gs.AddGatherer(roleDataStore.Gather)
 				gs.AddGatherer(clusterDataStore.Gather)
+				gs.AddGatherer(declarativeconfig.ManagerSingleton(registry).Gather())
 			}
 		}
 	}
