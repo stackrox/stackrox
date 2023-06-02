@@ -663,16 +663,6 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 	return conn, fakeCentral, closeF
 }
 
-// ApplyDeploymentAndWait creates a Kubernetes resources in test namespace and immediately waits for it to be shown
-func (c *TestContext) ApplyDeploymentAndWait(ctx context.Context, resource K8sResourceInfo) (func() error, error) {
-	deleteFn, err := c.ApplyResourceNoObject(ctx, DefaultNamespace, resource, nil)
-	if err != nil {
-		return deleteFn, err
-	}
-	c.WaitForDeploymentEvent(resource.Name)
-	return deleteFn, nil
-}
-
 // ApplyResourceNoObject creates a Kubernetes resource using `ApplyResource` without requiring an object reference.
 func (c *TestContext) ApplyResourceNoObject(ctx context.Context, ns string, resource K8sResourceInfo, retryFn RetryCallback) (func() error, error) {
 	obj := objByKind(resource.Kind)
