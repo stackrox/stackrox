@@ -1,4 +1,4 @@
-package netpol
+package connectivitymap
 
 import (
 	"os"
@@ -26,19 +26,20 @@ type analyzeNetpolCommand struct {
 	env environment.Environment
 }
 
-// Command defines the netpol command tree
+// Command defines the connectivity-map command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	analyzeNetpolCmd := &analyzeNetpolCommand{env: cliEnvironment}
 	c := &cobra.Command{
-		Use:   "netpol <folder-path>",
+		Use:   "connectivity-map <folder-path>",
 		Short: "(Technology Preview) Analyze connectivity based on network policies and other resources.",
-		Long: `Based on a given folder containing deployment and netpol YAMLs, will analyze permitted cluster connectivity. Will write to stdout if no output flags are provided.
+		Long: `Based on a given folder containing deployment and network policy YAMLs, will analyze permitted cluster connectivity. Will write to stdout if no output flags are provided.
 
 ** This is a Technology Preview feature **
 Technology Preview features are not supported with Red Hat production service level agreements (SLAs) and might not be functionally complete.
 Red Hat does not recommend using them in production.
 These features provide early access to upcoming product features, enabling customers to test functionality and provide feedback during the development process.
 For more information about the support scope of Red Hat Technology Preview features, see https://access.redhat.com/support/offerings/techpreview/`,
+
 		Args: cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
 			analyzeNetpolCmd.env.Logger().WarnfLn("This is a Technology Preview feature. Red Hat does not recommend using Technology Preview features in production.")
