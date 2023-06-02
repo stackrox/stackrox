@@ -105,11 +105,6 @@ export_test_environment() {
     ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
     ci_export ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG "${ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG:-true}"
 
-    if [[ -z "${BUILD_TAG:-}" ]]; then
-        # TODO(ROX-16008): Remove this once the declarative config feature flag is enabled by default.
-        ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
-    fi
-
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
     fi
@@ -190,8 +185,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "'"${ROX_POSTGRES_DATASTORE:-false}"'"'
     customize_envVars+=$'\n      - name: ROX_PROCESSES_LISTENING_ON_PORT'
     customize_envVars+=$'\n        value: "'"${ROX_PROCESSES_LISTENING_ON_PORT:-true}"'"'
-    customize_envVars+=$'\n      - name: ROX_DECLARATIVE_CONFIGURATION'
-    customize_envVars+=$'\n        value: "'"${ROX_DECLARATIVE_CONFIGURATION:-true}"'"'
 
     env - \
       centralAdminPasswordBase64="$centralAdminPasswordBase64" \
