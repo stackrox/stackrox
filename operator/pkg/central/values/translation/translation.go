@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
@@ -87,8 +88,11 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 			key := ctrlClient.ObjectKey{Namespace: c.GetNamespace(), Name: lookupName}
 			pvc := &corev1.PersistentVolumeClaim{}
 			err := t.Client.Get(ctx, key, pvc)
+			if !apiErrors.IsNotFound(err) {
+				utils.Should(errors.Wrapf(err, "failed to check pvc %s in name space %s", lookupName, c.GetNamespace()))
+			}
 			// In case of error, we do not know if there is exising pvc there. It would be safer to
-			// assume it is not there. In that case, we may leaving two persistent files not migrated
+			// assume it is not there. In that case, we may leave two persistent files not migrated
 			// for offline mode. I am not sure how many customer working with operator in offline mode in the first place,
 			// but that scenario can be corrected by upload them again.
 			return err == nil
