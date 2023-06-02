@@ -5,11 +5,15 @@ import java.util.concurrent.TimeUnit
 import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.api.v1.AuthproviderService
+import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.GroupServiceOuterClass
+import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.AuthProviderOuterClass.AuthProvider
 import io.stackrox.proto.storage.GroupOuterClass.GroupProperties
 import io.stackrox.proto.storage.GroupOuterClass.Group
 import io.stackrox.proto.storage.IntegrationHealthOuterClass.IntegrationHealth.Status
+import io.stackrox.proto.storage.NotifierOuterClass.Notifier
+import io.stackrox.proto.storage.NotifierOuterClass.Splunk
 import io.stackrox.proto.storage.RoleOuterClass.Access
 import io.stackrox.proto.storage.RoleOuterClass.PermissionSet
 import io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope
@@ -19,6 +23,7 @@ import io.stackrox.proto.storage.TraitsOuterClass.Traits
 import services.AuthProviderService
 import services.GroupService
 import services.IntegrationHealthService
+import services.NotifierService
 import services.RoleService
 
 import org.junit.Rule
@@ -37,8 +42,9 @@ class DeclarativeConfigTest extends BaseSpecification {
     static final private String ACCESS_SCOPE_KEY = "access-scope"
     static final private String ROLE_KEY = "role"
     static final private String AUTH_PROVIDER_KEY = "auth-provider"
+    static final private String NOTIFIER_KEY = "notifier"
 
-    static final private int CREATED_RESOURCES = 6
+    static final private int CREATED_RESOURCES = 7
 
     static final private int RETRIES = 30
     static final private int DELETION_RETRIES = 45
@@ -197,6 +203,41 @@ oidc:
   clientID: SOMECLIENTID
 """
 
+    // Values used within testing for notifiers.
+    // These include:
+    //  - a valid splunk notifier YAML (valid == upserting these will work)
+    //  - a valid notifier proto object (based on the values defined in the previous YAML)
+    //  - an invalid splunk notifier YAML (invalid == failure during upserting the generated proto from these values)
+    static final private String VALID_NOTIFIER_YAML = """\
+name: ${NOTIFIER_KEY}
+splunk:
+    token: stackrox-token
+    endpoint: stackrox-endpoint
+    sourceTypes:
+        - key: audit
+          sourceType: stackrox-audit-message
+        - key: alert
+          sourceType: stackrox-alert
+"""
+    static final private VALID_NOTIFIER = Notifier.newBuilder()
+            .setName(NOTIFIER_KEY)
+            .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE))
+            .setSplunk(Splunk.newBuilder()
+                    .setHttpToken("stackrox-token")
+                    .setHttpEndpoint("stackrox-endpoint")
+                    .putAllSourceTypes(["stackrox-audit-message": "key", "stackrox-alert": "alert"])
+            ).build()
+    static final private String INVALID_NOTIFIER_YAML = """\
+name: ${NOTIFIER_KEY}
+splunk:
+    endpoint: stackrox-endpoint
+    sourceTypes:
+        - key: audit
+          sourceType: stackrox-audit-message
+        - key: alert
+          sourceType: stackrox-alert
+"""
+
     // Overwrite the default timeout, as these tests may take longer than 800 seconds to finish.
     @Rule
     @SuppressWarnings(["JUnitPublicProperty"])
@@ -248,6 +289,9 @@ oidc:
         def foundGroups = verifyDeclarativeGroups(authProvider.getId(), expectedGroups)
         assert foundGroups == expectedGroups.size() :
                 "expected to find ${expectedGroups.size()} groups, but only found ${foundGroups}"
+
+        def notifier = verifyDeclarativeNotifier(VALID_NOTIFIER)
+        assert notifier
 
         when:
         // Update the config map to contain an invalid permission set YAML.
@@ -382,6 +426,11 @@ oidc:
         assert GroupService.getGroups(
                 GroupServiceOuterClass.GetGroupsRequest.newBuilder().setAuthProviderId(authProvider.getId()).build())
                 .getGroupsCount() == 0
+
+        // The previously created notifier should not exist anymore.
+        def notifierAfterDeletion = NotifierService.getNotifierClient().getNotifier(
+                Common.ResourceByID.newBuilder().setId(notifier.getId()).build())
+        assert notifierAfterDeletion == null
     }
 
     @Tag("BAT")
@@ -393,6 +442,7 @@ oidc:
                         (ACCESS_SCOPE_KEY): INVALID_ACCESS_SCOPE_YAML,
                         (ROLE_KEY): INVALID_ROLE_YAML,
                         (AUTH_PROVIDER_KEY): INVALID_AUTH_PROVIDER_YAML,
+                        (NOTIFIER_KEY): INVALID_NOTIFIER_YAML,
                 ], DEFAULT_NAMESPACE)
 
         then:
@@ -441,6 +491,13 @@ oidc:
                                 .setName(VALID_AUTH_PROVIDER.getName()).build()
                 )
                 .getAuthProvidersCount() == 0
+
+        // No notifier should be created.
+        def notifierAfterDeletion = NotifierService.getNotifierClient().getNotifiers(
+                NotifierServiceOuterClass.GetNotifiersRequest
+                        .newBuilder().build())
+                .notifiersList.find { it.getName() == VALID_NOTIFIER.getName() }
+        assert notifierAfterDeletion == null
 
         when:
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
@@ -619,7 +676,7 @@ oidc:
             // - role
             // - permission set
             // - config map
-            assert response.getIntegrationHealthCount() == 4
+            assert response.getIntegrationHealthCount() == 5
         }
 
         when:
@@ -657,9 +714,10 @@ oidc:
         orchestrator.createConfigMap(configMapName,
                 [
                         (PERMISSION_SET_KEY): VALID_PERMISSION_SET_YAML,
-                        (ACCESS_SCOPE_KEY): VALID_ACCESS_SCOPE_YAML,
-                        (ROLE_KEY): VALID_ROLE_YAML,
-                        (AUTH_PROVIDER_KEY): VALID_AUTH_PROVIDER_YAML,
+                        (ACCESS_SCOPE_KEY)  : VALID_ACCESS_SCOPE_YAML,
+                        (ROLE_KEY)          : VALID_ROLE_YAML,
+                        (AUTH_PROVIDER_KEY) : VALID_AUTH_PROVIDER_YAML,
+                        (NOTIFIER_KEY)      : VALID_NOTIFIER_YAML,
                 ], namespace)
     }
 
@@ -776,5 +834,23 @@ oidc:
         assert authProvider.getEnabled()
         assert authProvider.getConfigMap() == expectedAuthProvider.getConfigMap()
         return authProvider
+    }
+
+    // verifyDeclarativeNotifier will verify that the expected auth provider exists within the API and
+    // shares the same values.
+    // The retrieved notifier from the API will be returned, which will have the ID field populated.
+    private Notifier verifyDeclarativeNotifier(Notifier expectedNotifier) {
+        def notifier = NotifierService.getNotifierClient().getNotifiers(
+                NotifierServiceOuterClass.GetNotifiersRequest
+                        .newBuilder().build())
+                .notifiersList.find { it.getName() == VALID_NOTIFIER.getName() }
+        assert notifier
+        assert notifier.getName() == expectedNotifier.getName()
+        assert notifier.getTraits().getOrigin() == expectedNotifier.getTraits().getOrigin()
+        assert notifier.getType() == "splunk"
+        // Skipping the HTTP token since it will be obscured by the API.
+        assert notifier.getSplunk().getHttpEndpoint() == expectedNotifier.getSplunk().getHttpEndpoint()
+        assert notifier.getSplunk().getSourceTypesMap() == expectedNotifier.getSplunk().getSourceTypesMap()
+        return notifier
     }
 }
