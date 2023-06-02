@@ -71,13 +71,11 @@ message DatabaseBackupStatus {
 // The initial intended use is to disable certain functionality that does not make sense in the Cloud Service context.
 message CentralServicesCapabilities {
     enum CapabilityStatus {
-        // "Maybe" means "not disabled".
-        // The reason it's not called "Available" is that extended checks might be required to confirm true ability to
-        // use e.g. container AWS IAM role or GCP workload identity, and we can't positively say "Available" while such
-        // checks aren't implemented.
-        // "Maybe" means the user should be allowed to use the capability (both via UI and API) but an attempt may not
-        // be successful if the corresponding configuration does not match the actual environment.
-        Maybe = 0;
+        // Available means that UI and APIs should be available for users to use.
+        // This does not automatically mean that the functionality is 100% available and any calls to APIs will result
+        // in successful execution. Rather it means that users should be allowed to leverage the functionality as
+        // opposed to CapabilityDisabled when functionality should be blocked.
+        CapabilityAvailable = 0;
 
         // Capability is disabled, meaning the corresponding UI should be disabled and attempts to use related APIs
         // should lead to errors.
@@ -86,6 +84,10 @@ message CentralServicesCapabilities {
 
     // Ability to use container IAM role for scanning images from Amazon ECR using Scanner deployed as part of Central
     // Services.
+    // Note that CapabilityAvailable status does not mean that Scanner container actually has IAM role attached. Such
+    // check isn't implemented at the moment and an attempt to use the corresponding setting may lead to errors when
+    // the role is not actually there. It's user's responsibility to check the presence of role and integration status
+    // when the corresponding setting is enabled.
     CapabilityStatus central_scanning_can_use_container_iam_role_for_ecr = 1;
 
     // Ability to configure and perform Central backups to Amazon S3 or Google Cloud Storage.
