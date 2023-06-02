@@ -41,15 +41,15 @@ patterns=$(jq -c '.[]' "$DIR/restart-ok-patterns.json")
             then
                 echo "Ignoring this restart due to: ${comment}"
                 this_log_is_ok=true
-                if [[ -n "${ARTIFACT_DIR:-}" ]]; then
-                    cp "${logfile}" "${ARTIFACT_DIR}" || true
-                    echo "$(basename "${logfile}") copied to Artifacts"
-                fi
                 break
             fi
         done
         if ! ${this_log_is_ok}; then
             echo "This restart does not match any ignore patterns"
+            if [[ -n "${ARTIFACT_DIR:-}" ]]; then
+                cp "${logfile}" "${ARTIFACT_DIR}" || true
+                echo "$(basename "${logfile}") copied to Artifacts"
+            fi
             all_ok=false
         fi
     done
@@ -59,4 +59,3 @@ patterns=$(jq -c '.[]' "$DIR/restart-ok-patterns.json")
 )
 
 exit 0
-
