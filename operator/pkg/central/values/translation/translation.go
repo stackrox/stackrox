@@ -17,8 +17,6 @@ import (
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
-	corev1 "k8s.io/api/core/v1"
-	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
@@ -83,20 +81,14 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 	if value, ok := annotations[common.CentralPVCObsoletedAnnotation]; ok {
 		obsoletePvc = strings.ToLower(strings.TrimSpace(value)) == "true"
 	}
+	checker := &pvcExistenceChecker{
+		ctx:         ctx,
+		client:      t.Client,
+		nameSpace:   c.GetNamespace(),
+		obsoletePvc: obsoletePvc,
+	}
 	v.AddChild("central",
-		getCentralComponentValues(centralSpec, func(lookupName string) bool {
-			key := ctrlClient.ObjectKey{Namespace: c.GetNamespace(), Name: lookupName}
-			pvc := &corev1.PersistentVolumeClaim{}
-			err := t.Client.Get(ctx, key, pvc)
-			if !apiErrors.IsNotFound(err) {
-				utils.Should(errors.Wrapf(err, "failed to check pvc %s in name space %s", lookupName, c.GetNamespace()))
-			}
-			// In case of error, we do not know if there is exising pvc there. It would be safer to
-			// assume it is not there. In that case, we may leave two persistent files not migrated
-			// for offline mode. I am not sure how many customer working with operator in offline mode in the first place,
-			// but that scenario can be corrected by upload them again.
-			return err == nil
-		}, obsoletePvc))
+		getCentralComponentValues(centralSpec, checker))
 
 	if c.Spec.Scanner != nil {
 		v.AddChild("scanner", getCentralScannerComponentValues(c.Spec.Scanner))
@@ -162,10 +154,10 @@ func getCentralDBPersistenceValues(p *platform.DBPersistence) *translation.Value
 	return &persistence
 }
 
-func getCentralPersistenceValues(p *platform.Persistence, pvcExists func(claimName string) bool, pvcObsoleted bool) *translation.ValuesBuilder {
+func getCentralPersistenceValues(p *platform.Persistence, checker *pvcExistenceChecker) *translation.ValuesBuilder {
 	persistence := translation.NewValuesBuilder()
 	// Check pvcs which should exist in cluster.
-	if pvcObsoleted {
+	if checker.toObsolete() {
 		persistence.SetBoolValue("none", true)
 		return &persistence
 	}
@@ -179,7 +171,7 @@ func getCentralPersistenceValues(p *platform.Persistence, pvcExists func(claimNa
 			lookupName = pointer.StringDeref(pvc.ClaimName, extensions.DefaultCentralPVCName)
 		}
 		// Do not mount PVC if it does not exist.
-		if !pvcExists(lookupName) {
+		if !checker.pvcExists(lookupName) {
 			persistence.SetBoolValue("none", true)
 			return &persistence
 		}
@@ -194,7 +186,7 @@ func getCentralPersistenceValues(p *platform.Persistence, pvcExists func(claimNa
 	return &persistence
 }
 
-func getCentralComponentValues(c *platform.CentralComponentSpec, pvcExists func(lookupName string) bool, pvcObsoleted bool) *translation.ValuesBuilder {
+func getCentralComponentValues(c *platform.CentralComponentSpec, checker *pvcExistenceChecker) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
 
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
@@ -208,7 +200,7 @@ func getCentralComponentValues(c *platform.CentralComponentSpec, pvcExists func(
 
 	// TODO(ROX-7147): design CentralEndpointSpec, see central_types.go
 
-	cv.AddChild("persistence", getCentralPersistenceValues(c.GetPersistence(), pvcExists, pvcObsoleted))
+	cv.AddChild("persistence", getCentralPersistenceValues(c.GetPersistence(), checker))
 
 	if c.Exposure != nil {
 		exposure := translation.NewValuesBuilder()
