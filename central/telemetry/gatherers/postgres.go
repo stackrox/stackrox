@@ -37,8 +37,8 @@ func (d *postgresGatherer) Gather(ctx context.Context) *data.DatabaseStats {
 
 	// Check Postgres remaining capacity
 	if !env.ManagedCentral.BooleanSetting() {
-		availableDBBytes, _ := pgadmin.GetRemainingCapacity(d.adminConfig)
-		//errorList.AddError(err)
+		availableDBBytes, err := pgadmin.GetRemainingCapacity(d.adminConfig)
+		errorList.AddError(err)
 		dbStats.AvailableBytes = availableDBBytes
 	}
 
