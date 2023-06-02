@@ -20,9 +20,7 @@ updates:
       - "stackrox/ui-dep-updaters"
     commit-message:
       include: scope
-      prefix: chore(ui)
-      prefix-development: "chore(ui-dev)"
-
+      prefix: chore
 
   - package-ecosystem: 'gradle'
     directory: 'qa-tests-backend/'
@@ -37,7 +35,7 @@ updates:
       - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
-      prefix: chore(qa)
+      prefix: chore
 
   - package-ecosystem: 'gomod'
     directory: '/'
@@ -52,7 +50,7 @@ updates:
       - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
-      prefix: chore(gomod)
+      prefix: chore
     ignore:
       - dependency-name: "github.com/aws/aws-sdk-go"
         update-types: ["version-update:semver-patch"]
@@ -70,7 +68,7 @@ updates:
     - "stackrox/scanner"
     commit-message:
       include: scope
-      prefix: chore(scanner)
+      prefix: chore
 
   - package-ecosystem: 'gomod'
     directory: '/tools/linters/'
@@ -85,7 +83,7 @@ updates:
       - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
-      prefix: chore(linters)
+      prefix: chore
 
   - package-ecosystem: 'gomod'
     directory: '/tools/test/'
@@ -100,7 +98,7 @@ updates:
       - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
-      prefix: chore(test-tools)
+      prefix: chore
 
   - package-ecosystem: 'gomod'
     directory: '/operator/tools/'
@@ -116,7 +114,7 @@ updates:
     - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
-      prefix: chore(operator-tools)
+      prefix: chore
 
   - package-ecosystem: 'docker'
     directory: 'operator/'
@@ -132,7 +130,7 @@ updates:
     - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
-      prefix: chore(operator)
+      prefix: chore
 
   - package-ecosystem: 'docker'
     directory: 'image/rhel'
@@ -147,7 +145,7 @@ updates:
     - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
-      prefix: chore(rhel)
+      prefix: chore
 
   - package-ecosystem: 'docker'
     directory: 'image/postgres'
@@ -162,7 +160,7 @@ updates:
     - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
-      prefix: chore(postgres)
+      prefix: chore
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -174,4 +172,4 @@ updates:
     - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
-      prefix: chore(actions)
+      prefix: chore
