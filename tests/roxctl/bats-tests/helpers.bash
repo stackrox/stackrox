@@ -56,7 +56,8 @@ helm_template_central() {
   run helm template stackrox-central-services "$out_dir" \
     -n stackrox \
     --set imagePullSecrets.allowNone=true \
-    --output-dir="$out_dir/rendered"
+    --output-dir="$out_dir/rendered" \
+    --set central.persistence.none=true
   assert_success
   assert_output --partial "wrote $out_dir/rendered/stackrox-central-services/templates/01-central-13-deployment.yaml"
   assert_output --partial "wrote $out_dir/rendered/stackrox-central-services/templates/02-scanner-06-deployment.yaml"
