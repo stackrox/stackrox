@@ -79,7 +79,7 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 	annotations := c.GetAnnotations()
 	var obsoletePvc bool
 	if value, ok := annotations[common.CentralPVCObsoletedAnnotation]; ok {
-		obsoletePvc = strings.ToLower(strings.TrimSpace(value)) == "true"
+		obsoletePvc = strings.EqualFold("true", strings.TrimSpace(value))
 	}
 	checker := &pvcExistenceChecker{
 		ctx:         ctx,
