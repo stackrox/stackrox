@@ -58,28 +58,28 @@ class ImageScanningTest extends BaseSpecification {
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = isRaceBuild() ? 450 : 30
 
     static final private Map<String, Deployment> DEPLOYMENTS = [
+        // These images are retags of
+        // quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-most at
+        // @sha256:5ced4301768fcae2f83d8452fcf77a7e0da7e9cc0df7223bf9058ba634685e75
             "quay": new Deployment()
                     .setName("quay-image-scanning-test")
-                    // same image as us.gcr.io/stackrox-ci/qa/registry-image:0.3 but just retagged
-                    // Alternatively can use quay.io/rhacs-eng/qa:struts-app but that doesn't have as many
-                    // dockerfile violations
-                    .setImage("quay.io/rhacs-eng/qa:registry-image-0-3")
+                    .setImage("quay.io/rhacs-eng/qa:registry-image-0-4")
                     .addLabel("app", "quay-image-scanning-test")
                     .addImagePullSecret("quay-image-scanning-test"),
             "gcr": new Deployment()
                     .setName("gcr-image-scanning-test")
-                    .setImage("us.gcr.io/stackrox-ci/qa/registry-image:0.3")
+                    .setImage("us.gcr.io/stackrox-ci/qa/registry-image:0.4")
                     .addLabel("app", "gcr-image-scanning-test")
                     .addImagePullSecret("gcr-image-scanning-test"),
             "ecr": new Deployment()
                     .setName("ecr-image-registry-test")
                     .setImage("${Env.mustGetAWSECRRegistryID()}.dkr.ecr.${Env.mustGetAWSECRRegistryRegion()}." +
-                            "amazonaws.com/stackrox-qa-ecr-test:registry-image-no-secrets")
+                            "amazonaws.com/stackrox-qa-ecr-test:registry-image-0-4")
                     .addLabel("app", "ecr-image-registry-test")
                     .addImagePullSecret("ecr-image-registry-test"),
             "acr": new Deployment()
                     .setName("acr-image-registry-test")
-                    .setImage("stackroxci.azurecr.io/stackroxci/registry-image:0.3")
+                    .setImage("stackroxci.azurecr.io/stackroxci/registry-image:0.4")
                     .addLabel("app", "acr-image-registry-test")
                     .addImagePullSecret("acr-image-registry-test"),
     ]
