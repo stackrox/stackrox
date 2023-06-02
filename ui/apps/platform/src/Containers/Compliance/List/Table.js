@@ -294,8 +294,7 @@ const ListTable = ({
                         tableData = filterByComplianceState(formattedData, query, isControlList);
                         totalRows = getTotalRows(tableData, isControlList);
                         const { groupBy } = query;
-                        const groupByLabel =
-                            groupBy === 'STANDARD' ? 'standard' : resourceLabels[groupBy];
+                        const groupByLabel = resourceLabels[groupBy] ?? groupBy.toLowerCase();
 
                         const groupedByText = groupBy
                             ? `across ${tableData.length} ${pluralize(
