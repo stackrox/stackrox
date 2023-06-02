@@ -10,7 +10,7 @@ func GetCentralCapabilities() *v1.CentralServicesCapabilities {
 	return &v1.CentralServicesCapabilities{
 		CentralScanningCanUseContainerIamRoleForEcr: disabledIfManagedCentral(),
 		CentralCanUseCloudBackupIntegrations:        disabledIfManagedCentral(),
-		CentralCanAcceptUserDeclarativeResources:    disabledIfManagedCentral(),
+		CentralCanDisplayDeclarativeConfigHealth:    disabledIfManagedCentral(),
 	}
 }
 
@@ -18,5 +18,5 @@ func disabledIfManagedCentral() v1.CentralServicesCapabilities_CapabilityStatus 
 	if env.ManagedCentral.BooleanSetting() {
 		return v1.CentralServicesCapabilities_CapabilityDisabled
 	}
-	return v1.CentralServicesCapabilities_Maybe
+	return v1.CentralServicesCapabilities_CapabilityAvailable
 }
