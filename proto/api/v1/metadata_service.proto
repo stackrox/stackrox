@@ -71,17 +71,17 @@ message DatabaseBackupStatus {
 // The initial intended use is to disable certain functionality that does not make sense in the Cloud Service context.
 message CentralServicesCapabilities {
     enum CapabilityStatus {
-        // "Unknown" means "not disabled".
-        // The reason it's not called "Enabled" is that extended checks might be required to confirm true ability to use
-        // e.g. container AWS IAM role or GCP workload identity, and we can't positively say "Enabled" while such checks
-        // aren't implemented.
-        // This means the user should be allowed to use the capability (both via UI and API) but an attempt may not be
-        // successful if the corresponding configuration does not match the actual environment.
-        Unknown = 0;
+        // "Maybe" means "not disabled".
+        // The reason it's not called "Available" is that extended checks might be required to confirm true ability to
+        // use e.g. container AWS IAM role or GCP workload identity, and we can't positively say "Available" while such
+        // checks aren't implemented.
+        // "Maybe" means the user should be allowed to use the capability (both via UI and API) but an attempt may not
+        // be successful if the corresponding configuration does not match the actual environment.
+        Maybe = 0;
 
         // Capability is disabled, meaning the corresponding UI should be disabled and attempts to use related APIs
         // should lead to errors.
-        Disabled = 1;
+        CapabilityDisabled = 1;
     }
 
     // Ability to use container IAM role for scanning images from Amazon ECR using Scanner deployed as part of Central
