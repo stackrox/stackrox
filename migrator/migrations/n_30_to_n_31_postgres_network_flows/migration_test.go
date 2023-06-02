@@ -82,7 +82,7 @@ func (s *postgresMigrationSuite) verify(flowStore store.FlowStore, flows []*stor
 	for i, flow := range flows {
 		// Postgres Datetime columns only have microsecond granularity for timestamps.
 		// Adapt the input data to take this into account.
-		timestamp.RoundTimeStamp(flow.GetLastSeenTimestamp(), time.Microsecond)
+		timestamp.RoundTimestamp(flow.GetLastSeenTimestamp(), time.Microsecond)
 		s.Equal(flow, fetched[i])
 	}
 }

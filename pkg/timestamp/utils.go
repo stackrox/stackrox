@@ -8,7 +8,7 @@ import (
 )
 
 // RoundTimestamp rounds up ts to the nearest multiple of d. In case of error, the function returns without rounding up.
-func RoundTimeStamp(ts *types.Timestamp, d time.Duration) {
+func RoundTimestamp(ts *types.Timestamp, d time.Duration) {
 	t, err := types.TimestampFromProto(ts)
 	if err != nil {
 		return
