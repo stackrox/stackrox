@@ -115,8 +115,7 @@ spec:
           optional: true
         name: central-external-db-volume
       - name: stackrox-db
-        persistentVolumeClaim:
-          claimName: stackrox-db
+        emptyDir: {}
       - configMap:
           defaultMode: 420
           items:
