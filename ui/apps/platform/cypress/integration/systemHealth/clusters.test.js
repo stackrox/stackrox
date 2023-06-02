@@ -93,7 +93,7 @@ describe('System Health Clusters with fixture', () => {
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 7));
     });
 
-    it('should have counts in row 2 of Cluster status card header', () => {
+    it('should have counts in row 2 of Cluster status card', () => {
         setClock(currentDatetime); // call before visit
         visitSystemHealth({
             clusters: { fixture: clustersFixturePath },
