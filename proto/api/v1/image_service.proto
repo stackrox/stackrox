@@ -179,7 +179,7 @@ service ImageService {
     rpc EnrichLocalImageInternal (EnrichLocalImageInternalRequest) returns (ScanImageInternalResponse);
 
     // UpdateLocalScanStatusInternal is used solely by Sensor to send delegated scanning errors to central that
-    // prevent local enrichment from occuring (such as no scanner, thorttled, etc.).
+    // prevent local enrichment from occurring (such as no scanner, throttled, etc.).
     rpc UpdateLocalScanStatusInternal (UpdateLocalScanStatusInternalRequest) returns (Empty);
 
     // InvalidateScanAndRegistryCaches removes the image metadata cache.

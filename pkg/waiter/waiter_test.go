@@ -22,7 +22,7 @@ func TestStringWaiter(t *testing.T) {
 
 	got, err := w.Wait(context.Background())
 	assert.NoError(t, err)
-	assert.Equal(t, got, want)
+	assert.Equal(t, want, got)
 }
 
 func TestStructWaiter(t *testing.T) {
@@ -41,7 +41,7 @@ func TestStructWaiter(t *testing.T) {
 
 	got, err := w.Wait(context.Background())
 	assert.NoError(t, err)
-	assert.Equal(t, got.msg, want.msg)
+	assert.Equal(t, want.msg, got.msg)
 }
 
 func TestPointerWaiter(t *testing.T) {
@@ -60,10 +60,7 @@ func TestPointerWaiter(t *testing.T) {
 
 	got, err := w.Wait(context.Background())
 	assert.NoError(t, err)
-	assert.Equal(t, got, want)
-	if got != want {
-		t.Errorf("%p != %p", got, want)
-	}
+	assert.Equal(t, want, got)
 }
 
 func TestWaitCancel(t *testing.T) {
@@ -86,7 +83,7 @@ func TestWaitCancel(t *testing.T) {
 
 	// allow time for manager to cleanup canceled waiters
 	time.Sleep(100 * time.Millisecond)
-	assert.Equal(t, wm.len(), 0)
+	assert.Equal(t, 0, wm.len())
 }
 
 func TestWaitClose(t *testing.T) {
@@ -105,13 +102,13 @@ func TestWaitClose(t *testing.T) {
 		assert.ErrorIs(t, err, ErrWaiterClosed)
 	}()
 
-	assert.Equal(t, wm.len(), 1)
+	assert.Equal(t, 1, wm.len())
 	w.Close()
 	wg.Wait()
 
 	// allow time for manager to cleanup closed waiters
 	time.Sleep(200 * time.Millisecond)
-	assert.Equal(t, wm.len(), 0)
+	assert.Equal(t, 0, wm.len())
 }
 
 func TestCloseManager(t *testing.T) {
@@ -161,6 +158,8 @@ func TestCloseManagerMany(t *testing.T) {
 	}()
 
 	wg.Wait()
+
+	assert.Equal(t, 0, wm.len())
 }
 
 func TestSendToClosedWaiter(t *testing.T) {

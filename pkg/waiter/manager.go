@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -19,6 +20,8 @@ var (
 
 	// ErrManagerShutdown manager has been shutdown and therefore cannot process requests.
 	ErrManagerShutdown = errors.New("manager is shutdown")
+
+	log = logging.LoggerForModule()
 )
 
 type response[T any] struct {
@@ -32,10 +35,12 @@ type response[T any] struct {
 //go:generate mockgen-wrapper
 type Manager[T any] interface {
 	// Start spawns a goroutine that will run forever or until ctx.Done() delivering
-	// messages to waiters.
+	// messages to waiters. This should be called before anything else (when not
+	// called invocations to Send, Wait, etc. will block forever).
 	Start(ctx context.Context)
 
-	// Send sends data and err to the waiter with the provided id.
+	// Send sends data and err to the waiter with the provided ID. Only the first send
+	// will be delivered, subsequent sends are no-ops.
 	Send(id string, data T, err error) error
 
 	// NewWaiter creates a waiter with a unique ID.
@@ -62,15 +67,16 @@ type managerImpl[T any] struct {
 // NewManager creates a new waiter Manager.
 func NewManager[T any]() *managerImpl[T] {
 	return &managerImpl[T]{
-		waiters:               map[string]chan *response[T]{},
+		waiters:               make(map[string]chan *response[T]),
 		responseCh:            make(chan *response[T]),
 		doneWaiterCh:          make(chan string),
 		managerShutdownSignal: concurrency.NewSignal(),
 	}
 }
 
-// Start spawns a goroutine that will run forever or until ctx done delivering
-// messages to waiters.
+// Start spawns a goroutine that will run forever or until ctx.Done() delivering
+// messages to waiters. This should be called before anything else (when not
+// called invocations to Send, Wait, etc. will block forever).
 func (w *managerImpl[T]) Start(ctx context.Context) {
 	go func() {
 		for {
@@ -85,6 +91,7 @@ func (w *managerImpl[T]) Start(ctx context.Context) {
 			case r := <-w.responseCh:
 				waiterCh, found := w.removeWaiter(r.id)
 				if !found {
+					log.Debugf("Received response for non-existent waiter %q", r.id)
 					continue
 				}
 
@@ -135,14 +142,14 @@ func (w *managerImpl[T]) NewWaiter() (Waiter[T], error) {
 
 		waiterCh, created := w.addWaiter(id)
 		if created {
-			return newGenericWaiter(id, waiterCh, w.doneWaiterCh), nil
+			return newWaiter(id, waiterCh, w.doneWaiterCh), nil
 		}
 	}
 
 	return nil, ErrTooManyCollisions
 }
 
-// addWaiter will return true if the waiter chan was successful created, otherwise
+// addWaiter will return true if the waiter chan was successfully created, otherwise
 // will return false indicating an id collision.
 func (w *managerImpl[T]) addWaiter(id string) (chan *response[T], bool) {
 	w.waitersMu.Lock()
@@ -180,9 +187,12 @@ func (w *managerImpl[T]) closeWaiters() {
 	w.waitersMu.Lock()
 	defer w.waitersMu.Unlock()
 
-	for _, ch := range w.waiters {
+	for id, ch := range w.waiters {
 		close(ch)
+		delete(w.waiters, id)
 	}
+
+	w.waiters = nil
 }
 
 // len is used in tests to verify waiter cleanup, added to avoid race condition.
