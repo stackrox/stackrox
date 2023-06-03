@@ -181,6 +181,7 @@ func TestForceLocalScanning(t *testing.T) {
 	}
 
 	t.Setenv(env.LocalImageScanningEnabled.EnvVar(), "false")
+	t.Setenv(env.DelegatedScanningDisabled.EnvVar(), "false")
 
 	// with feature disabled, registry secret should NOT be stored
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
@@ -192,6 +193,19 @@ func TestForceLocalScanning(t *testing.T) {
 	assert.Error(t, err)
 
 	t.Setenv(env.LocalImageScanningEnabled.EnvVar(), "true")
+	t.Setenv(env.DelegatedScanningDisabled.EnvVar(), "true")
+
+	// with delegated scanning disabled, registry secret should NOT be stored
+	regStore = registry.NewRegistryStore(alwaysInsecureCheckTLS)
+	d = newSecretDispatcher(regStore)
+
+	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
+	reg, err = regStore.GetRegistryForImageInNamespace(fakeImage, fakeNamespace)
+	assert.Nil(t, reg)
+	assert.Error(t, err)
+
+	t.Setenv(env.LocalImageScanningEnabled.EnvVar(), "true")
+	t.Setenv(env.DelegatedScanningDisabled.EnvVar(), "false")
 
 	// feature is enabled, registry secret should be stored
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)

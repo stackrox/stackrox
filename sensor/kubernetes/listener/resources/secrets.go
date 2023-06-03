@@ -289,7 +289,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 				}
 			}
 
-			if env.LocalImageScanningEnabled.BooleanSetting() {
+			if env.LocalImageScanningEnabled.BooleanSetting() && !env.DelegatedScanningDisabled.BooleanSetting() {
 				// Store registry secrets to enable downstream scanning of all images
 				//
 				// This is only triggered when saName is empty so that we do not overwrite entries inserted
