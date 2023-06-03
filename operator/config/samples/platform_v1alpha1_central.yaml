@@ -4,7 +4,4 @@ metadata:
   name: stackrox-central-services
   namespace: stackrox
 spec:
-  central:
-    exposure:
-      route:
-        enabled: true
+  values: "Test"
