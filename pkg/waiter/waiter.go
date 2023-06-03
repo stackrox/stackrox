@@ -39,10 +39,10 @@ type waiterImpl[T any] struct {
 	id string
 
 	// the chan for receiving a msg.
-	ch chan *response[T]
+	ch <-chan *response[T]
 
 	// the chan used to inform the manager that this waiter is done.
-	managerDoneCh chan string
+	managerDoneCh chan<- string
 
 	// when signaled indicates this waiter should stop / cleanup.
 	doneSignal concurrency.Signal
@@ -50,7 +50,7 @@ type waiterImpl[T any] struct {
 
 var _ Waiter[struct{}] = (*waiterImpl[struct{}])(nil)
 
-func newGenericWaiter[T any](id string, ch chan *response[T], managerDoneCh chan string) *waiterImpl[T] {
+func newWaiter[T any](id string, ch <-chan *response[T], managerDoneCh chan<- string) *waiterImpl[T] {
 	return &waiterImpl[T]{
 		id:            id,
 		ch:            ch,
@@ -67,8 +67,8 @@ func (w *waiterImpl[T]) Wait(ctx context.Context) (T, error) {
 	var err error
 	var data T
 	select {
-	case r, more := <-w.ch:
-		if !more {
+	case r, ok := <-w.ch:
+		if !ok {
 			// channel has been closed.
 			err = ErrWaiterClosed
 			break
