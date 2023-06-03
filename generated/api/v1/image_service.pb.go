@@ -1544,7 +1544,7 @@ type ImageServiceClient interface {
 	// includes the image's vulnerabilities as well as the signature verification data.
 	EnrichLocalImageInternal(ctx context.Context, in *EnrichLocalImageInternalRequest, opts ...grpc.CallOption) (*ScanImageInternalResponse, error)
 	// UpdateLocalScanStatusInternal is used solely by Sensor to send delegated scanning errors to central that
-	// prevent local enrichment from occuring (such as no scanner, thorttled, etc.).
+	// prevent local enrichment from occurring (such as no scanner, throttled, etc.).
 	UpdateLocalScanStatusInternal(ctx context.Context, in *UpdateLocalScanStatusInternalRequest, opts ...grpc.CallOption) (*Empty, error)
 	// InvalidateScanAndRegistryCaches removes the image metadata cache.
 	InvalidateScanAndRegistryCaches(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
@@ -1705,7 +1705,7 @@ type ImageServiceServer interface {
 	// includes the image's vulnerabilities as well as the signature verification data.
 	EnrichLocalImageInternal(context.Context, *EnrichLocalImageInternalRequest) (*ScanImageInternalResponse, error)
 	// UpdateLocalScanStatusInternal is used solely by Sensor to send delegated scanning errors to central that
-	// prevent local enrichment from occuring (such as no scanner, thorttled, etc.).
+	// prevent local enrichment from occurring (such as no scanner, throttled, etc.).
 	UpdateLocalScanStatusInternal(context.Context, *UpdateLocalScanStatusInternalRequest) (*Empty, error)
 	// InvalidateScanAndRegistryCaches removes the image metadata cache.
 	InvalidateScanAndRegistryCaches(context.Context, *Empty) (*Empty, error)
