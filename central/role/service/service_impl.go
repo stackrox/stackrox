@@ -29,8 +29,7 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		// TODO: ROX-14398 Replace Role with Access
-		user.With(permissions.View(resources.Role)): {
+		user.With(permissions.View(resources.Access)): {
 			"/v1.RoleService/GetRoles",
 			"/v1.RoleService/GetRole",
 			"/v1.RoleService/ListPermissionSets",
@@ -38,12 +37,10 @@ var (
 			"/v1.RoleService/ListSimpleAccessScopes",
 			"/v1.RoleService/GetSimpleAccessScope",
 		},
-		// TODO: ROX-14398 Replace Role with Access
-		user.With(permissions.View(resources.Role), permissions.View(resources.Cluster), permissions.View(resources.Namespace)): {
+		user.With(permissions.View(resources.Access), permissions.View(resources.Cluster), permissions.View(resources.Namespace)): {
 			"/v1.RoleService/ComputeEffectiveAccessScope",
 		},
-		// TODO: ROX-14398 Replace Role with Access
-		user.With(permissions.Modify(resources.Role)): {
+		user.With(permissions.Modify(resources.Access)): {
 			"/v1.RoleService/CreateRole",
 			"/v1.RoleService/SetDefaultRole",
 			"/v1.RoleService/UpdateRole",

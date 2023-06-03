@@ -6,7 +6,6 @@ import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from '../re
 import { visit } from '../visit';
 
 let opnamesForDashboard = [
-    'policiesCount',
     'cvesCount',
     'getNodes',
     'getImages',
@@ -131,8 +130,11 @@ function getEntityPath(entitiesKey, entityId) {
 }
 
 export function visitVulnerabilityManagementDashboardFromLeftNav() {
+    const oldVulnMgmtNavText = hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')
+        ? 'Vulnerability Management (1.0)'
+        : 'Vulnerability Management';
     visitFromLeftNavExpandable(
-        'Vulnerability Management',
+        oldVulnMgmtNavText,
         'Dashboard',
         routeMatcherMapForVulnerabilityManagementDashboard
     );

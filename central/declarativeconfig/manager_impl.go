@@ -7,6 +7,7 @@ import (
 	"path"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -30,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -71,6 +73,8 @@ type managerImpl struct {
 	errorsPerDeclarativeConfig     map[string]int32
 
 	updaters map[reflect.Type]updater.ResourceUpdater
+
+	numberOfWatchHandlers atomic.Int32
 }
 
 var protoTypesOrder = []reflect.Type{
@@ -79,6 +83,7 @@ var protoTypesOrder = []reflect.Type{
 	types.RoleType,
 	types.AuthProviderType,
 	types.GroupType,
+	types.NotifierType,
 }
 
 // New creates a new instance of Manager.
@@ -90,8 +95,7 @@ func New(reconciliationTickerDuration, watchIntervalDuration time.Duration, upda
 	writeDeclarativeRoleCtx = sac.WithGlobalAccessScopeChecker(writeDeclarativeRoleCtx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			// TODO: ROX-14398 Replace Role with Access
-			sac.ResourceScopeKeys(resources.Role, resources.Access)))
+			sac.ResourceScopeKeys(resources.Access, resources.Integration)))
 	return &managerImpl{
 		universalTransformer:           transform.New(),
 		transformedMessagesByHandler:   map[string]protoMessagesByType{},
@@ -129,6 +133,7 @@ func (m *managerImpl) ReconcileDeclarativeConfigurations() {
 		}
 
 		var startedWatchHandler bool
+		var numberOfWatchHandlers int
 		for _, entry := range entries {
 			if !entry.IsDir() {
 				continue
@@ -144,6 +149,7 @@ func (m *managerImpl) ReconcileDeclarativeConfigurations() {
 			_ = k8scfgwatch.WatchConfigMountDir(context.Background(), dirToWatch,
 				k8scfgwatch.DeduplicateWatchErrors(wh), watchOpts)
 			startedWatchHandler = true
+			numberOfWatchHandlers++
 
 			if err := m.declarativeConfigErrorReporter.Register(dirToWatch, handlerNameForIntegrationHealth(dirToWatch),
 				storage.IntegrationHealth_DECLARATIVE_CONFIG); err != nil {
@@ -156,7 +162,16 @@ func (m *managerImpl) ReconcileDeclarativeConfigurations() {
 			log.Info("Start the reconciliation loop for declarative configurations")
 			m.startReconciliationLoop()
 		}
+		m.numberOfWatchHandlers.Swap(int32(numberOfWatchHandlers))
 	})
+}
+
+func (m *managerImpl) Gather() phonehome.GatherFunc {
+	return func(ctx context.Context) (map[string]any, error) {
+		return map[string]any{
+			"Total Number of declarative configuration mounts": m.numberOfWatchHandlers.Load(),
+		}, nil
+	}
 }
 
 // UpdateDeclarativeConfigContents will take the file contents and transform these to declarative configurations.

@@ -142,7 +142,6 @@ class Kubernetes implements OrchestratorMain {
         this.client.configuration.namespace = null
         this.client.configuration.setRequestTimeout(32*1000)
         this.client.configuration.setConnectionTimeout(20*1000)
-        this.client.configuration.setWebsocketTimeout(20*1000)
         this.deployments = this.client.apps().deployments()
         this.daemonsets = this.client.apps().daemonSets()
         this.statefulsets = this.client.apps().statefulSets()
@@ -352,7 +351,8 @@ class Kubernetes implements OrchestratorMain {
     Boolean restartPodByLabelWithExecKill(String ns, Map<String, String> labels) {
         Pod pod = getPodsByLabel(ns, labels).get(0)
         int prevRestartCount = pod.status.containerStatuses.get(0).restartCount
-        execInContainerByPodName(pod.metadata.name, pod.metadata.namespace, "kill 1")
+        def cmds = ["sh", "-c", "kill -15 1"] as String[]
+        execInContainerByPodName(pod.metadata.name, pod.metadata.namespace, cmds)
         log.debug "Killed pod ${pod.metadata.name}"
         return waitForPodRestart(pod.metadata.namespace, pod.metadata.name, prevRestartCount, 25, 5)
     }
@@ -1824,7 +1824,7 @@ class Kubernetes implements OrchestratorMain {
         Misc/Helper Methods
     */
 
-    boolean execInContainerByPodName(String name, String namespace, String cmd, int retries = 1) {
+    boolean execInContainerByPodName(String name, String namespace, String[] splitCmd, int retries = 1) {
         // Wait for container 0 to be running first.
         def timer = new Timer(retries, 1)
         while (timer.IsValid()) {
@@ -1881,13 +1881,7 @@ class Kubernetes implements OrchestratorMain {
             }
         }
 
-        final String[] splitCmd = CommandLine.parse(cmd).with {
-            final List<String> result = new ArrayList()
-            result.add(it.getExecutable())
-            result.addAll(it.getArguments())
-            return result as String[]
-        }
-        log.debug("Exec-ing the following command in pod {}: {}", name, cmd)
+        log.debug("Exec-ing the following command in pod {}: {}", name, splitCmd)
         try {
             final ExecWatch execCmd = client.pods()
                     .inNamespace(namespace)
@@ -1918,6 +1912,16 @@ class Kubernetes implements OrchestratorMain {
             log.warn("Error exec-ing command in pod", e)
         }
         return execStatus == ExecStatus.SUCCESS
+    }
+
+    boolean execInContainerByPodName(String name, String namespace, String cmd, int retries = 1) {
+        String[] splitCmd = CommandLine.parse(cmd).with {
+            final List<String> result = new ArrayList()
+            result.add(it.getExecutable())
+            result.addAll(it.getArguments())
+            return result as String[]
+        }
+        return execInContainerByPodName(name, namespace, splitCmd, retries)
     }
 
     private enum ExecStatus {

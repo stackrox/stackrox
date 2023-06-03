@@ -93,13 +93,11 @@ func (s *roleDataStoreTestSuite) SetupTest() {
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			// TODO: ROX-14398 Replace Role with Access
-			sac.ResourceScopeKeys(resources.Role)))
+			sac.ResourceScopeKeys(resources.Access)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			// TODO: ROX-14398 Replace Role with Access
-			sac.ResourceScopeKeys(resources.Role)))
+			sac.ResourceScopeKeys(resources.Access)))
 	s.hasWriteDeclarativeCtx = declarativeconfig.WithModifyDeclarativeResource(s.hasWriteCtx)
 
 	s.initDataStore()
@@ -636,8 +634,9 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 
 func getValidAccessScope(id string, name string) *storage.SimpleAccessScope {
 	return &storage.SimpleAccessScope{
-		Id:   role.EnsureValidAccessScopeID(id),
-		Name: name,
+		Id:    role.EnsureValidAccessScopeID(id),
+		Name:  name,
+		Rules: &storage.SimpleAccessScope_Rules{},
 	}
 }
 
@@ -757,12 +756,14 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	}
 	badScope := getInvalidAccessScope("scope.new", "new invalid scope")
 	mimicScope := &storage.SimpleAccessScope{
-		Id:   goodScope.Id,
-		Name: "existing scope",
+		Id:    goodScope.Id,
+		Name:  "existing scope",
+		Rules: &storage.SimpleAccessScope_Rules{},
 	}
 	cloneScope := &storage.SimpleAccessScope{
-		Id:   s.existingScope.Id,
-		Name: "new existing scope",
+		Id:    s.existingScope.Id,
+		Name:  "new existing scope",
+		Rules: &storage.SimpleAccessScope_Rules{},
 	}
 	updatedDefaultScope := getValidAccessScope("ffffffff-ffff-fff4-f5ff-fffffffffffe",
 		role.AccessScopeExcludeAll.GetName())

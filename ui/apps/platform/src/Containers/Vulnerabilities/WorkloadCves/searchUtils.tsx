@@ -78,7 +78,8 @@ export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySear
             }
         });
 
-        cleanSearchFilter.Fixable = cleanFixable;
+        // TODO We are explicitly excluding "Fixable" from the search filter until this functionality is re-enabled
+        // cleanSearchFilter.Fixable = cleanFixable;
     }
 
     if (rawSearchFilter.Severity) {
@@ -137,11 +138,13 @@ const vulnerabilitySearchStateForCveStatus: Record<CveStatusTab, VulnerabilitySt
 // Returns a search filter string that scopes results to a CVE Workflow state (e.g. 'OBSERVED')
 export function getCveStatusScopedQueryString(
     searchFilter: QuerySearchFilter,
-    cveStatusTab: CveStatusTab
+    cveStatusTab?: CveStatusTab /* TODO Make this required once Observed/Deferred/FP states are re-implemented */
 ): string {
-    const vulnerabilityState = vulnerabilitySearchStateForCveStatus[cveStatusTab];
+    const vulnerabilityStateFilter = cveStatusTab
+        ? { 'Vulnerability State': vulnerabilitySearchStateForCveStatus[cveStatusTab] }
+        : {};
     return getRequestQueryStringForSearchFilter({
         ...searchFilter,
-        'Vulnerability State': [vulnerabilityState],
+        ...vulnerabilityStateFilter,
     });
 }

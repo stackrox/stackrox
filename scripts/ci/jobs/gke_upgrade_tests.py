@@ -10,14 +10,12 @@ from pre_tests import PreSystemTests
 from ci_tests import UpgradeTest
 from post_tests import PostClusterTest, FinalPost
 
-# The Postgres version of this test is run from gke_postgres_upgrade_tests.py
-exit(0)
-
-# don't use postgres
-os.environ["ROX_POSTGRES_DATASTORE"] = "false"
+# NOTE:  This test starts with Postgres off so that migrations
+# from RocksDB to Postgres can be executed.  Once RocksDB is
+# out of support those bits can be removed.
 
 ClusterTestRunner(
-    cluster=GKECluster("upgrade-test"),
+    cluster=GKECluster("upgrade-test", machine_type="e2-standard-8"),
     pre_test=PreSystemTests(),
     test=UpgradeTest(),
     post_test=PostClusterTest(),

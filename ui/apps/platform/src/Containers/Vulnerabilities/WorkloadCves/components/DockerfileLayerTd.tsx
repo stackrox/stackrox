@@ -10,15 +10,11 @@ function DockerfileLayerTd({ layer }: DockerfileLayerTdProps) {
     return layer ? (
         <CodeBlock>
             <Flex>
-                <CodeBlockCode
-                    // 120px is a width that looks good with the largest dockerfile instruction: "HEALTHCHECK"
-                    style={{ flexBasis: '120px' }}
-                    className="pf-u-flex-shrink-0"
-                >
+                <CodeBlockCode className="pf-u-flex-nowrap">
                     {layer.line} {layer.instruction}
                 </CodeBlockCode>
                 <CodeBlockCode className="pf-u-flex-grow-1 pf-u-flex-basis-0">
-                    {layer.instruction} {layer.value}
+                    {layer.value}
                 </CodeBlockCode>
             </Flex>
         </CodeBlock>

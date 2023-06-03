@@ -10,13 +10,13 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/version"
-	"github.com/stackrox/rox/roxctl/analyze"
 	"github.com/stackrox/rox/roxctl/central"
 	"github.com/stackrox/rox/roxctl/cluster"
 	"github.com/stackrox/rox/roxctl/collector"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/completion"
+	connectivitymap "github.com/stackrox/rox/roxctl/connectivity-map"
 	"github.com/stackrox/rox/roxctl/declarativeconfig"
 	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/generate"
@@ -79,7 +79,7 @@ func Command() *cobra.Command {
 		helm.Command(cliEnvironment),
 		versionCommand(cliEnvironment),
 		completion.Command(cliEnvironment),
-		analyze.Command(cliEnvironment),
+		connectivitymap.Command(cliEnvironment),
 	)
 	if features.RoxctlNetpolGenerate.Enabled() {
 		c.AddCommand(generate.Command(cliEnvironment))

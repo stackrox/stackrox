@@ -2,17 +2,13 @@ import React, { ReactElement, useState } from 'react';
 import { Alert, Button, Checkbox, Form, Modal } from '@patternfly/react-core';
 import { useFormik } from 'formik';
 
-import {
-    ComplianceStandardMetadata,
-    fetchComplianceStandards,
-    // patchComplianceStandard,
-} from 'services/ComplianceService';
+import { ComplianceStandardMetadata, patchComplianceStandard } from 'services/ComplianceService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type ManageStandardsModalProps = {
-    standards: ComplianceStandardMetadata[];
     onCancel: () => void;
-    onSave: (standards: ComplianceStandardMetadata[]) => void;
+    onChange: () => void;
+    standards: ComplianceStandardMetadata[];
 };
 
 /*
@@ -24,41 +20,48 @@ function getShowScanResultsMap(standards: ComplianceStandardMetadata[]): Record<
     return Object.fromEntries(standards.map(({ id, hideScanResults }) => [id, !hideScanResults]));
 }
 
-function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
+function ManageStandardsModal({
+    onCancel,
+    onChange,
+    standards,
+}: ManageStandardsModalProps): ReactElement {
     const [errorMessage, setErrorMessage] = useState('');
+    const [countFulfilledWhenRejected, setCountFulfilledWhenRejected] = useState(0);
     const { dirty, handleSubmit, isSubmitting, setFieldValue, setSubmitting, values } = useFormik<
         Record<string, boolean>
     >({
         initialValues: getShowScanResultsMap(standards),
-        onSubmit: (/* showScanResultsMap */) => {
+        onSubmit: (showScanResultsMap) => {
             setErrorMessage('');
-            const patchRequestPromises = [];
-            /*
             // Filter standards for which hideScanResults property has changed,
             // and them map to promises for patch requests.
+            // Negate hideScanResults is correct even if property is absent.
             const patchRequestPromises = standards
-                .filter(
-                    ({ hideScanResults, id }) =>
-                        Boolean(hideScanResults) !== !showScanResultsMap[id]
-                )
+                .filter(({ hideScanResults, id }) => !hideScanResults !== showScanResultsMap[id])
                 .map(({ id }) => patchComplianceStandard(id, !showScanResultsMap[id]));
-            */
 
-            Promise.all(patchRequestPromises)
-                .then(() => {
-                    fetchComplianceStandards()
-                        .then((standardsFetchedAfterPatchRequests) => {
-                            onSave(standardsFetchedAfterPatchRequests);
-                        })
-                        .catch((error) => {
-                            setErrorMessage(getAxiosErrorMessage(error));
-                        })
-                        .finally(() => {
-                            setSubmitting(false);
-                        });
+            Promise.allSettled(patchRequestPromises)
+                .then((results) => {
+                    let numberOfRejectedPromises = 0;
+                    let reasonMessage = '';
+                    results.forEach((result) => {
+                        if (result.status === 'rejected') {
+                            if (numberOfRejectedPromises === 0) {
+                                reasonMessage = getAxiosErrorMessage(result.reason);
+                            }
+                            numberOfRejectedPromises += 1;
+                        }
+                    });
+                    setSubmitting(false);
+
+                    if (numberOfRejectedPromises === 0) {
+                        onChange();
+                    } else {
+                        setErrorMessage(reasonMessage);
+                        setCountFulfilledWhenRejected(results.length - numberOfRejectedPromises);
+                    }
                 })
                 .catch((error) => {
-                    // TODO fetchComplianceStandards in case some succeed before one fails?
                     setErrorMessage(getAxiosErrorMessage(error));
                     setSubmitting(false);
                 });
@@ -68,7 +71,7 @@ function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
     return (
         <Modal
             title="Manage standards"
-            variant="medium"
+            variant="small"
             isOpen
             showClose={false}
             actions={[
@@ -83,9 +86,25 @@ function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
                 >
                     Save
                 </Button>,
-                <Button key="Cancel" variant="link" onClick={onCancel} isDisabled={isSubmitting}>
-                    Cancel
-                </Button>,
+                countFulfilledWhenRejected === 0 ? (
+                    <Button
+                        key="Cancel"
+                        variant="secondary"
+                        onClick={onCancel}
+                        isDisabled={isSubmitting}
+                    >
+                        Cancel
+                    </Button>
+                ) : (
+                    <Button
+                        key="Close"
+                        variant="secondary"
+                        onClick={onChange}
+                        isDisabled={isSubmitting}
+                    >
+                        Close
+                    </Button>
+                ),
             ]}
         >
             <Form>
@@ -107,7 +126,7 @@ function ManageStandardsModal({ standards, onSave, onCancel }): ReactElement {
             {errorMessage && (
                 <Alert
                     title="Unable to save changes"
-                    variant="warning"
+                    variant="danger"
                     isInline
                     className="pf-u-mt-lg"
                 >

@@ -1,4 +1,7 @@
 values:
+  central:
+    persistence:
+      none: true
   ca:
     cert: ""
     key: ""

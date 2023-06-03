@@ -16,8 +16,8 @@ type PermissionSet struct {
 	Resources   []ResourceWithAccess `yaml:"resources,omitempty"`
 }
 
-// Type returns the PermissionSetConfiguration type.
-func (p *PermissionSet) Type() ConfigurationType {
+// ConfigurationType returns the PermissionSetConfiguration type.
+func (p *PermissionSet) ConfigurationType() ConfigurationType {
 	return PermissionSetConfiguration
 }
 

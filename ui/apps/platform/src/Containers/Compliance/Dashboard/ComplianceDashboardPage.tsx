@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { ReactElement, useState } from 'react';
+import { useApolloClient } from '@apollo/client';
 
 import Button from 'Components/Button';
 import ExportButton from 'Components/ExportButton';
@@ -9,21 +10,30 @@ import useCaseTypes from 'constants/useCaseTypes';
 import { useTheme } from 'Containers/ThemeProvider';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
-import { ComplianceStandardMetadata, fetchComplianceStandards } from 'services/ComplianceService';
+import {
+    ComplianceStandardMetadata,
+    fetchComplianceStandardsSortedByName,
+} from 'services/ComplianceService';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import ScanButton from '../ScanButton';
 import StandardsByEntity from '../widgets/StandardsByEntity';
 import StandardsAcrossEntity from '../widgets/StandardsAcrossEntity';
 import ComplianceByStandards from '../widgets/ComplianceByStandards';
 
+import ManageStandardsError from './ManageStandardsError';
 import ManageStandardsModal from './ManageStandardsModal';
 import ComplianceDashboardTile from './ComplianceDashboardTile';
 
 function ComplianceDashboardPage(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const { isFeatureFlagEnabled } = useFeatureFlags();
+    const [isFetchingStandards, setIsFetchingStandards] = useState(false);
+    const [errorMessageFetching, setErrorMessageFetching] = useState('');
     const [standards, setStandards] = useState<ComplianceStandardMetadata[]>([]);
     const [isManageStandardsModalOpen, setIsManageStandardsModalOpen] = useState(false);
+
+    const client = useApolloClient();
 
     const [isExporting, setIsExporting] = useState(false);
 
@@ -39,25 +49,43 @@ function ComplianceDashboardPage(): ReactElement {
     const hasManageStandardsButton =
         hasWriteAccessForComplianceStandards && isDisableComplianceStandardsEnabled;
 
-    useEffect(() => {
-        fetchComplianceStandards()
+    function clickManageStandardsButton() {
+        setIsFetchingStandards(true);
+        fetchComplianceStandardsSortedByName()
             .then((standardsFetched) => {
+                setErrorMessageFetching('');
                 setStandards(standardsFetched);
+                setIsManageStandardsModalOpen(true);
             })
-            .catch(() => {
-                // TODO
+            .catch((error) => {
+                setErrorMessageFetching(getAxiosErrorMessage(error));
+                setStandards([]);
+            })
+            .finally(() => {
+                setIsFetchingStandards(false);
             });
-    }, []);
+    }
 
-    function onSaveFromManageStandardsModal(standardsSaved: ComplianceStandardMetadata[]) {
-        setStandards(standardsSaved);
+    function onCloseManageStandardsError() {
+        setErrorMessageFetching('');
+    }
+
+    function onChangeManageStandardsModal() {
+        setIsManageStandardsModalOpen(false);
+
+        /*
+         * Same method as for Scan button to clear store of any cached query data,
+         * so backend filters out standards in query data according to saved update
+         * to hideScanResults properties.
+         */
+        return client.resetStore();
+    }
+
+    function onCancelManageStandardsModal() {
         setIsManageStandardsModalOpen(false);
     }
 
-    function onCancelFromManageStandardsModal() {
-        setIsManageStandardsModalOpen(false);
-    }
-
+    /* eslint-disable no-nested-ternary */
     return (
         <>
             <PageHeader header="Compliance" subHeader="Dashboard">
@@ -85,9 +113,10 @@ function ComplianceDashboardPage(): ReactElement {
                                         text="Manage standards"
                                         className="btn btn-base h-10 ml-2"
                                         onClick={() => {
-                                            setIsManageStandardsModalOpen(true);
+                                            clickManageStandardsButton();
                                         }}
-                                        disabled={standards.length === 0}
+                                        disabled={isFetchingStandards}
+                                        isLoading={isFetchingStandards}
                                     />
                                 </div>
                             )}
@@ -135,15 +164,21 @@ function ComplianceDashboardPage(): ReactElement {
                 </div>
             </div>
             {isExporting && <BackdropExporting />}
-            {isManageStandardsModalOpen && (
-                <ManageStandardsModal
-                    standards={standards}
-                    onSave={onSaveFromManageStandardsModal}
-                    onCancel={onCancelFromManageStandardsModal}
+            {errorMessageFetching ? (
+                <ManageStandardsError
+                    onClose={onCloseManageStandardsError}
+                    errorMessage={errorMessageFetching}
                 />
-            )}
+            ) : isManageStandardsModalOpen ? (
+                <ManageStandardsModal
+                    onCancel={onCancelManageStandardsModal}
+                    onChange={onChangeManageStandardsModal}
+                    standards={standards}
+                />
+            ) : null}
         </>
     );
+    /* eslint-enable no-nested-ternary */
 }
 
 export default ComplianceDashboardPage;

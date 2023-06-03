@@ -24,14 +24,14 @@ export type CredentialExpirationCardProps = {
     clusters: Cluster[];
     currentDatetime: Date | null;
     isFetchingInitialRequest: boolean;
-    requestErrorMessage: string;
+    errorMessageFetching: string;
 };
 
 function CredentialExpirationCard({
     clusters,
     currentDatetime,
     isFetchingInitialRequest,
-    requestErrorMessage,
+    errorMessageFetching,
 }: CredentialExpirationCardProps): ReactElement {
     const counts = currentDatetime
         ? getCertificateExpirationCounts(clusters, currentDatetime)
@@ -55,9 +55,9 @@ function CredentialExpirationCard({
                 isFetchingInitialRequest={isFetchingInitialRequest}
                 title="Credential expiration"
             />
-            {requestErrorMessage ? (
+            {errorMessageFetching ? (
                 <CardBody>
-                    <Alert isInline variant="warning" title={requestErrorMessage} />
+                    <Alert isInline variant="warning" title={errorMessageFetching} />
                 </CardBody>
             ) : counts !== null &&
               (counts.HEALTHY === 0 || counts.UNHEALTHY !== 0 || counts.DEGRADED !== 0) ? (

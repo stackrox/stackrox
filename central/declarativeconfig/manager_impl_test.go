@@ -21,6 +21,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const supportedTypesCount = 6
+
 func newTestManager(t *testing.T) *managerImpl {
 	m := New(100*time.Millisecond, 100*time.Millisecond, map[reflect.Type]updater.ResourceUpdater{},
 		nil, types.UniversalNameExtractor(), types.UniversalIDExtractor())
@@ -93,6 +95,15 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 		},
 		RoleName: "Admin",
 	}
+	notifier := &storage.Notifier{
+		Name: "notifierName",
+		Id:   "notifierId",
+		Config: &storage.Notifier_Splunk{
+			Splunk: &storage.Splunk{
+				HttpToken: "http-token",
+			},
+		},
+	}
 
 	gomock.InOrder(
 		mockUpdater.EXPECT().Upsert(gomock.Any(), accessScope),
@@ -101,6 +112,7 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 		mockUpdater.EXPECT().Upsert(gomock.Any(), role),
 		mockUpdater.EXPECT().Upsert(gomock.Any(), authProvider),
 		mockUpdater.EXPECT().Upsert(gomock.Any(), group),
+		mockUpdater.EXPECT().Upsert(gomock.Any(), notifier),
 	)
 
 	gomock.InOrder(
@@ -146,10 +158,18 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 			Status:       storage.IntegrationHealth_HEALTHY,
 			ErrorMessage: "",
 		})),
+		reporter.EXPECT().UpdateIntegrationHealthAsync(matchIntegrationHealth(&storage.IntegrationHealth{
+			Id:           "notifierId",
+			Name:         "notifierName in config map test-handler-2",
+			Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
+			Status:       storage.IntegrationHealth_HEALTHY,
+			ErrorMessage: "",
+		})),
 	)
 
 	// Delete resources should be called in order, ignoring the existing IDs from the previously upserted resources.
 	gomock.InOrder(
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"notifierId"}).Return(nil, nil),
 		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"group"}).Return(nil, nil),
 		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-auth-provider"}).Return(nil, nil),
 		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"role"}).Return(nil, nil),
@@ -164,6 +184,10 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 			{
 				Id:   "some-id",
 				Name: "Config Map some-config-map",
+			},
+			{
+				Id:   "notifierId",
+				Name: "",
 			},
 			{
 				Id:   "group",
@@ -196,6 +220,7 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 		types.RoleType:          mockUpdater,
 		types.AuthProviderType:  mockUpdater,
 		types.GroupType:         mockUpdater,
+		types.NotifierType:      mockUpdater,
 	}
 	m.declarativeConfigErrorReporter = reporter
 
@@ -218,6 +243,9 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 			},
 			types.GroupType: []proto.Message{
 				group,
+			},
+			types.NotifierType: []proto.Message{
+				notifier,
 			},
 		},
 	})
@@ -244,7 +272,7 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 		ErrorMessage: "test error",
 	}))
 
-	mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).Times(5)
+	mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).Times(supportedTypesCount)
 
 	reporter.EXPECT().RetrieveIntegrationHealths(storage.IntegrationHealth_DECLARATIVE_CONFIG).
 		Return(nil, nil).Times(1)
@@ -256,6 +284,7 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 		types.GroupType:         mockUpdater,
 		types.AuthProviderType:  mockUpdater,
 		types.RoleType:          mockUpdater,
+		types.NotifierType:      mockUpdater,
 	}
 	m.declarativeConfigErrorReporter = reporter
 
@@ -288,6 +317,7 @@ func TestReconcileTransformedMessages_SkipReconciliationWithNoChanges(t *testing
 		types.GroupType:         mockUpdater,
 		types.AuthProviderType:  mockUpdater,
 		types.RoleType:          mockUpdater,
+		types.NotifierType:      mockUpdater,
 	}
 	m.declarativeConfigErrorReporter = reporter
 
@@ -296,7 +326,7 @@ func TestReconcileTransformedMessages_SkipReconciliationWithNoChanges(t *testing
 	gomock.InOrder(
 		mockUpdater.EXPECT().Upsert(gomock.Any(), permissionSet1).Return(nil).Times(1),
 		reporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).Times(1),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).Times(5),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).Times(supportedTypesCount),
 		reporter.EXPECT().RetrieveIntegrationHealths(storage.IntegrationHealth_DECLARATIVE_CONFIG).
 			Return(nil, nil).Times(1),
 	)
@@ -337,6 +367,7 @@ func TestReconcileTransformedMessages_SkipDeletion(t *testing.T) {
 		types.GroupType:         mockUpdater,
 		types.AuthProviderType:  mockUpdater,
 		types.RoleType:          mockUpdater,
+		types.NotifierType:      mockUpdater,
 	}
 	m.declarativeConfigErrorReporter = reporter
 
@@ -344,7 +375,7 @@ func TestReconcileTransformedMessages_SkipDeletion(t *testing.T) {
 
 	gomock.InOrder(
 		mockUpdater.EXPECT().Upsert(gomock.Any(), permissionSet1).Return(errors.New("some error")).Times(1),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).Times(5),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).Times(supportedTypesCount),
 		reporter.EXPECT().RetrieveIntegrationHealths(storage.IntegrationHealth_DECLARATIVE_CONFIG).
 			Return(nil, nil).Times(1),
 	)
@@ -400,6 +431,7 @@ func TestReconcileTransformedMessages_SkipUpsert(t *testing.T) {
 		types.GroupType:         mockUpdater,
 		types.AuthProviderType:  mockUpdater,
 		types.RoleType:          mockUpdater,
+		types.NotifierType:      mockUpdater,
 	}
 	m.declarativeConfigErrorReporter = reporter
 
@@ -408,7 +440,7 @@ func TestReconcileTransformedMessages_SkipUpsert(t *testing.T) {
 	gomock.InOrder(
 		mockUpdater.EXPECT().Upsert(gomock.Any(), permissionSet1).Return(nil).Times(1),
 		reporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).Times(1),
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, errors.New("some error")).Times(5),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, errors.New("some error")).Times(supportedTypesCount),
 		reporter.EXPECT().RetrieveIntegrationHealths(storage.IntegrationHealth_DECLARATIVE_CONFIG).
 			Return(nil, nil).Times(1),
 	)
@@ -428,7 +460,7 @@ func TestReconcileTransformedMessages_SkipUpsert(t *testing.T) {
 	// 2. Run the reconciliation again. Only deletion should be done.
 
 	gomock.InOrder(
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, errors.New("some error")).Times(5),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, errors.New("some error")).Times(supportedTypesCount),
 		reporter.EXPECT().RetrieveIntegrationHealths(storage.IntegrationHealth_DECLARATIVE_CONFIG).
 			Return(nil, nil).Times(1),
 	)
@@ -440,7 +472,7 @@ func TestReconcileTransformedMessages_SkipUpsert(t *testing.T) {
 	// 3. Run the reconciliation again. Only deletion should be done, and if successful no deletion error should be indicated.
 
 	gomock.InOrder(
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).Times(5),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).Times(supportedTypesCount),
 		reporter.EXPECT().RetrieveIntegrationHealths(storage.IntegrationHealth_DECLARATIVE_CONFIG).
 			Return(nil, nil).Times(1),
 	)
@@ -511,7 +543,7 @@ func TestUpdateDeclarativeConfigContents_Errors(t *testing.T) {
 		Name:         "Config Map my-cool-config-map",
 		Type:         storage.IntegrationHealth_DECLARATIVE_CONFIG,
 		Status:       storage.IntegrationHealth_UNHEALTHY,
-		ErrorMessage: "could not unmarshal configuration into any of the supported types [auth-provider,access-scope,permission-set,role]",
+		ErrorMessage: "could not unmarshal configuration into any of the supported types [auth-provider,access-scope,permission-set,role,notifier]",
 	}))
 
 	m.UpdateDeclarativeConfigContents("/some/config/dir/to/my-cool-config-map", [][]byte{
@@ -553,6 +585,7 @@ func TestVerifyUpdaters(t *testing.T) {
 		types.GroupType:         mockUpdater,
 		types.AuthProviderType:  mockUpdater,
 		types.RoleType:          mockUpdater,
+		types.NotifierType:      mockUpdater,
 	}
 
 	err := m.verifyUpdaters()
@@ -570,6 +603,7 @@ func TestVerifyUpdaters(t *testing.T) {
 		types.GroupType:         mockUpdater,
 		types.AuthProviderType:  mockUpdater,
 		types.RoleType:          nil,
+		types.NotifierType:      mockUpdater,
 	}
 
 	err = m.verifyUpdaters()

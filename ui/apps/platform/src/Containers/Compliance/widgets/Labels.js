@@ -19,8 +19,9 @@ const Labels = ({ labels }) => (
                 }}
             >
                 <Tooltip content={`${label.key} : ${label.value || '""'}`}>
-                    <span className="text-base font-600 word-break truncate">
-                        {truncate(label.key)} : {label.value || '""'}
+                    <span className="text-base word-break truncate">
+                        <span className="font-700 pr-1">{`${truncate(label.key)}:`}</span>
+                        <span>{label.value || '""'}</span>
                     </span>
                 </Tooltip>
             </li>

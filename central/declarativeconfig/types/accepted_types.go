@@ -17,4 +17,6 @@ var (
 	PermissionSetType = reflect.TypeOf((*storage.PermissionSet)(nil))
 	// RoleType reflects the type of storage.Role.
 	RoleType = reflect.TypeOf((*storage.Role)(nil))
+	// NotifierType reflects the type of storage.Notifier.
+	NotifierType = reflect.TypeOf((*storage.Notifier)(nil))
 )

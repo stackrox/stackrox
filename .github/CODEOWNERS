@@ -21,6 +21,7 @@ proto/storage/risk.proto            @stackrox/core-workflows
 roxctl/**/*     @stackrox/merlin
 pkg/auth/**/*   @stackrox/merlin
 pkg/sac/**/*    @stackrox/merlin
+*/declarativeconfig/**/* @stackrox/merlin
 
 pkg/images/defaults/**/* @stackrox/maple
 

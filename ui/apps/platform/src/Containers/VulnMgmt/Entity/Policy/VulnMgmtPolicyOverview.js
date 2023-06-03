@@ -259,7 +259,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                     const failingDeployments = policyData.deployments;
                     const totalCount = policyData.deploymentCount;
                     const headerText = `${totalCount} ${pluralize(
-                        entityTypes.DEPLOYMENT,
+                        'deployment',
                         totalCount
                     )} ${pluralizeHas(totalCount)} failed across this policy`;
                     return (

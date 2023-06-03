@@ -224,25 +224,11 @@ kubectl -n bundle-test delete subscriptions.operators.coreos.com -l operators.co
 kubectl -n bundle-test delete catalogsources.operators.coreos.com rhacs-operator-catalog
 ```
 
-Also, you can blow everything away with
+Also, you can tear everything down with
 
 ```bash
 $ make olm-uninstall
 $ kubectl delete ns bundle-test
-```
-
-### Launch the Operator with OLM and Index
-
-Note this assumes OLM is already in place which is the case for OpenShift clusters.  
-If you're launching on non-OpenShift Kubernetes, first deploy OLM with `make olm-install`.
-
-```bash
-# Deploy
-# TODO(ROX-11744): drop branding here once operator is available from quay.io/stackrox-io
-ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olm TEST_NAMESPACE=index-test
-
-# Undeploy
-kubectl delete ns index-test
 ```
 
 ## Extending the StackRox Custom Resource Definitions
@@ -252,25 +238,78 @@ Instructions and best practices on how to extend the StackRox CRDs is contained 
 
 ## Installing operator via OLM
 
-The following command will install operator to the currently selected kubernetes cluster.
+These instructions are for deploying a version of the operator that has been pushed to the `rhacs-eng` Quay organization.
+See above for instructions on how to deploy an OLM bundle and index that was built locally.
+
+### Prerequisites
+
+#### Required Binaries
+
+Both the `kubectl-kuttl` and `operator-sdk` binaries are required for the following make targets to work.
+There are make targets to install both executables:
 
 ```bash
- make kuttl deploy-via-olm
+make operator-sdk
+make kuttl
 ```
 
-If operator image has a `-dirty` suffix then the following command has to be used instead:
+These make targets will add the executable to your `$GOPATH`.
+If that is not on your `$PATH`, then you can install the Operator SDK from its [release page](https://github.com/operator-framework/operator-sdk/releases)
+and kuttl from its [release page](https://github.com/kudobuilder/kuttl/releases/tag/v0.15.0).
+
+#### Pull Secret
+
+You'll also need a Quay pull secret configured in `~/.docker/config.json`.
+This can be retrieved on quay.io by:
+
+* Clicking on your profile in the top right corner
+* Choosing **Account Settings**
+* Under the **Docker CLI Password** section, click the **Generate Encrypted Password** link.
+* Enter your password and click **Verify**
+* Choose **Docker Configuration**
+* Either save the file to `~/.docker/config.json` or merge the quay config into your already-existing `config.json`.
+
+#### Clean Repo
+
+If `git describe --dirty` shows a `-dirty` suffix, you'll need to clean up your repo until git considers it "clean".
+Otherwise the make targets below will add `-dirty` to the image tag, and it likely won't be found.
+
+Note that if you run `olm-operator-install.sh` directly, this requirement does not apply.
+
+### Deploy
+
+Now the latest version (based off of `make tag`) can be installed like so:
 
 ```bash
-make kuttl deploy-dirty-tag-via-olm
+# TODO(ROX-11744): drop branding here once operator is available from quay.io/stackrox-io
+
+ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olm
 ```
 
-For upgrading an existing operator:
+This installs the operator into the `stackrox-operator` namespace.
+This can be overridden with the `TEST_NAMESPACE` argument:
 
 ```bash
-make kuttl upgrade-via-olm
-
+ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olm TEST_NAMESPACE=my-favorite-namespace
 ```
-Note that there is a specific command for upgrading `-dirty` suffixed tags `upgrade-dirty-tag-via-olm`
+
+If you'd rather put in a custom image spec, you can use the install script directly:
+
+```bash
+hack/olm-operator-install.sh stackrox-operator quay.io/rhacs-eng/stackrox-operator 3.74.0-588-ge99fe7b316
+```
+
+### Removal
+
+You can blow everything away with:
+
+```bash
+$ make olm-uninstall
+$ kubectl delete ns stackrox-operator
+
+# Optionally remove CRDs
+$ make uninstall
+```
 
 The above targets use `kuttl` internally, so if something goes wrong you may find
 [this guide](tests/TROUBLESHOOTING_E2E_TESTS.md) useful.

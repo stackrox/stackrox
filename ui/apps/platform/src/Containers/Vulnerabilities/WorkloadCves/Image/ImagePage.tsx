@@ -94,7 +94,7 @@ function ImagePage() {
             </PageSection>
         );
     } else {
-        const digest = imageData?.metadata?.v1?.digest;
+        const sha = imageData?.id;
         mainContent = (
             <>
                 <PageSection variant="light">
@@ -106,14 +106,14 @@ function ImagePage() {
                             <Title headingLevel="h1" className="pf-u-m-0">
                                 {imageName}
                             </Title>
-                            {digest && (
+                            {sha && (
                                 <ClipboardCopy
                                     hoverTip="Copy SHA"
                                     clickTip="Copied!"
                                     variant="inline-compact"
                                     className="pf-u-display-inline-flex pf-u-align-items-center pf-u-mt-sm pf-u-mb-md pf-u-font-size-sm"
                                 >
-                                    {digest}
+                                    {sha}
                                 </ClipboardCopy>
                             )}
                             <ImageDetailBadges imageData={imageData} />

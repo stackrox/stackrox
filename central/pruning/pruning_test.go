@@ -1746,23 +1746,12 @@ func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
 			if env.PostgresDatastoreEnabled.BooleanSetting() {
 				flows.EXPECT().RemoveStaleFlows(pruningCtx).Return(nil)
 			}
-			flows.EXPECT().RemoveMatchingFlows(pruningCtx, gomock.Any(), gomock.Any()).DoAndReturn(
-				func(ctx context.Context, keyFn func(props *storage.NetworkFlowProperties) bool, valueFn func(flow *storage.NetworkFlow) bool) error {
-					var deleted bool
-					for _, f := range c.flows {
-						if !keyFn(f.Props) || !valueFn(f) {
-							continue
-						}
-						deleted = true
-					}
-					assert.Equal(t, c.expectedDeletion, deleted)
-					return nil
-				})
+			flows.EXPECT().RemoveOrphanedFlows(pruningCtx, gomock.Any()).Return(nil)
 
 			gci := &garbageCollectorImpl{
 				networkflows: clusterFlows,
 			}
-			gci.removeOrphanedNetworkFlows(c.deployments, set.NewFrozenStringSet(fixtureconsts.Cluster1))
+			gci.removeOrphanedNetworkFlows(set.NewFrozenStringSet(fixtureconsts.Cluster1))
 		})
 	}
 }

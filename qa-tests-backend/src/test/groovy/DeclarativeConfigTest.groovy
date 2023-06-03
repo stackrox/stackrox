@@ -16,8 +16,6 @@ import io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope
 import io.stackrox.proto.storage.RoleOuterClass.Role
 import io.stackrox.proto.storage.TraitsOuterClass.Traits
 
-import util.Env
-
 import services.AuthProviderService
 import services.GroupService
 import services.IntegrationHealthService
@@ -25,13 +23,10 @@ import services.RoleService
 
 import org.junit.Rule
 import org.junit.rules.Timeout
-import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Tag
 
 @Retry(count = 0)
-// TODO(ROX-16008): Remove this once the declarative config feature flag is enabled by default.
-@IgnoreIf({ Env.get("ROX_DECLARATIVE_CONFIGURATION", "false") == "false" })
 class DeclarativeConfigTest extends BaseSpecification {
     static final private String DEFAULT_NAMESPACE = "stackrox"
 
@@ -355,17 +350,13 @@ oidc:
 
         // The previously created permission set should not exist anymore.
         def permissionSetAfterDeletion = RoleService.getRoleService().listPermissionSets()
-                .getPermissionSetsList().find {
-                    it.getName() == VALID_PERMISSION_SET.getName()
-                }
+                .getPermissionSetsList().find { it.getName() == VALID_PERMISSION_SET.getName() }
         assert permissionSetAfterDeletion == null
 
         // The previously created access scope should not exist anymore.
         def accessScopeAfterDeletion = RoleService.getRoleService()
                 .listSimpleAccessScopes()
-                .getAccessScopesList().find {
-                    it.getName() == VALID_ACCESS_SCOPE.getName()
-                }
+                .getAccessScopesList().find { it.getName() == VALID_ACCESS_SCOPE.getName() }
         assert accessScopeAfterDeletion == null
 
         // The previously created role should not exist anymore.
@@ -423,17 +414,13 @@ oidc:
 
         // No permission set should be created.
         def permissionSetAfterDeletion = RoleService.getRoleService().listPermissionSets()
-                .getPermissionSetsList().find {
-            it.getName() == VALID_PERMISSION_SET.getName()
-        }
+                .getPermissionSetsList().find { it.getName() == VALID_PERMISSION_SET.getName() }
         assert permissionSetAfterDeletion == null
 
         // No access scope should be created.
         def accessScopeAfterDeletion = RoleService.getRoleService()
                 .listSimpleAccessScopes()
-                .getAccessScopesList().find {
-            it.getName() == VALID_ACCESS_SCOPE.getName()
-        }
+                .getAccessScopesList().find { it.getName() == VALID_ACCESS_SCOPE.getName() }
         assert accessScopeAfterDeletion == null
 
         // No role should be created.

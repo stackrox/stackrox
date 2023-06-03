@@ -18,6 +18,17 @@ func TestWrongConfigurationTypeTransformNotifier(t *testing.T) {
 	assert.ErrorIs(t, err, errox.InvalidArgs)
 }
 
+func TestNoConfigTransformNotifier(t *testing.T) {
+	notifier := &declarativeconfig.Notifier{
+		Name: "test-notifier",
+	}
+	transformer := newNotifierTransform()
+	protos, err := transformer.Transform(notifier)
+	assert.Nil(t, protos)
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, errox.InvalidArgs)
+}
+
 func TestTransformGenericNotifier(t *testing.T) {
 	notifier := &declarativeconfig.Notifier{
 		Name: "test-notifier",

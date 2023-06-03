@@ -3,17 +3,23 @@ import {
     PageSection,
     Title,
     Divider,
-    Toolbar,
-    ToolbarItem,
     Flex,
     FlexItem,
+    Card,
+    CardBody,
 } from '@patternfly/react-core';
+import { useQuery } from '@apollo/client';
 
-import useLocalStorage from 'hooks/useLocalStorage';
+import useURLSearch from 'hooks/useURLSearch';
+import useURLStringUnion from 'hooks/useURLStringUnion';
 import PageTitle from 'Components/PageTitle';
-import CveStatusTabNavigation from './CveStatusTabNavigation';
-import DefaultFilterModal from '../components/DefaultFilterModal';
-import { VulnMgmtLocalStorage } from '../types';
+import useURLPagination from 'hooks/useURLPagination';
+import { VulnMgmtLocalStorage, entityTabValues } from '../types';
+import { parseQuerySearchFilter, getCveStatusScopedQueryString } from '../searchUtils';
+import { entityTypeCountsQuery } from '../components/EntityTypeToggleGroup';
+import CVEsTableContainer from './CVEsTableContainer';
+import DeploymentsTableContainer from './DeploymentsTableContainer';
+import ImagesTableContainer from './ImagesTableContainer';
 
 const emptyStorage: VulnMgmtLocalStorage = {
     preferences: {
@@ -25,29 +31,25 @@ const emptyStorage: VulnMgmtLocalStorage = {
 };
 
 function WorkloadCvesOverviewPage() {
-    const [storedValue, setStoredValue] = useLocalStorage('vulnerabilityManagement', emptyStorage);
+    const { searchFilter } = useURLSearch();
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    const [activeEntityTabKey] = useURLStringUnion('entityTab', entityTabValues);
 
-    function setLocalStorage(values) {
-        setStoredValue({
-            preferences: {
-                defaultFilters: values,
+    const { data: countsData = { imageCount: 0, imageCVECount: 0, deploymentCount: 0 } } = useQuery(
+        entityTypeCountsQuery,
+        {
+            variables: {
+                query: getCveStatusScopedQueryString(querySearchFilter),
             },
-        });
-    }
+        }
+    );
+
+    const pagination = useURLPagination(20);
 
     return (
         <>
             <PageTitle title="Workload CVEs Overview" />
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Toolbar>
-                    <ToolbarItem alignment={{ default: 'alignRight' }}>
-                        <DefaultFilterModal
-                            defaultFilters={storedValue.preferences.defaultFilters}
-                            setLocalStorage={setLocalStorage}
-                        />
-                    </ToolbarItem>
-                </Toolbar>
-            </PageSection>
+            {/* Default filters are disabled until fixability filters are fixed */}
             <Divider component="div" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-pl-lg">
@@ -60,7 +62,33 @@ function WorkloadCvesOverviewPage() {
                 </Flex>
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
-                <CveStatusTabNavigation defaultFilters={storedValue.preferences.defaultFilters} />
+                <PageSection isCenterAligned>
+                    <Card>
+                        <CardBody>
+                            {activeEntityTabKey === 'CVE' && (
+                                <CVEsTableContainer
+                                    defaultFilters={emptyStorage.preferences.defaultFilters}
+                                    countsData={countsData}
+                                    pagination={pagination}
+                                />
+                            )}
+                            {activeEntityTabKey === 'Image' && (
+                                <ImagesTableContainer
+                                    defaultFilters={emptyStorage.preferences.defaultFilters}
+                                    countsData={countsData}
+                                    pagination={pagination}
+                                />
+                            )}
+                            {activeEntityTabKey === 'Deployment' && (
+                                <DeploymentsTableContainer
+                                    defaultFilters={emptyStorage.preferences.defaultFilters}
+                                    countsData={countsData}
+                                    pagination={pagination}
+                                />
+                            )}
+                        </CardBody>
+                    </Card>
+                </PageSection>
             </PageSection>
         </>
     );

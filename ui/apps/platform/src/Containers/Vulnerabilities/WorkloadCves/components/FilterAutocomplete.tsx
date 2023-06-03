@@ -11,6 +11,7 @@ import FilterResourceDropdown, {
     Resource,
     resources,
 } from './FilterResourceDropdown';
+import { parseQuerySearchFilter } from '../searchUtils';
 
 function getOptions(data: string[] | undefined): React.ReactElement[] | undefined {
     return data?.map((value) => <SelectOption key={value} value={value} />);
@@ -40,6 +41,11 @@ export type FilterAutocompleteSelectProps = {
     setSearchFilter: (s) => void;
     supportedResourceFilters?: FilterResourceDropdownProps['supportedResourceFilters'];
     onDeleteGroup: (category) => void;
+    autocompleteSearchContext?:
+        | { 'Image SHA': string }
+        | { 'Deployment ID': string }
+        | { 'CVE ID': string }
+        | Record<string, never>;
 };
 
 function FilterAutocompleteSelect({
@@ -47,14 +53,25 @@ function FilterAutocompleteSelect({
     setSearchFilter,
     supportedResourceFilters,
     onDeleteGroup,
+    autocompleteSearchContext = {},
 }: FilterAutocompleteSelectProps) {
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const [resource, setResource] = useState<Resource>(
         () => resources.find((r) => supportedResourceFilters?.has(r)) ?? 'DEPLOYMENT'
     );
     const [typeahead, setTypeahead] = useState('');
     const { isOpen, onToggle } = useSelectToggle();
+
+    // TODO Autocomplete requests for "Cluster" never return results if there is a 'CVE ID' or 'Severity' search filter
+    // included in the query. In this case we don't include the additional filters at all which leaves the cluster results
+    // unfiltered. Not ideal, but better than no results.
+    const autocompleteSearchFilter =
+        resource === 'CLUSTER' && autocompleteSearchContext['CVE ID']
+            ? { [resource]: typeahead }
+            : { ...autocompleteSearchContext, ...querySearchFilter, [resource]: typeahead };
+
     const variables = {
-        query: getAutocompleteOptionsQueryString({ [resource]: typeahead }),
+        query: getAutocompleteOptionsQueryString(autocompleteSearchFilter),
         categories: getSearchCategoriesForAutocomplete(resource),
     };
 
@@ -97,7 +114,7 @@ function FilterAutocompleteSelect({
                 onClear={() => onDeleteGroup(resource)}
                 onToggle={onToggle}
                 isOpen={isOpen}
-                placeholder={`Filter by ${resource as string}`}
+                placeholderText={`Filter results by ${resource.toLowerCase()}`}
                 variant="typeaheadmulti"
                 isCreatable
                 createText="Add"

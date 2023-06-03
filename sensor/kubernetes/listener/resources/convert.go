@@ -346,7 +346,7 @@ func (w *deploymentWrap) populateImageMetadata(pods ...*v1.Pod) {
 			if image.GetId() != "" {
 				// Use the image ID from the pod's ContainerStatus.
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
-				image.IsClusterLocal = w.registryStore.HasRegistryForImage(image.GetName())
+				image.IsClusterLocal = w.registryStore.IsLocal(image.GetName())
 				continue
 			}
 
@@ -365,7 +365,7 @@ func (w *deploymentWrap) populateImageMetadata(pods ...*v1.Pod) {
 			if digest := imageUtils.ExtractImageDigest(c.ImageID); digest != "" {
 				image.Id = digest
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
-				image.IsClusterLocal = w.registryStore.HasRegistryForImage(image.GetName())
+				image.IsClusterLocal = w.registryStore.IsLocal(image.GetName())
 			}
 		}
 	}

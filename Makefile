@@ -68,7 +68,7 @@ ifeq ($(UNAME_S),Darwin)
 ifeq ($(UNAME_M),arm64)
 	# TODO(ROX-12064) build these images in the CI pipeline
 	# Currently built on a GCP ARM instance off the rox-ci-image branch "cgorman-custom-arm"
-	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.58-arm64
+	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.59-arm64
 endif
 endif
 
@@ -766,7 +766,7 @@ endif
 .PHONY: roxvet
 roxvet: $(ROXVET_BIN)
 	@echo "+ $@"
-	# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
+	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
 	$(SILENT)go vet -vettool "$(ROXVET_BIN)" $(shell go list -e ./... | grep -v 'operator/pkg/clientset')
 
 ##########

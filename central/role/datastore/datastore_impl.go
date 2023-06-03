@@ -19,14 +19,9 @@ import (
 )
 
 var (
-	// TODO: ROX-14398 Replace Role with Access
-	roleSAC = sac.ForResource(resources.Role)
+	roleSAC = sac.ForResource(resources.Access)
 
 	log = logging.LoggerForModule()
-
-	// TODO(ROX-14398): Once we use Access for this datastore instead of role, we can reuse the client's context instead.
-	groupReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Access)))
 )
 
 type dataStoreImpl struct {
@@ -821,7 +816,7 @@ func (ds *dataStoreImpl) verifyRoleForDeletion(ctx context.Context, name string)
 		return err
 	}
 
-	return ds.verifyNoGroupReferences(groupReadCtx, role)
+	return ds.verifyNoGroupReferences(ctx, role)
 }
 
 // Returns errox.ReferencedByAnotherObject if the given role is referenced by a group.

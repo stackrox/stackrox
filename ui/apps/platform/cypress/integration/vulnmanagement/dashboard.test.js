@@ -70,22 +70,6 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('should show same number of policies between the tile and the policies list', () => {
-        visitVulnerabilityManagementDashboard();
-
-        const entitiesKey = 'policies';
-        const tileLinkSelector = `${selectors.tileLinks}:eq(0)`;
-        cy.get(`${tileLinkSelector} ${selectors.tileLinkValue}`)
-            .invoke('text')
-            .then((value) => {
-                interactAndWaitForVulnerabilityManagementEntities(() => {
-                    cy.get(tileLinkSelector).click();
-                }, entitiesKey);
-
-                cy.get(`[data-testid="panel"] [data-testid="panel-header"]:contains("${value}")`);
-            });
-    });
-
     it('should show same number of Image CVEs in menu item and entities list', function () {
         if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
             this.skip();
@@ -114,7 +98,7 @@ describe('Vulnerability Management Dashboard', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'images';
-        const tileToCheck = hasFeatureFlag('ROX_POSTGRES_DATASTORE') ? 2 : 3;
+        const tileToCheck = hasFeatureFlag('ROX_POSTGRES_DATASTORE') ? 1 : 2;
         cy.get(`${selectors.tileLinks}:eq(${tileToCheck}) ${selectors.tileLinkValue}`)
             .invoke('text')
             .then((value) => {

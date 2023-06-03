@@ -23,6 +23,7 @@ coverage.out
 coverage.html
 combined_coverage.dat
 /.gotools/
+.proto/
 
 # Build output
 /bin/
