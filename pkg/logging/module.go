@@ -21,7 +21,7 @@ var (
 
 // CurrentModule returns the module corresponding to the caller.
 func CurrentModule() *Module {
-	return currentModule(3)
+	return currentModule(4)
 }
 
 func currentModule(skip int) *Module {
@@ -63,7 +63,7 @@ func newModule(name string, logLevel zap.AtomicLevel) *Module {
 
 // Logger returns a new logger for m.
 func (m *Module) Logger() *LoggerImpl {
-	return CreateLogger(m, 0)
+	return CreateLogger(m, 1)
 }
 
 // Name returns the name of m
