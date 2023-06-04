@@ -1,10 +1,10 @@
-import React, { useState, useEffect, ReactElement } from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 
 import { fetchImageIntegrationsHealth } from 'services/IntegrationHealthService';
 import { fetchImageIntegrations } from 'services/ImageIntegrationsService';
 import integrationsList from 'Containers/Integrations/utils/integrationsList';
 import IntegrationHealthWidgetVisual from './IntegrationHealthWidgetVisual';
-import { mergeIntegrationResponses, IntegrationMergedItem } from '../utils/integrations';
+import { IntegrationMergedItem, mergeIntegrationResponses } from '../utils/integrations';
 import { getAxiosErrorMessage } from '../../../utils/responseErrorUtils';
 
 type WidgetProps = {
@@ -12,12 +12,14 @@ type WidgetProps = {
 };
 
 const ImageIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactElement => {
+    const [isFetching, setIsFetching] = useState(false);
     const [imageIntegrationsMerged, setImageIntegrationsMerged] = useState(
         [] as IntegrationMergedItem[]
     );
     const [errorMessageFetching, setErrorMessageFetching] = useState('');
 
     useEffect(() => {
+        setIsFetching(true);
         Promise.all([fetchImageIntegrationsHealth(), fetchImageIntegrations()])
             .then(([integrationsHealth, integrations]) => {
                 setImageIntegrationsMerged(
@@ -32,14 +34,19 @@ const ImageIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactEleme
             .catch((error) => {
                 setImageIntegrationsMerged([]);
                 setErrorMessageFetching(getAxiosErrorMessage(error));
+            })
+            .finally(() => {
+                setIsFetching(false);
             });
     }, [pollingCount]);
+    const isFetchingInitialRequest = isFetching && pollingCount === 0;
 
     return (
         <IntegrationHealthWidgetVisual
             integrationText="Image Integrations"
             integrationsMerged={imageIntegrationsMerged}
             errorMessageFetching={errorMessageFetching}
+            isFetchingInitialRequest={isFetchingInitialRequest}
         />
     );
 };

@@ -9,54 +9,54 @@ import {
     Flex,
     FlexItem,
 } from '@patternfly/react-core';
-import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import pluralize from 'pluralize';
 import IntegrationsHealth from './IntegrationsHealth';
 import { IntegrationMergedItem } from '../utils/integrations';
-import IconText from '../../../Components/PatternFly/IconText/IconText';
+import { ErrorIcon, healthIconMap, SpinnerIcon } from '../CardHeaderIcons';
 
 type IntegrationHealthWidgetProps = {
     integrationText: string;
     integrationsMerged: IntegrationMergedItem[];
     errorMessageFetching: string;
+    isFetchingInitialRequest: boolean;
 };
 
 const IntegrationHealthWidget = ({
     integrationText,
     integrationsMerged,
     errorMessageFetching,
+    isFetchingInitialRequest,
 }: IntegrationHealthWidgetProps): ReactElement => {
     const integrations = integrationsMerged.filter((integrationMergedItem) => {
         return integrationMergedItem.status === 'UNHEALTHY';
     });
+    /* eslint-disable no-nested-ternary */
+    const icon = isFetchingInitialRequest
+        ? SpinnerIcon
+        : errorMessageFetching
+        ? ErrorIcon
+        : healthIconMap[integrations.length === 0 ? 'success' : 'danger'];
+    /* eslint-enable no-nested-ternary */
+    const hasCount = !isFetchingInitialRequest && !errorMessageFetching;
+
     return (
         <Card isFullHeight isCompact>
             <CardHeader>
                 <CardHeaderMain>
                     <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                        <FlexItem>{icon}</FlexItem>
                         <FlexItem>
                             <CardTitle component="h2">{integrationText}</CardTitle>
                         </FlexItem>
-                        {!errorMessageFetching && (
+                        {hasCount && (
                             <FlexItem>
-                                <IconText
-                                    icon={
-                                        integrations.length === 0 ? (
-                                            <CheckCircleIcon color="var(--pf-global--success-color--100)" />
-                                        ) : (
-                                            <ExclamationCircleIcon color="var(--pf-global--danger-color--100)" />
-                                        )
-                                    }
-                                    text={
-                                        integrations.length === 0
-                                            ? 'no errors'
-                                            : `${integrations.length} ${pluralize(
-                                                  'error',
-                                                  integrations.length
-                                              )}`
-                                    }
-                                />
+                                {integrations.length === 0
+                                    ? 'no errors'
+                                    : `${integrations.length} ${pluralize(
+                                          'error',
+                                          integrations.length
+                                      )}`}
                             </FlexItem>
                         )}
                     </Flex>
