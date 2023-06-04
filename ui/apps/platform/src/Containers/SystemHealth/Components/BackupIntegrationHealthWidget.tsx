@@ -5,6 +5,7 @@ import { fetchBackupIntegrations } from 'services/BackupIntegrationsService';
 import integrationsList from 'Containers/Integrations/utils/integrationsList';
 import IntegrationHealthWidgetVisual from './IntegrationHealthWidgetVisual';
 import { mergeIntegrationResponses, IntegrationMergedItem } from '../utils/integrations';
+import { getAxiosErrorMessage } from '../../../utils/responseErrorUtils';
 
 type WidgetProps = {
     pollingCount: number;
@@ -12,7 +13,7 @@ type WidgetProps = {
 
 const BackupIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactElement => {
     const [backupsMerged, setBackupsMerged] = useState([] as IntegrationMergedItem[]);
-    const [backupsRequestHasError, setBackupsRequestHasError] = useState(false);
+    const [errorMessageFetching, setErrorMessageFetching] = useState('');
 
     useEffect(() => {
         Promise.all([fetchBackupIntegrationsHealth(), fetchBackupIntegrations()])
@@ -24,11 +25,11 @@ const BackupIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactElem
                         integrationsList.backups
                     )
                 );
-                setBackupsRequestHasError(false);
+                setErrorMessageFetching('');
             })
-            .catch(() => {
+            .catch((error) => {
                 setBackupsMerged([]);
-                setBackupsRequestHasError(true);
+                setErrorMessageFetching(getAxiosErrorMessage(error));
             });
     }, [pollingCount]);
 
@@ -36,7 +37,7 @@ const BackupIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactElem
         <IntegrationHealthWidgetVisual
             integrationText="Backup Integrations"
             integrationsMerged={backupsMerged}
-            requestHasError={backupsRequestHasError}
+            errorMessageFetching={errorMessageFetching}
         />
     );
 };

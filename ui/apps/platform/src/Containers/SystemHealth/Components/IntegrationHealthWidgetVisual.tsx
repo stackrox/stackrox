@@ -1,5 +1,6 @@
 import React, { ReactElement } from 'react';
 import {
+    Alert,
     Card,
     CardBody,
     CardHeader,
@@ -11,7 +12,6 @@ import {
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import pluralize from 'pluralize';
-import { Message } from '@stackrox/ui-components';
 import IntegrationsHealth from './IntegrationsHealth';
 import { IntegrationMergedItem } from '../utils/integrations';
 import IconText from '../../../Components/PatternFly/IconText/IconText';
@@ -19,13 +19,13 @@ import IconText from '../../../Components/PatternFly/IconText/IconText';
 type IntegrationHealthWidgetProps = {
     integrationText: string;
     integrationsMerged: IntegrationMergedItem[];
-    requestHasError: boolean;
+    errorMessageFetching: string;
 };
 
 const IntegrationHealthWidget = ({
     integrationText,
     integrationsMerged,
-    requestHasError,
+    errorMessageFetching,
 }: IntegrationHealthWidgetProps): ReactElement => {
     const integrations = integrationsMerged.filter((integrationMergedItem) => {
         return integrationMergedItem.status === 'UNHEALTHY';
@@ -38,7 +38,7 @@ const IntegrationHealthWidget = ({
                         <FlexItem>
                             <CardTitle component="h2">{integrationText}</CardTitle>
                         </FlexItem>
-                        {!requestHasError && (
+                        {!errorMessageFetching && (
                             <FlexItem>
                                 <IconText
                                     icon={
@@ -63,8 +63,8 @@ const IntegrationHealthWidget = ({
                 </CardHeaderMain>
             </CardHeader>
             <CardBody>
-                {requestHasError ? (
-                    <Message type="error">Request failed for {integrationText}</Message>
+                {errorMessageFetching ? (
+                    <Alert isInline variant="warning" title={errorMessageFetching} />
                 ) : (
                     <IntegrationsHealth integrations={integrations} />
                 )}

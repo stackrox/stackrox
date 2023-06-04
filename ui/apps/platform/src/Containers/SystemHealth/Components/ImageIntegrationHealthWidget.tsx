@@ -5,6 +5,7 @@ import { fetchImageIntegrations } from 'services/ImageIntegrationsService';
 import integrationsList from 'Containers/Integrations/utils/integrationsList';
 import IntegrationHealthWidgetVisual from './IntegrationHealthWidgetVisual';
 import { mergeIntegrationResponses, IntegrationMergedItem } from '../utils/integrations';
+import { getAxiosErrorMessage } from '../../../utils/responseErrorUtils';
 
 type WidgetProps = {
     pollingCount: number;
@@ -14,7 +15,7 @@ const ImageIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactEleme
     const [imageIntegrationsMerged, setImageIntegrationsMerged] = useState(
         [] as IntegrationMergedItem[]
     );
-    const [imageIntegrationsRequestHasError, setImageIntegrationsRequestHasError] = useState(false);
+    const [errorMessageFetching, setErrorMessageFetching] = useState('');
 
     useEffect(() => {
         Promise.all([fetchImageIntegrationsHealth(), fetchImageIntegrations()])
@@ -26,11 +27,11 @@ const ImageIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactEleme
                         integrationsList.imageIntegrations
                     )
                 );
-                setImageIntegrationsRequestHasError(false);
+                setErrorMessageFetching('');
             })
-            .catch(() => {
+            .catch((error) => {
                 setImageIntegrationsMerged([]);
-                setImageIntegrationsRequestHasError(true);
+                setErrorMessageFetching(getAxiosErrorMessage(error));
             });
     }, [pollingCount]);
 
@@ -38,7 +39,7 @@ const ImageIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactEleme
         <IntegrationHealthWidgetVisual
             integrationText="Image Integrations"
             integrationsMerged={imageIntegrationsMerged}
-            requestHasError={imageIntegrationsRequestHasError}
+            errorMessageFetching={errorMessageFetching}
         />
     );
 };

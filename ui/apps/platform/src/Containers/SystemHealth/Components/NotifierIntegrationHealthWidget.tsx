@@ -5,6 +5,7 @@ import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService'
 import integrationsList from 'Containers/Integrations/utils/integrationsList';
 import IntegrationHealthWidgetVisual from './IntegrationHealthWidgetVisual';
 import { mergeIntegrationResponses, IntegrationMergedItem } from '../utils/integrations';
+import { getAxiosErrorMessage } from '../../../utils/responseErrorUtils';
 
 type WidgetProps = {
     pollingCount: number;
@@ -12,7 +13,7 @@ type WidgetProps = {
 
 const NotifierIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactElement => {
     const [notifiersMerged, setNotifiersMerged] = useState([] as IntegrationMergedItem[]);
-    const [notifiersRequestHasError, setNotifiersRequestHasError] = useState(false);
+    const [errorMessageFetching, setErrorMessageFetching] = useState('');
 
     useEffect(() => {
         Promise.all([fetchPluginIntegrationsHealth(), fetchNotifierIntegrations()])
@@ -24,11 +25,11 @@ const NotifierIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactEl
                         integrationsList.notifiers
                     )
                 );
-                setNotifiersRequestHasError(false);
+                setErrorMessageFetching('');
             })
-            .catch(() => {
+            .catch((error) => {
                 setNotifiersMerged([]);
-                setNotifiersRequestHasError(true);
+                setErrorMessageFetching(getAxiosErrorMessage(error));
             });
     }, [pollingCount]);
 
@@ -36,7 +37,7 @@ const NotifierIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactEl
         <IntegrationHealthWidgetVisual
             integrationText="Notifier Integrations"
             integrationsMerged={notifiersMerged}
-            requestHasError={notifiersRequestHasError}
+            errorMessageFetching={errorMessageFetching}
         />
     );
 };
