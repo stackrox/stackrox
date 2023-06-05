@@ -9,7 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	declarativeConfigHealthMock "github.com/stackrox/rox/central/declarativeconfig/health/mocks"
+	declarativeConfigHealthMock "github.com/stackrox/rox/central/declarativeconfig/health/datastore/mocks"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	"github.com/stackrox/rox/central/declarativeconfig/updater"
 	updaterMocks "github.com/stackrox/rox/central/declarativeconfig/updater/mocks"

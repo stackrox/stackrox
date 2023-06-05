@@ -1,7 +1,7 @@
 package declarativeconfig
 
 import (
-	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health"
+	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	"github.com/stackrox/rox/central/declarativeconfig/updater"
 	"github.com/stackrox/rox/pkg/auth/authproviders"

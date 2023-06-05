@@ -6,7 +6,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health"
+	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	declarativeCfgUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
