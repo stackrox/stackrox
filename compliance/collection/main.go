@@ -17,6 +17,6 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	umh := retry.NewUnconfirmedMessageHandler(ctx, env.NodeScanningAckDeadlineBase.DurationSetting())
-	c := compliance.NewComplianceApp(np, scanner, umh, umh)
+	c := compliance.NewComplianceApp(np, scanner, umh)
 	c.Start()
 }

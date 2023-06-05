@@ -27,22 +27,20 @@ import (
 
 // Compliance represents the Compliance app
 type Compliance struct {
-	nodeNameProvider   NodeNameProvider
-	nodeScanner        NodeScanner
-	sensorReplyHandler SensorReplyHandler
-	scanResend         unconfirmedMessageHandler
-	cache              *sensor.MsgFromCompliance
+	nodeNameProvider NodeNameProvider
+	nodeScanner      NodeScanner
+	umh              UnconfirmedMessageHandler
+	cache            *sensor.MsgFromCompliance
 }
 
 // NewComplianceApp contsructs the Compliance app object
 func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner,
-	srh SensorReplyHandler, umh unconfirmedMessageHandler) *Compliance {
+	srh UnconfirmedMessageHandler) *Compliance {
 	return &Compliance{
-		nodeNameProvider:   nnp,
-		nodeScanner:        scanner,
-		sensorReplyHandler: srh,
-		scanResend:         umh,
-		cache:              nil,
+		nodeNameProvider: nnp,
+		nodeScanner:      scanner,
+		umh:              srh,
+		cache:            nil,
 	}
 }
 
@@ -110,7 +108,7 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 			select {
 			case <-ctx.Done():
 				return
-			case _, ok := <-c.scanResend.RetryCommand():
+			case _, ok := <-c.umh.RetryCommand():
 				if ok && c.cache != nil {
 					nodeInventoriesC <- c.cache
 				}
@@ -120,7 +118,7 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 				if err != nil {
 					log.Errorf("Error running node scan: %v", err)
 				} else {
-					c.scanResend.ObserveSending()
+					c.umh.ObserveSending()
 					c.cache = msg.Clone()
 					nodeInventoriesC <- msg
 				}
@@ -205,9 +203,9 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 			switch t.Ack.GetAction() {
 			case sensor.MsgToCompliance_NodeInventoryACK_ACK:
 				// TODO(ROX-16549): Add metric to see the ratio of Ack/Nack(?)
-				c.sensorReplyHandler.HandleACK()
+				c.umh.HandleACK()
 			case sensor.MsgToCompliance_NodeInventoryACK_NACK:
-				c.sensorReplyHandler.HandleNACK()
+				c.umh.HandleNACK()
 			}
 		default:
 			utils.Should(errors.Errorf("Unhandled msg type: %T", t))

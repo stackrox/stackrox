@@ -80,7 +80,7 @@ func (s *UnconfirmedMessageHandlerImpl) retryLater() {
 	s.ticker.Reset(s.resendInterval)
 }
 
-// ObserveSending should be called when a new message is sent
+// ObserveSending should be called when a new message is sent and it is expected to be [N]ACKed
 func (s *UnconfirmedMessageHandlerImpl) ObserveSending() {
 	log.Debugf("Observing message being sent. Waiting for an ACK for %s", s.baseInterval.String())
 	s.ticker.Stop()
@@ -88,20 +88,19 @@ func (s *UnconfirmedMessageHandlerImpl) ObserveSending() {
 	s.ticker.Reset(s.baseInterval)
 }
 
-// ObserveConfirmation should be called when an ACK for the massage is received
-func (s *UnconfirmedMessageHandlerImpl) ObserveConfirmation() {
+func (s *UnconfirmedMessageHandlerImpl) observeConfirmation() {
 	log.Debug("Message has been acknowledged")
 	s.ticker.Stop()
 	s.retry = 0
 }
 
-// HandleACK is called when ACK is received in Compliance (implements SensorReplyHandler interface)
+// HandleACK is called when ACK is received
 func (s *UnconfirmedMessageHandlerImpl) HandleACK() {
 	log.Debug("Received ACK")
-	s.ObserveConfirmation()
+	s.observeConfirmation()
 }
 
-// HandleNACK is called when NACK is received in Compliance (implements SensorReplyHandler interface)
+// HandleNACK is called when NACK is received
 func (s *UnconfirmedMessageHandlerImpl) HandleNACK() {
 	log.Debug("Received NACK. Message will be resent")
 }

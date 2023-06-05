@@ -19,14 +19,10 @@ type NodeScanner interface {
 	IsActive() bool
 }
 
-// SensorReplyHandler handles the ack/nack message from Sensor
-type SensorReplyHandler interface {
+// UnconfirmedMessageHandler handles the observation of sending, and ACK/NACK messages
+type UnconfirmedMessageHandler interface {
 	HandleACK()
 	HandleNACK()
-}
-
-type unconfirmedMessageHandler interface {
 	ObserveSending()
-	ObserveConfirmation()
 	RetryCommand() <-chan struct{}
 }
