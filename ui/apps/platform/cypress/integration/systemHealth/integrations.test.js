@@ -144,7 +144,7 @@ describe('System Health Integrations fixtures', () => {
             {
                 id: '169b0d3f-8277-4900-bbce-1127077defae',
                 name: healthName,
-                type: 'DECLARATIVE_CONFIG',
+                resourceType: 'CONFIG_MAP',
                 status: 'UNHEALTHY',
                 errorMessage: errorMessageText,
                 lastTimestamp: '2020-12-04T00:38:17.906318735Z',
@@ -167,7 +167,7 @@ describe('System Health Integrations fixtures', () => {
             {
                 id: '169b0d3f-8277-4900-bbce-1127077defae',
                 name: healthName,
-                type: 'DECLARATIVE_CONFIG',
+                resourceType: 'CONFIG_MAP',
                 status: 'HEALTHY',
                 errorMessage: '',
                 lastTimestamp: '2020-12-04T00:38:17.906318735Z',
