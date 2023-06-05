@@ -278,7 +278,7 @@ oidc:
         // Verify the integration health for the access scope is unhealthy and contains an error message.
         // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
         // times here.
-        withRetry(30, 10) {
+        withRetry(RETRIES, PAUSE_SECS) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             def accessScopeHealth = response.getIntegrationHealthList().find {
                 it.getName().contains(ACCESS_SCOPE_KEY)
