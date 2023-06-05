@@ -1,22 +1,25 @@
-import React, { useState, useEffect, ReactElement } from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 
 import { fetchImageIntegrationsHealth } from 'services/IntegrationHealthService';
 import { fetchImageIntegrations } from 'services/ImageIntegrationsService';
 import integrationsList from 'Containers/Integrations/utils/integrationsList';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import IntegrationHealthWidgetVisual from './IntegrationHealthWidgetVisual';
-import { mergeIntegrationResponses, IntegrationMergedItem } from '../utils/integrations';
+import { IntegrationMergedItem, mergeIntegrationResponses } from '../utils/integrations';
 
 type WidgetProps = {
     pollingCount: number;
 };
 
 const ImageIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactElement => {
+    const [isFetching, setIsFetching] = useState(false);
     const [imageIntegrationsMerged, setImageIntegrationsMerged] = useState(
         [] as IntegrationMergedItem[]
     );
-    const [imageIntegrationsRequestHasError, setImageIntegrationsRequestHasError] = useState(false);
+    const [errorMessageFetching, setErrorMessageFetching] = useState('');
 
     useEffect(() => {
+        setIsFetching(true);
         Promise.all([fetchImageIntegrationsHealth(), fetchImageIntegrations()])
             .then(([integrationsHealth, integrations]) => {
                 setImageIntegrationsMerged(
@@ -26,20 +29,24 @@ const ImageIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactEleme
                         integrationsList.imageIntegrations
                     )
                 );
-                setImageIntegrationsRequestHasError(false);
+                setErrorMessageFetching('');
             })
-            .catch(() => {
+            .catch((error) => {
                 setImageIntegrationsMerged([]);
-                setImageIntegrationsRequestHasError(true);
+                setErrorMessageFetching(getAxiosErrorMessage(error));
+            })
+            .finally(() => {
+                setIsFetching(false);
             });
     }, [pollingCount]);
+    const isFetchingInitialRequest = isFetching && pollingCount === 0;
 
     return (
         <IntegrationHealthWidgetVisual
-            id="image-integrations"
             integrationText="Image Integrations"
             integrationsMerged={imageIntegrationsMerged}
-            requestHasError={imageIntegrationsRequestHasError}
+            errorMessageFetching={errorMessageFetching}
+            isFetchingInitialRequest={isFetchingInitialRequest}
         />
     );
 };
