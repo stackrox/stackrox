@@ -45,7 +45,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     static final private Deployment GCR_NGINX_DEPLOYMENT = new Deployment()
             .setName(GCR_NGINX)
-            .setImage("us.gcr.io/stackrox-ci/nginx:1.10.1")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
             .addLabel("app", "test")
 
     static final private Deployment BUSYBOX_NO_BYPASS_DEPLOYMENT = new Deployment()
@@ -205,9 +205,9 @@ class AdmissionControllerTest extends BaseSpecification {
         def policyGroup = PolicyGroup.newBuilder()
                 .setFieldName("CVE")
                 .setBooleanOperator(PolicyOuterClass.BooleanOperator.AND)
-        policyGroup.addAllValues([PolicyValue.newBuilder().setValue("CVE-2019-3462").build(),])
+        policyGroup.addAllValues([PolicyValue.newBuilder().setValue("CVE-2019-3844").build(),])
 
-        String policyName = "Matching CVE (CVE-2019-3462)"
+        String policyName = "Matching CVE (CVE-2019-3844)"
         PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
                 .setName(policyName)
                 .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
@@ -221,7 +221,7 @@ class AdmissionControllerTest extends BaseSpecification {
         String policyID = PolicyService.createNewPolicy(policy)
         assert policyID
 
-        log.info("Policy created to scale-to-zero deployments with CVE-2019-3462")
+        log.info("Policy created to scale-to-zero deployments with CVE-2019-3844")
         // Maximum time to wait for propagation to sensor
         Helpers.sleepWithRetryBackoff(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
         log.info("Sensor and admission-controller _should_ have the policy update")
@@ -239,7 +239,7 @@ class AdmissionControllerTest extends BaseSpecification {
         when:
         "Suppress CVE and check that the deployment can now launch"
 
-        def cve = "CVE-2019-3462"
+        def cve = "CVE-2019-3844"
         CVEService.suppressImageCVE(cve)
 
         log.info("Suppressed "+cve)
@@ -291,8 +291,9 @@ class AdmissionControllerTest extends BaseSpecification {
         "Data inputs are: "
 
         image | _
-        "us.gcr.io/stackrox-ci/nginx:1.10.1@sha256:b53e7ca2f567bdb7f23dad7d183a3466532d32f7ddf82847783fad14f425e5d3" | _
-        "us.gcr.io/stackrox-ci/nginx:1.10.1" | _
+        "quay.io/rhacs-eng/qa-multi-arch:nginx" | _
+        "quay.io/rhacs-eng/qa-multi-arch:nginx"+
+            "@sha256:a05b0cdd4fc1be3b224ba9662ebdf98fe44c09c0c9215b45f84344c12867002e" | _
     }
 
     @Unroll
