@@ -225,7 +225,7 @@ splunk:
             .setSplunk(Splunk.newBuilder()
                     .setHttpToken("stackrox-token")
                     .setHttpEndpoint("stackrox-endpoint")
-                    .putAllSourceTypes(["stackrox-audit-message": "key", "stackrox-alert": "alert"])
+                    .putAllSourceTypes(["audit": "stackrox-audit-message", "alert": "stackrox-alert"])
             ).build()
     static final private String INVALID_NOTIFIER_YAML = """\
 name: ${NOTIFIER_KEY}
