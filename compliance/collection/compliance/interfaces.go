@@ -21,8 +21,8 @@ type NodeScanner interface {
 
 // SensorReplyHandler handles the ack/nack message from Sensor
 type SensorReplyHandler interface {
-	HandleACK(ctx context.Context, client sensor.ComplianceService_CommunicateClient)
-	HandleNACK(ctx context.Context, client sensor.ComplianceService_CommunicateClient)
+	HandleACK()
+	HandleNACK()
 }
 
 type unconfirmedMessageHandler interface {

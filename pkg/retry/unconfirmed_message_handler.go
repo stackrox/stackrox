@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -14,7 +13,7 @@ var (
 	defaultBaseInterval = 1 * time.Minute
 )
 
-// UnconfirmedMessageHandlerImpl informs the caller when a resending should happen based on ACK messsage.
+// UnconfirmedMessageHandlerImpl informs the caller whether a resending should happen based on receiving ACK messsages.
 // Assumption: Time to receive an ACK is generally much shorter than the interval between sending consequtive messages.
 type UnconfirmedMessageHandlerImpl struct {
 	// baseInterval defines the delay after which we resend a message
@@ -97,12 +96,12 @@ func (s *UnconfirmedMessageHandlerImpl) ObserveConfirmation() {
 }
 
 // HandleACK is called when ACK is received in Compliance (implements SensorReplyHandler interface)
-func (s *UnconfirmedMessageHandlerImpl) HandleACK(_ context.Context, _ sensor.ComplianceService_CommunicateClient) {
-	log.Debugf("Received ACK from Sensor.")
+func (s *UnconfirmedMessageHandlerImpl) HandleACK() {
+	log.Debug("Received ACK")
 	s.ObserveConfirmation()
 }
 
 // HandleNACK is called when NACK is received in Compliance (implements SensorReplyHandler interface)
-func (s *UnconfirmedMessageHandlerImpl) HandleNACK(_ context.Context, _ sensor.ComplianceService_CommunicateClient) {
-	log.Debugf("Received NACK from Sensor. Node scan will be resent.")
+func (s *UnconfirmedMessageHandlerImpl) HandleNACK() {
+	log.Debug("Received NACK. Message will be resent")
 }
