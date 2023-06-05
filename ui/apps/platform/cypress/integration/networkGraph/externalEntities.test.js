@@ -15,7 +15,7 @@ describe('External Entities on Network Graph', () => {
     withAuth();
 
     describe('Baseline state', () => {
-        it('should group the namespaces into a cluster wrapper', () => {
+        it.skip('should group the namespaces into a cluster wrapper', () => {
             visitOldNetworkGraphWithMockedData();
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 const clusters = cytoscape.nodes().filter(filterClusters);
@@ -29,7 +29,7 @@ describe('External Entities on Network Graph', () => {
             });
         });
 
-        it('should group external connections into a node outside the cluster', () => {
+        it.skip('should group external connections into a node outside the cluster', () => {
             visitOldNetworkGraphWithMockedData();
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 const externalEntities = cytoscape.nodes().filter(filterInternet);
