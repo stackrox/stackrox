@@ -26,8 +26,9 @@ import spock.lang.IgnoreIf
 import spock.lang.Tag
 
 @Tag("BAT")
-// skip if executed on a cluster with just secured-cluster deployed i.e. central is not deployed
-@IgnoreIf({ Env.STANDALONE_SECURED_CLUSTER == "true" })
+// skip if executed in a test environment with just secured-cluster deployed in the test cluster
+// i.e. central is deployed elsewhere
+@IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
 class CertRotationTest extends BaseSpecification {
 
     def generateCerts(String path, String expectedFileName, JsonObject data = null) {

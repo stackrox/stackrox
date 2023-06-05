@@ -7,8 +7,9 @@ import util.Env
 
 @Tag("BAT")
 @Tag("COMPATIBILITY")
-// skip if executed on a cluster with just secured-cluster deployed i.e. central is not deployed
-@IgnoreIf({ Env.STANDALONE_SECURED_CLUSTER == "true" })
+// skip if executed in a test environment with just secured-cluster deployed in the test cluster
+// i.e. central is deployed elsewhere
+@IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
 class CertExpiryTest extends BaseSpecification {
 
     def "Test Central cert expiry"() {
