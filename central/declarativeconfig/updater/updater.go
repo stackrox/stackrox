@@ -6,7 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	authProviderDatastore "github.com/stackrox/rox/central/authprovider/datastore"
-	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health"
+	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"

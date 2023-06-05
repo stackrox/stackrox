@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
-	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health"
+	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	"github.com/stackrox/rox/central/declarativeconfig/updater"
 	declarativeConfigUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
