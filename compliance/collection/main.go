@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"time"
 
 	"github.com/stackrox/rox/compliance/collection/compliance"
 	"github.com/stackrox/rox/pkg/env"
@@ -17,7 +16,7 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	umh := retry.NewUnconfirmedMessageHandler(ctx, 15*time.Second)
+	umh := retry.NewUnconfirmedMessageHandler(ctx, env.NodeScanningAckDeadlineBase.DurationSetting())
 	c := compliance.NewComplianceApp(np, scanner, umh, umh)
 	c.Start()
 }
