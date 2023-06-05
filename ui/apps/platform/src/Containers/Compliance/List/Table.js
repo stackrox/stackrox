@@ -298,6 +298,7 @@ const ListTable = ({
                         // Resouces: CLUSTER, NAMESPACE, NODE, DEPLOYMENT.
                         // Or CATEGORY from View Standard link of sunburst graph on dashboard.
                         // Or STANDARD on Controls tab of resource single page.
+                        // Otherwise undefined.
                         const groupedByText = groupBy
                             ? `across ${tableData.length} ${pluralize(
                                   resourceLabels[groupBy] ?? groupBy.toLowerCase(),
