@@ -10,7 +10,6 @@ import (
 type IntegerSetting struct {
 	envVar       string
 	defaultValue int
-	isSet        bool
 }
 
 // EnvVar returns the string name of the environment variable

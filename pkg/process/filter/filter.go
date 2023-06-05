@@ -124,14 +124,15 @@ func (f *filterImpl) Add(indicator *storage.ProcessIndicator) bool {
 
 	rootLevel := f.getOrAddRootLevelNoLock(indicator)
 
+	if len(rootLevel.children) >= f.maxUniqueProcesses {
+		return false
+	}
+
 	// Handle the process level independently as we will never reject a new process
 	processLevel := rootLevel.children[indicator.GetSignal().GetExecFilePath()]
 	if processLevel == nil {
 		processLevel = newLevel()
 		rootLevel.children[indicator.GetSignal().GetExecFilePath()] = processLevel
-	}
-	if len(rootLevel.children) > f.maxUniqueProcesses {
-		return false
 	}
 
 	return f.siftNoLock(processLevel, strings.Fields(indicator.GetSignal().GetArgs()), 0)
