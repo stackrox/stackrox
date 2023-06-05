@@ -279,7 +279,7 @@ func (c *TestContext) StartFakeGRPC() {
 		message.PolicySync(c.config.InitialSystemPolicies),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
 
-	conn, _, shutdown := createConnectionAndStartServer(fakeCentral)
+	conn, shutdown := createConnectionAndStartServer(fakeCentral)
 
 	// grpcFactory will be nil on the first run of the testContext
 	if c.grpcFactory == nil {
@@ -614,8 +614,7 @@ func (c *TestContext) startSensorInstance(env *envconf.Config) {
 	c.fakeCentral.ConnectionStarted.Wait()
 }
 
-// TODO: Why return fakeCentral?
-func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grpc.ClientConn, *centralDebug.FakeService, func()) {
+func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grpc.ClientConn, func()) {
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
@@ -642,7 +641,7 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 		server.Stop()
 	}
 
-	return conn, fakeCentral, closeF
+	return conn, closeF
 }
 
 // ApplyResourceNoObject creates a Kubernetes resource using `ApplyResource` without requiring an object reference.
