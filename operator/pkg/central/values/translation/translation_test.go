@@ -554,7 +554,7 @@ func TestTranslate(t *testing.T) {
 			args: args{
 				c: platform.Central{
 					ObjectMeta: metav1.ObjectMeta{
-						Annotations: map[string]string{common.CentralPVCObsoletedAnnotation: "true"},
+						Annotations: map[string]string{common.CentralPVCObsoleteAnnotation: "true"},
 						Namespace:   "stackrox",
 					},
 					Spec: platform.CentralSpec{

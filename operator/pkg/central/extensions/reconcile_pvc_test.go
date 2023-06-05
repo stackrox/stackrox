@@ -87,7 +87,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 	emptyNotDeletedCentralWithDB.Spec.Central.DB = &platform.CentralDBSpec{}
 
 	pvcObsoletedAnnotation := map[string]string{
-		common.CentralPVCObsoletedAnnotation: "true",
+		common.CentralPVCObsoleteAnnotation: "true",
 	}
 	centralWithPvcObsoletedAnnotation := makeCentral(nil)
 	centralWithPvcObsoletedAnnotation.Annotations = pvcObsoletedAnnotation

@@ -4,35 +4,31 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// pvcExistenceChecker wraps up the information and function to detect
-type pvcExistenceChecker struct {
+// pvcStateChecker wraps up the information and function to determine pvc state
+type pvcStateChecker struct {
 	ctx         context.Context
 	client      ctrlClient.Client
 	obsoletePvc bool
-	nameSpace   string
+	namespace   string
 }
 
-func (c *pvcExistenceChecker) toObsolete() bool {
+func (c *pvcStateChecker) isObsolete() bool {
 	return c.obsoletePvc
 }
 
-func (c *pvcExistenceChecker) pvcExists(name string) bool {
-	key := ctrlClient.ObjectKey{Namespace: c.nameSpace, Name: name}
+func (c *pvcStateChecker) pvcExists(name string) (bool, error) {
+	key := ctrlClient.ObjectKey{Namespace: c.namespace, Name: name}
 	pvc := &corev1.PersistentVolumeClaim{}
-	err := c.client.Get(c.ctx, key, pvc)
-	if err != nil && !apiErrors.IsNotFound(err) {
-		// In case of error, we do not know if there is exising pvc there. It would be safer to
-		// assume it is not there. In that case, we may leave two persistent files not migrated
-		// for offline mode. I am not sure how many customer working with operator in offline mode in the first place,
-		// but that scenario can be corrected by upload them again.
-		utils.Should(errors.Wrapf(err, "failed to check pvc %s in name space %s", name, c.nameSpace))
-		return false
+	if err := c.client.Get(c.ctx, key, pvc); err != nil {
+		if apiErrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "failed to get PVC central-db status")
 	}
-	return err == nil
+	return true, nil
 }
