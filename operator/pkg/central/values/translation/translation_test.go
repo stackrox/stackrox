@@ -795,7 +795,7 @@ func TestTranslate(t *testing.T) {
 			client := fkClient.NewClientBuilder().WithObjects(allExisting...).Build()
 			translator := Translator{Client: client}
 
-			got, err := translator.translate(context.TODO(), tt.args.c)
+			got, err := translator.translate(context.Background(), tt.args.c)
 			assert.NoError(t, err)
 
 			assert.Equal(t, wantAsValues, got)
