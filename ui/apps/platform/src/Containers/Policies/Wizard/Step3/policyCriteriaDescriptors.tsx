@@ -600,7 +600,8 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         label: 'Runtime class',
         name: 'Runtime Class',
         shortName: 'Runtime class',
-        negatedName: `Runtime class doesn't match`,
+        longName: 'Privilege escalation on container is',
+        negatedName: `Privilege escalation on container doesn't match`,
         category: policyCriteriaCategories.DEPLOYMENT_METADATA,
         type: 'text',
         placeholder: 'kata',
@@ -611,6 +612,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         label: 'Volume name',
         name: 'Volume Name',
         shortName: 'Volume name',
+        longName: 'Volume name is',
         negatedName: `Volume name doesn't match`,
         category: policyCriteriaCategories.STORAGE,
         type: 'text',
@@ -622,6 +624,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         label: 'Volume source',
         name: 'Volume Source',
         shortName: 'Volume source',
+        longName: 'Volume source is',
         negatedName: `Volume source doesn't match`,
         category: policyCriteriaCategories.STORAGE,
         type: 'text',
@@ -633,6 +636,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         label: 'Volume destination',
         name: 'Volume Destination',
         shortName: 'Volume destination',
+        longName: 'Volume destination is',
         negatedName: `Volume destination doesn't match`,
         category: policyCriteriaCategories.STORAGE,
         type: 'text',
@@ -644,6 +648,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         label: 'Volume type',
         name: 'Volume Type',
         shortName: 'Volume type',
+        longName: 'Volume type is',
         negatedName: `Volume type doesn't match`,
         category: policyCriteriaCategories.STORAGE,
         type: 'text',
@@ -652,10 +657,10 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
-        label: 'Writable mounted volume',
+        label: 'Mounted volume writability',
         name: 'Writable Mounted Volume',
-        shortName: 'Writable mounted volume',
-        longName: 'Mounted volume writability',
+        shortName: 'Mounted volume writability',
+        longName: 'Mounted volume is',
         category: policyCriteriaCategories.STORAGE,
         type: 'radioGroup',
         radioButtons: [
@@ -676,6 +681,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         name: 'Mount Propagation',
         shortName: 'Mount propagation',
+        longName: 'Mount propagation is',
         negatedName: 'Mount propagation is not',
         category: policyCriteriaCategories.STORAGE,
         type: 'multiselect',
@@ -884,7 +890,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         label: 'Share host network namespace',
         name: 'Host Network',
         shortName: 'Host network',
-        longName: 'Host network',
+        longName: 'Share host network namespace',
         category: policyCriteriaCategories.DEPLOYMENT_METADATA,
         type: 'radioGroup',
         radioButtons: [
@@ -905,7 +911,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Share host PID namespace',
         name: 'Host PID',
-        longName: 'Host PID',
+        longName: 'Share host PID Namespace',
         category: policyCriteriaCategories.DEPLOYMENT_METADATA,
         type: 'radioGroup',
         radioButtons: [
@@ -926,7 +932,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Share host IPC namespace',
         name: 'Host IPC',
-        longName: 'Host IPC',
+        longName: 'Share host IPC namespace',
         category: policyCriteriaCategories.DEPLOYMENT_METADATA,
         type: 'radioGroup',
         radioButtons: [
@@ -965,6 +971,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         name: 'Process Name',
         shortName: 'Process name',
+        longName: 'Process name is',
         negatedName: `Process name doesn't match`,
         category: policyCriteriaCategories.PROCESS_ACTIVITY,
         type: 'text',
@@ -975,6 +982,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         name: 'Process Ancestor',
         shortName: 'Process ancestor',
+        longName: 'Process ancestor is',
         negatedName: `Process ancestor doesn't match`,
         category: policyCriteriaCategories.PROCESS_ACTIVITY,
         type: 'text',
@@ -985,6 +993,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         name: 'Process Arguments',
         shortName: 'Process arguments',
+        longName: 'Process arguments are',
         negatedName: `Process arguments don't match`,
         category: policyCriteriaCategories.PROCESS_ACTIVITY,
         type: 'text',
@@ -995,6 +1004,8 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Process UID',
         name: 'Process UID',
+        shortName: 'Process UID',
+        longName: 'Process UID is',
         negatedName: `Process UID doesn't match`,
         category: policyCriteriaCategories.PROCESS_ACTIVITY,
         type: 'text',
@@ -1004,8 +1015,8 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     },
     {
         name: 'Writable Host Mount',
-        shortName: 'Writable host mount',
-        longName: 'Host mount writability',
+        shortName: 'Host mount writability',
+        longName: 'Host mount is',
         category: policyCriteriaCategories.STORAGE,
         type: 'radioGroup',
         radioButtons: [
@@ -1044,7 +1055,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         label: 'Service account',
         name: 'Service Account',
         shortName: 'Service account',
-        longName: 'Service account name',
+        longName: 'Service account name is',
         negatedName: `Service account name doesn't match`,
         category: policyCriteriaCategories.KUBERNETES_ACCESS,
         type: 'text',
@@ -1136,7 +1147,8 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Namespace',
         name: 'Namespace',
-        longName: 'Namespace',
+        shortName: 'Namespace',
+        longName: 'Namespace is',
         negatedName: `Namespace doesn't match`,
         category: policyCriteriaCategories.DEPLOYMENT_METADATA,
         type: 'text',
@@ -1277,9 +1289,9 @@ export const policyConfigurationDescriptor: Descriptor[] = [
 
 export const auditLogDescriptor: Descriptor[] = [
     {
-        label: 'Kubernetes resource',
+        label: 'Kubernetes resource type',
         name: 'Kubernetes Resource',
-        shortName: 'Kubernetes resource',
+        shortName: 'Kubernetes resource type',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'select',
         placeholder: 'Select a resource',
@@ -1340,6 +1352,7 @@ export const auditLogDescriptor: Descriptor[] = [
         label: 'User agent',
         name: 'User Agent',
         shortName: 'User agent',
+        longName: 'User agent is',
         negatedName: "User agent doesn't match",
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
@@ -1350,6 +1363,7 @@ export const auditLogDescriptor: Descriptor[] = [
         label: 'Source IP address',
         name: 'Source IP Address',
         shortName: 'Source IP address',
+        longName: 'Source IP address is',
         negatedName: "Source IP address doesn't match",
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
