@@ -156,6 +156,11 @@ func getDefaultRoles() []*storage.Role {
 
 		// Historically, default permission sets and roles have had same name to make it easier for the user to quickly map one to the other.
 		permissionSet := getDefaultPermissionSet(roleName)
+		if permissionSet == nil {
+			utils.Should(errors.Errorf("No default permission set found for default role %s", roleName))
+			continue
+		}
+
 		role := &storage.Role{
 			Name:          roleName,
 			Description:   attributes.description,
@@ -192,27 +197,28 @@ func getDefaultPermissionSets() []*storage.PermissionSet {
 }
 
 func getDefaultPermissionSet(name string) *storage.PermissionSet {
-	for pname := range accesscontrol.DefaultPermissionSetIDs {
-		if pname == name {
-			attributes := defaultPermissionSets[name]
-			resourceToAccess := permissionsUtils.FromResourcesWithAccess(attributes.resourceWithAccess...)
-
-			return &storage.PermissionSet{
-				Id:               attributes.getID(),
-				Name:             name,
-				Description:      attributes.description,
-				ResourceToAccess: resourceToAccess,
-				Traits: &storage.Traits{
-					Origin: storage.Traits_DEFAULT,
-				},
-			}
-		}
+	_, found := accesscontrol.DefaultPermissionSetIDs[name]
+	if !found {
+		return nil
 	}
-	return nil
+
+	attributes, found := defaultPermissionSets[name]
+	if !found {
+		return nil
+	}
+
+	return &storage.PermissionSet{
+		Id:               attributes.getID(),
+		Name:             name,
+		Description:      attributes.description,
+		ResourceToAccess: permissionsUtils.FromResourcesWithAccess(attributes.resourceWithAccess...),
+		Traits: &storage.Traits{
+			Origin: storage.Traits_DEFAULT,
+		},
+	}
 }
 
-// GetDefaultAccessScopes returns built-in access scopes.
-func GetDefaultAccessScopes() []*storage.SimpleAccessScope {
+func getDefaultAccessScopes() []*storage.SimpleAccessScope {
 	return []*storage.SimpleAccessScope{
 		rolePkg.AccessScopeIncludeAll,
 		rolePkg.AccessScopeExcludeAll,

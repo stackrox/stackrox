@@ -60,5 +60,5 @@ func Singleton() DataStore {
 }
 
 func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.SimpleAccessScope) {
-	return getDefaultRoles(), getDefaultPermissionSets(), GetDefaultAccessScopes()
+	return getDefaultRoles(), getDefaultPermissionSets(), getDefaultAccessScopes()
 }
