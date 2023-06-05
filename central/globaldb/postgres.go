@@ -118,10 +118,10 @@ func InitializePostgres(ctx context.Context) postgres.DB {
 			log.Fatalf("Timed out trying to open database: %v", err)
 		}
 
-		_, err = postgresDB.Exec(ctx, "create extension if not exists pg_stat_statements")
-		if err != nil {
-			log.Errorf("Could not create pg_stat_statements extension: %v", err)
-		}
+		//_, err = postgresDB.Exec(ctx, "create extension if not exists pg_stat_statements")
+		//if err != nil {
+		//	log.Errorf("Could not create pg_stat_statements extension: %v", err)
+		//}
 		go startMonitoringPostgres(ctx, postgresDB, dbConfig)
 
 	})
