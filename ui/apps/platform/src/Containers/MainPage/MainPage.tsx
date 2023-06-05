@@ -89,9 +89,11 @@ function MainPage(): ReactElement {
             <div id="PageParent">
                 <Button
                     style={{
+                        bottom: 'calc(var(--pf-global--spacer--lg) * 6)',
                         position: 'absolute',
-                        bottom: 0,
-                        right: 'var(--pf-global--spacer--xl)',
+                        right: '0',
+                        transform: 'rotate(270deg)',
+                        transformOrigin: 'bottom right',
                         zIndex: 20000,
                     }}
                     icon={<OutlinedCommentsIcon />}

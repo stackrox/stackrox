@@ -128,6 +128,7 @@ spec:
         {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT_API
           value: "true"
+        {{- end }}
         [<- if (not .KubectlOutput) >]
         {{- if ._rox.sensor.localImageScanning.enabled }}
         - name: ROX_SCANNER_GRPC_ENDPOINT
@@ -135,9 +136,6 @@ spec:
         - name: ROX_LOCAL_IMAGE_SCANNING_ENABLED
           value: "true"
         {{- end }}
-        [<- end >]
-        {{- end }}
-        [<- if not .KubectlOutput >]
         - name: ROX_HELM_CLUSTER_CONFIG_FP
           value: {{ quote ._rox._configFP }}
         [<- end >]

@@ -9,6 +9,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/metadata/centralcapabilities"
 	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	"github.com/stackrox/rox/central/tlsconfig"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -185,4 +186,13 @@ func (s *serviceImpl) GetDatabaseBackupStatus(ctx context.Context, _ *v1.Empty) 
 	return &v1.DatabaseBackupStatus{
 		BackupInfo: sysInfo.GetBackupInfo(),
 	}, nil
+}
+
+// GetCentralCapabilities returns central services capabilities.
+func (s *serviceImpl) GetCentralCapabilities(ctx context.Context, _ *v1.Empty) (*v1.CentralServicesCapabilities, error) {
+	if authn.IdentityFromContextOrNil(ctx) == nil {
+		return nil, errox.NotAuthorized
+	}
+
+	return centralcapabilities.GetCentralCapabilities(), nil
 }

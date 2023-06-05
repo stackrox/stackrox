@@ -23,13 +23,13 @@ import {
     systemHealthPath,
     collectionsBasePath,
     vulnerabilitiesWorkloadCvesPath,
+    networkBasePathPF,
 } from 'routePaths';
 
 import LeftNavItem from './LeftNavItem';
-import NetworkGraphNavItems from './NetworkGraphNavItems';
+import BadgedNavItem from './BadgedNavItem';
 
 import './NavigationSidebar.css';
-import BadgedNavItem from './BadgedNavItem';
 
 type NavigationSidebarProps = {
     hasReadAccess: HasReadAccess;
@@ -84,7 +84,11 @@ function NavigationSidebar({
                     path={dashboardPath}
                     title={basePathToLabelMap[dashboardPath]}
                 />
-                <NetworkGraphNavItems isFeatureFlagEnabled={isFeatureFlagEnabled} />
+                <LeftNavItem
+                    isActive={location.pathname.includes(networkBasePathPF)}
+                    path={networkBasePathPF}
+                    title="Network Graph"
+                />
                 <LeftNavItem
                     isActive={location.pathname.includes(violationsBasePath)}
                     path={violationsBasePath}

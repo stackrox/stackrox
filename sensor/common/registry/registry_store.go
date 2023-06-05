@@ -64,10 +64,11 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 	})
 
 	store := &Store{
-		factory:          factory,
-		store:            make(map[string]registries.Set),
-		checkTLS:         tlscheck.CheckTLS,
-		globalRegistries: registries.NewSet(factory),
+		factory:                   factory,
+		store:                     make(map[string]registries.Set),
+		checkTLS:                  tlscheck.CheckTLS,
+		globalRegistries:          registries.NewSet(factory),
+		clusterLocalRegistryHosts: set.NewStringSet(),
 	}
 
 	if checkTLS != nil {

@@ -253,14 +253,6 @@
   {{ $_ := set $._rox.scanner "disable" true }}
 [< end >]
 
-{{/* Disable local scanner on non-OpenShift clusters by default. */}}
-{{ if not ._rox.env.openshift }}
-  {{ if eq $._rox.scanner.disable false }}
-    {{ include "srox.fail" (printf "Scanner was enabled but is only supported on OpenShift. Set scanner.disable=true to continue." ) }}
-  {{ end }}
-  {{ $_ := set $._rox.scanner "disable" true }}
-{{ end }}
-
 {{ if eq ._rox.scanner.disable false }}
   {{ $centralDeployment := dict }}
   {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
@@ -271,7 +263,7 @@
   {{ end }}
 {{ end }}
 
-{{ if and ._rox.env.openshift (eq ._rox.scanner.disable false) }}
+{{ if eq ._rox.scanner.disable false }}
   {{ if ne ._rox.scanner.mode "slim" }}
     {{ include "srox.fail" (print "Only scanner slim mode is allowed in Secured Cluster. To solve this, set to slim mode: scanner.mode=slim.") }}
   {{ end }}
