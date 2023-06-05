@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	declarativeCfgUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
@@ -13,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/set"
@@ -23,19 +23,20 @@ type notifierUpdater struct {
 	notifierDS    notifierDataStore.DataStore
 	policyCleaner policycleaner.PolicyCleaner
 	processor     notifier.Processor
-	reporter      integrationhealth.Reporter
+	healthDS      declarativeConfigHealth.DataStore
 	nameExtractor types.NameExtractor
 	idExtractor   types.IDExtractor
 }
 
 var _ ResourceUpdater = (*notifierUpdater)(nil)
 
-func newNotifierUpdater(notifierDS notifierDataStore.DataStore, policyCleaner policycleaner.PolicyCleaner, processor notifier.Processor, reporter integrationhealth.Reporter) ResourceUpdater {
+func newNotifierUpdater(notifierDS notifierDataStore.DataStore, policyCleaner policycleaner.PolicyCleaner,
+	processor notifier.Processor, healthDS declarativeConfigHealth.DataStore) ResourceUpdater {
 	return &notifierUpdater{
 		notifierDS:    notifierDS,
 		policyCleaner: policyCleaner,
 		processor:     processor,
-		reporter:      reporter,
+		healthDS:      healthDS,
 		idExtractor:   types.UniversalIDExtractor(),
 		nameExtractor: types.UniversalNameExtractor(),
 	}
@@ -56,7 +57,7 @@ func (u *notifierUpdater) Upsert(ctx context.Context, m proto.Message) error {
 	}
 	u.processor.UpdateNotifier(ctx, notifier)
 
-	return u.reporter.Register(notifierProto.GetId(), notifierProto.GetName(), storage.IntegrationHealth_NOTIFIER)
+	return nil
 }
 
 func (u *notifierUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
@@ -74,7 +75,7 @@ func (u *notifierUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip
 	var notifierIDs []string
 	for _, n := range notifiers {
 		if err := u.policyCleaner.DeleteNotifierFromPolicies(n.GetId()); err != nil {
-			notifierDeletionErr, notifierIDs = u.processDeletionError(notifierDeletionErr, errors.Wrap(err, "deleting notifier from policies"), notifierIDs, n)
+			notifierDeletionErr, notifierIDs = u.processDeletionError(ctx, notifierDeletionErr, errors.Wrap(err, "deleting notifier from policies"), notifierIDs, n)
 			continue
 		}
 
@@ -83,24 +84,23 @@ func (u *notifierUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip
 		// while integration health isn't.
 		if err := u.notifierDS.RemoveNotifier(ctx, n.GetId()); err != nil && !errors.Is(err, errox.NotFound) {
 			err := errors.Wrap(err, "deleting notifier from database")
-			notifierDeletionErr, notifierIDs = u.processDeletionError(notifierDeletionErr, err, notifierIDs, n)
+			notifierDeletionErr, notifierIDs = u.processDeletionError(ctx, notifierDeletionErr, err, notifierIDs, n)
 			continue
 		}
 
 		u.processor.RemoveNotifier(ctx, n.GetId())
-		if err := u.reporter.RemoveIntegrationHealth(n.GetId()); err != nil {
-			err := errors.Wrap(err, "deleting notifier's integration health")
-			notifierDeletionErr, notifierIDs = u.processDeletionError(notifierDeletionErr, err, notifierIDs, n)
-		}
 	}
 	return notifierIDs, notifierDeletionErr.ErrorOrNil()
 }
 
-func (u *notifierUpdater) processDeletionError(notifierDeletionErr *multierror.Error, err error, notifierIDs []string, notifier *storage.Notifier) (*multierror.Error, []string) {
+func (u *notifierUpdater) processDeletionError(ctx context.Context, notifierDeletionErr *multierror.Error, err error,
+	notifierIDs []string, notifier *storage.Notifier) (*multierror.Error, []string) {
 	notifierDeletionErr = multierror.Append(notifierDeletionErr, err)
 	notifierIDs = append(notifierIDs, notifier.GetId())
 
-	u.reporter.UpdateIntegrationHealthAsync(declarativeCfgUtils.IntegrationHealthForProtoMessage(notifier, "", err,
-		u.idExtractor, u.nameExtractor))
+	if err := u.healthDS.UpsertDeclarativeConfig(ctx, declarativeCfgUtils.HealthStatusForProtoMessage(notifier, "", err,
+		u.idExtractor, u.nameExtractor)); err != nil {
+		log.Errorf("Failed to update the declarative config health status %q: %v", notifier.GetId(), err)
+	}
 	return notifierDeletionErr, notifierIDs
 }

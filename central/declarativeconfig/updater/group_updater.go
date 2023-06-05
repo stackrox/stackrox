@@ -6,29 +6,29 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	"github.com/stackrox/rox/central/declarativeconfig/utils"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 type groupUpdater struct {
 	groupDS       groupDataStore.DataStore
-	reporter      integrationhealth.Reporter
+	healthDS      declarativeConfigHealth.DataStore
 	idExtractor   types.IDExtractor
 	nameExtractor types.NameExtractor
 }
 
 var _ ResourceUpdater = (*groupUpdater)(nil)
 
-func newGroupUpdater(datastore groupDataStore.DataStore, reporter integrationhealth.Reporter) ResourceUpdater {
+func newGroupUpdater(datastore groupDataStore.DataStore, healthDS declarativeConfigHealth.DataStore) ResourceUpdater {
 	return &groupUpdater{
 		groupDS:       datastore,
-		reporter:      reporter,
+		healthDS:      healthDS,
 		idExtractor:   types.UniversalIDExtractor(),
 		nameExtractor: types.UniversalNameExtractor(),
 	}
@@ -59,8 +59,11 @@ func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ..
 		if err := u.groupDS.Remove(ctx, group.GetProps(), true); err != nil {
 			groupDeletionErr = multierror.Append(groupDeletionErr, err)
 			groupIDs = append(groupIDs, group.GetProps().GetId())
-			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(group, "", err,
-				u.idExtractor, u.nameExtractor))
+			if err := u.healthDS.UpsertDeclarativeConfig(ctx, utils.HealthStatusForProtoMessage(group, "", err,
+				u.idExtractor, u.nameExtractor)); err != nil {
+				log.Errorf("Failed to update the declarative config health status %q: %v",
+					group.GetProps().GetId(), err)
+			}
 		}
 	}
 	return groupIDs, groupDeletionErr.ErrorOrNil()
