@@ -168,6 +168,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      env:
+        ARCH: ${{ matrix.arch }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
