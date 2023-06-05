@@ -32,36 +32,6 @@
           "DeclarativeConfigHealthService"
         ]
       }
-    },
-    "/v1/declarative-config/health/{id}": {
-      "get": {
-        "operationId": "DeclarativeConfigHealthService_GetDeclarativeConfigHealth",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1GetDeclarativeConfigHealthResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "DeclarativeConfigHealthService"
-        ]
-      }
     }
   },
   "definitions": {
@@ -149,14 +119,6 @@
         "HEALTHY"
       ],
       "default": "UNHEALTHY"
-    },
-    "v1GetDeclarativeConfigHealthResponse": {
-      "type": "object",
-      "properties": {
-        "health": {
-          "$ref": "#/definitions/storageDeclarativeConfigHealth"
-        }
-      }
     },
     "v1GetDeclarativeConfigHealthsResponse": {
       "type": "object",

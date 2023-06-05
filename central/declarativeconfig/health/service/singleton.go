@@ -8,15 +8,15 @@ import (
 var (
 	once sync.Once
 
-	ds Service
+	svc Service
 )
 
 func initialize() {
-	ds = New(datastore.Singleton())
+	svc = New(datastore.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.
 func Singleton() Service {
 	once.Do(initialize)
-	return ds
+	return svc
 }

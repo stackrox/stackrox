@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -19,7 +18,6 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Integration)): {
 			"/v1.DeclarativeConfigHealthService/GetDeclarativeConfigHealths",
-			"/v1.DeclarativeConfigHealthService/GetDeclarativeConfigHealth",
 		},
 	})
 
@@ -54,16 +52,4 @@ func (s *serviceImpl) GetDeclarativeConfigHealths(ctx context.Context, _ *v1.Emp
 		return nil, err
 	}
 	return &v1.GetDeclarativeConfigHealthsResponse{Healths: healths}, nil
-}
-
-// GetDeclarativeConfigHealth returns a specific declarative config health by ID.
-func (s *serviceImpl) GetDeclarativeConfigHealth(ctx context.Context, req *v1.ResourceByID) (*v1.GetDeclarativeConfigHealthResponse, error) {
-	health, exists, err := s.datastore.GetDeclarativeConfig(ctx, req.GetId())
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errox.NotFound.Newf("declarative config health %q does not exists", req.GetId())
-	}
-	return &v1.GetDeclarativeConfigHealthResponse{Health: health}, nil
 }
