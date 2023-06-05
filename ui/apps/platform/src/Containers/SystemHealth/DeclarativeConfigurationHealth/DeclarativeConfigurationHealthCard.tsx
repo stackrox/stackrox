@@ -12,7 +12,7 @@ import {
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
-import { fetchDeclarativeConfigurationsHealth } from 'services/DeclaativeConfigHealthService';
+import { fetchDeclarativeConfigurationsHealth } from 'services/DeclarativeConfigHealthService';
 import { getDateTime } from 'utils/dateUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 

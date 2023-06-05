@@ -9,6 +9,7 @@ import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
@@ -44,6 +45,26 @@ func HealthStatusForProtoMessage(message proto.Message, handler string, err erro
 	}
 }
 
+// HealthStatusForHandler will create a storage.DeclarativeConfigHealth object for a handler.
+// The health will be marked as unhealthy if err != nil, and health if err == nil.
+func HealthStatusForHandler(handlerID string, err error) *storage.DeclarativeConfigHealth {
+	var errMsg string
+	if err != nil {
+		errMsg = err.Error()
+	}
+
+	return &storage.DeclarativeConfigHealth{
+		Id:           declarativeconfig.NewDeclarativeHandlerUUID(path.Base(handlerID)).String(),
+		Name:         fmt.Sprintf("Config Map %s", path.Base(handlerID)),
+		ResourceName: path.Base(handlerID),
+		ResourceType: storage.DeclarativeConfigHealth_CONFIG_MAP,
+		Status: utils.IfThenElse(err != nil, storage.DeclarativeConfigHealth_UNHEALTHY,
+			storage.DeclarativeConfigHealth_HEALTHY),
+		ErrorMessage:  errMsg,
+		LastTimestamp: timestamp.TimestampNow(),
+	}
+}
+
 // resourceNameFromProtoMessage will return the resource name to use within a storage.DeclarativeConfigHealth.
 // This will take the name deduced from proto.Message, which will either be the name or if no name is given its ID.
 func resourceNameFromProtoMessage(message proto.Message, nameExtractor types.NameExtractor,
@@ -67,8 +88,9 @@ func resourceTypeFromProtoMessage(message proto.Message) storage.DeclarativeConf
 	case types.NotifierType:
 		return storage.DeclarativeConfigHealth_NOTIFIER
 	default:
-		utils.Should(errox.InvariantViolation.Newf("unsupported type given for proto message %+v, "+
+		utils.Must(errox.InvariantViolation.Newf("unsupported type given for proto message %+v, "+
 			"returning the default type", reflect.TypeOf(message)))
-		return storage.DeclarativeConfigHealth_ResourceType(0)
+		// Still return here although we will panic above.
+		return 0
 	}
 }

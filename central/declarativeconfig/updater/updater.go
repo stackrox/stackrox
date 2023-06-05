@@ -9,6 +9,7 @@ import (
 	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
+	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/policycleaner"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
@@ -37,6 +38,7 @@ func DefaultResourceUpdaters(registry authproviders.Registry) map[reflect.Type]R
 		types.RoleType:          newRoleUpdater(roleDatastore.Singleton(), groupDataStore.Singleton(), declarativeConfigHealth.Singleton()),
 		types.PermissionSetType: newPermissionSetUpdater(roleDatastore.Singleton(), declarativeConfigHealth.Singleton()),
 		types.AccessScopeType:   newAccessScopeUpdater(roleDatastore.Singleton(), declarativeConfigHealth.Singleton()),
-		types.NotifierType:      newNotifierUpdater(notifierDataStore.Singleton(), policycleaner.Singleton(), notifierProcessor.Singleton(), declarativeConfigHealth.Singleton()),
+		types.NotifierType: newNotifierUpdater(notifierDataStore.Singleton(), policycleaner.Singleton(),
+			notifierProcessor.Singleton(), declarativeConfigHealth.Singleton(), reporter.Singleton()),
 	}
 }
