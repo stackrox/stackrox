@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+import "storage/declarative_config_health.proto";
+
+package v1;
+
+message GetDeclarativeConfigHealthsResponse {
+    repeated storage.DeclarativeConfigHealth healths = 1;
+}
+
+message GetDeclarativeConfigHealthResponse {
+    storage.DeclarativeConfigHealth health = 1;
+}
+
+service DeclarativeConfigHealthService {
+
+    rpc GetDeclarativeConfigHealths (Empty) returns (GetDeclarativeConfigHealthsResponse) {
+        option (google.api.http) = {
+            get: "/v1/declarative-config/health"
+        };
+    }
+
+    rpc GetDeclarativeConfigHealth (ResourceByID) returns (GetDeclarativeConfigHealthResponse) {
+        option (google.api.http) = {
+            get: "/v1/declarative-config/health/{id}"
+        };
+    }
+}
