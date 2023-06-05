@@ -43,7 +43,7 @@ func BenchmarkSearchAllPods(b *testing.B) {
 	podsStore := rocksStore.New(db)
 	podsIndexer := index.New(bleveIndex)
 	podsSearcher := search.New(podsStore, podsIndexer)
-	simpleFilter := filter.NewFilter(5, []int{5, 4, 3, 2, 1})
+	simpleFilter := filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 
 	podsDatastore, err := newDatastoreImpl(ctx, podsStore, podsIndexer, podsSearcher, nil, simpleFilter)
 	require.NoError(b, err)
