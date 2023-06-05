@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit
 import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.api.v1.AuthproviderService
-import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.GroupServiceOuterClass
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.AuthProviderOuterClass.AuthProvider
@@ -232,9 +231,9 @@ name: ${NOTIFIER_KEY}
 splunk:
     endpoint: stackrox-endpoint
     sourceTypes:
-        - key: audit
+        - key: something
           sourceType: stackrox-audit-message
-        - key: alert
+        - key: else
           sourceType: stackrox-alert
 """
 
@@ -428,8 +427,10 @@ splunk:
                 .getGroupsCount() == 0
 
         // The previously created notifier should not exist anymore.
-        def notifierAfterDeletion = NotifierService.getNotifierClient().getNotifier(
-                Common.ResourceByID.newBuilder().setId(notifier.getId()).build())
+        def notifierAfterDeletion = NotifierService.getNotifierClient().getNotifiers(
+                NotifierServiceOuterClass.GetNotifiersRequest
+                        .newBuilder().build())
+                .notifiersList.find { it.getName() == VALID_NOTIFIER.getName() }
         assert notifierAfterDeletion == null
     }
 
@@ -467,15 +468,15 @@ splunk:
         }
 
         // No permission set should be created.
-        def permissionSetAfterDeletion = RoleService.getRoleService().listPermissionSets()
+        def nonExistingPermissionSet = RoleService.getRoleService().listPermissionSets()
                 .getPermissionSetsList().find { it.getName() == VALID_PERMISSION_SET.getName() }
-        assert permissionSetAfterDeletion == null
+        assert nonExistingPermissionSet == null
 
         // No access scope should be created.
-        def accessScopeAfterDeletion = RoleService.getRoleService()
+        def nonExistingAccessScope = RoleService.getRoleService()
                 .listSimpleAccessScopes()
                 .getAccessScopesList().find { it.getName() == VALID_ACCESS_SCOPE.getName() }
-        assert accessScopeAfterDeletion == null
+        assert nonExistingAccessScope == null
 
         // No role should be created.
         try {
@@ -493,11 +494,11 @@ splunk:
                 .getAuthProvidersCount() == 0
 
         // No notifier should be created.
-        def notifierAfterDeletion = NotifierService.getNotifierClient().getNotifiers(
+        def nonExistingNotifier = NotifierService.getNotifierClient().getNotifiers(
                 NotifierServiceOuterClass.GetNotifiersRequest
                         .newBuilder().build())
                 .notifiersList.find { it.getName() == VALID_NOTIFIER.getName() }
-        assert notifierAfterDeletion == null
+        assert nonExistingNotifier == null
 
         when:
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
