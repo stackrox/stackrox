@@ -294,11 +294,14 @@ const ListTable = ({
                         tableData = filterByComplianceState(formattedData, query, isControlList);
                         totalRows = getTotalRows(tableData, isControlList);
                         const { groupBy } = query;
-                        const groupByLabel = resourceLabels[groupBy] ?? groupBy.toLowerCase();
 
+                        // Resouces: CLUSTER, NAMESPACE, NODE, DEPLOYMENT.
+                        // Or CATEGORY from View Standard link of sunburst graph on dashboard.
+                        // Or STANDARD on Controls tab of resource single page.
+                        // Otherwise undefined.
                         const groupedByText = groupBy
                             ? `across ${tableData.length} ${pluralize(
-                                  groupByLabel,
+                                  resourceLabels[groupBy] ?? groupBy.toLowerCase(),
                                   tableData.length
                               )}`
                             : '';

@@ -43,13 +43,13 @@ const SystemHealthDashboardPage = () => {
                     <GridItem span={12}>
                         <VulnerabilityDefinitionsHealthCard pollingCount={pollingCountSlower} />
                     </GridItem>
-                    <GridItem span={4}>
+                    <GridItem span={12}>
                         <ImageIntegrationHealthWidget pollingCount={pollingCountFaster} />
                     </GridItem>
-                    <GridItem span={4}>
+                    <GridItem span={12}>
                         <NotifierIntegrationHealthWidget pollingCount={pollingCountFaster} />
                     </GridItem>
-                    <GridItem span={4}>
+                    <GridItem span={12}>
                         <BackupIntegrationHealthWidget pollingCount={pollingCountFaster} />
                     </GridItem>
                     <GridItem span={12}>

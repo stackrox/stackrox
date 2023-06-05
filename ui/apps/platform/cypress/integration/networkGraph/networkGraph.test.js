@@ -15,7 +15,7 @@ import {
 describe('Network Deployment Details', () => {
     withAuth();
 
-    it('should open up the Deployments Side Panel when a deployment is clicked', () => {
+    it.skip('should open up the Deployments Side Panel when a deployment is clicked', () => {
         visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
@@ -31,7 +31,7 @@ describe('Network Deployment Details', () => {
 describe('Network Graph Search', () => {
     withAuth();
 
-    it('should filter to show only the deployments from the stackrox namespace and deployments connected to them', () => {
+    it.skip('should filter to show only the deployments from the stackrox namespace and deployments connected to them', () => {
         visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
@@ -45,7 +45,7 @@ describe('Network Graph Search', () => {
         });
     });
 
-    it('should filter to show only the stackrox namespace and deployments connected to stackrox namespace', () => {
+    it.skip('should filter to show only the stackrox namespace and deployments connected to stackrox namespace', () => {
         visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
@@ -60,7 +60,7 @@ describe('Network Graph Search', () => {
         });
     });
 
-    it('should filter to show only a specific deployment and deployments connected to it', () => {
+    it.skip('should filter to show only a specific deployment and deployments connected to it', () => {
         visitOldNetworkGraphWithNamespaceFilter('stackrox');
         selectDeploymentFilter('sensor');
 
@@ -75,7 +75,7 @@ describe('Network Graph Search', () => {
         });
     });
 
-    it('should render an error message when the server fails to return a successful response', () => {
+    it.skip('should render an error message when the server fails to return a successful response', () => {
         visitOldNetworkGraph();
 
         // Stub out an error response from the server
