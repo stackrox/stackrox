@@ -236,6 +236,7 @@ func (c *TestContext) deleteNs(ctx context.Context, name string) error {
 	return nil
 }
 
+// SensorStopped checks if sensor under test stopped.
 func (c *TestContext) SensorStopped() bool {
 	return c.sensorStopped.IsDone()
 }

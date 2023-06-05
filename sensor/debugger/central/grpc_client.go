@@ -16,6 +16,8 @@ type fakeGRPCClient struct {
 	connMtx *sync.Mutex
 }
 
+// FakeGRPCFactory implements centralclient.CentralConnectionFactory interface and additional functions for testing
+// purposes only.
 type FakeGRPCFactory interface {
 	centralclient.CentralConnectionFactory
 	OverwriteCentralConnection(newConn *grpc.ClientConn)
