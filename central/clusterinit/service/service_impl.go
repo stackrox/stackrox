@@ -2,19 +2,25 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusterinit/backend"
 	"github.com/stackrox/rox/central/clusterinit/store"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 var (
@@ -28,6 +34,35 @@ type serviceImpl struct {
 
 	backend      backend.Backend
 	clusterStore clusterStore.DataStore
+}
+
+func (s *serviceImpl) Start() {
+	concurrency.NewRetryTicker(func(ctx context.Context) (timeToNextTick time.Duration, err error) {
+		bundle, err := s.GenerateInitBundle(context.Background(), &v1.InitBundleGenRequest{
+			Name: fmt.Sprintf("init-bundle-%d", time.Now().UTC().Second()),
+		})
+		if err != nil {
+			return 10 * time.Second, errors.Wrapf(err, "failed generating init-bundle")
+		}
+		log.Infof("Generated init-bundle %s", bundle.Meta.Name)
+
+		for _, conn := range connection.ManagerSingleton().GetActiveConnections() {
+			log.Infof("Sending certificates %s to %s", bundle.GetMeta().Name, conn.ClusterID())
+
+			waitableChan := concurrency.Never()
+			err := conn.InjectMessage(waitableChan, &central.MsgToSensor{
+				Msg: &central.MsgToSensor_InitBundleGenResponse{
+					InitBundleGenResponse: bundle,
+				},
+			})
+
+			if err != nil {
+				return 10 * time.Second, errors.Wrapf(err, "failed injecting message to sensor id: %q", conn.ClusterID())
+			}
+		}
+		log.Infof("Send certificates to clusters")
+		return 1 * time.Minute, nil
+	}, time.Minute*1, wait.Backoff{})
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

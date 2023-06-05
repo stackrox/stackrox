@@ -6,8 +6,8 @@ package v1
 import (
 	context "context"
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -27,6 +27,37 @@ var _ = math.Inf
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
+
+type PullTelemetryDataRequest_TelemetryDataType int32
+
+const (
+	PullTelemetryDataRequest_UNKNOWN         PullTelemetryDataRequest_TelemetryDataType = 0
+	PullTelemetryDataRequest_KUBERNETES_INFO PullTelemetryDataRequest_TelemetryDataType = 1
+	PullTelemetryDataRequest_CLUSTER_INFO    PullTelemetryDataRequest_TelemetryDataType = 2
+	PullTelemetryDataRequest_METRICS         PullTelemetryDataRequest_TelemetryDataType = 3
+)
+
+var PullTelemetryDataRequest_TelemetryDataType_name = map[int32]string{
+	0: "UNKNOWN",
+	1: "KUBERNETES_INFO",
+	2: "CLUSTER_INFO",
+	3: "METRICS",
+}
+
+var PullTelemetryDataRequest_TelemetryDataType_value = map[string]int32{
+	"UNKNOWN":         0,
+	"KUBERNETES_INFO": 1,
+	"CLUSTER_INFO":    2,
+	"METRICS":         3,
+}
+
+func (x PullTelemetryDataRequest_TelemetryDataType) String() string {
+	return proto.EnumName(PullTelemetryDataRequest_TelemetryDataType_name, int32(x))
+}
+
+func (PullTelemetryDataRequest_TelemetryDataType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_3d29ceed52498e29, []int{2, 0}
+}
 
 type ConfigureTelemetryRequest struct {
 	Enabled              bool     `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"` // Deprecated: Do not use.
@@ -89,35 +120,809 @@ func (m *ConfigureTelemetryRequest) Clone() *ConfigureTelemetryRequest {
 	return cloned
 }
 
+type CancelPullTelemetryDataRequest struct {
+	RequestId            string   `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CancelPullTelemetryDataRequest) Reset()         { *m = CancelPullTelemetryDataRequest{} }
+func (m *CancelPullTelemetryDataRequest) String() string { return proto.CompactTextString(m) }
+func (*CancelPullTelemetryDataRequest) ProtoMessage()    {}
+func (*CancelPullTelemetryDataRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3d29ceed52498e29, []int{1}
+}
+func (m *CancelPullTelemetryDataRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CancelPullTelemetryDataRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CancelPullTelemetryDataRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CancelPullTelemetryDataRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CancelPullTelemetryDataRequest.Merge(m, src)
+}
+func (m *CancelPullTelemetryDataRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *CancelPullTelemetryDataRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CancelPullTelemetryDataRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CancelPullTelemetryDataRequest proto.InternalMessageInfo
+
+func (m *CancelPullTelemetryDataRequest) GetRequestId() string {
+	if m != nil {
+		return m.RequestId
+	}
+	return ""
+}
+
+func (m *CancelPullTelemetryDataRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *CancelPullTelemetryDataRequest) Clone() *CancelPullTelemetryDataRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(CancelPullTelemetryDataRequest)
+	*cloned = *m
+
+	return cloned
+}
+
+type PullTelemetryDataRequest struct {
+	RequestId            string                                     `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	DataType             PullTelemetryDataRequest_TelemetryDataType `protobuf:"varint,2,opt,name=data_type,json=dataType,proto3,enum=v1.PullTelemetryDataRequest_TelemetryDataType" json:"data_type,omitempty"`
+	TimeoutMs            int64                                      `protobuf:"varint,3,opt,name=timeout_ms,json=timeoutMs,proto3" json:"timeout_ms,omitempty"`
+	Since                *types.Timestamp                           `protobuf:"bytes,4,opt,name=since,proto3" json:"since,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                   `json:"-"`
+	XXX_unrecognized     []byte                                     `json:"-"`
+	XXX_sizecache        int32                                      `json:"-"`
+}
+
+func (m *PullTelemetryDataRequest) Reset()         { *m = PullTelemetryDataRequest{} }
+func (m *PullTelemetryDataRequest) String() string { return proto.CompactTextString(m) }
+func (*PullTelemetryDataRequest) ProtoMessage()    {}
+func (*PullTelemetryDataRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3d29ceed52498e29, []int{2}
+}
+func (m *PullTelemetryDataRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *PullTelemetryDataRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_PullTelemetryDataRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *PullTelemetryDataRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PullTelemetryDataRequest.Merge(m, src)
+}
+func (m *PullTelemetryDataRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *PullTelemetryDataRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_PullTelemetryDataRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PullTelemetryDataRequest proto.InternalMessageInfo
+
+func (m *PullTelemetryDataRequest) GetRequestId() string {
+	if m != nil {
+		return m.RequestId
+	}
+	return ""
+}
+
+func (m *PullTelemetryDataRequest) GetDataType() PullTelemetryDataRequest_TelemetryDataType {
+	if m != nil {
+		return m.DataType
+	}
+	return PullTelemetryDataRequest_UNKNOWN
+}
+
+func (m *PullTelemetryDataRequest) GetTimeoutMs() int64 {
+	if m != nil {
+		return m.TimeoutMs
+	}
+	return 0
+}
+
+func (m *PullTelemetryDataRequest) GetSince() *types.Timestamp {
+	if m != nil {
+		return m.Since
+	}
+	return nil
+}
+
+func (m *PullTelemetryDataRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *PullTelemetryDataRequest) Clone() *PullTelemetryDataRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(PullTelemetryDataRequest)
+	*cloned = *m
+
+	cloned.Since = m.Since.Clone()
+	return cloned
+}
+
+type TelemetryResponsePayload struct {
+	// Types that are valid to be assigned to Payload:
+	//	*TelemetryResponsePayload_EndOfStream_
+	//	*TelemetryResponsePayload_KubernetesInfo_
+	//	*TelemetryResponsePayload_ClusterInfo_
+	//	*TelemetryResponsePayload_MetricsInfo
+	Payload              isTelemetryResponsePayload_Payload `protobuf_oneof:"payload"`
+	XXX_NoUnkeyedLiteral struct{}                           `json:"-"`
+	XXX_unrecognized     []byte                             `json:"-"`
+	XXX_sizecache        int32                              `json:"-"`
+}
+
+func (m *TelemetryResponsePayload) Reset()         { *m = TelemetryResponsePayload{} }
+func (m *TelemetryResponsePayload) String() string { return proto.CompactTextString(m) }
+func (*TelemetryResponsePayload) ProtoMessage()    {}
+func (*TelemetryResponsePayload) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3d29ceed52498e29, []int{3}
+}
+func (m *TelemetryResponsePayload) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TelemetryResponsePayload) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TelemetryResponsePayload.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TelemetryResponsePayload) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TelemetryResponsePayload.Merge(m, src)
+}
+func (m *TelemetryResponsePayload) XXX_Size() int {
+	return m.Size()
+}
+func (m *TelemetryResponsePayload) XXX_DiscardUnknown() {
+	xxx_messageInfo_TelemetryResponsePayload.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TelemetryResponsePayload proto.InternalMessageInfo
+
+type isTelemetryResponsePayload_Payload interface {
+	isTelemetryResponsePayload_Payload()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isTelemetryResponsePayload_Payload
+}
+
+type TelemetryResponsePayload_EndOfStream_ struct {
+	EndOfStream *TelemetryResponsePayload_EndOfStream `protobuf:"bytes,1,opt,name=end_of_stream,json=endOfStream,proto3,oneof" json:"end_of_stream,omitempty"`
+}
+type TelemetryResponsePayload_KubernetesInfo_ struct {
+	KubernetesInfo *TelemetryResponsePayload_KubernetesInfo `protobuf:"bytes,2,opt,name=kubernetes_info,json=kubernetesInfo,proto3,oneof" json:"kubernetes_info,omitempty"`
+}
+type TelemetryResponsePayload_ClusterInfo_ struct {
+	ClusterInfo *TelemetryResponsePayload_ClusterInfo `protobuf:"bytes,3,opt,name=cluster_info,json=clusterInfo,proto3,oneof" json:"cluster_info,omitempty"`
+}
+type TelemetryResponsePayload_MetricsInfo struct {
+	MetricsInfo *TelemetryResponsePayload_KubernetesInfo `protobuf:"bytes,4,opt,name=metrics_info,json=metricsInfo,proto3,oneof" json:"metrics_info,omitempty"`
+}
+
+func (*TelemetryResponsePayload_EndOfStream_) isTelemetryResponsePayload_Payload() {}
+func (m *TelemetryResponsePayload_EndOfStream_) Clone() isTelemetryResponsePayload_Payload {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TelemetryResponsePayload_EndOfStream_)
+	*cloned = *m
+
+	cloned.EndOfStream = m.EndOfStream.Clone()
+	return cloned
+}
+func (*TelemetryResponsePayload_KubernetesInfo_) isTelemetryResponsePayload_Payload() {}
+func (m *TelemetryResponsePayload_KubernetesInfo_) Clone() isTelemetryResponsePayload_Payload {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TelemetryResponsePayload_KubernetesInfo_)
+	*cloned = *m
+
+	cloned.KubernetesInfo = m.KubernetesInfo.Clone()
+	return cloned
+}
+func (*TelemetryResponsePayload_ClusterInfo_) isTelemetryResponsePayload_Payload() {}
+func (m *TelemetryResponsePayload_ClusterInfo_) Clone() isTelemetryResponsePayload_Payload {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TelemetryResponsePayload_ClusterInfo_)
+	*cloned = *m
+
+	cloned.ClusterInfo = m.ClusterInfo.Clone()
+	return cloned
+}
+func (*TelemetryResponsePayload_MetricsInfo) isTelemetryResponsePayload_Payload() {}
+func (m *TelemetryResponsePayload_MetricsInfo) Clone() isTelemetryResponsePayload_Payload {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TelemetryResponsePayload_MetricsInfo)
+	*cloned = *m
+
+	cloned.MetricsInfo = m.MetricsInfo.Clone()
+	return cloned
+}
+
+func (m *TelemetryResponsePayload) GetPayload() isTelemetryResponsePayload_Payload {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
+func (m *TelemetryResponsePayload) GetEndOfStream() *TelemetryResponsePayload_EndOfStream {
+	if x, ok := m.GetPayload().(*TelemetryResponsePayload_EndOfStream_); ok {
+		return x.EndOfStream
+	}
+	return nil
+}
+
+func (m *TelemetryResponsePayload) GetKubernetesInfo() *TelemetryResponsePayload_KubernetesInfo {
+	if x, ok := m.GetPayload().(*TelemetryResponsePayload_KubernetesInfo_); ok {
+		return x.KubernetesInfo
+	}
+	return nil
+}
+
+func (m *TelemetryResponsePayload) GetClusterInfo() *TelemetryResponsePayload_ClusterInfo {
+	if x, ok := m.GetPayload().(*TelemetryResponsePayload_ClusterInfo_); ok {
+		return x.ClusterInfo
+	}
+	return nil
+}
+
+func (m *TelemetryResponsePayload) GetMetricsInfo() *TelemetryResponsePayload_KubernetesInfo {
+	if x, ok := m.GetPayload().(*TelemetryResponsePayload_MetricsInfo); ok {
+		return x.MetricsInfo
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*TelemetryResponsePayload) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*TelemetryResponsePayload_EndOfStream_)(nil),
+		(*TelemetryResponsePayload_KubernetesInfo_)(nil),
+		(*TelemetryResponsePayload_ClusterInfo_)(nil),
+		(*TelemetryResponsePayload_MetricsInfo)(nil),
+	}
+}
+
+func (m *TelemetryResponsePayload) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *TelemetryResponsePayload) Clone() *TelemetryResponsePayload {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TelemetryResponsePayload)
+	*cloned = *m
+
+	if m.Payload != nil {
+		cloned.Payload = m.Payload.Clone()
+	}
+	return cloned
+}
+
+type TelemetryResponsePayload_EndOfStream struct {
+	ErrorMessage         string   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *TelemetryResponsePayload_EndOfStream) Reset()         { *m = TelemetryResponsePayload_EndOfStream{} }
+func (m *TelemetryResponsePayload_EndOfStream) String() string { return proto.CompactTextString(m) }
+func (*TelemetryResponsePayload_EndOfStream) ProtoMessage()    {}
+func (*TelemetryResponsePayload_EndOfStream) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3d29ceed52498e29, []int{3, 0}
+}
+func (m *TelemetryResponsePayload_EndOfStream) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TelemetryResponsePayload_EndOfStream) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TelemetryResponsePayload_EndOfStream.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TelemetryResponsePayload_EndOfStream) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TelemetryResponsePayload_EndOfStream.Merge(m, src)
+}
+func (m *TelemetryResponsePayload_EndOfStream) XXX_Size() int {
+	return m.Size()
+}
+func (m *TelemetryResponsePayload_EndOfStream) XXX_DiscardUnknown() {
+	xxx_messageInfo_TelemetryResponsePayload_EndOfStream.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TelemetryResponsePayload_EndOfStream proto.InternalMessageInfo
+
+func (m *TelemetryResponsePayload_EndOfStream) GetErrorMessage() string {
+	if m != nil {
+		return m.ErrorMessage
+	}
+	return ""
+}
+
+func (m *TelemetryResponsePayload_EndOfStream) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *TelemetryResponsePayload_EndOfStream) Clone() *TelemetryResponsePayload_EndOfStream {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TelemetryResponsePayload_EndOfStream)
+	*cloned = *m
+
+	return cloned
+}
+
+type TelemetryResponsePayload_KubernetesInfo struct {
+	Files                []*TelemetryResponsePayload_KubernetesInfo_File `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                        `json:"-"`
+	XXX_unrecognized     []byte                                          `json:"-"`
+	XXX_sizecache        int32                                           `json:"-"`
+}
+
+func (m *TelemetryResponsePayload_KubernetesInfo) Reset() {
+	*m = TelemetryResponsePayload_KubernetesInfo{}
+}
+func (m *TelemetryResponsePayload_KubernetesInfo) String() string { return proto.CompactTextString(m) }
+func (*TelemetryResponsePayload_KubernetesInfo) ProtoMessage()    {}
+func (*TelemetryResponsePayload_KubernetesInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3d29ceed52498e29, []int{3, 1}
+}
+func (m *TelemetryResponsePayload_KubernetesInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TelemetryResponsePayload_KubernetesInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TelemetryResponsePayload_KubernetesInfo.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TelemetryResponsePayload_KubernetesInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TelemetryResponsePayload_KubernetesInfo.Merge(m, src)
+}
+func (m *TelemetryResponsePayload_KubernetesInfo) XXX_Size() int {
+	return m.Size()
+}
+func (m *TelemetryResponsePayload_KubernetesInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_TelemetryResponsePayload_KubernetesInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TelemetryResponsePayload_KubernetesInfo proto.InternalMessageInfo
+
+func (m *TelemetryResponsePayload_KubernetesInfo) GetFiles() []*TelemetryResponsePayload_KubernetesInfo_File {
+	if m != nil {
+		return m.Files
+	}
+	return nil
+}
+
+func (m *TelemetryResponsePayload_KubernetesInfo) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *TelemetryResponsePayload_KubernetesInfo) Clone() *TelemetryResponsePayload_KubernetesInfo {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TelemetryResponsePayload_KubernetesInfo)
+	*cloned = *m
+
+	if m.Files != nil {
+		cloned.Files = make([]*TelemetryResponsePayload_KubernetesInfo_File, len(m.Files))
+		for idx, v := range m.Files {
+			cloned.Files[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
+type TelemetryResponsePayload_KubernetesInfo_File struct {
+	Path                 string   `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	Contents             []byte   `protobuf:"bytes,2,opt,name=contents,proto3" json:"contents,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *TelemetryResponsePayload_KubernetesInfo_File) Reset() {
+	*m = TelemetryResponsePayload_KubernetesInfo_File{}
+}
+func (m *TelemetryResponsePayload_KubernetesInfo_File) String() string {
+	return proto.CompactTextString(m)
+}
+func (*TelemetryResponsePayload_KubernetesInfo_File) ProtoMessage() {}
+func (*TelemetryResponsePayload_KubernetesInfo_File) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3d29ceed52498e29, []int{3, 1, 0}
+}
+func (m *TelemetryResponsePayload_KubernetesInfo_File) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TelemetryResponsePayload_KubernetesInfo_File) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TelemetryResponsePayload_KubernetesInfo_File.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TelemetryResponsePayload_KubernetesInfo_File) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TelemetryResponsePayload_KubernetesInfo_File.Merge(m, src)
+}
+func (m *TelemetryResponsePayload_KubernetesInfo_File) XXX_Size() int {
+	return m.Size()
+}
+func (m *TelemetryResponsePayload_KubernetesInfo_File) XXX_DiscardUnknown() {
+	xxx_messageInfo_TelemetryResponsePayload_KubernetesInfo_File.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TelemetryResponsePayload_KubernetesInfo_File proto.InternalMessageInfo
+
+func (m *TelemetryResponsePayload_KubernetesInfo_File) GetPath() string {
+	if m != nil {
+		return m.Path
+	}
+	return ""
+}
+
+func (m *TelemetryResponsePayload_KubernetesInfo_File) GetContents() []byte {
+	if m != nil {
+		return m.Contents
+	}
+	return nil
+}
+
+func (m *TelemetryResponsePayload_KubernetesInfo_File) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *TelemetryResponsePayload_KubernetesInfo_File) Clone() *TelemetryResponsePayload_KubernetesInfo_File {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TelemetryResponsePayload_KubernetesInfo_File)
+	*cloned = *m
+
+	if m.Contents != nil {
+		cloned.Contents = make([]byte, len(m.Contents))
+		copy(cloned.Contents, m.Contents)
+	}
+	return cloned
+}
+
+type TelemetryResponsePayload_ClusterInfo struct {
+	Chunk                []byte   `protobuf:"bytes,1,opt,name=chunk,proto3" json:"chunk,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *TelemetryResponsePayload_ClusterInfo) Reset()         { *m = TelemetryResponsePayload_ClusterInfo{} }
+func (m *TelemetryResponsePayload_ClusterInfo) String() string { return proto.CompactTextString(m) }
+func (*TelemetryResponsePayload_ClusterInfo) ProtoMessage()    {}
+func (*TelemetryResponsePayload_ClusterInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3d29ceed52498e29, []int{3, 2}
+}
+func (m *TelemetryResponsePayload_ClusterInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TelemetryResponsePayload_ClusterInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TelemetryResponsePayload_ClusterInfo.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TelemetryResponsePayload_ClusterInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TelemetryResponsePayload_ClusterInfo.Merge(m, src)
+}
+func (m *TelemetryResponsePayload_ClusterInfo) XXX_Size() int {
+	return m.Size()
+}
+func (m *TelemetryResponsePayload_ClusterInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_TelemetryResponsePayload_ClusterInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TelemetryResponsePayload_ClusterInfo proto.InternalMessageInfo
+
+func (m *TelemetryResponsePayload_ClusterInfo) GetChunk() []byte {
+	if m != nil {
+		return m.Chunk
+	}
+	return nil
+}
+
+func (m *TelemetryResponsePayload_ClusterInfo) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *TelemetryResponsePayload_ClusterInfo) Clone() *TelemetryResponsePayload_ClusterInfo {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TelemetryResponsePayload_ClusterInfo)
+	*cloned = *m
+
+	if m.Chunk != nil {
+		cloned.Chunk = make([]byte, len(m.Chunk))
+		copy(cloned.Chunk, m.Chunk)
+	}
+	return cloned
+}
+
+type PullTelemetryDataResponse struct {
+	RequestId            string                    `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	Payload              *TelemetryResponsePayload `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
+	XXX_unrecognized     []byte                    `json:"-"`
+	XXX_sizecache        int32                     `json:"-"`
+}
+
+func (m *PullTelemetryDataResponse) Reset()         { *m = PullTelemetryDataResponse{} }
+func (m *PullTelemetryDataResponse) String() string { return proto.CompactTextString(m) }
+func (*PullTelemetryDataResponse) ProtoMessage()    {}
+func (*PullTelemetryDataResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3d29ceed52498e29, []int{4}
+}
+func (m *PullTelemetryDataResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *PullTelemetryDataResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_PullTelemetryDataResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *PullTelemetryDataResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PullTelemetryDataResponse.Merge(m, src)
+}
+func (m *PullTelemetryDataResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *PullTelemetryDataResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_PullTelemetryDataResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PullTelemetryDataResponse proto.InternalMessageInfo
+
+func (m *PullTelemetryDataResponse) GetRequestId() string {
+	if m != nil {
+		return m.RequestId
+	}
+	return ""
+}
+
+func (m *PullTelemetryDataResponse) GetPayload() *TelemetryResponsePayload {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
+func (m *PullTelemetryDataResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *PullTelemetryDataResponse) Clone() *PullTelemetryDataResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(PullTelemetryDataResponse)
+	*cloned = *m
+
+	cloned.Payload = m.Payload.Clone()
+	return cloned
+}
+
+type TelemetryConfig struct {
+	// API user ID hash:
+	UserId string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// An empty endpoint means using default endpoint:
+	Endpoint string `protobuf:"bytes,2,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	// Telemetry storage service key:
+	StorageKeyV1         string   `protobuf:"bytes,3,opt,name=storage_key_v1,json=storageKeyV1,proto3" json:"storage_key_v1,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *TelemetryConfig) Reset()         { *m = TelemetryConfig{} }
+func (m *TelemetryConfig) String() string { return proto.CompactTextString(m) }
+func (*TelemetryConfig) ProtoMessage()    {}
+func (*TelemetryConfig) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3d29ceed52498e29, []int{5}
+}
+func (m *TelemetryConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TelemetryConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TelemetryConfig.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TelemetryConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TelemetryConfig.Merge(m, src)
+}
+func (m *TelemetryConfig) XXX_Size() int {
+	return m.Size()
+}
+func (m *TelemetryConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_TelemetryConfig.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TelemetryConfig proto.InternalMessageInfo
+
+func (m *TelemetryConfig) GetUserId() string {
+	if m != nil {
+		return m.UserId
+	}
+	return ""
+}
+
+func (m *TelemetryConfig) GetEndpoint() string {
+	if m != nil {
+		return m.Endpoint
+	}
+	return ""
+}
+
+func (m *TelemetryConfig) GetStorageKeyV1() string {
+	if m != nil {
+		return m.StorageKeyV1
+	}
+	return ""
+}
+
+func (m *TelemetryConfig) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *TelemetryConfig) Clone() *TelemetryConfig {
+	if m == nil {
+		return nil
+	}
+	cloned := new(TelemetryConfig)
+	*cloned = *m
+
+	return cloned
+}
+
 func init() {
+	proto.RegisterEnum("v1.PullTelemetryDataRequest_TelemetryDataType", PullTelemetryDataRequest_TelemetryDataType_name, PullTelemetryDataRequest_TelemetryDataType_value)
 	proto.RegisterType((*ConfigureTelemetryRequest)(nil), "v1.ConfigureTelemetryRequest")
+	proto.RegisterType((*CancelPullTelemetryDataRequest)(nil), "v1.CancelPullTelemetryDataRequest")
+	proto.RegisterType((*PullTelemetryDataRequest)(nil), "v1.PullTelemetryDataRequest")
+	proto.RegisterType((*TelemetryResponsePayload)(nil), "v1.TelemetryResponsePayload")
+	proto.RegisterType((*TelemetryResponsePayload_EndOfStream)(nil), "v1.TelemetryResponsePayload.EndOfStream")
+	proto.RegisterType((*TelemetryResponsePayload_KubernetesInfo)(nil), "v1.TelemetryResponsePayload.KubernetesInfo")
+	proto.RegisterType((*TelemetryResponsePayload_KubernetesInfo_File)(nil), "v1.TelemetryResponsePayload.KubernetesInfo.File")
+	proto.RegisterType((*TelemetryResponsePayload_ClusterInfo)(nil), "v1.TelemetryResponsePayload.ClusterInfo")
+	proto.RegisterType((*PullTelemetryDataResponse)(nil), "v1.PullTelemetryDataResponse")
+	proto.RegisterType((*TelemetryConfig)(nil), "v1.TelemetryConfig")
 }
 
 func init() { proto.RegisterFile("api/v1/telemetry_service.proto", fileDescriptor_3d29ceed52498e29) }
 
 var fileDescriptor_3d29ceed52498e29 = []byte{
-	// 335 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x91, 0x3f, 0x4f, 0xc3, 0x30,
-	0x10, 0xc5, 0xeb, 0x0c, 0x40, 0x3d, 0x21, 0x0b, 0xd1, 0x34, 0x0a, 0x01, 0x05, 0x21, 0x21, 0x06,
-	0x47, 0x81, 0x09, 0xc6, 0x22, 0xd4, 0x8d, 0xa1, 0x30, 0x20, 0x16, 0xe4, 0x86, 0x23, 0x8a, 0x9a,
-	0xda, 0xc1, 0xb9, 0x46, 0x20, 0x36, 0x26, 0x76, 0x16, 0x3e, 0x12, 0x03, 0x03, 0x12, 0x5f, 0x00,
-	0x15, 0x3e, 0x08, 0xca, 0xbf, 0x02, 0xa5, 0x15, 0xeb, 0xbb, 0xbb, 0xdf, 0x7b, 0xcf, 0xa6, 0x8e,
-	0x48, 0x22, 0x2f, 0xf3, 0x3d, 0x84, 0x18, 0x86, 0x80, 0xfa, 0xf6, 0x22, 0x05, 0x9d, 0x45, 0x01,
-	0xf0, 0x44, 0x2b, 0x54, 0xcc, 0xc8, 0x7c, 0xcb, 0x0e, 0x95, 0x0a, 0x63, 0xf0, 0xf2, 0x55, 0x21,
-	0xa5, 0x42, 0x81, 0x91, 0x92, 0x69, 0xb9, 0x61, 0xb5, 0x52, 0x54, 0x5a, 0x84, 0xf0, 0x8d, 0xa8,
-	0x06, 0xac, 0x42, 0xc3, 0x30, 0xc1, 0x5a, 0xdb, 0x8c, 0x24, 0x82, 0x96, 0x22, 0xce, 0x67, 0x01,
-	0x48, 0xd4, 0x22, 0x9e, 0x3e, 0x74, 0xf7, 0x69, 0xfb, 0x50, 0xc9, 0xab, 0x28, 0x1c, 0x69, 0x38,
-	0xad, 0x67, 0x3d, 0xb8, 0x1e, 0x41, 0x8a, 0xcc, 0xa6, 0x8b, 0x20, 0x45, 0x3f, 0x86, 0x4b, 0x93,
-	0x6c, 0x90, 0xed, 0xa5, 0x8e, 0x61, 0x92, 0x5e, 0x2d, 0xed, 0xbe, 0x18, 0x74, 0x79, 0x72, 0x72,
-	0x52, 0x36, 0x61, 0x03, 0xda, 0xee, 0x02, 0x4e, 0xe4, 0x9a, 0x5d, 0xb4, 0x60, 0x4d, 0x9e, 0xf9,
-	0xfc, 0x28, 0x8f, 0x68, 0xad, 0xf3, 0xaa, 0x0a, 0x9f, 0xbd, 0xeb, 0xba, 0xf7, 0x6f, 0x9f, 0x8f,
-	0x46, 0x9b, 0xb5, 0x7e, 0xbd, 0x98, 0x17, 0xd4, 0x61, 0x1f, 0x0c, 0xc2, 0xee, 0x28, 0xfb, 0x1b,
-	0x9e, 0xad, 0xe5, 0x2e, 0x73, 0x4b, 0xfd, 0xef, 0xbc, 0x55, 0x38, 0xdb, 0xd6, 0x3c, 0xe7, 0x03,
-	0xb2, 0x93, 0x9b, 0x1f, 0xd3, 0x66, 0x17, 0xb0, 0x3c, 0xfd, 0xd9, 0xcc, 0xe4, 0xd5, 0x5b, 0x4f,
-	0xf3, 0x5d, 0xbb, 0x00, 0xaf, 0xb2, 0x95, 0x59, 0xe0, 0x0e, 0x7f, 0x1e, 0x3b, 0xe4, 0x75, 0xec,
-	0x90, 0xf7, 0xb1, 0x43, 0x9e, 0x3e, 0x9c, 0x06, 0x35, 0x23, 0xc5, 0x53, 0x14, 0xc1, 0x40, 0xab,
-	0x9b, 0xf2, 0xbb, 0xb8, 0x48, 0x22, 0x9e, 0xf9, 0xe7, 0x46, 0xe6, 0x9f, 0x35, 0xfa, 0x0b, 0x85,
-	0xb6, 0xf7, 0x15, 0x00, 0x00, 0xff, 0xff, 0x5f, 0xc4, 0x48, 0x80, 0x58, 0x02, 0x00, 0x00,
+	// 840 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x54, 0x41, 0x8f, 0xdb, 0x44,
+	0x14, 0x8e, 0x93, 0xb4, 0xbb, 0x79, 0x4e, 0x77, 0xc3, 0xb4, 0x62, 0xbd, 0x56, 0x9a, 0x46, 0x2e,
+	0x48, 0x11, 0x48, 0x4e, 0x13, 0xa4, 0x4a, 0x70, 0x41, 0xda, 0x90, 0x6d, 0xa3, 0xb0, 0xd9, 0x95,
+	0x93, 0x2d, 0x88, 0x8b, 0x35, 0x6b, 0xbf, 0xa4, 0x56, 0x9c, 0x19, 0xe3, 0x19, 0x47, 0x44, 0xdc,
+	0x38, 0x71, 0x44, 0xe2, 0xc2, 0x9f, 0xe0, 0x77, 0xc0, 0x11, 0x89, 0x1b, 0x27, 0xb4, 0xf0, 0x43,
+	0x90, 0x3d, 0x4e, 0x76, 0x43, 0x77, 0x5b, 0xe8, 0xcd, 0xef, 0xf3, 0x7b, 0xdf, 0xf7, 0xe6, 0xf3,
+	0xf8, 0x83, 0x06, 0x8d, 0x82, 0xf6, 0xb2, 0xd3, 0x96, 0x18, 0xe2, 0x02, 0x65, 0xbc, 0x72, 0x05,
+	0xc6, 0xcb, 0xc0, 0x43, 0x3b, 0x8a, 0xb9, 0xe4, 0xa4, 0xb8, 0xec, 0x98, 0xf5, 0x19, 0xe7, 0xb3,
+	0x10, 0xdb, 0x69, 0x2b, 0x65, 0x8c, 0x4b, 0x2a, 0x03, 0xce, 0x84, 0xea, 0x30, 0x0f, 0x84, 0xe4,
+	0x31, 0x9d, 0xe1, 0x15, 0x45, 0xfe, 0x82, 0xe4, 0xd4, 0xb8, 0x88, 0xe4, 0x1a, 0x7b, 0x94, 0x53,
+	0x65, 0xd5, 0x45, 0x32, 0x6d, 0xcb, 0x60, 0x81, 0x42, 0xd2, 0x45, 0xa4, 0x1a, 0xac, 0x8f, 0xe1,
+	0xb0, 0xc7, 0xd9, 0x34, 0x98, 0x25, 0x31, 0x4e, 0xd6, 0x84, 0x0e, 0x7e, 0x9d, 0xa0, 0x90, 0xa4,
+	0x0e, 0x3b, 0xc8, 0xe8, 0x45, 0x88, 0xbe, 0xa1, 0x35, 0xb5, 0xd6, 0xee, 0x51, 0xd1, 0xd0, 0x9c,
+	0x35, 0x64, 0x7d, 0x0a, 0x8d, 0x1e, 0x65, 0x1e, 0x86, 0x67, 0x49, 0x18, 0x6e, 0x66, 0x3f, 0xa3,
+	0x92, 0xae, 0xe7, 0x1f, 0x02, 0xc4, 0xea, 0xd1, 0x0d, 0x14, 0x45, 0xc5, 0xa9, 0xe4, 0xc8, 0xc0,
+	0xb7, 0x7e, 0x2e, 0x82, 0xf1, 0x96, 0xb3, 0x64, 0x08, 0x15, 0x9f, 0x4a, 0xea, 0xca, 0x55, 0x84,
+	0x46, 0xb1, 0xa9, 0xb5, 0xf6, 0xba, 0xb6, 0xbd, 0xec, 0xd8, 0xb7, 0xf1, 0xd9, 0x5b, 0xe0, 0x64,
+	0x15, 0xa1, 0xb3, 0xeb, 0xe7, 0x4f, 0xa9, 0x56, 0xea, 0x0b, 0x4f, 0xa4, 0xbb, 0x10, 0x46, 0xa9,
+	0xa9, 0xb5, 0x4a, 0x4e, 0x25, 0x47, 0x4e, 0x04, 0x79, 0x02, 0x77, 0x44, 0xc0, 0x3c, 0x34, 0xca,
+	0x4d, 0xad, 0xa5, 0x77, 0x4d, 0x5b, 0x99, 0x6a, 0xaf, 0x4d, 0xb5, 0x27, 0x6b, 0x53, 0x1d, 0xd5,
+	0x68, 0x4d, 0xe0, 0x9d, 0x57, 0xf4, 0x88, 0x0e, 0x3b, 0xe7, 0xa3, 0xe1, 0xe8, 0xf4, 0x8b, 0x51,
+	0xad, 0x40, 0xee, 0xc3, 0xfe, 0xf0, 0xfc, 0xa8, 0xef, 0x8c, 0xfa, 0x93, 0xfe, 0xd8, 0x1d, 0x8c,
+	0x8e, 0x4f, 0x6b, 0x1a, 0xa9, 0x41, 0xb5, 0xf7, 0xf9, 0xf9, 0x78, 0xd2, 0x77, 0x14, 0x52, 0x4c,
+	0x67, 0x4e, 0xfa, 0x13, 0x67, 0xd0, 0x1b, 0xd7, 0x4a, 0xd6, 0x1f, 0x65, 0x30, 0xae, 0x7d, 0x23,
+	0x11, 0x71, 0x26, 0xf0, 0x8c, 0xae, 0x42, 0x4e, 0x7d, 0x32, 0x82, 0x7b, 0xc8, 0x7c, 0x97, 0x4f,
+	0x5d, 0x21, 0x63, 0xa4, 0x8b, 0xcc, 0x32, 0xbd, 0xdb, 0x4a, 0x4d, 0xb9, 0x6d, 0xc8, 0xee, 0x33,
+	0xff, 0x74, 0x3a, 0xce, 0xfa, 0x9f, 0x17, 0x1c, 0x1d, 0xaf, 0x4a, 0xf2, 0x02, 0xf6, 0xe7, 0xc9,
+	0x05, 0xc6, 0x0c, 0x25, 0x0a, 0x37, 0x60, 0x53, 0x9e, 0xd9, 0xac, 0x77, 0x3f, 0x7c, 0x2d, 0xe3,
+	0x70, 0x33, 0x33, 0x60, 0x53, 0xfe, 0xbc, 0xe0, 0xec, 0xcd, 0xb7, 0x10, 0x72, 0x02, 0x55, 0x2f,
+	0x4c, 0x84, 0xc4, 0x58, 0x91, 0x96, 0xfe, 0xc3, 0x9a, 0x3d, 0x35, 0x90, 0x33, 0xea, 0xde, 0x55,
+	0x49, 0xce, 0xa0, 0x9a, 0x8e, 0x04, 0x5e, 0xbe, 0x63, 0xf9, 0x6d, 0x76, 0xd4, 0x73, 0x8a, 0xb4,
+	0x34, 0xbb, 0xa0, 0x5f, 0xb3, 0x85, 0x3c, 0x86, 0x7b, 0x18, 0xc7, 0x3c, 0x76, 0x17, 0x28, 0x04,
+	0x9d, 0x61, 0x7e, 0x15, 0xab, 0x19, 0x78, 0xa2, 0x30, 0xf3, 0x07, 0x0d, 0xf6, 0xb6, 0x59, 0xc9,
+	0x31, 0xdc, 0x99, 0x06, 0x21, 0x0a, 0x43, 0x6b, 0x96, 0x5a, 0x7a, 0xf7, 0xc9, 0xff, 0xd8, 0xc8,
+	0x3e, 0x0e, 0x42, 0x74, 0xd4, 0xb8, 0xf9, 0x14, 0xca, 0x69, 0x49, 0x08, 0x94, 0x23, 0x2a, 0x5f,
+	0xe6, 0xf2, 0xd9, 0x33, 0x31, 0x61, 0xd7, 0xe3, 0x4c, 0x22, 0x93, 0x22, 0xfb, 0x38, 0x55, 0x67,
+	0x53, 0x9b, 0x8f, 0x41, 0xbf, 0x66, 0x1b, 0x79, 0x00, 0x77, 0xbc, 0x97, 0x09, 0x9b, 0x67, 0xf3,
+	0x55, 0x47, 0x15, 0x47, 0x15, 0xd8, 0x89, 0xd4, 0x0a, 0x56, 0x0c, 0x87, 0x37, 0xfc, 0x3b, 0x6a,
+	0xcd, 0x37, 0xfd, 0x8c, 0x4f, 0x37, 0x34, 0xf9, 0x1d, 0xa9, 0xbf, 0xee, 0xb4, 0xce, 0x46, 0x33,
+	0x84, 0xfd, 0x4d, 0x93, 0x4a, 0x21, 0x72, 0x00, 0x3b, 0x89, 0x48, 0xef, 0xc6, 0x5a, 0xe6, 0x6e,
+	0x5a, 0x0e, 0xfc, 0xf4, 0xac, 0xc8, 0xfc, 0x88, 0x07, 0x4c, 0x66, 0x22, 0x15, 0x67, 0x53, 0x93,
+	0xf7, 0x60, 0x2f, 0x0f, 0x45, 0x77, 0x8e, 0x2b, 0x77, 0xd9, 0xc9, 0x6e, 0x55, 0xc5, 0xa9, 0xe6,
+	0xe8, 0x10, 0x57, 0x2f, 0x3a, 0xdd, 0x5f, 0x8a, 0x50, 0xdb, 0xc8, 0x8d, 0x55, 0xea, 0x92, 0x39,
+	0x1c, 0x3e, 0x43, 0xf9, 0xaf, 0x2d, 0x92, 0x38, 0x4b, 0x5c, 0x52, 0x49, 0x8f, 0xd1, 0x4f, 0xe3,
+	0xd4, 0x7c, 0x64, 0xe7, 0x5c, 0xf6, 0xcd, 0xbd, 0x96, 0xf5, 0xdd, 0xef, 0x7f, 0xff, 0x58, 0x3c,
+	0x24, 0x07, 0x5b, 0xe9, 0xde, 0xf6, 0xd6, 0xe1, 0xfa, 0x7d, 0x51, 0x23, 0xdf, 0x02, 0x79, 0x35,
+	0x6c, 0xc9, 0xc3, 0x54, 0xe5, 0xd6, 0x10, 0x7e, 0xb3, 0xf2, 0xfb, 0x99, 0x72, 0xdd, 0xbc, 0x4d,
+	0xf9, 0x13, 0xed, 0x83, 0x54, 0x7c, 0x00, 0x95, 0x67, 0x28, 0x73, 0x9b, 0xaf, 0x9d, 0xec, 0xfe,
+	0xd6, 0xb7, 0x52, 0xef, 0xad, 0x7a, 0xc6, 0xf9, 0x2e, 0x79, 0x70, 0x13, 0xe7, 0x91, 0xfd, 0xeb,
+	0x65, 0x43, 0xfb, 0xed, 0xb2, 0xa1, 0xfd, 0x79, 0xd9, 0xd0, 0x7e, 0xfa, 0xab, 0x51, 0x00, 0x23,
+	0xe0, 0xb6, 0x90, 0xd4, 0x9b, 0xc7, 0xfc, 0x1b, 0x95, 0x8b, 0x36, 0x8d, 0x02, 0x7b, 0xd9, 0xf9,
+	0xaa, 0xb8, 0xec, 0x7c, 0x59, 0xb8, 0xb8, 0x9b, 0x61, 0x1f, 0xfd, 0x13, 0x00, 0x00, 0xff, 0xff,
+	0x5f, 0x56, 0x5c, 0xe2, 0xff, 0x06, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -134,7 +939,7 @@ const _ = grpc.SupportPackageIsVersion6
 type TelemetryServiceClient interface {
 	GetTelemetryConfiguration(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.TelemetryConfiguration, error)
 	ConfigureTelemetry(ctx context.Context, in *ConfigureTelemetryRequest, opts ...grpc.CallOption) (*storage.TelemetryConfiguration, error)
-	GetConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*central.TelemetryConfig, error)
+	GetConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*TelemetryConfig, error)
 }
 
 type telemetryServiceClient struct {
@@ -165,8 +970,8 @@ func (c *telemetryServiceClient) ConfigureTelemetry(ctx context.Context, in *Con
 	return out, nil
 }
 
-func (c *telemetryServiceClient) GetConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*central.TelemetryConfig, error) {
-	out := new(central.TelemetryConfig)
+func (c *telemetryServiceClient) GetConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*TelemetryConfig, error) {
+	out := new(TelemetryConfig)
 	err := c.cc.Invoke(ctx, "/v1.TelemetryService/GetConfig", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -178,7 +983,7 @@ func (c *telemetryServiceClient) GetConfig(ctx context.Context, in *Empty, opts 
 type TelemetryServiceServer interface {
 	GetTelemetryConfiguration(context.Context, *Empty) (*storage.TelemetryConfiguration, error)
 	ConfigureTelemetry(context.Context, *ConfigureTelemetryRequest) (*storage.TelemetryConfiguration, error)
-	GetConfig(context.Context, *Empty) (*central.TelemetryConfig, error)
+	GetConfig(context.Context, *Empty) (*TelemetryConfig, error)
 }
 
 // UnimplementedTelemetryServiceServer can be embedded to have forward compatible implementations.
@@ -191,7 +996,7 @@ func (*UnimplementedTelemetryServiceServer) GetTelemetryConfiguration(ctx contex
 func (*UnimplementedTelemetryServiceServer) ConfigureTelemetry(ctx context.Context, req *ConfigureTelemetryRequest) (*storage.TelemetryConfiguration, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ConfigureTelemetry not implemented")
 }
-func (*UnimplementedTelemetryServiceServer) GetConfig(ctx context.Context, req *Empty) (*central.TelemetryConfig, error) {
+func (*UnimplementedTelemetryServiceServer) GetConfig(ctx context.Context, req *Empty) (*TelemetryConfig, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
 }
 
@@ -311,6 +1116,460 @@ func (m *ConfigureTelemetryRequest) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
+func (m *CancelPullTelemetryDataRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CancelPullTelemetryDataRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CancelPullTelemetryDataRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.RequestId) > 0 {
+		i -= len(m.RequestId)
+		copy(dAtA[i:], m.RequestId)
+		i = encodeVarintTelemetryService(dAtA, i, uint64(len(m.RequestId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *PullTelemetryDataRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PullTelemetryDataRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *PullTelemetryDataRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Since != nil {
+		{
+			size, err := m.Since.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTelemetryService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.TimeoutMs != 0 {
+		i = encodeVarintTelemetryService(dAtA, i, uint64(m.TimeoutMs))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.DataType != 0 {
+		i = encodeVarintTelemetryService(dAtA, i, uint64(m.DataType))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.RequestId) > 0 {
+		i -= len(m.RequestId)
+		copy(dAtA[i:], m.RequestId)
+		i = encodeVarintTelemetryService(dAtA, i, uint64(len(m.RequestId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *TelemetryResponsePayload) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TelemetryResponsePayload) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TelemetryResponsePayload) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Payload != nil {
+		{
+			size := m.Payload.Size()
+			i -= size
+			if _, err := m.Payload.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *TelemetryResponsePayload_EndOfStream_) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TelemetryResponsePayload_EndOfStream_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EndOfStream != nil {
+		{
+			size, err := m.EndOfStream.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTelemetryService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+func (m *TelemetryResponsePayload_KubernetesInfo_) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TelemetryResponsePayload_KubernetesInfo_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.KubernetesInfo != nil {
+		{
+			size, err := m.KubernetesInfo.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTelemetryService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
+func (m *TelemetryResponsePayload_ClusterInfo_) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TelemetryResponsePayload_ClusterInfo_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.ClusterInfo != nil {
+		{
+			size, err := m.ClusterInfo.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTelemetryService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *TelemetryResponsePayload_MetricsInfo) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TelemetryResponsePayload_MetricsInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.MetricsInfo != nil {
+		{
+			size, err := m.MetricsInfo.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTelemetryService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	return len(dAtA) - i, nil
+}
+func (m *TelemetryResponsePayload_EndOfStream) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TelemetryResponsePayload_EndOfStream) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TelemetryResponsePayload_EndOfStream) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ErrorMessage) > 0 {
+		i -= len(m.ErrorMessage)
+		copy(dAtA[i:], m.ErrorMessage)
+		i = encodeVarintTelemetryService(dAtA, i, uint64(len(m.ErrorMessage)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *TelemetryResponsePayload_KubernetesInfo) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TelemetryResponsePayload_KubernetesInfo) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TelemetryResponsePayload_KubernetesInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Files) > 0 {
+		for iNdEx := len(m.Files) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Files[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintTelemetryService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *TelemetryResponsePayload_KubernetesInfo_File) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TelemetryResponsePayload_KubernetesInfo_File) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TelemetryResponsePayload_KubernetesInfo_File) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Contents) > 0 {
+		i -= len(m.Contents)
+		copy(dAtA[i:], m.Contents)
+		i = encodeVarintTelemetryService(dAtA, i, uint64(len(m.Contents)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Path) > 0 {
+		i -= len(m.Path)
+		copy(dAtA[i:], m.Path)
+		i = encodeVarintTelemetryService(dAtA, i, uint64(len(m.Path)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *TelemetryResponsePayload_ClusterInfo) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TelemetryResponsePayload_ClusterInfo) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TelemetryResponsePayload_ClusterInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Chunk) > 0 {
+		i -= len(m.Chunk)
+		copy(dAtA[i:], m.Chunk)
+		i = encodeVarintTelemetryService(dAtA, i, uint64(len(m.Chunk)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *PullTelemetryDataResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PullTelemetryDataResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *PullTelemetryDataResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Payload != nil {
+		{
+			size, err := m.Payload.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTelemetryService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.RequestId) > 0 {
+		i -= len(m.RequestId)
+		copy(dAtA[i:], m.RequestId)
+		i = encodeVarintTelemetryService(dAtA, i, uint64(len(m.RequestId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *TelemetryConfig) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TelemetryConfig) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TelemetryConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.StorageKeyV1) > 0 {
+		i -= len(m.StorageKeyV1)
+		copy(dAtA[i:], m.StorageKeyV1)
+		i = encodeVarintTelemetryService(dAtA, i, uint64(len(m.StorageKeyV1)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Endpoint) > 0 {
+		i -= len(m.Endpoint)
+		copy(dAtA[i:], m.Endpoint)
+		i = encodeVarintTelemetryService(dAtA, i, uint64(len(m.Endpoint)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.UserId) > 0 {
+		i -= len(m.UserId)
+		copy(dAtA[i:], m.UserId)
+		i = encodeVarintTelemetryService(dAtA, i, uint64(len(m.UserId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTelemetryService(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTelemetryService(v)
 	base := offset
@@ -330,6 +1589,225 @@ func (m *ConfigureTelemetryRequest) Size() (n int) {
 	_ = l
 	if m.Enabled {
 		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *CancelPullTelemetryDataRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.RequestId)
+	if l > 0 {
+		n += 1 + l + sovTelemetryService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *PullTelemetryDataRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.RequestId)
+	if l > 0 {
+		n += 1 + l + sovTelemetryService(uint64(l))
+	}
+	if m.DataType != 0 {
+		n += 1 + sovTelemetryService(uint64(m.DataType))
+	}
+	if m.TimeoutMs != 0 {
+		n += 1 + sovTelemetryService(uint64(m.TimeoutMs))
+	}
+	if m.Since != nil {
+		l = m.Since.Size()
+		n += 1 + l + sovTelemetryService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *TelemetryResponsePayload) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Payload != nil {
+		n += m.Payload.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *TelemetryResponsePayload_EndOfStream_) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EndOfStream != nil {
+		l = m.EndOfStream.Size()
+		n += 1 + l + sovTelemetryService(uint64(l))
+	}
+	return n
+}
+func (m *TelemetryResponsePayload_KubernetesInfo_) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.KubernetesInfo != nil {
+		l = m.KubernetesInfo.Size()
+		n += 1 + l + sovTelemetryService(uint64(l))
+	}
+	return n
+}
+func (m *TelemetryResponsePayload_ClusterInfo_) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ClusterInfo != nil {
+		l = m.ClusterInfo.Size()
+		n += 1 + l + sovTelemetryService(uint64(l))
+	}
+	return n
+}
+func (m *TelemetryResponsePayload_MetricsInfo) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.MetricsInfo != nil {
+		l = m.MetricsInfo.Size()
+		n += 1 + l + sovTelemetryService(uint64(l))
+	}
+	return n
+}
+func (m *TelemetryResponsePayload_EndOfStream) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ErrorMessage)
+	if l > 0 {
+		n += 1 + l + sovTelemetryService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *TelemetryResponsePayload_KubernetesInfo) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Files) > 0 {
+		for _, e := range m.Files {
+			l = e.Size()
+			n += 1 + l + sovTelemetryService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *TelemetryResponsePayload_KubernetesInfo_File) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Path)
+	if l > 0 {
+		n += 1 + l + sovTelemetryService(uint64(l))
+	}
+	l = len(m.Contents)
+	if l > 0 {
+		n += 1 + l + sovTelemetryService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *TelemetryResponsePayload_ClusterInfo) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Chunk)
+	if l > 0 {
+		n += 1 + l + sovTelemetryService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *PullTelemetryDataResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.RequestId)
+	if l > 0 {
+		n += 1 + l + sovTelemetryService(uint64(l))
+	}
+	if m.Payload != nil {
+		l = m.Payload.Size()
+		n += 1 + l + sovTelemetryService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *TelemetryConfig) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.UserId)
+	if l > 0 {
+		n += 1 + l + sovTelemetryService(uint64(l))
+	}
+	l = len(m.Endpoint)
+	if l > 0 {
+		n += 1 + l + sovTelemetryService(uint64(l))
+	}
+	l = len(m.StorageKeyV1)
+	if l > 0 {
+		n += 1 + l + sovTelemetryService(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -392,6 +1870,1073 @@ func (m *ConfigureTelemetryRequest) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.Enabled = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTelemetryService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CancelPullTelemetryDataRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTelemetryService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CancelPullTelemetryDataRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CancelPullTelemetryDataRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequestId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RequestId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTelemetryService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *PullTelemetryDataRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTelemetryService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PullTelemetryDataRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PullTelemetryDataRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequestId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RequestId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DataType", wireType)
+			}
+			m.DataType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DataType |= PullTelemetryDataRequest_TelemetryDataType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TimeoutMs", wireType)
+			}
+			m.TimeoutMs = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TimeoutMs |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Since", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Since == nil {
+				m.Since = &types.Timestamp{}
+			}
+			if err := m.Since.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTelemetryService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TelemetryResponsePayload) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTelemetryService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TelemetryResponsePayload: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TelemetryResponsePayload: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EndOfStream", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &TelemetryResponsePayload_EndOfStream{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Payload = &TelemetryResponsePayload_EndOfStream_{v}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KubernetesInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &TelemetryResponsePayload_KubernetesInfo{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Payload = &TelemetryResponsePayload_KubernetesInfo_{v}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &TelemetryResponsePayload_ClusterInfo{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Payload = &TelemetryResponsePayload_ClusterInfo_{v}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MetricsInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &TelemetryResponsePayload_KubernetesInfo{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Payload = &TelemetryResponsePayload_MetricsInfo{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTelemetryService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TelemetryResponsePayload_EndOfStream) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTelemetryService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EndOfStream: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EndOfStream: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ErrorMessage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ErrorMessage = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTelemetryService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TelemetryResponsePayload_KubernetesInfo) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTelemetryService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: KubernetesInfo: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: KubernetesInfo: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Files", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Files = append(m.Files, &TelemetryResponsePayload_KubernetesInfo_File{})
+			if err := m.Files[len(m.Files)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTelemetryService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TelemetryResponsePayload_KubernetesInfo_File) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTelemetryService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: File: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: File: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Path", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Path = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Contents", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Contents = append(m.Contents[:0], dAtA[iNdEx:postIndex]...)
+			if m.Contents == nil {
+				m.Contents = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTelemetryService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TelemetryResponsePayload_ClusterInfo) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTelemetryService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ClusterInfo: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ClusterInfo: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Chunk", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Chunk = append(m.Chunk[:0], dAtA[iNdEx:postIndex]...)
+			if m.Chunk == nil {
+				m.Chunk = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTelemetryService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *PullTelemetryDataResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTelemetryService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PullTelemetryDataResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PullTelemetryDataResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequestId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RequestId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Payload", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Payload == nil {
+				m.Payload = &TelemetryResponsePayload{}
+			}
+			if err := m.Payload.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTelemetryService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TelemetryConfig) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTelemetryService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TelemetryConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TelemetryConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UserId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.UserId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Endpoint", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Endpoint = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StorageKeyV1", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTelemetryService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTelemetryService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.StorageKeyV1 = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTelemetryService(dAtA[iNdEx:])

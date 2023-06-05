@@ -323,6 +323,7 @@ func startServices() {
 	pruning.Singleton().Start()
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
+	clusterInitService.Singleton().Start()
 
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		apiTokenExpiration.Singleton().Start()
