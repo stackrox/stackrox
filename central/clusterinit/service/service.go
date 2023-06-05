@@ -20,6 +20,7 @@ type Service interface {
 	v1.ClusterInitServiceServer
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
+	Start()
 }
 
 // New returns a new Service instance.

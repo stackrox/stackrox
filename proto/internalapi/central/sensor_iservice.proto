@@ -10,7 +10,7 @@ import "internalapi/central/policy_sync.proto";
 import "internalapi/central/sensor_events.proto";
 import "internalapi/central/sensor_upgrade.proto";
 import "internalapi/central/cluster_metrics.proto";
-import "internalapi/central/telemetry.proto";
+import "api/v1/telemetry_service.proto";
 import "internalapi/central/baseline_sync.proto";
 import "internalapi/central/hello.proto";
 import "internalapi/central/network_baseline_sync.proto";
@@ -18,6 +18,7 @@ import "internalapi/central/local_scanner.proto";
 import "internalapi/central/process_listening_on_ports_update.proto";
 import "storage/cluster.proto";
 import "storage/image.proto";
+import "api/v1/cluster_init_service.proto";
 
 package central;
 
@@ -31,7 +32,7 @@ message MsgFromSensor {
         ScrapeUpdate                  scrape_update                     = 3;
         NetworkPoliciesResponse       network_policies_response         = 4;
         ClusterStatusUpdate           cluster_status_update             = 5;
-        PullTelemetryDataResponse     telemetry_data_response           = 6;
+        v1.PullTelemetryDataResponse     telemetry_data_response           = 6;
         RawClusterHealthInfo          cluster_health_info               = 9;
         SensorHello                   hello                             = 10;
         AuditLogStatusInfo            audit_log_status_info             = 11;
@@ -52,11 +53,11 @@ message MsgToSensor {
         NetworkPoliciesCommand         network_policies_command           =  3;
         ClusterConfig                  cluster_config                     =  4;
         SensorUpgradeTrigger           sensor_upgrade_trigger             =  5;
-        PullTelemetryDataRequest       telemetry_data_request             =  6;
+        v1.PullTelemetryDataRequest       telemetry_data_request             =  6;
         PolicySync                     policy_sync                        =  7;
         ReassessPolicies               reassess_policies                  =  8;
         BaselineSync                   baseline_sync                      =  9;
-        CancelPullTelemetryDataRequest cancel_pull_telemetry_data_request = 10;
+        v1.CancelPullTelemetryDataRequest cancel_pull_telemetry_data_request = 10;
         PushNetworkEntitiesRequest     push_network_entities_request      = 11;
         CentralHello                   hello                              = 12;
         NetworkBaselineSync            network_baseline_sync              = 13;
@@ -68,6 +69,8 @@ message MsgToSensor {
         ReprocessDeployments           reprocess_deployments              = 19;
         NodeInventoryACK               node_inventory_ack                 = 20;
         DelegatedRegistryConfig        delegated_registry_config          = 21;
+        v1.InitBundleGenResponse      init_bundle_gen_response            = 22;
+
     }
 }
 

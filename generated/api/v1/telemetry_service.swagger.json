@@ -18,7 +18,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/centralTelemetryConfig"
+              "$ref": "#/definitions/v1TelemetryConfig"
             }
           },
           "default": {
@@ -87,23 +87,6 @@
     }
   },
   "definitions": {
-    "centralTelemetryConfig": {
-      "type": "object",
-      "properties": {
-        "userId": {
-          "type": "string",
-          "title": "API user ID hash:"
-        },
-        "endpoint": {
-          "type": "string",
-          "title": "An empty endpoint means using default endpoint:"
-        },
-        "storageKeyV1": {
-          "type": "string",
-          "title": "Telemetry storage service key:"
-        }
-      }
-    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -157,6 +140,23 @@
       "properties": {
         "enabled": {
           "type": "boolean"
+        }
+      }
+    },
+    "v1TelemetryConfig": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "title": "API user ID hash:"
+        },
+        "endpoint": {
+          "type": "string",
+          "title": "An empty endpoint means using default endpoint:"
+        },
+        "storageKeyV1": {
+          "type": "string",
+          "title": "Telemetry storage service key:"
         }
       }
     }
