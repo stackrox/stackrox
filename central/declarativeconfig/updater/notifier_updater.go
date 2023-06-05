@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/set"
@@ -24,6 +25,7 @@ type notifierUpdater struct {
 	policyCleaner policycleaner.PolicyCleaner
 	processor     notifier.Processor
 	healthDS      declarativeConfigHealth.DataStore
+	reporter      integrationhealth.Reporter
 	nameExtractor types.NameExtractor
 	idExtractor   types.IDExtractor
 }
@@ -31,12 +33,14 @@ type notifierUpdater struct {
 var _ ResourceUpdater = (*notifierUpdater)(nil)
 
 func newNotifierUpdater(notifierDS notifierDataStore.DataStore, policyCleaner policycleaner.PolicyCleaner,
-	processor notifier.Processor, healthDS declarativeConfigHealth.DataStore) ResourceUpdater {
+	processor notifier.Processor, healthDS declarativeConfigHealth.DataStore,
+	reporter integrationhealth.Reporter) ResourceUpdater {
 	return &notifierUpdater{
 		notifierDS:    notifierDS,
 		policyCleaner: policyCleaner,
 		processor:     processor,
 		healthDS:      healthDS,
+		reporter:      reporter,
 		idExtractor:   types.UniversalIDExtractor(),
 		nameExtractor: types.UniversalNameExtractor(),
 	}
@@ -57,7 +61,7 @@ func (u *notifierUpdater) Upsert(ctx context.Context, m proto.Message) error {
 	}
 	u.processor.UpdateNotifier(ctx, notifier)
 
-	return nil
+	return u.reporter.Register(notifierProto.GetId(), notifierProto.GetName(), storage.IntegrationHealth_NOTIFIER)
 }
 
 func (u *notifierUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error) {
@@ -89,6 +93,10 @@ func (u *notifierUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip
 		}
 
 		u.processor.RemoveNotifier(ctx, n.GetId())
+		if err := u.reporter.RemoveIntegrationHealth(n.GetId()); err != nil {
+			err := errors.Wrap(err, "deleting notifier's integration health")
+			notifierDeletionErr, notifierIDs = u.processDeletionError(ctx, notifierDeletionErr, err, notifierIDs, n)
+		}
 	}
 	return notifierIDs, notifierDeletionErr.ErrorOrNil()
 }

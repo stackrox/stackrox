@@ -152,7 +152,7 @@ describe('System Health Integrations fixtures', () => {
         ];
 
         visitSystemHealth({
-            'integrationhealth/declarativeconfigs': { body: { integrationHealth } },
+            'declarative-config/health': { body: { integrationHealth } },
         });
 
         const { widgets } = selectors.integrations;
@@ -175,7 +175,7 @@ describe('System Health Integrations fixtures', () => {
         ];
 
         visitSystemHealth({
-            'integrationhealth/declarativeconfigs': { body: { integrationHealth } },
+            'declarative-config/health': { body: { integrationHealth } },
         });
         const { widgets } = selectors.integrations;
         const itemSelector = `${widgets.declarativeConfigs} tr:first`;

@@ -48,7 +48,7 @@ const routeMatcherMap = {
         method: 'GET',
         url: api.integrationHealth.vulnDefinitions,
     },
-    'integrationhealth/declarativeconfigs': {
+    'declarative-config/health': {
         method: 'GET',
         url: '/v1/declarative-config/health',
     },

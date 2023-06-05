@@ -14,6 +14,7 @@ export type DeclarativeConfigHealth = {
     name: string;
     status: DeclarativeConfigHealthStatus;
     resourceType: DeclarativeConfigResourceType;
+    resourceName: string;
     errorMessage: string;
     lastTimestamp: string; // ISO 8601 timestamp when the status was ascertained.
 };
