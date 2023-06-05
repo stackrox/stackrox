@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -61,6 +62,9 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestWithRetryable() {
 
 	for name, cc := range cases {
 		suite.Run(name, func() {
+			counterMux := &sync.Mutex{}
+			counter := 0
+
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			umh := NewUnconfirmedMessageHandler(ctx, cc.baseDuration)
@@ -86,14 +90,17 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestWithRetryable() {
 				}(tt)
 			}
 			// retry-counting loop
-			counter := 0
 			go func() {
 				for range umh.RetryCommand() {
+					counterMux.Lock()
 					counter++
+					counterMux.Unlock()
 				}
 			}()
 			<-time.After(cc.wait)
 
+			counterMux.Lock()
+			defer counterMux.Unlock()
 			suite.Equal(cc.expectedRetries, counter)
 		})
 	}

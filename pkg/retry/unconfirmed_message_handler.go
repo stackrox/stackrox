@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -26,6 +27,8 @@ type UnconfirmedMessageHandlerImpl struct {
 	ch chan struct{}
 	// retry counts the number of retries for a given message
 	retry int
+	// retryMux is a mutex for retry variable
+	retryMux *sync.Mutex
 	// ctx is a context that can be used to stop this object
 	ctx context.Context
 }
@@ -39,6 +42,7 @@ func NewUnconfirmedMessageHandler(ctx context.Context, resendInterval time.Durat
 		ticker:         time.NewTicker(resendInterval),
 		ch:             make(chan struct{}),
 		retry:          0,
+		retryMux:       &sync.Mutex{},
 		ctx:            ctx,
 	}
 	nsr.ticker.Stop()
@@ -69,6 +73,8 @@ func (s *UnconfirmedMessageHandlerImpl) run() {
 }
 
 func (s *UnconfirmedMessageHandlerImpl) retryLater() {
+	s.retryMux.Lock()
+	defer s.retryMux.Unlock()
 	s.retry++
 	nextIn := s.retry * int(s.baseInterval.Seconds())
 	next, err := time.ParseDuration(fmt.Sprintf("%ds", nextIn))
@@ -82,6 +88,8 @@ func (s *UnconfirmedMessageHandlerImpl) retryLater() {
 
 // ObserveSending should be called when a new message is sent and it is expected to be [N]ACKed
 func (s *UnconfirmedMessageHandlerImpl) ObserveSending() {
+	s.retryMux.Lock()
+	defer s.retryMux.Unlock()
 	log.Debugf("Observing message being sent. Waiting for an ACK for %s", s.baseInterval.String())
 	s.ticker.Stop()
 	s.retry = 0
@@ -89,6 +97,8 @@ func (s *UnconfirmedMessageHandlerImpl) ObserveSending() {
 }
 
 func (s *UnconfirmedMessageHandlerImpl) observeConfirmation() {
+	s.retryMux.Lock()
+	defer s.retryMux.Unlock()
 	log.Debug("Message has been acknowledged")
 	s.ticker.Stop()
 	s.retry = 0
