@@ -523,6 +523,8 @@ func TestUpdateDeclarativeConfigContents_RegisterHealthStatus(t *testing.T) {
 		},
 	}, nil)
 
+	mockHealthDS.EXPECT().GetDeclarativeConfig(gomock.Any(), gomock.Any()).Return(nil, false, nil).AnyTimes()
+
 	mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
 		Id:           "test-name",
 		Name:         "test-name in config map my-cool-config-map",
