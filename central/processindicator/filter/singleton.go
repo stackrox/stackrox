@@ -1,8 +1,7 @@
 package filter
 
 import (
-	"math"
-
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -14,6 +13,8 @@ const (
 var (
 	singletonInstance sync.Once
 
+	maxUniqueProcesses = env.ProcessFilterMaxProcessPaths.IntegerSetting()
+
 	bucketSizes     = []int{8, 6, 4, 2}
 	singletonFilter filter.Filter
 )
@@ -21,8 +22,7 @@ var (
 // Singleton returns a global, threadsafe process filter
 func Singleton() filter.Filter {
 	singletonInstance.Do(func() {
-		// Set the maximum number of paths to the max integer in order to not filter out new processes in Sensor
-		singletonFilter = filter.NewFilter(maxExactPathMatches, math.MaxInt, bucketSizes)
+		singletonFilter = filter.NewFilter(maxExactPathMatches, maxUniqueProcesses, bucketSizes)
 	})
 	return singletonFilter
 }
