@@ -289,6 +289,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 				}
 			}
 
+			// The secrets captured in this block are used for delegated image scanning.
 			if env.LocalImageScanningEnabled.BooleanSetting() && !env.DelegatedScanningDisabled.BooleanSetting() {
 				// Store registry secrets to enable downstream scanning of all images
 				//
