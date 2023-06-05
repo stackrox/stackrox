@@ -50,7 +50,7 @@ const routeMatcherMap = {
     },
     'integrationhealth/declarativeconfigs': {
         method: 'GET',
-        url: '/v1/integrationhealth/declarativeconfigs',
+        url: '/v1/declarative-config/health',
     },
 };
 
