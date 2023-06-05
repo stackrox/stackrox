@@ -31,7 +31,7 @@ describe('Network Baseline Flows', () => {
     withAuth();
 
     describe('Navigating to Deployment', () => {
-        it('should navigate to a different deployment when clicking the "Navigate" button', () => {
+        it.skip('should navigate to a different deployment when clicking the "Navigate" button', () => {
             visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
@@ -51,7 +51,7 @@ describe('Network Baseline Flows', () => {
     });
 
     describe('Active Network Flows', () => {
-        it('should show table column headings', () => {
+        it.skip('should show table column headings', () => {
             visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
@@ -67,7 +67,7 @@ describe('Network Baseline Flows', () => {
             });
         });
 
-        it('should show anomalous flows section above the baseline flows', () => {
+        it.skip('should show anomalous flows section above the baseline flows', () => {
             visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
@@ -80,7 +80,7 @@ describe('Network Baseline Flows', () => {
     });
 
     describe('Toggling Status of Active Baseline Network Flows', () => {
-        it('should be able to toggle status of a single flow', () => {
+        it.skip('should be able to toggle status of a single flow', () => {
             visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
@@ -104,7 +104,7 @@ describe('Network Baseline Flows', () => {
             });
         });
 
-        it('should be able to toggle status of all flows', () => {
+        it.skip('should be able to toggle status of all flows', () => {
             visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
@@ -129,7 +129,7 @@ describe('Network Baseline Flows', () => {
             });
         });
 
-        it('should be able to toggle status of selected flows', () => {
+        it.skip('should be able to toggle status of selected flows', () => {
             visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
@@ -169,7 +169,7 @@ describe('Network Baseline Flows', () => {
     });
 
     describe('Baseline Settings', () => {
-        it('should not show the anomalous flows section', () => {
+        it.skip('should not show the anomalous flows section', () => {
             visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
@@ -181,7 +181,7 @@ describe('Network Baseline Flows', () => {
             });
         });
 
-        it('should be able to toggle status of a single baseline flow', () => {
+        it.skip('should be able to toggle status of a single baseline flow', () => {
             visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
@@ -222,7 +222,7 @@ describe('Network Baseline Flows', () => {
         });
 
         describe('Cluster with Helm management', () => {
-            it('should toggle the alert on baseline violations toggle', () => {
+            it.skip('should toggle the alert on baseline violations toggle', () => {
                 visitOldNetworkGraphWithNamespaceFilter('stackrox');
 
                 cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {

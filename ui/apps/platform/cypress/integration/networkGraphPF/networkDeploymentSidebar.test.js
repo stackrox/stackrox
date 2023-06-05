@@ -8,15 +8,8 @@ import {
     selectNamespace,
     selectDeployment,
 } from '../../helpers/networkGraphPF';
-import { hasFeatureFlag } from '../../helpers/features';
 
 describe('Network Graph deployment sidebar', () => {
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_NETWORK_GRAPH_PATTERNFLY')) {
-            this.skip();
-        }
-    });
-
     withAuth();
 
     it('should render a graph when cluster and namespace are selected', () => {

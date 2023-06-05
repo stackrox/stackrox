@@ -19,7 +19,7 @@ describe('Network Graph connections filter', () => {
     const activeSubstring = 'active connection';
     const allowedSubstring = 'allowed connection';
 
-    it('active appears in namespace edge tooltip', () => {
+    it.skip('active appears in namespace edge tooltip', () => {
         visitOldNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.activeFilter).click();
@@ -33,7 +33,7 @@ describe('Network Graph connections filter', () => {
         });
     });
 
-    it('allowed appears in namespace edge tooltip', () => {
+    it.skip('allowed appears in namespace edge tooltip', () => {
         visitOldNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.allowedFilter).click();
@@ -47,7 +47,7 @@ describe('Network Graph connections filter', () => {
         });
     });
 
-    it('active and allowed both appear for all in namespace edge tooltip', () => {
+    it.skip('active and allowed both appear for all in namespace edge tooltip', () => {
         visitOldNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.allFilter).click();
@@ -61,7 +61,7 @@ describe('Network Graph connections filter', () => {
         });
     });
 
-    it('should not show namespace edges when user hides them', () => {
+    it.skip('should not show namespace edges when user hides them', () => {
         visitOldNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.allFilter).click();

@@ -30,11 +30,11 @@ function uploadYAMLFile(fileName, selector) {
 describe('Network page', () => {
     withAuth();
 
-    it('should visit using the left nav', () => {
+    it.skip('should visit using the left nav', () => {
         visitOldNetworkGraphFromLeftNav();
     });
 
-    it('should have selected item in nav bar', () => {
+    it.skip('should have selected item in nav bar', () => {
         visitOldNetworkGraph();
         cy.get(`${navigationSelectors.navLinks}:contains('Network')`).should(
             'have.class',
@@ -42,13 +42,13 @@ describe('Network page', () => {
         );
     });
 
-    it('should have title', () => {
+    it.skip('should have title', () => {
         visitOldNetworkGraph();
 
         cy.title().should('match', getRegExpForTitleWithBranding('Network Graph'));
     });
 
-    it('should display a legend', () => {
+    it.skip('should display a legend', () => {
         visitOldNetworkGraphWithMockedData();
 
         const { deployments, namespaces, connections } = networkPageSelectors.legend;
@@ -67,7 +67,7 @@ describe('Network page', () => {
         cy.get(`${connections} *:nth-child(3) [alt="namespace-egress-ingress"]`);
     });
 
-    it('should handle toggle click on simulator network policy button', () => {
+    it.skip('should handle toggle click on simulator network policy button', () => {
         visitOldNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
@@ -77,7 +77,7 @@ describe('Network page', () => {
         cy.get(networkPageSelectors.panels.creatorPanel).should('not.exist');
     });
 
-    it('should display expected toast message when uploaded yaml without namespace', () => {
+    it.skip('should display expected toast message when uploaded yaml without namespace', () => {
         visitOldNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
@@ -89,7 +89,7 @@ describe('Network page', () => {
         cy.get(`${toastSelectors.body}:contains("network policy has empty namespace")`);
     });
 
-    it('should display display policies processed message when uploaded yaml with namespace', () => {
+    it.skip('should display display policies processed message when uploaded yaml with namespace', () => {
         visitOldNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
@@ -137,7 +137,7 @@ describe('Network Deployment Details', () => {
 describe('Network Policy Simulator', () => {
     withAuth();
 
-    it('should update the graph when generating and simulating network policies', () => {
+    it.skip('should update the graph when generating and simulating network policies', () => {
         // this will get the deployments for the 'default' and 'docker' namespace
         function getDeployments(cytoscape) {
             const deployments = cytoscape.filter((element) => {
