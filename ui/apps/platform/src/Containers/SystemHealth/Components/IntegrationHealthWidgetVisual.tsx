@@ -62,13 +62,15 @@ const IntegrationHealthWidget = ({
                     </Flex>
                 </CardHeaderMain>
             </CardHeader>
-            <CardBody>
-                {errorMessageFetching ? (
-                    <Alert isInline variant="warning" title={errorMessageFetching} />
-                ) : (
-                    <IntegrationsHealth integrations={integrations} />
-                )}
-            </CardBody>
+            {(errorMessageFetching || integrations.length !== 0) && (
+                <CardBody>
+                    {errorMessageFetching ? (
+                        <Alert isInline variant="warning" title={errorMessageFetching} />
+                    ) : (
+                        <IntegrationsHealth integrations={integrations} />
+                    )}
+                </CardBody>
+            )}
         </Card>
     );
 };

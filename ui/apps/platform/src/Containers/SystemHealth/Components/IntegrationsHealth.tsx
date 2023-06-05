@@ -9,9 +9,6 @@ type Props = {
 };
 
 const IntegrationsHealth = ({ integrations }: Props): ReactElement => {
-    if (integrations.length === 0) {
-        return <></>;
-    }
     return (
         <TableComposable variant="compact">
             <Thead>
@@ -31,11 +28,7 @@ const IntegrationsHealth = ({ integrations }: Props): ReactElement => {
                         <Td dataLabel="Label" modifier="breakWord" data-testid="label">
                             {label}
                         </Td>
-                        <Td
-                            dataLabel="Error message"
-                            modifier="breakWord"
-                            data-testid="error-message"
-                        >
+                        <Td dataLabel="Error" modifier="breakWord" data-testid="error-message">
                             {errorMessage.length === 0 ? '-' : errorMessage}
                         </Td>
                         <Td dataLabel="Date">{getDateTime(lastTimestamp)}</Td>
