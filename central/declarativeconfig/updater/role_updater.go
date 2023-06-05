@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	"github.com/stackrox/rox/central/declarativeconfig/utils"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
@@ -13,25 +14,25 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 type roleUpdater struct {
 	roleDS        roleDataStore.DataStore
 	groupDS       groupDataStore.DataStore
-	reporter      integrationhealth.Reporter
+	healthDS      declarativeConfigHealth.DataStore
 	idExtractor   types.IDExtractor
 	nameExtractor types.NameExtractor
 }
 
 var _ ResourceUpdater = (*roleUpdater)(nil)
 
-func newRoleUpdater(roleDatastore roleDataStore.DataStore, groupDatastore groupDataStore.DataStore, reporter integrationhealth.Reporter) ResourceUpdater {
+func newRoleUpdater(roleDatastore roleDataStore.DataStore, groupDatastore groupDataStore.DataStore,
+	healthDS declarativeConfigHealth.DataStore) ResourceUpdater {
 	return &roleUpdater{
 		roleDS:        roleDatastore,
 		groupDS:       groupDatastore,
-		reporter:      reporter,
+		healthDS:      healthDS,
 		idExtractor:   types.UniversalIDExtractor(),
 		nameExtractor: types.UniversalNameExtractor(),
 	}
@@ -62,8 +63,10 @@ func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...
 		if err := u.roleDS.RemoveRole(ctx, role.GetName()); err != nil {
 			roleDeletionErr = multierror.Append(roleDeletionErr, err)
 			roleNames = append(roleNames, role.GetName())
-			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(role, "", err,
-				u.idExtractor, u.nameExtractor))
+			if err := u.healthDS.UpsertDeclarativeConfig(ctx, utils.HealthStatusForProtoMessage(role, "", err,
+				u.idExtractor, u.nameExtractor)); err != nil {
+				log.Errorf("Failed to update the declarative config health status %q: %v", role.GetName(), err)
+			}
 			if errors.Is(err, errox.ReferencedByAnotherObject) {
 				role.Traits.Origin = storage.Traits_DECLARATIVE_ORPHANED
 				if err = u.roleDS.UpdateRole(ctx, role); err != nil {
