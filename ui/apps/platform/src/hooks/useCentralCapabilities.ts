@@ -14,12 +14,12 @@ function useCentralCapabilities(): UseCentralCapabilityResult {
     const isCentralCapabilityAvailable = useMemo(
         () =>
             (centralCapabilityFlag: CentralCapabilitiesFlags): boolean => {
-                const centralCapacity = centralCapabilities[centralCapabilityFlag];
-                if (centralCapacity === 'CapabilityAvailable') {
-                    return true;
+                const centralCapabilitiesStatus = centralCapabilities[centralCapabilityFlag];
+                if (centralCapabilitiesStatus === 'CapabilityDisabled') {
+                    return false;
                 }
 
-                return false;
+                return true;
             },
         [centralCapabilities]
     );
