@@ -97,13 +97,14 @@ runs:
       shell: bash
       run: |
         cd rocksdb
-        
-        make MACHINE=ppc64le TARGET_ARCHITECTURE=ppc64le CC="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc" CXX="/opt/at15.0/bin/powerpc64le-linux-gnu-g++" AR="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc-ar" shared_lib 
+        sudo mkdir /usr/local/lib/pkgconfig
 
-        make MACHINE=ppc64le TARGET_ARCHITECTURE=ppc64le CC="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc" CXX="/opt/at15.0/bin/powerpc64le-linux-gnu-g++" AR="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc-ar" static_lib 
+        sudo make MACHINE=ppc64le TARGET_ARCHITECTURE=ppc64le CC="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc" CXX="/opt/at15.0/bin/powerpc64le-linux-gnu-g++" AR="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc-ar" shared_lib 
 
-        make MACHINE=ppc64le TARGET_ARCHITECTURE=ppc64le CC="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc" CXX="/opt/at15.0/bin/powerpc64le-linux-gnu-g++" AR="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc-ar" install-shared 
+        sudo make MACHINE=ppc64le TARGET_ARCHITECTURE=ppc64le CC="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc" CXX="/opt/at15.0/bin/powerpc64le-linux-gnu-g++" AR="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc-ar" static_lib 
 
-        make MACHINE=ppc64le TARGET_ARCHITECTURE=ppc64le CC="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc" CXX="/opt/at15.0/bin/powerpc64le-linux-gnu-g++" AR="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc-ar" install-static 
+        sudo make MACHINE=ppc64le TARGET_ARCHITECTURE=ppc64le CC="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc" CXX="/opt/at15.0/bin/powerpc64le-linux-gnu-g++" AR="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc-ar" install-shared 
+
+        sudo make MACHINE=ppc64le TARGET_ARCHITECTURE=ppc64le CC="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc" CXX="/opt/at15.0/bin/powerpc64le-linux-gnu-g++" AR="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc-ar" install-static 
 
         cd ..
