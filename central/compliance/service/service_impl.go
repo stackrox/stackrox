@@ -154,14 +154,6 @@ func (s *serviceImpl) GetRunResults(ctx context.Context, request *v1.GetComplian
 	if err != nil {
 		return nil, err
 	}
-	config, exist, errConfig := s.complianceDataStore.GetConfig(ctx, request.GetStandardId())
-	if errConfig != nil {
-		return nil, errConfig
-	}
-	if exist && config.GetHideScanResults() {
-		return nil, errors.Errorf("Results are hidden for standard with ID %s", request.GetStandardId())
-	}
-
 	return &v1.GetComplianceRunResultsResponse{
 		Results:    results.LastSuccessfulResults,
 		FailedRuns: results.FailedRuns,
