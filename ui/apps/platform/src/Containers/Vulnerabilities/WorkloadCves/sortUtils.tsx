@@ -33,7 +33,7 @@ export const aggregateByCreatedTime: SortAggregate = {
 export const CVEsDefaultSort = {
     field: 'CVSS',
     aggregateBy: aggregateByCVSS,
-    direction: 'asc',
+    direction: 'desc',
 } as const;
 
 export const defaultDeploymentSortFields = ['Deployment', 'Cluster', 'Namespace', 'Created'];
