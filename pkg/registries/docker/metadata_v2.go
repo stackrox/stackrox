@@ -13,7 +13,7 @@ func HandleV2ManifestList(r *Registry, remote, ref string) (*storage.ImageMetada
 		return nil, err
 	}
 	if len(manifestList.Manifests) == 1 {
-		return HandleV2Manifest(r, remote, manifestList.Manifests[0].Digest.String())
+		return handleManifests(r, manifestList.Manifests[0].MediaType, remote, manifestList.Manifests[0].Digest.String())
 	}
 	for _, manifest := range manifestList.Manifests {
 		// Default to linux arch
@@ -59,7 +59,7 @@ func HandleOCIImageIndex(r *Registry, remote, ref string) (*storage.ImageMetadat
 		return nil, err
 	}
 	if len(index.Manifests) == 1 {
-		return HandleOCIManifest(r, remote, index.Manifests[0].Digest.String())
+		return handleManifests(r, index.Manifests[0].MediaType, remote, index.Manifests[0].Digest.String())
 	}
 	for _, manifest := range index.Manifests {
 		// Default to linux arch
