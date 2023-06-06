@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/image"
 	metaUtil "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -59,6 +60,8 @@ central:
   exposure:
     loadBalancer:
       enabled: true
+  persistence:
+    none: true
   db:
     enabled: true
     password:
@@ -101,6 +104,8 @@ central:
       enabled: true
   db:
     enabled: true
+  persistence:
+    none: true
 enableOpenShiftMonitoring: true
 system:
     enablePodSecurityPolicies: true
@@ -173,8 +178,16 @@ func (s *baseSuite) ParseObjects(objYAMLs map[string]string) []unstructured.Unst
 func (s *baseSuite) TestAllGeneratableGenerated() {
 	_, rendered := s.LoadAndRender(autogenerateAll)
 	s.Require().NotEmpty(rendered)
+	// We are in the process to remove these files. The support is limited to
+	// upgrade process only. Exclude them for now.
+	// TODO(ROX-16253): Remove PVC
+	excludes := set.NewFrozenStringSet("01-central-11-pvc.yaml", "00-storage-class.yaml")
 
 	for k, v := range rendered {
+		if excludes.Contains(path.Base(k)) {
+			s.Empty(v, "expected generated values file %s to be empty when specifying all generatable values", k)
+			continue
+		}
 		s.NotEmptyf(v, "unexpected empty rendered YAML %s", k)
 	}
 }
@@ -186,11 +199,15 @@ func (s *baseSuite) TestAllGeneratableExplicit() {
 	_, rendered := s.LoadAndRender(allValuesExplicit)
 	s.Require().NotEmpty(rendered)
 
+	// We are in the process to remove these files. The support is limited to
+	// upgrade process only. Exclude them for now.
+	excludes := set.NewFrozenStringSet("01-central-11-pvc.yaml", "00-storage-class.yaml", "99-generated-values-secret.yaml")
+
 	for k, v := range rendered {
-		if path.Base(k) == "99-generated-values-secret.yaml" {
-			s.Empty(v, "expected generated values file to be empty when specifying all generatable values")
-		} else {
-			s.NotEmptyf(v, "unexpected empty rendered YAML %s", k)
+		if excludes.Contains(path.Base(k)) {
+			s.Empty(v, "expected generated values file %s to be empty when specifying all generatable values", k)
+			continue
 		}
+		s.NotEmptyf(v, "unexpected empty rendered YAML %s", k)
 	}
 }

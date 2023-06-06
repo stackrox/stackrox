@@ -86,6 +86,8 @@ a README file detailing the Helm-based deployment process.`
     - Run
         helm install -n stackrox --create-namespace stackrox-central-services {{ $chartRef }}
       passing any additional arguments per the above instructions.
+      For installation of 4.1 and laster, it is required to add --set central.persistence.none=true to stop creating
+      new persistent storage to attach to Central.
 {{- if eq .K8sConfig.DeploymentFormat.String "HELM_VALUES" }}
       If you prefer reading the Helm chart from a directory on your local disk instead of from
       the stackrox upstream repository, replace {{ $chartRef }} with the path to the

@@ -80,6 +80,7 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 		checkTLS:                    tlscheck.CheckTLS,
 		globalRegistries:            registries.NewSet(someRegsFactory),
 		centralRegistryIntegrations: registries.NewSet(allRegsFactory),
+		clusterLocalRegistryHosts:   set.NewStringSet(),
 	}
 
 	if checkTLS != nil {

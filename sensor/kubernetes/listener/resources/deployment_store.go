@@ -138,7 +138,15 @@ func (ds *DeploymentStore) FindDeploymentIDsWithServiceAccount(namespace, sa str
 	defer ds.lock.RUnlock()
 
 	var match []string
-	for id, wrap := range ds.deployments {
+	ids, found := ds.deploymentIDs[namespace]
+	if !found || ids == nil {
+		return match
+	}
+	for id := range ids {
+		wrap, found := ds.deployments[id]
+		if !found || wrap == nil {
+			continue
+		}
 		if wrap.GetServiceAccount() == sa && wrap.GetNamespace() == namespace {
 			match = append(match, id)
 		}

@@ -10,34 +10,35 @@ import {
     FlexItem,
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
-import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 import pluralize from 'pluralize';
 
-import IconText from 'Components/PatternFly/IconText/IconText';
 import { fetchDeclarativeConfigurationsHealth } from 'services/IntegrationHealthService';
+import { IntegrationHealth } from 'types/integrationHealth.proto';
+import { getDateTime } from 'utils/dateUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import { IntegrationHealthItem } from '../utils/integrations';
-import { getDateTime } from '../../../utils/dateUtils';
+import { ErrorIcon, healthIconMap, SpinnerIcon } from '../CardHeaderIcons';
 
-type CardProps = {
+type DeclarativeConfigurationHealthCardProps = {
     pollingCount: number;
 };
 
-function DeclarativeConfigurationHealthCard({ pollingCount }: CardProps): ReactElement {
+function DeclarativeConfigurationHealthCard({
+    pollingCount,
+}: DeclarativeConfigurationHealthCardProps): ReactElement {
     const [isFetching, setIsFetching] = useState(false);
-    const [requestErrorMessage, setRequestErrorMessage] = useState('');
-    const [items, setItems] = useState<IntegrationHealthItem[]>([]);
+    const [errorMessageFetching, setErrorMessageFetching] = useState('');
+    const [items, setItems] = useState<IntegrationHealth[]>([]);
 
     useEffect(() => {
         setIsFetching(true);
         fetchDeclarativeConfigurationsHealth()
             .then((itemsFetched) => {
-                setRequestErrorMessage('');
+                setErrorMessageFetching('');
                 setItems(itemsFetched);
             })
             .catch((error) => {
-                setRequestErrorMessage(getAxiosErrorMessage(error));
+                setErrorMessageFetching(getAxiosErrorMessage(error));
                 setItems([]);
             })
             .finally(() => {
@@ -49,45 +50,42 @@ function DeclarativeConfigurationHealthCard({ pollingCount }: CardProps): ReactE
      * Wait for isFetching only until response to the initial request.
      * Otherwise count temporarily disappears during each subsequent request.
      */
-    const hasCount = (pollingCount !== 0 || !isFetching) && !requestErrorMessage;
-    const unhealthyItems = items.filter((value) => {
-        return value.status === 'UNHEALTHY';
-    });
-    const itemCount = unhealthyItems.length;
+    const isFetchingInitialRequest = isFetching && pollingCount === 0;
+    const hasCount = !isFetchingInitialRequest && !errorMessageFetching;
+    const unhealthyItems = items.filter(({ status }) => status === 'UNHEALTHY');
+    const unhealthyCount = unhealthyItems.length;
+
+    /* eslint-disable no-nested-ternary */
+    const icon = isFetchingInitialRequest
+        ? SpinnerIcon
+        : errorMessageFetching
+        ? ErrorIcon
+        : healthIconMap[unhealthyCount === 0 ? 'success' : 'danger'];
+    /* eslint-enable no-nested-ternary */
 
     return (
         <Card isFullHeight isCompact>
             <CardHeader>
                 <CardHeaderMain>
-                    <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                    <Flex className="pf-u-flex-grow-1">
+                        <FlexItem>{icon}</FlexItem>
                         <FlexItem>
                             <CardTitle component="h2">Declarative configuration</CardTitle>
                         </FlexItem>
                         {hasCount && (
                             <FlexItem>
-                                <IconText
-                                    icon={
-                                        itemCount === 0 ? (
-                                            <CheckCircleIcon color="var(--pf-global--success-color--100)" />
-                                        ) : (
-                                            <ExclamationCircleIcon color="var(--pf-global--danger-color--100)" />
-                                        )
-                                    }
-                                    text={
-                                        itemCount === 0
-                                            ? 'no errors'
-                                            : `${itemCount} ${pluralize('error', itemCount)}`
-                                    }
-                                />
+                                {unhealthyCount === 0
+                                    ? 'no errors'
+                                    : `${unhealthyCount} ${pluralize('error', unhealthyCount)}`}
                             </FlexItem>
                         )}
                     </Flex>
                 </CardHeaderMain>
             </CardHeader>
-            {(requestErrorMessage || itemCount !== 0) && (
+            {(errorMessageFetching || unhealthyCount !== 0) && (
                 <CardBody>
-                    {requestErrorMessage ? (
-                        <Alert isInline variant="warning" title={requestErrorMessage} />
+                    {errorMessageFetching ? (
+                        <Alert isInline variant="warning" title={errorMessageFetching} />
                     ) : (
                         <TableComposable variant="compact">
                             <Thead>

@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"crypto/x509"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -51,6 +52,8 @@ func (s *serviceImplTestSuite) SetupTest() {
 
 	err = testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
+
+	s.mockCtrl = gomock.NewController(s.T())
 }
 
 func (s *serviceImplTestSuite) TestTLSChallenge() {
@@ -131,8 +134,6 @@ func verifySignature(cert *x509.Certificate, resp *v1.TLSChallengeResponse) erro
 }
 
 func (s *serviceImplTestSuite) TestDatabaseStatus() {
-	s.mockCtrl = gomock.NewController(s.T())
-
 	// Need to fake being logged in
 	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
 	ctx := authn.ContextWithIdentity(sac.WithAllAccess(context.Background()), mockID, s.T())
@@ -192,4 +193,42 @@ func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
 	actual, err := srv.GetDatabaseBackupStatus(ctx, &v1.Empty{})
 	s.NoError(err)
 	s.EqualValues(expected, actual)
+}
+
+func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
+	s.Run("when not authenticated", func() {
+		caps, err := (&serviceImpl{}).GetCentralCapabilities(context.Background(), nil)
+
+		s.Nil(caps)
+		s.ErrorContains(err, "not authorized")
+	})
+
+	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
+	ctx := authn.ContextWithIdentity(sac.WithNoAccess(context.Background()), mockID, s.T())
+
+	s.Run("when managed central", func() {
+		s.T().Setenv("ROX_MANAGED_CENTRAL", "true")
+
+		caps, err := (&serviceImpl{}).GetCentralCapabilities(ctx, nil)
+
+		s.NoError(err)
+		s.Equal(v1.CentralServicesCapabilities_CapabilityDisabled, caps.GetCentralScanningCanUseContainerIamRoleForEcr())
+		s.Equal(v1.CentralServicesCapabilities_CapabilityDisabled, caps.GetCentralCanUseCloudBackupIntegrations())
+		s.Equal(v1.CentralServicesCapabilities_CapabilityDisabled, caps.GetCentralCanDisplayDeclarativeConfigHealth())
+	})
+
+	cases := map[string]string{"false": "false", "<empty>": ""}
+
+	for name, val := range cases {
+		s.Run(fmt.Sprintf("when not managed central (%s)", name), func() {
+			s.T().Setenv("ROX_MANAGED_CENTRAL", val)
+
+			caps, err := (&serviceImpl{}).GetCentralCapabilities(ctx, nil)
+
+			s.NoError(err)
+			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.CentralScanningCanUseContainerIamRoleForEcr)
+			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.CentralCanUseCloudBackupIntegrations)
+			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.CentralCanDisplayDeclarativeConfigHealth)
+		})
+	}
 }

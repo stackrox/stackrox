@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 import { Spinner } from '@patternfly/react-core';
 import {
     CheckCircleIcon,
@@ -18,7 +18,9 @@ export const DangerIcon = <ExclamationCircleIcon color="var(--pf-global--danger-
 export const SuccessIcon = <CheckCircleIcon color="var(--pf-global--success-color--100)" />;
 export const WarningIcon = <ExclamationTriangleIcon color="var(--pf-global--warning-color--100)" />;
 
-export const healthIconMap = {
+export type HealthVariant = 'danger' | 'warning' | 'success';
+
+export const healthIconMap: Record<HealthVariant, ReactElement> = {
     danger: DangerIcon,
     success: SuccessIcon,
     warning: WarningIcon,
