@@ -26,8 +26,9 @@ import spock.lang.IgnoreIf
 import spock.lang.Tag
 
 @Tag("BAT")
-// ROX-14228 skipping tests for 1st release on power & z
-@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+// skip if executed in a test environment with just secured-cluster deployed in the test cluster
+// i.e. central is deployed elsewhere
+@IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
 class CertRotationTest extends BaseSpecification {
 
     def generateCerts(String path, String expectedFileName, JsonObject data = null) {
