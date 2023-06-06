@@ -46,7 +46,7 @@ func (suite *DeploymentDataStoreTestSuite) SetupTest() {
 	suite.indexer = indexerMocks.NewMockIndexer(mockCtrl)
 	suite.searcher = searcherMocks.NewMockSearcher(mockCtrl)
 	suite.riskStore = riskMocks.NewMockDataStore(mockCtrl)
-	suite.filter = filter.NewFilter(5, []int{5, 4, 3, 2, 1})
+	suite.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 }
 
 func (suite *DeploymentDataStoreTestSuite) TearDownTest() {
