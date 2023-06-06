@@ -51,14 +51,20 @@ func (u *notifierUpdater) Upsert(ctx context.Context, m proto.Message) error {
 	if !ok {
 		return errox.InvariantViolation.Newf("wrong type passed to role updater: %T", notifierProto)
 	}
+
+	log.Infof("Received notifier proto %+v", notifierProto)
+	log.Info("Upsert the notifier")
 	_, err := u.notifierDS.UpsertNotifier(ctx, notifierProto)
 	if err != nil {
 		return err
 	}
+	log.Infof("Create the notifier on the processor")
 	notifier, err := notifiers.CreateNotifier(notifierProto)
 	if err != nil {
+		log.Infof("Received an error during creation of notifier: %v", err)
 		return errox.InvalidArgs.CausedBy(err)
 	}
+	log.Infof("Successfully created notifier")
 	u.processor.UpdateNotifier(ctx, notifier)
 
 	return u.reporter.Register(notifierProto.GetId(), notifierProto.GetName(), storage.IntegrationHealth_NOTIFIER)

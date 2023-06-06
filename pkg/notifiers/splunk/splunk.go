@@ -195,13 +195,16 @@ func init() {
 }
 
 func newSplunk(notifier *storage.Notifier) (*splunk, error) {
+	log.Infof("Got notifier %+v to create splunk notifier", notifier)
 	conf := notifier.GetSplunk()
 	if conf == nil {
 		return nil, errors.New("Splunk configuration required")
 	}
 	if err := validate(conf); err != nil {
+		log.Infof("Received an error for notifier: %v", err)
 		return nil, err
 	}
+	log.Infof("Passed validation for Splunk notifier")
 	url := urlfmt.FormatURL(conf.GetHttpEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
 	eventEndpoint := url
