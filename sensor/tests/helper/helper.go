@@ -442,7 +442,8 @@ func (c *TestContext) WaitForSyncEvent() {
 	for {
 		select {
 		case <-timer.C:
-			c.t.Fatalf("timeout reached waiting for sync event")
+			c.t.Errorf("timeout reached waiting for sync event")
+			return
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
 			for _, m := range messages {
@@ -494,7 +495,8 @@ func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion Asse
 	for {
 		select {
 		case <-timer.C:
-			c.t.Fatalf("timeout reached waiting for state: (%s): %s", message, lastErr)
+			c.t.Errorf("timeout reached waiting for state: (%s): %s", message, lastErr)
+			return
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
 			lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, DefaultNamespace, name)

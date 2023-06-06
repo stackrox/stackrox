@@ -27,7 +27,7 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 	require.NoError(t, err)
 
 	c.RunTest(helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
-		ctx, cancelFn := context.WithTimeout(context.Background(), 10*time.Minute)
+		ctx, cancelFn := context.WithTimeout(context.Background(), 1*time.Minute)
 		defer cancelFn()
 		_, err = c.ApplyResourceNoObject(ctx, helper.DefaultNamespace, NginxDeployment1, nil)
 
@@ -36,7 +36,7 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 		testContext.StopCentralGRPC()
 
 		obj := &appsV1.Deployment{}
-		_, err = c.ApplyResource(context.Background(), helper.DefaultNamespace, &NginxDeployment2, obj, nil)
+		_, err = c.ApplyResource(ctx, helper.DefaultNamespace, &NginxDeployment2, obj, nil)
 		require.NoError(t, err)
 
 		testContext.StartFakeGRPC()
@@ -45,10 +45,9 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 		require.Len(t, archived, 1)
 		deploymentInMessages(t, archived[0], helper.DefaultNamespace, NginxDeployment1.Name)
 
-		// TODO: Assert that sync event is sent and that deployment 1 and 2 is seen in current messages with SYNC type
-		// testContext.WaitForSyncEvent()
-		//testContext.DeploymentActionReceived(NginxDeployment1.Name, central.ResourceAction_SYNC_RESOURCE)
-		//testContext.DeploymentActionReceived(NginxDeployment2.Name, central.ResourceAction_SYNC_RESOURCE)
+		testContext.WaitForSyncEvent()
+		testContext.DeploymentActionReceived(NginxDeployment1.Name, central.ResourceAction_SYNC_RESOURCE)
+		testContext.DeploymentActionReceived(NginxDeployment2.Name, central.ResourceAction_SYNC_RESOURCE)
 
 	}))
 
