@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // HealthStatusForProtoMessage returns a storage.DeclarativeConfigHealth for the given proto.Message.
@@ -31,13 +32,22 @@ func HealthStatusForProtoMessage(message proto.Message, handler string, err erro
 
 	name := resourceNameFromProtoMessage(message, nameExtractor, idExtractor)
 
+	resourceType := resourceTypeFromProtoMessage(message)
+
+	// Special case: the store itself requires UUIDs.
+	// For roles, we currently do not have any ID, but their name.
+	// Hence, we need to create a UUID on-the-fly for it.
+	if resourceType == storage.DeclarativeConfigHealth_ROLE {
+		messageID = idForRole(messageID)
+	}
+
 	return &storage.DeclarativeConfigHealth{
 		Id: messageID,
 		Name: utils.IfThenElse(handler != "",
 			fmt.Sprintf("%s in config map %s", messageName, path.Base(handler)),
 			name),
 		ResourceName: name,
-		ResourceType: resourceTypeFromProtoMessage(message),
+		ResourceType: resourceType,
 		Status: utils.IfThenElse(err != nil, storage.DeclarativeConfigHealth_UNHEALTHY,
 			storage.DeclarativeConfigHealth_HEALTHY),
 		ErrorMessage:  errMsg,
@@ -93,4 +103,8 @@ func resourceTypeFromProtoMessage(message proto.Message) storage.DeclarativeConf
 		// Still return here although we will panic above.
 		return 0
 	}
+}
+
+func idForRole(name string) string {
+	return uuid.NewV5FromNonUUIDs("role-config-health", name).String()
 }
