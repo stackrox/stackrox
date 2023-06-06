@@ -5,12 +5,6 @@ set -euo pipefail
 PREVIOUS_RELEASE=$1
 RELEASE=$2
 
-GITHUB_REPOSITORY="stackrox/stackrox"
-PREVIOUS_SCANNER_VERSION="$(gh api \
-    -H "Accept: application/vnd.github.v3.raw" \
-    "/repos/${GITHUB_REPOSITORY}/contents/SCANNER_VERSION?ref=${PREVIOUS_RELEASE}"
-)"
-
 CWD="$(pwd)"
 TMP_DIR="$(mktemp -d)"
 
@@ -32,11 +26,8 @@ deploy_central() {
 
     rm -rf bundle-test1
     ./roxctl-"${PREVIOUS_RELEASE}" central generate k8s pvc \
-        --lb-type=lb \
-        --main-image=quay.io/rhacs-eng/main:"${PREVIOUS_RELEASE}" \
-        --central-db-image=quay.io/rhacs-eng/central-db:"${PREVIOUS_RELEASE}" \
-        --scanner-db-image=quay.io/rhacs-eng/scanner-db:"${PREVIOUS_SCANNER_VERSION}" \
-        --scanner-image=quay.io/rhacs-eng/scanner:"${PREVIOUS_SCANNER_VERSION}" \
+        --lb-type lb \
+        --image-defaults development_build \
         --output-dir bundle-test1
 
     ./bundle-test1/central/scripts/setup.sh
