@@ -618,9 +618,8 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
-	server := grpc.NewServer()
-	central.RegisterSensorServiceServer(server, fakeCentral)
-	fakeCentral.ServerPointer = server
+	fakeCentral.ServerPointer = grpc.NewServer()
+	central.RegisterSensorServiceServer(fakeCentral.ServerPointer, fakeCentral)
 
 	go func() {
 		utils.IgnoreError(func() error {

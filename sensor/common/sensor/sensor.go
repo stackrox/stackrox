@@ -366,7 +366,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			return s.wrapOrNewError(s.centralCommunication.Stopped().Err(), "communication stopped")
 		case <-s.stoppedSig.WaitC():
 			// This means sensor was signaled to finish, this error shouldn't be retried
-			log.Infof("Received stop signal from Sensor. Stopping without retrying")
+			log.Info("Received stop signal from Sensor. Stopping without retrying")
 			return backoff.Permanent(s.wrapOrNewError(s.stoppedSig.Err(), "received sensor stop signal"))
 		}
 	}, exponential, func(err error, d time.Duration) {
