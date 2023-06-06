@@ -62,6 +62,7 @@ type manager struct {
 	baselines                  common.ProcessBaselineManager
 	networkBaselines           common.NetworkBaselineManager
 	delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager
+	imageIntegrationMgr        common.ImageIntegrationManager
 	manager                    hashManager.Manager
 	autoTriggerUpgrades        *concurrency.Flag
 }
@@ -100,6 +101,7 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 	baselineManager common.ProcessBaselineManager,
 	networkBaselineManager common.NetworkBaselineManager,
 	delegatedRegistryConfigManager common.DelegatedRegistryConfigManager,
+	imageIntegrationMgr common.ImageIntegrationManager,
 	autoTriggerUpgrades *concurrency.Flag,
 ) error {
 	m.clusters = clusterManager
@@ -108,6 +110,7 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 	m.baselines = baselineManager
 	m.networkBaselines = networkBaselineManager
 	m.delegatedRegistryConfigMgr = delegatedRegistryConfigManager
+	m.imageIntegrationMgr = imageIntegrationMgr
 	m.autoTriggerUpgrades = autoTriggerUpgrades
 	err := m.initializeUpgradeControllers()
 	if err != nil {
@@ -254,6 +257,7 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 			m.baselines,
 			m.networkBaselines,
 			m.delegatedRegistryConfigMgr,
+			m.imageIntegrationMgr,
 			m.manager)
 	ctx = withConnection(ctx, conn)
 

@@ -69,6 +69,8 @@ func (d *delegatedRegistryImpl) ProcessMessage(msg *central.MsgToSensor) error {
 		return d.processUpdatedDelegatedRegistryConfig(msg.GetDelegatedRegistryConfig())
 	case msg.GetScanImage() != nil:
 		return d.processScanImage(msg.GetScanImage())
+	case msg.GetImageIntegrations() != nil:
+		return d.processImageIntegrations(msg.GetImageIntegrations())
 	}
 
 	return nil
@@ -92,7 +94,7 @@ func (d *delegatedRegistryImpl) processUpdatedDelegatedRegistryConfig(config *ce
 		return errors.New("could not process updated delegated registry config, stop requested")
 	default:
 		d.registryStore.SetDelegatedRegistryConfig(config)
-		log.Infof("Stored updated delegated registry config: %q", config)
+		log.Infof("Upserted delegated registry config: %q", config)
 	}
 	return nil
 }
@@ -157,4 +159,17 @@ func (d *delegatedRegistryImpl) sendScanStatusUpdate(scanReq *central.ScanImage,
 func (d *delegatedRegistryImpl) SetCentralGRPCClient(cc grpc.ClientConnInterface) {
 	d.imageSvc = v1.NewImageServiceClient(cc)
 	log.Debugf("Received central GRPC client connection")
+}
+
+func (d *delegatedRegistryImpl) processImageIntegrations(iiReq *central.ImageIntegrations) error {
+	select {
+	case <-d.stopSig.Done():
+		return errors.New("could not process updated image integrations, stop requested")
+	default:
+		log.Infof("Received %d updated and %d deleted image integrations", len(iiReq.GetUpdatedIntegrations()), len(iiReq.GetDeletedIntegrationIds()))
+
+		d.registryStore.UpsertCentralRegistryIntegrations(iiReq.GetUpdatedIntegrations())
+		d.registryStore.DeleteCentralRegistryIntegrations(iiReq.GetDeletedIntegrationIds())
+	}
+	return nil
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	delegatedRegistryConfigConvert "github.com/stackrox/rox/central/delegatedregistryconfig/convert"
+	"github.com/stackrox/rox/central/delegatedregistryconfig/util/imageintegration"
 	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/localscanner"
 	"github.com/stackrox/rox/central/metrics"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/telemetry"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
@@ -59,6 +61,7 @@ type sensorConnection struct {
 	baselineMgr                common.ProcessBaselineManager
 	networkBaselineMgr         common.NetworkBaselineManager
 	delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager
+	imageIntegrationMgr        common.ImageIntegrationManager
 
 	sensorHello  *central.SensorHello
 	capabilities set.Set[centralsensor.SensorCapability]
@@ -74,6 +77,7 @@ func newConnection(ctx context.Context,
 	baselineMgr common.ProcessBaselineManager,
 	networkBaselineMgr common.NetworkBaselineManager,
 	delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager,
+	imageIntegrationMgr common.ImageIntegrationManager,
 	hashMgr hashManager.Manager,
 ) *sensorConnection {
 
@@ -91,6 +95,7 @@ func newConnection(ctx context.Context,
 		baselineMgr:                baselineMgr,
 		networkBaselineMgr:         networkBaselineMgr,
 		delegatedRegistryConfigMgr: delegatedRegistryConfigMgr,
+		imageIntegrationMgr:        imageIntegrationMgr,
 
 		sensorHello:  sensorHello,
 		capabilities: centralsensor.CapSetFromStringSlice(sensorHello.GetCapabilities()...),
@@ -472,7 +477,37 @@ func (c *sensorConnection) getDelegatedRegistryConfigMsg(ctx context.Context) (*
 			DelegatedRegistryConfig: delegatedRegistryConfigConvert.StorageToInternalAPI(config),
 		},
 	}, nil
+}
 
+// getImageIntegrationMsg builds a MsgToSensor containing registry integrations that should
+// be sent to sensor. Returns nil if are no eligible integrations.
+func (c *sensorConnection) getImageIntegrationMsg(ctx context.Context) (*central.MsgToSensor, error) {
+	iis, err := c.imageIntegrationMgr.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	var imageIntegrations []*storage.ImageIntegration
+	for _, ii := range iis {
+		if !imageintegration.ValidForSync(ii) {
+			continue
+		}
+
+		imageIntegrations = append(imageIntegrations, ii)
+		log.Debugf("Sending registry integration %q (%v) to cluster %q", ii.GetName(), ii.GetId(), c.clusterID)
+	}
+
+	if len(imageIntegrations) == 0 {
+		return nil, nil
+	}
+
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ImageIntegrations{
+			ImageIntegrations: &central.ImageIntegrations{
+				UpdatedIntegrations: imageIntegrations,
+			},
+		},
+	}, nil
 }
 
 func (c *sensorConnection) Run(ctx context.Context, server central.SensorService_CommunicateServer, connectionCapabilities set.Set[centralsensor.SensorCapability]) error {
@@ -514,6 +549,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 	}
 
 	if connectionCapabilities.Contains(centralsensor.DelegatedRegistryCap) {
+		// Sync delegated registry config.
 		msg, err := c.getDelegatedRegistryConfigMsg(ctx)
 		if err != nil {
 			return errors.Wrapf(err, "unable to get delegated registry config msg for %q", c.clusterID)
@@ -523,7 +559,20 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 				return errors.Wrapf(err, "unable to sync initial delegated registry config to cluster %q", c.clusterID)
 			}
 
-			log.Debugf("Sent delegated registry config %q to cluster %q", msg.GetDelegatedRegistryConfig(), c.clusterID)
+			log.Infof("Sent delegated registry config %q to cluster %q", msg.GetDelegatedRegistryConfig(), c.clusterID)
+		}
+
+		// Sync integrations.
+		msg, err = c.getImageIntegrationMsg(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "unable to get image integrations msg for %q", c.clusterID)
+		}
+		if msg != nil {
+			if err := server.Send(msg); err != nil {
+				return errors.Wrapf(err, "unable to sync initial image integrations to cluster %q", c.clusterID)
+			}
+
+			log.Infof("Sent %d image integrations to cluster %q", len(msg.GetImageIntegrations().GetUpdatedIntegrations()), c.clusterID)
 		}
 	}
 

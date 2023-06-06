@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 )
 
@@ -257,6 +258,44 @@ func (m *MockDelegatedRegistryConfigManager) GetConfig(ctx context.Context) (*st
 func (mr *MockDelegatedRegistryConfigManagerMockRecorder) GetConfig(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockDelegatedRegistryConfigManager)(nil).GetConfig), ctx)
+}
+
+// MockImageIntegrationManager is a mock of ImageIntegrationManager interface.
+type MockImageIntegrationManager struct {
+	ctrl     *gomock.Controller
+	recorder *MockImageIntegrationManagerMockRecorder
+}
+
+// MockImageIntegrationManagerMockRecorder is the mock recorder for MockImageIntegrationManager.
+type MockImageIntegrationManagerMockRecorder struct {
+	mock *MockImageIntegrationManager
+}
+
+// NewMockImageIntegrationManager creates a new mock instance.
+func NewMockImageIntegrationManager(ctrl *gomock.Controller) *MockImageIntegrationManager {
+	mock := &MockImageIntegrationManager{ctrl: ctrl}
+	mock.recorder = &MockImageIntegrationManagerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockImageIntegrationManager) EXPECT() *MockImageIntegrationManagerMockRecorder {
+	return m.recorder
+}
+
+// GetImageIntegrations mocks base method.
+func (m *MockImageIntegrationManager) GetImageIntegrations(ctx context.Context, integration *v1.GetImageIntegrationsRequest) ([]*storage.ImageIntegration, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImageIntegrations", ctx, integration)
+	ret0, _ := ret[0].([]*storage.ImageIntegration)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetImageIntegrations indicates an expected call of GetImageIntegrations.
+func (mr *MockImageIntegrationManagerMockRecorder) GetImageIntegrations(ctx, integration interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageIntegrations", reflect.TypeOf((*MockImageIntegrationManager)(nil).GetImageIntegrations), ctx, integration)
 }
 
 // MockNetworkEntityManager is a mock of NetworkEntityManager interface.
