@@ -78,7 +78,7 @@ func (s *UnconfirmedMessageHandlerImpl) retryLater() {
 	s.retryMux.Lock()
 	defer s.retryMux.Unlock()
 	s.retry++
-	nextIn := s.retry * int(s.baseInterval.Seconds())
+	nextIn := (s.retry + 1) * int(s.baseInterval.Seconds())
 	next, err := time.ParseDuration(fmt.Sprintf("%ds", nextIn))
 	if err != nil {
 		next = defaultBaseInterval

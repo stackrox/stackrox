@@ -42,9 +42,9 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestWithRetryable() {
 			ackAfter:        []time.Duration{10 * time.Millisecond},
 			nackAfter:       []time.Duration{},
 		},
-		"should retry 3 times within 5 seconds when base set to 1s": {
+		"should retry 3 times within 6 seconds when base set to 1s": {
 			baseDuration:    time.Second,
-			wait:            5100 * time.Millisecond, // Retries after: 1s, 1s, 2s
+			wait:            6100 * time.Millisecond, // Retries after: 1s, 2s, 3s
 			expectedRetries: 3,
 			sendAfter:       []time.Duration{1 * time.Millisecond},
 			ackAfter:        []time.Duration{},
