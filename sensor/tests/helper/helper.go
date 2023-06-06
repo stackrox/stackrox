@@ -284,8 +284,7 @@ func (c *TestContext) StartFakeGRPC() {
 
 	// grpcFactory will be nil on the first run of the testContext
 	if c.grpcFactory == nil {
-		fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
-		c.grpcFactory = fakeConnectionFactory
+		c.grpcFactory = centralDebug.MakeFakeConnectionFactory(conn)
 	} else {
 		c.grpcFactory.OverwriteCentralConnection(conn)
 	}
