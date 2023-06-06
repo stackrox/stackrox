@@ -31,6 +31,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 Vulnerability Management 1.0 sections Image CVEs, Image Components, Images, Deployments, and Namespaces are deprecated and will be removed in the future. Once removed, use Vulnerability Management 2.0 for managing workload vulnerabilities.
 
 ### Technical Changes
+- The Central PVC stackrox-db is no longer required after this upgrade. To obsolete existing PVC, please check the docs online.
 - The output of `roxctl central whoami` now includes the username as well.
 - Helm setting `collector.nodeInventoryResources` has been renamed to `collector.nodeScanningResources`.
 - ROX-16959: Helm setting `admissionController.replicas` has been added to configure admission controller replicas.
