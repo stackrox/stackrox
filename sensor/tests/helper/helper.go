@@ -56,6 +56,9 @@ const (
 
 	// defaultTicker the default interval for the assertion functions to retry the assertion
 	defaultTicker = 500 * time.Millisecond
+
+	// certID is the id in the certificate which is sent on the hello message
+	certID = "00000000-0000-4000-A000-000000000000"
 )
 
 // K8sResourceInfo is a test file in YAML or a struct
@@ -259,7 +262,6 @@ func (c *TestContext) createTestNs(ctx context.Context, name string) (*v1.Namesp
 func (c *TestContext) StopCentralGRPC() {
 	if c.centralStopped.CompareAndSwap(false, true) {
 		c.fakeCentral.Stop()
-		c.fakeCentral.ServerPointer.Stop()
 		messagesBeforeStopping := c.fakeCentral.GetAllMessages()
 		c.archivedMessages = append(c.archivedMessages, messagesBeforeStopping)
 	}
@@ -275,7 +277,7 @@ func (c *TestContext) RestartFakeCentralConnection() {
 // StartFakeGRPC will start a gRPC server to act as Central.
 func (c *TestContext) StartFakeGRPC() {
 	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
-		message.SensorHello("00000000-0000-4000-A000-000000000000"),
+		message.SensorHello(certID),
 		message.ClusterConfig(),
 		message.PolicySync(c.config.InitialSystemPolicies),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
