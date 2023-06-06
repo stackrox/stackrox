@@ -2,14 +2,16 @@ package retry
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/cenkalti/backoff/v3"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestUnconfirmedMessageHandler(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(UnconfirmedMessageHandlerTestSuite))
 }
 
@@ -19,66 +21,75 @@ type UnconfirmedMessageHandlerTestSuite struct {
 
 func (suite *UnconfirmedMessageHandlerTestSuite) TestWithRetryable() {
 	cases := map[string]struct {
-		baseDuration    time.Duration
-		wait            time.Duration
-		expectedRetries int
-		sendAfter       []time.Duration
-		ackAfter        []time.Duration
-		nackAfter       []time.Duration
+		wait                    time.Duration
+		expectedSendingAttempts int32
+		sendAfter               []time.Duration
+		ackAfter                []time.Duration
+		nackAfter               []time.Duration
 	}{
-		"should retry once when 0 acks": {
-			baseDuration:    time.Second,
-			wait:            1100 * time.Millisecond,
-			expectedRetries: 1,
-			sendAfter:       []time.Duration{1 * time.Millisecond},
-			ackAfter:        []time.Duration{},
-			nackAfter:       []time.Duration{},
+		"should attempt once within a second when 0 acks": {
+			wait:                    1100 * time.Millisecond, // 100ms flake-buffer
+			expectedSendingAttempts: 1,
+			sendAfter:               []time.Duration{1 * time.Millisecond},
+			ackAfter:                []time.Duration{},
+			nackAfter:               []time.Duration{},
 		},
-		"should not retry when acks arrives immediately": {
-			baseDuration:    time.Second,
-			wait:            500 * time.Millisecond,
-			expectedRetries: 0,
-			sendAfter:       []time.Duration{1 * time.Millisecond},
-			ackAfter:        []time.Duration{10 * time.Millisecond},
-			nackAfter:       []time.Duration{},
+		"should attempt twice within two seconds when 0 acks": {
+			wait:                    2100 * time.Millisecond, // 100ms flake-buffer
+			expectedSendingAttempts: 2,
+			sendAfter:               []time.Duration{1 * time.Millisecond},
+			ackAfter:                []time.Duration{},
+			nackAfter:               []time.Duration{},
 		},
-		"should retry 3 times within 5 seconds when base set to 1s": {
-			baseDuration:    time.Second,
-			wait:            5100 * time.Millisecond, // Retries after: 1s, 1s, 2s
-			expectedRetries: 3,
-			sendAfter:       []time.Duration{1 * time.Millisecond},
-			ackAfter:        []time.Duration{},
-			nackAfter:       []time.Duration{},
+		"should attempt only once when ack arrives immediately": {
+			wait:                    500 * time.Millisecond,
+			expectedSendingAttempts: 1,
+			sendAfter:               []time.Duration{1 * time.Millisecond},
+			ackAfter:                []time.Duration{10 * time.Millisecond},
+			nackAfter:               []time.Duration{},
+		},
+		"should attempt 3 times within 5 seconds": {
+			wait:                    3100 * time.Millisecond,
+			expectedSendingAttempts: 3,
+			sendAfter:               []time.Duration{1 * time.Millisecond},
+			ackAfter:                []time.Duration{},
+			nackAfter:               []time.Duration{},
 		},
 		"should retry normally when nack is received": {
-			baseDuration:    time.Second,
-			wait:            1100 * time.Millisecond,
-			expectedRetries: 1,
-			sendAfter:       []time.Duration{1 * time.Millisecond},
-			ackAfter:        []time.Duration{},
-			nackAfter:       []time.Duration{3 * time.Millisecond},
+			wait:                    1100 * time.Millisecond,
+			expectedSendingAttempts: 1,
+			sendAfter:               []time.Duration{1 * time.Millisecond},
+			ackAfter:                []time.Duration{},
+			nackAfter:               []time.Duration{3 * time.Millisecond},
 		},
 	}
 
 	for name, cc := range cases {
 		suite.Run(name, func() {
-			counterMux := &sync.Mutex{}
-			counter := 0
+			var numSent int32
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			umh := NewUnconfirmedMessageHandler(ctx, cc.baseDuration)
+			back := backoff.NewExponentialBackOff()
+			back.InitialInterval = time.Second
+			back.RandomizationFactor = 0.0
+			back.Multiplier = 1.0
+			back.MaxElapsedTime = 30 * time.Minute
+
+			umh := NewUnconfirmedMessageHandler(ctx, back)
+			umh.SetOperation(func() error {
+				atomic.AddInt32(&numSent, 1)
+				suite.T().Logf("Sent message. Counter: %d", numSent)
+				return nil
+			})
 			// sending loop
-			for _, tt := range cc.sendAfter {
-				go func(tt time.Duration) {
-					<-time.After(tt)
-					umh.ObserveSending()
-				}(tt)
-			}
+			go umh.ExecOperation()
+
 			// acking loop
 			for _, tt := range cc.ackAfter {
 				go func(tt time.Duration) {
 					<-time.After(tt)
+					suite.T().Logf("Acking-test")
 					umh.HandleACK()
 				}(tt)
 			}
@@ -86,22 +97,13 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestWithRetryable() {
 			for _, tt := range cc.ackAfter {
 				go func(tt time.Duration) {
 					<-time.After(tt)
+					suite.T().Logf("Nacking-test")
 					umh.HandleNACK()
 				}(tt)
 			}
-			// retry-counting loop
-			go func() {
-				for range umh.RetryCommand() {
-					counterMux.Lock()
-					counter++
-					counterMux.Unlock()
-				}
-			}()
 			<-time.After(cc.wait)
 
-			counterMux.Lock()
-			defer counterMux.Unlock()
-			suite.Equal(cc.expectedRetries, counter)
+			suite.Equal(cc.expectedSendingAttempts, numSent)
 		})
 	}
 }

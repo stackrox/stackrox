@@ -23,6 +23,6 @@ type NodeScanner interface {
 type UnconfirmedMessageHandler interface {
 	HandleACK()
 	HandleNACK()
-	ObserveSending()
-	RetryCommand() <-chan struct{}
+	ExecOperation()
+	SetOperation(fn func() error)
 }

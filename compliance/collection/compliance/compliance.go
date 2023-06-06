@@ -99,6 +99,10 @@ func (c *Compliance) Start() {
 
 func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgFromCompliance {
 	nodeInventoriesC := make(chan *sensor.MsgFromCompliance)
+	c.umh.SetOperation(func() error {
+		nodeInventoriesC <- c.cache
+		return nil
+	})
 	nodeName := c.nodeNameProvider.GetNodeName()
 	go func() {
 		defer close(nodeInventoriesC)
@@ -108,19 +112,15 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 			select {
 			case <-ctx.Done():
 				return
-			case _, ok := <-c.umh.RetryCommand():
-				if ok && c.cache != nil {
-					nodeInventoriesC <- c.cache
-				}
 			case <-t.C:
 				log.Infof("Scanning node %q", nodeName)
 				msg, err := c.nodeScanner.ScanNode(ctx)
 				if err != nil {
 					log.Errorf("Error running node scan: %v", err)
 				} else {
-					c.umh.ObserveSending()
+					go c.umh.ExecOperation() // blocks until ack arrives
 					c.cache = msg.Clone()
-					nodeInventoriesC <- msg
+					// nodeInventoriesC <- msg
 				}
 				interval := i.Next()
 				cmetrics.ObserveRescanInterval(interval, c.nodeNameProvider.GetNodeName())

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/cenkalti/backoff/v3"
 	"github.com/stackrox/rox/compliance/collection/compliance"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -25,7 +26,14 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	umh := retry.NewUnconfirmedMessageHandler(ctx, 5*time.Second)
+
+	back := backoff.NewExponentialBackOff()
+	back.InitialInterval = 5 * time.Second
+	back.RandomizationFactor = 0.0
+	back.Multiplier = 2.0
+	back.MaxElapsedTime = 30 * time.Minute
+
+	umh := retry.NewUnconfirmedMessageHandler(ctx, back)
 	c := compliance.NewComplianceApp(np, scanner, umh)
 	c.Start()
 }
