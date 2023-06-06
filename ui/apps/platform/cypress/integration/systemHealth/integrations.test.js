@@ -223,5 +223,7 @@ describe('System Health Integrations fixtures', () => {
         const { widgets } = selectors.integrations;
         const itemSelector = `${widgets.declarativeConfigs} tr:first`;
         cy.get(`${itemSelector} td[data-label="Name"]`).should('not.exist');
+        // eslint-disable-next-line no-console
+        console.log('test');
     });
 });
