@@ -3,7 +3,7 @@ package docker
 import (
 	"fmt"
 
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/heroku/docker-registry-client/registry"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -21,7 +21,7 @@ func HandleV2ManifestList(r *Registry, remote, ref string) (*storage.ImageMetada
 		// TODO(ROX-13284): Support multi-arch images.
 		if manifest.Platform.OS == "linux" && manifest.Platform.Architecture == "amd64" {
 			switch manifest.Descriptor.MediaType {
-			case v1.MediaTypeImageManifest:
+			case registry.MediaTypeImageManifest:
 				return HandleOCIManifest(r, remote, manifest.Digest.String())
 			default:
 				return HandleV2Manifest(r, remote, manifest.Digest.String())
