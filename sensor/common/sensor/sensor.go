@@ -333,7 +333,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	exponential.MaxInterval = env.ConnectionRetryMaxInterval.DurationSetting()
 
 	err := backoff.RetryNotify(func() error {
-		log.Infof("Attempting connection setup")
+		log.Info("Attempting connection setup")
 		select {
 		case <-s.centralConnectionFactory.OkSignal().WaitC():
 			// Connection if up, we can try to create a new central communication
