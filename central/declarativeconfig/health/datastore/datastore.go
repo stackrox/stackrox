@@ -1,9 +1,9 @@
-package health
+package datastore
 
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/declarativeconfig/health/store"
+	"github.com/stackrox/rox/central/declarativeconfig/health/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 )
 

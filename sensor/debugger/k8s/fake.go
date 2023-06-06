@@ -430,9 +430,7 @@ func (f *FakeEventsManager) DeleteAllResources() error {
 		secretKind,
 		serviceAccountsKind,
 		roleKind,
-		clusterRoleKind,
 		roleBindingKind,
-		clusterRoleBindingKind,
 		networkPolicyKind,
 		serviceKind,
 		jobKind,
@@ -443,8 +441,6 @@ func (f *FakeEventsManager) DeleteAllResources() error {
 		deploymentKind,
 		statefulSetKind,
 		cronJobKind,
-		namespaceKind,
-		nodeKind,
 	}
 	for _, kind := range resourcesList {
 		clFunc, ok := f.clientMap[kind]
@@ -471,6 +467,37 @@ func (f *FakeEventsManager) DeleteAllResources() error {
 			}); err != nil {
 				errorList.AddError(err)
 			}
+		}
+	}
+	clusterWideResources := []string{
+		clusterRoleKind,
+		clusterRoleBindingKind,
+		namespaceKind,
+		nodeKind,
+	}
+	for _, kind := range clusterWideResources {
+		clFunc, ok := f.clientMap[kind]
+		if !ok {
+			errorList.AddStringf("kind %s not found", kind)
+			continue
+		}
+		cl = reflect.ValueOf(clFunc(""))
+		if err := f.forEachResource(cl, func(resource reflect.Value) error {
+			name, err := getNameFromObjectMeta(resource)
+			if err != nil {
+				return err
+			}
+			retVals := runOp(removeAction, cl, reflect.ValueOf(name))
+			if len(retVals) < 1 || len(retVals) > 2 {
+				return fmt.Errorf("expected 1 or 2 values from %s. Received: %d", removeAction, len(retVals))
+			}
+			errI := retVals[len(retVals)-1].Interface()
+			if errI == nil {
+				return nil
+			}
+			return errI.(error)
+		}); err != nil {
+			errorList.AddError(err)
 		}
 	}
 	return errorList.ToError()

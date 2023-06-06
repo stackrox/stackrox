@@ -11,7 +11,7 @@ import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
 import DatePhraseTd from '../components/DatePhraseTd';
 import TooltipTh from '../components/TooltipTh';
-import { VulnerabilitySeverityLabel } from '../types';
+import { VulnerabilitySeverityLabel, watchStatusLabel, WatchStatus } from '../types';
 
 export const imageListQuery = gql`
     query getImageList($query: String, $pagination: Pagination) {
@@ -64,7 +64,7 @@ type Image = {
     };
     operatingSystem: string;
     deploymentCount: number;
-    watchStatus: 'WATCHED' | 'NOT_WATCHED';
+    watchStatus: WatchStatus;
     metadata: {
         v1: {
             created: string | null;
@@ -152,7 +152,9 @@ function ImagesTable({ images, getSortParams, isFiltered, filteredSeverities }: 
                                         <Flex>
                                             <div>0 deployments</div>
                                             {/* TODO: double check on what this links to */}
-                                            <span>({`${watchStatus}`} image)</span>
+                                            <span>
+                                                ({`${watchStatusLabel[watchStatus]}`} image)
+                                            </span>
                                         </Flex>
                                     )}
                                 </Td>

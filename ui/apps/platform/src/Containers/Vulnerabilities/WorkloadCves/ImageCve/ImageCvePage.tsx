@@ -373,7 +373,6 @@ function ImageCvePage() {
                         </SplitItem>
                         <SplitItem>
                             <Pagination
-                                isCompact
                                 itemCount={tableRowCount}
                                 page={page}
                                 perPage={perPage}

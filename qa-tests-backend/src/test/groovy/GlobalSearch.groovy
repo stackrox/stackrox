@@ -48,7 +48,7 @@ class GlobalSearch extends BaseSpecification {
         if (!foundViolation) {
             def policy = Services.getPolicyByName("Latest tag")
             log.info "'Latest tag' policy:"
-            log.info policy
+            log.info policy.toString()
         }
         assert foundViolation
     }

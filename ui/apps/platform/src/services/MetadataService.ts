@@ -45,6 +45,8 @@ export type CentralServicesCapabilities = {
     centralCanDisplayDeclarativeConfigHealth: CentralServicesCapabilityStatus;
 };
 
+export type CentralCapabilitiesFlags = keyof CentralServicesCapabilities;
+
 export function fetchCentralCapabilities(): Promise<CentralServicesCapabilities> {
     return axios
         .get<CentralServicesCapabilities>('/v1/central-capabilities')
