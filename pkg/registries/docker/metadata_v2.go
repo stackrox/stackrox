@@ -3,7 +3,6 @@ package docker
 import (
 	"fmt"
 
-	"github.com/heroku/docker-registry-client/registry"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -20,12 +19,7 @@ func HandleV2ManifestList(r *Registry, remote, ref string) (*storage.ImageMetada
 		// Default to linux arch
 		// TODO(ROX-13284): Support multi-arch images.
 		if manifest.Platform.OS == "linux" && manifest.Platform.Architecture == "amd64" {
-			switch manifest.Descriptor.MediaType {
-			case registry.MediaTypeImageManifest:
-				return HandleOCIManifest(r, remote, manifest.Digest.String())
-			default:
-				return HandleV2Manifest(r, remote, manifest.Digest.String())
-			}
+			return handleManifests(r, manifest.MediaType, remote, manifest.Digest.String())
 		}
 	}
 	return nil, fmt.Errorf("could not find manifest in list for architecture linux:amd64: '%s'", ref)
@@ -71,7 +65,7 @@ func HandleOCIImageIndex(r *Registry, remote, ref string) (*storage.ImageMetadat
 		// Default to linux arch
 		// TODO(ROX-13284): Support multi-arch images.
 		if manifest.Platform.OS == "linux" && manifest.Platform.Architecture == "amd64" {
-			return HandleOCIManifest(r, remote, manifest.Digest.String())
+			return handleManifests(r, manifest.MediaType, remote, manifest.Digest.String())
 		}
 	}
 	return nil, fmt.Errorf("could not find manifest in index for architecture linux:amd64: %q", ref)

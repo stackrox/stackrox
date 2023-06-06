@@ -178,6 +178,26 @@ func (r *Registry) Match(image *storage.ImageName) bool {
 	return r.repositoryList.Contains(image.GetRemote())
 }
 
+func handleManifests(r *Registry, manifestType, remote, digest string) (*storage.ImageMetadata, error) {
+	// Note: Any updates here must be accompanied by updates to registry_without_digest.go.
+	switch manifestType {
+	case manifestV1.MediaTypeManifest:
+		return HandleV1Manifest(r, remote, digest)
+	case manifestV1.MediaTypeSignedManifest:
+		return HandleV1SignedManifest(r, remote, digest)
+	case manifestlist.MediaTypeManifestList:
+		return HandleV2ManifestList(r, remote, digest)
+	case manifestV2.MediaTypeManifest:
+		return HandleV2Manifest(r, remote, digest)
+	case registry.MediaTypeImageIndex:
+		return HandleOCIImageIndex(r, remote, digest)
+	case registry.MediaTypeImageManifest:
+		return HandleOCIManifest(r, remote, digest)
+	default:
+		return nil, fmt.Errorf("unknown manifest type '%s'", manifestType)
+	}
+}
+
 // Metadata returns the metadata via this registries implementation
 func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
 	if image == nil {
@@ -189,24 +209,7 @@ func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to get the manifest digest ")
 	}
-
-	// Note: Any updates here must be accompanied by updates to registry_without_digest.go.
-	switch manifestType {
-	case manifestV1.MediaTypeManifest:
-		return HandleV1Manifest(r, remote, digest.String())
-	case manifestV1.MediaTypeSignedManifest:
-		return HandleV1SignedManifest(r, remote, digest.String())
-	case manifestlist.MediaTypeManifestList:
-		return HandleV2ManifestList(r, remote, digest.String())
-	case manifestV2.MediaTypeManifest:
-		return HandleV2Manifest(r, remote, digest.String())
-	case registry.MediaTypeImageIndex:
-		return HandleOCIImageIndex(r, remote, digest.String())
-	case registry.MediaTypeImageManifest:
-		return HandleOCIManifest(r, remote, digest.String())
-	default:
-		return nil, fmt.Errorf("unknown manifest type '%s'", manifestType)
-	}
+	return handleManifests(r, manifestType, remote, digest.String())
 }
 
 // Test tests the current registry and makes sure that it is working properly
