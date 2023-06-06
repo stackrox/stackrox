@@ -127,14 +127,14 @@ func (s *RoleDependencySuite) Test_BindingHasNoRoleId() {
 			require.NoError(t, err)
 
 			var binding v12.RoleBinding
-			deleteRoleBinding, err := testC.ApplyResource(context.Background(), "sensor-integration", &NginxRoleBinding, &binding, nil)
+			deleteRoleBinding, err := testC.ApplyResourceAndWait(context.Background(), "sensor-integration", &NginxRoleBinding, &binding, nil)
 			defer utils.IgnoreError(deleteRoleBinding)
 			require.NoError(t, err)
 
 			testC.LastResourceState(matchBinding(binding.GetNamespace(), string(binding.GetUID())), assertBindingHasRoleID(""), "No RoleID")
 
 			var role v12.Role
-			deleteRole, err := testC.ApplyResource(context.Background(), "sensor-integration", &NginxRole, &role, nil)
+			deleteRole, err := testC.ApplyResourceAndWait(context.Background(), "sensor-integration", &NginxRole, &role, nil)
 			defer utils.IgnoreError(deleteRole)
 			require.NoError(t, err)
 

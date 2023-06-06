@@ -258,6 +258,11 @@ func (c *TestContext) createTestNs(ctx context.Context, name string) (*v1.Namesp
 	}, nil
 }
 
+// ArchivedMessages returns a slice of slices, each contain messages received by Central before restarting
+func (c *TestContext) ArchivedMessages() [][]*central.MsgFromSensor {
+	return c.archivedMessages
+}
+
 // StopCentralGRPC will attempt to stop fake central. If it was already stopped, nothing happens
 func (c *TestContext) StopCentralGRPC() {
 	if c.centralStopped.CompareAndSwap(false, true) {
@@ -331,7 +336,7 @@ func (c *TestContext) runWithResources(resources []K8sResourceInfo, testCase Tes
 	fileToObj := map[string]k8s.Object{}
 	for i := range resources {
 		obj := objByKind(resources[i].Kind)
-		removeFn, err := c.ApplyResource(context.Background(), DefaultNamespace, &resources[i], obj, retryFn)
+		removeFn, err := c.ApplyResourceAndWait(context.Background(), DefaultNamespace, &resources[i], obj, retryFn)
 		if err != nil {
 			return errors.Errorf("fail to apply resource: %s", err)
 		}
@@ -430,6 +435,25 @@ func (c *TestContext) LastResourceStateWithTimeout(matchResourceFn MatchResource
 	}
 }
 
+// WaitForSyncEvent will wait until sensor transmits a `Synced` event to Central, at the end of the reconciliation.
+func (c *TestContext) WaitForSyncEvent() {
+	timer := time.NewTimer(defaultWaitTimeout)
+	ticker := time.NewTicker(defaultTicker)
+	for {
+		select {
+		case <-timer.C:
+			c.t.Fatalf("timeout reached waiting for sync event")
+		case <-ticker.C:
+			messages := c.GetFakeCentral().GetAllMessages()
+			for _, m := range messages {
+				if m.GetEvent().GetSynced() != nil {
+					return
+				}
+			}
+		}
+	}
+}
+
 // WaitForDeploymentEvent waits until sensor process a given deployment
 func (c *TestContext) WaitForDeploymentEvent(name string) {
 	c.WaitForDeploymentEventWithTimeout(name, defaultWaitTimeout)
@@ -485,14 +509,19 @@ func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion Asse
 	}
 }
 
-// DeploymentCreateReceived checks if a deployment object was received with CREATE action
+// DeploymentCreateReceived checks if a deployment object was received with CREATE action.
 func (c *TestContext) DeploymentCreateReceived(name string) {
+	c.DeploymentActionReceived(name, central.ResourceAction_CREATE_RESOURCE)
+}
+
+// DeploymentActionReceived checks if a deployment object was received with specific action type.
+func (c *TestContext) DeploymentActionReceived(name string, expectedAction central.ResourceAction) {
 	c.LastDeploymentState(name, func(_ *storage.Deployment, action central.ResourceAction) error {
-		if action != central.ResourceAction_CREATE_RESOURCE {
-			return errors.New("event received is not CREATE")
+		if action != expectedAction {
+			return errors.Errorf("event action is %s, but expected %s", action, expectedAction)
 		}
 		return nil
-	}, "Deployment should be created")
+	}, "Deployment should be received with action")
 }
 
 // GetLastMessageMatching finds last element in slice matching `matchFn`.
@@ -645,10 +674,24 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 	return conn, closeF
 }
 
-// ApplyResourceNoObject creates a Kubernetes resource using `ApplyResource` without requiring an object reference.
+// ApplyResourceNoObject creates a Kubernetes resource using `ApplyResourceAndWait` without requiring an object reference.
 func (c *TestContext) ApplyResourceNoObject(ctx context.Context, ns string, resource K8sResourceInfo, retryFn RetryCallback) (func() error, error) {
 	obj := objByKind(resource.Kind)
-	return c.ApplyResource(ctx, ns, &resource, obj, retryFn)
+	return c.ApplyResourceAndWait(ctx, ns, &resource, obj, retryFn)
+}
+
+// ApplyResourceAndWait calls ApplyResource and waits for the resource if it's "waitable" (e.g. Deployment or Pod).
+func (c *TestContext) ApplyResourceAndWait(ctx context.Context, ns string, resource *K8sResourceInfo, obj k8s.Object, retryFn RetryCallback) (func() error, error) {
+	if fn, err := c.ApplyResource(ctx, ns, resource, obj, retryFn); err != nil {
+		return fn, err
+	} else {
+		if resource.Kind == "Deployment" || resource.Kind == "Pod" {
+			if err := c.waitForResource(defaultCreationTimeout, deploymentName(obj.GetName())); err != nil {
+				return nil, err
+			}
+		}
+		return fn, err
+	}
 }
 
 // ApplyResource creates a Kubernetes resource in namespace `ns` from a resource definition (see
@@ -691,12 +734,6 @@ func (c *TestContext) ApplyResource(ctx context.Context, ns string, resource *K8
 		}
 	} else {
 		if err := c.r.Create(ctx, obj); err != nil {
-			return nil, err
-		}
-	}
-
-	if resource.Kind == "Deployment" || resource.Kind == "Pod" {
-		if err := c.waitForResource(defaultCreationTimeout, deploymentName(obj.GetName())); err != nil {
 			return nil, err
 		}
 	}
