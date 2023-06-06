@@ -10,6 +10,7 @@ import (
 	postgresHealthStore "github.com/stackrox/rox/central/declarativeconfig/health/datastore/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -25,9 +26,10 @@ func TestDeclarativeConfigHealthDatastore(t *testing.T) {
 type declarativeConfigHealthDatastoreSuite struct {
 	suite.Suite
 
-	hasReadCtx     context.Context
-	hasWriteCtx    context.Context
-	hasNoAccessCtx context.Context
+	hasReadCtx             context.Context
+	hasWriteCtx            context.Context
+	hasWriteDeclarativeCtx context.Context
+	hasNoAccessCtx         context.Context
 
 	datastore    DataStore
 	postgresTest *pgtest.TestPostgres
@@ -54,6 +56,7 @@ func (s *declarativeConfigHealthDatastoreSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.Integration),
 		),
 	)
+	s.hasWriteDeclarativeCtx = declarativeconfig.WithModifyDeclarativeResource(s.hasWriteCtx)
 	s.hasNoAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 }
 
@@ -91,8 +94,16 @@ func (s *declarativeConfigHealthDatastoreSuite) TestUpdateConfigHealth() {
 	s.NoError(err)
 	s.False(exists)
 
-	// 3. With WRITE access should not return an error and the config health should be retrievable.
+	// 3. With WRITE access should return an error + should not be added.
 	err = s.datastore.UpsertDeclarativeConfig(s.hasWriteCtx, configHealth)
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
+	s.NoError(err)
+	s.False(exists)
+
+	// 4. With WRITE access and declarative config context key should not return an error and the config
+	// health should be retrievable.
+	err = s.datastore.UpsertDeclarativeConfig(s.hasWriteDeclarativeCtx, configHealth)
 	s.NoError(err)
 	receivedConfigHealth, exists, err := s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
@@ -123,15 +134,23 @@ func (s *declarativeConfigHealthDatastoreSuite) TestRemoveConfigHealth() {
 	s.NoError(err)
 	s.True(exists)
 
-	// 3. With WRITE access and existing config health remove should not return an error.
+	// 3. With WRITE access and existing config health remove should return an error.
 	err = s.datastore.RemoveDeclarativeConfig(s.hasWriteCtx, configHealth.GetId())
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	// 3. With WRITE access, declarative config context key, and existing config health remove should
+	// not return an error.
+	err = s.datastore.RemoveDeclarativeConfig(s.hasWriteDeclarativeCtx, configHealth.GetId())
 	s.NoError(err)
 	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
 	s.False(exists)
 
-	// 4. With WRITE access should return an error if config health is not found.
-	err = s.datastore.RemoveDeclarativeConfig(s.hasWriteCtx, configHealth.GetId())
+	// 4. With WRITE access and declarative config context key should return an error if config health is not found.
+	err = s.datastore.RemoveDeclarativeConfig(s.hasWriteDeclarativeCtx, configHealth.GetId())
 	s.ErrorIs(err, errox.NotFound)
 }
 
@@ -147,6 +166,11 @@ func (s *declarativeConfigHealthDatastoreSuite) testGetConfigHealth(getConfigHea
 	s.NotNil(configHealth)
 
 	// 3. With WRITE access should return a config health.
+	configHealth, err = getConfigHealth(s.hasWriteCtx)
+	s.NoError(err)
+	s.NotNil(configHealth)
+
+	// 4. With WRITE access and declarative config context key should return a config health.
 	configHealth, err = getConfigHealth(s.hasWriteCtx)
 	s.NoError(err)
 	s.NotNil(configHealth)
