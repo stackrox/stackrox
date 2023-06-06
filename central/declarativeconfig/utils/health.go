@@ -38,7 +38,7 @@ func HealthStatusForProtoMessage(message proto.Message, handler string, err erro
 	// For roles, we currently do not have any ID, but their name.
 	// Hence, we need to create a UUID on-the-fly for it.
 	if resourceType == storage.DeclarativeConfigHealth_ROLE {
-		messageID = idForRole(messageID)
+		messageID = HealthStatusIDForRole(messageID)
 	}
 
 	return &storage.DeclarativeConfigHealth{
@@ -105,6 +105,8 @@ func resourceTypeFromProtoMessage(message proto.Message) storage.DeclarativeConf
 	}
 }
 
-func idForRole(name string) string {
+// HealthStatusIDForRole returns a UUID for the health status based on the role's name.
+// The UUID is deterministic.
+func HealthStatusIDForRole(name string) string {
 	return uuid.NewV5FromNonUUIDs("role-config-health", name).String()
 }
