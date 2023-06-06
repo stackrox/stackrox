@@ -175,7 +175,7 @@ describe('System Health Integrations fixtures', () => {
         ];
 
         visitSystemHealth({
-            'declarative-config/health': { body: { integrationHealth } },
+            'declarative-config/health': { body: { healths: integrationHealth } },
         });
         const { widgets } = selectors.integrations;
         const itemSelector = `${widgets.declarativeConfigs} tr:first`;

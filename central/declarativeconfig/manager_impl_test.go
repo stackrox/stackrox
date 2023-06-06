@@ -142,7 +142,7 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 			ErrorMessage: "",
 		})),
 		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
-			Id:           "role",
+			Id:           "61a68f2a-2599-5a9f-a98a-8fc83e2c06cf",
 			Name:         "role in config map test-handler-2",
 			ResourceType: storage.DeclarativeConfigHealth_ROLE,
 			ResourceName: "role",
@@ -526,7 +526,7 @@ func TestUpdateDeclarativeConfigContents_RegisterHealthStatus(t *testing.T) {
 	mockHealthDS.EXPECT().GetDeclarativeConfig(gomock.Any(), gomock.Any()).Return(nil, false, nil).AnyTimes()
 
 	mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
-		Id:           "test-name",
+		Id:           "04a87e34-b568-5e14-90ac-380d25c8689b",
 		Name:         "test-name in config map my-cool-config-map",
 		ResourceType: storage.DeclarativeConfigHealth_ROLE,
 		ResourceName: "test-name",
