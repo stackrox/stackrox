@@ -20,7 +20,7 @@ describe('System Health Integrations fixtures', () => {
             'integrationhealth/externalbackups': { body: { integrationHealth } },
         });
 
-        cy.get(getCardHeaderDescendantSelector('Image Integrations', 'div:contains("no errors")'));
+        cy.get(getCardHeaderDescendantSelector('Backup Integrations', 'div:contains("no errors")'));
     });
 
     it('should not have count in healthy text for image integrations', () => {
