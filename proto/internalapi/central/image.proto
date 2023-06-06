@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+package central;
+
+// ScanImage is sent to sensor to request a local scan of an image.
+message ScanImage {
+    // request id is used to map scan results to a waiting goroutine.
+    string request_id = 1;
+
+    // full image name ie: <registry>/something/nginx:1.2.3.
+    string image_name = 2;
+
+    // force will cause central and sensor caches to be ignored.
+    bool   force      = 3;
+}

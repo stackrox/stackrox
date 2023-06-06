@@ -5,6 +5,7 @@ option go_package = "central";
 import "internalapi/central/cluster_config.proto";
 import "internalapi/central/cluster_status.proto";
 import "internalapi/central/delegated_registry_config.proto";
+import "internalapi/central/image.proto";
 import "internalapi/central/network_flow.proto";
 import "internalapi/central/policy_sync.proto";
 import "internalapi/central/sensor_events.proto";
@@ -68,6 +69,7 @@ message MsgToSensor {
         ReprocessDeployments           reprocess_deployments              = 19;
         NodeInventoryACK               node_inventory_ack                 = 20;
         DelegatedRegistryConfig        delegated_registry_config          = 21;
+        ScanImage                      scan_image                         = 22;
     }
 }
 

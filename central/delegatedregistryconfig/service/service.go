@@ -143,6 +143,7 @@ func (s *serviceImpl) UpdateConfig(ctx context.Context, config *v1.DelegatedRegi
 		},
 	}
 
+	log.Infof("Delegated registry config updated: %q", config)
 	for clusterID := range clusterIDs {
 		log.Debugf("Sending updated delegated registry config to cluster %q", clusterID)
 		if err := s.connManager.SendMessage(clusterID, msg); err != nil {
@@ -172,7 +173,7 @@ func (s *serviceImpl) validate(config *v1.DelegatedRegistryConfig, validClusters
 			errorList = append(errorList, fmt.Errorf("cluster %q is not valid", r.ClusterId))
 		}
 
-		if r.RegistryPath == "" {
+		if r.Path == "" {
 			errorList = append(errorList, errors.New("missing registry path"))
 		}
 	}

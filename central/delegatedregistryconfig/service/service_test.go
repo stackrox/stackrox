@@ -8,25 +8,15 @@ import (
 	"github.com/pkg/errors"
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	deleDSMocks "github.com/stackrox/rox/central/delegatedregistryconfig/datastore/mocks"
-	"github.com/stackrox/rox/central/scrape"
-	"github.com/stackrox/rox/central/sensor/networkentities"
-	"github.com/stackrox/rox/central/sensor/networkpolicies"
-	sensorConn "github.com/stackrox/rox/central/sensor/service/connection"
-	connMgrMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
-	"github.com/stackrox/rox/central/sensor/telemetry"
+	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	fakeConnWithCap    = &fakeSensorConn{hasCap: true}
-	fakeConnWithoutCap = &fakeSensorConn{hasCap: false}
-
 	none     = v1.DelegatedRegistryConfig_NONE
 	all      = v1.DelegatedRegistryConfig_ALL
 	specific = v1.DelegatedRegistryConfig_SPECIFIC
@@ -35,6 +25,10 @@ var (
 
 	errBroken = errors.New("broken")
 )
+
+func TestAuthz(t *testing.T) {
+	testutils.AssertAuthzWorks(t, &serviceImpl{})
+}
 
 func TestGetConfigSuccess(t *testing.T) {
 	var err error
@@ -79,14 +73,20 @@ func TestGetClustersSuccess(t *testing.T) {
 
 	clustersDS := clusterDSMocks.NewMockDataStore(gomock.NewController(t))
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
-	connMgr := connMgrMocks.NewMockManager(gomock.NewController(t))
+	connMgr := connMocks.NewMockManager(gomock.NewController(t))
+
+	fakeConnWithCap := connMocks.NewMockSensorConnection(gomock.NewController(t))
+	fakeConnWithCap.EXPECT().HasCapability(gomock.Any()).Return(true).AnyTimes()
+
+	fakeConnWithoutCap := connMocks.NewMockSensorConnection(gomock.NewController(t))
+	fakeConnWithoutCap.EXPECT().HasCapability(gomock.Any()).Return(false).AnyTimes()
 
 	s := New(deleClusterDS, clustersDS, connMgr)
 
 	clusters := []*storage.Cluster{{Id: "id", Name: "fake"}}
 
 	tt := map[string]struct {
-		conn  *fakeSensorConn
+		conn  *connMocks.MockSensorConnection
 		valid bool
 	}{
 		"without cap": {fakeConnWithoutCap, false},
@@ -195,7 +195,7 @@ func TestPutConfigError(t *testing.T) {
 
 	clustersDS := clusterDSMocks.NewMockDataStore(gomock.NewController(t))
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
-	connMgr := connMgrMocks.NewMockManager(gomock.NewController(t))
+	connMgr := connMocks.NewMockManager(gomock.NewController(t))
 	connMgr.EXPECT().GetConnection(gomock.Any()).AnyTimes()
 	s := New(deleClusterDS, clustersDS, connMgr)
 
@@ -223,7 +223,14 @@ func TestUpdateConfigSuccess(t *testing.T) {
 
 	clustersDS := clusterDSMocks.NewMockDataStore(gomock.NewController(t))
 	deleClusterDS := deleDSMocks.NewMockDataStore(gomock.NewController(t))
-	connMgr := connMgrMocks.NewMockManager(gomock.NewController(t))
+
+	fakeConnWithCap := connMocks.NewMockSensorConnection(gomock.NewController(t))
+	fakeConnWithCap.EXPECT().HasCapability(gomock.Any()).Return(true).AnyTimes()
+
+	fakeConnWithoutCap := connMocks.NewMockSensorConnection(gomock.NewController(t))
+	fakeConnWithoutCap.EXPECT().HasCapability(gomock.Any()).Return(false).AnyTimes()
+
+	connMgr := connMocks.NewMockManager(gomock.NewController(t))
 	connMgr.EXPECT().GetConnection("id1").Return(fakeConnWithCap).AnyTimes()
 	connMgr.EXPECT().GetConnection("id2").Return(fakeConnWithoutCap).AnyTimes()
 
@@ -241,7 +248,7 @@ func TestUpdateConfigSuccess(t *testing.T) {
 	t.Run("registries", func(t *testing.T) {
 		deleClusterDS.EXPECT().UpsertConfig(gomock.Any(), gomock.Any())
 		connMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any())
-		cfg.Registries = []*v1.DelegatedRegistryConfig_DelegatedRegistry{{ClusterId: "id1", RegistryPath: "something"}}
+		cfg.Registries = []*v1.DelegatedRegistryConfig_DelegatedRegistry{{ClusterId: "id1", Path: "something"}}
 		_, err = s.UpdateConfig(context.Background(), cfg)
 		assert.NoError(t, err)
 	})
@@ -254,27 +261,4 @@ func TestUpdateConfigSuccess(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-}
-
-type fakeSensorConn struct {
-	hasCap bool
-}
-
-var _ sensorConn.SensorConnection = (*fakeSensorConn)(nil)
-
-func (f *fakeSensorConn) HasCapability(_ centralsensor.SensorCapability) bool {
-	return f.hasCap
-}
-func (*fakeSensorConn) InjectMessageIntoQueue(_ *central.MsgFromSensor)        {}
-func (*fakeSensorConn) CheckAutoUpgradeSupport() error                         { return nil }
-func (*fakeSensorConn) ClusterID() string                                      { return "" }
-func (*fakeSensorConn) NetworkEntities() networkentities.Controller            { return nil }
-func (*fakeSensorConn) NetworkPolicies() networkpolicies.Controller            { return nil }
-func (*fakeSensorConn) ObjectsDeletedByReconciliation() (map[string]int, bool) { return nil, false }
-func (*fakeSensorConn) Scrapes() scrape.Controller                             { return nil }
-func (*fakeSensorConn) Stopped() concurrency.ReadOnlyErrorSignal               { return nil }
-func (*fakeSensorConn) Telemetry() telemetry.Controller                        { return nil }
-func (*fakeSensorConn) Terminate(_ error) bool                                 { return false }
-func (*fakeSensorConn) InjectMessage(_ concurrency.Waitable, _ *central.MsgToSensor) error {
-	return nil
 }
