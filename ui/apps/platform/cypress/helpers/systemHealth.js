@@ -2,7 +2,7 @@ import * as api from '../constants/apiEndpoints';
 import { systemHealthUrl } from '../constants/SystemHealth';
 
 import { visitFromLeftNavExpandable } from './nav';
-import { visit } from './visit';
+import { visit, visitWithStaticResponseForCapabilities } from './visit';
 
 // clock
 
@@ -15,6 +15,7 @@ export function setClock(currentDatetime) {
 
 export const integrationHealthVulnDefinitionsAlias = 'integrationhealth/vulndefinitions';
 
+const SystemHealthHeadingSelector = 'h1:contains("System Health")';
 const routeMatcherMap = {
     'integrationhealth/imageintegrations': {
         method: 'GET',
@@ -58,11 +59,21 @@ export function visitSystemHealthFromLeftNav() {
     visitFromLeftNavExpandable('Platform Configuration', 'System Health', routeMatcherMap);
 
     cy.location('pathname').should('eq', systemHealthUrl);
-    cy.get('h1:contains("System Health")');
+    cy.get(SystemHealthHeadingSelector);
 }
 
 export function visitSystemHealth(staticResponseMap) {
     visit(systemHealthUrl, routeMatcherMap, staticResponseMap);
 
-    cy.get('h1:contains("System Health")');
+    cy.get(SystemHealthHeadingSelector);
+}
+
+export function visitSystemHealthWithStaticResponseForCapabilities(staticResponseForCapabilities) {
+    visitWithStaticResponseForCapabilities(
+        systemHealthUrl,
+        staticResponseForCapabilities,
+        routeMatcherMap
+    );
+
+    cy.get(SystemHealthHeadingSelector);
 }

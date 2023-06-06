@@ -7,6 +7,7 @@ export const loginAuthProvidersAlias = 'login/authproviders';
 export const myPermissionsAlias = 'mypermissions';
 export const configPublicAlias = 'config/public';
 export const authStatusAlias = 'auth/status';
+export const centralCapabilitiesAlias = 'central-capabilities';
 
 // Requests to render pages via MainPage and Body components.
 const routeMatcherMapForAuthenticatedRoutes = {
@@ -33,7 +34,11 @@ const routeMatcherMapForAuthenticatedRoutes = {
     [authStatusAlias]: {
         method: 'GET',
         url: '/v1/auth/status',
-    }, // sagas/authSagas
+    }, // sagas/authSagas,
+    [centralCapabilitiesAlias]: {
+        method: 'GET',
+        url: '/v1/central-capabilities',
+    }, // reducers/centralCapabilities,
     /*
      * Intentionally omit credentialexpiry requests for central and scanner,
      * because they are in parallel with (and possibly even delayed by) page-specific requests.
@@ -118,6 +123,38 @@ export function visitWithStaticResponseForPermissions(
 ) {
     const staticResponseMapForAuthenticatedRoutes = {
         [myPermissionsAlias]: staticResponseForPermissions,
+    };
+    interceptRequests(
+        routeMatcherMapForAuthenticatedRoutes,
+        staticResponseMapForAuthenticatedRoutes
+    );
+    interceptRequests(routeMatcherMap, staticResponseMap);
+
+    cy.visit(pageUrl);
+
+    waitForResponses(routeMatcherMapForAuthenticatedRoutes);
+    waitForResponses(routeMatcherMap);
+}
+
+/**
+ * Visit page to test conditional rendering for central capabilities specified as response or fixture.
+ *
+ * { body: { ... } }
+ * { fixture: 'fixtures/wherever/whatever.json' }
+ *
+ * @param {string} pageUrl
+ * @param {{ body: { [key: string]: 'CapabilityAvailable' | 'CapabilityDisabled' } }} staticResponseForCapabilities
+ * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function visitWithStaticResponseForCapabilities(
+    pageUrl,
+    staticResponseForCapabilities,
+    routeMatcherMap,
+    staticResponseMap
+) {
+    const staticResponseMapForAuthenticatedRoutes = {
+        [centralCapabilitiesAlias]: staticResponseForCapabilities,
     };
     interceptRequests(
         routeMatcherMapForAuthenticatedRoutes,
