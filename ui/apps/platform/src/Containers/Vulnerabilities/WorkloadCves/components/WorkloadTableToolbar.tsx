@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import noop from 'lodash/noop';
 import { Toolbar, ToolbarGroup, ToolbarContent, ToolbarChip } from '@patternfly/react-core';
 
@@ -73,14 +73,6 @@ function WorkloadTableToolbar({
     function onDeleteAll() {
         onChangeSearchFilter({});
     }
-
-    // The `onChangeSearchFilter` function is intentionally not used in place of `setSearchFilter` below since
-    // it is intended to respond to a change via user action, and this useEffect is intended to sync the
-    // state when the page loads or local storage changes.
-    useEffect(() => {
-        setSearchFilter(defaultFilters, 'replace');
-        // unsure how to reset filters with URL filters only on defaultFilter change
-    }, [defaultFilters, setSearchFilter]);
 
     return (
         <Toolbar id="workload-cves-table-toolbar">
