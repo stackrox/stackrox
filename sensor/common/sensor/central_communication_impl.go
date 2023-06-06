@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"context"
+	"sync"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
@@ -34,6 +35,9 @@ type centralCommunicationImpl struct {
 	components []common.SensorComponent
 
 	stopper concurrency.Stopper
+
+	// allFinished waits until both receiver and sender fully stopped before cleaning up the stream.
+	allFinished *sync.WaitGroup
 }
 
 func (s *centralCommunicationImpl) Start(conn grpc.ClientConnInterface, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
@@ -83,9 +87,16 @@ func communicateWithAutoSensedEncoding(ctx context.Context, client central.Senso
 }
 
 func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector, onStops ...func(error)) {
+	var stream central.SensorService_CommunicateClient
 	defer func() {
 		s.stopper.Flow().ReportStopped()
 		runAll(s.stopper.Client().Stopped().Err(), onStops...)
+		s.allFinished.Wait()
+		if stream != nil {
+			if err := stream.CloseSend(); err != nil {
+				log.Errorf("Failed to close stream cleanly: %v", err)
+			}
+		}
 	}()
 
 	// Start the stream client.
@@ -131,7 +142,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		return
 	}
 
-	stream, err := communicateWithAutoSensedEncoding(ctx, client)
+	stream, err = communicateWithAutoSensedEncoding(ctx, client)
 	if err != nil {
 		s.stopper.Flow().StopWithError(err)
 		return
@@ -142,11 +153,6 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		return
 	}
 
-	defer func() {
-		if err := stream.CloseSend(); err != nil {
-			log.Errorf("Failed to close stream cleanly: %v", err)
-		}
-	}()
 	log.Info("Established connection to Central.")
 
 	centralReachable.Set(true)
