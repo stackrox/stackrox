@@ -51,7 +51,6 @@ function TableEntityToolbar({
                     )}
                     <ToolbarItem alignment={{ default: 'alignRight' }} variant="pagination">
                         <Pagination
-                            isCompact
                             itemCount={tableRowCount}
                             page={page}
                             perPage={perPage}
