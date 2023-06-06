@@ -83,3 +83,26 @@ subjects:
   name: central
   namespace: {{.Release.Namespace}}
 {{- end }}
+
+# TODO: fix toggle
+# TODO: do the same for other service accounts
+{{- if ._rox.env.openshift }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: rhacs-central-auth-reader
+  namespace: kube-system
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "rhacs-central-auth-reader") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "rhacs-central-auth-reader") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: extension-apiserver-authentication-reader
+subjects:
+- kind: ServiceAccount
+  name: central
+  namespace: {{.Release.Namespace}}
+{{- end }}

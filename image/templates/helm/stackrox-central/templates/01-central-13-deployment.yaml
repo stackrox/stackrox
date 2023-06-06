@@ -178,6 +178,9 @@ spec:
           mountPath: /run/secrets/stackrox.io/db-password
         - name: central-external-db-volume
           mountPath: /etc/ext-db
+        - name: monitoring-tls
+          mountPath: /run/secrets/stackrox.io/monitoring-tls
+          readOnly: true
         {{- range $extraMount := (default list ._rox.central.extraMounts) }}
         - name: {{ $extraMount.name }}
           {{- $extraMount.mount | toYaml | nindent 10 }}
@@ -247,6 +250,10 @@ spec:
           optional: true
       - name: stackrox-db
         {{- toYaml ._rox.central.persistence._volumeCfg | nindent 8 }}
+      - name: monitoring-tls
+        secret:
+          secretName: monitoring-tls
+          optional: true
       {{- range $extraMount := (default list ._rox.central.extraMounts) }}
       - name: {{ $extraMount.name }}
         {{- $extraMount.source | toYaml | nindent 8 }}

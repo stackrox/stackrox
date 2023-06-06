@@ -288,7 +288,7 @@ func main() {
 	}
 
 	// Start the prometheus metrics server
-	pkgMetrics.NewDefaultHTTPServer(pkgMetrics.CentralSubsystem).RunForever()
+	pkgMetrics.NewMetricsServer(pkgMetrics.CentralSubsystem).RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
 	go startGRPCServer()
