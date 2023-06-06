@@ -29,6 +29,8 @@ type UnconfirmedMessageHandlerImpl struct {
 	retry int
 	// retryMux is a mutex for retry variable
 	retryMux *sync.Mutex
+	// numUnackedSendings counts how many sendings occured (not retries) since the last ack
+	numUnackedSendings int
 	// ctx is a context that can be used to stop this object
 	ctx context.Context
 }
@@ -90,7 +92,12 @@ func (s *UnconfirmedMessageHandlerImpl) retryLater() {
 func (s *UnconfirmedMessageHandlerImpl) ObserveSending() {
 	s.retryMux.Lock()
 	defer s.retryMux.Unlock()
+	s.numUnackedSendings++
 	log.Debugf("Observing message being sent. Waiting for an ACK for %s", s.baseInterval.String())
+	if s.numUnackedSendings > 1 {
+		// Not resetting the ticker to the the baseInterval, because previous message was not acked at all
+		return
+	}
 	s.ticker.Stop()
 	s.retry = 0
 	s.ticker.Reset(s.baseInterval)
@@ -102,6 +109,7 @@ func (s *UnconfirmedMessageHandlerImpl) observeConfirmation() {
 	log.Debug("Message has been acknowledged")
 	s.ticker.Stop()
 	s.retry = 0
+	s.numUnackedSendings = 0
 }
 
 // HandleACK is called when ACK is received
