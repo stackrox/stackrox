@@ -2,7 +2,6 @@ on:
   push:
     branches:
     - 'yli3/**'
-  workflow_dispatch: {}
   schedule:
   # Run every 3 hours
   - cron: '0 */3 * * *'
@@ -31,9 +30,7 @@ jobs:
       run: |
         cd scanner
         go run cmd/updater/update.go
-        ls -l --block-size=M tmp
         gsutil cp -r tmp gs://scanner-v4-test/
-        echo "${GITHUB_REF_NAME}"
 
     env:
       GOMEMLIMIT: 500MiB

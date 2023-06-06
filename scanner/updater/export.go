@@ -4,7 +4,6 @@ import (
 	"compress/gzip"
 	"context"
 	"net/http"
-	"net/http/httptest"
 	"os"
 
 	"github.com/quay/claircore/alpine"
@@ -28,40 +27,35 @@ import (
 func ExportAction() error {
 	ctx := context.Background()
 
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusTeapot)
-	}))
-	defer srv.Close()
-
 	updaterStore, err := jsonblob.New()
 	if err != nil {
 		return err
 	}
 
-	updaterList := []driver.Updater{}
+	var updaters []driver.Updater
 
-	// Append updater sets directly to the updaterList
+	// Append updater sets directly to the updaters
 	appendUpdaterSet := func(updaterSet driver.UpdaterSet, err error) {
 		if err != nil {
 			zlog.Error(ctx).Msg(err.Error())
 			return
 		}
-		updaterList = append(updaterList, updaterSet.Updaters()...)
+		updaters = append(updaters, updaterSet.Updaters()...)
 	}
 
 	appendUpdaterSet(aws.UpdaterSet(ctx))
+	appendUpdaterSet(manual.Factory.UpdaterSet(ctx))
 	appendUpdaterSet(oracle.UpdaterSet(ctx))
+	appendUpdaterSet(osv.Factory.UpdaterSet(ctx))
 	appendUpdaterSet(photon.UpdaterSet(ctx))
 	appendUpdaterSet(suse.UpdaterSet(ctx))
-	appendUpdaterSet(osv.Factory.UpdaterSet(ctx))
-	appendUpdaterSet(manual.Factory.UpdaterSet(ctx))
 
-	debianFac, err := debian.NewFactory(ctx)
+	alpineFac, err := alpine.NewFactory(ctx)
 	if err != nil {
 		return err
 	}
 
-	alpineFac, err := alpine.NewFactory(ctx)
+	debianFac, err := debian.NewFactory(ctx)
 	if err != nil {
 		return err
 	}
@@ -111,7 +105,7 @@ func ExportAction() error {
 	defer gzipWriter.Close()
 
 	updaterSetMgr, err := updates.NewManager(ctx, updaterStore, updates.NewLocalLockSource(), http.DefaultClient,
-		updates.WithOutOfTree(updaterList),
+		updates.WithOutOfTree(updaters),
 	)
 	if err != nil {
 		return err
@@ -125,7 +119,7 @@ func ExportAction() error {
 	}
 
 	configStore, err := jsonblob.New()
-	configMgr, err := updates.NewManager(ctx, configStore, updates.NewLocalLockSource(), srv.Client(),
+	configMgr, err := updates.NewManager(ctx, configStore, updates.NewLocalLockSource(), http.DefaultClient,
 		updates.WithConfigs(cfgs),
 		updates.WithFactories(facs),
 	)
