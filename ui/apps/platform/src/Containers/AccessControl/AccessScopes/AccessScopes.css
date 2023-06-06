@@ -139,6 +139,6 @@ table .pf-c-dropdown__toggle.pf-m-plain svg {
  * Allow pop-up selects to scroll when customer has more roles than can be shown by height of screen
  */
  .pf-c-select__menu {
-    max-height: 100vh;
+    max-height: calc(100vh - (3 * var(--pf-c-page__header--MinHeight)));
     overflow: scroll;
 }
