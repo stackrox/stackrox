@@ -190,17 +190,17 @@ func (mr *MockManagerMockRecorder) SendMessage(clusterID, msg interface{}) *gomo
 }
 
 // Start mocks base method.
-func (m *MockManager) Start(mgr common.ClusterManager, netEntitiesMgr common.NetworkEntityManager, policyMgr common.PolicyManager, baselineMgr common.ProcessBaselineManager, networkBaselineMgr common.NetworkBaselineManager, delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager, autoTriggerUpgrades *concurrency.Flag) error {
+func (m *MockManager) Start(mgr common.ClusterManager, netEntitiesMgr common.NetworkEntityManager, policyMgr common.PolicyManager, baselineMgr common.ProcessBaselineManager, networkBaselineMgr common.NetworkBaselineManager, delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager, imageIntegrationMgr common.ImageIntegrationManager, autoTriggerUpgrades *concurrency.Flag) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Start", mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryConfigMgr, autoTriggerUpgrades)
+	ret := m.ctrl.Call(m, "Start", mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryConfigMgr, imageIntegrationMgr, autoTriggerUpgrades)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Start indicates an expected call of Start.
-func (mr *MockManagerMockRecorder) Start(mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryConfigMgr, autoTriggerUpgrades interface{}) *gomock.Call {
+func (mr *MockManagerMockRecorder) Start(mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryConfigMgr, imageIntegrationMgr, autoTriggerUpgrades interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockManager)(nil).Start), mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryConfigMgr, autoTriggerUpgrades)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockManager)(nil).Start), mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryConfigMgr, imageIntegrationMgr, autoTriggerUpgrades)
 }
 
 // TriggerCertRotation mocks base method.

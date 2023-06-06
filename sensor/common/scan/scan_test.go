@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/registries"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
@@ -52,20 +53,22 @@ func (suite *scanTestSuite) createMockImageServiceClient(img *storage.Image, fai
 
 func (suite *scanTestSuite) TestLocalEnrichment() {
 	var getRegistryForImageInNamespaceTriggered bool
+	fakeRegStore := &fakeRegistryStore{}
 
 	// Use mock functions to avoid having to provide a full registry / scanner.
 	scan := LocalScan{
 		scanImg:                  successfulScan,
 		fetchSignaturesWithRetry: successfulFetchSignatures,
-		getRegistryForImageInNamespace: func(*storage.ImageName, string) (registryTypes.Registry, error) {
+		getRegistryForImageInNamespace: func(*storage.ImageName, string) (registryTypes.ImageRegistry, error) {
 			getRegistryForImageInNamespaceTriggered = true
 			return &fakeRegistry{fail: false}, nil
 		},
-		getGlobalRegistryForImage: func(*storage.ImageName) (registryTypes.Registry, error) {
+		getGlobalRegistryForImage: func(*storage.ImageName) (registryTypes.ImageRegistry, error) {
 			return nil, nil
 		},
-		scannerClientSingleton: emptyScannerClientSingleton,
-		scanSemaphore:          semaphore.NewWeighted(10),
+		scannerClientSingleton:            emptyScannerClientSingleton,
+		scanSemaphore:                     semaphore.NewWeighted(10),
+		getMatchingCentralRegIntegrations: fakeRegStore.GetMatchingCentralRegistryIntegrations,
 	}
 
 	// Original values will be restored within the teardown function. This will be done after each test.
@@ -91,10 +94,10 @@ func (suite *scanTestSuite) TestLocalEnrichment() {
 func (suite *scanTestSuite) TestEnrichImageFailures() {
 	type testCase struct {
 		scanImg func(ctx context.Context, image *storage.Image,
-			registry registryTypes.Registry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
+			registry registryTypes.ImageRegistry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
 		fetchSignaturesWithRetry func(ctx context.Context, fetcher signatures.SignatureFetcher, image *storage.Image,
 			fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error)
-		getRegistryForImageInNamespace func(image *storage.ImageName, ns string) (registryTypes.Registry, error)
+		getRegistryForImageInNamespace func(image *storage.ImageName, ns string) (registryTypes.ImageRegistry, error)
 		fakeImageServiceClient         *fakeImageServiceClient
 		enrichmentTriggered            bool
 	}
@@ -102,14 +105,14 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 	cases := map[string]testCase{
 		"fail retrieving image metadata": {
 			fakeImageServiceClient: suite.createMockImageServiceClient(nil, false),
-			getRegistryForImageInNamespace: func(*storage.ImageName, string) (registryTypes.Registry, error) {
+			getRegistryForImageInNamespace: func(*storage.ImageName, string) (registryTypes.ImageRegistry, error) {
 				return &fakeRegistry{fail: true}, nil
 			},
 			enrichmentTriggered: true,
 		},
 		"fail scanning the image locally": {
 			fakeImageServiceClient: suite.createMockImageServiceClient(nil, false),
-			getRegistryForImageInNamespace: func(*storage.ImageName, string) (registryTypes.Registry, error) {
+			getRegistryForImageInNamespace: func(*storage.ImageName, string) (registryTypes.ImageRegistry, error) {
 				return &fakeRegistry{fail: false}, nil
 			},
 			scanImg:             failingScan,
@@ -117,7 +120,7 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 		},
 		"fail enrich image via central": {
 			fakeImageServiceClient: suite.createMockImageServiceClient(nil, true),
-			getRegistryForImageInNamespace: func(*storage.ImageName, string) (registryTypes.Registry, error) {
+			getRegistryForImageInNamespace: func(*storage.ImageName, string) (registryTypes.ImageRegistry, error) {
 				return &fakeRegistry{fail: false}, nil
 			},
 			scanImg:                  successfulScan,
@@ -126,7 +129,7 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 		},
 		"fail fetching signatures": {
 			fakeImageServiceClient: suite.createMockImageServiceClient(nil, false),
-			getRegistryForImageInNamespace: func(*storage.ImageName, string) (registryTypes.Registry, error) {
+			getRegistryForImageInNamespace: func(*storage.ImageName, string) (registryTypes.ImageRegistry, error) {
 				return &fakeRegistry{fail: false}, nil
 			},
 			scanImg:                  successfulScan,
@@ -139,14 +142,16 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 	suite.Require().NoError(err, "failed creating test image")
 
 	for name, c := range cases {
+		fakeRegStore := &fakeRegistryStore{centralNoRegs: true}
 		suite.Run(name, func() {
 			scan := LocalScan{
-				scanImg:                        c.scanImg,
-				fetchSignaturesWithRetry:       c.fetchSignaturesWithRetry,
-				getRegistryForImageInNamespace: c.getRegistryForImageInNamespace,
-				getGlobalRegistryForImage:      emptyGetGlobalRegistryForImage,
-				scannerClientSingleton:         emptyScannerClientSingleton,
-				scanSemaphore:                  semaphore.NewWeighted(10),
+				scanImg:                           c.scanImg,
+				fetchSignaturesWithRetry:          c.fetchSignaturesWithRetry,
+				getRegistryForImageInNamespace:    c.getRegistryForImageInNamespace,
+				getGlobalRegistryForImage:         emptyGetGlobalRegistryForImage,
+				scannerClientSingleton:            emptyScannerClientSingleton,
+				scanSemaphore:                     semaphore.NewWeighted(10),
+				getMatchingCentralRegIntegrations: fakeRegStore.GetMatchingCentralRegistryIntegrations,
 			}
 			img, err := scan.EnrichLocalImageInNamespace(context.Background(), c.fakeImageServiceClient, containerImg, "fake-namespace", "", false)
 			suite.Assert().Error(err, "expected an error")
@@ -158,6 +163,8 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 }
 
 func (suite *scanTestSuite) TestMetadataBeingSet() {
+	fakeRegStore := &fakeRegistryStore{}
+
 	scan := LocalScan{
 		scanImg: successfulScan,
 		fetchSignaturesWithRetry: func(_ context.Context, _ signatures.SignatureFetcher, img *storage.Image, _ string,
@@ -168,11 +175,12 @@ func (suite *scanTestSuite) TestMetadataBeingSet() {
 			return nil, nil
 		},
 		getGlobalRegistryForImage: emptyGetGlobalRegistryForImage,
-		getRegistryForImageInNamespace: func(image *storage.ImageName, ns string) (registryTypes.Registry, error) {
+		getRegistryForImageInNamespace: func(image *storage.ImageName, ns string) (registryTypes.ImageRegistry, error) {
 			return &fakeRegistry{fail: false}, nil
 		},
-		scannerClientSingleton: emptyScannerClientSingleton,
-		scanSemaphore:          semaphore.NewWeighted(10),
+		scannerClientSingleton:            emptyScannerClientSingleton,
+		scanSemaphore:                     semaphore.NewWeighted(10),
+		getMatchingCentralRegIntegrations: fakeRegStore.GetMatchingCentralRegistryIntegrations,
 	}
 
 	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
@@ -193,13 +201,14 @@ func (suite *scanTestSuite) TestEnrichLocalImageInNamespace() {
 	fakeRegStore := &fakeRegistryStore{}
 
 	scan := LocalScan{
-		scanImg:                        successfulScan,
-		fetchSignaturesWithRetry:       successfulFetchSignatures,
-		getRegistryForImageInNamespace: fakeRegStore.GetRegistryForImageInNamespace,
-		getGlobalRegistryForImage:      fakeRegStore.GetGlobalRegistryForImage,
-		scannerClientSingleton:         emptyScannerClientSingleton,
-		scanSemaphore:                  semaphore.NewWeighted(10),
-		createNoAuthImageRegistry:      successCreateNoAuthImageRegistry,
+		scanImg:                           successfulScan,
+		fetchSignaturesWithRetry:          successfulFetchSignatures,
+		getRegistryForImageInNamespace:    fakeRegStore.GetRegistryForImageInNamespace,
+		getGlobalRegistryForImage:         fakeRegStore.GetGlobalRegistryForImage,
+		scannerClientSingleton:            emptyScannerClientSingleton,
+		scanSemaphore:                     semaphore.NewWeighted(10),
+		createNoAuthImageRegistry:         successCreateNoAuthImageRegistry,
+		getMatchingCentralRegIntegrations: fakeRegStore.GetMatchingCentralRegistryIntegrations,
 	}
 
 	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
@@ -213,6 +222,7 @@ func (suite *scanTestSuite) TestEnrichLocalImageInNamespace() {
 	suite.Require().NoError(err)
 	suite.Assert().Equal(img, resultImg)
 	suite.Assert().True(imageServiceClient.enrichTriggered)
+	suite.Assert().True(fakeRegStore.getMatchingCentralRegistryIntegrationsInvoked)
 	suite.Assert().False(fakeRegStore.getRegistryForImageInNamespaceInvoked)
 	suite.Assert().True(fakeRegStore.getGlobalRegistryForImageInvoked)
 
@@ -225,6 +235,7 @@ func (suite *scanTestSuite) TestEnrichLocalImageInNamespace() {
 	suite.Require().NoError(err)
 	suite.Assert().Equal(img, resultImg)
 	suite.Assert().True(imageServiceClient.enrichTriggered)
+	suite.Assert().True(fakeRegStore.getMatchingCentralRegistryIntegrationsInvoked)
 	suite.Assert().True(fakeRegStore.getRegistryForImageInNamespaceInvoked)
 	suite.Assert().True(fakeRegStore.getGlobalRegistryForImageInvoked)
 }
@@ -266,7 +277,7 @@ func (suite *scanTestSuite) TestEnrichMultipleRegistries() {
 	reg1 := &fakeRegistry{fail: true}
 	reg2 := &fakeRegistry{}
 	reg3 := &fakeRegistry{}
-	regs := []registryTypes.Registry{reg1, reg2, reg3}
+	regs := []registryTypes.ImageRegistry{reg1, reg2, reg3}
 
 	scan := &LocalScan{
 		scanImg:                  successfulScan,
@@ -318,7 +329,7 @@ func (suite *scanTestSuite) TestEnrichNoRegistries() {
 	suite.Require().NoError(err, "unexpected error enriching image")
 	suite.Require().False(fakeRegStore.getGlobalRegistryForImageInvoked)
 	suite.Require().False(fakeRegStore.getRegistryForImageInNamespaceInvoked)
-	suite.Require().False(fakeRegStore.getRegistryForImageInvoked)
+	suite.Require().False(fakeRegStore.getMatchingCentralRegistryIntegrationsInvoked)
 }
 
 func (suite *scanTestSuite) TestEnrichNoRegistriesFailure() {
@@ -339,8 +350,65 @@ func (suite *scanTestSuite) TestEnrichNoRegistriesFailure() {
 	suite.Require().ErrorContains(err, "unable to create no auth registry")
 }
 
+func (suite *scanTestSuite) TestGetRegistries() {
+	scan := &LocalScan{}
+
+	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
+	suite.Require().NoError(err, "failed creating test image")
+
+	setup := func(regStore *fakeRegistryStore) {
+		scan.getGlobalRegistryForImage = regStore.GetGlobalRegistryForImage
+		scan.getMatchingCentralRegIntegrations = regStore.GetMatchingCentralRegistryIntegrations
+		scan.getRegistryForImageInNamespace = regStore.GetRegistryForImageInNamespace
+	}
+
+	suite.Run("no regs", func() {
+		regStore := &fakeRegistryStore{
+			namespaceNoRegs: true,
+			globalNoRegs:    true,
+			centralNoRegs:   true,
+		}
+		setup(regStore)
+
+		regs := scan.getRegistries("fake", containerImg.GetName())
+		suite.Len(regs, 0)
+	})
+
+	suite.Run("namespaces regs", func() {
+		regStore := &fakeRegistryStore{
+			namespaceNoRegs: false,
+			globalNoRegs:    true,
+			centralNoRegs:   true,
+		}
+		setup(regStore)
+
+		regs := scan.getRegistries("", containerImg.GetName())
+		suite.Len(regs, 0)
+		suite.False(regStore.getRegistryForImageInNamespaceInvoked)
+
+		regs = scan.getRegistries("fake", containerImg.GetName())
+		suite.Len(regs, 1)
+		suite.True(regStore.getRegistryForImageInNamespaceInvoked)
+	})
+
+	suite.Run("regs from all", func() {
+		regStore := &fakeRegistryStore{
+			globalReg:    &fakeRegistry{},
+			namespaceReg: &fakeRegistry{},
+			centralRegs:  []registryTypes.ImageRegistry{&fakeRegistry{}, &fakeRegistry{}},
+		}
+
+		setup(regStore)
+		regs := scan.getRegistries("fake", containerImg.GetName())
+		suite.Len(regs, 4)
+		suite.True(regStore.getRegistryForImageInNamespaceInvoked)
+		suite.True(regStore.getGlobalRegistryForImageInvoked)
+		suite.True(regStore.getMatchingCentralRegistryIntegrationsInvoked)
+	})
+}
+
 func successfulScan(_ context.Context, _ *storage.Image,
-	reg registryTypes.Registry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
+	reg registryTypes.ImageRegistry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
 
 	if reg != nil {
 		reg.Config()
@@ -370,7 +438,7 @@ func successfulFetchSignatures(_ context.Context, _ signatures.SignatureFetcher,
 }
 
 func failingScan(_ context.Context, _ *storage.Image,
-	_ registryTypes.Registry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
+	_ registryTypes.ImageRegistry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
 	return nil, errors.New("failed scanning image")
 }
 
@@ -383,15 +451,15 @@ func emptyScannerClientSingleton() *scannerclient.Client {
 	return &scannerclient.Client{}
 }
 
-func emptyGetGlobalRegistryForImage(*storage.ImageName) (registryTypes.Registry, error) {
+func emptyGetGlobalRegistryForImage(*storage.ImageName) (registryTypes.ImageRegistry, error) {
 	return nil, errors.New("no registry found")
 }
 
-func successCreateNoAuthImageRegistry(context.Context, *storage.ImageName) (registryTypes.Registry, error) {
+func successCreateNoAuthImageRegistry(context.Context, *storage.ImageName, registries.Factory) (registryTypes.ImageRegistry, error) {
 	return &fakeRegistry{}, nil
 }
 
-func failCreateNoAuthImageRegistry(context.Context, *storage.ImageName) (registryTypes.Registry, error) {
+func failCreateNoAuthImageRegistry(context.Context, *storage.ImageName, registries.Factory) (registryTypes.ImageRegistry, error) {
 	return nil, errors.New("broken")
 }
 
@@ -419,23 +487,57 @@ func (f *fakeRegistry) Name() string {
 	return "testing registry"
 }
 
+func (f *fakeRegistry) DataSource() *storage.DataSource {
+	return nil
+}
+
+func (f *fakeRegistry) Source() *storage.ImageIntegration {
+	return nil
+}
+
 type fakeRegistryStore struct {
-	getGlobalRegistryForImageInvoked      bool
-	getRegistryForImageInvoked            bool
-	getRegistryForImageInNamespaceInvoked bool
+	getGlobalRegistryForImageInvoked              bool
+	getRegistryForImageInNamespaceInvoked         bool
+	getMatchingCentralRegistryIntegrationsInvoked bool
+
+	globalReg    registryTypes.ImageRegistry
+	namespaceReg registryTypes.ImageRegistry
+	centralRegs  []registryTypes.ImageRegistry
+
+	globalNoRegs    bool
+	centralNoRegs   bool
+	namespaceNoRegs bool
 }
 
-func (f *fakeRegistryStore) GetRegistryForImage(_ *storage.ImageName) (registryTypes.Registry, error) {
-	f.getRegistryForImageInvoked = true
-	return &fakeRegistry{}, nil
-}
-
-func (f *fakeRegistryStore) GetRegistryForImageInNamespace(_ *storage.ImageName, _ string) (registryTypes.Registry, error) {
+func (f *fakeRegistryStore) GetRegistryForImageInNamespace(_ *storage.ImageName, _ string) (registryTypes.ImageRegistry, error) {
 	f.getRegistryForImageInNamespaceInvoked = true
+	if f.namespaceReg != nil {
+		return f.namespaceReg, nil
+	}
+	if f.namespaceNoRegs {
+		return nil, errors.New("no regs")
+	}
 	return &fakeRegistry{}, nil
 }
 
-func (f *fakeRegistryStore) GetGlobalRegistryForImage(*storage.ImageName) (registryTypes.Registry, error) {
+func (f *fakeRegistryStore) GetGlobalRegistryForImage(*storage.ImageName) (registryTypes.ImageRegistry, error) {
 	f.getGlobalRegistryForImageInvoked = true
+	if f.globalReg != nil {
+		return f.globalReg, nil
+	}
+	if f.globalNoRegs {
+		return nil, errors.New("no regs")
+	}
 	return &fakeRegistry{}, nil
+}
+
+func (f *fakeRegistryStore) GetMatchingCentralRegistryIntegrations(*storage.ImageName) []registryTypes.ImageRegistry {
+	f.getMatchingCentralRegistryIntegrationsInvoked = true
+	if f.centralRegs != nil {
+		return f.centralRegs
+	}
+	if f.centralNoRegs {
+		return nil
+	}
+	return []registryTypes.ImageRegistry{&fakeRegistry{}}
 }

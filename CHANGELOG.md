@@ -44,6 +44,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   is no longer needed. We will continue to populate it to support older versions of the product, but it will be ignored.
 - The time interval used to determine the frequency to scan orchestrator-level components (Kubernetes, OpenShift, Istio) is now configurable
   via ROX_ORCHESTRATOR_VULN_SCAN_INTERVAL.
+- Image Integrations will now be synced with secured clusters that have local scanning enabled.
 
 ## [4.0.0]
 

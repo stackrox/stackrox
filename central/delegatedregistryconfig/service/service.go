@@ -9,12 +9,12 @@ import (
 	cluster "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/convert"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
+	deleConnection "github.com/stackrox/rox/central/delegatedregistryconfig/util/connection"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errox"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -197,14 +197,12 @@ func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryC
 
 	res := make([]*v1.DelegatedRegistryCluster, len(clusters))
 	for i, c := range clusters {
-		conn := s.connManager.GetConnection(c.Id)
-
-		valid := conn != nil && conn.HasCapability(centralsensor.DelegatedRegistryCap)
+		conn := s.connManager.GetConnection(c.GetId())
 
 		res[i] = &v1.DelegatedRegistryCluster{
 			Id:      c.Id,
 			Name:    c.Name,
-			IsValid: valid,
+			IsValid: deleConnection.ValidForDelegation(conn),
 		}
 	}
 
