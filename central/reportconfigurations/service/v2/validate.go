@@ -11,6 +11,9 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 )
 
+// Use this context only to
+// 1) check if notifiers and collection attached to report config exist
+// 2) Populating notifier and collection names before returning v2.ReportConfiguration response
 var allAccessCtx = sac.WithAllAccess(context.Background())
 
 // ValidateReportConfiguration validates the given report configuration object
@@ -74,14 +77,14 @@ func (s *serviceImpl) validateNotifiers(config *apiV2.ReportConfiguration) error
 		if notifier.GetEmailConfig() == nil {
 			return errors.Wrap(errox.InvalidArgs, "Notifier must specify an email notifier configuration")
 		}
-		if err := s.validateEmailConfig(notifier.GetEmailConfig(), notifier.GetNotifierName()); err != nil {
+		if err := s.validateEmailConfig(notifier.GetEmailConfig()); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *serviceImpl) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfiguration, notifierName string) error {
+func (s *serviceImpl) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfiguration) error {
 	if emailConfig.GetNotifierId() == "" {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid email notifier")
 	}
@@ -100,16 +103,12 @@ func (s *serviceImpl) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfig
 	}
 
 	// Use allAccessCtx since report creator/updater might not have permissions for integrationSAC
-	notifier, found, err := s.notifierDatastore.GetNotifier(allAccessCtx, emailConfig.GetNotifierId())
+	exists, err := s.notifierDatastore.Exists(allAccessCtx, emailConfig.GetNotifierId())
 	if err != nil {
 		return errors.Errorf("Error looking up attached notifier, Notifier ID: %s, Error: %s", emailConfig.GetNotifierId(), err)
 	}
-	if !found {
+	if !exists {
 		return errors.Wrapf(errox.NotFound, "Notifier with ID %s not found.", emailConfig.GetNotifierId())
-	}
-	if notifierName != notifier.GetName() {
-		return errors.Wrapf(errox.InvalidArgs, "Notifier name (%s) does not match with notifier having ID %s",
-			notifierName, notifier.GetId())
 	}
 	return nil
 }
@@ -119,24 +118,20 @@ func (s *serviceImpl) validateResourceScope(config *apiV2.ReportConfiguration) e
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope")
 	}
 	collectionID := config.GetResourceScope().GetCollectionScope().GetCollectionId()
-	collectionName := config.GetResourceScope().GetCollectionScope().GetCollectionName()
 
 	if collectionID == "" {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid collection ID")
 	}
 
 	// Use allAccessCtx since report creator/updater might not have permissions for workflowAdministrationSAC
-	collection, found, err := s.collectionDatastore.Get(allAccessCtx, collectionID)
+	exists, err := s.collectionDatastore.Exists(allAccessCtx, collectionID)
 	if err != nil {
 		return errors.Errorf("Error trying to lookup attached collection, Collection: %s, Error: %s", collectionID, err)
 	}
-	if !found {
+	if !exists {
 		return errors.Wrapf(errox.NotFound, "Collection %s not found.", collectionID)
 	}
-	if collectionName != collection.GetName() {
-		return errors.Wrapf(errox.InvalidArgs, "Collection name (%s) does not match with collection having ID %s",
-			collectionName, collection.GetId())
-	}
+
 	return nil
 }
 
