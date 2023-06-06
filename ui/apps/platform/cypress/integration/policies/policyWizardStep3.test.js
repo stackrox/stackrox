@@ -208,7 +208,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
 
                 clickPolicyKeyGroup('Storage');
                 dragFieldIntoSection(
-                    `${selectors.step3.policyCriteria.key}:contains('Writable mounted volume')`
+                    `${selectors.step3.policyCriteria.key}:contains('Mounted volume writability')`
                 );
                 cy.get(selectors.step3.policyCriteria.value.radioGroup).should('exist');
                 cy.get(selectors.step3.policyCriteria.value.addBtn).should('not.exist');
@@ -237,7 +237,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
 
                 clickPolicyKeyGroup('Storage');
                 dragFieldIntoSection(
-                    `${selectors.step3.policyCriteria.key}:contains('Writable mounted volume')`
+                    `${selectors.step3.policyCriteria.key}:contains('Mounted volume writability')`
                 );
                 cy.get(selectors.step3.policyCriteria.value.negateCheckbox).should('not.exist');
             });
@@ -277,7 +277,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
 
                 clickPolicyKeyGroup('Image contents');
                 dragFieldIntoSection(
-                    `${selectors.step3.policyCriteria.key}:contains('Unscanned image')`
+                    `${selectors.step3.policyCriteria.key}:contains('Image scan status')`
                 );
                 cy.get(selectors.step3.policyCriteria.value.radioGroup).should('exist');
                 cy.get(
@@ -399,7 +399,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
                 dragFieldIntoSection(
-                    `${selectors.step3.policyCriteria.key}:contains('trusted image signers')`
+                    `${selectors.step3.policyCriteria.key}:contains('Image signature')`
                 );
                 cy.wait('@getSignatureIntegrations');
             });
