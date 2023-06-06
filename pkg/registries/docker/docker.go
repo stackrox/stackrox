@@ -207,7 +207,7 @@ func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error
 	remote := image.GetName().GetRemote()
 	digest, manifestType, err := r.Client.ManifestDigest(remote, utils.Reference(image))
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to get the manifest digest ")
+		return nil, errors.Wrap(err, "failed to get the manifest digest")
 	}
 	return handleManifests(r, manifestType, remote, digest.String())
 }
