@@ -130,7 +130,7 @@ func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.Comp
 	filteredSources := sources[:0]
 	for _, source := range sources {
 		config, exist, errConfig := s.complianceDataStore.GetConfig(ctx, source.GetStandardId())
-		if err != nil {
+		if errConfig != nil {
 			return nil, errConfig
 		}
 		if !exist || !config.GetHideScanResults() {
