@@ -159,11 +159,12 @@ func (s *aggregatedTrustStore) GetTrustedClientCAs() ([][]byte, error) {
 }
 
 func (s *builtInTrustStore) GetTrustedClientCAs() ([][]byte, error) {
-	ca, _, err := mtls.CACert()
+	caBytes, err := os.ReadFile(mtls.CAFilePath())
 	if err != nil {
+		log.Warnf("Could not read built-in CA file: %v", err)
 		return nil, err
 	}
-	return [][]byte{ca.Raw}, nil
+	return [][]byte{caBytes}, nil
 }
 
 func (s *fileBasedTrustStore) GetTrustedClientCAs() ([][]byte, error) {
