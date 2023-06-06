@@ -2,7 +2,7 @@ import axios from './instance';
 
 import { DeclarativeConfigHealth } from '../types/declarativeConfigHealth.proto';
 
-const url = '/v1/declarative-config/health';
+const healthUrl = '/v1/declarative-config/health';
 
 /**
  * Fetches the declarative config health objects.
@@ -10,7 +10,7 @@ const url = '/v1/declarative-config/health';
 export function fetchDeclarativeConfigurationsHealth(): Promise<{
     response: { healths: DeclarativeConfigHealth[] };
 }> {
-    return axios.get<{ healths: DeclarativeConfigHealth[] }>(url).then((response) => ({
+    return axios.get<{ healths: DeclarativeConfigHealth[] }>(healthUrl).then((response) => ({
         response: response.data,
     }));
 }
