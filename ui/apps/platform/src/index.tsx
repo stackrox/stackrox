@@ -38,6 +38,7 @@ import installRaven from 'installRaven';
 import { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import { fetchFeatureFlagsThunk } from './reducers/featureFlags';
 import { fetchPublicConfigThunk } from './reducers/publicConfig';
+import { fetchCentralCapabilitiesThunk } from './reducers/centralCapabilities';
 import configureApollo from './configureApolloClient';
 
 // This enables syntax highlighting for the patternfly code editor
@@ -71,6 +72,7 @@ const dispatch = (action) =>
 
 dispatch(fetchFeatureFlagsThunk());
 dispatch(fetchPublicConfigThunk());
+dispatch(fetchCentralCapabilitiesThunk());
 
 ReactDOM.render(
     <Provider store={store}>
