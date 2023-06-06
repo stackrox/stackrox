@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "api/v1/empty.proto";
+import "storage/user.proto";
+
+package v1;
+
+message AddTrustedClientCARequest {
+    bytes ca_bundle = 1;
+}
+
+message AddTrustedClientCAResponse {
+    string id = 1;
+}
+
+message RemoveTrustedClientCARequest {
+    string id = 1;
+}
+
+message RemoveTrustedClientCAResponse {
+    string id = 1;
+}
+
+message ListTrustedClientCAsRequest {
+}
+
+message TrustedSensorClientCA {
+    string id = 1;
+    bytes  ca_bundle = 2;
+}
+
+message ListTrustedClientCAsResponse {
+    repeated TrustedSensorClientCA items = 1;
+}
+
+message GetTrustedClientCARequest {
+    string id = 1;
+}
+
+message GetTrustedClientCAResponse {
+    TrustedSensorClientCA item = 1;
+}
+
+// TrustedCAService manages trusted Sensor CAs.
+service TrustedClientCAService {
+    rpc AddTrustedClientCA(AddTrustedClientCARequest) returns (AddTrustedClientCAResponse) {
+        option (google.api.http) = {
+            post: "/v1/auth/trustedClientCAs"
+            body: "*"
+        };
+    }
+    rpc RemoveTrustedClientCA(RemoveTrustedClientCARequest) returns (RemoveTrustedClientCAResponse) {
+        option (google.api.http) = {
+            delete: "/v1/auth/trustedClientCAs/{id}"
+        };
+    }
+    rpc ListTrustedClientCAs(ListTrustedClientCAsRequest) returns (ListTrustedClientCAsResponse) {
+        option (google.api.http) = {
+            get: "/v1/auth/trustedClientCAs"
+        };
+    }
+    rpc GetTrustedClientCA(GetTrustedClientCARequest) returns (GetTrustedClientCAResponse) {
+        option (google.api.http) = {
+            get: "/v1/auth/trustedClientCAs/{id}"
+        };
+    }
+}
