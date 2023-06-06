@@ -9,9 +9,5 @@ import (
 // delegating scan requests and syncing related resources (such as
 // image integrations).
 func ValidForDelegation(conn connection.SensorConnection) bool {
-	if conn != nil && conn.HasCapability(centralsensor.DelegatedRegistryCap) {
-		return true
-	}
-
-	return false
+	return conn != nil && conn.HasCapability(centralsensor.DelegatedRegistryCap)
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/enrichment/mocks"
+	enrichMocks "github.com/stackrox/rox/central/enrichment/mocks"
 	integrationMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
 	loopMocks "github.com/stackrox/rox/central/reprocessor/mocks"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -347,6 +348,8 @@ func TestBroadcast(t *testing.T) {
 		msg = &central.MsgToSensor{}
 	}
 
+	ii := &storage.ImageIntegration{}
+
 	t.Run("success", func(t *testing.T) {
 		setup(t)
 		conn.EXPECT().ClusterID()
@@ -354,14 +357,14 @@ func TestBroadcast(t *testing.T) {
 		conn.EXPECT().InjectMessage(gomock.Any(), msg)
 		connMgr.EXPECT().GetActiveConnections().Return([]connection.SensorConnection{conn})
 
-		s.broadcast(context.Background(), "action", "id", "name", msg)
+		s.broadcast(context.Background(), "action", ii, msg)
 	})
 
 	t.Run("noop on no conns", func(t *testing.T) {
 		setup(t)
 		connMgr.EXPECT().GetActiveConnections().Return(nil)
 
-		s.broadcast(context.Background(), "action", "id", "name", msg)
+		s.broadcast(context.Background(), "action", ii, msg)
 	})
 
 	t.Run("noop on conns not valid", func(t *testing.T) {
@@ -369,7 +372,7 @@ func TestBroadcast(t *testing.T) {
 		conn.EXPECT().HasCapability(gomock.Any()).Return(false)
 		connMgr.EXPECT().GetActiveConnections().Return([]connection.SensorConnection{conn})
 
-		s.broadcast(context.Background(), "action", "id", "name", msg)
+		s.broadcast(context.Background(), "action", ii, msg)
 	})
 
 	t.Run("noop on inject err", func(t *testing.T) {
@@ -379,6 +382,63 @@ func TestBroadcast(t *testing.T) {
 		conn.EXPECT().InjectMessage(gomock.Any(), gomock.Any()).Return(errors.New("broken"))
 		connMgr.EXPECT().GetActiveConnections().Return([]connection.SensorConnection{conn})
 
-		s.broadcast(context.Background(), "action", "id", "name", msg)
+		s.broadcast(context.Background(), "action", ii, msg)
+	})
+}
+
+func TestBroadcastOnDelete(t *testing.T) {
+	var s *serviceImpl
+	var iiDS *integrationMocks.MockDataStore
+	var intMgr *enrichMocks.MockManager
+	var connMgr *connMocks.MockManager
+	var conn *connMocks.MockSensorConnection
+
+	ii := &storage.ImageIntegration{Id: "id", Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY}}
+
+	setup := func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		connMgr = connMocks.NewMockManager(ctrl)
+		conn = connMocks.NewMockSensorConnection(ctrl)
+		iiDS = integrationMocks.NewMockDataStore(ctrl)
+		intMgr = enrichMocks.NewMockManager(ctrl)
+		s = &serviceImpl{connManager: connMgr, datastore: iiDS, integrationManager: intMgr}
+	}
+
+	t.Run("success", func(t *testing.T) {
+		setup(t)
+		conn.EXPECT().ClusterID().Return(ii.GetId())
+		conn.EXPECT().HasCapability(gomock.Any()).Return(true)
+		conn.EXPECT().InjectMessage(gomock.Any(), gomock.Any()).Return(nil)
+
+		connMgr.EXPECT().GetActiveConnections().Return([]connection.SensorConnection{conn})
+
+		intMgr.EXPECT().Remove(gomock.Any()).Return(nil)
+
+		iiDS.EXPECT().GetImageIntegration(gomock.Any(), gomock.Any()).Return(ii, true, nil)
+		iiDS.EXPECT().RemoveImageIntegration(gomock.Any(), gomock.Any()).Return(nil)
+
+		_, err := s.DeleteImageIntegration(context.Background(), &v1.ResourceByID{Id: "id"})
+		assert.NoError(t, err)
+	})
+
+	t.Run("no broadcast on no exist", func(t *testing.T) {
+		setup(t)
+
+		intMgr.EXPECT().Remove(gomock.Any()).Return(nil)
+
+		iiDS.EXPECT().GetImageIntegration(gomock.Any(), gomock.Any()).Return(nil, false, nil)
+		iiDS.EXPECT().RemoveImageIntegration(gomock.Any(), gomock.Any()).Return(nil)
+
+		_, err := s.DeleteImageIntegration(context.Background(), &v1.ResourceByID{Id: "id"})
+		assert.NoError(t, err)
+	})
+
+	t.Run("err on failure to get existing", func(t *testing.T) {
+		setup(t)
+
+		iiDS.EXPECT().GetImageIntegration(gomock.Any(), gomock.Any()).Return(nil, false, errors.New("broken"))
+
+		_, err := s.DeleteImageIntegration(context.Background(), &v1.ResourceByID{Id: "id"})
+		assert.Error(t, err)
 	})
 }
