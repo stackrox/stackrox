@@ -54,9 +54,11 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Blob, reader io.Rea
 	if err := sac.VerifyAuthzOK(scopeChecker.WriteAllowed(ctx)); err != nil {
 		return err
 	}
-	if err := sac.VerifyAuthzOK(scopeChecker.ReadAllowed(ctx)); err != nil {
-		return err
-	}
+	// Augment permission because we require read permission internally
+	ctx = sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
 
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
@@ -181,9 +183,11 @@ func (s *storeImpl) Delete(ctx context.Context, name string) error {
 	if err := sac.VerifyAuthzOK(scopeChecker.WriteAllowed(ctx)); err != nil {
 		return err
 	}
-	if err := sac.VerifyAuthzOK(scopeChecker.ReadAllowed(ctx)); err != nil {
-		return err
-	}
+	// Augment permission because we require read permission internally
+	ctx = sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err

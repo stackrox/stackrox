@@ -118,14 +118,14 @@ func (s *BlobsStoreSuite) TestSacForUpsertAndDelete() {
 	// Upsert fails with read permission
 	s.Require().Error(s.store.Upsert(rCtx, insertBlob, reader))
 	s.verifyLargeObjectCounts(0)
-	// Upsert fails with write permission
-	s.Require().Error(s.store.Upsert(wCtx, insertBlob, reader))
-	s.verifyLargeObjectCounts(0)
-
-	// Upsert succeed with read and write permission
-	s.Require().NoError(s.store.Upsert(rwCtx, insertBlob, reader))
+	// Upsert succeeds with write permission
+	s.Require().NoError(s.store.Upsert(wCtx, insertBlob, reader))
 	s.verifyLargeObjectCounts(1)
-	// Upsert again
+	// Upsert succeeds updating blob
+	reader = bytes.NewBuffer(randomData)
+	s.Require().NoError(s.store.Upsert(wCtx, insertBlob, reader))
+	s.verifyLargeObjectCounts(1)
+	// Upsert succeeds with read and write permission
 	reader = bytes.NewBuffer(randomData)
 	s.Require().NoError(s.store.Upsert(rwCtx, insertBlob, reader))
 	s.verifyLargeObjectCounts(1)
@@ -133,10 +133,13 @@ func (s *BlobsStoreSuite) TestSacForUpsertAndDelete() {
 	// Delete fails with read permission
 	s.Require().Error(s.store.Delete(rCtx, insertBlob.GetName()))
 	s.verifyLargeObjectCounts(1)
-	// Delete fails with write permission
-	s.Require().Error(s.store.Delete(wCtx, insertBlob.GetName()))
-	s.verifyLargeObjectCounts(1)
+	// Delete succeeds with write permission
+	s.Require().NoError(s.store.Delete(wCtx, insertBlob.GetName()))
+	s.verifyLargeObjectCounts(0)
 	// Delete succeeds with read and write permission
+	reader = bytes.NewBuffer(randomData)
+	s.Require().NoError(s.store.Upsert(rwCtx, insertBlob, reader))
+	s.verifyLargeObjectCounts(1)
 	s.Require().NoError(s.store.Delete(rwCtx, insertBlob.GetName()))
 	s.verifyLargeObjectCounts(0)
 }
