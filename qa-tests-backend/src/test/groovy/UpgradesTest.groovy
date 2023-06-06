@@ -18,10 +18,7 @@ import spock.lang.Unroll
 import spock.lang.IgnoreIf
 
 class UpgradesTest extends BaseSpecification {
-    // workaround for P/Z clusters
-    private final static String CLUSTERID =
-            ((Env.REMOTE_CLUSTER_ARCH == "x86_64" ) ? Env.mustGet("UPGRADE_CLUSTER_ID") : "")
-
+    private final static String CLUSTERID = Env.mustGet("UPGRADE_CLUSTER_ID")
     private final static String POLICIES_JSON_PATH =
             Env.get("POLICIES_JSON_RELATIVE_PATH", "../pkg/defaults/policies/files")
 
