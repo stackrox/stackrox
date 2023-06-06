@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
-	"github.com/stackrox/rox/central/declarativeconfig/utils"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
@@ -59,8 +58,7 @@ func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ..
 		if err := u.groupDS.Remove(ctx, group.GetProps(), true); err != nil {
 			groupDeletionErr = multierror.Append(groupDeletionErr, err)
 			groupIDs = append(groupIDs, group.GetProps().GetId())
-			if err := u.healthDS.UpsertDeclarativeConfig(ctx, utils.HealthStatusForProtoMessage(group, "", err,
-				u.idExtractor, u.nameExtractor)); err != nil {
+			if err := u.healthDS.UpdateErrorMessageForDeclarativeConfig(ctx, u.idExtractor(group), err); err != nil {
 				log.Errorf("Failed to update the declarative config health status %q: %v",
 					group.GetProps().GetId(), err)
 			}

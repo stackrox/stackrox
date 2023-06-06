@@ -9,7 +9,6 @@ import (
 	authProviderDatastore "github.com/stackrox/rox/central/authprovider/datastore"
 	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
-	declarativeCfgUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -115,8 +114,7 @@ func (u *authProviderUpdater) processDeletionError(ctx context.Context, authProv
 	authProviderDeletionErr = multierror.Append(authProviderDeletionErr, err)
 	authProviderIDs.Add(authProvider.GetId())
 
-	if err := u.healthDS.UpsertDeclarativeConfig(ctx, declarativeCfgUtils.HealthStatusForProtoMessage(authProvider, "", err,
-		u.idExtractor, u.nameExtractor)); err != nil {
+	if err := u.healthDS.UpdateErrorMessageForDeclarativeConfig(ctx, u.idExtractor(authProvider), err); err != nil {
 		log.Errorf("Failed to update the declarative config health status %q: %v", authProvider.GetId(), err)
 	}
 	return authProviderDeletionErr, authProviderIDs

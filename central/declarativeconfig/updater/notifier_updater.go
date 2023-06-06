@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
-	declarativeCfgUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/policycleaner"
 	"github.com/stackrox/rox/generated/storage"
@@ -106,8 +105,7 @@ func (u *notifierUpdater) processDeletionError(ctx context.Context, notifierDele
 	notifierDeletionErr = multierror.Append(notifierDeletionErr, err)
 	notifierIDs = append(notifierIDs, notifier.GetId())
 
-	if err := u.healthDS.UpsertDeclarativeConfig(ctx, declarativeCfgUtils.HealthStatusForProtoMessage(notifier, "", err,
-		u.idExtractor, u.nameExtractor)); err != nil {
+	if err := u.healthDS.UpdateErrorMessageForDeclarativeConfig(ctx, u.idExtractor(notifier), err); err != nil {
 		log.Errorf("Failed to update the declarative config health status %q: %v", notifier.GetId(), err)
 	}
 	return notifierDeletionErr, notifierIDs
