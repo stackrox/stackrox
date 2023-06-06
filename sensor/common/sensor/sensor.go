@@ -315,7 +315,7 @@ func (s *Sensor) notifyAllComponents(notification common.SensorComponentEvent) {
 	}
 }
 
-func (s *Sensor) wrapOrNewError(err error, message string) error {
+func wrapOrNewError(err error, message string) error {
 	if err == nil {
 		return errors.New(message)
 	}
@@ -341,7 +341,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		case <-s.centralConnectionFactory.StopSignal().WaitC():
 			// Connection is still broken, report and try again
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection)
-			return s.wrapOrNewError(s.centralConnectionFactory.StopSignal().Err(), "connection couldn't be re-established")
+			return wrapOrNewError(s.centralConnectionFactory.StopSignal().Err(), "connection couldn't be re-established")
 		}
 
 		// At this point, we know that connection factory reported that connection if up.
@@ -363,11 +363,11 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			// Trigger goroutine that will attempt the connection. s.centralConnectionFactory.*Signal() should be
 			// checked to probe connection state.
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection)
-			return s.wrapOrNewError(s.centralCommunication.Stopped().Err(), "communication stopped")
+			return wrapOrNewError(s.centralCommunication.Stopped().Err(), "communication stopped")
 		case <-s.stoppedSig.WaitC():
 			// This means sensor was signaled to finish, this error shouldn't be retried
 			log.Info("Received stop signal from Sensor. Stopping without retrying")
-			return backoff.Permanent(s.wrapOrNewError(s.stoppedSig.Err(), "received sensor stop signal"))
+			return backoff.Permanent(wrapOrNewError(s.stoppedSig.Err(), "received sensor stop signal"))
 		}
 	}, exponential, func(err error, d time.Duration) {
 		log.Infof("Central communication stopped: %s. Retrying after %s...", err, d.Round(time.Second))
