@@ -198,7 +198,7 @@ func handleManifests(r *Registry, manifestType, remote, digest string) (*storage
 	}
 }
 
-// Metadata returns the metadata via this registries implementation
+// Metadata returns the metadata via this registry's implementation
 func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
 	if image == nil {
 		return nil, nil
