@@ -793,7 +793,7 @@ func TestTranslate(t *testing.T) {
 				allExisting = append(allExisting, existingPVC)
 			}
 			client := fkClient.NewClientBuilder().WithObjects(allExisting...).Build()
-			translator := Translator{Client: client}
+			translator := New(client)
 
 			got, err := translator.translate(context.Background(), tt.args.c)
 			assert.NoError(t, err)

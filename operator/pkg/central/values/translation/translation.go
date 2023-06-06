@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 
 	// Required for the usage of go:embed below.
 	_ "embed"
@@ -32,9 +31,14 @@ const (
 	managedServicesAnnotation = "platform.stackrox.io/managed-services"
 )
 
+// New creates a new Translator
+func New(client ctrlClient.Client) Translator {
+	return Translator{client: client}
+}
+
 // Translator translates and enriches helm values
 type Translator struct {
-	Client ctrlClient.Client
+	client ctrlClient.Client
 }
 
 // Translate translates and enriches helm values
@@ -76,16 +80,12 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 	if centralSpec == nil {
 		centralSpec = &platform.CentralComponentSpec{}
 	}
-	annotations := c.GetAnnotations()
-	var obsoletePvc bool
-	if value, ok := annotations[common.CentralPVCObsoleteAnnotation]; ok {
-		obsoletePvc = strings.EqualFold("true", strings.TrimSpace(value))
-	}
+	obsoletePVC := common.ObsoletePVC(c.GetAnnotations())
 	checker := &pvcStateChecker{
 		ctx:         ctx,
-		client:      t.Client,
+		client:      t.client,
 		namespace:   c.GetNamespace(),
-		obsoletePvc: obsoletePvc,
+		obsoletePvc: obsoletePVC,
 	}
 
 	central, err := getCentralComponentValues(centralSpec, checker)
