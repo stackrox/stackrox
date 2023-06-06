@@ -24,6 +24,7 @@ import ImagesTableContainer from './ImagesTableContainer';
 const emptyStorage: VulnMgmtLocalStorage = {
     preferences: {
         defaultFilters: {
+            // TODO: re-add default filters to include critical, important, and fixable
             Severity: [],
             Fixable: [],
         },
