@@ -194,13 +194,8 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 			m.registerHealthForMessages(handlerID, protoMessages...)
 		}
 	}
-
-	if err := transformationErrors.ErrorOrNil(); err != nil {
-		m.updateDeclarativeConfigHealth(declarativeConfigUtils.HealthStatusForHandler(handlerID,
-			errors.Wrap(err, "during transforming configuration")))
-	} else {
-		m.updateDeclarativeConfigHealth(declarativeConfigUtils.HealthStatusForHandler(handlerID, nil))
-	}
+	m.updateDeclarativeConfigHealth(declarativeConfigUtils.HealthStatusForHandler(handlerID,
+		errors.Wrap(transformationErrors.ErrorOrNil(), "during transforming configuration")))
 
 	m.transformedMessagesMutex.Lock()
 	m.transformedMessagesByHandler[handlerID] = transformedConfigurations
@@ -359,8 +354,7 @@ func (m *managerImpl) registerHealthForMessages(handler string, messages ...prot
 // It deletes health status entries for deleted proto messages, as well as entries for which the first creation
 // of a resource failed.
 func (m *managerImpl) removeStaleHealthStatuses(idsToSkip []string) error {
-	healths, err := m.declarativeConfigHealthDS.
-		GetDeclarativeConfigs(m.reconciliationCtx)
+	healths, err := m.declarativeConfigHealthDS.GetDeclarativeConfigs(m.reconciliationCtx)
 	if err != nil {
 		return errors.Wrap(err, "retrieving integration health statuses for declarative config")
 	}
