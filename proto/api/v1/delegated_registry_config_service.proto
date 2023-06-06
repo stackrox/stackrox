@@ -34,9 +34,9 @@ message DelegatedRegistryConfig {
 
     message DelegatedRegistry {
         // Registry + optional path, ie: quay.example.com/prod
-        string registry_path = 1;
+        string path       = 1;
         // ID of the cluster to delegate ad-hoc requests to
-        string cluster_id    = 2;
+        string cluster_id = 2;
     }
 
     // Determines if delegation is enabled for no registries, all registries, or specific registries

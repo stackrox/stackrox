@@ -232,7 +232,7 @@ func (rs *Store) IsLocal(image *storage.ImageName) bool {
 
 	// if image matches a delegated registry prefix, it is local
 	for _, r := range config.Registries {
-		regPath := urlfmt.TrimHTTPPrefixes(r.RegistryPath)
+		regPath := urlfmt.TrimHTTPPrefixes(r.GetPath())
 		if strings.HasPrefix(imageFullName, regPath) {
 			return true
 		}

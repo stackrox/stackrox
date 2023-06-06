@@ -93,7 +93,7 @@
     "DelegatedRegistryConfigDelegatedRegistry": {
       "type": "object",
       "properties": {
-        "registryPath": {
+        "path": {
           "type": "string",
           "title": "Registry + optional path, ie: quay.example.com/prod"
         },

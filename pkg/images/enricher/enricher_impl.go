@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cvss"
+	"github.com/stackrox/rox/pkg/delegatedregistry"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -65,6 +66,8 @@ type enricherImpl struct {
 	asyncRateLimiter *rate.Limiter
 
 	metrics metrics
+
+	scanDelegator delegatedregistry.Delegator
 }
 
 // EnrichWithVulnerabilities enriches the given image with vulnerabilities.
@@ -126,8 +129,82 @@ func (e *enricherImpl) EnrichWithSignatureVerificationData(ctx context.Context, 
 	}, err
 }
 
+// delegateEnrichImage returns true if enrichment for this image should be delegated (enriched via Sensor). If true
+// and no error image was enriched successfully.
+func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx EnrichmentContext, image *storage.Image) (bool, error) {
+	if !enrichCtx.Delegable {
+		// Request should not be delegated.
+		return false, nil
+	}
+
+	clusterID, shouldDelegate, err := e.scanDelegator.GetDelegateClusterID(ctx, image.GetName())
+	if err != nil || !shouldDelegate {
+		// If was an error or should not delegate, short-circuit.
+		return shouldDelegate, err
+	}
+
+	// Check if image exists in database (will include metadata, sigs, etc.).
+	// Ignores in-mem metadata cache because that is not populated via
+	// enrichment requests from secured clusters. fetchFromDatabase will check
+	// if FetchOpt forces refetch. Assumes signatures in DB are OK, reprocessing
+	// or forcing re-scan will trigger updates as necessary.
+	existingImg, exists := e.fetchFromDatabase(ctx, image, enrichCtx.FetchOpt)
+	if exists && cachedImageIsValid(existingImg) {
+		image.Metadata = existingImg.GetMetadata()
+		image.Scan = existingImg.GetScan()
+		image.Signature = existingImg.GetSignature()
+		image.SignatureVerificationData = existingImg.GetSignatureVerificationData()
+		image.Notes = existingImg.GetNotes()
+
+		e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
+		e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
+
+		log.Debugf("Delegated enrichment returning cached image for %q", image.GetName().GetFullName())
+		return true, nil
+	}
+
+	// Send image to secured cluster for enrichment.
+	scannedImage, err := e.scanDelegator.DelegateScanImage(ctx, image.GetName(), clusterID, enrichCtx.FetchOpt.forceRefetchCachedValues())
+	if err != nil {
+		return true, err
+	}
+
+	// Copy the fields from scannedImage into image, EnrichImage expecting modification in place
+	*image = *scannedImage
+
+	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
+	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
+	return true, nil
+}
+
+func cachedImageIsValid(cachedImage *storage.Image) bool {
+	if cachedImage == nil {
+		return false
+	}
+
+	if metadataIsOutOfDate(cachedImage.GetMetadata()) {
+		return false
+	}
+
+	if cachedImage.GetScan() == nil {
+		return false
+	}
+
+	return true
+}
+
 // EnrichImage enriches an image with the integration set present.
 func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
+	if shouldDelegate, err := e.delegateEnrichImage(ctx, enrichContext, image); shouldDelegate {
+		// This enrichment should have been delegated, short circuit.
+		if err != nil {
+			return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, err
+		}
+		return EnrichmentResult{ImageUpdated: true, ScanResult: ScanSucceeded}, nil
+	} else if err != nil {
+		log.Warnf("Error attempting to delegate: %v", err)
+	}
+
 	errorList := errorhelpers.NewErrorList("image enrichment")
 
 	imageNoteSet := make(map[storage.Image_Note]struct{}, len(image.Notes))

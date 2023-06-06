@@ -34,4 +34,7 @@ var (
 
 	// ConnectionRetryMaxInterval defines the maximum interval between retries after the gRPC connection disconnects.
 	ConnectionRetryMaxInterval = registerDurationSetting("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", 10*time.Minute)
+
+	// ScanTimeout defines the scan timeout duration for Sensor initiated scans
+	ScanTimeout = registerDurationSetting("ROX_SCAN_TIMEOUT", 6*time.Minute)
 )

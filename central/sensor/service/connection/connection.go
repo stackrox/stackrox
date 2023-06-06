@@ -12,6 +12,8 @@ import (
 )
 
 // SensorConnection provides a handle to an established connection from a sensor.
+//
+//go:generate mockgen-wrapper
 type SensorConnection interface {
 	common.MessageInjector
 

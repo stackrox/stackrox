@@ -165,8 +165,8 @@ func TestRegistryStore_IsLocal(t *testing.T) {
 	regStore.AddClusterLocalRegistryHost("image-registry.openshift-image-registry.svc:5000")
 
 	specificRegs := []*central.DelegatedRegistryConfig_DelegatedRegistry{
-		{RegistryPath: "isfound.svc/repo/path"},
-		{RegistryPath: "otherfound.svc"},
+		{Path: "isfound.svc/repo/path"},
+		{Path: "otherfound.svc"},
 	}
 
 	tt := map[string]struct {

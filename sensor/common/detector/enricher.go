@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -26,8 +27,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const (
-	scanTimeout = 6 * time.Minute
+var (
+	scanTimeout = env.ScanTimeout.DurationSetting()
 )
 
 type scanResult struct {
@@ -91,7 +92,7 @@ func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanIma
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
-	img, err := localScan.EnrichLocalImageInNamespace(ctx, svc, req.containerImage, req.namespace)
+	img, err := localScan.EnrichLocalImageInNamespace(ctx, svc, req.containerImage, req.namespace, "", false)
 
 	return &v1.ScanImageInternalResponse{
 		Image: img,
@@ -168,13 +169,13 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	c.image = scannedImage.GetImage()
 }
 
-func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store) *enricher {
+func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
 	return &enricher{
 		scanResultChan:      make(chan scanResult),
 		serviceAccountStore: serviceAccountStore,
 		imageCache:          cache,
 		stopSig:             concurrency.NewSignal(),
-		localScan:           scan.NewLocalScan(registryStore),
+		localScan:           localScan,
 		regStore:            registryStore,
 	}
 }
