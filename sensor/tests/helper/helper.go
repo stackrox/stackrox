@@ -623,7 +623,7 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 
 	go func() {
 		utils.IgnoreError(func() error {
-			return server.Serve(listener)
+			return fakeCentral.ServerPointer.Serve(listener)
 		})
 	}()
 
@@ -637,7 +637,7 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 
 	closeF := func() {
 		utils.IgnoreError(listener.Close)
-		server.Stop()
+		fakeCentral.ServerPointer.Stop()
 	}
 
 	return conn, closeF
