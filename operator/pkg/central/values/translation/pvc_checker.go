@@ -13,12 +13,12 @@ import (
 type pvcStateChecker struct {
 	ctx         context.Context
 	client      ctrlClient.Client
-	obsoletePvc bool
+	obsoletePVC bool
 	namespace   string
 }
 
 func (c *pvcStateChecker) isObsolete() bool {
-	return c.obsoletePvc
+	return c.obsoletePVC
 }
 
 func (c *pvcStateChecker) pvcExists(name string) (bool, error) {

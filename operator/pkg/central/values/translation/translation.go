@@ -85,7 +85,7 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 		ctx:         ctx,
 		client:      t.client,
 		namespace:   c.GetNamespace(),
-		obsoletePvc: obsoletePVC,
+		obsoletePVC: obsoletePVC,
 	}
 
 	central, err := getCentralComponentValues(centralSpec, checker)
