@@ -229,12 +229,7 @@ splunk:
     static final private String INVALID_NOTIFIER_YAML = """\
 name: ${NOTIFIER_KEY}
 splunk:
-    endpoint: stackrox-endpoint
-    sourceTypes:
-        - key: something
-          sourceType: stackrox-audit-message
-        - key: else
-          sourceType: stackrox-alert
+    endpoint: ""
 """
 
     // Overwrite the default timeout, as these tests may take longer than 800 seconds to finish.
