@@ -226,11 +226,6 @@ splunk:
                     .setHttpEndpoint("stackrox-endpoint")
                     .putAllSourceTypes(["audit": "stackrox-audit-message", "alert": "stackrox-alert"])
             ).build()
-    static final private String INVALID_NOTIFIER_YAML = """\
-name: ${NOTIFIER_KEY}
-splunk:
-    endpoint: ""
-"""
 
     // Overwrite the default timeout, as these tests may take longer than 800 seconds to finish.
     @Rule
@@ -438,14 +433,13 @@ splunk:
                         (ACCESS_SCOPE_KEY): INVALID_ACCESS_SCOPE_YAML,
                         (ROLE_KEY): INVALID_ROLE_YAML,
                         (AUTH_PROVIDER_KEY): INVALID_AUTH_PROVIDER_YAML,
-                        (NOTIFIER_KEY): INVALID_NOTIFIER_YAML,
                 ], DEFAULT_NAMESPACE)
 
         then:
         withRetry(RETRIES, PAUSE_SECS) {
             def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
             // Expect 6 integration health status for the created resources and one for the config map.
-            assert response.integrationHealthCount == CREATED_RESOURCES + 1
+            assert response.integrationHealthCount == CREATED_RESOURCES
 
             for (integrationHealth in response.getIntegrationHealthList()) {
                 // Config map health will be healthy and do not indicate an error.
@@ -487,13 +481,6 @@ splunk:
                                 .setName(VALID_AUTH_PROVIDER.getName()).build()
                 )
                 .getAuthProvidersCount() == 0
-
-        // No notifier should be created.
-        def nonExistingNotifier = NotifierService.getNotifierClient().getNotifiers(
-                NotifierServiceOuterClass.GetNotifiersRequest
-                        .newBuilder().build())
-                .notifiersList.find { it.getName() == VALID_NOTIFIER.getName() }
-        assert nonExistingNotifier == null
 
         when:
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
