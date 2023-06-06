@@ -216,7 +216,12 @@ export function visitAccessControlEntity(entitiesKey, entityId, staticResponseMa
 // interact in entities table
 
 export function clickEntityNameInTable(entitiesKey, entityName) {
-    cy.get(`td[data-label="Name"] a:contains("${entityName}")`).click();
+    // RegExp constructor with exact match to prevent multiple matches like
+    // Admin
+    // Vulnerability Management Admin
+    cy.get('td[data-label="Name"]')
+        .contains('a', new RegExp(`^${entityName}$`))
+        .click();
 
     assertAccessControlEntityPage(entitiesKey);
 }
