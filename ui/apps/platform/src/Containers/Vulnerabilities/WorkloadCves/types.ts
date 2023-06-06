@@ -49,3 +49,9 @@ export type EntityTab = (typeof entityTabValues)[number];
 export function isValidEntityTab(value: unknown): value is EntityTab {
     return entityTabValues.some((tab) => tab === value);
 }
+
+export type WatchStatus = 'WATCHED' | 'NOT_WATCHED';
+export const watchStatusLabel = {
+    WATCHED: 'watched',
+    NOT_WATCHED: 'not watched',
+};
