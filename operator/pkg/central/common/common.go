@@ -8,9 +8,6 @@ const (
 )
 
 // ObsoletePVC determines if we should obsolete PVC
-func ObsoletePVC(annotations map[string]string) (obsoletePVC bool) {
-	if value, ok := annotations[CentralPVCObsoleteAnnotation]; ok {
-		obsoletePVC = strings.EqualFold("true", strings.TrimSpace(value))
-	}
-	return
+func ObsoletePVC(annotations map[string]string) bool {
+	return strings.EqualFold(annotations[CentralPVCObsoleteAnnotation], "true")
 }
