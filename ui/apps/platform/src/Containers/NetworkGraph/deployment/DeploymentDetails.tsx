@@ -83,6 +83,10 @@ function DeploymentDetails({
     const labelKeys = Object.keys(deployment.labels);
     const annotationKeys = Object.keys(deployment.annotations);
 
+    const onNetworkFlowsTabSelect = () => {
+        onDeploymentTabsSelect(deploymentTabs.FLOWS);
+    };
+
     const onNetworkPoliciesTabSelect = () => {
         onDeploymentTabsSelect(deploymentTabs.NETWORK_POLICIES);
     };
@@ -105,26 +109,44 @@ function DeploymentDetails({
                                             'None'}
                                         {numAnomalousExternalFlows !== 0 && (
                                             <FlexItem>
-                                                <Label
-                                                    variant="outline"
-                                                    color="red"
-                                                    icon={<ExclamationCircleIcon />}
+                                                <Button
+                                                    variant="link"
+                                                    isInline
+                                                    onClick={onNetworkFlowsTabSelect}
                                                 >
-                                                    {numAnomalousExternalFlows} external{' '}
-                                                    {pluralize('flow', numAnomalousExternalFlows)}
-                                                </Label>
+                                                    <Label
+                                                        variant="outline"
+                                                        color="red"
+                                                        icon={<ExclamationCircleIcon />}
+                                                    >
+                                                        {numAnomalousExternalFlows} external{' '}
+                                                        {pluralize(
+                                                            'flow',
+                                                            numAnomalousExternalFlows
+                                                        )}
+                                                    </Label>
+                                                </Button>
                                             </FlexItem>
                                         )}
                                         {numAnomalousInternalFlows !== 0 && (
                                             <FlexItem>
-                                                <Label
-                                                    variant="outline"
-                                                    color="gold"
-                                                    icon={<ExclamationTriangleIcon />}
+                                                <Button
+                                                    variant="link"
+                                                    isInline
+                                                    onClick={onNetworkFlowsTabSelect}
                                                 >
-                                                    {numAnomalousInternalFlows} internal{' '}
-                                                    {pluralize('flow', numAnomalousInternalFlows)}
-                                                </Label>
+                                                    <Label
+                                                        variant="outline"
+                                                        color="gold"
+                                                        icon={<ExclamationTriangleIcon />}
+                                                    >
+                                                        {numAnomalousInternalFlows} internal{' '}
+                                                        {pluralize(
+                                                            'flow',
+                                                            numAnomalousInternalFlows
+                                                        )}
+                                                    </Label>
+                                                </Button>
                                             </FlexItem>
                                         )}
                                     </Flex>
