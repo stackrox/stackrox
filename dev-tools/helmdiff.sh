@@ -37,6 +37,7 @@ for VERSION in "old" "new"; do
   helm install --debug --dry-run \
     -n stackrox \
     --disable-openapi-validation \
+    --set central.persistence.none=true \
     stackrox-central-services \
     "${TMP_ROOT}"/central-services-${VERSION} \
     > "${TMP_ROOT}"/central-services-${VERSION}-installation.yaml

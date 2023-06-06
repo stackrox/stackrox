@@ -49,7 +49,7 @@ class IntegrationsTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName(NOTIFIERDEPLOYMENT)
-                    .setImage("nginx")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
                     .addLabel("app", NOTIFIERDEPLOYMENT),
     ]
 
@@ -77,7 +77,7 @@ class IntegrationsTest extends BaseSpecification {
         given:
         "mailserver is running"
         def mailServer = MailServer.createMailServer(orchestrator, authenticated, !disableTLS)
-        sleep 15 * 1000 // wait 15s for service to start
+        sleep 30 * 1000 // wait 30s for service to start
 
         and:
         "a configuration that is expected to work"
@@ -371,7 +371,7 @@ class IntegrationsTest extends BaseSpecification {
                         // add random id to name to make it easier to search for when validating
                         .setName(uniqueName("policy-violation-email-notification"))
                         .addLabel("app", "policy-violation-email-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         */
 
         /*
@@ -380,13 +380,13 @@ class IntegrationsTest extends BaseSpecification {
                 new Deployment()
                         .setName("policy-violation-pagerduty-notification")
                         .addLabel("app", "policy-violation-pagerduty-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         */
         "GENERIC"   | [new GenericNotifier()]     |
                 new Deployment()
                         .setName("policy-violation-generic-notification")
                         .addLabel("app", "policy-violation-generic-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
     }
 
     @Unroll
@@ -483,7 +483,7 @@ class IntegrationsTest extends BaseSpecification {
                         // add random id to name to make it easier to search for when validating
                         .setName(uniqueName("policy-violation-email-notification"))
                         .addLabel("app", "policy-violation-email-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         */
 
          /*
@@ -492,13 +492,13 @@ class IntegrationsTest extends BaseSpecification {
                 new Deployment()
                         .setName("policy-violation-pagerduty-notification")
                         .addLabel("app", "policy-violation-pagerduty-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         */
         "GENERIC"   | [new GenericNotifier()]     |
                 new Deployment()
                         .setName("policy-violation-generic-notification")
                         .addLabel("app", "policy-violation-generic-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
     }
 
     @Unroll
@@ -615,7 +615,7 @@ class IntegrationsTest extends BaseSpecification {
                         .setName(uniqueName("policy-violation-email-notification-deploy-override"))
                         .addLabel("app", "policy-violation-email-notification-deploy-override")
                         .addAnnotation("mailgun", "stackrox.qa+alt1@gmail.com")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         "Email namespace override"     |
                 new EmailNotifier("Email Test", false,
                         NotifierOuterClass.Email.AuthMethod.DISABLED, null, "stackrox.qa+alt2@gmail.com")   |
@@ -624,7 +624,7 @@ class IntegrationsTest extends BaseSpecification {
                         // add random id to name to make it easier to search for when validating
                         .setName(uniqueName("policy-violation-email-notification-ns-override"))
                         .addLabel("app", "policy-violation-email-notification-ns-override")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
          */
         "Slack deploy override"   |
                 new SlackNotifier("slack test", "slack-key")   |
@@ -633,14 +633,14 @@ class IntegrationsTest extends BaseSpecification {
                         .setName("policy-violation-generic-notification-deploy-override")
                         .addLabel("app", "policy-violation-generic-notification-deploy-override")
                         .addAnnotation("slack-key", NotifierService.SLACK_ALT_WEBHOOK)
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         "Slack namespace override"   |
                 new SlackNotifier("slack test", "slack-key")   |
                 [key: "slack-key", value: NotifierService.SLACK_ALT_WEBHOOK] |
                 new Deployment()
                         .setName("policy-violation-generic-notification-ns-override")
                         .addLabel("app", "policy-violation-generic-notification-ns-override")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
     }
 
     @Unroll
@@ -762,6 +762,8 @@ class IntegrationsTest extends BaseSpecification {
 
     @Tag("Integration")
     @Tag("BAT")
+    // syslog test image is not multi-arch, docker files have x86 only dependencies
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify syslog notifier"() {
         given:
         "syslog server is created"

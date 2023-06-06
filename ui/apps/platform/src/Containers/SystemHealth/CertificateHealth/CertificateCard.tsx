@@ -79,7 +79,13 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
     }
 
     const title = `${nameOfComponent[component]} certificate`;
+
+    /*
+     * Wait for isFetching only until response to the initial request.
+     * Otherwise phrase temporarily disappears during each subsequent request.
+     */
     const isFetchingInitialRequest = isFetching && pollingCount === 0;
+
     /* eslint-disable no-nested-ternary */
     const icon = isFetchingInitialRequest
         ? SpinnerIcon
@@ -91,7 +97,7 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
         <Card isCompact>
             <CardHeader>
                 <Flex className="pf-u-flex-grow-1">
-                    {icon}
+                    <FlexItem>{icon}</FlexItem>
                     <FlexItem>
                         <CardTitle component="h2">{title}</CardTitle>
                     </FlexItem>

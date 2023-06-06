@@ -5,6 +5,8 @@ import {
 import { CertExpiryStatus } from 'Containers/Clusters/clusterTypes'; // TODO types/cluster.proto.ts
 import { Cluster } from 'types/cluster.proto';
 
+import { HealthVariant } from '../CardHeaderIcons';
+
 export type ClusterStatus = 'HEALTHY' | 'UNHEALTHY' | 'DEGRADED' | 'UNAVAILABLE' | 'UNINITIALIZED';
 
 export type ClusterStatusCounts = Record<ClusterStatus, number>;
@@ -101,4 +103,27 @@ export function getClusterBecauseOfStatusCounts(
     });
 
     return counts;
+}
+
+export function getClustersHealthPhrase(counts: ClusterStatusCounts): string {
+    if (counts.UNHEALTHY !== 0) {
+        return `${counts.UNHEALTHY} unhealthy`;
+    }
+    if (counts.DEGRADED !== 0) {
+        return `${counts.DEGRADED} degraded`;
+    }
+    if (counts.HEALTHY !== 0) {
+        return `${counts.HEALTHY} healthy`;
+    }
+    return '';
+}
+
+export function getClustersHealthVariant(counts: ClusterStatusCounts): HealthVariant {
+    if (counts.UNHEALTHY !== 0) {
+        return 'danger';
+    }
+    if (counts.DEGRADED !== 0) {
+        return 'warning';
+    }
+    return 'success';
 }

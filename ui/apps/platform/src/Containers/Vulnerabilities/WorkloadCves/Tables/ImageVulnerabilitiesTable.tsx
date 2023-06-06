@@ -28,12 +28,12 @@ import ImageComponentVulnerabilitiesTable, {
 import EmptyTableResults from '../components/EmptyTableResults';
 import DatePhraseTd from '../components/DatePhraseTd';
 import CvssTd from '../components/CvssTd';
+import { getAnyVulnerabilityIsFixable } from './table.utils';
 
 export const imageVulnerabilitiesFragment = gql`
     ${imageComponentVulnerabilitiesFragment}
     fragment ImageVulnerabilityFields on ImageVulnerability {
         severity
-        isFixable
         cve
         summary
         cvss
@@ -47,7 +47,6 @@ export const imageVulnerabilitiesFragment = gql`
 
 export type ImageVulnerability = {
     severity: string;
-    isFixable: boolean;
     cve: string;
     summary: string;
     cvss: number;
@@ -97,7 +96,6 @@ function ImageVulnerabilitiesTable({
                         cve,
                         severity,
                         summary,
-                        isFixable,
                         cvss,
                         scoreVersion,
                         imageComponents,
@@ -105,6 +103,7 @@ function ImageVulnerabilitiesTable({
                     },
                     rowIndex
                 ) => {
+                    const isFixable = getAnyVulnerabilityIsFixable(imageComponents);
                     const isExpanded = expandedRowSet.has(cve);
 
                     return (

@@ -1,3 +1,7 @@
+values:
+  central:
+    persistence:
+      none: true
 tests:
   - name: "Detect support for PodSecurityPolicies"
     values:

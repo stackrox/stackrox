@@ -1,9 +1,5 @@
 import { visitFromLeftNavExpandable } from '../../helpers/nav';
-import {
-    interactAndWaitForResponses,
-    interceptRequests,
-    waitForResponses,
-} from '../../helpers/request';
+import { interactAndWaitForResponses } from '../../helpers/request';
 import { getTableRowActionButtonByName } from '../../helpers/tableHelpers';
 import { visit } from '../../helpers/visit';
 
@@ -98,12 +94,6 @@ export function getIntegrationsEndpointAlias(integrationSource, integrationType)
             return '';
     }
 }
-
-const integrationSourceHashMap = {
-    backups: 'backup-integrations',
-    imageIntegrations: 'image-integrations',
-    notifiers: 'notifier-integrations',
-};
 
 function getIntegrationsEndpointAddressForGET(integrationSource, integrationType) {
     const integrationsEndpointAddress = getIntegrationsEndpointAddress(
@@ -217,29 +207,6 @@ export function assertIntegrationsTable(integrationSource, integrationType) {
 }
 
 // visit
-
-/**
- * @param {function} interactionCallback
- * @param {'backups' | 'imageIntegrations' | 'notifiers'} integrationSource
- * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
- */
-export function interactAndVisitIntegrationsDashboardForSource(
-    interactionCallback,
-    integrationSource,
-    staticResponseMap
-) {
-    interceptRequests(routeMatcherMapForIntegrationsDashboard, staticResponseMap);
-
-    interactionCallback();
-
-    cy.location('pathname').should('eq', basePath);
-    cy.location('hash').should('eq', `#${integrationSourceHashMap[integrationSource]}`);
-
-    cy.get(`h1:contains("${integrationsTitle}")`);
-    cy.get(`h2:contains("${integrationSourceTitleMap[integrationSource]}")`).should('be.visible'); // should scroll to anchor
-
-    waitForResponses(routeMatcherMapForIntegrationsDashboard);
-}
 
 /**
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]

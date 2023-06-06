@@ -63,6 +63,11 @@ export type DeploymentWithVulnerabilities = {
     }[];
 };
 
+type DeploymentVulnerabilityImageMapping = {
+    imageMetadataContext: ImageMetadataContext;
+    componentVulnerabilities: DeploymentComponentVulnerability[];
+};
+
 function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
     cve: string;
     severity: VulnerabilitySeverity;
@@ -70,12 +75,11 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
     discoveredAtImage: Date | null;
     summary: string;
     affectedComponentsText: string;
-    images: {
-        imageMetadataContext: ImageMetadataContext;
-        componentVulnerabilities: DeploymentComponentVulnerability[];
-    }[];
+    images: DeploymentVulnerabilityImageMapping[];
 }[] {
-    const imageMap: Record<string, ImageMetadataContext> = {};
+    // Create a map of image ID to image metadata for easy lookup
+    // We use 'Partial' here because there is no guarantee that the image will be found
+    const imageMap: Partial<Record<string, ImageMetadataContext>> = {};
     deployment.images.forEach((image) => {
         imageMap[image.id] = image;
     });
@@ -97,6 +101,17 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
                 ? uniqueComponents.values().next().value
                 : `${uniqueComponents.size} components`;
 
+        const vulnerabilityImages = images
+            .map((img) => ({
+                imageMetadataContext: imageMap[img.imageId],
+                componentVulnerabilities: img.imageComponents,
+            }))
+            // filter out values where the vulnerability->image mapping is missing
+            .filter(
+                (vulnImageMap): vulnImageMap is DeploymentVulnerabilityImageMapping =>
+                    !!vulnImageMap.imageMetadataContext
+            );
+
         return {
             cve,
             severity: highestVulnSeverity,
@@ -104,10 +119,7 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
             discoveredAtImage: oldestDiscoveredVulnDate,
             summary,
             affectedComponentsText,
-            images: images.map((img) => ({
-                imageMetadataContext: imageMap[img.imageId],
-                componentVulnerabilities: img.imageComponents,
-            })),
+            images: vulnerabilityImages,
         };
     });
 }
