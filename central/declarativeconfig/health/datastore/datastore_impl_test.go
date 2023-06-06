@@ -1,13 +1,13 @@
 //go:build sql_integration
 
-package health
+package datastore
 
 import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/declarativeconfig/health/store"
-	postgresHealthStore "github.com/stackrox/rox/central/declarativeconfig/health/store/postgres"
+	"github.com/stackrox/rox/central/declarativeconfig/health/datastore/store"
+	postgresHealthStore "github.com/stackrox/rox/central/declarativeconfig/health/datastore/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"

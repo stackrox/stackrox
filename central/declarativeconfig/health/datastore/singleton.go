@@ -1,7 +1,7 @@
-package health
+package datastore
 
 import (
-	pgStore "github.com/stackrox/rox/central/declarativeconfig/health/store/postgres"
+	pgStore "github.com/stackrox/rox/central/declarativeconfig/health/datastore/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/sync"
 )
