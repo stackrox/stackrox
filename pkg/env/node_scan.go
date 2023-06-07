@@ -26,4 +26,8 @@ var (
 
 	// NodeAnalysisDeadline is a time in which node-inventory component should reply to compliance
 	NodeAnalysisDeadline = registerDurationSetting("ROX_NODE_SCANNING_DEADLINE", 30*time.Second)
+
+	// NodeScanningAckDeadlineBase defines a base for calculating time when compliance would resend node-inventory
+	// if no ACK from central arrives.
+	NodeScanningAckDeadlineBase = registerDurationSetting("ROX_NODE_SCANNING_ACK_DEADLINE_BASE", 30*time.Second)
 )

@@ -19,8 +19,10 @@ type NodeScanner interface {
 	IsActive() bool
 }
 
-// SensorReplyHandler handles the ack/nack message from Sensor
-type SensorReplyHandler interface {
-	HandleACK(ctx context.Context, client sensor.ComplianceService_CommunicateClient)
-	HandleNACK(ctx context.Context, client sensor.ComplianceService_CommunicateClient)
+// UnconfirmedMessageHandler handles the observation of sending, and ACK/NACK messages
+type UnconfirmedMessageHandler interface {
+	HandleACK()
+	HandleNACK()
+	ObserveSending()
+	RetryCommand() <-chan struct{}
 }
