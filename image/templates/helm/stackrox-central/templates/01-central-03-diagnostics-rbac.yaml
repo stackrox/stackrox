@@ -20,6 +20,7 @@ rules:
   - "configmaps"
   - "services"
   - "pods"
+  - "pods/log"
   - "events"
   - "namespaces"
   verbs:
