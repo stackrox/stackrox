@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
-	"github.com/stackrox/rox/central/declarativeconfig/utils"
+	declarativeConfigUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -63,8 +63,8 @@ func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...
 		if err := u.roleDS.RemoveRole(ctx, role.GetName()); err != nil {
 			roleDeletionErr = multierror.Append(roleDeletionErr, err)
 			roleNames = append(roleNames, role.GetName())
-			if err := u.healthDS.UpsertDeclarativeConfig(ctx, utils.HealthStatusForProtoMessage(role, "", err,
-				u.idExtractor, u.nameExtractor)); err != nil {
+			if err := u.healthDS.UpdateStatusForDeclarativeConfig(ctx,
+				declarativeConfigUtils.HealthStatusIDForRole(role.GetName()), err); err != nil {
 				log.Errorf("Failed to update the declarative config health status %q: %v", role.GetName(), err)
 			}
 			if errors.Is(err, errox.ReferencedByAnotherObject) {

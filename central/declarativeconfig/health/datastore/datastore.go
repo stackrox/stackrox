@@ -13,6 +13,7 @@ import (
 type DataStore interface {
 	GetDeclarativeConfigs(ctx context.Context) ([]*storage.DeclarativeConfigHealth, error)
 	UpsertDeclarativeConfig(ctx context.Context, configHealth *storage.DeclarativeConfigHealth) error
+	UpdateStatusForDeclarativeConfig(ctx context.Context, id string, err error) error
 	RemoveDeclarativeConfig(ctx context.Context, id string) error
 	GetDeclarativeConfig(ctx context.Context, id string) (*storage.DeclarativeConfigHealth, bool, error)
 }
