@@ -99,7 +99,7 @@ func (s *serviceImpl) GetStandards(ctx context.Context, _ *v1.Empty) (*v1.GetCom
 	}, nil
 }
 
-// GetStandard returns details + controls for a given standard
+// GetStandard returns details and controls for a given standard
 func (s *serviceImpl) GetStandard(ctx context.Context, req *v1.ResourceByID) (*v1.GetComplianceStandardResponse, error) {
 	standard, exists, err := s.standardsRepo.Standard(req.GetId())
 	if err != nil {
@@ -129,11 +129,11 @@ func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.Comp
 
 	filteredSources := sources[:0]
 	for _, source := range sources {
-		config, exist, errConfig := s.complianceDataStore.GetConfig(ctx, source.GetStandardId())
+		config, exists, errConfig := s.complianceDataStore.GetConfig(ctx, source.GetStandardId())
 		if errConfig != nil {
 			return nil, errConfig
 		}
-		if !exist || !config.GetHideScanResults() {
+		if !exists || !config.GetHideScanResults() {
 			filteredSources = append(filteredSources, source)
 		}
 	}
