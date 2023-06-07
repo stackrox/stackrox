@@ -58,7 +58,7 @@ func (u *groupUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ..
 		if err := u.groupDS.Remove(ctx, group.GetProps(), true); err != nil {
 			groupDeletionErr = multierror.Append(groupDeletionErr, err)
 			groupIDs = append(groupIDs, group.GetProps().GetId())
-			if err := u.healthDS.UpdateErrorMessageForDeclarativeConfig(ctx, u.idExtractor(group), err); err != nil {
+			if err := u.healthDS.UpdateStatusForDeclarativeConfig(ctx, u.idExtractor(group), err); err != nil {
 				log.Errorf("Failed to update the declarative config health status %q: %v",
 					group.GetProps().GetId(), err)
 			}

@@ -16,6 +16,10 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
+const (
+	roleHealthIDNS = "role-config-health"
+)
+
 // HealthStatusForProtoMessage returns a storage.DeclarativeConfigHealth for the given proto.Message.
 // The health will be marked as unhealthy if err != nil, and healthy if err == nil.
 // Note: Handler can be left empty. In this case, the name of the health will be updated to not include the
@@ -108,5 +112,5 @@ func resourceTypeFromProtoMessage(message proto.Message) storage.DeclarativeConf
 // HealthStatusIDForRole returns a UUID for the health status based on the role's name.
 // The UUID is deterministic.
 func HealthStatusIDForRole(name string) string {
-	return uuid.NewV5FromNonUUIDs("role-config-health", name).String()
+	return uuid.NewV5FromNonUUIDs(roleHealthIDNS, name).String()
 }

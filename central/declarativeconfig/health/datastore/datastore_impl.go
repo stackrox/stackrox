@@ -51,7 +51,7 @@ func (ds *datastoreImpl) GetDeclarativeConfig(ctx context.Context, id string) (*
 	return ds.store.Get(ctx, id)
 }
 
-func (ds *datastoreImpl) UpdateErrorMessageForDeclarativeConfig(ctx context.Context, id string, errToUpdate error) error {
+func (ds *datastoreImpl) UpdateStatusForDeclarativeConfig(ctx context.Context, id string, errToUpdate error) error {
 	existingHealth, exists, err := ds.GetDeclarativeConfig(ctx, id)
 	if err != nil {
 		return err
@@ -60,9 +60,16 @@ func (ds *datastoreImpl) UpdateErrorMessageForDeclarativeConfig(ctx context.Cont
 		return errox.NotFound.Newf("unable to find config health for declarative config %q", id)
 	}
 
-	existingHealth.ErrorMessage = errToUpdate.Error()
+	var errMsg string
+	status := storage.DeclarativeConfigHealth_HEALTHY
+	if errToUpdate != nil {
+		errMsg = errToUpdate.Error()
+		status = storage.DeclarativeConfigHealth_UNHEALTHY
+	}
+
+	existingHealth.ErrorMessage = errMsg
 	existingHealth.LastTimestamp = timestamp.TimestampNow()
-	existingHealth.Status = storage.DeclarativeConfigHealth_UNHEALTHY
+	existingHealth.Status = status
 
 	return ds.UpsertDeclarativeConfig(ctx, existingHealth)
 }

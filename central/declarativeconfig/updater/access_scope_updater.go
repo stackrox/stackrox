@@ -58,7 +58,7 @@ func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToS
 		if err := u.roleDS.RemoveAccessScope(ctx, scope.GetId()); err != nil {
 			scopeDeletionErr = multierror.Append(scopeDeletionErr, err)
 			scopeIDs = append(scopeIDs, scope.GetId())
-			if err := u.healthDS.UpdateErrorMessageForDeclarativeConfig(ctx, u.idExtractor(scope), err); err != nil {
+			if err := u.healthDS.UpdateStatusForDeclarativeConfig(ctx, u.idExtractor(scope), err); err != nil {
 				log.Errorf("Failed to update the declarative config health status %q: %v", scope.GetId(), err)
 			}
 

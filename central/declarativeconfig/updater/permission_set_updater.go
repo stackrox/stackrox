@@ -58,7 +58,7 @@ func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsT
 		if err := u.roleDS.RemovePermissionSet(ctx, permissionSet.GetId()); err != nil {
 			permissionSetDeletionErr = multierror.Append(permissionSetDeletionErr, err)
 			permissionSetIDs = append(permissionSetIDs, permissionSet.GetId())
-			if err := u.healthDS.UpdateErrorMessageForDeclarativeConfig(ctx, u.idExtractor(permissionSet), err); err != nil {
+			if err := u.healthDS.UpdateStatusForDeclarativeConfig(ctx, u.idExtractor(permissionSet), err); err != nil {
 				log.Errorf("Failed to update the declarative config health status %q: %v", permissionSet.GetId(), err)
 			}
 			if errors.Is(err, errox.ReferencedByAnotherObject) {

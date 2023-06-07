@@ -105,7 +105,7 @@ func (u *notifierUpdater) processDeletionError(ctx context.Context, notifierDele
 	notifierDeletionErr = multierror.Append(notifierDeletionErr, err)
 	notifierIDs = append(notifierIDs, notifier.GetId())
 
-	if err := u.healthDS.UpdateErrorMessageForDeclarativeConfig(ctx, u.idExtractor(notifier), err); err != nil {
+	if err := u.healthDS.UpdateStatusForDeclarativeConfig(ctx, u.idExtractor(notifier), err); err != nil {
 		log.Errorf("Failed to update the declarative config health status %q: %v", notifier.GetId(), err)
 	}
 	return notifierDeletionErr, notifierIDs

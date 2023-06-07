@@ -63,7 +63,7 @@ func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...
 		if err := u.roleDS.RemoveRole(ctx, role.GetName()); err != nil {
 			roleDeletionErr = multierror.Append(roleDeletionErr, err)
 			roleNames = append(roleNames, role.GetName())
-			if err := u.healthDS.UpdateErrorMessageForDeclarativeConfig(ctx,
+			if err := u.healthDS.UpdateStatusForDeclarativeConfig(ctx,
 				declarativeConfigUtils.HealthStatusIDForRole(role.GetName()), err); err != nil {
 				log.Errorf("Failed to update the declarative config health status %q: %v", role.GetName(), err)
 			}

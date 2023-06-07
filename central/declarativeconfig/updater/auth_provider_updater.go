@@ -114,7 +114,7 @@ func (u *authProviderUpdater) processDeletionError(ctx context.Context, authProv
 	authProviderDeletionErr = multierror.Append(authProviderDeletionErr, err)
 	authProviderIDs.Add(authProvider.GetId())
 
-	if err := u.healthDS.UpdateErrorMessageForDeclarativeConfig(ctx, u.idExtractor(authProvider), err); err != nil {
+	if err := u.healthDS.UpdateStatusForDeclarativeConfig(ctx, u.idExtractor(authProvider), err); err != nil {
 		log.Errorf("Failed to update the declarative config health status %q: %v", authProvider.GetId(), err)
 	}
 	return authProviderDeletionErr, authProviderIDs
