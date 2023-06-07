@@ -3,7 +3,6 @@ import React, { ReactElement } from 'react';
 import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
-import { getClusterDeletionStatus, healthStatusStyles } from '../cluster.helpers';
 
 const testId = 'clusterDeletion';
 
@@ -22,8 +21,8 @@ function ClusterDeletion({ clusterRetentionInfo }: ClusterDeletionProps): ReactE
     if ('daysUntilDeletion' in clusterRetentionInfo) {
         // Cluster will be deleted if sensor status remains UNHEALTHY for the number of days.
         const { daysUntilDeletion } = clusterRetentionInfo;
-        const healthStatus = getClusterDeletionStatus(daysUntilDeletion);
-        const { bgColor, fgColor } = healthStatusStyles[healthStatus];
+        // const healthStatus = getClusterDeletionStatus(daysUntilDeletion);
+        // TODO IconText with something like SystemHealth/CardHeaderIcons? But what about Not applicable? MinusIcon?
         /* eslint-disable no-nested-ternary */
         const text =
             daysUntilDeletion < 1
@@ -33,14 +32,11 @@ function ClusterDeletion({ clusterRetentionInfo }: ClusterDeletionProps): ReactE
                 : `in ${daysUntilDeletion} days`;
         /* eslint-enable no-nested-ternary */
 
-        return <span className={`${bgColor} ${fgColor} whitespace-nowrap`}>{text}</span>;
+        return <span>{text}</span>;
     }
 
     // Cluster will not be deleted even if sensor status remains UNHEALTHY, because it has an ignore label.
-    const { bgColor, fgColor } = healthStatusStyles.HEALTHY;
-    return (
-        <span className={`${bgColor} ${fgColor} whitespace-nowrap`}>Excluded from deletion</span>
-    );
+    return <span>Excluded from deletion</span>;
 }
 
 export default ClusterDeletion;
