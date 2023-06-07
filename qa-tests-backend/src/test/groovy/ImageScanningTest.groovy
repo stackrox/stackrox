@@ -523,8 +523,8 @@ class ImageScanningTest extends BaseSpecification {
         "tests are:"
 
         scanner                          | expectedMessage                      | testAspect
-        new ClairScannerIntegration()    | /Failed to get the manifest digest/  | "image does not exist"
-        new StackroxScannerIntegration() | /Failed to get the manifest digest/  | "image does not exist"
+        new ClairScannerIntegration()    | /failed to get the manifest digest/  | "image does not exist"
+        new StackroxScannerIntegration() | /failed to get the manifest digest/  | "image does not exist"
         new ClairScannerIntegration()    | /no matching image registries found/ | "missing required registry"
         new StackroxScannerIntegration() | /no matching image registries found/ | "missing required registry"
 // This is not supported. Scanners get access to previous creds and can pull the images that way.
