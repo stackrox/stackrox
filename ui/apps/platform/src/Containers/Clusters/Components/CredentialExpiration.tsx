@@ -34,14 +34,14 @@ function CredentialExpiration({
 
     // Adapt health status categories to certificate expiration.
     const healthStatus = getCredentialExpirationStatus(certExpiryStatus, currentDatetime);
-    const { Icon, bgColor, fgColor } = healthStatusStyles[healthStatus];
+    const { Icon, fgColor } = healthStatusStyles[healthStatus];
     const icon = <Icon className="h-4 w-4" />;
 
     // Order arguments according to date-fns@2 convention:
     // If sensorCertExpiry > currentDateTime: in X units
     // If sensorCertExpiry <= currentDateTime: X units ago
     const distanceElement = (
-        <span className={`${bgColor} ${fgColor} whitespace-nowrap`}>
+        <span className="whitespace-nowrap">
             {getDistanceStrictAsPhrase(sensorCertExpiry, currentDatetime)}
         </span>
     );

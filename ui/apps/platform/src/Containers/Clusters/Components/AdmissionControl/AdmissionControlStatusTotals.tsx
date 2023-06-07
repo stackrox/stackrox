@@ -8,8 +8,6 @@ const tdClassName = 'p-0 text-right';
 const tdErrorsClassName = 'font-600 pb-0 pl-0 pr-1 pt-2 text-left'; // pt for gap above errors
 
 type AdmissionControlStatusTotalsProps = {
-    bgColor: string;
-    fgColor: string;
     admissionControlHealthInfo: {
         totalReadyPods: number;
         totalDesiredPods: number;
@@ -18,8 +16,6 @@ type AdmissionControlStatusTotalsProps = {
 };
 
 function AdmissionControlStatusTotals({
-    bgColor,
-    fgColor,
     admissionControlHealthInfo,
 }: AdmissionControlStatusTotalsProps): ReactElement {
     const notAvailable = 'n/a';
@@ -32,9 +28,7 @@ function AdmissionControlStatusTotals({
                         Admission Control pods ready:
                     </th>
                     <td className={tdClassName} data-testid="totalReadyPods">
-                        <span className={`${bgColor} ${fgColor}`}>
-                            {totalReadyPods == null ? notAvailable : totalReadyPods}
-                        </span>
+                        <span>{totalReadyPods == null ? notAvailable : totalReadyPods}</span>
                     </td>
                 </tr>
                 <tr className={trClassName} key="totalDesiredPods">

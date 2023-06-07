@@ -15,15 +15,9 @@ type CollectorStatusTotalsProps = {
         version: string;
         statusErrors: string[];
     };
-    bgColor: string;
-    fgColor: string;
 };
 
-function CollectorStatusTotals({
-    collectorHealthInfo,
-    bgColor,
-    fgColor,
-}: CollectorStatusTotalsProps): ReactElement {
+function CollectorStatusTotals({ collectorHealthInfo }: CollectorStatusTotalsProps): ReactElement {
     const notAvailable = 'n/a';
     const { totalReadyPods, totalDesiredPods, totalRegisteredNodes, version, statusErrors } =
         collectorHealthInfo;
@@ -43,9 +37,7 @@ function CollectorStatusTotals({
                         Collector pods ready:
                     </th>
                     <td className={tdClassName} data-testid="totalReadyPods">
-                        <span className={`${bgColor} ${fgColor}`}>
-                            {totalReadyPods == null ? notAvailable : totalReadyPods}
-                        </span>
+                        <span>{totalReadyPods == null ? notAvailable : totalReadyPods}</span>
                     </td>
                 </tr>
                 <tr className={trClassName} key="totalDesiredPods">

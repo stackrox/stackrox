@@ -5,11 +5,11 @@ import { DownloadCloud } from 'react-feather';
 import {
     CheckCircleIcon,
     ExclamationCircleIcon,
+    ExclamationTriangleIcon,
     InfoCircleIcon,
     InProgressIcon,
     MinusCircleIcon,
     ResourcesEmptyIcon,
-    TimesCircleIcon,
 } from '@patternfly/react-icons';
 
 import { ClusterProviderMetadata } from 'types/cluster.proto';
@@ -110,50 +110,21 @@ const MinusCircleRotate45 = ({ className }: MinusCircleRotate45Props) => (
 
 export const styleUninitialized = {
     Icon: MinusCircleRotate45,
-    bgColor: 'bg-base-200',
-    fgColor: 'text-base-700',
+    fgColor: '',
 };
 
 export const styleHealthy = {
     Icon: CheckCircleIcon,
-    bgColor: 'bg-success-200',
-    fgColor: 'text-success-700',
-};
-
-export const styleDegraded = {
-    Icon: ExclamationCircleIcon,
-    bgColor: 'bg-warning-200',
-    fgColor: 'text-warning-700',
-};
-
-export const styleUnhealthy = {
-    Icon: TimesCircleIcon,
-    bgColor: 'bg-alert-200',
-    fgColor: 'text-alert-700',
-};
-
-// PatternFly versions of cluster style constants
-export const styleUninitializedPF = {
-    Icon: MinusCircleRotate45,
-    bgColor: 'pf-u-background-color-100',
-    fgColor: 'pf-u-default-color-300',
-};
-
-export const styleHealthyPF = {
-    Icon: CheckCircleIcon,
-    bgColor: 'pf-u-background-color-success',
     fgColor: 'pf-u-success-color-100',
 };
 
-export const styleDegradedPF = {
-    Icon: ExclamationCircleIcon,
-    bgColor: 'pf-u-background-color-warning',
+export const styleDegraded = {
+    Icon: ExclamationTriangleIcon,
     fgColor: 'pf-u-warning-color-100',
 };
 
-export const styleUnhealthyPF = {
-    Icon: TimesCircleIcon,
-    bgColor: 'pf-u-background-color-danger',
+export const styleUnhealthy = {
+    Icon: ExclamationCircleIcon,
     fgColor: 'pf-u-danger-color-100',
 };
 
@@ -163,8 +134,7 @@ export const healthStatusStyles = {
     UNINITIALIZED: styleUninitialized,
     UNAVAILABLE: {
         Icon: ResourcesEmptyIcon,
-        bgColor: 'bg-base-200',
-        fgColor: 'text-base-700',
+        fgColor: '',
     },
     UNHEALTHY: styleUnhealthy,
     DEGRADED: styleDegraded,
@@ -174,54 +144,33 @@ export const healthStatusStyles = {
 // Special case for Collector when Sensor is UNHEALTHY or DELAYED.
 export const delayedCollectorStatusStyle = {
     Icon: InfoCircleIcon,
-    bgColor: 'bg-base-200',
-    fgColor: 'text-base-700',
+    fgColor: '',
 };
 
 // Special case for Admission Control when Sensor is UNHEALTHY or DELAYED.
 export const delayedAdmissionControlStatusStyle = {
     Icon: InfoCircleIcon,
-    bgColor: 'bg-base-200',
-    fgColor: 'text-base-700',
+    fgColor: '',
 };
 
 // Special case for Scanner when Sensor is UNHEALTHY or DELAYED.
 export const delayedScannerStatusStyle = {
     Icon: InfoCircleIcon,
-    bgColor: 'bg-base-200',
-    fgColor: 'text-base-700',
+    fgColor: '',
 };
 
 export const sensorUpgradeStyles = {
     current: styleHealthy,
     progress: {
         Icon: InProgressIcon,
-        bgColor: 'bg-tertiary-200',
-        fgColor: 'text-tertiary-700',
+        fgColor: 'pf-u-primary-color-100',
     },
     download: {
         Icon: DownloadCloud,
-        bgColor: 'bg-tertiary-200',
-        fgColor: 'text-tertiary-700',
+        fgColor: 'pf-u-link-color',
     },
     intervention: styleDegraded,
     failure: styleUnhealthy,
-};
-
-export const sensorUpgradeStylesPF = {
-    current: styleHealthyPF,
-    progress: {
-        Icon: InProgressIcon,
-        bgColor: 'bg-tertiary-200',
-        fgColor: 'text-tertiary-700',
-    },
-    download: {
-        Icon: DownloadCloud,
-        bgColor: 'bg-tertiary-200',
-        fgColor: 'text-tertiary-700',
-    },
-    intervention: styleDegradedPF,
-    failure: styleUnhealthyPF,
 };
 
 type UpgradeState = {

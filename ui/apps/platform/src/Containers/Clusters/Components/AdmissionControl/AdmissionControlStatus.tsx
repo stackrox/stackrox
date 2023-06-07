@@ -42,7 +42,7 @@ function AdmissionControlStatus({
         lastContact,
     } = healthStatus;
     const isDelayed = !!(lastContact && isDelayedSensorHealthStatus(sensorHealthStatus));
-    const { Icon, bgColor, fgColor } = isDelayed
+    const { Icon, fgColor } = isDelayed
         ? delayedAdmissionControlStatusStyle
         : healthStatusStyles[admissionControlHealthStatus];
     const icon = <Icon className={`${isList ? 'inline' : ''} h-4 w-4`} />;
@@ -66,11 +66,7 @@ function AdmissionControlStatus({
 
     if (admissionControlHealthInfo) {
         const admissionControlTotalsElement = (
-            <AdmissionControlStatusTotals
-                bgColor={bgColor}
-                fgColor={fgColor}
-                admissionControlHealthInfo={admissionControlHealthInfo}
-            />
+            <AdmissionControlStatusTotals admissionControlHealthInfo={admissionControlHealthInfo} />
         );
         const infoElement = healthInfoComplete ? (
             admissionControlTotalsElement
