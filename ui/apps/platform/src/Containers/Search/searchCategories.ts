@@ -115,7 +115,7 @@ export const searchResultCategoryMap: Record<
         ],
     },
     POLICIES: {
-        resourceName: 'Policy',
+        resourceName: 'WorkflowAdministration',
         filterOn: {
             filterCategory: 'Policy',
             filterLinks: [filterOnViolations],
@@ -128,7 +128,7 @@ export const searchResultCategoryMap: Record<
         ],
     },
     POLICY_CATEGORIES: {
-        resourceName: 'Policy',
+        resourceName: 'WorkflowAdministration',
         filterOn: null,
         viewLinks: [],
     },

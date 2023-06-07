@@ -98,7 +98,6 @@ export const resourceSubstitutions: Record<string, string[]> = {
     Image: ['ImageComponent'],
 };
 
-// TODO: ROX-13888 Remove Policy, VulnerabilityReports.
 export const resourceRemovalReleaseVersions = new Map<ResourceName, string>([]);
 
 // TODO(ROX-11453): Remove this mapping once the old resources are fully deprecated.
