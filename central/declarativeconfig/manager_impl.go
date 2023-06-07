@@ -371,6 +371,13 @@ func (m *managerImpl) removeStaleHealthStatuses(idsToSkip []string) error {
 			continue
 		}
 
+		// Special case: for roles, the health ID will be a UUID instead of the name. Hence, need to verify whether
+		// the IDs to skip (which will include the role names) contains the health's resource name.
+		if health.GetResourceType() == storage.DeclarativeConfigHealth_ROLE &&
+			idsToSkipSet.Contains(health.GetResourceName()) {
+			continue
+		}
+
 		if err := m.declarativeConfigHealthDS.RemoveDeclarativeConfig(m.reconciliationCtx,
 			health.GetId()); err != nil {
 			removingIntegrationHealthsErr = multierror.Append(removingIntegrationHealthsErr, err)
