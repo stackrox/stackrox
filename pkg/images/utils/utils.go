@@ -9,7 +9,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -239,21 +241,10 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 
 // UniqueImageNames returns the unique image names from the two given slices of image names.
 func UniqueImageNames(a, b []*storage.ImageName) []*storage.ImageName {
-	uniqueImageFullNames := set.NewStringSet()
-	uniqueImageNames := make([]*storage.ImageName, 0, len(a)+len(b))
-
-	uniqueImageNames = append(uniqueImageNames, getUniqueImageNames(a, uniqueImageFullNames)...)
-	uniqueImageNames = append(uniqueImageNames, getUniqueImageNames(b, uniqueImageFullNames)...)
-	return uniqueImageNames
-}
-
-func getUniqueImageNames(names []*storage.ImageName, uniqueFullNames set.StringSet) []*storage.ImageName {
-	uniqueImageNames := make([]*storage.ImageName, 0, len(names))
-	for _, name := range names {
-		fullName := name.GetFullName()
-		if !uniqueFullNames.Contains(fullName) {
-			uniqueFullNames.Add(fullName)
-			uniqueImageNames = append(uniqueImageNames, name)
+	uniqueImageNames := sliceutils.ShallowClone(a)
+	for _, imageName := range b {
+		if !protoutils.SliceContains(imageName, uniqueImageNames) {
+			uniqueImageNames = append(uniqueImageNames, imageName)
 		}
 	}
 	return uniqueImageNames
