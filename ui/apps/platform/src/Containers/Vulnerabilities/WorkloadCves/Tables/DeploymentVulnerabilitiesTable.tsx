@@ -28,7 +28,7 @@ import DeploymentComponentVulnerabilitiesTable, {
     deploymentComponentVulnerabilitiesFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
 import { getAnyVulnerabilityIsFixable, getHighestVulnerabilitySeverity } from './table.utils';
-import DatePhraseTd from '../components/DatePhraseTd';
+import DateDistanceTd from '../components/DatePhraseTd';
 
 export const deploymentWithVulnerabilitiesFragment = gql`
     ${deploymentComponentVulnerabilitiesFragment}
@@ -203,7 +203,7 @@ function DeploymentVulnerabilitiesTable({
                             </Td>
                             <Td dataLabel="Affected components">{affectedComponentsText}</Td>
                             <Td modifier="nowrap" dataLabel="First discovered">
-                                <DatePhraseTd date={discoveredAtImage} />
+                                <DateDistanceTd date={discoveredAtImage} />
                             </Td>
                         </Tr>
                         <Tr isExpanded={isExpanded}>

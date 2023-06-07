@@ -3,7 +3,7 @@ import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-tab
 import { gql } from '@apollo/client';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
-import DatePhraseTd from '../components/DatePhraseTd';
+import DateDistanceTd from '../components/DatePhraseTd';
 import EmptyTableResults from '../components/EmptyTableResults';
 import ImageNameTd from '../components/ImageNameTd';
 
@@ -70,7 +70,7 @@ function ImageResourceTable({ data, getSortParams }: ImageResourceTableProps) {
                             <Td>{deploymentCount > 0 ? 'Active' : 'Inactive'}</Td>
                             <Td>{operatingSystem}</Td>
                             <Td>
-                                <DatePhraseTd date={scanTime} />
+                                <DateDistanceTd date={scanTime} />
                             </Td>
                         </Tr>
                     </Tbody>

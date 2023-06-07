@@ -24,7 +24,7 @@ import DeploymentComponentVulnerabilitiesTable, {
     imageMetadataContextFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
 import SeverityCountLabels from '../components/SeverityCountLabels';
-import DatePhraseTd from '../components/DatePhraseTd';
+import DateDistanceTd from '../components/DatePhraseTd';
 import { VulnerabilitySeverityLabel } from '../types';
 
 export type DeploymentForCve = {
@@ -159,7 +159,7 @@ function AffectedDeploymentsTable({
                             </Td>
 
                             <Td modifier="nowrap" dataLabel="First discovered">
-                                <DatePhraseTd date={created} />
+                                <DateDistanceTd date={created} />
                             </Td>
                         </Tr>
                         <Tr isExpanded={isExpanded}>

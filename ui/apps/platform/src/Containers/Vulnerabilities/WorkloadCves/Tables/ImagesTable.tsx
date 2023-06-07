@@ -9,7 +9,7 @@ import ImageNameTd from '../components/ImageNameTd';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
-import DatePhraseTd from '../components/DatePhraseTd';
+import DateDistanceTd from '../components/DatePhraseTd';
 import TooltipTh from '../components/TooltipTh';
 import { VulnerabilitySeverityLabel, watchStatusLabel, WatchStatus } from '../types';
 
@@ -159,10 +159,10 @@ function ImagesTable({ images, getSortParams, isFiltered, filteredSeverities }: 
                                     )}
                                 </Td>
                                 <Td>
-                                    <DatePhraseTd date={metadata?.v1?.created} />
+                                    <DateDistanceTd date={metadata?.v1?.created} asPhrase={false} />
                                 </Td>
                                 <Td>
-                                    <DatePhraseTd date={scanTime} />
+                                    <DateDistanceTd date={scanTime} />
                                 </Td>
                             </Tr>
                         </Tbody>
