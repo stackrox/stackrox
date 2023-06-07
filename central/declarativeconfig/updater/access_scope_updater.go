@@ -6,29 +6,29 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
-	"github.com/stackrox/rox/central/declarativeconfig/utils"
+	declarativeConfigUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 type accessScopeUpdater struct {
 	roleDS        roleDataStore.DataStore
-	reporter      integrationhealth.Reporter
+	healthDS      declarativeConfigHealth.DataStore
 	idExtractor   types.IDExtractor
 	nameExtractor types.NameExtractor
 }
 
 var _ ResourceUpdater = (*accessScopeUpdater)(nil)
 
-func newAccessScopeUpdater(datastore roleDataStore.DataStore, reporter integrationhealth.Reporter) ResourceUpdater {
+func newAccessScopeUpdater(datastore roleDataStore.DataStore, healthDS declarativeConfigHealth.DataStore) ResourceUpdater {
 	return &accessScopeUpdater{
 		roleDS:        datastore,
-		reporter:      reporter,
+		healthDS:      healthDS,
 		idExtractor:   types.UniversalIDExtractor(),
 		nameExtractor: types.UniversalNameExtractor(),
 	}
@@ -59,8 +59,11 @@ func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToS
 		if err := u.roleDS.RemoveAccessScope(ctx, scope.GetId()); err != nil {
 			scopeDeletionErr = multierror.Append(scopeDeletionErr, err)
 			scopeIDs = append(scopeIDs, scope.GetId())
-			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(scope, "", err,
-				u.idExtractor, u.nameExtractor))
+			if err := u.healthDS.UpsertDeclarativeConfig(ctx, declarativeConfigUtils.HealthStatusForProtoMessage(
+				scope, "", err, u.idExtractor, u.nameExtractor)); err != nil {
+				log.Errorf("Failed to update the declarative config health status %q: %v", scope.GetId(), err)
+			}
+
 			if errors.Is(err, errox.ReferencedByAnotherObject) {
 				scope.Traits.Origin = storage.Traits_DECLARATIVE_ORPHANED
 				if err = u.roleDS.UpsertAccessScope(ctx, scope); err != nil {
