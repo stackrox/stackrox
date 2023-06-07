@@ -3,11 +3,10 @@ on:
     branches:
     - 'yli3/**'
   schedule:
-  # Run every 3 hours
   - cron: '0 */3 * * *'
 
 jobs:
-  test_schedule:
+  start-updaters:
     runs-on: ubuntu-latest
     steps:
     - name: Authenticate with Google Cloud
@@ -19,18 +18,20 @@ jobs:
       uses: google-github-actions/setup-gcloud@v1
 
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.9'
 
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
         go-version: '>=1.20.0'
 
-    - name: Run update script
-      run: |
-        cd scanner
-        go run cmd/updater/update.go
-        gsutil cp -r tmp gs://scanner-v4-test/
+    - name: Install dependencies
+      run: pip install requests
 
-    env:
-      GOMEMLIMIT: 500MiB
+    - name: Run Python script
+      run:  python .github/workflows/scripts/updater-support-versions.py
