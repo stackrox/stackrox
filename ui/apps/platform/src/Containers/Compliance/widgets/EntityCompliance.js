@@ -70,12 +70,19 @@ const EntityCompliance = ({ entityType, entityName, clusterName }) => {
             {({ loading, data }) => {
                 let contents = <Loader />;
                 if (!loading && data && data.results) {
-                    const { results } = data.results;
+                    // Frontend filtering of results.
+                    const { complianceStandards } = data;
+                    const results = data.results.results.filter((result) => {
+                        const standardId = result.aggregationKeys[0].id;
+                        return complianceStandards.some(({ id }) => id === standardId);
+                    });
+
                     if (!results.length) {
                         contents = (
                             <NoResultsMessage message="No data available. Please ensure your cluster is properly configured." />
                         );
                     } else {
+                        console.log(JSON.stringify(results, null, 2));
                         const barData = getBarData(results);
                         const totals = getTotals(results);
                         const pct =
