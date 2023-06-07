@@ -199,10 +199,7 @@ function launch_central {
       add_args "--enable-pod-security-policies=${POD_SECURITY_POLICIES}"
     fi
 
-    # TODO(ROX-16008): Once the feature flag is enabled by default, always add the config map mount.
-    if [[ -n "${ROX_DECLARATIVE_CONFIGURATION}" ]]; then
-        add_args "--declarative-config-config-maps=declarative-configurations"
-    fi
+    add_args "--declarative-config-config-maps=declarative-configurations"
 
     local unzip_dir="${k8s_dir}/central-deploy/"
     rm -rf "${unzip_dir}"

@@ -1,4 +1,4 @@
-package netpol
+package connectivitymap
 
 import (
 	"errors"

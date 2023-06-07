@@ -10,6 +10,8 @@ import {
     FlexItem,
     Button,
     Checkbox,
+    Stack,
+    StackItem,
 } from '@patternfly/react-core';
 import { TrashIcon, PlusIcon } from '@patternfly/react-icons';
 import { useFormikContext } from 'formik';
@@ -67,9 +69,7 @@ function PolicyGroupCard({
         ]);
     }
 
-    const headerText = group.negate
-        ? descriptor.negatedName
-        : descriptor.longName ?? descriptor.shortName ?? descriptor.name;
+    const headerLongText = group.negate ? descriptor.negatedName : descriptor.longName;
 
     return (
         <>
@@ -80,11 +80,18 @@ function PolicyGroupCard({
                             alignItems={{ default: 'alignItemsCenter' }}
                             className="pf-u-py-sm pf-u-text-wrap-on-sm"
                         >
-                            {headerText}:
+                            <Stack>
+                                <StackItem>{descriptor.shortName}</StackItem>
+                                {headerLongText && headerLongText !== descriptor.shortName && (
+                                    <StackItem className="pf-u-font-weight-normal">
+                                        {headerLongText}:
+                                    </StackItem>
+                                )}
+                            </Stack>
                         </Flex>
                     </CardTitle>
                     <CardActions hasNoOffset className="policy-group-card">
-                        {descriptor.negatedName && (
+                        {descriptor.negatedName && !readOnly && (
                             <>
                                 <Divider component="div" isVertical />
                                 <Checkbox

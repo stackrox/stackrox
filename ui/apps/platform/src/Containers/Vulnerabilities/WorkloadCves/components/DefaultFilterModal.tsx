@@ -56,7 +56,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
 
     return (
         <>
-            <Button variant="plain" onClick={handleModalToggle}>
+            <Button variant="plain" className="pf-u-color-300" onClick={handleModalToggle}>
                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
                     <Globe className="pf-u-mr-sm" />
                     Default vulnerability filters

@@ -18,7 +18,7 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -72,7 +72,7 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -118,7 +118,7 @@ jobs:
   ui:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -153,7 +153,7 @@ jobs:
   local-roxctl-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.58
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
     - name: Checkout
       uses: actions/checkout@v3

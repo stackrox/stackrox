@@ -70,13 +70,6 @@ central:
     {{- .GetConfigOverride "endpoints.yaml" | nindent 4 }}
   {{- end }}
 
-  {{- if .HasCentralHostPath }}
-  {{- if .HostPath.Central.WithNodeSelector }}
-  nodeSelector:
-    {{ .HostPath.Central.NodeSelectorKey | quote }}: {{ .HostPath.Central.NodeSelectorValue | quote }}
-  {{- end }}
-  {{- end }}
-
   {{- if .K8sConfig.ImageOverrides.Main }}
   image:
     {{- if .K8sConfig.ImageOverrides.Main.Name }}
@@ -89,19 +82,9 @@ central:
     tag: {{ .K8sConfig.ImageOverrides.Main.Tag }}
     {{- end }}
   {{- end }}
+
   persistence:
-    {{- if and .HasCentralHostPath }}
-    hostPath: {{ .HostPath.Central.HostPath }}
-    {{ else if .HasCentralExternal }}
-    persistentVolumeClaim:
-      claimName: {{ .External.Central.Name | quote }}
-      size: {{ printf "%dGi" .External.Central.Size | quote }}
-      {{- if .External.Central.StorageClass }}
-      storageClass: {{ .External.Central.StorageClass | quote }}
-      {{- end }}
-    {{- else }}
     none: true
-    {{- end }}
 
   {{- if ne .K8sConfig.LoadBalancerType.String "NONE" }}
   exposure:

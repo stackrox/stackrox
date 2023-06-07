@@ -71,25 +71,31 @@ message DatabaseBackupStatus {
 // The initial intended use is to disable certain functionality that does not make sense in the Cloud Service context.
 message CentralServicesCapabilities {
     enum CapabilityStatus {
-        // "Unknown" means "not disabled".
-        // The reason it's not called "Enabled" is that extended checks might be required to confirm true ability to use
-        // e.g. container AWS IAM role or GCP workload identity, and we can't positively say "Enabled" while such checks
-        // aren't implemented.
-        // This means the user should be allowed to use the capability (both via UI and API) but an attempt may not be
-        // successful if the corresponding configuration does not match the actual environment.
-        Unknown = 0;
+        // CapabilityAvailable means that UI and APIs should be available for users to use.
+        // This does not automatically mean that the functionality is 100% available and any calls to APIs will result
+        // in successful execution. Rather it means that users should be allowed to leverage the functionality as
+        // opposed to CapabilityDisabled when functionality should be blocked.
+        CapabilityAvailable = 0;
 
-        // Capability is disabled, meaning the corresponding UI should be disabled and attempts to use related APIs
+        // CapabilityDisabled means the corresponding UI should be disabled and attempts to use related APIs
         // should lead to errors.
-        Disabled = 1;
+        CapabilityDisabled = 1;
     }
 
     // Ability to use container IAM role for scanning images from Amazon ECR using Scanner deployed as part of Central
     // Services.
-    CapabilityStatus central_scanning_use_container_iam_role_for_ecr = 1;
+    // Note that CapabilityAvailable status does not mean that Scanner container actually has IAM role attached. Such
+    // check isn't implemented at the moment and an attempt to use the corresponding setting may lead to errors when
+    // the role is not actually there. It's user's responsibility to check the presence of role and integration status
+    // when the corresponding setting is enabled.
+    CapabilityStatus central_scanning_can_use_container_iam_role_for_ecr = 1;
 
     // Ability to configure and perform Central backups to Amazon S3 or Google Cloud Storage.
-    CapabilityStatus central_cloud_backup_integrations = 2;
+    CapabilityStatus central_can_use_cloud_backup_integrations = 2;
+
+    // Ability to present health of declarative config resources (e.g. auth providers, roles, access scopes, permission
+    // sets, notifiers) to the user.
+    CapabilityStatus central_can_display_declarative_config_health = 3;
 }
 
 service MetadataService {

@@ -13,9 +13,6 @@ export const selectors = {
         lastContact: '[data-testid="last-contact"]',
         viewAllButton: 'a:contains("View All")',
         widgets: {
-            imageIntegrations: '[data-testid="image-integrations"]',
-            notifierIntegrations: '[data-testid="notifier-integrations"]',
-            backupIntegrations: '[data-testid="backup-integrations"]',
             declarativeConfigs: '[data-testid="declarative-configs"]',
         },
     },

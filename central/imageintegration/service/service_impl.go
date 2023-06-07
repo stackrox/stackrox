@@ -182,11 +182,9 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 
 	// Pull the existing integration to determine if should broadcast the delete to sensors.
 	// Do this to avoid sending blind delete messages to potentially many clusters unnecessarily.
-	var doBroadcast bool
-	var name string
-	if ii, exists, err := s.datastore.GetImageIntegration(ctx, request.GetId()); err == nil && exists {
-		doBroadcast = imageintegration.ValidForSync(ii)
-		name = ii.GetName()
+	ii, existed, err := s.datastore.GetImageIntegration(ctx, request.GetId())
+	if err != nil {
+		return nil, err
 	}
 
 	if err := s.datastore.RemoveImageIntegration(ctx, request.GetId()); err != nil {
@@ -197,9 +195,10 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 		return nil, err
 	}
 
-	if doBroadcast {
-		s.broadcastDelete(ctx, request.GetId(), name)
+	if existed {
+		s.broadcastDelete(ctx, ii)
 	}
+
 	return &v1.Empty{}, nil
 }
 
@@ -377,25 +376,29 @@ func (s *serviceImpl) broadcastUpdate(ctx context.Context, ii *storage.ImageInte
 		},
 	}
 
-	s.broadcast(ctx, "updated", ii.GetId(), ii.GetName(), msg)
+	s.broadcast(ctx, "updated", ii, msg)
 }
 
 // broadcastDelete will send the deleted image integration to all Sensors that can handle
 // the update.
-func (s *serviceImpl) broadcastDelete(ctx context.Context, id string, name string) {
+func (s *serviceImpl) broadcastDelete(ctx context.Context, ii *storage.ImageIntegration) {
+	if !imageintegration.ValidForSync(ii) {
+		return
+	}
+
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_ImageIntegrations{
 			ImageIntegrations: &central.ImageIntegrations{
-				DeletedIntegrationIds: []string{id},
+				DeletedIntegrationIds: []string{ii.GetId()},
 			},
 		},
 	}
 
-	s.broadcast(ctx, "deleted", id, name, msg)
+	s.broadcast(ctx, "deleted", ii, msg)
 }
 
-func (s *serviceImpl) broadcast(ctx context.Context, action string, id string, name string, msg *central.MsgToSensor) {
-	log.Infof("Broadcasting %v image integration %q (%v)", action, name, id)
+func (s *serviceImpl) broadcast(ctx context.Context, action string, ii *storage.ImageIntegration, msg *central.MsgToSensor) {
+	log.Infof("Broadcasting %v image integration %q (%v)", action, ii.GetName(), ii.GetId())
 	for _, conn := range s.connManager.GetActiveConnections() {
 		if !deleConnection.ValidForDelegation(conn) {
 			continue
@@ -403,11 +406,11 @@ func (s *serviceImpl) broadcast(ctx context.Context, action string, id string, n
 
 		clusterID := conn.ClusterID()
 
-		log.Debugf("Sending %v image integration %q (%v) to cluster %q", action, name, id, clusterID)
+		log.Debugf("Sending %v image integration %q (%v) to cluster %q", action, ii.GetName(), ii.GetId(), clusterID)
 
 		err := conn.InjectMessage(ctx, msg)
 		if err != nil {
-			log.Warnf("Failed to send %v image integration %q (%v) to cluster %q", action, name, id, clusterID)
+			log.Warnf("Failed to send %v image integration %q (%v) to cluster %q", action, ii.GetName(), ii.GetId(), clusterID)
 		}
 	}
 }

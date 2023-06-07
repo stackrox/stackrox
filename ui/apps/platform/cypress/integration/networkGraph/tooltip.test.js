@@ -64,7 +64,7 @@ describe.skip('Network Graph tooltip', () => {
             });
         });
 
-        it('has bidirectional', () => {
+        it.skip('has bidirectional', () => {
             cy.intercept('GET', api.network.deployment, {
                 fixture: 'network/centralDeployment.json',
             }).as('centralDeployment');
@@ -102,7 +102,7 @@ describe.skip('Network Graph tooltip', () => {
             });
         });
 
-        it('has ingress only', () => {
+        it.skip('has ingress only', () => {
             cy.intercept('GET', api.network.deployment, {
                 fixture: 'network/scannerDbDeployment.json',
             }).as('scannerDbDeployment');
@@ -142,7 +142,7 @@ describe.skip('Network Graph tooltip', () => {
             });
         });
 
-        it('has egress only', () => {
+        it.skip('has egress only', () => {
             cy.intercept('GET', api.network.deployment, {
                 fixture: 'network/collectorDeployment.json',
             }).as('collectorDeployment');

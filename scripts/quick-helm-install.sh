@@ -72,6 +72,7 @@ fi
 
 helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services \
  --set central.adminPassword.value="${STACKROX_ADMIN_PASSWORD}" \
+ --set central.persistence.none=true \
  "${installflags[@]+"${installflags[@]}"}"
 
 kubectl -n stackrox rollout status deploy/central --timeout=3m

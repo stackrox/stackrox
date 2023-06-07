@@ -48,6 +48,7 @@ import (
 	"github.com/stackrox/rox/central/cve/suppress"
 	debugService "github.com/stackrox/rox/central/debug/service"
 	"github.com/stackrox/rox/central/declarativeconfig"
+	declarativeConfigHealthService "github.com/stackrox/rox/central/declarativeconfig/health/service"
 	delegatedRegistryConfigDataStore "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	delegatedRegistryConfigService "github.com/stackrox/rox/central/delegatedregistryconfig/service"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
@@ -360,6 +361,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 			configDS.Singleton(),
 			notifierDS.Singleton(),
 		),
+		declarativeConfigHealthService.Singleton(),
 		delegatedRegistryConfigService.Singleton(),
 		deploymentService.Singleton(),
 		detectionService.Singleton(),
@@ -565,6 +567,7 @@ func startGRPCServer() {
 				gs.AddGatherer(signatureIntegrationDS.Gather)
 				gs.AddGatherer(roleDataStore.Gather)
 				gs.AddGatherer(clusterDataStore.Gather)
+				gs.AddGatherer(declarativeconfig.ManagerSingleton(registry).Gather())
 			}
 		}
 	}

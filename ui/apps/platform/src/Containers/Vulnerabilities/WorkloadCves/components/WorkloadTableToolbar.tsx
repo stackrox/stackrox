@@ -1,15 +1,13 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import noop from 'lodash/noop';
-import uniq from 'lodash/uniq';
 import { Toolbar, ToolbarGroup, ToolbarContent, ToolbarChip } from '@patternfly/react-core';
 
 import useURLSearch from 'hooks/useURLSearch';
 import { SearchFilter } from 'types/search';
-import { DefaultFilters, VulnerabilitySeverityLabel, FixableStatus } from '../types';
+import { DefaultFilters } from '../types';
 import { Resource } from './FilterResourceDropdown';
 import FilterAutocomplete, { FilterAutocompleteSelectProps } from './FilterAutocomplete';
 import CVESeverityDropdown from './CVESeverityDropdown';
-import CVEStatusDropdown from './CVEStatusDropdown';
 import FilterChips from './FilterChips';
 
 const emptyDefaultFilters = {
@@ -32,9 +30,6 @@ function WorkloadTableToolbar({
     onFilterChange = noop,
 }: WorkloadTableToolbarProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
-    const searchSeverity = (searchFilter.Severity as VulnerabilitySeverityLabel[]) || [];
-    const searchFixable = (searchFilter.Fixable as FixableStatus[]) || [];
-    const { Severity: defaultSeverity, Fixable: defaultFixable } = defaultFilters;
 
     function onChangeSearchFilter(newFilter: SearchFilter) {
         setSearchFilter(newFilter);
@@ -79,24 +74,6 @@ function WorkloadTableToolbar({
         onChangeSearchFilter({});
     }
 
-    // The `onChangeSearchFilter` function is intentionally not used in place of `setSearchFilter` below since
-    // it is intended to respond to a change via user action, and this useEffect is intended to sync the
-    // state when the page loads or local storage changes.
-    useEffect(() => {
-        const severityFilter = uniq([...defaultSeverity, ...searchSeverity]);
-        const fixableFilter = uniq([...defaultFixable, ...searchFixable]);
-        setSearchFilter(
-            {
-                ...defaultFilters,
-                ...searchFilter,
-                Severity: severityFilter,
-                Fixable: fixableFilter,
-            },
-            'replace'
-        );
-        // unsure how to reset filters with URL filters only on defaultFilter change
-    }, [defaultFilters, setSearchFilter]);
-
     return (
         <Toolbar id="workload-cves-table-toolbar">
             <ToolbarContent>
@@ -109,7 +86,7 @@ function WorkloadTableToolbar({
                 />
                 <ToolbarGroup>
                     <CVESeverityDropdown searchFilter={searchFilter} onSelect={onSelect} />
-                    <CVEStatusDropdown searchFilter={searchFilter} onSelect={onSelect} />
+                    {/* CVEStatusDropdown is disabled until fixability filters are fixed */}
                 </ToolbarGroup>
                 <ToolbarGroup className="pf-u-w-100">
                     <FilterChips

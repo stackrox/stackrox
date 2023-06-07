@@ -62,7 +62,10 @@ export type ImageCvePageHeaderProps = {
 };
 
 function ImageCvePageHeader({ data }: ImageCvePageHeaderProps) {
-    const prioritizedDistros = uniqBy(sortCveDistroList(data?.distroTuples ?? []), 'distro');
+    const prioritizedDistros = uniqBy(
+        sortCveDistroList(data?.distroTuples ?? []),
+        getDistroLinkText
+    );
     return data ? (
         <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexStart' }}>
             <Title headingLevel="h1" className="pf-u-mb-sm">

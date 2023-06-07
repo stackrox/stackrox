@@ -1,6 +1,10 @@
 server:
   visibleSchemas:
   - openshift-4.1.0
+values:
+  central:
+    persistence:
+      none: true
 tests:
 - name: Should create SCCs
   expect: |

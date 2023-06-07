@@ -50,10 +50,10 @@
 
 {{/*
     Setup configuration for persistence backend.
+    TODO(ROX-16253): Remove PVC
   */}}
 {{ $volumeCfg := dict }}
 {{ if $centralCfg.persistence.none }}
-  {{ include "srox.warn" (list $ "You have selected no persistence backend. Every deletion of the StackRox Central pod will cause you to lose all your data. This is STRONGLY recommended against.") }}
   {{ $_ := set $volumeCfg "emptyDir" dict }}
 {{ end }}
 {{ if $centralCfg.persistence.hostPath }}

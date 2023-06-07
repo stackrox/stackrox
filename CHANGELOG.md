@@ -8,18 +8,19 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [NEXT RELEASE]
 
 ### Added Features
-- A default role `Vulnerability Manager` has been added that provides sufficient privileges to analyze and manage system vulnerabilities.
+- Two new default permission sets `Vulnerability Management Consumer` and `Vulnerability Management Admin` have been added for vulnerability management.
+  - `Vulnerability Management Consumer` provides read-only access to analyze vulnerabilities and initiate risk acceptance process.
+  - `Vulnerability Management Admin` provides administrative access to analyze vulnerabilities, generate reports, and manage risk acceptance process.
 - A default role `Network Graph Viewer` has been added that provides sufficient privileges to display network graphs.
 - A new command `roxctl central login` has been added that allows to use a user's token within roxctl instead of an API token or admin password.
-- ROX-15447: 
-  - A new `DelegatedRegistryConfig` API at `/v1/delegatedregistryconfig` has been added that provides dynamic configuration for local registry scanning (replaces `ROX_FORCE_LOCAL_IMAGE_SCANNING`).
-  - Image Integrations will now be synced with secured clusters that have local scanning enabled.
+- ROX-15447: A new `DelegatedRegistryConfig` API at `/v1/delegatedregistryconfig` has been added that provides dynamic configuration for local registry scanning (replaces `ROX_FORCE_LOCAL_IMAGE_SCANNING`).
 - A new environment variable `ROX_DISABLE_SIGNATURE_FETCHING` has been added to Central and Sensor which stops fetching image signatures in case the signature verification feature shall not be used.
   You may set this in case there's too much load on registries due to attempts to fetch image signatures.
   Note that if the environment variable is set, no signatures will be fetched and thus the signature verification feature cannot be used.
 - ROX-16532: Resource limits and requests for the node-inventory container can now be configured via the operator.
 - A new environment variable `ROX_SCAN_TIMEOUT` has been added to Sensor which allows for customizing the image scan timeout used in Sensor initiated scans.
 - ROX-17365: A new environment variable `ROX_DELEGATED_SCANNING_DISABLED` has been added that disables delegated scanning capabilities while leaving other local scanning capabilities intact.
+- ROX-16703: Helm setting `scanner.disable=false` now valid for any secured cluster (instead of OpenShift only). This enables scanner slim to be installed in non-OCP secured clusters.
 
 ### Removed Features
 - ROX-14398: As announced in 3.74, the permission `Access` replaces the deprecated permission `Role`.
@@ -30,9 +31,13 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     - Secured clusters configured to use KernelModule collection will automatically switch to EBPF
 
 ### Deprecated Features
-Vulnerability Management 1.0 sections Image CVEs, Image Components, Images, Deployments, and Namespaces are deprecated and will be removed in the future. Once removed, use Vulnerability Management 2.0 for managing workload vulnerabilities.
+- Vulnerability Management 1.0 sections Image CVEs, Image Components, Images, Deployments, and Namespaces are deprecated and will be removed in the future. Once removed, use Vulnerability Management 2.0 for managing workload vulnerabilities.
+- The default permission set `Vulnerability Management Approver` is deprecated and will be removed in a future release. Customers are advised to use `Vulnerability Management Admin` permission set instead. When `Vulnerability Management Approver` permission set is removed existing roles using it will be updated to use `Vulnerability Management Admin`.
+- The default permission set `Vulnerability Management Requester` is deprecated and will be removed in a future release. Customers are advised to use `Vulnerability Management Consumer` permission set instead. When `Vulnerability Management Requester` permission set is removed existing roles using it will be updated to use `Vulnerability Management Consumer`.
+- The default permission set `Vulnerability Report Creator` is deprecated and will be removed in a future release. Customers are advised to use `Vulnerability Management Admin` permission set instead. When `Vulnerability Report Creator` permission set is removed existing roles using it will be updated to use `Vulnerability Management Admin`.
 
 ### Technical Changes
+- The Central PVC stackrox-db is no longer required after this upgrade. To obsolete existing PVC, please check the docs online.
 - The output of `roxctl central whoami` now includes the username as well.
 - Helm setting `collector.nodeInventoryResources` has been renamed to `collector.nodeScanningResources`.
 - ROX-16959: Helm setting `admissionController.replicas` has been added to configure admission controller replicas.
@@ -40,6 +45,7 @@ Vulnerability Management 1.0 sections Image CVEs, Image Components, Images, Depl
   is no longer needed. We will continue to populate it to support older versions of the product, but it will be ignored.
 - The time interval used to determine the frequency to scan orchestrator-level components (Kubernetes, OpenShift, Istio) is now configurable
   via ROX_ORCHESTRATOR_VULN_SCAN_INTERVAL.
+- Image Integrations will now be synced with secured clusters that have local scanning enabled.
 
 ## [4.0.0]
 

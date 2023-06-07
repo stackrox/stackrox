@@ -46,6 +46,7 @@ function MainPage(): ReactElement {
     const { isFeatureFlagEnabled, isLoadingFeatureFlags } = useFeatureFlags();
     const { hasReadAccess, hasReadWriteAccess, isLoadingPermissions } = usePermissions();
     const isLoadingPublicConfig = useSelector(selectors.isLoadingPublicConfigSelector);
+    const isLoadingCentralCapabilities = useSelector(selectors.getIsLoadingCentralCapabilities);
 
     // Check for clusters under management
     // if none, and user can admin Clusters, redirect to clusters section
@@ -64,7 +65,12 @@ function MainPage(): ReactElement {
     // feature flags: for NavigationSidebar and Body
     // permissions: for NavigationSidebar and Body
     // public config: for PublicConfigHeader and PublicConfigFooter and analytics
-    if (isLoadingFeatureFlags || isLoadingPermissions || isLoadingPublicConfig) {
+    if (
+        isLoadingFeatureFlags ||
+        isLoadingPermissions ||
+        isLoadingPublicConfig ||
+        isLoadingCentralCapabilities
+    ) {
         return <LoadingSection message="Loading..." />;
     }
 
@@ -89,9 +95,11 @@ function MainPage(): ReactElement {
             <div id="PageParent">
                 <Button
                     style={{
+                        bottom: 'calc(var(--pf-global--spacer--lg) * 6)',
                         position: 'absolute',
-                        bottom: 0,
-                        right: 'var(--pf-global--spacer--xl)',
+                        right: '0',
+                        transform: 'rotate(270deg)',
+                        transformOrigin: 'bottom right',
                         zIndex: 20000,
                     }}
                     icon={<OutlinedCommentsIcon />}

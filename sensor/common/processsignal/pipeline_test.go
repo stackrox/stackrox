@@ -23,7 +23,7 @@ func TestProcessPipeline(t *testing.T) {
 	mockStore := clusterentities.NewStore()
 	mockDetector := mocks.NewMockDetector(mockCtrl)
 
-	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, []int{10, 10, 10}),
+	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
 		mockDetector)
 	closeChan := make(chan bool)
 

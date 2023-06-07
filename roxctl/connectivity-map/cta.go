@@ -1,5 +1,5 @@
-// Package netpol provides primitives for command 'roxctl analyze netpol'
-package netpol
+// Package connectivitymap provides primitives for command 'roxctl connectivity-map'
+package connectivitymap
 
 import (
 	"os"

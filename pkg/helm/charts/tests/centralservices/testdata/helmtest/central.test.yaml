@@ -9,6 +9,8 @@ values:
     cert: ""
     key: ""
   central:
+    persistence:
+      none: true
     serviceTLS:
       cert: ""
       key: ""

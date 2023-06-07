@@ -1,10 +1,13 @@
 package version
 
 import (
+	"time"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/timestamp"
 )
 
 // ConvertVersionFromProto converts a `*storage.Version` to Gorm model
@@ -38,7 +41,9 @@ func ConvertVersionToProto(m *schema.Versions) (*storage.Version, error) {
 	}
 
 	if m.LastPersisted != nil {
-		msg.LastPersisted = protoconv.MustConvertTimeToTimestamp(*m.LastPersisted)
+		ts := protoconv.MustConvertTimeToTimestamp(*m.LastPersisted)
+		timestamp.RoundTimestamp(ts, time.Microsecond)
+		msg.LastPersisted = ts
 	}
 
 	return &msg, nil
