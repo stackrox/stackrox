@@ -44,8 +44,7 @@ func New(reportConfigStore store.Store, indexer index.Indexer, searcher search.S
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
-			sac.ResourceScopeKeys(resources.VulnerabilityReports)))
+			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 	if err := d.buildIndex(ctx); err != nil {
 		return nil, errors.Wrap(err, "failed to build index from existing store")
 	}

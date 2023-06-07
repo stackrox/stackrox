@@ -28,15 +28,13 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
-	// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-	policySAC = sac.ForResource(resources.Policy)
+	log                       = logging.LoggerForModule()
+	workflowAdministrationSAC = sac.ForResource(resources.WorkflowAdministration)
 
-	policyCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+	workflowAdministrationCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-			sac.ResourceScopeKeys(resources.Policy)))
+			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 )
 
 type datastoreImpl struct {
@@ -54,7 +52,7 @@ func (ds *datastoreImpl) buildIndex() error {
 	if env.PostgresDatastoreEnabled.BooleanSetting() {
 		return nil
 	}
-	policies, err := ds.storage.GetAll(policyCtx)
+	policies, err := ds.storage.GetAll(workflowAdministrationCtx)
 	if err != nil {
 		return err
 	}
@@ -62,7 +60,7 @@ func (ds *datastoreImpl) buildIndex() error {
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
-	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
 	return ds.searcher.Search(ctx, q)
@@ -70,7 +68,7 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.R
 
 // Count returns the number of search results from the query
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return 0, err
 	}
 	return ds.searcher.Count(ctx, q)
@@ -103,7 +101,7 @@ func (ds *datastoreImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]
 }
 
 func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Policy, bool, error) {
-	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, false, err
 	}
 
@@ -136,7 +134,7 @@ func (ds *datastoreImpl) fillCategoryNames(ctx context.Context, policies []*stor
 	return nil
 }
 func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*storage.Policy, []int, error) {
-	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, nil, err
 	}
 
@@ -153,7 +151,7 @@ func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*stor
 }
 
 func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy, error) {
-	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
 
@@ -172,7 +170,7 @@ func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy,
 
 // GetPolicyByName returns policy with given name.
 func (ds *datastoreImpl) GetPolicyByName(ctx context.Context, name string) (*storage.Policy, bool, error) {
-	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, false, err
 	}
 
@@ -195,7 +193,7 @@ func (ds *datastoreImpl) GetPolicyByName(ctx context.Context, name string) (*sto
 
 // AddPolicy inserts a policy into the storage and the indexer
 func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) (string, error) {
-	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
+	if ok, err := workflowAdministrationSAC.WriteAllowed(ctx); err != nil {
 		return "", err
 	} else if !ok {
 		return "", sac.ErrResourceAccessDenied
@@ -247,7 +245,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 
 // UpdatePolicy updates a policy from the storage and the indexer
 func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Policy) error {
-	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
+	if ok, err := workflowAdministrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -278,7 +276,7 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 
 // RemovePolicy removes a policy from the storage and the indexer
 func (ds *datastoreImpl) RemovePolicy(ctx context.Context, id string) error {
-	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
+	if ok, err := workflowAdministrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -298,7 +296,7 @@ func (ds *datastoreImpl) removePolicyNoLock(ctx context.Context, id string) erro
 }
 
 func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*storage.Policy, overwrite bool) ([]*v1.ImportPolicyResponse, bool, error) {
-	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
+	if ok, err := workflowAdministrationSAC.WriteAllowed(ctx); err != nil {
 		return nil, false, err
 	} else if !ok {
 		return nil, false, sac.ErrResourceAccessDenied

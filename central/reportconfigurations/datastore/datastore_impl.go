@@ -20,8 +20,7 @@ import (
 )
 
 var (
-	// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
-	reportConfigSAC = sac.ForResource(resources.VulnerabilityReports)
+	reportConfigSAC = sac.ForResource(resources.WorkflowAdministration)
 
 	log = logging.LoggerForModule()
 )

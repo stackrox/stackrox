@@ -22,8 +22,7 @@ var (
 		Field: search.PolicyCategoryName.String(),
 	}
 
-	// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-	policyCategorySAC = sac.ForResource(resources.Policy)
+	policyCategorySAC = sac.ForResource(resources.WorkflowAdministration)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.

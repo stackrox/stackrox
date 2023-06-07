@@ -29,8 +29,7 @@ func initializeManager() manager.Manager {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
-			sac.ResourceScopeKeys(resources.VulnerabilityReports)))
+			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).ProtoQuery()
 	reportConfigs, err := datastore.Singleton().GetReportConfigurations(ctx, query)

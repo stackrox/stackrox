@@ -28,16 +28,9 @@ function AccessControl(): ReactElement {
                                 <b>Access</b> replaces{' '}
                                 <b>AuthProvider, Group, Licenses, Role, and User</b>
                             </ListItem>
-                        </List>
-
-                        <p>
-                            The following permission resources will be replaced in the upcoming
-                            versions:
-                        </p>
-                        <List>
                             <ListItem>
-                                <b>WorkflowAdministration</b> will replace{' '}
-                                <b>Policy, VulnerabilityReports</b>
+                                <b>WorkflowAdministration</b> replaces{' '}
+                                <b>Policy and VulnerabilityReports</b>
                             </ListItem>
                         </List>
                         <p>
