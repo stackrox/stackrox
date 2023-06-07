@@ -6,29 +6,29 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	"github.com/stackrox/rox/central/declarativeconfig/utils"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 type permissionSetUpdater struct {
 	roleDS        roleDataStore.DataStore
-	reporter      integrationhealth.Reporter
+	healthDS      declarativeConfigHealth.DataStore
 	idExtractor   types.IDExtractor
 	nameExtractor types.NameExtractor
 }
 
 var _ ResourceUpdater = (*permissionSetUpdater)(nil)
 
-func newPermissionSetUpdater(datastore roleDataStore.DataStore, reporter integrationhealth.Reporter) ResourceUpdater {
+func newPermissionSetUpdater(datastore roleDataStore.DataStore, healthDS declarativeConfigHealth.DataStore) ResourceUpdater {
 	return &permissionSetUpdater{
 		roleDS:        datastore,
-		reporter:      reporter,
+		healthDS:      healthDS,
 		idExtractor:   types.UniversalIDExtractor(),
 		nameExtractor: types.UniversalNameExtractor(),
 	}
@@ -59,8 +59,10 @@ func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsT
 		if err := u.roleDS.RemovePermissionSet(ctx, permissionSet.GetId()); err != nil {
 			permissionSetDeletionErr = multierror.Append(permissionSetDeletionErr, err)
 			permissionSetIDs = append(permissionSetIDs, permissionSet.GetId())
-			u.reporter.UpdateIntegrationHealthAsync(utils.IntegrationHealthForProtoMessage(permissionSet, "", err,
-				u.idExtractor, u.nameExtractor))
+			if err := u.healthDS.UpsertDeclarativeConfig(ctx, utils.HealthStatusForProtoMessage(permissionSet, "", err,
+				u.idExtractor, u.nameExtractor)); err != nil {
+				log.Errorf("Failed to update the declarative config health status %q: %v", permissionSet.GetId(), err)
+			}
 			if errors.Is(err, errox.ReferencedByAnotherObject) {
 				permissionSet.Traits.Origin = storage.Traits_DECLARATIVE_ORPHANED
 				if err = u.roleDS.UpsertPermissionSet(ctx, permissionSet); err != nil {

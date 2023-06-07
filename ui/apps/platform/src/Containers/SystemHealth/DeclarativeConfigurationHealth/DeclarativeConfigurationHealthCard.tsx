@@ -12,12 +12,12 @@ import {
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
-import { fetchDeclarativeConfigurationsHealth } from 'services/IntegrationHealthService';
-import { IntegrationHealth } from 'types/integrationHealth.proto';
+import { fetchDeclarativeConfigurationsHealth } from 'services/DeclarativeConfigHealthService';
 import { getDateTime } from 'utils/dateUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import { ErrorIcon, healthIconMap, SpinnerIcon } from '../CardHeaderIcons';
+import { DeclarativeConfigHealth } from '../../../types/declarativeConfigHealth.proto';
 
 type DeclarativeConfigurationHealthCardProps = {
     pollingCount: number;
@@ -28,14 +28,14 @@ function DeclarativeConfigurationHealthCard({
 }: DeclarativeConfigurationHealthCardProps): ReactElement {
     const [isFetching, setIsFetching] = useState(false);
     const [errorMessageFetching, setErrorMessageFetching] = useState('');
-    const [items, setItems] = useState<IntegrationHealth[]>([]);
+    const [items, setItems] = useState<DeclarativeConfigHealth[]>([]);
 
     useEffect(() => {
         setIsFetching(true);
         fetchDeclarativeConfigurationsHealth()
             .then((itemsFetched) => {
                 setErrorMessageFetching('');
-                setItems(itemsFetched);
+                setItems(itemsFetched.response.healths);
             })
             .catch((error) => {
                 setErrorMessageFetching(getAxiosErrorMessage(error));

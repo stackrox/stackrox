@@ -8,6 +8,7 @@ const (
 	permissionSetUUIDNS string = "permission-set"
 	accessScopeUUIDNS   string = "access-scope"
 	notifierUUIDNS      string = "notifier"
+	handlerUUIDNS       string = "handler"
 )
 
 // NewDeclarativeAuthProviderUUID creates a UUID from the name of a declarative auth provider configuration.
@@ -38,4 +39,10 @@ func NewDeclarativeAccessScopeUUID(name string) uuid.UUID {
 // The returned UUID will be deterministic.
 func NewDeclarativeNotifierUUID(name string) uuid.UUID {
 	return uuid.NewV5FromNonUUIDs(notifierUUIDNS, name)
+}
+
+// NewDeclarativeHandlerUUID creates a UUID from the name of a declarative configuration handler.
+// The returned UUID will be deterministic.
+func NewDeclarativeHandlerUUID(name string) uuid.UUID {
+	return uuid.NewV5FromNonUUIDs(handlerUUIDNS, name)
 }

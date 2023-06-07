@@ -6,6 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	authProviderDatastore "github.com/stackrox/rox/central/authprovider/datastore"
+	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
@@ -32,11 +33,12 @@ type ResourceUpdater interface {
 func DefaultResourceUpdaters(registry authproviders.Registry) map[reflect.Type]ResourceUpdater {
 	return map[reflect.Type]ResourceUpdater{
 		types.AuthProviderType: newAuthProviderUpdater(authProviderDatastore.Singleton(), registry,
-			groupDataStore.Singleton(), reporter.Singleton()),
-		types.GroupType:         newGroupUpdater(groupDataStore.Singleton(), reporter.Singleton()),
-		types.RoleType:          newRoleUpdater(roleDatastore.Singleton(), groupDataStore.Singleton(), reporter.Singleton()),
-		types.PermissionSetType: newPermissionSetUpdater(roleDatastore.Singleton(), reporter.Singleton()),
-		types.AccessScopeType:   newAccessScopeUpdater(roleDatastore.Singleton(), reporter.Singleton()),
-		types.NotifierType:      newNotifierUpdater(notifierDataStore.Singleton(), policycleaner.Singleton(), notifierProcessor.Singleton(), reporter.Singleton()),
+			groupDataStore.Singleton(), declarativeConfigHealth.Singleton()),
+		types.GroupType:         newGroupUpdater(groupDataStore.Singleton(), declarativeConfigHealth.Singleton()),
+		types.RoleType:          newRoleUpdater(roleDatastore.Singleton(), groupDataStore.Singleton(), declarativeConfigHealth.Singleton()),
+		types.PermissionSetType: newPermissionSetUpdater(roleDatastore.Singleton(), declarativeConfigHealth.Singleton()),
+		types.AccessScopeType:   newAccessScopeUpdater(roleDatastore.Singleton(), declarativeConfigHealth.Singleton()),
+		types.NotifierType: newNotifierUpdater(notifierDataStore.Singleton(), policycleaner.Singleton(),
+			notifierProcessor.Singleton(), declarativeConfigHealth.Singleton(), reporter.Singleton()),
 	}
 }

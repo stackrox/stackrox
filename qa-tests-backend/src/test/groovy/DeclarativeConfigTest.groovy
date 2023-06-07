@@ -10,7 +10,8 @@ import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.AuthProviderOuterClass.AuthProvider
 import io.stackrox.proto.storage.GroupOuterClass.GroupProperties
 import io.stackrox.proto.storage.GroupOuterClass.Group
-import io.stackrox.proto.storage.IntegrationHealthOuterClass.IntegrationHealth.Status
+import io.stackrox.proto.storage.DeclarativeConfigHealthOuterClass.DeclarativeConfigHealth.Status
+import io.stackrox.proto.storage.DeclarativeConfigHealthOuterClass.DeclarativeConfigHealth.ResourceType
 import io.stackrox.proto.storage.NotifierOuterClass.Notifier
 import io.stackrox.proto.storage.NotifierOuterClass.Splunk
 import io.stackrox.proto.storage.RoleOuterClass.Access
@@ -21,7 +22,7 @@ import io.stackrox.proto.storage.TraitsOuterClass.Traits
 
 import services.AuthProviderService
 import services.GroupService
-import services.IntegrationHealthService
+import services.DeclarativeConfigHealthService
 import services.NotifierService
 import services.RoleService
 
@@ -45,8 +46,8 @@ class DeclarativeConfigTest extends BaseSpecification {
 
     static final private int CREATED_RESOURCES = 7
 
-    static final private int RETRIES = 30
-    static final private int DELETION_RETRIES = 45
+    static final private int RETRIES = 45g
+    static final private int DELETION_RETRIES = 60
     static final private int PAUSE_SECS = 10
 
     // Values used within testing for permission sets.
@@ -248,10 +249,10 @@ splunk:
         // has been triggered.
         // If the tests are flaky, we have to increase this value.
         withRetry(RETRIES, PAUSE_SECS) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
             // Expect 6 integration health status for the created resources and one for the config map.
-            assert response.integrationHealthCount == CREATED_RESOURCES + 1
-            for (integrationHealth in response.integrationHealthList) {
+            assert response.healthsCount == CREATED_RESOURCES + 1
+            for (integrationHealth in response.healthsList) {
                 assert integrationHealth.hasLastTimestamp()
                 assert integrationHealth.getErrorMessage() == ""
                 assert integrationHealth.getStatus() == Status.HEALTHY
@@ -291,8 +292,8 @@ splunk:
         // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
         // times here.
         withRetry(RETRIES, PAUSE_SECS) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def permissionSetHealth = response.getIntegrationHealthList().find {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def permissionSetHealth = response.getHealthsList().find {
                 it.getName().contains(PERMISSION_SET_KEY)
             }
             assert permissionSetHealth
@@ -312,8 +313,8 @@ splunk:
         // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
         // times here.
         withRetry(RETRIES, PAUSE_SECS) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def accessScopeHealth = response.getIntegrationHealthList().find {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def accessScopeHealth = response.getHealthsList().find {
                 it.getName().contains(ACCESS_SCOPE_KEY)
             }
             assert accessScopeHealth
@@ -331,8 +332,8 @@ splunk:
         then:
         // Verify the integration health for the role is unhealthy and contains an error message.
         withRetry(RETRIES, PAUSE_SECS) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def roleHealth = response.getIntegrationHealthList().find {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def roleHealth = response.getHealthsList().find {
                 it.getName().contains(ROLE_KEY)
             }
             assert roleHealth
@@ -352,8 +353,8 @@ splunk:
         // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
         // times here.
         withRetry(RETRIES, PAUSE_SECS) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def roleHealth = response.getIntegrationHealthList().find {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def roleHealth = response.getHealthsList().find {
                 it.getName().contains(AUTH_PROVIDER_KEY)
             }
             assert roleHealth
@@ -376,11 +377,11 @@ splunk:
 
         then:
         withRetry(DELETION_RETRIES, PAUSE_SECS) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            assert response.getIntegrationHealthCount() == 1
-            def configMapHealth = response.getIntegrationHealth(0)
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            assert response.getHealthsCount() == 1
+            def configMapHealth = response.getHealths(0)
             assert configMapHealth
-            assert configMapHealth.getName().contains("Config Map")
+            assert configMapHealth.getResourceType() == ResourceType.CONFIG_MAP
             assert configMapHealth.getErrorMessage() == ""
             assert configMapHealth.getStatus() == Status.HEALTHY
         }
@@ -437,13 +438,13 @@ splunk:
 
         then:
         withRetry(RETRIES, PAUSE_SECS) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
             // Expect 6 integration health status for the created resources and one for the config map.
-            assert response.integrationHealthCount == CREATED_RESOURCES
+            assert response.healthsCount == CREATED_RESOURCES
 
-            for (integrationHealth in response.getIntegrationHealthList()) {
+            for (integrationHealth in response.getHealthsList()) {
                 // Config map health will be healthy and do not indicate an error.
-                if (integrationHealth.getName().contains("Config Map")) {
+                if (integrationHealth.getResourceType() == ResourceType.CONFIG_MAP) {
                     assert integrationHealth
                     assert integrationHealth.hasLastTimestamp()
                     assert integrationHealth.getErrorMessage() == ""
@@ -488,9 +489,9 @@ splunk:
         then:
         // Only the config map health status should exist, all others should be removed.
         withRetry(DELETION_RETRIES, PAUSE_SECS) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            assert response.getIntegrationHealthCount() == 1
-            def configMapHealth = response.getIntegrationHealth(0)
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            assert response.getHealthsCount() == 1
+            def configMapHealth = response.getHealths(0)
             assert configMapHealth
             assert configMapHealth.getName().contains("Config Map")
             assert configMapHealth.getErrorMessage() == ""
@@ -510,10 +511,10 @@ splunk:
         // has been triggered.
         // If the tests are flaky, we have to increase this value.
         withRetry(RETRIES, PAUSE_SECS) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
             // Expect 6 integration health status for the created resources and one for the config map.
-            assert response.integrationHealthCount == CREATED_RESOURCES + 1
-            for (integrationHealth in response.integrationHealthList) {
+            assert response.healthsCount == CREATED_RESOURCES + 1
+            for (integrationHealth in response.healthsList) {
                 assert integrationHealth.hasLastTimestamp()
                 assert integrationHealth.getErrorMessage() == ""
                 assert integrationHealth.getStatus() == Status.HEALTHY
@@ -528,8 +529,8 @@ splunk:
         // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
         // times here.
         withRetry(RETRIES, PAUSE_SECS) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def permissionSetHealth = response.getIntegrationHealthList().find {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def permissionSetHealth = response.getHealthsList().find {
                 it.getName().contains(PERMISSION_SET_KEY)
             }
             assert permissionSetHealth
@@ -548,8 +549,8 @@ splunk:
 
         then:
         withRetry(RETRIES, PAUSE_SECS) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def permissionSetHealth = response.getIntegrationHealthList().find {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def permissionSetHealth = response.getHealthsList().find {
                 it.getName().contains(PERMISSION_SET_KEY)
             }
             assert permissionSetHealth
@@ -563,8 +564,8 @@ splunk:
 
         then:
         withRetry(RETRIES, PAUSE_SECS) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def accessScopeHealth = response.getIntegrationHealthList().find {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def accessScopeHealth = response.getHealthsList().find {
                 it.getName().contains(ACCESS_SCOPE_KEY)
             }
             assert accessScopeHealth
@@ -583,8 +584,8 @@ splunk:
 
         then:
         withRetry(RETRIES, PAUSE_SECS) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def accessScopeHealth = response.getIntegrationHealthList().find {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def accessScopeHealth = response.getHealthsList().find {
                 it.getName().contains(ACCESS_SCOPE_KEY)
             }
             assert accessScopeHealth
@@ -618,8 +619,8 @@ splunk:
 
         then:
         withRetry(RETRIES, PAUSE_SECS) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def roleHealth = response.getIntegrationHealthList().find {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def roleHealth = response.getHealthsList().find {
                 it.getName().contains(ROLE_KEY)
             }
             assert roleHealth
@@ -638,8 +639,8 @@ splunk:
 
         then:
         withRetry(RETRIES, PAUSE_SECS) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def roleHealth = response.getIntegrationHealthList().find {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def roleHealth = response.getHealthsList().find {
                 it.getName().contains(ROLE_KEY)
             }
             assert roleHealth
@@ -653,13 +654,13 @@ splunk:
 
         then:
         withRetry(RETRIES, PAUSE_SECS) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
             // After auth provider deletion we should be left only with integration health for:
             // - access scope
             // - role
             // - permission set
             // - config map
-            assert response.getIntegrationHealthCount() == 5
+            assert response.getHealthsCount() == 5
         }
 
         when:
@@ -676,11 +677,11 @@ splunk:
         then:
         // Only the config map health status should exist, all others should be removed.
         withRetry(DELETION_RETRIES, PAUSE_SECS) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            assert response.getIntegrationHealthCount() == 1
-            def configMapHealth = response.getIntegrationHealth(0)
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            assert response.getHealthsCount() == 1
+            def configMapHealth = response.getHealths(0)
             assert configMapHealth
-            assert configMapHealth.getName().contains("Config Map")
+            assert configMapHealth.getResourceType() == ResourceType.CONFIG_MAP
             assert configMapHealth.getErrorMessage() == ""
             assert configMapHealth.getStatus() == Status.HEALTHY
         }

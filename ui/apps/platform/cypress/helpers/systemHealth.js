@@ -14,7 +14,7 @@ export function setClock(currentDatetime) {
 // visit
 
 export const integrationHealthVulnDefinitionsAlias = 'integrationhealth/vulndefinitions';
-export const integrationHealthDeclarativeConfigsAlias = 'integrationhealth/declarativeconfigs';
+export const integrationHealthDeclarativeConfigsAlias = 'declarative-config/health';
 
 const SystemHealthHeadingSelector = 'h1:contains("System Health")';
 const routeMatcherMap = {
@@ -52,7 +52,7 @@ const routeMatcherMap = {
     },
     [integrationHealthDeclarativeConfigsAlias]: {
         method: 'GET',
-        url: '/v1/integrationhealth/declarativeconfigs',
+        url: '/v1/declarative-config/health',
     },
 };
 
