@@ -1,7 +1,14 @@
-apiVersion: v1
-kind: Secret
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: proxy-config
+  name: central
+spec:
+  template:
+    spec:
+      volumes:
+      - name: stackrox-db
+        persistentVolumeClaim:
+          claimName: stackrox-db
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -12,9 +19,3 @@ metadata:
     kind: Central
     name: stackrox-central-services
     controller: true
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 100Gi
