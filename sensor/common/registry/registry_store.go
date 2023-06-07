@@ -2,6 +2,7 @@ package registry
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -17,6 +18,11 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/pkg/urlfmt"
+)
+
+const (
+	pullSecretNamePrefix = "PullSec"
+	globalRegNamePrefix  = "Global"
 )
 
 var (
@@ -46,6 +52,9 @@ type Store struct {
 	// should be done via local scanner or sent to central.
 	delegatedRegistryConfig      *central.DelegatedRegistryConfig
 	delegatedRegistryConfigMutex sync.RWMutex
+
+	// centralRegistryIntegration holds registry integrations sync'd from Central.
+	centralRegistryIntegrations registries.Set
 }
 
 // CheckTLS defines a function which checks if the given address is using TLS.
@@ -56,19 +65,17 @@ type CheckTLS func(ctx context.Context, origAddr string) (bool, error)
 // The passed-in CheckTLS is used to check if a registry uses TLS.
 // If checkTLS is nil, tlscheck.CheckTLS is used by default.
 func NewRegistryStore(checkTLS CheckTLS) *Store {
-	factory := registries.NewFactory(registries.FactoryOptions{
-		CreatorFuncs: []registries.CreatorWrapper{
-			dockerFactory.Creator,
-			rhelFactory.Creator,
-		},
+	regFactory := registries.NewFactory(registries.FactoryOptions{
+		CreatorFuncs: registries.AllCreatorFuncsWithoutRepoList,
 	})
 
 	store := &Store{
-		factory:                   factory,
-		store:                     make(map[string]registries.Set),
-		checkTLS:                  tlscheck.CheckTLS,
-		globalRegistries:          registries.NewSet(factory),
-		clusterLocalRegistryHosts: set.NewStringSet(),
+		factory:                     regFactory,
+		store:                       make(map[string]registries.Set),
+		checkTLS:                    tlscheck.CheckTLS,
+		globalRegistries:            registries.NewSet(regFactory),
+		centralRegistryIntegrations: registries.NewSet(regFactory),
+		clusterLocalRegistryHosts:   set.NewStringSet(),
 	}
 
 	if checkTLS != nil {
@@ -91,7 +98,7 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 	return regs
 }
 
-func createImageIntegration(registry string, dce config.DockerConfigEntry, secure bool) *storage.ImageIntegration {
+func createImageIntegration(registry string, dce config.DockerConfigEntry, secure bool, name string) *storage.ImageIntegration {
 	registryType := dockerFactory.GenericDockerRegistryType
 	if rhelFactory.RedHatRegistryEndpoints.Contains(urlfmt.TrimHTTPPrefixes(registry)) {
 		registryType = rhelFactory.RedHatRegistryType
@@ -99,7 +106,7 @@ func createImageIntegration(registry string, dce config.DockerConfigEntry, secur
 
 	return &storage.ImageIntegration{
 		Id:         registry,
-		Name:       registry,
+		Name:       name,
 		Type:       registryType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
@@ -111,6 +118,20 @@ func createImageIntegration(registry string, dce config.DockerConfigEntry, secur
 			},
 		},
 	}
+}
+
+// genIntegrationName returns a string to use as an integration name. It's meant to aid in identifying where
+// the registry came from.
+func genIntegrationName(prefix string, namespace string, registry string) string {
+	if namespace != "" {
+		namespace = fmt.Sprintf("/ns:%s", namespace)
+	}
+
+	if registry != "" {
+		registry = fmt.Sprintf("/reg:%s", registry)
+	}
+
+	return fmt.Sprintf("%v%v%v", prefix, namespace, registry)
 }
 
 // UpsertRegistry upserts the given registry with the given credentials in the given namespace into the store.
@@ -125,7 +146,8 @@ func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string,
 	// remove http/https prefixes from registry, matching may fail otherwise, the created registry.url will have
 	// the appropriate prefix
 	registry = urlfmt.TrimHTTPPrefixes(registry)
-	err = regs.UpdateImageIntegration(createImageIntegration(registry, dce, secure))
+	name := genIntegrationName(pullSecretNamePrefix, namespace, registry)
+	err = regs.UpdateImageIntegration(createImageIntegration(registry, dce, secure, name))
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
 	}
@@ -147,12 +169,12 @@ func (rs *Store) getRegistriesInNamespace(namespace string) registries.Set {
 // and is associated with namespace.
 //
 // An error is returned if no registry found.
-func (rs *Store) GetRegistryForImageInNamespace(image *storage.ImageName, namespace string) (registryTypes.Registry, error) {
+func (rs *Store) GetRegistryForImageInNamespace(image *storage.ImageName, namespace string) (registryTypes.ImageRegistry, error) {
 	reg := image.GetRegistry()
 	regs := rs.getRegistriesInNamespace(namespace)
 	if regs != nil {
 		for _, r := range regs.GetAll() {
-			if r.Name() == reg {
+			if r.Config().RegistryHostname == reg {
 				return r, nil
 			}
 		}
@@ -168,7 +190,8 @@ func (rs *Store) UpsertGlobalRegistry(ctx context.Context, registry string, dce 
 		return errors.Wrapf(err, "unable to check TLS for registry %q", registry)
 	}
 
-	err = rs.globalRegistries.UpdateImageIntegration(createImageIntegration(registry, dce, secure))
+	name := genIntegrationName(globalRegNamePrefix, "", registry)
+	err = rs.globalRegistries.UpdateImageIntegration(createImageIntegration(registry, dce, secure, name))
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
 	}
@@ -181,12 +204,12 @@ func (rs *Store) UpsertGlobalRegistry(ctx context.Context, registry string, dce 
 // GetGlobalRegistryForImage returns the relevant global registry for image.
 //
 // An error is returned if the registry is unknown.
-func (rs *Store) GetGlobalRegistryForImage(image *storage.ImageName) (registryTypes.Registry, error) {
+func (rs *Store) GetGlobalRegistryForImage(image *storage.ImageName) (registryTypes.ImageRegistry, error) {
 	reg := image.GetRegistry()
 	regs := rs.globalRegistries
 	if regs != nil {
 		for _, r := range regs.GetAll() {
-			if r.Name() == reg {
+			if r.Config().RegistryHostname == reg {
 				return r, nil
 			}
 		}
@@ -262,4 +285,41 @@ func (rs *Store) hasClusterLocalRegistryHost(host string) bool {
 	defer rs.clusterLocalRegistryHostsMutex.RUnlock()
 
 	return rs.clusterLocalRegistryHosts.Contains(trimmed)
+}
+
+// UpsertCentralRegistryIntegrations upserts registry integrations from Central into the store.
+func (rs *Store) UpsertCentralRegistryIntegrations(iis []*storage.ImageIntegration) {
+	for _, ii := range iis {
+		err := rs.centralRegistryIntegrations.UpdateImageIntegration(ii)
+		if err != nil {
+			log.Errorf("Failed to upsert registry integration %q: %v", ii.GetId(), err)
+		} else {
+			log.Debugf("Upserted registry integration %q (%q)", ii.GetName(), ii.GetId())
+		}
+	}
+}
+
+// DeleteCentralRegistryIntegrations deletes registry integrations from the store.
+func (rs *Store) DeleteCentralRegistryIntegrations(ids []string) {
+	for _, id := range ids {
+		err := rs.centralRegistryIntegrations.RemoveImageIntegration(id)
+		if err != nil {
+			log.Errorf("Failed to delete registry integration %q: %v", id, err)
+		} else {
+			log.Debugf("Deleted registry integration %q", id)
+		}
+	}
+}
+
+// GetMatchingCentralRegistryIntegrations returns registry integrations sync'd from Central that match the
+// provided image name.
+func (rs *Store) GetMatchingCentralRegistryIntegrations(imgName *storage.ImageName) []registryTypes.ImageRegistry {
+	var regs []registryTypes.ImageRegistry
+	for _, ii := range rs.centralRegistryIntegrations.GetAll() {
+		if ii.Match(imgName) {
+			regs = append(regs, ii)
+		}
+	}
+
+	return regs
 }

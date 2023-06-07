@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -54,7 +55,7 @@ func TestRegistryStore_same_namespace(t *testing.T) {
 	}
 	reg, err := regStore.GetRegistryForImageInNamespace(img, "qa")
 	require.NoError(t, err)
-	assert.Equal(t, "image-registry.openshift-image-registry.svc:5000", reg.Name())
+	assert.Equal(t, "image-registry.openshift-image-registry.svc:5000", reg.Config().RegistryHostname)
 
 	img = &storage.ImageName{
 		Registry: "image-registry.openshift-image-registry.svc.local:5000",
@@ -64,7 +65,7 @@ func TestRegistryStore_same_namespace(t *testing.T) {
 	}
 	reg, err = regStore.GetRegistryForImageInNamespace(img, "qa")
 	require.NoError(t, err)
-	assert.Equal(t, "image-registry.openshift-image-registry.svc.local:5000", reg.Name())
+	assert.Equal(t, "image-registry.openshift-image-registry.svc.local:5000", reg.Config().RegistryHostname)
 
 	img = &storage.ImageName{
 		Registry: "172.99.12.11:5000",
@@ -74,7 +75,7 @@ func TestRegistryStore_same_namespace(t *testing.T) {
 	}
 	reg, err = regStore.GetRegistryForImageInNamespace(img, "qa")
 	require.NoError(t, err)
-	assert.Equal(t, "172.99.12.11:5000", reg.Name())
+	assert.Equal(t, "172.99.12.11:5000", reg.Config().RegistryHostname)
 }
 
 // TestRegistryStore_SpecificNamespace tests interactions with the registry store
@@ -88,7 +89,7 @@ func TestRegistryStore_SpecificNamespace(t *testing.T) {
 	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dce))
 	reg, err := regStore.GetRegistryForImageInNamespace(fakeImgName, fakeNamespace)
 	require.NoError(t, err)
-	assert.Equal(t, fakeImgName.GetRegistry(), reg.Name())
+	assert.Equal(t, fakeImgName.GetRegistry(), reg.Config().RegistryHostname)
 	assert.Equal(t, reg.Config().Username, "username")
 
 	// no registry should exist based on img.Remote
@@ -108,14 +109,14 @@ func TestRegistryStore_MultipleSecretsSameRegistry(t *testing.T) {
 	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dceA))
 	reg, err := regStore.GetRegistryForImageInNamespace(fakeImgName, fakeNamespace)
 	require.NoError(t, err)
-	assert.Equal(t, fakeImgName.GetRegistry(), reg.Name())
+	assert.Equal(t, fakeImgName.GetRegistry(), reg.Config().RegistryHostname)
 	assert.Equal(t, reg.Config().Username, dceA.Username)
 	assert.Equal(t, reg.Config().Password, dceA.Password)
 
 	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dceB))
 	reg, err = regStore.GetRegistryForImageInNamespace(fakeImgName, fakeNamespace)
 	require.NoError(t, err)
-	assert.Equal(t, fakeImgName.GetRegistry(), reg.Name())
+	assert.Equal(t, fakeImgName.GetRegistry(), reg.Config().RegistryHostname)
 	assert.Equal(t, reg.Config().Username, dceB.Username)
 	assert.Equal(t, reg.Config().Password, dceB.Password)
 }
@@ -153,10 +154,10 @@ func TestRegistryStore_GlobalStoreFailUpsertCheckTLS(t *testing.T) {
 }
 
 func TestRegistryStore_CreateImageIntegrationType(t *testing.T) {
-	ii := createImageIntegration("http://example.com", config.DockerConfigEntry{}, false)
+	ii := createImageIntegration("http://example.com", config.DockerConfigEntry{}, false, "")
 	assert.Equal(t, ii.Type, docker.GenericDockerRegistryType)
 
-	ii = createImageIntegration("https://registry.redhat.io", config.DockerConfigEntry{}, true)
+	ii = createImageIntegration("https://registry.redhat.io", config.DockerConfigEntry{}, true, "")
 	assert.Equal(t, ii.Type, rhel.RedHatRegistryType)
 }
 
@@ -268,4 +269,26 @@ func TestRegistryStore_IsLocal(t *testing.T) {
 		t.Run(name, tf)
 	}
 
+}
+
+func TestRegistryStore_GenImgIntName(t *testing.T) {
+	tt := []struct {
+		prefix    string
+		namespace string
+		registry  string
+		expected  string
+	}{
+		{"", "", "", ""},
+		{"PRE", "", "", "PRE"},
+		{"PRE", "", "REG", "PRE/reg:REG"},
+		{"PRE", "NAME", "", "PRE/ns:NAME"},
+		{"PRE", "NAME", "REG", "PRE/ns:NAME/reg:REG"},
+	}
+
+	for i, test := range tt {
+		t.Run(fmt.Sprintf("%v", i), func(t *testing.T) {
+			actual := genIntegrationName(test.prefix, test.namespace, test.registry)
+			assert.Equal(t, test.expected, actual)
+		})
+	}
 }

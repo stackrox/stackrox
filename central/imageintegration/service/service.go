@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -35,7 +36,8 @@ func New(registryFactory registries.Factory,
 	nodeEnricher enricher.NodeEnricher,
 	datastore datastore.DataStore,
 	clusterDatastore clusterDatastore.DataStore,
-	reprocessorLoop reprocessor.Loop) Service {
+	reprocessorLoop reprocessor.Loop,
+	connManager connection.Manager) Service {
 	return &serviceImpl{
 		registryFactory:    registryFactory,
 		scannerFactory:     scannerFactory,
@@ -44,5 +46,6 @@ func New(registryFactory registries.Factory,
 		datastore:          datastore,
 		clusterDatastore:   clusterDatastore,
 		reprocessorLoop:    reprocessorLoop,
+		connManager:        connManager,
 	}
 }

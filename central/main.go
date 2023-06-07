@@ -427,6 +427,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		processBaselineDataStore.Singleton(),
 		networkBaselineDataStore.Singleton(),
 		delegatedRegistryConfigDataStore.Singleton(),
+		iiDatastore.Singleton(),
 		autoTriggerUpgrades,
 	); err != nil {
 		log.Panicf("Couldn't start sensor connection manager: %v", err)

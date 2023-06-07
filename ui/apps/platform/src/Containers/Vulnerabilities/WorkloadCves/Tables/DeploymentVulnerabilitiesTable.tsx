@@ -38,6 +38,7 @@ export const deploymentWithVulnerabilitiesFragment = gql`
             ...ImageMetadataContext
         }
         imageVulnerabilities(query: $query, pagination: $pagination) {
+            vulnerabilityId: id
             cve
             summary
             images(query: $query) {
@@ -54,6 +55,7 @@ export type DeploymentWithVulnerabilities = {
     id: string;
     images: ImageMetadataContext[];
     imageVulnerabilities: {
+        vulnerabilityId: string;
         cve: string;
         summary: string;
         images: {
@@ -69,6 +71,7 @@ type DeploymentVulnerabilityImageMapping = {
 };
 
 function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
+    vulnerabilityId: string;
     cve: string;
     severity: VulnerabilitySeverity;
     isFixable: boolean;
@@ -85,7 +88,7 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
     });
 
     return deployment.imageVulnerabilities.map((vulnerability) => {
-        const { cve, summary, images } = vulnerability;
+        const { vulnerabilityId, cve, summary, images } = vulnerability;
         // Severity, Fixability, and Discovered date are all based on the aggregate value of all components
         const allVulnerableComponents = vulnerability.images.flatMap((img) => img.imageComponents);
         const highestVulnSeverity = getHighestVulnerabilitySeverity(allVulnerableComponents);
@@ -113,6 +116,7 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
             );
 
         return {
+            vulnerabilityId,
             cve,
             severity: highestVulnSeverity,
             isFixable: isAnyVulnFixable,
@@ -160,6 +164,7 @@ function DeploymentVulnerabilitiesTable({
             {vulnerabilities.length === 0 && <EmptyTableResults colSpan={7} />}
             {vulnerabilities.map((vulnerability, rowIndex) => {
                 const {
+                    vulnerabilityId,
                     cve,
                     severity,
                     summary,
@@ -171,7 +176,7 @@ function DeploymentVulnerabilitiesTable({
                 const isExpanded = expandedRowSet.has(cve);
 
                 return (
-                    <Tbody key={cve} isExpanded={isExpanded}>
+                    <Tbody key={vulnerabilityId} isExpanded={isExpanded}>
                         <Tr>
                             <Td
                                 expand={{

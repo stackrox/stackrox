@@ -173,7 +173,6 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                         </SplitItem>
                         <SplitItem>
                             <Pagination
-                                isCompact
                                 itemCount={totalVulnerabilityCount}
                                 page={page}
                                 perPage={perPage}

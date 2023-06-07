@@ -95,7 +95,6 @@ function DeploymentPageResources({ deploymentId }: DeploymentPageResourcesProps)
                     >
                         <div className="pf-u-background-color-100 pf-u-pt-sm">
                             <Pagination
-                                isCompact
                                 itemCount={imageCount}
                                 page={page}
                                 perPage={perPage}
