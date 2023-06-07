@@ -16,7 +16,6 @@ import {
 import { CodeEditor, CodeEditorControl, Language } from '@patternfly/react-code-editor';
 import { MoonIcon, SunIcon } from '@patternfly/react-icons';
 
-import useURLParameter from 'hooks/useURLParameter';
 import download from 'utils/download';
 import SelectSingle from 'Components/SelectSingle';
 import { useTheme } from 'Containers/ThemeProvider';
@@ -38,11 +37,6 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
     const { networkPolicies, isLoading, error } = useFetchNetworkPolicies(policyIds);
     const { isDarkMode } = useTheme();
     const [customDarkMode, setCustomDarkMode] = React.useState(isDarkMode);
-    const [selectednetpolicy, setSelectednetpolicy] = useURLParameter(
-        'selectednetpolicy',
-        undefined
-    );
-    console.log({ selectednetpolicy });
 
     const allNetworkPoliciesYAML = useMemo(
         () => ({
