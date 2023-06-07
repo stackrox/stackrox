@@ -13,13 +13,13 @@ func HandleV2ManifestList(r *Registry, remote, ref string) (*storage.ImageMetada
 		return nil, err
 	}
 	if len(manifestList.Manifests) == 1 {
-		return HandleV2Manifest(r, remote, manifestList.Manifests[0].Digest.String())
+		return handleManifests(r, manifestList.Manifests[0].MediaType, remote, manifestList.Manifests[0].Digest.String())
 	}
 	for _, manifest := range manifestList.Manifests {
 		// Default to linux arch
 		// TODO(ROX-13284): Support multi-arch images.
 		if manifest.Platform.OS == "linux" && manifest.Platform.Architecture == "amd64" {
-			return HandleV2Manifest(r, remote, manifest.Digest.String())
+			return handleManifests(r, manifest.MediaType, remote, manifest.Digest.String())
 		}
 	}
 	return nil, fmt.Errorf("could not find manifest in list for architecture linux:amd64: '%s'", ref)
@@ -59,13 +59,13 @@ func HandleOCIImageIndex(r *Registry, remote, ref string) (*storage.ImageMetadat
 		return nil, err
 	}
 	if len(index.Manifests) == 1 {
-		return HandleOCIManifest(r, remote, index.Manifests[0].Digest.String())
+		return handleManifests(r, index.Manifests[0].MediaType, remote, index.Manifests[0].Digest.String())
 	}
 	for _, manifest := range index.Manifests {
 		// Default to linux arch
 		// TODO(ROX-13284): Support multi-arch images.
 		if manifest.Platform.OS == "linux" && manifest.Platform.Architecture == "amd64" {
-			return HandleOCIManifest(r, remote, manifest.Digest.String())
+			return handleManifests(r, manifest.MediaType, remote, manifest.Digest.String())
 		}
 	}
 	return nil, fmt.Errorf("could not find manifest in index for architecture linux:amd64: %q", ref)
