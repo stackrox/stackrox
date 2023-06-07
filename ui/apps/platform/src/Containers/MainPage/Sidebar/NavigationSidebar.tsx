@@ -49,7 +49,7 @@ function NavigationSidebar({
     ) {
         vulnerabilityManagementPaths.push(vulnManagementRiskAcceptancePath);
     }
-    if (hasReadAccess('VulnerabilityReports')) {
+    if (hasReadAccess('WorkflowAdministration')) {
         vulnerabilityManagementPaths.push(vulnManagementReportsPath);
     }
 

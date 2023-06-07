@@ -19,7 +19,7 @@ function VulnMgmtReportPage(): ReactElement {
     }
 
     const { hasReadWriteAccess } = usePermissions();
-    const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
+    const hasVulnReportWriteAccess = hasReadWriteAccess('WorkflowAdministration');
 
     const queryObject = getQueryObject(search);
     const { action } = queryObject;

@@ -43,7 +43,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
     const history = useHistory();
 
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
-    const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
+    const hasVulnReportWriteAccess = hasReadWriteAccess('WorkflowAdministration');
     const hasImageReadAccess = hasReadAccess('Image');
     const hasAccessScopeReadAccess = hasReadAccess('Access');
     const hasNotifierIntegrationReadAccess = hasReadAccess('Integration');

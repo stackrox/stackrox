@@ -28,17 +28,41 @@ function AccessControl(): ReactElement {
                                 <b>Access</b> replaces{' '}
                                 <b>AuthProvider, Group, Licenses, Role, and User</b>
                             </ListItem>
-                        </List>
-
-                        <p>
-                            The following permission resources will be replaced in the upcoming
-                            versions:
-                        </p>
-                        <List>
+<<<<<<< HEAD
+=======
                             <ListItem>
-                                <b>WorkflowAdministration</b> will replace{' '}
-                                <b>Policy, VulnerabilityReports</b>
+                                <b>Administration</b> replaces{' '}
+                                <b>
+                                    AllComments, Config, DebugLogs, NetworkGraphConfig, ProbeUpload,
+                                    ScannerBundle, ScannerDefinitions, SensorUpgradeConfig, and
+                                    ServiceIdentity
+                                </b>
                             </ListItem>
+                            <ListItem>
+                                <b>Compliance</b> replaces <b>ComplianceRuns</b>
+                            </ListItem>
+                            <ListItem>
+                                <b>DeploymentExtension</b> replaces{' '}
+                                <b>Indicator, NetworkBaseline, ProcessWhitelist, and Risk</b>
+                            </ListItem>
+                            <ListItem>
+                                <b>Integration</b> replaces{' '}
+                                <b>
+                                    APIToken, BackupPlugins, ImageIntegration, Notifier, and
+                                    SignatureIntegration
+                                </b>
+                            </ListItem>
+                            <ListItem>
+                                <b>WorkflowAdministration</b> replaces{' '}
+                                <b>Policy and VulnerabilityReports</b>
+                            </ListItem>
+                            <ListItem>
+                                <b>Image</b> now also covers <b>ImageComponent</b>
+                            </ListItem>
+                            <ListItem>
+                                <b>Cluster</b> now also covers <b>ClusterCVE</b>
+                            </ListItem>
+>>>>>>> 0a8c520e9e (Changelog + UI removals.)
                         </List>
                         <p>
                             For additional information on deprecation and required actions, please

@@ -85,7 +85,7 @@ function ReportingTablePanel({
     const [deletingReportIds, setDeletingReportIds] = useState<string[]>([]);
 
     const { hasReadWriteAccess } = usePermissions();
-    const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
+    const hasVulnReportWriteAccess = hasReadWriteAccess('WorkflowAdministration');
     const hasAccessScopeWriteAccess = hasReadWriteAccess('Access');
     const hasNotifierIntegrationWriteAccess = hasReadWriteAccess('Integration');
     const canWriteReports =

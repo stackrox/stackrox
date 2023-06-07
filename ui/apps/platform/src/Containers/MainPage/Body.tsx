@@ -110,7 +110,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const isVulnMgmtWorkloadCvesEnabled =
         isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES') && isPostgresEnabled;
 
-    const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');
+    const hasVulnerabilityReportsPermission = hasReadAccess('WorkflowAdministration');
     const hasCollectionsPermission = hasReadAccess('WorkflowAdministration');
 
     return (

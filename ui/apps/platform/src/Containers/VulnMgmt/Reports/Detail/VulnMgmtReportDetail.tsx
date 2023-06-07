@@ -52,7 +52,7 @@ function VulnMgmtReportDetail({ report, reportScope }: VulnMgmtReportDetailProps
     const [isActionsOpen, setIsActionsOpen] = useState(false);
 
     const { hasReadWriteAccess } = usePermissions();
-    const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
+    const hasVulnReportWriteAccess = hasReadWriteAccess('WorkflowAdministration');
     const hasAccessScopeWriteAccess = hasReadWriteAccess('Access');
     const hasNotifierIntegrationWriteAccess = hasReadWriteAccess('Integration');
     const canWriteReports =
