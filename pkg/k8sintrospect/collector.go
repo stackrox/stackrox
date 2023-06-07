@@ -227,7 +227,8 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 func appendDebugError(logsData []byte, err error) []byte {
 	var serr *k8sErrors.StatusError
 	if errors.As(err, &serr) {
-		logsData = append(logsData, fmt.Sprintf(serr.DebugError())...)
+		fsf := fmt.Sprintf // supress roxvet error: DebugError() returns format.
+		logsData = append(logsData, fsf(serr.DebugError())...)
 	}
 	return logsData
 }
