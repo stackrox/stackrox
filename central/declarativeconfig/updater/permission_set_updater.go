@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
-	"github.com/stackrox/rox/central/declarativeconfig/utils"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
@@ -59,8 +58,7 @@ func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsT
 		if err := u.roleDS.RemovePermissionSet(ctx, permissionSet.GetId()); err != nil {
 			permissionSetDeletionErr = multierror.Append(permissionSetDeletionErr, err)
 			permissionSetIDs = append(permissionSetIDs, permissionSet.GetId())
-			if err := u.healthDS.UpsertDeclarativeConfig(ctx, utils.HealthStatusForProtoMessage(permissionSet, "", err,
-				u.idExtractor, u.nameExtractor)); err != nil {
+			if err := u.healthDS.UpdateStatusForDeclarativeConfig(ctx, u.idExtractor(permissionSet), err); err != nil {
 				log.Errorf("Failed to update the declarative config health status %q: %v", permissionSet.GetId(), err)
 			}
 			if errors.Is(err, errox.ReferencedByAnotherObject) {
