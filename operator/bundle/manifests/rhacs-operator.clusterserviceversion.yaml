@@ -564,6 +564,9 @@ spec:
           in the event of an emergency.
         displayName: Bypass
         path: admissionControl.bypass
+      - description: The number of replicas of the admission control pod.
+        displayName: Default Replicas
+        path: admissionControl.replicas
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.
