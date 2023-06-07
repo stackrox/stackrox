@@ -27,17 +27,20 @@ import (
 
 // Compliance represents the Compliance app
 type Compliance struct {
-	nodeNameProvider   NodeNameProvider
-	nodeScanner        NodeScanner
-	sensorReplyHandler SensorReplyHandler
+	nodeNameProvider NodeNameProvider
+	nodeScanner      NodeScanner
+	umh              UnconfirmedMessageHandler
+	cache            *sensor.MsgFromCompliance
 }
 
 // NewComplianceApp contsructs the Compliance app object
-func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner, srh SensorReplyHandler) *Compliance {
+func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner,
+	srh UnconfirmedMessageHandler) *Compliance {
 	return &Compliance{
-		nodeNameProvider:   nnp,
-		nodeScanner:        scanner,
-		sensorReplyHandler: srh,
+		nodeNameProvider: nnp,
+		nodeScanner:      scanner,
+		umh:              srh,
+		cache:            nil,
 	}
 }
 
@@ -105,12 +108,18 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 			select {
 			case <-ctx.Done():
 				return
+			case _, ok := <-c.umh.RetryCommand():
+				if ok && c.cache != nil {
+					nodeInventoriesC <- c.cache
+				}
 			case <-t.C:
 				log.Infof("Scanning node %q", nodeName)
 				msg, err := c.nodeScanner.ScanNode(ctx)
 				if err != nil {
 					log.Errorf("Error running node scan: %v", err)
 				} else {
+					c.umh.ObserveSending()
+					c.cache = msg.Clone()
 					nodeInventoriesC <- msg
 				}
 				interval := i.Next()
@@ -193,11 +202,10 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 		case *sensor.MsgToCompliance_Ack:
 			switch t.Ack.GetAction() {
 			case sensor.MsgToCompliance_NodeInventoryACK_ACK:
-				// TODO(ROX-16687): Implement behavior when receiving Ack here
 				// TODO(ROX-16549): Add metric to see the ratio of Ack/Nack(?)
-				c.sensorReplyHandler.HandleACK(ctx, client)
+				c.umh.HandleACK()
 			case sensor.MsgToCompliance_NodeInventoryACK_NACK:
-				c.sensorReplyHandler.HandleNACK(ctx, client)
+				c.umh.HandleNACK()
 			}
 		default:
 			utils.Should(errors.Errorf("Unhandled msg type: %T", t))
