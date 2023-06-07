@@ -82,13 +82,12 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 	}
 	obsoletePVC := common.ObsoletePVC(c.GetAnnotations())
 	checker := &pvcStateChecker{
-		ctx:         ctx,
-		client:      t.client,
-		namespace:   c.GetNamespace(),
-		obsoletePVC: obsoletePVC,
+		ctx:       ctx,
+		client:    t.client,
+		namespace: c.GetNamespace(),
 	}
 
-	central, err := getCentralComponentValues(centralSpec, checker)
+	central, err := getCentralComponentValues(centralSpec, checker, obsoletePVC)
 	if err != nil {
 		return nil, err
 	}
@@ -159,10 +158,10 @@ func getCentralDBPersistenceValues(p *platform.DBPersistence) *translation.Value
 	return &persistence
 }
 
-func getCentralPersistenceValues(p *platform.Persistence, checker *pvcStateChecker) (*translation.ValuesBuilder, error) {
+func getCentralPersistenceValues(p *platform.Persistence, checker *pvcStateChecker, obsoletePVC bool) (*translation.ValuesBuilder, error) {
 	persistence := translation.NewValuesBuilder()
 	// Check pvcs which should exist in cluster.
-	if checker.isObsolete() {
+	if obsoletePVC {
 		persistence.SetBoolValue("none", true)
 		return &persistence, nil
 	}
@@ -196,7 +195,7 @@ func getCentralPersistenceValues(p *platform.Persistence, checker *pvcStateCheck
 	return &persistence, nil
 }
 
-func getCentralComponentValues(c *platform.CentralComponentSpec, checker *pvcStateChecker) (*translation.ValuesBuilder, error) {
+func getCentralComponentValues(c *platform.CentralComponentSpec, checker *pvcStateChecker, obsoletePVC bool) (*translation.ValuesBuilder, error) {
 	cv := translation.NewValuesBuilder()
 
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
@@ -210,7 +209,7 @@ func getCentralComponentValues(c *platform.CentralComponentSpec, checker *pvcSta
 
 	// TODO(ROX-7147): design CentralEndpointSpec, see central_types.go
 
-	persistence, err := getCentralPersistenceValues(c.GetPersistence(), checker)
+	persistence, err := getCentralPersistenceValues(c.GetPersistence(), checker, obsoletePVC)
 	if err != nil {
 		return nil, err
 	}

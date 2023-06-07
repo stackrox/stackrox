@@ -11,14 +11,9 @@ import (
 
 // pvcStateChecker wraps up the information and function to determine pvc state
 type pvcStateChecker struct {
-	ctx         context.Context
-	client      ctrlClient.Client
-	obsoletePVC bool
-	namespace   string
-}
-
-func (c *pvcStateChecker) isObsolete() bool {
-	return c.obsoletePVC
+	ctx       context.Context
+	client    ctrlClient.Client
+	namespace string
 }
 
 func (c *pvcStateChecker) pvcExists(name string) (bool, error) {
