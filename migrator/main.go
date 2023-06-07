@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	migVer "github.com/stackrox/rox/migrator/version"
 	"github.com/stackrox/rox/pkg/config"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -125,7 +124,7 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 
 	// We need to pass Rocks to the runner if we are in Rocks mode OR
 	// if we need to processBoth for the purpose of migrating Rocks to Postgres
-	if !env.PostgresDatastoreEnabled.BooleanSetting() || processBoth {
+	if processBoth {
 		boltDB, err = bolthelpers.Load()
 		if err != nil {
 			return errors.Wrap(err, "failed to open bolt DB")
@@ -169,12 +168,7 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 		return nil
 	}
 	log.WriteToStderrf("version for %q is %v", dbClone, ver)
-
-	if boltDB == nil && !env.PostgresDatastoreEnabled.BooleanSetting() {
-		log.WriteToStderr("No DB found. Nothing to migrate...")
-		return nil
-	}
-
+	
 	err = runner.Run(&types.Databases{
 		BoltDB:     boltDB,
 		RocksDB:    rocks,

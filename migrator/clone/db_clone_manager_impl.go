@@ -3,7 +3,6 @@ package clone
 import (
 	pgClone "github.com/stackrox/rox/migrator/clone/postgres"
 	"github.com/stackrox/rox/migrator/clone/rocksdb"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
 )
@@ -91,7 +90,7 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, string, error)
 	// Get the RocksDB clone we are migrating
 	clone, clonePath, err := d.dbmRocks.GetCloneToMigrate()
 	if err != nil {
-		if !env.PostgresDatastoreEnabled.BooleanSetting() || migrateFromRocks {
+		if migrateFromRocks {
 			return "", "", "", err
 		}
 		log.Warnf("unable to determine Rocks clone.  Continuing with postgres.  %v", err)
