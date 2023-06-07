@@ -20,6 +20,9 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
+    - name: Create user
+      run: useradd tester
+
     - name: Checkout
       uses: actions/checkout@v3
       with:
@@ -34,7 +37,7 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      run: su tester -c "${{ matrix.gotags }} make go-unit-tests"
 
     - name: Generate junit report
       if: always()
