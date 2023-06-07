@@ -1,239 +1,346 @@
 package extensions
 
 import (
-	"fmt"
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	"github.com/stackrox/rox/operator/pkg/types"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestReconcileDBPassword(t *testing.T) {
 	const (
-		pw1                = "mysecretpassword"
-		pw2                = "mysupersecretpassword"
 		customPWSecretName = "my-password"
 	)
-	canonicalPWSecretWithPW1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      canonicalCentralDBPasswordSecretName,
-			Namespace: testutils.TestNamespace,
-		},
-		Data: map[string][]byte{
-			centralDBPasswordKey: []byte(pw1),
-		},
-	}
 
-	canonicalPWSecretWithNoPassword := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      canonicalCentralDBPasswordSecretName,
-			Namespace: testutils.TestNamespace,
-		},
-		Data: map[string][]byte{},
-	}
-
-	customPWSecretWithPW1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      customPWSecretName,
-			Namespace: testutils.TestNamespace,
-		},
-		Data: map[string][]byte{
-			"password": []byte(fmt.Sprintf("%s\n", pw1)),
-		},
-	}
-
-	customPWSecretWithPW2 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      customPWSecretName,
-			Namespace: testutils.TestNamespace,
-		},
-		Data: map[string][]byte{
-			"password": []byte(fmt.Sprintf("%s\n", pw2)),
-		},
-	}
-
-	customPWSecretWithInvalidPW := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      customPWSecretName,
-			Namespace: testutils.TestNamespace,
-		},
-		Data: map[string][]byte{
-			"password": []byte("foo\nbar\n"),
-		},
-	}
-
-	specWithAutogenPassword := v1alpha1.CentralSpec{
+	specWithoutSecretReference := v1alpha1.CentralSpec{
 		Central: &v1alpha1.CentralComponentSpec{
 			DB: &v1alpha1.CentralDBSpec{},
 		},
 	}
 
-	specWithUserSpecifiedPassword := v1alpha1.CentralSpec{
-		Central: &v1alpha1.CentralComponentSpec{
-			DB: &v1alpha1.CentralDBSpec{
-				PasswordSecret: &v1alpha1.LocalSecretReference{
-					Name: customPWSecretName,
-				},
-			},
-		},
-	}
-
-	specWithCanonicalAsUserSpecifiedPassword := v1alpha1.CentralSpec{
-		Central: &v1alpha1.CentralComponentSpec{
-			DB: &v1alpha1.CentralDBSpec{
-				PasswordSecret: &v1alpha1.LocalSecretReference{
-					Name: canonicalCentralDBPasswordSecretName,
-				},
-			},
-		},
-	}
-
-	cases := map[string]secretReconciliationTestCase{
-		"If unmanaged central-db-password secret exists, that secret should be left untouched": {
-			Existing: []*v1.Secret{canonicalPWSecretWithPW1},
-		},
-		"If no central-db-password secret exists and no custom secret reference was specified, a password should be automatically generated": {
-			Spec: specWithAutogenPassword,
-			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				canonicalCentralDBPasswordSecretName: func(t *testing.T, data types.SecretDataMap) {
-					_, err := passwordFromSecretData(data)
-					assert.NoError(t, err)
-				},
-			},
-		},
-		"If a managed central-db-password secret with a password exists, this password should remain unchanged": {
-			Spec:            specWithAutogenPassword,
-			ExistingManaged: []*v1.Secret{canonicalPWSecretWithPW1},
-			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				canonicalCentralDBPasswordSecretName: func(t *testing.T, data types.SecretDataMap) {
-					pw, err := passwordFromSecretData(data)
-					require.NoError(t, err)
-					assert.Equal(t, pw1, pw)
-				},
-			},
-		},
-		"If a managed central-db-password secret with no password exists, a password should be automatically generated": {
-			Spec:            specWithAutogenPassword,
-			ExistingManaged: []*v1.Secret{canonicalPWSecretWithNoPassword},
-			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				canonicalCentralDBPasswordSecretName: func(t *testing.T, data types.SecretDataMap) {
-					_, err := passwordFromSecretData(data)
-					assert.NoError(t, err)
-				},
-			},
-		},
-		"If an unmanaged central-db-password secret with no password exists, an error should be raised": {
-			Spec:          specWithAutogenPassword,
-			Existing:      []*v1.Secret{canonicalPWSecretWithNoPassword},
-			ExpectedError: "secret must contain a non-empty",
-		},
-		"If an unmanaged central-db-password secret exists, this password should remain unchanged even without a user-specified password": {
-			Spec:     specWithAutogenPassword,
-			Existing: []*v1.Secret{canonicalPWSecretWithPW1},
-		},
-		"If no central-db-password exists, and a user specified password secret was given, the central-db-password secret should be created with this password": {
-			Spec:     specWithUserSpecifiedPassword,
-			Existing: []*v1.Secret{customPWSecretWithPW1},
-			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				canonicalCentralDBPasswordSecretName: func(t *testing.T, data types.SecretDataMap) {
-					pw, err := passwordFromSecretData(data)
-					require.NoError(t, err)
-					assert.Equal(t, pw1, pw)
-				},
-			},
-		},
-		"If a managed central-db-password exists, and a user specified password secret with the same password was given, the central-db-password secret should be left intact": {
-			Spec:            specWithUserSpecifiedPassword,
-			Existing:        []*v1.Secret{customPWSecretWithPW1},
-			ExistingManaged: []*v1.Secret{canonicalPWSecretWithPW1},
-			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				canonicalCentralDBPasswordSecretName: func(t *testing.T, data types.SecretDataMap) {
-					pw, err := passwordFromSecretData(data)
-					require.NoError(t, err)
-					assert.Equal(t, pw1, pw)
-				},
-			},
-		},
-		"If a managed central-db-password exists, and a user specified password secret with a different password was given, the central-db-password secret should be updated with this password": {
-			Spec:            specWithUserSpecifiedPassword,
-			Existing:        []*v1.Secret{customPWSecretWithPW2},
-			ExistingManaged: []*v1.Secret{canonicalPWSecretWithPW1},
-			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				canonicalCentralDBPasswordSecretName: func(t *testing.T, data types.SecretDataMap) {
-					pw, err := passwordFromSecretData(data)
-					require.NoError(t, err)
-					assert.Equal(t, pw2, pw)
-				},
-			},
-		},
-		"If an unmanaged central-db-password exists, and a user-specified password secret with the same password was given, the central-db-password secret should be left intact": {
-			Spec:     specWithUserSpecifiedPassword,
-			Existing: []*v1.Secret{customPWSecretWithPW1, canonicalPWSecretWithPW1},
-		},
-		"If an unmanaged central-db-password exists, and a user-specified password secret with a different password was given, an error should be raised": {
-			Spec:          specWithUserSpecifiedPassword,
-			Existing:      []*v1.Secret{customPWSecretWithPW2, canonicalPWSecretWithPW1},
-			ExpectedError: "existing password does not match expected one",
-		},
-		"If a user-specified password secret with an invalid password was given, an error should be raised": {
-			Spec:          specWithUserSpecifiedPassword,
-			Existing:      []*v1.Secret{customPWSecretWithInvalidPW},
-			ExpectedError: "secret must contain a non-empty",
-		},
-		"If the user-specified password secret does not exist, an error should be raised": {
-			Spec:          specWithUserSpecifiedPassword,
-			ExpectedError: "failed to retrieve central db password secret",
-		},
-		"If the user-specified password is the canonical one, and that does not exist, an error should be raised": {
-			Spec:          specWithCanonicalAsUserSpecifiedPassword,
-			ExpectedError: "failed to retrieve central db password secret",
-		},
-		"If the user-specified password is the canonical one, and that does exist with a valid password, no error should be raised": {
-			Spec:     specWithCanonicalAsUserSpecifiedPassword,
-			Existing: []*v1.Secret{canonicalPWSecretWithPW1},
-		},
-		"If the user-specified password is the canonical one, and that does exist with an invalid password, an error should be raised": {
-			Spec:          specWithCanonicalAsUserSpecifiedPassword,
-			Existing:      []*v1.Secret{canonicalPWSecretWithNoPassword},
-			ExpectedError: "secret must contain a non-empty",
-		},
-		"When using an external DB with specified password secret, that secret should be left untouched": {
-			Spec: v1alpha1.CentralSpec{
-				Central: &v1alpha1.CentralComponentSpec{
-					DB: &v1alpha1.CentralDBSpec{
-						ConnectionStringOverride: pointers.String("foo"),
-						PasswordSecret: &v1alpha1.LocalSecretReference{
-							Name: customPWSecretName,
-						},
+	specWithSecretReference := func(secretName string) v1alpha1.CentralSpec {
+		return v1alpha1.CentralSpec{
+			Central: &v1alpha1.CentralComponentSpec{
+				DB: &v1alpha1.CentralDBSpec{
+					PasswordSecret: &v1alpha1.LocalSecretReference{
+						Name: secretName,
 					},
 				},
 			},
-			Existing: []*v1.Secret{customPWSecretWithPW1, canonicalPWSecretWithPW1},
-		},
-		"When using an external DB, and no password secret is specified, an error should be raised": {
-			Spec: v1alpha1.CentralSpec{
-				Central: &v1alpha1.CentralComponentSpec{
-					DB: &v1alpha1.CentralDBSpec{
-						ConnectionStringOverride: pointers.String("foo"),
-					},
-				},
-			},
-			ExpectedError: "setting spec.central.db.passwordSecret is mandatory when using an external DB",
-		},
+		}
 	}
 
-	for name, c := range cases {
-		c := c
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
+	customPasswordSecret := func(secretName, password string) *v1.Secret {
+		return secretWithValues(secretName, centralDBPasswordKey, password)
+	}
+	emptySecret := func(secretName string) *v1.Secret {
+		return secretWithValues(secretName)
+	}
+	centralDBSecretWithPassword := func(password string) *v1.Secret {
+		return secretWithValues(canonicalCentralDBPasswordSecretName, centralDBPasswordKey, password)
+	}
+	emptyCentralDbSecret := func() *v1.Secret {
+		return emptySecret(canonicalCentralDBPasswordSecretName)
+	}
 
-			testSecretReconciliation(t, reconcileCentralDBPassword, c)
+	var cli ctrlClient.WithWatch
+	var ctx context.Context
+	setup := func() {
+		ctx = context.Background()
+		sch := runtime.NewScheme()
+		require.NoError(t, platform.AddToScheme(sch))
+		require.NoError(t, scheme.AddToScheme(sch))
+		cli = fake.NewClientBuilder().WithScheme(sch).Build()
+	}
+
+	createCentral := func(ctx context.Context, spec v1alpha1.CentralSpec) (*v1alpha1.Central, error) {
+		central := &v1alpha1.Central{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "platform.stackrox.io/v1alpha1",
+				Kind:       "Central",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "central",
+				Namespace: testutils.TestNamespace,
+				UID:       "1234",
+			},
+			Spec: spec,
+		}
+		return central, cli.Create(ctx, central)
+	}
+
+	getCentralDBSecret := func(ctx context.Context) (*v1.Secret, error) {
+		secret := &v1.Secret{}
+		err := cli.Get(ctx, ctrlClient.ObjectKey{Name: canonicalCentralDBPasswordSecretName, Namespace: testutils.TestNamespace}, secret)
+		return secret, err
+	}
+
+	assertDBSecretValue := func(t *testing.T, ctx context.Context, expectedPassword string) {
+		secret, err := getCentralDBSecret(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, expectedPassword, string(secret.Data[centralDBPasswordKey]))
+	}
+
+	t.Run("When the central-db-password secret exist with a Central owner reference, the owner reference should be removed", func(t *testing.T) {
+		// ROX-13947: If we delete the secret when Centrals are deleted, but the PVC is not deleted, then Central
+		// will no longer be able to connect to the DB upon reinstall. This removes any previous owner reference
+		// that would've caused garbage collection to delete the secret.
+		setup()
+		central, err := createCentral(ctx, specWithoutSecretReference)
+		require.NoError(t, err)
+		secretWithOwner := centralDBSecretWithPassword("password")
+		secretWithOwner.OwnerReferences = []metav1.OwnerReference{
+			{
+				APIVersion: "platform.stackrox.io/v1alpha1",
+				Kind:       "Central",
+				Name:       "central",
+				UID:        "1234",
+			},
+		}
+		err = cli.Create(ctx, secretWithOwner)
+		require.NoError(t, err)
+
+		err = reconcileCentralDBPassword(ctx, central, cli)
+		require.NoError(t, err)
+
+		secret, err := getCentralDBSecret(ctx)
+		require.NoError(t, err)
+		assert.Empty(t, secret.OwnerReferences)
+	})
+
+	t.Run("When the central-db-password secret exist with a owner reference that is not Central, the owner reference should be untouched", func(t *testing.T) {
+		setup()
+		central, err := createCentral(ctx, specWithoutSecretReference)
+		require.NoError(t, err)
+		secretWithOwner := centralDBSecretWithPassword("password")
+		secretWithOwner.OwnerReferences = []metav1.OwnerReference{
+			{
+				APIVersion: "foo.com/v1alpha1",
+				Kind:       "Central",
+				Name:       "central",
+				UID:        "1234",
+			},
+		}
+		require.NoError(t, cli.Create(ctx, secretWithOwner))
+
+		err = reconcileCentralDBPassword(ctx, central, cli)
+		require.NoError(t, err)
+
+		secret, err := getCentralDBSecret(ctx)
+		require.NoError(t, err)
+		assert.Len(t, secret.OwnerReferences, 1)
+	})
+
+	t.Run("When no custom secret is specified, and no central-db-password secret exists, a password should be automatically generated", func(t *testing.T) {
+		setup()
+		central, err := createCentral(ctx, specWithoutSecretReference)
+		require.NoError(t, err)
+
+		err = reconcileCentralDBPassword(ctx, central, cli)
+		require.NoError(t, err)
+
+		secret, err := getCentralDBSecret(ctx)
+		require.NoError(t, err)
+		assert.NotEmptyf(t, secret.Data[centralDBPasswordKey], "Expected password to be generated")
+	})
+
+	t.Run("When no custom secret is specified, and a central-db-password secret exists without a password key, a password should be added", func(t *testing.T) {
+		setup()
+		central, err := createCentral(ctx, specWithoutSecretReference)
+		require.NoError(t, err)
+		err = cli.Create(ctx, emptyCentralDbSecret())
+		require.NoError(t, err)
+
+		err = reconcileCentralDBPassword(ctx, central, cli)
+		require.NoError(t, err)
+
+		secret, err := getCentralDBSecret(ctx)
+		require.NoError(t, err)
+		assert.NotEmptyf(t, secret.Data[centralDBPasswordKey], "Expected password to be generated")
+	})
+
+	t.Run("When no custom secret is specified, and a central-db-password secret exists, it should remain unchanged", func(t *testing.T) {
+		setup()
+		central, err := createCentral(ctx, specWithoutSecretReference)
+		require.NoError(t, err)
+		err = cli.Create(ctx, centralDBSecretWithPassword("password"))
+		require.NoError(t, err)
+
+		err = reconcileCentralDBPassword(ctx, central, cli)
+		require.NoError(t, err)
+
+		assertDBSecretValue(t, ctx, "password")
+	})
+
+	t.Run("When no custom secret is specified, and the database is external, then an error should be thrown", func(t *testing.T) {
+		setup()
+		var someConnectionString = "bla"
+		central, err := createCentral(ctx, v1alpha1.CentralSpec{
+			Central: &v1alpha1.CentralComponentSpec{
+				DB: &v1alpha1.CentralDBSpec{
+					ConnectionStringOverride: &someConnectionString,
+				},
+			},
 		})
+		require.NoError(t, err)
+		err = cli.Create(ctx, centralDBSecretWithPassword("password"))
+		require.NoError(t, err)
+
+		err = reconcileCentralDBPassword(ctx, central, cli)
+		require.Error(t, err)
+
+		assert.Contains(t, err.Error(), "spec.central.db.passwordSecret must be set when using an external database")
+	})
+
+	t.Run("When a custom secret is specified, and no central-db-password secret exists, a central-db-password secret should be created with the value of the custom secret", func(t *testing.T) {
+		setup()
+		central, err := createCentral(ctx, specWithSecretReference(customPWSecretName))
+		require.NoError(t, err)
+		err = cli.Create(ctx, customPasswordSecret(customPWSecretName, "password"))
+		require.NoError(t, err)
+
+		err = reconcileCentralDBPassword(ctx, central, cli)
+		require.NoError(t, err)
+
+		assertDBSecretValue(t, ctx, "password")
+	})
+
+	t.Run("When a custom secret is specified, and a central-db-password secret exists, the value should be changed to reflect the custom secret", func(t *testing.T) {
+		setup()
+		central, err := createCentral(ctx, specWithSecretReference(customPWSecretName))
+		require.NoError(t, err)
+		err = cli.Create(ctx, customPasswordSecret(customPWSecretName, "password"))
+		require.NoError(t, err)
+		err = cli.Create(ctx, centralDBSecretWithPassword("old-password"))
+		require.NoError(t, err)
+
+		err = reconcileCentralDBPassword(ctx, central, cli)
+		require.NoError(t, err)
+
+		assertDBSecretValue(t, ctx, "password")
+	})
+
+	t.Run("When a custom secret is specified but doesn't exist, an error should be returned", func(t *testing.T) {
+		setup()
+		central, err := createCentral(ctx, specWithSecretReference(customPWSecretName))
+		require.NoError(t, err)
+
+		err = reconcileCentralDBPassword(ctx, central, cli)
+		require.Error(t, err)
+
+		assert.Contains(t, err.Error(), "failed to get spec.central.db.passwordSecret")
+	})
+	t.Run("When a custom secret is specified but without a password key, an error should be returned", func(t *testing.T) {
+		setup()
+		central, err := createCentral(ctx, specWithSecretReference(customPWSecretName))
+		require.NoError(t, err)
+		err = cli.Create(ctx, emptySecret(customPWSecretName))
+		require.NoError(t, err)
+
+		err = reconcileCentralDBPassword(ctx, central, cli)
+		require.Error(t, err)
+
+		assert.Contains(t, err.Error(), "secret \"my-password\" does not contain a \"password\" entry")
+	})
+	t.Run("When a custom secret value changes, it should be reflected in the generated secret", func(t *testing.T) {
+		setup()
+		central, err := createCentral(ctx, specWithSecretReference(customPWSecretName))
+		require.NoError(t, err)
+
+		// create the secret
+		err = cli.Create(ctx, secretWithValues(customPWSecretName, "password", "password1"))
+		require.NoError(t, err)
+
+		// reconcile
+		err = reconcileCentralDBPassword(ctx, central, cli)
+		require.NoError(t, err)
+
+		// check the generated secret has the initial value
+		assertDBSecretValue(t, ctx, "password1")
+
+		// update the secret
+		err = cli.Update(ctx, secretWithValues(customPWSecretName, "password", "password2"))
+		require.NoError(t, err)
+
+		// reconcile
+		err = reconcileCentralDBPassword(ctx, central, cli)
+		require.NoError(t, err)
+
+		// check the generated secret has been updated
+		assertDBSecretValue(t, ctx, "password2")
+	})
+
+	t.Run("When a custom secret is specified but the password is invalid, an error should be returned", func(t *testing.T) {
+		setup()
+		central, err := createCentral(ctx, specWithSecretReference(customPWSecretName))
+		require.NoError(t, err)
+		err = cli.Create(ctx, customPasswordSecret(customPWSecretName, " "))
+		require.NoError(t, err)
+
+		err = reconcileCentralDBPassword(ctx, central, cli)
+		require.Error(t, err)
+
+		assert.Contains(t, err.Error(), "secret \"my-password\" contains an empty \"password\" entry")
+	})
+	t.Run("When a custom secret name = central-db-password but doesn't exist, an error should be returned", func(t *testing.T) {
+		setup()
+		central, err := createCentral(ctx, specWithSecretReference(canonicalCentralDBPasswordSecretName))
+		require.NoError(t, err)
+
+		err = reconcileCentralDBPassword(ctx, central, cli)
+		require.Error(t, err)
+
+		assert.Contains(t, err.Error(), "failed to get spec.central.db.passwordSecret")
+	})
+
+	t.Run("When the custom secret name = central-db-password one but has an invalid password, an error should be returned", func(t *testing.T) {
+		setup()
+		central, err := createCentral(ctx, specWithSecretReference(canonicalCentralDBPasswordSecretName))
+		require.NoError(t, err)
+		err = cli.Create(ctx, customPasswordSecret(canonicalCentralDBPasswordSecretName, " "))
+		require.NoError(t, err)
+
+		err = reconcileCentralDBPassword(ctx, central, cli)
+		require.Error(t, err)
+
+		assert.Contains(t, err.Error(), "secret \"central-db-password\" contains an empty \"password\" entry")
+	})
+
+	t.Run("When the custom secret name = central-db-password and is valid, it should be left untouched", func(t *testing.T) {
+		setup()
+		central, err := createCentral(ctx, specWithSecretReference(canonicalCentralDBPasswordSecretName))
+		require.NoError(t, err)
+		err = cli.Create(ctx, customPasswordSecret(canonicalCentralDBPasswordSecretName, "password"))
+		require.NoError(t, err)
+
+		err = reconcileCentralDBPassword(ctx, central, cli)
+		require.NoError(t, err)
+
+		assertDBSecretValue(t, ctx, "password")
+	})
+
+}
+
+func secretWithValues(secretName string, keyValues ...string) *v1.Secret {
+	var data = make(map[string][]byte)
+	for i := 0; i < len(keyValues); i += 2 {
+		data[keyValues[i]] = []byte(keyValues[i+1])
+	}
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: testutils.TestNamespace,
+		},
+		Data: data,
 	}
 }

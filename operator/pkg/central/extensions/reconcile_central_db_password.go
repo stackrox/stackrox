@@ -8,10 +8,11 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
-	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/pkg/renderer"
 	coreV1 "k8s.io/api/core/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -26,105 +27,176 @@ const (
 
 // ReconcileCentralDBPasswordExtension returns an extension that takes care of reconciling the central-db-password secret.
 func ReconcileCentralDBPasswordExtension(client ctrlClient.Client) extensions.ReconcileExtension {
-	return wrapExtension(reconcileCentralDBPassword, client)
+	return wrapExtension(wrappedReconcileCentralDBPassword, client)
 }
 
-func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), _ logr.Logger) error {
-	run := &reconcileCentralDBPasswordExtensionRun{
-		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, c),
-		centralObj:          c,
-	}
-	return run.Execute(ctx)
+func wrappedReconcileCentralDBPassword(ctx context.Context, central *platform.Central, client ctrlClient.Client, _ func(statusFunc updateStatusFunc), _ logr.Logger) error {
+	return reconcileCentralDBPassword(ctx, central, client)
 }
 
-type reconcileCentralDBPasswordExtensionRun struct {
-	*commonExtensions.SecretReconciliator
-	centralObj *platform.Central
-	password   string
-}
+func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client) error {
 
-func (r *reconcileCentralDBPasswordExtensionRun) readAndSetPasswordFromReferencedSecret(ctx context.Context) error {
-	if r.centralObj.Spec.Central.DB.GetPasswordSecret() == nil {
-		return errors.New("no password secret was specified in spec.central.db.passwordSecret")
+	var (
+		err                        error
+		hasReferencedSecret        bool
+		referencedSecretName       string
+		isExternalDB               bool
+		centralDBPasswordSecretKey = ctrlClient.ObjectKey{Namespace: c.GetNamespace(), Name: canonicalCentralDBPasswordSecretName}
+		password                   = renderer.CreatePassword()
+	)
+
+	if c.Spec.Central != nil {
+		isExternalDB = c.Spec.Central.IsExternalDB()
 	}
 
-	passwordSecretName := r.centralObj.Spec.Central.DB.PasswordSecret.Name
-
-	passwordSecret := &coreV1.Secret{}
-	key := ctrlClient.ObjectKey{Namespace: r.centralObj.GetNamespace(), Name: passwordSecretName}
-	if err := r.Client().Get(ctx, key, passwordSecret); err != nil {
-		return errors.Wrapf(err, "failed to retrieve central db password secret %q", passwordSecretName)
+	if c.Spec.Central != nil && c.Spec.Central.DB != nil && c.Spec.Central.DB.PasswordSecret != nil {
+		hasReferencedSecret = true
+		referencedSecretName = c.Spec.Central.DB.PasswordSecret.Name
 	}
 
-	password, err := passwordFromSecretData(passwordSecret.Data)
-	if err != nil {
-		return errors.Wrapf(err, "reading central db password from secret %s", passwordSecretName)
+	if !hasReferencedSecret && isExternalDB {
+		return errors.New("spec.central.db.passwordSecret must be set when using an external database")
 	}
 
-	r.password = password
-	return nil
-}
-
-func (r *reconcileCentralDBPasswordExtensionRun) Execute(ctx context.Context) error {
-	if r.centralObj.DeletionTimestamp != nil {
-		return r.ReconcileSecret(ctx, canonicalCentralDBPasswordSecretName, false, nil, nil, false)
+	if hasReferencedSecret && len(referencedSecretName) == 0 {
+		return errors.New("central.db.passwordSecret.name must be set")
 	}
 
-	centralSpec := r.centralObj.Spec.Central
-	if centralSpec != nil && centralSpec.DB != nil {
-		dbSpec := centralSpec.DB
-		dbPasswordSecret := dbSpec.PasswordSecret
-		if dbSpec.IsExternal() && dbPasswordSecret == nil {
-			return errors.New("setting spec.central.db.passwordSecret is mandatory when using an external DB")
+	if hasReferencedSecret {
+		referencedSecretKey := ctrlClient.ObjectKey{Namespace: c.GetNamespace(), Name: referencedSecretName}
+		password, err = obtainPasswordFromReferencedSecret(ctx, client, referencedSecretKey)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get password from referenced secret %q", referencedSecretName)
 		}
 
-		if dbPasswordSecret != nil {
-			if err := r.readAndSetPasswordFromReferencedSecret(ctx); err != nil {
-				return err
-			}
-			// If the user wants to use the central-db-password secret directly, that's fine, and we don't have anything more to do.
-			if dbPasswordSecret.Name == canonicalCentralDBPasswordSecretName {
-				return nil
-			}
+		// if the referenced secret name == central-db-password, we don't need to do anything.
+		if referencedSecretName == canonicalCentralDBPasswordSecretName {
+			return nil
 		}
 	}
 
-	// At this point, r.password was set via readAndSetPasswordFromReferencedSecret above (user-specified mode), or is unset,
-	// in which case the auto-generation logic will take effect.
-	if err := r.ReconcileSecret(ctx, canonicalCentralDBPasswordSecretName, true, r.validateSecretData, r.generateDBPassword, true); err != nil {
-		return errors.Wrapf(err, "reconciling %s secret", canonicalCentralDBPasswordSecretName)
-	}
-	return nil
-}
-
-func (r *reconcileCentralDBPasswordExtensionRun) validateSecretData(data types.SecretDataMap, _ bool) error {
-	password, err := passwordFromSecretData(data)
+	centralDBPasswordSecret := new(coreV1.Secret)
+	err = client.Get(ctx, centralDBPasswordSecretKey, centralDBPasswordSecret)
 	if err != nil {
-		return errors.Wrap(err, "validating existing secret data")
+		if !k8sErrors.IsNotFound(err) {
+			// an unexpected error occurred while getting the secret
+			return errors.Wrapf(err, "failed to get central-db-password secret %q", canonicalCentralDBPasswordSecretName)
+		}
+		// secret doesn't exist, create it
+		centralDBPasswordSecret = makeNewCentralDBPasswordSecretWithPassword(c, password)
+		err = client.Create(ctx, centralDBPasswordSecret)
+		if err != nil {
+			return errors.Wrapf(err, "failed to create central-db-password secret %q", canonicalCentralDBPasswordSecretName)
+		}
+	} else {
+		// secret might need to be updated
+		shouldUpdateOwnerReference := unsetCentralDBPasswordSecretOwnerReferenceIfNeeded(c, centralDBPasswordSecret)
+		shouldUpdatePassword := updateCentralDBPasswordSecretDataIfNeeded(centralDBPasswordSecret, password, hasReferencedSecret)
+		if shouldUpdateOwnerReference || shouldUpdatePassword {
+			err = client.Update(ctx, centralDBPasswordSecret)
+			if err != nil {
+				return errors.Wrapf(err, "failed to update central-db-password secret %q", canonicalCentralDBPasswordSecretName)
+			}
+		}
 	}
-	if r.password != "" && r.password != password {
-		return errors.New("existing password does not match expected one")
-	}
-	// The following assignment shouldn't have any consequences, as a successful validation should prevent generation
-	// from being invoked, but better safe than sorry (about clobbering a user-set password).
-	r.password = password
+
 	return nil
 }
 
-func (r *reconcileCentralDBPasswordExtensionRun) generateDBPassword() (types.SecretDataMap, error) {
-	if r.password == "" {
-		r.password = renderer.CreatePassword()
+func obtainPasswordFromReferencedSecret(ctx context.Context, client ctrlClient.Client, referencedSecretKey ctrlClient.ObjectKey) (password string, err error) {
+	// get the referenced secret
+	referencedSecret := new(coreV1.Secret)
+	if err := client.Get(ctx, referencedSecretKey, referencedSecret); err != nil {
+		return "", errors.Wrapf(err, "failed to get spec.central.db.passwordSecret %q", referencedSecretKey.Name)
 	}
 
-	return types.SecretDataMap{
-		centralDBPasswordKey: []byte(r.password),
-	}, nil
+	// get the password from the referenced secret
+	password, err = getAndValidatePasswordFromReferencedSecret(referencedSecret)
+	if err != nil {
+		return "", errors.Wrapf(err, "reading central db password from secret %s", canonicalCentralDBPasswordSecretName)
+	}
+
+	return password, nil
 }
 
-func passwordFromSecretData(data types.SecretDataMap) (string, error) {
-	password := strings.TrimSpace(string(data[centralDBPasswordKey]))
-	if password == "" || strings.ContainsAny(password, "\r\n") {
-		return "", errors.Errorf("secret must contain a non-empty, single-line %q entry", centralDBPasswordKey)
+func updateCentralDBPasswordSecretDataIfNeeded(secret *coreV1.Secret, password string, hasReferencedSecret bool) bool {
+	shouldUpdatePassword := false
+	passwordIsEmpty := secret.Data == nil || len(secret.Data[centralDBPasswordKey]) == 0
+	passwordsAreDifferent := secret.Data == nil || string(secret.Data[centralDBPasswordKey]) != password
+
+	if passwordIsEmpty || hasReferencedSecret && passwordsAreDifferent {
+		shouldUpdatePassword = true
+	}
+
+	if shouldUpdatePassword {
+		secret.Data = map[string][]byte{
+			centralDBPasswordKey: []byte(password),
+		}
+	}
+
+	return shouldUpdatePassword
+}
+
+func unsetCentralDBPasswordSecretOwnerReferenceIfNeeded(c *platform.Central, secret *coreV1.Secret) bool {
+	// make sure that the secret owner reference is unset. This is to ensure that PVCs which are not deleted
+	// when Centrals are deleted do not have their passwords deleted.
+
+	if len(secret.OwnerReferences) == 0 {
+		return false
+	}
+
+	shouldUpdateOwnerReference := false
+	centralOwnerRef := v1.NewControllerRef(c, c.GroupVersionKind())
+	centralGK := c.GroupVersionKind().GroupKind()
+	var resultOwnerRefs []v1.OwnerReference
+	for _, ownerRef := range secret.OwnerReferences {
+		ownerGV, err := schema.ParseGroupVersion(ownerRef.APIVersion)
+		if err != nil {
+			continue
+		}
+		ownerGK := ownerGV.WithKind(ownerRef.Kind).GroupKind()
+		if ownerRef.UID == centralOwnerRef.UID &&
+			ownerRef.Name == centralOwnerRef.Name &&
+			ownerGK == centralGK {
+			shouldUpdateOwnerReference = true
+		} else {
+			resultOwnerRefs = append(resultOwnerRefs, ownerRef)
+		}
+	}
+	if shouldUpdateOwnerReference {
+		secret.OwnerReferences = resultOwnerRefs
+	}
+	return shouldUpdateOwnerReference
+}
+
+func makeNewCentralDBPasswordSecretWithPassword(c *platform.Central, password string) *coreV1.Secret {
+	// we do not set the owner reference, because this password is bound to the lifetime of the PVC which we might
+	// not be managing. For security, we do not want to delete the password when the Central instance is deleted.
+	return &coreV1.Secret{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      canonicalCentralDBPasswordSecretName,
+			Namespace: c.GetNamespace(),
+		},
+		Data: map[string][]byte{
+			centralDBPasswordKey: []byte(password),
+		},
+	}
+}
+
+func getAndValidatePasswordFromReferencedSecret(secret *coreV1.Secret) (string, error) {
+	if secret.Data == nil {
+		return "", errors.Errorf("secret %q does not contain a %q entry", secret.Name, centralDBPasswordKey)
+	}
+	passwordBytes, ok := secret.Data[centralDBPasswordKey]
+	if !ok {
+		return "", errors.Errorf("secret %q does not contain a %q entry", secret.Name, centralDBPasswordKey)
+	}
+	password := strings.TrimSpace(string(passwordBytes))
+	if len(password) == 0 {
+		return "", errors.Errorf("secret %q contains an empty %q entry", secret.Name, centralDBPasswordKey)
+	}
+	if strings.ContainsAny(password, "\r\n") {
+		return "", errors.Errorf("secret %q contains a multi-line %q entry", secret.Name, centralDBPasswordKey)
 	}
 	return password, nil
 }
