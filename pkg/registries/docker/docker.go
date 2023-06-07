@@ -38,7 +38,16 @@ var (
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
 	return GenericDockerRegistryType, func(integration *storage.ImageIntegration) (types.Registry, error) {
-		reg, err := NewDockerRegistry(integration)
+		reg, err := NewDockerRegistry(integration, false)
+		return reg, err
+	}
+}
+
+// CreatorWithoutRepoList provides the type and registries.Creator to add to the registries Registry.
+// Populating the internal repo list will be disabled.
+func CreatorWithoutRepoList() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
+	return GenericDockerRegistryType, func(integration *storage.ImageIntegration) (types.Registry, error) {
+		reg, err := NewDockerRegistry(integration, true)
 		return reg, err
 	}
 }
@@ -70,6 +79,8 @@ type Config struct {
 	Password string
 	// Insecure defines if the registry should be insecure
 	Insecure bool
+	// DisableRepoList when true disables populating list of repos from remote registry.
+	DisableRepoList bool
 }
 
 // NewDockerRegistryWithConfig creates a new instantiation of the docker registry
@@ -103,10 +114,15 @@ func NewDockerRegistryWithConfig(cfg Config, integration *storage.ImageIntegrati
 
 	client.Client.Timeout = registryTimeout
 
-	repoSet, err := retrieveRepositoryList(client)
-	if err != nil {
-		// This is not a critical error so it is purposefully not returned
-		log.Debugf("could not update repo list for integration %s: %v", integration.GetName(), err)
+	var repoSet set.Set[string]
+	var ticker *time.Ticker
+	if !cfg.DisableRepoList {
+		repoSet, err = retrieveRepositoryList(client)
+		if err != nil {
+			// This is not a critical error so it is purposefully not returned
+			log.Debugf("could not update repo list for integration %s: %v", integration.GetName(), err)
+		}
+		ticker = time.NewTicker(repoListInterval)
 	}
 
 	return &Registry{
@@ -117,21 +133,22 @@ func NewDockerRegistryWithConfig(cfg Config, integration *storage.ImageIntegrati
 		protoImageIntegration: integration,
 
 		repositoryList:       repoSet,
-		repositoryListTicker: time.NewTicker(repoListInterval),
+		repositoryListTicker: ticker,
 	}, nil
 }
 
 // NewDockerRegistry creates a generic docker registry integration
-func NewDockerRegistry(integration *storage.ImageIntegration) (*Registry, error) {
+func NewDockerRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*Registry, error) {
 	dockerConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Docker)
 	if !ok {
 		return nil, errors.New("Docker configuration required")
 	}
 	cfg := Config{
-		Endpoint: dockerConfig.Docker.GetEndpoint(),
-		Username: dockerConfig.Docker.GetUsername(),
-		Password: dockerConfig.Docker.GetPassword(),
-		Insecure: dockerConfig.Docker.GetInsecure(),
+		Endpoint:        dockerConfig.Docker.GetEndpoint(),
+		Username:        dockerConfig.Docker.GetUsername(),
+		Password:        dockerConfig.Docker.GetPassword(),
+		Insecure:        dockerConfig.Docker.GetInsecure(),
+		DisableRepoList: disableRepoList,
 	}
 	return NewDockerRegistryWithConfig(cfg, integration)
 }
@@ -150,6 +167,10 @@ func retrieveRepositoryList(client *registry.Registry) (set.StringSet, error) {
 // Match decides if the image is contained within this registry
 func (r *Registry) Match(image *storage.ImageName) bool {
 	match := urlfmt.TrimHTTPPrefixes(r.registry) == image.GetRegistry()
+	if r.cfg.DisableRepoList {
+		return match
+	}
+
 	var list set.StringSet
 	concurrency.WithRLock(&r.repositoryListLock, func() {
 		list = r.repositoryList
