@@ -99,7 +99,7 @@ function ComplianceDashboardPage(): ReactElement {
                         <div className="flex items-center">
                             <div className="flex items-center">
                                 <ScanButton
-                                    className={`flex items-center justify-center border-2 btn btn-base h-10 uppercase lg:min-w-32 xl:min-w-43 ${darkModeClasses}`}
+                                    className={`flex items-center justify-center border-2 btn btn-base h-10 lg:min-w-32 xl:min-w-43 ${darkModeClasses}`}
                                     text="Scan environment"
                                     textClass="hidden lg:block"
                                     textCondensed="Scan all"
