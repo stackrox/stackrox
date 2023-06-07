@@ -140,4 +140,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_181_to_m_182_group_role_permission_with_access_one"
 	_ "github.com/stackrox/rox/migrator/migrations/m_182_to_m_183_remove_default_scope_manager_role"
 	_ "github.com/stackrox/rox/migrator/migrations/m_183_to_m_184_move_declarative_config_health"
+	_ "github.com/stackrox/rox/migrator/migrations/m_184_to_m_185_remove_policy_vulnerability_report_resources"
 )
