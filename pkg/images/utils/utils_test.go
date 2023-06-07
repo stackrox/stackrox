@@ -213,3 +213,38 @@ func TestExtractOpenShiftProject_solelyRemote(t *testing.T) {
 	}
 	assert.Equal(t, "stackrox", ExtractOpenShiftProject(imgName))
 }
+
+func TestUniqueImageNames(t *testing.T) {
+	a := []*storage.ImageName{
+		{
+			Registry: "docker.io",
+			Remote:   "something",
+			Tag:      "latest",
+			FullName: "docker.io/something:latest",
+		},
+		{
+			Registry: "docker.io",
+			Remote:   "someone",
+			Tag:      "latest",
+			FullName: "docker.io/someone:latest",
+		},
+	}
+	b := []*storage.ImageName{
+		{
+			Registry: "docker.io",
+			Remote:   "somewhere",
+			Tag:      "latest",
+			FullName: "docker.io/somewhere:latest",
+		},
+		{
+			Registry: "docker.io",
+			Remote:   "someone",
+			Tag:      "latest",
+			FullName: "docker.io/someone:latest",
+		},
+	}
+
+	res := UniqueImageNames(a, b)
+
+	assert.Equal(t, append(a, b[0]), res)
+}

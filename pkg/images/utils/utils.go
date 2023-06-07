@@ -9,7 +9,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -235,4 +237,15 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 			Cves: int32(len(cveSet)),
 		}
 	}
+}
+
+// UniqueImageNames returns the unique image names from the two given slices of image names.
+func UniqueImageNames(a, b []*storage.ImageName) []*storage.ImageName {
+	uniqueImageNames := sliceutils.ShallowClone(a)
+	for _, imageName := range b {
+		if !protoutils.SliceContains(imageName, uniqueImageNames) {
+			uniqueImageNames = append(uniqueImageNames, imageName)
+		}
+	}
+	return uniqueImageNames
 }

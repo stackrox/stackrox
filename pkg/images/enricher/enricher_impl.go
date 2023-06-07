@@ -301,6 +301,10 @@ func (e *enricherImpl) updateImageFromDatabase(ctx context.Context, img *storage
 		return false
 	}
 
+	// Since the image we use may not include all image names associated with the stored image due to different scanning
+	// workflows, ensure we merge the image names.
+	img.Names = utils.UniqueImageNames(existingImg.GetNames(), img.GetNames())
+
 	usesExistingScan := e.useExistingScan(img, existingImg, option)
 	e.useExistingSignature(img, existingImg, option)
 	e.useExistingSignatureVerificationData(img, existingImg, option)
