@@ -26,7 +26,7 @@ if is_release_test_stream "$version"; then
 	# send to #acs-slack-integration-testing when testing the release process
 	webhook_url="${SLACK_MAIN_WEBHOOK}"
 else
-	# send to #eng-release
+	# send to #acs-release-notifications
 	webhook_url="${RELEASE_WORKFLOW_NOTIFY_WEBHOOK}"
 fi
 
