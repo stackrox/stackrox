@@ -65,7 +65,9 @@ type CheckTLS func(ctx context.Context, origAddr string) (bool, error)
 // The passed-in CheckTLS is used to check if a registry uses TLS.
 // If checkTLS is nil, tlscheck.CheckTLS is used by default.
 func NewRegistryStore(checkTLS CheckTLS) *Store {
-	regFactory := registries.NewFactory(registries.FactoryOptions{})
+	regFactory := registries.NewFactory(registries.FactoryOptions{
+		CreatorFuncs: registries.AllCreatorFuncsWithoutRepoList,
+	})
 
 	store := &Store{
 		factory:                     regFactory,

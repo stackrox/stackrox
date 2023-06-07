@@ -28,7 +28,7 @@ func TestGoogle(t *testing.T) {
 		},
 	}
 
-	registry, err := NewRegistry(integration)
+	registry, err := NewRegistry(integration, false)
 	require.NoError(t, err)
 
 	metadata, err := registry.Metadata(&storage.Image{
