@@ -14,6 +14,7 @@ export function setClock(currentDatetime) {
 // visit
 
 export const integrationHealthVulnDefinitionsAlias = 'integrationhealth/vulndefinitions';
+export const integrationHealthDeclarativeConfigsAlias = 'integrationhealth/declarativeconfigs';
 
 const SystemHealthHeadingSelector = 'h1:contains("System Health")';
 const routeMatcherMap = {
@@ -49,7 +50,7 @@ const routeMatcherMap = {
         method: 'GET',
         url: api.integrationHealth.vulnDefinitions,
     },
-    'integrationhealth/declarativeconfigs': {
+    [integrationHealthDeclarativeConfigsAlias]: {
         method: 'GET',
         url: '/v1/integrationhealth/declarativeconfigs',
     },
@@ -68,11 +69,17 @@ export function visitSystemHealth(staticResponseMap) {
     cy.get(SystemHealthHeadingSelector);
 }
 
-export function visitSystemHealthWithStaticResponseForCapabilities(staticResponseForCapabilities) {
+export function visitSystemHealthWithStaticResponseForCapabilities(
+    staticResponseForCapabilities,
+    keysToRemoveFromRouteMatcherMap = []
+) {
+    const updatedRouteMatcherMap = { ...routeMatcherMap };
+    keysToRemoveFromRouteMatcherMap.forEach((key) => delete updatedRouteMatcherMap[key]);
+
     visitWithStaticResponseForCapabilities(
         systemHealthUrl,
         staticResponseForCapabilities,
-        routeMatcherMap
+        updatedRouteMatcherMap
     );
 
     cy.get(SystemHealthHeadingSelector);

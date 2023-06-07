@@ -1,5 +1,8 @@
 import withAuth from '../../helpers/basicAuth';
-import { visitSystemHealthWithStaticResponseForCapabilities } from '../../helpers/systemHealth';
+import {
+    visitSystemHealthWithStaticResponseForCapabilities,
+    integrationHealthDeclarativeConfigsAlias,
+} from '../../helpers/systemHealth';
 
 describe('System Health Declarative Configuration', () => {
     withAuth();
@@ -24,11 +27,14 @@ describe('System Health Declarative Configuration', () => {
     });
 
     it('should not display declarative configuration when capability is disabled', () => {
-        visitSystemHealthWithStaticResponseForCapabilities({
-            body: {
-                centralCanDisplayDeclarativeConfigHealth: 'CapabilityDisabled',
+        visitSystemHealthWithStaticResponseForCapabilities(
+            {
+                body: {
+                    centralCanDisplayDeclarativeConfigHealth: 'CapabilityDisabled',
+                },
             },
-        });
+            [integrationHealthDeclarativeConfigsAlias]
+        );
 
         cy.get(declarativeConfigHeadingSelector).should('not.exist');
     });
