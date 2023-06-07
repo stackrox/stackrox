@@ -28,7 +28,7 @@ import ImageComponentVulnerabilitiesTable, {
     imageMetadataContextFragment,
 } from './ImageComponentVulnerabilitiesTable';
 import EmptyTableResults from '../components/EmptyTableResults';
-import DatePhraseTd from '../components/DatePhraseTd';
+import DateDistanceTd from '../components/DatePhraseTd';
 import CvssTd from '../components/CvssTd';
 
 export type ImageForCve = {
@@ -148,7 +148,7 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                                     : `${imageComponents.length} components`}
                             </Td>
                             <Td dataLabel="First discovered">
-                                <DatePhraseTd date={scanTime} />
+                                <DateDistanceTd date={scanTime} />
                             </Td>
                         </Tr>
                         <Tr isExpanded={isExpanded}>

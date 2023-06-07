@@ -19,7 +19,7 @@ import { getEntityPagePath } from '../searchUtils';
 import TooltipTh from '../components/TooltipTh';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
-import DatePhraseTd from '../components/DatePhraseTd';
+import DateDistanceTd from '../components/DatePhraseTd';
 import CvssTd from '../components/CvssTd';
 import {
     getScoreVersionsForTopCVSS,
@@ -207,7 +207,7 @@ function CVEsTable({
                                     {affectedImageCount}/{unfilteredImageCount} affected images
                                 </Td>
                                 <Td>
-                                    <DatePhraseTd date={firstDiscoveredInSystem} />
+                                    <DateDistanceTd date={firstDiscoveredInSystem} />
                                 </Td>
                             </Tr>
                             <Tr isExpanded={isExpanded}>
