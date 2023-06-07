@@ -36,7 +36,7 @@ jobs:
       - name: Check PR title length
         if: github.event.pull_request.user.login != 'dependabot[bot]'
         env:
-          LENGTH: '70'
+          LENGTH: '120'
         run: |
           TITLE_LENGTH="$(echo -nE "$PR_TITLE" | wc --chars)"
           if [ "$TITLE_LENGTH" -gt "$LENGTH" ]
