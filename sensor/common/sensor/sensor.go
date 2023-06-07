@@ -227,8 +227,10 @@ func (s *Sensor) Start() {
 	errSig := s.centralConnectionFactory.StopSignal()
 
 	if features.PreventSensorRestartOnDisconnect.Enabled() {
+		log.Infof("Running Sensor with connection retry: preventing sensor restart on disconnect")
 		go s.communicationWithCentralWithRetries(&centralReachable)
 	} else {
+		log.Infof("Running Sensor without connection retries: sensor will restart on disconnect")
 		// This has to be checked only if retries are not enabled. With retries, this signal will be checked
 		// inside communicationWithCentralWithRetries since it has to be re-checked on reconnects, and not
 		// crash if it fails.
@@ -313,6 +315,13 @@ func (s *Sensor) notifyAllComponents(notification common.SensorComponentEvent) {
 	}
 }
 
+func wrapOrNewError(err error, message string) error {
+	if err == nil {
+		return errors.New(message)
+	}
+	return errors.Wrap(err, message)
+}
+
 func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurrency.Flag) {
 	// Attempt a simple restart strategy: if connection broke, re-establish the connection with exponential back-offs.
 	// This approach does not consider messages that were already sent to central_sender but weren't written to the stream.
@@ -324,15 +333,15 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	exponential.MaxInterval = env.ConnectionRetryMaxInterval.DurationSetting()
 
 	err := backoff.RetryNotify(func() error {
+		log.Info("Attempting connection setup")
 		select {
 		case <-s.centralConnectionFactory.OkSignal().WaitC():
 			// Connection if up, we can try to create a new central communication
 			s.changeState(common.SensorComponentEventCentralReachable)
-			break
 		case <-s.centralConnectionFactory.StopSignal().WaitC():
 			// Connection is still broken, report and try again
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection)
-			return errors.Wrap(s.centralConnectionFactory.StopSignal().Err(), "connection couldn't be re-established")
+			return wrapOrNewError(s.centralConnectionFactory.StopSignal().Err(), "connection couldn't be re-established")
 		}
 
 		// At this point, we know that connection factory reported that connection if up.
@@ -342,6 +351,11 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
 		select {
 		case <-s.centralCommunication.Stopped().WaitC():
+			if err := s.centralCommunication.Stopped().Err(); err != nil {
+				log.Infof("Communication with Central stopped with error: %s. Retrying.", s.centralCommunication.Stopped().Err())
+			} else {
+				log.Info("Communication with Central stopped. Retrying.")
+			}
 			// Communication either ended or there was an error. Either way we should retry.
 			// Send notification to all components that we are running in offline mode
 			s.changeState(common.SensorComponentEventOfflineMode)
@@ -349,17 +363,20 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			// Trigger goroutine that will attempt the connection. s.centralConnectionFactory.*Signal() should be
 			// checked to probe connection state.
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection)
-			return s.centralCommunication.Stopped().Err()
+			return wrapOrNewError(s.centralCommunication.Stopped().Err(), "communication stopped")
 		case <-s.stoppedSig.WaitC():
 			// This means sensor was signaled to finish, this error shouldn't be retried
-			return backoff.Permanent(s.stoppedSig.Err())
+			log.Info("Received stop signal from Sensor. Stopping without retrying")
+			return backoff.Permanent(wrapOrNewError(s.stoppedSig.Err(), "received sensor stop signal"))
 		}
 	}, exponential, func(err error, d time.Duration) {
-		log.Infof("Central communication stoppped: %s. Retrying after %s...", err, d.Round(time.Second))
+		log.Infof("Central communication stopped: %s. Retrying after %s...", err, d.Round(time.Second))
 	})
 
+	log.Infof("Stopping gRPC connection retry loop.")
+
 	if err != nil {
-		log.Warnf("backoff returned error: %s", err)
+		log.Warnf("Backoff returned error: %s", err)
 	}
 }
 

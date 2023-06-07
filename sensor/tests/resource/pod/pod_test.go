@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/sensor/tests/resource"
+	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	appsv1 "k8s.io/api/apps/v1"
@@ -21,12 +21,12 @@ import (
 )
 
 var (
-	NginxDeployment = resource.K8sResourceInfo{Kind: "Deployment", YamlFile: "nginx.yaml"}
-	NginxPod        = resource.K8sResourceInfo{Kind: "Pod", YamlFile: "nginx-pod.yaml"}
+	NginxDeployment = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "nginx.yaml"}
+	NginxPod        = helper.K8sResourceInfo{Kind: "Pod", YamlFile: "nginx-pod.yaml"}
 )
 
 type PodHierarchySuite struct {
-	testContext *resource.TestContext
+	testContext *helper.TestContext
 	suite.Suite
 }
 
@@ -39,7 +39,7 @@ var _ suite.TearDownTestSuite = &PodHierarchySuite{}
 
 func (s *PodHierarchySuite) SetupSuite() {
 	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
-	if testContext, err := resource.NewContext(s.T()); err != nil {
+	if testContext, err := helper.NewContext(s.T()); err != nil {
 		s.Fail("failed to setup test context: %s", err)
 	} else {
 		s.testContext = testContext
@@ -57,7 +57,7 @@ func sortAlphabetically(list []string) {
 	})
 }
 
-func assertDeploymentContainerImages(images ...string) resource.AssertFunc {
+func assertDeploymentContainerImages(images ...string) helper.AssertFunc {
 	return func(deployment *storage.Deployment, _ central.ResourceAction) error {
 		if len(deployment.GetContainers()) != len(images) {
 			return errors.Errorf("number of containers does not match slice of images provided: %d != %d", len(deployment.GetContainers()), len(images))
@@ -79,10 +79,10 @@ func assertDeploymentContainerImages(images ...string) resource.AssertFunc {
 
 func (s *PodHierarchySuite) Test_ContainerSpecOnDeployment() {
 	s.testContext.RunTest(
-		resource.WithResources([]resource.K8sResourceInfo{
+		helper.WithResources([]helper.K8sResourceInfo{
 			NginxDeployment,
 		}),
-		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, objects map[string]k8s.Object) {
+		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, objects map[string]k8s.Object) {
 			// wait until pods are created
 			err := wait.For(conditions.New(testC.Resources()).ResourceMatch(objects[NginxDeployment.YamlFile], func(object k8s.Object) bool {
 				d := object.(*appsv1.Deployment)
@@ -96,7 +96,7 @@ func (s *PodHierarchySuite) Test_ContainerSpecOnDeployment() {
 				"nginx deployment should have a single container with nginx:1.14.2 image")
 
 			messages := testC.GetFakeCentral().GetAllMessages()
-			uniquePodNames := resource.GetUniquePodNamesFromPrefix(messages, "sensor-integration", "nginx-")
+			uniquePodNames := helper.GetUniquePodNamesFromPrefix(messages, "sensor-integration", "nginx-")
 			s.Require().Len(uniquePodNames, 3, "Should have received three different pod events")
 		}),
 	)
@@ -104,11 +104,11 @@ func (s *PodHierarchySuite) Test_ContainerSpecOnDeployment() {
 
 func (s *PodHierarchySuite) Test_ParentlessPodsAreTreatedAsDeployments() {
 	s.testContext.RunTest(
-		resource.WithResources([]resource.K8sResourceInfo{
+		helper.WithResources([]helper.K8sResourceInfo{
 			NginxDeployment,
 			NginxPod,
 		}),
-		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, objects map[string]k8s.Object) {
+		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, objects map[string]k8s.Object) {
 			// wait until pods are created
 			err := wait.For(conditions.New(testC.Resources()).ResourceMatch(objects[NginxDeployment.YamlFile], func(object k8s.Object) bool {
 				d := object.(*appsv1.Deployment)
@@ -122,13 +122,13 @@ func (s *PodHierarchySuite) Test_ParentlessPodsAreTreatedAsDeployments() {
 				"nginx standalone pod should have a single container with nginx:1.14.1 image")
 
 			messages := testC.GetFakeCentral().GetAllMessages()
-			uniqueDeployments := resource.GetUniqueDeploymentNames(messages, "sensor-integration")
+			uniqueDeployments := helper.GetUniqueDeploymentNames(messages, "sensor-integration")
 			s.Contains(uniqueDeployments, "nginx-deployment",
 				"Should have receiving at least one deployment with nginx-deployment name")
 			s.Contains(uniqueDeployments, "nginx-rogue",
 				"Should have receiving at least one deployment with nginx-rogue name")
 
-			uniquePodNames := resource.GetUniquePodNamesFromPrefix(messages, "sensor-integration", "nginx-")
+			uniquePodNames := helper.GetUniquePodNamesFromPrefix(messages, "sensor-integration", "nginx-")
 			s.Require().Len(uniquePodNames, 4,
 				"Should have received four different pod events (3 from nginx-deployment and 1 from nginx-rouge")
 		}),
@@ -137,10 +137,10 @@ func (s *PodHierarchySuite) Test_ParentlessPodsAreTreatedAsDeployments() {
 
 func (s *PodHierarchySuite) Test_DeleteDeployment() {
 	s.testContext.RunTest(
-		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 			var id string
 			k8sDeployment := &appsv1.Deployment{}
-			deleteDep, err := testC.ApplyResource(context.Background(), resource.DefaultNamespace, &NginxDeployment, k8sDeployment, nil)
+			deleteDep, err := testC.ApplyResource(context.Background(), helper.DefaultNamespace, &NginxDeployment, k8sDeployment, nil)
 			require.NoError(t, err)
 			id = string(k8sDeployment.GetUID())
 			// Check the deployment is processed
@@ -170,10 +170,10 @@ func (s *PodHierarchySuite) Test_DeleteDeployment() {
 
 func (s *PodHierarchySuite) Test_DeletePod() {
 	s.testContext.RunTest(
-		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 			var id string
 			k8sPod := &v1.Pod{}
-			deletePod, err := testC.ApplyResource(context.Background(), resource.DefaultNamespace, &NginxPod, k8sPod, nil)
+			deletePod, err := testC.ApplyResource(context.Background(), helper.DefaultNamespace, &NginxPod, k8sPod, nil)
 			require.NoError(t, err)
 			id = string(k8sPod.GetUID())
 			// Check the pod is processed

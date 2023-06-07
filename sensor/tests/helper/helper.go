@@ -1,4 +1,4 @@
-package resource
+package helper
 
 import (
 	"context"
@@ -6,7 +6,9 @@ import (
 	"log"
 	"net"
 	"os"
+	"path"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -14,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
@@ -53,6 +56,9 @@ const (
 
 	// defaultTicker the default interval for the assertion functions to retry the assertion
 	defaultTicker = 500 * time.Millisecond
+
+	// certID is the id in the certificate which is sent on the hello message
+	certID = "00000000-0000-4000-A000-000000000000"
 )
 
 // K8sResourceInfo is a test file in YAML or a struct
@@ -117,9 +123,18 @@ type TestContext struct {
 	fakeCentral     *centralDebug.FakeService
 	centralReceived chan *central.MsgFromSensor
 	stopFn          func()
+	sensorStopped   concurrency.ReadOnlyErrorSignal
+	centralStopped  atomic.Bool
+	config          CentralConfig
+	grpcFactory     centralDebug.FakeGRPCFactory
+
+	// archivedMessages holds messages sent from Sensor to FakeCentral before stopping Central. These can be fetched
+	// in case the test needs to assert on messages sent right before stopping the gRPC connection.
+	archivedMessages [][]*central.MsgFromSensor
 }
 
-func defaultCentralConfig() CentralConfig {
+// DefaultCentralConfig hold default values when starting local sensor in tests.
+func DefaultCentralConfig() CentralConfig {
 	// Uses replayed policies.json file as default policies for tests.
 	// These are all policies in ACS, which means many alerts might be generated.
 	policies, err := testutils.GetPoliciesFromFile("../../replay/data/policies.json")
@@ -129,12 +144,13 @@ func defaultCentralConfig() CentralConfig {
 
 	return CentralConfig{
 		InitialSystemPolicies: policies,
+		CertFilePath:          "../../../../tools/local-sensor/certs/",
 	}
 }
 
 // NewContext creates a new test context with default configuration.
 func NewContext(t *testing.T) (*TestContext, error) {
-	return NewContextWithConfig(t, defaultCentralConfig())
+	return NewContextWithConfig(t, DefaultCentralConfig())
 }
 
 // NewContextWithConfig creates a new test context with custom central configuration.
@@ -144,16 +160,21 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 	if err != nil {
 		return nil, err
 	}
-	fakeCentral, startFn, stopFn := startSensorAndFakeCentral(envConfig, config)
-	ch := make(chan *central.MsgFromSensor, 100)
-	fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
-		ch <- msg
-	})
 
-	startFn()
-	return &TestContext{
-		t, r, envConfig, fakeCentral, ch, stopFn,
-	}, nil
+	tc := TestContext{
+		t:                t,
+		r:                r,
+		env:              envConfig,
+		centralReceived:  make(chan *central.MsgFromSensor, 100),
+		centralStopped:   atomic.Bool{},
+		config:           config,
+		archivedMessages: [][]*central.MsgFromSensor{},
+	}
+
+	tc.StartFakeGRPC()
+	tc.startSensorInstance(envConfig)
+
+	return &tc, nil
 }
 
 // WithPermutation sets whether the test should run with permutations
@@ -218,6 +239,11 @@ func (c *TestContext) deleteNs(ctx context.Context, name string) error {
 	return nil
 }
 
+// SensorStopped checks if sensor under test stopped.
+func (c *TestContext) SensorStopped() bool {
+	return c.sensorStopped.IsDone()
+}
+
 func (c *TestContext) createTestNs(ctx context.Context, name string) (*v1.Namespace, func() error, error) {
 	utils.IgnoreError(func() error {
 		return c.deleteNs(ctx, name)
@@ -230,6 +256,46 @@ func (c *TestContext) createTestNs(ctx context.Context, name string) (*v1.Namesp
 	return &nsObj, func() error {
 		return c.deleteNs(ctx, name)
 	}, nil
+}
+
+// StopCentralGRPC will attempt to stop fake central. If it was already stopped, nothing happens
+func (c *TestContext) StopCentralGRPC() {
+	if c.centralStopped.CompareAndSwap(false, true) {
+		c.fakeCentral.Stop()
+		messagesBeforeStopping := c.fakeCentral.GetAllMessages()
+		c.archivedMessages = append(c.archivedMessages, messagesBeforeStopping)
+	}
+}
+
+// RestartFakeCentralConnection creates a new fake central connection and updates factory pointers.
+// It calls StopCentralGRPC to make sure current fake central is stopped before creating new instance.
+func (c *TestContext) RestartFakeCentralConnection() {
+	c.StopCentralGRPC()
+	c.StartFakeGRPC()
+}
+
+// StartFakeGRPC will start a gRPC server to act as Central.
+func (c *TestContext) StartFakeGRPC() {
+	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
+		message.SensorHello(certID),
+		message.ClusterConfig(),
+		message.PolicySync(c.config.InitialSystemPolicies),
+		message.BaselineSync([]*storage.ProcessBaseline{}))
+
+	conn, shutdown := createConnectionAndStartServer(fakeCentral)
+
+	// grpcFactory will be nil on the first run of the testContext
+	if c.grpcFactory == nil {
+		c.grpcFactory = centralDebug.MakeFakeConnectionFactory(conn)
+	} else {
+		c.grpcFactory.OverwriteCentralConnection(conn)
+	}
+
+	fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
+		c.centralReceived <- msg
+	})
+	fakeCentral.OnShutdown(shutdown)
+	c.fakeCentral = fakeCentral
 }
 
 // GetFakeCentral gets a fake central instance. This is used to fetch messages sent by sensor under test.
@@ -407,7 +473,7 @@ func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion Asse
 			c.t.Fatalf("timeout reached waiting for state: (%s): %s", message, lastErr)
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
-			lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, "sensor-integration", name)
+			lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, DefaultNamespace, name)
 			deployment := lastDeploymentUpdate.GetEvent().GetDeployment()
 			action := lastDeploymentUpdate.GetEvent().GetAction()
 			if deployment != nil {
@@ -417,6 +483,16 @@ func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion Asse
 			}
 		}
 	}
+}
+
+// DeploymentCreateReceived checks if a deployment object was received with CREATE action
+func (c *TestContext) DeploymentCreateReceived(name string) {
+	c.LastDeploymentState(name, func(_ *storage.Deployment, action central.ResourceAction) error {
+		if action != central.ResourceAction_CREATE_RESOURCE {
+			return errors.New("event received is not CREATE")
+		}
+		return nil
+	}, "Deployment should be created")
 }
 
 // GetLastMessageMatching finds last element in slice matching `matchFn`.
@@ -511,52 +587,45 @@ func GetAllAlertsForDeploymentName(messages []*central.MsgFromSensor, name strin
 // CentralConfig allows tests to inject ACS policies in the tests
 type CentralConfig struct {
 	InitialSystemPolicies []*storage.Policy
+	CertFilePath          string
 }
 
-func startSensorAndFakeCentral(env *envconf.Config, config CentralConfig) (*centralDebug.FakeService, func(), func()) {
-	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "../../../../tools/local-sensor/certs/cert.pem"))
-	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "../../../../tools/local-sensor/certs/key.pem"))
-	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "../../../../tools/local-sensor/certs/caCert.pem"))
-	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_KEY_FILE", "../../../../tools/local-sensor/certs/caKey.pem"))
-
-	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
-		message.SensorHello("00000000-0000-4000-A000-000000000000"),
-		message.ClusterConfig(),
-		message.PolicySync(config.InitialSystemPolicies),
-		message.BaselineSync([]*storage.ProcessBaseline{}))
-
-	conn, spyCentral, _ := createConnectionAndStartServer(fakeCentral)
-	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
+func (c *TestContext) startSensorInstance(env *envconf.Config) {
+	c.t.Setenv("ROX_MTLS_CERT_FILE", path.Join(c.config.CertFilePath, "/cert.pem"))
+	c.t.Setenv("ROX_MTLS_KEY_FILE", path.Join(c.config.CertFilePath, "/key.pem"))
+	c.t.Setenv("ROX_MTLS_CA_FILE", path.Join(c.config.CertFilePath, "/caCert.pem"))
+	c.t.Setenv("ROX_MTLS_CA_KEY_FILE", path.Join(c.config.CertFilePath, "/caKey.pem"))
 
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(client.MustCreateInterfaceFromRest(env.Client().RESTConfig())).
 		WithLocalSensor(true).
 		WithResyncPeriod(1 * time.Second).
-		WithCentralConnectionFactory(fakeConnectionFactory))
+		WithCentralConnectionFactory(c.grpcFactory))
 
 	if err != nil {
 		panic(err)
 	}
 
-	return fakeCentral, func() {
-			go s.Start()
-			spyCentral.ConnectionStarted.Wait()
-		}, func() {
-			go s.Stop()
-			spyCentral.KillSwitch.Done()
-		}
+	c.sensorStopped = s.Stopped()
+	c.stopFn = func() {
+		go s.Stop()
+		c.fakeCentral.KillSwitch.Done()
+	}
+
+	go s.Start()
+	c.fakeCentral.ConnectionStarted.Wait()
 }
 
-func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grpc.ClientConn, *centralDebug.FakeService, func()) {
+func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grpc.ClientConn, func()) {
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
-	server := grpc.NewServer()
-	central.RegisterSensorServiceServer(server, fakeCentral)
+	fakeCentral.ServerPointer = grpc.NewServer()
+	central.RegisterSensorServiceServer(fakeCentral.ServerPointer, fakeCentral)
 
 	go func() {
 		utils.IgnoreError(func() error {
-			return server.Serve(listener)
+			return fakeCentral.ServerPointer.Serve(listener)
 		})
 	}()
 
@@ -570,10 +639,10 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 
 	closeF := func() {
 		utils.IgnoreError(listener.Close)
-		server.Stop()
+		fakeCentral.ServerPointer.Stop()
 	}
 
-	return conn, fakeCentral, closeF
+	return conn, closeF
 }
 
 // ApplyResourceNoObject creates a Kubernetes resource using `ApplyResource` without requiring an object reference.

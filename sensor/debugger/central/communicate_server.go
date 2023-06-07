@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -19,6 +20,9 @@ type FakeService struct {
 
 	ConnectionStarted concurrency.Signal
 	KillSwitch        concurrency.Signal
+
+	// Server pointer exposes the underlying gRPC server connection
+	ServerPointer *grpc.Server
 
 	// initialMessages are messages to be sent to sensor once connection is open
 	initialMessages []*central.MsgToSensor
@@ -111,7 +115,8 @@ func (s *FakeService) startInputIngestion(stream central.SensorService_Communica
 			if err == io.EOF {
 				break
 			}
-			log.Fatalf("error receiving message from sensor: %s", err)
+			log.Printf("grpc stream stopped: %s\n", err)
+			break
 		}
 		if s.KillSwitch.IsDone() {
 			return
@@ -171,5 +176,7 @@ func (s *FakeService) OnMessage(callback func(sensor *central.MsgFromSensor)) {
 
 // Stop kills fake central.
 func (s *FakeService) Stop() {
-	s.onShutdown()
+	if s.onShutdown != nil {
+		s.onShutdown()
+	}
 }

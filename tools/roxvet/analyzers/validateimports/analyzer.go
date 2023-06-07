@@ -301,7 +301,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	}
 
 	if validImportRoot == "sensor/debugger" {
-		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/kubernetes/listener/resources", "sensor/kubernetes/client")
+		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/kubernetes/listener/resources", "sensor/kubernetes/client", "sensor/common/centralclient")
 	}
 
 	if validImportRoot == "tools" {
