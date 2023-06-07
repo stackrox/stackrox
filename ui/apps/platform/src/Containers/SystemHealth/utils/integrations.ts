@@ -1,11 +1,4 @@
-import {
-    styleHealthy,
-    styleUnhealthy,
-    styleUninitialized,
-} from 'Containers/Clusters/cluster.helpers';
 import { IntegrationBase } from 'services/IntegrationsService';
-
-import { CategoryStyle } from './health';
 
 interface IdNameInterface {
     id: string;
@@ -26,20 +19,6 @@ interface IntegrationsListItem {
     type: string;
     label: string;
 }
-
-export type IntegrationStatus = 'HEALTHY' | 'UNINITIALIZED' | 'UNHEALTHY';
-
-export const integrationLabelMap: Record<IntegrationStatus, string> = {
-    HEALTHY: 'Healthy',
-    UNINITIALIZED: 'Uninitialized',
-    UNHEALTHY: 'Unhealthy',
-};
-
-export const integrationStyleMap: Record<IntegrationStatus, CategoryStyle> = {
-    HEALTHY: styleHealthy,
-    UNINITIALIZED: styleUninitialized,
-    UNHEALTHY: styleUnhealthy,
-};
 
 /*
  * Replace integration health type with integration type and add corresponding label.
