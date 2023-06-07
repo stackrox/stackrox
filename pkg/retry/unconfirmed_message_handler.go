@@ -86,7 +86,7 @@ func (s *UnconfirmedMessageHandlerImpl) retryLater() {
 func (s *UnconfirmedMessageHandlerImpl) ObserveSending() {
 	s.numUnackedSendings.Add(1)
 	log.Debugf("Observing message being sent. Waiting for an ACK for %s", s.baseInterval.String())
-	if !s.numUnackedSendings.CompareAndSwap(1, 1) { // if s.numUnackedSendings > 1
+	if s.numUnackedSendings.Load() > 1 {
 		// Not resetting the ticker to the the baseInterval, because previous message was not acked at all
 		return
 	}
