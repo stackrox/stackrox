@@ -25,15 +25,13 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
-	// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-	policyCategorySAC = sac.ForResource(resources.Policy)
+	log               = logging.LoggerForModule()
+	policyCategorySAC = sac.ForResource(resources.WorkflowAdministration)
 
 	policyCategoryCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-			sac.ResourceScopeKeys(resources.Policy)))
+			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 )
 
 type datastoreImpl struct {

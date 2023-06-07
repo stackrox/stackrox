@@ -42,7 +42,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ReportConfigurationsSchema
-	targetResource = resources.VulnerabilityReports
+	targetResource = resources.WorkflowAdministration
 )
 
 // Store is the interface to interact with the storage for storage.ReportConfiguration

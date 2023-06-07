@@ -43,7 +43,7 @@ func init() {
 // Policies returns GraphQL resolvers for all policies
 func (resolver *Resolver) Policies(ctx context.Context, args PaginatedQuery) ([]*policyResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Policies")
-	if err := readPolicies(ctx); err != nil {
+	if err := readWorkflowAdministration(ctx); err != nil {
 		return nil, err
 	}
 	q, err := args.AsV1QueryOrEmpty()
@@ -57,7 +57,7 @@ func (resolver *Resolver) Policies(ctx context.Context, args PaginatedQuery) ([]
 // Policy returns a GraphQL resolver for a given policy
 func (resolver *Resolver) Policy(ctx context.Context, args struct{ *graphql.ID }) (*policyResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Policy")
-	if err := readPolicies(ctx); err != nil {
+	if err := readWorkflowAdministration(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.wrapPolicy(resolver.PolicyDataStore.GetPolicy(ctx, string(*args.ID)))
@@ -66,7 +66,7 @@ func (resolver *Resolver) Policy(ctx context.Context, args struct{ *graphql.ID }
 // PolicyCount returns count of all policies across infrastructure
 func (resolver *Resolver) PolicyCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "PolicyCount")
-	if err := readPolicies(ctx); err != nil {
+	if err := readWorkflowAdministration(ctx); err != nil {
 		return 0, err
 	}
 	q, err := args.AsV1QueryOrEmpty()

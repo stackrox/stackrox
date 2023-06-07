@@ -21,13 +21,11 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-		user.With(permissions.View(resources.Policy)): {
+		user.With(permissions.View(resources.WorkflowAdministration)): {
 			"/v1.PolicyCategoryService/GetPolicyCategory",
 			"/v1.PolicyCategoryService/GetPolicyCategories",
 		},
-		// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-		user.With(permissions.Modify(resources.Policy)): {
+		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			"/v1.PolicyCategoryService/PostPolicyCategory",
 			"/v1.PolicyCategoryService/RenamePolicyCategory",
 			"/v1.PolicyCategoryService/DeletePolicyCategory",

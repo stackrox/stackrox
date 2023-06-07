@@ -52,11 +52,13 @@ function VulnMgmtReportDetail({ report, reportScope }: VulnMgmtReportDetailProps
     const [isActionsOpen, setIsActionsOpen] = useState(false);
 
     const { hasReadWriteAccess } = usePermissions();
-    const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
+    const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
     const hasAccessScopeWriteAccess = hasReadWriteAccess('Access');
     const hasNotifierIntegrationWriteAccess = hasReadWriteAccess('Integration');
     const canWriteReports =
-        hasVulnReportWriteAccess && hasAccessScopeWriteAccess && hasNotifierIntegrationWriteAccess;
+        hasWorkflowAdministrationWriteAccess &&
+        hasAccessScopeWriteAccess &&
+        hasNotifierIntegrationWriteAccess;
 
     const dropdownItems: ReactElement[] = [];
     if (canWriteReports) {

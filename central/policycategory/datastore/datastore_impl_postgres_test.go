@@ -79,7 +79,7 @@ func (s *PolicyCategoryPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.Policy),
+		sac.ResourceScopeKeys(resources.WorkflowAdministration),
 	))
 
 	// Add category.

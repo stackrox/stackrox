@@ -18,13 +18,11 @@
         "NetworkGraph": "READ_ACCESS",
         "NetworkPolicy": "READ_ACCESS",
         "Node": "NO_ACCESS",
-        "Policy": "READ_ACCESS",
         "Secret": "READ_ACCESS",
         "ServiceAccount": "NO_ACCESS",
         "VulnerabilityManagementApprovals": "NO_ACCESS",
         "VulnerabilityManagementRequests": "NO_ACCESS",
-        "VulnerabilityReports": "NO_ACCESS",
         "WatchedImage": "READ_ACCESS",
-        "WorkflowAdministration" : "NO_ACCESS"
+        "WorkflowAdministration" : "READ_ACCESS"
     }
 }
