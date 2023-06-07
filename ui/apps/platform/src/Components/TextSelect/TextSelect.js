@@ -22,11 +22,8 @@ const TextSelect = ({ ...rest }) => {
         control: (base) => ({
             ...base,
             border: 'none',
-            'letter-spacing': '.03125rem',
-            'text-transform': 'uppercase',
             'font-weight': '700!important',
             color: 'var(--base-600)',
-            'font-size': '.6875rem',
             cursor: 'pointer !important',
         }),
         indicatorSeparator: (base) => ({ ...base, display: 'none' }),
