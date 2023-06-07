@@ -261,10 +261,8 @@ func main() {
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
 	log.Warn("The following permission resources have been replaced:\n" +
-		"	Access replaces AuthProvider, Group, Licenses, and User\n" +
-		"The following permission resources will be replaced in the upcoming versions:\n" +
-		"	Access will replace Role\n" +
-		"	WorkflowAdministration will replace Policy and VulnerabilityReports.")
+		"	Access replaces AuthProvider, Group, Licenses, Role, and User\n" +
+		"	WorkflowAdministration replaces Policy and VulnerabilityReports\n")
 	ensureDB(ctx)
 
 	// Need to remove the backup clone and set the current version

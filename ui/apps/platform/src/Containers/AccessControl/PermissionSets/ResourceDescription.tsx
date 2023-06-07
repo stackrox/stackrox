@@ -32,15 +32,12 @@ const resourceDescriptions: Record<ResourceName, string> = {
     NetworkPolicy:
         'Read: View network policies in secured clusters and simulate changes. Write: Apply network policy changes in secured clusters.',
     Node: 'Read: View Kubernetes nodes in secured clusters. Write: N/A',
-    Policy: 'Read: View system policies. Write: Add, modify, or delete system policies.',
     Secret: 'Read: View metadata about secrets in secured clusters. Write: N/A',
     ServiceAccount: 'Read: List Kubernetes service accounts in secured clusters. Write: N/A',
     VulnerabilityManagementApprovals:
         'Read: View all pending deferral or false positive requests for vulnerabilities. Write: Approve or deny any pending deferral or false positive requests and move any previously approved requests back to observed.',
     VulnerabilityManagementRequests:
         'Read: View all pending deferral or false positive requests for vulnerabilities. Write: Request a deferral on a vulnerability, mark it as a false positive or move a pending or previously approved request (made by the same user) back to observed.',
-    VulnerabilityReports:
-        'Read: View all vulnerability report configurations. Write: Add, modify or delete vulnerability report configurations.',
     WatchedImage:
         'Read: View undeployed watched images monitored. Write: Configure watched images.',
     WorkflowAdministration:
