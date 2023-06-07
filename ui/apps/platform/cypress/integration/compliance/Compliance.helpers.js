@@ -23,7 +23,7 @@ function getEntityPagePath(entitiesKey) {
 
 // opname
 
-const routeMatcherMapForComplianceDashboard = getRouteMatcherMapForGraphQL([
+const opnamesWithoutStandards = [
     'clustersCount',
     'namespacesCount',
     'nodesCount',
@@ -34,13 +34,24 @@ const routeMatcherMapForComplianceDashboard = getRouteMatcherMapForGraphQL([
     'getAggregatedResultsAcrossEntity_NAMESPACE',
     'getAggregatedResultsAcrossEntity_NODE',
     'getComplianceStandards',
+];
+
+export const routeMatcherMapWithoutStandards =
+    getRouteMatcherMapForGraphQL(opnamesWithoutStandards);
+
+// TODO are these reliable after hideScanResults feature?
+/*
+const opnamesOfStandards = [
     'complianceStandards_CIS_Docker_v1_2_0',
     'complianceStandards_CIS_Kubernetes_v1_5',
     'complianceStandards_HIPAA_164',
     'complianceStandards_NIST_800_190',
     'complianceStandards_NIST_SP_800_53_Rev_4',
     'complianceStandards_PCI_DSS_3_2',
-]);
+];
+*/
+
+const routeMatcherMapForComplianceDashboard = getRouteMatcherMapForGraphQL(opnamesWithoutStandards);
 
 const opnameForEntities = {
     clusters: 'clustersList', // just clusters would be even better, and so on
