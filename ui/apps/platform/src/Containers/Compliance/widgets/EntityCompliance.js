@@ -82,7 +82,6 @@ const EntityCompliance = ({ entityType, entityName, clusterName }) => {
                             <NoResultsMessage message="No data available. Please ensure your cluster is properly configured." />
                         );
                     } else {
-                        console.log(JSON.stringify(results, null, 2));
                         const barData = getBarData(results);
                         const totals = getTotals(results);
                         const pct =
