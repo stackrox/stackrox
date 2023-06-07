@@ -10,7 +10,7 @@ import { getEntityPagePath } from '../searchUtils';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
-import DatePhraseTd from '../components/DatePhraseTd';
+import DateDistanceTd from '../components/DatePhraseTd';
 import TooltipTh from '../components/TooltipTh';
 import { VulnerabilitySeverityLabel } from '../types';
 
@@ -139,7 +139,7 @@ function DeploymentsTable({
                                     </>
                                 </Td>
                                 <Td>
-                                    <DatePhraseTd date={created} />
+                                    <DateDistanceTd date={created} />
                                 </Td>
                             </Tr>
                         </Tbody>

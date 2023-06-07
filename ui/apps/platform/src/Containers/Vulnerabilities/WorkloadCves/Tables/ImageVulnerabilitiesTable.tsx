@@ -26,7 +26,7 @@ import ImageComponentVulnerabilitiesTable, {
 } from './ImageComponentVulnerabilitiesTable';
 
 import EmptyTableResults from '../components/EmptyTableResults';
-import DatePhraseTd from '../components/DatePhraseTd';
+import DateDistanceTd from '../components/DatePhraseTd';
 import CvssTd from '../components/CvssTd';
 import { getAnyVulnerabilityIsFixable } from './table.utils';
 
@@ -143,7 +143,7 @@ function ImageVulnerabilitiesTable({
                                         : `${imageComponents.length} components`}
                                 </Td>
                                 <Td dataLabel="First discovered">
-                                    <DatePhraseTd date={discoveredAtImage} />
+                                    <DateDistanceTd date={discoveredAtImage} />
                                 </Td>
                             </Tr>
                             <Tr isExpanded={isExpanded}>

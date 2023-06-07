@@ -2,7 +2,7 @@ import React from 'react';
 import { LabelGroup, Label } from '@patternfly/react-core';
 import { gql } from '@apollo/client';
 
-import { getDistanceStrictAsPhrase, getDateTime } from 'utils/dateUtils';
+import { getDistanceStrict, getDateTime } from 'utils/dateUtils';
 
 export type ImageDetails = {
     deploymentCount: number;
@@ -45,7 +45,7 @@ function ImageDetailBadges({ imageData }: ImageDetailBadgesProps) {
         <LabelGroup numLabels={Infinity}>
             <Label color={isActive ? 'green' : 'gold'}>{isActive ? 'Active' : 'Inactive'}</Label>
             {operatingSystem && <Label>OS: {operatingSystem}</Label>}
-            {created && <Label>Age: {getDistanceStrictAsPhrase(created, new Date())}</Label>}
+            {created && <Label>Age: {getDistanceStrict(created, new Date())}</Label>}
             {scanTime && (
                 <Label>
                     Scan time: {getDateTime(scanTime)} by {dataSource?.name ?? 'Unknown Scanner'}
