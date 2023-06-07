@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import { fetchNetworkPolicies } from 'services/NetworkService';
 import { NetworkPolicy } from 'types/networkPolicy.proto';
@@ -13,7 +14,7 @@ const defaultResultState = { networkPolicies: [], error: null, isLoading: true }
 function useFetchNetworkPolicies(policyIds: string[]): Result {
     const [result, setResult] = useState<Result>(defaultResultState);
 
-    useEffect(() => {
+    useDeepCompareEffect(() => {
         setResult(defaultResultState);
 
         if (policyIds) {

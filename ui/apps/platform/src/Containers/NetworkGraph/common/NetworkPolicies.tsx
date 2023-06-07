@@ -31,7 +31,7 @@ type NetworkPolicyYAML = {
     yaml: string;
 };
 
-const allNetworkPoliciesId = 'network-policy-combined-yaml-pf-key';
+const allNetworkPoliciesId = 'All network policies';
 
 function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React.ReactElement {
     const { networkPolicies, isLoading, error } = useFetchNetworkPolicies(policyIds);
@@ -126,7 +126,9 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                         handleSelect={handleSelectedNetworkPolicy}
                         placeholderText="Select a network policy"
                     >
-                        <SelectOption value="all">All network policies</SelectOption>
+                        <SelectOption value={allNetworkPoliciesId}>
+                            All network policies
+                        </SelectOption>
                         <Divider component="li" />
                         <>
                             {networkPolicies.map((networkPolicy) => {
