@@ -16,6 +16,7 @@ import {
 import { CodeEditor, CodeEditorControl, Language } from '@patternfly/react-code-editor';
 import { MoonIcon, SunIcon } from '@patternfly/react-icons';
 
+import useURLParameter from 'hooks/useURLParameter';
 import download from 'utils/download';
 import SelectSingle from 'Components/SelectSingle';
 import { useTheme } from 'Containers/ThemeProvider';
@@ -31,12 +32,17 @@ type NetworkPolicyYAML = {
     yaml: string;
 };
 
-const allNetworkPoliciesId = 'network-policy-combined-yaml-pf-key';
+const allNetworkPoliciesId = 'All network policies';
 
 function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React.ReactElement {
     const { networkPolicies, isLoading, error } = useFetchNetworkPolicies(policyIds);
     const { isDarkMode } = useTheme();
     const [customDarkMode, setCustomDarkMode] = React.useState(isDarkMode);
+    const [selectednetpolicy, setSelectednetpolicy] = useURLParameter(
+        'selectednetpolicy',
+        undefined
+    );
+    console.log({ selectednetpolicy });
 
     const allNetworkPoliciesYAML = useMemo(
         () => ({
@@ -126,7 +132,9 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                         handleSelect={handleSelectedNetworkPolicy}
                         placeholderText="Select a network policy"
                     >
-                        <SelectOption value="all">All network policies</SelectOption>
+                        <SelectOption value={allNetworkPoliciesId}>
+                            All network policies
+                        </SelectOption>
                         <Divider component="li" />
                         <>
                             {networkPolicies.map((networkPolicy) => {
