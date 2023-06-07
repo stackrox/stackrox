@@ -9,13 +9,13 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/tests/resource"
+	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stretchr/testify/suite"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 )
 
 var (
-	Pod = resource.K8sResourceInfo{Kind: "Pod", YamlFile: "pod.yaml"}
+	Pod = helper.K8sResourceInfo{Kind: "Pod", YamlFile: "pod.yaml"}
 
 	Policies = []*storage.Policy{
 		{
@@ -53,7 +53,7 @@ var (
 )
 
 type ImageScanSuite struct {
-	testContext *resource.TestContext
+	testContext *helper.TestContext
 	suite.Suite
 }
 
@@ -63,9 +63,9 @@ func Test_ImageScan(t *testing.T) {
 
 func (s *ImageScanSuite) SetupSuite() {
 	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
-	testContext, err := resource.NewContextWithConfig(s.T(), resource.CentralConfig{
-		InitialSystemPolicies: Policies,
-	})
+	customConfig := helper.DefaultCentralConfig()
+	customConfig.InitialSystemPolicies = Policies
+	testContext, err := helper.NewContextWithConfig(s.T(), customConfig)
 	s.Require().NoError(err)
 	s.testContext = testContext
 }
@@ -76,8 +76,8 @@ func (s *ImageScanSuite) TearDownTest() {
 
 func (s *ImageScanSuite) Test_AlertsUpdatedOnImageUpdate() {
 	s.testContext.RunTest(
-		resource.WithResources([]resource.K8sResourceInfo{Pod}),
-		resource.WithTestCase(func(t *testing.T, tc *resource.TestContext, resource map[string]k8s.Object) {
+		helper.WithResources([]helper.K8sResourceInfo{Pod}),
+		helper.WithTestCase(func(t *testing.T, tc *helper.TestContext, resource map[string]k8s.Object) {
 			var image *storage.ContainerImage
 			// Image should be received by central
 			fmt.Println("lvm: waiting for pod")

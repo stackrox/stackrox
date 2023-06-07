@@ -5,14 +5,16 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/metrics"
 )
 
 type centralSenderImpl struct {
-	senders []common.SensorComponent
-	stopper concurrency.Stopper
+	senders  []common.SensorComponent
+	stopper  concurrency.Stopper
+	finished *sync.WaitGroup
 }
 
 func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, onStops ...func(error)) {
@@ -49,8 +51,10 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 	defer func() {
 		s.stopper.Flow().ReportStopped()
 		runAll(s.stopper.Client().Stopped().Err(), onStops...)
+		s.finished.Done()
 	}()
 
+	s.finished.Add(1)
 	wrappedStream := metrics.NewCountingEventStream(stream, "unique")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "unique")
 	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream)
