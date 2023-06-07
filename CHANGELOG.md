@@ -26,7 +26,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-14398: As announced in 3.74, the permission `Access` replaces the deprecated permission `Role`.
 - ROX-14398: As announced in 3.74, the `Scope Manager` system role and permission set will be removed. If existing product installations do have customer references to either the `Scope Manager` system role or the `Scope Manager` system permission set, then the referenced object will be adjusted to contain a description mentioning its deprecation. Furthermore, the objects will not be marked as system resources, and will not be supported anymore.
 - ROX-17031: env var `ROX_FORCE_LOCAL_IMAGE_SCANNING` has been removed and replaced by the `DelegatedRegistryConfig` API.
-- ROX-13888: As announced in 3.74, the permission `WorkflowAdministration` replaces the deprecated permissions `Vulnerability Reports, Policy`. 
+- ROX-13888: As announced in 3.74, the permission `WorkflowAdministration` replaces the deprecated permissions `Vulnerability Reports` and `Policy`. 
 
 - KernelModule collection has been removed, following deprecation in 4.0.
     - Secured clusters configured to use KernelModule collection will automatically switch to EBPF

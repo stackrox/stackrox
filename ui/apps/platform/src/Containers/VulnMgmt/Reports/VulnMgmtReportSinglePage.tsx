@@ -19,7 +19,7 @@ function VulnMgmtReportPage(): ReactElement {
     }
 
     const { hasReadWriteAccess } = usePermissions();
-    const hasVulnReportWriteAccess = hasReadWriteAccess('WorkflowAdministration');
+    const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
 
     const queryObject = getQueryObject(search);
     const { action } = queryObject;
@@ -44,7 +44,7 @@ function VulnMgmtReportPage(): ReactElement {
                     {getAxiosErrorMessage(error)}
                 </Alert>
             )}
-            {action === 'edit' && hasVulnReportWriteAccess && !!report ? (
+            {action === 'edit' && hasWorkflowAdministrationWriteAccess && !!report ? (
                 <VulnMgmtEditReportPage
                     report={report}
                     reportScope={reportScope}

@@ -96,6 +96,14 @@ var defaultPermissionSets = map[string]permSetAttributes{
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.VulnReporter],
 		description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
 		resourceWithAccess: func() []permissions.ResourceWithAccess {
+			if !env.PostgresDatastoreEnabled.BooleanSetting() {
+				return []permissions.ResourceWithAccess{
+					permissions.View(resources.Access),                   // required for scopes
+					permissions.View(resources.Integration),              // required for vuln report configurations
+					permissions.View(resources.WorkflowAdministration),   // required for vuln report configurations prior to collections
+					permissions.Modify(resources.WorkflowAdministration), // required for vuln report configurations prior to collections
+				}
+			}
 			return []permissions.ResourceWithAccess{
 				permissions.View(resources.WorkflowAdministration),   // required for vuln report configurations
 				permissions.Modify(resources.WorkflowAdministration), // required for vuln report configurations
