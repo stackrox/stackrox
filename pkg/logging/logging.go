@@ -268,7 +268,7 @@ func GetGlobalLogLevel() zapcore.Level {
 
 // LoggerForModule returns a logger for the current module.
 func LoggerForModule() Logger {
-	return CurrentModule().Logger()
+	return currentModule(3).Logger()
 }
 
 // convenience methods log apply to root logger
@@ -367,7 +367,9 @@ func SortedLevels() []zapcore.Level {
 // Skip allows to specify how much layers of nested calls we will skip during logging.
 func CreateLogger(module *Module, skip int) *LoggerImpl {
 	lc := config
-	return createLoggerWithConfig(&lc, module, skip)
+	// Need to increase the skip by 1 by default since we call the logger inline. Otherwise, the location of the caller
+	// would also be set to this file.
+	return createLoggerWithConfig(&lc, module, skip+1)
 }
 
 func createLoggerWithConfig(lc *zap.Config, module *Module, skip int) *LoggerImpl {
