@@ -10,12 +10,16 @@ import (
 
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/central/common"
+	"github.com/stackrox/rox/operator/pkg/central/extensions"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -27,12 +31,18 @@ const (
 	managedServicesAnnotation = "platform.stackrox.io/managed-services"
 )
 
+// New creates a new Translator
+func New(client ctrlClient.Client) Translator {
+	return Translator{client: client}
+}
+
 // Translator translates and enriches helm values
 type Translator struct {
+	client ctrlClient.Client
 }
 
 // Translate translates and enriches helm values
-func (t Translator) Translate(_ context.Context, u *unstructured.Unstructured) (chartutil.Values, error) {
+func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured) (chartutil.Values, error) {
 	baseValues, err := chartutil.ReadValues(baseValuesYAML)
 	utils.CrashOnError(err) // ensured through unit test that this doesn't happen.
 
@@ -42,7 +52,7 @@ func (t Translator) Translate(_ context.Context, u *unstructured.Unstructured) (
 		return nil, err
 	}
 
-	valsFromCR, err := translate(c)
+	valsFromCR, err := t.translate(ctx, c)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +66,7 @@ func (t Translator) Translate(_ context.Context, u *unstructured.Unstructured) (
 }
 
 // translate translates a Central CR into helm values.
-func translate(c platform.Central) (chartutil.Values, error) {
+func (t Translator) translate(ctx context.Context, c platform.Central) (chartutil.Values, error) {
 	v := translation.NewValuesBuilder()
 
 	v.AddAllFrom(translation.GetImagePullSecrets(c.Spec.ImagePullSecrets))
@@ -70,8 +80,19 @@ func translate(c platform.Central) (chartutil.Values, error) {
 	if centralSpec == nil {
 		centralSpec = &platform.CentralComponentSpec{}
 	}
+	obsoletePVC := common.ObsoletePVC(c.GetAnnotations())
+	checker := &pvcStateChecker{
+		ctx:       ctx,
+		client:    t.client,
+		namespace: c.GetNamespace(),
+	}
 
-	v.AddChild("central", getCentralComponentValues(centralSpec))
+	central, err := getCentralComponentValues(centralSpec, checker, obsoletePVC)
+	if err != nil {
+		return nil, err
+	}
+
+	v.AddChild("central", central)
 
 	if c.Spec.Scanner != nil {
 		v.AddChild("scanner", getCentralScannerComponentValues(c.Spec.Scanner))
@@ -137,23 +158,44 @@ func getCentralDBPersistenceValues(p *platform.DBPersistence) *translation.Value
 	return &persistence
 }
 
-func getCentralPersistenceValues(p *platform.Persistence) *translation.ValuesBuilder {
+func getCentralPersistenceValues(p *platform.Persistence, checker *pvcStateChecker, obsoletePVC bool) (*translation.ValuesBuilder, error) {
 	persistence := translation.NewValuesBuilder()
+	// Check pvcs which should exist in cluster.
+	if obsoletePVC {
+		persistence.SetBoolValue("none", true)
+		return &persistence, nil
+	}
+
 	if hostPath := p.GetHostPath(); hostPath != "" {
 		persistence.SetStringValue("hostPath", hostPath)
 	} else {
+		pvc := p.GetPersistentVolumeClaim()
+		lookupName := extensions.DefaultCentralPVCName
+		if pvc != nil {
+			lookupName = pointer.StringDeref(pvc.ClaimName, extensions.DefaultCentralPVCName)
+		}
+		// Do not mount PVC if it does not exist.
+		exists, err := checker.pvcExists(lookupName)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			persistence.SetBoolValue("none", true)
+			return &persistence, nil
+		}
+
 		pvcBuilder := translation.NewValuesBuilder()
 		pvcBuilder.SetBoolValue("createClaim", false)
-		if pvc := p.GetPersistentVolumeClaim(); pvc != nil {
+		if pvc != nil {
 			pvcBuilder.SetString("claimName", pvc.ClaimName)
 		}
 
 		persistence.AddChild("persistentVolumeClaim", &pvcBuilder)
 	}
-	return &persistence
+	return &persistence, nil
 }
 
-func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.ValuesBuilder {
+func getCentralComponentValues(c *platform.CentralComponentSpec, checker *pvcStateChecker, obsoletePVC bool) (*translation.ValuesBuilder, error) {
 	cv := translation.NewValuesBuilder()
 
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
@@ -167,7 +209,12 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 
 	// TODO(ROX-7147): design CentralEndpointSpec, see central_types.go
 
-	cv.AddChild("persistence", getCentralPersistenceValues(c.GetPersistence()))
+	persistence, err := getCentralPersistenceValues(c.GetPersistence(), checker, obsoletePVC)
+	if err != nil {
+		return nil, err
+	}
+
+	cv.AddChild("persistence", persistence)
 
 	if c.Exposure != nil {
 		exposure := translation.NewValuesBuilder()
@@ -198,7 +245,7 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 
 	cv.AddChild("declarativeConfiguration", getDeclarativeConfigurationValues(c.DeclarativeConfiguration))
 
-	return &cv
+	return &cv, nil
 }
 
 func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesBuilder {

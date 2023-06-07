@@ -10,6 +10,7 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/central/common"
 	utils "github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	corev1 "k8s.io/api/core/v1"
@@ -134,6 +135,9 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 	if r.centralObj.DeletionTimestamp != nil || r.persistence == nil {
 		return r.handleDelete()
 	}
+	if common.ObsoletePVC(r.centralObj.GetAnnotations()) {
+		return r.handleDelete()
+	}
 
 	if r.persistence.GetHostPath() != "" {
 		if r.persistence.GetPersistentVolumeClaim() != nil {
@@ -179,6 +183,11 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 	}
 
 	if pvc == nil {
+		// Starting from 4.1, we do not create new PVCs for central.
+		if r.target == PVCTargetCentral {
+			return nil
+		}
+
 		return r.handleCreate(claimName, pvcConfig)
 	}
 
