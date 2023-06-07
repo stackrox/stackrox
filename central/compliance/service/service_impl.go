@@ -133,7 +133,7 @@ func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.Comp
 		if err != nil {
 			return nil, err
 		}
-		//Not exists implies standards is not hidden
+		// Not exists implies standards is not hidden
 		if exists && config.GetHideScanResults() {
 			continue
 		}
