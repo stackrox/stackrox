@@ -171,7 +171,7 @@ func (s *declarativeConfigHealthDatastoreSuite) testGetConfigHealth(getConfigHea
 	s.NotNil(configHealth)
 
 	// 4. With WRITE access and declarative config context key should return a config health.
-	configHealth, err = getConfigHealth(s.hasWriteCtx)
+	configHealth, err = getConfigHealth(s.hasWriteDeclarativeCtx)
 	s.NoError(err)
 	s.NotNil(configHealth)
 }

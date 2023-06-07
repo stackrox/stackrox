@@ -33,14 +33,14 @@ func (ds *datastoreImpl) GetDeclarativeConfigs(ctx context.Context) ([]*storage.
 }
 
 func (ds *datastoreImpl) UpsertDeclarativeConfig(ctx context.Context, configHealth *storage.DeclarativeConfigHealth) error {
-	if err := ds.verifyContextKey(ctx); err != nil {
+	if err := ds.verifyDeclarativeContext(ctx); err != nil {
 		return err
 	}
 	return ds.store.Upsert(ctx, configHealth)
 }
 
 func (ds *datastoreImpl) RemoveDeclarativeConfig(ctx context.Context, id string) error {
-	if err := ds.verifyContextKey(ctx); err != nil {
+	if err := ds.verifyDeclarativeContext(ctx); err != nil {
 		return err
 	}
 
@@ -60,7 +60,7 @@ func (ds *datastoreImpl) GetDeclarativeConfig(ctx context.Context, id string) (*
 }
 
 func (ds *datastoreImpl) UpdateStatusForDeclarativeConfig(ctx context.Context, id string, errToUpdate error) error {
-	if err := ds.verifyContextKey(ctx); err != nil {
+	if err := ds.verifyDeclarativeContext(ctx); err != nil {
 		return err
 	}
 	existingHealth, exists, err := ds.GetDeclarativeConfig(ctx, id)
@@ -85,10 +85,11 @@ func (ds *datastoreImpl) UpdateStatusForDeclarativeConfig(ctx context.Context, i
 	return ds.UpsertDeclarativeConfig(ctx, existingHealth)
 }
 
-func (ds *datastoreImpl) verifyContextKey(ctx context.Context) error {
+func (ds *datastoreImpl) verifyDeclarativeContext(ctx context.Context) error {
 	if !declarativeconfig.HasModifyDeclarativeResourceKey(ctx) {
 		return errox.NotAuthorized.New(
-			"declarative config health cannot be modified with the current permission")
+			"declarative config health can only be modified by clients with permission to modify " +
+				"declarative configuration resources")
 	}
 	return nil
 }
