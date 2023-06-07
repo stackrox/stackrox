@@ -19,6 +19,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   Note that if the environment variable is set, no signatures will be fetched and thus the signature verification feature cannot be used.
 - ROX-16532: Resource limits and requests for the node-inventory container can now be configured via the operator.
 - A new environment variable `ROX_SCAN_TIMEOUT` has been added to Sensor which allows for customizing the image scan timeout used in Sensor initiated scans.
+- ROX-17365: A new environment variable `ROX_DELEGATED_SCANNING_DISABLED` has been added that disables delegated scanning capabilities while leaving other local scanning capabilities intact.
 - ROX-16703: Helm setting `scanner.disable=false` now valid for any secured cluster (instead of OpenShift only). This enables scanner slim to be installed in non-OCP secured clusters.
 
 ### Removed Features
