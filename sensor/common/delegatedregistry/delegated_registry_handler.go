@@ -23,6 +23,8 @@ var (
 
 	scanTimeout         = env.ScanTimeout.DurationSetting()
 	statusUpdateTimeout = 10 * time.Second
+
+	enabled = env.LocalImageScanningEnabled.BooleanSetting() && !env.DelegatedScanningDisabled.BooleanSetting()
 )
 
 // Handler is responsible for processing delegated registry related requests
@@ -48,8 +50,7 @@ func NewHandler(registryStore *registry.Store, localScan *scan.LocalScan) Handle
 }
 
 func (d *delegatedRegistryImpl) Capabilities() []centralsensor.SensorCapability {
-	if !env.LocalImageScanningEnabled.BooleanSetting() {
-		// Do not advertise the capability if local scanning is disabled.
+	if !enabled {
 		return nil
 	}
 
@@ -59,8 +60,7 @@ func (d *delegatedRegistryImpl) Capabilities() []centralsensor.SensorCapability 
 func (d *delegatedRegistryImpl) Notify(_ common.SensorComponentEvent) {}
 
 func (d *delegatedRegistryImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	if !env.LocalImageScanningEnabled.BooleanSetting() {
-		// Ignore all messages if local scanning is disabled.
+	if !enabled {
 		return nil
 	}
 
