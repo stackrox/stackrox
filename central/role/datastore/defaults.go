@@ -91,20 +91,11 @@ var defaultPermissionSets = map[string]permSetAttributes{
 			permissions.Modify(resources.VulnerabilityManagementRequests),
 		},
 	},
-	// TODO ROX-13888 when we migrate to WorkflowAdministration we can remove VulnerabilityReports and Role resources
 	accesscontrol.VulnReporter: {
 		idSuffix:    "vulnreporter",
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.VulnReporter],
 		description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
 		resourceWithAccess: func() []permissions.ResourceWithAccess {
-			if !env.PostgresDatastoreEnabled.BooleanSetting() {
-				return []permissions.ResourceWithAccess{
-					permissions.View(resources.Access),                 // required for scopes
-					permissions.View(resources.Integration),            // required for vuln report configurations
-					permissions.View(resources.VulnerabilityReports),   // required for vuln report configurations prior to collections
-					permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations prior to collections
-				}
-			}
 			return []permissions.ResourceWithAccess{
 				permissions.View(resources.WorkflowAdministration),   // required for vuln report configurations
 				permissions.Modify(resources.WorkflowAdministration), // required for vuln report configurations
@@ -121,7 +112,6 @@ var defaultPermissionSets = map[string]permSetAttributes{
 			permissions.View(resources.Deployment),
 			permissions.View(resources.Image),
 			permissions.View(resources.WatchedImage),
-			permissions.View(resources.VulnerabilityReports),
 			permissions.View(resources.WorkflowAdministration),
 			permissions.Modify(resources.VulnerabilityManagementRequests),
 		},
@@ -140,7 +130,6 @@ var defaultPermissionSets = map[string]permSetAttributes{
 			permissions.Modify(resources.WatchedImage),
 			permissions.Modify(resources.VulnerabilityManagementRequests),
 			permissions.Modify(resources.VulnerabilityManagementApprovals),
-			permissions.Modify(resources.VulnerabilityReports),
 			permissions.Modify(resources.WorkflowAdministration),
 		},
 	},

@@ -42,7 +42,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.PolicyCategoryEdgesSchema
-	targetResource = resources.Policy
+	targetResource = resources.WorkflowAdministration
 )
 
 // Store is the interface to interact with the storage for storage.PolicyCategoryEdge

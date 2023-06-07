@@ -63,7 +63,7 @@ func Singleton() DataStore {
 // from the policies table in postgres
 func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 	policyIDSet := set.NewStringSet()
-	storedPolicies, err := s.GetAll(policyCtx)
+	storedPolicies, err := s.GetAll(workflowAdministrationCtx)
 	if err != nil {
 		panic(err)
 	}
@@ -93,7 +93,7 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
 			p.Categories = []string{}
 		}
-		if err := s.Upsert(policyCtx, p); err != nil {
+		if err := s.Upsert(workflowAdministrationCtx, p); err != nil {
 			utils.CrashOnError(err)
 		}
 		if env.PostgresDatastoreEnabled.BooleanSetting() {
