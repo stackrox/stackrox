@@ -50,6 +50,16 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestWithRetryable() {
 			ackAfter:        []time.Duration{},
 			nackAfter:       []time.Duration{},
 		},
+		"should not reset retries if the first messsage is unacked and second message is sent": {
+			baseDuration: time.Second,
+			wait:         9100 * time.Millisecond,
+			// Withouth reset, it retries 3 times in 9s: (send) 1s, 2s, (send), 3s, (test stop) 4s, 5s.
+			// With reset, it would retry 4 times in 9s: (send) 1s, 2s, (send), 1s, 2s, 3s, (test stop).
+			expectedRetries: 3,
+			sendAfter:       []time.Duration{1 * time.Millisecond, 4100 * time.Millisecond},
+			ackAfter:        []time.Duration{},
+			nackAfter:       []time.Duration{},
+		},
 		"should retry normally when nack is received": {
 			baseDuration:    time.Second,
 			wait:            1100 * time.Millisecond,
@@ -72,6 +82,7 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestWithRetryable() {
 			for _, tt := range cc.sendAfter {
 				go func(tt time.Duration) {
 					<-time.After(tt)
+					suite.T().Logf("Sending test message")
 					umh.ObserveSending()
 				}(tt)
 			}
