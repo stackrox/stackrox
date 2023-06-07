@@ -24,9 +24,7 @@ import (
 
 // ExportAction is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data
 // and then outputting the result as a gzip file
-func ExportAction() error {
-	ctx := context.Background()
-
+func ExportAction(ctx context.Context) error {
 	updaterStore, err := jsonblob.New()
 	if err != nil {
 		return err

@@ -8,7 +8,8 @@ import (
 )
 
 func main() {
-	err := updater.ExportAction()
+	ctx := context.Background()
+	err := updater.ExportAction(ctx)
 	if err != nil {
 		zlog.Error(context.Background()).Msg(err.Error())
 	}
