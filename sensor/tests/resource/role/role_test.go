@@ -122,7 +122,7 @@ func matchBinding(namespace, id string) helper.MatchResource {
 func (s *RoleDependencySuite) Test_BindingHasNoRoleId() {
 	s.testContext.RunTest(
 		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
-			deleteDep, err := testC.ApplyResourceNoObject(context.Background(), "sensor-integration", NginxDeployment, nil)
+			deleteDep, err := testC.ApplyResourceAndWaitNoObject(context.Background(), "sensor-integration", NginxDeployment, nil)
 			defer utils.IgnoreError(deleteDep)
 			require.NoError(t, err)
 
@@ -184,15 +184,15 @@ func (s *RoleDependencySuite) Test_PermissionLevelIsNone() {
 func (s *RoleDependencySuite) Test_MultipleDeploymentUpdates() {
 	s.testContext.RunTest(
 		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
-			deleteDep, err := testC.ApplyResourceNoObject(context.Background(), "sensor-integration", NginxDeployment, nil)
+			deleteDep, err := testC.ApplyResourceAndWaitNoObject(context.Background(), "sensor-integration", NginxDeployment, nil)
 			defer utils.IgnoreError(deleteDep)
 			require.NoError(t, err)
 
-			deleteRoleBinding, err := testC.ApplyResourceNoObject(context.Background(), "sensor-integration", NginxRoleBinding, nil)
+			deleteRoleBinding, err := testC.ApplyResourceAndWaitNoObject(context.Background(), "sensor-integration", NginxRoleBinding, nil)
 			defer utils.IgnoreError(deleteRoleBinding)
 			require.NoError(t, err)
 
-			deleteRole, err := testC.ApplyResourceNoObject(context.Background(), "sensor-integration", NginxRole, nil)
+			deleteRole, err := testC.ApplyResourceAndWaitNoObject(context.Background(), "sensor-integration", NginxRole, nil)
 
 			defer utils.IgnoreError(deleteRole)
 			require.NoError(t, err)

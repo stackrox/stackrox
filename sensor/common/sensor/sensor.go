@@ -304,6 +304,7 @@ func (s *Sensor) changeState(state common.SensorComponentEvent) {
 	s.currentStateMtx.Lock()
 	defer s.currentStateMtx.Unlock()
 	if s.currentState != state {
+		log.Infof("Updating Sensor State to: %s", state)
 		s.currentState = state
 		s.notifyAllComponents(s.currentState)
 	}

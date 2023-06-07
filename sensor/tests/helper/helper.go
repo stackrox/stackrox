@@ -436,8 +436,8 @@ func (c *TestContext) LastResourceStateWithTimeout(matchResourceFn MatchResource
 }
 
 // WaitForSyncEvent will wait until sensor transmits a `Synced` event to Central, at the end of the reconciliation.
-func (c *TestContext) WaitForSyncEvent() {
-	timer := time.NewTimer(defaultWaitTimeout)
+func (c *TestContext) WaitForSyncEvent(timeout time.Duration) {
+	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
 	for {
 		select {
@@ -491,7 +491,7 @@ func (c *TestContext) LastDeploymentState(name string, assertion AssertFunc, mes
 func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion AssertFunc, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
-	var lastErr error
+	lastErr := errors.New("no deployment found")
 	for {
 		select {
 		case <-timer.C:
@@ -523,7 +523,7 @@ func (c *TestContext) DeploymentActionReceived(name string, expectedAction centr
 			return errors.Errorf("event action is %s, but expected %s", action, expectedAction)
 		}
 		return nil
-	}, "Deployment should be received with action")
+	}, fmt.Sprintf("Deployment %s should be received with action %s", name, expectedAction))
 }
 
 // GetLastMessageMatching finds last element in slice matching `matchFn`.
@@ -676,8 +676,9 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 	return conn, closeF
 }
 
-// ApplyResourceNoObject creates a Kubernetes resource using `ApplyResourceAndWait` without requiring an object reference.
-func (c *TestContext) ApplyResourceNoObject(ctx context.Context, ns string, resource K8sResourceInfo, retryFn RetryCallback) (func() error, error) {
+// ApplyResourceAndWaitNoObject creates a Kubernetes resource using `ApplyResourceAndWait` without requiring an object reference.
+// Use this if there is no need to get or manipulate the data in the YAML file.
+func (c *TestContext) ApplyResourceAndWaitNoObject(ctx context.Context, ns string, resource K8sResourceInfo, retryFn RetryCallback) (func() error, error) {
 	obj := objByKind(resource.Kind)
 	return c.ApplyResourceAndWait(ctx, ns, &resource, obj, retryFn)
 }
@@ -719,7 +720,7 @@ func (c *TestContext) ApplyResource(ctx context.Context, ns string, resource *K8
 		); err != nil {
 			return nil, err
 		}
-		resource.Name = resource.YamlFile
+		resource.Name = obj.GetName()
 	}
 
 	if shouldRetryResource(resource.Kind) || retryFn != nil {

@@ -29,9 +29,9 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 	c.RunTest(helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
 		ctx, cancelFn := context.WithTimeout(context.Background(), 1*time.Minute)
 		defer cancelFn()
-		_, err = c.ApplyResourceNoObject(ctx, helper.DefaultNamespace, NginxDeployment1, nil)
 
-		testContext.WaitForSyncEvent()
+		testContext.WaitForSyncEvent(30 * time.Second)
+		_, err = c.ApplyResourceAndWaitNoObject(ctx, helper.DefaultNamespace, NginxDeployment1, nil)
 
 		testContext.StopCentralGRPC()
 
@@ -43,17 +43,16 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 
 		archived := testContext.ArchivedMessages()
 		require.Len(t, archived, 1)
-		deploymentInMessages(t, archived[0], helper.DefaultNamespace, NginxDeployment1.Name)
+		deploymentMessageInArchive(t, archived[0], helper.DefaultNamespace, NginxDeployment1.Name)
 
-		testContext.WaitForSyncEvent()
+		testContext.WaitForSyncEvent(30 * time.Second)
 		testContext.DeploymentActionReceived(NginxDeployment1.Name, central.ResourceAction_SYNC_RESOURCE)
 		testContext.DeploymentActionReceived(NginxDeployment2.Name, central.ResourceAction_SYNC_RESOURCE)
-
 	}))
 
 }
 
-func deploymentInMessages(t *testing.T, messages []*central.MsgFromSensor, namespace, deploymentName string) {
+func deploymentMessageInArchive(t *testing.T, messages []*central.MsgFromSensor, namespace, deploymentName string) {
 	t.Logf("%d messages in archive", len(messages))
 	for _, m := range messages {
 		dep := m.GetEvent().GetDeployment()
@@ -61,5 +60,5 @@ func deploymentInMessages(t *testing.T, messages []*central.MsgFromSensor, names
 			return
 		}
 	}
-	t.Errorf("could not find deployment %s:%s in messages", namespace, deploymentName)
+	t.Errorf("could not find deployment %s:%s in archived messages", namespace, deploymentName)
 }
