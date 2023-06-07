@@ -1376,8 +1376,8 @@ github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40T
 github.com/quasilyte/go-consistent v0.0.0-20190521200055-c6f3937de18c/go.mod h1:5STLWrekHfjyYwxBRVRXNOSewLJ3PWfDJd1VyTS21fI=
 github.com/quasilyte/go-ruleguard v0.2.0/go.mod h1:2RT/tf0Ce0UDj5y243iWKosQogJd8+1G3Rs2fxmlYnw=
 github.com/quasilyte/regex/syntax v0.0.0-20200407221936-30656e2c4a95/go.mod h1:rlzQ04UMyJXu/aOvhd8qT+hvDrFpiwqp8MRXDY9szc0=
-github.com/quay/claircore v1.5.5 h1:SH3gkJGRo4jSGh/l/OQPoI6DL292VRGk3SF8QIKlEHE=
-github.com/quay/claircore v1.5.5/go.mod h1:QoKTswHrXysCScSHj9+Ylc1Yl3t25hAyXpBDUcpqS48=
+github.com/quay/claircore v1.5.6 h1:ClYCZYioRcngFUxOiO+bOcb894v7BHIKULQxw0C1Ys0=
+github.com/quay/claircore v1.5.6/go.mod h1:WVYCDfevyE2HOb0dQTvkrGet0Zctgieg4tPWPKrYjGU=
 github.com/quay/zlog v1.1.4 h1:sKe/m7fFeThQlY+LzPwpgOdWD4KKehIqTrJ1H+EtwgU=
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
