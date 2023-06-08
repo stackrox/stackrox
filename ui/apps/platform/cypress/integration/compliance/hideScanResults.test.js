@@ -1,5 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
+import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
 import { getInputByLabel } from '../../helpers/formHelpers';
 
 import { visitComplianceDashboard } from './Compliance.helpers';
@@ -60,6 +60,10 @@ describe('Compliance hideScanResults', () => {
 
     before(function beforeHook() {
         if (!hasFeatureFlag('ROX_DISABLE_COMPLIANCE_STANDARDS')) {
+            this.skip();
+        }
+
+        if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
     });
