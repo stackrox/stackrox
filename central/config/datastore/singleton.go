@@ -3,13 +3,10 @@ package datastore
 import (
 	"context"
 
-	configStore "github.com/stackrox/rox/central/config/store"
-	"github.com/stackrox/rox/central/config/store/bolt"
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -55,12 +52,8 @@ var (
 )
 
 func initialize() {
-	var store configStore.Store
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		store = pgStore.New(globaldb.GetPostgres())
-	} else {
-		store = bolt.New(globaldb.GetGlobalDB())
-	}
+	store := pgStore.New(globaldb.GetPostgres())
+
 	d = New(store)
 
 	ctx := sac.WithGlobalAccessScopeChecker(

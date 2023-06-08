@@ -5,11 +5,9 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/installation/store/bolt"
 	pgStore "github.com/stackrox/rox/central/installation/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -46,11 +44,7 @@ func createInitial() {
 // Singleton returns a singleton of the InstallationInfo store
 func Singleton() Store {
 	singletonInit.Do(func() {
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			storeSingleton = pgStore.New(globaldb.GetPostgres())
-		} else {
-			storeSingleton = bolt.New(globaldb.GetGlobalDB())
-		}
+		storeSingleton = pgStore.New(globaldb.GetPostgres())
 		createInitial()
 	})
 	return storeSingleton
