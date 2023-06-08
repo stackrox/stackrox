@@ -5,45 +5,20 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	activeComponentDackbox "github.com/stackrox/rox/central/activecomponent/dackbox"
-	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/datastore/index"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	clusterCVEEdgeDackbox "github.com/stackrox/rox/central/clustercveedge/dackbox"
 	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
-	clusterCVEEdgeIndex "github.com/stackrox/rox/central/clustercveedge/index"
-	componentCVEEdgeDackbox "github.com/stackrox/rox/central/componentcveedge/dackbox"
-	componentCVEEdgeIndex "github.com/stackrox/rox/central/componentcveedge/index"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	cveConverterV1 "github.com/stackrox/rox/central/cve/converter"
 	cveConverterUtils "github.com/stackrox/rox/central/cve/converter/utils"
 	cveConverterV2 "github.com/stackrox/rox/central/cve/converter/v2"
-	cveDackbox "github.com/stackrox/rox/central/cve/dackbox"
-	cveIndex "github.com/stackrox/rox/central/cve/index"
-	deploymentDackbox "github.com/stackrox/rox/central/deployment/dackbox"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/globalindex"
-	imageDackbox "github.com/stackrox/rox/central/image/dackbox"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	imageIndex "github.com/stackrox/rox/central/image/index"
-	imageComponentDackbox "github.com/stackrox/rox/central/imagecomponent/dackbox"
-	imageComponentIndex "github.com/stackrox/rox/central/imagecomponent/index"
-	imageComponentEdgeDackbox "github.com/stackrox/rox/central/imagecomponentedge/dackbox"
-	imageComponentEdgeIndex "github.com/stackrox/rox/central/imagecomponentedge/index"
-	imageCVEEdgeDackbox "github.com/stackrox/rox/central/imagecveedge/dackbox"
-	imageCVEEdgeIndex "github.com/stackrox/rox/central/imagecveedge/index"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	nodeDackbox "github.com/stackrox/rox/central/node/dackbox"
 	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
-	nodeIndex "github.com/stackrox/rox/central/node/index"
-	nodeComponentEdgeDackbox "github.com/stackrox/rox/central/nodecomponentedge/dackbox"
-	nodeComponentEdgeIndex "github.com/stackrox/rox/central/nodecomponentedge/index"
 	"github.com/stackrox/rox/generated/storage"
-	boltPkg "github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -463,88 +438,30 @@ func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) (err error) {
 func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 	var err error
 	s := &dackboxTestDataStoreImpl{}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase = pgtest.ForT(t)
-		s.nodeStore, err = nodeDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
-		if err != nil {
-			return nil, err
-		}
-		s.imageStore, err = imageDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
-		if err != nil {
-			return nil, err
-		}
-		s.deploymentStore, err = deploymentDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
-		if err != nil {
-			return nil, err
-		}
-		s.namespaceStore, err = namespaceDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
-		if err != nil {
-			return nil, err
-		}
-		s.clusterStore, err = clusterDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
-		if err != nil {
-			return nil, err
-		}
-		s.clusterCVEStore, err = clusterCVEDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		s.boltengine, err = boltPkg.NewTemp("dackboxtestbolt")
-		if err != nil {
-			return nil, err
-		}
-		s.rocksEngine, err = rocksPkg.NewTemp("dackboxtest")
-		if err != nil {
-			return nil, err
-		}
-		s.bleveIndex, err = globalindex.MemOnlyIndex()
-		if err != nil {
-			return nil, err
-		}
-		s.keyFence = dackboxConcurrency.NewKeyFence()
-		s.indexQ = queue.NewWaitableQueue()
-		s.dacky, err = dackbox.NewRocksDBDackBox(s.rocksEngine, s.indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
-		if err != nil {
-			return nil, err
-		}
-		reg := indexer.NewWrapperRegistry()
-		indexer.NewLazy(s.indexQ, reg, s.bleveIndex, s.dacky.AckIndexed).Start()
-		reg.RegisterWrapper(activeComponentDackbox.Bucket, activeComponentIndex.Wrapper{})
-		reg.RegisterWrapper(clusterCVEEdgeDackbox.Bucket, clusterCVEEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(componentCVEEdgeDackbox.Bucket, componentCVEEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(cveDackbox.Bucket, cveIndex.Wrapper{})
-		reg.RegisterWrapper(deploymentDackbox.Bucket, deploymentIndex.Wrapper{})
-		reg.RegisterWrapper(imageDackbox.Bucket, imageIndex.Wrapper{})
-		reg.RegisterWrapper(imageComponentDackbox.Bucket, imageComponentIndex.Wrapper{})
-		reg.RegisterWrapper(imageComponentEdgeDackbox.Bucket, imageComponentEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(imageCVEEdgeDackbox.Bucket, imageCVEEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(nodeDackbox.Bucket, nodeIndex.Wrapper{})
-		reg.RegisterWrapper(nodeComponentEdgeDackbox.Bucket, nodeComponentEdgeIndex.Wrapper{})
-		s.nodeStore, err = nodeDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
-		if err != nil {
-			return nil, err
-		}
-		s.imageStore, err = imageDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
-		if err != nil {
-			return nil, err
-		}
-		s.deploymentStore, err = deploymentDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
-		if err != nil {
-			return nil, err
-		}
-		s.namespaceStore, err = namespaceDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
-		if err != nil {
-			return nil, err
-		}
-		s.clusterStore, err = clusterDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence, s.boltengine)
-		if err != nil {
-			return nil, err
-		}
-		s.clusterCVEEdgeStore, err = clusterCVEEdgeDataStore.GetTestRocksBleveDataStore(t, s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
-		if err != nil {
-			return nil, err
-		}
+	s.pgtestbase = pgtest.ForT(t)
+	s.nodeStore, err = nodeDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+	if err != nil {
+		return nil, err
+	}
+	s.imageStore, err = imageDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+	if err != nil {
+		return nil, err
+	}
+	s.deploymentStore, err = deploymentDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+	if err != nil {
+		return nil, err
+	}
+	s.namespaceStore, err = namespaceDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+	if err != nil {
+		return nil, err
+	}
+	s.clusterStore, err = clusterDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+	if err != nil {
+		return nil, err
+	}
+	s.clusterCVEStore, err = clusterCVEDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+	if err != nil {
+		return nil, err
 	}
 	s.storedDeployments = make([]string, 0)
 	s.storedNamespaces = make([]string, 0)
