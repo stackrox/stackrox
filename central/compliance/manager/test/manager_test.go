@@ -78,7 +78,7 @@ func (s *managerTestSuite) TestExpandSelection_AllOne_GetClustersError() {
 
 func (s *managerTestSuite) TestExpandSelection_OneAll_OK() {
 	var err error
-	s.standardRegistry, err = standards.NewRegistry(nil, nil,
+	s.standardRegistry, err = standards.NewRegistry(nil, nil, nil, nil, nil,
 		metadata.Standard{ID: "standard1"},
 		metadata.Standard{ID: "standard2"},
 	)
@@ -98,7 +98,7 @@ func (s *managerTestSuite) TestExpandSelection_AllAll_OK() {
 		{Id: "cluster2"},
 	}, nil)
 	var err error
-	s.standardRegistry, err = standards.NewRegistry(nil, nil,
+	s.standardRegistry, err = standards.NewRegistry(nil, nil, nil, nil, nil,
 		metadata.Standard{ID: "standard1"},
 		metadata.Standard{ID: "standard2"},
 	)
@@ -133,7 +133,7 @@ func (s *managerTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.Compliance)))
 	s.mockCtrl = gomock.NewController(s.T())
 	var err error
-	s.standardRegistry, err = standards.NewRegistry(nil, nil)
+	s.standardRegistry, err = standards.NewRegistry(nil, nil, nil, nil, nil)
 	s.Require().NoError(err)
 	s.mockClusterStore = clusterDatastoreMocks.NewMockDataStore(s.mockCtrl)
 	s.mockNodeStore = nodeDatastoreMocks.NewMockDataStore(s.mockCtrl)

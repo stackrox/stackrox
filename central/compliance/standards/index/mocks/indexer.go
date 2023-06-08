@@ -5,104 +5,97 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	search "github.com/stackrox/rox/pkg/search"
+	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
-// MockIndexer is a mock of Indexer interface.
-type MockIndexer struct {
+// MockStandardIndexer is a mock of StandardIndexer interface.
+type MockStandardIndexer struct {
 	ctrl     *gomock.Controller
-	recorder *MockIndexerMockRecorder
+	recorder *MockStandardIndexerMockRecorder
 }
 
-// MockIndexerMockRecorder is the mock recorder for MockIndexer.
-type MockIndexerMockRecorder struct {
-	mock *MockIndexer
+// MockStandardIndexerMockRecorder is the mock recorder for MockStandardIndexer.
+type MockStandardIndexerMockRecorder struct {
+	mock *MockStandardIndexer
 }
 
-// NewMockIndexer creates a new mock instance.
-func NewMockIndexer(ctrl *gomock.Controller) *MockIndexer {
-	mock := &MockIndexer{ctrl: ctrl}
-	mock.recorder = &MockIndexerMockRecorder{mock}
+// NewMockStandardIndexer creates a new mock instance.
+func NewMockStandardIndexer(ctrl *gomock.Controller) *MockStandardIndexer {
+	mock := &MockStandardIndexer{ctrl: ctrl}
+	mock.recorder = &MockStandardIndexerMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
+func (m *MockStandardIndexer) EXPECT() *MockStandardIndexerMockRecorder {
 	return m.recorder
 }
 
-// DeleteControl mocks base method.
-func (m *MockIndexer) DeleteControl(id string) error {
+// Search mocks base method.
+func (m *MockStandardIndexer) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteControl", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteControl indicates an expected call of DeleteControl.
-func (mr *MockIndexerMockRecorder) DeleteControl(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteControl", reflect.TypeOf((*MockIndexer)(nil).DeleteControl), id)
-}
-
-// DeleteStandard mocks base method.
-func (m *MockIndexer) DeleteStandard(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteStandard", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteStandard indicates an expected call of DeleteStandard.
-func (mr *MockIndexerMockRecorder) DeleteStandard(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteStandard", reflect.TypeOf((*MockIndexer)(nil).DeleteStandard), id)
-}
-
-// IndexStandard mocks base method.
-func (m *MockIndexer) IndexStandard(standard *v1.ComplianceStandard) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IndexStandard", standard)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// IndexStandard indicates an expected call of IndexStandard.
-func (mr *MockIndexerMockRecorder) IndexStandard(standard interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexStandard", reflect.TypeOf((*MockIndexer)(nil).IndexStandard), standard)
-}
-
-// SearchControls mocks base method.
-func (m *MockIndexer) SearchControls(q *v1.Query) ([]search.Result, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchControls", q)
+	varargs := []interface{}{ctx, q}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Search", varargs...)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SearchControls indicates an expected call of SearchControls.
-func (mr *MockIndexerMockRecorder) SearchControls(q interface{}) *gomock.Call {
+// Search indicates an expected call of Search.
+func (mr *MockStandardIndexerMockRecorder) Search(ctx, q interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchControls", reflect.TypeOf((*MockIndexer)(nil).SearchControls), q)
+	varargs := append([]interface{}{ctx, q}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockStandardIndexer)(nil).Search), varargs...)
 }
 
-// SearchStandards mocks base method.
-func (m *MockIndexer) SearchStandards(q *v1.Query) ([]search.Result, error) {
+// MockControlIndexer is a mock of ControlIndexer interface.
+type MockControlIndexer struct {
+	ctrl     *gomock.Controller
+	recorder *MockControlIndexerMockRecorder
+}
+
+// MockControlIndexerMockRecorder is the mock recorder for MockControlIndexer.
+type MockControlIndexerMockRecorder struct {
+	mock *MockControlIndexer
+}
+
+// NewMockControlIndexer creates a new mock instance.
+func NewMockControlIndexer(ctrl *gomock.Controller) *MockControlIndexer {
+	mock := &MockControlIndexer{ctrl: ctrl}
+	mock.recorder = &MockControlIndexerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockControlIndexer) EXPECT() *MockControlIndexerMockRecorder {
+	return m.recorder
+}
+
+// Search mocks base method.
+func (m *MockControlIndexer) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchStandards", q)
+	varargs := []interface{}{ctx, q}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Search", varargs...)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SearchStandards indicates an expected call of SearchStandards.
-func (mr *MockIndexerMockRecorder) SearchStandards(q interface{}) *gomock.Call {
+// Search indicates an expected call of Search.
+func (mr *MockControlIndexerMockRecorder) Search(ctx, q interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchStandards", reflect.TypeOf((*MockIndexer)(nil).SearchStandards), q)
+	varargs := append([]interface{}{ctx, q}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockControlIndexer)(nil).Search), varargs...)
 }
