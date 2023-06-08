@@ -168,7 +168,7 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 		return nil
 	}
 	log.WriteToStderrf("version for %q is %v", dbClone, ver)
-	
+
 	err = runner.Run(&types.Databases{
 		BoltDB:     boltDB,
 		RocksDB:    rocks,
