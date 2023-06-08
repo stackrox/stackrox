@@ -111,5 +111,4 @@ func (d *dbCloneManagerImpl) Persist(cloneName string, pgClone string, persistBo
 	}
 
 	return d.dbmPostgres.Persist(pgClone)
-	return d.dbmRocks.Persist(cloneName)
 }
