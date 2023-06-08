@@ -4,21 +4,18 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
 	pgStore "github.com/stackrox/rox/central/processindicator/store/postgres"
-	"github.com/stackrox/rox/central/processindicator/store/rocksdb"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
@@ -59,9 +56,6 @@ func New(store store.Store, plopStorage plopStore.Store, indexer index.Indexer, 
 		stopper:               concurrency.NewStopper(),
 	}
 	ctx := sac.WithAllAccess(context.Background())
-	if err := d.buildIndex(ctx); err != nil {
-		return nil, err
-	}
 
 	if env.ProcessPruningEnabled.BooleanSetting() {
 		go d.prunePeriodically(ctx)
@@ -76,12 +70,4 @@ func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error)
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)
 	return New(dbstore, plopDBstore, indexer, searcher, nil)
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index) (DataStore, error) {
-	dbstore := rocksdb.New(rocksengine)
-	indexer := index.New(bleveIndex)
-	searcher := search.New(dbstore, indexer)
-	return New(dbstore, nil, indexer, searcher, nil)
 }
