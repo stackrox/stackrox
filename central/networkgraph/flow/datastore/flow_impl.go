@@ -11,12 +11,10 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/timestamp"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -124,19 +122,6 @@ func (fds *flowDataStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id s
 	}
 
 	return fds.storage.RemoveFlowsForDeployment(ctx, id)
-}
-
-func (fds *flowDataStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		utils.Should(errors.New("No longer supported with Postgres"))
-		return nil
-	}
-	if ok, err := networkGraphSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-	return fds.storage.RemoveMatchingFlows(ctx, keyMatchFn, valueMatchFn)
 }
 
 // RemoveStaleFlows - remove stale duplicate network flows

@@ -183,10 +183,6 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	if err != nil {
 		return nil, err
 	}
-	networkFlowClusterStore, err := nfDS.GetTestRocksBleveClusterDataStore(t, rocksengine)
-	if err != nil {
-		return nil, err
-	}
 	riskStore, err := riskDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
 	if err != nil {
 		return nil, err
@@ -196,6 +192,6 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	namespaceRanker := ranking.NamespaceRanker()
 	deploymentRanker := ranking.DeploymentRanker()
 	return New(dacky, keyFence, nil, bleveIndex, bleveIndex, imageStore,
-		processBaselineStore, networkFlowClusterStore, riskStore, nil,
+		processBaselineStore, nil, riskStore, nil,
 		processFilter, clusterRanker, namespaceRanker, deploymentRanker)
 }

@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blevesearch/bleve"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
@@ -19,8 +18,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
@@ -31,14 +28,12 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoutils"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
-	"go.etcd.io/bbolt"
 )
 
 const (
@@ -951,32 +946,6 @@ func GetTestPostgresManager(t *testing.T, pool postgres.DB) (Manager, error) {
 		return nil, err
 	}
 	networkFlowClusterStore, err := networkFlowDS.GetTestPostgresClusterDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
-	sensorCnxMgr := connection.ManagerSingleton()
-	return New(networkBaselineStore, networkEntityStore, deploymentStore, networkPolicyStore, networkFlowClusterStore, sensorCnxMgr)
-}
-
-// GetTestRocksBleveManager provides a network baseline manager connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveManager(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence concurrency.KeyFence, boltengine *bbolt.DB) (Manager, error) {
-	networkBaselineStore, err := datastore.GetTestRocksBleveDataStore(t, rocksengine)
-	if err != nil {
-		return nil, err
-	}
-	networkEntityStore, err := networkEntityDS.GetTestRocksBleveDataStore(t, rocksengine)
-	if err != nil {
-		return nil, err
-	}
-	deploymentStore, err := deploymentDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex, dacky, keyFence)
-	if err != nil {
-		return nil, err
-	}
-	networkPolicyStore, err := networkPolicyDS.GetTestRocksBleveDataStore(t, rocksengine, boltengine)
-	if err != nil {
-		return nil, err
-	}
-	networkFlowClusterStore, err := networkFlowDS.GetTestRocksBleveClusterDataStore(t, rocksengine)
 	if err != nil {
 		return nil, err
 	}
