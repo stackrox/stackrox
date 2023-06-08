@@ -24,7 +24,6 @@ type DataStore interface {
 }
 
 // New returns a new Store instance
-
 func New(storage store.Store) DataStore {
 	return &datastoreImpl{
 		storage: storage,
