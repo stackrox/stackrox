@@ -4,20 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/pod/datastore/internal/search"
-	"github.com/stackrox/rox/central/pod/index"
 	"github.com/stackrox/rox/central/pod/store/cache"
 	pgStore "github.com/stackrox/rox/central/pod/store/postgres"
-	"github.com/stackrox/rox/central/pod/store/rocksdb"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	piFilter "github.com/stackrox/rox/central/processindicator/filter"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/process/filter"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -39,17 +34,6 @@ type DataStore interface {
 	GetPodIDs(ctx context.Context) ([]string, error)
 }
 
-// NewRocksDB creates a pod datastore based on RocksDB
-func NewRocksDB(db *rocksdbBase.RocksDB, bleveIndex bleve.Index, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
-	store, err := cache.NewCachedStore(rocksdb.New(db))
-	if err != nil {
-		return nil, err
-	}
-	indexer := index.New(bleveIndex)
-	searcher := search.New(store, indexer)
-	return newDatastoreImpl(sac.WithAllAccess(context.Background()), store, indexer, searcher, indicators, processFilter)
-}
-
 // NewPostgresDB creates a pod datastore based on Postgres
 func NewPostgresDB(db postgres.DB, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
 	store, err := cache.NewCachedStore(pgStore.New(db))
@@ -58,25 +42,15 @@ func NewPostgresDB(db postgres.DB, indicators piDS.DataStore, processFilter filt
 	}
 	indexer := pgStore.NewIndexer(db)
 	searcher := search.New(store, indexer)
-	return newDatastoreImpl(sac.WithAllAccess(context.Background()), store, indexer, searcher, indicators, processFilter)
+	return newDatastoreImpl(store, indexer, searcher, indicators, processFilter)
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error) {
 	processIndicatorStore, err := piDS.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
 	}
 	processIndicatorFilter := piFilter.Singleton()
 	return NewPostgresDB(pool, processIndicatorStore, processIndicatorFilter)
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index) (DataStore, error) {
-	processIndicatorStore, err := piDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
-	if err != nil {
-		return nil, err
-	}
-	processIndicatorFilter := piFilter.Singleton()
-	return NewRocksDB(rocksengine, bleveIndex, processIndicatorStore, processIndicatorFilter)
 }

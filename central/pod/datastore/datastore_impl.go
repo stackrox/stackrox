@@ -14,17 +14,13 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/debug"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 const (
-	podBatchSize              = 1000
 	resourceType              = "Pod"
 	maxNumberOfDeadContainers = 10
 )
@@ -46,7 +42,7 @@ type datastoreImpl struct {
 	keyedMutex *concurrency.KeyedMutex
 }
 
-func newDatastoreImpl(ctx context.Context, storage podStore.Store, indexer podIndex.Indexer, searcher podSearch.Searcher,
+func newDatastoreImpl(storage podStore.Store, indexer podIndex.Indexer, searcher podSearch.Searcher,
 	indicators piDS.DataStore, processFilter filter.Filter) (*datastoreImpl, error) {
 	ds := &datastoreImpl{
 		podStore:      storage,
@@ -56,101 +52,7 @@ func newDatastoreImpl(ctx context.Context, storage podStore.Store, indexer podIn
 		processFilter: processFilter,
 		keyedMutex:    concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
-	if err := ds.buildIndex(ctx); err != nil {
-		return nil, err
-	}
 	return ds, nil
-}
-
-func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	defer debug.FreeOSMemory()
-
-	needsReindexing, err := ds.podIndexer.NeedsInitialIndexing()
-	if err != nil {
-		return err
-	}
-	if needsReindexing {
-		return ds.fullReindex(ctx)
-	}
-
-	log.Info("[STARTUP] Determining if pod db/indexer reconciliation is needed")
-
-	podsToIndex, err := ds.podStore.GetKeysToIndex(ctx)
-	if err != nil {
-		return errors.Wrap(err, "error retrieving keys to index")
-	}
-
-	log.Infof("[STARTUP] Found %d Pods to index", len(podsToIndex))
-
-	podBatcher := batcher.New(len(podsToIndex), podBatchSize)
-	for start, end, valid := podBatcher.Next(); valid; start, end, valid = podBatcher.Next() {
-		pods, missingIndices, err := ds.podStore.GetMany(ctx, podsToIndex[start:end])
-		if err != nil {
-			return err
-		}
-		if err := ds.podIndexer.AddPods(pods); err != nil {
-			return err
-		}
-		if len(missingIndices) > 0 {
-			idsToRemove := make([]string, 0, len(missingIndices))
-			for _, missingIdx := range missingIndices {
-				idsToRemove = append(idsToRemove, podsToIndex[start:end][missingIdx])
-			}
-			if err := ds.podIndexer.DeletePods(idsToRemove); err != nil {
-				return err
-			}
-		}
-
-		// Ack keys so that even if central restarts, we don't need to reindex them again
-		if err := ds.podStore.AckKeysIndexed(ctx, podsToIndex[start:end]...); err != nil {
-			return err
-		}
-		log.Infof("[STARTUP] Successfully indexed %d/%d pods", end, len(podsToIndex))
-	}
-
-	log.Info("[STARTUP] Successfully indexed all out of sync pods")
-	return nil
-}
-
-func (ds *datastoreImpl) fullReindex(ctx context.Context) error {
-	log.Info("[STARTUP] Reindexing all pods")
-
-	podIDs, err := ds.podStore.GetIDs(ctx)
-	if err != nil {
-		return err
-	}
-	log.Infof("[STARTUP] Found %d pods to index", len(podIDs))
-	podBatcher := batcher.New(len(podIDs), podBatchSize)
-	for start, end, valid := podBatcher.Next(); valid; start, end, valid = podBatcher.Next() {
-		pods, _, err := ds.podStore.GetMany(ctx, podIDs[start:end])
-		if err != nil {
-			return err
-		}
-		if err := ds.podIndexer.AddPods(pods); err != nil {
-			return err
-		}
-		log.Infof("[STARTUP] Successfully indexed %d/%d pods", end, len(podIDs))
-	}
-	log.Infof("[STARTUP] Successfully indexed %d pods", len(podIDs))
-
-	// Clear the keys because we just re-indexed everything
-	keys, err := ds.podStore.GetKeysToIndex(ctx)
-	if err != nil {
-		return err
-	}
-	if err := ds.podStore.AckKeysIndexed(ctx, keys...); err != nil {
-		return err
-	}
-
-	// Write out that initial indexing is complete
-	if err := ds.podIndexer.MarkInitialIndexingComplete(); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
