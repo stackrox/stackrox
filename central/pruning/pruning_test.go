@@ -281,10 +281,7 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 		deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 		require.NoError(s.T(), err)
 
-		pods, err := podDatastore.NewRocksDB(db, bleveIndex, mockProcessDataStore, mockFilter)
-		require.NoError(s.T(), err)
-
-		return mockAlertDatastore, mockConfigDatastore, images, deployments, pods, indexingQ
+		return mockAlertDatastore, mockConfigDatastore, images, deployments, nil, indexingQ
 	}
 
 	deployments, err := deploymentDatastore.New(nil, dackboxConcurrency.NewKeyFence(), s.pool, nil, nil, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())

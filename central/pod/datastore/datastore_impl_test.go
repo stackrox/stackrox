@@ -12,7 +12,6 @@ import (
 	storeMocks "github.com/stackrox/rox/central/pod/store/mocks"
 	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
@@ -52,11 +51,7 @@ func (suite *PodDataStoreTestSuite) SetupTest() {
 	suite.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 
 	var err error
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
-		suite.storage.EXPECT().GetKeysToIndex(ctx).Return(nil, nil)
-	}
-	suite.datastore, err = newDatastoreImpl(ctx, suite.storage, suite.indexer, suite.searcher, suite.processStore, suite.filter)
+	suite.datastore, err = newDatastoreImpl(suite.storage, suite.indexer, suite.searcher, suite.processStore, suite.filter)
 	suite.NoError(err)
 }
 
@@ -223,66 +218,4 @@ func (suite *PodDataStoreTestSuite) TestRemovePod() {
 	suite.indexer.EXPECT().DeletePod(expectedPod.GetId()).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed(ctx, expectedPod.GetId()).Return(errors.New("error"))
 	suite.Error(suite.datastore.RemovePod(ctx, expectedPod.GetId()), "error")
-}
-
-func (suite *PodDataStoreTestSuite) TestReconciliationFullReindex() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-	suite.indexer.EXPECT().NeedsInitialIndexing().Return(true, nil)
-
-	pod1 := fixtures.GetPod()
-	pod1.Id = "A"
-	pod2 := fixtures.GetPod()
-	pod2.Id = "B"
-
-	suite.storage.EXPECT().GetIDs(ctx).Return([]string{"A", "B", "C"}, nil)
-	suite.storage.EXPECT().GetMany(ctx, []string{"A", "B", "C"}).Return([]*storage.Pod{pod1, pod2}, nil, nil)
-	suite.indexer.EXPECT().AddPods([]*storage.Pod{pod1, pod2}).Return(nil)
-
-	suite.storage.EXPECT().GetKeysToIndex(ctx).Return([]string{"D", "E"}, nil)
-	suite.storage.EXPECT().AckKeysIndexed(ctx, []string{"D", "E"}).Return(nil)
-
-	suite.indexer.EXPECT().MarkInitialIndexingComplete().Return(nil)
-
-	// Create a new data store to trigger the reindexing.
-	_, err := newDatastoreImpl(ctx, suite.storage, suite.indexer, nil, suite.processStore, suite.filter)
-	suite.NoError(err)
-}
-
-func (suite *PodDataStoreTestSuite) TestReconciliationPartialReindex() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-	suite.storage.EXPECT().GetKeysToIndex(ctx).Return([]string{"A", "B", "C"}, nil)
-	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
-
-	pod1 := fixtures.GetPod()
-	pod1.Id = "A"
-	pod2 := fixtures.GetPod()
-	pod2.Id = "B"
-	pod3 := fixtures.GetPod()
-	pod3.Id = "C"
-
-	podList := []*storage.Pod{pod1, pod2, pod3}
-
-	suite.storage.EXPECT().GetMany(ctx, []string{"A", "B", "C"}).Return(podList, nil, nil)
-	suite.indexer.EXPECT().AddPods(podList).Return(nil)
-	suite.storage.EXPECT().AckKeysIndexed(ctx, []string{"A", "B", "C"}).Return(nil)
-
-	_, err := newDatastoreImpl(ctx, suite.storage, suite.indexer, nil, suite.processStore, suite.filter)
-	suite.NoError(err)
-
-	// Make podList just A,B so C should be deleted
-	podList = podList[:1]
-	suite.storage.EXPECT().GetKeysToIndex(ctx).Return([]string{"A", "B", "C"}, nil)
-	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
-
-	suite.storage.EXPECT().GetMany(ctx, []string{"A", "B", "C"}).Return(podList, []int{2}, nil)
-	suite.indexer.EXPECT().AddPods(podList).Return(nil)
-	suite.indexer.EXPECT().DeletePods([]string{"C"}).Return(nil)
-	suite.storage.EXPECT().AckKeysIndexed(ctx, []string{"A", "B", "C"}).Return(nil)
-
-	_, err = newDatastoreImpl(ctx, suite.storage, suite.indexer, nil, suite.processStore, suite.filter)
-	suite.NoError(err)
 }
