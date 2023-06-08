@@ -512,7 +512,7 @@ splunk:
         // If the tests are flaky, we have to increase this value.
         withRetry(RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // Expect 6 integration health status for the created resources and one for the config map.
+            // Expect 7 integration health status for the created resources and one for the config map.
             assert response.healthsCount == CREATED_RESOURCES + 1
             for (integrationHealth in response.healthsList) {
                 assert integrationHealth.hasLastTimestamp()
