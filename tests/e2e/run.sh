@@ -60,6 +60,7 @@ test_e2e() {
     # Give some time for previous tests to finish up
     wait_for_api
 
+    # TODO(ROX-17674): Remove the block for running sensor integration tests
     info "Sensor k8s integration tests"
     make sensor-integration-test || touch FAIL
     info "Saving junit XML report"
