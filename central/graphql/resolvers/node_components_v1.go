@@ -105,7 +105,7 @@ func (encr *EmbeddedNodeScanComponentResolver) LastScanned(_ context.Context) (*
 }
 
 // TopVuln returns the first vulnerability with the top CVSS score.
-func (encr *EmbeddedNodeScanComponentResolver) TopVuln(_ context.Context) (VulnerabilityResolver, error) {
+func (encr *EmbeddedNodeScanComponentResolver) TopVuln(_ context.Context) (*EmbeddedVulnerabilityResolver, error) {
 	var maxCvss *storage.EmbeddedVulnerability
 	for _, vuln := range encr.data.GetVulns() {
 		if maxCvss == nil || vuln.GetCvss() > maxCvss.GetCvss() {
@@ -119,7 +119,7 @@ func (encr *EmbeddedNodeScanComponentResolver) TopVuln(_ context.Context) (Vulne
 }
 
 // Vulns resolves the vulnerabilities contained in the node component.
-func (encr *EmbeddedNodeScanComponentResolver) Vulns(_ context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
+func (encr *EmbeddedNodeScanComponentResolver) Vulns(_ context.Context, args PaginatedQuery) ([]*EmbeddedVulnerabilityResolver, error) {
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -144,16 +144,11 @@ func (encr *EmbeddedNodeScanComponentResolver) Vulns(_ context.Context, args Pag
 		})
 	}
 
-	resolvers, err := paginate(query.GetPagination(), vulns, nil)
+	vulns, err = paginate(query.GetPagination(), vulns, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	ret := make([]VulnerabilityResolver, 0, len(resolvers))
-	for _, resolver := range resolvers {
-		ret = append(ret, resolver)
-	}
-	return ret, err
+	return vulns, nil
 }
 
 // VulnCount resolves the number of vulnerabilities contained in the node component.

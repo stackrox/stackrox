@@ -25,8 +25,6 @@ func init() {
 			"lastScanned: Time",
 			"createdAt: Time", // Discovered At System
 			"discoveredAtImage(query: String): Time",
-			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
-			"componentCount(query: String): Int!",
 			"images(query: String, pagination: Pagination): [Image!]!",
 			"imageCount(query: String): Int!",
 			"deployments(query: String, pagination: Pagination): [Deployment!]!",
