@@ -138,10 +138,6 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	if err != nil {
 		return nil, err
 	}
-	podStore, err := podDataStore.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
-	if err != nil {
-		return nil, err
-	}
 	secretStore, err := secretDataStore.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
 	if err != nil {
 		return nil, err
@@ -179,7 +175,7 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 
 	return New(clusterdbstore, clusterhealthdbstore, nil,
 		alertStore, iiStore, namespaceStore, deploymentStore,
-		nodeStore, podStore, secretStore, netFlowStore, netEntityStore,
+		nodeStore, nil, secretStore, netFlowStore, netEntityStore,
 		serviceAccountStore, k8sRoleStore, k8sRoleBindingStore, sensorCnxMgr, nil,
 		dacky, clusterRanker, indexer, networkBaselineManager)
 }
