@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/process/filter"
-	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -43,7 +42,7 @@ func NewPostgresDB(db postgres.DB, indicators piDS.DataStore, processFilter filt
 	}
 	indexer := pgStore.NewIndexer(db)
 	searcher := search.New(store, indexer)
-	return newDatastoreImpl(sac.WithAllAccess(context.Background()), store, indexer, searcher, indicators, processFilter)
+	return newDatastoreImpl(store, indexer, searcher, indicators, processFilter)
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.

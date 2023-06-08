@@ -42,7 +42,7 @@ type datastoreImpl struct {
 	keyedMutex *concurrency.KeyedMutex
 }
 
-func newDatastoreImpl(_ context.Context, storage podStore.Store, indexer podIndex.Indexer, searcher podSearch.Searcher,
+func newDatastoreImpl(storage podStore.Store, indexer podIndex.Indexer, searcher podSearch.Searcher,
 	indicators piDS.DataStore, processFilter filter.Filter) (*datastoreImpl, error) {
 	ds := &datastoreImpl{
 		podStore:      storage,

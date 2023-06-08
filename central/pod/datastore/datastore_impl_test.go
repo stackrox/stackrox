@@ -51,7 +51,7 @@ func (suite *PodDataStoreTestSuite) SetupTest() {
 	suite.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 
 	var err error
-	suite.datastore, err = newDatastoreImpl(ctx, suite.storage, suite.indexer, suite.searcher, suite.processStore, suite.filter)
+	suite.datastore, err = newDatastoreImpl(suite.storage, suite.indexer, suite.searcher, suite.processStore, suite.filter)
 	suite.NoError(err)
 }
 
