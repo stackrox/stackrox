@@ -261,11 +261,7 @@ func (d *dbCloneManagerImpl) rollbackEnabled() bool {
 	currClone, currExists := d.cloneMap[CurrentClone]
 	if !currExists {
 		// If our focus is Postgres, just log the error and ignore Rocks as that likely means no PVC
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			log.Warn("cannot find current clone for RocksDB")
-		} else {
-			utils.Should(errors.New("cannot find current clone"))
-		}
+		log.Warn("cannot find current clone for RocksDB")
 
 		return false
 	}
@@ -276,11 +272,7 @@ func (d *dbCloneManagerImpl) hasSpaceForRollback() bool {
 	currClone, currExists := d.cloneMap[CurrentClone]
 	if !currExists {
 		// If our focus is Postgres, just log the error and ignore Rocks
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			log.Warn("cannot find current clone for RocksDB")
-		} else {
-			utils.Should(errors.New("cannot find current clone"))
-		}
+		log.Warn("cannot find current clone for RocksDB")
 
 		return false
 	}

@@ -6,7 +6,6 @@ package cvehelper
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/env"
 )
 
 // CVEType is the type of a CVE fetched by fetcher
@@ -162,25 +161,7 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability, postg
 		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
 	}
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		ret.Severity = from.GetSeverity()
-		return ret
-	}
-
-	// If the OS is empty, then the OS is unknown and we don't need to save
-	// any distro specific settings
-	if os == "" {
-		return ret
-	}
-	ret.DistroSpecifics = map[string]*storage.CVE_DistroSpecific{
-		os: {
-			Severity:     from.GetSeverity(),
-			Cvss:         ret.Cvss,
-			CvssV2:       ret.CvssV2,
-			CvssV3:       ret.CvssV3,
-			ScoreVersion: ret.ScoreVersion,
-		},
-	}
+	ret.Severity = from.GetSeverity()
 	return ret
 }
 

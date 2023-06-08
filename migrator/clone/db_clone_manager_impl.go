@@ -3,7 +3,6 @@ package clone
 import (
 	pgClone "github.com/stackrox/rox/migrator/clone/postgres"
 	"github.com/stackrox/rox/migrator/clone/rocksdb"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
 )
@@ -45,18 +44,12 @@ func (d *dbCloneManagerImpl) Scan() error {
 	err := d.dbmRocks.Scan()
 	if err != nil {
 		// If our focus is Postgres, just log the error and ignore Rocks
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			log.Warn(err)
-		} else {
-			return err
-		}
+		log.Warn(err)
 	}
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		err = d.dbmPostgres.Scan()
-		if err != nil {
-			return err
-		}
+	err = d.dbmPostgres.Scan()
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -69,37 +62,35 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, string, error)
 	var migrateFromRocks bool
 	var err error
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		// We have to support the restoration of legacy backups for a couple of releases.  This allows us to determine
-		// if we are dealing with that case.
-		restoreFromRocks := d.dbmRocks.CheckForRestore()
+	// We have to support the restoration of legacy backups for a couple of releases.  This allows us to determine
+	// if we are dealing with that case.
+	restoreFromRocks := d.dbmRocks.CheckForRestore()
 
-		// Get the version of the Rocks Current so Postgres manager can use that info
-		// to determine what clone it needs to migrate.
-		var rocksVersion *migrations.MigrationVersion
-		if restoreFromRocks {
-			rocksVersion = d.dbmRocks.GetVersion(rocksdb.RestoreClone)
-		} else {
-			rocksVersion = d.dbmRocks.GetVersion(rocksdb.CurrentClone)
-		}
+	// Get the version of the Rocks Current so Postgres manager can use that info
+	// to determine what clone it needs to migrate.
+	var rocksVersion *migrations.MigrationVersion
+	if restoreFromRocks {
+		rocksVersion = d.dbmRocks.GetVersion(rocksdb.RestoreClone)
+	} else {
+		rocksVersion = d.dbmRocks.GetVersion(rocksdb.CurrentClone)
+	}
 
-		pgClone, migrateFromRocks, err = d.dbmPostgres.GetCloneToMigrate(rocksVersion, restoreFromRocks)
-		if err != nil {
-			return "", "", "", err
-		}
+	pgClone, migrateFromRocks, err = d.dbmPostgres.GetCloneToMigrate(rocksVersion, restoreFromRocks)
+	if err != nil {
+		return "", "", "", err
+	}
 
-		// If we need to migrate from rocks we need to continue processing and
-		// get the Rocks clones.  If we don't, there is no need to process Rocks, but
-		// we will check to see if we can get rid of rocks
-		if !migrateFromRocks {
-			return "", "", pgClone, nil
-		}
+	// If we need to migrate from rocks we need to continue processing and
+	// get the Rocks clones.  If we don't, there is no need to process Rocks, but
+	// we will check to see if we can get rid of rocks
+	if !migrateFromRocks {
+		return "", "", pgClone, nil
 	}
 
 	// Get the RocksDB clone we are migrating
 	clone, clonePath, err := d.dbmRocks.GetCloneToMigrate()
 	if err != nil {
-		if !env.PostgresDatastoreEnabled.BooleanSetting() || migrateFromRocks {
+		if migrateFromRocks {
 			return "", "", "", err
 		}
 		log.Warnf("unable to determine Rocks clone.  Continuing with postgres.  %v", err)
@@ -110,17 +101,14 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, string, error)
 
 // Persist - replaces current clone with upgraded one.
 func (d *dbCloneManagerImpl) Persist(cloneName string, pgClone string, persistBoth bool) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		// We need to persist the Rocks previous, so it is there in case of a rollback.  In the case of
-		// an upgrade that will generate a previous, the Temp Clone will be the one RocksDB persists.
-		// During the persist operation the Current clone will move to Previous and Temp will move to Current.
-		if persistBoth && (cloneName == rocksdb.TempClone || cloneName == rocksdb.RestoreClone) {
-			if err := d.dbmRocks.Persist(cloneName); err != nil {
-				log.Warnf("Unable to create a previous version of Rocks to rollback to: %v", err)
-			}
+	// We need to persist the Rocks previous, so it is there in case of a rollback.  In the case of
+	// an upgrade that will generate a previous, the Temp Clone will be the one RocksDB persists.
+	// During the persist operation the Current clone will move to Previous and Temp will move to Current.
+	if persistBoth && (cloneName == rocksdb.TempClone || cloneName == rocksdb.RestoreClone) {
+		if err := d.dbmRocks.Persist(cloneName); err != nil {
+			log.Warnf("Unable to create a previous version of Rocks to rollback to: %v", err)
 		}
-
-		return d.dbmPostgres.Persist(pgClone)
 	}
-	return d.dbmRocks.Persist(cloneName)
+
+	return d.dbmPostgres.Persist(pgClone)
 }
