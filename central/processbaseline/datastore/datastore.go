@@ -95,9 +95,5 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	if err != nil {
 		return nil, err
 	}
-	indicatorStore, err := processIndicatorDatastore.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
-	if err != nil {
-		return nil, err
-	}
-	return New(dbstore, indexer, searcher, resultsStore, indicatorStore), nil
+	return New(dbstore, indexer, searcher, resultsStore, nil), nil
 }
