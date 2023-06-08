@@ -18,8 +18,11 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-user-0.3.59-5-g8653da908f
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
+    - name: Create user
+      run: useradd tester
+
     - name: Checkout
       uses: actions/checkout@v3
       with:
@@ -34,7 +37,7 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      run: su tester -c "${{ matrix.gotags }} make go-unit-tests"
 
     - name: Generate junit report
       if: always()
@@ -72,7 +75,7 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-user-0.3.59-5-g8653da908f
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -118,7 +121,7 @@ jobs:
   ui:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-user-0.3.59-5-g8653da908f
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -153,7 +156,7 @@ jobs:
   local-roxctl-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-user-0.3.59-5-g8653da908f
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
     - name: Checkout
       uses: actions/checkout@v3
