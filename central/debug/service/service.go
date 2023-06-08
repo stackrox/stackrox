@@ -96,6 +96,7 @@ type Service interface {
 	v1.DebugServiceServer
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
+	GetDiagnosticDumpWithCentral(w http.ResponseWriter, r *http.Request, withCentral bool)
 }
 
 // New returns a Service that implements v1.DebugServiceServer
@@ -678,6 +679,10 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 // getDiagnosticDump aims to provide a snapshot of some state information for
 // triaging. The size and download times of this dump shall stay reasonable.
 func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) {
+	s.GetDiagnosticDumpWithCentral(w, r, env.EnableCentralDiagnostics.BooleanSetting())
+}
+
+func (s *serviceImpl) GetDiagnosticDumpWithCentral(w http.ResponseWriter, r *http.Request, withCentral bool) {
 	filename := time.Now().Format("stackrox_diagnostic_2006_01_02_15_04_05.zip")
 
 	opts := debugDumpOptions{
@@ -686,7 +691,7 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 		withCPUProfile:    false,
 		withLogImbue:      true,
 		withAccessControl: true,
-		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
+		withCentral:       withCentral,
 		withNotifiers:     true,
 	}
 

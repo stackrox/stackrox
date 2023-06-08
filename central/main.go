@@ -407,6 +407,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 	if devbuild.IsEnabled() {
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}
+	debugService.NewDefaultHTTPServer(debugSvc).RunForever()
 
 	return servicesToRegister
 }
