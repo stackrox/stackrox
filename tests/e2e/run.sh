@@ -60,6 +60,17 @@ test_e2e() {
     # Give some time for previous tests to finish up
     wait_for_api
 
+    info "Sensor k8s integration tests"
+    make sensor-integration-test || touch FAIL
+    info "Saving junit XML report"
+    make generate-junit-reports || touch FAIL
+    store_test_results junit-reports reports
+    store_test_results "test-output/test.log" "sensor-integration"
+    [[ ! -f FAIL ]] || die "sensor-integration e2e tests failed"
+
+    # Give some time for previous tests to finish up
+    wait_for_api
+
     setup_proxy_tests "localhost"
     run_proxy_tests "localhost"
     cd "$ROOT"
