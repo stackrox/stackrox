@@ -18,6 +18,12 @@ source "$ROOT/tests/e2e/lib.sh"
 # shellcheck source=../../tests/e2e/run.sh
 source "$ROOT/tests/e2e/run.sh"
 
+# test_sensor_wip is here to unlock the changes in the openshift/release repo.
+# Once they are merged, we will open another PR where we switch to test_sensor
+test_sensor_wip() {
+    info "Placeholder for sensor integration tests"
+}
+
 test_sensor() {
     info "Starting sensor integration tests"
 
@@ -57,5 +63,5 @@ test_sensor() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    test_sensor "$*"
+    test_sensor_wip "$*"
 fi
