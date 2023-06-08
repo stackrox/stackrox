@@ -21,15 +21,6 @@ var (
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
 
-	boltOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "bolt_op_duration",
-		Help:      "Time taken to perform a bolt operation",
-		// We care more about precision at lower latencies, or outliers at higher latencies.
-		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
-	}, []string{"Operation", "Type"})
-
 	rocksDBOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -213,11 +204,6 @@ var (
 
 func startTimeToMS(t time.Time) float64 {
 	return float64(time.Since(t).Nanoseconds()) / float64(time.Millisecond)
-}
-
-// SetBoltOperationDurationTime times how long a particular bolt operation took on a particular resource
-func SetBoltOperationDurationTime(start time.Time, op metrics.Op, t string) {
-	boltOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
 }
 
 // SetRocksDBOperationDurationTime times how long a particular rocksdb operation took on a particular resource

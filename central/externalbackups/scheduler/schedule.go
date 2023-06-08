@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb/export"
 	"github.com/stackrox/rox/central/systeminfo/listener"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -51,12 +50,7 @@ func New(reporter integrationhealth.Reporter, backupListener listener.BackupList
 }
 
 func (s *scheduler) backup(w *io.PipeWriter, includeCerts bool) {
-	var err error
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		err = export.BackupPostgres(context.Background(), globaldb.GetPostgres(), s.backupListener, includeCerts, w)
-	} else {
-		err = export.Backup(context.Background(), globaldb.GetGlobalDB(), globaldb.GetRocksDB(), s.backupListener, includeCerts, w)
-	}
+	err := export.BackupPostgres(context.Background(), globaldb.GetPostgres(), s.backupListener, includeCerts, w)
 	if err != nil {
 		log.Errorf("Failed to write backup to io.writer: %v", err)
 		if err := w.CloseWithError(err); err != nil {

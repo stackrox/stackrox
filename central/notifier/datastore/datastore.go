@@ -23,7 +23,8 @@ type DataStore interface {
 	RemoveNotifier(ctx context.Context, id string) error
 }
 
-// New returns a new Store instance using the provided bolt DB instance.
+// New returns a new Store instance
+
 func New(storage store.Store) DataStore {
 	return &datastoreImpl{
 		storage: storage,

@@ -4,11 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/imageintegration/index"
 	"github.com/stackrox/rox/central/imageintegration/search"
 	"github.com/stackrox/rox/central/imageintegration/store"
-	"github.com/stackrox/rox/central/imageintegration/store/bolt"
 	pgStore "github.com/stackrox/rox/central/imageintegration/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -16,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"go.etcd.io/bbolt"
 )
 
 var (
@@ -70,12 +67,4 @@ func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error)
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(store, indexer)
 	return New(store, indexer, searcher), nil
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(_ *testing.T, boltengine *bbolt.DB, bleveIndex bleve.Index) (DataStore, error) {
-	testStore := bolt.New(boltengine)
-	indexer := index.New(bleveIndex)
-	searcher := search.New(testStore, indexer)
-	return New(testStore, indexer, searcher), nil
 }

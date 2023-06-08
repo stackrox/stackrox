@@ -297,13 +297,7 @@ func main() {
 }
 
 func ensureDB(ctx context.Context) {
-	var versionStore vStore.Store
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		versionStore = vStore.NewPostgres(globaldb.InitializePostgres(ctx))
-	} else {
-		versionStore = vStore.New(globaldb.GetGlobalDB(), globaldb.GetRocksDB())
-	}
-
+	versionStore := vStore.NewPostgres(globaldb.InitializePostgres(ctx))
 	err := version.Ensure(versionStore)
 	if err != nil {
 		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
@@ -715,63 +709,40 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	}
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:      "/db/backup",
-			Authorizer: dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: notImplementedOnManagedServices(
-				globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), listener.Singleton(), false),
-			),
-			Compression: true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:      "/api/extensions/backup",
-			Authorizer: user.WithRole(accesscontrol.Admin),
-			ServerHandler: notImplementedOnManagedServices(
-				globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), listener.Singleton(), true),
-			),
-			Compression: true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/export/csv/node/cve",
-			Authorizer:    user.With(permissions.View(resources.Node)),
-			ServerHandler: nodeCveCsv.NodeCVECSVHandler(),
-			Compression:   true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/export/csv/image/cve",
-			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
-			ServerHandler: imageCveCsv.ImageCVECSVHandler(),
-			Compression:   true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/export/csv/cluster/cve",
-			Authorizer:    user.With(permissions.View(resources.Cluster)),
-			ServerHandler: clusterCveCsv.ClusterCVECSVHandler(),
-			Compression:   true,
-		})
-	} else {
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/db/backup",
-			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, listener.Singleton(), false)),
-			Compression:   true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/extensions/backup",
-			Authorizer:    user.WithRole(accesscontrol.Admin),
-			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, listener.Singleton(), true)),
-			Compression:   true,
-		})
-
-		// v1 style restore endpoint, not supported for Postgres
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/db/restore",
-			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
-			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB()),
-			EnableAudit:   true,
-		})
-	}
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:      "/db/backup",
+		Authorizer: dbAuthz.DBReadAccessAuthorizer(),
+		ServerHandler: notImplementedOnManagedServices(
+			globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), false),
+		),
+		Compression: true,
+	})
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:      "/api/extensions/backup",
+		Authorizer: user.WithRole(accesscontrol.Admin),
+		ServerHandler: notImplementedOnManagedServices(
+			globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), true),
+		),
+		Compression: true,
+	})
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:         "/api/export/csv/node/cve",
+		Authorizer:    user.With(permissions.View(resources.Node)),
+		ServerHandler: nodeCveCsv.NodeCVECSVHandler(),
+		Compression:   true,
+	})
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:         "/api/export/csv/image/cve",
+		Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
+		ServerHandler: imageCveCsv.ImageCVECSVHandler(),
+		Compression:   true,
+	})
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:         "/api/export/csv/cluster/cve",
+		Authorizer:    user.With(permissions.View(resources.Cluster)),
+		ServerHandler: clusterCveCsv.ClusterCVECSVHandler(),
+		Compression:   true,
+	})
 
 	customRoutes = append(customRoutes, routes.CustomRoute{
 		Route:         "/api/extensions/clusters/helm-config.yaml",
