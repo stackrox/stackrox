@@ -50,97 +50,84 @@ func (suite *imageServiceSuite) SetupTest() {
 
 func (suite *imageServiceSuite) TestGetImage() {
 	ctx := context.Background()
+	imageID := "imageID"
+	imageName := "imageName"
+	err := errors.New("some error")
+	errCentral := errors.Wrap(err, "scanning image via central")
+	errLocalScan := errors.Wrap(errors.New("some error"), "scanning image via local scanner")
 	cases := map[string]struct {
 		request *sensor.GetImageRequest
 		notify  common.SensorComponentEvent
 		// Unset expectValue will indicate no call to the function
-		expectCache       *expectValue
-		expectRegistry    *expectValue
-		expectCentralCall *expectValue
-		expectLocalScan   *expectValue
+		expectCache       *expectFunctionHelper
+		expectRegistry    *expectFunctionHelper
+		expectCentralCall *expectFunctionHelper
+		expectLocalScan   *expectFunctionHelper
 		expectedError     error
 		expectedResponse  *sensor.GetImageResponse
 	}{
 		"Cache hit and central is not reachable": {
-			request: createImageRequest("", "123"),
-			notify:  common.SensorComponentEventOfflineMode,
-			expectCache: createExpectValue(1, &storage.Image{
-				Scan: &storage.ImageScan{},
-			}, nil),
-			expectedError: nil,
-			expectedResponse: &sensor.GetImageResponse{
-				Image: &storage.Image{
-					Scan: &storage.ImageScan{},
-				},
-			},
+			request:          createImageRequest(imageName, imageID, false),
+			notify:           common.SensorComponentEventOfflineMode,
+			expectCache:      expectCacheHelper(suite.mockCache, 1, createScannedImage(imageName, imageID)),
+			expectedError:    nil,
+			expectedResponse: createImageResponse(imageName, imageID),
 		},
 		"Cache hit and central is reachable": {
-			request: createImageRequest("", "123"),
-			notify:  common.SensorComponentEventCentralReachable,
-			expectCache: createExpectValue(1, &storage.Image{
-				Scan: &storage.ImageScan{},
-			}, nil),
-			expectedError: nil,
-			expectedResponse: &sensor.GetImageResponse{
-				Image: &storage.Image{
-					Scan: &storage.ImageScan{},
-				},
-			},
+			request:          createImageRequest(imageName, imageID, false),
+			notify:           common.SensorComponentEventCentralReachable,
+			expectCache:      expectCacheHelper(suite.mockCache, 1, createScannedImage(imageName, imageID)),
+			expectedError:    nil,
+			expectedResponse: createImageResponse(imageName, imageID),
 		},
 		"No cache hit and central is not reachable": {
-			request:          createImageRequest("", "123"),
+			request:          createImageRequest(imageName, imageID, false),
 			notify:           common.SensorComponentEventOfflineMode,
-			expectCache:      createExpectValue(1, nil, nil),
+			expectCache:      expectCacheHelper(suite.mockCache, 1, nil),
 			expectedError:    errCentralNoReachable,
 			expectedResponse: nil,
 		},
 		"No cache hit and central is reachable": {
-			request:        createImageRequest("", "123"),
-			notify:         common.SensorComponentEventCentralReachable,
-			expectCache:    createExpectValue(1, nil, nil),
-			expectRegistry: createExpectValue(1, false, nil),
-			expectCentralCall: createExpectValue(1, &v1.ScanImageInternalResponse{
-				Image: &storage.Image{},
-			}, nil),
-			expectedError: nil,
-			expectedResponse: &sensor.GetImageResponse{
-				Image: &storage.Image{},
-			},
+			request:           createImageRequest(imageName, imageID, false),
+			notify:            common.SensorComponentEventCentralReachable,
+			expectCache:       expectCacheHelper(suite.mockCache, 1, nil),
+			expectRegistry:    expectRegistryHelper(suite.mockRegistryStore, 1, false),
+			expectCentralCall: expectCentralCall(suite.mockCentral, 1, createScanImageInternalResponse(imageName, imageID), nil),
+			expectedError:     nil,
+			expectedResponse:  createImageResponse(imageName, imageID),
 		},
 		"No cache hit, central is reachable and returns error": {
-			request:           createImageRequest("", "123"),
+			request:           createImageRequest(imageName, imageID, false),
 			notify:            common.SensorComponentEventCentralReachable,
-			expectCache:       createExpectValue(1, nil, nil),
-			expectRegistry:    createExpectValue(1, false, nil),
-			expectCentralCall: createExpectValue(1, nil, errors.New("some error")),
-			expectedError:     errors.Wrap(errors.New("some error"), "scanning image via central"),
+			expectCache:       expectCacheHelper(suite.mockCache, 1, nil),
+			expectRegistry:    expectRegistryHelper(suite.mockRegistryStore, 1, false),
+			expectCentralCall: expectCentralCall(suite.mockCentral, 1, nil, err),
+			expectedError:     errCentral,
 			expectedResponse:  nil,
 		},
 		"No cache hit, local scan, central is not reachable": {
-			request:          createImageRequest("", "123"),
+			request:          createImageRequest(imageName, imageID, false),
 			notify:           common.SensorComponentEventOfflineMode,
-			expectCache:      createExpectValue(1, nil, nil),
+			expectCache:      expectCacheHelper(suite.mockCache, 1, nil),
 			expectedError:    errCentralNoReachable,
 			expectedResponse: nil,
 		},
 		"No cache hit, local scan, central is reachable": {
-			request:         createImageRequest("", "123"),
-			notify:          common.SensorComponentEventCentralReachable,
-			expectCache:     createExpectValue(1, nil, nil),
-			expectRegistry:  createExpectValue(1, true, nil),
-			expectLocalScan: createExpectValue(1, &storage.Image{}, nil),
-			expectedError:   nil,
-			expectedResponse: &sensor.GetImageResponse{
-				Image: &storage.Image{},
-			},
+			request:          createImageRequest(imageName, imageID, false),
+			notify:           common.SensorComponentEventCentralReachable,
+			expectCache:      expectCacheHelper(suite.mockCache, 1, nil),
+			expectRegistry:   expectRegistryHelper(suite.mockRegistryStore, 1, true),
+			expectLocalScan:  expectLocalScan(suite.mockLocalScan, 1, createScannedImage(imageName, imageID), nil),
+			expectedError:    nil,
+			expectedResponse: createImageResponse(imageName, imageID),
 		},
 		"No cache hit, local scan returns error, central is reachable": {
-			request:          createImageRequest("", "123"),
+			request:          createImageRequest(imageName, imageID, false),
 			notify:           common.SensorComponentEventCentralReachable,
-			expectCache:      createExpectValue(1, nil, nil),
-			expectRegistry:   createExpectValue(1, true, nil),
-			expectLocalScan:  createExpectValue(1, nil, errors.New("some error")),
-			expectedError:    errors.Wrap(errors.New("some error"), "scanning image via local scanner"),
+			expectCache:      expectCacheHelper(suite.mockCache, 1, nil),
+			expectRegistry:   expectRegistryHelper(suite.mockRegistryStore, 1, true),
+			expectLocalScan:  expectLocalScan(suite.mockLocalScan, 1, nil, err),
+			expectedError:    errLocalScan,
 			expectedResponse: nil,
 		},
 	}
@@ -148,46 +135,10 @@ func (suite *imageServiceSuite) TestGetImage() {
 		suite.T().Run(testName, func(t *testing.T) {
 			suite.service.centralReady.Reset()
 			suite.service.Notify(c.notify)
-			if c.expectCache != nil {
-				suite.mockCache.EXPECT().Get(gomock.Any()).Times(c.expectCache.times).DoAndReturn(func(_ interface{}) interface{} {
-					return c.expectCache.retValue
-				})
-			} else {
-				suite.mockCache.EXPECT().Get(gomock.Any()).Times(0)
-			}
-			if c.expectRegistry != nil {
-				suite.mockRegistryStore.EXPECT().IsLocal(gomock.Any()).Times(c.expectRegistry.times).DoAndReturn(func(_ interface{}) bool {
-					ret, ok := c.expectRegistry.retValue.(bool)
-					assert.Truef(t, ok, "Invalid test case. The 'ret' value should be of type (bool), got %T", c.expectRegistry.retValue)
-					return ret
-				})
-			} else {
-				suite.mockRegistryStore.EXPECT().IsLocal(gomock.Any()).Times(0)
-			}
-			if c.expectCentralCall != nil {
-				suite.mockCentral.EXPECT().ScanImageInternal(gomock.Any(), gomock.Any()).Times(c.expectCentralCall.times).DoAndReturn(func(_, _ interface{}, _ ...interface{}) (*v1.ScanImageInternalResponse, error) {
-					if c.expectCentralCall.retValue == nil {
-						return nil, c.expectCentralCall.err
-					}
-					ret, ok := c.expectCentralCall.retValue.(*v1.ScanImageInternalResponse)
-					assert.Truef(t, ok, "Invalid test case. The 'ret' value should be of type %T, got %T", &v1.ScanImageInternalResponse{}, c.expectCentralCall.retValue)
-					return ret, c.expectCentralCall.err
-				})
-			} else {
-				suite.mockCentral.EXPECT().ScanImageInternal(gomock.Any(), gomock.Any()).Times(0)
-			}
-			if c.expectLocalScan != nil {
-				suite.mockLocalScan.EXPECT().EnrichLocalImageInNamespace(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(c.expectLocalScan.times).DoAndReturn(func(_, _, _, _, _, _ interface{}) (*storage.Image, error) {
-					if c.expectLocalScan.retValue == nil {
-						return nil, c.expectLocalScan.err
-					}
-					ret, ok := c.expectLocalScan.retValue.(*storage.Image)
-					assert.Truef(t, ok, "Invalid test case. The 'ret' value should be of type %T, got %T", &storage.Image{}, c.expectLocalScan.retValue)
-					return ret, c.expectLocalScan.err
-				})
-			} else {
-				suite.mockLocalScan.EXPECT().EnrichLocalImageInNamespace(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-			}
+			c.expectCache.Fn()()
+			c.expectRegistry.Fn()()
+			c.expectCentralCall.Fn()()
+			c.expectLocalScan.Fn()()
 			res, err := suite.service.GetImage(ctx, c.request)
 			if c.expectedError != nil {
 				assert.EqualError(t, err, c.expectedError.Error())
@@ -199,28 +150,131 @@ func (suite *imageServiceSuite) TestGetImage() {
 	}
 }
 
-type expectValue struct {
-	times    int
-	retValue interface{}
-	err      error
-}
-
-func createExpectValue(times int, val interface{}, err error) *expectValue {
-	return &expectValue{
-		times:    times,
-		retValue: val,
-		err:      err,
+func expectCacheHelper(mockCache *mocks.MockCache, times int, retValue interface{}) *expectFunctionHelper {
+	var fn func()
+	if times == 0 {
+		fn = func() {
+			mockCache.EXPECT().Get(gomock.Any()).Times(0)
+		}
+	} else {
+		fn = func() {
+			mockCache.EXPECT().Get(gomock.Any()).Times(times).DoAndReturn(func(_ interface{}) interface{} {
+				return retValue
+			})
+		}
+	}
+	return &expectFunctionHelper{
+		fn: fn,
 	}
 }
 
-func createImageRequest(name, id string) *sensor.GetImageRequest {
+func expectRegistryHelper(mockRegistryStore *mocks2.MockregistryStore, times int, retValue bool) *expectFunctionHelper {
+	var fn func()
+	if times == 0 {
+		fn = func() {
+			mockRegistryStore.EXPECT().IsLocal(gomock.Any()).Times(0)
+		}
+	} else {
+		fn = func() {
+			mockRegistryStore.EXPECT().IsLocal(gomock.Any()).Times(times).DoAndReturn(func(_ interface{}) bool {
+				return retValue
+			})
+		}
+	}
+	return &expectFunctionHelper{
+		fn: fn,
+	}
+}
+
+func expectCentralCall(mockCentral *mocks2.MockcentralClient, times int, retValue *v1.ScanImageInternalResponse, retErr error) *expectFunctionHelper {
+	var fn func()
+	if times == 0 {
+		fn = func() {
+			mockCentral.EXPECT().ScanImageInternal(gomock.Any(), gomock.Any()).Times(0)
+		}
+	} else {
+		fn = func() {
+			mockCentral.EXPECT().ScanImageInternal(gomock.Any(), gomock.Any()).Times(times).DoAndReturn(func(_, _ interface{}, _ ...interface{}) (*v1.ScanImageInternalResponse, error) {
+				return retValue, retErr
+			})
+		}
+	}
+	return &expectFunctionHelper{
+		fn: fn,
+	}
+}
+
+func expectLocalScan(mockLocalScan *mocks2.MocklocalScan, times int, retValue *storage.Image, retErr error) *expectFunctionHelper {
+	var fn func()
+	if times == 0 {
+		fn = func() {
+			mockLocalScan.EXPECT().EnrichLocalImageInNamespace(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+		}
+	} else {
+		fn = func() {
+			mockLocalScan.EXPECT().EnrichLocalImageInNamespace(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(times).DoAndReturn(func(_, _, _, _, _, _ interface{}) (*storage.Image, error) {
+				return retValue, retErr
+			})
+		}
+	}
+	return &expectFunctionHelper{
+		fn: fn,
+	}
+}
+
+type expectFunctionHelper struct {
+	fn func()
+}
+
+func (e *expectFunctionHelper) Fn() func() {
+	if e == nil || e.fn == nil {
+		return func() {}
+	}
+	return e.fn
+}
+
+func createScannedImage(name, id string) *storage.Image {
+	return &storage.Image{
+		Id: id,
+		Name: &storage.ImageName{
+			FullName: name,
+		},
+		Scan: &storage.ImageScan{},
+	}
+}
+
+func createImageRequest(name, id string, scanInline bool) *sensor.GetImageRequest {
 	return &sensor.GetImageRequest{
-		ScanInline: false,
+		ScanInline: scanInline,
 		Image: &storage.ContainerImage{
 			Id: id,
 			Name: &storage.ImageName{
 				FullName: name,
 			},
+		},
+	}
+}
+
+func createScanImageInternalResponse(name, id string) *v1.ScanImageInternalResponse {
+	return &v1.ScanImageInternalResponse{
+		Image: &storage.Image{
+			Id: id,
+			Name: &storage.ImageName{
+				FullName: name,
+			},
+			Scan: &storage.ImageScan{},
+		},
+	}
+}
+
+func createImageResponse(name, id string) *sensor.GetImageResponse {
+	return &sensor.GetImageResponse{
+		Image: &storage.Image{
+			Id: id,
+			Name: &storage.ImageName{
+				FullName: name,
+			},
+			Scan: &storage.ImageScan{},
 		},
 	}
 }
