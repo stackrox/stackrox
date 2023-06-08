@@ -32,12 +32,15 @@ jobs:
       run: |
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
         git config --global --add safe.directory "$(pwd)"
+        su tester -c "git config --global --add safe.directory \"$(pwd)\""
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Go Unit Tests
-      run: su tester -c "${{ matrix.gotags }} make go-unit-tests"
+      run: |
+        chmod a+w .
+        su tester -c "${{ matrix.gotags }} make go-unit-tests"
 
     - name: Generate junit report
       if: always()
