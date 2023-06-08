@@ -8,7 +8,6 @@ import (
 
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -35,11 +34,6 @@ type FlowStoreTestSuite struct {
 
 // SetupSuite runs before any tests
 func (suite *FlowStoreTestSuite) SetupSuite() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.T().Skip("Skip rocks tests")
-		suite.T().SkipNow()
-	}
-
 	var err error
 	suite.tested, err = suite.store.CreateFlowStore(context.Background(), fixtureconsts.Cluster1)
 	suite.Require().NoError(err)
@@ -88,32 +82,17 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	err = suite.tested.UpsertFlows(context.Background(), flows, updateTS)
 	suite.NoError(err, "upsert should succeed on first insert")
 
-	readFlows, readUpdateTS, err := suite.tested.GetAllFlows(context.Background(), nil)
+	readFlows, _, err := suite.tested.GetAllFlows(context.Background(), nil)
 	suite.Require().NoError(err)
 	suite.ElementsMatch(readFlows, flows)
-	// I don't think these time checks make sense based on how this will work in PG.
-	// Not sure it made sense regardless.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
-	}
 
-	readFlows, readUpdateTS, err = suite.tested.GetAllFlows(context.Background(), protoconv.ConvertTimeToTimestamp(t2))
+	readFlows, _, err = suite.tested.GetAllFlows(context.Background(), protoconv.ConvertTimeToTimestamp(t2))
 	suite.Require().NoError(err)
 	suite.ElementsMatch(readFlows, flows[1:])
-	// I don't think these time checks make sense based on how this will work in PG.
-	// Not sure it made sense regardless.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
-	}
 
-	readFlows, readUpdateTS, err = suite.tested.GetAllFlows(context.Background(), protoconv.ConvertTimeToTimestamp(time.Now()))
+	readFlows, _, err = suite.tested.GetAllFlows(context.Background(), protoconv.ConvertTimeToTimestamp(time.Now()))
 	suite.Require().NoError(err)
 	suite.ElementsMatch(readFlows, flows[2:])
-	// I don't think these time checks make sense based on how this will work in PG.
-	// Not sure it made sense regardless.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
-	}
 
 	updateTS += 1337
 	err = suite.tested.UpsertFlows(context.Background(), flows, updateTS)
@@ -136,29 +115,19 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.NoError(err, "remove should succeed when not present")
 
 	var actualFlows []*storage.NetworkFlow
-	actualFlows, readUpdateTS, err = suite.tested.GetAllFlows(context.Background(), nil)
+	actualFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil)
 	suite.NoError(err)
 	suite.ElementsMatch(actualFlows, flows[1:])
-	// I don't think these time checks make sense based on how this will work in PG.
-	// Not sure it made sense regardless.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
-	}
 
 	updateTS += 42
 	err = suite.tested.UpsertFlows(context.Background(), flows, updateTS)
 	suite.NoError(err, "upsert should succeed")
 
-	actualFlows, readUpdateTS, err = suite.tested.GetAllFlows(context.Background(), nil)
+	actualFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil)
 	suite.NoError(err)
 	suite.ElementsMatch(actualFlows, flows)
-	// I don't think these time checks make sense based on how this will work in PG.
-	// Not sure it made sense regardless.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
-	}
 
-	node1Flows, readUpdateTS, err := suite.tested.GetMatchingFlows(context.Background(), func(props *storage.NetworkFlowProperties) bool {
+	node1Flows, _, err := suite.tested.GetMatchingFlows(context.Background(), func(props *storage.NetworkFlowProperties) bool {
 		if props.GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT && props.GetDstEntity().GetId() == fixtureconsts.Deployment1 {
 			return true
 		}
@@ -169,11 +138,6 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	}, nil)
 	suite.NoError(err)
 	suite.ElementsMatch(node1Flows, flows[:1])
-	// I don't think these time checks make sense based on how this will work in PG.
-	// Not sure it made sense regardless.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(readUpdateTS))
-	}
 }
 
 // TestRemoveAllMatching tests removing flows that match deployments that have been removed
@@ -181,12 +145,10 @@ func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 	t1 := time.Now().Add(-5 * time.Minute)
 	t2 := time.Now()
 	t3 := time.Now().Add(15 * time.Minute)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		// Round the timestamps to the microsecond
-		t1 = t1.Truncate(1000)
-		t2 = t2.Truncate(1000)
-		t3 = t3.Truncate(1000)
-	}
+	// Round the timestamps to the microsecond
+	t1 = t1.Truncate(1000)
+	t2 = t2.Truncate(1000)
+	t3 = t3.Truncate(1000)
 	flows := []*storage.NetworkFlow{
 		{
 			Props: &storage.NetworkFlowProperties{
