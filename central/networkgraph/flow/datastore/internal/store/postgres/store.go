@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm"
 )
@@ -131,12 +130,6 @@ type FlowStore interface {
 	RemoveFlow(ctx context.Context, props *storage.NetworkFlowProperties) error
 	// RemoveFlowsForDeployment remove flows associated with a deployment
 	RemoveFlowsForDeployment(ctx context.Context, id string) error
-
-	// RemoveMatchingFlows We can probably phase out the functions
-	// valueMatchFn checks to see if time difference vs now is greater than orphanWindow i.e. 30 minutes
-	// keyMatchFn checks to see if either the source or destination are orphaned.  Orphaned means it is type deployment and the id does not exist in deployments.
-	// Though that appears to be dackbox so that is gross.  May have to keep the keyMatchFn for now and replace with a join when deployments are moved to a table?
-	RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error
 
 	// RemoveStaleFlows remove stale duplicate network flows
 	RemoveStaleFlows(ctx context.Context) error
@@ -574,15 +567,6 @@ func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFl
 	return pgutils.Retry(func() error {
 		return s.delete(ctx, props)
 	})
-}
-
-// RemoveMatchingFlows removes flows from the store that fit the criteria specified in both keyMatchFn AND valueMatchFN
-// keyMatchFn will return true if a flow references a source OR destination deployment that has been deleted
-// valueMatchFn will return true if the lastSeenTimestamp of a flow is more than 30 minutes ago.
-// TODO(ROX-9921) Figure out what to do with the functions.
-func (s *flowStoreImpl) RemoveMatchingFlows(_ context.Context, _ func(props *storage.NetworkFlowProperties) bool, _ func(flow *storage.NetworkFlow) bool) error {
-	utils.Should(errors.New("No longer supported with Postgres"))
-	return nil
 }
 
 // RemoveOrphanedFlows removes flows that have been orphaned

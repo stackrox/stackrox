@@ -142,14 +142,6 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	if err != nil {
 		return nil, err
 	}
-	netFlowStore, err := netFlowsDataStore.GetTestRocksBleveClusterDataStore(t, rocksengine)
-	if err != nil {
-		return nil, err
-	}
-	netEntityStore, err := netEntityDataStore.GetTestRocksBleveDataStore(t, rocksengine)
-	if err != nil {
-		return nil, err
-	}
 	serviceAccountStore, err := serviceAccountDataStore.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
 	if err != nil {
 		return nil, err
@@ -162,10 +154,6 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 	if err != nil {
 		return nil, err
 	}
-	networkBaselineManager, err := networkBaselineManager.GetTestRocksBleveManager(t, rocksengine, bleveIndex, dacky, keyFence, boltengine)
-	if err != nil {
-		return nil, err
-	}
 	iiStore, err := imageIntegrationDataStore.GetTestRocksBleveDataStore(t, boltengine, bleveIndex)
 	if err != nil {
 		return nil, err
@@ -175,7 +163,7 @@ func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, 
 
 	return New(clusterdbstore, clusterhealthdbstore, nil,
 		alertStore, iiStore, namespaceStore, deploymentStore,
-		nodeStore, nil, secretStore, netFlowStore, netEntityStore,
+		nodeStore, nil, secretStore, nil, nil,
 		serviceAccountStore, k8sRoleStore, k8sRoleBindingStore, sensorCnxMgr, nil,
-		dacky, clusterRanker, indexer, networkBaselineManager)
+		dacky, clusterRanker, indexer, nil)
 }
