@@ -144,7 +144,7 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
                                         alignItems={{ default: 'alignItemsCenter' }}
                                         spaceItems={{ default: 'spaceItemsSm' }}
                                     >
-                                        <span>Generate a diagnostic bundle</span>
+                                        <span>Reissuing internal certificates</span>
                                         <ExternalLinkAltIcon color="var(--pf-global--link--Color)" />
                                     </Flex>
                                 </Button>
