@@ -612,7 +612,7 @@ func (a *aggregatorImpl) getSearchFuncs() map[storage.ComplianceAggregation_Scop
 	// `compliance/search/options.go`.
 	return map[storage.ComplianceAggregation_Scope]searchFuncAndOptionsMap{
 		storage.ComplianceAggregation_STANDARD: {
-			searchFunc: wrapContextLessSearchFunc(a.standards.SearchStandards),
+			searchFunc: a.standards.SearchStandards,
 			optionsMap: standardsIndex.StandardOptions,
 		},
 		storage.ComplianceAggregation_CLUSTER: {
@@ -631,7 +631,7 @@ func (a *aggregatorImpl) getSearchFuncs() map[storage.ComplianceAggregation_Scop
 			optionsMap: namespaceMappings.OptionsMap,
 		},
 		storage.ComplianceAggregation_CONTROL: {
-			searchFunc: wrapContextLessSearchFunc(a.standards.SearchControls),
+			searchFunc: a.standards.SearchControls,
 			optionsMap: standardsIndex.ControlOptions,
 		},
 		storage.ComplianceAggregation_DEPLOYMENT: {

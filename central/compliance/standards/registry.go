@@ -1,14 +1,18 @@
 package standards
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance/framework"
+	pgControl "github.com/stackrox/rox/central/compliance/standards/control"
 	"github.com/stackrox/rox/central/compliance/standards/index"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
+	pgStandard "github.com/stackrox/rox/central/compliance/standards/standard"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -20,20 +24,39 @@ type Registry struct {
 	categoriesByID map[string]*Category
 	controlsByID   map[string]*Control
 
-	indexer       index.Indexer
+	standardStore   pgStandard.Store
+	standardIndexer index.StandardIndexer
+
+	controlStore   pgControl.Store
+	controlIndexer index.ControlIndexer
+
 	checkRegistry framework.CheckRegistry
 }
 
 // NewRegistry creates and returns a new standards registry.
-func NewRegistry(indexer index.Indexer, checkRegistry framework.CheckRegistry, standardMDs ...metadata.Standard) (*Registry, error) {
+func NewRegistry(standardStore pgStandard.Store, standardIndexer index.StandardIndexer, controlStore pgControl.Store, controlIndexer index.ControlIndexer, checkRegistry framework.CheckRegistry, standardMDs ...metadata.Standard) (*Registry, error) {
 	r := &Registry{
+		standardStore:   standardStore,
+		standardIndexer: standardIndexer,
+		controlStore:    controlStore,
+		controlIndexer:  controlIndexer,
+
 		standardsByID:  make(map[string]*Standard),
 		categoriesByID: make(map[string]*Category),
 		controlsByID:   make(map[string]*Control),
-		indexer:        indexer,
 		checkRegistry:  checkRegistry,
 	}
-	if err := r.RegisterStandards(standardMDs...); err != nil {
+	ctx := sac.WithAllAccess(context.Background())
+
+	// Standards and controls are completely upserted by the call to Register Standards
+	if err := standardStore.DeleteByQuery(ctx, search.NewQueryBuilder().AddStrings(search.StandardID, search.WildcardString).ProtoQuery()); err != nil {
+		return nil, err
+	}
+	if err := controlStore.DeleteByQuery(ctx, search.NewQueryBuilder().AddStrings(search.ControlID, search.WildcardString).ProtoQuery()); err != nil {
+		return nil, err
+	}
+
+	if err := r.RegisterStandards(ctx, standardMDs...); err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -45,9 +68,9 @@ func (r *Registry) RegisterCheck(check framework.Check) error {
 }
 
 // RegisterStandards registers all of the standards in the standard registry
-func (r *Registry) RegisterStandards(standardMDs ...metadata.Standard) error {
+func (r *Registry) RegisterStandards(ctx context.Context, standardMDs ...metadata.Standard) error {
 	for _, standardMD := range standardMDs {
-		if err := r.RegisterStandard(standardMD, false); err != nil {
+		if err := r.RegisterStandard(ctx, standardMD, false); err != nil {
 			return errors.Wrapf(err, "registering standard %q", standardMD.ID)
 		}
 	}
@@ -55,7 +78,7 @@ func (r *Registry) RegisterStandards(standardMDs ...metadata.Standard) error {
 }
 
 // DeleteStandard removes a standard from the registry
-func (r *Registry) DeleteStandard(id string) error {
+func (r *Registry) DeleteStandard(ctx context.Context, id string) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 	standard := r.standardsByID[id]
@@ -63,18 +86,17 @@ func (r *Registry) DeleteStandard(id string) error {
 		return nil
 	}
 	delete(r.standardsByID, id)
-	if r.indexer != nil {
-		if err := r.indexer.DeleteStandard(id); err != nil {
-			return err
-		}
+
+	if err := r.standardStore.Delete(ctx, id); err != nil {
+		return err
 	}
+
 	for id := range r.controlsByID {
 		if ChildOfStandard(id, standard.ID) {
 			delete(r.controlsByID, id)
-			if r.indexer != nil {
-				if err := r.indexer.DeleteControl(id); err != nil {
-					return err
-				}
+
+			if err := r.controlStore.Delete(ctx, id); err != nil {
+				return err
 			}
 			r.checkRegistry.Delete(id)
 		}
@@ -88,23 +110,21 @@ func (r *Registry) DeleteStandard(id string) error {
 }
 
 // DeleteControl removes a control from the registry
-func (r *Registry) DeleteControl(id string) error {
+func (r *Registry) DeleteControl(ctx context.Context, id string) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
 	r.checkRegistry.Delete(id)
 	delete(r.controlsByID, id)
-	if r.indexer == nil {
-		return nil
-	}
-	if err := r.indexer.DeleteControl(id); err != nil {
+
+	if err := r.controlStore.Delete(ctx, id); err != nil {
 		return err
 	}
 	return nil
 }
 
 // RegisterStandard registers an individual standard
-func (r *Registry) RegisterStandard(standardMD metadata.Standard, overwrite bool) error {
+func (r *Registry) RegisterStandard(ctx context.Context, standardMD metadata.Standard, overwrite bool) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 	if _, existing := r.standardsByID[standardMD.ID]; existing && !overwrite {
@@ -121,10 +141,11 @@ func (r *Registry) RegisterStandard(standardMD metadata.Standard, overwrite bool
 		r.controlsByID[ctrl.QualifiedID()] = ctrl
 	}
 
-	if r.indexer == nil {
-		return nil
+	storageStandard := standard.ToStorageProto()
+	if err := r.standardStore.Upsert(ctx, storageStandard); err != nil {
+		return err
 	}
-	return r.indexer.IndexStandard(standard.ToProto())
+	return r.controlStore.UpsertMany(ctx, storageStandard.GetControls())
 }
 
 // LookupStandard returns the standard object with the given ID.
@@ -151,7 +172,7 @@ func (r *Registry) Standards() ([]*v1.ComplianceStandardMetadata, error) {
 	defer r.lock.RUnlock()
 	result := make([]*v1.ComplianceStandardMetadata, 0, len(r.standardsByID))
 	for _, standard := range r.standardsByID {
-		result = append(result, standard.MetadataProto())
+		result = append(result, standard.V1MetadataProto())
 	}
 	return result, nil
 }
@@ -164,7 +185,7 @@ func (r *Registry) Standard(id string) (*v1.ComplianceStandard, bool, error) {
 	if standard == nil {
 		return nil, false, nil
 	}
-	return standard.ToProto(), true, nil
+	return standard.ToV1Proto(), true, nil
 }
 
 // StandardMetadata returns the metadata proto for the compliance standard with the given ID.
@@ -175,7 +196,7 @@ func (r *Registry) StandardMetadata(id string) (*v1.ComplianceStandardMetadata, 
 	if standard == nil {
 		return nil, false, nil
 	}
-	return standard.MetadataProto(), true, nil
+	return standard.V1MetadataProto(), true, nil
 }
 
 // Controls returns the list of controls for the given compliance standard.
@@ -230,14 +251,14 @@ func (r *Registry) GetCategoryByControl(controlID string) *Category {
 func (r *Registry) Control(controlID string) *v1.ComplianceControl {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
-	return r.controlsByID[controlID].ToProto()
+	return r.controlsByID[controlID].ToV1Proto()
 }
 
 // Group returns the proto object for a single group
 func (r *Registry) Group(groupID string) *v1.ComplianceControlGroup {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
-	return r.categoriesByID[groupID].ToProto()
+	return r.categoriesByID[groupID].ToV1Proto()
 }
 
 // GetCISDockerStandardID returns the Docker CIS standard ID.
@@ -265,15 +286,17 @@ func (r *Registry) GetCISKubernetesStandardID() (string, error) {
 }
 
 // SearchStandards searches across standards
-func (r *Registry) SearchStandards(q *v1.Query) ([]search.Result, error) {
+func (r *Registry) SearchStandards(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
-	return r.indexer.SearchStandards(q)
+
+	return r.standardIndexer.Search(ctx, q)
 }
 
 // SearchControls searches across controls
-func (r *Registry) SearchControls(q *v1.Query) ([]search.Result, error) {
+func (r *Registry) SearchControls(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
-	return r.indexer.SearchControls(q)
+
+	return r.controlIndexer.Search(ctx, q)
 }

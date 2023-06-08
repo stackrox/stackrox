@@ -80,7 +80,7 @@ func (resolver *Resolver) ComplianceStandards(ctx context.Context, query RawQuer
 	if err != nil {
 		return nil, err
 	}
-	results, err := resolver.ComplianceStandardStore.SearchStandards(q)
+	results, err := resolver.ComplianceStandardStore.SearchStandards(ctx, q)
 	if err != nil {
 		return nil, err
 	}

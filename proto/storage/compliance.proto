@@ -182,3 +182,75 @@ message PreComputedComplianceAggregation {
     repeated ComplianceAggregation.Source sources         = 2;
     repeated string                       domain_pointers = 3;
 }
+
+message ComplianceStandardMetadata {
+    enum Scope {
+        UNSET      = 0;
+        CLUSTER    = 1;
+        NAMESPACE  = 2;
+        DEPLOYMENT = 3;
+        NODE       = 4;
+    }
+
+    string id                     = 1 [(gogoproto.moretags) = 'search:"Standard ID,hidden" sql:"pk"'];
+    string name                   = 2 [(gogoproto.moretags) = 'search:"Standard,store,hidden"'];
+    string description            = 3;
+    int32  num_implemented_checks = 4;
+    repeated Scope scopes         = 5;
+    bool   dynamic                = 6;
+    bool hideScanResults          = 7;
+}
+
+message ComplianceControl {
+    string id          = 1 [(gogoproto.moretags) = 'search:"Control ID,hidden" sql:"pk"'];
+    string standard_id = 2 [(gogoproto.moretags) = 'search:"Standard ID,hidden"'];
+    string group_id    = 3 [(gogoproto.moretags) = 'search:"Control Group ID,hidden"'];
+    string name        = 4 [(gogoproto.moretags) = 'search:"Control,store"'];
+    string description = 5;
+
+    bool implemented           = 6;
+    string interpretation_text = 7;
+}
+
+message ComplianceControlGroup {
+    string id                     = 1 [(gogoproto.moretags) = 'search:"Control Group ID" sql:"pk"'];
+    string standard_id            = 2 [(gogoproto.moretags) = 'search:"Standard ID,store"'];
+    string name                   = 3 [(gogoproto.moretags) = 'search:"Control Group,store"'];
+    string description            = 4;
+    int32  num_implemented_checks = 5;
+}
+
+message ComplianceStandard {
+    ComplianceStandardMetadata metadata    = 1;
+    repeated ComplianceControlGroup groups = 2 [(gogoproto.moretags) = 'search:"-"'];
+    repeated ComplianceControl controls    = 3 [(gogoproto.moretags) = 'search:"-"'];
+}
+
+message GetComplianceStandardResponse {
+    ComplianceStandard standard = 1;
+}
+
+message GetComplianceStandardsResponse {
+    repeated ComplianceStandardMetadata standards = 1;
+}
+
+message UpdateComplianceRequest {
+
+    string id = 1;
+    bool hideScanResults = 2;
+}
+
+message GetComplianceRunResultsRequest {
+    string cluster_id = 1;
+    string standard_id = 2;
+
+    // Specifies the run ID for which to return results. If empty, the most recent run is returned.
+    // CAVEAT: Setting this field circumvents the results cache on the server-side, which may lead to significantly
+    //         increased memory pressure and decreased performance.
+    string run_id = 3;
+}
+
+message GetComplianceRunResultsResponse {
+    storage.ComplianceRunResults           results     = 1;
+    repeated storage.ComplianceRunMetadata failed_runs = 2;
+}

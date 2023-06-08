@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -58,7 +59,7 @@ func (s *Standard) AllChecks() []framework.Check {
 	return s.allChecks
 }
 
-func (s *Standard) protoScopes() []v1.ComplianceStandardMetadata_Scope {
+func (s *Standard) v1ProtoScopes() []v1.ComplianceStandardMetadata_Scope {
 	scopes := []v1.ComplianceStandardMetadata_Scope{
 		v1.ComplianceStandardMetadata_CLUSTER,
 	}
@@ -77,32 +78,82 @@ func (s *Standard) protoScopes() []v1.ComplianceStandardMetadata_Scope {
 	return scopes
 }
 
-// MetadataProto returns the proto representation of the standard's metadata.
-func (s *Standard) MetadataProto() *v1.ComplianceStandardMetadata {
+func (s *Standard) storageProtoScopes() []storage.ComplianceStandardMetadata_Scope {
+	scopes := []storage.ComplianceStandardMetadata_Scope{
+		storage.ComplianceStandardMetadata_CLUSTER,
+	}
+	for _, s := range s.scopes {
+		switch s {
+		case pkgFramework.DeploymentKind:
+			scopes = append(scopes, storage.ComplianceStandardMetadata_DEPLOYMENT)
+			scopes = append(scopes, storage.ComplianceStandardMetadata_NAMESPACE)
+		case pkgFramework.NodeKind:
+			scopes = append(scopes, storage.ComplianceStandardMetadata_NODE)
+		}
+	}
+	sort.Slice(scopes, func(i, j int) bool {
+		return scopes[i] < scopes[j]
+	})
+	return scopes
+}
+
+// V1MetadataProto returns the proto representation of the standard's metadata.
+func (s *Standard) V1MetadataProto() *v1.ComplianceStandardMetadata {
 	return &v1.ComplianceStandardMetadata{
 		Id:                   s.ID,
 		Name:                 s.Name,
 		Description:          s.Description,
 		NumImplementedChecks: int32(len(s.allChecks)),
-		Scopes:               s.protoScopes(),
+		Scopes:               s.v1ProtoScopes(),
 		Dynamic:              s.Dynamic,
 	}
 }
 
-// ToProto returns the proto definition of the entire compliance standard.
-func (s *Standard) ToProto() *v1.ComplianceStandard {
+// StorageMetadataProto returns the proto representation of the standard's metadata.
+func (s *Standard) StorageMetadataProto() *storage.ComplianceStandardMetadata {
+	return &storage.ComplianceStandardMetadata{
+		Id:                   s.ID,
+		Name:                 s.Name,
+		Description:          s.Description,
+		NumImplementedChecks: int32(len(s.allChecks)),
+		Scopes:               s.storageProtoScopes(),
+		Dynamic:              s.Dynamic,
+	}
+}
+
+// ToV1Proto returns the proto definition of the entire compliance standard.
+func (s *Standard) ToV1Proto() *v1.ComplianceStandard {
 	groups := make([]*v1.ComplianceControlGroup, 0, len(s.Categories))
 	var controls []*v1.ComplianceControl
 
 	for _, category := range s.AllCategories() {
-		groups = append(groups, category.ToProto())
+		groups = append(groups, category.ToV1Proto())
 		for _, control := range category.AllControls() {
-			controls = append(controls, control.ToProto())
+			controls = append(controls, control.ToV1Proto())
 		}
 	}
 
 	return &v1.ComplianceStandard{
-		Metadata: s.MetadataProto(),
+		Metadata: s.V1MetadataProto(),
+		Groups:   groups,
+		Controls: controls,
+	}
+}
+
+// ToStorageProto returns the proto definition of the entire compliance standard.
+func (s *Standard) ToStorageProto() *storage.ComplianceStandard {
+	groups := make([]*storage.ComplianceControlGroup, 0, len(s.Categories))
+	var controls []*storage.ComplianceControl
+
+	for _, category := range s.AllCategories() {
+		groups = append(groups, category.ToStorageProto())
+		for _, control := range category.AllControls() {
+			controls = append(controls, control.ToStorageProto())
+		}
+	}
+
+	return &storage.ComplianceStandard{
+		Metadata: s.StorageMetadataProto(),
 		Groups:   groups,
 		Controls: controls,
 	}
@@ -158,12 +209,26 @@ func (c *Category) AllControls() []*Control {
 	return allControls
 }
 
-// ToProto returns the proto representation of the category's metadata.
-func (c *Category) ToProto() *v1.ComplianceControlGroup {
+// ToV1Proto returns the proto representation of the category's metadata.
+func (c *Category) ToV1Proto() *v1.ComplianceControlGroup {
 	if c == nil {
 		return nil
 	}
 	return &v1.ComplianceControlGroup{
+		Id:                   c.QualifiedID(),
+		StandardId:           c.Standard.ID,
+		Name:                 c.Name,
+		Description:          c.Description,
+		NumImplementedChecks: int32(len(c.allChecks)),
+	}
+}
+
+// ToStorageProto returns the proto representation of the category's metadata.
+func (c *Category) ToStorageProto() *storage.ComplianceControlGroup {
+	if c == nil {
+		return nil
+	}
+	return &storage.ComplianceControlGroup{
 		Id:                   c.QualifiedID(),
 		StandardId:           c.Standard.ID,
 		Name:                 c.Name,
@@ -192,8 +257,8 @@ func (c *Control) QualifiedID() string {
 	return c.qualifiedID
 }
 
-// ToProto returns the proto representation of a control.
-func (c *Control) ToProto() *v1.ComplianceControl {
+// ToV1Proto returns the proto representation of a control.
+func (c *Control) ToV1Proto() *v1.ComplianceControl {
 	if c == nil {
 		return nil
 	}
@@ -202,6 +267,26 @@ func (c *Control) ToProto() *v1.ComplianceControl {
 		interpretationText = c.Check.InterpretationText()
 	}
 	return &v1.ComplianceControl{
+		Id:                 c.QualifiedID(),
+		StandardId:         c.Standard.ID,
+		GroupId:            c.Category.QualifiedID(),
+		Name:               c.Name,
+		Description:        c.Description,
+		Implemented:        c.Check != nil,
+		InterpretationText: interpretationText,
+	}
+}
+
+// ToStorageProto returns the proto representation of a control.
+func (c *Control) ToStorageProto() *storage.ComplianceControl {
+	if c == nil {
+		return nil
+	}
+	var interpretationText string
+	if c.Check != nil {
+		interpretationText = c.Check.InterpretationText()
+	}
+	return &storage.ComplianceControl{
 		Id:                 c.QualifiedID(),
 		StandardId:         c.Standard.ID,
 		GroupId:            c.Category.QualifiedID(),

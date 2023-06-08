@@ -1,6 +1,8 @@
 package index
 
 import (
+	"context"
+
 	"github.com/blevesearch/bleve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
@@ -16,6 +18,16 @@ var (
 	// ControlOptions is the search options map for a compliance control
 	ControlOptions = search.Walk(v1.SearchCategory_COMPLIANCE_CONTROL, "control", (*v1.ComplianceControl)(nil))
 )
+
+// StandardIndexer implements the indexer for standards
+type StandardIndexer interface {
+	Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
+}
+
+// ControlIndexer implements the indexer for controls
+type ControlIndexer interface {
+	Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
+}
 
 // Indexer is the interface for Compliance Search
 //

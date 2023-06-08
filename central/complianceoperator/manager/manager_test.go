@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package manager
 
 import (
@@ -7,48 +9,48 @@ import (
 	"github.com/stackrox/rox/central/compliance/datastore/mocks"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards"
+	pgControl "github.com/stackrox/rox/central/compliance/standards/control"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
+	pgStandard "github.com/stackrox/rox/central/compliance/standards/standard"
 	checkResultsDatastore "github.com/stackrox/rox/central/complianceoperator/checkresults/datastore"
-	checkResultsStore "github.com/stackrox/rox/central/complianceoperator/checkresults/store/rocksdb"
+	checkResultsStore "github.com/stackrox/rox/central/complianceoperator/checkresults/store/postgres"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/profiles/datastore"
-	profileStore "github.com/stackrox/rox/central/complianceoperator/profiles/store/rocksdb"
+	profileStore "github.com/stackrox/rox/central/complianceoperator/profiles/store/postgres"
 	rulesDatastore "github.com/stackrox/rox/central/complianceoperator/rules/datastore"
-	rulesStore "github.com/stackrox/rox/central/complianceoperator/rules/store/rocksdb"
+	rulesStore "github.com/stackrox/rox/central/complianceoperator/rules/store/postgres"
 	scansDatastore "github.com/stackrox/rox/central/complianceoperator/scans/datastore"
-	scansStore "github.com/stackrox/rox/central/complianceoperator/scans/store/rocksdb"
+	scansStore "github.com/stackrox/rox/central/complianceoperator/scans/store/postgres"
 	scanSettingBindingDatastore "github.com/stackrox/rox/central/complianceoperator/scansettingbinding/datastore"
-	scanSettingBindingStore "github.com/stackrox/rox/central/complianceoperator/scansettingbinding/store/rocksdb"
+	scanSettingBindingStore "github.com/stackrox/rox/central/complianceoperator/scansettingbinding/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func newManager(t *testing.T) *managerImpl {
-	registry, err := standards.NewRegistry(nil, framework.RegistrySingleton(), metadata.AllStandards...)
+func newManager(t *testing.T) (*managerImpl, postgres.DB) {
+	db := pgtest.ForT(t)
+
+	standardStore := pgStandard.New(db)
+	controlStore := pgControl.New(db)
+
+	registry, err := standards.NewRegistry(standardStore, nil, controlStore, nil, framework.RegistrySingleton(), metadata.AllStandards...)
 	require.NoError(t, err)
 
-	db := rocksdbtest.RocksDBForT(t)
-	prof, err := profileStore.New(db)
-	require.NoError(t, err)
-
-	ssb, err := scanSettingBindingStore.New(db)
-	require.NoError(t, err)
-
-	rules, err := rulesStore.New(db)
-	require.NoError(t, err)
-
+	prof := profileStore.New(db)
+	ssb := scanSettingBindingStore.New(db)
+	rules := rulesStore.New(db)
 	rulesDS, err := rulesDatastore.NewDatastore(rules)
 	require.NoError(t, err)
 
-	scans, err := scansStore.New(db)
-	require.NoError(t, err)
+	scans := scansStore.New(db)
 
 	scansDS := scansDatastore.NewDatastore(scans)
 
-	checks, err := checkResultsStore.New(db)
+	checks := checkResultsStore.New(db)
 	require.NoError(t, err)
 
 	ctrl := gomock.NewController(t)
@@ -57,11 +59,12 @@ func newManager(t *testing.T) *managerImpl {
 	mgr, err := NewManager(registry, profileDatastore.NewDatastore(prof), scansDS, scanSettingBindingDatastore.NewDatastore(ssb), rulesDS, checkResultsDatastore.NewDatastore(checks), compliance)
 	require.NoError(t, err)
 
-	return mgr.(*managerImpl)
+	return mgr.(*managerImpl), db
 }
 
 func TestAddProfile(t *testing.T) {
-	mgr := newManager(t)
+	mgr, db := newManager(t)
+	defer db.Close()
 
 	rule1Name := "rule1"
 	rule1 := &storage.ComplianceOperatorRule{
@@ -164,7 +167,8 @@ func TestAddProfile(t *testing.T) {
 }
 
 func TestDeleteProfile(t *testing.T) {
-	mgr := newManager(t)
+	mgr, db := newManager(t)
+	defer db.Close()
 
 	mgr.compliance.(*mocks.MockDataStore).EXPECT().ClearAggregationResults(allAccessCtx).AnyTimes()
 
@@ -273,7 +277,8 @@ func TestDeleteProfile(t *testing.T) {
 }
 
 func TestIsStandardActiveFunctions(t *testing.T) {
-	mgr := newManager(t)
+	mgr, db := newManager(t)
+	defer db.Close()
 
 	assert.False(t, mgr.IsStandardActive("random"))
 	assert.False(t, mgr.IsStandardActiveForCluster("random", "thisdoesntmatter"))
@@ -314,7 +319,8 @@ func TestIsStandardActiveFunctions(t *testing.T) {
 }
 
 func TestAddRule(t *testing.T) {
-	mgr := newManager(t)
+	mgr, db := newManager(t)
+	defer db.Close()
 
 	rule1Name := "rule1"
 	rule1 := &storage.ComplianceOperatorRule{
@@ -368,7 +374,8 @@ func TestAddRule(t *testing.T) {
 }
 
 func TestDeleteRule(t *testing.T) {
-	mgr := newManager(t)
+	mgr, db := newManager(t)
+	defer db.Close()
 
 	rule1Name := "rule1"
 	rule1 := &storage.ComplianceOperatorRule{
@@ -422,7 +429,8 @@ func TestDeleteRule(t *testing.T) {
 }
 
 func TestGetMachineConfigs(t *testing.T) {
-	mgr := newManager(t)
+	mgr, db := newManager(t)
+	defer db.Close()
 
 	result, err := mgr.GetMachineConfigs("")
 	assert.NoError(t, err)

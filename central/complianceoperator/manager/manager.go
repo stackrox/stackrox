@@ -227,7 +227,7 @@ func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfil
 			currentControls.Add(standards.BuildQualifiedID(profile.GetName(), control.ID))
 		}
 		for controlToDelete := range existingControls.Difference(currentControls) {
-			if err := m.registry.DeleteControl(controlToDelete); err != nil {
+			if err := m.registry.DeleteControl(allAccessCtx, controlToDelete); err != nil {
 				return err
 			}
 		}
@@ -250,7 +250,7 @@ func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfil
 		}
 	}
 
-	if err := m.registry.RegisterStandard(standard, true); err != nil {
+	if err := m.registry.RegisterStandard(allAccessCtx, standard, true); err != nil {
 		log.Errorf("could not register standard %s: %v", profile.GetName(), err)
 	}
 
@@ -288,7 +288,7 @@ func (m *managerImpl) DeleteProfile(deletedProfile *storage.ComplianceOperatorPr
 		return err
 	}
 	if !found {
-		if err := m.registry.DeleteStandard(deletedProfile.GetName()); err != nil {
+		if err := m.registry.DeleteStandard(allAccessCtx, deletedProfile.GetName()); err != nil {
 			return err
 		}
 	}
@@ -301,7 +301,7 @@ func (m *managerImpl) DeleteProfile(deletedProfile *storage.ComplianceOperatorPr
 			if rule == nil {
 				continue
 			}
-			if err := m.registry.DeleteControl(standards.BuildQualifiedID(deletedProfile.GetName(), getRuleName(rule))); err != nil {
+			if err := m.registry.DeleteControl(allAccessCtx, standards.BuildQualifiedID(deletedProfile.GetName(), getRuleName(rule))); err != nil {
 				return err
 			}
 		}

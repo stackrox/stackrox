@@ -1,26 +1,37 @@
+//go:build sql_integration
+
 package standards
 
 import (
+	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/compliance/standards/index"
+	pgControl "github.com/stackrox/rox/central/compliance/standards/control"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
-	"github.com/stackrox/rox/central/globalindex"
+	pgStandard "github.com/stackrox/rox/central/compliance/standards/standard"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestIndexer(t *testing.T) {
-	globalIdx, err := globalindex.MemOnlyIndex()
-	require.NoError(t, err)
-	defer utils.IgnoreError(globalIdx.Close)
+	tp := pgtest.ForT(t)
+	defer tp.Close()
 
-	standardIdx := index.New(globalIdx)
-	registry, err := NewRegistry(standardIdx, nil, metadata.AllStandards...)
+	standardStore := pgStandard.New(tp)
+	standardIndexer := pgStandard.NewIndexer(tp)
+
+	controlStore := pgControl.New(tp)
+	controlIndexer := pgControl.NewIndexer(tp)
+
+	registry, err := NewRegistry(standardStore, standardIndexer, controlStore, controlIndexer, nil, metadata.AllStandards...)
 	require.NoError(t, err)
-	results, err := registry.SearchStandards(search.NewQueryBuilder().AddStrings(search.StandardID, "pci").ProtoQuery())
+
+	ctx := sac.WithAllAccess(context.Background())
+
+	results, err := registry.SearchStandards(ctx, search.NewQueryBuilder().AddStrings(search.StandardID, "pci").ProtoQuery())
 	assert.NoError(t, err)
 	assert.Len(t, results, 1)
 }
