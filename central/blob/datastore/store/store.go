@@ -7,12 +7,17 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/blob/datastore/store/postgres"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log          = logging.LoggerForModule()
+	scopeChecker = sac.ForResource(resources.Administration)
+)
 
 // Store is the interface to interact with the storage for storage.Blob
 type Store interface {
@@ -46,6 +51,15 @@ func wrapRollback(ctx context.Context, tx *pgPkg.Tx, err error) error {
 
 // Upsert adds a blob to the database
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error {
+	if err := sac.VerifyAuthzOK(scopeChecker.WriteAllowed(ctx)); err != nil {
+		return err
+	}
+	// Augment permission because we require read permission internally
+	ctx = sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
+
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -166,6 +180,14 @@ func (s *storeImpl) Get(ctx context.Context, name string, writer io.Writer) (*st
 
 // Delete removes a blob from database if it exists
 func (s *storeImpl) Delete(ctx context.Context, name string) error {
+	if err := sac.VerifyAuthzOK(scopeChecker.WriteAllowed(ctx)); err != nil {
+		return err
+	}
+	// Augment permission because we require read permission internally
+	ctx = sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
