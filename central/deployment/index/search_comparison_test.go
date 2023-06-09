@@ -33,6 +33,7 @@ func compareResults(t *testing.T, matches bool, predResult *search.Result, searc
 }
 
 func TestImageSearchResults(t *testing.T) {
+	//TODO:	[ROX-17705]	Update BenchmarkSearchAllDeployments and TestDeploymentSearchResults to run on postgres
 	pgtest.SkipIfPostgresEnabled(t)
 
 	cases := []struct {

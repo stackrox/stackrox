@@ -27,6 +27,7 @@ import (
 )
 
 func BenchmarkSearchAllDeployments(b *testing.B) {
+	//TODO:	[ROX-17705]	Update BenchmarkSearchAllDeployments and TestDeploymentSearchResults to run on postgres
 	pgtest.SkipIfPostgresEnabled(b)
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
