@@ -7,17 +7,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	componentCVEEdgeDackBox "github.com/stackrox/rox/central/componentcveedge/dackbox"
-	componentCVEEdgeIndex "github.com/stackrox/rox/central/componentcveedge/index"
-	cveDackbox "github.com/stackrox/rox/central/cve/dackbox"
-	cveIndex "github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/globalindex"
-	imageDackBox "github.com/stackrox/rox/central/image/dackbox"
-	imageIndex "github.com/stackrox/rox/central/image/index"
-	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
-	componentIndex "github.com/stackrox/rox/central/imagecomponent/index"
-	imageComponentEdgeDackBox "github.com/stackrox/rox/central/imagecomponentedge/dackbox"
-	imageComponentEdgeIndex "github.com/stackrox/rox/central/imagecomponentedge/index"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
@@ -70,11 +60,6 @@ func (suite *ImageDataStoreTestSuite) SetupSuite() {
 
 	reg := indexer.NewWrapperRegistry()
 	indexer.NewLazy(suite.indexQ, reg, suite.index, dacky.AckIndexed).Start()
-	reg.RegisterWrapper(cveDackbox.Bucket, cveIndex.Wrapper{})
-	reg.RegisterWrapper(componentDackBox.Bucket, componentIndex.Wrapper{})
-	reg.RegisterWrapper(componentCVEEdgeDackBox.Bucket, componentCVEEdgeIndex.Wrapper{})
-	reg.RegisterWrapper(imageDackBox.Bucket, imageIndex.Wrapper{})
-	reg.RegisterWrapper(imageComponentEdgeDackBox.Bucket, imageComponentEdgeIndex.Wrapper{})
 
 	suite.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(suite.T()))
 

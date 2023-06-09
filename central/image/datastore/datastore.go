@@ -4,16 +4,10 @@ import (
 	"context"
 
 	"github.com/blevesearch/bleve"
-	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
-	cveIndexer "github.com/stackrox/rox/central/cve/index"
-	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/image/datastore/search"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	dackBoxStore "github.com/stackrox/rox/central/image/datastore/store/dackbox"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
-	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
-	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
-	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -48,20 +42,18 @@ type DataStore interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
-func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.Index, processIndex bleve.Index, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
-	indexer := imageIndexer.New(bleveIndex)
-
+func newDatastore(dacky *dackbox.DackBox, storage store.Store, _ bleve.Index, _ bleve.Index, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
 	searcher := search.New(storage,
 		dacky,
-		cveIndexer.New(bleveIndex),
-		componentCVEEdgeIndexer.New(bleveIndex),
-		componentIndexer.New(bleveIndex),
-		imageComponentEdgeIndexer.New(bleveIndex),
-		imageIndexer.New(bleveIndex),
-		deploymentIndexer.New(bleveIndex, processIndex),
-		imageCVEEdgeIndexer.New(bleveIndex),
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
 	)
-	ds := newDatastoreImpl(storage, indexer, searcher, risks, imageRanker, imageComponentRanker)
+	ds := newDatastoreImpl(storage, nil, searcher, risks, imageRanker, imageComponentRanker)
 	ds.initializeRankers()
 
 	return ds

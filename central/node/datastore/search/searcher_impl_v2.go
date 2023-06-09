@@ -18,7 +18,10 @@ import (
 )
 
 var (
-	sacHelper = sac.ForResource(resources.Node).MustCreatePgSearchHelper()
+	sacHelper         = sac.ForResource(resources.Node).MustCreatePgSearchHelper()
+	defaultSortOption = &v1.QuerySortOption{
+		Field: search.LastUpdatedTime.String(),
+	}
 )
 
 // NewV2 returns a new instance of Searcher for the given storage and indexer.

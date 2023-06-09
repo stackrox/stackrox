@@ -7,41 +7,16 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	activeComponentDackbox "github.com/stackrox/rox/central/activecomponent/dackbox"
-	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/datastore/index"
-	clusterCVEEdgeDackbox "github.com/stackrox/rox/central/clustercveedge/dackbox"
-	clusterCVEEdgeIndex "github.com/stackrox/rox/central/clustercveedge/index"
-	componentCVEEdgeDackbox "github.com/stackrox/rox/central/componentcveedge/dackbox"
-	componentCVEEdgeIndex "github.com/stackrox/rox/central/componentcveedge/index"
-	cveDackbox "github.com/stackrox/rox/central/cve/dackbox"
-	cveIndex "github.com/stackrox/rox/central/cve/index"
-	deploymentDackbox "github.com/stackrox/rox/central/deployment/dackbox"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/globalindex"
-	imageDackbox "github.com/stackrox/rox/central/image/dackbox"
 	"github.com/stackrox/rox/central/image/datastore"
-	imageIndex "github.com/stackrox/rox/central/image/index"
-	"github.com/stackrox/rox/central/image/mappings"
-	imageComponentDackbox "github.com/stackrox/rox/central/imagecomponent/dackbox"
-	imageComponentIndex "github.com/stackrox/rox/central/imagecomponent/index"
-	imageComponentEdgeDackbox "github.com/stackrox/rox/central/imagecomponentedge/dackbox"
-	imageComponentEdgeIndex "github.com/stackrox/rox/central/imagecomponentedge/index"
-	imageCVEEdgeDackbox "github.com/stackrox/rox/central/imagecveedge/dackbox"
 	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
-	imageCVEEdgeIndex "github.com/stackrox/rox/central/imagecveedge/index"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	nodeDackbox "github.com/stackrox/rox/central/node/dackbox"
-	nodeIndex "github.com/stackrox/rox/central/node/index"
-	nodeComponentEdgeDackbox "github.com/stackrox/rox/central/nodecomponentedge/dackbox"
-	nodeComponentEdgeIndex "github.com/stackrox/rox/central/nodecomponentedge/index"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -91,49 +66,16 @@ type imageDatastoreSACSuite struct {
 
 func (s *imageDatastoreSACSuite) SetupSuite() {
 	var err error
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase = pgtest.ForT(s.T())
-		s.Require().NotNil(s.pgtestbase)
-		s.datastore, err = datastore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
-		s.Require().NoError(err)
-		s.imageVulnEdgeDatastore = imageCVEEdgeDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
-		s.deploymentDatastore, err = deploymentDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
-		s.Require().NoError(err)
-		s.namespaceDatastore, err = namespaceDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
-		s.Require().NoError(err)
-		s.optionsMap = schema.ImagesSchema.OptionsMap
-	} else {
-		s.engine, err = rocksdb.NewTemp("imageSACTest")
-		s.Require().NoError(err)
-		s.index, err = globalindex.MemOnlyIndex()
-		s.Require().NoError(err)
-		s.keyFence = dackboxConcurrency.NewKeyFence()
-		s.indexQ = queue.NewWaitableQueue()
-		s.dacky, err = dackbox.NewRocksDBDackBox(s.engine, s.indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
-		s.Require().NoError(err)
-		reg := indexer.NewWrapperRegistry()
-		indexer.NewLazy(s.indexQ, reg, s.index, s.dacky.AckIndexed).Start()
-		reg.RegisterWrapper(activeComponentDackbox.Bucket, activeComponentIndex.Wrapper{})
-		reg.RegisterWrapper(clusterCVEEdgeDackbox.Bucket, clusterCVEEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(componentCVEEdgeDackbox.Bucket, componentCVEEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(cveDackbox.Bucket, cveIndex.Wrapper{})
-		reg.RegisterWrapper(deploymentDackbox.Bucket, deploymentIndex.Wrapper{})
-		reg.RegisterWrapper(imageDackbox.Bucket, imageIndex.Wrapper{})
-		reg.RegisterWrapper(imageComponentDackbox.Bucket, imageComponentIndex.Wrapper{})
-		reg.RegisterWrapper(imageComponentEdgeDackbox.Bucket, imageComponentEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(imageCVEEdgeDackbox.Bucket, imageCVEEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(nodeDackbox.Bucket, nodeIndex.Wrapper{})
-		reg.RegisterWrapper(nodeComponentEdgeDackbox.Bucket, nodeComponentEdgeIndex.Wrapper{})
-
-		s.datastore, err = datastore.GetTestRocksBleveDataStore(s.T(), s.engine, s.index, s.dacky, s.keyFence)
-		s.Require().NoError(err)
-		s.imageVulnEdgeDatastore = imageCVEEdgeDataStore.GetTestRocksBleveDataStore(s.T(), s.index, s.dacky, s.keyFence)
-		s.deploymentDatastore, err = deploymentDataStore.GetTestRocksBleveDataStore(s.T(), s.engine, s.index, s.dacky, s.keyFence)
-		s.Require().NoError(err)
-		s.namespaceDatastore, err = namespaceDataStore.GetTestRocksBleveDataStore(s.T(), s.engine, s.index, s.dacky, s.keyFence)
-		s.Require().NoError(err)
-		s.optionsMap = mappings.OptionsMap
-	}
+	s.pgtestbase = pgtest.ForT(s.T())
+	s.Require().NotNil(s.pgtestbase)
+	s.datastore, err = datastore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
+	s.Require().NoError(err)
+	s.imageVulnEdgeDatastore = imageCVEEdgeDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
+	s.deploymentDatastore, err = deploymentDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
+	s.Require().NoError(err)
+	s.namespaceDatastore, err = namespaceDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
+	s.Require().NoError(err)
+	s.optionsMap = schema.ImagesSchema.OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
 		resources.Image)

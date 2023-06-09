@@ -47,17 +47,9 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) SetupSuite() {
 	var err error
 	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
 	s.Require().NoError(err)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pool := s.dackboxTestStore.GetPostgresPool()
-		s.datastore = GetTestPostgresDataStore(s.T(), pool)
-	} else {
-		rocksengine := s.dackboxTestStore.GetRocksEngine()
-		bleveIndex := s.dackboxTestStore.GetBleveIndex()
-		dacky := s.dackboxTestStore.GetDackbox()
-		genericStore, err := componentCVEEdgeDataStore.GetTestRocksBleveDataStore(s.T(), rocksengine, bleveIndex, dacky)
-		s.Require().NoError(err)
-		s.datastore = nodeComponentCVEEdgeFromGenericStore{genericStore: genericStore}
-	}
+
+	pool := s.dackboxTestStore.GetPostgresPool()
+	s.datastore = GetTestPostgresDataStore(s.T(), pool)
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Node)
 }
 

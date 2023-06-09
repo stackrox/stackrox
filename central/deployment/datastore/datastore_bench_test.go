@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	search2 "github.com/stackrox/rox/pkg/search"
@@ -26,6 +27,8 @@ import (
 )
 
 func BenchmarkSearchAllDeployments(b *testing.B) {
+	pgtest.SkipIfPostgresEnabled(b)
+
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -48,8 +51,8 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 
 	storage := dackBoxStore.New(dacky, concurrency.NewKeyFence())
 
-	deploymentsIndexer := index.New(bleveIndex, bleveIndex)
-	deploymentsSearcher := search.New(storage, dacky, nil, nil, nil, nil, nil, deploymentsIndexer, nil)
+	var deploymentsIndexer index.Indexer
+	var deploymentsSearcher search.Searcher
 
 	imageDS := imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, bleveIndex, false, nil, ranking.NewRanker(), ranking.NewRanker())
 

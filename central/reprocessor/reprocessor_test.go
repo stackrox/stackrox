@@ -6,22 +6,10 @@ import (
 	"context"
 	"testing"
 
-	componentCVEEdgeDackbox "github.com/stackrox/rox/central/componentcveedge/dackbox"
-	componentCVEEdgeIndex "github.com/stackrox/rox/central/componentcveedge/index"
-	cveDackbox "github.com/stackrox/rox/central/cve/dackbox"
-	cveIndex "github.com/stackrox/rox/central/cve/index"
-	deploymentDackbox "github.com/stackrox/rox/central/deployment/dackbox"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/globalindex"
-	indexDackbox "github.com/stackrox/rox/central/image/dackbox"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imagePG "github.com/stackrox/rox/central/image/datastore/store/postgres"
-	imageIndex "github.com/stackrox/rox/central/image/index"
-	imageComponentDackbox "github.com/stackrox/rox/central/imagecomponent/dackbox"
-	imageComponentIndex "github.com/stackrox/rox/central/imagecomponent/index"
-	imageComponentEdgeDackbox "github.com/stackrox/rox/central/imagecomponentedge/dackbox"
-	imageComponentEdgeIndex "github.com/stackrox/rox/central/imagecomponentedge/index"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
@@ -73,13 +61,6 @@ func TestGetActiveImageIDs(t *testing.T) {
 		reg := indexer.NewWrapperRegistry()
 		lazy := indexer.NewLazy(indexingQ, reg, bleveIndex, dacky.AckIndexed)
 		lazy.Start()
-
-		reg.RegisterWrapper(deploymentDackbox.Bucket, deploymentIndex.Wrapper{})
-		reg.RegisterWrapper(indexDackbox.Bucket, imageIndex.Wrapper{})
-		reg.RegisterWrapper(cveDackbox.Bucket, cveIndex.Wrapper{})
-		reg.RegisterWrapper(componentCVEEdgeDackbox.Bucket, componentCVEEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(imageComponentDackbox.Bucket, imageComponentIndex.Wrapper{})
-		reg.RegisterWrapper(imageComponentEdgeDackbox.Bucket, imageComponentEdgeIndex.Wrapper{})
 
 		imageDS = imageDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), bleveIndex, bleveIndex, false, nil, ranking.NewRanker(), ranking.NewRanker())
 

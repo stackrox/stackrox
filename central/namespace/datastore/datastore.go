@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/blevesearch/bleve"
 	"github.com/pkg/errors"
 	cveSAC "github.com/stackrox/rox/central/cve/sac"
 	"github.com/stackrox/rox/central/dackbox"
@@ -17,20 +16,16 @@ import (
 	"github.com/stackrox/rox/central/namespace/index/mappings"
 	"github.com/stackrox/rox/central/namespace/store"
 	pgStore "github.com/stackrox/rox/central/namespace/store/postgres"
-	"github.com/stackrox/rox/central/namespace/store/rocksdb"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	dackboxPkg "github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/derivedfields/counter"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -93,19 +88,6 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 	namespaceRanker := ranking.NamespaceRanker()
 	idMapStore := idmap.StorageSingleton()
 	return New(dbstore, nil, indexer, deploymentStore, namespaceRanker, idMapStore)
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackboxPkg.DackBox, keyFence concurrency.KeyFence) (DataStore, error) {
-	dbstore := rocksdb.New(rocksengine)
-	indexer := index.New(bleveIndex)
-	deploymentStore, err := deploymentDataStore.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex, dacky, keyFence)
-	if err != nil {
-		return nil, err
-	}
-	namespaceRanker := ranking.NamespaceRanker()
-	idMapStore := idmap.StorageSingleton()
-	return New(dbstore, dacky, indexer, deploymentStore, namespaceRanker, idMapStore)
 }
 
 var (

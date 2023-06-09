@@ -5,7 +5,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/stackrox/rox/central/globalindex"
 	imageIndex "github.com/stackrox/rox/central/image/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -60,10 +59,7 @@ func TestImageSearchResults(t *testing.T) {
 		},
 	}
 
-	idx, err := globalindex.MemOnlyIndex()
-	require.NoError(t, err)
-
-	index := imageIndex.New(idx)
+	var index imageIndex.Indexer
 
 	factory := predicate.NewFactory("image", (*storage.Image)(nil))
 	for _, c := range cases {
@@ -83,6 +79,8 @@ func TestImageSearchResults(t *testing.T) {
 }
 
 func TestDeploymentSearchResults(t *testing.T) {
+	pgtest.SkipIfPostgresEnabled(t)
+
 	cases := []struct {
 		deployment *storage.Deployment
 		query      *v1.Query
@@ -102,10 +100,7 @@ func TestDeploymentSearchResults(t *testing.T) {
 		},
 	}
 
-	idx, err := globalindex.MemOnlyIndex()
-	require.NoError(t, err)
-
-	index := New(idx, idx)
+	var index Indexer
 
 	factory := predicate.NewFactory("deployment", (*storage.Deployment)(nil))
 	for _, c := range cases {
