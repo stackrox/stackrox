@@ -4,20 +4,17 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/processbaseline/index"
 	"github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
 	pgStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
-	"github.com/stackrox/rox/central/processbaseline/store/rocksdb"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/postgres"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/require"
 )
@@ -78,22 +75,4 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 		return nil, err
 	}
 	return New(store, indexer, searcher, resultsStore, indicatorStore), nil
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index) (DataStore, error) {
-	dbstore, err := rocksdb.New(rocksengine)
-	if err != nil {
-		return nil, err
-	}
-	indexer := index.New(bleveIndex)
-	searcher, err := search.New(dbstore, indexer)
-	if err != nil {
-		return nil, err
-	}
-	resultsStore, err := datastore.GetTestRocksBleveDataStore(t, rocksengine)
-	if err != nil {
-		return nil, err
-	}
-	return New(dbstore, indexer, searcher, resultsStore, nil), nil
 }
