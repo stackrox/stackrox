@@ -17,6 +17,10 @@ info() {
     echo "INFO: $(date): $*"
 }
 
+error() {
+    echo "ERROR: $(date): $*"
+}
+
 die() {
     echo >&2 "$@"
     exit 1

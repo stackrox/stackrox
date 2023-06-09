@@ -21,7 +21,7 @@ endif
 endif
 
 ifeq ($(TAG),)
-TAG=$(shell git describe --tags --abbrev=10 --dirty --long)
+TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
 endif
 
 DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
@@ -69,21 +69,14 @@ tag:
 .PHONY: images
 images: scanner-image db-image
 
-.PHONY: scanner-build-dockerized
-scanner-build-dockerized: deps
+.PHONY: scanner-build
+scanner-build: deps
 	$(SILENT)echo "+ $@"
 ifdef CI
-	docker container create --name builder $(BUILD_IMAGE) $(BUILD_CMD)
-	docker cp $(GOPATH) builder:/
-	docker start -i builder
-	docker cp builder:/go/src/github.com/stackrox/scanner/image/scanner/bin/scanner image/scanner/bin/scanner
+	$(BUILD_FLAGS) $(BUILD_CMD)
 else
 	docker run $(IMAGE_BUILD_FLAGS) $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) $(BUILD_CMD)
 endif
-
-.PHONY: scanner-build-nodeps
-scanner-build-nodeps:
-	$(BUILD_FLAGS) $(BUILD_CMD)
 
 .PHONY: $(CURDIR)/image/scanner/bundle.tar.gz
 $(CURDIR)/image/scanner/bundle.tar.gz:
@@ -94,7 +87,7 @@ $(CURDIR)/image/db/bundle.tar.gz:
 	$(CURDIR)/image/db/create-bundle.sh $(CURDIR)/image/db $(CURDIR)/image/db
 
 .PHONY: scanner-image
-scanner-image: scanner-build-dockerized ossls-notice $(CURDIR)/image/scanner/bundle.tar.gz
+scanner-image: scanner-build ossls-notice $(CURDIR)/image/scanner/bundle.tar.gz
 	$(SILENT)echo "+ $@"
 	$(SILENT)docker build -t scanner:$(TAG) -f image/scanner/Dockerfile image/scanner
 
@@ -102,11 +95,6 @@ scanner-image: scanner-build-dockerized ossls-notice $(CURDIR)/image/scanner/bun
 db-image: $(CURDIR)/image/db/bundle.tar.gz
 	$(SILENT)echo "+ $@"
 	$(SILENT)docker build -t scanner-db:$(TAG) --build-arg POSTGRESQL_ARCH=${ARCH} -f image/db/Dockerfile image/db
-
-.PHONY: ossls-notice
-ossls-notice: deps $(OSSLS_BIN)
-	$(OSSLS_BIN) version
-	$(OSSLS_BIN) audit --export image/scanner/THIRD_PARTY_NOTICES
 
 ###########
 ## Tests ##
@@ -120,6 +108,33 @@ ossls-notice: deps $(OSSLS_BIN)
 ## Style ##
 ###########
 
+###########
+## Clean ##
+###########
+
+.PHONY: clean
+clean: clean-image clean-gobin clean-deps
+	$(SILENT)echo "+ $@"
+
+.PHONY: clean-image
+clean-image:
+	$(SILENT)echo "+ $@"
+	$(SILENT)git clean -xdf image/scanner/bin
+
+.PHONY: clean-gobin
+clean-gobin:
+	$(SILENT)echo "+ $@"
+	$(SILENT)rm -rf $(GOBIN)
+
+.PHONY: clean-deps
+clean-deps:
+	$(SILENT)echo "+ $@"
+	$(SILENT)rm -f deps
+
+###########
+## Tools ##
+###########
+
 deps: go.mod
 	$(SILENT)echo "+ $@"
 	$(SILENT)go mod tidy
@@ -129,19 +144,7 @@ ifdef CI
 endif
 	$(SILENT)touch deps
 
-###########
-## Clean ##
-###########
-
-.PHONY: clean
-clean: clean-image
-	$(SILENT)echo "+ $@"
-
-.PHONY: clean-image
-clean-image:
-	$(SILENT)echo "+ $@"
-	$(SILENT)git clean -xdf image/scanner/bin
-
-###########
-## Tools ##
-###########
+.PHONY: ossls-notice
+ossls-notice: deps $(OSSLS_BIN)
+	$(OSSLS_BIN) version
+	$(OSSLS_BIN) audit --export image/scanner/THIRD_PARTY_NOTICES

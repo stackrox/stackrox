@@ -233,6 +233,47 @@ push_main_image_set() {
     done
 }
 
+push_scanner_image_set() {
+    info "Pushing scanner and scanner-db images"
+
+    if is_OPENSHIFT_CI; then
+        error "Pushing Scanner images is not available on OpenShift CI"
+    fi
+
+    local scanner_image_set=("scanner" "scanner-db")
+
+    _push_scanner_image_set() {
+        local registry="$1"
+        local tag="$2"
+
+        for image in "${scanner_image_set[@]}"; do
+            "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "${registry}/${image}:${tag}" | cat
+        done
+    }
+
+    _tag_scanner_image_set() {
+        local local_tag="$1"
+        local registry="$2"
+        local remote_tag="$3"
+
+        for image in "${scanner_image_set[@]}"; do
+            docker tag "stackrox/${image}:${local_tag}" "${registry}/${image}:${remote_tag}"
+        done
+    }
+
+    local destination_registries=("quay.io/rhacs-eng" "quay.io/stackrox-io")
+
+    local tag
+    tag="$(make -C scanner --quiet --no-print-directory tag)"
+    info "Pushing Scanner images with tag: ${tag}"
+    for registry in "${destination_registries[@]}"; do
+        registry_rw_login "$registry"
+
+        _tag_image_set "$registry" "$tag"
+        _push_image_set "$registry" "$tag"
+    done
+}
+
 push_operator_image_set() {
     info "Pushing stackrox-operator, stackrox-operator-bundle and stackrox-operator-index images"
 
