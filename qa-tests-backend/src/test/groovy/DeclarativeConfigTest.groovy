@@ -1,5 +1,7 @@
 import static util.Helpers.withRetry
 
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 import io.grpc.StatusRuntimeException
@@ -233,8 +235,20 @@ splunk:
     @SuppressWarnings(["JUnitPublicProperty"])
     Timeout globalTimeout = new Timeout(1200, TimeUnit.SECONDS)
 
+    private ScheduledFuture<?> annotateTaskHandle
+
+    def setupSpec() {
+        annotateTaskHandle = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new Runnable() {
+            @Override
+            void run() {
+                orchestrator.addPodAnnotationByDeployment(DEFAULT_NAMESPACE, "central", "test", String.valueOf(System.currentTimeMillis()))
+            }
+        }, 0, 1, TimeUnit.SECONDS)
+    }
+
     def cleanup() {
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
+        annotateTaskHandle.cancel(true)
     }
 
     @Tag("BAT")
