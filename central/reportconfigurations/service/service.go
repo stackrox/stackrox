@@ -5,7 +5,6 @@ import (
 
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reportconfigurations/datastore"
-	"github.com/stackrox/rox/central/reportconfigurations/service/common"
 	"github.com/stackrox/rox/central/reports/manager"
 	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	accessScopeStore "github.com/stackrox/rox/central/role/datastore"
@@ -28,8 +27,10 @@ func New(reportConfigStore datastore.DataStore,
 	collectionDatastore collectionDataStore.DataStore,
 	manager manager.Manager) Service {
 	return &serviceImpl{
-		manager:           manager,
-		reportConfigStore: reportConfigStore,
-		validator:         common.NewValidator(accessScopeStore, collectionDatastore, notifierStore),
+		manager:              manager,
+		reportConfigStore:    reportConfigStore,
+		accessScopeDatastore: accessScopeStore,
+		collectionDatastore:  collectionDatastore,
+		notifierDatastore:    notifierStore,
 	}
 }
