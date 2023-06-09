@@ -162,6 +162,22 @@ class NonGroovyE2e(BaseTest):
             post_start_hook=set_dirs_after_start,
         )
 
+class SensorIntegration(BaseTest):
+    TEST_TIMEOUT = 90 * 60
+    TEST_OUTPUT_DIR = "/tmp/sensor-integration-test-logs"
+
+    def run(self):
+        print("Executing the Sensor Integration Tests")
+
+        def set_dirs_after_start():
+            # let post test know where logs are
+            self.test_outputs = [SensorIntegration.TEST_OUTPUT_DIR]
+
+        self.run_with_graceful_kill(
+            ["tests/e2e/sensor.sh", SensorIntegration.TEST_OUTPUT_DIR],
+            SensorIntegration.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
+        )
 
 class ScaleTest(BaseTest):
     TEST_TIMEOUT = 90 * 60
