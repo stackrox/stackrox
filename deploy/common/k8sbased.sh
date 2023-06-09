@@ -195,6 +195,12 @@ function launch_central {
     	add_args "--with-config-file=${ROXDEPLOY_CONFIG_FILE_MAP}"
     fi
 
+    SUPPORTS_PSP=$(kubectl api-resources | grep "podsecuritypolicies" -c || true)
+    if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
+        echo "Pod security policies are not supported on this cluster. Skipping..."
+        POD_SECURITY_POLICIES="false"
+    fi
+
     if [[ -n "$POD_SECURITY_POLICIES" ]]; then
       add_args "--enable-pod-security-policies=${POD_SECURITY_POLICIES}"
     fi
@@ -480,6 +486,12 @@ function launch_sensor {
     if [[ -n "$ROXCTL_TIMEOUT" ]]; then
       echo "Extending roxctl timeout to $ROXCTL_TIMEOUT"
       extra_config+=("--timeout=$ROXCTL_TIMEOUT")
+    fi
+
+    SUPPORTS_PSP=$(kubectl api-resources | grep "podsecuritypolicies" -c || true)
+    if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
+        echo "Pod security policies are not supported on this cluster. Skipping..."
+        POD_SECURITY_POLICIES="false"
     fi
 
     if [[ -n "$POD_SECURITY_POLICIES" ]]; then
