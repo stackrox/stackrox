@@ -54,7 +54,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	if !buildinfo.ReleaseBuild {
 		flags.AddHelmChartDebugSetting(c)
 	}
-	c.PersistentFlags().BoolVar(&cmd.config.EnablePodSecurityPolicies, "enable-pod-security-policies", true, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
+	c.PersistentFlags().BoolVar(&cmd.config.EnablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
 	c.PersistentPreRunE = func(*cobra.Command, []string) error {
 		cmd.construct(c)
 		return cmd.populateMTLS()

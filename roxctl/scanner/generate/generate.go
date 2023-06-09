@@ -113,7 +113,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		fmt.Sprintf(
 			"Generate deployment files supporting the given Istio version. Valid versions: %s",
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
-	c.PersistentFlags().BoolVar(&scannerGenerateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", true, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
+	c.PersistentFlags().BoolVar(&scannerGenerateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
 
 	// TODO(ROX-15868): Remove the offline-mode flag after the deprecation notice has passed.
 	c.Flags().BoolVar(&scannerGenerateCmd.apiParams.OfflineMode, "offline-mode", false, "Whether to run the scanner in offline mode (so "+
