@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-# Runs all e2e tests. Derived from the workload of CircleCI gke-api-nongroovy-tests.
+# Runs sensor integration tests.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
