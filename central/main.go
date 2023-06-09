@@ -707,50 +707,47 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   false,
 			EnableAudit:   true,
 		},
+		{
+			Route:      "/db/backup",
+			Authorizer: dbAuthz.DBReadAccessAuthorizer(),
+			ServerHandler: notImplementedOnManagedServices(
+				globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), false),
+			),
+			Compression: true,
+		},
+		{
+			Route:      "/api/extensions/backup",
+			Authorizer: user.WithRole(accesscontrol.Admin),
+			ServerHandler: notImplementedOnManagedServices(
+				globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), true),
+			),
+			Compression: true,
+		},
+		{
+			Route:         "/api/export/csv/node/cve",
+			Authorizer:    user.With(permissions.View(resources.Node)),
+			ServerHandler: nodeCveCsv.NodeCVECSVHandler(),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/export/csv/image/cve",
+			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
+			ServerHandler: imageCveCsv.ImageCVECSVHandler(),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/export/csv/cluster/cve",
+			Authorizer:    user.With(permissions.View(resources.Cluster)),
+			ServerHandler: clusterCveCsv.ClusterCVECSVHandler(),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/extensions/clusters/helm-config.yaml",
+			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster))),
+			ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
+			Compression:   true,
+		},
 	}
-
-	customRoutes = append(customRoutes, routes.CustomRoute{
-		Route:      "/db/backup",
-		Authorizer: dbAuthz.DBReadAccessAuthorizer(),
-		ServerHandler: notImplementedOnManagedServices(
-			globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), false),
-		),
-		Compression: true,
-	})
-	customRoutes = append(customRoutes, routes.CustomRoute{
-		Route:      "/api/extensions/backup",
-		Authorizer: user.WithRole(accesscontrol.Admin),
-		ServerHandler: notImplementedOnManagedServices(
-			globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), true),
-		),
-		Compression: true,
-	})
-	customRoutes = append(customRoutes, routes.CustomRoute{
-		Route:         "/api/export/csv/node/cve",
-		Authorizer:    user.With(permissions.View(resources.Node)),
-		ServerHandler: nodeCveCsv.NodeCVECSVHandler(),
-		Compression:   true,
-	})
-	customRoutes = append(customRoutes, routes.CustomRoute{
-		Route:         "/api/export/csv/image/cve",
-		Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
-		ServerHandler: imageCveCsv.ImageCVECSVHandler(),
-		Compression:   true,
-	})
-	customRoutes = append(customRoutes, routes.CustomRoute{
-		Route:         "/api/export/csv/cluster/cve",
-		Authorizer:    user.With(permissions.View(resources.Cluster)),
-		ServerHandler: clusterCveCsv.ClusterCVECSVHandler(),
-		Compression:   true,
-	})
-
-	customRoutes = append(customRoutes, routes.CustomRoute{
-		Route:         "/api/extensions/clusters/helm-config.yaml",
-		Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster))),
-		ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
-		Compression:   true,
-	})
-
 	scannerDefinitionsRoute := "/api/extensions/scannerdefinitions"
 	// Only grant compression to well-known content types. It should capture files
 	// worthy of compression in definition's bundle. Ignore all other types (e.g.,
