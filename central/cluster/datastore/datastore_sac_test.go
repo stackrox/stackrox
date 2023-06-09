@@ -6,28 +6,19 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/cluster/index/mappings"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	boltPkg "github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox"
-	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
-	"go.etcd.io/bbolt"
 )
 
 var (
@@ -46,11 +37,6 @@ type clusterDatastoreSACSuite struct {
 	// Elements for postgres mode
 	pgtestbase *pgtest.TestPostgres
 
-	// Elements for bleve+rocksdb mode
-	boltengine *bbolt.DB
-	engine     *rocksdb.RocksDB
-	index      bleve.Index
-
 	optionsMap searchPkg.OptionsMap
 
 	testContexts   map[string]context.Context
@@ -59,38 +45,16 @@ type clusterDatastoreSACSuite struct {
 
 func (s *clusterDatastoreSACSuite) SetupSuite() {
 	var err error
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase = pgtest.ForT(s.T())
-		s.NotNil(s.pgtestbase)
-		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
-		s.Require().NoError(err)
-		s.optionsMap = schema.ClustersSchema.OptionsMap
-	} else {
-		s.boltengine, err = boltPkg.NewTemp("clusterSACTestBolt")
-		s.Require().NoError(err)
-		s.engine, err = rocksdb.NewTemp("clusterSACTest")
-		s.Require().NoError(err)
-		s.index, err = globalindex.MemOnlyIndex()
-		s.Require().NoError(err)
-		keyFence := dackboxConcurrency.NewKeyFence()
-		indexQ := queue.NewWaitableQueue()
-		dacky, err := dackbox.NewRocksDBDackBox(s.engine, indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
-		s.Require().NoError(err)
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index, dacky, keyFence, s.boltengine)
-		s.Require().NoError(err)
-		s.optionsMap = mappings.OptionsMap
-	}
+	s.pgtestbase = pgtest.ForT(s.T())
+	s.NotNil(s.pgtestbase)
+	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
+	s.Require().NoError(err)
+	s.optionsMap = schema.ClustersSchema.OptionsMap
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Cluster)
 }
 
 func (s *clusterDatastoreSACSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase.DB.Close()
-	} else {
-		s.Require().NoError(s.boltengine.Close())
-		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
-		s.Require().NoError(s.index.Close())
-	}
+	s.pgtestbase.DB.Close()
 }
 
 func (s *clusterDatastoreSACSuite) SetupTest() {

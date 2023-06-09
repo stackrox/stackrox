@@ -6,19 +6,14 @@ import (
 
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/search"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
-	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/bolt"
 	pgStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore"
 	undoDeploymentPostgres "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/postgres"
-	undoDeploymentRocksDB "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/rocksdb"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
-	undobolt "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/bolt"
 	undopostgres "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
-	"go.etcd.io/bbolt"
 )
 
 var (
@@ -81,16 +76,5 @@ func GetBenchPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error
 	dbstore := pgStore.New(pool)
 	undodbstore := undopostgres.New(pool)
 	undodeploymentdbstore := undoDeploymentPostgres.New(pool)
-	return New(dbstore, nil, undodbstore, undodeploymentdbstore), nil
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB, boltengine *bbolt.DB) (DataStore, error) {
-	dbstore := bolt.New(boltengine)
-	undodbstore := undobolt.New(boltengine)
-	undodeploymentdbstore, err := undoDeploymentRocksDB.New(rocksengine)
-	if err != nil {
-		return nil, err
-	}
 	return New(dbstore, nil, undodbstore, undodeploymentdbstore), nil
 }

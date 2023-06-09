@@ -15,7 +15,6 @@ func init() {
 
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		prometheus.MustRegister(
-			boltOperationHistogramVec,
 			rocksDBOperationHistogramVec,
 			dackboxOperationHistogramVec,
 		)
