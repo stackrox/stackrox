@@ -11,7 +11,11 @@ import ClusterStatusProblems from './ClusterStatusProblems';
 import GlobalSearchButton from './GlobalSearchButton';
 import HelpMenu from './HelpMenu';
 import OrchestratorComponentsToggle from './OrchestratorComponentsToggle';
+/*
+ * TODO: remove this comment, which hides the light-mode/dark-mode toggle import,
+ *       after we update to use PatternFly themes for dark mode
 import ThemeToggleButton from './ThemeToggleButton';
+ */
 import UserMenu from './UserMenu';
 
 function MastheadToolbar(): ReactElement {
@@ -38,9 +42,13 @@ function MastheadToolbar(): ReactElement {
                 <PageHeaderToolsItem>
                     <CLIDownloadMenu />
                 </PageHeaderToolsItem>
+                {/*
+                  * TODO: remove this comment, which hides the light-mode/dark-mode toggle,
+                  *       after we update to use PatternFly themes for dark mode
                 <PageHeaderToolsItem>
                     <ThemeToggleButton />
                 </PageHeaderToolsItem>
+                */}
                 <PageHeaderToolsItem>
                     <ClusterStatusProblems />
                 </PageHeaderToolsItem>
