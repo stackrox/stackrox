@@ -11,17 +11,6 @@
     "RUNTIME"
   ],
   "eventSource": "DEPLOYMENT_EVENT",
-  "exclusions": [
-    {
-      "name": "Don't alert on the insights-operator deployment in namespace openshift-insights",
-      "deployment": {
-        "name": "insights-operator",
-        "scope": {
-          "namespace": "openshift-insights"
-        }
-      }
-    }
-  ],
   "severity": "MEDIUM_SEVERITY",
   "policyVersion": "1.1",
   "policySections": [

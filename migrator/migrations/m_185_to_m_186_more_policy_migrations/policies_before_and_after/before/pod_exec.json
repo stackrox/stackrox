@@ -11,44 +11,6 @@
     "RUNTIME"
   ],
   "eventSource": "DEPLOYMENT_EVENT",
-  "exclusions": [
-    {
-      "name": "Don't alert on deployment thanos-querier in namespace openshift-monitoring",
-      "deployment": {
-        "name": "thanos-querier",
-        "scope": {
-          "namespace": "openshift-monitoring"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment prometheus-k8s in namespace openshift-monitoring",
-      "deployment": {
-        "name": "prometheus-k8s",
-        "scope": {
-          "namespace": "openshift-monitoring"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment ovnkube-node in namespace openshift-ovn-kubernetes",
-      "deployment": {
-        "name": "ovnkube-node",
-        "scope": {
-          "namespace": "openshift-ovn-kubernetes"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment etcd-ci-ln-*-master-\\d+ in namespace openshift-etcd",
-      "deployment": {
-        "name": "etcd-ci-ln-.*-master-\\d+",
-        "scope": {
-          "namespace": "openshift-etcd"
-        }
-      }
-    }
-  ],
   "severity": "HIGH_SEVERITY",
   "policyVersion": "1.1",
   "policySections": [
