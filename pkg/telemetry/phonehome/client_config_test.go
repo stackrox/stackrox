@@ -17,4 +17,9 @@ func TestConfig_Enabled(t *testing.T) {
 		StorageKey: "test-key",
 	}
 	assert.True(t, cfg.Enabled())
+
+	cfg = &Config{
+		StorageKey: disabled,
+	}
+	assert.False(t, cfg.Enabled())
 }

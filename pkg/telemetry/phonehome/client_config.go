@@ -13,6 +13,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+const disabled = "DISABLED"
+
 var (
 	log = logging.LoggerForModule()
 )
@@ -60,7 +62,7 @@ type Config struct {
 
 // Enabled tells whether telemetry data collection is enabled.
 func (cfg *Config) Enabled() bool {
-	return cfg != nil && cfg.StorageKey != ""
+	return cfg != nil && cfg.StorageKey != "" && cfg.StorageKey != disabled
 }
 
 // Gatherer returns the telemetry gatherer instance.
