@@ -222,60 +222,6 @@
           "namespace": "openshift-cluster-node-tuning-operator"
         }
       }
-    },
-    {
-      "name": "Don't alert on deployment coredns-ci-ln-*-master-\\d+ in namespace openshift-vsphere-infra",
-      "deployment": {
-        "name": "coredns-ci-ln-.*-master-\\d+",
-        "scope": {
-          "namespace": "openshift-vsphere-infra"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment haproxy-ci-ln-*-master-\\d+ in namespace openshift-vsphere-infra",
-      "deployment": {
-        "name": "haproxy-ci-ln-.*-master-\\d+",
-        "scope": {
-          "namespace": "openshift-vsphere-infra"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment keepalived-ci-ln-*-master-\\d+ in namespace openshift-vsphere-infra",
-      "deployment": {
-        "name": "keepalived-ci-ln-.*-master-\\d+",
-        "scope": {
-          "namespace": "openshift-vsphere-infra"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment router-default in namespace openshift-ingress",
-      "deployment": {
-        "name": "router-default",
-        "scope": {
-          "namespace": "openshift-ingress"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment vmware-vsphere-csi-driver-controller in namespace openshift-cluster-csi-drivers",
-      "deployment": {
-        "name": "vmware-vsphere-csi-driver-controller",
-        "scope": {
-          "namespace": "openshift-cluster-csi-drivers"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment vmware-vsphere-csi-driver-node in namespace openshift-cluster-csi-drivers",
-      "deployment": {
-        "name": "vmware-vsphere-csi-driver-node",
-        "scope": {
-          "namespace": "openshift-cluster-csi-drivers"
-        }
-      }
     }
   ],
   "severity": "MEDIUM_SEVERITY",

@@ -17,22 +17,7 @@
       "deployment": {
         "name": "scanner",
         "scope": {
-          "label": {
-            "key": "app.kubernetes.io/name",
-            "value": "stackrox"
-          }
-        }
-      }
-    },
-    {
-      "name": "Don't alert on StackRox collector",
-      "deployment": {
-        "name": "collector",
-        "scope": {
-          "label": {
-            "key": "app.kubernetes.io/name",
-            "value": "stackrox"
-          }
+          "namespace": "stackrox"
         }
       }
     },

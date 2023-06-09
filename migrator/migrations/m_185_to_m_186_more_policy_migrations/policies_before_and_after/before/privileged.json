@@ -188,33 +188,6 @@
           "namespace": "openshift-machine-config-operator"
         }
       }
-    },
-    {
-      "name": "Don't alert on deployment coredns-ci-ln-*-master-\\d+ in namespace openshift-vsphere-infra",
-      "deployment": {
-        "name": "coredns-ci-ln-.*-master-\\d+",
-        "scope": {
-          "namespace": "openshift-vsphere-infra"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment haproxy-ci-ln-*-master-\\d+ in namespace openshift-vsphere-infra",
-      "deployment": {
-        "name": "haproxy-ci-ln-.*-master-\\d+",
-        "scope": {
-          "namespace": "openshift-vsphere-infra"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment keepalived-ci-ln-*-master-\\d+ in namespace openshift-vsphere-infra",
-      "deployment": {
-        "name": "keepalived-ci-ln-.*-master-\\d+",
-        "scope": {
-          "namespace": "openshift-vsphere-infra"
-        }
-      }
     }
   ],
   "severity": "MEDIUM_SEVERITY",
