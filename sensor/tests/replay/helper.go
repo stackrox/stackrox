@@ -129,7 +129,7 @@ func RunReplayTest(t *testing.T, suite Suite, writer *TraceWriterWithChannel, k8
 	}()
 	writer.disable()
 	// Wait for the re-sync to happen
-	time.Sleep(5 * resyncTime)
+	time.Sleep(10 * resyncTime)
 	allEvents := suite.GetFakeCentral().GetAllMessages()
 	// Read the sensorOutputFile containing the expected sensor's output
 	expectedEvents, err := readSensorOutputFile(sensorOutputFile)
