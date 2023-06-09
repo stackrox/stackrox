@@ -27,7 +27,7 @@ const CVETable = (props) => {
                 Header: 'Name',
                 accessor: 'name',
                 headerClassName:
-                    'pl-3 font-600 text-left border-b border-base-300 border-r-0 bg-primary-200',
+                    'pl-3 font-700 text-left border-b border-base-300 border-r-0 bg-primary-200',
                 Cell: ({ value }) => <div>{value}</div>,
             },
             {
@@ -35,21 +35,21 @@ const CVETable = (props) => {
                 accessor: 'version',
                 className: 'w-1/8 pr-4 flex items-center justify-end',
                 headerClassName:
-                    'w-1/8 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200',
+                    'w-1/8 font-700 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200',
             },
             {
                 Header: 'Source',
                 accessor: 'source',
                 className: 'pr-4 flex items-center justify-end w-1/8',
                 headerClassName:
-                    'w-1/8 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200',
+                    'w-1/8 font-700 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200',
             },
             {
                 Header: 'Location',
                 accessor: 'location',
                 className: 'flex items-center justify-start word-break-all w-1/4',
                 headerClassName:
-                    'w-1/4 font-600 border-b border-base-300 border-r-0 bg-primary-200',
+                    'w-1/4 font-700 border-b border-base-300 border-r-0 bg-primary-200',
                 Cell: ({ value }) => (
                     <Tooltip content={value}>
                         <div>{value}</div>
@@ -61,7 +61,7 @@ const CVETable = (props) => {
                 accessor: 'vulns.length',
                 className: 'w-1/10 pr-4 flex items-center justify-end',
                 headerClassName:
-                    'w-1/10 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200',
+                    'w-1/10 font-700 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200',
             },
         ];
 
@@ -70,7 +70,7 @@ const CVETable = (props) => {
                 Header: 'Fixable',
                 className: 'w-1/10 pr-4 flex items-center justify-end',
                 headerClassName:
-                    'w-1/10 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200',
+                    'w-1/10 font-700 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200',
                 Cell: ({ original }) => {
                     return original.vulns.filter((vuln) => vuln.fixedBy).length;
                 },

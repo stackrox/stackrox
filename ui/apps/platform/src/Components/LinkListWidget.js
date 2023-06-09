@@ -17,7 +17,7 @@ function getLI(item) {
         <Link
             to={item.link}
             title={item.label}
-            className="font-600 text-base-600 hover:bg-primary-100 focus:bg-primary-100 focus:text-primary-700 hover:text-primary-700 leading-normal px-2 inline-block w-full h-8 items-center flex"
+            className="text-base-600 underline leading-normal px-2 inline-block w-full h-8 items-center flex"
         >
             <span className="truncate w-full">{item.label}</span>
         </Link>

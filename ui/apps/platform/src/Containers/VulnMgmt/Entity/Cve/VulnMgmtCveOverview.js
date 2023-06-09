@@ -61,8 +61,8 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
             <ExternalLink size={16} />
         </a>
     ) : (
-        <span className="font-600 uppercase text-center text-base-600 bg-base-100 text-xs p-1">
-            Full Description Unavailable
+        <span className="text-center text-base-600 bg-base-100 text-sm p-1">
+            Full description unavailable
         </span>
     );
 
