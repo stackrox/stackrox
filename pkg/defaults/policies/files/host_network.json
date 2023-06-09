@@ -251,7 +251,7 @@
       }
     },
     {
-      "name": "Don't alert on deployment coredns-ci-ln-*-worker-* in namespace openshift-vsphere-infra",
+      "name": "Don't alert on deployments coredns-ci-ln-*-worker-* in namespace openshift-vsphere-infra",
       "deployment": {
         "name": "coredns-ci-ln-.*-worker-.*",
         "scope": {
@@ -260,7 +260,7 @@
       }
     },
     {
-      "name": "Don't alert on deployment keepalived-ci-ln-*-worker-* in namespace openshift-vsphere-infra",
+      "name": "Don't alert on deployments keepalived-ci-ln-*-worker-* in namespace openshift-vsphere-infra",
       "deployment": {
         "name": "keepalived-ci-ln-.*-worker-.*",
         "scope": {
