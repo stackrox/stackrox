@@ -252,12 +252,11 @@ push_scanner_image_set() {
     }
 
     _tag_scanner_image_set() {
-        local local_tag="$1"
-        local registry="$2"
-        local remote_tag="$3"
+        local registry="$1"
+        local tag="$2"
 
         for image in "${scanner_image_set[@]}"; do
-            docker tag "stackrox/${image}:${local_tag}" "${registry}/${image}:${remote_tag}"
+            docker tag "${image}:${tag}" "${registry}/${image}:${tag}"
         done
     }
 
@@ -269,8 +268,8 @@ push_scanner_image_set() {
     for registry in "${destination_registries[@]}"; do
         registry_rw_login "$registry"
 
-        _tag_image_set "$registry" "$tag"
-        _push_image_set "$registry" "$tag"
+        _tag_scanner_image_set "$registry" "$tag"
+        _push_scanner_image_set "$registry" "$tag"
     done
 }
 

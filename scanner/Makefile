@@ -89,11 +89,13 @@ $(CURDIR)/image/db/bundle.tar.gz:
 .PHONY: scanner-image
 scanner-image: scanner-build ossls-notice $(CURDIR)/image/scanner/bundle.tar.gz
 	$(SILENT)echo "+ $@"
+	$(SILENT)echo "Building scanner:$(TAG)"
 	$(SILENT)docker build -t scanner:$(TAG) -f image/scanner/Dockerfile image/scanner
 
 .PHONY: db-image
 db-image: $(CURDIR)/image/db/bundle.tar.gz
 	$(SILENT)echo "+ $@"
+	$(SILENT)echo "Building scanner-db:$(TAG)"
 	$(SILENT)docker build -t scanner-db:$(TAG) --build-arg POSTGRESQL_ARCH=${ARCH} -f image/db/Dockerfile image/db
 
 ###########
