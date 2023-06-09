@@ -251,6 +251,24 @@
       }
     },
     {
+      "name": "Don't alert on deployment coredns-ci-ln-*-worker-* in namespace openshift-vsphere-infra",
+      "deployment": {
+        "name": "coredns-ci-ln-.*-worker-.*",
+        "scope": {
+          "namespace": "openshift-vsphere-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment keepalived-ci-ln-*-worker-* in namespace openshift-vsphere-infra",
+      "deployment": {
+        "name": "keepalived-ci-ln-.*-worker-.*",
+        "scope": {
+          "namespace": "openshift-vsphere-infra"
+        }
+      }
+    },
+    {
       "name": "Don't alert on deployment router-default in namespace openshift-ingress",
       "deployment": {
         "name": "router-default",
