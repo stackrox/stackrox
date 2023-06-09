@@ -8,27 +8,18 @@ import (
 
 	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/role/store"
 	PermissionSetPGStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
-	permissionSetStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
 	postgresRolePGStore "github.com/stackrox/rox/central/role/store/role/postgres"
-	roleStore "github.com/stackrox/rox/central/role/store/role/rocksdb"
 	postgresSimpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
-	simpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	bolt "go.etcd.io/bbolt"
 )
 
 func TestAllDefaultRolesAreCovered(t *testing.T) {
@@ -81,10 +72,7 @@ type roleDataStoreTestSuite struct {
 	hasWriteCtx            context.Context
 	hasWriteDeclarativeCtx context.Context
 
-	dataStore DataStore
-	boltDB    *bolt.DB
-	rocksie   *rocksdb.RocksDB
-
+	dataStore    DataStore
 	postgresTest *pgtest.TestPostgres
 
 	existingRole                     *storage.Role
@@ -117,28 +105,12 @@ func (s *roleDataStoreTestSuite) mockGroupGetFiltered(_ context.Context, _ func(
 }
 
 func (s *roleDataStoreTestSuite) initDataStore() {
-	var err error
-	var roleStorage store.RoleStore
-	var permissionSetStorage store.PermissionSetStore
-	var accessScopeStorage store.SimpleAccessScopeStore
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.postgresTest = pgtest.ForT(s.T())
-		s.Require().NotNil(s.postgresTest)
-		roleStorage = postgresRolePGStore.New(s.postgresTest.DB)
-		permissionSetStorage = PermissionSetPGStore.New(s.postgresTest.DB)
-		accessScopeStorage = postgresSimpleAccessScopeStore.New(s.postgresTest.DB)
-	} else {
-		s.boltDB, err = bolthelper.NewTemp(s.T().Name() + "-bolt.db")
-		s.Require().NoError(err)
-		s.rocksie = rocksdbtest.RocksDBForT(s.T())
+	s.postgresTest = pgtest.ForT(s.T())
+	s.Require().NotNil(s.postgresTest)
 
-		roleStorage, err = roleStore.New(s.rocksie)
-		s.Require().NoError(err)
-		permissionSetStorage, err = permissionSetStore.New(s.rocksie)
-		s.Require().NoError(err)
-		accessScopeStorage, err = simpleAccessScopeStore.New(s.rocksie)
-		s.Require().NoError(err)
-	}
+	roleStorage := postgresRolePGStore.New(s.postgresTest.DB)
+	permissionSetStorage := PermissionSetPGStore.New(s.postgresTest.DB)
+	accessScopeStorage := postgresSimpleAccessScopeStore.New(s.postgresTest.DB)
 
 	s.dataStore = New(roleStorage, permissionSetStorage, accessScopeStorage, s.mockGroupGetFiltered)
 
@@ -165,12 +137,7 @@ func (s *roleDataStoreTestSuite) initDataStore() {
 }
 
 func (s *roleDataStoreTestSuite) TearDownTest() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.postgresTest.Close()
-	} else {
-		rocksdbtest.TearDownRocksDB(s.rocksie)
-		testutils.TearDownDB(s.boltDB)
-	}
+	s.postgresTest.Close()
 }
 
 ////////////////////////////////////////////////////////////////////////////////

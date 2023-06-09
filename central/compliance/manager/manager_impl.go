@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/central/scrape/factory"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
@@ -100,9 +99,7 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 	}
 
 	nodes, err := m.nodeStore.SearchRawNodes(ctx, search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
-	if errors.Cause(err) == bolthelper.ErrBucketNotFound {
-		nodes = nil
-	} else if err != nil {
+	if err != nil {
 		return nil, errors.Wrapf(err, "retrieving nodes for cluster %s", clusterID)
 	}
 

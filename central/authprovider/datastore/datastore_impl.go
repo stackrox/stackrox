@@ -81,7 +81,7 @@ func (b *datastoreImpl) AddAuthProvider(ctx context.Context, authProvider *stora
 	return b.storage.Upsert(ctx, authProvider)
 }
 
-// UpdateAuthProvider upserts an auth provider into bolt.
+// UpdateAuthProvider upserts an auth provider.
 func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *storage.AuthProvider) error {
 	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err

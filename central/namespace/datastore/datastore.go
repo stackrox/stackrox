@@ -174,7 +174,7 @@ func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace 
 	return namespace, true, err
 }
 
-// GetAllNamespaces retrieves namespaces matching the request from bolt
+// GetAllNamespaces retrieves namespaces matching the request
 func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
 	var allowedNamespaces []*storage.NamespaceMetadata
 	walkFn := func() error {
@@ -213,7 +213,7 @@ func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]
 	return namespaces, nil
 }
 
-// AddNamespace adds a namespace to bolt
+// AddNamespace adds a namespace.
 func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.NamespaceMetadata) error {
 	if ok, err := namespaceSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -311,7 +311,7 @@ func (b *datastoreImpl) searchNamespaces(ctx context.Context, q *v1.Query) ([]*s
 		}
 		if !exists {
 			// This could be due to a race where it's deleted in the time between
-			// the search and the query to Bolt.
+			// the search and the query.
 			continue
 		}
 		nsSlice = append(nsSlice, ns)

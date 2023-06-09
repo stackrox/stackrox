@@ -5,12 +5,9 @@ import (
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/globalindex"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/policy/index"
 	"github.com/stackrox/rox/central/policy/search"
 	policyStore "github.com/stackrox/rox/central/policy/store"
-	"github.com/stackrox/rox/central/policy/store/boltdb"
 	policyPostgres "github.com/stackrox/rox/central/policy/store/postgres"
 	categoriesDS "github.com/stackrox/rox/central/policycategory/datastore"
 	"github.com/stackrox/rox/pkg/defaults/policies"
@@ -29,17 +26,8 @@ var (
 )
 
 func initialize() {
-	var storage policyStore.Store
-	var indexer index.Indexer
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage = policyPostgres.New(globaldb.GetPostgres())
-		indexer = policyPostgres.NewIndexer(globaldb.GetPostgres())
-	} else {
-		storage = boltdb.New(globaldb.GetGlobalDB())
-		indexer = index.New(globalindex.GetGlobalTmpIndex())
-	}
-
+	storage := policyPostgres.New(globaldb.GetPostgres())
+	indexer := policyPostgres.NewIndexer(globaldb.GetPostgres())
 	searcher := search.New(storage, indexer)
 
 	clusterDatastore := clusterDS.Singleton()
