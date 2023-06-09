@@ -32,9 +32,7 @@ import (
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -115,7 +113,6 @@ func (s *SearchOperationsTestSuite) TearDownTest() {
 
 func (s *SearchOperationsTestSuite) TestAutocomplete() {
 	var (
-		indexingQ    queue.WaitableQueue
 		deploymentDS deploymentDatastore.DataStore
 		err          error
 	)
@@ -153,12 +150,6 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 	deploymentRanker.Add(fixtureconsts.Deployment4, 100)
 	s.NoError(deploymentDS.UpsertDeployment(allAccessCtx, deploymentName2))
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		finishedIndexing := concurrency.NewSignal()
-		indexingQ.PushSignal(&finishedIndexing)
-		finishedIndexing.Wait()
-	}
-
 	builder := NewBuilder().
 		WithAlertStore(alertMocks.NewMockDataStore(s.mockCtrl)).
 		WithDeploymentStore(deploymentDS).
@@ -174,9 +165,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithAggregator(nil)
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
-	}
+	builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 
 	service := builder.Build().(*serviceImpl)
 
@@ -285,7 +274,6 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 		alertsDS     alertDatastore.DataStore
 		deploymentDS deploymentDatastore.DataStore
 		err          error
-		indexingQ    queue.WaitableQueue
 	)
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
@@ -302,12 +290,6 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 	alert := fixtures.GetAlert()
 	s.NoError(alertsDS.UpsertAlert(alertAccessCtx, alert))
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		finishedIndexing := concurrency.NewSignal()
-		indexingQ.PushSignal(&finishedIndexing)
-		finishedIndexing.Wait()
-	}
-
 	builder := NewBuilder().
 		WithAlertStore(alertsDS).
 		WithDeploymentStore(deploymentDS).
@@ -323,9 +305,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithAggregator(nil)
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
-	}
+	builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 	service := builder.Build().(*serviceImpl)
 
 	deploymentQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, deployment.Name).Query()
@@ -367,7 +347,6 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 		alertsDS     alertDatastore.DataStore
 		deploymentDS deploymentDatastore.DataStore
 		err          error
-		indexingQ    queue.WaitableQueue
 	)
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
@@ -383,12 +362,6 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 
 	alert := fixtures.GetAlert()
 	s.NoError(alertsDS.UpsertAlert(alertAccessCtx, alert))
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		finishedIndexing := concurrency.NewSignal()
-		indexingQ.PushSignal(&finishedIndexing)
-		finishedIndexing.Wait()
-	}
 
 	builder := NewBuilder().
 		WithAlertStore(alertsDS).
