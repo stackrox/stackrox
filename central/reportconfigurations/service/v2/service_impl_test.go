@@ -33,14 +33,11 @@ type ReportConfigurationServiceTestSuite struct {
 }
 
 type upsertTestCase struct {
-	desc              string
-	v2ReprtConfigGen  func() *apiV2.ReportConfiguration
-	reportConfigGen   func() *storage.ReportConfiguration
-	setMocks          func()
-	isValidationError bool
+	desc                       string
+	setMocksAndGenReportConfig func() *apiV2.ReportConfiguration
+	reportConfigGen            func() *storage.ReportConfiguration
+	isValidationError          bool
 }
-
-var noMocks = func() {}
 
 func (s *ReportConfigurationServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
@@ -65,8 +62,7 @@ func (s *ReportConfigurationServiceTestSuite) TestCreateReportConfiguration() {
 
 	for _, tc := range s.upsertReportConfigTestCases(false) {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			requestConfig := tc.v2ReprtConfigGen()
-			tc.setMocks()
+			requestConfig := tc.setMocksAndGenReportConfig()
 			if !tc.isValidationError {
 				protoReportConfig := tc.reportConfigGen()
 				s.reportConfigDatastore.EXPECT().AddReportConfiguration(ctx, protoReportConfig).Return(protoReportConfig.GetId(), nil).Times(1)
@@ -88,8 +84,7 @@ func (s *ReportConfigurationServiceTestSuite) TestUpdateReportConfiguration() {
 
 	for _, tc := range s.upsertReportConfigTestCases(true) {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			requestConfig := tc.v2ReprtConfigGen()
-			tc.setMocks()
+			requestConfig := tc.setMocksAndGenReportConfig()
 			if !tc.isValidationError {
 				protoReportConfig := tc.reportConfigGen()
 				s.reportConfigDatastore.EXPECT().UpdateReportConfiguration(ctx, protoReportConfig).Return(nil).Times(1)
@@ -135,15 +130,20 @@ func (s *ReportConfigurationServiceTestSuite) TestGetReportConfigurations() {
 
 	for _, tc := range testCases {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			expectedConfigs := &apiV2.GetReportConfigurationsResponse{
+			expectedResp := &apiV2.GetReportConfigurationsResponse{
 				ReportConfigs: []*apiV2.ReportConfiguration{fixtures.GetValidV2ReportConfigWithMultipleNotifiers()},
 			}
 
 			s.reportConfigDatastore.EXPECT().GetReportConfigurations(ctx, tc.expectedQ).
 				Return([]*storage.ReportConfiguration{fixtures.GetValidReportConfigWithMultipleNotifiers()}, nil).Times(1)
+
+			s.mockGetNotifierCall(expectedResp.ReportConfigs[0].GetNotifiers()[0])
+			s.mockGetNotifierCall(expectedResp.ReportConfigs[0].GetNotifiers()[1])
+			s.mockGetCollectionCall(expectedResp.ReportConfigs[0])
+
 			configs, err := s.service.GetReportConfigurations(ctx, tc.query)
 			s.NoError(err)
-			s.Equal(expectedConfigs, configs)
+			s.Equal(expectedResp, configs)
 		})
 	}
 }
@@ -178,21 +178,28 @@ func (s *ReportConfigurationServiceTestSuite) TestGetReportConfigurationByID() {
 
 	for _, tc := range testCases {
 		s.T().Run(tc.desc, func(t *testing.T) {
+			var expectedResp *apiV2.ReportConfiguration
 			if !tc.isValidationError {
 				if !tc.isDataNotFoundError {
 					s.reportConfigDatastore.EXPECT().GetReportConfiguration(ctx, tc.id).
 						Return(fixtures.GetValidReportConfigWithMultipleNotifiers(), true, nil).Times(1)
+
+					expectedResp = fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+					s.mockGetNotifierCall(expectedResp.GetNotifiers()[0])
+					s.mockGetNotifierCall(expectedResp.GetNotifiers()[1])
+					s.mockGetCollectionCall(expectedResp)
 				} else {
 					s.reportConfigDatastore.EXPECT().GetReportConfiguration(ctx, tc.id).
 						Return(nil, false, nil)
 				}
 			}
+
 			config, err := s.service.GetReportConfiguration(ctx, &apiV2.ResourceByID{Id: tc.id})
 			if tc.isValidationError || tc.isDataNotFoundError {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(fixtures.GetValidV2ReportConfigWithMultipleNotifiers(), config)
+				s.Equal(expectedResp, config)
 			}
 		})
 	}
@@ -262,23 +269,28 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases(isUpda
 	cases := []upsertTestCase{
 		{
 			desc: "Valid report config with multiple notifiers",
-			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
-				return fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
+				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, false, isUpdate)
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[1], true, false, isUpdate)
+
+				s.mockCollectionStoreCalls(ret, true, false, isUpdate)
+
+				return ret
 			},
 			reportConfigGen: func() *storage.ReportConfiguration {
 				return fixtures.GetValidReportConfigWithMultipleNotifiers()
 			},
 			isValidationError: false,
-			setMocks: func() {
-				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(2)
-				s.collectionDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
-			},
 		},
 		{
 			desc: "Valid report config without notifiers",
-			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 				ret.Notifiers = nil
+
+				s.mockCollectionStoreCalls(ret, true, false, isUpdate)
 				return ret
 			},
 			reportConfigGen: func() *storage.ReportConfiguration {
@@ -287,13 +299,10 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases(isUpda
 				return ret
 			},
 			isValidationError: false,
-			setMocks: func() {
-				s.collectionDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
-			},
 		},
 		{
 			desc: "Report config with invalid schedule : invalid day of week",
-			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 				ret.Schedule = &apiV2.ReportSchedule{
 					IntervalType: apiV2.ReportSchedule_WEEKLY,
@@ -306,11 +315,10 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases(isUpda
 				return ret
 			},
 			isValidationError: true,
-			setMocks:          noMocks,
 		},
 		{
 			desc: "Report config with invalid schedule : missing days of week",
-			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 				ret.Schedule = &apiV2.ReportSchedule{
 					IntervalType: apiV2.ReportSchedule_WEEKLY,
@@ -323,11 +331,10 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases(isUpda
 				return ret
 			},
 			isValidationError: true,
-			setMocks:          noMocks,
 		},
 		{
 			desc: "Report config with invalid schedule : invalid day of month",
-			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 				ret.Schedule = &apiV2.ReportSchedule{
 					IntervalType: apiV2.ReportSchedule_MONTHLY,
@@ -340,11 +347,10 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases(isUpda
 				return ret
 			},
 			isValidationError: true,
-			setMocks:          noMocks,
 		},
 		{
 			desc: "Report config with invalid schedule : missing days of month",
-			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 				ret.Schedule = &apiV2.ReportSchedule{
 					IntervalType: apiV2.ReportSchedule_MONTHLY,
@@ -357,143 +363,176 @@ func (s *ReportConfigurationServiceTestSuite) upsertReportConfigTestCases(isUpda
 				return ret
 			},
 			isValidationError: true,
-			setMocks:          noMocks,
 		},
 		{
 			desc: "Report config with invalid notifier : missing email config",
-			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 				ret.Notifiers[1].NotifierConfig.(*apiV2.NotifierConfiguration_EmailConfig).EmailConfig = nil
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
 				return ret
 			},
 			isValidationError: true,
-			setMocks: func() {
-				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
-			},
 		},
 		{
 			desc: "Report config with invalid notifier : empty notifierID in email config",
-			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 				ret.Notifiers[1].NotifierConfig.(*apiV2.NotifierConfiguration_EmailConfig).EmailConfig.NotifierId = ""
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
 				return ret
 			},
 			isValidationError: true,
-			setMocks: func() {
-				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
-			},
 		},
 		{
 			desc: "Report config with invalid notifier : empty mailing list in email config",
-			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 				ret.Notifiers[1].NotifierConfig.(*apiV2.NotifierConfiguration_EmailConfig).EmailConfig.MailingLists = nil
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
 				return ret
 			},
 			isValidationError: true,
-			setMocks: func() {
-				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
-			},
 		},
 		{
 			desc: "Report config with invalid notifier : invalid email in email config",
-			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 				ret.Notifiers[1].NotifierConfig.(*apiV2.NotifierConfiguration_EmailConfig).EmailConfig.MailingLists = []string{"sdfdksfjk"}
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
 				return ret
 			},
 			isValidationError: true,
-			setMocks: func() {
-				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
-			},
 		},
 		{
 			desc: "Report config with invalid notifier : notifier not found",
-			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
-				return fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
+				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[1], false, true, isUpdate)
+				return ret
 			},
 			isValidationError: true,
-			setMocks: func() {
-				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).
-					Times(1).Return(true, nil).
-					Times(1).Return(false, nil)
-			},
 		},
 		{
 			desc: "Report config with missing resource scope",
-			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 				ret.ResourceScope = nil
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[1], true, true, isUpdate)
 				return ret
 			},
 			isValidationError: true,
-			setMocks: func() {
-				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(2)
-			},
 		},
 		{
 			desc: "Report config with invalid resource scope : empty collectionID",
-			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.ResourceScope.ScopeReference.(*apiV2.ResourceScope_CollectionId).CollectionId = ""
+				ret.ResourceScope.ScopeReference.(*apiV2.ResourceScope_CollectionScope).CollectionScope.CollectionId = ""
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[1], true, true, isUpdate)
 				return ret
 			},
 			isValidationError: true,
-			setMocks: func() {
-				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(2)
-			},
 		},
 		{
 			desc: "Report config with invalid resource scope : collection not found",
-			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
-				return fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
+				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[1], true, true, isUpdate)
+
+				s.mockCollectionStoreCalls(ret, false, true, isUpdate)
+				return ret
 			},
 			isValidationError: true,
-			setMocks: func() {
-				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(2)
-				s.collectionDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
-			},
 		},
 		{
 			desc: "Report config with missing vuln report filters",
-			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 				ret.Filter.(*apiV2.ReportConfiguration_VulnReportFilters).VulnReportFilters = nil
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[1], true, true, isUpdate)
+
+				s.mockCollectionStoreCalls(ret, true, true, isUpdate)
 				return ret
 			},
 			isValidationError: true,
-			setMocks: func() {
-				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(2)
-				s.collectionDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
-			},
 		},
 		{
 			desc: "Report config with invalid vuln report filters : cvesSince unset",
-			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 				ret.Filter.(*apiV2.ReportConfiguration_VulnReportFilters).VulnReportFilters.CvesSince = nil
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[1], true, true, isUpdate)
+
+				s.mockCollectionStoreCalls(ret, true, true, isUpdate)
 				return ret
 			},
 			isValidationError: true,
-			setMocks: func() {
-				s.notifierDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(2)
-				s.collectionDatastore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
-			},
 		},
 	}
 
 	if isUpdate {
 		cases = append(cases, upsertTestCase{
 			desc: "Report config with empty id",
-			v2ReprtConfigGen: func() *apiV2.ReportConfiguration {
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 				ret.Id = ""
 				return ret
 			},
 			isValidationError: true,
-			setMocks:          noMocks,
 		})
 	}
 
 	return cases
+}
+
+func (s *ReportConfigurationServiceTestSuite) mockNotifierStoreCalls(reqNotifier *apiV2.NotifierConfiguration,
+	notifierIDExits, isValidationError, isUpdate bool) {
+	if notifierIDExits {
+		s.notifierDatastore.EXPECT().Exists(gomock.Any(), reqNotifier.GetEmailConfig().GetNotifierId()).
+			Return(true, nil).Times(1)
+	} else {
+		s.notifierDatastore.EXPECT().Exists(gomock.Any(), reqNotifier.GetEmailConfig().GetNotifierId()).
+			Return(false, nil).Times(1)
+	}
+
+	if !isValidationError && !isUpdate {
+		s.mockGetNotifierCall(reqNotifier)
+	}
+}
+
+func (s *ReportConfigurationServiceTestSuite) mockGetNotifierCall(reqNotifier *apiV2.NotifierConfiguration) {
+	s.notifierDatastore.EXPECT().GetNotifier(gomock.Any(), reqNotifier.GetEmailConfig().GetNotifierId()).
+		Return(&storage.Notifier{
+			Id:   reqNotifier.GetEmailConfig().GetNotifierId(),
+			Name: reqNotifier.GetNotifierName(),
+		}, true, nil).Times(1)
+}
+
+func (s *ReportConfigurationServiceTestSuite) mockCollectionStoreCalls(reqConfig *apiV2.ReportConfiguration,
+	collectionIDExists, isValidationError, isUpdate bool) {
+	if collectionIDExists {
+		s.collectionDatastore.EXPECT().Exists(gomock.Any(), reqConfig.GetResourceScope().GetCollectionScope().GetCollectionId()).
+			Return(true, nil).Times(1)
+	} else {
+		s.collectionDatastore.EXPECT().Exists(gomock.Any(), reqConfig.GetResourceScope().GetCollectionScope().GetCollectionId()).
+			Return(false, nil).Times(1)
+	}
+
+	if !isValidationError && !isUpdate {
+		s.mockGetCollectionCall(reqConfig)
+	}
+}
+
+func (s *ReportConfigurationServiceTestSuite) mockGetCollectionCall(reqConfig *apiV2.ReportConfiguration) {
+	s.collectionDatastore.EXPECT().Get(gomock.Any(), reqConfig.GetResourceScope().GetCollectionScope().GetCollectionId()).
+		Return(&storage.ResourceCollection{
+			Id:   reqConfig.GetResourceScope().GetCollectionScope().GetCollectionId(),
+			Name: reqConfig.GetResourceScope().GetCollectionScope().GetCollectionName(),
+		}, true, nil).Times(1)
 }

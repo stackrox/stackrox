@@ -85,14 +85,20 @@ message ReportSchedule {
 
 message ResourceScope {
     oneof scope_reference {
-        string collection_id = 1;
+        CollectionReference collection_scope = 1;
     }
+}
+
+message CollectionReference {
+    string collection_id =   1;
+    string collection_name = 2;
 }
 
 message NotifierConfiguration {
     oneof notifier_config {
         EmailNotifierConfiguration email_config = 1;
     }
+    string notifier_name = 2;
 }
 
 message EmailNotifierConfiguration  {
