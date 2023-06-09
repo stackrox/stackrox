@@ -29,18 +29,13 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
       with:
+        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Ignore dubious repository ownership
       run: |
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
         git config --global --add safe.directory "$(pwd)"
-
-    - name: check tags
-      run: cd scanner && git tag
-
-    - name: Check tag
-      run: make -C scanner tag
 
     - name: Build Scanner and ScannerDB
       run: make -C scanner images
