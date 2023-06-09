@@ -18,7 +18,10 @@ import (
 )
 
 var (
-	sacHelper = sac.ForResource(resources.Image).MustCreatePgSearchHelper()
+	sacHelper         = sac.ForResource(resources.Image).MustCreatePgSearchHelper()
+	defaultSortOption = &v1.QuerySortOption{
+		Field: search.Component.String(),
+	}
 )
 
 // NewV2 returns a new instance of Searcher for the given storage and indexer.

@@ -43,16 +43,9 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) SetupSuite() {
 	var err error
 	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
 	s.Require().NoError(err)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pool := s.dackboxTestStore.GetPostgresPool()
-		s.datastore, err = GetTestPostgresDataStore(s.T(), pool)
-		s.Require().NoError(err)
-	} else {
-		bleveIndex := s.dackboxTestStore.GetBleveIndex()
-		dacky := s.dackboxTestStore.GetDackbox()
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), bleveIndex, dacky)
-		s.Require().NoError(err)
-	}
+	pool := s.dackboxTestStore.GetPostgresPool()
+	s.datastore, err = GetTestPostgresDataStore(s.T(), pool)
+	s.Require().NoError(err)
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
 }
 

@@ -4,13 +4,10 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/nodecomponentedge/index"
-	pkgNodeComponentEdgeSAC "github.com/stackrox/rox/central/nodecomponentedge/sac"
 	"github.com/stackrox/rox/central/nodecomponentedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/search/filtered"
 )
 
 type searcherImpl struct {
@@ -78,11 +75,6 @@ func convertOne(cve *storage.NodeComponentEdge, result *search.Result) *v1.Searc
 		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
 		Score:          result.Score,
 	}
-}
-
-// Format the search functionality of the indexer to be filtered (for sac) and paginated.
-func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	return filtered.UnsafeSearcher(unsafeSearcher, pkgNodeComponentEdgeSAC.GetSACFilter())
 }
 
 func (ds *searcherImpl) searchNodeComponentEdges(ctx context.Context, q *v1.Query) ([]*storage.NodeComponentEdge, error) {

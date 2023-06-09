@@ -6,15 +6,11 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
-	cveIndexer "github.com/stackrox/rox/central/cve/index"
-	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	"github.com/stackrox/rox/central/node/datastore/search"
 	"github.com/stackrox/rox/central/node/datastore/store"
 	dackBoxStore "github.com/stackrox/rox/central/node/datastore/store/dackbox"
 	pgStore "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	nodeIndexer "github.com/stackrox/rox/central/node/index"
-	nodeComponentEdgeIndexer "github.com/stackrox/rox/central/nodecomponentedge/index"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -50,19 +46,11 @@ type DataStore interface {
 // newDatastore returns a datastore for Nodes.
 // noUpdateTimestamps controls whether timestamps are automatically updated when upserting nodes.
 // This should be set to `false` except for some tests.
-func newDatastore(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore, nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) DataStore {
+func newDatastore(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, _ bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore, nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) DataStore {
 	dataStore := dackBoxStore.New(dacky, keyFence, noUpdateTimestamps)
-	indexer := nodeIndexer.New(bleveIndex)
 
-	searcher := search.New(dataStore,
-		dacky,
-		cveIndexer.New(bleveIndex),
-		componentCVEEdgeIndexer.New(bleveIndex),
-		componentIndexer.New(bleveIndex),
-		nodeComponentEdgeIndexer.New(bleveIndex),
-		indexer,
-	)
-	ds := newDatastoreImpl(dataStore, indexer, searcher, risks, nodeRanker, nodeComponentRanker)
+	var searcher search.Searcher
+	ds := newDatastoreImpl(dataStore, nil, searcher, risks, nodeRanker, nodeComponentRanker)
 	ds.initializeRankers()
 
 	return ds

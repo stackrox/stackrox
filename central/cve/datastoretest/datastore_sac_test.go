@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	genericCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	dackboxTestUtils "github.com/stackrox/rox/central/dackbox/testutils"
@@ -39,28 +38,11 @@ func (s *cveDataStoreSACTestSuite) SetupSuite() {
 	var err error
 	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
 	s.Require().NoError(err)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pool := s.dackboxTestStore.GetPostgresPool()
-		s.imageCVEStore, err = imageCVEDataStore.GetTestPostgresDataStore(s.T(), pool)
-		s.Require().NoError(err)
-		s.nodeCVEStore, err = nodeCVEDataStore.GetTestPostgresDataStore(s.T(), pool)
-		s.Require().NoError(err)
-	} else {
-		dacky := s.dackboxTestStore.GetDackbox()
-		keyFence := s.dackboxTestStore.GetKeyFence()
-		rocksEngine := s.dackboxTestStore.GetRocksEngine()
-		bleveIndex := s.dackboxTestStore.GetBleveIndex()
-		indexQ := s.dackboxTestStore.GetIndexQ()
-		genericCVEStore, err := genericCVEDataStore.GetTestRocksBleveDataStore(s.T(), rocksEngine, bleveIndex, dacky,
-			keyFence, indexQ)
-		s.Require().NoError(err)
-		s.imageCVEStore = &imageCVEDataStoreFromGenericStore{
-			genericStore: genericCVEStore,
-		}
-		s.nodeCVEStore = &nodeCVEDataStoreFromGenericStore{
-			genericStore: genericCVEStore,
-		}
-	}
+	pool := s.dackboxTestStore.GetPostgresPool()
+	s.imageCVEStore, err = imageCVEDataStore.GetTestPostgresDataStore(s.T(), pool)
+	s.Require().NoError(err)
+	s.nodeCVEStore, err = nodeCVEDataStore.GetTestPostgresDataStore(s.T(), pool)
+	s.Require().NoError(err)
 	s.imageTestContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
 	s.nodeTestContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Node)
 }

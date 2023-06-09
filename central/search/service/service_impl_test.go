@@ -33,7 +33,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -71,11 +70,8 @@ func TestSearchFuncs(t *testing.T) {
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
 		WithImageIntegrationStore(imageIntegrationDataStoreMocks.NewMockDataStore(mockCtrl)).
-		WithAggregator(nil)
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(mockCtrl))
-	}
+		WithAggregator(nil).
+		WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(mockCtrl))
 
 	s := builder.Build()
 
@@ -101,7 +97,6 @@ type SearchOperationsTestSuite struct {
 
 func (s *SearchOperationsTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
-
 	testingDB := pgtest.ForT(s.T())
 	s.pool = testingDB.DB
 }
@@ -121,7 +116,6 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 	// Since we are using the datastore and not the store we need to create a ranker and use it to populate the
 	// risk score so the results are ordered correctly.
 	deploymentRanker := ranking.NewRanker()
-
 	deploymentDS, err = deploymentDatastore.New(nil, dackboxConcurrency.NewKeyFence(), s.pool, nil, nil, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), deploymentRanker)
 	s.Require().NoError(err)
 
@@ -163,9 +157,8 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
-		WithAggregator(nil)
-
-	builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
+		WithAggregator(nil).
+		WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 
 	service := builder.Build().(*serviceImpl)
 
@@ -228,7 +221,6 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 	var ds policyDatastore.DataStore
 
 	categoriesDS := categoryDataStoreMocks.NewMockDataStore(s.mockCtrl)
-
 	policyStore := policyPostgres.New(s.pool)
 	policyIndexer = policyPostgres.NewIndexer(s.pool)
 	s.NoError(policyStore.Upsert(ctx, fixtures.GetPolicy()))
@@ -247,11 +239,9 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
-		WithAggregator(nil)
+		WithAggregator(nil).
+		WithPolicyCategoryDataStore(categoriesDS)
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		builder = builder.WithPolicyCategoryDataStore(categoriesDS)
-	}
 	service := builder.Build().(*serviceImpl)
 
 	results, err := service.autocomplete(ctx, fmt.Sprintf("%s:", search.Severity), []v1.SearchCategory{v1.SearchCategory_POLICIES})
@@ -277,7 +267,6 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 	)
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
-
 	deploymentDS, err = deploymentDatastore.New(nil, dackboxConcurrency.NewKeyFence(), s.pool, nil, nil, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	s.Require().NoError(err)
 
@@ -350,7 +339,6 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 	)
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
-
 	deploymentDS, err = deploymentDatastore.New(nil, dackboxConcurrency.NewKeyFence(), s.pool, nil, nil, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	s.Require().NoError(err)
 
@@ -377,11 +365,8 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithImageIntegrationStore(imageIntegrationDataStoreMocks.NewMockDataStore(s.mockCtrl)).
-		WithAggregator(nil)
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
-	}
+		WithAggregator(nil).
+		WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 
 	service := builder.Build().(*serviceImpl)
 

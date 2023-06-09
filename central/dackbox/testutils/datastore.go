@@ -438,6 +438,7 @@ func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) (err error) {
 func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
 	var err error
 	s := &dackboxTestDataStoreImpl{}
+
 	s.pgtestbase = pgtest.ForT(t)
 	s.nodeStore, err = nodeDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
 	if err != nil {

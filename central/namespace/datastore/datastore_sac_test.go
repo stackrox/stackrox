@@ -7,8 +7,6 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/namespace/index/mappings"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox"
@@ -53,26 +51,11 @@ type namespaceDatastoreSACSuite struct {
 
 func (s *namespaceDatastoreSACSuite) SetupSuite() {
 	var err error
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase = pgtest.ForT(s.T())
-		s.Require().NotNil(s.pgtestbase)
-		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
-		s.Require().NoError(err)
-		s.optionsMap = schema.NamespacesSchema.OptionsMap
-	} else {
-		s.engine, err = rocksdb.NewTemp("namespaceSACTest")
-		s.Require().NoError(err)
-		s.index, err = globalindex.MemOnlyIndex()
-		s.Require().NoError(err)
-		s.keyFence = concurrency.NewKeyFence()
-		s.indexQ = queue.NewWaitableQueue()
-		s.dacky, err = dackbox.NewRocksDBDackBox(s.engine, s.indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
-		s.Require().NoError(err)
-
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index, s.dacky, s.keyFence)
-		s.Require().NoError(err)
-		s.optionsMap = mappings.OptionsMap
-	}
+	s.pgtestbase = pgtest.ForT(s.T())
+	s.Require().NotNil(s.pgtestbase)
+	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
+	s.Require().NoError(err)
+	s.optionsMap = schema.NamespacesSchema.OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
 		resources.Namespace)

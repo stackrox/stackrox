@@ -35,26 +35,14 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.
-func New(storage store.Store,
-	graphProvider graph.Provider,
-	cveIndexer cveIndexer.Indexer,
-	componentCVEEdgeIndexer componentCVEEdgeIndexer.Indexer,
-	componentIndexer componentIndexer.Indexer,
-	imageComponentEdgeIndexer imageComponentEdgeIndexer.Indexer,
-	imageIndexer imageIndexer.Indexer,
-	deploymentIndexer deploymentIndexer.Indexer,
-	imageCVEEdgeIndexer imageCVEEdgeIndexer.Indexer) Searcher {
-	return &searcherImpl{
-		storage:       storage,
-		indexer:       deploymentIndexer,
-		graphProvider: graphProvider,
-		searcher: formatSearcher(graphProvider,
-			cveIndexer,
-			componentCVEEdgeIndexer,
-			componentIndexer,
-			imageComponentEdgeIndexer,
-			imageIndexer,
-			deploymentIndexer,
-			imageCVEEdgeIndexer),
-	}
+func New(_ store.Store,
+	_ graph.Provider,
+	_ cveIndexer.Indexer,
+	_ componentCVEEdgeIndexer.Indexer,
+	_ componentIndexer.Indexer,
+	_ imageComponentEdgeIndexer.Indexer,
+	_ imageIndexer.Indexer,
+	_ deploymentIndexer.Indexer,
+	_ imageCVEEdgeIndexer.Indexer) Searcher {
+	return nil
 }

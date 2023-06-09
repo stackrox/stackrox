@@ -19,7 +19,11 @@ import (
 )
 
 var (
-	sacHelper = sac.ForResource(resources.Deployment).MustCreatePgSearchHelper()
+	sacHelper         = sac.ForResource(resources.Deployment).MustCreatePgSearchHelper()
+	defaultSortOption = &v1.QuerySortOption{
+		Field:    search.DeploymentPriority.String(),
+		Reversed: false,
+	}
 )
 
 // NewV2 returns a new instance of Searcher for the given storage and indexer.
