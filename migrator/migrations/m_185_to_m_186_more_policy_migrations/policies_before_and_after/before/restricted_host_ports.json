@@ -10,17 +10,6 @@
   "lifecycleStages": [
     "DEPLOY"
   ],
-  "exclusions": [
-    {
-      "name": "Don't alert on the router-default deployment in namespace openshift-ingress",
-      "deployment": {
-        "name": "router-default",
-        "scope": {
-          "namespace": "openshift-ingress"
-        }
-      }
-    }
-  ],
   "severity": "MEDIUM_SEVERITY",
   "policyVersion": "1.1",
   "policySections": [
