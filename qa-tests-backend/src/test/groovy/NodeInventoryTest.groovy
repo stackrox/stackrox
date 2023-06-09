@@ -8,7 +8,12 @@ import services.ClusterService
 import services.NodeService
 import spock.lang.Shared
 import spock.lang.Tag
+import spock.lang.IgnoreIf
+import util.Env
 
+// skip if executed in a test environment with just secured-cluster deployed in the test cluster
+// i.e. central is deployed elsewhere
+@IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
 class NodeInventoryTest extends BaseSpecification {
     @Shared
     private String clusterId

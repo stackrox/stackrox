@@ -294,6 +294,9 @@ class NetworkSimulator extends BaseSpecification {
 
     @Tag("NetworkPolicySimulation")
     @Tag("BAT")
+    // skip if executed in a test environment with just secured-cluster deployed in the test cluster
+    // i.e. central is deployed elsewhere
+    @IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
     def "Verify NetworkPolicy Simulator with query - single policy simulation"() {
         given:
         def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
