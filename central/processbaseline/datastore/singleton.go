@@ -2,18 +2,12 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/processbaseline/index"
 	"github.com/stackrox/rox/central/processbaseline/search"
-	"github.com/stackrox/rox/central/processbaseline/store"
 	pgStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
-	"github.com/stackrox/rox/central/processbaseline/store/rocksdb"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore"
 	indicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -25,22 +19,11 @@ var (
 )
 
 func initialize() {
-	var storage store.Store
-	var indexer index.Indexer
-	var err error
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage, err = pgStore.NewWithCache(pgStore.New(globaldb.GetPostgres()))
-		if err != nil {
-			log.Fatal("failed to open process baseline store")
-		}
-		indexer = pgStore.NewIndexer(globaldb.GetPostgres())
-	} else {
-		var err error
-		storage, err = rocksdb.New(globaldb.GetRocksDB())
-		utils.CrashOnError(err)
-
-		indexer = index.New(globalindex.GetGlobalTmpIndex())
+	storage, err := pgStore.NewWithCache(pgStore.New(globaldb.GetPostgres()))
+	if err != nil {
+		log.Fatal("failed to open process baseline store")
 	}
+	indexer := pgStore.NewIndexer(globaldb.GetPostgres())
 
 	searcher, err := search.New(storage, indexer)
 	if err != nil {

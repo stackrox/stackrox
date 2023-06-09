@@ -7,11 +7,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkbaseline/store"
 	pgStore "github.com/stackrox/rox/central/networkbaseline/store/postgres"
-	"github.com/stackrox/rox/central/networkbaseline/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -40,12 +38,6 @@ func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error)
 // GetBenchPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetBenchPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
 	dbstore := pgStore.New(pool)
-	return newNetworkBaselineDataStore(dbstore), nil
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB) (DataStore, error) {
-	dbstore := rocksdb.New(rocksengine)
 	return newNetworkBaselineDataStore(dbstore), nil
 }
 
