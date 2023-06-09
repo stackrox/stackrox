@@ -60,6 +60,7 @@ test_e2e() {
     # Give some time for previous tests to finish up
     wait_for_api
 
+    # TODO(ROX-17674): Remove the block for running sensor integration tests
     info "Sensor k8s integration tests"
     make sensor-integration-test || touch FAIL
     info "Saving junit XML report"
@@ -104,7 +105,7 @@ test_preamble() {
 
     export ROX_PLAINTEXT_ENDPOINTS="8080,grpc@8081"
     export ROXDEPLOY_CONFIG_FILE_MAP="$ROOT/scripts/ci/endpoints/endpoints.yaml"
-    
+
     local registry="quay.io/rhacs-eng"
 
     SCANNER_IMAGE="$registry/scanner:$(cat "$ROOT"/SCANNER_VERSION)"
