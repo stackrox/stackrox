@@ -55,19 +55,8 @@ func (s *clusterCVEEdgeDatastoreSACSuite) SetupSuite() {
 	var err error
 	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
 	s.Require().NoError(err)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.datastore, err = datastore.GetTestPostgresDataStore(s.T(), s.dackboxTestStore.GetPostgresPool())
-		s.Require().NoError(err)
-	} else {
-		s.datastore, err = datastore.GetTestRocksBleveDataStore(
-			s.T(),
-			s.dackboxTestStore.GetRocksEngine(),
-			s.dackboxTestStore.GetBleveIndex(),
-			s.dackboxTestStore.GetDackbox(),
-			s.dackboxTestStore.GetKeyFence(),
-		)
-		s.Require().NoError(err)
-	}
+	s.datastore, err = datastore.GetTestPostgresDataStore(s.T(), s.dackboxTestStore.GetPostgresPool())
+	s.Require().NoError(err)
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) TearDownSuite() {

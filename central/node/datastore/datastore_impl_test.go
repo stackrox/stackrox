@@ -7,17 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	componentCVEEdgeDackBox "github.com/stackrox/rox/central/componentcveedge/dackbox"
-	componentCVEEdgeIndex "github.com/stackrox/rox/central/componentcveedge/index"
-	cveDackbox "github.com/stackrox/rox/central/cve/dackbox"
-	cveIndex "github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/globalindex"
-	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
-	componentIndex "github.com/stackrox/rox/central/imagecomponent/index"
-	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
-	nodeIndex "github.com/stackrox/rox/central/node/index"
-	nodeComponentEdgeDackBox "github.com/stackrox/rox/central/nodecomponentedge/dackbox"
-	nodeComponentEdgeIndex "github.com/stackrox/rox/central/nodecomponentedge/index"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
@@ -78,11 +68,6 @@ func (suite *NodeDataStoreTestSuite) SetupSuite() {
 
 	reg := indexer.NewWrapperRegistry()
 	indexer.NewLazy(suite.indexQ, reg, bleveIndex, dacky.AckIndexed).Start()
-	reg.RegisterWrapper(cveDackbox.Bucket, cveIndex.Wrapper{})
-	reg.RegisterWrapper(componentDackBox.Bucket, componentIndex.Wrapper{})
-	reg.RegisterWrapper(componentCVEEdgeDackBox.Bucket, componentCVEEdgeIndex.Wrapper{})
-	reg.RegisterWrapper(nodeDackBox.Bucket, nodeIndex.Wrapper{})
-	reg.RegisterWrapper(nodeComponentEdgeDackBox.Bucket, nodeComponentEdgeIndex.Wrapper{})
 
 	suite.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(suite.T()))
 

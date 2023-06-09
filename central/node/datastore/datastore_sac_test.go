@@ -8,8 +8,6 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globalindex"
-	nodeDackbox "github.com/stackrox/rox/central/node/dackbox"
-	nodeIndex "github.com/stackrox/rox/central/node/index"
 	"github.com/stackrox/rox/central/node/index/mappings"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -82,7 +80,6 @@ func (s *nodeDatastoreSACSuite) setupRocks() {
 
 	reg := indexer.NewWrapperRegistry()
 	indexer.NewLazy(s.indexQ, reg, s.bleveIndex, s.dacky.AckIndexed).Start()
-	reg.RegisterWrapper(nodeDackbox.Bucket, nodeIndex.Wrapper{})
 
 	s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.rocksEngine, s.bleveIndex, s.dacky, s.keyFence)
 	s.Require().NoError(err)

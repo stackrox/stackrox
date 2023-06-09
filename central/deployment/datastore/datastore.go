@@ -6,19 +6,12 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
-	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
-	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/deployment/store/cache"
 	dackBoxStore "github.com/stackrox/rox/central/deployment/store/dackbox"
 	pgStore "github.com/stackrox/rox/central/deployment/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
-	imageIndexer "github.com/stackrox/rox/central/image/index"
-	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
-	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
-	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	pbDS "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorFilter "github.com/stackrox/rox/central/processindicator/filter"
@@ -62,8 +55,7 @@ type DataStore interface {
 	GetDeploymentIDs(ctx context.Context) ([]string, error)
 }
 
-func newDataStore(storage store.Store, graphProvider graph.Provider, pool postgres.DB,
-	bleveIndex bleve.Index, processIndex bleve.Index,
+func newDataStore(storage store.Store, _ graph.Provider, pool postgres.DB, _ bleve.Index, _ bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
@@ -71,23 +63,9 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, pool postgr
 	if err != nil {
 		return nil, err
 	}
-	var deploymentIndexer index.Indexer
-	var searcher search.Searcher
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		deploymentIndexer = pgStore.NewIndexer(pool)
-		searcher = search.NewV2(storage, deploymentIndexer)
-	} else {
-		deploymentIndexer = index.New(bleveIndex, processIndex)
-		searcher = search.New(storage,
-			graphProvider,
-			cveIndexer.New(bleveIndex),
-			componentCVEEdgeIndexer.New(bleveIndex),
-			componentIndexer.New(bleveIndex),
-			imageComponentEdgeIndexer.New(bleveIndex),
-			imageIndexer.New(bleveIndex),
-			deploymentIndexer,
-			imageCVEEdgeIndexer.New(bleveIndex))
-	}
+
+	deploymentIndexer := pgStore.NewIndexer(pool)
+	searcher := search.NewV2(storage, deploymentIndexer)
 	ds := newDatastoreImpl(storage, deploymentIndexer, searcher, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 
 	ds.initializeRanker()
@@ -110,8 +88,8 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool postgres.DB
 }
 
 // NewTestDataStore allows for direct creation of the datastore for testing purposes
-func NewTestDataStore(t testing.TB, storage store.Store, graphProvider graph.Provider, pool postgres.DB,
-	bleveIndex bleve.Index, processIndex bleve.Index,
+func NewTestDataStore(t testing.TB, storage store.Store, _ graph.Provider, pool postgres.DB,
+	_ bleve.Index, _ bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
@@ -122,23 +100,9 @@ func NewTestDataStore(t testing.TB, storage store.Store, graphProvider graph.Pro
 	if err != nil {
 		return nil, err
 	}
-	var deploymentIndexer index.Indexer
-	var searcher search.Searcher
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		deploymentIndexer = pgStore.NewIndexer(pool)
-		searcher = search.NewV2(storage, deploymentIndexer)
-	} else {
-		deploymentIndexer = index.New(bleveIndex, processIndex)
-		searcher = search.New(storage,
-			graphProvider,
-			cveIndexer.New(bleveIndex),
-			componentCVEEdgeIndexer.New(bleveIndex),
-			componentIndexer.New(bleveIndex),
-			imageComponentEdgeIndexer.New(bleveIndex),
-			imageIndexer.New(bleveIndex),
-			deploymentIndexer,
-			imageCVEEdgeIndexer.New(bleveIndex))
-	}
+
+	deploymentIndexer := pgStore.NewIndexer(pool)
+	searcher := search.NewV2(storage, deploymentIndexer)
 	ds := newDatastoreImpl(storage, deploymentIndexer, searcher, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 
 	ds.initializeRanker()

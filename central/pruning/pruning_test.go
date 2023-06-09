@@ -13,23 +13,16 @@ import (
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertDatastoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	clusterIndex "github.com/stackrox/rox/central/cluster/index"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
-	clusterRocksDB "github.com/stackrox/rox/central/cluster/store/cluster/rocksdb"
 	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
-	clusterHealthRocksDB "github.com/stackrox/rox/central/cluster/store/clusterhealth/rocksdb"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
-	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/globalindex"
-	imageDackBox "github.com/stackrox/rox/central/image/dackbox"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageDatastoreMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
-	imageIndex "github.com/stackrox/rox/central/image/index"
 	componentsMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	imageIntegrationDatastoreMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
 	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
@@ -69,7 +62,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -268,22 +260,6 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 	mockFilter.EXPECT().DeleteByPod(gomock.Any()).AnyTimes()
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		db, bleveIndex := setupRocksDBAndBleve(s.T())
-
-		dacky, registry, indexingQ := testDackBoxInstance(s.T(), db, bleveIndex)
-		registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
-		registry.RegisterWrapper(imageDackBox.Bucket, imageIndex.Wrapper{})
-
-		// Initialize real datastore
-		images := imageDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), bleveIndex, bleveIndex, true, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker())
-
-		deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-		require.NoError(s.T(), err)
-
-		return mockAlertDatastore, mockConfigDatastore, images, deployments, nil, indexingQ
-	}
-
 	deployments, err := deploymentDatastore.New(nil, dackboxConcurrency.NewKeyFence(), s.pool, nil, nil, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(s.T(), err)
 
@@ -420,51 +396,6 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	clusterCVEs.EXPECT().DeleteClusterCVEsInternal(gomock.Any(), gomock.Any()).AnyTimes()
 
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		db, bleveIndex := setupRocksDBAndBleve(s.T())
-		clusterIndexer := clusterIndex.New(bleveIndex)
-
-		dacky, registry, indexingQ := testDackBoxInstance(s.T(), db, bleveIndex)
-		registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
-
-		deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, clusterFlows,
-			mockRiskDatastore, expiringcache.NewExpiringCache(1*time.Minute), mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-		require.NoError(s.T(), err)
-
-		clusterStorage, err := clusterRocksDB.New(db)
-		require.NoError(s.T(), err)
-
-		clusterHealthStorage, err := clusterHealthRocksDB.New(db)
-		require.NoError(s.T(), err)
-
-		nodeDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
-		clusterDataStore, err := clusterDatastore.New(
-			clusterStorage,
-			clusterHealthStorage,
-			clusterCVEs,
-			alertDataStore,
-			imageIntegrationDataStore,
-			namespaceDataStore,
-			deployments,
-			nodeDataStore,
-			podDataStore,
-			secretDataStore,
-			flowsDataStore,
-			netEntityDataStore,
-			serviceAccountMockDataStore,
-			roleDataStore,
-			roleBindingDataStore,
-			connMgr,
-			notifierMock,
-			mockProvider,
-			ranking.NewRanker(),
-			clusterIndexer,
-			networkBaselineMgr)
-		require.NoError(s.T(), err)
-
-		return mockConfigDatastore, deployments, clusterDataStore, indexingQ
-	}
 
 	deployments, err := deploymentDatastore.New(nil, dackboxConcurrency.NewKeyFence(), s.pool, nil, nil, nil, mockBaselineDataStore, clusterFlows, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(s.T(), err)
