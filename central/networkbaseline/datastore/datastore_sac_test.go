@@ -44,7 +44,6 @@ var _ interface {
 
 func (s *networkBaselineDatastoreSACTestSuite) SetupSuite() {
 	var err error
-	networkBaselineObj := "networkBaselineSACTest"
 
 	pgtestbase := pgtest.ForT(s.T())
 	s.Require().NotNil(pgtestbase)
