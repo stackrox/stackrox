@@ -29,6 +29,15 @@
           "namespace": "openshift-monitoring"
         }
       }
+    },
+    {
+      "name": "Don't alert on deployment csi-azuredisk-node-win in kube-system namespace",
+      "deployment": {
+        "name": "csi-azuredisk-node-win",
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
     }
   ],
   "severity": "LOW_SEVERITY",
