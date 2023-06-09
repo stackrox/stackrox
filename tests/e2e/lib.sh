@@ -589,7 +589,7 @@ remove_existing_stackrox_resources() {
 delete_cluster() {
     info "Deleting cluster $1 from Central"
 
-    id=$(roxcurl v1/clusters  | jq -r '.clusters[] | select(.name=="'$1'") | .id')
+    id=$(roxcurl v1/clusters  | jq -r '.clusters[] | select(.name=="'"$1"'") | .id')
     roxcurl "v1/clusters/$id" -X DELETE
 
     # Allow deletions to propagate
