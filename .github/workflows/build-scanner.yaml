@@ -36,6 +36,12 @@ jobs:
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
         git config --global --add safe.directory "$(pwd)"
 
+    - name: check tags
+      run: cd scanner && git tag
+
+    - name: Check tag
+      run: make -C scanner tag
+
     - name: Build Scanner and ScannerDB
       run: make -C scanner images
 
