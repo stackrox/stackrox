@@ -237,7 +237,7 @@ splunk:
 
     private ScheduledFuture<?> annotateTaskHandle
 
-    def setupSpec() {
+    def setup() {
         annotateTaskHandle = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new Runnable() {
             @Override
             void run() {
