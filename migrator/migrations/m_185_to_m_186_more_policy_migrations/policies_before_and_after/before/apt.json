@@ -11,17 +11,6 @@
     "BUILD",
     "DEPLOY"
   ],
-  "exclusions": [
-    {
-      "name": "Don't alert on deployment csi-azurefile-node-win in kube-system namespace",
-      "deployment": {
-        "name": "csi-azurefile-node-win",
-        "scope": {
-          "namespace": "kube-system"
-        }
-      }
-    }
-  ],
   "severity": "LOW_SEVERITY",
   "policyVersion": "1.1",
   "policySections": [
