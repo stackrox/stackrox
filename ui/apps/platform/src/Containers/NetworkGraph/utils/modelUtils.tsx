@@ -26,7 +26,6 @@ import {
     CustomEdgeModel,
     DeploymentData,
     CIDRBlockData,
-    EdgeData,
 } from '../types/topology.type';
 import { protocolLabel } from './flowUtils';
 
@@ -290,8 +289,8 @@ export function transformActiveData(
             // this is to reuse the first edge if the edge is bidirectional;
             if (activeEdgeMap[reverseEdgeId]) {
                 edge.id = reverseEdgeId;
-                edge.data.startTerminalType = EdgeTerminalType.directional;
-                edge.data.endTerminalType = EdgeTerminalType.directional;
+                edge.data.startTerminalType = 'directional' as EdgeTerminalType;
+                edge.data.endTerminalType = 'directional' as EdgeTerminalType;
                 const mergedPortEdgeLabel = mergePortProtocolEdgeLabels(
                     portProtocolLabel,
                     activeEdgeMap[reverseEdgeId].data.tag
@@ -435,8 +434,8 @@ export function transformPolicyData(nodes: Node[]): {
                     ...edge.data,
                     isBidirectional: true,
                     // this makes the PF topology library render arrows on both sides
-                    startTerminalType: EdgeTerminalType.directional,
-                    endTerminalType: EdgeTerminalType.directional,
+                    startTerminalType: 'directional' as EdgeTerminalType,
+                    endTerminalType: 'directional' as EdgeTerminalType,
                     // this is to save the label string so we don't have to recalulate
                     portProtocolLabel: mergedPortEdgeLabel,
                     // the edge label shows up when this exists, we set it so the
@@ -651,58 +650,4 @@ export function getConnectedNodeIds(edges: CustomEdgeModel[], selectedNodeId: st
         return acc;
     }, [] as string[]);
     return connectedNodeIds;
-}
-
-function filterDNSFlows(properties) {
-    return !(
-        (properties.port === 53 || properties.port === 5353) &&
-        properties.protocol === 'L4_PROTOCOL_UDP'
-    );
-}
-
-export function removeDNSFlows(edges: CustomEdgeModel[]): CustomEdgeModel[] {
-    const modifiedEdges: CustomEdgeModel[] = [];
-    edges.forEach((edge) => {
-        const filteredSourceToTargetProperties =
-            edge.data.sourceToTargetProperties.filter(filterDNSFlows);
-        const filteredTargetToSourceProperties =
-            edge.data?.targetToSourceProperties?.filter(filterDNSFlows) || [];
-        const combinedProperties = [
-            ...filteredSourceToTargetProperties,
-            ...filteredTargetToSourceProperties,
-        ];
-
-        if (combinedProperties.length !== 0) {
-            const portProtocolLabel = getPortProtocolEdgeLabel([
-                ...filteredSourceToTargetProperties,
-                ...filteredTargetToSourceProperties,
-            ]);
-            const modifiedData: EdgeData = {
-                sourceToTargetProperties: filteredSourceToTargetProperties,
-                targetToSourceProperties: filteredTargetToSourceProperties,
-                isBidirectional:
-                    filteredTargetToSourceProperties.length !== 0 &&
-                    filteredSourceToTargetProperties.length !== 0,
-                portProtocolLabel,
-                tag: portProtocolLabel,
-            };
-            if (filteredSourceToTargetProperties.length !== 0) {
-                modifiedData.endTerminalType = EdgeTerminalType.directional;
-            } else {
-                modifiedData.endTerminalType = EdgeTerminalType.none;
-            }
-            if (filteredTargetToSourceProperties.length !== 0) {
-                modifiedData.startTerminalType = EdgeTerminalType.directional;
-            } else {
-                modifiedData.startTerminalType = EdgeTerminalType.none;
-            }
-            const modifiedEdge = {
-                ...edge,
-                data: modifiedData,
-            };
-
-            modifiedEdges.push(modifiedEdge);
-        }
-    });
-    return modifiedEdges;
 }

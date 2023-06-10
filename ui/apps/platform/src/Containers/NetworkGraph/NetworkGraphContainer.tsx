@@ -24,8 +24,8 @@ import {
     createExtraneousEdges,
     graphModel,
     getConnectedNodeIds,
-    removeDNSFlows,
 } from './utils/modelUtils';
+import { removeDNSEdges } from './utils/edgeUtils';
 import {
     cidrBlockBadgeColor,
     cidrBlockBadgeText,
@@ -319,7 +319,7 @@ function NetworkGraphContainer({
 
     // we want to filter out the DNS flows when viewing "inactive" flows (without DNS flows)
     if (edgeState === 'inactive') {
-        filteredEdges = removeDNSFlows(filteredEdges);
+        filteredEdges = removeDNSEdges(filteredEdges);
     }
 
     // if edgeState is extraneous && there is a selectedNode, add in/egress flows nodes/edges
