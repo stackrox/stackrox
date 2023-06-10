@@ -389,6 +389,15 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230530153820-e85fd2cbaebc // indirect
 )
 
+// WARNING
+// =======
+//
+// The `scanner/go.mod` consumes this go.mod. When modifying replacements, make
+// sure to sync all changes with scanner/go.mod.
+//
+// HOW TO BUMP
+// ===========
+//
 // To bump the version of a replacement package, use:
 //
 //   $ go mod edit -replace <package>=<replacement>@<branch or commit reference>
