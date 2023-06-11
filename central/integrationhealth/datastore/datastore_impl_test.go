@@ -6,9 +6,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/integrationhealth/store"
 	postgresIntegrationStore "github.com/stackrox/rox/central/integrationhealth/store/postgres"
-	rocksdbIntegrationStore "github.com/stackrox/rox/central/integrationhealth/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -39,16 +37,9 @@ type integrationHealthDatastoreTestSuite struct {
 }
 
 func (s *integrationHealthDatastoreTestSuite) SetupTest() {
-	var integrationStore store.Store
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.postgresTest = pgtest.ForT(s.T())
-		s.Require().NotNil(s.postgresTest)
-		integrationStore = postgresIntegrationStore.New(s.postgresTest.DB)
-	} else {
-		s.rocksie = rocksdbtest.RocksDBForT(s.T())
-		integrationStore = rocksdbIntegrationStore.New(s.rocksie)
-	}
+	s.postgresTest = pgtest.ForT(s.T())
+	s.Require().NotNil(s.postgresTest)
+	integrationStore := postgresIntegrationStore.New(s.postgresTest.DB)
 	s.datastore = New(integrationStore)
 
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
