@@ -9,16 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blevesearch/bleve"
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/alert/datastore"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -50,50 +45,26 @@ func mustParseTime(timeStr string) time.Time {
 // testDataStore contains all things that need to be created and disposed in order to use Alerts datastore.DataStore in
 // tests.
 type testDataStore struct {
-	// To remove once rocksdb is removed
-	rocksDB *rocksdb.RocksDB
-	index   bleve.Index
-
 	testDB   *pgtest.TestPostgres
 	alertsDS datastore.DataStore
 }
 
 // makeDS creates a new temp datastore with only provided alerts for use in tests.
 func makeDS(t *testing.T, alerts []*storage.Alert) testDataStore {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		testDB := pgtest.ForT(t)
-		assert.NotNil(t, testDB)
-		alertsDS, err := datastore.GetTestPostgresDataStore(t, testDB.DB)
-		require.NoError(t, err)
-
-		err = alertsDS.UpsertAlerts(sac.WithAllAccess(context.Background()), alerts)
-		require.NoError(t, err)
-
-		return testDataStore{testDB: testDB, alertsDS: alertsDS}
-	}
-
-	rocksDB := rocksdbtest.RocksDBForT(t)
-
-	bleveIndex, err := globalindex.MemOnlyIndex()
+	testDB := pgtest.ForT(t)
+	assert.NotNil(t, testDB)
+	alertsDS, err := datastore.GetTestPostgresDataStore(t, testDB.DB)
 	require.NoError(t, err)
 
-	alertsDS := datastore.NewWithDb(rocksDB, bleveIndex)
-
-	err = alertsDS.UpsertAlerts(context.Background(), alerts)
+	err = alertsDS.UpsertAlerts(sac.WithAllAccess(context.Background()), alerts)
 	require.NoError(t, err)
 
-	return testDataStore{rocksDB: rocksDB, index: bleveIndex, alertsDS: alertsDS}
+	return testDataStore{testDB: testDB, alertsDS: alertsDS}
 }
 
 // teardown cleans up test datastore.
 func (d *testDataStore) teardown(t *testing.T) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		d.testDB.Teardown(t)
-	} else {
-		d.rocksDB.Close()
-		err := d.index.Close()
-		assert.NoError(t, err)
-	}
+	d.testDB.Teardown(t)
 }
 
 // these simply converts varargs to slice for slightly less typing (pun intended).

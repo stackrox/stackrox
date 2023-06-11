@@ -4,21 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
-	"github.com/stackrox/rox/central/alert/datastore/internal/store/rocksdb"
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/postgres"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -57,43 +51,13 @@ func New(alertStore store.Store, indexer index.Indexer, searcher search.Searcher
 		keyedMutex: concurrency.NewKeyedMutex(mutexPoolSize),
 		keyFence:   dackboxConcurrency.NewKeyFence(),
 	}
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Alert)))
-	if err := ds.buildIndex(ctx); err != nil {
-		return nil, err
-	}
 	return ds, nil
-}
-
-// NewWithDb returns a new soleInstance of DataStore using the input indexer, and searcher.
-func NewWithDb(db *rocksdbBase.RocksDB, bIndex bleve.Index) DataStore {
-	alertStore := rocksdb.New(db)
-	indexer := index.New(bIndex)
-	searcher := search.New(alertStore, indexer)
-
-	return &datastoreImpl{
-		storage:    alertStore,
-		indexer:    indexer,
-		searcher:   searcher,
-		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
-	}
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
 	alertStore := pgStore.New(pool)
 	indexer := pgStore.NewIndexer(pool)
-	searcher := search.New(alertStore, indexer)
-
-	return New(alertStore, indexer, searcher)
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index) (DataStore, error) {
-	alertStore := rocksdb.New(rocksengine)
-	indexer := index.New(bleveIndex)
 	searcher := search.New(alertStore, indexer)
 
 	return New(alertStore, indexer, searcher)

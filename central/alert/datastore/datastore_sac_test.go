@@ -7,8 +7,6 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/alert/mappings"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -52,25 +50,12 @@ type alertDatastoreSACTestSuite struct {
 
 func (s *alertDatastoreSACTestSuite) SetupSuite() {
 	var err error
-	alertObj := "alertSACTest"
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(s.T())
-		s.Require().NotNil(pgtestbase)
-		s.pool = pgtestbase.DB
-		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
-		s.Require().NoError(err)
-		s.optionsMap = schema.AlertsSchema.OptionsMap
-	} else {
-		s.engine, err = rocksdb.NewTemp(alertObj)
-		s.NoError(err)
-		s.index, err = globalindex.TempInitializeIndices(alertObj)
-		s.NoError(err)
-
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index)
-		s.Require().NoError(err)
-		s.optionsMap = mappings.OptionsMap
-	}
+	pgtestbase := pgtest.ForT(s.T())
+	s.Require().NotNil(pgtestbase)
+	s.pool = pgtestbase.DB
+	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
+	s.Require().NoError(err)
+	s.optionsMap = schema.AlertsSchema.OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Alert)
 }
