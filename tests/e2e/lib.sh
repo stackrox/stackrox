@@ -585,17 +585,6 @@ remove_existing_stackrox_resources() {
     ) 2>&1 | sed -e 's/^/out: /' || true
 }
 
-# Delete the cluster from Central
-delete_cluster() {
-    info "Deleting cluster $1 from Central"
-
-    id=$(roxcurl v1/clusters  | jq -r '.clusters[] | select(.name=="'"$1"'") | .id')
-    roxcurl "v1/clusters/$id" -X DELETE
-
-    # Allow deletions to propagate
-    sleep 30
-}
-
 wait_for_api() {
     info "Waiting for Central to be ready"
 
