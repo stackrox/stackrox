@@ -7,7 +7,6 @@ import (
 	scheduleStore "github.com/stackrox/rox/central/apitoken/datastore/internal/schedulestore/postgres"
 	"github.com/stackrox/rox/central/apitoken/datastore/internal/store"
 	postgresStore "github.com/stackrox/rox/central/apitoken/datastore/internal/store/postgres"
-	rocksdbStore "github.com/stackrox/rox/central/apitoken/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -15,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -47,15 +45,6 @@ func newPostgres(pool postgres.DB) *datastoreImpl {
 		storage:         storage,
 		searcher:        searcher,
 		scheduleStorage: scheduleStorage,
-	}
-}
-
-func newRocks(rocksDBInstance *rocksdb.RocksDB) *datastoreImpl {
-	storage := rocksdbStore.New(rocksDBInstance)
-	return &datastoreImpl{
-		storage:         storage,
-		searcher:        nil,
-		scheduleStorage: nil,
 	}
 }
 

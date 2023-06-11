@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/postgres"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -80,17 +79,6 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 	nodeRanker := ranking.NodeRanker()
 	nodeComponentRanker := ranking.NodeComponentRanker()
 	return NewWithPostgres(dbstore, indexer, searcher, riskStore, nodeRanker, nodeComponentRanker), nil
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t testing.TB, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (DataStore, error) {
-	riskStore, err := riskDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
-	if err != nil {
-		return nil, err
-	}
-	nodeRanker := ranking.NodeRanker()
-	nodeComponentRanker := ranking.NodeComponentRanker()
-	return New(dacky, keyFence, bleveIndex, riskStore, nodeRanker, nodeComponentRanker), nil
 }
 
 // NodeString returns a human-readable string representation of a node.
