@@ -169,8 +169,8 @@ func (ds *datastoreImpl) UpsertAlerts(ctx context.Context, alertBatch []*storage
 	return nil
 }
 
-func (ds *datastoreImpl) MarkAlertStaleBatch(ctx context.Context, ids ...string) ([]*storage.Alert, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "MarkAlertStaleBatch")
+func (ds *datastoreImpl) MarkAlertsResolvedBatch(ctx context.Context, ids ...string) ([]*storage.Alert, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "MarkAlertsResolvedBatch")
 
 	resolvedAt := types.TimestampNow()
 	idsAsBytes := make([][]byte, 0, len(ids))

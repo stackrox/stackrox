@@ -1425,6 +1425,10 @@ func (s *PruningTestSuite) TestMarkOrphanedAlerts() {
 				postgres: db.DB,
 				alerts:   alerts,
 			}
+
+			alerts.EXPECT().MarkAlertsResolvedBatch(pruningCtx, c.expectedDeletions)
+			gci.markOrphanedAlertsAsResolved(c.deployments)
+
 			actualAlertsDS, err := alertDatastore.GetTestPostgresDataStore(t, db.DB)
 			assert.NoError(t, err)
 
@@ -1447,7 +1451,7 @@ func (s *PruningTestSuite) TestMarkOrphanedAlerts() {
 					State: la.GetState(),
 				}))
 			}
-			alerts.EXPECT().MarkAlertStaleBatch(pruningCtx, c.expectedDeletions)
+			alerts.EXPECT().MarkAlertsResolvedBatch(pruningCtx, c.expectedDeletions)
 			gci.markOrphanedAlertsAsResolved(c.deployments)
 		})
 	}

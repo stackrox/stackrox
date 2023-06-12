@@ -80,9 +80,9 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 		}
 	})
 
-	b.Run("markStaleBatch", func(b *testing.B) {
+	b.Run("markResolvedBatch", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, err := datastore.MarkAlertStaleBatch(ctx, ids...)
+			_, err := datastore.MarkAlertsResolvedBatch(ctx, ids...)
 			require.NoError(b, err)
 		}
 	})

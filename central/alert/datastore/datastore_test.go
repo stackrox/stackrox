@@ -147,7 +147,7 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStaleBatch() {
 	s.indexer.EXPECT().AddListAlerts(gomock.Any()).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(gomock.Any(), fakeAlert.GetId()).Times(1).Return(nil)
 
-	_, err := s.dataStore.MarkAlertStaleBatch(s.hasWriteCtx, alerttest.FakeAlertID)
+	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasWriteCtx, alerttest.FakeAlertID)
 	s.NoError(err)
 
 	s.Equal(storage.ViolationState_RESOLVED, fakeAlert.GetState())
@@ -158,7 +158,7 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStaleBatchWhenStorageFails() {
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, []int{0}, errFake)
 
-	_, err := s.dataStore.MarkAlertStaleBatch(s.hasWriteCtx, alerttest.FakeAlertID)
+	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasWriteCtx, alerttest.FakeAlertID)
 
 	s.Equal(errFake, err)
 }
@@ -168,7 +168,7 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStaleBatchWhenTheAlertWasNotFound
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{fakeAlert.GetId()}).Return(nil, []int{0}, nil)
 
-	_, err := s.dataStore.MarkAlertStaleBatch(s.hasWriteCtx, fakeAlert.GetId())
+	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasWriteCtx, fakeAlert.GetId())
 
 	s.NoError(err)
 }
@@ -180,7 +180,7 @@ func (s *alertDataStoreTestSuite) TestKeyIndexing() {
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil)
 	s.indexer.EXPECT().AddListAlerts(gomock.Any()).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(gomock.Any(), gomock.Any()).Return(nil)
-	_, err := s.dataStore.MarkAlertStaleBatch(s.hasWriteCtx, fakeAlert.GetId())
+	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasWriteCtx, fakeAlert.GetId())
 
 	s.NoError(err)
 }
@@ -246,7 +246,7 @@ func (s *alertDataStoreWithSACTestSuite) TestMarkAlertStaleBatchEnforced() {
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Times(0)
 	s.indexer.EXPECT().AddListAlert(gomock.Any()).Times(0)
 
-	_, err := s.dataStore.MarkAlertStaleBatch(s.hasReadCtx, alerttest.FakeAlertID)
+	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasReadCtx, alerttest.FakeAlertID)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 
 	s.Equal(storage.ViolationState_ACTIVE, fakeAlert.GetState())
