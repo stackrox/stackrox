@@ -89,10 +89,9 @@ func (d *db) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.
 	} else {
 		ct, err = d.Pool.Exec(ctx, sql, args...)
 	}
-
 	if err != nil {
 		incQueryErrors(sql, err)
-		return nil, err
+		return nil, toErrox(err)
 	}
 	return ct, nil
 }
