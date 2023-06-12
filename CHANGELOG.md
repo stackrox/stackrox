@@ -21,12 +21,19 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - RBAC risk was deprecated in release 4.0 due to poor performance.
 
 ### Technical Changes
-
 - ROX-16962: A new parameter `spec.admissionControl.replicas` has been added to the `SecuredCluster` CRD.
 - ROX-18073: The implementation of Add Capabilities policy criteria has been fixed to ensure violations are generated \
 correctly for the specified values.
 - Rollback to a 3.y release or the 4.0 release will no longer be supported starting from 4.3.
 - Rollbacks from future releases to the 4.2 or later release will no longer require `ForceRollbackVersion` to be set.
+- TODO: Fix the following CHANGELOG
+- Scanner is receiving a major overhaul this release, and the major version is bumped from 2 to 4.
+  - Scanner v2 images will continue to be served, but with the suffix "classic". That means, the previous
+    major version of Scanner is still available, but the images will have the following names:
+    - <repository>/scanner-classic:<tag>
+    - <repository>/scanner-db-classic:<tag>
+    - <repository>/scanner-slim-classic:<tag>
+    - <repository>/scanner-db-slim-classic:<tag>
 
 ## [4.1.0]
 
