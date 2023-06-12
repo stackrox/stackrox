@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 
+	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 )
 
@@ -18,7 +19,17 @@ func (b *BatchResults) Close() error {
 
 	if err := b.BatchResults.Close(); err != nil {
 		incQueryErrors("batch", err)
-		return err
+		return toErrox(err)
 	}
 	return nil
+}
+
+// Exec wraps pgx.BatchResults Exec
+func (b *BatchResults) Exec() (pgconn.CommandTag, error) {
+	ct, err := b.BatchResults.Exec()
+	if err != nil {
+		incQueryErrors("batch", err)
+		return nil, toErrox(err)
+	}
+	return ct, err
 }
