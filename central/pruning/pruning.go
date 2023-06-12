@@ -507,7 +507,7 @@ func (g *garbageCollectorImpl) markOrphanedAlertsAsResolved(deployments set.Froz
 
 	log.Infof("[Alert pruning] Found %d orphaned alerts", len(alertsToResolve))
 	if _, err := g.alerts.MarkAlertsResolvedBatch(pruningCtx, alertsToResolve...); err != nil {
-		log.Error(errors.Wrap(err, "error marking alert as stale"))
+		log.Error(errors.Wrap(err, "error marking alert as resolved"))
 	}
 }
 
