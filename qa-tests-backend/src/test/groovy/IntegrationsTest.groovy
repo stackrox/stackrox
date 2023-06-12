@@ -29,7 +29,6 @@ import services.ClusterService
 import services.ExternalBackupService
 import services.ImageIntegrationService
 import services.NetworkPolicyService
-import services.NotifierService
 import services.PolicyService
 import util.Env
 import util.MailServer
