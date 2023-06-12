@@ -29,7 +29,6 @@ import services.ClusterService
 import services.ExternalBackupService
 import services.ImageIntegrationService
 import services.NetworkPolicyService
-import services.NotifierService
 import services.PolicyService
 import util.Env
 import util.MailServer
@@ -628,15 +627,15 @@ class IntegrationsTest extends BaseSpecification {
          */
         "Slack deploy override"   |
                 new SlackNotifier("slack test", "slack-key")   |
-                null   |
+                null                                                    |
                 new Deployment()
                         .setName("policy-violation-generic-notification-deploy-override")
                         .addLabel("app", "policy-violation-generic-notification-deploy-override")
-                        .addAnnotation("slack-key", NotifierService.SLACK_ALT_WEBHOOK)
+                        .addAnnotation("slack-key", Env.mustGetSlackAltWebhook())
                         .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         "Slack namespace override"   |
                 new SlackNotifier("slack test", "slack-key")   |
-                [key: "slack-key", value: NotifierService.SLACK_ALT_WEBHOOK] |
+                [key: "slack-key", value: Env.mustGetSlackAltWebhook()] |
                 new Deployment()
                         .setName("policy-violation-generic-notification-ns-override")
                         .addLabel("app", "policy-violation-generic-notification-ns-override")
