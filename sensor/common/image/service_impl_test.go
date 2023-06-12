@@ -13,7 +13,6 @@ import (
 	cacheMocks "github.com/stackrox/rox/pkg/expiringcache/mocks"
 	"github.com/stackrox/rox/sensor/common"
 	imageMocks "github.com/stackrox/rox/sensor/common/image/mocks"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -33,28 +32,31 @@ type imageServiceSuite struct {
 
 var _ suite.SetupTestSuite = (*imageServiceSuite)(nil)
 
-func (suite *imageServiceSuite) SetupTest() {
-	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.mockCache = cacheMocks.NewMockCache(suite.mockCtrl)
-	suite.mockRegistryStore = imageMocks.NewMockregistryStore(suite.mockCtrl)
-	suite.mockCentral = imageMocks.NewMockcentralClient(suite.mockCtrl)
-	suite.mockLocalScan = imageMocks.NewMocklocalScan(suite.mockCtrl)
-	suite.service = &serviceImpl{
-		imageCache:    suite.mockCache,
-		registryStore: suite.mockRegistryStore,
-		localScan:     suite.mockLocalScan,
+func (s *imageServiceSuite) SetupTest() {
+	s.mockCtrl = gomock.NewController(s.T())
+	s.mockCache = cacheMocks.NewMockCache(s.mockCtrl)
+	s.mockRegistryStore = imageMocks.NewMockregistryStore(s.mockCtrl)
+	s.mockCentral = imageMocks.NewMockcentralClient(s.mockCtrl)
+	s.mockLocalScan = imageMocks.NewMocklocalScan(s.mockCtrl)
+}
+
+func (s *imageServiceSuite) createImageService() {
+	s.service = &serviceImpl{
+		imageCache:    s.mockCache,
+		registryStore: s.mockRegistryStore,
+		localScan:     s.mockLocalScan,
 		centralReady:  concurrency.NewSignal(),
-		centralClient: suite.mockCentral,
+		centralClient: s.mockCentral,
 	}
 }
 
-func (suite *imageServiceSuite) TestGetImage() {
+func (s *imageServiceSuite) TestGetImage() {
 	ctx := context.Background()
 	imageID := "imageID"
 	imageName := "imageName"
 	err := errors.New("some error")
 	errCentral := errors.Wrap(err, "scanning image via central")
-	errLocalScan := errors.Wrap(errors.New("some error"), "scanning image via local scanner")
+	errLocalScan := errors.Wrap(err, "scanning image via local scanner")
 	cases := map[string]struct {
 		request *sensor.GetImageRequest
 		notify  common.SensorComponentEvent
@@ -69,156 +71,124 @@ func (suite *imageServiceSuite) TestGetImage() {
 		"Cache hit and central is unreachable": {
 			request:          createImageRequest(imageName, imageID, false),
 			notify:           common.SensorComponentEventOfflineMode,
-			expectCache:      expectCacheHelper(suite.mockCache, 1, createScannedImage(imageName, imageID)),
+			expectCache:      expectCacheHelper(s.mockCache, 1, createScannedImage(imageName, imageID)),
 			expectedError:    nil,
 			expectedResponse: createImageResponse(imageName, imageID),
 		},
 		"Cache hit and central is reachable": {
 			request:          createImageRequest(imageName, imageID, false),
 			notify:           common.SensorComponentEventCentralReachable,
-			expectCache:      expectCacheHelper(suite.mockCache, 1, createScannedImage(imageName, imageID)),
+			expectCache:      expectCacheHelper(s.mockCache, 1, createScannedImage(imageName, imageID)),
 			expectedError:    nil,
 			expectedResponse: createImageResponse(imageName, imageID),
 		},
 		"Cache miss and central is unreachable": {
 			request:          createImageRequest(imageName, imageID, false),
 			notify:           common.SensorComponentEventOfflineMode,
-			expectCache:      expectCacheHelper(suite.mockCache, 1, nil),
+			expectCache:      expectCacheHelper(s.mockCache, 1, nil),
 			expectedError:    errCentralNoReachable,
 			expectedResponse: nil,
 		},
 		"Cache miss and central is reachable": {
 			request:           createImageRequest(imageName, imageID, false),
 			notify:            common.SensorComponentEventCentralReachable,
-			expectCache:       expectCacheHelper(suite.mockCache, 1, nil),
-			expectRegistry:    expectRegistryHelper(suite.mockRegistryStore, 1, false),
-			expectCentralCall: expectCentralCall(suite.mockCentral, 1, createScanImageInternalResponse(imageName, imageID), nil),
+			expectCache:       expectCacheHelper(s.mockCache, 1, nil),
+			expectRegistry:    expectRegistryHelper(s.mockRegistryStore, 1, false),
+			expectCentralCall: expectCentralCall(s.mockCentral, 1, createScanImageInternalResponse(imageName, imageID), nil),
 			expectedError:     nil,
 			expectedResponse:  createImageResponse(imageName, imageID),
 		},
 		"Cache miss, central is reachable and returns error": {
 			request:           createImageRequest(imageName, imageID, false),
 			notify:            common.SensorComponentEventCentralReachable,
-			expectCache:       expectCacheHelper(suite.mockCache, 1, nil),
-			expectRegistry:    expectRegistryHelper(suite.mockRegistryStore, 1, false),
-			expectCentralCall: expectCentralCall(suite.mockCentral, 1, nil, err),
+			expectCache:       expectCacheHelper(s.mockCache, 1, nil),
+			expectRegistry:    expectRegistryHelper(s.mockRegistryStore, 1, false),
+			expectCentralCall: expectCentralCall(s.mockCentral, 1, nil, err),
 			expectedError:     errCentral,
 			expectedResponse:  nil,
 		},
 		"Cache miss, local scan, central is unreachable": {
 			request:          createImageRequest(imageName, imageID, false),
 			notify:           common.SensorComponentEventOfflineMode,
-			expectCache:      expectCacheHelper(suite.mockCache, 1, nil),
+			expectCache:      expectCacheHelper(s.mockCache, 1, nil),
 			expectedError:    errCentralNoReachable,
 			expectedResponse: nil,
 		},
 		"Cache miss, local scan, central is reachable": {
 			request:          createImageRequest(imageName, imageID, false),
 			notify:           common.SensorComponentEventCentralReachable,
-			expectCache:      expectCacheHelper(suite.mockCache, 1, nil),
-			expectRegistry:   expectRegistryHelper(suite.mockRegistryStore, 1, true),
-			expectLocalScan:  expectLocalScan(suite.mockLocalScan, 1, createScannedImage(imageName, imageID), nil),
+			expectCache:      expectCacheHelper(s.mockCache, 1, nil),
+			expectRegistry:   expectRegistryHelper(s.mockRegistryStore, 1, true),
+			expectLocalScan:  expectLocalScan(s.mockLocalScan, 1, createScannedImage(imageName, imageID), nil),
 			expectedError:    nil,
 			expectedResponse: createImageResponse(imageName, imageID),
 		},
 		"Cache miss, local scan returns error, central is reachable": {
 			request:          createImageRequest(imageName, imageID, false),
 			notify:           common.SensorComponentEventCentralReachable,
-			expectCache:      expectCacheHelper(suite.mockCache, 1, nil),
-			expectRegistry:   expectRegistryHelper(suite.mockRegistryStore, 1, true),
-			expectLocalScan:  expectLocalScan(suite.mockLocalScan, 1, nil, err),
+			expectCache:      expectCacheHelper(s.mockCache, 1, nil),
+			expectRegistry:   expectRegistryHelper(s.mockRegistryStore, 1, true),
+			expectLocalScan:  expectLocalScan(s.mockLocalScan, 1, nil, err),
 			expectedError:    errLocalScan,
 			expectedResponse: nil,
 		},
 	}
 	for testName, c := range cases {
-		suite.T().Run(testName, func(t *testing.T) {
-			suite.service.centralReady.Reset()
-			suite.service.Notify(c.notify)
+		s.Run(testName, func() {
+			s.createImageService()
+			s.service.Notify(c.notify)
 			c.expectCache.Fn()()
 			c.expectRegistry.Fn()()
 			c.expectCentralCall.Fn()()
 			c.expectLocalScan.Fn()()
-			res, err := suite.service.GetImage(ctx, c.request)
+			res, err := s.service.GetImage(ctx, c.request)
 			if c.expectedError != nil {
-				assert.EqualError(t, err, c.expectedError.Error())
+				s.Assert().EqualError(err, c.expectedError.Error())
 			} else {
-				assert.NoError(t, err)
+				s.Assert().NoError(err)
 			}
-			assert.Equal(t, c.expectedResponse, res)
+			s.Assert().Equal(c.expectedResponse, res)
 		})
 	}
 }
 
-func expectCacheHelper(mockCache *cacheMocks.MockCache, times int, retValue interface{}) *expectFunctionHelper {
-	var fn func()
-	if times == 0 {
-		fn = func() {
-			mockCache.EXPECT().Get(gomock.Any()).Times(0)
-		}
-	} else {
-		fn = func() {
-			mockCache.EXPECT().Get(gomock.Any()).Times(times).DoAndReturn(func(_ interface{}) interface{} {
+func expectCacheHelper(mockCache *cacheMocks.MockCache, times int, retValue any) *expectFunctionHelper {
+	return &expectFunctionHelper{
+		fn: func() {
+			mockCache.EXPECT().Get(gomock.Any()).Times(times).DoAndReturn(func(_ any) any {
 				return retValue
 			})
-		}
-	}
-	return &expectFunctionHelper{
-		fn: fn,
+		},
 	}
 }
 
 func expectRegistryHelper(mockRegistryStore *imageMocks.MockregistryStore, times int, retValue bool) *expectFunctionHelper {
-	var fn func()
-	if times == 0 {
-		fn = func() {
-			mockRegistryStore.EXPECT().IsLocal(gomock.Any()).Times(0)
-		}
-	} else {
-		fn = func() {
-			mockRegistryStore.EXPECT().IsLocal(gomock.Any()).Times(times).DoAndReturn(func(_ interface{}) bool {
+	return &expectFunctionHelper{
+		fn: func() {
+			mockRegistryStore.EXPECT().IsLocal(gomock.Any()).Times(times).DoAndReturn(func(_ any) bool {
 				return retValue
 			})
-		}
-	}
-	return &expectFunctionHelper{
-		fn: fn,
+		},
 	}
 }
 
 func expectCentralCall(mockCentral *imageMocks.MockcentralClient, times int, retValue *v1.ScanImageInternalResponse, retErr error) *expectFunctionHelper {
-	var fn func()
-	if times == 0 {
-		fn = func() {
-			mockCentral.EXPECT().ScanImageInternal(gomock.Any(), gomock.Any()).Times(0)
-		}
-	} else {
-		fn = func() {
-			mockCentral.EXPECT().ScanImageInternal(gomock.Any(), gomock.Any()).Times(times).DoAndReturn(func(_, _ interface{}, _ ...interface{}) (*v1.ScanImageInternalResponse, error) {
+	return &expectFunctionHelper{
+		fn: func() {
+			mockCentral.EXPECT().ScanImageInternal(gomock.Any(), gomock.Any()).Times(times).DoAndReturn(func(_, _ any, _ ...any) (*v1.ScanImageInternalResponse, error) {
 				return retValue, retErr
 			})
-		}
-	}
-	return &expectFunctionHelper{
-		fn: fn,
+		},
 	}
 }
 
 func expectLocalScan(mockLocalScan *imageMocks.MocklocalScan, times int, retValue *storage.Image, retErr error) *expectFunctionHelper {
-	var fn func()
-	if times == 0 {
-		fn = func() {
-			mockLocalScan.EXPECT().EnrichLocalImageInNamespace(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-		}
-	} else {
-		fn = func() {
-			mockLocalScan.EXPECT().EnrichLocalImageInNamespace(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(times).DoAndReturn(func(_, _, _, _, _, _ interface{}) (*storage.Image, error) {
+	return &expectFunctionHelper{
+		fn: func() {
+			mockLocalScan.EXPECT().EnrichLocalImageInNamespace(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(times).DoAndReturn(func(_, _, _, _, _, _ any) (*storage.Image, error) {
 				return retValue, retErr
 			})
-		}
-	}
-	return &expectFunctionHelper{
-		fn: fn,
+		},
 	}
 }
 
