@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/serviceaccount/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
@@ -26,36 +25,6 @@ type datastoreImpl struct {
 	storage  store.Store
 	indexer  index.Indexer
 	searcher search.Searcher
-}
-
-func (d *datastoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	log.Info("[STARTUP] Indexing service accounts")
-	var serviceAccounts []*storage.ServiceAccount
-	var count int
-	// Postgres op retries not required. This is related to bleve indexing which is not used in postgres.
-	err := d.storage.Walk(ctx, func(sa *storage.ServiceAccount) error {
-		serviceAccounts = append(serviceAccounts, sa)
-		if len(serviceAccounts) == batchSize {
-			if err := d.indexer.AddServiceAccounts(serviceAccounts); err != nil {
-				return err
-			}
-			serviceAccounts = serviceAccounts[:0]
-		}
-		count++
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	if err := d.indexer.AddServiceAccounts(serviceAccounts); err != nil {
-		return err
-	}
-
-	log.Infof("[STARTUP] Successfully indexed %d service accounts", count)
-	return nil
 }
 
 func (d *datastoreImpl) GetServiceAccount(ctx context.Context, id string) (*storage.ServiceAccount, bool, error) {

@@ -59,7 +59,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
-	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -1917,26 +1916,12 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
-			var serviceAccounts serviceAccountDataStore.DataStore
-			var k8sRoles k8sRoleDataStore.DataStore
-			var k8sRoleBindings k8sRoleBindingDataStore.DataStore
-			var err error
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				serviceAccounts, err = serviceAccountDataStore.GetTestPostgresDataStore(t, s.pool)
-				assert.NoError(t, err)
-				k8sRoles, err = k8sRoleDataStore.GetTestPostgresDataStore(t, s.pool)
-				assert.NoError(t, err)
-				k8sRoleBindings, err = k8sRoleBindingDataStore.GetTestPostgresDataStore(t, s.pool)
-				assert.NoError(t, err)
-			} else {
-				db, bleveIndex := setupRocksDBAndBleve(t)
-				serviceAccounts, err = serviceAccountDataStore.NewForTestOnly(t, db, bleveIndex)
-				assert.NoError(t, err)
-				k8sRoles, err = k8sRoleDataStore.NewForTestOnly(t, db, bleveIndex)
-				assert.NoError(t, err)
-				k8sRoleBindings, err = k8sRoleBindingDataStore.NewForTestOnly(t, db, bleveIndex)
-				assert.NoError(t, err)
-			}
+			serviceAccounts, err := serviceAccountDataStore.GetTestPostgresDataStore(t, s.pool)
+			assert.NoError(t, err)
+			k8sRoles, err := k8sRoleDataStore.GetTestPostgresDataStore(t, s.pool)
+			assert.NoError(t, err)
+			k8sRoleBindings, err := k8sRoleBindingDataStore.GetTestPostgresDataStore(t, s.pool)
+			assert.NoError(t, err)
 
 			for _, sa := range c.serviceAccts {
 				assert.NoError(t, serviceAccounts.UpsertServiceAccount(pruningCtx, sa))
@@ -2047,18 +2032,6 @@ func (s *PruningTestSuite) TestRemoveLogImbues() {
 			}
 		})
 	}
-}
-
-func testDackBoxInstance(t *testing.T, db *rocksdb.RocksDB, index bleve.Index) (*dackbox.DackBox, indexer.WrapperRegistry, queue.WaitableQueue) {
-	indexingQ := queue.NewWaitableQueue()
-	dacky, err := dackbox.NewRocksDBDackBox(db, indexingQ, []byte("graph"), []byte("dirty"), []byte("valid"))
-	require.NoError(t, err)
-
-	reg := indexer.NewWrapperRegistry()
-	lazy := indexer.NewLazy(indexingQ, reg, index, dacky.AckIndexed)
-	lazy.Start()
-
-	return dacky, reg, indexingQ
 }
 
 func getAllAlerts() *v1.Query {
