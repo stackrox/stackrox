@@ -40,11 +40,7 @@ func NewMetricsServer(subsystem Subsystem) *MetricsServer {
 	// Allow the metric to be registered multiple times for tests
 	_ = prometheus.Register(uptimeMetric)
 
-	certDir := env.SecureMetricsCertDir.Setting()
-	clientCANamespace := env.SecureMetricsClientCANamespace.Setting()
-	clientCAConfigMap := env.SecureMetricsClientCAConfigMap.Setting()
-	// TODO: handle error here
-	tlsLoader, _ := NewTLSConfigLoader(certDir, clientCANamespace, clientCAConfigMap)
+	tlsLoader := createTLSConfigLoader()
 	return &MetricsServer{
 		Address:         env.MetricsPort.Setting(),
 		SecureAddress:   env.SecureMetricsPort.Setting(),
@@ -62,29 +58,24 @@ func (s *MetricsServer) RunForever() {
 	mux := http.NewServeMux()
 	mux.Handle(metricsURLPath, promhttp.HandlerFor(s.Gatherer, s.HandlerOpts))
 
-	metricsEnabled := metricsEnabled()
-	if metricsEnabled {
+	runMetrics := metricsEnabled() && metricsValid()
+	if runMetrics {
 		go runForever(s.Address, mux)
 	}
 
-	secureMetricsEnabled := secureMetricsEnabled()
-	if secureMetricsEnabled {
+	runSecureMetrics := secureMetricsEnabled() && s.secureMetricsValid()
+	if runSecureMetrics {
 		s.tlsConfigLoader.WatchForChanges()
 		tlsConfig := s.tlsConfigLoader.TLSConfig
 		go runForeverTLS(s.SecureAddress, mux, tlsConfig)
 	}
 
-	if metricsEnabled || secureMetricsEnabled {
+	if runMetrics || runSecureMetrics {
 		go gatherUptimeMetricForever(time.Now(), s.uptimeMetric)
 	}
 }
 
 func metricsEnabled() bool {
-	if err := env.ValidateMetricsSetting(); err != nil {
-		utils.Should(errors.Wrap(err, "invalid metrics setting"))
-		log.Error(errors.Wrap(err, "metrics server is disabled"))
-		return false
-	}
 	if !env.MetricsEnabled() {
 		log.Warn("Metrics server is disabled")
 		return false
@@ -92,17 +83,48 @@ func metricsEnabled() bool {
 	return true
 }
 
-func secureMetricsEnabled() bool {
-	if err := env.ValidateSecureMetricsSetting(); err != nil {
-		utils.Should(errors.Wrap(err, "invalid secure metrics setting"))
-		log.Error(errors.Wrap(err, "secure metrics server is disabled"))
+func metricsValid() bool {
+	if err := env.ValidateMetricsSetting(); err != nil {
+		utils.Should(errors.Wrap(err, "invalid metrics setting"))
+		log.Error(errors.Wrap(err, "metrics server is disabled"))
 		return false
 	}
+	return true
+}
+
+func secureMetricsEnabled() bool {
 	if !env.SecureMetricsEnabled() {
 		log.Warn("Secure metrics server is disabled")
 		return false
 	}
 	return true
+}
+
+func (s *MetricsServer) secureMetricsValid() bool {
+	if err := env.ValidateSecureMetricsSetting(); err != nil {
+		utils.Should(errors.Wrap(err, "invalid secure metrics setting"))
+		log.Error(errors.Wrap(err, "secure metrics server is disabled"))
+		return false
+	}
+	if s.tlsConfigLoader == nil {
+		utils.Should(errors.New("invalid TLS config loader"))
+		return false
+	}
+	return true
+}
+
+func createTLSConfigLoader() *tlsConfigLoader {
+	if !secureMetricsEnabled() {
+		return nil
+	}
+	certDir := env.SecureMetricsCertDir.Setting()
+	clientCANamespace := env.SecureMetricsClientCANamespace.Setting()
+	clientCAConfigMap := env.SecureMetricsClientCAConfigMap.Setting()
+	tlsConfigLoader, err := NewTLSConfigLoader(certDir, clientCANamespace, clientCAConfigMap)
+	if err != nil {
+		log.Error(errors.Wrap(err, "failed to create TLS config loader"))
+	}
+	return tlsConfigLoader
 }
 
 func gatherUptimeMetricForever(startTime time.Time, uptimeMetric prometheus.Gauge) {
@@ -130,5 +152,5 @@ func runForeverTLS(address string, mux *http.ServeMux, tlsConfig *tls.Config) {
 	}
 	err := server.ListenAndServeTLS("", "")
 	// The HTTPS server should never terminate.
-	log.Panicf("Unexpected termination of metrics server %q: %v", server.Addr, err)
+	log.Panicf("Unexpected termination of secure metrics server %q: %v", server.Addr, err)
 }

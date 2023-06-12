@@ -46,7 +46,7 @@ func TestMetricsServerAddressEnvs(t *testing.T) {
 	}
 }
 
-func TestMetricsServerError(t *testing.T) {
+func TestMetricsServerPanic(t *testing.T) {
 	cases := map[string]struct {
 		metricsPort       string
 		secureMetricsPort string
@@ -55,22 +55,22 @@ func TestMetricsServerError(t *testing.T) {
 		"metrics error - debug build panics": {
 			metricsPort:       "error",
 			secureMetricsPort: "",
-			releaseBuild:      true,
+			releaseBuild:      false,
 		},
-		"metrics error - release build nils": {
+		"metrics error - release build does not panic": {
 			metricsPort:       "error",
 			secureMetricsPort: "",
-			releaseBuild:      false,
+			releaseBuild:      true,
 		},
 		"secureMetrics error - debug build panics": {
 			metricsPort:       "",
 			secureMetricsPort: "error",
-			releaseBuild:      true,
+			releaseBuild:      false,
 		},
-		"secureMetrics error - release build nils": {
+		"secureMetrics error - release build does not panic": {
 			metricsPort:       "",
 			secureMetricsPort: "error",
-			releaseBuild:      false,
+			releaseBuild:      true,
 		},
 	}
 
@@ -83,10 +83,9 @@ func TestMetricsServerError(t *testing.T) {
 			t.Setenv(env.SecureMetricsPort.EnvVar(), c.secureMetricsPort)
 
 			if c.releaseBuild {
-				server := NewMetricsServer(CentralSubsystem)
-				assert.Nil(t, server)
+				assert.NotPanics(t, func() { NewMetricsServer(CentralSubsystem).RunForever() })
 			} else {
-				assert.Panics(t, func() { NewMetricsServer(CentralSubsystem) })
+				assert.Panics(t, func() { NewMetricsServer(CentralSubsystem).RunForever() })
 			}
 		})
 	}

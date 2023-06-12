@@ -115,7 +115,7 @@ func (t *tlsConfigLoader) updateCertificate(cert *tls.Certificate) {
 func (t *tlsConfigLoader) watchForClientCAChanges() {
 	for {
 		watcher, err := t.k8sClient.CoreV1().ConfigMaps(t.clientCANamespace).Watch(
-			context.TODO(),
+			context.Background(),
 			metav1.SingleObject(metav1.ObjectMeta{
 				Name: t.clientCAConfigMap, Namespace: t.clientCANamespace,
 			}))
