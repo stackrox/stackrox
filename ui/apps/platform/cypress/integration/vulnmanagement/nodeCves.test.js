@@ -1,6 +1,6 @@
 import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
+import { hasOrchestratorFlavor } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -19,12 +19,6 @@ const entitiesKey = 'node-cves';
 
 describe('Vulnerability Management Node CVEs', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-    });
 
     it('should display table columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
