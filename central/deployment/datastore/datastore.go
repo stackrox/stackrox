@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/process/filter"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -135,23 +134,4 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 	namespaceRanker := ranking.NamespaceRanker()
 	deploymentRanker := ranking.DeploymentRanker()
 	return newDatastoreImpl(dbstore, indexer, searcher, imageStore, processBaselineStore, networkFlowClusterStore, riskStore, nil, processFilter, clusterRanker, namespaceRanker, deploymentRanker), nil
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (DataStore, error) {
-	imageStore, err := imageDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex, dacky, keyFence)
-	if err != nil {
-		return nil, err
-	}
-	riskStore, err := riskDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
-	if err != nil {
-		return nil, err
-	}
-	processFilter := processIndicatorFilter.Singleton()
-	clusterRanker := ranking.ClusterRanker()
-	namespaceRanker := ranking.NamespaceRanker()
-	deploymentRanker := ranking.DeploymentRanker()
-	return New(dacky, keyFence, nil, bleveIndex, bleveIndex, imageStore,
-		nil, nil, riskStore, nil,
-		processFilter, clusterRanker, namespaceRanker, deploymentRanker)
 }

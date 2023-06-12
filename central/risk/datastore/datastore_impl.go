@@ -10,9 +10,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
@@ -26,29 +24,6 @@ type datastoreImpl struct {
 	indexer            index.Indexer
 	searcher           search.Searcher
 	entityTypeToRanker map[string]*ranking.Ranker
-}
-
-func (d *datastoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	log.Info("[STARTUP] Indexing risk")
-	var risks []*storage.Risk
-	walkFn := func() error {
-		risks = risks[:0]
-		return d.storage.Walk(ctx, func(risk *storage.Risk) error {
-			risks = append(risks, risk)
-			return nil
-		})
-	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
-		return err
-	}
-	if err := d.indexer.AddRisks(risks); err != nil {
-		return err
-	}
-	log.Info("[STARTUP] Successfully indexed risk")
-	return nil
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
