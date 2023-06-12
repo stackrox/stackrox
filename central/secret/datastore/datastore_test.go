@@ -6,23 +6,17 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/secret/internal/index"
 	"github.com/stackrox/rox/central/secret/internal/store"
-	rocksdbStore "github.com/stackrox/rox/central/secret/internal/store/rocksdb"
 	secretSearch "github.com/stackrox/rox/central/secret/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -33,10 +27,6 @@ func TestSecretDataStore(t *testing.T) {
 
 type SecretDataStoreTestSuite struct {
 	suite.Suite
-
-	bleveIndex bleve.Index
-
-	db *rocksdb.RocksDB
 
 	indexer   index.Indexer
 	searcher  secretSearch.Searcher
@@ -51,27 +41,11 @@ type SecretDataStoreTestSuite struct {
 func (suite *SecretDataStoreTestSuite) SetupSuite() {
 	var err error
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(suite.T())
-		suite.Require().NotNil(pgtestbase)
-		suite.pool = pgtestbase.DB
-		suite.datastore, err = GetTestPostgresDataStore(suite.T(), suite.pool)
-		suite.Require().NoError(err)
-	} else {
-		suite.bleveIndex, err = globalindex.TempInitializeIndices("")
-		suite.Require().NoError(err)
-
-		db, err := rocksdb.NewTemp(suite.T().Name() + ".db")
-		suite.Require().NoError(err)
-
-		suite.db = db
-
-		suite.storage = rocksdbStore.New(db)
-		suite.indexer = index.New(suite.bleveIndex)
-		suite.searcher = secretSearch.New(suite.storage, suite.indexer)
-		suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher)
-		suite.Require().NoError(err)
-	}
+	pgtestbase := pgtest.ForT(suite.T())
+	suite.Require().NotNil(pgtestbase)
+	suite.pool = pgtestbase.DB
+	suite.datastore, err = GetTestPostgresDataStore(suite.T(), suite.pool)
+	suite.Require().NoError(err)
 
 	suite.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -80,12 +54,7 @@ func (suite *SecretDataStoreTestSuite) SetupSuite() {
 }
 
 func (suite *SecretDataStoreTestSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.pool.Close()
-	} else {
-		suite.NoError(suite.bleveIndex.Close())
-		rocksdbtest.TearDownRocksDB(suite.db)
-	}
+	suite.pool.Close()
 }
 
 func (suite *SecretDataStoreTestSuite) assertSearchResults(q *v1.Query, s *storage.Secret) {
