@@ -13,6 +13,7 @@ import (
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterHealthPostgresStore "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
+	podStore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -245,5 +246,49 @@ func (s *PostgresPruningSuite) TestGetOrphanedAlertIDs() {
 			}
 			s.NoError(alertDS.DeleteAlerts(s.ctx, c.alert.GetId()))
 		})
+	}
+}
+
+func (s *PostgresPruningSuite) TestGetOrphanedPodIDs() {
+	podDS, err := podStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Nil(err)
+
+	clusterDS, err := clusterStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Nil(err)
+
+	clusterID1, err := clusterDS.AddCluster(s.ctx, &storage.Cluster{Name: "testOrphanPodCluster1", MainImage: "docker.io/stackrox/rox:latest"})
+	s.Nil(err)
+
+	clusterID2, err := clusterDS.AddCluster(s.ctx, &storage.Cluster{Name: "testOrphanPodCluster2", MainImage: "docker.io/stackrox/rox:latest"})
+	s.Nil(err)
+
+	// Add some pods to Cluster 1
+	cluster1PodCount := 20
+	cluster2PodCount := 15
+
+	s.addSomePods(podDS, clusterID1, cluster1PodCount)
+	s.addSomePods(podDS, clusterID2, cluster2PodCount)
+
+	// No pods orphaned
+	idsToPrune, err := GetOrphanedPodIDs(s.ctx, s.testDB.DB)
+	s.Nil(err)
+	s.Equal(len(idsToPrune), 0)
+
+	// cluster 2 pods orphaned
+	err = clusterDS.RemoveCluster(s.ctx, clusterID2, nil)
+	s.Nil(err)
+	idsToPrune, err = GetOrphanedPodIDs(s.ctx, s.testDB.DB)
+	s.Nil(err)
+	s.Equal(len(idsToPrune), cluster2PodCount)
+}
+
+func (s *PostgresPruningSuite) addSomePods(podDS podStore.DataStore, clusterID string, numberPods int) {
+	for i := 0; i < numberPods; i++ {
+		pod := &storage.Pod{
+			Id:        uuid.NewV4().String(),
+			ClusterId: clusterID,
+		}
+		err := podDS.UpsertPod(s.ctx, pod)
+		s.Nil(err)
 	}
 }
