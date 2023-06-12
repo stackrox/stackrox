@@ -68,6 +68,7 @@ func (s *ReportMetadataDatastoreTestSuite) TestReportMetadataWorkflows() {
 	report.ReportConfigId = configID
 	reportID, err := s.datastore.AddReportMetadata(noAccessCtx, report)
 	s.Error(err)
+	s.Equal("", reportID)
 
 	// Test AddReportMetadata: no error with write access
 	reportID, err = s.datastore.AddReportMetadata(s.ctx, report)
@@ -141,7 +142,7 @@ func (s *ReportMetadataDatastoreTestSuite) TestReportMetadataWorkflows() {
 	// Test Exists: returns false without read access
 	exists, err := s.datastore.Exists(noAccessCtx, reportID)
 	s.NoError(err)
-	s.False(false)
+	s.False(exists)
 
 	// Test Exists: returns correct value with read access
 	exists, err = s.datastore.Exists(s.ctx, reportID)
