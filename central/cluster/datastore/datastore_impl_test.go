@@ -123,7 +123,6 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.riskDataStore = riskMocks.NewMockDataStore(suite.mockCtrl)
 	suite.connMgr = connectionMocks.NewMockManager(suite.mockCtrl)
 	suite.notifierMock = notifierMocks.NewMockProcessor(suite.mockCtrl)
-	suite.mockProvider = graphMocks.NewMockProvider(suite.mockCtrl)
 	suite.networkBaselineMgr = networkBaselineMocks.NewMockManager(suite.mockCtrl)
 	suite.serviceAccountDataStore = serviceAccountMocks.NewMockDataStore(suite.mockCtrl)
 	suite.roleDataStore = roleMocks.NewMockDataStore(suite.mockCtrl)
@@ -157,7 +156,6 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 		suite.roleBindingDataStore,
 		suite.connMgr,
 		suite.notifierMock,
-		suite.mockProvider,
 		ranking.NewRanker(),
 		suite.indexer,
 		suite.networkBaselineMgr,
