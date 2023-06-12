@@ -454,13 +454,10 @@ func startGRPCServer() {
 			sac.ResourceScopeKeys(resources.Access)))
 
 	// Create the registry of applied auth providers.
-	registry, err := authproviders.NewStoreBackedRegistry(
+	registry := authproviders.NewStoreBackedRegistry(
 		ssoURLPathPrefix, tokenRedirectURLPath,
 		authProviderDS.Singleton(), jwt.IssuerFactorySingleton(),
 		mapper.FactorySingleton())
-	if err != nil {
-		log.Panicf("Could not create auth provider registry: %v", err)
-	}
 
 	// env.EnableOpenShiftAuth signals the desire but does not guarantee Central
 	// is configured correctly to talk to the OpenShift's OAuth server. If this
