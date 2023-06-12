@@ -53,6 +53,8 @@ type clusterCVEEdgeDatastoreSACSuite struct {
 
 func (s *clusterCVEEdgeDatastoreSACSuite) SetupSuite() {
 	var err error
+	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
+	s.Require().NoError(err)
 	s.datastore, err = datastore.GetTestPostgresDataStore(s.T(), s.dackboxTestStore.GetPostgresPool())
 	s.Require().NoError(err)
 }
