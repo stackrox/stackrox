@@ -238,13 +238,19 @@ splunk:
     private ScheduledFuture<?> annotateTaskHandle
 
     def setup() {
+        // We use this hack to speed up declarative config volume reconciliation.
+        // The reason this works is because kubelet reconciles volume from secret when:
+        // 1) Something about the pod changes
+        // 2) Somewhat around 1 minute passes
+        // Updating value of annotation thus triggers reconciliation of declarative config.
         annotateTaskHandle = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new Runnable() {
             @Override
             void run() {
                 try {
-                    orchestrator.addPodAnnotationByApp(DEFAULT_NAMESPACE, "central", "test", String.valueOf(System.currentTimeMillis()))
+                    def value = String.valueOf(System.currentTimeMillis())
+                    orchestrator.addPodAnnotationByApp(DEFAULT_NAMESPACE, "central", "test", value)
                 } catch (Exception e) {
-                    e.printStackTrace()
+                    log.error( "Failed adding annotation to central", e)
                 }
             }
         }, 0, 1, TimeUnit.SECONDS)
