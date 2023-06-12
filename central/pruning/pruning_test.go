@@ -250,6 +250,22 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 	return mockAlertDatastore, mockConfigDatastore, images, deployments, pods
 }
 
+func (s *PruningTestSuite) generatePodDataStructures() podDatastore.DataStore {
+	// Setup the mocks
+	ctrl := gomock.NewController(s.T())
+	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
+	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsByPod(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+
+	mockFilter := filterMocks.NewMockFilter(ctrl)
+	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
+	mockFilter.EXPECT().DeleteByPod(gomock.Any()).AnyTimes()
+
+	pods, err := podDatastore.NewPostgresDB(s.pool, mockProcessDataStore, mockFilter)
+	require.NoError(s.T(), err)
+
+	return pods
+}
+
 func (s *PruningTestSuite) generateNodeDataStructures() testNodeDatastore.DataStore {
 	ctrl := gomock.NewController(s.T())
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
@@ -1946,6 +1962,59 @@ func (s *PruningTestSuite) TestRemoveLogImbues() {
 				assert.False(t, c.expectedLogDeletions.Contains(li.Id))
 			}
 		})
+	}
+}
+
+func (s *PruningTestSuite) TestRemoveOrphanedPods() {
+	_, _, clusterDS, _ := s.generateClusterDataStructures()
+
+	clusterID1, err := clusterDS.AddCluster(s.ctx, &storage.Cluster{Name: "testOrphanPodCluster1", MainImage: "docker.io/stackrox/rox:latest"})
+	s.Nil(err)
+
+	clusterID2, err := clusterDS.AddCluster(s.ctx, &storage.Cluster{Name: "testOrphanPodCluster2", MainImage: "docker.io/stackrox/rox:latest"})
+	s.Nil(err)
+
+	pods := s.generatePodDataStructures()
+
+	// Add some pods to Cluster 1
+	cluster1PodCount := 20
+	cluster2PodCount := 15
+
+	s.addSomePods(pods, clusterID1, cluster1PodCount)
+	s.addSomePods(pods, clusterID2, cluster2PodCount)
+
+	gci := &garbageCollectorImpl{
+		pods:     pods,
+		postgres: s.pool,
+	}
+
+	podCount, err := pods.Count(s.ctx, search.EmptyQuery())
+	s.Nil(err)
+	// Shouldn't remove any
+	gci.removeOrphanedPods()
+	updatedCount, err := pods.Count(s.ctx, search.EmptyQuery())
+	s.Nil(err)
+	s.Equal(updatedCount, podCount)
+
+	// Now delete cluster 2
+	err = clusterDS.RemoveCluster(s.ctx, clusterID2, nil)
+	s.Nil(err)
+
+	gci.removeOrphanedPods()
+	updatedCount, err = pods.Count(s.ctx, search.EmptyQuery())
+	s.Nil(err)
+	s.Equal(updatedCount, podCount-cluster2PodCount)
+
+}
+
+func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID string, numberPods int) {
+	for i := 0; i < numberPods; i++ {
+		pod := &storage.Pod{
+			Id:        uuid.NewV4().String(),
+			ClusterId: clusterID,
+		}
+		err := podDS.UpsertPod(s.ctx, pod)
+		s.Nil(err)
 	}
 }
 
