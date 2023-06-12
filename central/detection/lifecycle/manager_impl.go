@@ -401,14 +401,8 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 	}
 
 	if policies.AppliesAtRunTime(policy) {
-		// Perform notifications and update DB.
-		modifiedDeployments, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithPolicyID(policy.GetId()))
-		if err != nil {
-			return err
-		}
-		if modifiedDeployments.Cardinality() > 0 {
-			defer m.reprocessor.ReprocessRiskForDeployments(modifiedDeployments.AsSlice()...)
-		}
+		// Perform notifications and update DB, reprocess risk
+		go m.processAlertsAndRisk(policy)
 	}
 	if policy.GetDisabled() {
 		m.removedOrDisabledPolicies.Add(policy.GetId())
@@ -453,4 +447,13 @@ func (m *managerImpl) RemovePolicy(policyID string) error {
 		}
 	}
 	return nil
+}
+
+func (m *managerImpl) processAlertsAndRisk(policy *storage.Policy) {
+	policyID := policy.GetId()
+	modifiedDeployments, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithPolicyID(policyID))
+	log.Errorf("error processing alerts for policy %q: %v", policyID, err)
+	if modifiedDeployments.Cardinality() > 0 {
+		go m.reprocessor.ReprocessRiskForDeployments(modifiedDeployments.AsSlice()...)
+	}
 }

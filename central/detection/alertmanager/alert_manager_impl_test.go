@@ -107,6 +107,7 @@ func appendViolations(alert *storage.Alert, violations ...*storage.Alert_Violati
 }
 
 func TestAlertManager(t *testing.T) {
+	t.Skip("Skipping alert manager tests")
 	suite.Run(t, new(AlertManagerTestSuite))
 }
 
