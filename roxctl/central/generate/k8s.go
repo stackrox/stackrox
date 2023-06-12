@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/istioutils"
@@ -81,12 +80,6 @@ func orchestratorCommand(shortName, _ string) *cobra.Command {
 	return c
 }
 
-func isReleaseVersion() bool {
-	return buildinfo.ReleaseBuild &&
-		version.GetMainVersion() != "" &&
-		!strings.Contains(version.GetMainVersion(), "-")
-}
-
 func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *renderer.K8sConfig, shortName, longName string, getClusterType func() (storage.ClusterType, error)) *cobra.Command {
 	c := orchestratorCommand(shortName, longName)
 	c.PersistentPreRunE = func(*cobra.Command, []string) error {
@@ -113,7 +106,7 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 	flagWrap.StringVar(&k8sConfig.CentralDBImage, flags.FlagNameCentralDBImage, "", "central-db image to use"+defaultImageHelp, "central")
 	flagWrap.StringVar(&k8sConfig.ScannerImage, flags.FlagNameScannerImage, "", "scanner image to use"+defaultImageHelp, "scanner")
 	flagWrap.StringVar(&k8sConfig.ScannerDBImage, flags.FlagNameScannerDBImage, "", "scanner-db image to use"+defaultImageHelp, "scanner")
-	flagWrap.BoolVar(&k8sConfig.Telemetry.Enabled, "enable-telemetry", isReleaseVersion(), "whether to enable telemetry", "central")
+	flagWrap.BoolVar(&k8sConfig.Telemetry.Enabled, "enable-telemetry", version.IsReleaseVersion(), "whether to enable telemetry", "central")
 
 	if env.DeclarativeConfiguration.BooleanSetting() {
 		flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfigMounts.ConfigMaps, "declarative-config-config-maps", nil,
