@@ -27,7 +27,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/logging"
 	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/sac"
@@ -91,7 +90,6 @@ func New(
 	rbds roleBindingDataStore.DataStore,
 	cm connection.Manager,
 	notifier notifierProcessor.Processor,
-	_ graph.Provider,
 	clusterRanker *ranking.Ranker,
 	indexer index.Indexer,
 	networkBaselineMgr networkBaselineManager.Manager,
