@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version/internal"
@@ -182,4 +183,11 @@ func deriveChartVersion(mainVersion string) (string, error) {
 
 	chartVersion := fmt.Sprintf("%d.%d.%d%s", chartMajor, chartMinor, chartPatch, chartSuffix)
 	return chartVersion, nil
+}
+
+// IsReleaseVersion tells whether the binary is built for a release.
+func IsReleaseVersion() bool {
+	return buildinfo.ReleaseBuild &&
+		GetMainVersion() != "" &&
+		!strings.Contains(GetMainVersion(), "-")
 }

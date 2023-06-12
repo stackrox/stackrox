@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/zip"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -201,13 +202,13 @@ func updateConfig(config *renderer.Config) error {
 	if config.K8sConfig != nil {
 		config.Environment[env.OfflineModeEnv.EnvVar()] = strconv.FormatBool(config.K8sConfig.OfflineMode)
 
-		if config.K8sConfig.Telemetry.Enabled {
-			// TODO(ROX-13889): (when enabled for on-prem)
-			// if env.TelemetryStorageKey.Setting() == "" {
-			//   return errox.InvalidArgs.Newf("telemetry storage key is not set")
-			// }
+		if config.K8sConfig.Telemetry.Enabled &&
+			!(!version.IsReleaseVersion() && env.TelemetryStorageKey.Setting() == "") {
 			config.K8sConfig.Telemetry.StorageKey = env.TelemetryStorageKey.Setting()
 			config.K8sConfig.Telemetry.StorageEndpoint = env.TelemetryEndpoint.Setting()
+		} else {
+			config.K8sConfig.Telemetry.StorageKey = "DISABLED"
+			config.K8sConfig.Telemetry.Enabled = false
 		}
 	}
 
@@ -251,18 +252,11 @@ func OutputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
 		return err
 	}
 	if config.K8sConfig.Telemetry.Enabled {
-		if config.K8sConfig.Telemetry.StorageKey == "" {
-			// TODO(ROX-13889): won't be reachable
-			logger.WarnfLn("No telemetry storage key has been provided. " +
-				"Telemetry collection will not be enabled.")
-			config.K8sConfig.Telemetry.Enabled = false
-		} else {
-			logger.InfofLn("StackRox Kubernetes Security Platform collects " +
-				"and transmits anonymous usage and system configuration " +
-				"information. If you want to OPT OUT from this, re-generate " +
-				"the deployment bundle with the '--enable-telemetry=false' " +
-				"flag.")
-		}
+		logger.InfofLn("StackRox Kubernetes Security Platform collects " +
+			"and transmits anonymous usage and system configuration " +
+			"information. If you want to OPT OUT from this, re-generate " +
+			"the deployment bundle with the '--enable-telemetry=false' " +
+			"flag.")
 	}
 
 	wrapper, err := createBundle(&config)
