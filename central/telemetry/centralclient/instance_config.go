@@ -2,15 +2,20 @@ package centralclient
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -33,9 +38,56 @@ var (
 	enabled  bool
 )
 
+const (
+	telemetryConfigURL = "https://telemetry.stackrox.io/config.json"
+	disabledKey        = "DISABLED"
+)
+
+type remoteConfig struct {
+	Key string `json:"key,omitempty"`
+}
+
+func downloadConfig(u string) (*remoteConfig, error) {
+	req, err := http.NewRequest(http.MethodGet, u, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot request telemetry configuration")
+	}
+	client := http.Client{
+		Timeout:   5 * time.Second,
+		Transport: proxy.RoundTripper(),
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot download telemetry configuration")
+	}
+	var cfg *remoteConfig
+	err = json.NewDecoder(resp.Body).Decode(&cfg)
+	return cfg, errors.Wrap(err, "cannot decode telemetry configuration")
+}
+
+func isReleaseBuild() bool {
+	return buildinfo.ReleaseBuild &&
+		version.GetMainVersion() != "" &&
+		!strings.Contains(version.GetMainVersion(), "-")
+}
+
 func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 	key := env.TelemetryStorageKey.Setting()
-	if key == "" || env.OfflineModeEnv.BooleanSetting() {
+	if key == disabledKey || env.OfflineModeEnv.BooleanSetting() {
+		return nil, nil, nil
+	}
+
+	if key == "" && isReleaseBuild() {
+		remoteCfg, err := downloadConfig(telemetryConfigURL)
+		if err != nil {
+			return nil, nil, err
+		}
+		if remoteCfg != nil {
+			key = remoteCfg.Key
+		}
+	}
+
+	if key == "" {
 		return nil, nil, nil
 	}
 
