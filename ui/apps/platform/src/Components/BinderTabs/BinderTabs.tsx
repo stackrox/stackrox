@@ -16,7 +16,7 @@ function BinderTabHeader({
     dataTestId = 'tab',
 }: BinderTabHeaderProps): ReactElement {
     const className = 'border-base-400 border'; // 400 instead of 300 to contrast with bg-base-200
-    const buttonClassName = `${isActive ? 'bg-primary-200' : 'bg-base-200'} text-base-600 p-3`;
+    const buttonClassName = `${isActive ? 'bg-primary-200' : 'bg-base-100'} text-base-600 p-3`;
 
     return (
         <li key={title} className={className} data-testid={dataTestId}>
