@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-    - 'yli3/**'
+    - 'tmp/**'
   schedule:
   - cron: '0 */3 * * *'
 

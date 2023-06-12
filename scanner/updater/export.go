@@ -107,7 +107,8 @@ func ExportAction(ctx context.Context) error {
 	gzipWriter := gzip.NewWriter(outputFile)
 	defer gzipWriter.Close()
 
-	updaterSetMgr, err := updates.NewManager(ctx, updaterStore, updates.NewLocalLockSource(), http.DefaultClient,
+	httpClient := http.DefaultClient
+	updaterSetMgr, err := updates.NewManager(ctx, updaterStore, updates.NewLocalLockSource(), httpClient,
 		updates.WithOutOfTree(updaters),
 	)
 	if err != nil {
@@ -122,7 +123,7 @@ func ExportAction(ctx context.Context) error {
 	}
 
 	configStore, err := jsonblob.New()
-	configMgr, err := updates.NewManager(ctx, configStore, updates.NewLocalLockSource(), http.DefaultClient,
+	configMgr, err := updates.NewManager(ctx, configStore, updates.NewLocalLockSource(), httpClient,
 		updates.WithConfigs(cfgs),
 		updates.WithFactories(facs),
 	)
