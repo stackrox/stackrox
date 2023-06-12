@@ -6,17 +6,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -31,10 +27,6 @@ func TestNamespaceDataStoreSAC(t *testing.T) {
 type namespaceDatastoreSACSuite struct {
 	suite.Suite
 
-	// Elements for bleve+rocksdb mode
-	engine   *rocksdb.RocksDB
-	index    bleve.Index
-	dacky    *dackbox.DackBox
 	keyFence concurrency.KeyFence
 	indexQ   queue.WaitableQueue
 
@@ -62,12 +54,7 @@ func (s *namespaceDatastoreSACSuite) SetupSuite() {
 }
 
 func (s *namespaceDatastoreSACSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase.DB.Close()
-	} else {
-		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
-		s.Require().NoError(s.index.Close())
-	}
+	s.pgtestbase.DB.Close()
 }
 
 func (s *namespaceDatastoreSACSuite) SetupTest() {
