@@ -6,7 +6,6 @@ import {
     visitVulnerabilityManagementDashboard,
     visitVulnerabilityManagementDashboardFromLeftNav,
 } from '../../helpers/vulnmanagement/entities';
-import { hasFeatureFlag } from '../../helpers/features';
 
 function verifyVulnerabilityManagementDashboardCVEs(entitiesKey, menuListItemRegExp) {
     visitVulnerabilityManagementDashboard();
@@ -70,27 +69,15 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('should show same number of Image CVEs in menu item and entities list', function () {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-
+    it('should show same number of Image CVEs in menu item and entities list', () => {
         verifyVulnerabilityManagementDashboardCVEs('image-cves', /^\d+ Image CVEs?$/);
     });
 
-    it('should show same number of Node CVEs in menu item and entities list', function () {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-
+    it('should show same number of Node CVEs in menu item and entities list', () => {
         verifyVulnerabilityManagementDashboardCVEs('node-cves', /^\d+ Node CVEs?$/);
     });
 
-    it('should show same number of Cluster (Platform) CVEs in menu item and entities list', function () {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-
+    it('should show same number of Cluster (Platform) CVEs in menu item and entities list', () => {
         verifyVulnerabilityManagementDashboardCVEs('cluster-cves', /^\d+ Platform CVEs?$/);
     });
 
@@ -98,7 +85,7 @@ describe('Vulnerability Management Dashboard', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'images';
-        const tileToCheck = hasFeatureFlag('ROX_POSTGRES_DATASTORE') ? 1 : 2;
+        const tileToCheck = 1;
         cy.get(`${selectors.tileLinks}:eq(${tileToCheck}) ${selectors.tileLinkValue}`)
             .invoke('text')
             .then((value) => {
@@ -146,11 +133,7 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('should navigate to the node components list', function () {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-
+    it('should navigate to the node components list', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'node-components';
@@ -162,11 +145,7 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('should navigate to the image components list', function () {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-
+    it('should navigate to the image components list', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'image-components';
@@ -197,10 +176,8 @@ describe('Vulnerability Management Dashboard', () => {
     it('clicking the "Recently Detected Image Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
         visitVulnerabilityManagementDashboard();
 
-        const entitiesKey = hasFeatureFlag('ROX_POSTGRES_DATASTORE') ? 'image-cves' : 'cves';
-        const widgetHeading = hasFeatureFlag('ROX_POSTGRES_DATASTORE')
-            ? 'Recently Detected Image Vulnerabilities'
-            : 'Recently Detected Vulnerabilities';
+        const entitiesKey = 'image-cves';
+        const widgetHeading = 'Recently Detected Image Vulnerabilities';
 
         interactAndWaitForVulnerabilityManagementEntities(() => {
             cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
@@ -212,10 +189,8 @@ describe('Vulnerability Management Dashboard', () => {
     it('clicking the "Most Common Image Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
         visitVulnerabilityManagementDashboard();
 
-        const entitiesKey = hasFeatureFlag('ROX_POSTGRES_DATASTORE') ? 'image-cves' : 'cves';
-        const widgetHeading = hasFeatureFlag('ROX_POSTGRES_DATASTORE')
-            ? 'Most Common Image Vulnerabilities'
-            : 'Most Common Vulnerabilities';
+        const entitiesKey = 'image-cves';
+        const widgetHeading = 'Most Common Image Vulnerabilities';
 
         interactAndWaitForVulnerabilityManagementEntities(() => {
             cy.get(getViewAllSelectorForWidget(widgetHeading)).click();

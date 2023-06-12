@@ -20,7 +20,6 @@ describe('Entities single views', () => {
         }
 
         const entitiesKey1 = 'clusters';
-        const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
 
         visitVulnerabilityManagementEntities(entitiesKey1);
 
@@ -30,7 +29,7 @@ describe('Entities single views', () => {
                 cy.get(`.rt-td:nth-child(3) ${selectors.fixableCvesLink}:eq(0)`).click();
             },
             entitiesKey1,
-            usingVMUpdates ? 'image-cves' : 'cves'
+            'image-cves'
         );
 
         interactAndWaitForVulnerabilityManagementEntity(() => {
@@ -199,8 +198,7 @@ describe('Entities single views', () => {
     });
 
     it('should show a CVE description in overview when coming from cve list', () => {
-        const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
-        const entitiesKey = usingVMUpdates ? 'image-cves' : 'cves';
+        const entitiesKey = 'image-cves';
         visitVulnerabilityManagementEntities(entitiesKey);
 
         cy.get(`${selectors.tableBodyRowGroups}:eq(0) ${selectors.cveDescription}`)
@@ -249,9 +247,8 @@ describe('Entities single views', () => {
 
     it('should show the active state in Component overview when scoped under a deployment', () => {
         const activeVulnEnabled = hasFeatureFlag('ROX_ACTIVE_VULN_MGMT');
-        const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
         const entitiesKey1 = 'deployments';
-        const entitiesKey2 = usingVMUpdates ? 'image-components' : 'components';
+        const entitiesKey2 = 'image-components';
         visitVulnerabilityManagementEntities(entitiesKey1);
 
         // click on the first deployment in the list
@@ -262,9 +259,7 @@ describe('Entities single views', () => {
         // now, go to the components for that deployment
         interactAndWaitForVulnerabilityManagementSecondaryEntities(
             () => {
-                cy.get(
-                    usingVMUpdates ? selectors.imageComponentTileLink : selectors.componentTileLink
-                ).click();
+                cy.get(selectors.imageComponentTileLink).click();
             },
             entitiesKey1,
             entitiesKey2
@@ -295,11 +290,8 @@ describe('Entities single views', () => {
     it('should show the active state in the fixable CVES widget for a single deployment', () => {
         const activeVulnEnabled = hasFeatureFlag('ROX_ACTIVE_VULN_MGMT');
         const entitiesKey = 'deployments';
-        const usingVMUpdates = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
 
-        const fixableCvesFixture = usingVMUpdates
-            ? 'vulnerabilities/fixableCvesForEntity.json'
-            : 'vulnerabilities/fixableCvesForEntityLegacy.json';
+        const fixableCvesFixture = 'vulnerabilities/fixableCvesForEntity.json';
         const getFixableCvesForEntity = api.graphql('getFixableCvesForEntity');
         cy.intercept('POST', getFixableCvesForEntity, {
             fixture: fixableCvesFixture,

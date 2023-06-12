@@ -1,6 +1,5 @@
 import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import {
     interactAndWaitForVulnerabilityManagementEntity,
     visitVulnerabilityManagementDashboard,
@@ -51,12 +50,6 @@ function selectTopRiskiestOption(optionText) {
 
 describe('Vulnerability Management Dashboard', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-    });
 
     // Some tests might fail in local deployment.
 

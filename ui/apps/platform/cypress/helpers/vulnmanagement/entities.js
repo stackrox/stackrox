@@ -5,38 +5,16 @@ import { visitFromLeftNavExpandable } from '../nav';
 import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from '../request';
 import { visit } from '../visit';
 
-let opnamesForDashboard = [
+const opnamesForDashboard = [
     'cvesCount',
     'getNodes',
     'getImages',
     'topRiskyDeployments',
-    'topRiskiestImagesOld',
     'topRiskiestImageVulns',
-    'recentlyDetectedVulnerabilities',
     'recentlyDetectedImageVulnerabilities',
-    'mostCommonVulnerabilities',
     'mostCommonImageVulnerabilities',
-    'clustersWithMostOrchestratorIstioVulnerabilities',
     'clustersWithMostClusterVulnerabilities',
 ];
-
-if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-    opnamesForDashboard = opnamesForDashboard.filter(
-        (opname) =>
-            opname !== 'clustersWithMostOrchestratorIstioVulnerabilities' &&
-            opname !== 'recentlyDetectedVulnerabilities' &&
-            opname !== 'topRiskiestImagesOld' &&
-            opname !== 'mostCommonVulnerabilities'
-    );
-} else {
-    opnamesForDashboard = opnamesForDashboard.filter(
-        (opname) =>
-            opname !== 'clustersWithMostClusterVulnerabilities' &&
-            opname !== 'recentlyDetectedImageVulnerabilities' &&
-            opname !== 'topRiskiestImageVulns' &&
-            opname !== 'mostCommonImageVulnerabilities'
-    );
-}
 
 const routeMatcherMapForVulnerabilityManagementDashboard =
     getRouteMatcherMapForGraphQL(opnamesForDashboard);
