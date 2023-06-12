@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
-	"github.com/stackrox/rox/central/idmap"
 	nsDackBox "github.com/stackrox/rox/central/namespace/dackbox"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/dackbox"
@@ -90,15 +89,6 @@ func fromEdgeSource(transform filtered.ScopeTransform) filtered.ScopeTransform {
 	return transformFromEdge
 }
 
-func namespaceIDToScope(ctx context.Context, namespaceID string) []sac.ScopeKey {
-	idMap := idmap.FromContext(ctx)
-
-	nsInfo := idMap.ByNamespaceID(string(namespaceID))
-	if nsInfo == nil {
-		// If we can't find the namespace info, conservatively require any/any access. This will prevent information
-		// leakage, while not impacted users with sufficient (global) privileges.
-		return []sac.ScopeKey{sac.ClusterScopeKey(""), sac.NamespaceScopeKey("")}
-	}
-
-	return []sac.ScopeKey{sac.ClusterScopeKey(nsInfo.ClusterID), sac.NamespaceScopeKey(nsInfo.Name)}
+func namespaceIDToScope(_ context.Context, _ string) []sac.ScopeKey {
+	return []sac.ScopeKey{sac.ClusterScopeKey(""), sac.NamespaceScopeKey("")}
 }
