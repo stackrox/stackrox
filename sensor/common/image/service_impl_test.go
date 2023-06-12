@@ -60,11 +60,11 @@ func (s *imageServiceSuite) TestGetImage() {
 	cases := map[string]struct {
 		request *sensor.GetImageRequest
 		notify  common.SensorComponentEvent
-		// Unset expectFunctionHelper will indicate no call to the function
-		expectCache       *expectFunctionHelper
-		expectRegistry    *expectFunctionHelper
-		expectCentralCall *expectFunctionHelper
-		expectLocalScan   *expectFunctionHelper
+		// Unset expectFn will indicate no call to the function
+		expectCache       expectFn
+		expectRegistry    expectFn
+		expectCentralCall expectFn
+		expectLocalScan   expectFn
 		expectedError     error
 		expectedResponse  *sensor.GetImageResponse
 	}{
@@ -137,10 +137,10 @@ func (s *imageServiceSuite) TestGetImage() {
 		s.Run(testName, func() {
 			s.createImageService()
 			s.service.Notify(c.notify)
-			c.expectCache.Fn()()
-			c.expectRegistry.Fn()()
-			c.expectCentralCall.Fn()()
-			c.expectLocalScan.Fn()()
+			c.expectCache.run()
+			c.expectRegistry.run()
+			c.expectCentralCall.run()
+			c.expectLocalScan.run()
 			res, err := s.service.GetImage(ctx, c.request)
 			if c.expectedError != nil {
 				s.Assert().EqualError(err, c.expectedError.Error())
@@ -152,55 +152,44 @@ func (s *imageServiceSuite) TestGetImage() {
 	}
 }
 
-func expectCacheHelper(mockCache *cacheMocks.MockCache, times int, retValue any) *expectFunctionHelper {
-	return &expectFunctionHelper{
-		fn: func() {
-			mockCache.EXPECT().Get(gomock.Any()).Times(times).DoAndReturn(func(_ any) any {
-				return retValue
-			})
-		},
+func expectCacheHelper(mockCache *cacheMocks.MockCache, times int, retValue any) expectFn {
+	return func() {
+		mockCache.EXPECT().Get(gomock.Any()).Times(times).DoAndReturn(func(_ any) any {
+			return retValue
+		})
 	}
 }
 
-func expectRegistryHelper(mockRegistryStore *imageMocks.MockregistryStore, times int, retValue bool) *expectFunctionHelper {
-	return &expectFunctionHelper{
-		fn: func() {
-			mockRegistryStore.EXPECT().IsLocal(gomock.Any()).Times(times).DoAndReturn(func(_ any) bool {
-				return retValue
-			})
-		},
+func expectRegistryHelper(mockRegistryStore *imageMocks.MockregistryStore, times int, retValue bool) expectFn {
+	return func() {
+		mockRegistryStore.EXPECT().IsLocal(gomock.Any()).Times(times).DoAndReturn(func(_ any) bool {
+			return retValue
+		})
 	}
 }
 
-func expectCentralCall(mockCentral *imageMocks.MockcentralClient, times int, retValue *v1.ScanImageInternalResponse, retErr error) *expectFunctionHelper {
-	return &expectFunctionHelper{
-		fn: func() {
-			mockCentral.EXPECT().ScanImageInternal(gomock.Any(), gomock.Any()).Times(times).DoAndReturn(func(_, _ any, _ ...any) (*v1.ScanImageInternalResponse, error) {
-				return retValue, retErr
-			})
-		},
+func expectCentralCall(mockCentral *imageMocks.MockcentralClient, times int, retValue *v1.ScanImageInternalResponse, retErr error) expectFn {
+	return func() {
+		mockCentral.EXPECT().ScanImageInternal(gomock.Any(), gomock.Any()).Times(times).DoAndReturn(func(_, _ any, _ ...any) (*v1.ScanImageInternalResponse, error) {
+			return retValue, retErr
+		})
 	}
 }
 
-func expectLocalScan(mockLocalScan *imageMocks.MocklocalScan, times int, retValue *storage.Image, retErr error) *expectFunctionHelper {
-	return &expectFunctionHelper{
-		fn: func() {
-			mockLocalScan.EXPECT().EnrichLocalImageInNamespace(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(times).DoAndReturn(func(_, _, _, _, _, _ any) (*storage.Image, error) {
-				return retValue, retErr
-			})
-		},
+func expectLocalScan(mockLocalScan *imageMocks.MocklocalScan, times int, retValue *storage.Image, retErr error) expectFn {
+	return func() {
+		mockLocalScan.EXPECT().EnrichLocalImageInNamespace(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(times).DoAndReturn(func(_, _, _, _, _, _ any) (*storage.Image, error) {
+			return retValue, retErr
+		})
 	}
 }
 
-type expectFunctionHelper struct {
-	fn func()
-}
+type expectFn func()
 
-func (e *expectFunctionHelper) Fn() func() {
-	if e == nil || e.fn == nil {
-		return func() {}
+func (f expectFn) run() {
+	if f != nil {
+		f()
 	}
-	return e.fn
 }
 
 func createScannedImage(name, id string) *storage.Image {
