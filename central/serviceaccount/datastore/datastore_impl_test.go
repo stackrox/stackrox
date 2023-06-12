@@ -7,12 +7,10 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
 	pgStore "github.com/stackrox/rox/central/serviceaccount/internal/store/postgres"
-	"github.com/stackrox/rox/central/serviceaccount/internal/store/rocksdb"
 	serviceAccountSearch "github.com/stackrox/rox/central/serviceaccount/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -49,23 +47,11 @@ type ServiceAccountDataStoreTestSuite struct {
 
 func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
 	var err error
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(suite.T())
-		suite.Require().NotNil(pgtestbase)
-		suite.pool = pgtestbase.DB
-		suite.storage = pgStore.New(suite.pool)
-		suite.indexer = pgStore.NewIndexer(suite.pool)
-	} else {
-		suite.bleveIndex, err = globalindex.TempInitializeIndices("")
-		suite.Require().NoError(err)
-
-		suite.db, err = rocksdbHelper.NewTemp(suite.T().Name())
-		suite.Require().NoError(err)
-
-		suite.storage = rocksdb.New(suite.db)
-		suite.Require().NoError(err)
-		suite.indexer = index.New(suite.bleveIndex)
-	}
+	pgtestbase := pgtest.ForT(suite.T())
+	suite.Require().NotNil(pgtestbase)
+	suite.pool = pgtestbase.DB
+	suite.storage = pgStore.New(suite.pool)
+	suite.indexer = pgStore.NewIndexer(suite.pool)
 	suite.searcher = serviceAccountSearch.New(suite.storage, suite.indexer)
 	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher)
 	suite.Require().NoError(err)

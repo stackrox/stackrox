@@ -9,9 +9,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/debug"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
@@ -28,40 +25,6 @@ type datastoreImpl struct {
 	storage  store.Store
 	indexer  index.Indexer
 	searcher search.Searcher
-}
-
-func (d *datastoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	defer debug.FreeOSMemory()
-
-	log.Info("[STARTUP] Indexing roles")
-
-	var roles []*storage.K8SRole
-	var count int
-	// Postgres op retries not required. This is related to bleve indexing which is not used in postgres.
-	walkFn := func() error {
-		return d.storage.Walk(ctx, func(role *storage.K8SRole) error {
-			roles = append(roles, role)
-			if len(roles) == batchSize {
-				if err := d.indexer.AddK8SRoles(roles); err != nil {
-					return err
-				}
-				roles = roles[:0]
-			}
-			count++
-			return nil
-		})
-	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
-		return err
-	}
-	if err := d.indexer.AddK8SRoles(roles); err != nil {
-		return err
-	}
-	log.Infof("[STARTUP] Successfully indexed %d roles", count)
-	return nil
 }
 
 func (d *datastoreImpl) GetRole(ctx context.Context, id string) (*storage.K8SRole, bool, error) {
