@@ -105,7 +105,6 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const { isDarkMode } = useTheme();
 
     const isPostgresEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-    const isCollectionsEnabled = isPostgresEnabled;
     const isNetworkGraphPatternflyEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY');
     const isVulnMgmtWorkloadCvesEnabled =
         isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES') && isPostgresEnabled;
@@ -134,7 +133,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path={policyManagementBasePath} component={AsyncPolicyManagementPage} />
                     {/* Make sure the following Redirect element works after react-router-dom upgrade */}
                     <Redirect exact from={deprecatedPoliciesPath} to={policiesPath} />
-                    {isCollectionsEnabled && hasCollectionsPermission && (
+                    {hasCollectionsPermission && (
                         <Route path={collectionsPath} component={AsyncCollectionsPage} />
                     )}
                     <Route path={riskPath} component={AsyncRiskPage} />
