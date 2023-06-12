@@ -55,11 +55,3 @@ func (b *indexerImpl) DeleteReportConfiguration(id string) error {
 func (b *indexerImpl) DeleteReportConfigurations(_ []string) error {
 	return nil
 }
-
-func (b *indexerImpl) MarkInitialIndexingComplete() error {
-	return nil
-}
-
-func (b *indexerImpl) NeedsInitialIndexing() (bool, error) {
-	return false, nil
-}

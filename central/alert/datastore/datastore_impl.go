@@ -14,7 +14,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
-	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -280,46 +279,6 @@ func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*stora
 
 func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {
 	return o1 != nil && o2 != nil && o1.GetClusterId() == o2.GetClusterId() && o1.GetNamespace() == o2.GetNamespace()
-}
-
-func (ds *datastoreImpl) fullReindex(ctx context.Context) error {
-	log.Info("[STARTUP] Reindexing all alerts")
-
-	alertIDs, err := ds.storage.GetIDs(ctx)
-	if err != nil {
-		return err
-	}
-	log.Infof("[STARTUP] Found %d alerts to index", len(alertIDs))
-	alertBatcher := batcher.New(len(alertIDs), alertBatchSize)
-	for start, end, valid := alertBatcher.Next(); valid; start, end, valid = alertBatcher.Next() {
-		listAlerts, _, err := ds.getListAlerts(ctx, alertIDs[start:end])
-		if err != nil {
-			return err
-		}
-		if err := ds.indexer.AddListAlerts(listAlerts); err != nil {
-			return err
-		}
-		if end%(alertBatchSize*10) == 0 {
-			log.Infof("[STARTUP] Successfully indexed %d/%d alerts", end, len(alertIDs))
-		}
-	}
-	log.Infof("[STARTUP] Successfully indexed %d alerts", len(alertIDs))
-
-	// Clear the keys because we just re-indexed everything
-	keys, err := ds.storage.GetKeysToIndex(ctx)
-	if err != nil {
-		return err
-	}
-	if err := ds.storage.AckKeysIndexed(ctx, keys...); err != nil {
-		return err
-	}
-
-	// Write out that initial indexing is complete
-	if err := ds.indexer.MarkInitialIndexingComplete(); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (ds *datastoreImpl) getListAlerts(ctx context.Context, ids []string) ([]*storage.ListAlert, []int, error) {

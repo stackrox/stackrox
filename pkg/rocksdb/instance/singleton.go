@@ -40,17 +40,3 @@ func GetRocksDB() *rocksdb.RocksDB {
 	})
 	return rocksDB
 }
-
-// UpdatePrefixSizeMetrics update prefix size metrics for all the registered buckets
-func UpdatePrefixSizeMetrics() {
-	for _, bucket := range registeredBuckets {
-		rocksMetrics.UpdateRocksDBPrefixSizeMetric(GetRocksDB(), bucket.prefix, bucket.prefixString, bucket.objType)
-	}
-}
-
-// WalkBucket walks and perform fn on each bucket
-func WalkBucket(fn func(prefix []byte, prefixString string, objType string)) {
-	for _, bucket := range registeredBuckets {
-		fn(bucket.prefix, bucket.prefixString, bucket.objType)
-	}
-}

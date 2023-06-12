@@ -3,7 +3,6 @@
 package index
 
 import (
-	"bytes"
 	"context"
 	bleve "github.com/blevesearch/bleve"
 	metrics "github.com/stackrox/rox/central/metrics"
@@ -92,18 +91,6 @@ func (b *indexerImpl) DeleteSecrets(ids []string) error {
 		return err
 	}
 	return nil
-}
-
-func (b *indexerImpl) MarkInitialIndexingComplete() error {
-	return b.index.SetInternal([]byte(resourceName), []byte("old"))
-}
-
-func (b *indexerImpl) NeedsInitialIndexing() (bool, error) {
-	data, err := b.index.GetInternal([]byte(resourceName))
-	if err != nil {
-		return false, err
-	}
-	return !bytes.Equal([]byte("old"), data), nil
 }
 
 func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {

@@ -114,35 +114,6 @@ func (mr *MockIndexerMockRecorder) DeleteProcessBaselines(ids interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProcessBaselines", reflect.TypeOf((*MockIndexer)(nil).DeleteProcessBaselines), ids)
 }
 
-// MarkInitialIndexingComplete mocks base method.
-func (m *MockIndexer) MarkInitialIndexingComplete() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkInitialIndexingComplete")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// MarkInitialIndexingComplete indicates an expected call of MarkInitialIndexingComplete.
-func (mr *MockIndexerMockRecorder) MarkInitialIndexingComplete() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkInitialIndexingComplete", reflect.TypeOf((*MockIndexer)(nil).MarkInitialIndexingComplete))
-}
-
-// NeedsInitialIndexing mocks base method.
-func (m *MockIndexer) NeedsInitialIndexing() (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NeedsInitialIndexing")
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// NeedsInitialIndexing indicates an expected call of NeedsInitialIndexing.
-func (mr *MockIndexerMockRecorder) NeedsInitialIndexing() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NeedsInitialIndexing", reflect.TypeOf((*MockIndexer)(nil).NeedsInitialIndexing))
-}
-
 // Search mocks base method.
 func (m *MockIndexer) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	m.ctrl.T.Helper()
