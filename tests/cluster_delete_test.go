@@ -1,5 +1,4 @@
 //go:build destructive
-// +build destructive
 
 package tests
 
