@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import { tryDeleteCollection, visitCollections } from './Collections.helpers';
 
 /* 
@@ -8,12 +7,6 @@ import { tryDeleteCollection, visitCollections } from './Collections.helpers';
 */
 describe('Create collection', () => {
     withAuth();
-
-    beforeEach(function beforeHook() {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-    });
 
     const collectionName = 'Financial deployments';
     const clonedName = `${collectionName} -COPY-`;
