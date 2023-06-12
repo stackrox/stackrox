@@ -12,8 +12,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -72,10 +70,7 @@ func getVulnerabilityID(vulnerability *storage.EmbeddedVulnerability, os string)
 func getEdgeID(component *storage.EmbeddedNodeScanComponent, vulnerability *storage.EmbeddedVulnerability, os string) string {
 	componentID := getComponentID(component, os)
 	vulnerabilityID := getVulnerabilityID(vulnerability, os)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return pgSearch.IDFromPks([]string{componentID, vulnerabilityID})
-	}
-	return edges.EdgeID{ParentID: componentID, ChildID: vulnerabilityID}.ToString()
+	return pgSearch.IDFromPks([]string{componentID, vulnerabilityID})
 }
 
 type edgeTestCase struct {

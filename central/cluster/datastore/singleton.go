@@ -56,7 +56,6 @@ func initialize() {
 		roleBindingDataStore.Singleton(),
 		connection.ManagerSingleton(),
 		notifierProcessor.Singleton(),
-		nil,
 		ranking.ClusterRanker(),
 		indexer,
 		networkBaselineManager.Singleton())
