@@ -10,9 +10,9 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/expiringcache/mocks"
+	cacheMocks "github.com/stackrox/rox/pkg/expiringcache/mocks"
 	"github.com/stackrox/rox/sensor/common"
-	mocks2 "github.com/stackrox/rox/sensor/common/image/mocks"
+	imageMocks "github.com/stackrox/rox/sensor/common/image/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -24,10 +24,10 @@ func TestImageService(t *testing.T) {
 type imageServiceSuite struct {
 	suite.Suite
 	mockCtrl          *gomock.Controller
-	mockCache         *mocks.MockCache
-	mockRegistryStore *mocks2.MockregistryStore
-	mockCentral       *mocks2.MockcentralClient
-	mockLocalScan     *mocks2.MocklocalScan
+	mockCache         *cacheMocks.MockCache
+	mockRegistryStore *imageMocks.MockregistryStore
+	mockCentral       *imageMocks.MockcentralClient
+	mockLocalScan     *imageMocks.MocklocalScan
 	service           *serviceImpl
 }
 
@@ -35,10 +35,10 @@ var _ suite.SetupTestSuite = (*imageServiceSuite)(nil)
 
 func (suite *imageServiceSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.mockCache = mocks.NewMockCache(suite.mockCtrl)
-	suite.mockRegistryStore = mocks2.NewMockregistryStore(suite.mockCtrl)
-	suite.mockCentral = mocks2.NewMockcentralClient(suite.mockCtrl)
-	suite.mockLocalScan = mocks2.NewMocklocalScan(suite.mockCtrl)
+	suite.mockCache = cacheMocks.NewMockCache(suite.mockCtrl)
+	suite.mockRegistryStore = imageMocks.NewMockregistryStore(suite.mockCtrl)
+	suite.mockCentral = imageMocks.NewMockcentralClient(suite.mockCtrl)
+	suite.mockLocalScan = imageMocks.NewMocklocalScan(suite.mockCtrl)
 	suite.service = &serviceImpl{
 		imageCache:    suite.mockCache,
 		registryStore: suite.mockRegistryStore,
@@ -58,7 +58,7 @@ func (suite *imageServiceSuite) TestGetImage() {
 	cases := map[string]struct {
 		request *sensor.GetImageRequest
 		notify  common.SensorComponentEvent
-		// Unset expectValue will indicate no call to the function
+		// Unset expectFunctionHelper will indicate no call to the function
 		expectCache       *expectFunctionHelper
 		expectRegistry    *expectFunctionHelper
 		expectCentralCall *expectFunctionHelper
@@ -66,7 +66,7 @@ func (suite *imageServiceSuite) TestGetImage() {
 		expectedError     error
 		expectedResponse  *sensor.GetImageResponse
 	}{
-		"Cache hit and central is not reachable": {
+		"Cache hit and central is unreachable": {
 			request:          createImageRequest(imageName, imageID, false),
 			notify:           common.SensorComponentEventOfflineMode,
 			expectCache:      expectCacheHelper(suite.mockCache, 1, createScannedImage(imageName, imageID)),
@@ -80,14 +80,14 @@ func (suite *imageServiceSuite) TestGetImage() {
 			expectedError:    nil,
 			expectedResponse: createImageResponse(imageName, imageID),
 		},
-		"No cache hit and central is not reachable": {
+		"Cache miss and central is unreachable": {
 			request:          createImageRequest(imageName, imageID, false),
 			notify:           common.SensorComponentEventOfflineMode,
 			expectCache:      expectCacheHelper(suite.mockCache, 1, nil),
 			expectedError:    errCentralNoReachable,
 			expectedResponse: nil,
 		},
-		"No cache hit and central is reachable": {
+		"Cache miss and central is reachable": {
 			request:           createImageRequest(imageName, imageID, false),
 			notify:            common.SensorComponentEventCentralReachable,
 			expectCache:       expectCacheHelper(suite.mockCache, 1, nil),
@@ -96,7 +96,7 @@ func (suite *imageServiceSuite) TestGetImage() {
 			expectedError:     nil,
 			expectedResponse:  createImageResponse(imageName, imageID),
 		},
-		"No cache hit, central is reachable and returns error": {
+		"Cache miss, central is reachable and returns error": {
 			request:           createImageRequest(imageName, imageID, false),
 			notify:            common.SensorComponentEventCentralReachable,
 			expectCache:       expectCacheHelper(suite.mockCache, 1, nil),
@@ -105,14 +105,14 @@ func (suite *imageServiceSuite) TestGetImage() {
 			expectedError:     errCentral,
 			expectedResponse:  nil,
 		},
-		"No cache hit, local scan, central is not reachable": {
+		"Cache miss, local scan, central is unreachable": {
 			request:          createImageRequest(imageName, imageID, false),
 			notify:           common.SensorComponentEventOfflineMode,
 			expectCache:      expectCacheHelper(suite.mockCache, 1, nil),
 			expectedError:    errCentralNoReachable,
 			expectedResponse: nil,
 		},
-		"No cache hit, local scan, central is reachable": {
+		"Cache miss, local scan, central is reachable": {
 			request:          createImageRequest(imageName, imageID, false),
 			notify:           common.SensorComponentEventCentralReachable,
 			expectCache:      expectCacheHelper(suite.mockCache, 1, nil),
@@ -121,7 +121,7 @@ func (suite *imageServiceSuite) TestGetImage() {
 			expectedError:    nil,
 			expectedResponse: createImageResponse(imageName, imageID),
 		},
-		"No cache hit, local scan returns error, central is reachable": {
+		"Cache miss, local scan returns error, central is reachable": {
 			request:          createImageRequest(imageName, imageID, false),
 			notify:           common.SensorComponentEventCentralReachable,
 			expectCache:      expectCacheHelper(suite.mockCache, 1, nil),
@@ -150,7 +150,7 @@ func (suite *imageServiceSuite) TestGetImage() {
 	}
 }
 
-func expectCacheHelper(mockCache *mocks.MockCache, times int, retValue interface{}) *expectFunctionHelper {
+func expectCacheHelper(mockCache *cacheMocks.MockCache, times int, retValue interface{}) *expectFunctionHelper {
 	var fn func()
 	if times == 0 {
 		fn = func() {
@@ -168,7 +168,7 @@ func expectCacheHelper(mockCache *mocks.MockCache, times int, retValue interface
 	}
 }
 
-func expectRegistryHelper(mockRegistryStore *mocks2.MockregistryStore, times int, retValue bool) *expectFunctionHelper {
+func expectRegistryHelper(mockRegistryStore *imageMocks.MockregistryStore, times int, retValue bool) *expectFunctionHelper {
 	var fn func()
 	if times == 0 {
 		fn = func() {
@@ -186,7 +186,7 @@ func expectRegistryHelper(mockRegistryStore *mocks2.MockregistryStore, times int
 	}
 }
 
-func expectCentralCall(mockCentral *mocks2.MockcentralClient, times int, retValue *v1.ScanImageInternalResponse, retErr error) *expectFunctionHelper {
+func expectCentralCall(mockCentral *imageMocks.MockcentralClient, times int, retValue *v1.ScanImageInternalResponse, retErr error) *expectFunctionHelper {
 	var fn func()
 	if times == 0 {
 		fn = func() {
@@ -204,7 +204,7 @@ func expectCentralCall(mockCentral *mocks2.MockcentralClient, times int, retValu
 	}
 }
 
-func expectLocalScan(mockLocalScan *mocks2.MocklocalScan, times int, retValue *storage.Image, retErr error) *expectFunctionHelper {
+func expectLocalScan(mockLocalScan *imageMocks.MocklocalScan, times int, retValue *storage.Image, retErr error) *expectFunctionHelper {
 	var fn func()
 	if times == 0 {
 		fn = func() {
