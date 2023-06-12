@@ -6,11 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
-	"github.com/stackrox/rox/central/deployment/index"
 	dackBoxStore "github.com/stackrox/rox/central/deployment/store/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
-	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -47,17 +44,11 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	require.NoError(b, err)
 
-	bleveIndex, err := globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex, "")
+	_, err = globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex, "")
 	require.NoError(b, err)
 
 	storage := dackBoxStore.New(dacky, concurrency.NewKeyFence())
-
-	var deploymentsIndexer index.Indexer
-	var deploymentsSearcher search.Searcher
-
-	imageDS := imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, bleveIndex, false, nil, ranking.NewRanker(), ranking.NewRanker())
-
-	deploymentsDatastore := newDatastoreImpl(storage, deploymentsIndexer, deploymentsSearcher, imageDS, nil, nil, nil, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deploymentsDatastore := newDatastoreImpl(storage, nil, nil, nil, nil, nil, nil, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 
 	deploymentPrototype := fixtures.GetDeployment().Clone()
 
