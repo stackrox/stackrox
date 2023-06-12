@@ -595,11 +595,14 @@ splunk:
         }
 
         when:
-        def authProvidersResponse = AuthProviderService.getAuthProviders()
-        def authProvider = authProvidersResponse.getAuthProvidersList().find {
-            it.getName() == AUTH_PROVIDER_KEY
+        def authProvider = null
+        withRetry(RETRIES, PAUSE_SECS) {
+            def authProvidersResponse = AuthProviderService.getAuthProviders()
+            authProvider = authProvidersResponse.getAuthProvidersList().find {
+                it.getName() == AUTH_PROVIDER_KEY
+            }
+            assert authProvider
         }
-        assert authProvider
         def imperativeGroup = Group.newBuilder()
                 .setRoleName(ROLE_KEY)
                 .setProps(GroupProperties.newBuilder()
