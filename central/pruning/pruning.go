@@ -212,30 +212,19 @@ func (g *garbageCollectorImpl) removeExpiredVulnRequests() {
 }
 
 // Remove pods where the cluster has been deleted.
-func (g *garbageCollectorImpl) removeOrphanedPods(clusters set.FrozenStringSet) {
-	var podIDsToRemove []string
-	staleClusterIDsFound := set.NewStringSet()
-	walkFn := func() error {
-		podIDsToRemove = podIDsToRemove[:0]
-		staleClusterIDsFound.Clear()
-		return g.pods.WalkAll(pruningCtx, func(pod *storage.Pod) error {
-			if !clusters.Contains(pod.GetClusterId()) {
-				podIDsToRemove = append(podIDsToRemove, pod.GetId())
-				staleClusterIDsFound.Add(pod.GetClusterId())
-			}
-			return nil
-		})
-	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
-		log.Errorf("Error walking pods to find orphaned pods: %v", err)
+func (g *garbageCollectorImpl) removeOrphanedPods() {
+	podIDsToRemove, err := postgres.GetOrphanedPodIDs(pruningCtx, g.postgres)
+	if err != nil {
+		log.Errorf("Error finding orphaned pods: %v", err)
 		return
 	}
+
 	if len(podIDsToRemove) == 0 {
 		log.Info("[Pruning] Found no orphaned pods...")
 		return
 	}
-	log.Infof("[Pruning] Found %d orphaned pods (from formerly deleted clusters: %v). Deleting...",
-		len(podIDsToRemove), staleClusterIDsFound.AsSlice())
+	log.Infof("[Pruning] Found %d orphaned pods (from formerly deleted clusters). Deleting...",
+		len(podIDsToRemove))
 
 	for _, id := range podIDsToRemove {
 		if err := g.pods.RemovePod(pruningCtx, id); err != nil {
@@ -312,8 +301,7 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	g.markOrphanedAlertsAsResolved(deploymentSet)
 	g.removeOrphanedNetworkFlows(clusterIDSet)
 
-	// TODO: Convert this from ListSearch to using negation search similar to SAs, roles and role bindings below
-	g.removeOrphanedPods(clusterIDSet)
+	g.removeOrphanedPods()
 
 	q := clusterIDsToNegationQuery(clusterIDSet)
 	g.removeOrphanedServiceAccounts(q)
