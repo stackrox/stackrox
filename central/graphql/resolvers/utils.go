@@ -412,3 +412,22 @@ func (resolver *Resolver) processWithAuditLog(ctx context.Context, req interface
 	}
 	return resp, err
 }
+
+func getImageIDFromQuery(q *v1.Query) string {
+	if q == nil {
+		return ""
+	}
+	var imageID string
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+		if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), search.ImageSHA.String()) {
+			imageID = matchFieldQuery.MatchFieldQuery.Value
+			imageID = strings.TrimRight(imageID, `"`)
+			imageID = strings.TrimLeft(imageID, `"`)
+		}
+	})
+	return imageID
+}

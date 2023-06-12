@@ -65,9 +65,6 @@ type ImageVulnerabilityResolver interface {
 // ImageVulnerability returns a vulnerability of the given id
 func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerability")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return resolver.imageVulnerabilityV2(ctx, args)
-	}
 
 	// check permissions
 	if err := readImages(ctx); err != nil {
@@ -87,10 +84,6 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 // ImageVulnerabilities resolves a set of image vulnerabilities for the input query
 func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := withImageCveTypeFiltering(q.String())
-		return resolver.imageVulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
-	}
 
 	// check permissions
 	if err := readImages(ctx); err != nil {
@@ -128,10 +121,6 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 // ImageVulnerabilityCount returns count of image vulnerabilities for the input query
 func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCount")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := withImageCveTypeFiltering(args.String())
-		return resolver.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
-	}
 
 	// check permissions
 	if err := readImages(ctx); err != nil {
@@ -157,10 +146,6 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 // ImageVulnerabilityCounter returns a VulnerabilityCounterResolver for the input query
 func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCounter")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := withImageCveTypeFiltering(args.String())
-		return resolver.vulnCounterV2(ctx, RawQuery{Query: &query})
-	}
 
 	// check permissions
 	if err := readImages(ctx); err != nil {

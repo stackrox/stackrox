@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -39,16 +38,6 @@ func (resolver *Resolver) wrapPlottedImageVulnerabilitiesWithContext(ctx context
 
 // PlottedImageVulnerabilities - returns image vulns
 func (resolver *Resolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := withImageCveTypeFiltering(args.String())
-		allCveIds, fixableCount, err := getPlottedVulnsIdsAndFixableCount(ctx, resolver, RawQuery{Query: &query})
-		if err != nil {
-			return nil, err
-		}
-
-		return resolver.wrapPlottedImageVulnerabilitiesWithContext(ctx, allCveIds, fixableCount)
-	}
-
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err

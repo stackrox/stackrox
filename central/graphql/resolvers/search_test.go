@@ -12,7 +12,6 @@ import (
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	clusterCVEMocks "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
-	cveMocks "github.com/stackrox/rox/central/cve/datastore/mocks"
 	imageCVEMocks "github.com/stackrox/rox/central/cve/image/datastore/mocks"
 	nodeCVEMocks "github.com/stackrox/rox/central/cve/node/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
@@ -33,7 +32,6 @@ import (
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -59,7 +57,6 @@ func TestSearchCategories(t *testing.T) {
 	serviceAccounts := serviceAccountMocks.NewMockDataStore(ctrl)
 	roles := k8sroleMocks.NewMockDataStore(ctrl)
 	rolebindings := k8srolebindingMocks.NewMockDataStore(ctrl)
-	cves := cveMocks.NewMockDataStore(ctrl)
 	components := imageComponentMocks.NewMockDataStore(ctrl)
 
 	resolver := &Resolver{
@@ -76,16 +73,11 @@ func TestSearchCategories(t *testing.T) {
 		K8sRoleBindingStore:      rolebindings,
 		K8sRoleStore:             roles,
 		ImageComponentDataStore:  components,
-	}
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		resolver.CVEDataStore = cves
-	} else {
-		resolver.PolicyCategoryDataStore = policyCategoryMocks.NewMockDataStore(ctrl)
-		resolver.ImageCVEDataStore = imageCVEMocks.NewMockDataStore(ctrl)
-		resolver.NodeCVEDataStore = nodeCVEMocks.NewMockDataStore(ctrl)
-		resolver.ClusterCVEDataStore = clusterCVEMocks.NewMockDataStore(ctrl)
-		resolver.NodeComponentDataStore = nodeComponentMocks.NewMockDataStore(ctrl)
+		PolicyCategoryDataStore:  policyCategoryMocks.NewMockDataStore(ctrl),
+		ImageCVEDataStore:        imageCVEMocks.NewMockDataStore(ctrl),
+		NodeCVEDataStore:         nodeCVEMocks.NewMockDataStore(ctrl),
+		ClusterCVEDataStore:      clusterCVEMocks.NewMockDataStore(ctrl),
+		NodeComponentDataStore:   nodeComponentMocks.NewMockDataStore(ctrl),
 	}
 
 	searchCategories := resolver.getAutoCompleteSearchers()
