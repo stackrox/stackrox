@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import {
     collectionsAlias,
@@ -24,12 +23,6 @@ const staticResponseMap = {
 
 describe('Collections table', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-    });
 
     it('should visit via link in left nav', () => {
         visitCollectionsFromLeftNav(staticResponseMap);
