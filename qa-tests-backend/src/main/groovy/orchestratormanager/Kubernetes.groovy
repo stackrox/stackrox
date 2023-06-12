@@ -389,10 +389,10 @@ class Kubernetes implements OrchestratorMain {
                 .upload(Paths.get(fromPath))
     }
 
-    def addPodAnnotationByDeployment(String ns, String deploymentName, String key, String value) {
-        Pod pod = getPodsByLabel(ns, ["deployment": deploymentName]).get(0)
+    def addPodAnnotationByApp(String ns, String appName, String key, String value) {
+        Pod pod = getPodsByLabel(ns, ["app": appName]).get(0)
         client.pods().inNamespace(ns).withName(pod.metadata.name).edit {
-            n -> new PodBuilder().editMetadata().addToAnnotations(key, value).endMetadata().build()
+            n -> new PodBuilder(n).editMetadata().addToAnnotations(key, value).endMetadata().build()
         }
     }
 

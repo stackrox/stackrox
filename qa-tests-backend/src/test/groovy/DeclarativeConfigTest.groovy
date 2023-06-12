@@ -241,7 +241,11 @@ splunk:
         annotateTaskHandle = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new Runnable() {
             @Override
             void run() {
-                orchestrator.addPodAnnotationByDeployment(DEFAULT_NAMESPACE, "central", "test", String.valueOf(System.currentTimeMillis()))
+                try {
+                    orchestrator.addPodAnnotationByApp(DEFAULT_NAMESPACE, "central", "test", String.valueOf(System.currentTimeMillis()))
+                } catch (Exception e) {
+                    e.printStackTrace()
+                }
             }
         }, 0, 1, TimeUnit.SECONDS)
     }
