@@ -10,13 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-var (
-	defaultSortOption = &v1.QuerySortOption{
-		Field:    search.ReportCompletionTime.String(),
-		Reversed: true,
-	}
-)
-
 type searcherImpl struct {
 	storage  pgStore.Store
 	indexer  index.Indexer

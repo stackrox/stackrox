@@ -14,6 +14,13 @@ import (
 	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 )
 
+var (
+	defaultSortOption = &v1.QuerySortOption{
+		Field:    search.ReportCompletionTime.String(),
+		Reversed: true,
+	}
+)
+
 // Searcher provides search functionality on existing ReportMetadatas.
 //
 //go:generate mockgen-wrapper
