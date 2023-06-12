@@ -6,6 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	authProviderDatastore "github.com/stackrox/rox/central/authprovider/datastore"
+	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
 	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
@@ -14,7 +15,6 @@ import (
 	"github.com/stackrox/rox/central/notifier/policycleaner"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	roleDatastore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/pkg/auth/authproviders"
 )
 
 // ResourceUpdater handles updates of proto resources within declarative config reconciliation routine.
@@ -30,9 +30,9 @@ type ResourceUpdater interface {
 
 // DefaultResourceUpdaters return a map from proto type to an ResourceUpdater instance responsible
 // for updates for this type.
-func DefaultResourceUpdaters(registry authproviders.Registry) map[reflect.Type]ResourceUpdater {
+func DefaultResourceUpdaters() map[reflect.Type]ResourceUpdater {
 	return map[reflect.Type]ResourceUpdater{
-		types.AuthProviderType: newAuthProviderUpdater(authProviderDatastore.Singleton(), registry,
+		types.AuthProviderType: newAuthProviderUpdater(authProviderDatastore.Singleton(), authProviderRegistry.Singleton(),
 			groupDataStore.Singleton(), declarativeConfigHealth.Singleton()),
 		types.GroupType:         newGroupUpdater(groupDataStore.Singleton(), declarativeConfigHealth.Singleton()),
 		types.RoleType:          newRoleUpdater(roleDatastore.Singleton(), groupDataStore.Singleton(), declarativeConfigHealth.Singleton()),

@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/central/audit"
 	authService "github.com/stackrox/rox/central/auth/service"
 	"github.com/stackrox/rox/central/auth/userpass"
-	authProviderDS "github.com/stackrox/rox/central/authprovider/datastore"
+	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
 	authProviderSvc "github.com/stackrox/rox/central/authprovider/service"
 	authProviderTelemetry "github.com/stackrox/rox/central/authprovider/telemetry"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
@@ -115,7 +115,6 @@ import (
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
@@ -212,10 +211,6 @@ var (
 )
 
 const (
-	ssoURLPathPrefix = "/sso/"
-	//#nosec G101 -- This is a false positive
-	tokenRedirectURLPath = "/auth/response/generic"
-
 	grpcServerWatchdogTimeout = 20 * time.Second
 
 	maxServiceCertTokenLeeway = 1 * time.Minute
@@ -325,13 +320,13 @@ func startServices() {
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
 
-func servicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
+func servicesToRegister() []pkgGRPC.APIService {
 	// PLEASE KEEP THE FOLLOWING LIST SORTED.
 	servicesToRegister := []pkgGRPC.APIService{
 		alertService.Singleton(),
 		apiTokenService.Singleton(),
 		authService.New(),
-		authProviderSvc.New(registry, groupDataStore.Singleton()),
+		authProviderSvc.New(authProviderRegistry.Singleton(), groupDataStore.Singleton()),
 		backupRestoreService.Singleton(),
 		backupService.Singleton(),
 		centralHealthService.Singleton(),
@@ -348,7 +343,7 @@ func servicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
 			gatherers.Singleton(),
 			logimbueStore.Singleton(),
 			trace.AuthzTraceSinkSingleton(),
-			registry,
+			authProviderRegistry.Singleton(),
 			groupDataStore.Singleton(),
 			roleDataStore.Singleton(),
 			configDS.Singleton(),
@@ -454,10 +449,7 @@ func startGRPCServer() {
 			sac.ResourceScopeKeys(resources.Access)))
 
 	// Create the registry of applied auth providers.
-	registry := authproviders.NewStoreBackedRegistry(
-		ssoURLPathPrefix, tokenRedirectURLPath,
-		authProviderDS.Singleton(), jwt.IssuerFactorySingleton(),
-		mapper.FactorySingleton())
+	registry := authProviderRegistry.Singleton()
 
 	// env.EnableOpenShiftAuth signals the desire but does not guarantee Central
 	// is configured correctly to talk to the OpenShift's OAuth server. If this
@@ -483,7 +475,7 @@ func startGRPCServer() {
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
 
 	if env.DeclarativeConfiguration.BooleanSetting() {
-		declarativeconfig.ManagerSingleton(registry).ReconcileDeclarativeConfigurations()
+		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
 	}
 
 	clusterInitBackend := backend.Singleton()
@@ -557,13 +549,13 @@ func startGRPCServer() {
 				gs.AddGatherer(signatureIntegrationDS.Gather)
 				gs.AddGatherer(roleDataStore.Gather)
 				gs.AddGatherer(clusterDataStore.Gather)
-				gs.AddGatherer(declarativeconfig.ManagerSingleton(registry).Gather())
+				gs.AddGatherer(declarativeconfig.ManagerSingleton().Gather())
 			}
 		}
 	}
 
 	server := pkgGRPC.NewAPI(config)
-	server.Register(servicesToRegister(registry)...)
+	server.Register(servicesToRegister()...)
 
 	startServices()
 	startedSig := server.Start()
