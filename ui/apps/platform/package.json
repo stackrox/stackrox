@@ -102,7 +102,7 @@
         "typeface-open-sans": "^1.1.13",
         "typeface-open-sans-condensed": "^1.1.13",
         "use-deep-compare-effect": "^1.8.1",
-        "yup": "^1.0.0-beta.4"
+        "yup": "^1.2.0"
     },
     "resolutions": {
         "react-cytoscapejs/cytoscape": "^3.17.0"
