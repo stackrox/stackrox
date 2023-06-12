@@ -161,12 +161,9 @@ test_sensor_bundle() {
     info "Testing the sensor bundle"
 
     rm -rf sensor-remote
-    info "printing roxctl version"
-    "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" version
     "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
     [[ -d sensor-remote ]]
 
-    cat ./sensor-remote/sensor.sh
     ./sensor-remote/sensor.sh
 
     kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
