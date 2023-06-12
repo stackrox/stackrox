@@ -251,14 +251,3 @@ func validForAllDNSNames(cert *x509.Certificate, dnsNames ...string) bool {
 	}
 	return true
 }
-
-var (
-	allowedAdditionalCAExtensionList = []string{".crt", ".pem"}
-	allowedAdditionalCAExtensionMap  = map[string]struct{}{}
-)
-
-func init() {
-	for _, ext := range allowedAdditionalCAExtensionList {
-		allowedAdditionalCAExtensionMap[ext] = struct{}{}
-	}
-}
