@@ -7,7 +7,7 @@ import { useTheme } from 'Containers/ThemeProvider';
 
 const Tab = ({ text, index, active, to }) => (
     <li
-        className={`flex flex-grow items-center ${active ? 'bg-primary-200' : ''} ${
+        className={`flex flex-grow items-center ${active ? 'bg-primary-200' : 'bg-base-100'} ${
             index !== 0 ? 'border-l border-base-400' : ''
         }`}
     >
