@@ -8,12 +8,12 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/x509utils"
 	"go.uber.org/zap"
 )
@@ -40,7 +40,7 @@ func GetAdditionalCAFilePaths() ([]string, error) {
 		return nil, errors.Wrap(err, fmt.Sprintf("Failed to read additional CAs directory %q", additionalCADir))
 	}
 
-	var filePaths = map[string]struct{}{}
+	var filePaths = set.NewStringSet()
 
 	for _, directoryEntry := range directoryEntries {
 
@@ -86,17 +86,13 @@ func GetAdditionalCAFilePaths() ([]string, error) {
 			continue
 		}
 
-		filePaths[filePath] = struct{}{}
+		filePaths.Add(filePath)
 
 	}
 
-	var files []string
-	for filePath := range filePaths {
-		files = append(files, filePath)
-	}
-	sort.Strings(files)
-
-	return files, nil
+	return filePaths.AsSortedSlice(func(i, j string) bool {
+		return strings.Compare(i, j) < 0
+	}), nil
 
 }
 
