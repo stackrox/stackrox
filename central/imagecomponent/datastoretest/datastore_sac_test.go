@@ -35,6 +35,8 @@ type cveDataStoreSACTestSuite struct {
 
 func (s *cveDataStoreSACTestSuite) SetupSuite() {
 	var err error
+	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
+	s.Require().NoError(err)
 	pool := s.dackboxTestStore.GetPostgresPool()
 	s.imageComponentStore, err = imageComponentDataStore.GetTestPostgresDataStore(s.T(), pool)
 	s.Require().NoError(err)

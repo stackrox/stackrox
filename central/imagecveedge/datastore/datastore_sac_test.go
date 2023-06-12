@@ -40,6 +40,9 @@ type imageCVEEdgeDatastoreSACTestSuite struct {
 }
 
 func (s *imageCVEEdgeDatastoreSACTestSuite) SetupSuite() {
+	var err error
+	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
+	s.Require().NoError(err)
 	pool := s.dackboxTestStore.GetPostgresPool()
 	s.datastore = GetTestPostgresDataStore(s.T(), pool)
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
