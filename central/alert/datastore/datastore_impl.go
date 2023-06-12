@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
@@ -18,8 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/debug"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -322,61 +319,6 @@ func (ds *datastoreImpl) fullReindex(ctx context.Context) error {
 		return err
 	}
 
-	return nil
-}
-
-func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	defer debug.FreeOSMemory()
-
-	needsFullIndexing, err := ds.indexer.NeedsInitialIndexing()
-	if err != nil {
-		return err
-	}
-	if needsFullIndexing {
-		return ds.fullReindex(ctx)
-	}
-
-	log.Info("[STARTUP] Determining if alert db/indexer reconciliation is needed")
-	keysToIndex, err := ds.storage.GetKeysToIndex(ctx)
-	if err != nil {
-		return errors.Wrap(err, "error retrieving keys to index from store")
-	}
-
-	log.Infof("[STARTUP] Found %d Alerts to index", len(keysToIndex))
-
-	defer debug.FreeOSMemory()
-
-	alertBatcher := batcher.New(len(keysToIndex), alertBatchSize)
-	for start, end, valid := alertBatcher.Next(); valid; start, end, valid = alertBatcher.Next() {
-		listAlerts, missingIndices, err := ds.getListAlerts(ctx, keysToIndex[start:end])
-		if err != nil {
-			return err
-		}
-		if err := ds.indexer.AddListAlerts(listAlerts); err != nil {
-			return err
-		}
-
-		if len(missingIndices) > 0 {
-			idsToRemove := make([]string, 0, len(missingIndices))
-			for _, missingIdx := range missingIndices {
-				idsToRemove = append(idsToRemove, keysToIndex[start:end][missingIdx])
-			}
-			if err := ds.indexer.DeleteListAlerts(idsToRemove); err != nil {
-				return err
-			}
-		}
-		// Ack keys so that even if central restarts, we don't need to reindex them again
-		if err := ds.storage.AckKeysIndexed(ctx, keysToIndex[start:end]...); err != nil {
-			return err
-		}
-
-		log.Infof("[STARTUP] Successfully indexed %d/%d alerts", end, len(keysToIndex))
-	}
-
-	log.Info("[STARTUP] Successfully indexed all out of sync alerts")
 	return nil
 }
 
