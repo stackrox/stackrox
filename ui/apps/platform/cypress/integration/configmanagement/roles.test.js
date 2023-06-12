@@ -39,7 +39,7 @@ describe('Configuration Management Roles', () => {
     it('should have the correct tabs for a single entity view', () => {
         visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
-        hasTabsFor(['users and groups', 'service accounts']);
+        hasTabsFor(['subjects', 'serviceaccounts']);
     });
 
     describe('should have same number in users and groups table as in count widget', () => {

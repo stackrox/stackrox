@@ -1,21 +1,19 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
+import upperFirst from 'lodash/upperFirst';
+
 import { useTheme } from 'Containers/ThemeProvider';
 
 const Tab = ({ text, index, active, to }) => (
     <li
-        className={`hover:bg-primary-200 flex flex-grow items-center ${
-            active ? 'bg-base-100 text-primary-700' : ''
-        } ${index !== 0 ? 'border-l border-base-400' : ''}`}
+        className={`flex flex-grow items-center ${active ? 'bg-primary-200' : ''} ${
+            index !== 0 ? 'border-l border-base-400' : ''
+        }`}
     >
         <Link to={to} data-testid="tab" className={`w-full no-underline ${active && 'active'}`}>
-            <div
-                className={`${
-                    active ? 'text-primary-700' : 'text-base-500 hover:text-base-600'
-                } cursor-pointer uppercase font-700 p-3 flex justify-center`}
-            >
-                {text}
+            <div className="cursor-pointer text-base-600 p-3 flex justify-center">
+                {upperFirst(text)}
             </div>
         </Link>
     </li>
@@ -51,7 +49,7 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
                 >
                     {showGroupTab && (
                         <span
-                            className="truncate absolute top-0 z-10 border-l border-t border-r border-base-400 text-2xs py-1 px-2 rounded-t-lg text-base-500 w-full"
+                            className="truncate absolute top-0 z-10 border-l border-t border-r border-base-400 text-xs py-1 px-2 rounded-t-lg w-full"
                             style={{ transform: 'translateY(-100%)' }}
                         >
                             {group}
@@ -79,7 +77,7 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
         <div className="relative">
             <ul
                 data-testid="grouped-tabs"
-                className={` flex border-b border-base-400 px-4 uppercase text-sm ignore-react-onclickoutside ${
+                className={` flex border-b border-base-400 px-4 text-sm ignore-react-onclickoutside ${
                     !isDarkMode ? 'bg-primary-100' : 'bg-base-0'
                 }`}
             >
