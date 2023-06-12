@@ -140,6 +140,7 @@ import (
 	"github.com/stackrox/rox/central/telemetry/gatherers"
 	telemetryService "github.com/stackrox/rox/central/telemetry/service"
 	"github.com/stackrox/rox/central/tlsconfig"
+	"github.com/stackrox/rox/central/trace"
 	"github.com/stackrox/rox/central/ui"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
@@ -324,7 +325,7 @@ func startServices() {
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
 
-func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.AuthzTraceSink) []pkgGRPC.APIService {
+func servicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
 	// PLEASE KEEP THE FOLLOWING LIST SORTED.
 	servicesToRegister := []pkgGRPC.APIService{
 		alertService.Singleton(),
@@ -346,7 +347,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 			connection.ManagerSingleton(),
 			gatherers.Singleton(),
 			logimbueStore.Singleton(),
-			authzTraceSink,
+			trace.AuthzTraceSinkSingleton(),
 			registry,
 			groupDataStore.Singleton(),
 			roleDataStore.Singleton(),
@@ -534,7 +535,7 @@ func startGRPCServer() {
 	}
 
 	// This adds an on-demand global tracing for the built-in authorization.
-	authzTraceSink := observe.NewAuthzTraceSink()
+	authzTraceSink := trace.AuthzTraceSinkSingleton()
 	config.UnaryInterceptors = append(config.UnaryInterceptors,
 		observe.AuthzTraceInterceptor(authzTraceSink),
 	)
@@ -565,7 +566,7 @@ func startGRPCServer() {
 	}
 
 	server := pkgGRPC.NewAPI(config)
-	server.Register(servicesToRegister(registry, authzTraceSink)...)
+	server.Register(servicesToRegister(registry)...)
 
 	startServices()
 	startedSig := server.Start()
