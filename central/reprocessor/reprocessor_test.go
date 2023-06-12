@@ -10,10 +10,8 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imagePG "github.com/stackrox/rox/central/image/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
-	"github.com/stackrox/rox/pkg/concurrency"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -31,7 +29,6 @@ func TestGetActiveImageIDs(t *testing.T) {
 		pool          postgres.DB
 		imageDS       imageDatastore.DataStore
 		deploymentsDS deploymentDatastore.DataStore
-		indexingQ     queue.WaitableQueue
 		err           error
 	)
 
@@ -58,12 +55,6 @@ func TestGetActiveImageIDs(t *testing.T) {
 	for _, image := range images {
 		require.NoError(t, imageDS.UpsertImage(testCtx, image))
 		imageIDs = append(imageIDs, image.GetId())
-	}
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		newSig := concurrency.NewSignal()
-		indexingQ.PushSignal(&newSig)
-		newSig.Wait()
 	}
 
 	ids, err = loop.getActiveImageIDs()

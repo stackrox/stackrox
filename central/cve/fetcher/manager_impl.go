@@ -4,16 +4,12 @@ import (
 	"context"
 	"time"
 
-	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
-	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/central/cve/converter/utils"
-	legacyCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
-	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/throttle"
 )
 
@@ -73,43 +69,6 @@ func (m *orchestratorIstioCVEManagerImpl) reconcile() {
 func (m *orchestratorIstioCVEManagerImpl) reconcileAllCVEs() {
 	log.Infof("Start orchestrator-level vulnerability reconciliation")
 	m.reconcile()
-}
-
-func reconcileCVEsInDB(cveDataStore legacyCVEDataStore.DataStore, edgeDataStore clusterCVEEdgeDataStore.DataStore,
-	cveType storage.CVE_CVEType, newCVEs []converter.ClusterCVEParts) error {
-	query := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVEType, cveType.String()).ProtoQuery()
-	cveResults, err := cveDataStore.Search(allAccessCtx, query)
-	if err != nil {
-		return err
-	}
-
-	edgeResults, err := edgeDataStore.Search(allAccessCtx, query)
-	if err != nil {
-		return err
-	}
-
-	// Identify the cves and cluster cve edges that do not affect the infra
-	discardEdgeIds := pkgSearch.ResultsToIDSet(edgeResults)
-	discardCVEs := pkgSearch.ResultsToIDSet(cveResults)
-
-	for _, newCVE := range newCVEs {
-		for _, edge := range newCVE.Children {
-			discardEdgeIds.Remove(edge.Edge.GetId())
-		}
-		discardCVEs.Remove(newCVE.CVE.GetId())
-	}
-
-	if len(discardCVEs) == 0 && len(discardEdgeIds) == 0 {
-		return nil
-	}
-
-	err = edgeDataStore.Delete(allAccessCtx, discardEdgeIds.AsSlice()...)
-	if err != nil {
-		return err
-	}
-
-	// delete all the cluster cves that do not affect the infra
-	return cveDataStore.Delete(allAccessCtx, discardCVEs.AsSlice()...)
 }
 
 // UpsertOrchestratorIntegration creates or updates an orchestrator integration.
