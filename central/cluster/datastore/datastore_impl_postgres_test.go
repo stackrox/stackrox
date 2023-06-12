@@ -19,6 +19,12 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	fakeClusterID   = "FAKECLUSTERID"
+	mainImage       = "docker.io/stackrox/rox:latest"
+	centralEndpoint = "central.stackrox:443"
+)
+
 func TestClusterDataStoreWithPostgres(t *testing.T) {
 	suite.Run(t, new(ClusterPostgresDataStoreTestSuite))
 }

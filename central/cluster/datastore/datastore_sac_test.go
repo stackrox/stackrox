@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -682,11 +681,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterHealth() {
 
 	var cases map[string]testutils.ClusterSACCrudTestCase
 	testedVerb := "update cluster health"
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		cases = testutils.GenericGlobalClusterSACWriteTestCases(context.Background(), s.T(), testedVerb, clusterID, "not"+clusterID, resources.Cluster)
-	} else {
-		cases = testutils.GenericClusterSACWriteTestCases(context.Background(), s.T(), testedVerb, clusterID, "not"+clusterID, resources.Cluster)
-	}
+	cases = testutils.GenericGlobalClusterSACWriteTestCases(context.Background(), s.T(), testedVerb, clusterID, "not"+clusterID, resources.Cluster)
 
 	for name, c := range cases {
 		s.Run(name, func() {
