@@ -1966,7 +1966,7 @@ func (s *PruningTestSuite) TestRemoveLogImbues() {
 }
 
 func (s *PruningTestSuite) TestRemoveOrphanedPods() {
-	_, _, clusterDS, _ := s.generateClusterDataStructures()
+	_, _, clusterDS := s.generateClusterDataStructures()
 
 	clusterID1, err := clusterDS.AddCluster(s.ctx, &storage.Cluster{Name: "testOrphanPodCluster1", MainImage: "docker.io/stackrox/rox:latest"})
 	s.Nil(err)
