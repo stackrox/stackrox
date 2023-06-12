@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/prometheus/client_golang v1.15.1
-	github.com/quay/claircore v1.5.6
+	github.com/quay/claircore v1.5.7
 	github.com/quay/zlog v1.1.4
 )
 
