@@ -36,10 +36,10 @@ const SecurityContext = ({ deployment }) => {
                 );
             });
         if (!containers.length) {
-            containers = <span className="py-3 font-600">None</span>;
+            containers = <span className="py-3">None</span>;
         }
     } else {
-        containers = <span className="py-3 font-600">None</span>;
+        containers = <span className="py-3">None</span>;
     }
     return (
         <div className="px-3 pt-5">
