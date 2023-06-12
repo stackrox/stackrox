@@ -366,7 +366,9 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 
 func (s *serviceImpl) acquireScanSemaphore() error {
 	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
-		s, err := status.New(codes.Unavailable, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
+		// Aborted indicates the operation was aborted, typically due to a concurrency
+		// issues.  Clients should retry by default on Aborted.
+		s, err := status.New(codes.Aborted, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
 		if pkgUtils.ShouldErr(err) == nil {
 			return s.Err()
 		}
