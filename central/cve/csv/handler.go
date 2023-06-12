@@ -2,10 +2,7 @@ package csv
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -20,8 +17,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/parser"
@@ -163,10 +158,6 @@ func cveCSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQuery,
 			storage.CVE_IMAGE_CVE.String(), storage.CVE_NODE_CVE.String(), storage.CVE_K8S_CVE.String(), storage.CVE_OPENSHIFT_CVE.String(), storage.CVE_ISTIO_CVE.String())
 	}
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return cveCSVRowsFromLegacyVulnResolver(c, query, rawQuery, paginatedQuery)
-	}
-
 	switch cveType {
 	case storage.CVE_IMAGE_CVE.String():
 		imageCveRows, err := imageCveCsv.ImageCVECSVRows(c, query, rawQuery, paginatedQuery)
@@ -189,86 +180,6 @@ func cveCSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQuery,
 	default:
 		return nil, errors.Errorf("Unhandled CVEType '%s'", cveType)
 	}
-}
-
-func cveCSVRowsFromLegacyVulnResolver(c context.Context, query *v1.Query, rawQuery resolvers.RawQuery, paginatedQuery resolvers.PaginatedQuery) ([]*cveRow, error) {
-	ctx, err := csvHandler.GetScopeContext(c, query)
-	if err != nil {
-		log.Errorf("unable to determine resource scope for query %q: %v", query.String(), err)
-		return nil, err
-	}
-
-	res := csvHandler.GetResolver()
-	if res == nil {
-		log.Errorf("Unexpected value (nil) for resolver in Handler")
-		return nil, errors.New("Resolver not initialized in handler")
-	}
-	vulnResolvers, err := res.Vulnerabilities(ctx, paginatedQuery)
-	if err != nil {
-		log.Errorf("unable to get vulnerabilities for csv export: %v", err)
-		return nil, err
-	}
-
-	cveRows := make([]*cveRow, 0, len(vulnResolvers))
-	for _, d := range vulnResolvers {
-		var errorList errorhelpers.ErrorList
-		dataRow := &cveRow{}
-		dataRow.CVE = d.CVE(ctx)
-		dataRow.CveTypes = strings.Join(d.VulnerabilityTypes(), " ")
-		isFixable, err := d.IsFixable(ctx, rawQuery)
-		if err != nil {
-			errorList.AddError(err)
-		}
-		dataRow.Fixable = strconv.FormatBool(isFixable)
-		dataRow.CvssScore = fmt.Sprintf("%.2f (%s)", d.Cvss(ctx), d.ScoreVersion(ctx))
-		envImpact, err := d.EnvImpact(ctx)
-		if err != nil {
-			errorList.AddError(err)
-		}
-		dataRow.EnvImpact = fmt.Sprintf("%.2f", envImpact*100)
-		dataRow.ImpactScore = fmt.Sprintf("%.2f", d.ImpactScore(ctx))
-		// Entity counts should be scoped to CVE only
-		deploymentCount, err := d.DeploymentCount(ctx, resolvers.RawQuery{})
-		if err != nil {
-			errorList.AddError(err)
-		}
-		dataRow.DeploymentCount = fmt.Sprint(deploymentCount)
-		// Entity counts should be scoped to CVE only
-		imageCount, err := d.ImageCount(ctx, resolvers.RawQuery{})
-		if err != nil {
-			errorList.AddError(err)
-		}
-		dataRow.ImageCount = fmt.Sprint(imageCount)
-		// Entity counts should be scoped to CVE only
-		nodeCount, err := d.NodeCount(ctx, resolvers.RawQuery{})
-		if err != nil {
-			errorList.AddError(err)
-		}
-		dataRow.NodeCount = fmt.Sprint(nodeCount)
-		// Entity counts should be scoped to CVE only
-		componentCount, err := d.ComponentCount(ctx, resolvers.RawQuery{})
-		if err != nil {
-			errorList.AddError(err)
-		}
-		dataRow.ComponentCount = fmt.Sprint(componentCount)
-		scannedTime, err := d.LastScanned(ctx)
-		if err != nil {
-			errorList.AddError(err)
-		}
-		dataRow.ScannedTime = csv.FromGraphQLTime(scannedTime)
-		publishedTime, err := d.PublishedOn(ctx)
-		if err != nil {
-			errorList.AddError(err)
-		}
-		dataRow.PublishedTime = csv.FromGraphQLTime(publishedTime)
-		dataRow.Summary = d.Summary(ctx)
-
-		cveRows = append(cveRows, dataRow)
-		if err := errorList.ToError(); err != nil {
-			log.Errorf("failed to generate complete csv entry for cve %s: %v", dataRow.CVE, err)
-		}
-	}
-	return cveRows, nil
 }
 
 func imageCVERowsToCVERows(imageCveRows []*imageCveCsv.ImageCVERow) []*cveRow {
