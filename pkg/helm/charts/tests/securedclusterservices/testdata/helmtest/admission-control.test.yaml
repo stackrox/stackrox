@@ -81,3 +81,47 @@ tests:
           replicas: 50
       expect: |
         .deployments["admission-control"].spec.replicas | assertThat(. == 50)
+
+- name: "Admission Controller affinity"
+  tests:
+    - name: "default affinity"
+      expect: |
+        .deployments["admission-control"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 2)
+        .deployments["admission-control"].spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
+    - name: "override node affinity"
+      values:
+        admissionControl:
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 50
+                  preference:
+                    matchExpressions:
+                      - key: node-role.kubernetes.io/master
+                        operator: Exists
+      expect: |
+        .deployments["admission-control"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
+        .deployments["admission-control"].spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
+    - name: "override antiAffinity"
+      values:
+        admissionControl:
+          affinity:
+            podAntiAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 10
+                podAffinityTerm:
+                  namespaces: ["stackrox"]
+                  topologyKey: "kubernetes.io/hostname"
+                  labelSelector:
+                    matchLabels:
+                      app: admission-control
+              - weight: 10
+                podAffinityTerm:
+                  namespaces: ["stackrox"]
+                  topologyKey: "kubernetes.io/hostname"
+                  labelSelector:
+                    matchLabels:
+                      app: admission-control-other
+      expect: |
+        .deployments["admission-control"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 2)
+        .deployments["admission-control"].spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 2)

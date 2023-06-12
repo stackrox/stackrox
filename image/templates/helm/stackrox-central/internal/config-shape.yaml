@@ -29,6 +29,7 @@ central:
   endpointsConfig: null # string | dict
   nodeSelector: null # string | dict
   tolerations: null # [dict]
+  affinity: null # dict
   exposeMonitoring: null # bool
   jwtSigner:
     key: null # string
