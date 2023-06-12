@@ -32,7 +32,7 @@ func NewClusterDataStore(storage store.ClusterStore, graphConfig graphConfigDS.D
 }
 
 // GetTestPostgresClusterDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresClusterDataStore(t *testing.T, pool postgres.DB) (ClusterDataStore, error) {
+func GetTestPostgresClusterDataStore(t testing.TB, pool postgres.DB) (ClusterDataStore, error) {
 	dbstore := pgStore.NewClusterStore(pool)
 	configStore, err := graphConfigDS.GetTestPostgresDataStore(t, pool)
 	if err != nil {

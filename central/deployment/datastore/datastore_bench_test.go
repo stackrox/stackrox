@@ -3,61 +3,31 @@ package datastore
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"testing"
 
-	dackBoxStore "github.com/stackrox/rox/central/deployment/store/dackbox"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/ranking"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	search2 "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func BenchmarkSearchAllDeployments(b *testing.B) {
-	//TODO:	[ROX-17705]	Update BenchmarkSearchAllDeployments and TestDeploymentSearchResults to run on postgres
-	pgtest.SkipIfPostgresEnabled(b)
+	ctx := sac.WithAllAccess(context.Background())
+	testDB := pgtest.ForT(b)
 
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Deployment),
-		))
-
-	tempPath := b.TempDir()
-
-	blevePath := filepath.Join(tempPath, "scorch.bleve")
-
-	db, err := rocksdb.NewTemp("benchmark_search_all")
+	deploymentsDatastore, err := GetTestPostgresDataStore(b, testDB.DB)
 	require.NoError(b, err)
-	defer rocksdbtest.TearDownRocksDB(db)
-
-	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
-	require.NoError(b, err)
-
-	_, err = globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex, "")
-	require.NoError(b, err)
-
-	storage := dackBoxStore.New(dacky, concurrency.NewKeyFence())
-	deploymentsDatastore := newDatastoreImpl(storage, nil, nil, nil, nil, nil, nil, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 
 	deploymentPrototype := fixtures.GetDeployment().Clone()
-
 	const numDeployments = 1000
 	for i := 0; i < numDeployments; i++ {
 		if i > 0 && i%100 == 0 {
 			fmt.Println("Added", i, "deployments")
 		}
-		deploymentPrototype.Id = fmt.Sprintf("deployment%d", i)
+		deploymentPrototype.Id = uuid.NewV4().String()
 		require.NoError(b, deploymentsDatastore.UpsertDeployment(ctx, deploymentPrototype))
 	}
 

@@ -41,8 +41,6 @@ type imageComponentEdgeDatastoreSACTestSuite struct {
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) SetupSuite() {
 	var err error
-	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
-	s.Require().NoError(err)
 	pool := s.dackboxTestStore.GetPostgresPool()
 	s.datastore, err = GetTestPostgresDataStore(s.T(), pool)
 	s.Require().NoError(err)
