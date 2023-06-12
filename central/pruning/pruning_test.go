@@ -53,7 +53,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/dackbox"
 	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -273,7 +272,6 @@ func (s *PruningTestSuite) generateAlertDataStructures(ctx context.Context) (ale
 	// Initialize real datastore
 	var (
 		alerts alertDatastore.DataStore
-		dacky  *dackbox.DackBox
 		err    error
 	)
 
@@ -290,7 +288,7 @@ func (s *PruningTestSuite) generateAlertDataStructures(ctx context.Context) (ale
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 
-	deployments, err := deploymentDatastore.New(dacky, dackboxConcurrency.NewKeyFence(), s.pool, nil, nil, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deployments, err := deploymentDatastore.New(nil, dackboxConcurrency.NewKeyFence(), s.pool, nil, nil, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(s.T(), err)
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments
 }
