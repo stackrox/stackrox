@@ -43,7 +43,7 @@ LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v $(GOPATH):/go:delegated
 GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go
 IMAGE_BUILD_FLAGS := -e CGO_ENABLED=0 -e GOOS=linux -e GOARCH=${GOARCH}
 BUILD_FLAGS := CGO_ENABLED=0 GOOS=linux GOARCH=${GOARCH}
-BUILD_CMD := go build -trimpath -ldflags="-X github.com/stackrox/scanner/v4/internal/version.Version=$(TAG)" -o image/scanner/bin/scanner ./cmd
+BUILD_CMD := go build -trimpath -ldflags="-X github.com/stackrox/stackrox/scanner/v4/internal/version.Version=$(TAG)" -o image/scanner/bin/scanner ./cmd
 
 #####################################################################
 ###### Binaries we depend on (need to be defined on top) ############
