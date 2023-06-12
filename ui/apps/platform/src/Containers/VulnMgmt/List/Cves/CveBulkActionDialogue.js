@@ -258,7 +258,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
         const truncatedSummary = truncate(item.summary, 120);
         return (
             <li key={item.id} className="flex items-center bg-tertiary-200 mb-2 p-2">
-                <span className="min-w-32">{item.cve}</span>
+                <span className="min-w-32 font-700">{item.cve}</span>
                 <span>{truncatedSummary}</span>
             </li>
         );
