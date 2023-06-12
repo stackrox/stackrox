@@ -11,7 +11,7 @@ package storage;
 
 message ReportMetadata {
     string       report_id        = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
-    string       report_config_id = 2 [(gogoproto.moretags) = 'sql:"fk(ReportConfiguration:id)" search:"Report Configuration ID"'];
+    string       report_config_id = 2 [(gogoproto.moretags) = 'search:"Report Configuration ID" sql:"fk(ReportConfiguration:id)"'];
     SlimUser     user             = 3;
     ReportStatus report_status    = 4;
     bool         is_downloaded    = 5;
@@ -35,7 +35,6 @@ message ReportStatus {
         ON_DEMAND = 0;
         SCHEDULED = 1;
     }
-
 
     RunState                   run_state                  = 1 [(gogoproto.moretags) = 'search:"Report State"'];
     google.protobuf.Timestamp  queued_at                  = 2 [(gogoproto.moretags) = 'search:"Report Init Time"'];

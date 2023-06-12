@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/standards/index"
 	subjectMapping "github.com/stackrox/rox/central/rbac/service/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -150,6 +151,10 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_SERVICE_ACCOUNTS:        schema.ServiceAccountsSchema.OptionsMap,
 		v1.SearchCategory_SUBJECTS:                subjectSearchOptions,
 		v1.SearchCategory_VULN_REQUEST:            schema.VulnerabilityRequestsSchema.OptionsMap,
+	}
+
+	if features.VulnMgmtReportingEnhancements.Enabled() {
+		entityOptionsMap[v1.SearchCategory_REPORT_METADATA] = schema.ReportMetadatasSchema.OptionsMap
 	}
 
 	return entityOptionsMap

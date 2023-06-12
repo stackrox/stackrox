@@ -58,4 +58,5 @@ type ReportMetadatas struct {
 	ReportStatusReportMethod             storage.ReportStatus_RunMethod          `gorm:"column:reportstatus_reportmethod;type:integer"`
 	ReportStatusReportNotificationMethod storage.ReportStatus_NotificationMethod `gorm:"column:reportstatus_reportnotificationmethod;type:integer"`
 	Serialized                           []byte                                  `gorm:"column:serialized;type:bytea"`
+	ReportConfigurationsRef              ReportConfigurations                    `gorm:"foreignKey:reportconfigid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
