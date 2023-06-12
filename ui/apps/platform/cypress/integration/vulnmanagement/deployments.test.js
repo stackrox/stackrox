@@ -1,4 +1,4 @@
-import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
+import { hasOrchestratorFlavor } from '../../helpers/features';
 import withAuth from '../../helpers/basicAuth';
 import {
     assertSortedItems,
@@ -18,12 +18,6 @@ const entitiesKey = 'deployments';
 
 describe('Vulnerability Management Deployments', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-    });
 
     it('should display table columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
