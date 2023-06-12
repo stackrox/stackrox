@@ -52,8 +52,6 @@ func New(nsStore store.Store, _ graph.Provider, indexer index.Indexer, deploymen
 		namespaceRanker:   namespaceRanker,
 		formattedSearcher: formatSearcherV2(indexer, namespaceRanker),
 	}
-
-	ds.formattedSearcher = formatSearcherV2(indexer, namespaceRanker)
 	return ds, nil
 }
 
