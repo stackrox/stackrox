@@ -685,16 +685,18 @@ func (c *TestContext) ApplyResourceAndWaitNoObject(ctx context.Context, ns strin
 
 // ApplyResourceAndWait calls ApplyResource and waits for the resource if it's "waitable" (e.g. Deployment or Pod).
 func (c *TestContext) ApplyResourceAndWait(ctx context.Context, ns string, resource *K8sResourceInfo, obj k8s.Object, retryFn RetryCallback) (func() error, error) {
-	if fn, err := c.ApplyResource(ctx, ns, resource, obj, retryFn); err != nil {
-		return fn, err
-	} else {
-		if resource.Kind == "Deployment" || resource.Kind == "Pod" {
-			if err := c.waitForResource(defaultCreationTimeout, deploymentName(obj.GetName())); err != nil {
-				return nil, err
-			}
-		}
-		return fn, err
+	fn, err := c.ApplyResource(ctx, ns, resource, obj, retryFn)
+	if err != nil {
+		return nil, err
 	}
+
+	if resource.Kind == "Deployment" || resource.Kind == "Pod" {
+		if err := c.waitForResource(defaultCreationTimeout, deploymentName(obj.GetName())); err != nil {
+			return nil, err
+		}
+	}
+
+	return fn, nil
 }
 
 // ApplyResource creates a Kubernetes resource in namespace `ns` from a resource definition (see
