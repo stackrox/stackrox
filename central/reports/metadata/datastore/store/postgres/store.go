@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	baseTable = "report_metadatas"
+	baseTable = "report_metadata"
 
 	batchAfter = 100
 
@@ -41,7 +41,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ReportMetadatasSchema
+	schema         = pkgSchema.ReportMetadataSchema
 	targetResource = resources.WorkflowAdministration
 )
 
@@ -81,7 +81,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoReportMetadatas(ctx context.Context, batch *pgx.Batch, obj *storage.ReportMetadata) error {
+func insertIntoReportMetadata(ctx context.Context, batch *pgx.Batch, obj *storage.ReportMetadata) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -101,13 +101,13 @@ func insertIntoReportMetadatas(ctx context.Context, batch *pgx.Batch, obj *stora
 		serialized,
 	}
 
-	finalStr := "INSERT INTO report_metadatas (ReportId, ReportConfigId, User_Name, ReportStatus_RunState, ReportStatus_QueuedAt, ReportStatus_CompletedAt, ReportStatus_ReportMethod, ReportStatus_ReportNotificationMethod, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(ReportId) DO UPDATE SET ReportId = EXCLUDED.ReportId, ReportConfigId = EXCLUDED.ReportConfigId, User_Name = EXCLUDED.User_Name, ReportStatus_RunState = EXCLUDED.ReportStatus_RunState, ReportStatus_QueuedAt = EXCLUDED.ReportStatus_QueuedAt, ReportStatus_CompletedAt = EXCLUDED.ReportStatus_CompletedAt, ReportStatus_ReportMethod = EXCLUDED.ReportStatus_ReportMethod, ReportStatus_ReportNotificationMethod = EXCLUDED.ReportStatus_ReportNotificationMethod, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO report_metadata (ReportId, ReportConfigId, User_Name, ReportStatus_RunState, ReportStatus_QueuedAt, ReportStatus_CompletedAt, ReportStatus_ReportMethod, ReportStatus_ReportNotificationMethod, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(ReportId) DO UPDATE SET ReportId = EXCLUDED.ReportId, ReportConfigId = EXCLUDED.ReportConfigId, User_Name = EXCLUDED.User_Name, ReportStatus_RunState = EXCLUDED.ReportStatus_RunState, ReportStatus_QueuedAt = EXCLUDED.ReportStatus_QueuedAt, ReportStatus_CompletedAt = EXCLUDED.ReportStatus_CompletedAt, ReportStatus_ReportMethod = EXCLUDED.ReportStatus_ReportMethod, ReportStatus_ReportNotificationMethod = EXCLUDED.ReportStatus_ReportNotificationMethod, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func (s *storeImpl) copyFromReportMetadatas(ctx context.Context, tx *postgres.Tx, objs ...*storage.ReportMetadata) error {
+func (s *storeImpl) copyFromReportMetadata(ctx context.Context, tx *postgres.Tx, objs ...*storage.ReportMetadata) error {
 
 	inputRows := [][]interface{}{}
 
@@ -184,7 +184,7 @@ func (s *storeImpl) copyFromReportMetadatas(ctx context.Context, tx *postgres.Tx
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"report_metadatas"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"report_metadata"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -219,7 +219,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ReportMetadat
 		return err
 	}
 
-	if err := s.copyFromReportMetadatas(ctx, tx, objs...); err != nil {
+	if err := s.copyFromReportMetadata(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -240,7 +240,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ReportMetadata)
 
 	for _, obj := range objs {
 		batch := &pgx.Batch{}
-		if err := insertIntoReportMetadatas(ctx, batch, obj); err != nil {
+		if err := insertIntoReportMetadata(ctx, batch, obj); err != nil {
 			return err
 		}
 		batchResults := conn.SendBatch(ctx, batch)
@@ -588,11 +588,11 @@ func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableReportMetadatas(ctx, db)
+	dropTableReportMetadata(ctx, db)
 }
 
-func dropTableReportMetadatas(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS report_metadatas CASCADE")
+func dropTableReportMetadata(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS report_metadata CASCADE")
 
 }
 

@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
+// GetReportMetadata returns a valid report metadata object
 func GetReportMetadata() *storage.ReportMetadata {
 	return &storage.ReportMetadata{
 		ReportId:       uuid.NewV4().String(),

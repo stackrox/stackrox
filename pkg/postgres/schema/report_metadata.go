@@ -16,19 +16,19 @@ import (
 )
 
 var (
-	// CreateTableReportMetadatasStmt holds the create statement for table `report_metadatas`.
-	CreateTableReportMetadatasStmt = &postgres.CreateStmts{
-		GormModel: (*ReportMetadatas)(nil),
+	// CreateTableReportMetadataStmt holds the create statement for table `report_metadata`.
+	CreateTableReportMetadataStmt = &postgres.CreateStmts{
+		GormModel: (*ReportMetadata)(nil),
 		Children:  []*postgres.CreateStmts{},
 	}
 
-	// ReportMetadatasSchema is the go schema for table `report_metadatas`.
-	ReportMetadatasSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("report_metadatas")
+	// ReportMetadataSchema is the go schema for table `report_metadata`.
+	ReportMetadataSchema = func() *walker.Schema {
+		schema := GetSchemaForTable("report_metadata")
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ReportMetadata)(nil)), "report_metadatas")
+		schema = walker.Walk(reflect.TypeOf((*storage.ReportMetadata)(nil)), "report_metadata")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ReportConfiguration": ReportConfigurationsSchema,
 		}
@@ -37,18 +37,18 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_REPORT_METADATA, "reportmetadata", (*storage.ReportMetadata)(nil)))
-		RegisterTable(schema, CreateTableReportMetadatasStmt)
+		RegisterTable(schema, CreateTableReportMetadataStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_REPORT_METADATA, schema)
 		return schema
 	}()
 )
 
 const (
-	ReportMetadatasTableName = "report_metadatas"
+	ReportMetadataTableName = "report_metadata"
 )
 
-// ReportMetadatas holds the Gorm model for Postgres table `report_metadatas`.
-type ReportMetadatas struct {
+// ReportMetadata holds the Gorm model for Postgres table `report_metadata`.
+type ReportMetadata struct {
 	ReportId                             string                                  `gorm:"column:reportid;type:uuid;primaryKey"`
 	ReportConfigId                       string                                  `gorm:"column:reportconfigid;type:varchar"`
 	UserName                             string                                  `gorm:"column:user_name;type:varchar"`

@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
-// Indexer provides functionality to index node components.
+// Indexer provides functionality to index report metadatas.
 type Indexer interface {
 	AddReportMetadata(report *storage.ReportMetadata) error
 	AddReportMetadatas(reports []*storage.ReportMetadata) error

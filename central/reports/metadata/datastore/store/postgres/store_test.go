@@ -15,34 +15,34 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ReportMetadatasStoreSuite struct {
+type ReportMetadataStoreSuite struct {
 	suite.Suite
 	store  Store
 	testDB *pgtest.TestPostgres
 }
 
-func TestReportMetadatasStore(t *testing.T) {
-	suite.Run(t, new(ReportMetadatasStoreSuite))
+func TestReportMetadataStore(t *testing.T) {
+	suite.Run(t, new(ReportMetadataStoreSuite))
 }
 
-func (s *ReportMetadatasStoreSuite) SetupSuite() {
+func (s *ReportMetadataStoreSuite) SetupSuite() {
 
 	s.testDB = pgtest.ForT(s.T())
 	s.store = New(s.testDB.DB)
 }
 
-func (s *ReportMetadatasStoreSuite) SetupTest() {
+func (s *ReportMetadataStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.testDB.Exec(ctx, "TRUNCATE report_metadatas CASCADE")
-	s.T().Log("report_metadatas", tag)
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE report_metadata CASCADE")
+	s.T().Log("report_metadata", tag)
 	s.NoError(err)
 }
 
-func (s *ReportMetadatasStoreSuite) TearDownSuite() {
+func (s *ReportMetadataStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
-func (s *ReportMetadatasStoreSuite) TestStore() {
+func (s *ReportMetadataStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
