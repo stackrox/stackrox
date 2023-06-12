@@ -10,10 +10,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/debug"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -30,31 +27,6 @@ type dataStoreImpl struct {
 
 	searcher search.Searcher
 	indexer  index.Indexer
-}
-
-func (d *dataStoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	defer debug.FreeOSMemory()
-	log.Info("[STARTUP] Indexing report configurations")
-
-	var reportConfigs []*storage.ReportConfiguration
-	walkFn := func() error {
-		reportConfigs = reportConfigs[:0]
-		return d.reportConfigStore.Walk(ctx, func(reportConfig *storage.ReportConfiguration) error {
-			reportConfigs = append(reportConfigs, reportConfig)
-			return nil
-		})
-	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
-		return err
-	}
-	if err := d.indexer.AddReportConfigurations(reportConfigs); err != nil {
-		return err
-	}
-	log.Info("[STARTUP] Successfully indexed report configurations")
-	return nil
 }
 
 func (d *dataStoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
