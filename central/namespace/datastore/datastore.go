@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/dackbox"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentSAC "github.com/stackrox/rox/central/deployment/sac"
-	"github.com/stackrox/rox/central/idmap"
 	imageSAC "github.com/stackrox/rox/central/image/sac"
 	"github.com/stackrox/rox/central/namespace/index"
 	"github.com/stackrox/rox/central/namespace/index/mappings"
@@ -22,7 +21,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/derivedfields/counter"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -54,26 +52,14 @@ type DataStore interface {
 }
 
 // New returns a new DataStore instance using the provided store and indexer
-func New(nsStore store.Store, graphProvider graph.Provider, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker, idMapStorage idmap.Storage) (DataStore, error) {
+func New(nsStore store.Store, _ graph.Provider, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker) (DataStore, error) {
 	ds := &datastoreImpl{
 		store:           nsStore,
 		indexer:         indexer,
 		deployments:     deploymentDataStore,
 		namespaceRanker: namespaceRanker,
-		idMapStorage:    idMapStorage,
 	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		ds.formattedSearcher = formatSearcherV2(indexer, namespaceRanker)
-	} else {
-		ds.formattedSearcher = formatSearcher(indexer, graphProvider, namespaceRanker)
-	}
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Namespace)))
-	if err := ds.buildIndex(ctx); err != nil {
-		return nil, err
-	}
+	ds.formattedSearcher = formatSearcherV2(indexer, namespaceRanker)
 	return ds, nil
 }
 
@@ -86,8 +72,7 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 		return nil, err
 	}
 	namespaceRanker := ranking.NamespaceRanker()
-	idMapStore := idmap.StorageSingleton()
-	return New(dbstore, nil, indexer, deploymentStore, namespaceRanker, idMapStore)
+	return New(dbstore, nil, indexer, deploymentStore, namespaceRanker)
 }
 
 var (
@@ -109,35 +94,7 @@ type datastoreImpl struct {
 	formattedSearcher search.Searcher
 	namespaceRanker   *ranking.Ranker
 
-	idMapStorage idmap.Storage
-
 	deployments deploymentDataStore.DataStore
-}
-
-func (b *datastoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	log.Info("[STARTUP] initializing namespaces")
-	var namespaces []*storage.NamespaceMetadata
-	walkFn := func() error {
-		namespaces = namespaces[:0]
-		return b.store.Walk(ctx, func(ns *storage.NamespaceMetadata) error {
-			namespaces = append(namespaces, ns)
-			return nil
-		})
-	}
-	if err := walkFn(); err != nil {
-		return err
-	}
-	if b.idMapStorage != nil {
-		b.idMapStorage.OnNamespaceAdd(namespaces...)
-	}
-	if err := b.indexer.AddNamespaceMetadatas(namespaces); err != nil {
-		return err
-	}
-	log.Info("[STARTUP] Successfully indexed namespaces")
-	return nil
 }
 
 // GetNamespace returns namespace with given id.
@@ -206,9 +163,6 @@ func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.Nam
 	if err := b.store.Upsert(ctx, namespace); err != nil {
 		return err
 	}
-	if b.idMapStorage != nil && !env.PostgresDatastoreEnabled.BooleanSetting() {
-		b.idMapStorage.OnNamespaceAdd(namespace)
-	}
 	return b.indexer.AddNamespaceMetadata(namespace)
 }
 
@@ -236,9 +190,6 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 
 	if err := b.store.Delete(ctx, id); err != nil {
 		return err
-	}
-	if b.idMapStorage != nil && !env.PostgresDatastoreEnabled.BooleanSetting() {
-		b.idMapStorage.OnNamespaceRemove(id)
 	}
 	// Remove ranker record here since removal is not handled in risk store as no entry present for namespace
 	b.namespaceRanker.Remove(id)
