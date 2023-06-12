@@ -241,7 +241,7 @@ func CreateTestNamespaceDatastore(t testing.TB, testDB *pgtest.TestPostgres) nam
 
 	storage := namespacePostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
 	indexer := namespacePostgres.NewIndexer(testDB.DB)
-	datastore, err := namespaceDataStore.New(storage, nil, indexer, nil, ranking.NamespaceRanker(), nil)
+	datastore, err := namespaceDataStore.New(storage, nil, indexer, nil, ranking.NamespaceRanker())
 	assert.NoError(t, err, "failed to create namespace datastore")
 	return datastore
 }
