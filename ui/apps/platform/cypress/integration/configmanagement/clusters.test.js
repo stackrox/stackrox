@@ -53,8 +53,8 @@ describe('Configuration Management Clusters', () => {
             'deployments',
             'images',
             'secrets',
-            'users and groups',
-            'service accounts',
+            'subjects',
+            'serviceaccounts',
             'roles',
             'controls',
         ]);
