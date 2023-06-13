@@ -2,7 +2,6 @@
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement, useState } from 'react';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePagination from 'hooks/patternfly/usePagination';
 import { SearchFilter } from 'types/search';
 import queryService from 'utils/queryService';
@@ -34,9 +33,6 @@ function FalsePositiveCVEs({
         defaultSortOption,
     });
 
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
     const vulnsQuery = queryService.objectToWhereClause({
         ...searchFilter,
         'Vulnerability State': 'FALSE_POSITIVE',
@@ -50,7 +46,6 @@ function FalsePositiveCVEs({
             offset: (page - 1) * perPage,
             sortOption,
         },
-        showVMUpdates,
     });
 
     const itemCount = data?.image?.vulnCount || 0;
