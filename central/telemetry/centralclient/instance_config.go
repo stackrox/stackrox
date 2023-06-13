@@ -39,12 +39,11 @@ var (
 )
 
 const (
-	telemetryConfigURL = "https://telemetry.stackrox.io/config.json"
-	disabledKey        = "DISABLED"
+	disabledKey = "DISABLED"
 )
 
 type remoteConfig struct {
-	Key string `json:"key,omitempty"`
+	Key string `json:"storage_key_v1,omitempty"`
 }
 
 func downloadConfig(u string) (*remoteConfig, error) {
@@ -78,7 +77,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 	}
 
 	if key == "" && isReleaseBuild() {
-		remoteCfg, err := downloadConfig(telemetryConfigURL)
+		remoteCfg, err := downloadConfig(env.TelemetryConfigURL.Setting())
 		if err != nil {
 			return nil, nil, err
 		}
