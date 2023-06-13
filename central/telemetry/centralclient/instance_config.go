@@ -76,12 +76,15 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 		return nil, nil, nil
 	}
 
-	if key == "" && (isReleaseBuild() || env.TelemetryConfigURL.Setting() != "") {
+	if env.TelemetryConfigURL.Setting() != "" &&
+		// Development versions must provide a key on top of the URL.
+		(key == "" && isReleaseBuild() || key != "") {
 		remoteCfg, err := downloadConfig(env.TelemetryConfigURL.Setting())
 		if err != nil {
 			return nil, nil, err
 		}
-		if remoteCfg != nil {
+		// The key has to match for development versions.
+		if remoteCfg != nil && (isReleaseBuild() || remoteCfg.Key == key) {
 			key = remoteCfg.Key
 			log.Info("Telemetry configuration has been downloaded from ",
 				env.TelemetryConfigURL.Setting())
