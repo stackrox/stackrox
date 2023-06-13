@@ -24,8 +24,6 @@ type tlsConfigLoader struct {
 	TLSConfig *tls.Config
 
 	certDir           string
-	certFile          string
-	keyFile           string
 	clientCANamespace string
 	clientCAConfigMap string
 	k8sClient         *kubernetes.Clientset
@@ -36,13 +34,9 @@ type tlsConfigLoader struct {
 func NewTLSConfigLoader(certDir, clientCANamespace, clientCAConfigMap string) (*tlsConfigLoader, error) {
 	tlsRootConfig := verifier.DefaultTLSServerConfig(nil, nil)
 	tlsRootConfig.ClientAuth = tls.RequireAndVerifyClientCert
-	certFile := filepath.Join(certDir, env.TLSCertFileName)
-	keyFile := filepath.Join(certDir, env.TLSKeyFileName)
 	loader := &tlsConfigLoader{
 		TLSConfig:         tlsRootConfig,
 		certDir:           certDir,
-		certFile:          certFile,
-		keyFile:           keyFile,
 		clientCANamespace: clientCANamespace,
 		clientCAConfigMap: clientCAConfigMap,
 	}
@@ -77,25 +71,27 @@ func (t *tlsConfigLoader) getClientConfigFunc() func(*tls.ClientHelloInfo) (*tls
 }
 
 func (t *tlsConfigLoader) getCertificateFromDirectory(dir string) (*tls.Certificate, error) {
-	if exists, err := fileutils.Exists(t.certFile); err != nil || !exists {
+	certFile := filepath.Join(dir, env.TLSCertFileName)
+	keyFile := filepath.Join(dir, env.TLSKeyFileName)
+	if exists, err := fileutils.Exists(certFile); err != nil || !exists {
 		if err != nil {
 			log.Warnw("Error checking if monitoring TLS certificate file exists", zap.Error(err))
 			return nil, err
 		}
-		log.Infof("Monitoring TLS certificate file %q does not exist. Skipping", t.certFile)
+		log.Infof("Monitoring TLS certificate file %q does not exist. Skipping", certFile)
 		return nil, nil
 	}
 
-	if exists, err := fileutils.Exists(t.keyFile); err != nil || !exists {
+	if exists, err := fileutils.Exists(keyFile); err != nil || !exists {
 		if err != nil {
 			log.Warnw("Error checking if monitoring TLS key file exists", zap.Error(err))
 			return nil, err
 		}
-		log.Infof("Monitoring TLS key file %q does not exist. Skipping", t.keyFile)
+		log.Infof("Monitoring TLS key file %q does not exist. Skipping", keyFile)
 		return nil, nil
 	}
 
-	cert, err := tls.LoadX509KeyPair(t.certFile, t.keyFile)
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading monitoring certificate failed")
 	}
