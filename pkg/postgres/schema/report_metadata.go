@@ -51,7 +51,7 @@ const (
 type ReportMetadata struct {
 	ReportId                             string                                  `gorm:"column:reportid;type:uuid;primaryKey"`
 	ReportConfigId                       string                                  `gorm:"column:reportconfigid;type:varchar"`
-	UserName                             string                                  `gorm:"column:user_name;type:varchar"`
+	RequesterName                        string                                  `gorm:"column:requester_name;type:varchar"`
 	ReportStatusRunState                 storage.ReportStatus_RunState           `gorm:"column:reportstatus_runstate;type:integer"`
 	ReportStatusQueuedAt                 *time.Time                              `gorm:"column:reportstatus_queuedat;type:timestamp"`
 	ReportStatusCompletedAt              *time.Time                              `gorm:"column:reportstatus_completedat;type:timestamp"`

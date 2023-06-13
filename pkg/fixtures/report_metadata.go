@@ -11,7 +11,7 @@ func GetReportMetadata() *storage.ReportMetadata {
 	return &storage.ReportMetadata{
 		ReportId:       uuid.NewV4().String(),
 		ReportConfigId: "config-1",
-		User: &storage.SlimUser{
+		Requester: &storage.SlimUser{
 			Id:   "user-1",
 			Name: "user-1",
 		},

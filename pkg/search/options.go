@@ -314,7 +314,7 @@ var (
 	ReportState              = newFieldLabel("Report State")
 	ReportQueuedTime         = newFieldLabel("Report Init Time")
 	ReportCompletionTime     = newFieldLabel("Report Completion Time")
-	ReportMethod             = newFieldLabel("Report Method")
+	ReportRequestType        = newFieldLabel("Report Request Type")
 	ReportNotificationMethod = newFieldLabel("Report Notification Method")
 
 	// Test Search Fields

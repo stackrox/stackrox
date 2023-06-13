@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/reports/metadata/datastore/index"
 	pgStore "github.com/stackrox/rox/central/reports/metadata/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -12,7 +11,6 @@ import (
 
 type searcherImpl struct {
 	storage  pgStore.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 }
 

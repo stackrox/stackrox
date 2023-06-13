@@ -92,7 +92,7 @@ func insertIntoReportMetadata(ctx context.Context, batch *pgx.Batch, obj *storag
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetReportId()),
 		obj.GetReportConfigId(),
-		obj.GetUser().GetName(),
+		obj.GetRequester().GetName(),
 		obj.GetReportStatus().GetRunState(),
 		pgutils.NilOrTime(obj.GetReportStatus().GetQueuedAt()),
 		pgutils.NilOrTime(obj.GetReportStatus().GetCompletedAt()),
@@ -101,7 +101,7 @@ func insertIntoReportMetadata(ctx context.Context, batch *pgx.Batch, obj *storag
 		serialized,
 	}
 
-	finalStr := "INSERT INTO report_metadata (ReportId, ReportConfigId, User_Name, ReportStatus_RunState, ReportStatus_QueuedAt, ReportStatus_CompletedAt, ReportStatus_ReportMethod, ReportStatus_ReportNotificationMethod, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(ReportId) DO UPDATE SET ReportId = EXCLUDED.ReportId, ReportConfigId = EXCLUDED.ReportConfigId, User_Name = EXCLUDED.User_Name, ReportStatus_RunState = EXCLUDED.ReportStatus_RunState, ReportStatus_QueuedAt = EXCLUDED.ReportStatus_QueuedAt, ReportStatus_CompletedAt = EXCLUDED.ReportStatus_CompletedAt, ReportStatus_ReportMethod = EXCLUDED.ReportStatus_ReportMethod, ReportStatus_ReportNotificationMethod = EXCLUDED.ReportStatus_ReportNotificationMethod, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO report_metadata (ReportId, ReportConfigId, Requester_Name, ReportStatus_RunState, ReportStatus_QueuedAt, ReportStatus_CompletedAt, ReportStatus_ReportMethod, ReportStatus_ReportNotificationMethod, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(ReportId) DO UPDATE SET ReportId = EXCLUDED.ReportId, ReportConfigId = EXCLUDED.ReportConfigId, Requester_Name = EXCLUDED.Requester_Name, ReportStatus_RunState = EXCLUDED.ReportStatus_RunState, ReportStatus_QueuedAt = EXCLUDED.ReportStatus_QueuedAt, ReportStatus_CompletedAt = EXCLUDED.ReportStatus_CompletedAt, ReportStatus_ReportMethod = EXCLUDED.ReportStatus_ReportMethod, ReportStatus_ReportNotificationMethod = EXCLUDED.ReportStatus_ReportNotificationMethod, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -123,7 +123,7 @@ func (s *storeImpl) copyFromReportMetadata(ctx context.Context, tx *postgres.Tx,
 
 		"reportconfigid",
 
-		"user_name",
+		"requester_name",
 
 		"reportstatus_runstate",
 
@@ -155,7 +155,7 @@ func (s *storeImpl) copyFromReportMetadata(ctx context.Context, tx *postgres.Tx,
 
 			obj.GetReportConfigId(),
 
-			obj.GetUser().GetName(),
+			obj.GetRequester().GetName(),
 
 			obj.GetReportStatus().GetRunState(),
 

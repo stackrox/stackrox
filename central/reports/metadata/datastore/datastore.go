@@ -4,9 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/reports/metadata/datastore/index"
 	"github.com/stackrox/rox/central/reports/metadata/datastore/search"
-	"github.com/stackrox/rox/central/reports/metadata/datastore/store"
 	pgStore "github.com/stackrox/rox/central/reports/metadata/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -37,13 +35,12 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore and a QueryResolver.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+func New(storage pgStore.Store, searcher search.Searcher) (DataStore, error) {
 	if !features.VulnMgmtReportingEnhancements.Enabled() {
 		return nil, nil
 	}
 	ds := &datastoreImpl{
 		storage:  storage,
-		indexer:  indexer,
 		searcher: searcher,
 	}
 	return ds, nil
@@ -55,5 +52,5 @@ func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error)
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(store, indexer)
 
-	return New(store, indexer, searcher)
+	return New(store, searcher)
 }

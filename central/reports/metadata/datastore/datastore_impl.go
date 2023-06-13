@@ -6,9 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/reports/metadata/datastore/index"
 	"github.com/stackrox/rox/central/reports/metadata/datastore/search"
-	"github.com/stackrox/rox/central/reports/metadata/datastore/store"
+	pgStore "github.com/stackrox/rox/central/reports/metadata/datastore/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -26,8 +25,7 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	indexer  index.Indexer
+	storage  pgStore.Store
 	searcher search.Searcher
 }
 
@@ -106,14 +104,12 @@ func (ds *datastoreImpl) AddReportMetadata(ctx context.Context, report *storage.
 	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
 		return "", err
 	}
-	if report.ReportId == "" {
-		report.ReportId = uuid.NewV4().String()
+	if report.ReportId != "" {
+		return "", errors.New("new report metadata must not have a preset `id`")
 	}
+	report.ReportId = uuid.NewV4().String()
 	if err := ds.storage.Upsert(ctx, report); err != nil {
 		return "", err
-	}
-	if err := ds.indexer.AddReportMetadata(report); err != nil {
-		return report.ReportId, err
 	}
 	return report.ReportId, nil
 }
@@ -129,7 +125,7 @@ func (ds *datastoreImpl) UpdateReportMetadata(ctx context.Context, report *stora
 	if err := ds.storage.Upsert(ctx, report); err != nil {
 		return err
 	}
-	return ds.indexer.AddReportMetadata(report)
+	return nil
 }
 
 func (ds *datastoreImpl) DeleteReportMetadata(ctx context.Context, id string) error {
@@ -140,7 +136,7 @@ func (ds *datastoreImpl) DeleteReportMetadata(ctx context.Context, id string) er
 	if err := ds.storage.Delete(ctx, id); err != nil {
 		return err
 	}
-	return ds.indexer.DeleteReportMetadata(id)
+	return nil
 }
 
 func (ds *datastoreImpl) Walk(ctx context.Context, fn func(report *storage.ReportMetadata) error) error {
