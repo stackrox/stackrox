@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/central/audit"
 	authService "github.com/stackrox/rox/central/auth/service"
 	"github.com/stackrox/rox/central/auth/userpass"
-	authProviderDS "github.com/stackrox/rox/central/authprovider/datastore"
+	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
 	authProviderSvc "github.com/stackrox/rox/central/authprovider/service"
 	authProviderTelemetry "github.com/stackrox/rox/central/authprovider/telemetry"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
@@ -79,7 +79,6 @@ import (
 	"github.com/stackrox/rox/central/jwt"
 	licenseService "github.com/stackrox/rox/central/license/service"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
-	logimbueStore "github.com/stackrox/rox/central/logimbue/store"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
@@ -90,7 +89,6 @@ import (
 	networkFlowService "github.com/stackrox/rox/central/networkgraph/service"
 	networkPolicyService "github.com/stackrox/rox/central/networkpolicies/service"
 	nodeService "github.com/stackrox/rox/central/node/service"
-	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
@@ -115,7 +113,6 @@ import (
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
@@ -137,9 +134,9 @@ import (
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/systeminfo/listener"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
-	"github.com/stackrox/rox/central/telemetry/gatherers"
 	telemetryService "github.com/stackrox/rox/central/telemetry/service"
 	"github.com/stackrox/rox/central/tlsconfig"
+	"github.com/stackrox/rox/central/trace"
 	"github.com/stackrox/rox/central/ui"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
@@ -211,10 +208,6 @@ var (
 )
 
 const (
-	ssoURLPathPrefix = "/sso/"
-	//#nosec G101 -- This is a false positive
-	tokenRedirectURLPath = "/auth/response/generic"
-
 	grpcServerWatchdogTimeout = 20 * time.Second
 
 	maxServiceCertTokenLeeway = 1 * time.Minute
@@ -318,13 +311,13 @@ func startServices() {
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
 
-func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.AuthzTraceSink) []pkgGRPC.APIService {
+func servicesToRegister() []pkgGRPC.APIService {
 	// PLEASE KEEP THE FOLLOWING LIST SORTED.
 	servicesToRegister := []pkgGRPC.APIService{
 		alertService.Singleton(),
 		apiTokenService.Singleton(),
 		authService.New(),
-		authProviderSvc.New(registry, groupDataStore.Singleton()),
+		authProviderSvc.New(authProviderRegistry.Singleton(), groupDataStore.Singleton()),
 		backupRestoreService.Singleton(),
 		backupService.Singleton(),
 		centralHealthService.Singleton(),
@@ -335,18 +328,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		complianceService.Singleton(),
 		configService.Singleton(),
 		credentialExpiryService.Singleton(),
-		debugService.New(
-			clusterDataStore.Singleton(),
-			connection.ManagerSingleton(),
-			gatherers.Singleton(),
-			logimbueStore.Singleton(),
-			authzTraceSink,
-			registry,
-			groupDataStore.Singleton(),
-			roleDataStore.Singleton(),
-			configDS.Singleton(),
-			notifierDS.Singleton(),
-		),
+		debugService.Singleton(),
 		declarativeConfigHealthService.Singleton(),
 		delegatedRegistryConfigService.Singleton(),
 		deploymentService.Singleton(),
@@ -447,13 +429,7 @@ func startGRPCServer() {
 			sac.ResourceScopeKeys(resources.Access)))
 
 	// Create the registry of applied auth providers.
-	registry, err := authproviders.NewStoreBackedRegistry(
-		ssoURLPathPrefix, tokenRedirectURLPath,
-		authProviderDS.Singleton(), jwt.IssuerFactorySingleton(),
-		mapper.FactorySingleton())
-	if err != nil {
-		log.Panicf("Could not create auth provider registry: %v", err)
-	}
+	registry := authProviderRegistry.Singleton()
 
 	// env.EnableOpenShiftAuth signals the desire but does not guarantee Central
 	// is configured correctly to talk to the OpenShift's OAuth server. If this
@@ -479,7 +455,7 @@ func startGRPCServer() {
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
 
 	if env.DeclarativeConfiguration.BooleanSetting() {
-		declarativeconfig.ManagerSingleton(registry).ReconcileDeclarativeConfigurations()
+		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
 	}
 
 	clusterInitBackend := backend.Singleton()
@@ -528,7 +504,7 @@ func startGRPCServer() {
 	}
 
 	// This adds an on-demand global tracing for the built-in authorization.
-	authzTraceSink := observe.NewAuthzTraceSink()
+	authzTraceSink := trace.AuthzTraceSinkSingleton()
 	config.UnaryInterceptors = append(config.UnaryInterceptors,
 		observe.AuthzTraceInterceptor(authzTraceSink),
 	)
@@ -553,13 +529,13 @@ func startGRPCServer() {
 				gs.AddGatherer(signatureIntegrationDS.Gather)
 				gs.AddGatherer(roleDataStore.Gather)
 				gs.AddGatherer(clusterDataStore.Gather)
-				gs.AddGatherer(declarativeconfig.ManagerSingleton(registry).Gather())
+				gs.AddGatherer(declarativeconfig.ManagerSingleton().Gather())
 			}
 		}
 	}
 
 	server := pkgGRPC.NewAPI(config)
-	server.Register(servicesToRegister(registry, authzTraceSink)...)
+	server.Register(servicesToRegister()...)
 
 	startServices()
 	startedSig := server.Start()
