@@ -162,7 +162,6 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
     needs: 
       - define-job-matrix
-      - build-rocksdb-bins-power
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
@@ -190,6 +189,62 @@ jobs:
         if: |
           contains(github.event.pull_request.labels.*.name, 'ci-release-build')
             ||
+          matrix.name == 'prerelease'
+        run: echo "GOTAGS=release" >> "$GITHUB_ENV"
+
+      - name: Setup Go build environment for -race
+        if: |
+          contains(github.event.pull_request.labels.*.name, 'ci-race-tests')
+            ||
+          matrix.name == 'race-condition-debug'
+        run: echo "RACE=true" >> "$GITHUB_ENV"
+
+      - name: Build Go Binaries
+        run: make build-prep main-build-nodeps
+
+      - name: Bundle the build to preserve permissions
+        run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: go-binaries-build-${{ matrix.name }}
+          path: go-binaries-build.tgz
+
+  pre-build-go-binaries-power:
+    strategy:
+      # Supports three go binary builds:
+      # default - built with environment defaults (see handle-tagged-build & env.mk)
+      # prerelease - built with GOTAGS=release
+      # race-condition-debug - built with -race
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
+    needs: 
+      - define-job-matrix
+      - build-rocksdb-bins-power
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Ignore dubious repository ownership
+        run: |
+          # Prevent fatal error "detected dubious ownership in repository" from recent git.
+          git config --global --add safe.directory "$(pwd)"
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - uses: ./.github/actions/handle-tagged-build
+
+      - name: PR labels
+        uses: joerick/pr-labels-action@v1.0.8
+
+      - name: Setup Go build environment for release
+        if: |
+          contains(github.event.pull_request.labels.*.name, 'ci-release-build') 
+            || 
           matrix.name == 'prerelease'
         run: echo "GOTAGS=release" >> "$GITHUB_ENV"
 
@@ -254,6 +309,7 @@ jobs:
       - pre-build-ui
       - pre-build-cli
       - pre-build-go-binaries
+      - pre-build-go-binaries-power
       - pre-build-docs
     strategy:
       # Supports four image builds (see Setup build env):
