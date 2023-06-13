@@ -46,9 +46,9 @@ class DeclarativeConfigTest extends BaseSpecification {
 
     static final private int CREATED_RESOURCES = 7
 
-    static final private int RETRIES = 450
+    static final private int RETRIES = 45
     static final private int DELETION_RETRIES = 60
-    static final private int PAUSE_SECS = 1
+    static final private int PAUSE_SECS = 10
 
     // Values used within testing for permission sets.
     // These include:
