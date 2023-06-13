@@ -27,8 +27,6 @@ type Store interface {
 
 	Walk(ctx context.Context, fn func(obj *storage.ProcessListeningOnPortStorage) error) error
 
-	AckKeysIndexed(ctx context.Context, keys ...string) error
-	GetKeysToIndex(ctx context.Context) ([]string, error)
 
 	GetProcessListeningOnPort(
 		ctx context.Context,

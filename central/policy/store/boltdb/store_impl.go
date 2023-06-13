@@ -43,16 +43,6 @@ func (s *storeImpl) DeleteMany(_ context.Context, _ []string) error {
 
 //// Stubs for satisfying legacy interfaces
 
-// AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(_ context.Context, _ ...string) error {
-	return nil
-}
-
-// GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
-	return nil, nil
-}
-
 func (s *storeImpl) wasDefaultPolicyRemoved(id string) (bool, error) {
 	var wasRemoved bool
 	if err := s.View(func(tx *bolt.Tx) error {

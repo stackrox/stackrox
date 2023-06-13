@@ -112,7 +112,6 @@ func (s *alertDataStoreTestSuite) TestAddAlert() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{fakeAlert}).Return(errFake)
 
-	// We don't expect AckKeysIndexed, since the error returned from the above call will prevent this.
 	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
 
 	s.Equal(errFake, err)
@@ -122,7 +121,6 @@ func (s *alertDataStoreTestSuite) TestAddAlertWhenTheIndexerFails() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{fakeAlert}).Return(errFake)
 
-	// No AckKeysIndexed call due to error on upsert.
 	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
 
 	s.Equal(errFake, err)
@@ -133,8 +131,6 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStaleBatch() {
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, nil, nil)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil)
-	s.storage.EXPECT().AckKeysIndexed(gomock.Any(), fakeAlert.GetId()).Times(1).Return(nil)
-
 	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasWriteCtx, alerttest.FakeAlertID)
 	s.NoError(err)
 
@@ -166,9 +162,7 @@ func (s *alertDataStoreTestSuite) TestKeyIndexing() {
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{fakeAlert.GetId()}).Return([]*storage.Alert{fakeAlert}, nil, nil)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil)
-	s.storage.EXPECT().AckKeysIndexed(gomock.Any(), gomock.Any()).Return(nil)
 	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasWriteCtx, fakeAlert.GetId())
-
 	s.NoError(err)
 }
 

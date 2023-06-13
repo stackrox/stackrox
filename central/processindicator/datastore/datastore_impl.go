@@ -99,19 +99,7 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 		return sac.ErrResourceAccessDenied
 	}
 
-	err := ds.storage.UpsertMany(ctx, indicators)
-	if err != nil {
-		return err
-	}
-
-	keys := make([]string, 0, len(indicators))
-	for _, indicator := range indicators {
-		keys = append(keys, indicator.GetId())
-	}
-	if err := ds.storage.AckKeysIndexed(ctx, keys...); err != nil {
-		return errors.Wrap(err, "error acknowledging added process indexing")
-	}
-	return nil
+	return ds.storage.UpsertMany(ctx, indicators)
 }
 
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error {
@@ -144,10 +132,6 @@ func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) err
 	}
 	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
 		return err
-	}
-
-	if err := ds.storage.AckKeysIndexed(ctx, ids...); err != nil {
-		return errors.Wrap(err, "error acknowledging indicator removal")
 	}
 
 	// Clean up correlated ProcessListeningOnPort objects. Probably could be

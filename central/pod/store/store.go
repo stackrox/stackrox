@@ -19,6 +19,4 @@ type Store interface {
 	Upsert(ctx context.Context, pod *storage.Pod) error
 	Delete(ctx context.Context, id string) error
 
-	AckKeysIndexed(ctx context.Context, keys ...string) error
-	GetKeysToIndex(ctx context.Context) ([]string, error)
 }

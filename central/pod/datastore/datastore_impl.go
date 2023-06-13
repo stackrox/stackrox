@@ -105,9 +105,12 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 		if err := ds.podStore.Upsert(ctx, pod); err != nil {
 			return errors.Wrapf(err, "inserting pod %q to store", pod.GetName())
 		}
+<<<<<<< HEAD
 		if err := ds.podStore.AckKeysIndexed(ctx, pod.GetId()); err != nil {
 			return errors.Wrapf(err, "could not acknowledge indexing for %q", pod.GetName())
 		}
+=======
+>>>>>>> 72d72a69a6 (Remove indexer acknowledgement framework)
 		return nil
 	})
 	if err != nil {
@@ -170,6 +173,7 @@ func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 	ds.processFilter.DeleteByPod(pod)
 
 	err = ds.keyedMutex.DoStatusWithLock(id, func() error {
+<<<<<<< HEAD
 		if err := ds.podStore.Delete(ctx, id); err != nil {
 			return err
 		}
@@ -177,6 +181,9 @@ func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 			return err
 		}
 		return nil
+=======
+		return ds.podStore.Delete(ctx, id)
+>>>>>>> 72d72a69a6 (Remove indexer acknowledgement framework)
 	})
 	if err != nil {
 		return err
