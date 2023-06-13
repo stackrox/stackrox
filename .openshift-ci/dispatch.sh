@@ -28,7 +28,7 @@ gate_job "$ci_job"
 
 case "$ci_job" in
     gke*qa-e2e-tests|gke*nongroovy-e2e-tests|gke*upgrade-tests|gke-ui-e2e-tests|\
-    eks-qa-e2e-tests|osd*qa-e2e-tests)
+    eks-qa-e2e-tests|osd*qa-e2e-tests|gke*sensor-integration-tests)
         openshift_ci_e2e_mods
         ;;
     *-operator-e2e-tests)
