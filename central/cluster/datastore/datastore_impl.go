@@ -731,7 +731,7 @@ func (ds *datastoreImpl) markAlertsStale(ctx context.Context, alerts []*storage.
 	for _, alert := range alerts {
 		ids = append(ids, alert.GetId())
 	}
-	resolvedAlerts, err := ds.alertDataStore.MarkAlertStaleBatch(ctx, ids...)
+	resolvedAlerts, err := ds.alertDataStore.MarkAlertsResolvedBatch(ctx, ids...)
 	if err != nil {
 		return err
 	}

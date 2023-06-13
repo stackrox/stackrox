@@ -128,7 +128,7 @@ func (s *alertDatastoreSACTestSuite) TestUpsertAlert() {
 	}
 }
 
-func (s *alertDatastoreSACTestSuite) TestMarkAlertStale() {
+func (s *alertDatastoreSACTestSuite) TestMarkAlertResolved() {
 	cases := map[string]crudTest{
 		"(full) read-only cannot mark alert stale": {
 			scopeKey:      testutils.UnrestrictedReadCtx,
@@ -188,7 +188,7 @@ func (s *alertDatastoreSACTestSuite) TestMarkAlertStale() {
 			s.NoError(err)
 
 			ctx := s.testContexts[c.scopeKey]
-			_, err = s.datastore.MarkAlertStaleBatch(ctx, alert1.GetId())
+			_, err = s.datastore.MarkAlertsResolvedBatch(ctx, alert1.GetId())
 			if !c.expectError {
 				s.NoError(err)
 				// SAC behavior in postgres has changed. Instead of returning error, pg store returns nil result,
@@ -196,7 +196,7 @@ func (s *alertDatastoreSACTestSuite) TestMarkAlertStale() {
 			} else if !env.PostgresDatastoreEnabled.BooleanSetting() {
 				s.Equal(c.expectedError, err)
 			}
-			_, err = s.datastore.MarkAlertStaleBatch(ctx, alert2.GetId())
+			_, err = s.datastore.MarkAlertsResolvedBatch(ctx, alert2.GetId())
 			if !c.expectError {
 				s.NoError(err)
 				// SAC behavior in postgres has changed. Instead of returning error, pg store returns nil result,

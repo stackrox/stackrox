@@ -36,8 +36,8 @@ type DataStore interface {
 	CountAlerts(ctx context.Context) (int, error)
 	UpsertAlert(ctx context.Context, alert *storage.Alert) error
 	UpsertAlerts(ctx context.Context, alerts []*storage.Alert) error
-	// MarkAlertStaleBatch marks alerts with specified ids as RESOLVED in batch and returns resolved alerts.
-	MarkAlertStaleBatch(ctx context.Context, id ...string) ([]*storage.Alert, error)
+	// MarkAlertsResolvedBatch marks alerts with specified ids as RESOLVED in batch and returns resolved alerts.
+	MarkAlertsResolvedBatch(ctx context.Context, id ...string) ([]*storage.Alert, error)
 
 	DeleteAlerts(ctx context.Context, ids ...string) error
 }
