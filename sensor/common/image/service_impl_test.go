@@ -137,10 +137,10 @@ func (s *imageServiceSuite) TestGetImage() {
 		s.Run(testName, func() {
 			s.createImageService()
 			s.service.Notify(c.notify)
-			c.expectCache.run()
-			c.expectRegistry.run()
-			c.expectCentralCall.run()
-			c.expectLocalScan.run()
+			c.expectCache.runIfSet()
+			c.expectRegistry.runIfSet()
+			c.expectCentralCall.runIfSet()
+			c.expectLocalScan.runIfSet()
 			res, err := s.service.GetImage(ctx, c.request)
 			if c.expectedError != nil {
 				s.Assert().EqualError(err, c.expectedError.Error())
@@ -186,7 +186,7 @@ func expectLocalScan(mockLocalScan *imageMocks.MocklocalScan, times int, retValu
 
 type expectFn func()
 
-func (f expectFn) run() {
+func (f expectFn) runIfSet() {
 	if f != nil {
 		f()
 	}
