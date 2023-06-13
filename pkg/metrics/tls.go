@@ -21,12 +21,11 @@ import (
 )
 
 type tlsConfigLoader struct {
-	TLSConfig *tls.Config
-
 	certDir           string
-	clientCANamespace string
 	clientCAConfigMap string
+	clientCANamespace string
 	k8sClient         *kubernetes.Clientset
+	tlsConfig         *tls.Config
 
 	cfgMutex sync.RWMutex
 }
@@ -36,12 +35,12 @@ func NewTLSConfigLoader(certDir, clientCANamespace, clientCAConfigMap string) (*
 	tlsRootConfig := verifier.DefaultTLSServerConfig(nil, nil)
 	tlsRootConfig.ClientAuth = tls.RequireAndVerifyClientCert
 	loader := &tlsConfigLoader{
-		TLSConfig:         tlsRootConfig,
 		certDir:           certDir,
 		clientCANamespace: clientCANamespace,
 		clientCAConfigMap: clientCAConfigMap,
+		tlsConfig:         tlsRootConfig,
 	}
-	loader.TLSConfig.GetConfigForClient = loader.getClientConfigFunc()
+	loader.tlsConfig.GetConfigForClient = loader.getClientConfigFunc()
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -64,11 +63,18 @@ func (t *tlsConfigLoader) WatchForChanges() {
 	go t.watchForClientCAChanges()
 }
 
+func (t *tlsConfigLoader) TLSConfig() *tls.Config {
+	if t == nil {
+		return nil
+	}
+	return t.tlsConfig
+}
+
 func (t *tlsConfigLoader) getClientConfigFunc() func(*tls.ClientHelloInfo) (*tls.Config, error) {
 	return func(clientHello *tls.ClientHelloInfo) (*tls.Config, error) {
 		t.cfgMutex.RLock()
 		defer t.cfgMutex.RUnlock()
-		return t.TLSConfig, nil
+		return t.tlsConfig, nil
 	}
 }
 
@@ -107,7 +113,7 @@ func (t *tlsConfigLoader) getCertificateFromDirectory(dir string) (*tls.Certific
 func (t *tlsConfigLoader) updateCertificate(cert *tls.Certificate) {
 	t.cfgMutex.Lock()
 	defer t.cfgMutex.Unlock()
-	t.TLSConfig.Certificates = []tls.Certificate{*cert}
+	t.tlsConfig.Certificates = []tls.Certificate{*cert}
 }
 
 func (t *tlsConfigLoader) watchForClientCAChanges() {
@@ -140,7 +146,7 @@ func (t *tlsConfigLoader) updateClientCA(eventChannel <-chan watch.Event) {
 						caCertPool.AppendCertsFromPEM(caCert)
 
 						t.cfgMutex.Lock()
-						t.TLSConfig.ClientCAs = caCertPool
+						t.tlsConfig.ClientCAs = caCertPool
 						t.cfgMutex.Unlock()
 					}
 				}

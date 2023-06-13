@@ -1,6 +1,10 @@
 package metrics
 
 import (
+	"context"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -40,8 +44,8 @@ func TestMetricsServerAddressEnvs(t *testing.T) {
 			server := NewServer(CentralSubsystem)
 
 			require.NotNil(t, server)
-			assert.Equal(t, env.MetricsPort.Setting(), server.Address)
-			assert.Equal(t, env.SecureMetricsPort.Setting(), server.SecureAddress)
+			assert.Equal(t, env.MetricsPort.Setting(), server.metricsServer.Addr)
+			assert.Equal(t, env.SecureMetricsPort.Setting(), server.secureMetricsServer.Addr)
 		})
 	}
 }
@@ -81,12 +85,33 @@ func TestMetricsServerPanic(t *testing.T) {
 			}
 			t.Setenv(env.MetricsPort.EnvVar(), c.metricsPort)
 			t.Setenv(env.SecureMetricsPort.EnvVar(), c.secureMetricsPort)
+			server := NewServer(CentralSubsystem)
 
 			if c.releaseBuild {
-				assert.NotPanics(t, func() { NewServer(CentralSubsystem).RunForever() })
+				assert.NotPanics(t, func() { server.RunForever() })
 			} else {
-				assert.Panics(t, func() { NewServer(CentralSubsystem).RunForever() })
+				assert.Panics(t, func() { server.RunForever() })
 			}
+			server.Stop(context.TODO())
 		})
 	}
 }
+
+func TestMetricsServerHTTPRequest(t *testing.T) {
+	t.Setenv(env.SecureMetricsPort.EnvVar(), "disabled")
+	server := NewServer(CentralSubsystem)
+	server.RunForever()
+
+	request := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	recorder := httptest.NewRecorder()
+	server.metricsServer.Handler.ServeHTTP(recorder, request)
+	resp := recorder.Result()
+	_, err := ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+
+	resp.Body.Close()
+	server.Stop(context.TODO())
+}
+
+
+// TOOD: test https server

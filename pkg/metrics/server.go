@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	"crypto/tls"
+	"context"
 	"net/http"
 	"time"
 
@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
+	"go.uber.org/zap"
 )
 
 const (
@@ -21,16 +22,36 @@ var log = logging.LoggerForModule()
 
 // Server is a HTTP server for exporting Prometheus metrics.
 type Server struct {
-	Address         string
-	SecureAddress   string
-	Gatherer        prometheus.Gatherer
-	HandlerOpts     promhttp.HandlerOpts
-	tlsConfigLoader *tlsConfigLoader
-	uptimeMetric    prometheus.Gauge
+	metricsServer       *http.Server
+	secureMetricsServer *http.Server
+	tlsConfigLoader     *tlsConfigLoader
+	uptimeMetric        prometheus.Gauge
 }
 
 // NewServer creates and returns a new metrics http(s) server with configured settings.
 func NewServer(subsystem Subsystem) *Server {
+	mux := http.NewServeMux()
+	mux.Handle(metricsURLPath, promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{}))
+
+	var metricsServer *http.Server
+	if metricsEnabled() {
+		metricsServer = &http.Server{
+			Addr:    env.MetricsPort.Setting(),
+			Handler: mux,
+		}
+	}
+
+	var tlsConfigLoader *tlsConfigLoader
+	var secureMetricsServer *http.Server
+	if secureMetricsEnabled() {
+		tlsConfigLoader = createTLSConfigLoader()
+		secureMetricsServer = &http.Server{
+			Addr:      env.SecureMetricsPort.Setting(),
+			Handler:   mux,
+			TLSConfig: tlsConfigLoader.TLSConfig(),
+		}
+	}
+
 	uptimeMetric := prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: PrometheusNamespace,
 		Subsystem: subsystem.String(),
@@ -40,13 +61,11 @@ func NewServer(subsystem Subsystem) *Server {
 	// Allow the metric to be registered multiple times for tests
 	_ = prometheus.Register(uptimeMetric)
 
-	tlsLoader := createTLSConfigLoader()
 	return &Server{
-		Address:         env.MetricsPort.Setting(),
-		SecureAddress:   env.SecureMetricsPort.Setting(),
-		Gatherer:        prometheus.DefaultGatherer,
-		tlsConfigLoader: tlsLoader,
-		uptimeMetric:    uptimeMetric,
+		metricsServer:       metricsServer,
+		secureMetricsServer: secureMetricsServer,
+		tlsConfigLoader:     tlsConfigLoader,
+		uptimeMetric:        uptimeMetric,
 	}
 }
 
@@ -55,23 +74,35 @@ func (s *Server) RunForever() {
 	if s == nil {
 		return
 	}
-	mux := http.NewServeMux()
-	mux.Handle(metricsURLPath, promhttp.HandlerFor(s.Gatherer, s.HandlerOpts))
 
 	runMetrics := metricsEnabled() && metricsValid()
 	if runMetrics {
-		go runForever(s.Address, mux)
+		go runForever(s.metricsServer)
 	}
 
 	runSecureMetrics := secureMetricsEnabled() && s.secureMetricsValid()
 	if runSecureMetrics {
 		s.tlsConfigLoader.WatchForChanges()
-		tlsConfig := s.tlsConfigLoader.TLSConfig
-		go runForeverTLS(s.SecureAddress, mux, tlsConfig)
+		go runForeverTLS(s.secureMetricsServer)
 	}
 
 	if runMetrics || runSecureMetrics {
 		go gatherUptimeMetricForever(time.Now(), s.uptimeMetric)
+	}
+}
+
+func (s *Server) Stop(ctx context.Context) {
+	if metricsEnabled() {
+		if err := s.metricsServer.Shutdown(ctx); err != nil {
+			log.Errorw("Failed to shutdown metrics server", zap.Error(err))
+			s.metricsServer.Close()
+		}
+	}
+	if secureMetricsEnabled() {
+		if err := s.secureMetricsServer.Shutdown(ctx); err != nil {
+			log.Errorw("Failed to shutdown secure metrics server", zap.Error(err))
+			s.secureMetricsServer.Close()
+		}
 	}
 }
 
@@ -134,23 +165,16 @@ func gatherUptimeMetricForever(startTime time.Time, uptimeMetric prometheus.Gaug
 	}
 }
 
-func runForever(address string, mux *http.ServeMux) {
-	server := &http.Server{
-		Addr:    address,
-		Handler: mux,
+func runForever(server *http.Server) {
+	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+		// The HTTP server should never terminate.
+		log.Panicf("Unexpected termination of metrics server %q: %v", server.Addr, err)
 	}
-	err := server.ListenAndServe()
-	// The HTTP server should never terminate.
-	log.Panicf("Unexpected termination of metrics server %q: %v", server.Addr, err)
 }
 
-func runForeverTLS(address string, mux *http.ServeMux, tlsConfig *tls.Config) {
-	server := &http.Server{
-		Addr:      address,
-		Handler:   mux,
-		TLSConfig: tlsConfig,
+func runForeverTLS(server *http.Server) {
+	if err := server.ListenAndServeTLS("", ""); !errors.Is(err, http.ErrServerClosed) {
+		// The HTTPS server should never terminate.
+		log.Panicf("Unexpected termination of secure metrics server %q: %v", server.Addr, err)
 	}
-	err := server.ListenAndServeTLS("", "")
-	// The HTTPS server should never terminate.
-	log.Panicf("Unexpected termination of secure metrics server %q: %v", server.Addr, err)
 }
