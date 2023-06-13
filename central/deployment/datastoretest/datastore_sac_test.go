@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentTypes "github.com/stackrox/rox/central/deployment/store/types"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
@@ -17,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
@@ -41,10 +39,6 @@ type deploymentIDs struct {
 
 type deploymentDatastoreSACSuite struct {
 	suite.Suite
-
-	// Elements for bleve+rocksdb mode
-	engine *rocksdb.RocksDB
-	index  bleve.Index
 
 	// Elements for postgres mode
 	pool postgres.DB

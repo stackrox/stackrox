@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/image/datastore"
 	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
@@ -17,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
@@ -33,10 +31,6 @@ func TestImageDataStoreSAC(t *testing.T) {
 
 type imageDatastoreSACSuite struct {
 	suite.Suite
-
-	// Elements for bleve+rocksdb mode
-	engine *rocksdb.RocksDB
-	index  bleve.Index
 
 	// Elements for postgres mode
 	pgtestbase *pgtest.TestPostgres

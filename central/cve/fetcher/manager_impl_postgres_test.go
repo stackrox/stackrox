@@ -20,9 +20,6 @@ import (
 	"github.com/stackrox/rox/central/cve/matcher"
 	mockImageDataStore "github.com/stackrox/rox/central/image/datastore/mocks"
 	mockNSDataStore "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	netEntitiesMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
-	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -435,38 +432,29 @@ type TestClusterCVEOpsInPostgresTestSuite struct {
 
 	mockCtrl            *gomock.Controller
 	ctx                 context.Context
-	testPostgres        pgtest.TestPostgres
+	testPostgres        *pgtest.TestPostgres
 	clusterDataStore    clusterDS.DataStore
 	clusterCVEDatastore clusterCVEDataStore.DataStore
 	mockNamespaces      *mockNSDataStore.MockDataStore
-	netEntities         *netEntitiesMocks.MockEntityDataStore
-	nodeDataStore       *nodeMocks.MockDataStore
-	netFlows            *netFlowsMocks.MockClusterDataStore
 	mockImages          *mockImageDataStore.MockDataStore
 	cveManager          *orchestratorCVEManager
 }
 
 func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
-	testDB := pgtest.ForT(s.T())
+	s.testPostgres = pgtest.ForT(s.T())
 	s.mockCtrl = gomock.NewController(s.T())
-	defer s.mockCtrl.Finish()
 
 	// Create cluster datastore
 	s.mockNamespaces = mockNSDataStore.NewMockDataStore(s.mockCtrl)
-	s.netEntities = netEntitiesMocks.NewMockEntityDataStore(s.mockCtrl)
-	s.nodeDataStore = nodeMocks.NewMockDataStore(s.mockCtrl)
-	s.netFlows = netFlowsMocks.NewMockClusterDataStore(s.mockCtrl)
 	s.mockImages = mockImageDataStore.NewMockDataStore(s.mockCtrl)
 
 	// Create cluster cve datastore
-	clusterCVEDatastore, err := clusterCVEDataStore.GetTestPostgresDataStore(s.T(), testDB.DB)
+	clusterCVEDatastore, err := clusterCVEDataStore.GetTestPostgresDataStore(s.T(), s.testPostgres.DB)
 	s.NoError(err)
 	s.clusterCVEDatastore = clusterCVEDatastore
 
-	s.nodeDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
-	s.netEntities.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
-	clusterDataStore, err := clusterDS.GetTestPostgresDataStore(s.T(), testDB)
+	clusterDataStore, err := clusterDS.GetTestPostgresDataStore(s.T(), s.testPostgres.DB)
 	s.NoError(err)
 	s.clusterDataStore = clusterDataStore
 
@@ -487,7 +475,6 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TearDownSuite() {
 
 func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	// Upsert cluster.
-	s.netFlows.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Return(netFlowsMocks.NewMockFlowDataStore(s.mockCtrl), nil)
 	c1ID, err := s.clusterDataStore.AddCluster(s.ctx, &storage.Cluster{
 		Name:               "c1",
 		Labels:             map[string]string{"env": "prod", "team": "team"},
@@ -497,7 +484,6 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	s.NoError(err)
 
 	// Upsert cluster.
-	s.netFlows.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Return(netFlowsMocks.NewMockFlowDataStore(s.mockCtrl), nil)
 	c2ID, err := s.clusterDataStore.AddCluster(s.ctx, &storage.Cluster{
 		Name:               "c2",
 		Labels:             map[string]string{"env": "test", "team": "team"},
@@ -507,7 +493,6 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	s.NoError(err)
 
 	// Upsert cluster.
-	s.netFlows.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Return(netFlowsMocks.NewMockFlowDataStore(s.mockCtrl), nil)
 	c3ID, err := s.clusterDataStore.AddCluster(s.ctx, &storage.Cluster{
 		Name:               "c3",
 		Labels:             map[string]string{"env": "test", "team": "team"},
