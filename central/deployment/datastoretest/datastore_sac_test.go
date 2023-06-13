@@ -13,11 +13,6 @@ import (
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox"
-	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -48,11 +43,8 @@ type deploymentDatastoreSACSuite struct {
 	suite.Suite
 
 	// Elements for bleve+rocksdb mode
-	engine   *rocksdb.RocksDB
-	index    bleve.Index
-	dacky    *dackbox.DackBox
-	keyFence dackboxConcurrency.KeyFence
-	indexQ   queue.WaitableQueue
+	engine *rocksdb.RocksDB
+	index  bleve.Index
 
 	// Elements for postgres mode
 	pool postgres.DB
@@ -92,12 +84,7 @@ func (s *deploymentDatastoreSACSuite) SetupSuite() {
 }
 
 func (s *deploymentDatastoreSACSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	} else {
-		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
-		s.Require().NoError(s.index.Close())
-	}
+	s.pool.Close()
 }
 
 func (s *deploymentDatastoreSACSuite) SetupTest() {
@@ -122,15 +109,6 @@ func (s *deploymentDatastoreSACSuite) deleteDeployment(clusterID string, deploym
 func (s *deploymentDatastoreSACSuite) deleteNamespace(namespaceID string) {
 	err := s.namespaceStore.RemoveNamespace(sac.WithAllAccess(context.Background()), namespaceID)
 	s.NoError(err)
-}
-
-func (s *deploymentDatastoreSACSuite) waitForIndexing() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		// Some cases need to wait for dackbox indexing to complete.
-		doneSignal := concurrency.NewSignal()
-		s.indexQ.PushSignal(&doneSignal)
-		<-doneSignal.Done()
-	}
 }
 
 func (s *deploymentDatastoreSACSuite) pushDeploymentToStore(clusterID string, namespaceName string) *storage.Deployment {
@@ -171,7 +149,7 @@ func (s *deploymentDatastoreSACSuite) setupMultipleDeploymentReadTest() ([]strin
 		deploymentID3: deployment3,
 		deploymentID4: deployment4,
 	}
-	s.waitForIndexing()
+
 	return pushedIDs, IDtoDeployment, map[string]multipleDeploymentReadTestCase{
 		"(full) read-only can see all deployments": {
 			ScopeKey:              testutils.UnrestrictedReadCtx,
@@ -260,7 +238,6 @@ func (s *deploymentDatastoreSACSuite) setupSearchTest() {
 			deploymentID: d.GetId(),
 		})
 	}
-	s.waitForIndexing()
 }
 
 func (s *deploymentDatastoreSACSuite) TestUpsertDeployment() {
@@ -295,7 +272,6 @@ func (s *deploymentDatastoreSACSuite) TestUpsertDeployment() {
 
 func (s *deploymentDatastoreSACSuite) TestGetDeployment() {
 	deployment := s.pushDeploymentToStore(testconsts.Cluster2, testconsts.NamespaceB)
-	s.waitForIndexing()
 	deployment.Priority = 1
 
 	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
@@ -355,7 +331,7 @@ func (s *deploymentDatastoreSACSuite) TestGetDeployments() {
 }
 
 func (s *deploymentDatastoreSACSuite) TestGetDeploymentIDs() {
-	pushedIDs, _, cases := s.setupMultipleDeploymentReadTest()
+	_, _, cases := s.setupMultipleDeploymentReadTest()
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -363,11 +339,7 @@ func (s *deploymentDatastoreSACSuite) TestGetDeploymentIDs() {
 			fetchedIDs, getErr := s.datastore.GetDeploymentIDs(ctx)
 			s.Require().NoError(getErr)
 			// Note: the behaviour change may impact policy dry runs if the requester does not have full namespace scope.
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				s.ElementsMatch(fetchedIDs, c.ExpectedDeploymentIDs)
-			} else {
-				s.ElementsMatch(fetchedIDs, pushedIDs)
-			}
+			s.ElementsMatch(fetchedIDs, c.ExpectedDeploymentIDs)
 		})
 	}
 }
@@ -393,7 +365,6 @@ func (s *deploymentDatastoreSACSuite) runGetImagesForDeploymentTest(testContexts
 	s.Require().NoError(err)
 	deployment := s.pushDeploymentToStore(testconsts.Cluster2, testconsts.NamespaceB)
 	imageFromDeployment := fixtures.LightweightDeploymentImage()
-	s.waitForIndexing()
 
 	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
 

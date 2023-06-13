@@ -13,15 +13,8 @@ import (
 	"github.com/golang/mock/gomock"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	mockClusterDataStore "github.com/stackrox/rox/central/cluster/datastore/mocks"
-	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
-	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
-	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
-	clusterCVEEdgePostgres "github.com/stackrox/rox/central/clustercveedge/datastore/store/postgres"
-	clusterCVEEdgeSearch "github.com/stackrox/rox/central/clustercveedge/search"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	mockCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
-	clusterCVESearch "github.com/stackrox/rox/central/cve/cluster/datastore/search"
-	clusterCVEPostgres "github.com/stackrox/rox/central/cve/cluster/datastore/store/postgres"
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	"github.com/stackrox/rox/central/cve/matcher"
@@ -30,10 +23,8 @@ import (
 	netEntitiesMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
-	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -41,11 +32,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/gorm"
 )
 
 func TestReconcileIstioCVEsInPostgres(t *testing.T) {
-
 	cluster := &storage.Cluster{
 		Id:   "test_cluster_id1",
 		Name: "cluster1",
@@ -446,8 +435,7 @@ type TestClusterCVEOpsInPostgresTestSuite struct {
 
 	mockCtrl            *gomock.Controller
 	ctx                 context.Context
-	db                  postgres.DB
-	gormDB              *gorm.DB
+	testPostgres        pgtest.TestPostgres
 	clusterDataStore    clusterDS.DataStore
 	clusterCVEDatastore clusterCVEDataStore.DataStore
 	mockNamespaces      *mockNSDataStore.MockDataStore
@@ -460,18 +448,7 @@ type TestClusterCVEOpsInPostgresTestSuite struct {
 
 func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := postgres.ParseConfig(source)
-	s.NoError(err)
-
-	db, err := postgres.New(s.ctx, config)
-	s.NoError(err)
-	s.db = db
-
-	s.gormDB = pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), s.gormDB)
-
+	testDB := pgtest.ForT(s.T())
 	s.mockCtrl = gomock.NewController(s.T())
 	defer s.mockCtrl.Finish()
 
@@ -483,32 +460,15 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
 	s.mockImages = mockImageDataStore.NewMockDataStore(s.mockCtrl)
 
 	// Create cluster cve datastore
-	clusterCVEPostgres.Destroy(s.ctx, db)
-	clusterCVEStorage := clusterCVEPostgres.NewFullTestStore(s.T(), db, clusterCVEPostgres.CreateTableAndNewStore(s.ctx, db, s.gormDB))
-	clusterCVEIndexer := clusterCVEPostgres.NewIndexer(db)
-	clusterCVESearcher := clusterCVESearch.New(clusterCVEStorage, clusterCVEIndexer)
-	clusterCVEDS, err := clusterCVEDataStore.New(clusterCVEStorage, clusterCVEIndexer, clusterCVESearcher)
+	clusterCVEDatastore, err := clusterCVEDataStore.GetTestPostgresDataStore(s.T(), testDB.DB)
 	s.NoError(err)
-	s.clusterCVEDatastore = clusterCVEDS
+	s.clusterCVEDatastore = clusterCVEDatastore
 
 	s.nodeDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	s.netEntities.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
-	clusterPostgres.Destroy(s.ctx, db)
-	clusterDataStore, err := clusterDS.New(
-		clusterPostgres.CreateTableAndNewStore(s.ctx, db, s.gormDB),
-		clusterHealthPostgres.CreateTableAndNewStore(s.ctx, db, s.gormDB),
-		s.clusterCVEDatastore, nil, nil, s.mockNamespaces, nil, s.nodeDataStore, nil, nil,
-		s.netFlows, s.netEntities, nil, nil, nil, nil, nil, ranking.ClusterRanker(), clusterPostgres.NewIndexer(db), nil)
+	clusterDataStore, err := clusterDS.GetTestPostgresDataStore(s.T(), testDB)
 	s.NoError(err)
 	s.clusterDataStore = clusterDataStore
-
-	// Create cluster cve edge datastore
-	clusterCVEEdgePostgres.Destroy(s.ctx, db)
-	clusterCVEEdgeStorage := clusterCVEEdgePostgres.NewFullTestStore(s.T(), clusterCVEEdgePostgres.CreateTableAndNewStore(s.ctx, db, s.gormDB))
-	clusterCVEEdgeIndexer := clusterCVEEdgePostgres.NewIndexer(db)
-	clusterCVEEdgeSearcher := clusterCVEEdgeSearch.NewV2(clusterCVEEdgeStorage, clusterCVEEdgeIndexer)
-	_, err = clusterCVEEdgeDataStore.New(nil, clusterCVEEdgeStorage, clusterCVEEdgeIndexer, clusterCVEEdgeSearcher)
-	s.NoError(err)
 
 	// Create cve manager
 	cveMatcher, err := matcher.NewCVEMatcher(clusterDataStore, s.mockNamespaces, s.mockImages)
@@ -516,15 +476,13 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
 
 	s.cveManager = &orchestratorCVEManager{
 		clusterDataStore:    clusterDataStore,
-		clusterCVEDataStore: clusterCVEDS,
+		clusterCVEDataStore: clusterCVEDatastore,
 		cveMatcher:          cveMatcher,
 	}
 }
 
 func (s *TestClusterCVEOpsInPostgresTestSuite) TearDownSuite() {
-	s.db.Close()
-	pgtest.CloseGormDB(s.T(), s.gormDB)
-	s.mockCtrl.Finish()
+	s.testPostgres.Teardown(s.T())
 }
 
 func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {

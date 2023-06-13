@@ -73,7 +73,7 @@ func (s *ImagePostgresDataStoreTestSuite) SetupTest() {
 	componentStorage := imageComponentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	componentIndexer := imageComponentPostgres.NewIndexer(s.db)
 	componentSearcher := imageComponentSearch.NewV2(componentStorage, componentIndexer)
-	s.componentDataStore = imageComponentDS.New(nil, componentStorage, componentIndexer, componentSearcher, s.mockRisk, ranking.NewRanker())
+	s.componentDataStore = imageComponentDS.New(componentStorage, componentSearcher, s.mockRisk, ranking.NewRanker())
 
 	cveStorage := imageCVEPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	cveIndexer := imageCVEPostgres.NewIndexer(s.db)

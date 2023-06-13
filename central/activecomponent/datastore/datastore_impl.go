@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
@@ -20,10 +19,9 @@ var (
 )
 
 type datastoreImpl struct {
-	storage       store.Store
-	graphProvider graph.Provider
-	indexer       index.Indexer
-	searcher      search.Searcher
+	storage  store.Store
+	indexer  index.Indexer
+	searcher search.Searcher
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, query *v1.Query) ([]pkgSearch.Result, error) {

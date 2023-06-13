@@ -8,15 +8,13 @@ import (
 	"github.com/stackrox/rox/central/imagecomponentedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 type datastoreImpl struct {
-	storage       store.Store
-	indexer       index.Indexer
-	searcher      search.Searcher
-	graphProvider graph.Provider
+	storage  store.Store
+	indexer  index.Indexer
+	searcher search.Searcher
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {

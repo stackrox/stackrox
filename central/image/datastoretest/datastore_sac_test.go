@@ -13,12 +13,6 @@ import (
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox"
-	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -41,11 +35,8 @@ type imageDatastoreSACSuite struct {
 	suite.Suite
 
 	// Elements for bleve+rocksdb mode
-	engine   *rocksdb.RocksDB
-	index    bleve.Index
-	dacky    *dackbox.DackBox
-	keyFence dackboxConcurrency.KeyFence
-	indexQ   queue.WaitableQueue
+	engine *rocksdb.RocksDB
+	index  bleve.Index
 
 	// Elements for postgres mode
 	pgtestbase *pgtest.TestPostgres
@@ -84,12 +75,7 @@ func (s *imageDatastoreSACSuite) SetupSuite() {
 }
 
 func (s *imageDatastoreSACSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase.DB.Close()
-	} else {
-		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
-		s.Require().NoError(s.index.Close())
-	}
+	s.pgtestbase.Close()
 }
 
 func (s *imageDatastoreSACSuite) SetupTest() {
@@ -99,15 +85,6 @@ func (s *imageDatastoreSACSuite) SetupTest() {
 func (s *imageDatastoreSACSuite) TearDownTest() {
 	for _, id := range s.testImageIDs {
 		s.deleteImage(id)
-	}
-}
-
-func (s *imageDatastoreSACSuite) waitForIndexing() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		// Some cases need to wait for dackbox indexing to complete.
-		doneSignal := concurrency.NewSignal()
-		s.indexQ.PushSignal(&doneSignal)
-		<-doneSignal.Done()
 	}
 }
 
@@ -124,18 +101,12 @@ func (s *imageDatastoreSACSuite) deleteNamespace(id string) {
 }
 
 func getImageCVEID(cve string) string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return cve + "#crime-stories"
-	}
-	return cve
+	return cve + "#crime-stories"
 }
 
 // getImageCVEEdgeID returns base 64 encoded Image:CVE ids
 func getImageCVEEdgeID(image, cve string) string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return pgSearch.IDFromPks([]string{image, getImageCVEID(cve)})
-	}
-	return edges.EdgeID{ParentID: image, ChildID: getImageCVEID(cve)}.ToString()
+	return pgSearch.IDFromPks([]string{image, getImageCVEID(cve)})
 }
 
 func (s *imageDatastoreSACSuite) verifyListImagesEqual(image1, image2 *storage.ListImage) {
@@ -321,7 +292,6 @@ func (s *imageDatastoreSACSuite) setupReadTest() ([]*storage.Image, func(), erro
 	if setupErr != nil {
 		return nil, cleanup, setupErr
 	}
-	s.waitForIndexing()
 	return images, cleanup, nil
 }
 
@@ -424,39 +394,37 @@ func (s *imageDatastoreSACSuite) TestGetImageMetadata() {
 		})
 	}
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.Require().True(len(images) > 1)
-		image2 := images[1]
-		// Test GetManyImageMetadata in postgres mode (only supported mode).
-		for name, testCase := range cases {
-			s.Run("Many_"+name, func() {
-				ctx := s.testContexts[testCase.ScopeKey]
-				readMeta, err := s.datastore.GetManyImageMetadata(ctx, []string{image.GetId(), image2.GetId()})
-				s.Require().NoError(err)
-				if testCase.ExpectedFound {
-					s.Require().Equal(2, len(readMeta))
-					readImageMeta1 := readMeta[0]
-					readImageMeta2 := readMeta[1]
-					if readImageMeta1.GetId() == image.GetId() {
-						s.Equal(image.GetId(), readImageMeta1.GetId())
-						s.Equal(image.GetComponents(), readImageMeta1.GetComponents())
-						s.Equal(image.GetCves(), readImageMeta1.GetCves())
-						s.Equal(image2.GetId(), readImageMeta2.GetId())
-						s.Equal(image2.GetComponents(), readImageMeta2.GetComponents())
-						s.Equal(image2.GetCves(), readImageMeta2.GetCves())
-					} else {
-						s.Equal(image2.GetId(), readImageMeta1.GetId())
-						s.Equal(image2.GetComponents(), readImageMeta1.GetComponents())
-						s.Equal(image2.GetCves(), readImageMeta1.GetCves())
-						s.Equal(image.GetId(), readImageMeta2.GetId())
-						s.Equal(image.GetComponents(), readImageMeta2.GetComponents())
-						s.Equal(image.GetCves(), readImageMeta2.GetCves())
-					}
+	s.Require().True(len(images) > 1)
+	image2 := images[1]
+	// Test GetManyImageMetadata in postgres mode (only supported mode).
+	for name, testCase := range cases {
+		s.Run("Many_"+name, func() {
+			ctx := s.testContexts[testCase.ScopeKey]
+			readMeta, err := s.datastore.GetManyImageMetadata(ctx, []string{image.GetId(), image2.GetId()})
+			s.Require().NoError(err)
+			if testCase.ExpectedFound {
+				s.Require().Equal(2, len(readMeta))
+				readImageMeta1 := readMeta[0]
+				readImageMeta2 := readMeta[1]
+				if readImageMeta1.GetId() == image.GetId() {
+					s.Equal(image.GetId(), readImageMeta1.GetId())
+					s.Equal(image.GetComponents(), readImageMeta1.GetComponents())
+					s.Equal(image.GetCves(), readImageMeta1.GetCves())
+					s.Equal(image2.GetId(), readImageMeta2.GetId())
+					s.Equal(image2.GetComponents(), readImageMeta2.GetComponents())
+					s.Equal(image2.GetCves(), readImageMeta2.GetCves())
 				} else {
-					s.Equal(0, len(readMeta))
+					s.Equal(image2.GetId(), readImageMeta1.GetId())
+					s.Equal(image2.GetComponents(), readImageMeta1.GetComponents())
+					s.Equal(image2.GetCves(), readImageMeta1.GetCves())
+					s.Equal(image.GetId(), readImageMeta2.GetId())
+					s.Equal(image.GetComponents(), readImageMeta2.GetComponents())
+					s.Equal(image.GetCves(), readImageMeta2.GetCves())
 				}
-			})
-		}
+			} else {
+				s.Equal(0, len(readMeta))
+			}
+		})
 	}
 }
 
@@ -662,9 +630,7 @@ func (s *imageDatastoreSACSuite) setupSearchTest() (func(), error) {
 		return cleanup, setupErr
 	}
 
-	s.waitForIndexing()
 	return cleanup, nil
-
 }
 
 func (s *imageDatastoreSACSuite) TestCountImages() {

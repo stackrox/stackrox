@@ -9,8 +9,6 @@ import (
 	dackboxTestUtils "github.com/stackrox/rox/central/dackbox/testutils"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -50,11 +48,11 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) SetupSuite() {
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TearDownSuite() {
-	s.Require().NoError(s.dackboxTestStore.Cleanup(s.T()))
+	s.dackboxTestStore.Cleanup(s.T())
 }
 
-func (s *imageComponentEdgeDatastoreSACTestSuite) cleanImageToVulnerabilityGraph(waitForIndexing bool) {
-	s.Require().NoError(s.dackboxTestStore.CleanImageToVulnerabilitiesGraph(waitForIndexing))
+func (s *imageComponentEdgeDatastoreSACTestSuite) cleanImageToVulnerabilityGraph() {
+	s.Require().NoError(s.dackboxTestStore.CleanImageToVulnerabilitiesGraph())
 }
 
 func getComponentID(component *storage.EmbeddedImageScanComponent, os string) string {
@@ -64,10 +62,7 @@ func getComponentID(component *storage.EmbeddedImageScanComponent, os string) st
 func getEdgeID(image *storage.Image, component *storage.EmbeddedImageScanComponent, os string) string {
 	imageID := image.GetId()
 	componentID := getComponentID(component, os)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return pgSearch.IDFromPks([]string{imageID, componentID})
-	}
-	return edges.EdgeID{ParentID: imageID, ChildID: componentID}.ToString()
+	return pgSearch.IDFromPks([]string{imageID, componentID})
 }
 
 type edgeTestCase struct {
@@ -179,8 +174,8 @@ var (
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestExistsEdge() {
 	// Inject the fixture graph and test for image1 to component1 edge
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilityGraph(dontWaitForIndexing)
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
 
 	targetEdgeID := img1cmp1edge
@@ -194,8 +189,8 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestExistsEdge() {
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetEdge() {
 	// Inject the fixtures graph and fetch the image1 to component1 edge
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilityGraph(dontWaitForIndexing)
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
 
 	targetEdgeID := img1cmp1edge
@@ -219,8 +214,8 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetEdge() {
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 	// Inject the fixtures graph and fetch the image1 to component1 and image2 to component 4 edges
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilityGraph(dontWaitForIndexing)
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
 
 	targetEdge1ID := img1cmp1edge
@@ -260,12 +255,8 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestCount() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("graph.Context wrapper missing in ImageComponentEdge searcher",
-			"to enable Search test case in non-postgres mode")
-	}
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanImageToVulnerabilityGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
 
 	for _, c := range testCases {
@@ -283,12 +274,8 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestCount() {
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearch() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("graph.Context wrapper missing in ImageComponentEdge searcher",
-			"to enable Search test case in non-postgres mode")
-	}
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanImageToVulnerabilityGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
 
 	for _, c := range testCases {
@@ -309,12 +296,8 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearch() {
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("graph.Context wrapper missing in ImageComponentEdge searcher",
-			"to enable Search test case in non-postgres mode")
-	}
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanImageToVulnerabilityGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
 
 	for _, c := range testCases {
@@ -336,12 +319,8 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("graph.Context wrapper missing in ImageComponentEdge searcher",
-			"to enable Search test case in non-postgres mode")
-	}
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanImageToVulnerabilityGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
 
 	for _, c := range testCases {

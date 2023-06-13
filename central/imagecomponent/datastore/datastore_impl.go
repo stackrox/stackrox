@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/imagecomponent/index"
 	"github.com/stackrox/rox/central/imagecomponent/search"
 	"github.com/stackrox/rox/central/imagecomponent/store"
 	"github.com/stackrox/rox/central/ranking"
@@ -11,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -22,10 +20,8 @@ var (
 )
 
 type datastoreImpl struct {
-	storage       store.Store
-	indexer       index.Indexer
-	searcher      search.Searcher
-	graphProvider graph.Provider
+	storage  store.Store
+	searcher search.Searcher
 
 	risks                riskDataStore.DataStore
 	imageComponentRanker *ranking.Ranker

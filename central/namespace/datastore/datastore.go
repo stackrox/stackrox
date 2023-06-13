@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -44,7 +43,7 @@ type DataStore interface {
 }
 
 // New returns a new DataStore instance using the provided store and indexer
-func New(nsStore store.Store, _ graph.Provider, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker) (DataStore, error) {
+func New(nsStore store.Store, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker) (DataStore, error) {
 	ds := &datastoreImpl{
 		store:             nsStore,
 		indexer:           indexer,
@@ -64,7 +63,7 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 		return nil, err
 	}
 	namespaceRanker := ranking.NamespaceRanker()
-	return New(dbstore, nil, indexer, deploymentStore, namespaceRanker)
+	return New(dbstore, indexer, deploymentStore, namespaceRanker)
 }
 
 var (

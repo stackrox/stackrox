@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -16,7 +15,4 @@ type Store interface {
 
 	Get(ctx context.Context, id string) (*storage.ClusterCVEEdge, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ClusterCVEEdge, []int, error)
-
-	Upsert(ctx context.Context, cveParts ...converter.ClusterCVEParts) error
-	Delete(ctx context.Context, ids ...string) error
 }
