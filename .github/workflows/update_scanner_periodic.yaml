@@ -30,7 +30,7 @@ jobs:
         branch: update_scanner_version
         signoff: false
         delete-branch: true
-        title: Update SCANNER_VERSION
+        title: 'chore(scanner): Update SCANNER_VERSION'
         body: |
           Weekly update of SCANNER_VERSION to latest master version
         labels: |
