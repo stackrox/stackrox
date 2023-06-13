@@ -19,8 +19,8 @@ const (
 
 var log = logging.LoggerForModule()
 
-// MetricsServer is a HTTP server for exporting Prometheus metrics.
-type MetricsServer struct {
+// Server is a HTTP server for exporting Prometheus metrics.
+type Server struct {
 	Address         string
 	SecureAddress   string
 	Gatherer        prometheus.Gatherer
@@ -29,8 +29,8 @@ type MetricsServer struct {
 	uptimeMetric    prometheus.Gauge
 }
 
-// NewMetricsServer creates and returns a new metrics http(s) server with configured settings.
-func NewMetricsServer(subsystem Subsystem) *MetricsServer {
+// NewServer creates and returns a new metrics http(s) server with configured settings.
+func NewServer(subsystem Subsystem) *Server {
 	uptimeMetric := prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: PrometheusNamespace,
 		Subsystem: subsystem.String(),
@@ -41,7 +41,7 @@ func NewMetricsServer(subsystem Subsystem) *MetricsServer {
 	_ = prometheus.Register(uptimeMetric)
 
 	tlsLoader := createTLSConfigLoader()
-	return &MetricsServer{
+	return &Server{
 		Address:         env.MetricsPort.Setting(),
 		SecureAddress:   env.SecureMetricsPort.Setting(),
 		Gatherer:        prometheus.DefaultGatherer,
@@ -51,7 +51,7 @@ func NewMetricsServer(subsystem Subsystem) *MetricsServer {
 }
 
 // RunForever starts the HTTP and HTTPS server in the background.
-func (s *MetricsServer) RunForever() {
+func (s *Server) RunForever() {
 	if s == nil {
 		return
 	}
@@ -100,7 +100,7 @@ func secureMetricsEnabled() bool {
 	return true
 }
 
-func (s *MetricsServer) secureMetricsValid() bool {
+func (s *Server) secureMetricsValid() bool {
 	if err := env.ValidateSecureMetricsSetting(); err != nil {
 		utils.Should(errors.Wrap(err, "invalid secure metrics setting"))
 		log.Error(errors.Wrap(err, "secure metrics server is disabled"))

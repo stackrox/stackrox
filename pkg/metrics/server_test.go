@@ -37,7 +37,7 @@ func TestMetricsServerAddressEnvs(t *testing.T) {
 			t.Setenv(env.MetricsPort.EnvVar(), c.metricsPort)
 			t.Setenv(env.SecureMetricsPort.EnvVar(), c.secureMetricsPort)
 
-			server := NewMetricsServer(CentralSubsystem)
+			server := NewServer(CentralSubsystem)
 
 			require.NotNil(t, server)
 			assert.Equal(t, env.MetricsPort.Setting(), server.Address)
@@ -83,9 +83,9 @@ func TestMetricsServerPanic(t *testing.T) {
 			t.Setenv(env.SecureMetricsPort.EnvVar(), c.secureMetricsPort)
 
 			if c.releaseBuild {
-				assert.NotPanics(t, func() { NewMetricsServer(CentralSubsystem).RunForever() })
+				assert.NotPanics(t, func() { NewServer(CentralSubsystem).RunForever() })
 			} else {
-				assert.Panics(t, func() { NewMetricsServer(CentralSubsystem).RunForever() })
+				assert.Panics(t, func() { NewServer(CentralSubsystem).RunForever() })
 			}
 		})
 	}

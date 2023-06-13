@@ -31,6 +31,7 @@ type tlsConfigLoader struct {
 	cfgMutex sync.RWMutex
 }
 
+// NewTLSConfigLoader creates a new TLS config loader.
 func NewTLSConfigLoader(certDir, clientCANamespace, clientCAConfigMap string) (*tlsConfigLoader, error) {
 	tlsRootConfig := verifier.DefaultTLSServerConfig(nil, nil)
 	tlsRootConfig.ClientAuth = tls.RequireAndVerifyClientCert
@@ -54,6 +55,7 @@ func NewTLSConfigLoader(certDir, clientCANamespace, clientCAConfigMap string) (*
 	return loader, nil
 }
 
+// WatchForChanges watches for changes of the server TLS certificate files and the client CA config map.
 func (t *tlsConfigLoader) WatchForChanges() {
 	// Watch for changes of server TLS certificate.
 	certwatch.WatchCertDir(t.certDir, t.getCertificateFromDirectory, t.updateCertificate)
