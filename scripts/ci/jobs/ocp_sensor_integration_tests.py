@@ -15,8 +15,5 @@ os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["ROX_ACTIVE_VULN_MGMT"] = "true"
 
 ClusterTestRunner(
-    pre_test=PreSystemTests(),
     test=SensorIntegration(),
-    post_test=NullPostTest(),
-    final_post=NullPostTest(),
 ).run()
