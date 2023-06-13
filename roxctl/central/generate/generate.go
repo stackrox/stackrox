@@ -203,7 +203,7 @@ func updateConfig(config *renderer.Config) error {
 		config.Environment[env.OfflineModeEnv.EnvVar()] = strconv.FormatBool(config.K8sConfig.OfflineMode)
 
 		if config.K8sConfig.Telemetry.Enabled &&
-			!(!version.IsReleaseVersion() && env.TelemetryStorageKey.Setting() == "") {
+			(version.IsReleaseVersion() || env.TelemetryStorageKey.Setting() != "") {
 			config.K8sConfig.Telemetry.StorageKey = env.TelemetryStorageKey.Setting()
 			config.K8sConfig.Telemetry.StorageEndpoint = env.TelemetryEndpoint.Setting()
 		} else {
