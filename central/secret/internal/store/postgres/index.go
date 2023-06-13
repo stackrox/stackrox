@@ -55,11 +55,3 @@ func (b *indexerImpl) DeleteSecret(id string) error {
 func (b *indexerImpl) DeleteSecrets(_ []string) error {
 	return nil
 }
-
-func (b *indexerImpl) MarkInitialIndexingComplete() error {
-	return nil
-}
-
-func (b *indexerImpl) NeedsInitialIndexing() (bool, error) {
-	return false, nil
-}

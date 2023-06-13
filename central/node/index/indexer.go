@@ -18,7 +18,5 @@ type Indexer interface {
 	Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteNode(id string) error
 	DeleteNodes(ids []string) error
-	MarkInitialIndexingComplete() error
-	NeedsInitialIndexing() (bool, error)
 	Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
 }

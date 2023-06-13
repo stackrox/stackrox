@@ -17,8 +17,6 @@ type Indexer interface {
 	AddImages(images []*storage.Image) error
 	DeleteImage(id string) error
 	DeleteImages(ids []string) error
-	MarkInitialIndexingComplete() error
-	NeedsInitialIndexing() (bool, error)
 	Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
 	Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 }
