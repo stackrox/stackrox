@@ -31,7 +31,7 @@ FormFieldRemoveButton.defaultProps = {
     field: null,
     dataTestId: 'form-field-remove-btn',
     className:
-        'ml-2 p-1 rounded-r-sm text-base-100 uppercase text-alert-700 hover:text-alert-800 bg-alert-200 hover:bg-alert-300 border-alert-300 rounded',
+        'ml-2 p-1 rounded-r-sm text-base-100 text-alert-700 hover:text-alert-800 bg-alert-200 hover:bg-alert-300 border-alert-300 rounded',
 };
 
 export default FormFieldRemoveButton;

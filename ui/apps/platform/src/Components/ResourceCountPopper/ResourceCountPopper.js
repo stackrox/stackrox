@@ -26,7 +26,7 @@ const ResourceCountPopper = ({ data, label, renderContent, reactOutsideClassName
             disabled={!length}
             placement="bottom"
             reactOutsideClassName={reactOutsideClassName}
-            buttonClass={`uppercase w-full rounded border border-base-400 bg-base-100 p-1 px-2 text-left text-xs ${
+            buttonClass={`w-full rounded border border-base-400 bg-base-100 p-1 px-2 text-left text-sm ${
                 length && 'hover:bg-base-200'
             }`}
             buttonContent={buttonContent}
