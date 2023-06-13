@@ -11,7 +11,6 @@ import (
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	cveConverterV2 "github.com/stackrox/rox/central/cve/converter/v2"
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	dackboxTestUtils "github.com/stackrox/rox/central/dackbox/testutils"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -41,7 +40,6 @@ type clusterCVEDatastoreSACSuite struct {
 	suite.Suite
 
 	pgStore          clusterCVEDataStore.DataStore
-	legacyStore      cveDataStore.DataStore
 	dackboxTestStore dackboxTestUtils.DackboxTestDataStore
 }
 
@@ -457,30 +455,16 @@ func embeddedVulnerabilityToClusterCVE(from *storage.EmbeddedVulnerability) *sto
 func (s *clusterCVEDatastoreSACSuite) checkCVEStored(targetCVE string,
 	cve *storage.EmbeddedVulnerability,
 	shouldBeStored bool) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		obj, found, err := s.pgStore.Get(allAccessCtx, targetCVE)
-		s.NoError(err)
-		if shouldBeStored {
-			s.True(found)
-			s.NotNil(obj)
-			s.Equal(cve.GetCvss(), obj.GetCvss())
-			s.Equal(cve.GetCvssV3().GetVector(), obj.GetCveBaseInfo().GetCvssV3().GetVector())
-		} else {
-			s.False(found)
-			s.Nil(obj)
-		}
+	obj, found, err := s.pgStore.Get(allAccessCtx, targetCVE)
+	s.NoError(err)
+	if shouldBeStored {
+		s.True(found)
+		s.NotNil(obj)
+		s.Equal(cve.GetCvss(), obj.GetCvss())
+		s.Equal(cve.GetCvssV3().GetVector(), obj.GetCveBaseInfo().GetCvssV3().GetVector())
 	} else {
-		obj, found, err := s.legacyStore.Get(allAccessCtx, targetCVE)
-		s.NoError(err)
-		if shouldBeStored {
-			s.True(found)
-			s.NotNil(obj)
-			s.Equal(cve.GetCvss(), obj.GetCvss())
-			s.Equal(cve.GetCvssV3().GetVector(), obj.GetCvssV3().GetVector())
-		} else {
-			s.False(found)
-			s.Nil(obj)
-		}
+		s.False(found)
+		s.Nil(obj)
 	}
 }
 
@@ -640,11 +624,7 @@ func (s *clusterCVEDatastoreSACSuite) runTestExistCVE(targetCVE string) {
 		s.Run(c.name, func() {
 			ctx := c.ctx
 			var exists bool
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				exists, err = s.pgStore.Exists(ctx, targetCVE)
-			} else {
-				exists, err = s.legacyStore.Exists(ctx, targetCVE)
-			}
+			exists, err = s.pgStore.Exists(ctx, targetCVE)
 			s.NoError(err)
 			s.Equal(c.visibleCVE[targetCVE], exists)
 		})
@@ -671,34 +651,19 @@ func (s *clusterCVEDatastoreSACSuite) runTestGetCVE(targetCVE string, cveObj *st
 	for _, c := range getClusterCVETestCases(s.T(), validClusters[0], validClusters[1], true) {
 		s.Run(c.name, func() {
 			ctx := c.ctx
-			var exists bool
 			var v3AttackVector string
 			var cvss float32
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				var obj *storage.ClusterCVE
-				obj, exists, err = s.pgStore.Get(ctx, targetCVE)
-				if c.visibleCVE[targetCVE] {
-					s.NotNil(obj)
-				} else {
-					s.Nil(obj)
-				}
-				if exists {
-					v3AttackVector = obj.GetCveBaseInfo().GetCvssV3().GetVector()
-					cvss = obj.GetCvss()
-				}
+			obj, exists, err := s.pgStore.Get(ctx, targetCVE)
+			if c.visibleCVE[targetCVE] {
+				s.NotNil(obj)
 			} else {
-				var obj *storage.CVE
-				obj, exists, err = s.legacyStore.Get(ctx, targetCVE)
-				if c.visibleCVE[targetCVE] {
-					s.NotNil(obj)
-				} else {
-					s.Nil(obj)
-				}
-				if exists {
-					v3AttackVector = obj.GetCvssV3().GetVector()
-					cvss = obj.GetCvss()
-				}
+				s.Nil(obj)
 			}
+			if exists {
+				v3AttackVector = obj.GetCveBaseInfo().GetCvssV3().GetVector()
+				cvss = obj.GetCvss()
+			}
+
 			if c.visibleCVE[targetCVE] {
 				s.Equal(cveObj.GetCvss(), cvss)
 				s.Equal(cveObj.GetCvssV3().GetVector(), v3AttackVector)
@@ -752,29 +717,17 @@ func (s *clusterCVEDatastoreSACSuite) TestGetBatch() {
 					visibleCVEs++
 				}
 			}
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				results, err := s.pgStore.GetBatch(ctx, targetCVEs)
-				s.NoError(err)
-				s.Equal(visibleCVEs, len(results))
-				for _, cve := range results {
-					cveName := cve.GetCveBaseInfo().GetCve()
-					cvss := cve.GetCvss()
-					v3AttackVector := cve.GetCveBaseInfo().GetCvssV3().GetVector()
-					vectorsPerCVE[cveName] = v3AttackVector
-					cvssPerCVE[cveName] = cvss
-				}
-			} else {
-				results, err := s.legacyStore.GetBatch(ctx, targetCVEs)
-				s.NoError(err)
-				s.Equal(visibleCVEs, len(results))
-				for _, cve := range results {
-					cveName := cve.GetId()
-					cvss := cve.GetCvss()
-					v3AttackVector := cve.GetCvssV3().GetVector()
-					vectorsPerCVE[cveName] = v3AttackVector
-					cvssPerCVE[cveName] = cvss
-				}
+			results, err := s.pgStore.GetBatch(ctx, targetCVEs)
+			s.NoError(err)
+			s.Equal(visibleCVEs, len(results))
+			for _, cve := range results {
+				cveName := cve.GetCveBaseInfo().GetCve()
+				cvss := cve.GetCvss()
+				v3AttackVector := cve.GetCveBaseInfo().GetCvssV3().GetVector()
+				vectorsPerCVE[cveName] = v3AttackVector
+				cvssPerCVE[cveName] = cvss
 			}
+
 			if c.visibleCVE[targetCVE1] {
 				s.Equal(cve1.GetCvssV3().GetVector(), vectorsPerCVE[targetCVE1])
 				s.Equal(cve1.GetCvss(), cvssPerCVE[targetCVE1])
@@ -808,15 +761,10 @@ func (s *clusterCVEDatastoreSACSuite) TestCount() {
 					visibleCVEs++
 				}
 			}
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				count, err := s.pgStore.Count(ctx, search.EmptyQuery())
-				s.NoError(err)
-				s.Equal(visibleCVEs, count)
-			} else {
-				count, err := s.legacyStore.Count(ctx, search.EmptyQuery())
-				s.NoError(err)
-				s.Equal(visibleCVEs, count)
-			}
+			count, err := s.pgStore.Count(ctx, search.EmptyQuery())
+			s.NoError(err)
+			s.Equal(visibleCVEs, count)
+
 		})
 	}
 }
@@ -839,21 +787,13 @@ func (s *clusterCVEDatastoreSACSuite) TestSearch() {
 				}
 			}
 			foundIDs := make([]string, 0, 3)
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				results, err := s.pgStore.Search(ctx, search.EmptyQuery())
-				s.NoError(err)
-				s.Equal(visibleCVEs, len(results))
-				for _, r := range results {
-					foundIDs = append(foundIDs, r.ID)
-				}
-			} else {
-				results, err := s.legacyStore.Search(ctx, search.EmptyQuery())
-				s.NoError(err)
-				s.Equal(visibleCVEs, len(results))
-				for _, r := range results {
-					foundIDs = append(foundIDs, r.ID)
-				}
+			results, err := s.pgStore.Search(ctx, search.EmptyQuery())
+			s.NoError(err)
+			s.Equal(visibleCVEs, len(results))
+			for _, r := range results {
+				foundIDs = append(foundIDs, r.ID)
 			}
+
 			for _, identifier := range foundIDs {
 				s.True(c.visibleCVE[identifier])
 			}
@@ -880,21 +820,13 @@ func (s *clusterCVEDatastoreSACSuite) TestSearchClusterCVEs() {
 				}
 			}
 			foundIDs := make([]string, 0, 3)
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				results, err := s.pgStore.SearchClusterCVEs(ctx, search.EmptyQuery())
-				s.NoError(err)
-				s.Equal(visibleCVEs, len(results))
-				for _, r := range results {
-					foundIDs = append(foundIDs, r.GetId())
-				}
-			} else {
-				results, err := s.legacyStore.SearchCVEs(ctx, search.EmptyQuery())
-				s.NoError(err)
-				s.Equal(visibleCVEs, len(results))
-				for _, r := range results {
-					foundIDs = append(foundIDs, r.GetId())
-				}
+			results, err := s.pgStore.SearchClusterCVEs(ctx, search.EmptyQuery())
+			s.NoError(err)
+			s.Equal(visibleCVEs, len(results))
+			for _, r := range results {
+				foundIDs = append(foundIDs, r.GetId())
 			}
+
 			for _, identifier := range foundIDs {
 				s.True(c.visibleCVE[identifier])
 			}
@@ -929,31 +861,19 @@ func (s *clusterCVEDatastoreSACSuite) TestSearchRawClusterCVEs() {
 			vectorsPerCVE := make(map[string]string, 0)
 			cvssPerCVE := make(map[string]float32, 0)
 			foundIDs := make([]string, 0, 3)
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				results, err := s.pgStore.SearchRawCVEs(ctx, search.EmptyQuery())
-				s.NoError(err)
-				s.Equal(visibleCVEs, len(results))
-				for _, r := range results {
-					foundIDs = append(foundIDs, r.GetId())
-					cveName := r.GetId()
-					v3AttackVector := r.GetCveBaseInfo().GetCvssV3().GetVector()
-					cvss := r.GetCvss()
-					vectorsPerCVE[cveName] = v3AttackVector
-					cvssPerCVE[cveName] = cvss
-				}
-			} else {
-				results, err := s.legacyStore.SearchRawCVEs(ctx, search.EmptyQuery())
-				s.NoError(err)
-				s.Equal(visibleCVEs, len(results))
-				for _, r := range results {
-					foundIDs = append(foundIDs, r.GetId())
-					cveName := r.GetId()
-					v3AttackVector := r.GetCvssV3().GetVector()
-					cvss := r.GetCvss()
-					vectorsPerCVE[cveName] = v3AttackVector
-					cvssPerCVE[cveName] = cvss
-				}
+
+			results, err := s.pgStore.SearchRawCVEs(ctx, search.EmptyQuery())
+			s.NoError(err)
+			s.Equal(visibleCVEs, len(results))
+			for _, r := range results {
+				foundIDs = append(foundIDs, r.GetId())
+				cveName := r.GetId()
+				v3AttackVector := r.GetCveBaseInfo().GetCvssV3().GetVector()
+				cvss := r.GetCvss()
+				vectorsPerCVE[cveName] = v3AttackVector
+				cvssPerCVE[cveName] = cvss
 			}
+
 			for _, identifier := range foundIDs {
 				s.True(c.visibleCVE[identifier])
 			}
@@ -996,31 +916,19 @@ func (s *clusterCVEDatastoreSACSuite) checkCVESnoozed(targetCVE string,
 	var objSnoozeStart *types.Timestamp
 	var objSnoozeExpiry *types.Timestamp
 	expectedSnoozeExpire := addDurationToTimestamp(snoozeStart, snoozeDuration)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		var obj *storage.ClusterCVE
-		obj, found, err = s.pgStore.Get(allAccessCtx, targetCVE)
-		if found {
-			objSnoozed = obj.GetSnoozed()
-			objSnoozeStart = obj.GetSnoozeStart()
-			objSnoozeExpiry = obj.GetSnoozeExpiry()
-		} else {
-			objSnoozed = false
-			objSnoozeStart = nil
-			objSnoozeExpiry = nil
-		}
+
+	var obj *storage.ClusterCVE
+	obj, found, err = s.pgStore.Get(allAccessCtx, targetCVE)
+	if found {
+		objSnoozed = obj.GetSnoozed()
+		objSnoozeStart = obj.GetSnoozeStart()
+		objSnoozeExpiry = obj.GetSnoozeExpiry()
 	} else {
-		var obj *storage.CVE
-		obj, found, err = s.legacyStore.Get(allAccessCtx, targetCVE)
-		if found {
-			objSnoozed = obj.GetSuppressed()
-			objSnoozeStart = obj.GetSuppressActivation()
-			objSnoozeExpiry = obj.GetSuppressExpiry()
-		} else {
-			objSnoozed = false
-			objSnoozeStart = nil
-			objSnoozeExpiry = nil
-		}
+		objSnoozed = false
+		objSnoozeStart = nil
+		objSnoozeExpiry = nil
 	}
+
 	s.NoError(err)
 	s.True(found)
 	if shouldBeSnoozed {
@@ -1036,37 +944,22 @@ func (s *clusterCVEDatastoreSACSuite) checkCVEUnsnoozed(targetCVE string,
 	snoozeStart *types.Timestamp,
 	snoozeDuration *types.Duration,
 	shouldBeUnsnoozed bool) {
-	var err error
-	var found bool
+
 	var objSnoozed bool
 	var objSnoozeStart *types.Timestamp
 	var objSnoozeExpiry *types.Timestamp
 	expectedSnoozeExpire := addDurationToTimestamp(snoozeStart, snoozeDuration)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		var obj *storage.ClusterCVE
-		obj, found, err = s.pgStore.Get(allAccessCtx, targetCVE)
-		if found {
-			objSnoozed = obj.GetSnoozed()
-			objSnoozeStart = obj.GetSnoozeStart()
-			objSnoozeExpiry = obj.GetSnoozeExpiry()
-		} else {
-			objSnoozed = false
-			objSnoozeStart = nil
-			objSnoozeExpiry = nil
-		}
+	obj, found, err := s.pgStore.Get(allAccessCtx, targetCVE)
+	if found {
+		objSnoozed = obj.GetSnoozed()
+		objSnoozeStart = obj.GetSnoozeStart()
+		objSnoozeExpiry = obj.GetSnoozeExpiry()
 	} else {
-		var obj *storage.CVE
-		obj, found, err = s.legacyStore.Get(allAccessCtx, targetCVE)
-		if found {
-			objSnoozed = obj.GetSuppressed()
-			objSnoozeStart = obj.GetSuppressActivation()
-			objSnoozeExpiry = obj.GetSuppressExpiry()
-		} else {
-			objSnoozed = false
-			objSnoozeStart = nil
-			objSnoozeExpiry = nil
-		}
+		objSnoozed = false
+		objSnoozeStart = nil
+		objSnoozeExpiry = nil
 	}
+
 	s.NoError(err)
 	s.True(found)
 	if shouldBeUnsnoozed {
@@ -1091,11 +984,8 @@ func (s *clusterCVEDatastoreSACSuite) runTestSuppressUnsuppressCVE(targetCVE str
 			snoozeStart := types.TimestampNow()
 			snoozeStart.Nanos = 0
 			snoozeDuration := types.DurationProto(10 * time.Minute)
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				err = s.pgStore.Suppress(ctx, snoozeStart, snoozeDuration, targetCVE)
-			} else {
-				err = s.legacyStore.Suppress(ctx, snoozeStart, snoozeDuration, targetCVE)
-			}
+
+			err = s.pgStore.Suppress(ctx, snoozeStart, snoozeDuration, targetCVE)
 			if c.visibleCVE[targetCVE] {
 				s.NoError(err)
 			} else {
@@ -1103,21 +993,16 @@ func (s *clusterCVEDatastoreSACSuite) runTestSuppressUnsuppressCVE(targetCVE str
 			}
 			s.checkCVESnoozed(targetCVE, snoozeStart, snoozeDuration, c.visibleCVE[targetCVE])
 			if !c.visibleCVE[targetCVE] {
-				if env.PostgresDatastoreEnabled.BooleanSetting() {
-					err = s.pgStore.Suppress(allAccessCtx, snoozeStart, snoozeDuration, targetCVE)
-				} else {
-					err = s.legacyStore.Suppress(allAccessCtx, snoozeStart, snoozeDuration, targetCVE)
-				}
+
+				err = s.pgStore.Suppress(allAccessCtx, snoozeStart, snoozeDuration, targetCVE)
+
 				s.NoError(err)
 			}
 			// Ensure the object is now snoozed
 			s.checkCVESnoozed(targetCVE, snoozeStart, snoozeDuration, true)
 			// Unsuppress
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				err = s.pgStore.Unsuppress(ctx, targetCVE)
-			} else {
-				err = s.legacyStore.Unsuppress(ctx, targetCVE)
-			}
+			err = s.pgStore.Unsuppress(ctx, targetCVE)
+
 			if c.visibleCVE[targetCVE] {
 				s.NoError(err)
 			} else {
@@ -1126,11 +1011,7 @@ func (s *clusterCVEDatastoreSACSuite) runTestSuppressUnsuppressCVE(targetCVE str
 			// Check unsuppressed worked
 			s.checkCVEUnsnoozed(targetCVE, snoozeStart, snoozeDuration, c.visibleCVE[targetCVE])
 			if !c.visibleCVE[targetCVE] {
-				if env.PostgresDatastoreEnabled.BooleanSetting() {
-					err = s.pgStore.Unsuppress(allAccessCtx, targetCVE)
-				} else {
-					err = s.legacyStore.Unsuppress(allAccessCtx, targetCVE)
-				}
+				err = s.pgStore.Unsuppress(allAccessCtx, targetCVE)
 				s.NoError(err)
 			}
 		})

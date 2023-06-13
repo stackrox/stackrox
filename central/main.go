@@ -44,7 +44,6 @@ import (
 	imageCVEService "github.com/stackrox/rox/central/cve/image/service"
 	nodeCveCsv "github.com/stackrox/rox/central/cve/node/csv"
 	nodeCVEService "github.com/stackrox/rox/central/cve/node/service"
-	cveService "github.com/stackrox/rox/central/cve/service"
 	"github.com/stackrox/rox/central/cve/suppress"
 	debugService "github.com/stackrox/rox/central/debug/service"
 	"github.com/stackrox/rox/central/declarativeconfig"
@@ -370,16 +369,12 @@ func servicesToRegister() []pkgGRPC.APIService {
 		telemetryService.Singleton(),
 		userService.Singleton(),
 		vulnRequestService.Singleton(),
-	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		servicesToRegister = append(servicesToRegister, clusterCVEService.Singleton())
-		servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
-		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
-		servicesToRegister = append(servicesToRegister, collectionService.Singleton())
-		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
-		servicesToRegister = append(servicesToRegister, processListeningOnPorts.Singleton())
-	} else {
-		servicesToRegister = append(servicesToRegister, cveService.Singleton())
+		clusterCVEService.Singleton(),
+		imageCVEService.Singleton(),
+		nodeCVEService.Singleton(),
+		collectionService.Singleton(),
+		policyCategoryService.Singleton(),
+		processListeningOnPorts.Singleton(),
 	}
 
 	if features.VulnMgmtReportingEnhancements.Enabled() {

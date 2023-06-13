@@ -6,13 +6,8 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	cveSAC "github.com/stackrox/rox/central/cve/sac"
-	"github.com/stackrox/rox/central/dackbox"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentSAC "github.com/stackrox/rox/central/deployment/sac"
-	imageSAC "github.com/stackrox/rox/central/image/sac"
 	"github.com/stackrox/rox/central/namespace/index"
-	"github.com/stackrox/rox/central/namespace/index/mappings"
 	"github.com/stackrox/rox/central/namespace/store"
 	pgStore "github.com/stackrox/rox/central/namespace/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
@@ -20,14 +15,11 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/derivedfields/counter"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/search/derivedfields"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sorted"
@@ -54,12 +46,12 @@ type DataStore interface {
 // New returns a new DataStore instance using the provided store and indexer
 func New(nsStore store.Store, _ graph.Provider, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker) (DataStore, error) {
 	ds := &datastoreImpl{
-		store:           nsStore,
-		indexer:         indexer,
-		deployments:     deploymentDataStore,
-		namespaceRanker: namespaceRanker,
+		store:             nsStore,
+		indexer:           indexer,
+		deployments:       deploymentDataStore,
+		namespaceRanker:   namespaceRanker,
+		formattedSearcher: formatSearcherV2(indexer, namespaceRanker),
 	}
-	ds.formattedSearcher = formatSearcherV2(indexer, namespaceRanker)
 	return ds, nil
 }
 
@@ -77,10 +69,7 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 
 var (
 	namespaceSAC                     = sac.ForResource(resources.Namespace)
-	namespaceSACSearchHelper         = namespaceSAC.MustCreateSearchHelper(mappings.OptionsMap)
 	namespaceSACPostgresSearchHelper = namespaceSAC.MustCreatePgSearchHelper()
-
-	log = logging.LoggerForModule()
 
 	defaultSortOption = &v1.QuerySortOption{
 		Field:    search.Namespace.String(),
@@ -274,22 +263,4 @@ func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher, namespaceRanker
 	// This is currently required due to the priority searcher
 	paginatedSearcher := paginated.Paginated(prioritySortedSearcher)
 	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
-}
-
-func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher, graphProvider graph.Provider, namespaceRanker *ranking.Ranker) search.Searcher {
-	filteredSearcher := namespaceSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
-	derivedFieldSortedSearcher := wrapDerivedFieldSearcher(graphProvider, filteredSearcher, namespaceRanker)
-	paginatedSearcher := paginated.Paginated(derivedFieldSortedSearcher)
-	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
-	return defaultSortedSearcher
-}
-
-func wrapDerivedFieldSearcher(graphProvider graph.Provider, searcher search.Searcher, namespaceRanker *ranking.Ranker) search.Searcher {
-	prioritySortedSearcher := sorted.Searcher(searcher, search.NamespacePriority, namespaceRanker)
-
-	return derivedfields.CountSortedSearcher(prioritySortedSearcher, map[string]counter.DerivedFieldCounter{
-		search.DeploymentCount.String(): counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.NamespaceToDeploymentPath, deploymentSAC.GetSACFilter()),
-		search.ImageCount.String():      counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.NamespaceToImagePath, imageSAC.GetSACFilter()),
-		search.CVECount.String():        counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.NamespaceToCVEPath, cveSAC.GetSACFilter()),
-	})
 }

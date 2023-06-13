@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -27,8 +26,6 @@ var (
 )
 
 func TestNodeCVEDataStore(t *testing.T) {
-	pgtest.SkipIfPostgresDisabled(t)
-
 	suite.Run(t, new(NodeCVEDataStoreSuite))
 }
 
