@@ -20,6 +20,7 @@ func (resourcesCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execu
 		if res == nil {
 			if gvk.Kind != "PodSecurityPolicy" {
 				reporter.Warnf("server does not support resource type %v", gvk)
+				continue
 			}
 			reporter.Errorf("server does not support resource type %v", gvk)
 			continue
