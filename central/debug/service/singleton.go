@@ -17,11 +17,11 @@ import (
 var (
 	once sync.Once
 
-	as Service
+	debugService Service
 )
 
 func initialize() {
-	as = New(datastore.Singleton(),
+	debugService = New(datastore.Singleton(),
 		connection.ManagerSingleton(),
 		gatherers.Singleton(),
 		logimbueStore.Singleton(),
@@ -36,5 +36,5 @@ func initialize() {
 // Singleton provides the instance of the Service interface to register.
 func Singleton() Service {
 	once.Do(initialize)
-	return as
+	return debugService
 }

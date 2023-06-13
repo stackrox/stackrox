@@ -15,12 +15,12 @@ const (
 )
 
 var (
-	once      sync.Once
-	singleton authproviders.Registry
+	once     sync.Once
+	registry authproviders.Registry
 )
 
 func initialize() {
-	singleton = authproviders.NewStoreBackedRegistry(
+	registry = authproviders.NewStoreBackedRegistry(
 		ssoURLPathPrefix, tokenRedirectURLPath,
 		authProviderDS.Singleton(), jwt.IssuerFactorySingleton(),
 		mapper.FactorySingleton())
@@ -29,5 +29,5 @@ func initialize() {
 // Singleton returns the auth providers registry.
 func Singleton() authproviders.Registry {
 	once.Do(initialize)
-	return singleton
+	return registry
 }

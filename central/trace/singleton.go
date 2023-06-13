@@ -6,16 +6,16 @@ import (
 )
 
 var (
-	once      sync.Once
-	singleton observe.AuthzTraceSink
+	once           sync.Once
+	authzTraceSink observe.AuthzTraceSink
 )
 
 func initialize() {
-	singleton = observe.NewAuthzTraceSink()
+	authzTraceSink = observe.NewAuthzTraceSink()
 }
 
 // AuthzTraceSinkSingleton returns the authz trace sink instance.
 func AuthzTraceSinkSingleton() observe.AuthzTraceSink {
 	once.Do(initialize)
-	return singleton
+	return authzTraceSink
 }
