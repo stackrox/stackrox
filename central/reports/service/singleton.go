@@ -6,7 +6,6 @@ import (
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reports/manager"
-	accessScopeStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
@@ -22,7 +21,7 @@ var (
 
 func initialize() {
 	mgr := initializeManager()
-	as = New(datastore.Singleton(), notifierDataStore.Singleton(), accessScopeStore.Singleton(), mgr)
+	as = New(datastore.Singleton(), notifierDataStore.Singleton(), mgr)
 }
 
 func initializeManager() manager.Manager {

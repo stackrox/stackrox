@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 )
@@ -97,20 +96,6 @@ func (s *serviceImpl) validateEmailConfig(ctx context.Context, emailConfig *stor
 }
 
 func (s *serviceImpl) validateResourceScope(ctx context.Context, config *storage.ReportConfiguration) error {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if config.GetScopeId() == "" {
-			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid scope ID")
-		}
-		exists, err := s.accessScopeDatastore.AccessScopeExists(ctx, config.GetScopeId())
-		if err != nil {
-			return errors.Errorf("Error trying to lookup attached scope, Scope: %s, Error: %s", config.GetScopeId(), err)
-		}
-		if !exists {
-			return errors.Wrapf(errox.NotFound, "Access scope %s not found.", config.GetScopeId())
-		}
-		return nil
-	}
-
 	if config.GetScopeId() == "" {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid collection ID in the 'scopeId' field")
 	}
