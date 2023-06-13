@@ -21,5 +21,6 @@ ClusterTestRunner(
     final_post=FinalPost(
         store_qa_test_debug_logs=False,
         store_qa_spock_results=False,
+        handle_e2e_progress_failures=False,
     ),
 ).run()
