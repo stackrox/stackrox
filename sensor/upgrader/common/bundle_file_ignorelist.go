@@ -25,10 +25,6 @@ var (
 		"ca-setup-sensor.sh",
 		"delete-ca-sensor.sh",
 		"NOTES.txt",
-		// TODO:  improve this doing it this way for a quick test.
-		"sensor-pod-security.yaml",
-		"admission-controller-pod-security.yaml",
-		"collector-pod-security.yaml",
 	)
 )
 
