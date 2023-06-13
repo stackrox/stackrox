@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddImageComponentEdge mocks base method.
-func (m *MockIndexer) AddImageComponentEdge(imagecomponentedge *storage.ImageComponentEdge) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddImageComponentEdge", imagecomponentedge)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddImageComponentEdge indicates an expected call of AddImageComponentEdge.
-func (mr *MockIndexerMockRecorder) AddImageComponentEdge(imagecomponentedge interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddImageComponentEdge", reflect.TypeOf((*MockIndexer)(nil).AddImageComponentEdge), imagecomponentedge)
-}
-
-// AddImageComponentEdges mocks base method.
-func (m *MockIndexer) AddImageComponentEdges(imagecomponentedges []*storage.ImageComponentEdge) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddImageComponentEdges", imagecomponentedges)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddImageComponentEdges indicates an expected call of AddImageComponentEdges.
-func (mr *MockIndexerMockRecorder) AddImageComponentEdges(imagecomponentedges interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddImageComponentEdges", reflect.TypeOf((*MockIndexer)(nil).AddImageComponentEdges), imagecomponentedges)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteImageComponentEdge mocks base method.
-func (m *MockIndexer) DeleteImageComponentEdge(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteImageComponentEdge", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteImageComponentEdge indicates an expected call of DeleteImageComponentEdge.
-func (mr *MockIndexerMockRecorder) DeleteImageComponentEdge(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteImageComponentEdge", reflect.TypeOf((*MockIndexer)(nil).DeleteImageComponentEdge), id)
-}
-
-// DeleteImageComponentEdges mocks base method.
-func (m *MockIndexer) DeleteImageComponentEdges(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteImageComponentEdges", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteImageComponentEdges indicates an expected call of DeleteImageComponentEdges.
-func (mr *MockIndexerMockRecorder) DeleteImageComponentEdges(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteImageComponentEdges", reflect.TypeOf((*MockIndexer)(nil).DeleteImageComponentEdges), ids)
 }
 
 // Search mocks base method.

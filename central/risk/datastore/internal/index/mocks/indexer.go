@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddRisk mocks base method.
-func (m *MockIndexer) AddRisk(risk *storage.Risk) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddRisk", risk)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddRisk indicates an expected call of AddRisk.
-func (mr *MockIndexerMockRecorder) AddRisk(risk interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRisk", reflect.TypeOf((*MockIndexer)(nil).AddRisk), risk)
-}
-
-// AddRisks mocks base method.
-func (m *MockIndexer) AddRisks(risks []*storage.Risk) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddRisks", risks)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddRisks indicates an expected call of AddRisks.
-func (mr *MockIndexerMockRecorder) AddRisks(risks interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRisks", reflect.TypeOf((*MockIndexer)(nil).AddRisks), risks)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteRisk mocks base method.
-func (m *MockIndexer) DeleteRisk(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteRisk", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteRisk indicates an expected call of DeleteRisk.
-func (mr *MockIndexerMockRecorder) DeleteRisk(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRisk", reflect.TypeOf((*MockIndexer)(nil).DeleteRisk), id)
-}
-
-// DeleteRisks mocks base method.
-func (m *MockIndexer) DeleteRisks(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteRisks", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteRisks indicates an expected call of DeleteRisks.
-func (mr *MockIndexerMockRecorder) DeleteRisks(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRisks", reflect.TypeOf((*MockIndexer)(nil).DeleteRisks), ids)
 }
 
 // Search mocks base method.

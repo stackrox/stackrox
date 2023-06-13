@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddPolicies mocks base method.
-func (m *MockIndexer) AddPolicies(policies []*storage.Policy) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddPolicies", policies)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddPolicies indicates an expected call of AddPolicies.
-func (mr *MockIndexerMockRecorder) AddPolicies(policies interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPolicies", reflect.TypeOf((*MockIndexer)(nil).AddPolicies), policies)
-}
-
-// AddPolicy mocks base method.
-func (m *MockIndexer) AddPolicy(policy *storage.Policy) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddPolicy", policy)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddPolicy indicates an expected call of AddPolicy.
-func (mr *MockIndexerMockRecorder) AddPolicy(policy interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPolicy", reflect.TypeOf((*MockIndexer)(nil).AddPolicy), policy)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeletePolicies mocks base method.
-func (m *MockIndexer) DeletePolicies(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeletePolicies", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeletePolicies indicates an expected call of DeletePolicies.
-func (mr *MockIndexerMockRecorder) DeletePolicies(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePolicies", reflect.TypeOf((*MockIndexer)(nil).DeletePolicies), ids)
-}
-
-// DeletePolicy mocks base method.
-func (m *MockIndexer) DeletePolicy(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeletePolicy", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeletePolicy indicates an expected call of DeletePolicy.
-func (mr *MockIndexerMockRecorder) DeletePolicy(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePolicy", reflect.TypeOf((*MockIndexer)(nil).DeletePolicy), id)
 }
 
 // Search mocks base method.

@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddReportConfiguration mocks base method.
-func (m *MockIndexer) AddReportConfiguration(reportconfiguration *storage.ReportConfiguration) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddReportConfiguration", reportconfiguration)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddReportConfiguration indicates an expected call of AddReportConfiguration.
-func (mr *MockIndexerMockRecorder) AddReportConfiguration(reportconfiguration interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddReportConfiguration", reflect.TypeOf((*MockIndexer)(nil).AddReportConfiguration), reportconfiguration)
-}
-
-// AddReportConfigurations mocks base method.
-func (m *MockIndexer) AddReportConfigurations(reportconfigurations []*storage.ReportConfiguration) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddReportConfigurations", reportconfigurations)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddReportConfigurations indicates an expected call of AddReportConfigurations.
-func (mr *MockIndexerMockRecorder) AddReportConfigurations(reportconfigurations interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddReportConfigurations", reflect.TypeOf((*MockIndexer)(nil).AddReportConfigurations), reportconfigurations)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteReportConfiguration mocks base method.
-func (m *MockIndexer) DeleteReportConfiguration(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteReportConfiguration", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteReportConfiguration indicates an expected call of DeleteReportConfiguration.
-func (mr *MockIndexerMockRecorder) DeleteReportConfiguration(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReportConfiguration", reflect.TypeOf((*MockIndexer)(nil).DeleteReportConfiguration), id)
-}
-
-// DeleteReportConfigurations mocks base method.
-func (m *MockIndexer) DeleteReportConfigurations(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteReportConfigurations", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteReportConfigurations indicates an expected call of DeleteReportConfigurations.
-func (mr *MockIndexerMockRecorder) DeleteReportConfigurations(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReportConfigurations", reflect.TypeOf((*MockIndexer)(nil).DeleteReportConfigurations), ids)
 }
 
 // Search mocks base method.

@@ -1,11 +1,12 @@
+//go:build sql_integration
+
 package index
 
 import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/policy/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -26,35 +27,33 @@ var (
 	ctx = sac.WithAllAccess(context.Background())
 )
 
-func TestPolicyIndex(t *testing.T) {
+func TestPolicySearch(t *testing.T) {
 	suite.Run(t, new(PolicyIndexTestSuite))
 }
 
 type PolicyIndexTestSuite struct {
 	suite.Suite
 
-	bleveIndex bleve.Index
-
 	indexer Indexer
+	db      *pgtest.TestPostgres
 }
 
 func (suite *PolicyIndexTestSuite) SetupSuite() {
-	pgtest.SkipIfPostgresEnabled(suite.T())
+	suite.db = pgtest.ForT(suite.T())
+	suite.indexer = postgres.NewIndexer(suite.db)
 
-	tmpIndex, err := globalindex.TempInitializeIndices("")
-	suite.Require().NoError(err)
-
-	suite.bleveIndex = tmpIndex
-	suite.indexer = New(tmpIndex)
+	store := postgres.New(suite.db)
 
 	policy := fixtures.GetPolicy()
-	suite.NoError(suite.indexer.AddPolicy(policy))
+	ctx := sac.WithAllAccess(context.Background())
+	suite.NoError(store.Upsert(ctx, policy))
 
 	secondPolicy := fixtures.GetPolicy()
 	secondPolicy.Id = fakeID
+	secondPolicy.Name = policy.GetName() + " clone"
 	secondPolicy.Severity = fakeSeverity
 	secondPolicy.LifecycleStages = []storage.LifecycleStage{storage.LifecycleStage_DEPLOY}
-	suite.NoError(suite.indexer.AddPolicies([]*storage.Policy{secondPolicy}))
+	suite.NoError(store.Upsert(ctx, secondPolicy))
 }
 
 func (suite *PolicyIndexTestSuite) TestPolicySearch() {
@@ -169,5 +168,5 @@ func (suite *PolicyIndexTestSuite) TestPolicySearch() {
 }
 
 func (suite *PolicyIndexTestSuite) TearDownSuite() {
-	suite.NoError(suite.bleveIndex.Close())
+	suite.db.Teardown(suite.T())
 }

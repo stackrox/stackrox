@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddClusterCVE mocks base method.
-func (m *MockIndexer) AddClusterCVE(cve *storage.ClusterCVE) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddClusterCVE", cve)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddClusterCVE indicates an expected call of AddClusterCVE.
-func (mr *MockIndexerMockRecorder) AddClusterCVE(cve interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddClusterCVE", reflect.TypeOf((*MockIndexer)(nil).AddClusterCVE), cve)
-}
-
-// AddClusterCVEs mocks base method.
-func (m *MockIndexer) AddClusterCVEs(cves []*storage.ClusterCVE) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddClusterCVEs", cves)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddClusterCVEs indicates an expected call of AddClusterCVEs.
-func (mr *MockIndexerMockRecorder) AddClusterCVEs(cves interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddClusterCVEs", reflect.TypeOf((*MockIndexer)(nil).AddClusterCVEs), cves)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteClusterCVE mocks base method.
-func (m *MockIndexer) DeleteClusterCVE(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteClusterCVE", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteClusterCVE indicates an expected call of DeleteClusterCVE.
-func (mr *MockIndexerMockRecorder) DeleteClusterCVE(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteClusterCVE", reflect.TypeOf((*MockIndexer)(nil).DeleteClusterCVE), id)
-}
-
-// DeleteClusterCVEs mocks base method.
-func (m *MockIndexer) DeleteClusterCVEs(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteClusterCVEs", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteClusterCVEs indicates an expected call of DeleteClusterCVEs.
-func (mr *MockIndexerMockRecorder) DeleteClusterCVEs(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteClusterCVEs", reflect.TypeOf((*MockIndexer)(nil).DeleteClusterCVEs), ids)
 }
 
 // Search mocks base method.

@@ -55,10 +55,7 @@ func (d *datastoreImpl) UpsertServiceAccount(ctx context.Context, request *stora
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.storage.Upsert(ctx, request); err != nil {
-		return err
-	}
-	return d.indexer.AddServiceAccount(request)
+	return d.storage.Upsert(ctx, request)
 }
 
 func (d *datastoreImpl) RemoveServiceAccount(ctx context.Context, id string) error {
@@ -68,10 +65,7 @@ func (d *datastoreImpl) RemoveServiceAccount(ctx context.Context, id string) err
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.storage.Delete(ctx, id); err != nil {
-		return err
-	}
-	return d.indexer.DeleteServiceAccount(id)
+	return d.storage.Delete(ctx, id)
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {

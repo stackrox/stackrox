@@ -61,9 +61,6 @@ func (d *dataStoreImpl) AddReportConfiguration(ctx context.Context, reportConfig
 	if err := d.reportConfigStore.Upsert(ctx, reportConfig); err != nil {
 		return "", err
 	}
-	if err := d.indexer.AddReportConfiguration(reportConfig); err != nil {
-		return reportConfig.Id, err
-	}
 	return reportConfig.Id, nil
 }
 
@@ -76,10 +73,7 @@ func (d *dataStoreImpl) UpdateReportConfiguration(ctx context.Context, reportCon
 		return errors.New("report configuration id field must be set")
 	}
 
-	if err := d.reportConfigStore.Upsert(ctx, reportConfig); err != nil {
-		return err
-	}
-	return d.indexer.AddReportConfiguration(reportConfig)
+	return d.reportConfigStore.Upsert(ctx, reportConfig)
 }
 
 func (d *dataStoreImpl) RemoveReportConfiguration(ctx context.Context, id string) error {
@@ -89,7 +83,7 @@ func (d *dataStoreImpl) RemoveReportConfiguration(ctx context.Context, id string
 	if err := d.reportConfigStore.Delete(ctx, id); err != nil {
 		return err
 	}
-	return d.indexer.DeleteReportConfiguration(id)
+	return nil
 }
 
 func (d *dataStoreImpl) Walk(ctx context.Context, fn func(reportConfig *storage.ReportConfiguration) error) error {

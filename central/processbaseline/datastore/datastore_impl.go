@@ -84,14 +84,6 @@ func (ds *datastoreImpl) addProcessBaselineUnlocked(ctx context.Context, id stri
 	if err := ds.storage.Upsert(ctx, baseline); err != nil {
 		return id, errors.Wrapf(err, "inserting process baseline %q into store", baseline.GetId())
 	}
-	if err := ds.indexer.AddProcessBaseline(baseline); err != nil {
-		err = errors.Wrapf(err, "inserting process baseline %q into index", baseline.GetId())
-		subErr := ds.storage.Delete(ctx, id)
-		if subErr != nil {
-			err = errors.Wrap(err, "error rolling back process process baseline addition")
-		}
-		return id, err
-	}
 	return id, nil
 }
 
@@ -99,23 +91,12 @@ func (ds *datastoreImpl) addProcessBaselineLocked(ctx context.Context, baseline 
 	if err := ds.storage.Upsert(ctx, baseline); err != nil {
 		return baseline.GetId(), errors.Wrapf(err, "inserting process baseline %q into store", baseline.GetId())
 	}
-	if err := ds.indexer.AddProcessBaseline(baseline); err != nil {
-		err = errors.Wrapf(err, "inserting process baseline %q into index", baseline.GetId())
-		subErr := ds.storage.Delete(ctx, baseline.GetId())
-		if subErr != nil {
-			err = errors.Wrap(err, "error rolling back process process baseline addition")
-		}
-		return baseline.GetId(), err
-	}
 	return baseline.GetId(), nil
 }
 
 func (ds *datastoreImpl) removeProcessBaselineByID(ctx context.Context, id string) error {
 	ds.baselineLock.Lock(id)
 	defer ds.baselineLock.Unlock(id)
-	if err := ds.indexer.DeleteProcessBaseline(id); err != nil {
-		return errors.Wrap(err, "error removing process baseline from index")
-	}
 	if err := ds.storage.Delete(ctx, id); err != nil {
 		return errors.Wrap(err, "error removing process baseline from store")
 	}

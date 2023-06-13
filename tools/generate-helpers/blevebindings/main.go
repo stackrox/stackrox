@@ -80,44 +80,9 @@ func generateOptionsFile(props operations.GeneratorProperties) error {
 	return f.Save(filepath.Join(centralFilePath, goSubPackage, "options.go"))
 }
 
-func generateIndexImplementationFile(props operations.GeneratorProperties, implementations []Code) error {
-	wrapperClass := operations.MakeWrapperType(props.Object)
-	tagString := makeTag(props.Object)
-	if props.Tag != "" {
-		tagString = props.Tag
-	}
-	f := newFile()
-	f.ImportAlias(packagenames.Ops, "ops")
-	f.Line()
-	f.Const().Id("batchSize").Op("=").Lit(5000)
-	f.Line()
-	f.Const().Id("resourceName").Op("=").Lit(props.Object)
-
-	f.Type().Id("indexerImpl").Struct(Id("index").Qual(packagenames.Bleve, "Index"))
-	f.Line()
-	f.Type().Id(wrapperClass).Struct(
-		Op("*").Qual(props.Pkg, props.Object).Tag(map[string]string{"json": tagString}),
-		Id("Type").String().Tag(map[string]string{"json": "type"}),
-	)
-	f.Line()
-
-	for _, implementation := range implementations {
-		f.Add(implementation)
-		f.Line()
-	}
-
-	return f.Save("indexer_impl.go")
-}
-
 func generateIndexInterfaceFile(interfaceMethods []Code) error {
 	f := newFile()
 	f.Type().Id("Indexer").Interface(interfaceMethods...)
-
-	f.Func().Id("New").Params(Id("index").Qual(packagenames.Bleve, "Index")).Id("Indexer").Block(
-		Return(Op("&").Id("indexerImpl").Values(Dict{
-			Id("index"): Id("index"),
-		})),
-	)
 	return f.Save("indexer.go")
 }
 
@@ -138,12 +103,9 @@ func generateMocks(props operations.GeneratorProperties) error {
 }
 
 func generate(props operations.GeneratorProperties) error {
-	interfaceMethods, implementations := operations.GenerateInterfaceAndImplementation(props)
+	interfaceMethods := operations.GenerateInterfaceAndImplementation(props)
 
 	if err := generateIndexInterfaceFile(interfaceMethods); err != nil {
-		return err
-	}
-	if err := generateIndexImplementationFile(props, implementations); err != nil {
 		return err
 	}
 	if err := generateOptionsFile(props); err != nil {

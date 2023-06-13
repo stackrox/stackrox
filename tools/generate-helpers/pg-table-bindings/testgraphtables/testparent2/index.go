@@ -7,7 +7,6 @@ import (
 
 	metrics "github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	search "github.com/stackrox/rox/pkg/search"
@@ -36,22 +35,4 @@ func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesear
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "TestParent2")
 
 	return pgSearch.RunSearchRequest(ctx, v1.SearchCategory(111), q, b.db)
-}
-
-//// Stubs for satisfying interfaces
-
-func (b *indexerImpl) AddTestParent2(deployment *storage.TestParent2) error {
-	return nil
-}
-
-func (b *indexerImpl) AddTestParent2s(_ []*storage.TestParent2) error {
-	return nil
-}
-
-func (b *indexerImpl) DeleteTestParent2(id string) error {
-	return nil
-}
-
-func (b *indexerImpl) DeleteTestParent2s(_ []string) error {
-	return nil
 }

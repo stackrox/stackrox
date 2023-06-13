@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddImage mocks base method.
-func (m *MockIndexer) AddImage(image *storage.Image) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddImage", image)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddImage indicates an expected call of AddImage.
-func (mr *MockIndexerMockRecorder) AddImage(image interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddImage", reflect.TypeOf((*MockIndexer)(nil).AddImage), image)
-}
-
-// AddImages mocks base method.
-func (m *MockIndexer) AddImages(images []*storage.Image) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddImages", images)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddImages indicates an expected call of AddImages.
-func (mr *MockIndexerMockRecorder) AddImages(images interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddImages", reflect.TypeOf((*MockIndexer)(nil).AddImages), images)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteImage mocks base method.
-func (m *MockIndexer) DeleteImage(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteImage", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteImage indicates an expected call of DeleteImage.
-func (mr *MockIndexerMockRecorder) DeleteImage(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteImage", reflect.TypeOf((*MockIndexer)(nil).DeleteImage), id)
-}
-
-// DeleteImages mocks base method.
-func (m *MockIndexer) DeleteImages(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteImages", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteImages indicates an expected call of DeleteImages.
-func (mr *MockIndexerMockRecorder) DeleteImages(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteImages", reflect.TypeOf((*MockIndexer)(nil).DeleteImages), ids)
 }
 
 // Search mocks base method.

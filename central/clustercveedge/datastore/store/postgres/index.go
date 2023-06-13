@@ -7,7 +7,6 @@ import (
 
 	metrics "github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	search "github.com/stackrox/rox/pkg/search"
@@ -36,22 +35,4 @@ func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesear
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ClusterCVEEdge")
 
 	return pgSearch.RunSearchRequest(ctx, v1.SearchCategory_CLUSTER_VULN_EDGE, q, b.db)
-}
-
-//// Stubs for satisfying interfaces
-
-func (b *indexerImpl) AddClusterCVEEdge(deployment *storage.ClusterCVEEdge) error {
-	return nil
-}
-
-func (b *indexerImpl) AddClusterCVEEdges(_ []*storage.ClusterCVEEdge) error {
-	return nil
-}
-
-func (b *indexerImpl) DeleteClusterCVEEdge(id string) error {
-	return nil
-}
-
-func (b *indexerImpl) DeleteClusterCVEEdges(_ []string) error {
-	return nil
 }
