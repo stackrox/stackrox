@@ -28,7 +28,7 @@ type eventPipeline struct {
 	detector    detector.Detector
 	reprocessor reprocessor.Handler
 
-	offlineMode atomic.Bool
+	offlineMode *atomic.Bool
 
 	eventsC chan *central.MsgFromSensor
 	stopSig concurrency.Signal
@@ -98,9 +98,8 @@ func (p *eventPipeline) Notify(event common.SensorComponentEvent) {
 	log.Infof("Received notify: %s", event)
 	switch event {
 	case common.SensorComponentEventCentralReachable:
-
 		// Start listening to events if not yet listening
-		if p.offlineMode.CompareAndSwap(false, true) {
+		if p.offlineMode.CompareAndSwap(true, false) {
 			log.Infof("Connection established: Starting Kubernetes listener")
 			if err := p.listener.Start(); err != nil {
 				log.Fatalf("Failed to start listener component. Sensor cannot run without listening to Kubernetes events: %s", err)
@@ -108,7 +107,7 @@ func (p *eventPipeline) Notify(event common.SensorComponentEvent) {
 		}
 	case common.SensorComponentEventOfflineMode:
 		// Stop listening to events
-		if p.offlineMode.CompareAndSwap(true, false) {
+		if p.offlineMode.CompareAndSwap(false, true) {
 			p.listener.Stop(errors.New("gRPC connection stopped"))
 		}
 	}
