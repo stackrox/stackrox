@@ -14,7 +14,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -31,18 +30,20 @@ func (s *tlsConfigTestSuite) TestGetAdditionalCAs() {
 
 	additionalCAs, err := GetAdditionalCAs()
 	s.Require().NoError(err)
-	s.Require().Len(additionalCAs, 5, "Could not decode all certs")
+	s.Require().Len(additionalCAs, 6, "Could not decode all certs")
 	s.True(s.isCommonNameInCerts(additionalCAs, "CENTRAL_SERVICE: Central"), "Could not find cert from multiple crt file")
 
-	// non .crt or .pem files should be ignored
+	// non .crt or .pem files should not be ignored
 	s.FileExists("testdata/foo.txt")
+	s.FileExists("testdata/cert.txt")
 }
 
 func (s *tlsConfigTestSuite) TestGetAdditionalCAFilePaths() {
 	s.T().Setenv("ROX_MTLS_ADDITIONAL_CA_DIR", "testdata")
 	filePaths, err := GetAdditionalCAFilePaths()
 	s.Require().NoError(err)
-	s.Len(filePaths, 4)
+	s.Len(filePaths, 5)
+	s.Contains(filePaths, "testdata/cert.txt")
 	s.Contains(filePaths, "testdata/cert.pem")
 	s.Contains(filePaths, "testdata/crt01.crt")
 	s.Contains(filePaths, "testdata/multiple_certs.crt")
@@ -268,29 +269,4 @@ func writeKey(dir string, privateKey *ecdsa.PrivateKey) error {
 		return err
 	}
 	return pem.Encode(keyFile, &pem.Block{Type: "EC PRIVATE KEY", Bytes: privateKeyBytes})
-}
-
-func Test_isValidAdditionalCAFileName(t *testing.T) {
-	tests := []struct {
-		name string
-		want bool
-	}{
-		{"bla.crt", true},
-		{"bla.pem", true},
-		{"bla", false},
-		{"bla.crt.", false},
-		{"bla.pem.", false},
-		{"bla.crt.foo", false},
-		{"", false},
-		{"foo.bar", false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, isValidAdditionalCAFileName(tt.name))
-		})
-	}
-}
-
-func Test_skipAdditionalCAFileMsg(t *testing.T) {
-	assert.Equal(t, `skipping additional-ca file "foo" because it has an invalid extension; allowed file extensions for additional ca certificates are [.crt .pem]`, skipAdditionalCAFileMsg("foo"))
 }
