@@ -56,7 +56,7 @@ func deploymentMessageInArchive(t *testing.T, messages []*central.MsgFromSensor,
 	t.Logf("%d messages in archive", len(messages))
 	for _, m := range messages {
 		dep := m.GetEvent().GetDeployment()
-		if dep != nil && dep.GetNamespace() == namespace && dep.GetName() == deploymentName {
+		if dep != nil && dep.GetNamespace() == namespace && dep.GetName() == deploymentName && m.GetEvent().GetAction() != central.ResourceAction_SYNC_RESOURCE {
 			return
 		}
 	}

@@ -437,11 +437,10 @@ func (c *TestContext) LastResourceStateWithTimeout(matchResourceFn MatchResource
 
 // WaitForSyncEvent will wait until sensor transmits a `Synced` event to Central, at the end of the reconciliation.
 func (c *TestContext) WaitForSyncEvent(timeout time.Duration) {
-	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
 	for {
 		select {
-		case <-timer.C:
+		case <-time.After(timeout):
 			c.t.Errorf("timeout reached waiting for sync event")
 			return
 		case <-ticker.C:
