@@ -56,7 +56,6 @@ func (i *instantiator) Instantiate(bundleContents Contents) ([]*unstructured.Uns
 	if i.ctx.InCertRotationMode() {
 		common.Filter(&allObjects, common.CertObjectPredicate)
 	}
-
 	return allObjects, nil
 }
 
