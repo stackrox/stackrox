@@ -25,10 +25,6 @@ var (
 		"ca-setup-sensor.sh",
 		"delete-ca-sensor.sh",
 		"NOTES.txt",
-		// TODO:  ignore these when PSPs disabled.  Quick test for now.
-		"sensor-pod-security.yaml",
-		"admission-controller-pod-security.yaml",
-		"collector-pod-security.yaml",
 	)
 )
 
