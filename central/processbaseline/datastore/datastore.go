@@ -57,7 +57,7 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, p
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error) {
 	dbStore := pgStore.New(pool)
 	store, err := pgStore.NewWithCache(dbStore)
 	require.NoError(t, err)
