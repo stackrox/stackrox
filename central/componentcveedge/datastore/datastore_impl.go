@@ -4,15 +4,12 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/componentcveedge/index"
-	sacFilters "github.com/stackrox/rox/central/componentcveedge/sac"
 	"github.com/stackrox/rox/central/componentcveedge/search"
 	"github.com/stackrox/rox/central/componentcveedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/env"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/filtered"
 )
 
 type datastoreImpl struct {
@@ -43,13 +40,6 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ComponentCVEEdge, bool, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		filteredIDs, err := ds.filterReadable(ctx, []string{id})
-		if err != nil || len(filteredIDs) != 1 {
-			return nil, false, err
-		}
-	}
-
 	edge, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
@@ -58,25 +48,9 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.Component
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		filteredIDs, err := ds.filterReadable(ctx, []string{id})
-		if err != nil || len(filteredIDs) != 1 {
-			return false, err
-		}
-	}
-
 	found, err := ds.storage.Exists(ctx, id)
 	if err != nil || !found {
 		return false, err
 	}
 	return true, nil
-}
-
-func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]string, error) {
-	var filteredIDs []string
-	var err error
-	graph.Context(ctx, ds.graphProvider, func(graphContext context.Context) {
-		filteredIDs, err = filtered.ApplySACFilter(graphContext, ids, sacFilters.GetSACFilter())
-	})
-	return filteredIDs, err
 }
