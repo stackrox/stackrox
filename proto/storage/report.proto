@@ -42,7 +42,7 @@ message ReportStatus {
     google.protobuf.Timestamp  queued_at                  = 2 [(gogoproto.moretags) = 'search:"Report Init Time"'];
     google.protobuf.Timestamp  completed_at               = 3 [(gogoproto.moretags) = 'search:"Report Completion Time"'];
     string                     error_msg                  = 4;
-    RunMethod                  report_method              = 5 [(gogoproto.moretags) = 'search:"Report Request Type"'];
+    RunMethod                  report_request_type        = 5 [(gogoproto.moretags) = 'search:"Report Request Type"'];
     NotificationMethod         report_notification_method = 6 [(gogoproto.moretags) = 'search:"Report Notification Method"'];
 }
 

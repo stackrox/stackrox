@@ -96,12 +96,12 @@ func insertIntoReportMetadata(ctx context.Context, batch *pgx.Batch, obj *storag
 		obj.GetReportStatus().GetRunState(),
 		pgutils.NilOrTime(obj.GetReportStatus().GetQueuedAt()),
 		pgutils.NilOrTime(obj.GetReportStatus().GetCompletedAt()),
-		obj.GetReportStatus().GetReportMethod(),
+		obj.GetReportStatus().GetReportRequestType(),
 		obj.GetReportStatus().GetReportNotificationMethod(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO report_metadata (ReportId, ReportConfigId, Requester_Name, ReportStatus_RunState, ReportStatus_QueuedAt, ReportStatus_CompletedAt, ReportStatus_ReportMethod, ReportStatus_ReportNotificationMethod, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(ReportId) DO UPDATE SET ReportId = EXCLUDED.ReportId, ReportConfigId = EXCLUDED.ReportConfigId, Requester_Name = EXCLUDED.Requester_Name, ReportStatus_RunState = EXCLUDED.ReportStatus_RunState, ReportStatus_QueuedAt = EXCLUDED.ReportStatus_QueuedAt, ReportStatus_CompletedAt = EXCLUDED.ReportStatus_CompletedAt, ReportStatus_ReportMethod = EXCLUDED.ReportStatus_ReportMethod, ReportStatus_ReportNotificationMethod = EXCLUDED.ReportStatus_ReportNotificationMethod, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO report_metadata (ReportId, ReportConfigId, Requester_Name, ReportStatus_RunState, ReportStatus_QueuedAt, ReportStatus_CompletedAt, ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(ReportId) DO UPDATE SET ReportId = EXCLUDED.ReportId, ReportConfigId = EXCLUDED.ReportConfigId, Requester_Name = EXCLUDED.Requester_Name, ReportStatus_RunState = EXCLUDED.ReportStatus_RunState, ReportStatus_QueuedAt = EXCLUDED.ReportStatus_QueuedAt, ReportStatus_CompletedAt = EXCLUDED.ReportStatus_CompletedAt, ReportStatus_ReportRequestType = EXCLUDED.ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod = EXCLUDED.ReportStatus_ReportNotificationMethod, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -131,7 +131,7 @@ func (s *storeImpl) copyFromReportMetadata(ctx context.Context, tx *postgres.Tx,
 
 		"reportstatus_completedat",
 
-		"reportstatus_reportmethod",
+		"reportstatus_reportrequesttype",
 
 		"reportstatus_reportnotificationmethod",
 
@@ -163,7 +163,7 @@ func (s *storeImpl) copyFromReportMetadata(ctx context.Context, tx *postgres.Tx,
 
 			pgutils.NilOrTime(obj.GetReportStatus().GetCompletedAt()),
 
-			obj.GetReportStatus().GetReportMethod(),
+			obj.GetReportStatus().GetReportRequestType(),
 
 			obj.GetReportStatus().GetReportNotificationMethod(),
 

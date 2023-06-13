@@ -55,7 +55,7 @@ type ReportMetadata struct {
 	ReportStatusRunState                 storage.ReportStatus_RunState           `gorm:"column:reportstatus_runstate;type:integer"`
 	ReportStatusQueuedAt                 *time.Time                              `gorm:"column:reportstatus_queuedat;type:timestamp"`
 	ReportStatusCompletedAt              *time.Time                              `gorm:"column:reportstatus_completedat;type:timestamp"`
-	ReportStatusReportMethod             storage.ReportStatus_RunMethod          `gorm:"column:reportstatus_reportmethod;type:integer"`
+	ReportStatusReportRequestType        storage.ReportStatus_RunMethod          `gorm:"column:reportstatus_reportrequesttype;type:integer"`
 	ReportStatusReportNotificationMethod storage.ReportStatus_NotificationMethod `gorm:"column:reportstatus_reportnotificationmethod;type:integer"`
 	Serialized                           []byte                                  `gorm:"column:serialized;type:bytea"`
 	ReportConfigurationsRef              ReportConfigurations                    `gorm:"foreignKey:reportconfigid;references:id;belongsTo;constraint:OnDelete:CASCADE"`

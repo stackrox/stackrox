@@ -87,7 +87,7 @@ func (s *ReportMetadataDatastoreTestSuite) TestReportMetadataWorkflows() {
 	s.Equal(reportID, report.ReportId)
 
 	// Test UpdateReportMetadata: error without write access
-	report.ReportStatus.ReportMethod = storage.ReportStatus_SCHEDULED
+	report.ReportStatus.ReportRequestType = storage.ReportStatus_SCHEDULED
 	err = s.datastore.UpdateReportMetadata(noAccessCtx, report)
 	s.Error(err)
 
@@ -103,7 +103,7 @@ func (s *ReportMetadataDatastoreTestSuite) TestReportMetadataWorkflows() {
 	report, found, err = s.datastore.Get(s.ctx, reportID)
 	s.NoError(err)
 	s.True(found)
-	s.Equal(storage.ReportStatus_SCHEDULED, report.ReportStatus.ReportMethod)
+	s.Equal(storage.ReportStatus_SCHEDULED, report.ReportStatus.ReportRequestType)
 
 	// Test Search: Without read access
 	results, err := s.datastore.Search(noAccessCtx, search.EmptyQuery())

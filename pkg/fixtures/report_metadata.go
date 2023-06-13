@@ -20,7 +20,7 @@ func GetReportMetadata() *storage.ReportMetadata {
 			QueuedAt:                 timestamp.TimestampNow(),
 			CompletedAt:              timestamp.TimestampNow(),
 			ErrorMsg:                 "",
-			ReportMethod:             storage.ReportStatus_ON_DEMAND,
+			ReportRequestType:        storage.ReportStatus_ON_DEMAND,
 			ReportNotificationMethod: storage.ReportStatus_EMAIL,
 		},
 		IsDownloaded: false,
