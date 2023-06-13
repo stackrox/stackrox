@@ -22,10 +22,10 @@ func (objectPreconditionsCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *
 	for gvk, acts := range groupedActions {
 		res := ctx.GetResourceMetadata(gvk, resources.BundleResource)
 		if res == nil {
-			if gvk.Kind == "PodSecurityPolicy" {
-				reporter.Warnf("server does not support resource type %v", gvk)
-				continue
-			}
+			//if gvk.Kind == "PodSecurityPolicy" {
+			//	reporter.Warnf("server does not support resource type %v", gvk)
+			//	continue
+			//}
 			return errors.Errorf("could not find resource metadata for resource type %v", gvk)
 		}
 
