@@ -5,8 +5,8 @@ import { Traits } from '../types/traits.proto';
 const accessScopessUrl = '/v1/simpleaccessscopes';
 
 export const defaultAccessScopeIds = {
-    UnrestrictedPostgres: 'ffffffff-ffff-fff4-f5ff-ffffffffffff',
-    DenyAllPostgres: 'ffffffff-ffff-fff4-f5ff-fffffffffffe',
+    Unrestricted: 'ffffffff-ffff-fff4-f5ff-ffffffffffff',
+    DenyAll: 'ffffffff-ffff-fff4-f5ff-fffffffffffe',
 };
 
 // The only remaining usage of this function is in ResourceScopeSelection.tsx file,
@@ -16,7 +16,7 @@ export function getIsDefaultAccessScopeId(id: string): boolean {
 }
 
 export function getIsUnrestrictedAccessScopeId(id: string): boolean {
-    return id === defaultAccessScopeIds.UnrestrictedPostgres;
+    return id === defaultAccessScopeIds.Unrestricted;
 }
 
 export type SimpleAccessScopeNamespace = {

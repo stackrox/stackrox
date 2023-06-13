@@ -70,7 +70,7 @@ function Roles(): ReactElement {
     const [alertAccessScopes, setAlertAccessScopes] = useState<ReactElement | null>(null);
 
     function getDefaultAccessScopeID() {
-        return defaultAccessScopeIds.UnrestrictedPostgres;
+        return defaultAccessScopeIds.Unrestricted;
     }
 
     const roleNew: Role = {
