@@ -74,7 +74,6 @@ func (t *tlsConfigLoader) getClientConfigFunc() func(*tls.ClientHelloInfo) (*tls
 
 func (t *tlsConfigLoader) getCertificateFromDirectory(dir string) (*tls.Certificate, error) {
 	certFile := filepath.Join(dir, env.TLSCertFileName)
-	keyFile := filepath.Join(dir, env.TLSKeyFileName)
 	if exists, err := fileutils.Exists(certFile); err != nil || !exists {
 		if err != nil {
 			log.Warnw("Error checking if monitoring TLS certificate file exists", zap.Error(err))
@@ -84,6 +83,7 @@ func (t *tlsConfigLoader) getCertificateFromDirectory(dir string) (*tls.Certific
 		return nil, nil
 	}
 
+	keyFile := filepath.Join(dir, env.TLSKeyFileName)
 	if exists, err := fileutils.Exists(keyFile); err != nil || !exists {
 		if err != nil {
 			log.Warnw("Error checking if monitoring TLS key file exists", zap.Error(err))
@@ -118,7 +118,7 @@ func (t *tlsConfigLoader) watchForClientCAChanges() {
 				Name: t.clientCAConfigMap, Namespace: t.clientCANamespace,
 			}))
 		if err != nil {
-			log.Errorf("Unable to create client CA watcher", zap.Error(err))
+			log.Errorw("Unable to create client CA watcher", zap.Error(err))
 			continue
 		}
 		t.updateClientCA(watcher.ResultChan())
