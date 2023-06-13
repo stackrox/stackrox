@@ -90,7 +90,7 @@ func (s *signalServer) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnect
 		for _, networkConn := range networkConns {
 			networkInfo := fmt.Sprintf("%s|%s|%s|%s|%s", getEndpoint(networkConn.GetLocalAddress()), getEndpoint(networkConn.GetRemoteAddress()), networkConn.GetRole().String(), networkConn.GetSocketFamily().String(), networkConn.GetCloseTimestamp().String())
 			fmt.Printf("NetworkInfo: %s %s\n", networkConn.GetContainerId(), networkInfo)
-			if err := s.UpdateNetworkConnInfo(networkConn.GetContainerId(), networkInfo); err != nil {
+			if err := s.UpdateBucket(networkConn.GetContainerId(), networkInfo, networkBucket); err != nil {
 				return err
 			}
 		}
@@ -123,19 +123,6 @@ func (s *signalServer) UpdateProcessLineageInfo(processName string, parentID str
 		bucket, _ := tx.CreateBucketIfNotExists([]byte(processLineageInfoBucket))
 		processBucket, _ := bucket.CreateBucketIfNotExists([]byte(processName))
 		return processBucket.Put([]byte(parentID), []byte(lineageInfo))
-	})
-}
-
-func (s *signalServer) UpdateNetworkConnInfo(containerID string, networkInfo string) error {
-	return s.db.Update(func(tx *bolt.Tx) error {
-		b, _ := tx.CreateBucketIfNotExists([]byte(networkBucket))
-		err := b.Put([]byte(containerID), []byte(networkInfo))
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
-
-		return nil
 	})
 }
 
