@@ -14,6 +14,7 @@ from post_tests import PostClusterTest, FinalPost
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 
 ClusterTestRunner(
+    pre_test=PreSystemTests(),
     cluster=GKECluster("sensor-integration-test"),
     test=SensorIntegration(),
 ).run()
