@@ -266,8 +266,7 @@ export function clickOnCountWidget(entitiesKey, type) {
     }
 
     if (type === 'entityList') {
-        cy.get(`${selectors.groupedTabs}:contains('${entitiesKey}')`);
-        cy.get(`li.bg-base-100:contains("${entitiesKey}")`);
+        cy.get(`${selectors.groupedTabs}:contains('${headingForEntities[entitiesKey]}')`);
     }
 }
 
@@ -320,9 +319,9 @@ export const clickOnSingleEntityInTable = (entitiesKey1, entitiesKey2) => {
         });
 };
 
-export const hasTabsFor = (entities) => {
-    entities.forEach((entity) => {
-        cy.get(`${selectors.groupedTabs} div:contains("${entity}")`);
+export const hasTabsFor = (entitiesKeys) => {
+    entitiesKeys.forEach((entitiesKey) => {
+        cy.get(`${selectors.groupedTabs} div:contains("${headingForEntities[entitiesKey]}")`);
     });
 };
 
