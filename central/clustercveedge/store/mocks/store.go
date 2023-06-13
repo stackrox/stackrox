@@ -9,7 +9,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	converter "github.com/stackrox/rox/central/cve/converter"
 	storage "github.com/stackrox/rox/generated/storage"
 )
 
@@ -49,25 +48,6 @@ func (m *MockStore) Count(ctx context.Context) (int, error) {
 func (mr *MockStoreMockRecorder) Count(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStore)(nil).Count), ctx)
-}
-
-// Delete mocks base method.
-func (m *MockStore) Delete(ctx context.Context, ids ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx}
-	for _, a := range ids {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Delete", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Delete indicates an expected call of Delete.
-func (mr *MockStoreMockRecorder) Delete(ctx interface{}, ids ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx}, ids...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), varargs...)
 }
 
 // Exists mocks base method.
@@ -115,23 +95,4 @@ func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.Clust
 func (mr *MockStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
-}
-
-// Upsert mocks base method.
-func (m *MockStore) Upsert(ctx context.Context, cveParts ...converter.ClusterCVEParts) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx}
-	for _, a := range cveParts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Upsert", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Upsert indicates an expected call of Upsert.
-func (mr *MockStoreMockRecorder) Upsert(ctx interface{}, cveParts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx}, cveParts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), varargs...)
 }

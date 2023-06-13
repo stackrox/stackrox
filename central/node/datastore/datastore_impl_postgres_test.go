@@ -693,3 +693,12 @@ func getTestNodeForPostgres(id, name string) *storage.Node {
 		RiskScore: 30,
 	}
 }
+
+func cloneAndUpdateRiskPriority(node *storage.Node) *storage.Node {
+	cloned := node.Clone()
+	cloned.Priority = 1
+	for _, component := range cloned.GetScan().GetComponents() {
+		component.Priority = 1
+	}
+	return cloned
+}

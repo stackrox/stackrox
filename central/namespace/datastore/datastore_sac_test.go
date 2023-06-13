@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -28,13 +27,9 @@ type namespaceDatastoreSACSuite struct {
 	suite.Suite
 
 	keyFence concurrency.KeyFence
-	indexQ   queue.WaitableQueue
-
 	// Elements for postgres mode
 	pgtestbase *pgtest.TestPostgres
-
-	datastore DataStore
-
+	datastore  DataStore
 	optionsMap searchPkg.OptionsMap
 
 	testContexts     map[string]context.Context

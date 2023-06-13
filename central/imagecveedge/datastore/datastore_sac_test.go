@@ -10,8 +10,6 @@ import (
 	dackboxTestUtils "github.com/stackrox/rox/central/dackbox/testutils"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
@@ -49,11 +47,11 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) SetupSuite() {
 }
 
 func (s *imageCVEEdgeDatastoreSACTestSuite) TearDownSuite() {
-	s.Require().NoError(s.dackboxTestStore.Cleanup(s.T()))
+	s.dackboxTestStore.Cleanup(s.T())
 }
 
-func (s *imageCVEEdgeDatastoreSACTestSuite) cleanImageToVulnerabilitiesGraph(waitForIndexing bool) {
-	s.Require().NoError(s.dackboxTestStore.CleanImageToVulnerabilitiesGraph(waitForIndexing))
+func (s *imageCVEEdgeDatastoreSACTestSuite) cleanImageToVulnerabilitiesGraph() {
+	s.Require().NoError(s.dackboxTestStore.CleanImageToVulnerabilitiesGraph())
 }
 
 func getCveID(vulnerability *storage.EmbeddedVulnerability, os string) string {
@@ -63,10 +61,7 @@ func getCveID(vulnerability *storage.EmbeddedVulnerability, os string) string {
 func getEdgeID(image *storage.Image, vulnerability *storage.EmbeddedVulnerability, os string) string {
 	imageID := image.GetId()
 	convertedCVEID := getCveID(vulnerability, os)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return pgSearch.IDFromPks([]string{imageID, convertedCVEID})
-	}
-	return edges.EdgeID{ParentID: imageID, ChildID: convertedCVEID}.ToString()
+	return pgSearch.IDFromPks([]string{imageID, convertedCVEID})
 }
 
 type edgeTestCase struct {
@@ -201,8 +196,8 @@ var (
 
 func (s *imageCVEEdgeDatastoreSACTestSuite) TestGet() {
 	// Inject the fixture graph, and test exists for Image1 to CVE-1234-0001 edge
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	targetEdgeID := img1cve1edge
 	expectedSrcID := fixtures.GetImageSherlockHolmes1().GetId()
@@ -226,12 +221,9 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) TestGet() {
 }
 
 func (s *imageCVEEdgeDatastoreSACTestSuite) TestSearch() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("ImageCVEEdge Search datastore unit tests do not work in pre-postgres mode")
-	}
 	// Inject the fixture graph, and test data filtering on count operations
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range testCases {
 		s.Run(c.contextKey, func() {
@@ -253,12 +245,9 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) TestSearch() {
 }
 
 func (s *imageCVEEdgeDatastoreSACTestSuite) TestSearchEdges() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("ImageCVEEdge Search datastore unit tests do not work in pre-postgres mode")
-	}
 	// Inject the fixture graph, and test data filtering on count operations
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range testCases {
 		s.Run(c.contextKey, func() {
@@ -280,12 +269,9 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) TestSearchEdges() {
 }
 
 func (s *imageCVEEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("ImageCVEEdge Search datastore unit tests do not work in pre-postgres mode")
-	}
 	// Inject the fixture graph, and test data filtering on count operations
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range testCases {
 		s.Run(c.contextKey, func() {

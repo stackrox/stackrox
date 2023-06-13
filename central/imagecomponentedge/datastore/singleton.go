@@ -19,7 +19,7 @@ func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
 	indexer := pgStore.NewIndexer(globaldb.GetPostgres())
 	searcher := search.NewV2(storage, indexer)
-	ad, err = New(nil, storage, indexer, searcher)
+	ad, err = New(storage, indexer, searcher)
 	utils.CrashOnError(err)
 }
 
