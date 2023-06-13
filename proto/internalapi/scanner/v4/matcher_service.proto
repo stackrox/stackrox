@@ -20,7 +20,7 @@ message Metadata {
 // Matcher finds vulnerabilities in index reports.
 service Matcher {
 
-    // GetVulnerabilities get or create a VulnerabilityReport and return it.
+    // GetVulnerabilities get a VulnerabilityReport and return it.
     // The Manifest must have been Indexed first via the Indexer.
     rpc GetVulnerabilities (GetVulnerabilitiesRequest) returns (VulnerabilityReport);
 
