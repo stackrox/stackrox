@@ -57,10 +57,6 @@ func (i *instantiator) Instantiate(bundleContents Contents) ([]*unstructured.Uns
 		common.Filter(&allObjects, common.CertObjectPredicate)
 	}
 
-	// TODO: check to see if PSPs are allowed
-	// Remove the psps
-	common.Filter(&allObjects, common.PSPObjectPredicate)
-
 	return allObjects, nil
 }
 
@@ -68,10 +64,6 @@ func (i *instantiator) loadObjectsFromYAMLs(c Contents) ([]*unstructured.Unstruc
 	var result []*unstructured.Unstructured
 	for _, fileName := range c.ListFiles() {
 		if !strings.HasSuffix(fileName, ".yaml") {
-			continue
-		}
-
-		if strings.Contains(fileName, "pod-security") {
 			continue
 		}
 
