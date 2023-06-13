@@ -96,7 +96,7 @@ type Service interface {
 	v1.DebugServiceServer
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
-	DiagnosticsHandler() http.HandlerFunc
+	PrivateDiagnosticsHandler() http.HandlerFunc
 }
 
 // New returns a Service that implements v1.DebugServiceServer
@@ -133,7 +133,7 @@ type serviceImpl struct {
 	notifierDataStore    notifierDS.DataStore
 }
 
-func (s *serviceImpl) DiagnosticsHandler() http.HandlerFunc {
+func (s *serviceImpl) PrivateDiagnosticsHandler() http.HandlerFunc {
 	return func(responseWriter http.ResponseWriter, r *http.Request) {
 		ctx := sac.WithGlobalAccessScopeChecker(r.Context(), sac.AllowAllAccessScopeChecker())
 		requestWithContext := r.WithContext(ctx)

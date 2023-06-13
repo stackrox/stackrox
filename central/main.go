@@ -307,7 +307,7 @@ func privateRoutes() []*private.Route {
 	}
 	result = append(result, &private.Route{
 		Route:         "/diagnostics",
-		ServerHandler: debugService.Singleton().DiagnosticsHandler(),
+		ServerHandler: debugService.Singleton().PrivateDiagnosticsHandler(),
 	})
 	return result
 }
