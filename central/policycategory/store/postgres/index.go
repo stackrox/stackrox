@@ -55,11 +55,3 @@ func (b *indexerImpl) DeletePolicyCategory(id string) error {
 func (b *indexerImpl) DeletePolicyCategories(_ []string) error {
 	return nil
 }
-
-func (b *indexerImpl) MarkInitialIndexingComplete() error {
-	return nil
-}
-
-func (b *indexerImpl) NeedsInitialIndexing() (bool, error) {
-	return false, nil
-}

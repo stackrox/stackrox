@@ -17,8 +17,6 @@ type Indexer interface {
 	Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteListAlert(id string) error
 	DeleteListAlerts(ids []string) error
-	MarkInitialIndexingComplete() error
-	NeedsInitialIndexing() (bool, error)
 	Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
 }
 

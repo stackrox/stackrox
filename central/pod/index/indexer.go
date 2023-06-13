@@ -17,8 +17,6 @@ type Indexer interface {
 	Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeletePod(id string) error
 	DeletePods(ids []string) error
-	MarkInitialIndexingComplete() error
-	NeedsInitialIndexing() (bool, error)
 	Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
 }
 
