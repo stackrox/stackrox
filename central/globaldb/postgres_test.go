@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -20,13 +19,6 @@ type PostgresUtilitySuite struct {
 
 func TestConfigSetup(t *testing.T) {
 	suite.Run(t, new(PostgresUtilitySuite))
-}
-
-func (s *PostgresUtilitySuite) SetupSuite() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 }
 
 func (s *PostgresUtilitySuite) TestSourceParser() {

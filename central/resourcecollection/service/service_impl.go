@@ -91,9 +91,6 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // ListCollectionSelectors returns all supported selectors
 func (s *serviceImpl) ListCollectionSelectors(_ context.Context, _ *v1.Empty) (*v1.ListCollectionSelectorsResponse, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.Errorf("%s env var is not enabled", env.PostgresDatastoreEnabled.EnvVar())
-	}
 	selectors := datastore.GetSupportedFieldLabels()
 	selectorStrings := make([]string, 0, len(selectors))
 	for _, selector := range selectors {
@@ -106,9 +103,6 @@ func (s *serviceImpl) ListCollectionSelectors(_ context.Context, _ *v1.Empty) (*
 
 // GetCollection returns a collection for the given request
 func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollectionRequest) (*v1.GetCollectionResponse, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.Errorf("%s env var is not enabled", env.PostgresDatastoreEnabled.EnvVar())
-	}
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Id should be set when requesting a collection")
 	}
@@ -134,10 +128,6 @@ func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollecti
 
 // GetCollectionCount returns count of collections matching the query in the request
 func (s *serviceImpl) GetCollectionCount(ctx context.Context, request *v1.GetCollectionCountRequest) (*v1.GetCollectionCountResponse, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.Errorf("%s env var is not enabled", env.PostgresDatastoreEnabled.EnvVar())
-	}
-
 	query, err := resolveQuery(request.GetQuery(), false)
 	if err != nil {
 		return nil, err

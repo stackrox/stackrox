@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mathutil"
@@ -366,60 +365,27 @@ func formatMessage(rc *storage.ReportConfiguration, emailTemplate string, date t
 }
 
 func (s *scheduler) getReportData(ctx context.Context, rc *storage.ReportConfiguration) ([]common.Result, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		collection, found, err := s.collectionDatastore.Get(ctx, rc.GetScopeId())
-		if err != nil {
-			return nil, errors.Wrapf(err, "error building report query: unable to get the collection %s", rc.GetScopeId())
-		}
-		if !found {
-			return nil, errors.Errorf("error building report query: collection with id %s not found", rc.GetScopeId())
-		}
-		rQuery, err := s.buildReportQuery(ctx, rc, collection, nil, nil, nil)
-		if err != nil {
-			return nil, err
-		}
-		deploymentIds, err := s.getDeploymentIDs(ctx, rQuery.DeploymentsQuery)
-		if err != nil {
-			return nil, err
-		}
-		result, err := s.runPaginatedDeploymentsQuery(ctx, rQuery.CveFieldsQuery, deploymentIds)
-		if err != nil {
-			return nil, err
-		}
-		result.Deployments = orderByClusterAndNamespace(result.Deployments)
-		return []common.Result{result}, nil
-	}
-
-	scope, found, err := s.roleDatastore.GetAccessScope(ctx, rc.GetScopeId())
+	collection, found, err := s.collectionDatastore.Get(ctx, rc.GetScopeId())
 	if err != nil {
-		return nil, errors.Wrap(err, "error building report query: unable to get the resource scope")
+		return nil, errors.Wrapf(err, "error building report query: unable to get the collection %s", rc.GetScopeId())
 	}
 	if !found {
-		return nil, errors.Errorf("error building report query: resource scope %s not found", scope.GetId())
+		return nil, errors.Errorf("error building report query: collection with id %s not found", rc.GetScopeId())
 	}
-	clusters, err := s.clusterDatastore.GetClusters(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "error building report query: unable to get clusters")
-	}
-	namespaces, err := s.namespaceDatastore.GetAllNamespaces(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "error building report query: unable to get namespaces")
-	}
-
-	rQuery, err := s.buildReportQuery(ctx, rc, nil, scope, clusters, namespaces)
+	rQuery, err := s.buildReportQuery(ctx, rc, collection, nil, nil, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	r := make([]common.Result, 0, len(rQuery.ScopeQueries))
-	for _, sq := range rQuery.ScopeQueries {
-		resultData, err := s.runPaginatedQuery(ctx, sq, rQuery.CveFieldsQuery)
-		if err != nil {
-			return nil, err
-		}
-		r = append(r, resultData)
+	deploymentIds, err := s.getDeploymentIDs(ctx, rQuery.DeploymentsQuery)
+	if err != nil {
+		return nil, err
 	}
-	return r, nil
+	result, err := s.runPaginatedDeploymentsQuery(ctx, rQuery.CveFieldsQuery, deploymentIds)
+	if err != nil {
+		return nil, err
+	}
+	result.Deployments = orderByClusterAndNamespace(result.Deployments)
+	return []common.Result{result}, nil
 }
 
 // TODO : Remove scope arg from function signature after collections feature is released as access scopes will no longer be used in vuln reports
@@ -439,12 +405,7 @@ func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery 
 	offset := paginatedQueryStartOffset
 	var resultData common.Result
 	for {
-		var gqlQuery string
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			gqlQuery = reportQueryPostgres
-		} else {
-			gqlQuery = reportDataQuery
-		}
+		gqlQuery := reportQueryPostgres
 		r, err := s.execReportDataQuery(ctx, gqlQuery, scopeQuery, cveQuery, offset)
 		if err != nil {
 			return r, err

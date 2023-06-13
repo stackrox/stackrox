@@ -31,7 +31,6 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -80,10 +79,7 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 		v1.SearchCategory_ROLEBINDINGS:       s.bindings.SearchRoleBindings,
 		v1.SearchCategory_SUBJECTS:           service.NewSubjectSearcher(s.bindings).SearchSubjects,
 		v1.SearchCategory_IMAGE_INTEGRATIONS: s.imageIntegrations.SearchImageIntegrations,
-	}
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		searchfuncs[v1.SearchCategory_POLICY_CATEGORIES] = s.categories.SearchPolicyCategories
+		v1.SearchCategory_POLICY_CATEGORIES:  s.categories.SearchPolicyCategories,
 	}
 
 	return searchfuncs
@@ -106,10 +102,7 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 		v1.SearchCategory_ROLEBINDINGS:       s.bindings,
 		v1.SearchCategory_SUBJECTS:           service.NewSubjectSearcher(s.bindings),
 		v1.SearchCategory_IMAGE_INTEGRATIONS: s.imageIntegrations,
-	}
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		searchers[v1.SearchCategory_POLICY_CATEGORIES] = s.categories
+		v1.SearchCategory_POLICY_CATEGORIES:  s.categories,
 	}
 
 	return searchers

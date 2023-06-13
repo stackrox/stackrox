@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	dackboxTestUtils "github.com/stackrox/rox/central/dackbox/testutils"
+	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -31,28 +31,28 @@ func TestNodeComponentEdgeDatastoreSAC(t *testing.T) {
 type nodeComponentEdgeDatastoreSACTestSuite struct {
 	suite.Suite
 
-	dackboxTestStore dackboxTestUtils.DackboxTestDataStore
-	datastore        DataStore
+	testGraphDatastore graphDBTestUtils.TestGraphDataStore
+	datastore          DataStore
 
 	testContexts map[string]context.Context
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) SetupSuite() {
 	var err error
-	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
+	s.testGraphDatastore, err = graphDBTestUtils.NewTestGraphDataStore(s.T())
 	s.Require().NoError(err)
-	pool := s.dackboxTestStore.GetPostgresPool()
+	pool := s.testGraphDatastore.GetPostgresPool()
 	s.datastore, err = GetTestPostgresDataStore(s.T(), pool)
 	s.Require().NoError(err)
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Node)
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TearDownSuite() {
-	s.dackboxTestStore.Cleanup(s.T())
+	s.testGraphDatastore.Cleanup(s.T())
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) cleanupNodeToVulnerabilityGraph() {
-	s.Require().NoError(s.dackboxTestStore.CleanNodeToVulnerabilitiesGraph())
+	s.Require().NoError(s.testGraphDatastore.CleanNodeToVulnerabilitiesGraph())
 }
 
 func getComponentID(component *storage.EmbeddedNodeScanComponent, os string) string {
@@ -177,11 +177,11 @@ func getTestCases(nodeIDs []string) []edgeTestCase {
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestExists() {
 	// Inject the fixture graph and test for node1 to component1 edge
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanupNodeToVulnerabilityGraph()
 	s.Require().NoError(err)
 
-	nodeIDs := s.dackboxTestStore.GetStoredNodeIDs()
+	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	node1 := nodeIDs[0]
 	targetEdgeID := getEdgeID(node1, fixtures.GetEmbeddedNodeComponent1x1(), nodeScanOperatingSystem)
 	testCases := getTestCases(nodeIDs)
@@ -197,11 +197,11 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestExists() {
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGet() {
 	// Inject the fixture graph and test for node1 to component1 edge
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanupNodeToVulnerabilityGraph()
 	s.Require().NoError(err)
 
-	nodeIDs := s.dackboxTestStore.GetStoredNodeIDs()
+	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	node1 := nodeIDs[0]
 	targetEdgeID := getEdgeID(node1, fixtures.GetEmbeddedNodeComponent1x1(), nodeScanOperatingSystem)
 	expectedSrcID := node1
@@ -228,11 +228,11 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGet() {
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 	// Inject the fixture graph and test for node1 to component1 edge and node2 to component 4 edges
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanupNodeToVulnerabilityGraph()
 	s.Require().NoError(err)
 
-	nodeIDs := s.dackboxTestStore.GetStoredNodeIDs()
+	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	testCases := getTestCases(nodeIDs)
 
 	node1 := nodeIDs[0]
@@ -284,11 +284,11 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestCount() {
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanupNodeToVulnerabilityGraph()
 	s.Require().NoError(err)
 
-	nodeIDs := s.dackboxTestStore.GetStoredNodeIDs()
+	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	testCases := getTestCases(nodeIDs)
 
 	for _, c := range testCases {
@@ -308,11 +308,11 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestCount() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearch() {
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanupNodeToVulnerabilityGraph()
 	s.Require().NoError(err)
 
-	nodeIDs := s.dackboxTestStore.GetStoredNodeIDs()
+	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	testCases := getTestCases(nodeIDs)
 
 	for _, c := range testCases {
@@ -337,11 +337,11 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearch() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanupNodeToVulnerabilityGraph()
 	s.Require().NoError(err)
 
-	nodeIDs := s.dackboxTestStore.GetStoredNodeIDs()
+	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	testCases := getTestCases(nodeIDs)
 
 	for _, c := range testCases {
@@ -366,11 +366,11 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanupNodeToVulnerabilityGraph()
 	s.Require().NoError(err)
 
-	nodeIDs := s.dackboxTestStore.GetStoredNodeIDs()
+	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	testCases := getTestCases(nodeIDs)
 
 	for _, c := range testCases {
