@@ -16,13 +16,7 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 ClusterTestRunner(
     cluster=GKECluster("sensor-integration-test"),
     test=SensorIntegration(),
-    post_test=PostClusterTest(
-        check_stackrox_logs=False,
-    ),
-    final_post=FinalPost(
-        store_qa_test_debug_logs=False,
-        store_qa_spock_results=False,
-        handle_e2e_progress_failures=False,
-    ),
+    post_test=NullPostTest(),
+    final_post=NullPostTest(),
 ).run()
 
