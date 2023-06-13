@@ -73,10 +73,7 @@ func (d *dataStoreImpl) UpdateReportConfiguration(ctx context.Context, reportCon
 		return errors.New("report configuration id field must be set")
 	}
 
-	if err := d.reportConfigStore.Upsert(ctx, reportConfig); err != nil {
-		return err
-	}
-	return nil
+	return d.reportConfigStore.Upsert(ctx, reportConfig)
 }
 
 func (d *dataStoreImpl) RemoveReportConfiguration(ctx context.Context, id string) error {
