@@ -126,19 +126,6 @@ func (s *signalServer) UpdateProcessLineageInfo(processName string, parentID str
 	})
 }
 
-func (s *signalServer) UpdateNetworkConnInfo(containerID string, networkInfo string) error {
-	return s.db.Update(func(tx *bolt.Tx) error {
-		b, _ := tx.CreateBucketIfNotExists([]byte(networkBucket))
-		err := b.Put([]byte(containerID), []byte(networkInfo))
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
-
-		return nil
-	})
-}
-
 func (s *signalServer) UpdateBucket(containerID string, info string, bucket string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		b, err := tx.CreateBucketIfNotExists([]byte(bucket))
