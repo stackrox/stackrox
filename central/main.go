@@ -98,6 +98,7 @@ import (
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	policyService "github.com/stackrox/rox/central/policy/service"
 	policyCategoryService "github.com/stackrox/rox/central/policycategory/service"
+	"github.com/stackrox/rox/central/private"
 	probeUploadService "github.com/stackrox/rox/central/probeupload/service"
 	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineService "github.com/stackrox/rox/central/processbaseline/service"
@@ -284,9 +285,31 @@ func main() {
 	pkgMetrics.NewDefaultHTTPServer(pkgMetrics.CentralSubsystem).RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
+	if env.PrivateDiagnosticsEnabled.BooleanSetting() {
+		privateServer := private.NewHTTPServer()
+		privateServer.AddRoutes(privateRoutes())
+		privateServer.RunForever()
+	}
+
 	go startGRPCServer()
 
 	waitForTerminationSignal()
+}
+
+func privateRoutes() []*private.Route {
+	result := make([]*private.Route, 0)
+	for r, h := range routes.DebugRoutes {
+		result = append(result, &private.Route{
+			Route:         r,
+			ServerHandler: h,
+			Compression:   true,
+		})
+	}
+	result = append(result, &private.Route{
+		Route:         "/diagnostics",
+		ServerHandler: debugService.Singleton().DiagnosticsHandler(),
+	})
+	return result
 }
 
 func ensureDB(ctx context.Context) {
@@ -407,7 +430,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 	if devbuild.IsEnabled() {
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}
-	debugService.NewDefaultHTTPServer(debugSvc).RunForever()
 
 	return servicesToRegister
 }

@@ -96,7 +96,7 @@ type Service interface {
 	v1.DebugServiceServer
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
-	GetDiagnosticDumpWithCentral(w http.ResponseWriter, r *http.Request, withCentral bool)
+	DiagnosticsHandler() http.HandlerFunc
 }
 
 // New returns a Service that implements v1.DebugServiceServer
@@ -131,6 +131,14 @@ type serviceImpl struct {
 	roleDataStore        roleDS.DataStore
 	configDataStore      configDS.DataStore
 	notifierDataStore    notifierDS.DataStore
+}
+
+func (s *serviceImpl) DiagnosticsHandler() http.HandlerFunc {
+	return func(responseWriter http.ResponseWriter, r *http.Request) {
+		ctx := sac.WithGlobalAccessScopeChecker(r.Context(), sac.AllowAllAccessScopeChecker())
+		requestWithContext := r.WithContext(ctx)
+		s.getDiagnosticDumpWithCentral(responseWriter, requestWithContext, true)
+	}
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -679,10 +687,10 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 // getDiagnosticDump aims to provide a snapshot of some state information for
 // triaging. The size and download times of this dump shall stay reasonable.
 func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) {
-	s.GetDiagnosticDumpWithCentral(w, r, env.EnableCentralDiagnostics.BooleanSetting())
+	s.getDiagnosticDumpWithCentral(w, r, env.EnableCentralDiagnostics.BooleanSetting())
 }
 
-func (s *serviceImpl) GetDiagnosticDumpWithCentral(w http.ResponseWriter, r *http.Request, withCentral bool) {
+func (s *serviceImpl) getDiagnosticDumpWithCentral(w http.ResponseWriter, r *http.Request, withCentral bool) {
 	filename := time.Now().Format("stackrox_diagnostic_2006_01_02_15_04_05.zip")
 
 	opts := debugDumpOptions{
