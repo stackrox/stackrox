@@ -122,18 +122,6 @@
       ],
       "default": "UI_NONE"
     },
-    "EmbeddedVulnerabilityVulnerabilityType": {
-      "type": "string",
-      "enum": [
-        "UNKNOWN_VULNERABILITY",
-        "IMAGE_VULNERABILITY",
-        "K8S_VULNERABILITY",
-        "ISTIO_VULNERABILITY",
-        "NODE_VULNERABILITY",
-        "OPENSHIFT_VULNERABILITY"
-      ],
-      "default": "UNKNOWN_VULNERABILITY"
-    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -420,12 +408,6 @@
         "version": {
           "type": "string"
         },
-        "vulns": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/storageEmbeddedVulnerability"
-          }
-        },
         "vulnerabilities": {
           "type": "array",
           "items": {
@@ -445,90 +427,6 @@
           "format": "float"
         }
       }
-    },
-    "storageEmbeddedVulnerability": {
-      "type": "object",
-      "properties": {
-        "cve": {
-          "type": "string"
-        },
-        "cvss": {
-          "type": "number",
-          "format": "float"
-        },
-        "summary": {
-          "type": "string"
-        },
-        "link": {
-          "type": "string"
-        },
-        "fixedBy": {
-          "type": "string"
-        },
-        "scoreVersion": {
-          "$ref": "#/definitions/storageEmbeddedVulnerabilityScoreVersion"
-        },
-        "cvssV2": {
-          "$ref": "#/definitions/storageCVSSV2"
-        },
-        "cvssV3": {
-          "$ref": "#/definitions/storageCVSSV3"
-        },
-        "publishedOn": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "lastModified": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "vulnerabilityType": {
-          "$ref": "#/definitions/EmbeddedVulnerabilityVulnerabilityType",
-          "description": "For internal purposes only."
-        },
-        "vulnerabilityTypes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/EmbeddedVulnerabilityVulnerabilityType"
-          }
-        },
-        "suppressed": {
-          "type": "boolean"
-        },
-        "suppressActivation": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "suppressExpiry": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "firstSystemOccurrence": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Time when the CVE was first seen in the system."
-        },
-        "firstImageOccurrence": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Time when the CVE was first seen in the image."
-        },
-        "severity": {
-          "$ref": "#/definitions/storageVulnerabilitySeverity"
-        },
-        "state": {
-          "$ref": "#/definitions/storageVulnerabilityState"
-        }
-      },
-      "title": "Next Tag: 21"
-    },
-    "storageEmbeddedVulnerabilityScoreVersion": {
-      "type": "string",
-      "enum": [
-        "V2",
-        "V3"
-      ],
-      "default": "V2"
     },
     "storageNode": {
       "type": "object",
@@ -759,16 +657,6 @@
         "CRITICAL_VULNERABILITY_SEVERITY"
       ],
       "default": "UNKNOWN_VULNERABILITY_SEVERITY"
-    },
-    "storageVulnerabilityState": {
-      "type": "string",
-      "enum": [
-        "OBSERVED",
-        "DEFERRED",
-        "FALSE_POSITIVE"
-      ],
-      "default": "OBSERVED",
-      "description": "VulnerabilityState indicates if vulnerability is being observed or deferred(/suppressed). By default, it vulnerabilities are observed."
     },
     "v1ListNodesResponse": {
       "type": "object",
