@@ -4,22 +4,12 @@ package index
 
 import (
 	"context"
-	bleve "github.com/blevesearch/bleve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 type Indexer interface {
-	AddRisk(risk *storage.Risk) error
-	AddRisks(risks []*storage.Risk) error
 	Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
-	DeleteRisk(id string) error
-	DeleteRisks(ids []string) error
 	Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
-}
-
-func New(index bleve.Index) Indexer {
-	return &indexerImpl{index: index}
 }

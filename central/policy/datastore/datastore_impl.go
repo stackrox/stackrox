@@ -48,17 +48,6 @@ type datastoreImpl struct {
 	categoriesDatastore categoriesDataStore.DataStore
 }
 
-func (ds *datastoreImpl) buildIndex() error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	policies, err := ds.storage.GetAll(workflowAdministrationCtx)
-	if err != nil {
-		return err
-	}
-	return ds.indexer.AddPolicies(policies)
-}
-
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
 	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
@@ -240,7 +229,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 		}
 	}
 
-	return policy.Id, ds.indexer.AddPolicy(policy)
+	return policy.Id, nil
 }
 
 // UpdatePolicy updates a policy from the storage and the indexer
@@ -271,7 +260,7 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 	if err := ds.storage.Upsert(ctx, policy); err != nil {
 		return err
 	}
-	return ds.indexer.AddPolicy(policy)
+	return nil
 }
 
 // RemovePolicy removes a policy from the storage and the indexer
@@ -292,7 +281,7 @@ func (ds *datastoreImpl) removePolicyNoLock(ctx context.Context, id string) erro
 	if err := ds.storage.Delete(ctx, id); err != nil {
 		return err
 	}
-	return ds.indexer.DeletePolicy(id)
+	return nil
 }
 
 func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*storage.Policy, overwrite bool) ([]*v1.ImportPolicyResponse, bool, error) {
@@ -413,12 +402,6 @@ func (ds *datastoreImpl) importPolicy(ctx context.Context, policy *storage.Polic
 				return result
 			}
 		}
-	}
-
-	err = ds.indexer.AddPolicy(policy)
-	if err != nil {
-		result.Errors = getImportErrorsFromError(err)
-		return result
 	}
 	result.Succeeded = true
 	return result

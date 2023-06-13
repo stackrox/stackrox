@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddDeployment mocks base method.
-func (m *MockIndexer) AddDeployment(deployment *storage.Deployment) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddDeployment", deployment)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddDeployment indicates an expected call of AddDeployment.
-func (mr *MockIndexerMockRecorder) AddDeployment(deployment interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddDeployment", reflect.TypeOf((*MockIndexer)(nil).AddDeployment), deployment)
-}
-
-// AddDeployments mocks base method.
-func (m *MockIndexer) AddDeployments(deployments []*storage.Deployment) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddDeployments", deployments)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddDeployments indicates an expected call of AddDeployments.
-func (mr *MockIndexerMockRecorder) AddDeployments(deployments interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddDeployments", reflect.TypeOf((*MockIndexer)(nil).AddDeployments), deployments)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteDeployment mocks base method.
-func (m *MockIndexer) DeleteDeployment(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteDeployment", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteDeployment indicates an expected call of DeleteDeployment.
-func (mr *MockIndexerMockRecorder) DeleteDeployment(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDeployment", reflect.TypeOf((*MockIndexer)(nil).DeleteDeployment), id)
-}
-
-// DeleteDeployments mocks base method.
-func (m *MockIndexer) DeleteDeployments(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteDeployments", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteDeployments indicates an expected call of DeleteDeployments.
-func (mr *MockIndexerMockRecorder) DeleteDeployments(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDeployments", reflect.TypeOf((*MockIndexer)(nil).DeleteDeployments), ids)
 }
 
 // Search mocks base method.

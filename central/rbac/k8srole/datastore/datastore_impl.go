@@ -57,7 +57,7 @@ func (d *datastoreImpl) UpsertRole(ctx context.Context, request *storage.K8SRole
 	if err := d.storage.Upsert(ctx, request); err != nil {
 		return err
 	}
-	return d.indexer.AddK8SRole(request)
+	return nil
 }
 
 func (d *datastoreImpl) RemoveRole(ctx context.Context, id string) error {
@@ -70,7 +70,7 @@ func (d *datastoreImpl) RemoveRole(ctx context.Context, id string) error {
 	if err := d.storage.Delete(ctx, id); err != nil {
 		return err
 	}
-	return d.indexer.DeleteK8SRole(id)
+	return nil
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {

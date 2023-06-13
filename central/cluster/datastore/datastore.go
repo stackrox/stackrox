@@ -120,7 +120,7 @@ func New(
 	}
 
 	ds.searcher = search.NewV2(clusterStorage, indexer, clusterRanker)
-	if err := ds.buildIndex(sac.WithAllAccess(context.Background())); err != nil {
+	if err := ds.buildCache(sac.WithAllAccess(context.Background())); err != nil {
 		return ds, err
 	}
 

@@ -68,7 +68,7 @@ func (d *datastoreImpl) UpsertSecret(ctx context.Context, request *storage.Secre
 	if err := d.storage.Upsert(ctx, request); err != nil {
 		return err
 	}
-	return d.indexer.AddSecret(request)
+	return nil
 }
 
 func (d *datastoreImpl) RemoveSecret(ctx context.Context, id string) error {
@@ -81,7 +81,7 @@ func (d *datastoreImpl) RemoveSecret(ctx context.Context, id string) error {
 	if err := d.storage.Delete(ctx, id); err != nil {
 		return err
 	}
-	return d.indexer.DeleteSecret(id)
+	return nil
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {

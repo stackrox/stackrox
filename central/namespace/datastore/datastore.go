@@ -152,7 +152,7 @@ func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.Nam
 	if err := b.store.Upsert(ctx, namespace); err != nil {
 		return err
 	}
-	return b.indexer.AddNamespaceMetadata(namespace)
+	return nil
 }
 
 // UpdateNamespace updates a namespace to bolt
@@ -166,7 +166,7 @@ func (b *datastoreImpl) UpdateNamespace(ctx context.Context, namespace *storage.
 	if err := b.store.Upsert(ctx, namespace); err != nil {
 		return err
 	}
-	return b.indexer.AddNamespaceMetadata(namespace)
+	return nil
 }
 
 // RemoveNamespace removes a namespace.
@@ -183,7 +183,7 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 	// Remove ranker record here since removal is not handled in risk store as no entry present for namespace
 	b.namespaceRanker.Remove(id)
 
-	return b.indexer.DeleteNamespaceMetadata(id)
+	return nil
 }
 
 func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {

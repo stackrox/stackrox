@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -86,7 +85,7 @@ func (ds *datastoreImpl) AddImageIntegration(ctx context.Context, integration *s
 	if err != nil {
 		return "", err
 	}
-	return integration.Id, ds.indexer.AddImageIntegration(integration)
+	return integration.Id, nil
 }
 
 // UpdateImageIntegration is pass-through to the underlying store.
@@ -101,7 +100,7 @@ func (ds *datastoreImpl) UpdateImageIntegration(ctx context.Context, integration
 	if err != nil {
 		return err
 	}
-	return ds.indexer.AddImageIntegration(integration)
+	return nil
 }
 
 // RemoveImageIntegration is pass-through to the underlying store.
@@ -114,23 +113,6 @@ func (ds *datastoreImpl) RemoveImageIntegration(ctx context.Context, id string) 
 	if err := ds.storage.Delete(ctx, id); err != nil {
 		return err
 	}
-	return ds.indexer.DeleteImageIntegration(id)
-}
-
-func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	imageIntegrations, err := ds.storage.GetAll(ctx)
-	log.Infof("[STARTUP] Found %d Image Integrations to be indexed", len(imageIntegrations))
-	if err != nil {
-		return err
-	}
-	err = ds.indexer.AddImageIntegrations(imageIntegrations)
-	if err != nil {
-		return err
-	}
-	log.Infof("[STARTUP] Successfully indexed %d Image Integrations", len(imageIntegrations))
 	return nil
 }
 

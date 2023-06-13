@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddProcessIndicator mocks base method.
-func (m *MockIndexer) AddProcessIndicator(processindicator *storage.ProcessIndicator) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddProcessIndicator", processindicator)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddProcessIndicator indicates an expected call of AddProcessIndicator.
-func (mr *MockIndexerMockRecorder) AddProcessIndicator(processindicator interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessIndicator", reflect.TypeOf((*MockIndexer)(nil).AddProcessIndicator), processindicator)
-}
-
-// AddProcessIndicators mocks base method.
-func (m *MockIndexer) AddProcessIndicators(processindicators []*storage.ProcessIndicator) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddProcessIndicators", processindicators)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddProcessIndicators indicates an expected call of AddProcessIndicators.
-func (mr *MockIndexerMockRecorder) AddProcessIndicators(processindicators interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessIndicators", reflect.TypeOf((*MockIndexer)(nil).AddProcessIndicators), processindicators)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteProcessIndicator mocks base method.
-func (m *MockIndexer) DeleteProcessIndicator(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteProcessIndicator", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteProcessIndicator indicates an expected call of DeleteProcessIndicator.
-func (mr *MockIndexerMockRecorder) DeleteProcessIndicator(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProcessIndicator", reflect.TypeOf((*MockIndexer)(nil).DeleteProcessIndicator), id)
-}
-
-// DeleteProcessIndicators mocks base method.
-func (m *MockIndexer) DeleteProcessIndicators(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteProcessIndicators", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteProcessIndicators indicates an expected call of DeleteProcessIndicators.
-func (mr *MockIndexerMockRecorder) DeleteProcessIndicators(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProcessIndicators", reflect.TypeOf((*MockIndexer)(nil).DeleteProcessIndicators), ids)
 }
 
 // Search mocks base method.

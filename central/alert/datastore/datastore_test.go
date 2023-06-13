@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -111,10 +110,7 @@ func (s *alertDataStoreTestSuite) TestCountAlerts_Error() {
 
 func (s *alertDataStoreTestSuite) TestAddAlert() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{fakeAlert}).Return(nil)
-	s.indexer.EXPECT().AddListAlerts([]*storage.ListAlert{
-		fillSortHelperFields(convert.AlertToListAlert(alerttest.NewFakeAlert())),
-	}).Return(errFake)
+	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{fakeAlert}).Return(errFake)
 
 	// We don't expect AckKeysIndexed, since the error returned from the above call will prevent this.
 	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
@@ -137,7 +133,6 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStaleBatch() {
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, nil, nil)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil)
-	s.indexer.EXPECT().AddListAlerts(gomock.Any()).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(gomock.Any(), fakeAlert.GetId()).Times(1).Return(nil)
 
 	_, err := s.dataStore.MarkAlertStaleBatch(s.hasWriteCtx, alerttest.FakeAlertID)
@@ -171,7 +166,6 @@ func (s *alertDataStoreTestSuite) TestKeyIndexing() {
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{fakeAlert.GetId()}).Return([]*storage.Alert{fakeAlert}, nil, nil)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil)
-	s.indexer.EXPECT().AddListAlerts(gomock.Any()).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(gomock.Any(), gomock.Any()).Return(nil)
 	_, err := s.dataStore.MarkAlertStaleBatch(s.hasWriteCtx, fakeAlert.GetId())
 
@@ -220,8 +214,6 @@ func (s *alertDataStoreWithSACTestSuite) SetupTest() {
 
 func (s *alertDataStoreWithSACTestSuite) TestAddAlertEnforced() {
 	s.storage.EXPECT().Upsert(gomock.Any(), alerttest.NewFakeAlert()).Times(0)
-	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(alerttest.NewFakeAlert())).Times(0)
-
 	err := s.dataStore.UpsertAlert(s.hasReadCtx, alerttest.NewFakeAlert())
 
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
@@ -232,7 +224,6 @@ func (s *alertDataStoreWithSACTestSuite) TestMarkAlertStaleBatchEnforced() {
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, nil, nil)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Times(0)
-	s.indexer.EXPECT().AddListAlert(gomock.Any()).Times(0)
 
 	_, err := s.dataStore.MarkAlertStaleBatch(s.hasReadCtx, alerttest.FakeAlertID)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)

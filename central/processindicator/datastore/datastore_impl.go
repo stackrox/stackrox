@@ -103,9 +103,6 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 	if err != nil {
 		return err
 	}
-	if err := ds.indexer.AddProcessIndicators(indicators); err != nil {
-		return err
-	}
 
 	keys := make([]string, 0, len(indicators))
 	for _, indicator := range indicators {
@@ -149,9 +146,6 @@ func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) err
 		return err
 	}
 
-	if err := ds.indexer.DeleteProcessIndicators(ids); err != nil {
-		return err
-	}
 	if err := ds.storage.AckKeysIndexed(ctx, ids...); err != nil {
 		return errors.Wrap(err, "error acknowledging indicator removal")
 	}

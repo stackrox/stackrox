@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddNodeCVE mocks base method.
-func (m *MockIndexer) AddNodeCVE(cve *storage.NodeCVE) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddNodeCVE", cve)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddNodeCVE indicates an expected call of AddNodeCVE.
-func (mr *MockIndexerMockRecorder) AddNodeCVE(cve interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNodeCVE", reflect.TypeOf((*MockIndexer)(nil).AddNodeCVE), cve)
-}
-
-// AddNodeCVEs mocks base method.
-func (m *MockIndexer) AddNodeCVEs(cves []*storage.NodeCVE) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddNodeCVEs", cves)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddNodeCVEs indicates an expected call of AddNodeCVEs.
-func (mr *MockIndexerMockRecorder) AddNodeCVEs(cves interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNodeCVEs", reflect.TypeOf((*MockIndexer)(nil).AddNodeCVEs), cves)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteNodeCVE mocks base method.
-func (m *MockIndexer) DeleteNodeCVE(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteNodeCVE", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteNodeCVE indicates an expected call of DeleteNodeCVE.
-func (mr *MockIndexerMockRecorder) DeleteNodeCVE(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNodeCVE", reflect.TypeOf((*MockIndexer)(nil).DeleteNodeCVE), id)
-}
-
-// DeleteNodeCVEs mocks base method.
-func (m *MockIndexer) DeleteNodeCVEs(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteNodeCVEs", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteNodeCVEs indicates an expected call of DeleteNodeCVEs.
-func (mr *MockIndexerMockRecorder) DeleteNodeCVEs(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNodeCVEs", reflect.TypeOf((*MockIndexer)(nil).DeleteNodeCVEs), ids)
 }
 
 // Search mocks base method.

@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddClusterCVEEdge mocks base method.
-func (m *MockIndexer) AddClusterCVEEdge(clustercveedge *storage.ClusterCVEEdge) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddClusterCVEEdge", clustercveedge)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddClusterCVEEdge indicates an expected call of AddClusterCVEEdge.
-func (mr *MockIndexerMockRecorder) AddClusterCVEEdge(clustercveedge interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddClusterCVEEdge", reflect.TypeOf((*MockIndexer)(nil).AddClusterCVEEdge), clustercveedge)
-}
-
-// AddClusterCVEEdges mocks base method.
-func (m *MockIndexer) AddClusterCVEEdges(clustercveedges []*storage.ClusterCVEEdge) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddClusterCVEEdges", clustercveedges)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddClusterCVEEdges indicates an expected call of AddClusterCVEEdges.
-func (mr *MockIndexerMockRecorder) AddClusterCVEEdges(clustercveedges interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddClusterCVEEdges", reflect.TypeOf((*MockIndexer)(nil).AddClusterCVEEdges), clustercveedges)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteClusterCVEEdge mocks base method.
-func (m *MockIndexer) DeleteClusterCVEEdge(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteClusterCVEEdge", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteClusterCVEEdge indicates an expected call of DeleteClusterCVEEdge.
-func (mr *MockIndexerMockRecorder) DeleteClusterCVEEdge(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteClusterCVEEdge", reflect.TypeOf((*MockIndexer)(nil).DeleteClusterCVEEdge), id)
-}
-
-// DeleteClusterCVEEdges mocks base method.
-func (m *MockIndexer) DeleteClusterCVEEdges(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteClusterCVEEdges", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteClusterCVEEdges indicates an expected call of DeleteClusterCVEEdges.
-func (mr *MockIndexerMockRecorder) DeleteClusterCVEEdges(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteClusterCVEEdges", reflect.TypeOf((*MockIndexer)(nil).DeleteClusterCVEEdges), ids)
 }
 
 // Search mocks base method.

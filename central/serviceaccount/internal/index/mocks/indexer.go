@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddServiceAccount mocks base method.
-func (m *MockIndexer) AddServiceAccount(serviceaccount *storage.ServiceAccount) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddServiceAccount", serviceaccount)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddServiceAccount indicates an expected call of AddServiceAccount.
-func (mr *MockIndexerMockRecorder) AddServiceAccount(serviceaccount interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddServiceAccount", reflect.TypeOf((*MockIndexer)(nil).AddServiceAccount), serviceaccount)
-}
-
-// AddServiceAccounts mocks base method.
-func (m *MockIndexer) AddServiceAccounts(serviceaccounts []*storage.ServiceAccount) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddServiceAccounts", serviceaccounts)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddServiceAccounts indicates an expected call of AddServiceAccounts.
-func (mr *MockIndexerMockRecorder) AddServiceAccounts(serviceaccounts interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddServiceAccounts", reflect.TypeOf((*MockIndexer)(nil).AddServiceAccounts), serviceaccounts)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteServiceAccount mocks base method.
-func (m *MockIndexer) DeleteServiceAccount(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteServiceAccount", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteServiceAccount indicates an expected call of DeleteServiceAccount.
-func (mr *MockIndexerMockRecorder) DeleteServiceAccount(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteServiceAccount", reflect.TypeOf((*MockIndexer)(nil).DeleteServiceAccount), id)
-}
-
-// DeleteServiceAccounts mocks base method.
-func (m *MockIndexer) DeleteServiceAccounts(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteServiceAccounts", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteServiceAccounts indicates an expected call of DeleteServiceAccounts.
-func (mr *MockIndexerMockRecorder) DeleteServiceAccounts(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteServiceAccounts", reflect.TypeOf((*MockIndexer)(nil).DeleteServiceAccounts), ids)
 }
 
 // Search mocks base method.
