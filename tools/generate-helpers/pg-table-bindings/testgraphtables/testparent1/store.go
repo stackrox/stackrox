@@ -110,11 +110,11 @@ func insertIntoTestParent1(ctx context.Context, batch *pgx.Batch, obj *storage.T
 	return nil
 }
 
-func insertIntoTestParent1Childrens(_ context.Context, batch *pgx.Batch, obj *storage.TestParent1_Child1Ref, test_parent1_Id string, idx int) error {
+func insertIntoTestParent1Childrens(_ context.Context, batch *pgx.Batch, obj *storage.TestParent1_Child1Ref, testParent1ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		test_parent1_Id,
+		testParent1ID,
 		idx,
 		obj.GetChildId(),
 	}
@@ -204,7 +204,7 @@ func (s *storeImpl) copyFromTestParent1(ctx context.Context, tx *postgres.Tx, ob
 	return err
 }
 
-func (s *storeImpl) copyFromTestParent1Childrens(ctx context.Context, tx *postgres.Tx, test_parent1_Id string, objs ...*storage.TestParent1_Child1Ref) error {
+func (s *storeImpl) copyFromTestParent1Childrens(ctx context.Context, tx *postgres.Tx, testParent1ID string, objs ...*storage.TestParent1_Child1Ref) error {
 
 	inputRows := [][]interface{}{}
 
@@ -227,7 +227,7 @@ func (s *storeImpl) copyFromTestParent1Childrens(ctx context.Context, tx *postgr
 
 		inputRows = append(inputRows, []interface{}{
 
-			test_parent1_Id,
+			testParent1ID,
 
 			idx,
 

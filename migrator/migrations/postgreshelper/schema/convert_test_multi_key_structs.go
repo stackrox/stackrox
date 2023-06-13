@@ -34,10 +34,10 @@ func ConvertTestMultiKeyStructFromProto(obj *storage.TestMultiKeyStruct) (*TestM
 }
 
 // ConvertTestMultiKeyStruct_NestedFromProto converts a `*storage.TestMultiKeyStruct_Nested` to Gorm model
-func ConvertTestMultiKeyStruct_NestedFromProto(obj *storage.TestMultiKeyStruct_Nested, idx int, test_multi_key_structs_Key1 string, test_multi_key_structs_Key2 string) (*TestMultiKeyStructsNesteds, error) {
+func ConvertTestMultiKeyStruct_NestedFromProto(obj *storage.TestMultiKeyStruct_Nested, idx int, testMultiKeyStructsKey1 string, testMultiKeyStructsKey2 string) (*TestMultiKeyStructsNesteds, error) {
 	model := &TestMultiKeyStructsNesteds{
-		TestMultiKeyStructsKey1: test_multi_key_structs_Key1,
-		TestMultiKeyStructsKey2: test_multi_key_structs_Key2,
+		TestMultiKeyStructsKey1: testMultiKeyStructsKey1,
+		TestMultiKeyStructsKey2: testMultiKeyStructsKey2,
 		Idx:                     idx,
 		Nested:                  obj.GetNested(),
 		IsNested:                obj.GetIsNested(),

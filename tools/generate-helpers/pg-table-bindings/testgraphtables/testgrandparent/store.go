@@ -111,11 +111,11 @@ func insertIntoTestGrandparents(ctx context.Context, batch *pgx.Batch, obj *stor
 	return nil
 }
 
-func insertIntoTestGrandparentsEmbeddeds(ctx context.Context, batch *pgx.Batch, obj *storage.TestGrandparent_Embedded, test_grandparents_Id string, idx int) error {
+func insertIntoTestGrandparentsEmbeddeds(ctx context.Context, batch *pgx.Batch, obj *storage.TestGrandparent_Embedded, testGrandparentsID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		test_grandparents_Id,
+		testGrandparentsID,
 		idx,
 		obj.GetVal(),
 	}
@@ -126,22 +126,22 @@ func insertIntoTestGrandparentsEmbeddeds(ctx context.Context, batch *pgx.Batch, 
 	var query string
 
 	for childIndex, child := range obj.GetEmbedded2() {
-		if err := insertIntoTestGrandparentsEmbeddedsEmbedded2(ctx, batch, child, test_grandparents_Id, idx, childIndex); err != nil {
+		if err := insertIntoTestGrandparentsEmbeddedsEmbedded2(ctx, batch, child, testGrandparentsID, idx, childIndex); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from test_grandparents_embeddeds_embedded2 where test_grandparents_Id = $1 AND test_grandparents_embeddeds_idx = $2 AND idx >= $3"
-	batch.Queue(query, test_grandparents_Id, idx, len(obj.GetEmbedded2()))
+	batch.Queue(query, testGrandparentsID, idx, len(obj.GetEmbedded2()))
 	return nil
 }
 
-func insertIntoTestGrandparentsEmbeddedsEmbedded2(_ context.Context, batch *pgx.Batch, obj *storage.TestGrandparent_Embedded_Embedded2, test_grandparents_Id string, test_grandparents_embeddeds_idx int, idx int) error {
+func insertIntoTestGrandparentsEmbeddedsEmbedded2(_ context.Context, batch *pgx.Batch, obj *storage.TestGrandparent_Embedded_Embedded2, testGrandparentsID string, testGrandparentsEmbeddedsIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		test_grandparents_Id,
-		test_grandparents_embeddeds_idx,
+		testGrandparentsID,
+		testGrandparentsEmbeddedsIdx,
 		idx,
 		obj.GetVal(),
 	}
@@ -235,7 +235,7 @@ func (s *storeImpl) copyFromTestGrandparents(ctx context.Context, tx *postgres.T
 	return err
 }
 
-func (s *storeImpl) copyFromTestGrandparentsEmbeddeds(ctx context.Context, tx *postgres.Tx, test_grandparents_Id string, objs ...*storage.TestGrandparent_Embedded) error {
+func (s *storeImpl) copyFromTestGrandparentsEmbeddeds(ctx context.Context, tx *postgres.Tx, testGrandparentsID string, objs ...*storage.TestGrandparent_Embedded) error {
 
 	inputRows := [][]interface{}{}
 
@@ -258,7 +258,7 @@ func (s *storeImpl) copyFromTestGrandparentsEmbeddeds(ctx context.Context, tx *p
 
 		inputRows = append(inputRows, []interface{}{
 
-			test_grandparents_Id,
+			testGrandparentsID,
 
 			idx,
 
@@ -284,7 +284,7 @@ func (s *storeImpl) copyFromTestGrandparentsEmbeddeds(ctx context.Context, tx *p
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = s.copyFromTestGrandparentsEmbeddedsEmbedded2(ctx, tx, test_grandparents_Id, idx, obj.GetEmbedded2()...); err != nil {
+		if err = s.copyFromTestGrandparentsEmbeddedsEmbedded2(ctx, tx, testGrandparentsID, idx, obj.GetEmbedded2()...); err != nil {
 			return err
 		}
 	}
@@ -292,7 +292,7 @@ func (s *storeImpl) copyFromTestGrandparentsEmbeddeds(ctx context.Context, tx *p
 	return err
 }
 
-func (s *storeImpl) copyFromTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, tx *postgres.Tx, test_grandparents_Id string, test_grandparents_embeddeds_idx int, objs ...*storage.TestGrandparent_Embedded_Embedded2) error {
+func (s *storeImpl) copyFromTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, tx *postgres.Tx, testGrandparentsID string, testGrandparentsEmbeddedsIdx int, objs ...*storage.TestGrandparent_Embedded_Embedded2) error {
 
 	inputRows := [][]interface{}{}
 
@@ -317,9 +317,9 @@ func (s *storeImpl) copyFromTestGrandparentsEmbeddedsEmbedded2(ctx context.Conte
 
 		inputRows = append(inputRows, []interface{}{
 
-			test_grandparents_Id,
+			testGrandparentsID,
 
-			test_grandparents_embeddeds_idx,
+			testGrandparentsEmbeddedsIdx,
 
 			idx,
 

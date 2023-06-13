@@ -121,12 +121,12 @@ func insertIntoTestMultiKeyStructs(ctx context.Context, batch *pgx.Batch, obj *s
 	return nil
 }
 
-func insertIntoTestMultiKeyStructsNesteds(_ context.Context, batch *pgx.Batch, obj *storage.TestMultiKeyStruct_Nested, test_multi_key_structs_Key1 string, test_multi_key_structs_Key2 string, idx int) error {
+func insertIntoTestMultiKeyStructsNesteds(_ context.Context, batch *pgx.Batch, obj *storage.TestMultiKeyStruct_Nested, testMultiKeyStructsKey1 string, testMultiKeyStructsKey2 string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		test_multi_key_structs_Key1,
-		test_multi_key_structs_Key2,
+		testMultiKeyStructsKey1,
+		testMultiKeyStructsKey2,
 		idx,
 		obj.GetNested(),
 		obj.GetIsNested(),
@@ -256,7 +256,7 @@ func (s *storeImpl) copyFromTestMultiKeyStructs(ctx context.Context, tx *postgre
 	return err
 }
 
-func (s *storeImpl) copyFromTestMultiKeyStructsNesteds(ctx context.Context, tx *postgres.Tx, test_multi_key_structs_Key1 string, test_multi_key_structs_Key2 string, objs ...*storage.TestMultiKeyStruct_Nested) error {
+func (s *storeImpl) copyFromTestMultiKeyStructsNesteds(ctx context.Context, tx *postgres.Tx, testMultiKeyStructsKey1 string, testMultiKeyStructsKey2 string, objs ...*storage.TestMultiKeyStruct_Nested) error {
 
 	inputRows := [][]interface{}{}
 
@@ -291,9 +291,9 @@ func (s *storeImpl) copyFromTestMultiKeyStructsNesteds(ctx context.Context, tx *
 
 		inputRows = append(inputRows, []interface{}{
 
-			test_multi_key_structs_Key1,
+			testMultiKeyStructsKey1,
 
-			test_multi_key_structs_Key2,
+			testMultiKeyStructsKey2,
 
 			idx,
 

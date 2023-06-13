@@ -110,11 +110,11 @@ func insertIntoActiveComponents(ctx context.Context, batch *pgx.Batch, obj *stor
 	return nil
 }
 
-func insertIntoActiveComponentsActiveContextsSlices(_ context.Context, batch *pgx.Batch, obj *storage.ActiveComponent_ActiveContext, active_components_Id string, idx int) error {
+func insertIntoActiveComponentsActiveContextsSlices(_ context.Context, batch *pgx.Batch, obj *storage.ActiveComponent_ActiveContext, activeComponentsID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		active_components_Id,
+		activeComponentsID,
 		idx,
 		obj.GetContainerName(),
 		obj.GetImageId(),
@@ -205,7 +205,7 @@ func (s *storeImpl) copyFromActiveComponents(ctx context.Context, tx *postgres.T
 	return err
 }
 
-func (s *storeImpl) copyFromActiveComponentsActiveContextsSlices(ctx context.Context, tx *postgres.Tx, active_components_Id string, objs ...*storage.ActiveComponent_ActiveContext) error {
+func (s *storeImpl) copyFromActiveComponentsActiveContextsSlices(ctx context.Context, tx *postgres.Tx, activeComponentsID string, objs ...*storage.ActiveComponent_ActiveContext) error {
 
 	inputRows := [][]interface{}{}
 
@@ -230,7 +230,7 @@ func (s *storeImpl) copyFromActiveComponentsActiveContextsSlices(ctx context.Con
 
 		inputRows = append(inputRows, []interface{}{
 
-			active_components_Id,
+			activeComponentsID,
 
 			idx,
 
