@@ -109,7 +109,7 @@ func (d *datastoreImpl) UpsertRisk(ctx context.Context, risk *storage.Risk) erro
 		return err
 	}
 	upsertRankerRecord(d.getRanker(risk.GetSubject().GetType()), risk.GetSubject().GetId(), risk.GetScore())
-	return d.indexer.AddRisk(risk)
+	return nil
 }
 
 func (d *datastoreImpl) RemoveRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) error {
@@ -133,7 +133,7 @@ func (d *datastoreImpl) RemoveRisk(ctx context.Context, subjectID string, subjec
 		return err
 	}
 	removeRankerRecord(d.getRanker(risk.GetSubject().GetType()), risk.GetSubject().GetId())
-	return d.indexer.DeleteRisk(id)
+	return nil
 }
 
 func (d *datastoreImpl) getRisk(ctx context.Context, id string) (*storage.Risk, bool, error) {

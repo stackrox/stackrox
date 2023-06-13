@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddNode mocks base method.
-func (m *MockIndexer) AddNode(node *storage.Node) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddNode", node)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddNode indicates an expected call of AddNode.
-func (mr *MockIndexerMockRecorder) AddNode(node interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNode", reflect.TypeOf((*MockIndexer)(nil).AddNode), node)
-}
-
-// AddNodes mocks base method.
-func (m *MockIndexer) AddNodes(nodes []*storage.Node) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddNodes", nodes)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddNodes indicates an expected call of AddNodes.
-func (mr *MockIndexerMockRecorder) AddNodes(nodes interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNodes", reflect.TypeOf((*MockIndexer)(nil).AddNodes), nodes)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteNode mocks base method.
-func (m *MockIndexer) DeleteNode(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteNode", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteNode indicates an expected call of DeleteNode.
-func (mr *MockIndexerMockRecorder) DeleteNode(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNode", reflect.TypeOf((*MockIndexer)(nil).DeleteNode), id)
-}
-
-// DeleteNodes mocks base method.
-func (m *MockIndexer) DeleteNodes(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteNodes", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteNodes indicates an expected call of DeleteNodes.
-func (mr *MockIndexerMockRecorder) DeleteNodes(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNodes", reflect.TypeOf((*MockIndexer)(nil).DeleteNodes), ids)
 }
 
 // Search mocks base method.

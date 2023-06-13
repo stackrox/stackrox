@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddK8SRoleBinding mocks base method.
-func (m *MockIndexer) AddK8SRoleBinding(k8srolebinding *storage.K8SRoleBinding) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddK8SRoleBinding", k8srolebinding)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddK8SRoleBinding indicates an expected call of AddK8SRoleBinding.
-func (mr *MockIndexerMockRecorder) AddK8SRoleBinding(k8srolebinding interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddK8SRoleBinding", reflect.TypeOf((*MockIndexer)(nil).AddK8SRoleBinding), k8srolebinding)
-}
-
-// AddK8SRoleBindings mocks base method.
-func (m *MockIndexer) AddK8SRoleBindings(k8srolebindings []*storage.K8SRoleBinding) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddK8SRoleBindings", k8srolebindings)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddK8SRoleBindings indicates an expected call of AddK8SRoleBindings.
-func (mr *MockIndexerMockRecorder) AddK8SRoleBindings(k8srolebindings interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddK8SRoleBindings", reflect.TypeOf((*MockIndexer)(nil).AddK8SRoleBindings), k8srolebindings)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteK8SRoleBinding mocks base method.
-func (m *MockIndexer) DeleteK8SRoleBinding(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteK8SRoleBinding", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteK8SRoleBinding indicates an expected call of DeleteK8SRoleBinding.
-func (mr *MockIndexerMockRecorder) DeleteK8SRoleBinding(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteK8SRoleBinding", reflect.TypeOf((*MockIndexer)(nil).DeleteK8SRoleBinding), id)
-}
-
-// DeleteK8SRoleBindings mocks base method.
-func (m *MockIndexer) DeleteK8SRoleBindings(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteK8SRoleBindings", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteK8SRoleBindings indicates an expected call of DeleteK8SRoleBindings.
-func (mr *MockIndexerMockRecorder) DeleteK8SRoleBindings(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteK8SRoleBindings", reflect.TypeOf((*MockIndexer)(nil).DeleteK8SRoleBindings), ids)
 }
 
 // Search mocks base method.

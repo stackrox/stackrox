@@ -422,9 +422,8 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsGet() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesAdd() {
-	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
+	storeMock, _, _ := suite.setupDataStoreWithMocks()
 	storeMock.EXPECT().UpsertMany(suite.hasWriteCtx, gomock.Any()).Times(0)
-	indexMock.EXPECT().AddProcessIndicators(gomock.Any()).Times(0)
 
 	err := suite.datastore.AddProcessIndicators(suite.hasNoneCtx, &storage.ProcessIndicator{})
 	suite.Error(err, "expected an error trying to write without permissions")
@@ -434,9 +433,8 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesAddMany() {
-	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
+	storeMock, _, _ := suite.setupDataStoreWithMocks()
 	storeMock.EXPECT().UpsertMany(suite.hasWriteCtx, gomock.Any()).Times(0)
-	indexMock.EXPECT().AddProcessIndicators(gomock.Any()).Times(0)
 
 	err := suite.datastore.AddProcessIndicators(suite.hasNoneCtx, &storage.ProcessIndicator{})
 	suite.Error(err, "expected an error trying to write without permissions")
@@ -446,9 +444,8 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesAddMany() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestAllowsAddMany() {
-	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
+	storeMock, _, _ := suite.setupDataStoreWithMocks()
 	storeMock.EXPECT().UpsertMany(suite.hasWriteCtx, gomock.Any()).Return(nil)
-	indexMock.EXPECT().AddProcessIndicators(gomock.Any()).Return(nil)
 
 	storeMock.EXPECT().AckKeysIndexed(suite.hasWriteCtx, fixtureconsts.ProcessIndicatorID1).Return(nil)
 
@@ -457,9 +454,6 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsAddMany() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByPod() {
-	_, indexMock, _ := suite.setupDataStoreWithMocks()
-	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Times(0)
-
 	err := suite.datastore.RemoveProcessIndicatorsByPod(suite.hasNoneCtx, uuid.NewDummy().String())
 	suite.Error(err, "expected an error trying to write without permissions")
 

@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddComponentCVEEdge mocks base method.
-func (m *MockIndexer) AddComponentCVEEdge(componentcveedge *storage.ComponentCVEEdge) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddComponentCVEEdge", componentcveedge)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddComponentCVEEdge indicates an expected call of AddComponentCVEEdge.
-func (mr *MockIndexerMockRecorder) AddComponentCVEEdge(componentcveedge interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddComponentCVEEdge", reflect.TypeOf((*MockIndexer)(nil).AddComponentCVEEdge), componentcveedge)
-}
-
-// AddComponentCVEEdges mocks base method.
-func (m *MockIndexer) AddComponentCVEEdges(componentcveedges []*storage.ComponentCVEEdge) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddComponentCVEEdges", componentcveedges)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddComponentCVEEdges indicates an expected call of AddComponentCVEEdges.
-func (mr *MockIndexerMockRecorder) AddComponentCVEEdges(componentcveedges interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddComponentCVEEdges", reflect.TypeOf((*MockIndexer)(nil).AddComponentCVEEdges), componentcveedges)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteComponentCVEEdge mocks base method.
-func (m *MockIndexer) DeleteComponentCVEEdge(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteComponentCVEEdge", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteComponentCVEEdge indicates an expected call of DeleteComponentCVEEdge.
-func (mr *MockIndexerMockRecorder) DeleteComponentCVEEdge(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteComponentCVEEdge", reflect.TypeOf((*MockIndexer)(nil).DeleteComponentCVEEdge), id)
-}
-
-// DeleteComponentCVEEdges mocks base method.
-func (m *MockIndexer) DeleteComponentCVEEdges(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteComponentCVEEdges", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteComponentCVEEdges indicates an expected call of DeleteComponentCVEEdges.
-func (mr *MockIndexerMockRecorder) DeleteComponentCVEEdges(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteComponentCVEEdges", reflect.TypeOf((*MockIndexer)(nil).DeleteComponentCVEEdges), ids)
 }
 
 // Search mocks base method.

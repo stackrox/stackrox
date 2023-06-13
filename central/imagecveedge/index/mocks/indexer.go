@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddImageCVEEdge mocks base method.
-func (m *MockIndexer) AddImageCVEEdge(imagecveedge *storage.ImageCVEEdge) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddImageCVEEdge", imagecveedge)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddImageCVEEdge indicates an expected call of AddImageCVEEdge.
-func (mr *MockIndexerMockRecorder) AddImageCVEEdge(imagecveedge interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddImageCVEEdge", reflect.TypeOf((*MockIndexer)(nil).AddImageCVEEdge), imagecveedge)
-}
-
-// AddImageCVEEdges mocks base method.
-func (m *MockIndexer) AddImageCVEEdges(imagecveedges []*storage.ImageCVEEdge) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddImageCVEEdges", imagecveedges)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddImageCVEEdges indicates an expected call of AddImageCVEEdges.
-func (mr *MockIndexerMockRecorder) AddImageCVEEdges(imagecveedges interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddImageCVEEdges", reflect.TypeOf((*MockIndexer)(nil).AddImageCVEEdges), imagecveedges)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteImageCVEEdge mocks base method.
-func (m *MockIndexer) DeleteImageCVEEdge(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteImageCVEEdge", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteImageCVEEdge indicates an expected call of DeleteImageCVEEdge.
-func (mr *MockIndexerMockRecorder) DeleteImageCVEEdge(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteImageCVEEdge", reflect.TypeOf((*MockIndexer)(nil).DeleteImageCVEEdge), id)
-}
-
-// DeleteImageCVEEdges mocks base method.
-func (m *MockIndexer) DeleteImageCVEEdges(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteImageCVEEdges", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteImageCVEEdges indicates an expected call of DeleteImageCVEEdges.
-func (mr *MockIndexerMockRecorder) DeleteImageCVEEdges(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteImageCVEEdges", reflect.TypeOf((*MockIndexer)(nil).DeleteImageCVEEdges), ids)
 }
 
 // Search mocks base method.

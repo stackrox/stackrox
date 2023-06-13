@@ -108,7 +108,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsFiltering() {
 			},
 		},
 	}
-	suite.mockIndexer.EXPECT().AddImageIntegration(gomock.Any()).AnyTimes().Return(nil)
 	// Test Add
 	for _, r := range integrations {
 		id, err := suite.datastore.AddImageIntegration(suite.hasWriteCtx, r)
@@ -260,7 +259,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsAdd() {
-	suite.mockIndexer.EXPECT().AddImageIntegration(gomock.Any()).Return(nil)
 	id, err := suite.datastore.AddImageIntegration(suite.hasWriteCtx, getIntegration("namenamenamename"))
 	suite.NoError(err, "expected no error trying to write with permissions")
 	suite.NotEmpty(id)
@@ -277,7 +275,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesUpdate() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsUpdate() {
-	suite.mockIndexer.EXPECT().AddImageIntegration(gomock.Any()).Return(nil)
 	integration := suite.storeIntegration("joseph is the best")
 
 	err := suite.datastore.UpdateImageIntegration(suite.hasWriteCtx, integration)
@@ -293,7 +290,6 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesRemove() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsRemove() {
-	suite.mockIndexer.EXPECT().DeleteImageIntegration(gomock.Any()).Return(nil)
 	integration := suite.storeIntegration("jdgbfdkjh")
 
 	err := suite.datastore.RemoveImageIntegration(suite.hasWriteCtx, integration.GetId())
@@ -308,15 +304,13 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestSearch() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestIndexing() {
-	pgtest.SkipIfPostgresEnabled(suite.T())
-
 	ii := &storage.ImageIntegration{
 		Id:        "id1",
 		ClusterId: clusterID,
 		Name:      "imageIntegration1",
 	}
 
-	suite.NoError(suite.indexer.AddImageIntegration(ii))
+	suite.NoError(suite.store.Upsert(sac.WithAllAccess(context.Background()), ii))
 
 	q := pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.ClusterID, clusterID).ProtoQuery()
 	results, err := suite.indexer.Search(suite.hasWriteCtx, q)
