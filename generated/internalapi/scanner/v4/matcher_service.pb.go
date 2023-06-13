@@ -194,7 +194,7 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type MatcherClient interface {
-	// GetVulnerabilities get or create a VulnerabilityReport and return it.
+	// GetVulnerabilities get a VulnerabilityReport and return it.
 	// The Manifest must have been Indexed first via the Indexer.
 	GetVulnerabilities(ctx context.Context, in *GetVulnerabilitiesRequest, opts ...grpc.CallOption) (*VulnerabilityReport, error)
 	// GetMetadata returns information on vulnerability metadata, ek.g., last update timestamp.
@@ -229,7 +229,7 @@ func (c *matcherClient) GetMetadata(ctx context.Context, in *types.Empty, opts .
 
 // MatcherServer is the server API for Matcher service.
 type MatcherServer interface {
-	// GetVulnerabilities get or create a VulnerabilityReport and return it.
+	// GetVulnerabilities get a VulnerabilityReport and return it.
 	// The Manifest must have been Indexed first via the Indexer.
 	GetVulnerabilities(context.Context, *GetVulnerabilitiesRequest) (*VulnerabilityReport, error)
 	// GetMetadata returns information on vulnerability metadata, ek.g., last update timestamp.
