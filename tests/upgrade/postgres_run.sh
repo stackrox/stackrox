@@ -231,6 +231,9 @@ test_upgrade_paths() {
     # Cleanup the scaled sensor before smoke tests
     helm uninstall -n stackrox stackrox-secured-cluster-services
 
+    # Remove scaled Sensor from Central
+    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" cluster delete --name scale-remote
+
     info "Fetching a sensor bundle for cluster 'remote'"
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" version
     rm -rf sensor-remote
