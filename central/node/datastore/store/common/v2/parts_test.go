@@ -6,17 +6,12 @@ import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSplitAndMergeNode(t *testing.T) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip postgres tests")
-		t.SkipNow()
-	}
 	ts := timestamp.TimestampNow()
 	node := &storage.Node{
 		Id:   "id",

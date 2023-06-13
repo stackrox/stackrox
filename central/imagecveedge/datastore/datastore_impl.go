@@ -7,14 +7,12 @@ import (
 	"github.com/stackrox/rox/central/imagecveedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 type datastoreImpl struct {
-	graphProvider graph.Provider
-	storage       store.Store
-	searcher      search.Searcher
+	storage  store.Store
+	searcher search.Searcher
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {

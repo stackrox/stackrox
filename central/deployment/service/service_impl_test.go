@@ -131,7 +131,7 @@ func setupPostgresDatastore(t *testing.T) (datastore.DataStore, func()) {
 
 	mockCtrl := gomock.NewController(t)
 	riskDataStore := riskMocks.NewMockDataStore(mockCtrl)
-	ds, err := datastore.New(nil, nil, pool, nil, nil, nil, nil, nil, riskDataStore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	ds, err := datastore.New(pool, nil, nil, nil, riskDataStore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 
 	closer := func() {

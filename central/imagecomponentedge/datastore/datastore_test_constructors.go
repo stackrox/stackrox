@@ -13,5 +13,5 @@ func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error)
 	storage := postgresStore.New(pool)
 	indexer := postgresStore.NewIndexer(pool)
 	searcher := search.NewV2(storage, indexer)
-	return New(nil, storage, indexer, searcher)
+	return New(storage, indexer, searcher)
 }

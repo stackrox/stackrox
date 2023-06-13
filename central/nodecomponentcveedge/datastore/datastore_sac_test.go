@@ -52,11 +52,11 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) SetupSuite() {
 }
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TearDownSuite() {
-	s.Require().NoError(s.dackboxTestStore.Cleanup(s.T()))
+	s.dackboxTestStore.Cleanup(s.T())
 }
 
-func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) cleanNodeToVulnerabilitiesGraph(waitForIndexing bool) {
-	s.Require().NoError(s.dackboxTestStore.CleanNodeToVulnerabilitiesGraph(waitForIndexing))
+func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) cleanNodeToVulnerabilitiesGraph() {
+	s.Require().NoError(s.dackboxTestStore.CleanNodeToVulnerabilitiesGraph())
 }
 
 func getComponentID(component *storage.EmbeddedNodeScanComponent, os string) string {
@@ -183,8 +183,8 @@ var (
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleComponent() {
 	// Inject the fixture graph, and test exists for Component1 to CVE-1234-0001 edge
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	targetEdgeID := cmp1cve1edge
 	for _, c := range testCases {
@@ -199,8 +199,8 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleComp
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleComponentToSharedCVE() {
 	// Inject the fixture graph, and test exists for Component1 to CVE-4567-0002 edge
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	targetEdgeID := cmp1cve2edge
 	for _, c := range testCases {
@@ -215,8 +215,8 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleComp
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSharedComponent() {
 	// Inject the fixture graph, and test exists for Component3 to CVE-3456-0004 edge
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	targetEdgeID := cmp3cve4edge
 	for _, c := range testCases {
@@ -231,8 +231,8 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSharedComp
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleComponent() {
 	// Inject the fixture graph, and test read for Component1 to CVE-1234-0001 edge
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	targetEdgeID := cmp1cve1edge
 	expectedSrcID := getComponentID(fixtures.GetEmbeddedNodeComponent1x1(), nodeScanOperatingSystem)
@@ -257,8 +257,8 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleCompone
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleComponentToSharedCVE() {
 	// Inject the fixture graph, and test read for Component1 to CVE-4567-0002 edge
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	targetEdgeID := cmp1cve2edge
 	expectedSrcID := getComponentID(fixtures.GetEmbeddedNodeComponent1x1(), nodeScanOperatingSystem)
@@ -283,8 +283,8 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleCompone
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSharedComponent() {
 	// Inject the fixture graph, and test read for Component3 to CVE-3456-0004 edge
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	targetEdgeID := cmp3cve4edge
 	expectedSrcID := getComponentID(fixtures.GetEmbeddedNodeComponent1s2x3(), nodeScanOperatingSystem)
@@ -309,8 +309,8 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSharedCompone
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestCount() {
 	// Inject the fixture graph, and test data filtering on count operations
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range testCases {
 		s.Run(c.contextKey, func() {
@@ -330,8 +330,8 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestCount() {
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestSearch() {
 	// Inject the fixture graph, and test data filtering on count operations
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range testCases {
 		s.Run(c.contextKey, func() {
@@ -354,8 +354,8 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestSearch() {
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestSearchEdges() {
 	// Inject the fixture graph, and test data filtering on count operations
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range testCases {
 		s.Run(c.contextKey, func() {
@@ -378,8 +378,8 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestSearchEdges() {
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
 	// Inject the fixture graph, and test data filtering on count operations
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range testCases {
 		s.Run(c.contextKey, func() {

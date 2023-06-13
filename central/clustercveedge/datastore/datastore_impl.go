@@ -3,30 +3,16 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/clustercveedge/index"
 	"github.com/stackrox/rox/central/clustercveedge/search"
 	"github.com/stackrox/rox/central/clustercveedge/store"
-	"github.com/stackrox/rox/central/cve/converter"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/utils"
-)
-
-var (
-	clustersSAC = sac.ForResource(resources.Cluster)
 )
 
 type datastoreImpl struct {
-	storage       store.Store
-	indexer       index.Indexer
-	searcher      search.Searcher
-	graphProvider graph.Provider
+	storage  store.Store
+	searcher search.Searcher
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
@@ -71,35 +57,4 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 		return nil, err
 	}
 	return edges, nil
-}
-
-func (ds *datastoreImpl) Upsert(ctx context.Context, parts ...converter.ClusterCVEParts) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return utils.ShouldErr(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
-	}
-	if len(parts) == 0 {
-		return nil
-	}
-
-	if ok, err := clustersSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	// Store the new CVE data.
-	return ds.storage.Upsert(ctx, parts...)
-}
-
-func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return utils.ShouldErr(errors.New("Unexpected cluster-cve edge upsert when running on Postgres"))
-	}
-	if ok, err := clustersSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	return ds.storage.Delete(ctx, ids...)
 }

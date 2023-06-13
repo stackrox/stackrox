@@ -19,7 +19,7 @@ func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
 	indexer := pgStore.NewIndexer(globaldb.GetPostgres())
 	var err error
-	as, err = New(storage, nil, indexer, deploymentDataStore.Singleton(), ranking.NamespaceRanker())
+	as, err = New(storage, indexer, deploymentDataStore.Singleton(), ranking.NamespaceRanker())
 	utils.CrashOnError(err)
 }
 

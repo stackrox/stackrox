@@ -3,20 +3,16 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/nodecomponentedge/index"
 	"github.com/stackrox/rox/central/nodecomponentedge/search"
 	"github.com/stackrox/rox/central/nodecomponentedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 type datastoreImpl struct {
-	storage       store.Store
-	indexer       index.Indexer
-	searcher      search.Searcher
-	graphProvider graph.Provider
+	storage  store.Store
+	searcher search.Searcher
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {

@@ -17,13 +17,11 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
@@ -232,28 +230,14 @@ func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.Deploym
 	}
 
 	for _, r := range results {
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			// In postgres, map key and values are returned as one `k=v`.
-			for _, match := range r.Matches[labelFieldPath] {
-				key, value, hasEquals := pgsearch.ParseMapQuery(match)
-				if !hasEquals {
-					utils.Should(errors.Errorf("cannot handle label %s", match))
-					continue
-				}
-				setUpdater(key, value)
-			}
-		} else {
-			keyFieldPath := blevesearch.ToMapKeyPath(labelFieldPath)
-			valueFieldPath := blevesearch.ToMapValuePath(labelFieldPath)
-			keyMatches, valueMatches := r.Matches[keyFieldPath], r.Matches[valueFieldPath]
-			if len(keyMatches) != len(valueMatches) {
-				utils.Should(errors.Errorf("mismatch between key and value matches: %d != %d", len(keyMatches), len(valueMatches)))
+		// In postgres, map key and values are returned as one `k=v`.
+		for _, match := range r.Matches[labelFieldPath] {
+			key, value, hasEquals := pgsearch.ParseMapQuery(match)
+			if !hasEquals {
+				utils.Should(errors.Errorf("cannot handle label %s", match))
 				continue
 			}
-			for i, key := range keyMatches {
-				value := valueMatches[i]
-				setUpdater(key, value)
-			}
+			setUpdater(key, value)
 		}
 	}
 
