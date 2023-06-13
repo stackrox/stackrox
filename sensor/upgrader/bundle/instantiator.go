@@ -71,6 +71,10 @@ func (i *instantiator) loadObjectsFromYAMLs(c Contents) ([]*unstructured.Unstruc
 			continue
 		}
 
+		if strings.Contains(fileName, "pod-security") {
+			continue
+		}
+
 		fileObjs, err := i.loadObjectsFromYAML(c.File(fileName))
 		if err != nil {
 			return nil, errors.Wrapf(err, "loading objects from YAML file %s", fileName)
