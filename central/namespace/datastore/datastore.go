@@ -149,10 +149,7 @@ func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.Nam
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := b.store.Upsert(ctx, namespace); err != nil {
-		return err
-	}
-	return nil
+	return b.store.Upsert(ctx, namespace)
 }
 
 // UpdateNamespace updates a namespace to bolt
@@ -163,10 +160,7 @@ func (b *datastoreImpl) UpdateNamespace(ctx context.Context, namespace *storage.
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := b.store.Upsert(ctx, namespace); err != nil {
-		return err
-	}
-	return nil
+	return b.store.Upsert(ctx, namespace)
 }
 
 // RemoveNamespace removes a namespace.

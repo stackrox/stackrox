@@ -257,10 +257,7 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 		policy.Categories = []string{}
 	}
 
-	if err := ds.storage.Upsert(ctx, policy); err != nil {
-		return err
-	}
-	return nil
+	return ds.storage.Upsert(ctx, policy)
 }
 
 // RemovePolicy removes a policy from the storage and the indexer
@@ -278,10 +275,7 @@ func (ds *datastoreImpl) RemovePolicy(ctx context.Context, id string) error {
 }
 
 func (ds *datastoreImpl) removePolicyNoLock(ctx context.Context, id string) error {
-	if err := ds.storage.Delete(ctx, id); err != nil {
-		return err
-	}
-	return nil
+	return ds.storage.Delete(ctx, id)
 }
 
 func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*storage.Policy, overwrite bool) ([]*v1.ImportPolicyResponse, bool, error) {

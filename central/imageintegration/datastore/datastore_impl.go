@@ -96,11 +96,7 @@ func (ds *datastoreImpl) UpdateImageIntegration(ctx context.Context, integration
 		return sac.ErrResourceAccessDenied
 	}
 
-	err := ds.storage.Upsert(ctx, integration)
-	if err != nil {
-		return err
-	}
-	return nil
+	return ds.storage.Upsert(ctx, integration)
 }
 
 // RemoveImageIntegration is pass-through to the underlying store.
@@ -110,10 +106,7 @@ func (ds *datastoreImpl) RemoveImageIntegration(ctx context.Context, id string) 
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	if err := ds.storage.Delete(ctx, id); err != nil {
-		return err
-	}
-	return nil
+	return ds.storage.Delete(ctx, id)
 }
 
 // SearchImageIntegrations
