@@ -59,7 +59,10 @@ func (i *instantiator) Instantiate(bundleContents Contents) ([]*unstructured.Uns
 
 	// Remove the psps if not enabled
 	if !i.ctx.IsPodSecurityEnabled() {
+		log.Info("Trying to filter out PSPs")
+		log.Infof("Before %v", &allObjects)
 		common.Filter(&allObjects, common.Not(common.PSPObjectPredicate))
+		log.Infof("After %v", &allObjects)
 	}
 
 	return allObjects, nil
