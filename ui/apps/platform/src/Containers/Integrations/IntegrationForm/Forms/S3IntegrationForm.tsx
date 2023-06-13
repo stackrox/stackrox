@@ -10,6 +10,7 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
+import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -120,6 +121,12 @@ function S3IntegrationForm({
     isEditable = false,
 }: IntegrationFormProps<S3Integration>): ReactElement {
     const formInitialValues = { ...defaultValues, ...initialValues };
+
+    const { isCentralCapabilityAvailable } = useCentralCapabilities();
+    const canUseCloudBackupIntegrations = isCentralCapabilityAvailable(
+        'centralCanUseCloudBackupIntegrations'
+    );
+
     if (initialValues) {
         formInitialValues.externalBackup = {
             ...formInitialValues.externalBackup,
@@ -328,21 +335,23 @@ function S3IntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    <FormLabelGroup
-                        label=""
-                        fieldId="externalBackup.s3.useIam"
-                        touched={touched}
-                        errors={errors}
-                    >
-                        <Checkbox
-                            label="Use container IAM role"
-                            id="externalBackup.s3.useIam"
-                            isChecked={values.externalBackup.s3.useIam}
-                            onChange={updateKeysOnChange}
-                            onBlur={handleBlur}
-                            isDisabled={!isEditable}
-                        />
-                    </FormLabelGroup>
+                    {canUseCloudBackupIntegrations && (
+                        <FormLabelGroup
+                            label=""
+                            fieldId="externalBackup.s3.useIam"
+                            touched={touched}
+                            errors={errors}
+                        >
+                            <Checkbox
+                                label="Use container IAM role"
+                                id="externalBackup.s3.useIam"
+                                isChecked={values.externalBackup.s3.useIam}
+                                onChange={updateKeysOnChange}
+                                onBlur={handleBlur}
+                                isDisabled={!isEditable}
+                            />
+                        </FormLabelGroup>
+                    )}
                     {!isCreating && isEditable && (
                         <FormLabelGroup
                             label=""
