@@ -104,7 +104,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     @Tag("Integration")
-    @Tag("BAT")
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
