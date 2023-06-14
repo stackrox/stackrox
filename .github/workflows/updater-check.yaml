@@ -13,7 +13,7 @@ jobs:
       matrix: ${{ steps.output-matrix.outputs.matrix }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Read versions
       id: versions
@@ -26,8 +26,8 @@ jobs:
       run: |
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
         MATRIX=$(jq -Rs '{ versions: split("\n")[:-1] }' versions.txt)
-        echo "matrix<<EOF"$'\n'"$MATRIX"$'\n'EOF >> $GITHUB_OUTPUT
-        echo "$MATRIX"
+        echo "matrix<<EOF"$'\n'"${MATRIX}"$'\n'EOF >> "${GITHUB_OUTPUT}"
+        echo "${MATRIX}"
 
   output-versions:
     needs: read-versions
@@ -56,6 +56,5 @@ jobs:
         if [ -d "scanner" ]; then
           cd scanner
           go run cmd/updater/update.go
-          mv tmp "${{ env.ROX_PRODUCT_VERSION }}"
-          gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://scanner-v4-test/"
+          gsutil cp -r tmp "gs://scanner-v4-test/${{ env.ROX_PRODUCT_VERSION }}"
         fi
