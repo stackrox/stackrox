@@ -78,7 +78,9 @@ test_upgrade_paths() {
 
     local log_output_dir="$1"
 
-    EARLIER_SHA="870568de0830819aae85f255dbdb7e9c19bd74e7"
+#    EARLIER_SHA="870568de0830819aae85f255dbdb7e9c19bd74e7"
+#    EARLIER_TAG="3.69.x-1-g870568de08"
+    EARLIER_SHA="fe924fce30bbec4dbd37d731ccd505837a2c2575"
     EARLIER_TAG="3.69.x-1-g870568de08"
     FORCE_ROLLBACK_VERSION="$EARLIER_TAG"
 

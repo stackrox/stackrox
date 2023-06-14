@@ -85,11 +85,14 @@ deploy_earlier_central() {
     info "Deploying: $EARLIER_TAG..."
 
     if is_CI; then
-        gsutil cp "gs://stackrox-ci/roxctl-$EARLIER_TAG" "bin/$TEST_HOST_PLATFORM/roxctl"
+#        gsutil cp "gs://stackrox-ci/roxctl-$EARLIER_TAG" "bin/$TEST_HOST_PLATFORM/roxctl"
+        make cli
     else
         make cli
     fi
+    info "$TEST_HOST_PLATFORM"
     chmod +x "bin/$TEST_HOST_PLATFORM/roxctl"
+    ls -l "bin/$TEST_HOST_PLATFORM/roxctl"
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" \
