@@ -8,7 +8,6 @@ import (
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reports/manager"
-	accessScopeStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -37,7 +36,6 @@ type serviceImpl struct {
 	manager           manager.Manager
 	reportConfigStore reportConfigDS.DataStore
 	notifierStore     notifierDataStore.DataStore
-	accessScopeStore  accessScopeStore.DataStore
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
