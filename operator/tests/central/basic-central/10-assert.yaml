@@ -13,6 +13,11 @@ collectors:
 - type: pod
   selector: app=scanner-db
   tail: -1
+- command: kubectl describe pod -n $NAMESPACE -l app=central
+- command: kubectl describe pod -n $NAMESPACE -l app=central-db
+- command: kubectl describe pod -n $NAMESPACE -l app=scanner
+- command: kubectl describe pod -n $NAMESPACE -l app=scanner-db
+timeout: 900
 ---
 apiVersion: platform.stackrox.io/v1alpha1
 kind: Central
