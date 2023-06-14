@@ -70,7 +70,6 @@ type Store interface {
 
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
-
 }
 
 // New returns a new Store instance using the provided bolt DB instance.

@@ -27,7 +27,6 @@ type Store interface {
 
 	Walk(ctx context.Context, fn func(obj *storage.ProcessListeningOnPortStorage) error) error
 
-
 	GetProcessListeningOnPort(
 		ctx context.Context,
 		deploymentID string,

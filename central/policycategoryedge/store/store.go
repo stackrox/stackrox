@@ -23,5 +23,4 @@ type Store interface {
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 
 	Walk(ctx context.Context, fn func(obj *storage.PolicyCategoryEdge) error) error
-
 }

@@ -20,5 +20,4 @@ type Store interface {
 
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
-
 }

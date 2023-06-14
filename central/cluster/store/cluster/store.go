@@ -21,5 +21,4 @@ type Store interface {
 	DeleteMany(ctx context.Context, ids []string) error
 
 	Walk(ctx context.Context, fn func(obj *storage.Cluster) error) error
-
 }

@@ -18,5 +18,4 @@ type Store interface {
 
 	Upsert(ctx context.Context, pod *storage.Pod) error
 	Delete(ctx context.Context, id string) error
-
 }
