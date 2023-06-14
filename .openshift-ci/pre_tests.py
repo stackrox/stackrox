@@ -16,6 +16,9 @@ class PreSystemTests:
     cluster from which to get information.
     """
 
+    def __init__(self, run_poll_for_system_test_images=True):
+        self.run_poll_for_system_test_images = run_poll_for_system_test_images
+
     VERSIONS_TIMEOUT = 10 * 60
     POLL_TIMEOUT = 60 * 60
 
@@ -28,13 +31,13 @@ class PreSystemTests:
             check=False,
             timeout=PreSystemTests.VERSIONS_TIMEOUT,
         )
-
-        subprocess.run(
-            [
-                "scripts/ci/lib.sh",
-                "poll_for_system_test_images",
-                str(PreSystemTests.POLL_TIMEOUT),
-            ],
-            check=True,
-            timeout=PreSystemTests.POLL_TIMEOUT * 1.2,
-        )
+        if self.run_poll_for_system_test_images:
+            subprocess.run(
+                [
+                    "scripts/ci/lib.sh",
+                    "poll_for_system_test_images",
+                    str(PreSystemTests.POLL_TIMEOUT),
+                ],
+                check=True,
+                timeout=PreSystemTests.POLL_TIMEOUT * 1.2,
+            )
