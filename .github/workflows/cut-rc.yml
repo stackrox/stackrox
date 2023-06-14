@@ -189,7 +189,7 @@ jobs:
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
-            cherry-pick \
+            cherry-pick --allow-empty \
             "${{needs.variables.outputs.milestone}}" \
             "${{needs.variables.outputs.branch}}" \
             "${{needs.variables.outputs.named-release-patch}}"
