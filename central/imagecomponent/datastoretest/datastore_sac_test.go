@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	dackboxTestUtils "github.com/stackrox/rox/central/dackbox/testutils"
+	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
 	"github.com/stackrox/rox/central/role/resources"
@@ -25,7 +25,7 @@ func TestImageComponentDataStoreSAC(t *testing.T) {
 type cveDataStoreSACTestSuite struct {
 	suite.Suite
 
-	dackboxTestStore    dackboxTestUtils.DackboxTestDataStore
+	testGraphDatastore  graphDBTestUtils.TestGraphDataStore
 	imageComponentStore imageComponentDataStore.DataStore
 	nodeComponentStore  nodeComponentDataStore.DataStore
 
@@ -35,9 +35,9 @@ type cveDataStoreSACTestSuite struct {
 
 func (s *cveDataStoreSACTestSuite) SetupSuite() {
 	var err error
-	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
+	s.testGraphDatastore, err = graphDBTestUtils.NewTestGraphDataStore(s.T())
 	s.Require().NoError(err)
-	pool := s.dackboxTestStore.GetPostgresPool()
+	pool := s.testGraphDatastore.GetPostgresPool()
 	s.imageComponentStore, err = imageComponentDataStore.GetTestPostgresDataStore(s.T(), pool)
 	s.Require().NoError(err)
 	s.nodeComponentStore, err = nodeComponentDataStore.GetTestPostgresDataStore(s.T(), pool)
@@ -47,7 +47,7 @@ func (s *cveDataStoreSACTestSuite) SetupSuite() {
 }
 
 func (s *cveDataStoreSACTestSuite) TearDownSuite() {
-	s.dackboxTestStore.Cleanup(s.T())
+	s.testGraphDatastore.Cleanup(s.T())
 }
 
 func getImageComponentID(component *storage.EmbeddedImageScanComponent, os string) string {
@@ -59,11 +59,11 @@ func getNodeComponentID(component *storage.EmbeddedNodeScanComponent, os string)
 }
 
 func (s *cveDataStoreSACTestSuite) cleanImageToVulnerabilitiesGraph() {
-	s.Require().NoError(s.dackboxTestStore.CleanImageToVulnerabilitiesGraph())
+	s.Require().NoError(s.testGraphDatastore.CleanImageToVulnerabilitiesGraph())
 }
 
 func (s *cveDataStoreSACTestSuite) cleanNodeToVulnerabilitiesGraph() {
-	s.Require().NoError(s.dackboxTestStore.CleanNodeToVulnerabilitiesGraph())
+	s.Require().NoError(s.testGraphDatastore.CleanNodeToVulnerabilitiesGraph())
 }
 
 type componentTestCase struct {
@@ -367,7 +367,7 @@ var (
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentExistsSingleScopeOnly() {
 	// Inject the fixture graph, and test exists for Component1x1
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range imageComponentTestCases {
@@ -382,7 +382,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentExistsSingleScopeOnly() 
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentExistsSharedComponent() {
 	// Inject the fixture graph, and test exists for Component1s2x3
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range imageComponentTestCases {
@@ -397,7 +397,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentExistsSharedComponent() 
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentGetSingleScopeOnly() {
 	// Inject the fixture graph, and test retrieval for Component1x1
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	targetComponent := imageComponent1x1
@@ -422,7 +422,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentGetSingleScopeOnly() {
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentGetSharedComponent() {
 	// Inject the fixture graph, and test retrieval for Component1s2x3
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	targetComponent := imageComponent1s2x3
@@ -446,7 +446,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentGetSharedComponent() {
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentGetBatch() {
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	componentIDs := []string{
@@ -480,7 +480,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentCount() {
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentSearch() {
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range imageComponentTestCases {
@@ -509,7 +509,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentSearch() {
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentSearchImageComponents() {
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range imageComponentTestCases {
@@ -538,7 +538,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentSearchImageComponents() 
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentSearchRawImageComponents() {
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range imageComponentTestCases {
@@ -568,7 +568,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentSearchRawImageComponents
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentExistsSingleScopeOnly() {
 	// Inject the fixture graph, and test exists for Component1x1
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range nodeComponentTestCases {
@@ -583,7 +583,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentExistsSingleScopeOnly() {
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentExistsSharedComponent() {
 	// Inject the fixture graph, and test exists for Component1s2x3
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range nodeComponentTestCases {
@@ -598,7 +598,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentExistsSharedComponent() {
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentGetSingleScopeOnly() {
 	// Inject the fixture graph, and test retrieval for Component1x1
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	targetComponent := nodeComponent1x1
@@ -623,7 +623,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentGetSingleScopeOnly() {
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentGetSharedComponent() {
 	// Inject the fixture graph, and test retrieval for Component1s2x3
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	targetComponent := nodeComponent1s2x3
@@ -647,7 +647,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentGetSharedComponent() {
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentGetBatch() {
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	componentIDs := []string{
@@ -678,7 +678,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentGetBatch() {
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentCount() {
 	s.T().Skip("Skipping Component count tests for now.")
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range nodeComponentTestCases {
@@ -699,7 +699,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentCount() {
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearch() {
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range nodeComponentTestCases {
@@ -728,7 +728,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearch() {
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearchNodeComponents() {
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range nodeComponentTestCases {
@@ -757,7 +757,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearchNodeComponents() {
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearchRawNodeComponents() {
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range nodeComponentTestCases {

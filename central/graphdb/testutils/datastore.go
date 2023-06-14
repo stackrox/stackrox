@@ -22,9 +22,9 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
-// DackboxTestDataStore provides the interface to a utility for dackbox testing, with accessors to some internals,
+// TestGraphDataStore provides the interface to a utility for connected datastores testing, with accessors to some internals,
 // as well as test data injection and cleanup functions.
-type DackboxTestDataStore interface {
+type TestGraphDataStore interface {
 	// Expose internal for the case other datastores would be needed for testing purposes
 	GetPostgresPool() postgres.DB
 	// Internal accessor for test case generation
@@ -42,7 +42,7 @@ type DackboxTestDataStore interface {
 	Cleanup(t *testing.T)
 }
 
-type dackboxTestDataStoreImpl struct {
+type testGraphDataStoreImpl struct {
 	// Pool for postgres mode
 	pgtestbase *pgtest.TestPostgres
 
@@ -92,22 +92,22 @@ func embeddedVulnerabilityToClusterCVE(from *storage.EmbeddedVulnerability) *sto
 	return ret
 }
 
-func (s *dackboxTestDataStoreImpl) GetPostgresPool() postgres.DB {
+func (s *testGraphDataStoreImpl) GetPostgresPool() postgres.DB {
 	return s.pgtestbase.DB
 }
 
-func (s *dackboxTestDataStoreImpl) GetStoredClusterIDs() []string {
+func (s *testGraphDataStoreImpl) GetStoredClusterIDs() []string {
 	return s.storedClusters
 }
 
-func (s *dackboxTestDataStoreImpl) GetStoredNodeIDs() []string {
+func (s *testGraphDataStoreImpl) GetStoredNodeIDs() []string {
 	return s.storedNodes
 }
 
 // PushClusterToVulnerabilitiesGraph inserts the cluster -> CVE graph defined
-// in the dackbox fixture (see the comment at the top of the cluster section for more details).
+// in the graph fixture (see the comment at the top of the cluster section for more details).
 // The actual edges are declared in the function
-func (s *dackboxTestDataStoreImpl) PushClusterToVulnerabilitiesGraph() (err error) {
+func (s *testGraphDataStoreImpl) PushClusterToVulnerabilitiesGraph() (err error) {
 	ctx := sac.WithAllAccess(context.Background())
 	cluster1 := fixtures.GetCluster(testconsts.Cluster1)
 	cluster2 := fixtures.GetCluster(testconsts.Cluster2)
@@ -159,13 +159,13 @@ func (s *dackboxTestDataStoreImpl) PushClusterToVulnerabilitiesGraph() (err erro
 }
 
 // PushImageToVulnerabilitiesGraph inserts the namespace -> deployment -> image -> CVE graph defined
-// in the dackbox fixture (see the comment at the top of the image section for more details).
+// in the graph fixture (see the comment at the top of the image section for more details).
 // This function creates NamespaceA in Cluster1 and NamespaceB in Cluster2, then injects the SherlockHolmes
 // and DoctorJekyll images, to finally bind them to their respective namespaces through the identically
 // names deployments.
 // Sherlock holmes is the deployment / image part from Cluster1 and NamespaceA.
 // Dr Jekyll is the deployment / image part from Cluster2 and NamespaceB.
-func (s *dackboxTestDataStoreImpl) PushImageToVulnerabilitiesGraph() (err error) {
+func (s *testGraphDataStoreImpl) PushImageToVulnerabilitiesGraph() (err error) {
 	ctx := sac.WithAllAccess(context.Background())
 	testNamespace1 := fixtures.GetNamespace(testconsts.Cluster1, testconsts.Cluster1, testconsts.NamespaceA)
 	testNamespace2 := fixtures.GetNamespace(testconsts.Cluster2, testconsts.Cluster2, testconsts.NamespaceB)
@@ -207,10 +207,10 @@ func (s *dackboxTestDataStoreImpl) PushImageToVulnerabilitiesGraph() (err error)
 }
 
 // PushNodeToVulnerabilitiesGraph inserts the node -> CVE graph defined
-// in the dackbox fixture (see the comment at the top of the image section for more details).
+// in the graph fixture (see the comment at the top of the image section for more details).
 // Sherlock holmes is the node part from Cluster1.
 // Dr Jekyll is the node part from Cluster2.
-func (s *dackboxTestDataStoreImpl) PushNodeToVulnerabilitiesGraph() (err error) {
+func (s *testGraphDataStoreImpl) PushNodeToVulnerabilitiesGraph() (err error) {
 	ctx := sac.WithAllAccess(context.Background())
 	testNode1 := fixtures.GetScopedNode1(uuid.NewV4().String(), testconsts.Cluster1)
 	testNode2 := fixtures.GetScopedNode2(uuid.NewV4().String(), testconsts.Cluster2)
@@ -228,7 +228,7 @@ func (s *dackboxTestDataStoreImpl) PushNodeToVulnerabilitiesGraph() (err error) 
 }
 
 // CleanClusterToVulnerabilitiesGraph removes from database the data injected by PushClusterToVulnerabilitiesGraph.
-func (s *dackboxTestDataStoreImpl) CleanClusterToVulnerabilitiesGraph() (err error) {
+func (s *testGraphDataStoreImpl) CleanClusterToVulnerabilitiesGraph() (err error) {
 	ctx := sac.WithAllAccess(context.Background())
 	storedClusters := s.storedClusters
 	for _, clusterID := range storedClusters {
@@ -250,7 +250,7 @@ func (s *dackboxTestDataStoreImpl) CleanClusterToVulnerabilitiesGraph() (err err
 }
 
 // CleanImageToVulnerabilitiesGraph removes from database the data injected by PushImageToVulnerabilitiesGraph.
-func (s *dackboxTestDataStoreImpl) CleanImageToVulnerabilitiesGraph() (err error) {
+func (s *testGraphDataStoreImpl) CleanImageToVulnerabilitiesGraph() (err error) {
 	ctx := sac.WithAllAccess(context.Background())
 	storedDeployments := s.storedDeployments
 	for _, deploymentID := range storedDeployments {
@@ -287,7 +287,7 @@ func (s *dackboxTestDataStoreImpl) CleanImageToVulnerabilitiesGraph() (err error
 }
 
 // CleanNodeToVulnerabilitiesGraph removes from database the data injected by PushNodeToVulnerabilitiesGraph.
-func (s *dackboxTestDataStoreImpl) CleanNodeToVulnerabilitiesGraph() (err error) {
+func (s *testGraphDataStoreImpl) CleanNodeToVulnerabilitiesGraph() (err error) {
 	ctx := sac.WithAllAccess(context.Background())
 	storedNodes := s.storedNodes
 	for _, nodeID := range storedNodes {
@@ -300,15 +300,15 @@ func (s *dackboxTestDataStoreImpl) CleanNodeToVulnerabilitiesGraph() (err error)
 	return nil
 }
 
-func (s *dackboxTestDataStoreImpl) Cleanup(t *testing.T) {
+func (s *testGraphDataStoreImpl) Cleanup(t *testing.T) {
 	s.pgtestbase.Teardown(t)
 }
 
-// NewDackboxTestDataStore provides a utility for dackbox storage testing, which contains a set of connected
-// dackbox datastores, as well as a set of functions to inject and cleanup data.
-func NewDackboxTestDataStore(t *testing.T) (DackboxTestDataStore, error) {
+// NewTestGraphDataStore provides a utility for storage testing, which contains a set of connected
+// datastores, as well as a set of functions to inject and cleanup data.
+func NewTestGraphDataStore(t *testing.T) (TestGraphDataStore, error) {
 	var err error
-	s := &dackboxTestDataStoreImpl{}
+	s := &testGraphDataStoreImpl{}
 
 	s.pgtestbase = pgtest.ForT(t)
 	s.nodeStore, err = nodeDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())

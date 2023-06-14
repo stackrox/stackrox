@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/clustercveedge/datastore"
-	dackboxTestUtils "github.com/stackrox/rox/central/dackbox/testutils"
+	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -39,24 +39,24 @@ func TestClusterCVEEdgeDatastoreSAC(t *testing.T) {
 type clusterCVEEdgeDatastoreSACSuite struct {
 	suite.Suite
 
-	datastore        datastore.DataStore
-	dackboxTestStore dackboxTestUtils.DackboxTestDataStore
+	datastore          datastore.DataStore
+	testGraphDatastore graphDBTestUtils.TestGraphDataStore
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) SetupSuite() {
 	var err error
-	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
+	s.testGraphDatastore, err = graphDBTestUtils.NewTestGraphDataStore(s.T())
 	s.Require().NoError(err)
-	s.datastore, err = datastore.GetTestPostgresDataStore(s.T(), s.dackboxTestStore.GetPostgresPool())
+	s.datastore, err = datastore.GetTestPostgresDataStore(s.T(), s.testGraphDatastore.GetPostgresPool())
 	s.Require().NoError(err)
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) TearDownSuite() {
-	s.dackboxTestStore.Cleanup(s.T())
+	s.testGraphDatastore.Cleanup(s.T())
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) cleanImageToVulnerabilitiesGraph() {
-	s.Require().NoError(s.dackboxTestStore.CleanClusterToVulnerabilitiesGraph())
+	s.Require().NoError(s.testGraphDatastore.CleanClusterToVulnerabilitiesGraph())
 }
 
 func getCveID(vulnerability *storage.EmbeddedVulnerability) string {
@@ -349,10 +349,10 @@ func (s *clusterCVEEdgeDatastoreSACSuite) checkClusterCVEEdgePresence(id string,
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) TestExists() {
-	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushClusterToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
-	validClusters := s.dackboxTestStore.GetStoredClusterIDs()
+	validClusters := s.testGraphDatastore.GetStoredClusterIDs()
 	s.Require().True(len(validClusters) >= 2)
 
 	testCases := getClusterCVEEdgeReadTestCases(s.T(), validClusters[0], validClusters[1])
@@ -368,10 +368,10 @@ func (s *clusterCVEEdgeDatastoreSACSuite) TestExists() {
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) TestGet() {
-	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushClusterToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
-	validClusters := s.dackboxTestStore.GetStoredClusterIDs()
+	validClusters := s.testGraphDatastore.GetStoredClusterIDs()
 	s.Require().True(len(validClusters) >= 2)
 
 	targetEdgeCveID := getCveID(embeddedCVE1)
@@ -396,10 +396,10 @@ func (s *clusterCVEEdgeDatastoreSACSuite) TestGet() {
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) TestGetBatch() {
-	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushClusterToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
-	validClusters := s.dackboxTestStore.GetStoredClusterIDs()
+	validClusters := s.testGraphDatastore.GetStoredClusterIDs()
 	s.Require().True(len(validClusters) >= 2)
 
 	testEdgeIDs := getClusterCVEEdges(validClusters[0], validClusters[1])
@@ -434,10 +434,10 @@ func (s *clusterCVEEdgeDatastoreSACSuite) TestGetBatch() {
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) TestCount() {
-	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushClusterToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
-	validClusters := s.dackboxTestStore.GetStoredClusterIDs()
+	validClusters := s.testGraphDatastore.GetStoredClusterIDs()
 	s.Require().True(len(validClusters) >= 2)
 
 	testCases := getClusterCVEEdgeReadTestCases(s.T(), validClusters[0], validClusters[1])
@@ -458,10 +458,10 @@ func (s *clusterCVEEdgeDatastoreSACSuite) TestCount() {
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) TestSearch() {
-	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushClusterToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
-	validClusters := s.dackboxTestStore.GetStoredClusterIDs()
+	validClusters := s.testGraphDatastore.GetStoredClusterIDs()
 	s.Require().True(len(validClusters) >= 2)
 
 	testEdgeIDs := getClusterCVEEdges(validClusters[0], validClusters[1])
@@ -487,10 +487,10 @@ func (s *clusterCVEEdgeDatastoreSACSuite) TestSearch() {
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) TestSearchEdges() {
-	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushClusterToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
-	validClusters := s.dackboxTestStore.GetStoredClusterIDs()
+	validClusters := s.testGraphDatastore.GetStoredClusterIDs()
 	s.Require().True(len(validClusters) >= 2)
 
 	testEdgeIDs := getClusterCVEEdges(validClusters[0], validClusters[1])
@@ -516,10 +516,10 @@ func (s *clusterCVEEdgeDatastoreSACSuite) TestSearchEdges() {
 }
 
 func (s *clusterCVEEdgeDatastoreSACSuite) TestSearchRawEdges() {
-	err := s.dackboxTestStore.PushClusterToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushClusterToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
-	validClusters := s.dackboxTestStore.GetStoredClusterIDs()
+	validClusters := s.testGraphDatastore.GetStoredClusterIDs()
 	s.Require().True(len(validClusters) >= 2)
 
 	testEdgeIDs := getClusterCVEEdges(validClusters[0], validClusters[1])
