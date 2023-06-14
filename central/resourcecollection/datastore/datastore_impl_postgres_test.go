@@ -55,7 +55,7 @@ func (s *CollectionPostgresDataStoreTestSuite) SetupSuite() {
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 	s.store = pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	index := pgStore.NewIndexer(s.db)
-	s.datastore, s.qr, err = New(s.store, index, search.New(s.store, index))
+	s.datastore, s.qr, err = New(s.store, search.New(s.store, index))
 	s.NoError(err)
 }
 

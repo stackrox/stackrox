@@ -8,7 +8,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	searcherMocks "github.com/stackrox/rox/central/pod/datastore/internal/search/mocks"
-	indexerMocks "github.com/stackrox/rox/central/pod/index/mocks"
 	storeMocks "github.com/stackrox/rox/central/pod/store/mocks"
 	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -33,7 +32,6 @@ type PodDataStoreTestSuite struct {
 	datastore *datastoreImpl
 
 	storage      *storeMocks.MockStore
-	indexer      *indexerMocks.MockIndexer
 	searcher     *searcherMocks.MockSearcher
 	processStore *indicatorMocks.MockDataStore
 	filter       filter.Filter
@@ -45,14 +43,11 @@ func (suite *PodDataStoreTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(suite.T())
 	suite.mockCtrl = mockCtrl
 	suite.storage = storeMocks.NewMockStore(mockCtrl)
-	suite.indexer = indexerMocks.NewMockIndexer(mockCtrl)
 	suite.searcher = searcherMocks.NewMockSearcher(mockCtrl)
 	suite.processStore = indicatorMocks.NewMockDataStore(mockCtrl)
 	suite.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 
-	var err error
-	suite.datastore, err = newDatastoreImpl(suite.storage, suite.indexer, suite.searcher, suite.processStore, suite.filter)
-	suite.NoError(err)
+	suite.datastore = newDatastoreImpl(suite.storage, suite.searcher, suite.processStore, suite.filter)
 }
 
 func (suite *PodDataStoreTestSuite) TearDownTest() {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
 	pgStore "github.com/stackrox/rox/central/serviceaccount/internal/store/postgres"
 	"github.com/stackrox/rox/central/serviceaccount/search"
@@ -28,11 +27,10 @@ type DataStore interface {
 	RemoveServiceAccount(ctx context.Context, id string) error
 }
 
-// New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(saStore store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+// New returns a new instance of DataStore using the input store, and searcher.
+func New(saStore store.Store, searcher search.Searcher) (DataStore, error) {
 	d := &datastoreImpl{
 		storage:  saStore,
-		indexer:  indexer,
 		searcher: searcher,
 	}
 	return d, nil
@@ -43,5 +41,5 @@ func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error)
 	dbstore := pgStore.New(pool)
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)
-	return New(dbstore, indexer, searcher)
+	return New(dbstore, searcher)
 }

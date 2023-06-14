@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 )
 
-// DataStore wraps storage, indexer, and searcher for ProcessBaselineResults.
+// DataStore wraps storage, and searcher for ProcessBaselineResults.
 //
 //go:generate mockgen-wrapper
 type DataStore interface {

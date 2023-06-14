@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/nodecomponent/datastore/index"
 	"github.com/stackrox/rox/central/nodecomponent/datastore/search"
 	pgStore "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
@@ -22,7 +21,6 @@ var (
 
 type datastoreImpl struct {
 	storage  pgStore.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 
 	risks               riskDataStore.DataStore

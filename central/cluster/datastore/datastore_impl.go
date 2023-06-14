@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
-	"github.com/stackrox/rox/central/cluster/index"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
@@ -66,7 +65,6 @@ var (
 )
 
 type datastoreImpl struct {
-	indexer                   index.Indexer
 	clusterStorage            clusterStore.Store
 	clusterHealthStorage      clusterHealthStore.Store
 	clusterCVEDataStore       clusterCVEDS.DataStore

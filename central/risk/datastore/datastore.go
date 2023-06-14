@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/ranking"
-	"github.com/stackrox/rox/central/risk/datastore/internal/index"
 	"github.com/stackrox/rox/central/risk/datastore/internal/search"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/risk/datastore/internal/store/postgres"
@@ -30,11 +29,10 @@ type DataStore interface {
 	RemoveRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) error
 }
 
-// New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(riskStore store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+// New returns a new instance of DataStore using the input store, and searcher.
+func New(riskStore store.Store, searcher search.Searcher) (DataStore, error) {
 	d := &datastoreImpl{
 		storage:  riskStore,
-		indexer:  indexer,
 		searcher: searcher,
 		entityTypeToRanker: map[string]*ranking.Ranker{
 			storage.RiskSubjectType_CLUSTER.String():   ranking.ClusterRanker(),
@@ -59,5 +57,5 @@ func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error)
 	dbstore := pgStore.New(pool)
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)
-	return New(dbstore, indexer, searcher)
+	return New(dbstore, searcher)
 }

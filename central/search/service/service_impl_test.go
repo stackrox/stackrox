@@ -224,7 +224,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 	policyIndexer = policyPostgres.NewIndexer(s.pool)
 	s.NoError(policyStore.Upsert(ctx, fixtures.GetPolicy()))
 	policySearcher := policySearcher.New(policyStore, policyIndexer)
-	ds = policyDatastore.New(policyStore, policyIndexer, policySearcher, nil, nil, categoriesDS)
+	ds = policyDatastore.New(policyStore, policySearcher, nil, nil, categoriesDS)
 
 	builder := NewBuilder().
 		WithAlertStore(alertMocks.NewMockDataStore(s.mockCtrl)).

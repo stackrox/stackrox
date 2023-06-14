@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/resourcecollection/datastore/index"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -67,10 +66,9 @@ func GetSupportedFieldLabels() []pkgSearch.FieldLabel {
 }
 
 // New returns a new instance of a DataStore and a QueryResolver.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, QueryResolver, error) {
+func New(storage store.Store, searcher search.Searcher) (DataStore, QueryResolver, error) {
 	ds := &datastoreImpl{
 		storage:  storage,
-		indexer:  indexer,
 		searcher: searcher,
 	}
 

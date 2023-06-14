@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/node/datastore/search"
 	"github.com/stackrox/rox/central/node/datastore/store"
 	pgStore "github.com/stackrox/rox/central/node/datastore/store/postgres"
-	nodeIndexer "github.com/stackrox/rox/central/node/index"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -39,9 +38,9 @@ type DataStore interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
-// NewWithPostgres returns a new instance of DataStore using the input store, indexer, and searcher.
-func NewWithPostgres(storage store.Store, indexer nodeIndexer.Indexer, searcher search.Searcher, risks riskDS.DataStore, nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) DataStore {
-	ds := newDatastoreImpl(storage, indexer, searcher, risks, nodeRanker, nodeComponentRanker)
+// NewWithPostgres returns a new instance of DataStore using the input store, and searcher.
+func NewWithPostgres(storage store.Store, searcher search.Searcher, risks riskDS.DataStore, nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) DataStore {
+	ds := newDatastoreImpl(storage, searcher, risks, nodeRanker, nodeComponentRanker)
 	ds.initializeRankers()
 	return ds
 }
@@ -57,7 +56,7 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 	}
 	nodeRanker := ranking.NodeRanker()
 	nodeComponentRanker := ranking.NodeComponentRanker()
-	return NewWithPostgres(dbstore, indexer, searcher, riskStore, nodeRanker, nodeComponentRanker), nil
+	return NewWithPostgres(dbstore, searcher, riskStore, nodeRanker, nodeComponentRanker), nil
 }
 
 // NodeString returns a human-readable string representation of a node.

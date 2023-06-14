@@ -15,8 +15,7 @@ var (
 
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
-	indexer := pgStore.NewIndexer(globaldb.GetPostgres())
-	searcher := search.NewV2(storage, indexer)
+	searcher := search.NewV2(storage, pgStore.NewIndexer(globaldb.GetPostgres()))
 	ad = New(storage, searcher)
 }
 

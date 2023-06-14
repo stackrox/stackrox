@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/policycategoryedge/index"
 	"github.com/stackrox/rox/central/policycategoryedge/search"
 	"github.com/stackrox/rox/central/policycategoryedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -33,10 +32,9 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
+func New(storage store.Store, searcher search.Searcher) DataStore {
 	ds := &datastoreImpl{
 		storage:  storage,
-		indexer:  indexer,
 		searcher: searcher,
 	}
 	return ds

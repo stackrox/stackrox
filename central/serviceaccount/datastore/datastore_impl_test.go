@@ -53,7 +53,7 @@ func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
 	suite.storage = pgStore.New(suite.pool)
 	suite.indexer = pgStore.NewIndexer(suite.pool)
 	suite.searcher = serviceAccountSearch.New(suite.storage, suite.indexer)
-	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher)
+	suite.datastore, err = New(suite.storage, suite.searcher)
 	suite.Require().NoError(err)
 
 	suite.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),

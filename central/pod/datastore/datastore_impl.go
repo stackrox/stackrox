@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	podSearch "github.com/stackrox/rox/central/pod/datastore/internal/search"
-	podIndex "github.com/stackrox/rox/central/pod/index"
 	podStore "github.com/stackrox/rox/central/pod/store"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/role/resources"
@@ -33,7 +32,6 @@ var (
 
 type datastoreImpl struct {
 	podStore    podStore.Store
-	podIndexer  podIndex.Indexer
 	podSearcher podSearch.Searcher
 
 	indicators    piDS.DataStore
@@ -42,17 +40,14 @@ type datastoreImpl struct {
 	keyedMutex *concurrency.KeyedMutex
 }
 
-func newDatastoreImpl(storage podStore.Store, indexer podIndex.Indexer, searcher podSearch.Searcher,
-	indicators piDS.DataStore, processFilter filter.Filter) (*datastoreImpl, error) {
-	ds := &datastoreImpl{
+func newDatastoreImpl(storage podStore.Store, searcher podSearch.Searcher, indicators piDS.DataStore, processFilter filter.Filter) *datastoreImpl {
+	return &datastoreImpl{
 		podStore:      storage,
-		podIndexer:    indexer,
 		podSearcher:   searcher,
 		indicators:    indicators,
 		processFilter: processFilter,
 		keyedMutex:    concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
-	return ds, nil
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {

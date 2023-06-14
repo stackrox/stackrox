@@ -65,7 +65,7 @@ func (suite *PLOPDataStoreTestSuite) SetupTest() {
 	indicatorSearcher := processIndicatorSearch.New(indicatorStorage, indicatorIndexer)
 
 	suite.indicatorDataStore, _ = processIndicatorDataStore.New(
-		indicatorStorage, suite.store, indicatorIndexer, indicatorSearcher, nil)
+		indicatorStorage, suite.store, indicatorSearcher, nil)
 	suite.datastore = New(suite.store, suite.indicatorDataStore)
 }
 
