@@ -36,8 +36,6 @@ type k8sRoleSACSuite struct {
 }
 
 func (s *k8sRoleSACSuite) SetupSuite() {
-	var err error
-
 	pgtestbase := pgtest.ForT(s.T())
 	s.Require().NotNil(pgtestbase)
 	s.pool = pgtestbase.DB
