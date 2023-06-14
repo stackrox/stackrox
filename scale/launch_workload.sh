@@ -18,6 +18,12 @@ if [ ! -f "$file" ]; then
     exit 1
 fi
 
+# This is purposefully kept as stackrox because this is where central should be run
+if ! kubectl -n stackrox get pvc/central-db > /dev/null; then
+  >&2 echo "Running the scale workload requires a PVC"
+  exit 1
+fi
+
 # Create signature integrations to verify image signatures.
 "${DIR}"/signatures/create-signature-integrations.sh
 
