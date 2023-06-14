@@ -79,7 +79,11 @@ func applyPointwise(ss []string, f func(string) string) {
 
 var (
 	acronymsToUpperCase = map[string]struct{}{
-		"ID": {},
+		"API":  {},
+		"CPU":  {},
+		"ID":   {},
+		"UID":  {},
+		"UUID": {},
 	}
 )
 
