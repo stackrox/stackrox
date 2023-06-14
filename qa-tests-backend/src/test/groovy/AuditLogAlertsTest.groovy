@@ -179,9 +179,9 @@ class AuditLogAlertsTest extends BaseSpecification {
         and:
         "Feature is disabled and then re-enabled"
         assert ClusterService.updateAuditLogDynamicConfig(true)
-        Helpers.sleepWithRetryBackoff(5000) // wait 5s for it to propagate to sensor before re-enabling
+        sleep(5000) // wait 5s for it to propagate to sensor before re-enabling
         assert ClusterService.updateAuditLogDynamicConfig(false)
-        Helpers.sleepWithRetryBackoff(5000) // wait 5s for it to propagate again
+        sleep(5000) // wait 5s for it to propagate again
 
         and:
         "Another violation is generated"

@@ -33,11 +33,9 @@ import util.OnFailure
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
-import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Specification
 
-@Retry(condition = { Helpers.determineRetry(failure) })
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
 
@@ -318,8 +316,6 @@ class BaseSpecification extends Specification {
 
     def cleanup() {
         log.info("Ending testcase")
-
-        Helpers.resetRetryAttempts()
     }
 
     static addStackroxImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {

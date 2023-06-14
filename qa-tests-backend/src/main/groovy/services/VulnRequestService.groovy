@@ -66,7 +66,7 @@ class VulnRequestService extends BaseService {
                 .build()
         def response = getVulnRequestClient().undoVulnerabilityRequest(id)
         // Allow propagation of CVE suppression and invalidation of cache
-        Helpers.sleepWithRetryBackoff(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
+        sleep(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
         return response
     }
 
