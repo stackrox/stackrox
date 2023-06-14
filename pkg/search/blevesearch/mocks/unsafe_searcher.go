@@ -38,7 +38,7 @@ func (m *MockUnsafeSearcher) EXPECT() *MockUnsafeSearcherMockRecorder {
 }
 
 // Count mocks base method.
-func (m *MockUnsafeSearcher) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+func (m *MockUnsafeSearcher) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, q}
 	for _, a := range opts {
@@ -58,7 +58,7 @@ func (mr *MockUnsafeSearcherMockRecorder) Count(ctx, q interface{}, opts ...inte
 }
 
 // Search mocks base method.
-func (m *MockUnsafeSearcher) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
+func (m *MockUnsafeSearcher) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, q}
 	for _, a := range opts {

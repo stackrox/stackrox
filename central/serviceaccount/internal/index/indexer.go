@@ -10,6 +10,6 @@ import (
 )
 
 type Indexer interface {
-	Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
-	Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 }

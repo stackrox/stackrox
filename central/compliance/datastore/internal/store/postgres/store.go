@@ -23,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 var (
@@ -35,8 +34,8 @@ var (
 )
 
 type metadataIndex interface {
-	Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
-	Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 }
 
 // NewStore returns a compliance store based on Postgres

@@ -38,7 +38,7 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 }
 
 // Count mocks base method.
-func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+func (m *MockIndexer) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, q}
 	for _, a := range opts {
@@ -58,7 +58,7 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 }
 
 // Search mocks base method.
-func (m *MockIndexer) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
+func (m *MockIndexer) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, q}
 	for _, a := range opts {
