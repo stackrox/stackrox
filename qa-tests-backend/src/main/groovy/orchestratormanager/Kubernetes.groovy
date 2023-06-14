@@ -33,6 +33,7 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder
 import io.fabric8.kubernetes.api.model.ObjectFieldSelectorBuilder
 import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.kubernetes.api.model.Pod
+import io.fabric8.kubernetes.api.model.PodBuilder
 import io.fabric8.kubernetes.api.model.PodList
 import io.fabric8.kubernetes.api.model.PodSpec
 import io.fabric8.kubernetes.api.model.PodTemplateSpec
@@ -386,6 +387,13 @@ class Kubernetes implements OrchestratorMain {
                 .withName(podName)
                 .file(toPath)
                 .upload(Paths.get(fromPath))
+    }
+
+    def addPodAnnotationByApp(String ns, String appName, String key, String value) {
+        Pod pod = getPodsByLabel(ns, ["app": appName]).get(0)
+        client.pods().inNamespace(ns).withName(pod.metadata.name).edit {
+            n -> new PodBuilder(n).editMetadata().addToAnnotations(key, value).endMetadata().build()
+        }
     }
 
     def waitForDeploymentDeletion(Deployment deploy, int retries = 30, int intervalSeconds = 5) {

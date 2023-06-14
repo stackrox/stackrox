@@ -35,6 +35,7 @@ interface OrchestratorMain {
     String getPodLog(String ns, String name)
     def copyFileToPod(String fromPath, String ns, String podName, String toPath)
     boolean podReady(Pod pod)
+    def addPodAnnotationByApp(String ns, String appName, String key, String value)
 
     //Deployments
     io.fabric8.kubernetes.api.model.apps.Deployment getOrchestratorDeployment(String ns, String name)

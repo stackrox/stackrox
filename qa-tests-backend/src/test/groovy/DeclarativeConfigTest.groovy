@@ -1,5 +1,7 @@
 import static util.Helpers.withRetry
 
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 import io.grpc.StatusRuntimeException
@@ -48,7 +50,7 @@ class DeclarativeConfigTest extends BaseSpecification {
 
     static final private int RETRIES = 45
     static final private int DELETION_RETRIES = 60
-    static final private int PAUSE_SECS = 10
+    static final private int PAUSE_SECS = 2
 
     // Values used within testing for permission sets.
     // These include:
@@ -233,8 +235,30 @@ splunk:
     @SuppressWarnings(["JUnitPublicProperty"])
     Timeout globalTimeout = new Timeout(1200, TimeUnit.SECONDS)
 
+    private ScheduledFuture<?> annotateTaskHandle
+
+    def setup() {
+        // We use this hack to speed up declarative config volume reconciliation.
+        // The reason this works is because kubelet reconciles volume from secret when:
+        // 1) Something about the pod changes
+        // 2) Somewhat around 1 minute passes
+        // Updating value of annotation thus triggers reconciliation of declarative config.
+        annotateTaskHandle = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new Runnable() {
+            @Override
+            void run() {
+                try {
+                    def value = String.valueOf(System.currentTimeMillis())
+                    orchestrator.addPodAnnotationByApp(DEFAULT_NAMESPACE, "central", "test", value)
+                } catch (Exception e) {
+                    log.error( "Failed adding annotation to central", e)
+                }
+            }
+        }, 0, 1, TimeUnit.SECONDS)
+    }
+
     def cleanup() {
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
+        annotateTaskHandle.cancel(true)
     }
 
     @Tag("BAT")
