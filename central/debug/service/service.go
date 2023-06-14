@@ -69,7 +69,7 @@ const (
 
 	noTelemetry telemetryMode = iota
 	telemetryCentralOnly
-	telemetryComplete
+	telemetryCentralAndSensors
 
 	centralClusterPrefix = "_central-cluster"
 
@@ -582,7 +582,7 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	}
 
 	if s.telemetryGatherer != nil && opts.telemetryMode > noTelemetry {
-		telemetryData := s.telemetryGatherer.Gather(debugDumpCtx, opts.telemetryMode >= telemetryComplete, opts.withCentral)
+		telemetryData := s.telemetryGatherer.Gather(debugDumpCtx, opts.telemetryMode >= telemetryCentralAndSensors, opts.withCentral)
 		if err := writeTelemetryData(zipWriter, telemetryData); err != nil {
 			log.Error(err)
 		}
@@ -689,7 +689,7 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 
 	opts := debugDumpOptions{
 		logs:              fullK8sIntrospectionData,
-		telemetryMode:     telemetryComplete,
+		telemetryMode:     telemetryCentralAndSensors,
 		withCPUProfile:    false,
 		withLogImbue:      true,
 		withAccessControl: true,
