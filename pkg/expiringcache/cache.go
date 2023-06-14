@@ -8,6 +8,8 @@ import (
 )
 
 // Cache implements a cache where the elements expire after a specific time
+//
+//go:generate mockgen-wrapper
 type Cache interface {
 	Add(key, value interface{})
 	Get(key interface{}) interface{}
