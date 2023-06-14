@@ -23,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -88,7 +87,6 @@ type ProcessBaselineServiceTestSuite struct {
 	datastore datastore.DataStore
 	service   Service
 
-	db   *rocksdb.RocksDB
 	pool postgres.DB
 
 	reprocessor        *mocks.MockLoop

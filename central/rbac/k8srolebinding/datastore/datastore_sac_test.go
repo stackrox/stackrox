@@ -6,12 +6,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
@@ -30,11 +28,7 @@ type k8sRoleBindingSACSuite struct {
 	datastore DataStore
 
 	testPostgres *pgtest.TestPostgres
-
-	engine *rocksdb.RocksDB
-	index  bleve.Index
-
-	optionsMap searchPkg.OptionsMap
+	optionsMap   searchPkg.OptionsMap
 
 	testContexts          map[string]context.Context
 	testK8sRoleBindingIDs []string
