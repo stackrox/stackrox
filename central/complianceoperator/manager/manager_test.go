@@ -29,7 +29,7 @@ import (
 )
 
 func newManager(t *testing.T) *managerImpl {
-	registry, err := standards.NewRegistry(nil, framework.RegistrySingleton(), metadata.AllStandards...)
+	registry, err := standards.NewRegistry(framework.RegistrySingleton(), metadata.AllStandards...)
 	require.NoError(t, err)
 
 	db := pgtest.ForT(t)
