@@ -1,14 +1,7 @@
 package common
 
 import (
-	"context"
-	"testing"
-	"time"
-
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stretchr/testify/assert"
 )
 
 var clusters = []*storage.Cluster{
@@ -41,24 +34,6 @@ var securedNS = &storage.NamespaceMetadata{
 	ClusterName: "secured",
 }
 
-var accessScope = &storage.SimpleAccessScope{
-	Id:   "scope1",
-	Name: "test scope",
-	Rules: &storage.SimpleAccessScope_Rules{
-		IncludedClusters: []string{},
-		IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-			{
-				NamespaceName: "ns1",
-				ClusterName:   "remote",
-			},
-			{
-				NamespaceName: "ns2",
-				ClusterName:   "secured",
-			},
-		},
-	},
-}
-
 var vulnFilters = &storage.VulnerabilityReportFilters{
 	Fixability:      storage.VulnerabilityReportFilters_FIXABLE,
 	SinceLastReport: false,
@@ -66,18 +41,4 @@ var vulnFilters = &storage.VulnerabilityReportFilters{
 		storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 		storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 	},
-}
-
-func TestBuildQuery(t *testing.T) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip test when Postgres (and thus collections) is enabled")
-		t.SkipNow()
-	}
-	qb := NewVulnReportQueryBuilder(clusters, namespaces, accessScope, nil, vulnFilters, nil, time.Now())
-	ctx := sac.WithAllAccess(context.Background())
-	rq, err := qb.BuildQuery(ctx)
-	assert.NoError(t, err)
-
-	assert.ElementsMatch(t, []string{`Cluster:"remote"+Namespace:"ns1"`, `Cluster:"secured"+Namespace:"ns2"`}, rq.ScopeQueries)
-	assert.Equal(t, "Fixable:true+Severity:\"CRITICAL_VULNERABILITY_SEVERITY\",\"IMPORTANT_VULNERABILITY_SEVERITY\"", rq.CveFieldsQuery)
 }

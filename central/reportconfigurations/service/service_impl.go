@@ -10,27 +10,20 @@ import (
 	"github.com/stackrox/rox/central/reportconfigurations/service/common"
 	"github.com/stackrox/rox/central/reports/manager"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
-	accessScopeDS "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 type serviceImpl struct {
 	v1.UnimplementedReportConfigurationServiceServer
 
-	manager              manager.Manager
-	reportConfigStore    datastore.DataStore
-	accessScopeDatastore accessScopeDS.DataStore
-	collectionDatastore  collectionDS.DataStore
-	notifierDatastore    notifierDS.DataStore
+	manager             manager.Manager
+	reportConfigStore   datastore.DataStore
+	collectionDatastore collectionDS.DataStore
+	notifierDatastore   notifierDS.DataStore
 }
 
 func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *v1.RawQuery) (*v1.GetReportConfigurationsResponse, error) {
