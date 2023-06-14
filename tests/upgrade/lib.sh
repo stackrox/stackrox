@@ -96,6 +96,7 @@ deploy_earlier_central() {
     MAIN_IMAGE_TAG="$EARLIER_TAG" \
     SCANNER_IMAGE="$REGISTRY/scanner:$(cat SCANNER_VERSION)" \
     SCANNER_DB_IMAGE="$REGISTRY/scanner-db:$(cat SCANNER_VERSION)" \
+    POD_SECURITY_POLICIES=false \
     ./deploy/k8s/central.sh
 
     export_central_basic_auth_creds
