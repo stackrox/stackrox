@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	searchMocks "github.com/stackrox/rox/pkg/search/blevesearch/mocks"
+	searchMocks "github.com/stackrox/rox/pkg/search/mocks"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -65,14 +65,14 @@ func TestFilteredSearcher(t *testing.T) {
 type filteredSearcherTestSuite struct {
 	suite.Suite
 
-	mockUnsafeSearcher *searchMocks.MockUnsafeSearcher
+	mockUnsafeSearcher *searchMocks.MockSearcher
 
 	mockCtrl *gomock.Controller
 }
 
 func (s *filteredSearcherTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
-	s.mockUnsafeSearcher = searchMocks.NewMockUnsafeSearcher(s.mockCtrl)
+	s.mockUnsafeSearcher = searchMocks.NewMockSearcher(s.mockCtrl)
 }
 
 func (s *filteredSearcherTestSuite) TearDownTest() {

@@ -1,4 +1,4 @@
-package blevesearch
+package search
 
 import "fmt"
 

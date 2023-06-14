@@ -9,12 +9,11 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 // SearchHelper facilitates applying scoped access control to search operations.
 type SearchHelper interface {
-	FilteredSearcher(searcher blevesearch.UnsafeSearcher) search.Searcher
+	FilteredSearcher(searcher search.Searcher) search.Searcher
 }
 
 // scopeCheckerFactory will be called to create a ScopeChecker.
@@ -42,7 +41,7 @@ func NewPgSearchHelper(resourceMD permissions.ResourceMetadata, factory scopeChe
 	}, nil
 }
 
-func (h *pgSearchHelper) FilteredSearcher(searcher blevesearch.UnsafeSearcher) search.Searcher {
+func (h *pgSearchHelper) FilteredSearcher(searcher search.Searcher) search.Searcher {
 	return search.FuncSearcher{
 		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 			return h.executeSearch(ctx, q, searcher)
@@ -77,7 +76,7 @@ func (h *pgSearchHelper) enrichQueryWithSACFilter(effectiveAccessScope *effectiv
 	return scopedQuery, nil
 }
 
-func (h *pgSearchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) ([]search.Result, error) {
+func (h *pgSearchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher search.Searcher) ([]search.Result, error) {
 	scopeChecker := h.scopeCheckerFactory(ctx, storage.Access_READ_ACCESS)
 	if scopeChecker.IsAllowed() {
 		return searcher.Search(ctx, q)
@@ -100,7 +99,7 @@ func (h *pgSearchHelper) executeSearch(ctx context.Context, q *v1.Query, searche
 	return results, nil
 }
 
-func (h *pgSearchHelper) executeCount(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) (int, error) {
+func (h *pgSearchHelper) executeCount(ctx context.Context, q *v1.Query, searcher search.Searcher) (int, error) {
 	scopeChecker := h.scopeCheckerFactory(ctx, storage.Access_READ_ACCESS)
 	if scopeChecker.IsAllowed() {
 		return searcher.Count(ctx, q)
