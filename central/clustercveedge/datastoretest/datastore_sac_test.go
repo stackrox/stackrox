@@ -18,10 +18,6 @@ import (
 )
 
 const (
-	clusterOS = ""
-
-	waitForIndexing = true
-
 	cluster1ToCVE1EdgeID = "cluster1ToCVE1EdgeID"
 	cluster1ToCVE2EdgeID = "cluster1ToCVE2EdgeID"
 	cluster2ToCVE2EdgeID = "cluster2ToCVE2EdgeID"
