@@ -353,6 +353,7 @@ func (c *UpgradeContext) ListCurrentObjects() ([]*unstructured.Unstructured, err
 	return objects, nil
 }
 
+// IsPodSecurityEnabled returns whether or not pod security polices are enabled for this cluster
 func (c *UpgradeContext) IsPodSecurityEnabled() bool {
 	return c.podSecurityPoliciesSupported
 }
