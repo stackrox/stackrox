@@ -158,6 +158,8 @@ class BaseSpecification extends Specification {
             }
         }
 
+        setupCoreImageIntegration()
+
         globalSetupDone = true
     }
 
@@ -203,8 +205,6 @@ class BaseSpecification extends Specification {
         }
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
-
-        setupCoreImageIntegration()
 
         recordResourcesAtSpecStart()
     }
@@ -272,11 +272,6 @@ class BaseSpecification extends Specification {
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
-
-        log.info "Removing integration"
-        if (coreImageIntegrationId != null) {
-            ImageIntegrationService.deleteImageIntegration(coreImageIntegrationId)
-        }
 
         try {
             orchestrator.cleanup()
