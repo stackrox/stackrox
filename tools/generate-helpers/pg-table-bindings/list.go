@@ -74,6 +74,7 @@ func init() {
 		&storage.ProcessListeningOnPortStorage{}:                resources.DeploymentExtension,
 		&storage.ResourceCollection{}:                           resources.WorkflowAdministration,
 		&storage.ReportConfiguration{}:                          resources.WorkflowAdministration,
+		&storage.ReportMetadata{}:                               resources.WorkflowAdministration,
 		&storage.Risk{}:                                         resources.DeploymentExtension,
 		&storage.Role{}:                                         resources.Access,
 		&storage.SensorUpgradeConfig{}:                          resources.Administration,

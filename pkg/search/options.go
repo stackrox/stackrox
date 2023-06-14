@@ -270,8 +270,9 @@ var (
 	DefaultExternalSource = newFieldLabel("Default External Source")
 
 	// Report configurations search fields
-	ReportName = newFieldLabel("Report Name")
-	ReportType = newFieldLabel("Report Type")
+	ReportName     = newFieldLabel("Report Name")
+	ReportType     = newFieldLabel("Report Type")
+	ReportConfigID = newFieldLabel("Report Configuration ID")
 
 	// Resource alerts search fields
 	ResourceName = newFieldLabel("Resource")
@@ -308,6 +309,13 @@ var (
 	MinSequenceNumber     = newFieldLabel("Minimum Sequence Number")
 	CurrentSequenceNumber = newFieldLabel("Current Sequence Number")
 	LastPersistedTime     = newFieldLabel("Last Persisted")
+
+	// Report Metadata fields
+	ReportState              = newFieldLabel("Report State")
+	ReportQueuedTime         = newFieldLabel("Report Init Time")
+	ReportCompletionTime     = newFieldLabel("Report Completion Time")
+	ReportRequestType        = newFieldLabel("Report Request Type")
+	ReportNotificationMethod = newFieldLabel("Report Notification Method")
 
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
