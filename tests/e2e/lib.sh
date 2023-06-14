@@ -290,6 +290,7 @@ deploy_sensor_via_operator() {
     fi
 
     if [[ -n "${COLLECTION_METHOD:-}" ]]; then
+       echo "Using COLLECTION_METHOD=${COLLECTION_METHOD}"
        kubectl -n stackrox set env ds/collector COLLECTION_METHOD="${COLLECTION_METHOD}"
     fi
 
