@@ -197,7 +197,7 @@ func (s *debugServiceTestSuite) TestGetBundle() {
 	s.configMock.EXPECT().GetConfig(gomock.Any()).Return(&storage.Config{}, nil)
 	s.service.writeZippedDebugDump(context.Background(), w, "debug.zip", debugDumpOptions{
 		logs:              0,
-		telemetryMode:     0,
+		telemetryMode:     noTelemetry,
 		withCPUProfile:    false,
 		withLogImbue:      false,
 		withAccessControl: false,

@@ -54,12 +54,22 @@ import (
 
 type logsMode int
 
+// telemetryMode specifies how to use sensor/central telemetry to gather diagnostics.
+// 0 - don't collect any telemetry data
+// 1 - collect telemetry data for central only
+// 2 - collect telemetry data from sensors and central
+type telemetryMode int
+
 const (
 	cpuProfileDuration = 30 * time.Second
 
 	noLogs logsMode = iota
 	localLogs
 	fullK8sIntrospectionData
+
+	noTelemetry telemetryMode = iota
+	telemetryCentralOnly
+	telemetryCentralAndSensors
 
 	centralClusterPrefix = "_central-cluster"
 
@@ -499,12 +509,8 @@ func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 }
 
 type debugDumpOptions struct {
-	logs logsMode
-	// telemetryMode specifies how to use sensor/central telemetry to gather diagnostics.
-	// 0 - don't collect any telemetry data
-	// 1 - collect telemetry data for central only
-	// 2 - collect telemetry data from sensors and central
-	telemetryMode     int
+	logs              logsMode
+	telemetryMode     telemetryMode
 	withCPUProfile    bool
 	withLogImbue      bool
 	withAccessControl bool
@@ -575,8 +581,8 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		}
 	}
 
-	if s.telemetryGatherer != nil && opts.telemetryMode > 0 {
-		telemetryData := s.telemetryGatherer.Gather(debugDumpCtx, opts.telemetryMode >= 2, opts.withCentral)
+	if s.telemetryGatherer != nil && opts.telemetryMode > noTelemetry {
+		telemetryData := s.telemetryGatherer.Gather(debugDumpCtx, opts.telemetryMode >= telemetryCentralAndSensors, opts.withCentral)
 		if err := writeTelemetryData(zipWriter, telemetryData); err != nil {
 			log.Error(err)
 		}
@@ -642,7 +648,7 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 		withAccessControl: true,
 		withNotifiers:     true,
 		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
-		telemetryMode:     0,
+		telemetryMode:     noTelemetry,
 	}
 
 	query := r.URL.Query()
@@ -663,7 +669,8 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 	telemetryModeStr := query.Get("telemetry")
 	if telemetryModeStr != "" {
 		var err error
-		opts.telemetryMode, err = strconv.Atoi(telemetryModeStr)
+		telemetryModeInt, err := strconv.Atoi(telemetryModeStr)
+		opts.telemetryMode = telemetryMode(telemetryModeInt)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, "invalid telemetry mode value: %q\n", telemetryModeStr)
@@ -682,7 +689,7 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 
 	opts := debugDumpOptions{
 		logs:              fullK8sIntrospectionData,
-		telemetryMode:     2,
+		telemetryMode:     telemetryCentralAndSensors,
 		withCPUProfile:    false,
 		withLogImbue:      true,
 		withAccessControl: true,
