@@ -145,6 +145,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		auditLogCollectionManager,
 		reprocessorHandler,
 		delegatedRegistryHandler,
+		imageService,
 	}
 	if env.RHCOSNodeScanning.BooleanSetting() {
 		matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())

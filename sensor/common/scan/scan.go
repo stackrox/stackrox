@@ -19,10 +19,10 @@ import (
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/tlscheck"
-	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/sync/semaphore"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -63,14 +63,24 @@ type LocalScan struct {
 	regFactory registries.Factory
 }
 
-// NewLocalScan initializes a LocalScan struct.
-func NewLocalScan(registryStore *registry.Store) *LocalScan {
+type registryStore interface {
+	GetRegistryForImageInNamespace(*storage.ImageName, string) (registryTypes.ImageRegistry, error)
+	GetGlobalRegistryForImage(*storage.ImageName) (registryTypes.ImageRegistry, error)
+	GetMatchingCentralRegistryIntegrations(*storage.ImageName) []registryTypes.ImageRegistry
+}
+
+// LocalScanCentralClient interface to central's client
+type LocalScanCentralClient interface {
+	EnrichLocalImageInternal(context.Context, *v1.EnrichLocalImageInternalRequest, ...grpc.CallOption) (*v1.ScanImageInternalResponse, error)
+}
+
+// NewLocalScan initializes a LocalScan struct
+func NewLocalScan(registryStore registryStore) *LocalScan {
 	regFactory := registries.NewFactory(registries.FactoryOptions{
 		CreatorFuncs: []registries.CreatorWrapper{
 			docker.CreatorWithoutRepoList,
 		},
 	})
-
 	return &LocalScan{
 		scanImg:                           scanImage,
 		fetchSignaturesWithRetry:          signatures.FetchImageSignaturesWithRetries,
@@ -89,7 +99,7 @@ func NewLocalScan(registryStore *registry.Store) *LocalScan {
 // the OCP global pull secret.
 //
 // If no registry credentials are found an empty registry slice is passed to enrichLocalImageFromRegistry for enriching with 'no auth'.
-func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage, namespace string, requestID string, force bool) (*storage.Image, error) {
+func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClient LocalScanCentralClient, ci *storage.ContainerImage, namespace string, requestID string, force bool) (*storage.Image, error) {
 	imgName := ci.GetName()
 
 	regs := s.getRegistries(namespace, imgName)
@@ -136,7 +146,7 @@ func (s *LocalScan) getRegistries(namespace string, imgName *storage.ImageName) 
 // assume no auth is required.
 //
 // Will return any errors that may occur during scanning, fetching signatures or during reaching out to Central.
-func (s *LocalScan) enrichLocalImageFromRegistry(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage, registries []registryTypes.ImageRegistry, requestID string, force bool) (*storage.Image, error) {
+func (s *LocalScan) enrichLocalImageFromRegistry(ctx context.Context, centralClient LocalScanCentralClient, ci *storage.ContainerImage, registries []registryTypes.ImageRegistry, requestID string, force bool) (*storage.Image, error) {
 	if ci == nil {
 		return nil, pkgErrors.Wrap(ErrEnrichNotStarted, "missing image, nothing to enrich")
 	}
