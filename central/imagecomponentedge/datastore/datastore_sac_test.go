@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	dackboxTestUtils "github.com/stackrox/rox/central/dackbox/testutils"
+	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -31,28 +31,28 @@ func TestImageComponentEdgeDatastoreSAC(t *testing.T) {
 type imageComponentEdgeDatastoreSACTestSuite struct {
 	suite.Suite
 
-	dackboxTestStore dackboxTestUtils.DackboxTestDataStore
-	datastore        DataStore
+	testGraphDatastore graphDBTestUtils.TestGraphDataStore
+	datastore          DataStore
 
 	testContexts map[string]context.Context
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) SetupSuite() {
 	var err error
-	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
+	s.testGraphDatastore, err = graphDBTestUtils.NewTestGraphDataStore(s.T())
 	s.Require().NoError(err)
-	pool := s.dackboxTestStore.GetPostgresPool()
+	pool := s.testGraphDatastore.GetPostgresPool()
 	s.datastore, err = GetTestPostgresDataStore(s.T(), pool)
 	s.Require().NoError(err)
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TearDownSuite() {
-	s.dackboxTestStore.Cleanup(s.T())
+	s.testGraphDatastore.Cleanup(s.T())
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) cleanImageToVulnerabilityGraph() {
-	s.Require().NoError(s.dackboxTestStore.CleanImageToVulnerabilitiesGraph())
+	s.Require().NoError(s.testGraphDatastore.CleanImageToVulnerabilitiesGraph())
 }
 
 func getComponentID(component *storage.EmbeddedImageScanComponent, os string) string {
@@ -174,7 +174,7 @@ var (
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestExistsEdge() {
 	// Inject the fixture graph and test for image1 to component1 edge
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
 
@@ -189,7 +189,7 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestExistsEdge() {
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetEdge() {
 	// Inject the fixtures graph and fetch the image1 to component1 edge
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
 
@@ -214,7 +214,7 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetEdge() {
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 	// Inject the fixtures graph and fetch the image1 to component1 and image2 to component 4 edges
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
 
@@ -255,7 +255,7 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestCount() {
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
 
@@ -274,7 +274,7 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestCount() {
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearch() {
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
 
@@ -296,7 +296,7 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearch() {
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
 
@@ -319,7 +319,7 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph()
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
 
