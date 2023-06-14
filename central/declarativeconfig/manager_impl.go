@@ -38,8 +38,6 @@ const (
 
 	// The number of consecutive errors for a declarative configuration that causes its health status to be UNHEALTHY.
 	consecutiveReconciliationErrorThreshold = 3
-
-	handlerIntegrationHealthStatusPrefix = "Config Map"
 )
 
 type protoMessagesByType = map[reflect.Type][]proto.Message
