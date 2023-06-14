@@ -42,3 +42,9 @@ func CertObjectPredicate(obj k8sutil.Object) bool {
 func AdditionalCASecretPredicate(obj k8sutil.Object) bool {
 	return k8sobjects.RefOf(obj) == image.AdditionalCASensorSecretRef
 }
+
+// PSPObjectPredicate takes the given obj, and returns `true` if the object corresponds to a psp.
+func PSPObjectPredicate(obj k8sutil.Object) bool {
+	_, exists := image.SensorPSPObjectRefs[k8sobjects.RefOf(obj)]
+	return exists
+}
