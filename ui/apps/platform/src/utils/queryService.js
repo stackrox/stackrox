@@ -2,7 +2,6 @@ import pluralize from 'pluralize';
 
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
-import decodeBase64 from 'utils/decodeBase64/decodeBase64';
 import { NODE_FRAGMENT } from 'queries/node';
 import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
 import { NAMESPACE_FRAGMENT } from 'queries/namespace';
@@ -14,7 +13,6 @@ import { CONTROL_FRAGMENT } from 'queries/controls';
 import { POLICY_FRAGMENT } from 'queries/policy';
 import { IMAGE_FRAGMENT } from 'queries/image';
 import {
-    VULN_COMPONENT_LIST_FRAGMENT,
     VULN_CVE_LIST_FRAGMENT,
     IMAGE_LIST_FRAGMENT as VULN_IMAGE_LIST_FRAGMENT,
     CLUSTER_LIST_FRAGMENT_UPDATED as VULN_CLUSTER_LIST_FRAGMENT_UPDATED,
@@ -62,23 +60,12 @@ function entityContextToQueryObject(entityContext) {
         return {};
     }
 
-    // TODO: waiting for backend to use COMPONENT ID instead of NAME and VERSION. workaround for now
     return Object.keys(entityContext).reduce((acc, key) => {
         const entityQueryObj = {};
         if (key === entityTypes.IMAGE) {
             entityQueryObj[`${key} SHA`] = entityContext[key];
-        } else if (
-            // TODO: remove the plain COMPONENT option after migration to Postgres
-            key === entityTypes.COMPONENT
-        ) {
-            const parsedComponentID = entityContext[key].split(':').map(decodeBase64);
-            // eslint-disable-next-line dot-notation
-            [entityQueryObj['COMPONENT'], entityQueryObj[`COMPONENT VERSION`]] = parsedComponentID;
         } else if (key === entityTypes.IMAGE_COMPONENT || key === entityTypes.NODE_COMPONENT) {
             entityQueryObj['COMPONENT ID'] = entityContext[key];
-        } else if (key === entityTypes.CVE) {
-            // TODO: remove the plain CVE option after migration to Postgres
-            entityQueryObj.CVE = entityContext[key];
         } else if (
             key === entityTypes.IMAGE_CVE ||
             key === entityTypes.NODE_CVE ||
@@ -236,8 +223,6 @@ function getFragmentName(listType) {
             return 'nodeCVEFields';
         case entityTypes.CLUSTER_CVE:
             return 'clusterCVEFields';
-        case entityTypes.COMPONENT:
-            return 'componentFields';
         case entityTypes.NODE_COMPONENT:
             return 'nodeComponentFields';
         case entityTypes.IMAGE_COMPONENT:
@@ -269,7 +254,6 @@ function getFragment(entityType, listType, useCase) {
         },
         [useCases.VULN_MANAGEMENT]: {
             ...defaultFragments,
-            [entityTypes.COMPONENT]: VULN_COMPONENT_LIST_FRAGMENT,
             [entityTypes.NODE_COMPONENT]: VULN_NODE_COMPONENT_LIST_FRAGMENT,
             [entityTypes.IMAGE_COMPONENT]: VULN_IMAGE_COMPONENT_LIST_FRAGMENT,
             [entityTypes.CVE]: VULN_CVE_LIST_FRAGMENT,
