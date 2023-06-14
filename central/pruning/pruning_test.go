@@ -275,7 +275,6 @@ func (s *PruningTestSuite) generateNodeDataStructures() testNodeDatastore.DataSt
 
 	nodes := testNodeDatastore.NewWithPostgres(
 		nodeStore,
-		nodeIndexer,
 		nodeSearch.NewV2(nodeStore, nodeIndexer),
 		mockRiskDatastore,
 		ranking.NewRanker(),
@@ -1853,8 +1852,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 		s.T().Run(c.name, func(t *testing.T) {
 			serviceAccounts, err := serviceAccountDataStore.GetTestPostgresDataStore(t, s.pool)
 			assert.NoError(t, err)
-			k8sRoles, err := k8sRoleDataStore.GetTestPostgresDataStore(t, s.pool)
-			assert.NoError(t, err)
+			k8sRoles := k8sRoleDataStore.GetTestPostgresDataStore(t, s.pool)
 			k8sRoleBindings, err := k8sRoleBindingDataStore.GetTestPostgresDataStore(t, s.pool)
 			assert.NoError(t, err)
 
