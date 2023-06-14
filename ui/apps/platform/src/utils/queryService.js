@@ -16,15 +16,10 @@ import { IMAGE_FRAGMENT } from 'queries/image';
 import {
     VULN_COMPONENT_LIST_FRAGMENT,
     VULN_CVE_LIST_FRAGMENT,
-    OLD_IMAGE_LIST_FRAGMENT as OLD_VULN_IMAGE_LIST_FRAGMENT,
     IMAGE_LIST_FRAGMENT as VULN_IMAGE_LIST_FRAGMENT,
-    CLUSTER_LIST_FRAGMENT as VULN_CLUSTER_LIST_FRAGMENT,
     CLUSTER_LIST_FRAGMENT_UPDATED as VULN_CLUSTER_LIST_FRAGMENT_UPDATED,
-    DEPLOYMENT_LIST_FRAGMENT as VULN_DEPLOYMENT_LIST_FRAGMENT,
     DEPLOYMENT_LIST_FRAGMENT_UPDATED as VULN_DEPLOYMENT_LIST_FRAGMENT_UPDATED,
-    NAMESPACE_LIST_FRAGMENT as VULN_NAMESPACE_LIST_FRAGMENT,
     NAMESPACE_LIST_FRAGMENT_UPDATED as VULN_NAMESPACE_LIST_FRAGMENT_UPDATED,
-    NODE_LIST_FRAGMENT as VULN_NODE_LIST_FRAGMENT,
     NODE_LIST_FRAGMENT_UPDATED as VULN_NODE_LIST_FRAGMENT_UPDATED,
     POLICY_LIST_FRAGMENT as VULN_POLICY_LIST_FRAGMENT,
     VULN_IMAGE_COMPONENT_LIST_FRAGMENT,
@@ -211,7 +206,7 @@ function getListFieldName(entityType, listType, useCase) {
     return parts.join('');
 }
 
-function getFragmentName(entityType, listType) {
+function getFragmentName(listType) {
     switch (listType) {
         case entityTypes.CLUSTER:
             return 'clusterFields';
@@ -235,14 +230,6 @@ function getFragmentName(entityType, listType) {
             return 'serviceAccountFields';
         case entityTypes.CONTROL:
             return 'controlFields';
-        case entityTypes.CVE:
-            if (entityType === entityTypes.NODE_COMPONENT) {
-                return 'nodeCVEFields';
-            }
-            if (entityType === entityTypes.IMAGE_COMPONENT) {
-                return 'imageCVEFields';
-            }
-            return 'cveFields';
         case entityTypes.IMAGE_CVE:
             return 'imageCVEFields';
         case entityTypes.NODE_CVE:
@@ -260,7 +247,7 @@ function getFragmentName(entityType, listType) {
     }
 }
 
-function getFragment(entityType, listType, useCase, showVMUpdates = false) {
+function getFragment(entityType, listType, useCase) {
     const defaultFragments = {
         [entityTypes.IMAGE]: IMAGE_FRAGMENT,
         [entityTypes.NODE]: NODE_FRAGMENT,
@@ -289,22 +276,12 @@ function getFragment(entityType, listType, useCase, showVMUpdates = false) {
             [entityTypes.CLUSTER_CVE]: CLUSTER_CVE_LIST_FRAGMENT,
             [entityTypes.NODE_CVE]: NODE_CVE_LIST_FRAGMENT,
             [entityTypes.IMAGE_CVE]: VULN_IMAGE_CVE_LIST_FRAGMENT,
-            [entityTypes.IMAGE]: showVMUpdates
-                ? VULN_IMAGE_LIST_FRAGMENT
-                : OLD_VULN_IMAGE_LIST_FRAGMENT,
-            [entityTypes.CLUSTER]: showVMUpdates
-                ? VULN_CLUSTER_LIST_FRAGMENT_UPDATED
-                : VULN_CLUSTER_LIST_FRAGMENT,
-            [entityTypes.NAMESPACE]: showVMUpdates
-                ? VULN_NAMESPACE_LIST_FRAGMENT_UPDATED
-                : VULN_NAMESPACE_LIST_FRAGMENT,
+            [entityTypes.IMAGE]: VULN_IMAGE_LIST_FRAGMENT,
+            [entityTypes.CLUSTER]: VULN_CLUSTER_LIST_FRAGMENT_UPDATED,
+            [entityTypes.NAMESPACE]: VULN_NAMESPACE_LIST_FRAGMENT_UPDATED,
             [entityTypes.POLICY]: VULN_POLICY_LIST_FRAGMENT,
-            [entityTypes.DEPLOYMENT]: showVMUpdates
-                ? VULN_DEPLOYMENT_LIST_FRAGMENT_UPDATED
-                : VULN_DEPLOYMENT_LIST_FRAGMENT,
-            [entityTypes.NODE]: showVMUpdates
-                ? VULN_NODE_LIST_FRAGMENT_UPDATED
-                : VULN_NODE_LIST_FRAGMENT,
+            [entityTypes.DEPLOYMENT]: VULN_DEPLOYMENT_LIST_FRAGMENT_UPDATED,
+            [entityTypes.NODE]: VULN_NODE_LIST_FRAGMENT_UPDATED,
         },
     };
 
@@ -330,10 +307,10 @@ function getFragment(entityType, listType, useCase, showVMUpdates = false) {
     return fragmentMap[listType];
 }
 
-function getFragmentInfo(entityType, listType, useCase, showVMUpdates = false) {
+function getFragmentInfo(entityType, listType, useCase) {
     const listFieldName = getListFieldName(entityType, listType, useCase);
-    const fragmentName = getFragmentName(entityType, listType);
-    const fragment = getFragment(entityType, listType, useCase, showVMUpdates);
+    const fragmentName = getFragmentName(listType);
+    const fragment = getFragment(entityType, listType, useCase);
 
     return {
         listFieldName,
