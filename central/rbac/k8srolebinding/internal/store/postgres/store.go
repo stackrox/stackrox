@@ -64,9 +64,6 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.K8SRoleBinding) error) error
-
-	AckKeysIndexed(ctx context.Context, keys ...string) error
-	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
@@ -729,16 +726,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.K8SRoleBindin
 }
 
 //// Stubs for satisfying legacy interfaces
-
-// AckKeysIndexed acknowledges the passed keys were indexed.
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
-	return nil
-}
-
-// GetKeysToIndex returns the keys that need to be indexed.
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
-	return nil, nil
-}
 
 //// Interface functions - END
 

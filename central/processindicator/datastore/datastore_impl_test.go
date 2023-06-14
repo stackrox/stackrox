@@ -446,9 +446,6 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesAddMany() {
 func (suite *IndicatorDataStoreTestSuite) TestAllowsAddMany() {
 	storeMock, _, _ := suite.setupDataStoreWithMocks()
 	storeMock.EXPECT().UpsertMany(suite.hasWriteCtx, gomock.Any()).Return(nil)
-
-	storeMock.EXPECT().AckKeysIndexed(suite.hasWriteCtx, fixtureconsts.ProcessIndicatorID1).Return(nil)
-
 	err := suite.datastore.AddProcessIndicators(suite.hasWriteCtx, &storage.ProcessIndicator{Id: fixtureconsts.ProcessIndicatorID1})
 	suite.NoError(err, "expected no error trying to write with permissions")
 }

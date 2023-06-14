@@ -21,6 +21,4 @@ type Store interface {
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
 	Walk(ctx context.Context, fn func(obj *storage.PolicyCategory) error) error
-	AckKeysIndexed(ctx context.Context, keys ...string) error
-	GetKeysToIndex(ctx context.Context) ([]string, error)
 }

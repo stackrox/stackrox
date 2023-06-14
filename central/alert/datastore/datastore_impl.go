@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
@@ -219,15 +220,10 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 		return sac.ErrResourceAccessDenied
 	}
 
-	errorList := errorhelpers.NewErrorList("deleting alert")
 	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
-		errorList.AddError(err)
+		return errors.Wrap(err, "deleting alert")
 	}
-	if err := ds.storage.AckKeysIndexed(ctx, ids...); err != nil {
-		errorList.AddError(err)
-	}
-
-	return errorList.ToError()
+	return nil
 }
 
 func sacKeyForAlert(alert *storage.Alert) []sac.ScopeKey {
@@ -256,16 +252,7 @@ func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*stora
 	if len(alerts) == 0 {
 		return nil
 	}
-
-	if err := ds.storage.UpsertMany(ctx, alerts); err != nil {
-		return err
-	}
-
-	ids := make([]string, 0, len(alerts))
-	for _, alert := range alerts {
-		ids = append(ids, alert.GetId())
-	}
-	return ds.storage.AckKeysIndexed(ctx, ids...)
+	return ds.storage.UpsertMany(ctx, alerts)
 }
 
 func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {

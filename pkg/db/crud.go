@@ -23,8 +23,4 @@ type Crud interface {
 
 	Delete(id string) error
 	DeleteMany(ids []string) error
-
-	// Helper functions
-	AckKeysIndexed(keys ...string) error
-	GetKeysToIndex() ([]string, error)
 }
