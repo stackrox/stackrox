@@ -39,7 +39,7 @@ jobs:
 
     - name: Go Unit Tests
       run: |
-        chmod a+w . roxctl/connectivity-map/testdata/minimal
+        chmod a+rwx . roxctl/connectivity-map/testdata/minimal
         su tester -c "${{ matrix.gotags }} make go-unit-tests"
 
     - name: Generate junit report
