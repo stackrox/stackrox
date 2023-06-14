@@ -3,17 +3,13 @@ package datastore
 import (
 	"context"
 
-	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/image/datastore/search"
 	"github.com/stackrox/rox/central/image/datastore/store"
-	dackBoxStore "github.com/stackrox/rox/central/image/datastore/store/dackbox"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -40,31 +36,6 @@ type DataStore interface {
 
 	DeleteImages(ctx context.Context, ids ...string) error
 	Exists(ctx context.Context, id string) (bool, error)
-}
-
-func newDatastore(dacky *dackbox.DackBox, storage store.Store, _ bleve.Index, _ bleve.Index, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
-	searcher := search.New(storage,
-		dacky,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-	)
-	ds := newDatastoreImpl(storage, nil, searcher, risks, imageRanker, imageComponentRanker)
-	ds.initializeRankers()
-
-	return ds
-}
-
-// New returns a new instance of DataStore using the input store, indexer, and searcher.
-// noUpdateTimestamps controls whether timestamps are automatically updated when upserting images.
-// This should be set to `false` except for some tests.
-func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, processIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
-	storage := dackBoxStore.New(dacky, keyFence, noUpdateTimestamps)
-	return newDatastore(dacky, storage, bleveIndex, processIndex, risks, imageRanker, imageComponentRanker)
 }
 
 // NewWithPostgres returns a new instance of DataStore using the input store, indexer, and searcher.

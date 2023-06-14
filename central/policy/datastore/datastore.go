@@ -50,10 +50,6 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher,
 		notifierDatastore:   notifierDatastore,
 		categoriesDatastore: categoriesDatastore,
 	}
-
-	if err := ds.buildIndex(); err != nil {
-		panic("unable to load search index for policies")
-	}
 	return ds
 }
 

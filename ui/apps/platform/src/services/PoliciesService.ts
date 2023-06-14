@@ -9,7 +9,6 @@ import axios from './instance';
 import { Empty } from './types';
 
 const baseUrl = '/v1/policies';
-const policyCategoriesUrl = '/v1/policyCategories';
 
 /*
  * Get a policy. Policy is a superset of ListPolicy.
@@ -26,15 +25,6 @@ export function getPolicies(query = ''): Promise<ListPolicy[]> {
     return axios
         .get<{ policies: Policy[] }>(`${baseUrl}?${params}`)
         .then((response) => response?.data?.policies ?? []);
-}
-
-/*
- * Get policy categories.
- */
-export function getPolicyCategories(): Promise<string[]> {
-    return axios
-        .get<{ categories: string[] }>(policyCategoriesUrl)
-        .then((response) => response?.data?.categories ?? []);
 }
 
 /*

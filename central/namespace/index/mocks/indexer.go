@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddNamespaceMetadata mocks base method.
-func (m *MockIndexer) AddNamespaceMetadata(namespacemetadata *storage.NamespaceMetadata) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddNamespaceMetadata", namespacemetadata)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddNamespaceMetadata indicates an expected call of AddNamespaceMetadata.
-func (mr *MockIndexerMockRecorder) AddNamespaceMetadata(namespacemetadata interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNamespaceMetadata", reflect.TypeOf((*MockIndexer)(nil).AddNamespaceMetadata), namespacemetadata)
-}
-
-// AddNamespaceMetadatas mocks base method.
-func (m *MockIndexer) AddNamespaceMetadatas(namespacemetadatas []*storage.NamespaceMetadata) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddNamespaceMetadatas", namespacemetadatas)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddNamespaceMetadatas indicates an expected call of AddNamespaceMetadatas.
-func (mr *MockIndexerMockRecorder) AddNamespaceMetadatas(namespacemetadatas interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNamespaceMetadatas", reflect.TypeOf((*MockIndexer)(nil).AddNamespaceMetadatas), namespacemetadatas)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteNamespaceMetadata mocks base method.
-func (m *MockIndexer) DeleteNamespaceMetadata(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteNamespaceMetadata", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteNamespaceMetadata indicates an expected call of DeleteNamespaceMetadata.
-func (mr *MockIndexerMockRecorder) DeleteNamespaceMetadata(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNamespaceMetadata", reflect.TypeOf((*MockIndexer)(nil).DeleteNamespaceMetadata), id)
-}
-
-// DeleteNamespaceMetadatas mocks base method.
-func (m *MockIndexer) DeleteNamespaceMetadatas(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteNamespaceMetadatas", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteNamespaceMetadatas indicates an expected call of DeleteNamespaceMetadatas.
-func (mr *MockIndexerMockRecorder) DeleteNamespaceMetadatas(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNamespaceMetadatas", reflect.TypeOf((*MockIndexer)(nil).DeleteNamespaceMetadatas), ids)
 }
 
 // Search mocks base method.

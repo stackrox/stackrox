@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddImageComponent mocks base method.
-func (m *MockIndexer) AddImageComponent(imagecomponent *storage.ImageComponent) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddImageComponent", imagecomponent)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddImageComponent indicates an expected call of AddImageComponent.
-func (mr *MockIndexerMockRecorder) AddImageComponent(imagecomponent interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddImageComponent", reflect.TypeOf((*MockIndexer)(nil).AddImageComponent), imagecomponent)
-}
-
-// AddImageComponents mocks base method.
-func (m *MockIndexer) AddImageComponents(imagecomponents []*storage.ImageComponent) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddImageComponents", imagecomponents)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddImageComponents indicates an expected call of AddImageComponents.
-func (mr *MockIndexerMockRecorder) AddImageComponents(imagecomponents interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddImageComponents", reflect.TypeOf((*MockIndexer)(nil).AddImageComponents), imagecomponents)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteImageComponent mocks base method.
-func (m *MockIndexer) DeleteImageComponent(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteImageComponent", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteImageComponent indicates an expected call of DeleteImageComponent.
-func (mr *MockIndexerMockRecorder) DeleteImageComponent(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteImageComponent", reflect.TypeOf((*MockIndexer)(nil).DeleteImageComponent), id)
-}
-
-// DeleteImageComponents mocks base method.
-func (m *MockIndexer) DeleteImageComponents(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteImageComponents", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteImageComponents indicates an expected call of DeleteImageComponents.
-func (mr *MockIndexerMockRecorder) DeleteImageComponents(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteImageComponents", reflect.TypeOf((*MockIndexer)(nil).DeleteImageComponents), ids)
 }
 
 // Search mocks base method.

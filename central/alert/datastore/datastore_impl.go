@@ -168,8 +168,8 @@ func (ds *datastoreImpl) UpsertAlerts(ctx context.Context, alertBatch []*storage
 	return nil
 }
 
-func (ds *datastoreImpl) MarkAlertStaleBatch(ctx context.Context, ids ...string) ([]*storage.Alert, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "MarkAlertStaleBatch")
+func (ds *datastoreImpl) MarkAlertsResolvedBatch(ctx context.Context, ids ...string) ([]*storage.Alert, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "MarkAlertsResolvedBatch")
 
 	resolvedAt := types.TimestampNow()
 	idsAsBytes := make([][]byte, 0, len(ids))
@@ -223,9 +223,6 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
 		errorList.AddError(err)
 	}
-	if err := ds.indexer.DeleteListAlerts(ids); err != nil {
-		errorList.AddError(err)
-	}
 	if err := ds.storage.AckKeysIndexed(ctx, ids...); err != nil {
 		errorList.AddError(err)
 	}
@@ -265,14 +262,8 @@ func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*stora
 	}
 
 	ids := make([]string, 0, len(alerts))
-	listAlerts := make([]*storage.ListAlert, 0, len(alerts))
 	for _, alert := range alerts {
 		ids = append(ids, alert.GetId())
-		listAlerts = append(listAlerts, fillSortHelperFields(convert.AlertToListAlert(alert)))
-	}
-
-	if err := ds.indexer.AddListAlerts(listAlerts); err != nil {
-		return err
 	}
 	return ds.storage.AckKeysIndexed(ctx, ids...)
 }

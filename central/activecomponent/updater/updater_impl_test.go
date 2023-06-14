@@ -17,7 +17,6 @@ import (
 	piMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -250,14 +249,7 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 			// Deployment C does not have image1.
 			s.Assert().NotEqual(ac.GetDeploymentId(), mockDeployments[2].GetId())
 
-			var imageComponent string
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				imageComponent = pgSearch.IDToParts(ac.GetComponentId())[0]
-			} else {
-				edge, err := edges.FromString(ac.GetComponentId())
-				s.NoError(err)
-				imageComponent = edge.ParentID
-			}
+			imageComponent := pgSearch.IDToParts(ac.GetComponentId())[0]
 
 			s.Assert().True(strings.HasPrefix(imageComponent, mockImage.GetId()))
 			s.Assert().NotEqual(imageComponent, mockImage.GetScan().GetComponents()[2].GetName())

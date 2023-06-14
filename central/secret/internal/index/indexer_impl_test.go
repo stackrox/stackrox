@@ -1,24 +1,26 @@
+//go:build sql_integration
+
 package index
 
 import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/secret/internal/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
-const (
-	fakeID = "ABC"
+var (
+	fakeID = uuid.NewV4().String()
 )
 
 var (
@@ -32,19 +34,15 @@ func TestSecretIndex(t *testing.T) {
 type SecretIndexTestSuite struct {
 	suite.Suite
 
-	bleveIndex bleve.Index
+	db *pgtest.TestPostgres
 
 	indexer Indexer
 }
 
 func (suite *SecretIndexTestSuite) SetupSuite() {
-	pgtest.SkipIfPostgresEnabled(suite.T())
-
-	tmpIndex, err := globalindex.TempInitializeIndices("")
-	suite.Require().NoError(err)
-
-	suite.bleveIndex = tmpIndex
-	suite.indexer = New(tmpIndex)
+	suite.db = pgtest.ForT(suite.T())
+	suite.indexer = postgres.NewIndexer(suite.db)
+	store := postgres.New(suite.db)
 
 	secret := fixtures.GetSecret()
 	secret.Files = []*storage.SecretDataFile{
@@ -53,11 +51,11 @@ func (suite *SecretIndexTestSuite) SetupSuite() {
 			Type: storage.SecretType_CERTIFICATE_REQUEST,
 		},
 	}
-	suite.NoError(suite.indexer.AddSecret(secret))
+	suite.NoError(store.Upsert(ctx, secret))
 
 	secondSecret := fixtures.GetSecret()
 	secondSecret.Id = fakeID
-	suite.NoError(suite.indexer.AddSecret(secondSecret))
+	suite.NoError(store.Upsert(ctx, secondSecret))
 }
 
 func (suite *SecretIndexTestSuite) TestSecretSearch() {
@@ -97,5 +95,5 @@ func (suite *SecretIndexTestSuite) TestSecretSearch() {
 }
 
 func (suite *SecretIndexTestSuite) TearDownSuite() {
-	suite.NoError(suite.bleveIndex.Close())
+	suite.db.Teardown(suite.T())
 }

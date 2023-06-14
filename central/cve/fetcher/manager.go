@@ -8,7 +8,6 @@ import (
 	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	"github.com/stackrox/rox/central/cve/converter/utils"
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -38,14 +37,12 @@ type orchestratorIstioCVEManagerImpl struct {
 func NewOrchestratorIstioCVEManagerImpl(
 	clusterDataStore clusterDataStore.DataStore,
 	clusterCVEDataStore clusterCVEDataStore.DataStore,
-	legacyCVEDataStore cveDataStore.DataStore,
 	clusterCVEEdgeDataStore clusterCVEEdgeDataStore.DataStore,
 	cveMatcher *cveMatcher.CVEMatcher,
 ) (OrchestratorIstioCVEManager, error) {
 	m := &orchestratorIstioCVEManagerImpl{
 		orchestratorCVEMgr: &orchestratorCVEManager{
 			clusterDataStore:        clusterDataStore,
-			legacyCVEDataStore:      legacyCVEDataStore,
 			clusterCVEDataStore:     clusterCVEDataStore,
 			clusterCVEEdgeDataStore: clusterCVEEdgeDataStore,
 			cveMatcher:              cveMatcher,

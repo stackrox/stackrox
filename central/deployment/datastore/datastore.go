@@ -5,11 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/deployment/store/cache"
-	dackBoxStore "github.com/stackrox/rox/central/deployment/store/dackbox"
 	pgStore "github.com/stackrox/rox/central/deployment/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
@@ -19,10 +17,6 @@ import (
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -54,10 +48,7 @@ type DataStore interface {
 	GetDeploymentIDs(ctx context.Context) ([]string, error)
 }
 
-func newDataStore(storage store.Store, _ graph.Provider, pool postgres.DB, _ bleve.Index, _ bleve.Index,
-	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
-	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
-	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
+func newDataStore(storage store.Store, pool postgres.DB, images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter, clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
 	storage, err := cache.NewCachedStore(storage)
 	if err != nil {
 		return nil, err
@@ -71,27 +62,13 @@ func newDataStore(storage store.Store, _ graph.Provider, pool postgres.DB, _ ble
 	return ds, nil
 }
 
-// New creates a deployment datastore based on dackbox
-func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, pool postgres.DB,
-	bleveIndex bleve.Index, processIndex bleve.Index,
-	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
-	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
-	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
-	var storage store.Store
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage = pgStore.NewFullStore(pool)
-	} else {
-		storage = dackBoxStore.New(dacky, keyFence)
-	}
-	return newDataStore(storage, dacky, pool, bleveIndex, processIndex, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+// New creates a deployment datastore using postgres.
+func New(pool postgres.DB, images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter, clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
+	return newDataStore(pgStore.NewFullStore(pool), pool, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 }
 
 // NewTestDataStore allows for direct creation of the datastore for testing purposes
-func NewTestDataStore(t testing.TB, storage store.Store, _ graph.Provider, pool postgres.DB,
-	_ bleve.Index, _ bleve.Index,
-	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
-	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
-	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
+func NewTestDataStore(t testing.TB, storage store.Store, pool postgres.DB, images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter, clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
 	if t == nil {
 		return nil, errors.New("NewTestDataStore called without testing")
 	}
@@ -109,7 +86,7 @@ func NewTestDataStore(t testing.TB, storage store.Store, _ graph.Provider, pool 
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error) {
 	dbstore := pgStore.FullStoreWrap(pgStore.New(pool))
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.NewV2(dbstore, indexer)

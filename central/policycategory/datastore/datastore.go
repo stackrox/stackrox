@@ -53,10 +53,6 @@ func New(store store.Store, indexer index.Indexer, searcher search.Searcher, pol
 		utils.CrashOnError(err)
 	}
 	ds.categoryNameIDMap = categoryUtils.GetCategoryNameToIDs(categories)
-
-	if err := ds.buildIndex(); err != nil {
-		panic("unable to load search index for policy categories")
-	}
 	return ds
 }
 

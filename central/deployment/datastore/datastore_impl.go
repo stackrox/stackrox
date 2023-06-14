@@ -19,7 +19,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -229,19 +228,10 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 
 	// Update deployment with latest risk score
 	deployment.RiskScore = ds.deploymentRanker.GetScoreForID(deployment.GetId())
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
-			return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
-		}
-		return nil
+	if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
+		return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
 	}
-	return ds.keyedMutex.DoStatusWithLock(deployment.GetId(), func() error {
-		if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
-			return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
-		}
-		return nil
-	})
+	return nil
 }
 
 // RemoveDeployment removes an alert from the deploymentStore and the deploymentIndexer

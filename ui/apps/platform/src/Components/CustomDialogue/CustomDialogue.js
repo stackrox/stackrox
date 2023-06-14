@@ -25,7 +25,7 @@ const CustomDialogue = (props) => {
             className={`ignore-react-onclickoutside ${props.className}`}
         >
             {props.title && (
-                <div className="flex items-center w-full p-3 bg-primary-700 text-xl text-base-100 uppercase">
+                <div className="flex items-center w-full p-3 border-b border-base-300 font-700 text-xl">
                     <div className="flex flex-1">{props.title}</div>
                     <Icon.X className="ml-6 h-4 w-4 cursor-pointer" onClick={props.onCancel} />
                 </div>

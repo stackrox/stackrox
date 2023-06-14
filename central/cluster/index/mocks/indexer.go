@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddCluster mocks base method.
-func (m *MockIndexer) AddCluster(cluster *storage.Cluster) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddCluster", cluster)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddCluster indicates an expected call of AddCluster.
-func (mr *MockIndexerMockRecorder) AddCluster(cluster interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCluster", reflect.TypeOf((*MockIndexer)(nil).AddCluster), cluster)
-}
-
-// AddClusters mocks base method.
-func (m *MockIndexer) AddClusters(clusters []*storage.Cluster) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddClusters", clusters)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddClusters indicates an expected call of AddClusters.
-func (mr *MockIndexerMockRecorder) AddClusters(clusters interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddClusters", reflect.TypeOf((*MockIndexer)(nil).AddClusters), clusters)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteCluster mocks base method.
-func (m *MockIndexer) DeleteCluster(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteCluster", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteCluster indicates an expected call of DeleteCluster.
-func (mr *MockIndexerMockRecorder) DeleteCluster(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCluster", reflect.TypeOf((*MockIndexer)(nil).DeleteCluster), id)
-}
-
-// DeleteClusters mocks base method.
-func (m *MockIndexer) DeleteClusters(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteClusters", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteClusters indicates an expected call of DeleteClusters.
-func (mr *MockIndexerMockRecorder) DeleteClusters(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteClusters", reflect.TypeOf((*MockIndexer)(nil).DeleteClusters), ids)
 }
 
 // Search mocks base method.

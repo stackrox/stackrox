@@ -5,17 +5,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/node/datastore/search"
 	"github.com/stackrox/rox/central/node/datastore/store"
-	dackBoxStore "github.com/stackrox/rox/central/node/datastore/store/dackbox"
 	pgStore "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	nodeIndexer "github.com/stackrox/rox/central/node/index"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/postgres"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -40,24 +37,6 @@ type DataStore interface {
 	DeleteNodes(ctx context.Context, ids ...string) error
 	DeleteAllNodesForCluster(ctx context.Context, clusterID string) error
 	Exists(ctx context.Context, id string) (bool, error)
-}
-
-// newDatastore returns a datastore for Nodes.
-// noUpdateTimestamps controls whether timestamps are automatically updated when upserting nodes.
-// This should be set to `false` except for some tests.
-func newDatastore(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, _ bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore, nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) DataStore {
-	dataStore := dackBoxStore.New(dacky, keyFence, noUpdateTimestamps)
-
-	var searcher search.Searcher
-	ds := newDatastoreImpl(dataStore, nil, searcher, risks, nodeRanker, nodeComponentRanker)
-	ds.initializeRankers()
-
-	return ds
-}
-
-// New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, risks riskDS.DataStore, nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) DataStore {
-	return newDatastore(dacky, keyFence, bleveIndex, false, risks, nodeRanker, nodeComponentRanker)
 }
 
 // NewWithPostgres returns a new instance of DataStore using the input store, indexer, and searcher.

@@ -4,20 +4,10 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
-	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
-	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	"github.com/stackrox/rox/central/graphql/resolvers"
-	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
-	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
-	nsMappings "github.com/stackrox/rox/central/namespace/index/mappings"
-	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
-	deploymentMappings "github.com/stackrox/rox/pkg/search/options/deployments"
-	imageMappings "github.com/stackrox/rox/pkg/search/options/images"
 	"github.com/stackrox/rox/pkg/search/scoped"
 )
 
@@ -33,62 +23,33 @@ var (
 )
 
 func init() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		NamespaceOnlyOptionsMap = search.Difference(schema.NamespacesSchema.OptionsMap, schema.ClustersSchema.OptionsMap)
-		DeploymentOnlyOptionsMap = search.Difference(
-			schema.DeploymentsSchema.OptionsMap,
-			search.CombineOptionsMaps(
-				schema.ClustersSchema.OptionsMap,
-				schema.NamespacesSchema.OptionsMap,
-				schema.ImagesSchema.OptionsMap,
-			),
-		)
-		ImageOnlyOptionsMap = search.Difference(
+	NamespaceOnlyOptionsMap = search.Difference(schema.NamespacesSchema.OptionsMap, schema.ClustersSchema.OptionsMap)
+	DeploymentOnlyOptionsMap = search.Difference(
+		schema.DeploymentsSchema.OptionsMap,
+		search.CombineOptionsMaps(
+			schema.ClustersSchema.OptionsMap,
+			schema.NamespacesSchema.OptionsMap,
 			schema.ImagesSchema.OptionsMap,
-			search.CombineOptionsMaps(
-				schema.ImageComponentEdgesSchema.OptionsMap,
-				schema.ImageComponentsSchema.OptionsMap,
-				schema.ImageComponentCveEdgesSchema.OptionsMap,
-				schema.ImageCvesSchema.OptionsMap,
-			),
-		)
-		NodeOnlyOptionsMap = search.Difference(
-			schema.NodesSchema.OptionsMap,
-			search.CombineOptionsMaps(
-				schema.NodeComponentEdgesSchema.OptionsMap,
-				schema.NodeComponentsSchema.OptionsMap,
-				schema.NodeComponentsCvesEdgesSchema.OptionsMap,
-				schema.NodeCvesSchema.OptionsMap,
-			),
-		)
-	} else {
-		NamespaceOnlyOptionsMap = search.Difference(nsMappings.OptionsMap, clusterMappings.OptionsMap)
-		DeploymentOnlyOptionsMap = search.Difference(deploymentMappings.OptionsMap,
-			search.CombineOptionsMaps(
-				clusterMappings.OptionsMap,
-				nsMappings.OptionsMap,
-				imageMappings.OptionsMap,
-			),
-		)
-		ImageOnlyOptionsMap = search.Difference(
-			imageMappings.OptionsMap,
-			search.CombineOptionsMaps(
-				imageComponentEdgeMappings.OptionsMap,
-				componentMappings.OptionsMap,
-				componentCVEEdgeMappings.OptionsMap,
-				cveMappings.OptionsMap,
-			),
-		)
-		NodeOnlyOptionsMap = search.Difference(
-			nodeMappings.OptionsMap,
-			search.CombineOptionsMaps(
-				imageComponentEdgeMappings.OptionsMap,
-				componentMappings.OptionsMap,
-				componentCVEEdgeMappings.OptionsMap,
-				cveMappings.OptionsMap,
-			),
-		)
-	}
+		),
+	)
+	ImageOnlyOptionsMap = search.Difference(
+		schema.ImagesSchema.OptionsMap,
+		search.CombineOptionsMaps(
+			schema.ImageComponentEdgesSchema.OptionsMap,
+			schema.ImageComponentsSchema.OptionsMap,
+			schema.ImageComponentCveEdgesSchema.OptionsMap,
+			schema.ImageCvesSchema.OptionsMap,
+		),
+	)
+	NodeOnlyOptionsMap = search.Difference(
+		schema.NodesSchema.OptionsMap,
+		search.CombineOptionsMaps(
+			schema.NodeComponentEdgesSchema.OptionsMap,
+			schema.NodeComponentsSchema.OptionsMap,
+			schema.NodeComponentsCvesEdgesSchema.OptionsMap,
+			schema.NodeCvesSchema.OptionsMap,
+		),
+	)
 }
 
 // SearchWrapper is used to extract scope from a cve csv export query

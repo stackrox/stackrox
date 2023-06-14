@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -38,34 +37,6 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddSecret mocks base method.
-func (m *MockIndexer) AddSecret(secret *storage.Secret) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddSecret", secret)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddSecret indicates an expected call of AddSecret.
-func (mr *MockIndexerMockRecorder) AddSecret(secret interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSecret", reflect.TypeOf((*MockIndexer)(nil).AddSecret), secret)
-}
-
-// AddSecrets mocks base method.
-func (m *MockIndexer) AddSecrets(secrets []*storage.Secret) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddSecrets", secrets)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddSecrets indicates an expected call of AddSecrets.
-func (mr *MockIndexerMockRecorder) AddSecrets(secrets interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSecrets", reflect.TypeOf((*MockIndexer)(nil).AddSecrets), secrets)
-}
-
 // Count mocks base method.
 func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
@@ -84,34 +55,6 @@ func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteSecret mocks base method.
-func (m *MockIndexer) DeleteSecret(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteSecret", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteSecret indicates an expected call of DeleteSecret.
-func (mr *MockIndexerMockRecorder) DeleteSecret(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSecret", reflect.TypeOf((*MockIndexer)(nil).DeleteSecret), id)
-}
-
-// DeleteSecrets mocks base method.
-func (m *MockIndexer) DeleteSecrets(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteSecrets", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteSecrets indicates an expected call of DeleteSecrets.
-func (mr *MockIndexerMockRecorder) DeleteSecrets(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSecrets", reflect.TypeOf((*MockIndexer)(nil).DeleteSecrets), ids)
 }
 
 // Search mocks base method.

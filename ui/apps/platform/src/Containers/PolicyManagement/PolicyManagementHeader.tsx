@@ -3,7 +3,6 @@ import { PageSection, Title } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
 import TabNav from 'Components/TabNav';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { policiesBasePath, policyCategoriesPath } from 'routePaths';
 
 type PolicyManagementHeaderProps = {
@@ -11,12 +10,10 @@ type PolicyManagementHeaderProps = {
 };
 
 function PolicyManagementHeader({ currentTabTitle }: PolicyManagementHeaderProps) {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const tabLinks = [{ title: 'Policies', href: policiesBasePath }];
-    const isPolicyCategoriesEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-    if (isPolicyCategoriesEnabled) {
-        tabLinks.push({ title: 'Policy categories', href: policyCategoriesPath });
-    }
+    const tabLinks = [
+        { title: 'Policies', href: policiesBasePath },
+        { title: 'Policy categories', href: policyCategoriesPath },
+    ];
 
     return (
         <>

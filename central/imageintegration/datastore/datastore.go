@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -41,12 +40,6 @@ func New(imageIntegrationStorage store.Store, indexer index.Indexer, searcher se
 		storage:           imageIntegrationStorage,
 		indexer:           indexer,
 		formattedSearcher: searcher,
-	}
-
-	ctx := sac.WithAllAccess(context.Background())
-
-	if err := ds.buildIndex(ctx); err != nil {
-		log.Fatal("unable to load search index for image integrations")
 	}
 	return ds
 }

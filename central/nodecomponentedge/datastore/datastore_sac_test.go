@@ -9,8 +9,6 @@ import (
 	dackboxTestUtils "github.com/stackrox/rox/central/dackbox/testutils"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -50,11 +48,11 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) SetupSuite() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TearDownSuite() {
-	s.Require().NoError(s.dackboxTestStore.Cleanup(s.T()))
+	s.dackboxTestStore.Cleanup(s.T())
 }
 
-func (s *nodeComponentEdgeDatastoreSACTestSuite) cleanupNodeToVulnerabilityGraph(waitForIndexing bool) {
-	s.Require().NoError(s.dackboxTestStore.CleanNodeToVulnerabilitiesGraph(waitForIndexing))
+func (s *nodeComponentEdgeDatastoreSACTestSuite) cleanupNodeToVulnerabilityGraph() {
+	s.Require().NoError(s.dackboxTestStore.CleanNodeToVulnerabilitiesGraph())
 }
 
 func getComponentID(component *storage.EmbeddedNodeScanComponent, os string) string {
@@ -63,10 +61,7 @@ func getComponentID(component *storage.EmbeddedNodeScanComponent, os string) str
 
 func getEdgeID(nodeID string, component *storage.EmbeddedNodeScanComponent, os string) string {
 	componentID := getComponentID(component, os)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return pgSearch.IDFromPks([]string{nodeID, componentID})
-	}
-	return edges.EdgeID{ParentID: nodeID, ChildID: componentID}.ToString()
+	return pgSearch.IDFromPks([]string{nodeID, componentID})
 }
 
 type edgeTestCase struct {
@@ -182,8 +177,8 @@ func getTestCases(nodeIDs []string) []edgeTestCase {
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestExists() {
 	// Inject the fixture graph and test for node1 to component1 edge
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanupNodeToVulnerabilityGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanupNodeToVulnerabilityGraph()
 	s.Require().NoError(err)
 
 	nodeIDs := s.dackboxTestStore.GetStoredNodeIDs()
@@ -202,8 +197,8 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestExists() {
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGet() {
 	// Inject the fixture graph and test for node1 to component1 edge
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanupNodeToVulnerabilityGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanupNodeToVulnerabilityGraph()
 	s.Require().NoError(err)
 
 	nodeIDs := s.dackboxTestStore.GetStoredNodeIDs()
@@ -233,8 +228,8 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGet() {
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 	// Inject the fixture graph and test for node1 to component1 edge and node2 to component 4 edges
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanupNodeToVulnerabilityGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanupNodeToVulnerabilityGraph()
 	s.Require().NoError(err)
 
 	nodeIDs := s.dackboxTestStore.GetStoredNodeIDs()
@@ -289,12 +284,8 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestCount() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("graph.Context wrapper missing in NodeComponentEdge searcher",
-			"to enable Search test case in non-postgres mode")
-	}
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanupNodeToVulnerabilityGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanupNodeToVulnerabilityGraph()
 	s.Require().NoError(err)
 
 	nodeIDs := s.dackboxTestStore.GetStoredNodeIDs()
@@ -317,12 +308,8 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestCount() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearch() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("graph.Context wrapper missing in NodeComponentEdge searcher",
-			"to enable Search test case in non-postgres mode")
-	}
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanupNodeToVulnerabilityGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanupNodeToVulnerabilityGraph()
 	s.Require().NoError(err)
 
 	nodeIDs := s.dackboxTestStore.GetStoredNodeIDs()
@@ -350,12 +337,8 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearch() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("graph.Context wrapper missing in NodeComponentEdge searcher",
-			"to enable Search test case in non-postgres mode")
-	}
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanupNodeToVulnerabilityGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanupNodeToVulnerabilityGraph()
 	s.Require().NoError(err)
 
 	nodeIDs := s.dackboxTestStore.GetStoredNodeIDs()
@@ -383,12 +366,8 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("graph.Context wrapper missing in NodeComponentEdge searcher",
-			"to enable Search test case in non-postgres mode")
-	}
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanupNodeToVulnerabilityGraph(waitForIndexing)
+	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanupNodeToVulnerabilityGraph()
 	s.Require().NoError(err)
 
 	nodeIDs := s.dackboxTestStore.GetStoredNodeIDs()

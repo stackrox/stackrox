@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -12,13 +11,6 @@ var (
 
 func init() {
 	// general
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		prometheus.MustRegister(
-			rocksDBOperationHistogramVec,
-			dackboxOperationHistogramVec,
-		)
-	}
 
 	prometheus.MustRegister(
 		pipelinePanicCounter,

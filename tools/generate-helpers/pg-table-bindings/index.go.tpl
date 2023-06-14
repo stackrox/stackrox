@@ -39,21 +39,3 @@ func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesear
 
 	return pgSearch.RunSearchRequest(ctx, v1.{{.SearchCategory}}, q, b.db)
 }
-
-//// Stubs for satisfying interfaces
-
-func (b *indexerImpl) Add{{.TrimmedType}}(deployment *{{.Type}}) error {
-	return nil
-}
-
-func (b *indexerImpl) Add{{pluralType .TrimmedType}}(_ []*{{.Type}}) error {
-	return nil
-}
-
-func (b *indexerImpl) Delete{{.TrimmedType}}(id string) error {
-	return nil
-}
-
-func (b *indexerImpl) Delete{{pluralType .TrimmedType}}(_ []string) error {
-	return nil
-}
