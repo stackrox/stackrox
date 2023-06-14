@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/reportconfigurations/index"
 	"github.com/stackrox/rox/central/reportconfigurations/search"
 	"github.com/stackrox/rox/central/reportconfigurations/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -26,7 +25,6 @@ type dataStoreImpl struct {
 	reportConfigStore store.Store
 
 	searcher search.Searcher
-	indexer  index.Indexer
 }
 
 func (d *dataStoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {

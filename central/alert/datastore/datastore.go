@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
@@ -42,11 +41,10 @@ type DataStore interface {
 	DeleteAlerts(ctx context.Context, ids ...string) error
 }
 
-// New returns a new soleInstance of DataStore using the input store, indexer, and searcher.
-func New(alertStore store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+// New returns a new soleInstance of DataStore using the input store, and searcher.
+func New(alertStore store.Store, searcher search.Searcher) (DataStore, error) {
 	ds := &datastoreImpl{
 		storage:    alertStore,
-		indexer:    indexer,
 		searcher:   searcher,
 		keyedMutex: concurrency.NewKeyedMutex(mutexPoolSize),
 		keyFence:   dackboxConcurrency.NewKeyFence(),
@@ -60,5 +58,5 @@ func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error)
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(alertStore, indexer)
 
-	return New(alertStore, indexer, searcher)
+	return New(alertStore, searcher)
 }

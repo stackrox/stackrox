@@ -8,7 +8,6 @@ import (
 	errorsPkg "github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/policy/index"
 	"github.com/stackrox/rox/central/policy/search"
 	"github.com/stackrox/rox/central/policy/store"
 	"github.com/stackrox/rox/central/policy/store/boltdb"
@@ -39,7 +38,6 @@ var (
 
 type datastoreImpl struct {
 	storage     store.Store
-	indexer     index.Indexer
 	searcher    search.Searcher
 	policyMutex sync.Mutex
 

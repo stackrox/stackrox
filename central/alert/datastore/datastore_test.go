@@ -36,7 +36,6 @@ type alertDataStoreTestSuite struct {
 
 	dataStore DataStore
 	storage   *storeMocks.MockStore
-	indexer   *indexMocks.MockIndexer
 	searcher  *searchMocks.MockSearcher
 
 	mockCtrl *gomock.Controller
@@ -54,11 +53,10 @@ func (s *alertDataStoreTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
-	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
 
 	var err error
-	s.dataStore, err = New(s.storage, s.indexer, s.searcher)
+	s.dataStore, err = New(s.storage, s.searcher)
 	s.Require().NoError(err)
 }
 
@@ -199,10 +197,9 @@ func (s *alertDataStoreWithSACTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
-	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
 	var err error
-	s.dataStore, err = New(s.storage, s.indexer, s.searcher)
+	s.dataStore, err = New(s.storage, s.searcher)
 	s.NoError(err)
 }
 

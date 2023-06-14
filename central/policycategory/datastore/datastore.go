@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/policycategory/index"
 	"github.com/stackrox/rox/central/policycategory/search"
 	"github.com/stackrox/rox/central/policycategory/store"
 	categoryUtils "github.com/stackrox/rox/central/policycategory/utils"
@@ -33,11 +32,10 @@ type DataStore interface {
 	DeletePolicyCategory(ctx context.Context, id string) error
 }
 
-// New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(store store.Store, indexer index.Indexer, searcher search.Searcher, policyCategoryEdgeDS policyCategoryEdgeDS.DataStore) DataStore {
+// New returns a new instance of DataStore using the input store, and searcher.
+func New(store store.Store, searcher search.Searcher, policyCategoryEdgeDS policyCategoryEdgeDS.DataStore) DataStore {
 	ds := &datastoreImpl{
 		storage:              store,
-		indexer:              indexer,
 		searcher:             searcher,
 		policyCategoryEdgeDS: policyCategoryEdgeDS,
 		categoryNameIDMap:    make(map[string]string, 0),
@@ -57,10 +55,9 @@ func New(store store.Store, indexer index.Indexer, searcher search.Searcher, pol
 }
 
 // newWithoutDefaults should be used only for testing purposes.
-func newWithoutDefaults(store store.Store, indexer index.Indexer, searcher search.Searcher, policyCategoryEdgeDS policyCategoryEdgeDS.DataStore) DataStore {
+func newWithoutDefaults(store store.Store, searcher search.Searcher, policyCategoryEdgeDS policyCategoryEdgeDS.DataStore) DataStore {
 	return &datastoreImpl{
 		storage:              store,
-		indexer:              indexer,
 		searcher:             searcher,
 		policyCategoryEdgeDS: policyCategoryEdgeDS,
 		categoryNameIDMap:    make(map[string]string, 0),

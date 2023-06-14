@@ -72,7 +72,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 	suite.indexer = postgresStore.NewIndexer(suite.testDB.DB)
 
 	// test formattedSearcher
-	suite.datastore = NewForTestOnly(suite.store, suite.mockIndexer, suite.mockSearcher)
+	suite.datastore = NewForTestOnly(suite.store, suite.mockSearcher)
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TearDownTest() {
@@ -326,7 +326,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestDataStoreSearch() {
 	}
 
 	// Create a new datastore since the one in suite uses mocks
-	ds := New(suite.store, suite.indexer, search.New(suite.store, suite.indexer))
+	ds := New(suite.store, search.New(suite.store, suite.indexer))
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	_, err := ds.AddImageIntegration(ctx, ii)

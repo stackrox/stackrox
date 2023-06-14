@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/processindicator"
-	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
@@ -44,12 +43,11 @@ type DataStore interface {
 	Wait(cancelWhen concurrency.Waitable) bool
 }
 
-// New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(store store.Store, plopStorage plopStore.Store, indexer index.Indexer, searcher search.Searcher, prunerFactory pruner.Factory) (DataStore, error) {
+// New returns a new instance of DataStore using the input store, and searcher.
+func New(store store.Store, plopStorage plopStore.Store, searcher search.Searcher, prunerFactory pruner.Factory) (DataStore, error) {
 	d := &datastoreImpl{
 		storage:               store,
 		plopStorage:           plopStorage,
-		indexer:               indexer,
 		searcher:              searcher,
 		prunerFactory:         prunerFactory,
 		prunedArgsLengthCache: make(map[processindicator.ProcessWithContainerInfo]int),
@@ -69,5 +67,5 @@ func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error)
 	plopDBstore := plopStore.New(pool)
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)
-	return New(dbstore, plopDBstore, indexer, searcher, nil)
+	return New(dbstore, plopDBstore, searcher, nil)
 }

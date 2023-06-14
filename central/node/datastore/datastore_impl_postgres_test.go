@@ -75,19 +75,18 @@ func (suite *NodePostgresDataStoreTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mockRisk = mockRisks.NewMockDataStore(suite.mockCtrl)
 	storage := pgStore.CreateTableAndNewStore(suite.ctx, suite.T(), suite.db, suite.gormDB, false)
-	indexer := pgStore.NewIndexer(suite.db)
-	searcher := search.NewV2(storage, indexer)
-	suite.datastore = NewWithPostgres(storage, indexer, searcher, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	searcher := search.NewV2(storage, pgStore.NewIndexer(suite.db))
+	suite.datastore = NewWithPostgres(storage, searcher, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	componentStorage := nodeComponentPostgres.CreateTableAndNewStore(suite.ctx, suite.db, suite.gormDB)
 	componentIndexer := nodeComponentPostgres.NewIndexer(suite.db)
 	componentSearcher := nodeComponentSearch.New(componentStorage, componentIndexer)
-	suite.componentDataStore = nodeComponentDS.New(componentStorage, componentIndexer, componentSearcher, suite.mockRisk, ranking.NewRanker())
+	suite.componentDataStore = nodeComponentDS.New(componentStorage, componentSearcher, suite.mockRisk, ranking.NewRanker())
 
 	cveStorage := nodeCVEPostgres.CreateTableAndNewStore(suite.ctx, suite.db, suite.gormDB)
 	cveIndexer := nodeCVEPostgres.NewIndexer(suite.db)
 	cveSearcher := nodeCVESearch.New(cveStorage, cveIndexer)
-	cveDataStore, err := nodeCVEDS.New(cveStorage, cveIndexer, cveSearcher, concurrency.NewKeyFence())
+	cveDataStore, err := nodeCVEDS.New(cveStorage, cveSearcher, concurrency.NewKeyFence())
 	suite.NoError(err)
 	suite.nodeCVEDataStore = cveDataStore
 }

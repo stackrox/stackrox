@@ -6,7 +6,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/common"
-	"github.com/stackrox/rox/central/cve/node/datastore/index"
 	"github.com/stackrox/rox/central/cve/node/datastore/search"
 	"github.com/stackrox/rox/central/cve/node/datastore/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -29,7 +28,6 @@ var (
 
 type datastoreImpl struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 
 	cveSuppressionLock  sync.RWMutex

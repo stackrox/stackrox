@@ -23,14 +23,13 @@ func initialize() {
 	if err != nil {
 		log.Fatal("failed to open process baseline store")
 	}
-	indexer := pgStore.NewIndexer(globaldb.GetPostgres())
 
-	searcher, err := search.New(storage, indexer)
+	searcher, err := search.New(storage, pgStore.NewIndexer(globaldb.GetPostgres()))
 	if err != nil {
 		panic("unable to load search index for process baseline")
 	}
 
-	ad = New(storage, indexer, searcher, datastore.Singleton(), indicatorStore.Singleton())
+	ad = New(storage, searcher, datastore.Singleton(), indicatorStore.Singleton())
 }
 
 // Singleton provides the interface for non-service external interaction.

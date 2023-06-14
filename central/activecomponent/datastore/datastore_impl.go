@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/activecomponent/datastore/index"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
 	"github.com/stackrox/rox/central/activecomponent/datastore/search"
 	"github.com/stackrox/rox/central/role/resources"
@@ -20,7 +19,6 @@ var (
 
 type datastoreImpl struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 }
 

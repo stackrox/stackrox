@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/processbaseline/index"
 	"github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
 	pgStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
@@ -19,7 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// DataStore wraps storage, indexer, and searcher for ProcessBaselines.
+// DataStore wraps storage, and searcher for ProcessBaselines.
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
@@ -43,11 +42,10 @@ type DataStore interface {
 	ClearProcessBaselines(ctx context.Context, ids []string) error
 }
 
-// New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, processBaselineResults datastore.DataStore, processIndicators processIndicatorDatastore.DataStore) DataStore {
+// New returns a new instance of DataStore using the input store, and searcher.
+func New(storage store.Store, searcher search.Searcher, processBaselineResults datastore.DataStore, processIndicators processIndicatorDatastore.DataStore) DataStore {
 	d := &datastoreImpl{
 		storage:                storage,
-		indexer:                indexer,
 		searcher:               searcher,
 		baselineLock:           concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 		processBaselineResults: processBaselineResults,
@@ -74,5 +72,5 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 	if err != nil {
 		return nil, err
 	}
-	return New(store, indexer, searcher, resultsStore, indicatorStore), nil
+	return New(store, searcher, resultsStore, indicatorStore), nil
 }

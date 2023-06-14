@@ -72,7 +72,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 
 	suite.baselineResultsStore = mocks.NewMockDataStore(suite.mockCtrl)
 	suite.indicatorMockStore = indicatorMocks.NewMockDataStore(suite.mockCtrl)
-	suite.datastore = New(suite.storage, suite.indexer, suite.searcher, suite.baselineResultsStore, suite.indicatorMockStore)
+	suite.datastore = New(suite.storage, suite.searcher, suite.baselineResultsStore, suite.indicatorMockStore)
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TearDownTest() {

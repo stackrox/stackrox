@@ -48,7 +48,6 @@ type GraphQLImageComponentTestSuite struct {
 }
 
 func (s *GraphQLImageComponentTestSuite) SetupSuite() {
-
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = SetupTestPostgresConn(s.T())

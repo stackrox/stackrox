@@ -113,7 +113,6 @@ func New(
 		cm:                        cm,
 		notifier:                  notifier,
 		clusterRanker:             clusterRanker,
-		indexer:                   indexer,
 		networkBaselineMgr:        networkBaselineMgr,
 		idToNameCache:             simplecache.New(),
 		nameToIDCache:             simplecache.New(),

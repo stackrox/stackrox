@@ -11,7 +11,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/processindicator"
-	"github.com/stackrox/rox/central/processindicator/index"
 	indexMocks "github.com/stackrox/rox/central/processindicator/index/mocks"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	prunerMocks "github.com/stackrox/rox/central/processindicator/pruner/mocks"
@@ -44,7 +43,6 @@ type IndicatorDataStoreTestSuite struct {
 	datastore   DataStore
 	storage     store.Store
 	plopStorage plopStore.Store
-	indexer     index.Indexer
 	searcher    processSearch.Searcher
 
 	postgres *pgtest.TestPostgres
@@ -72,8 +70,7 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 	suite.postgres = pgtest.ForT(suite.T())
 	suite.storage = postgresStore.New(suite.postgres.DB)
 	suite.plopStorage = plopStore.New(suite.postgres.DB)
-	suite.indexer = postgresStore.NewIndexer(suite.postgres.DB)
-	suite.searcher = processSearch.New(suite.storage, suite.indexer)
+	suite.searcher = processSearch.New(suite.storage, postgresStore.NewIndexer(suite.postgres.DB))
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 
@@ -105,7 +102,7 @@ func (suite *IndicatorDataStoreTestSuite) initPodToIndicatorsMap() {
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
 	var err error
-	suite.datastore, err = New(suite.storage, suite.plopStorage, suite.indexer, suite.searcher, nil)
+	suite.datastore, err = New(suite.storage, suite.plopStorage, suite.searcher, nil)
 	suite.Require().NoError(err)
 }
 
@@ -114,14 +111,14 @@ func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() (*storeMocks
 	mockIndexer := indexMocks.NewMockIndexer(suite.mockCtrl)
 	mockSearcher := searchMocks.NewMockSearcher(suite.mockCtrl)
 	var err error
-	suite.datastore, err = New(mockStorage, nil, mockIndexer, mockSearcher, nil)
+	suite.datastore, err = New(mockStorage, nil, mockSearcher, nil)
 	suite.Require().NoError(err)
 
 	return mockStorage, mockIndexer, mockSearcher
 }
 
 func (suite *IndicatorDataStoreTestSuite) verifyIndicatorsAre(indicators ...*storage.ProcessIndicator) {
-	indexResults, err := suite.indexer.Search(suite.hasWriteCtx, search.EmptyQuery())
+	indexResults, err := suite.searcher.Search(suite.hasWriteCtx, search.EmptyQuery())
 	suite.NoError(err)
 	suite.Len(indexResults, len(indicators))
 	resultIDs := make([]string, 0, len(indexResults))
@@ -327,7 +324,7 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 		})
 	}
 	var err error
-	suite.datastore, err = New(suite.storage, suite.plopStorage, suite.indexer, suite.searcher, mockPrunerFactory)
+	suite.datastore, err = New(suite.storage, suite.plopStorage, suite.searcher, mockPrunerFactory)
 	suite.Require().NoError(err)
 	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
@@ -483,6 +480,5 @@ type ProcessIndicatorReindexSuite struct {
 func (suite *ProcessIndicatorReindexSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.storage = storeMocks.NewMockStore(suite.mockCtrl)
-	suite.indexer = indexMocks.NewMockIndexer(suite.mockCtrl)
 	suite.searcher = searchMocks.NewMockSearcher(suite.mockCtrl)
 }

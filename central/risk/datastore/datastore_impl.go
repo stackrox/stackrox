@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/ranking"
-	"github.com/stackrox/rox/central/risk/datastore/internal/index"
 	"github.com/stackrox/rox/central/risk/datastore/internal/search"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -21,7 +20,6 @@ var (
 
 type datastoreImpl struct {
 	storage            store.Store
-	indexer            index.Indexer
 	searcher           search.Searcher
 	entityTypeToRanker map[string]*ranking.Ranker
 }

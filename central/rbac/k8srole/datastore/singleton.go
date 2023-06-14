@@ -18,12 +18,7 @@ var (
 
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
-	indexer := pgStore.NewIndexer(globaldb.GetPostgres())
-	var err error
-	ad, err = New(storage, indexer, search.New(storage, indexer))
-	if err != nil {
-		log.Panicf("Failed to initialize k8s role datastore: %s", err)
-	}
+	ad = New(storage, search.New(storage, pgStore.NewIndexer(globaldb.GetPostgres())))
 }
 
 // Singleton provides the interface for non-service external interaction.

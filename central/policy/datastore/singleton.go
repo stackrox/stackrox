@@ -27,17 +27,14 @@ var (
 
 func initialize() {
 	storage := policyPostgres.New(globaldb.GetPostgres())
-	indexer := policyPostgres.NewIndexer(globaldb.GetPostgres())
-	searcher := search.New(storage, indexer)
+	searcher := search.New(storage, policyPostgres.NewIndexer(globaldb.GetPostgres()))
 
 	clusterDatastore := clusterDS.Singleton()
 	notifierDatastore := notifierDS.Singleton()
 	categoriesDatastore := categoriesDS.Singleton()
 
-	ad = New(storage, indexer, searcher, clusterDatastore, notifierDatastore, categoriesDatastore)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		addDefaults(storage, categoriesDatastore)
-	}
+	ad = New(storage, searcher, clusterDatastore, notifierDatastore, categoriesDatastore)
+	addDefaults(storage, categoriesDatastore)
 }
 
 // Singleton provides the interface for non-service external interaction.

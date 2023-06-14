@@ -40,9 +40,8 @@ func NewPostgresDB(db postgres.DB, indicators piDS.DataStore, processFilter filt
 	if err != nil {
 		return nil, err
 	}
-	indexer := pgStore.NewIndexer(db)
-	searcher := search.New(store, indexer)
-	return newDatastoreImpl(store, indexer, searcher, indicators, processFilter)
+	searcher := search.New(store, pgStore.NewIndexer(db))
+	return newDatastoreImpl(store, searcher, indicators, processFilter), nil
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.

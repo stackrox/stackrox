@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/image/datastore/search"
 	"github.com/stackrox/rox/central/image/datastore/store"
-	"github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -36,7 +35,6 @@ type datastoreImpl struct {
 	keyedMutex *concurrency.KeyedMutex
 
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 
 	risks riskDS.DataStore
@@ -45,11 +43,10 @@ type datastoreImpl struct {
 	imageComponentRanker *ranking.Ranker
 }
 
-func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher search.Searcher, risks riskDS.DataStore,
+func newDatastoreImpl(storage store.Store, searcher search.Searcher, risks riskDS.DataStore,
 	imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) *datastoreImpl {
 	ds := &datastoreImpl{
 		storage:  storage,
-		indexer:  indexer,
 		searcher: searcher,
 
 		risks: risks,

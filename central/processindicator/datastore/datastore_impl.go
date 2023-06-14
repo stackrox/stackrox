@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator"
-	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
@@ -35,7 +34,6 @@ type datastoreImpl struct {
 	// logically belongs to the datastore implementation of PLOP, but this way
 	// it would be an import cycle, so call the Store directly.
 	plopStorage plopStore.Store
-	indexer     index.Indexer
 	searcher    search.Searcher
 
 	prunerFactory         pruner.Factory

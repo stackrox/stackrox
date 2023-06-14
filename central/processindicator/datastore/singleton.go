@@ -30,13 +30,12 @@ var (
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
 	plopStorage := plopStore.New(globaldb.GetPostgres())
-	indexer := pgStore.NewIndexer(globaldb.GetPostgres())
-	searcher := search.New(storage, indexer)
+	searcher := search.New(storage, pgStore.NewIndexer(globaldb.GetPostgres()))
 
 	p := pruner.NewFactory(minArgsPerProcess, pruneInterval)
 
 	var err error
-	ad, err = New(storage, plopStorage, indexer, searcher, p)
+	ad, err = New(storage, plopStorage, searcher, p)
 	utils.CrashOnError(errors.Wrap(err, "unable to load datastore for process indicators"))
 }
 
