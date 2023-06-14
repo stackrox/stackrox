@@ -61,6 +61,7 @@ test_upgrade() {
 
     preamble
     setup_deployment_env false false
+    setup_podsecuritypolicies_config
     remove_existing_stackrox_resources
 
     test_upgrade_paths "$log_output_dir"
