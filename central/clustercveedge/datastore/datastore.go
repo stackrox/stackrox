@@ -7,6 +7,7 @@ import (
 	pgStore "github.com/stackrox/rox/central/clustercveedge/datastore/store/postgres"
 	"github.com/stackrox/rox/central/clustercveedge/search"
 	"github.com/stackrox/rox/central/clustercveedge/store"
+	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -39,7 +40,6 @@ func New(storage store.Store, searcher search.Searcher) (DataStore, error) {
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
 	storage := pgStore.New(pool)
-	indexer := pgStore.NewIndexer(pool)
-	searcher := search.NewV2(storage, indexer)
+	searcher := search.NewV2(storage, pgStore.NewIndexer(globaldb.GetPostgres()))
 	return New(storage, searcher)
 }

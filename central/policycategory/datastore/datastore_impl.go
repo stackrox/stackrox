@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	errorsPkg "github.com/pkg/errors"
-	"github.com/stackrox/rox/central/policycategory/index"
 	"github.com/stackrox/rox/central/policycategory/search"
 	"github.com/stackrox/rox/central/policycategory/store"
 	"github.com/stackrox/rox/central/policycategoryedge/datastore"
@@ -35,7 +34,6 @@ var (
 
 type datastoreImpl struct {
 	storage              store.Store
-	indexer              index.Indexer
 	searcher             search.Searcher
 	policyCategoryEdgeDS datastore.DataStore
 	categoryMutex        sync.Mutex
@@ -188,7 +186,7 @@ func (ds *datastoreImpl) GetAllPolicyCategories(ctx context.Context) ([]*storage
 	return categories, nil
 }
 
-// AddPolicyCategory inserts a policy category into the storage and the indexer
+// AddPolicyCategory inserts a policy category into the storage.
 func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storage.PolicyCategory) (*storage.PolicyCategory, error) {
 	if ok, err := policyCategorySAC.WriteAllowed(ctx); err != nil {
 		return nil, err
@@ -254,7 +252,7 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 	}, nil
 }
 
-// DeletePolicyCategory removes a policy from the storage and the indexer
+// DeletePolicyCategory removes a policy from the storage
 func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) error {
 	if ok, err := policyCategorySAC.WriteAllowed(ctx); err != nil {
 		return err

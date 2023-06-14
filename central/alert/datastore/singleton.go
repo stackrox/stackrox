@@ -16,10 +16,9 @@ var (
 
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
-	indexer := pgStore.NewIndexer(globaldb.GetPostgres())
-	searcher := search.New(storage, indexer)
+	searcher := search.New(storage, pgStore.NewIndexer(globaldb.GetPostgres()))
 	var err error
-	soleInstance, err = New(storage, indexer, searcher)
+	soleInstance, err = New(storage, searcher)
 	utils.CrashOnError(errors.Wrap(err, "unable to load datastore for alerts"))
 }
 

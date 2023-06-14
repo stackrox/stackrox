@@ -54,9 +54,8 @@ func newDataStore(storage store.Store, pool postgres.DB, images imageDS.DataStor
 		return nil, err
 	}
 
-	deploymentIndexer := pgStore.NewIndexer(pool)
-	searcher := search.NewV2(storage, deploymentIndexer)
-	ds := newDatastoreImpl(storage, deploymentIndexer, searcher, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+	searcher := search.NewV2(storage, pgStore.NewIndexer(pool))
+	ds := newDatastoreImpl(storage, searcher, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 
 	ds.initializeRanker()
 	return ds, nil
@@ -77,9 +76,8 @@ func NewTestDataStore(t testing.TB, storage store.Store, pool postgres.DB, image
 		return nil, err
 	}
 
-	deploymentIndexer := pgStore.NewIndexer(pool)
-	searcher := search.NewV2(storage, deploymentIndexer)
-	ds := newDatastoreImpl(storage, deploymentIndexer, searcher, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+	searcher := search.NewV2(storage, pgStore.NewIndexer(pool))
+	ds := newDatastoreImpl(storage, searcher, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 
 	ds.initializeRanker()
 	return ds, nil
@@ -110,5 +108,5 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 	clusterRanker := ranking.ClusterRanker()
 	namespaceRanker := ranking.NamespaceRanker()
 	deploymentRanker := ranking.DeploymentRanker()
-	return newDatastoreImpl(dbstore, indexer, searcher, imageStore, processBaselineStore, networkFlowClusterStore, riskStore, nil, processFilter, clusterRanker, namespaceRanker, deploymentRanker), nil
+	return newDatastoreImpl(dbstore, searcher, imageStore, processBaselineStore, networkFlowClusterStore, riskStore, nil, processFilter, clusterRanker, namespaceRanker, deploymentRanker), nil
 }

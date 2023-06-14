@@ -62,7 +62,7 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	nsRanker := ranking.NewRanker()
 	deploymentRanker := ranking.NewRanker()
 
-	ds := newDatastoreImpl(suite.storage, suite.indexer, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker)
+	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker)
 
 	deployments := []*storage.Deployment{
 		{

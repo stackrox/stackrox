@@ -8,7 +8,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/cve/common"
-	indexMocks "github.com/stackrox/rox/central/cve/node/datastore/index/mocks"
 	searchMocks "github.com/stackrox/rox/central/cve/node/datastore/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/cve/node/datastore/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -34,7 +33,6 @@ type NodeCVEDataStoreSuite struct {
 
 	mockCtrl *gomock.Controller
 
-	indexer   *indexMocks.MockIndexer
 	storage   *storeMocks.MockStore
 	searcher  *searchMocks.MockSearcher
 	datastore *datastoreImpl
@@ -43,13 +41,12 @@ type NodeCVEDataStoreSuite struct {
 func (suite *NodeCVEDataStoreSuite) SetupSuite() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 
-	suite.indexer = indexMocks.NewMockIndexer(suite.mockCtrl)
 	suite.storage = storeMocks.NewMockStore(suite.mockCtrl)
 	suite.searcher = searchMocks.NewMockSearcher(suite.mockCtrl)
 
 	suite.searcher.EXPECT().SearchRawCVEs(accessAllCtx, testSuppressionQuery).Return([]*storage.NodeCVE{}, nil)
 
-	ds, err := New(suite.storage, suite.indexer, suite.searcher, concurrency.NewKeyFence())
+	ds, err := New(suite.storage, suite.searcher, concurrency.NewKeyFence())
 	suite.Require().NoError(err)
 	suite.datastore = ds.(*datastoreImpl)
 }

@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/imageintegration/index"
 	"github.com/stackrox/rox/central/imageintegration/search"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -21,7 +20,6 @@ var (
 
 type datastoreImpl struct {
 	storage           store.Store
-	indexer           index.Indexer
 	formattedSearcher search.Searcher
 }
 

@@ -18,9 +18,8 @@ var (
 
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres(), false, keyfence.NodeKeyFenceSingleton())
-	indexer := pgStore.NewIndexer(globaldb.GetPostgres())
-	searcher := search.NewV2(storage, indexer)
-	ad = NewWithPostgres(storage, indexer, searcher, riskDS.Singleton(), ranking.NodeRanker(), ranking.NodeComponentRanker())
+	searcher := search.NewV2(storage, pgStore.NewIndexer(globaldb.GetPostgres()))
+	ad = NewWithPostgres(storage, searcher, riskDS.Singleton(), ranking.NodeRanker(), ranking.NodeComponentRanker())
 }
 
 // Singleton provides the interface for non-service external interaction.

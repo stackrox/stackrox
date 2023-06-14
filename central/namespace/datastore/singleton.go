@@ -6,7 +6,6 @@ import (
 	pgStore "github.com/stackrox/rox/central/namespace/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -17,10 +16,7 @@ var (
 
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
-	indexer := pgStore.NewIndexer(globaldb.GetPostgres())
-	var err error
-	as, err = New(storage, indexer, deploymentDataStore.Singleton(), ranking.NamespaceRanker())
-	utils.CrashOnError(err)
+	as = New(storage, pgStore.NewIndexer(globaldb.GetPostgres()), deploymentDataStore.Singleton(), ranking.NamespaceRanker())
 }
 
 // Singleton provides the interface for non-service external interaction.

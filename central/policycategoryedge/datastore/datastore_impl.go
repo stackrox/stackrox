@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/policycategoryedge/index"
 	"github.com/stackrox/rox/central/policycategoryedge/search"
 	"github.com/stackrox/rox/central/policycategoryedge/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -20,7 +19,6 @@ var (
 
 type datastoreImpl struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 
 	mutex sync.Mutex

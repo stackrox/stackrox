@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/activecomponent/datastore/index"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/activecomponent/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/activecomponent/datastore/search"
@@ -31,10 +30,9 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
+func New(storage store.Store, searcher search.Searcher) DataStore {
 	ds := &datastoreImpl{
 		storage:  storage,
-		indexer:  indexer,
 		searcher: searcher,
 	}
 	return ds
@@ -46,11 +44,9 @@ func NewForTestOnly(t *testing.T, db postgres.DB) (DataStore, error) {
 	testutils.MustBeInTest(t)
 
 	storage := pgStore.New(db)
-	indexer := pgStore.NewIndexer(db)
-	searcher := search.NewV2(storage, indexer)
+	searcher := search.NewV2(storage, pgStore.NewIndexer(db))
 	ds := &datastoreImpl{
 		storage:  storage,
-		indexer:  indexer,
 		searcher: searcher,
 	}
 

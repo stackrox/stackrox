@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
 	"github.com/stackrox/rox/central/serviceaccount/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -13,17 +12,12 @@ import (
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
-const (
-	batchSize = 1000
-)
-
 var (
 	serviceAccountsSAC = sac.ForResource(resources.ServiceAccount)
 )
 
 type datastoreImpl struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 }
 

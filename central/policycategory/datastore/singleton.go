@@ -35,7 +35,7 @@ func initialize() {
 
 	addDefaults(store)
 	searcher := search.New(store, indexer)
-	ad = New(store, indexer, searcher, policyCategoryEdgeDS.Singleton())
+	ad = New(store, searcher, policyCategoryEdgeDS.Singleton())
 
 }
 

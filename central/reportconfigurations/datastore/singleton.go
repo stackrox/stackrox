@@ -17,9 +17,8 @@ func Singleton() DataStore {
 	once.Do(func() {
 		var err error
 		storage := pgStore.New(globaldb.GetPostgres())
-		indexer := pgStore.NewIndexer(globaldb.GetPostgres())
 
-		ds, err = New(storage, indexer, search.New(storage, indexer))
+		ds, err = New(storage, search.New(storage, pgStore.NewIndexer(globaldb.GetPostgres())))
 		if err != nil {
 			log.Panicf("Failed to initialize report configurations datastore: %s", err)
 		}

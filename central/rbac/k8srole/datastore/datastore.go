@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
 	pgStore "github.com/stackrox/rox/central/rbac/k8srole/internal/store/postgres"
 	"github.com/stackrox/rox/central/rbac/k8srole/search"
@@ -28,20 +27,17 @@ type DataStore interface {
 	RemoveRole(ctx context.Context, id string) error
 }
 
-// New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(k8sRoleStore store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
-	d := &datastoreImpl{
+// New returns a new instance of DataStore using the input store, and searcher.
+func New(k8sRoleStore store.Store, searcher search.Searcher) DataStore {
+	return &datastoreImpl{
 		storage:  k8sRoleStore,
-		indexer:  indexer,
 		searcher: searcher,
 	}
-	return d, nil
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
-	indexer := pgStore.NewIndexer(pool)
-	searcher := search.New(dbstore, indexer)
-	return New(dbstore, indexer, searcher)
+	searcher := search.New(dbstore, pgStore.NewIndexer(pool))
+	return New(dbstore, searcher)
 }

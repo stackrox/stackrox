@@ -7,7 +7,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	"github.com/stackrox/rox/central/metrics"
@@ -31,15 +30,10 @@ var (
 	alertSAC = sac.ForResource(resources.Alert)
 )
 
-const (
-	alertBatchSize = 1000
-)
-
 // datastoreImpl is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert
 // objects.
 type datastoreImpl struct {
 	storage    store.Store
-	indexer    index.Indexer
 	searcher   search.Searcher
 	keyedMutex *concurrency.KeyedMutex
 	keyFence   dackboxConcurrency.KeyFence
@@ -97,7 +91,7 @@ func (ds *datastoreImpl) CountAlerts(ctx context.Context) (int, error) {
 	return ds.Count(ctx, activeQuery)
 }
 
-// UpsertAlert inserts an alert into storage and into the indexer
+// UpsertAlert inserts an alert into storage
 func (ds *datastoreImpl) UpsertAlert(ctx context.Context, alert *storage.Alert) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "UpsertAlert")
 
@@ -111,7 +105,7 @@ func (ds *datastoreImpl) UpsertAlert(ctx context.Context, alert *storage.Alert) 
 	return ds.updateAlertNoLock(ctx, alert)
 }
 
-// UpdateAlertBatch updates an alert in storage and in the indexer
+// UpdateAlertBatch updates an alert in storage
 func (ds *datastoreImpl) UpdateAlertBatch(ctx context.Context, alert *storage.Alert, waitGroup *sync.WaitGroup, c chan error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "UpdateAlertBatch")
 
@@ -147,7 +141,7 @@ func (ds *datastoreImpl) UpdateAlertBatch(ctx context.Context, alert *storage.Al
 	}
 }
 
-// UpsertAlerts updates an alert in storage and in the indexer
+// UpsertAlerts updates an alert in storage
 func (ds *datastoreImpl) UpsertAlerts(ctx context.Context, alertBatch []*storage.Alert) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "UpsertAlerts")
 

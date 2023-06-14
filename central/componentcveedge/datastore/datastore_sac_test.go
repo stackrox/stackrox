@@ -20,9 +20,6 @@ import (
 
 var (
 	imageScanOperatingSystem = "crime-stories"
-
-	dontWaitForIndexing = false
-	waitForIndexing     = true
 )
 
 func TestImageComponentCVEEdgeDatastoreSAC(t *testing.T) {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/imageintegration/index"
 	"github.com/stackrox/rox/central/imageintegration/search"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	pgStore "github.com/stackrox/rox/central/imageintegration/store/postgres"
@@ -35,20 +34,18 @@ type DataStore interface {
 }
 
 // New returns an instance of DataStore.
-func New(imageIntegrationStorage store.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
+func New(imageIntegrationStorage store.Store, searcher search.Searcher) DataStore {
 	ds := &datastoreImpl{
 		storage:           imageIntegrationStorage,
-		indexer:           indexer,
 		formattedSearcher: searcher,
 	}
 	return ds
 }
 
 // NewForTestOnly returns an instance of DataStore only for tests.
-func NewForTestOnly(imageIntegrationStorage store.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
+func NewForTestOnly(imageIntegrationStorage store.Store, searcher search.Searcher) DataStore {
 	ds := &datastoreImpl{
 		storage:           imageIntegrationStorage,
-		indexer:           indexer,
 		formattedSearcher: searcher,
 	}
 	return ds
@@ -57,7 +54,6 @@ func NewForTestOnly(imageIntegrationStorage store.Store, indexer index.Indexer, 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
 	store := pgStore.New(pool)
-	indexer := pgStore.NewIndexer(pool)
-	searcher := search.New(store, indexer)
-	return New(store, indexer, searcher), nil
+	searcher := search.New(store, pgStore.NewIndexer(pool))
+	return New(store, searcher), nil
 }

@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
 	"github.com/stackrox/rox/central/rbac/k8srole/search"
 	"github.com/stackrox/rox/central/role/resources"
@@ -13,17 +12,12 @@ import (
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
-const (
-	batchSize = 1000
-)
-
 var (
 	k8sRolesSAC = sac.ForResource(resources.K8sRole)
 )
 
 type datastoreImpl struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 }
 

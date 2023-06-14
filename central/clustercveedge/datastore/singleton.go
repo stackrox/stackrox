@@ -17,8 +17,7 @@ var (
 func initialize() {
 	var err error
 	storage := pgStore.New(globaldb.GetPostgres())
-	indexer := pgStore.NewIndexer(globaldb.GetPostgres())
-	ad, err = New(storage, search.NewV2(storage, indexer))
+	ad, err = New(storage, search.NewV2(storage, pgStore.NewIndexer(globaldb.GetPostgres())))
 	utils.CrashOnError(err)
 }
 

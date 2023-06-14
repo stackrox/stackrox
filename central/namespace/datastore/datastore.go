@@ -43,15 +43,13 @@ type DataStore interface {
 }
 
 // New returns a new DataStore instance using the provided store and indexer
-func New(nsStore store.Store, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker) (DataStore, error) {
-	ds := &datastoreImpl{
+func New(nsStore store.Store, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker) DataStore {
+	return &datastoreImpl{
 		store:             nsStore,
-		indexer:           indexer,
 		deployments:       deploymentDataStore,
 		namespaceRanker:   namespaceRanker,
 		formattedSearcher: formatSearcherV2(indexer, namespaceRanker),
 	}
-	return ds, nil
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
@@ -63,7 +61,7 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 		return nil, err
 	}
 	namespaceRanker := ranking.NamespaceRanker()
-	return New(dbstore, indexer, deploymentStore, namespaceRanker)
+	return New(dbstore, indexer, deploymentStore, namespaceRanker), nil
 }
 
 var (

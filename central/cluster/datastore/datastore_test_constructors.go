@@ -67,7 +67,7 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 	if err != nil {
 		return nil, err
 	}
-	k8sRoleStore, err := roleDataStore.GetTestPostgresDataStore(t, pool)
+	k8sRoleStore := roleDataStore.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
 	}
