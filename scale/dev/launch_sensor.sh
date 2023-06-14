@@ -20,12 +20,6 @@ fi
 
 SENSOR_HELM_DEPLOY=false CLUSTER="${namespace}" NAMESPACE_OVERRIDE="${namespace}" "$DIR/../../deploy/k8s/sensor.sh"
 
-# This is purposefully kept as stackrox because this is where central should be run
-if ! kubectl -n stackrox get pvc/stackrox-db > /dev/null; then
-  >&2 echo "Running the scale workload requires a PVC"
-  exit 1
-fi
-
 kubectl -n "${namespace}" delete deploy/admission-control
 kubectl -n "${namespace}" delete daemonset collector
 
