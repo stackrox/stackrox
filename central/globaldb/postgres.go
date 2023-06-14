@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
@@ -66,6 +67,8 @@ SELECT TABLE_NAME
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	postgresOpenRetries        = 10
 	postgresTimeBetweenRetries = 10 * time.Second
 	postgresDB                 postgres.DB

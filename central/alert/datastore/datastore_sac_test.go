@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -15,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
@@ -34,9 +32,6 @@ func TestAlertDatastoreSAC(t *testing.T) {
 
 type alertDatastoreSACTestSuite struct {
 	suite.Suite
-
-	engine *rocksdb.RocksDB
-	index  bleve.Index
 
 	pool postgres.DB
 
@@ -61,12 +56,7 @@ func (s *alertDatastoreSACTestSuite) SetupSuite() {
 }
 
 func (s *alertDatastoreSACTestSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	} else {
-		err := rocksdb.CloseAndRemove(s.engine)
-		s.NoError(err)
-	}
+	s.pool.Close()
 }
 
 func (s *alertDatastoreSACTestSuite) SetupTest() {

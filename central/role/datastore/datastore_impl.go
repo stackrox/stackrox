@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
-	rocksDBStore "github.com/stackrox/rox/central/role/store"
+	"github.com/stackrox/rox/central/role/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
@@ -25,9 +25,9 @@ var (
 )
 
 type dataStoreImpl struct {
-	roleStorage          rocksDBStore.RoleStore
-	permissionSetStorage rocksDBStore.PermissionSetStore
-	accessScopeStorage   rocksDBStore.SimpleAccessScopeStore
+	roleStorage          store.RoleStore
+	permissionSetStorage store.PermissionSetStore
+	accessScopeStorage   store.SimpleAccessScopeStore
 	groupGetFilteredFunc func(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error)
 
 	lock sync.RWMutex
