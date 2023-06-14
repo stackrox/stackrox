@@ -151,6 +151,14 @@ var (
 		Name:      "additional-ca-sensor",
 		Namespace: namespaces.StackRox,
 	}
+
+	pspGVK = schema.GroupVersionKind{Group: "policy", Version: "v1beta1", Kind: "PodSecurityPolicy"}
+	// SensorPSPObjectRefs are the objects in the sensor bundle that represents pod security policies.
+	SensorPSPObjectRefs = map[k8sobjects.ObjectRef]struct{}{
+		{GVK: pspGVK, Name: "stackrox-sensor"}:            {},
+		{GVK: pspGVK, Name: "stackrox-collector"}:         {},
+		{GVK: pspGVK, Name: "stackrox-admission-control"}: {},
+	}
 )
 
 // LoadAndInstantiateChartTemplate loads a Helm chart (meta-)template from an embed.FS, and instantiates

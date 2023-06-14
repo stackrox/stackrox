@@ -56,6 +56,12 @@ func (i *instantiator) Instantiate(bundleContents Contents) ([]*unstructured.Uns
 	if i.ctx.InCertRotationMode() {
 		common.Filter(&allObjects, common.CertObjectPredicate)
 	}
+
+	// Remove the psps if not enabled
+	if !i.ctx.IsPodSecurityEnabled() {
+		common.Filter(&allObjects, common.Not(common.PSPObjectPredicate))
+	}
+
 	return allObjects, nil
 }
 

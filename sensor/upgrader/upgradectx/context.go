@@ -44,6 +44,8 @@ type UpgradeContext struct {
 
 	centralHTTPClient *http.Client
 	grpcClientConn    *grpc.ClientConn
+
+	podSecurityPoliciesSupported bool
 }
 
 // Create creates a new upgrader context from the given config.
@@ -104,9 +106,13 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 	}
 	log.Infof("Server supports %d out of %d relevant state resource types", numStateResources, len(common.StateResourceTypes))
 
+	pspSupported := false
 	for _, gvk := range common.OrderedBundleResourceTypes {
 		if _, ok := resourceMap[gvk]; ok {
 			log.Infof("Resource type %s is SUPPORTED", gvk)
+			if gvk.Kind == "PodSecurityPolicy" {
+				pspSupported = true
+			}
 		} else {
 			log.Infof("Resource type %s is NOT SUPPORTED", gvk)
 		}
@@ -134,12 +140,13 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 	}
 
 	c := &UpgradeContext{
-		ctx:                    ctx,
-		config:                 *config,
-		resources:              resourceMap,
-		clientSet:              k8sClientSet,
-		dynamicClientGenerator: dynamicClientGenerator,
-		schemaValidator:        schemaValidator,
+		ctx:                          ctx,
+		config:                       *config,
+		resources:                    resourceMap,
+		clientSet:                    k8sClientSet,
+		dynamicClientGenerator:       dynamicClientGenerator,
+		schemaValidator:              schemaValidator,
+		podSecurityPoliciesSupported: pspSupported,
 	}
 
 	if config.CentralEndpoint != "" {
@@ -344,4 +351,9 @@ func (c *UpgradeContext) ListCurrentObjects() ([]*unstructured.Unstructured, err
 	common.Filter(&objects, common.Not(common.AdditionalCASecretPredicate))
 
 	return objects, nil
+}
+
+// IsPodSecurityEnabled returns whether or not pod security polices are enabled for this cluster
+func (c *UpgradeContext) IsPodSecurityEnabled() bool {
+	return c.podSecurityPoliciesSupported
 }
