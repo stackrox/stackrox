@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package postgres
+package datastore
 
 import (
 	"context"
@@ -33,17 +33,21 @@ func TestSearchComparison(t *testing.T) {
 type SearchComparisonTestSuite struct {
 	suite.Suite
 
-	mockCtrl       *gomock.Controller
-	testDB         *pgtest.TestPostgres
-	imageDatastore imageDataStore.DataStore
-
-	optionsMap search.OptionsMap
+	mockCtrl            *gomock.Controller
+	testDB              *pgtest.TestPostgres
+	imageDatastore      imageDataStore.DataStore
+	deploymentDatastore DataStore
+	optionsMap          search.OptionsMap
 }
 
 func (s *SearchComparisonTestSuite) SetupSuite() {
 	pgtest.SkipIfPostgresDisabled(s.T())
 
 	s.testDB = pgtest.ForT(s.T())
+
+	deploymentDS, err := GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Require().NoError(err)
+	s.deploymentDatastore = deploymentDS
 
 	imageDS, err := imageDataStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Require().NoError(err)
@@ -157,9 +161,6 @@ func (s *SearchComparisonTestSuite) TestDeploymentSearchResults() {
 		},
 	}
 
-	index := NewIndexer(s.testDB.DB)
-	store := New(s.testDB.DB)
-
 	factory := predicate.NewFactory("deployment", (*storage.Deployment)(nil))
 	for _, c := range cases {
 		s.T().Run("test", func(t *testing.T) {
@@ -168,8 +169,8 @@ func (s *SearchComparisonTestSuite) TestDeploymentSearchResults() {
 
 			predResult, matches := predicate.Evaluate(c.deployment)
 
-			require.NoError(t, store.Upsert(ctx, c.deployment))
-			searchResults, err := index.Search(ctx, c.query)
+			require.NoError(t, s.deploymentDatastore.UpsertDeployment(ctx, c.deployment))
+			searchResults, err := s.deploymentDatastore.Search(ctx, c.query)
 			require.NoError(t, err)
 
 			compareResults(t, matches, predResult, searchResults)
