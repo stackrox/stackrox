@@ -305,8 +305,7 @@ func (s *testGraphDataStoreImpl) Cleanup(t *testing.T) {
 }
 
 // NewTestGraphDataStore provides a utility for storage testing, which contains a set of connected
-//
-//	datastores, as well as a set of functions to inject and cleanup data.
+// datastores, as well as a set of functions to inject and cleanup data.
 func NewTestGraphDataStore(t *testing.T) (TestGraphDataStore, error) {
 	var err error
 	s := &testGraphDataStoreImpl{}
