@@ -11,7 +11,6 @@ import objects.Secret
 import services.AlertService
 import services.ClusterService
 import services.PolicyService
-import util.Helpers
 
 import spock.lang.Requires
 import spock.lang.Stepwise

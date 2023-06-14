@@ -24,7 +24,6 @@ import services.ClusterService
 import services.ImageIntegrationService
 import services.ImageService
 import util.Env
-import util.Helpers
 import util.Timer
 
 import org.junit.Assume
@@ -184,7 +183,6 @@ class ImageScanningTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("Integration")
     def "Verify Image Registry+Scanner Integrations: #testName"() {
-
         given:
         "Get deployment details used to test integration"
         assert IMAGE_PULL_SECRETS.containsKey(integration)
@@ -622,7 +620,6 @@ class ImageScanningTest extends BaseSpecification {
     @Unroll
     @Tag("Integration")
     def "Image scanning test to check if scan time is not null #image from stackrox"() {
-
         when:
         "Add Stackrox scanner"
         String integrationId = StackroxScannerIntegration.createDefaultIntegration()
@@ -656,7 +653,6 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     def "Validate basic image details across all current images in StackRox"() {
-
         when:
         "get list of all images"
         List<ImageOuterClass.ListImage> images = ImageService.getImages()
@@ -690,7 +686,6 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     def "Validate image deletion does not affect other images"() {
-
         given:
         ImageIntegrationService.addStackroxScannerIntegration()
 

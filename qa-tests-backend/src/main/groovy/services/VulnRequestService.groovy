@@ -4,7 +4,6 @@ import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.VulnReqService
 import io.stackrox.proto.api.v1.VulnerabilityRequestServiceGrpc
 import io.stackrox.proto.storage.VulnRequests.VulnerabilityRequest
-import util.Helpers
 
 class VulnRequestService extends BaseService {
     static getVulnRequestClient() {

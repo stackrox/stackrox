@@ -15,7 +15,6 @@ import services.ImageIntegrationService
 import services.ImageService
 import services.PolicyService
 import util.ChaosMonkey
-import util.Helpers
 import util.Timer
 
 import spock.lang.Shared
