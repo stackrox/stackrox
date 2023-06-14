@@ -1241,10 +1241,10 @@ post_process_test_results() {
     set +u
     {
         csv_output="$(mktemp --suffix=.csv)"
-        common_args=" -build-id ${BUILD_ID}" \
-            " -build-tag ${STACKROX_BUILD_TAG}" \
-            " -job-name ${JOB_NAME}" \
-            " -csv-output ${csv_output}"
+        common_args=(-build-id "${BUILD_ID}" \
+            -build-tag "${STACKROX_BUILD_TAG}" \
+            -job-name "${JOB_NAME}" \
+            -csv-output "${csv_output}")
 
         if is_in_PR_context; then
             info "Creating JIRA issues for failures found in ${ARTIFACT_DIR}"
@@ -1256,12 +1256,12 @@ post_process_test_results() {
                 -junit-reports-dir "${ARTIFACT_DIR}" \
                 -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
                 -threshold 5 \
-                "${common_args}"
+                "${common_args[@]}"
         else
             info "Converting JUNIT found in ${ARTIFACT_DIR} to CSV"
             curl --retry 5 -SsfL https://github.com/stackrox/junit2csv/releases/download/v0.0.1/junit2csv -o junit2csv && \
             chmod +x junit2csv && \
-            ./junit2csv "${common_args}"
+            ./junit2csv "${common_args[@]}"
         fi
 
         info "Creating Big Query test records from ${csv_output}"
