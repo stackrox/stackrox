@@ -20,7 +20,4 @@ type Store interface {
 	UpsertMany(ctx context.Context, alerts []*storage.Alert) error
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
-
-	AckKeysIndexed(ctx context.Context, keys ...string) error
-	GetKeysToIndex(ctx context.Context) ([]string, error)
 }

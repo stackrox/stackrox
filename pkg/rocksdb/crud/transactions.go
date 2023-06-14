@@ -1,7 +1,6 @@
 package generic
 
 import (
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -52,46 +51,4 @@ func (b *txnHelper) addStringKeysToIndex(batch *gorocksdb.WriteBatch, keys ...st
 		byteKeys = append(byteKeys, []byte(k))
 	}
 	b.addKeysToIndex(batch, byteKeys...)
-}
-
-// AckKeysIndexed acknowledges that keys were indexed
-func (b *txnHelper) AckKeysIndexed(keys ...string) error {
-	if !b.trackIndex {
-		log.Errorf("UNEXPECTED: acking keys indexed for prefix %s despite having trackIndex=false. TrackIndex should probably be set to true", b.prefix)
-		return nil
-	}
-	if err := b.db.IncRocksDBInProgressOps(); err != nil {
-		return err
-	}
-	defer b.db.DecRocksDBInProgressOps()
-
-	batch := gorocksdb.NewWriteBatch()
-	defer batch.Destroy()
-
-	for _, k := range keys {
-		batch.Delete(dbhelper.GetBucketKey(b.prefix, []byte(k)))
-	}
-
-	if err := b.db.Write(defaultWriteOptions, batch); err != nil {
-		return errors.Wrap(err, "acking indexed keys")
-	}
-	return nil
-}
-
-// GetKeysToIndex retrieves the number of keys to index
-func (b *txnHelper) GetKeysToIndex() ([]string, error) {
-	if !b.trackIndex {
-		return nil, nil
-	}
-	if err := b.db.IncRocksDBInProgressOps(); err != nil {
-		return nil, err
-	}
-	defer b.db.DecRocksDBInProgressOps()
-
-	var keys []string
-	err := BucketKeyForEach(b.db, defaultIteratorOptions, b.prefix, true, func(k []byte) error {
-		keys = append(keys, string(k))
-		return nil
-	})
-	return keys, errors.Wrap(err, "getting keys to index")
 }

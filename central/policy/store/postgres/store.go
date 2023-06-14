@@ -63,9 +63,6 @@ type Store interface {
 	GetAll(ctx context.Context) ([]*storage.Policy, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.Policy) error) error
-
-	AckKeysIndexed(ctx context.Context, keys ...string) error
-	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
@@ -607,16 +604,6 @@ func (s *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest
 // DeletePolicyCategory is not implemented in postgres mode.
 func (s *storeImpl) DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error {
 	return errors.New("unimplemented")
-}
-
-// AckKeysIndexed acknowledges the passed keys were indexed.
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
-	return nil
-}
-
-// GetKeysToIndex returns the keys that need to be indexed.
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
-	return nil, nil
 }
 
 //// Interface functions - END

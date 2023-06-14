@@ -34,24 +34,6 @@ func (m *MockCrud) EXPECT() *MockCrudMockRecorder {
 	return m.recorder
 }
 
-// AckKeysIndexed mocks base method.
-func (m *MockCrud) AckKeysIndexed(keys ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{}
-	for _, a := range keys {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "AckKeysIndexed", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AckKeysIndexed indicates an expected call of AckKeysIndexed.
-func (mr *MockCrudMockRecorder) AckKeysIndexed(keys ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AckKeysIndexed", reflect.TypeOf((*MockCrud)(nil).AckKeysIndexed), keys...)
-}
-
 // Count mocks base method.
 func (m *MockCrud) Count() (int, error) {
 	m.ctrl.T.Helper()
@@ -139,21 +121,6 @@ func (m *MockCrud) GetKeys() ([]string, error) {
 func (mr *MockCrudMockRecorder) GetKeys() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeys", reflect.TypeOf((*MockCrud)(nil).GetKeys))
-}
-
-// GetKeysToIndex mocks base method.
-func (m *MockCrud) GetKeysToIndex() ([]string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetKeysToIndex")
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetKeysToIndex indicates an expected call of GetKeysToIndex.
-func (mr *MockCrudMockRecorder) GetKeysToIndex() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeysToIndex", reflect.TypeOf((*MockCrud)(nil).GetKeysToIndex))
 }
 
 // GetMany mocks base method.
