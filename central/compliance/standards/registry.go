@@ -249,6 +249,8 @@ func (r *Registry) GetCISKubernetesStandardID() (string, error) {
 
 // SearchStandards searches across standards
 func (r *Registry) SearchStandards(q *v1.Query) ([]search.Result, error) {
+	// Predicate search does not support sorting, but sort options are not used in the current code path for
+	// the calls to this function
 	var results []search.Result
 	for _, standard := range r.AllStandards() {
 		pred, err := standardPredicateFactory.GeneratePredicate(q)
@@ -266,6 +268,8 @@ func (r *Registry) SearchStandards(q *v1.Query) ([]search.Result, error) {
 
 // SearchControls searches across controls
 func (r *Registry) SearchControls(q *v1.Query) ([]search.Result, error) {
+	// Predicate search does not support sorting, but sort options are not used in the current code path for
+	// the calls to this function
 	pred, err := controlPredicateFactory.GeneratePredicate(q)
 	if err != nil {
 		return nil, errors.Wrap(err, "generating predicate for query")
