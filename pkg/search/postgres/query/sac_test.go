@@ -1,0 +1,57 @@
+package pgsearch
+
+import (
+	"context"
+	"testing"
+
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestGetReadWriteSACQuery(t *testing.T) {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), createTestReadMultipleResourcesSomeWithNamespaceScope(t))
+	got, err := GetReadWriteSACQuery(ctx, &storage.ClusterCVE{})
+	assert.Equal(t, `base_query:<match_field_query:<field:"Cluster ID" value:"\"clusterID\"" > > `, got.String())
+	assert.NoError(t, err)
+	got, err = GetReadWriteSACQuery(ctx, &storage.NamespaceMetadata{})
+	assert.Equal(t, `base_query:<match_none_query:<> > `, got.String())
+	assert.NoError(t, err)
+	got, err = GetReadWriteSACQuery(ctx, &storage.Cluster{})
+	assert.Nil(t, got)
+	assert.EqualError(t, err, "unregistered type *storage.Cluster")
+}
+
+func createTestReadMultipleResourcesSomeWithNamespaceScope(t *testing.T) sac.ScopeCheckerCore {
+	resourceCluster := permissions.Resource("Cluster")
+	resourceDeployment := permissions.Resource("Deployment")
+	resourceNode := permissions.Resource("Node")
+
+	clusterClusterID := "clusterID"
+	nsNamespace2 := "namespace2"
+
+	testScope := map[storage.Access]map[permissions.Resource]*sac.TestResourceScope{
+		storage.Access_READ_WRITE_ACCESS: {
+			resourceCluster: &sac.TestResourceScope{
+				Included: false,
+				Clusters: map[string]*sac.TestClusterScope{
+					clusterClusterID: {
+						Included: true,
+					},
+				},
+			},
+			resourceNode: &sac.TestResourceScope{Included: true},
+			resourceDeployment: &sac.TestResourceScope{
+				Included: false,
+				Clusters: map[string]*sac.TestClusterScope{
+					clusterClusterID: {
+						Included:   false,
+						Namespaces: []string{nsNamespace2},
+					},
+				},
+			},
+		},
+	}
+	return sac.TestScopeCheckerCoreFromFullScopeMap(t, testScope)
+}
