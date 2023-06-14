@@ -1,9 +1,10 @@
-package pgsearch
+package postgres
 
 import (
 	"context"
 	"testing"
 
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac"
@@ -12,15 +13,12 @@ import (
 
 func TestGetReadWriteSACQuery(t *testing.T) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), createTestReadMultipleResourcesSomeWithNamespaceScope(t))
-	got, err := GetReadWriteSACQuery(ctx, &storage.ClusterCVE{})
+	got, err := GetReadWriteSACQuery(ctx, resources.Cluster)
 	assert.Equal(t, `base_query:<match_field_query:<field:"Cluster ID" value:"\"clusterID\"" > > `, got.String())
 	assert.NoError(t, err)
-	got, err = GetReadWriteSACQuery(ctx, &storage.NamespaceMetadata{})
+	got, err = GetReadWriteSACQuery(ctx, resources.Namespace)
 	assert.Equal(t, `base_query:<match_none_query:<> > `, got.String())
 	assert.NoError(t, err)
-	got, err = GetReadWriteSACQuery(ctx, &storage.Cluster{})
-	assert.Nil(t, got)
-	assert.EqualError(t, err, "unregistered type *storage.Cluster")
 }
 
 func createTestReadMultipleResourcesSomeWithNamespaceScope(t *testing.T) sac.ScopeCheckerCore {
