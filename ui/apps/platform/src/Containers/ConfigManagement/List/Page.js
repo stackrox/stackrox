@@ -21,7 +21,7 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import entityLabels from 'messages/entity';
 import parseURL from 'utils/URLParser';
 import URLService from 'utils/URLService';
-import { getUseCaseEntityMap } from 'utils/entityRelationships';
+import { getConfigurationManagementEntityTypes } from 'utils/entityRelationships';
 import { WorkflowState } from 'utils/WorkflowState';
 import EntityList from './EntityList';
 import SidePanel from '../SidePanel/SidePanel';
@@ -29,7 +29,6 @@ import SidePanel from '../SidePanel/SidePanel';
 const ListPage = ({ match, location, history }) => {
     const [isExporting, setIsExporting] = useState(false);
     const { isDarkMode } = useTheme();
-    const useCaseEntityMap = getUseCaseEntityMap();
 
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;
@@ -72,7 +71,10 @@ const ListPage = ({ match, location, history }) => {
                         />
                     </div>
                     <div className="flex items-center pl-2">
-                        <EntitiesMenu text="All Entities" options={useCaseEntityMap[useCase]} />
+                        <EntitiesMenu
+                            text="All Entities"
+                            options={getConfigurationManagementEntityTypes()}
+                        />
                     </div>
                 </div>
             </PageHeader>

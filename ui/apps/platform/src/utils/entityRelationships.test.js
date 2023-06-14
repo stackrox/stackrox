@@ -101,12 +101,12 @@ it('gets Matches relationships', () => {
 
     // should also get extended matches
     matches = getEntityTypesByRelationship(
-        entityTypes.CVE,
+        entityTypes.IMAGE_CVE,
         relationshipTypes.MATCHES,
         useCaseTypes.VULN_MANAGEMENT
     );
     expect(matches).toContain(entityTypes.IMAGE);
-    expect(matches).toContain(entityTypes.COMPONENT);
+    expect(matches).toContain(entityTypes.IMAGE_COMPONENT);
     expect(matches).toContain(entityTypes.DEPLOYMENT);
     expect(matches).not.toContain(entityTypes.NAMESPACE);
 });
@@ -179,11 +179,11 @@ it('gets Contain relationships', () => {
         useCaseTypes.VULN_MANAGEMENT
     );
     // should have direct child
-    expect(contains).toContain(entityTypes.COMPONENT);
+    expect(contains).toContain(entityTypes.IMAGE_COMPONENT);
     // should not contain itself
     expect(contains).not.toContain(entityTypes.IMAGE);
     // should have grandchild
-    expect(contains).toContain(entityTypes.CVE);
+    expect(contains).toContain(entityTypes.IMAGE_CVE);
     // should not have granchild's extended matches
     expect(contains).not.toContain(entityTypes.DEPLOYMENT);
 });
