@@ -80,7 +80,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoNetworkpolicies(ctx context.Context, batch *pgx.Batch, obj *storage.NetworkPolicy) error {
+func insertIntoNetworkpolicies(_ context.Context, batch *pgx.Batch, obj *storage.NetworkPolicy) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

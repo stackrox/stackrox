@@ -76,7 +76,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoNetworkEntities(ctx context.Context, batch *pgx.Batch, obj *storage.NetworkEntity) error {
+func insertIntoNetworkEntities(_ context.Context, batch *pgx.Batch, obj *storage.NetworkEntity) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

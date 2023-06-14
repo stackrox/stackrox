@@ -132,7 +132,7 @@ func New(db postgres.DB) Store {
 {{- define "insertObject"}}
 {{- $migration := .migration }}
 {{- $schema := .schema }}
-func {{ template "insertFunctionName" $schema }}(ctx context.Context, batch *pgx.Batch, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
+func {{ template "insertFunctionName" $schema }}({{ if eq (len $schema.Children) 0 }}_{{ else }}ctx{{ end }} context.Context, batch *pgx.Batch, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
     {{if not $schema.Parent }}
     serialized, marshalErr := obj.Marshal()
     if marshalErr != nil {
@@ -1052,12 +1052,12 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
 {{- if eq .TrimmedType "Policy" }}
 
 // RenamePolicyCategory is not implemented in postgres mode.
-func (s *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error {
+func (s *storeImpl) RenamePolicyCategory(_ *v1.RenamePolicyCategoryRequest) error {
     return errors.New("unimplemented")
 }
 
 // DeletePolicyCategory is not implemented in postgres mode.
-func (s *storeImpl) DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error {
+func (s *storeImpl) DeletePolicyCategory(_ *v1.DeletePolicyCategoryRequest) error {
     return errors.New("unimplemented")
 }
 {{- end }}

@@ -78,7 +78,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoAPITokens(ctx context.Context, batch *pgx.Batch, obj *storage.TokenMetadata) error {
+func insertIntoAPITokens(_ context.Context, batch *pgx.Batch, obj *storage.TokenMetadata) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

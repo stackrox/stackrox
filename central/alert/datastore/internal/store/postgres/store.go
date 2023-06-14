@@ -80,7 +80,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoAlerts(ctx context.Context, batch *pgx.Batch, obj *storage.Alert) error {
+func insertIntoAlerts(_ context.Context, batch *pgx.Batch, obj *storage.Alert) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

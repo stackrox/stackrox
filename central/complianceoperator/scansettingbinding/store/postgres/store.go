@@ -77,7 +77,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoComplianceOperatorScanSettingBindings(ctx context.Context, batch *pgx.Batch, obj *storage.ComplianceOperatorScanSettingBinding) error {
+func insertIntoComplianceOperatorScanSettingBindings(_ context.Context, batch *pgx.Batch, obj *storage.ComplianceOperatorScanSettingBinding) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

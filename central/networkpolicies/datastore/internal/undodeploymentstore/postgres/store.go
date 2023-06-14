@@ -78,7 +78,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoNetworkpoliciesundodeployments(ctx context.Context, batch *pgx.Batch, obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
+func insertIntoNetworkpoliciesundodeployments(_ context.Context, batch *pgx.Batch, obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

@@ -110,7 +110,7 @@ func insertIntoTestParent1(ctx context.Context, batch *pgx.Batch, obj *storage.T
 	return nil
 }
 
-func insertIntoTestParent1Childrens(ctx context.Context, batch *pgx.Batch, obj *storage.TestParent1_Child1Ref, test_parent1_Id string, idx int) error {
+func insertIntoTestParent1Childrens(_ context.Context, batch *pgx.Batch, obj *storage.TestParent1_Child1Ref, test_parent1_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

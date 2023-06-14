@@ -136,7 +136,7 @@ func insertIntoTestGrandparentsEmbeddeds(ctx context.Context, batch *pgx.Batch, 
 	return nil
 }
 
-func insertIntoTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, batch *pgx.Batch, obj *storage.TestGrandparent_Embedded_Embedded2, test_grandparents_Id string, test_grandparents_embeddeds_idx int, idx int) error {
+func insertIntoTestGrandparentsEmbeddedsEmbedded2(_ context.Context, batch *pgx.Batch, obj *storage.TestGrandparent_Embedded_Embedded2, test_grandparents_Id string, test_grandparents_embeddeds_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

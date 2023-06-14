@@ -79,7 +79,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoTestShortCircuits(ctx context.Context, batch *pgx.Batch, obj *storage.TestShortCircuit) error {
+func insertIntoTestShortCircuits(_ context.Context, batch *pgx.Batch, obj *storage.TestShortCircuit) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

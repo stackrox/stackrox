@@ -79,7 +79,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoTestChild2(ctx context.Context, batch *pgx.Batch, obj *storage.TestChild2) error {
+func insertIntoTestChild2(_ context.Context, batch *pgx.Batch, obj *storage.TestChild2) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

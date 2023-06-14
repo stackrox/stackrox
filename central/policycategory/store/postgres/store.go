@@ -79,7 +79,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoPolicyCategories(ctx context.Context, batch *pgx.Batch, obj *storage.PolicyCategory) error {
+func insertIntoPolicyCategories(_ context.Context, batch *pgx.Batch, obj *storage.PolicyCategory) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

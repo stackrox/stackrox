@@ -186,7 +186,7 @@ func insertIntoDeploymentsContainers(ctx context.Context, batch *pgx.Batch, obj 
 	return nil
 }
 
-func insertIntoDeploymentsContainersEnvs(ctx context.Context, batch *pgx.Batch, obj *storage.ContainerConfig_EnvironmentConfig, deployments_Id string, deployments_containers_idx int, idx int) error {
+func insertIntoDeploymentsContainersEnvs(_ context.Context, batch *pgx.Batch, obj *storage.ContainerConfig_EnvironmentConfig, deployments_Id string, deployments_containers_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -204,7 +204,7 @@ func insertIntoDeploymentsContainersEnvs(ctx context.Context, batch *pgx.Batch, 
 	return nil
 }
 
-func insertIntoDeploymentsContainersVolumes(ctx context.Context, batch *pgx.Batch, obj *storage.Volume, deployments_Id string, deployments_containers_idx int, idx int) error {
+func insertIntoDeploymentsContainersVolumes(_ context.Context, batch *pgx.Batch, obj *storage.Volume, deployments_Id string, deployments_containers_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -224,7 +224,7 @@ func insertIntoDeploymentsContainersVolumes(ctx context.Context, batch *pgx.Batc
 	return nil
 }
 
-func insertIntoDeploymentsContainersSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.EmbeddedSecret, deployments_Id string, deployments_containers_idx int, idx int) error {
+func insertIntoDeploymentsContainersSecrets(_ context.Context, batch *pgx.Batch, obj *storage.EmbeddedSecret, deployments_Id string, deployments_containers_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -268,7 +268,7 @@ func insertIntoDeploymentsPorts(ctx context.Context, batch *pgx.Batch, obj *stor
 	return nil
 }
 
-func insertIntoDeploymentsPortsExposureInfos(ctx context.Context, batch *pgx.Batch, obj *storage.PortConfig_ExposureInfo, deployments_Id string, deployments_ports_idx int, idx int) error {
+func insertIntoDeploymentsPortsExposureInfos(_ context.Context, batch *pgx.Batch, obj *storage.PortConfig_ExposureInfo, deployments_Id string, deployments_ports_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

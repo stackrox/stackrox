@@ -78,7 +78,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoExternalBackups(ctx context.Context, batch *pgx.Batch, obj *storage.ExternalBackup) error {
+func insertIntoExternalBackups(_ context.Context, batch *pgx.Batch, obj *storage.ExternalBackup) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

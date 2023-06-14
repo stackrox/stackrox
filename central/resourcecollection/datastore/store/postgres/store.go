@@ -110,7 +110,7 @@ func insertIntoCollections(ctx context.Context, batch *pgx.Batch, obj *storage.R
 	return nil
 }
 
-func insertIntoCollectionsEmbeddedCollections(ctx context.Context, batch *pgx.Batch, obj *storage.ResourceCollection_EmbeddedResourceCollection, collections_Id string, idx int) error {
+func insertIntoCollectionsEmbeddedCollections(_ context.Context, batch *pgx.Batch, obj *storage.ResourceCollection_EmbeddedResourceCollection, collections_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

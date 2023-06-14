@@ -80,7 +80,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoNetworkBaselines(ctx context.Context, batch *pgx.Batch, obj *storage.NetworkBaseline) error {
+func insertIntoNetworkBaselines(_ context.Context, batch *pgx.Batch, obj *storage.NetworkBaseline) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

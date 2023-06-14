@@ -80,7 +80,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoComplianceRunMetadata(ctx context.Context, batch *pgx.Batch, obj *storage.ComplianceRunMetadata) error {
+func insertIntoComplianceRunMetadata(_ context.Context, batch *pgx.Batch, obj *storage.ComplianceRunMetadata) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

@@ -110,7 +110,7 @@ func insertIntoActiveComponents(ctx context.Context, batch *pgx.Batch, obj *stor
 	return nil
 }
 
-func insertIntoActiveComponentsActiveContextsSlices(ctx context.Context, batch *pgx.Batch, obj *storage.ActiveComponent_ActiveContext, active_components_Id string, idx int) error {
+func insertIntoActiveComponentsActiveContextsSlices(_ context.Context, batch *pgx.Batch, obj *storage.ActiveComponent_ActiveContext, active_components_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

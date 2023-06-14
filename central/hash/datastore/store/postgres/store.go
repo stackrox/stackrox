@@ -77,7 +77,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoHashes(ctx context.Context, batch *pgx.Batch, obj *storage.Hash) error {
+func insertIntoHashes(_ context.Context, batch *pgx.Batch, obj *storage.Hash) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

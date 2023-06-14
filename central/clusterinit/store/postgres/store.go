@@ -75,7 +75,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoClusterInitBundles(ctx context.Context, batch *pgx.Batch, obj *storage.InitBundleMeta) error {
+func insertIntoClusterInitBundles(_ context.Context, batch *pgx.Batch, obj *storage.InitBundleMeta) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

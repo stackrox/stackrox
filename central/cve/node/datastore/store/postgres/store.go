@@ -79,7 +79,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoNodeCves(ctx context.Context, batch *pgx.Batch, obj *storage.NodeCVE) error {
+func insertIntoNodeCves(_ context.Context, batch *pgx.Batch, obj *storage.NodeCVE) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
