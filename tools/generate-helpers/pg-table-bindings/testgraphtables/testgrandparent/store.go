@@ -50,14 +50,14 @@ var (
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.TestGrandparent) error
 	UpsertMany(ctx context.Context, objs []*storage.TestGrandparent) error
-	Delete(ctx context.Context, ID string) error
+	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, ID string) (bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, ID string) (*storage.TestGrandparent, bool, error)
+	Get(ctx context.Context, id string) (*storage.TestGrandparent, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.TestGrandparent, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.TestGrandparent, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
@@ -451,7 +451,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestGrandpar
 }
 
 // Delete removes the object associated to the specified ID from the store.
-func (s *storeImpl) Delete(ctx context.Context, ID string) error {
+func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "TestGrandparent")
 
 	var sacQueryFilter *v1.Query
@@ -467,7 +467,7 @@ func (s *storeImpl) Delete(ctx context.Context, ID string) error {
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ID).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
 	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
@@ -562,7 +562,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the ID exists in the store.
-func (s *storeImpl) Exists(ctx context.Context, ID string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TestGrandparent")
 
 	var sacQueryFilter *v1.Query
@@ -578,7 +578,7 @@ func (s *storeImpl) Exists(ctx context.Context, ID string) (bool, error) {
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ID).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
 	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
@@ -588,7 +588,7 @@ func (s *storeImpl) Exists(ctx context.Context, ID string) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, ID string) (*storage.TestGrandparent, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string) (*storage.TestGrandparent, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "TestGrandparent")
 
 	var sacQueryFilter *v1.Query
@@ -605,7 +605,7 @@ func (s *storeImpl) Get(ctx context.Context, ID string) (*storage.TestGrandparen
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ID).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
 	data, err := pgSearch.RunGetQueryForSchema[storage.TestGrandparent](ctx, schema, q, s.db)

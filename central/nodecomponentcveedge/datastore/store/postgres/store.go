@@ -47,9 +47,9 @@ var (
 // Store is the interface to interact with the storage for storage.NodeComponentCVEEdge
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, ID string) (bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, ID string) (*storage.NodeComponentCVEEdge, bool, error)
+	Get(ctx context.Context, id string) (*storage.NodeComponentCVEEdge, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NodeComponentCVEEdge, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.NodeComponentCVEEdge, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
@@ -105,7 +105,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the ID exists in the store.
-func (s *storeImpl) Exists(ctx context.Context, ID string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NodeComponentCVEEdge")
 
 	var sacQueryFilter *v1.Query
@@ -121,7 +121,7 @@ func (s *storeImpl) Exists(ctx context.Context, ID string) (bool, error) {
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ID).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
 	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
@@ -131,7 +131,7 @@ func (s *storeImpl) Exists(ctx context.Context, ID string) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, ID string) (*storage.NodeComponentCVEEdge, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string) (*storage.NodeComponentCVEEdge, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeComponentCVEEdge")
 
 	var sacQueryFilter *v1.Query
@@ -148,7 +148,7 @@ func (s *storeImpl) Get(ctx context.Context, ID string) (*storage.NodeComponentC
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ID).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
 	data, err := pgSearch.RunGetQueryForSchema[storage.NodeComponentCVEEdge](ctx, schema, q, s.db)

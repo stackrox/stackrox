@@ -49,14 +49,14 @@ var (
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.IntegrationHealth) error
 	UpsertMany(ctx context.Context, objs []*storage.IntegrationHealth) error
-	Delete(ctx context.Context, ID string) error
+	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, ID string) (bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, ID string) (*storage.IntegrationHealth, bool, error)
+	Get(ctx context.Context, id string) (*storage.IntegrationHealth, bool, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.IntegrationHealth, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
@@ -265,7 +265,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.IntegrationH
 }
 
 // Delete removes the object associated to the specified ID from the store.
-func (s *storeImpl) Delete(ctx context.Context, ID string) error {
+func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "IntegrationHealth")
 
 	var sacQueryFilter *v1.Query
@@ -276,7 +276,7 @@ func (s *storeImpl) Delete(ctx context.Context, ID string) error {
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ID).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
 	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
@@ -355,7 +355,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the ID exists in the store.
-func (s *storeImpl) Exists(ctx context.Context, ID string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "IntegrationHealth")
 
 	var sacQueryFilter *v1.Query
@@ -366,7 +366,7 @@ func (s *storeImpl) Exists(ctx context.Context, ID string) (bool, error) {
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ID).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
 	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
@@ -376,7 +376,7 @@ func (s *storeImpl) Exists(ctx context.Context, ID string) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, ID string) (*storage.IntegrationHealth, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string) (*storage.IntegrationHealth, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "IntegrationHealth")
 
 	var sacQueryFilter *v1.Query
@@ -388,7 +388,7 @@ func (s *storeImpl) Get(ctx context.Context, ID string) (*storage.IntegrationHea
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ID).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
 	data, err := pgSearch.RunGetQueryForSchema[storage.IntegrationHealth](ctx, schema, q, s.db)

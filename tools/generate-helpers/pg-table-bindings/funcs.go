@@ -101,6 +101,9 @@ func lowerCamelCase(s string) string {
 		return ""
 	}
 	words[0] = strings.ToLower(words[0])
+	if len(words) == 1 && words[0] == "id" {
+		return "id"
+	}
 	applyPointwise(words[1:], strings.Title)
 	applyPointwise(words, upperCaseAcronyms)
 	return strings.Join(words, "")

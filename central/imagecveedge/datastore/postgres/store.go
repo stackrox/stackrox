@@ -47,9 +47,9 @@ var (
 // Store is the interface to interact with the storage for storage.ImageCVEEdge
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, ID string) (bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, ID string) (*storage.ImageCVEEdge, bool, error)
+	Get(ctx context.Context, id string) (*storage.ImageCVEEdge, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageCVEEdge, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.ImageCVEEdge, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
@@ -105,7 +105,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the ID exists in the store.
-func (s *storeImpl) Exists(ctx context.Context, ID string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ImageCVEEdge")
 
 	var sacQueryFilter *v1.Query
@@ -121,7 +121,7 @@ func (s *storeImpl) Exists(ctx context.Context, ID string) (bool, error) {
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ID).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
 	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
@@ -131,7 +131,7 @@ func (s *storeImpl) Exists(ctx context.Context, ID string) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, ID string) (*storage.ImageCVEEdge, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ImageCVEEdge, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEEdge")
 
 	var sacQueryFilter *v1.Query
@@ -148,7 +148,7 @@ func (s *storeImpl) Get(ctx context.Context, ID string) (*storage.ImageCVEEdge, 
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ID).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
 	data, err := pgSearch.RunGetQueryForSchema[storage.ImageCVEEdge](ctx, schema, q, s.db)
