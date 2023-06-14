@@ -1,6 +1,9 @@
 import React, { FunctionComponent, ReactElement } from 'react';
+import { useHistory } from 'react-router-dom';
 
 import { isUserResource } from 'Containers/AccessControl/traits';
+import useCentralCapabilities from 'hooks/useCentralCapabilities';
+import { integrationsPath } from 'routePaths';
 import { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
 // image integrations
@@ -100,6 +103,16 @@ function IntegrationForm({
     initialValues,
     isEditable,
 }: IntegrationFormProps): ReactElement {
+    const history = useHistory();
+
+    const { isCentralCapabilityAvailable } = useCentralCapabilities();
+    const canUseCloudBackupIntegrations = isCentralCapabilityAvailable(
+        'centralCanUseCloudBackupIntegrations'
+    );
+    if (!canUseCloudBackupIntegrations && source === 'backups') {
+        history.replace(integrationsPath);
+    }
+
     const Form: FunctionComponent<FormProps> = ComponentFormMap?.[source]?.[type];
     if (!Form) {
         throw new Error(
