@@ -146,6 +146,8 @@ class BaseSpecification extends Specification {
 
         allAccessToken = tokenResp.token
 
+        setupCoreImageIntegration()
+
         addShutdownHook {
             LOG.info "Performing global shutdown"
             BaseService.useBasicAuth()
@@ -156,9 +158,12 @@ class BaseSpecification extends Specification {
                     RoleService.deleteRole(testRole.name)
                 }
             }
-        }
 
-        setupCoreImageIntegration()
+            log.info "Removing core image registry integration"
+            if (coreImageIntegrationId != null) {
+                ImageIntegrationService.deleteImageIntegration(coreImageIntegrationId)
+            }
+        }
 
         globalSetupDone = true
     }
@@ -213,7 +218,7 @@ class BaseSpecification extends Specification {
         coreImageIntegrationId = ImageIntegrationService.getImageIntegrationByName(
                 Constants.CORE_IMAGE_INTEGRATION_NAME)
         if (!coreImageIntegrationId) {
-            log.info "Adding core image integration"
+            log.info "Adding core image registry integration"
             coreImageIntegrationId = ImageIntegrationService.createImageIntegration(
                     ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                             .setName(Constants.CORE_IMAGE_INTEGRATION_NAME)
