@@ -287,8 +287,10 @@ jobs:
         with:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
-            { "blocks": [
+            {
+              "text": "Upstream release ${{needs.variables.outputs.named-release-patch}} has been triggered. Consult the tracker for next steps.",
 
+              "blocks": [
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}:
             *Upstream release ${{needs.variables.outputs.named-release-patch}}
@@ -316,8 +318,10 @@ jobs:
         with:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
-            { "blocks": [
+            {
+              "text": "Upstream patch release ${{needs.variables.outputs.named-release-patch}} has been triggered. Consult the tracker for next steps.",
 
+              "blocks": [
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}:
             *Upstream patch release ${{needs.variables.outputs.named-release-patch}}
