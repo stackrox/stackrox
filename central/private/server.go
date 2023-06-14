@@ -22,6 +22,7 @@ func NewHTTPServer() *HTTPServer {
 	}
 }
 
+// AddRoutes adds routes to private server to be exposed on.
 func (s *HTTPServer) AddRoutes(routes []*Route) {
 	for _, r := range routes {
 		h := r.ServerHandler
