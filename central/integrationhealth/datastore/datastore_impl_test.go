@@ -9,12 +9,9 @@ import (
 	postgresIntegrationStore "github.com/stackrox/rox/central/integrationhealth/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -32,7 +29,6 @@ type integrationHealthDatastoreTestSuite struct {
 	hasNoAccessCtx context.Context
 
 	datastore    DataStore
-	rocksie      *rocksdb.RocksDB
 	postgresTest *pgtest.TestPostgres
 }
 
@@ -59,11 +55,7 @@ func (s *integrationHealthDatastoreTestSuite) SetupTest() {
 }
 
 func (s *integrationHealthDatastoreTestSuite) TearDownTest() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.postgresTest.Close()
-	} else {
-		rocksdbtest.TearDownRocksDB(s.rocksie)
-	}
+	s.postgresTest.Close()
 }
 
 func (s *integrationHealthDatastoreTestSuite) TestGetRegistriesAndScanners() {
