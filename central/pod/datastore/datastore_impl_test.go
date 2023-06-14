@@ -109,7 +109,7 @@ func (suite *PodDataStoreTestSuite) TestUpsertPodNew() {
 	suite.storage.EXPECT().Get(ctx, expectedPod.GetId()).Return(nil, false, nil)
 	suite.storage.EXPECT().Upsert(ctx, expectedPod).Return(errors.New("error"))
 	suite.Error(suite.datastore.UpsertPod(ctx, expectedPod), "error")
-	
+
 	suite.storage.EXPECT().Get(ctx, expectedPod.GetId()).Return(nil, false, nil)
 	suite.storage.EXPECT().Upsert(ctx, expectedPod).Return(nil)
 	suite.NoError(suite.datastore.UpsertPod(ctx, expectedPod))
