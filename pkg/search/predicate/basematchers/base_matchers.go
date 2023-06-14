@@ -226,8 +226,9 @@ func forStringExactMatch(value string, negated bool) (func(string) bool, error) 
 }
 
 func forStringPrefixMatch(value string, negated bool) (func(string) bool, error) {
+	lowerValue := strings.ToLower(value)
 	return func(instance string) bool {
 		// matched != negated is equivalent to (matched XOR negated), which is what we want here
-		return (value == search.WildcardString || strings.HasPrefix(instance, value)) != negated
+		return (value == search.WildcardString || strings.HasPrefix(strings.ToLower(instance), lowerValue)) != negated
 	}, nil
 }
