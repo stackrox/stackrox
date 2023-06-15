@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
-	"github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -14,10 +13,8 @@ import (
 )
 
 var (
-	k8sRoleBindingsSACSearchHelper = sac.ForResource(resources.K8sRoleBinding).
-					MustCreateSearchHelper(mappings.OptionsMap)
 	k8sRoleBindingsSACPostgresSearchHelper = sac.ForResource(resources.K8sRoleBinding).
-						MustCreatePgSearchHelper()
+		MustCreatePgSearchHelper()
 )
 
 // searcherImpl provides a search implementation for k8s role bindings.
