@@ -8,7 +8,6 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -57,12 +56,7 @@ func (s *serviceAccountSACSuite) SetupSuite() {
 }
 
 func (s *serviceAccountSACSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	} else {
-		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
-		s.Require().NoError(s.index.Close())
-	}
+	s.pool.Close()
 }
 
 func (s *serviceAccountSACSuite) SetupTest() {

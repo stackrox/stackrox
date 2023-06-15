@@ -10,7 +10,6 @@ import (
 	pgStore "github.com/stackrox/rox/central/risk/datastore/internal/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
@@ -39,10 +38,7 @@ func New(riskStore store.Store, searcher search.Searcher) (DataStore, error) {
 			storage.RiskSubjectType_NAMESPACE.String(): ranking.NamespaceRanker(),
 			storage.RiskSubjectType_NODE.String():      ranking.NodeRanker(),
 			storage.RiskSubjectType_NODE_COMPONENT.String(): func() *ranking.Ranker {
-				if env.PostgresDatastoreEnabled.BooleanSetting() {
-					return ranking.NodeComponentRanker()
-				}
-				return ranking.ComponentRanker()
+				return ranking.NodeComponentRanker()
 			}(),
 			storage.RiskSubjectType_DEPLOYMENT.String():      ranking.DeploymentRanker(),
 			storage.RiskSubjectType_IMAGE.String():           ranking.ImageRanker(),

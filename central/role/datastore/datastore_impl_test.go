@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -492,11 +491,7 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 
 	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, mimicPermissionSet)
 	// With postgres the unique constraint catches this.
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		assert.ErrorContains(s.T(), err, "violates unique constraint")
-	} else {
-		s.ErrorIs(err, errox.AlreadyExists, "adding permission set with an existing name yields an error")
-	}
+	assert.ErrorContains(s.T(), err, "violates unique constraint")
 
 	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, goodPermissionSet)
 	s.ErrorIs(err, errox.NotFound, "updating non-existing permission set yields an error")
@@ -521,11 +516,7 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 
 	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, mimicPermissionSet)
 	// With postgres the unique constraint catches this.
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		assert.ErrorContains(s.T(), err, "violates unique constraint")
-	} else {
-		s.ErrorIs(err, errox.AlreadyExists, "introducing a name collision with Update*() yields an error")
-	}
+	assert.ErrorContains(s.T(), err, "violates unique constraint")
 
 	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, updatedGoodPermissionSet)
 	s.NoError(err)
@@ -760,11 +751,7 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 
 	err = s.dataStore.AddAccessScope(s.hasWriteCtx, mimicScope)
 	// With postgres the unique constraint catches this.
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		assert.ErrorContains(s.T(), err, "violates unique constraint")
-	} else {
-		s.ErrorIs(err, errox.AlreadyExists, "adding scope with an existing name yields an error")
-	}
+	assert.ErrorContains(s.T(), err, "violates unique constraint")
 
 	err = s.dataStore.UpdateAccessScope(s.hasWriteCtx, goodScope)
 	s.ErrorIs(err, errox.NotFound, "updating non-existing scope yields an error")
@@ -789,11 +776,7 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 
 	err = s.dataStore.UpdateAccessScope(s.hasWriteCtx, mimicScope)
 	// With postgres the unique constraint catches this.
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		assert.ErrorContains(s.T(), err, "violates unique constraint")
-	} else {
-		s.ErrorIs(err, errox.AlreadyExists, "introducing a name collision with Update*() yields an error")
-	}
+	assert.ErrorContains(s.T(), err, "violates unique constraint")
 
 	err = s.dataStore.UpdateAccessScope(s.hasWriteCtx, updatedGoodScope)
 	s.NoError(err)

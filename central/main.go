@@ -91,7 +91,6 @@ import (
 	"github.com/stackrox/rox/central/notifier/processor"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
-	"github.com/stackrox/rox/central/option"
 	pingService "github.com/stackrox/rox/central/ping/service"
 	podService "github.com/stackrox/rox/central/pod/service"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -258,21 +257,16 @@ func main() {
 	ensureDB(ctx)
 
 	// Need to remove the backup clone and set the current version
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		sourceMap, config, err := pgconfig.GetPostgresConfig()
-		if err != nil {
-			log.Errorf("Unable to get Postgres DB config: %v", err)
-		}
-
-		err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone())
-		if err != nil {
-			log.Errorf("Failed to remove backup DB: %v", err)
-		}
-		versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
-	} else {
-		// Update last associated software version on DBs.
-		migrations.SetCurrent(option.CentralOptions.DBPathBase)
+	sourceMap, config, err := pgconfig.GetPostgresConfig()
+	if err != nil {
+		log.Errorf("Unable to get Postgres DB config: %v", err)
 	}
+
+	err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone())
+	if err != nil {
+		log.Errorf("Failed to remove backup DB: %v", err)
+	}
+	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 
 	// Now that we verified that the DB can be loaded, remove the .backup directory
 	if err := migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(migrations.DBMountPath(), migrations.GetBackupClone())); err != nil {
@@ -302,10 +296,7 @@ func startServices() {
 	pruning.Singleton().Start()
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		apiTokenExpiration.Singleton().Start()
-	}
+	apiTokenExpiration.Singleton().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -795,9 +786,7 @@ func waitForTerminationSignal() {
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
-	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		stoppables = append(stoppables, stoppableWithName{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"})
+		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
 	}
 
 	var wg sync.WaitGroup

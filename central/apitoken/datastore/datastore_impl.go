@@ -3,14 +3,12 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	scheduleStore "github.com/stackrox/rox/central/apitoken/datastore/internal/schedulestore/postgres"
 	"github.com/stackrox/rox/central/apitoken/datastore/internal/store"
 	postgresStore "github.com/stackrox/rox/central/apitoken/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -137,9 +135,6 @@ func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.New("API Token search is only available in postgres mode")
-	}
 	return b.searcher.Search(ctx, q)
 }
 
@@ -147,23 +142,14 @@ func (b *datastoreImpl) SearchRawTokens(ctx context.Context, q *v1.Query) ([]*st
 	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.New("API Token search is only available in postgres mode")
-	}
 	return b.storage.GetByQuery(ctx, q)
 
 }
 
 func (b *datastoreImpl) GetNotificationSchedule(ctx context.Context) (*storage.NotificationSchedule, bool, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, false, errors.New("API Token notification schedule retrieval is only supported in postgres mode")
-	}
 	return b.scheduleStorage.Get(ctx)
 }
 
 func (b *datastoreImpl) UpsertNotificationSchedule(ctx context.Context, schedule *storage.NotificationSchedule) error {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return errors.New("API Token notification schedule update is only supported in postgres mode")
-	}
 	return b.scheduleStorage.Upsert(ctx, schedule)
 }

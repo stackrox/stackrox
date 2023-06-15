@@ -19,7 +19,6 @@ import (
 	edgePostgres "github.com/stackrox/rox/central/policycategoryedge/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -178,8 +177,6 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportPolicy() {
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) TestSearchPolicyCategoryFeatureDisabled() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "false")
-
 	// Policy should get upserted with category names stored inside the policy storage proto object
 	// no edges, no separate category objects)
 	policy := fixtures.GetPolicy()

@@ -39,8 +39,6 @@ type groupsWithPostgresTestSuite struct {
 }
 
 func (s *groupsWithPostgresTestSuite) SetupSuite() {
-	pgtest.SkipIfPostgresDisabled(s.T())
-
 	s.mockCtrl = gomock.NewController(s.T())
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(

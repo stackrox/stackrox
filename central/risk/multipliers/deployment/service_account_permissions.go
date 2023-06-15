@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/rbac/utils"
 	serviceAccountStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -28,10 +27,10 @@ var (
 	maxResources       = 46.0
 	maxPermissionScore = 1518.0
 
-	riskFactorPrefix     = "Service account %q has been granted"
-	clusterAdminSuffix   = "cluster admin privileges in the cluster"
-	clusterScopeSuffix   = "the following permissions on resources in the cluster:"
-	namespaceScopeSuffix = "the following permissions on resources in namespace %q:"
+	//riskFactorPrefix     = "Service account %q has been granted"
+	//clusterAdminSuffix   = "cluster admin privileges in the cluster"
+	//clusterScopeSuffix   = "the following permissions on resources in the cluster:"
+	//namespaceScopeSuffix = "the following permissions on resources in namespace %q:"
 )
 
 // saPermissionsMultiplier is a scorer for the permissions granted to the service account of the deployment
@@ -53,55 +52,53 @@ func NewSAPermissionsMultiplier(roleStore roleStore.DataStore, bindingStore bind
 // Score takes a deployment and evaluates its risk based on the permissions granted to the deployment's service account
 func (c *saPermissionsMultiplier) Score(ctx context.Context, deployment *storage.Deployment, _ map[string][]*storage.Risk_Result) *storage.Risk_Result {
 	// TODO(ROX-9637)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	var factors []*storage.Risk_Result_Factor
-	overallScore := float32(0)
-
-	autoMountFactors, autoMounted := c.tokenAutomounted(ctx, deployment)
-	if !autoMounted {
-		return nil
-	}
-
-	factors = append(factors, autoMountFactors...)
-	overallScore = 1.0
-
-	subject := k8srbac.GetSubjectForDeployment(deployment)
-	clusterScore, verbs, isAdmin := c.getClusterPermissionsScore(ctx, deployment, subject)
-
-	if isAdmin {
-		factors = append(factors, &storage.Risk_Result_Factor{
-			Message: fmt.Sprintf(strings.Join([]string{riskFactorPrefix, clusterAdminSuffix}, " "), subject.GetName()),
-		})
-		overallScore += float32(clusterScore) / float32(maxPermissionScore)
-
-	} else {
-		if clusterScore > 0.0 {
-			factors = append(factors, &storage.Risk_Result_Factor{
-				Message: fmt.Sprintf(strings.Join([]string{riskFactorPrefix, clusterScopeSuffix, verbs}, " "), subject.GetName()),
-			})
-		}
-
-		namespaceScore, verbs := c.getNamespacePermissionsScore(ctx, deployment, subject)
-		if namespaceScore > 0.0 {
-			factors = append(factors, &storage.Risk_Result_Factor{
-				Message: fmt.Sprintf(strings.Join([]string{riskFactorPrefix, namespaceScopeSuffix, verbs}, " "),
-					subject.GetName(), deployment.GetNamespace()),
-			})
-		}
-		overallScore += float32(clusterScore+namespaceScore) / float32(maxPermissionScore)
-	}
-
-	if overallScore > 0.0 {
-		return &storage.Risk_Result{
-			Name:    rbacConfigurationHeading,
-			Factors: factors,
-			Score:   overallScore,
-		}
-	}
-
 	return nil
+	//var factors []*storage.Risk_Result_Factor
+	//overallScore := float32(0)
+	//
+	//autoMountFactors, autoMounted := c.tokenAutomounted(ctx, deployment)
+	//if !autoMounted {
+	//	return nil
+	//}
+	//
+	//factors = append(factors, autoMountFactors...)
+	//overallScore = 1.0
+	//
+	//subject := k8srbac.GetSubjectForDeployment(deployment)
+	//clusterScore, verbs, isAdmin := c.getClusterPermissionsScore(ctx, deployment, subject)
+	//
+	//if isAdmin {
+	//	factors = append(factors, &storage.Risk_Result_Factor{
+	//		Message: fmt.Sprintf(strings.Join([]string{riskFactorPrefix, clusterAdminSuffix}, " "), subject.GetName()),
+	//	})
+	//	overallScore += float32(clusterScore) / float32(maxPermissionScore)
+	//
+	//} else {
+	//	if clusterScore > 0.0 {
+	//		factors = append(factors, &storage.Risk_Result_Factor{
+	//			Message: fmt.Sprintf(strings.Join([]string{riskFactorPrefix, clusterScopeSuffix, verbs}, " "), subject.GetName()),
+	//		})
+	//	}
+	//
+	//	namespaceScore, verbs := c.getNamespacePermissionsScore(ctx, deployment, subject)
+	//	if namespaceScore > 0.0 {
+	//		factors = append(factors, &storage.Risk_Result_Factor{
+	//			Message: fmt.Sprintf(strings.Join([]string{riskFactorPrefix, namespaceScopeSuffix, verbs}, " "),
+	//				subject.GetName(), deployment.GetNamespace()),
+	//		})
+	//	}
+	//	overallScore += float32(clusterScore+namespaceScore) / float32(maxPermissionScore)
+	//}
+	//
+	//if overallScore > 0.0 {
+	//	return &storage.Risk_Result{
+	//		Name:    rbacConfigurationHeading,
+	//		Factors: factors,
+	//		Score:   overallScore,
+	//	}
+	//}
+	//
+	//return nil
 }
 
 func (c *saPermissionsMultiplier) getClusterPermissionsScore(ctx context.Context, deployment *storage.Deployment, subject *storage.Subject) (score float32, verbList string, isAdmin bool) {

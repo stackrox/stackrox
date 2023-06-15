@@ -12,13 +12,10 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/search/paginated"
-	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
 var (
@@ -50,20 +47,17 @@ func (ds *searcherImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.Se
 
 // SearchListAlerts retrieves list alerts from the indexer and storage
 func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		q = applyDefaultState(q)
-		alerts, err := ds.storage.GetByQuery(ctx, q)
-		if err != nil {
-			return nil, err
-		}
-		listAlerts := make([]*storage.ListAlert, 0, len(alerts))
-		for _, alert := range alerts {
-			listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
-		}
-		return listAlerts, nil
+	q = applyDefaultState(q)
+	alerts, err := ds.storage.GetByQuery(ctx, q)
+	if err != nil {
+		return nil, err
 	}
-	alerts, _, err := ds.searchListAlerts(ctx, q)
-	return alerts, err
+	listAlerts := make([]*storage.ListAlert, 0, len(alerts))
+	for _, alert := range alerts {
+		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
+	}
+	return listAlerts, nil
+
 }
 
 // SearchRawAlerts retrieves Alerts from the indexer and storage
@@ -90,19 +84,8 @@ func (ds *searcherImpl) searchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 }
 
 func (ds *searcherImpl) searchAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		q = applyDefaultState(q)
-		return ds.storage.GetByQuery(ctx, q)
-	}
-	results, err := ds.Search(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	alerts, _, err := ds.storage.GetMany(ctx, search.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
-	}
-	return alerts, nil
+	q = applyDefaultState(q)
+	return ds.storage.GetByQuery(ctx, q)
 }
 
 // Search takes a SearchRequest and finds any matches
@@ -148,15 +131,7 @@ func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResu
 ///////////////////////////////////////////////
 
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	var filteredSearcher search.Searcher
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		// Make the UnsafeSearcher safe.
-		filteredSearcher = alertPostgresSACSearchHelper.FilteredSearcher(unsafeSearcher)
-	} else {
-		filteredSearcher = alertSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
-		filteredSearcher = sortfields.TransformSortFields(filteredSearcher, mappings.OptionsMap)
-		filteredSearcher = paginated.Paginated(filteredSearcher)
-	}
+	filteredSearcher := alertPostgresSACSearchHelper.FilteredSearcher(unsafeSearcher)
 	withDefaultViolationState := withDefaultActiveViolations(filteredSearcher)
 	return withDefaultViolationState
 }
