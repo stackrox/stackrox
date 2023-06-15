@@ -1464,7 +1464,7 @@ func (s *PruningTestSuite) TestMarkOrphanedAlerts() {
 				}))
 			}
 			alerts.EXPECT().MarkAlertsResolvedBatch(pruningCtx, c.expectedDeletions)
-			gci.markOrphanedAlertsAsResolved(c.deployments)
+			gci.markOrphanedAlertsAsResolved()
 		})
 	}
 }
