@@ -10,19 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
-const (
-	// permissionSetIDPrefix should be prepended to every human-hostile ID of a
-	// permission set for readability, e.g.,
-	//     "io.stackrox.authz.permissionset.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13".
-	permissionSetIDPrefix = "io.stackrox.authz.permissionset."
-
-	// accessScopeIDPrefix should be prepended to every human-hostile ID of an
-	// access scope for readability, e.g.,
-	//     "io.stackrox.authz.accessscope.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13".
-	accessScopeIDPrefix = "io.stackrox.authz.accessscope."
-)
-
-func generateIdentifier(prefix string) string {
+func generateIdentifier() string {
 	generatedIDSuffix := uuid.NewV4().String()
 	return generatedIDSuffix
 }
@@ -34,7 +22,7 @@ func isValidIdentifier(id string) bool {
 
 // GeneratePermissionSetID returns a random valid permission set ID.
 func GeneratePermissionSetID() string {
-	return generateIdentifier(permissionSetIDPrefix)
+	return generateIdentifier()
 }
 
 // EnsureValidPermissionSetID converts id to the correct format if necessary.
@@ -42,12 +30,12 @@ func EnsureValidPermissionSetID(id string) string {
 	if isValidIdentifier(id) {
 		return id
 	}
-	return generateIdentifier(permissionSetIDPrefix)
+	return generateIdentifier()
 }
 
 // GenerateAccessScopeID returns a random valid access scope ID.
 func GenerateAccessScopeID() string {
-	return generateIdentifier(accessScopeIDPrefix)
+	return generateIdentifier()
 }
 
 // EnsureValidAccessScopeID converts id to the correct format if necessary.
@@ -55,7 +43,7 @@ func EnsureValidAccessScopeID(id string) string {
 	if isValidIdentifier(id) {
 		return id
 	}
-	return generateIdentifier(accessScopeIDPrefix)
+	return generateIdentifier()
 }
 
 // ValidateAccessScopeID returns an error if the scope ID prefix is not correct.
