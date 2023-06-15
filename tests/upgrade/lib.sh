@@ -104,7 +104,7 @@ deploy_earlier_central() {
 
     # Let's try helm
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart
-    sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/early-stackrox-central-services-chart/internal/defaults.yaml
+#    sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/early-stackrox-central-services-chart/internal/defaults.yaml
     helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
          --set central.db.enabled=false \
          --set central.exposure.loadBalancer.enabled=true \
