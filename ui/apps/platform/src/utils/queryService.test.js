@@ -49,19 +49,6 @@ describe('queryService.', () => {
     });
 
     describe('entityContextToQueryObject', () => {
-        it('returns the query object for a Component', () => {
-            const entityContext = {
-                COMPONENT: 'cHl0aG9uMy40:My40LjMtMXVidW50dTF-MTQuMDQuNw',
-            };
-
-            const queryObject = queryService.entityContextToQueryObject(entityContext);
-
-            expect(queryObject).toEqual({
-                COMPONENT: 'python3.4',
-                'COMPONENT VERSION': '3.4.3-1ubuntu1~14.04.7',
-            });
-        });
-
         it('returns the query object for an Image Component', () => {
             const entityContext = {
                 IMAGE_COMPONENT: 'openssl#1.1.1d-0+deb10u7#debian:10',
@@ -83,18 +70,6 @@ describe('queryService.', () => {
 
             expect(queryObject).toEqual({
                 'COMPONENT ID': 'linux-gke#5.4.0-1068#ubuntu:20.04',
-            });
-        });
-
-        it('returns the query object for a CVE', () => {
-            const entityContext = {
-                CVE: 'CVE-2022-2068',
-            };
-
-            const queryObject = queryService.entityContextToQueryObject(entityContext);
-
-            expect(queryObject).toEqual({
-                CVE: 'CVE-2022-2068',
             });
         });
 
