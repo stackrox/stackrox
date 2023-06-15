@@ -8,10 +8,16 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 )
 
-// ParseClusterIDFromServiceCert parses the service cert to extract cluster id.
+type ParseClusterIDFromServiceCertFn func(storage.ServiceType) (string, error)
+
+var (
+	ParseClusterIDFromServiceCert ParseClusterIDFromServiceCertFn = parseClusterIDFromServiceCertImpl
+)
+
+// parseClusterIDFromServiceCertImpl parses the service cert to extract cluster id.
 // expectedServiceType specifies an optional service type expected for this cert. Use UNKNOWN_SERVICE
 // for no expectation.
-func ParseClusterIDFromServiceCert(expectedServiceType storage.ServiceType) (string, error) {
+func parseClusterIDFromServiceCertImpl(expectedServiceType storage.ServiceType) (string, error) {
 	leaf, err := mtls.LeafCertificateFromFile()
 	if err != nil {
 		return "", errors.Wrap(err, "Could not read sensor certificate")

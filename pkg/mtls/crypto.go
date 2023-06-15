@@ -127,8 +127,14 @@ type IssuedCert struct {
 	ID       *storage.ServiceIdentity
 }
 
-// LeafCertificateFromFile reads a tls.Certificate (including private key and cert).
-func LeafCertificateFromFile() (tls.Certificate, error) {
+type LeafCertificateFromFileFn func() (tls.Certificate, error)
+
+var (
+	LeafCertificateFromFile LeafCertificateFromFileFn = leafCertificateFromFileImpl
+)
+
+// leafCertificateFromFileImpl reads a tls.Certificate (including private key and cert).
+func leafCertificateFromFileImpl() (tls.Certificate, error) {
 	return tls.LoadX509KeyPair(certFilePathSetting.Setting(), keyFilePathSetting.Setting())
 }
 
@@ -186,8 +192,14 @@ func readCA() (*x509.Certificate, []byte, []byte, error) {
 	return caCert, caCertFileContents, caCertDER, caCertErr
 }
 
-// CACert reads the cert from the local file system and returns the cert and the DER encoding.
-func CACert() (*x509.Certificate, []byte, error) {
+type CACertFn func() (*x509.Certificate, []byte, error)
+
+var (
+	CACert CACertFn = caCertImpl
+)
+
+// caCertImpl reads the cert from the local file system and returns the cert and the DER encoding.
+func caCertImpl() (*x509.Certificate, []byte, error) {
 	caCert, _, caCertDER, caCertErr := readCA()
 	return caCert, caCertDER, caCertErr
 }
