@@ -58,7 +58,6 @@ scale/profiler/port-forward.sh
 scale/signatures/create-signature-integrations.sh
 scale/signatures/deploy.sh
 scripts/certification/run.sh
-scripts/ci/bench-and-graph.sh
 scripts/ci/collect-qa-service-logs.sh
 scripts/ci/complianceoperator/create.sh
 scripts/ci/deployment-minder.sh
