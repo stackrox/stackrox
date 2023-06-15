@@ -27,13 +27,6 @@ func init() {
 			"nodeComponentCount(query: String): Int!",
 			"nodeComponents(query: String, pagination: Pagination): [NodeComponent!]!",
 		}),
-		// deprecated fields
-		schema.AddExtraResolvers("NodeScan", []string{
-			"componentCount(query: String): Int! " +
-				"@deprecated(reason: \"use 'nodeComponentCount'\")",
-			"components(query: String, pagination: Pagination): [EmbeddedNodeScanComponent!]! " +
-				"@deprecated(reason: \"use 'nodeComponents'\")",
-		}),
 	)
 }
 

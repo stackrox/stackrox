@@ -22,13 +22,6 @@ func init() {
 			"imageComponentCount(query: String): Int!",
 			"imageComponents(query: String, pagination: Pagination): [ImageComponent!]!",
 		}),
-		// deprecated fields
-		schema.AddExtraResolvers("ImageScan", []string{
-			"componentCount(query: String): Int! " +
-				"@deprecated(reason: \"use 'imageComponentCount'\")",
-			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]! " +
-				"@deprecated(reason: \"use 'imageComponents'\")",
-		}),
 	)
 }
 

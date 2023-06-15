@@ -46,7 +46,7 @@ func init() {
 			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability]!",
 			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
 			"scan: ImageScan",
-			"topImageVulnerability(query: String): ImageVulnerability",
+			"topImageVulnerability(query: String): ImageVulnerability @deprecated(reason: \"sort 'imageVulnerabilities' by Severity or CVSS to view CVEs with most severe impact.\")",
 			"unusedVarSink(query: String): Int",
 			"watchStatus: ImageWatchStatus!",
 

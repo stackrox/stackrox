@@ -42,7 +42,7 @@ func init() {
 			"nodeVulnerabilityCounter(query: String): VulnerabilityCounter!",
 			"plottedNodeVulnerabilities(query: String): PlottedNodeVulnerabilities!",
 			"source: String!",
-			"topNodeVulnerability: NodeVulnerability",
+			"topNodeVulnerability: NodeVulnerability @deprecated(reason: \"sort 'nodeVulnerabilities' by Severity or CVSS to view CVEs with most severe impact.\")",
 			"unusedVarSink(query: String): Int",
 		}),
 
