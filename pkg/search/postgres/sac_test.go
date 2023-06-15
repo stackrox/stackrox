@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac"
@@ -13,18 +12,26 @@ import (
 
 func TestGetReadWriteSACQuery(t *testing.T) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), createTestReadMultipleResourcesSomeWithNamespaceScope(t))
-	got, err := GetReadWriteSACQuery(ctx, resources.Cluster)
+	got, err := GetReadWriteSACQuery(ctx, metadata("Cluster", permissions.ClusterScope)
 	assert.Equal(t, `base_query:<match_field_query:<field:"Cluster ID" value:"\"clusterID\"" > > `, got.String())
 	assert.NoError(t, err)
-	got, err = GetReadWriteSACQuery(ctx, resources.Namespace)
+	got, err = GetReadWriteSACQuery(ctx, metadata("Namespace", permissions.NamespaceScope))
 	assert.Equal(t, `base_query:<match_none_query:<> > `, got.String())
 	assert.NoError(t, err)
-	got, err = GetReadWriteSACQuery(sac.WithNoAccess(context.Background()), resources.Integration)
+	got, err = GetReadWriteSACQuery(sac.WithNoAccess(context.Background()), metadata("Integration", permissions.GlobalScope))
 	assert.Equal(t, `base_query:<match_none_query:<> > `, got.String())
 	assert.NoError(t, err)
 	assert.Panics(t, func() {
-		_, _ = GetReadWriteSACQuery(context.Background(), resources.Namespace)
+		_, _ = GetReadWriteSACQuery(context.Background(), metadata("Namespace", permissions.NamespaceScope))
 	})
+}
+
+func metadata(name permissions.Resource, scope permissions.ResourceScope) permissions.ResourceMetadata {
+	md := permissions.ResourceMetadata{
+		Resource: name,
+		Scope:    scope,
+	}
+	return md
 }
 
 func createTestReadMultipleResourcesSomeWithNamespaceScope(t *testing.T) sac.ScopeCheckerCore {
