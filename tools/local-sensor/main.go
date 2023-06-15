@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/binary"
 	"encoding/json"
 	"flag"
@@ -24,14 +22,13 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
-	"github.com/stackrox/rox/pkg/clusterid"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	commonSensor "github.com/stackrox/rox/sensor/common/sensor"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
+	"github.com/stackrox/rox/sensor/debugger/certs"
 	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/debugger/message"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
@@ -313,6 +310,10 @@ func main() {
 		WithResyncPeriod(localConfig.ResyncPeriod).
 		WithWorkloadManager(workloadManager)
 
+	if isFakeCentral {
+		sensorConfig = sensorConfig.WithCertsParser(certs.NewSensorCertsParser())
+	}
+
 	if localConfig.RecordK8sEnabled {
 		traceRec := &k8s.TraceWriter{
 			Destination: path.Clean(localConfig.RecordK8sFile),
@@ -413,21 +414,10 @@ func setupCentralWithRealConnection(localConfig localSensorConfig) centralclient
 }
 
 func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclient.CentralConnectionFactory, *centralDebug.FakeService) {
-	//utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "tools/local-sensor/certs/cert.pem"))
-	//utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "tools/local-sensor/certs/key.pem"))
-	//utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "tools/local-sensor/certs/caCert.pem"))
-	//utils.CrashOnError(os.Setenv("ROX_MTLS_CA_KEY_FILE", "tools/local-sensor/certs/caKey.pem"))
-	mtls.LeafCertificateFromFile = func() (tls.Certificate, error) {
-		return tls.Certificate{}, nil
-	}
-
-	mtls.CACert = func() (*x509.Certificate, []byte, error) {
-		return &x509.Certificate{}, []byte{}, nil
-	}
-
-	clusterid.ParseClusterIDFromServiceCert = func(_ storage.ServiceType) (string, error) {
-		return "00000000-0000-4000-A000-000000000000", nil
-	}
+	// utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "tools/local-sensor/certs/cert.pem"))
+	// utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "tools/local-sensor/certs/key.pem"))
+	// utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "tools/local-sensor/certs/caCert.pem"))
+	// utils.CrashOnError(os.Setenv("ROX_MTLS_CA_KEY_FILE", "tools/local-sensor/certs/caKey.pem"))
 
 	var policies []*storage.Policy
 	var err error

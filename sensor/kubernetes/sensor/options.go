@@ -1,9 +1,12 @@
 package sensor
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"io"
 	"time"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
@@ -19,6 +22,7 @@ type CreateOptions struct {
 	resyncPeriod           time.Duration
 	k8sClient              client.Interface
 	traceWriter            io.Writer
+	certsParser            CertsParser
 	eventPipelineQueueSize int
 }
 
@@ -36,6 +40,7 @@ func ConfigWithDefaults() *CreateOptions {
 		localSensor:            false,
 		resyncPeriod:           1 * time.Minute,
 		traceWriter:            nil,
+		certsParser:            nil,
 		eventPipelineQueueSize: env.EventPipelineQueueSize.IntegerSetting(),
 	}
 }
@@ -88,4 +93,18 @@ func (cfg *CreateOptions) WithEventPipelineQueueSize(size int) *CreateOptions {
 func (cfg *CreateOptions) WithTraceWriter(trWriter io.Writer) *CreateOptions {
 	cfg.traceWriter = trWriter
 	return cfg
+}
+
+// WithCertsParser sets the CertsParser.
+// Default: nil
+func (cfg *CreateOptions) WithCertsParser(parser CertsParser) *CreateOptions {
+	cfg.certsParser = parser
+	return cfg
+}
+
+// CertsParser defines the functions to parse the certificates
+type CertsParser interface {
+	LeafCertificateFromFile() (tls.Certificate, error)
+	CACert() (*x509.Certificate, []byte, error)
+	ParseClusterIDFromServiceCert(storage.ServiceType) (string, error)
 }

@@ -127,15 +127,9 @@ type IssuedCert struct {
 	ID       *storage.ServiceIdentity
 }
 
-type LeafCertificateFromFileFn func() (tls.Certificate, error)
-
-var (
-	LeafCertificateFromFile LeafCertificateFromFileFn = leafCertificateFromFileImpl
-)
-
-// leafCertificateFromFileImpl reads a tls.Certificate (including private key and cert).
-func leafCertificateFromFileImpl() (tls.Certificate, error) {
-	return tls.LoadX509KeyPair(certFilePathSetting.Setting(), keyFilePathSetting.Setting())
+// LeafCertificateFromFile reads a tls.Certificate (including private key and cert).
+func LeafCertificateFromFile() (tls.Certificate, error) {
+	return GetCertificateParser().parser.LeafCertificateFromFile()
 }
 
 // CACertPEM returns the PEM-encoded CA certificate.
@@ -192,16 +186,9 @@ func readCA() (*x509.Certificate, []byte, []byte, error) {
 	return caCert, caCertFileContents, caCertDER, caCertErr
 }
 
-type CACertFn func() (*x509.Certificate, []byte, error)
-
-var (
-	CACert CACertFn = caCertImpl
-)
-
-// caCertImpl reads the cert from the local file system and returns the cert and the DER encoding.
-func caCertImpl() (*x509.Certificate, []byte, error) {
-	caCert, _, caCertDER, caCertErr := readCA()
-	return caCert, caCertDER, caCertErr
+// CACert reads the cert from the local file system and returns the cert and the DER encoding.
+func CACert() (*x509.Certificate, []byte, error) {
+	return GetCertificateParser().parser.CACert()
 }
 
 // CAForSigning reads the cert and key from the local file system and returns

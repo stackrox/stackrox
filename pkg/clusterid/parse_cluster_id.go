@@ -5,19 +5,51 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/sync"
 )
-
-type ParseClusterIDFromServiceCertFn func(storage.ServiceType) (string, error)
 
 var (
-	ParseClusterIDFromServiceCert ParseClusterIDFromServiceCertFn = parseClusterIDFromServiceCertImpl
+	once     sync.Once
+	instance *parserWrapper
 )
 
-// parseClusterIDFromServiceCertImpl parses the service cert to extract cluster id.
+// Parser defines the function to parse the cluster ID from the service cert.
+type Parser interface {
+	ParseClusterIDFromServiceCert(expectedServiceType storage.ServiceType) (string, error)
+}
+
+type parserWrapper struct {
+	parser Parser
+}
+
+type parserImpl struct {
+}
+
+// GetParser returns the parserWrapper.
+func GetParser() *parserWrapper {
+	once.Do(func() {
+		instance = &parserWrapper{
+			parser: &parserImpl{},
+		}
+	})
+	return instance
+}
+
+// Override the internal parser. This should only be used for testing.
+func (p *parserWrapper) Override(parser Parser) {
+	if buildinfo.ReleaseBuild {
+		// This is not allowed in release builds
+		return
+	}
+	p.parser = parser
+}
+
+// ParseClusterIDFromServiceCert parses the service cert to extract cluster id.
 // expectedServiceType specifies an optional service type expected for this cert. Use UNKNOWN_SERVICE
 // for no expectation.
-func parseClusterIDFromServiceCertImpl(expectedServiceType storage.ServiceType) (string, error) {
+func (p *parserImpl) ParseClusterIDFromServiceCert(expectedServiceType storage.ServiceType) (string, error) {
 	leaf, err := mtls.LeafCertificateFromFile()
 	if err != nil {
 		return "", errors.Wrap(err, "Could not read sensor certificate")
@@ -38,4 +70,11 @@ func parseClusterIDFromServiceCertImpl(expectedServiceType storage.ServiceType) 
 	}
 
 	return subj.Identifier, nil
+}
+
+// ParseClusterIDFromServiceCert parses the service cert to extract cluster id.
+// expectedServiceType specifies an optional service type expected for this cert. Use UNKNOWN_SERVICE
+// for no expectation.
+func ParseClusterIDFromServiceCert(expectedServiceType storage.ServiceType) (string, error) {
+	return GetParser().parser.ParseClusterIDFromServiceCert(expectedServiceType)
 }
