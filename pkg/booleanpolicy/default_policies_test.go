@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/defaults/policies"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/kubernetes"
@@ -93,8 +92,6 @@ func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 	} {
 		suite.customPolicies[customPolicy.GetName()] = customPolicy
 	}
-
-	suite.T().Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
 }
 
 func (suite *DefaultPoliciesTestSuite) TearDownSuite() {}
@@ -3282,10 +3279,6 @@ func (suite *DefaultPoliciesTestSuite) getViolations(policy *storage.Policy, dep
 }
 
 func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
-	if !features.NetworkPolicySystemPolicy.Enabled() {
-		return
-	}
-
 	testCases := map[string]struct {
 		netpolsApplied *augmentedobjs.NetworkPoliciesApplied
 		alerts         []*storage.Alert_Violation

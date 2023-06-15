@@ -15,10 +15,6 @@ var (
 	// ComplianceOperatorCheckResults enables getting compliance results from the compliance operator
 	ComplianceOperatorCheckResults = registerFeature("Enable fetching of compliance operator results", "ROX_COMPLIANCE_OPERATOR_INTEGRATION", true)
 
-	// NetworkPolicySystemPolicy enables two system policy fields (Missing (Ingress|Egress) Network Policy) to check deployments
-	// against network policies applied in the secured cluster.
-	NetworkPolicySystemPolicy = registerFeature("Enable NetworkPolicy-related system policy fields", "ROX_NETPOL_FIELDS", true)
-
 	// QuayRobotAccounts enables Robot accounts as credentials in Quay Image Integration.
 	QuayRobotAccounts = registerFeature("Enable Robot accounts in Quay Image Integration", "ROX_QUAY_ROBOT_ACCOUNTS", true)
 

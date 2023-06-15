@@ -23,9 +23,8 @@ var (
 	//go:embed files/*.json
 	policiesFS embed.FS
 
-	featureFlagFileGuard = map[string]features.FeatureFlag{
-		"deployment_has_ingress_network_policy.json": features.NetworkPolicySystemPolicy,
-	}
+	// featureFlagFileGuard is a map indexed by file name that ignores files if the feature flag is not enabled.
+	featureFlagFileGuard = map[string]features.FeatureFlag{}
 )
 
 // DefaultPolicies returns a slice of the default policies.
