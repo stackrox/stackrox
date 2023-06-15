@@ -11,7 +11,7 @@ export const summaryCountsOpname = 'summary_counts';
 export const getAllNamespacesByClusterOpname = 'getAllNamespacesByCluster';
 export const alertCountsBySeverityOpname = 'alertCountsBySeverity';
 export const mostRecentAlertsOpname = 'mostRecentAlerts';
-export const getImagesOpname = 'getImages';
+export const getImagesAtMostRiskOpname = 'getImagesAtMostRisk';
 export const deploymentsWithProcessInfoAlias = 'deploymentswithprocessinfo';
 export const agingImagesQueryOpname = 'agingImagesQuery';
 export const alertsSummaryCountsGroupByCategoryAlias = 'alerts/summary/counts_CATEGORY';
@@ -25,7 +25,9 @@ const routeMatcherMapForViolationsByPolicySeverity = {
     ...getRouteMatcherMapForGraphQL([alertCountsBySeverityOpname]),
     ...getRouteMatcherMapForGraphQL([mostRecentAlertsOpname]),
 };
-const routeMatcherMapForImagesAtMostRisk = getRouteMatcherMapForGraphQL([getImagesOpname]);
+const routeMatcherMapForImagesAtMostRisk = getRouteMatcherMapForGraphQL([
+    getImagesAtMostRiskOpname,
+]);
 const routeMatcherMapForDeploymentsAtMostRisk = {
     [deploymentsWithProcessInfoAlias]: {
         method: 'GET',
