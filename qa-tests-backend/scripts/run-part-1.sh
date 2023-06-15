@@ -37,6 +37,11 @@ config_part_1() {
 
     export_test_environment
 
+    if is_CI && ! command -v roxctl >/dev/null 2>&1; then
+        make cli_linux-amd64
+        make cli-install
+    fi
+
     setup_gcp
     setup_deployment_env false false
     setup_podsecuritypolicies_config
