@@ -94,6 +94,7 @@ func (s *Server) RunForever() {
 	}
 }
 
+// Stop first attemps a Shutdown and then a Close of the metrics servers.
 func (s *Server) Stop(ctx context.Context) {
 	if s == nil {
 		return
@@ -102,13 +103,19 @@ func (s *Server) Stop(ctx context.Context) {
 	if metricsEnabled() {
 		if err := s.metricsServer.Shutdown(ctx); err != nil {
 			log.Errorw("Failed to shutdown metrics server", zap.Error(err))
-			s.metricsServer.Close()
+			err := s.metricsServer.Close()
+			if err != nil {
+				log.Errorw("Failed to close metrics server", zap.Error(err))
+			}
 		}
 	}
 	if secureMetricsEnabled() {
 		if err := s.secureMetricsServer.Shutdown(ctx); err != nil {
 			log.Errorw("Failed to shutdown secure metrics server", zap.Error(err))
-			s.secureMetricsServer.Close()
+			err := s.secureMetricsServer.Close()
+			if err != nil {
+				log.Errorw("Failed to close metrics server", zap.Error(err))
+			}
 		}
 	}
 }

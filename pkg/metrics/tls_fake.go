@@ -34,6 +34,7 @@ func testClient() (*http.Client, error) {
 	return client, nil
 }
 
+// FakeTLSConfigurer is a fake TLS configurer with pre-defined certificates.
 type FakeTLSConfigurer struct {
 	tlsConfig *tls.Config
 }

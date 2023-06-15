@@ -39,6 +39,7 @@ type TLSConfigurer interface {
 	WatchForChanges()
 }
 
+// NilTLSConfigurer is a no-op configurer.
 type NilTLSConfigurer struct{}
 
 // WatchForChanges does nothing.
@@ -91,6 +92,7 @@ func NewTLSConfigurer(certDir, clientCANamespace, clientCAConfigMap string) (TLS
 	return cfgr, nil
 }
 
+// NewTLSConfigurerFromEnv creates a new TLS configurer based on environment variables.
 func NewTLSConfigurerFromEnv() TLSConfigurer {
 	if !secureMetricsEnabled() {
 		return nil
