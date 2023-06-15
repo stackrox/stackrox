@@ -95,12 +95,24 @@ deploy_earlier_central() {
     ls -l "bin/$TEST_HOST_PLATFORM/roxctl"
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" \
-    MAIN_IMAGE_TAG="$EARLIER_TAG" \
-    SCANNER_IMAGE="$REGISTRY/scanner:$(cat SCANNER_VERSION)" \
-    SCANNER_DB_IMAGE="$REGISTRY/scanner-db:$(cat SCANNER_VERSION)" \
-    POD_SECURITY_POLICIES=false \
-    ./deploy/k8s/central.sh
+#    PATH="bin/$TEST_HOST_PLATFORM:$PATH" \
+#    MAIN_IMAGE_TAG="$EARLIER_TAG" \
+#    SCANNER_IMAGE="$REGISTRY/scanner:$(cat SCANNER_VERSION)" \
+#    SCANNER_DB_IMAGE="$REGISTRY/scanner-db:$(cat SCANNER_VERSION)" \
+#    POD_SECURITY_POLICIES=false \
+#    ./deploy/k8s/central.sh
+
+    # Let's try helm
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart
+    sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/early-stackrox-central-services-chart/internal/defaults.yaml
+    helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
+         --set central.db.enabled=false \
+         --set central.exposure.loadBalancer.enabled=true \
+         --set system.enablePodSecurityPolicies=false \
+         --set central.image.tag="${EARLIER_TAG}" \
+         --set central.db.image.tag="${EARLIER_TAG}" \
+         --set scanner.image.tag="$(cat SCANNER_VERSION)" \
+         --set scanner.dbImage.tag="$(cat SCANNER_VERSION)"
 
     export_central_basic_auth_creds
 }
