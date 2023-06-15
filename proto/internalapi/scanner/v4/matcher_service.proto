@@ -20,8 +20,7 @@ message Metadata {
 // Matcher finds vulnerabilities in index reports.
 service Matcher {
 
-    // GetVulnerabilities get a VulnerabilityReport and return it.
-    // The Manifest must have been Indexed first via the Indexer.
+    // GetVulnerabilities returns a VulnerabilityReport for a previously indexed manifest.
     rpc GetVulnerabilities (GetVulnerabilitiesRequest) returns (VulnerabilityReport);
 
     // GetMetadata returns information on vulnerability metadata, ek.g., last update timestamp.
