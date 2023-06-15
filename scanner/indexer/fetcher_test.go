@@ -2,18 +2,19 @@ package indexer
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFetcherSimple(t *testing.T) {
 	root, err := filepath.Abs("testdata")
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
 	a := newLocalFetchArena(root)
+
 	image := "quay.io/stackrox-io/main:4.0.0"
 	t.Run(image, func(t *testing.T) {
 		run(t, a, image, 13)
@@ -22,11 +23,10 @@ func TestFetcherSimple(t *testing.T) {
 
 func TestFetcherParallel(t *testing.T) {
 	root, err := filepath.Abs("testdata")
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
 	a := newLocalFetchArena(root)
+
 	// Repeat each image to test duplicate calls.
 	for _, testcase := range []struct {
 		name   string
@@ -86,32 +86,23 @@ func TestFetcherParallel(t *testing.T) {
 //
 // run is just simply ensuring there are no errors when fetching the manifest and layers
 // of the image and the layer's path is set properly.
-func run(t *testing.T, a *localFetchArena, image string, layers int) {
+func run(t *testing.T, a *localFetchArena, image string, expectedLayers int) {
 	ctx := context.Background()
 
 	m, err := a.Get(ctx, image)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
 	r := a.Realizer(ctx)
 
 	err = r.Realize(ctx, m.Layers)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
-	if len(m.Layers) != layers {
-		t.Error(fmt.Errorf("did not get expected number of layers (%d != %d)", len(m.Layers), layers))
-	}
+	assert.Equal(t, expectedLayers, len(m.Layers), "did not get expected number of layers")
 	for _, l := range m.Layers {
 		t.Logf("%+v", l)
+
 		expected := filepath.Join(a.root, l.Hash.String())
-		if l.URI != expected {
-			t.Error(fmt.Errorf("URI != local filepath (%s != %s)", l.URI, expected))
-		}
+		assert.Equal(t, expected, l.URI, "URI != local filepath")
 	}
-	if err := r.Close(); err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, r.Close())
 }

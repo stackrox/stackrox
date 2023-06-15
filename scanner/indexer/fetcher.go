@@ -21,7 +21,7 @@ import (
 
 var (
 	_ indexer.FetchArena = (*localFetchArena)(nil)
-	_ indexer.Realizer   = (*localFetcher)(nil)
+	_ indexer.Realizer   = (*localRealizer)(nil)
 )
 
 // localFetchArena implements indexer.FetchArena.
@@ -53,7 +53,7 @@ func newLocalFetchArena(root string) *localFetchArena {
 
 // Realizer returns an indexer.Realizer.
 func (f *localFetchArena) Realizer(_ context.Context) indexer.Realizer {
-	return &localFetcher{
+	return &localRealizer{
 		f: f,
 	}
 }
@@ -275,7 +275,7 @@ func (f *localFetchArena) Close(ctx context.Context) error {
 	return nil
 }
 
-type localFetcher struct {
+type localRealizer struct {
 	f *localFetchArena
 	// clean lists the layer hashes to clean up once no longer needed.
 	clean []string
@@ -284,7 +284,7 @@ type localFetcher struct {
 // Realize populates the local filepath for each layer.
 //
 // It is assumed the layer's URI is the local filesystem path to the layer.
-func (f *localFetcher) Realize(_ context.Context, ls []*claircore.Layer) error {
+func (f *localRealizer) Realize(_ context.Context, ls []*claircore.Layer) error {
 	f.clean = make([]string, len(ls))
 	for i, l := range ls {
 		f.clean[i] = l.Hash.String()
@@ -298,7 +298,7 @@ func (f *localFetcher) Realize(_ context.Context, ls []*claircore.Layer) error {
 // Close marks all the layers' backing files as unused.
 //
 // This method may actually delete the backing files.
-func (f *localFetcher) Close() error {
+func (f *localRealizer) Close() error {
 	var errs []error
 	for _, d := range f.clean {
 		if err := f.f.forget(d); err != nil {

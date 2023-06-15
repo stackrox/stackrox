@@ -26,16 +26,16 @@ func WithAuth(auth authn.Authenticator) Option {
 	}
 }
 
-// DefaultPlatform is the linux operating system
+// defaultPlatform is the linux operating system
 // and the running program's architecture.
-var DefaultPlatform = v1.Platform{
+var defaultPlatform = v1.Platform{
 	Architecture: runtime.GOARCH,
 	OS:           "linux", // We only support Linux containers at this time.
 }
 
 // WithPlatform specifies the desired OS and architecture of the image.
 //
-// Default: DefaultPlatform.
+// Default: defaultPlatform.
 func WithPlatform(platform v1.Platform) Option {
 	return func(o *options) {
 		o.platform = platform
@@ -45,7 +45,7 @@ func WithPlatform(platform v1.Platform) Option {
 func makeOptions(opts ...Option) options {
 	o := options{
 		auth:     authn.Anonymous,
-		platform: DefaultPlatform,
+		platform: defaultPlatform,
 	}
 
 	for _, opt := range opts {
