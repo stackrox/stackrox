@@ -21,19 +21,6 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-type tlsConfigLoader struct {
-	certDir           string
-	clientCAConfigMap string
-	clientCANamespace string
-	k8sClient         *kubernetes.Clientset
-
-	clientCAs       []*x509.Certificate
-	serverCerts     []tls.Certificate
-	tlsConfigHolder *certwatch.TLSConfigHolder
-
-	mutex sync.RWMutex
-}
-
 func certFilePath() string {
 	certDir := env.SecureMetricsCertDir.Setting()
 	certFile := filepath.Join(certDir, env.TLSCertFileName)
@@ -46,18 +33,51 @@ func keyFilePath() string {
 	return keyFile
 }
 
-// NewTLSConfigLoader creates a new TLS config loader.
-func NewTLSConfigLoader(certDir, clientCANamespace, clientCAConfigMap string) (*tlsConfigLoader, error) {
+// TLSConfigurer instantiates and updates the TLS configuration of a web server.
+type TLSConfigurer interface {
+	TLSConfig() (*tls.Config, error)
+	WatchForChanges()
+}
+
+type NilTLSConfigurer struct{}
+
+// WatchForChanges does nothing.
+func (t *NilTLSConfigurer) WatchForChanges() {}
+
+// TLSConfig returns nil.
+func (t *NilTLSConfigurer) TLSConfig() (*tls.Config, error) {
+	return nil, nil
+}
+
+// TLSConfigurerImpl holds the current TLS configuration. The configurer
+// watches the certificate directory for changes and updates the server
+// certificates in the TLS config. The client CA is updated based on a
+// Kubernetes config map watcher.
+type TLSConfigurerImpl struct {
+	certDir           string
+	clientCAConfigMap string
+	clientCANamespace string
+	k8sClient         *kubernetes.Clientset
+
+	clientCAs       []*x509.Certificate
+	serverCerts     []tls.Certificate
+	tlsConfigHolder *certwatch.TLSConfigHolder
+
+	mutex sync.RWMutex
+}
+
+// NewTLSConfigurer creates a new TLS configurer.
+func NewTLSConfigurer(certDir, clientCANamespace, clientCAConfigMap string) (TLSConfigurer, error) {
 	tlsRootConfig := verifier.DefaultTLSServerConfig(nil, nil)
 	tlsRootConfig.ClientAuth = tls.RequireAndVerifyClientCert
-	loader := &tlsConfigLoader{
+	cfgr := &TLSConfigurerImpl{
 		certDir:           certDir,
 		clientCANamespace: clientCANamespace,
 		clientCAConfigMap: clientCAConfigMap,
 		tlsConfigHolder:   certwatch.NewTLSConfigHolder(tlsRootConfig),
 	}
-	loader.tlsConfigHolder.AddServerCertSource(&loader.serverCerts)
-	loader.tlsConfigHolder.AddClientCertSource(&loader.clientCAs)
+	cfgr.tlsConfigHolder.AddServerCertSource(&cfgr.serverCerts)
+	cfgr.tlsConfigHolder.AddClientCertSource(&cfgr.clientCAs)
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -67,12 +87,27 @@ func NewTLSConfigLoader(certDir, clientCANamespace, clientCAConfigMap string) (*
 	if err != nil {
 		return nil, err
 	}
-	loader.k8sClient = clientset
-	return loader, nil
+	cfgr.k8sClient = clientset
+	return cfgr, nil
+}
+
+func NewTLSConfigurerFromEnv() TLSConfigurer {
+	if !secureMetricsEnabled() {
+		return nil
+	}
+
+	certDir := env.SecureMetricsCertDir.Setting()
+	clientCANamespace := env.SecureMetricsClientCANamespace.Setting()
+	clientCAConfigMap := env.SecureMetricsClientCAConfigMap.Setting()
+	cfgr, err := NewTLSConfigurer(certDir, clientCANamespace, clientCAConfigMap)
+	if err != nil {
+		log.Error(errors.Wrap(err, "failed to create TLS config loader"))
+	}
+	return cfgr
 }
 
 // WatchForChanges watches for changes of the server TLS certificate files and the client CA config map.
-func (t *tlsConfigLoader) WatchForChanges() {
+func (t *TLSConfigurerImpl) WatchForChanges() {
 	// Watch for changes of server TLS certificate.
 	certwatch.WatchCertDir(t.certDir, t.getCertificateFromDirectory, t.updateCertificate)
 
@@ -80,14 +115,15 @@ func (t *tlsConfigLoader) WatchForChanges() {
 	go t.watchForClientCAChanges()
 }
 
-func (t *tlsConfigLoader) TLSConfig() (*tls.Config, error) {
+// TLSConfig returns the current TLS config.
+func (t *TLSConfigurerImpl) TLSConfig() (*tls.Config, error) {
 	if t == nil {
 		return nil, nil
 	}
 	return t.tlsConfigHolder.TLSConfig()
 }
 
-func (t *tlsConfigLoader) getCertificateFromDirectory(dir string) (*tls.Certificate, error) {
+func (t *TLSConfigurerImpl) getCertificateFromDirectory(dir string) (*tls.Certificate, error) {
 	certFile := filepath.Join(dir, env.TLSCertFileName)
 	if exists, err := fileutils.Exists(certFile); err != nil || !exists {
 		if err != nil {
@@ -119,7 +155,7 @@ func (t *tlsConfigLoader) getCertificateFromDirectory(dir string) (*tls.Certific
 	return &cert, nil
 }
 
-func (t *tlsConfigLoader) updateCertificate(cert *tls.Certificate) {
+func (t *TLSConfigurerImpl) updateCertificate(cert *tls.Certificate) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 	if cert == nil {
@@ -130,7 +166,7 @@ func (t *tlsConfigLoader) updateCertificate(cert *tls.Certificate) {
 	t.tlsConfigHolder.UpdateTLSConfig()
 }
 
-func (t *tlsConfigLoader) watchForClientCAChanges() {
+func (t *TLSConfigurerImpl) watchForClientCAChanges() {
 	for {
 		watcher, err := t.k8sClient.CoreV1().ConfigMaps(t.clientCANamespace).Watch(
 			context.Background(),
@@ -145,7 +181,7 @@ func (t *tlsConfigLoader) watchForClientCAChanges() {
 	}
 }
 
-func (t *tlsConfigLoader) updateClientCA(eventChannel <-chan watch.Event) {
+func (t *TLSConfigurerImpl) updateClientCA(eventChannel <-chan watch.Event) {
 	for {
 		event, open := <-eventChannel
 		if open {

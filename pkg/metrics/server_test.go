@@ -2,9 +2,8 @@ package metrics
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -41,7 +40,7 @@ func TestMetricsServerAddressEnvs(t *testing.T) {
 			t.Setenv(env.MetricsPort.EnvVar(), c.metricsPort)
 			t.Setenv(env.SecureMetricsPort.EnvVar(), c.secureMetricsPort)
 
-			server := NewServer(CentralSubsystem)
+			server := NewServer(CentralSubsystem, &NilTLSConfigurer{})
 
 			require.NotNil(t, server)
 			assert.Equal(t, env.MetricsPort.Setting(), server.metricsServer.Addr)
@@ -85,33 +84,49 @@ func TestMetricsServerPanic(t *testing.T) {
 			}
 			t.Setenv(env.MetricsPort.EnvVar(), c.metricsPort)
 			t.Setenv(env.SecureMetricsPort.EnvVar(), c.secureMetricsPort)
-			server := NewServer(CentralSubsystem)
+			server := NewServer(CentralSubsystem, &NilTLSConfigurer{})
+			defer server.Stop(context.TODO())
 
 			if c.releaseBuild {
 				assert.NotPanics(t, func() { server.RunForever() })
 			} else {
 				assert.Panics(t, func() { server.RunForever() })
 			}
-			server.Stop(context.TODO())
 		})
 	}
 }
 
 func TestMetricsServerHTTPRequest(t *testing.T) {
 	t.Setenv(env.SecureMetricsPort.EnvVar(), "disabled")
-	server := NewServer(CentralSubsystem)
+	server := NewServer(CentralSubsystem, &NilTLSConfigurer{})
+	defer server.Stop(context.TODO())
 	server.RunForever()
 
-	request := httptest.NewRequest(http.MethodGet, "/metrics", nil)
-	recorder := httptest.NewRecorder()
-	server.metricsServer.Handler.ServeHTTP(recorder, request)
-	resp := recorder.Result()
-	_, err := ioutil.ReadAll(resp.Body)
-	assert.NoError(t, err)
+	resp, err := http.Get("http://localhost:9090/metrics")
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	msg, err := io.ReadAll(resp.Body)
 
-	resp.Body.Close()
-	server.Stop(context.TODO())
+	require.NoError(t, err)
+	assert.Contains(t, string(msg), "go_gc_duration_seconds")
 }
 
+func TestSecureMetricsServerHTTPRequest(t *testing.T) {
+	t.Setenv(env.MetricsPort.EnvVar(), "disabled")
+	t.Setenv(env.SecureMetricsCertDir.EnvVar(), "./testdata")
+	fakeTLSConfigurer, err := newFakeTLSConfigurer()
+	require.NoError(t, err)
+	server := NewServer(CentralSubsystem, fakeTLSConfigurer)
+	defer server.Stop(context.TODO())
+	server.RunForever()
 
-// TOOD: test https server
+	client, err := testClient()
+	require.NoError(t, err)
+	resp, err := client.Get("https://localhost:9443/metrics")
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	msg, err := io.ReadAll(resp.Body)
+
+	require.NoError(t, err)
+	assert.Contains(t, string(msg), "go_gc_duration_seconds")
+}

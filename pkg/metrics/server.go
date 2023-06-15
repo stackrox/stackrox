@@ -24,12 +24,12 @@ var log = logging.LoggerForModule()
 type Server struct {
 	metricsServer       *http.Server
 	secureMetricsServer *http.Server
-	tlsConfigLoader     *tlsConfigLoader
+	tlsConfigurer       TLSConfigurer
 	uptimeMetric        prometheus.Gauge
 }
 
 // NewServer creates and returns a new metrics http(s) server with configured settings.
-func NewServer(subsystem Subsystem) *Server {
+func NewServer(subsystem Subsystem, tlsConfigurer TLSConfigurer) *Server {
 	mux := http.NewServeMux()
 	mux.Handle(metricsURLPath, promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{}))
 
@@ -41,11 +41,9 @@ func NewServer(subsystem Subsystem) *Server {
 		}
 	}
 
-	var tlsConfigLoader *tlsConfigLoader
 	var secureMetricsServer *http.Server
 	if secureMetricsEnabled() {
-		tlsConfigLoader = createTLSConfigLoader()
-		tlsConfig, err := tlsConfigLoader.TLSConfig()
+		tlsConfig, err := tlsConfigurer.TLSConfig()
 		if err != nil {
 			utils.Should(errors.Wrap(err, "failed to create TLS config loader"))
 			return nil
@@ -69,7 +67,7 @@ func NewServer(subsystem Subsystem) *Server {
 	return &Server{
 		metricsServer:       metricsServer,
 		secureMetricsServer: secureMetricsServer,
-		tlsConfigLoader:     tlsConfigLoader,
+		tlsConfigurer:       tlsConfigurer,
 		uptimeMetric:        uptimeMetric,
 	}
 }
@@ -87,7 +85,7 @@ func (s *Server) RunForever() {
 
 	runSecureMetrics := secureMetricsEnabled() && s.secureMetricsValid()
 	if runSecureMetrics {
-		s.tlsConfigLoader.WatchForChanges()
+		s.tlsConfigurer.WatchForChanges()
 		go runForeverTLS(s.secureMetricsServer)
 	}
 
@@ -146,26 +144,11 @@ func (s *Server) secureMetricsValid() bool {
 		log.Error(errors.Wrap(err, "secure metrics server is disabled"))
 		return false
 	}
-	if s.tlsConfigLoader == nil {
-		utils.Should(errors.New("invalid TLS config loader"))
+	if s.tlsConfigurer == nil {
+		utils.Should(errors.New("invalid TLS configurer"))
 		return false
 	}
 	return true
-}
-
-func createTLSConfigLoader() *tlsConfigLoader {
-	if !secureMetricsEnabled() {
-		return nil
-	}
-
-	certDir := env.SecureMetricsCertDir.Setting()
-	clientCANamespace := env.SecureMetricsClientCANamespace.Setting()
-	clientCAConfigMap := env.SecureMetricsClientCAConfigMap.Setting()
-	tlsConfigLoader, err := NewTLSConfigLoader(certDir, clientCANamespace, clientCAConfigMap)
-	if err != nil {
-		log.Error(errors.Wrap(err, "failed to create TLS config loader"))
-	}
-	return tlsConfigLoader
 }
 
 func gatherUptimeMetricForever(startTime time.Time, uptimeMetric prometheus.Gauge) {
