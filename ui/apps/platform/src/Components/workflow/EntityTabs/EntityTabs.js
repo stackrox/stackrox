@@ -15,7 +15,7 @@ const EntityTabs = ({ entityType, activeTab }) => {
     const workflowState = useContext(workflowStateContext);
     function getTab(tabType) {
         return {
-            group: entityGroupMap[tabType],
+            group: entityGroups[entityGroupMap[tabType]],
             value: tabType,
             text: pluralize(entityLabels[tabType]),
             to: workflowState.pushList(tabType).setSearch('').toUrl(),
