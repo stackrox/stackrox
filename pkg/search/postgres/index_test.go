@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/timeutil"
 	pgStore "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/multitest/postgres"
@@ -33,7 +32,7 @@ type IndexSuite struct {
 	pool    postgres.DB
 	store   pgStore.Store
 	indexer interface {
-		Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
+		Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	}
 }
 

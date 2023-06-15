@@ -10,7 +10,6 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	search "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
@@ -25,13 +24,13 @@ type indexerImpl struct {
 	db postgres.DB
 }
 
-func (b *indexerImpl) Count(ctx context.Context, q *v1.Query, _ ...blevesearch.SearchOption) (int, error) {
+func (b *indexerImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "Image")
 
 	return pgSearch.RunCountRequest(ctx, v1.SearchCategory_IMAGES, q, b.db)
 }
 
-func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, _ ...blevesearch.SearchOption) ([]search.Result, error) {
+func (b *indexerImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Image")
 
 	return pgSearch.RunSearchRequest(ctx, v1.SearchCategory_IMAGES, q, b.db)

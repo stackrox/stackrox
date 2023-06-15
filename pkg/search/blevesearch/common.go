@@ -255,7 +255,7 @@ func resolveMatchFieldQuery(ctx bleveContext, index bleve.Index, category v1.Sea
 }
 
 // RunSearchRequest builds a query and runs it against the index.
-func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index, optionsMap searchPkg.OptionsMap, searchOpts ...SearchOption) ([]searchPkg.Result, error) {
+func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index, optionsMap searchPkg.OptionsMap) ([]searchPkg.Result, error) {
 	sortOrder, searchAfter, err := getSortOrderAndSearchAfter(q.GetPagination(), optionsMap)
 	if err != nil {
 		return nil, err
@@ -267,17 +267,6 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index
 		searchAfter:       searchAfter,
 	}
 
-	opts := opts{}
-	for _, opt := range searchOpts {
-		if err := opt(&opts); err != nil {
-			return nil, errors.Wrap(err, "could not apply search option")
-		}
-	}
-
-	if opts.hook != nil {
-		ctx.hook = opts.hook(category)
-	}
-
 	bleveQuery, highlightContext, err := buildQuery(ctx, index, category, q, optionsMap)
 	if err != nil {
 		return nil, err
@@ -286,18 +275,8 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index
 }
 
 // RunCountRequest builds a query and runs it to get the count of matches against the index.
-func RunCountRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index, optionsMap searchPkg.OptionsMap, searchOpts ...SearchOption) (int, error) {
+func RunCountRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index, optionsMap searchPkg.OptionsMap) (int, error) {
 	var ctx bleveContext
-	var opts opts
-	for _, opt := range searchOpts {
-		if err := opt(&opts); err != nil {
-			return 0, errors.Wrap(err, "could not apply search option")
-		}
-	}
-
-	if opts.hook != nil {
-		ctx.hook = opts.hook(category)
-	}
 
 	bleveQuery, _, err := buildQuery(ctx, index, category, q, optionsMap)
 	if err != nil {
