@@ -169,9 +169,40 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 				continue
 			}
 			if strings.Contains(field, "=") {
-				opts.Index = stringutils.GetAfter(field, "=")
+				indexConfig := stringutils.GetAfter(field, "=")
+				if strings.Contains(indexConfig, ":") {
+					indexConfigData := strings.Split(indexConfig, ";")
+					indexOptions := &PostgresIndexOptions{}
+					for _, configElem := range indexConfigData {
+						configKeyValuePair := strings.Split(configElem, ":")
+						if len(configKeyValuePair) < 2 {
+							continue
+						}
+						key := strings.ToLower(configKeyValuePair[0])
+						value := configKeyValuePair[1]
+						switch key {
+						case "name":
+							indexOptions.IndexName = value
+						case "type":
+							indexOptions.IndexType = value
+						case "category":
+							indexOptions.IndexCategory = value
+						case "priority":
+							indexOptions.IndexPriority = value
+						}
+					}
+					opts.Index = append(opts.Index, indexOptions)
+				} else {
+					indexOptions := &PostgresIndexOptions{
+						IndexType: indexConfig,
+					}
+					opts.Index = append(opts.Index, indexOptions)
+				}
 			} else {
-				opts.Index = defaultIndex
+				indexOptions := &PostgresIndexOptions{
+					IndexType: defaultIndex,
+				}
+				opts.Index = append(opts.Index, indexOptions)
 			}
 		case field == "ignore_unique":
 			// if this is an embedded entity that defines a unique constraint, then we want to ignore it as
