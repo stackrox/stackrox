@@ -11,7 +11,6 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	search "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
