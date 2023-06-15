@@ -813,7 +813,4 @@ mitre:
 
 .PHONY: bootstrap_migration
 bootstrap_migration:
-	$(SILENT)echo "package migrations" > migrator/migrations/gen.go
-	$(SILENT)echo "//go:generate bootstrap_new_migration \"${DESCRIPTION}\"" >> migrator/migrations/gen.go
-	$(SILENT)PATH="$(GOTOOLS_BIN):$(PATH):$(BASE_DIR)/tools/generate-helpers" go generate -v -x migrator/migrations/gen.go
-	$(SILENT)rm migrator/migrations/gen.go
+	$(SILENT)if [[ "x${DESCRIPTION}" == "x" ]]; then echo "Please set a description for your migration in the DESCRIPTION environment variable"; else go run tools/generate-helpers/bootstrap-migration/main.go --root . --description "${DESCRIPTION}" ;fi
