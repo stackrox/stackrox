@@ -2,9 +2,10 @@ name: Start Updater
 on:
   push:
     branches:
-    - 'yli3/**'
+      - "yli3/**"
+      - "tm/test-scanner-updater-checkout"
   schedule:
-  - cron: '0 */3 * * *'
+    - cron: "0 */3 * * *"
 
 jobs:
   read-versions:
@@ -12,22 +13,22 @@ jobs:
     outputs:
       matrix: ${{ steps.output-matrix.outputs.matrix }}
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Read versions
-      id: versions
-      run: |
-        VERSIONS=$(cat scanner/updater/version/RELEASE_VERSION)
-        echo "$VERSIONS" | grep -Eo '([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+\.x-[0-9]+-g[a-f0-9]+)' > versions.txt
+      - name: Read versions
+        id: versions
+        run: |
+          VERSIONS=$(cat scanner/updater/version/RELEASE_VERSION)
+          echo "$VERSIONS" | grep -Eo '([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+\.x-[0-9]+-g[a-f0-9]+)' > versions.txt
 
-    - name: Generate matrix JSON
-      id: output-matrix
-      run: |
-        EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-        MATRIX=$(jq -Rs '{ versions: split("\n")[:-1] }' versions.txt)
-        echo "matrix<<EOF"$'\n'"${MATRIX}"$'\n'EOF >> "${GITHUB_OUTPUT}"
-        echo "${MATRIX}"
+      - name: Generate matrix JSON
+        id: output-matrix
+        run: |
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          MATRIX=$(jq -Rs '{ versions: split("\n")[:-1] }' versions.txt)
+          echo "matrix<<EOF"$'\n'"${MATRIX}"$'\n'EOF >> "${GITHUB_OUTPUT}"
+          echo "${MATRIX}"
 
   output-versions:
     needs: read-versions
@@ -38,23 +39,23 @@ jobs:
     env:
       ROX_PRODUCT_VERSION: ${{ matrix.version }}
     steps:
-    - name: Authenticate with Google Cloud
-      uses: google-github-actions/auth@v1
-      with:
-        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+      - name: Checkout ${{ env.ROX_PRODUCT_VERSION }}
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ env.ROX_PRODUCT_VERSION }}
 
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v1
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
 
-    - name: Download and unzip file
-      run: |
-        DOWNLOAD_URL="https://github.com/stackrox/stackrox/archive/refs/tags/${{ env.ROX_PRODUCT_VERSION }}.zip"
-        FILE_NAME=$(basename "$DOWNLOAD_URL")
-        wget "$DOWNLOAD_URL" -O "$FILE_NAME"
-        unzip "$FILE_NAME" -d unzipped-folder
-        cd unzipped-folder/stackrox-*
-        if [ -d "scanner" ]; then
-          cd scanner
-          go run cmd/updater/update.go
-          gsutil cp -r tmp "gs://scanner-v4-test/${{ env.ROX_PRODUCT_VERSION }}"
-        fi
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Download and unzip file
+        run: |
+          if [ -d "scanner" ]; then
+            cd scanner
+            go run ./cmd/updater
+            gsutil cp -r tmp "gs://scanner-v4-test/${{ env.ROX_PRODUCT_VERSION }}"
+          fi
