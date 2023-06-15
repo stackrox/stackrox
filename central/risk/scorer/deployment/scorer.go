@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/risk/multipliers/image"
 	saStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -27,7 +26,7 @@ type Scorer interface {
 
 // NewDeploymentScorer returns a new scorer that encompasses multipliers for evaluating deployment risk
 func NewDeploymentScorer(alertSearcher getters.AlertSearcher, roles roleStore.DataStore, bindings bindingStore.DataStore, serviceAccounts saStore.DataStore, allowlistEvaluator evaluator.Evaluator) Scorer {
-	scoreImpl := &deploymentScorerImpl{
+	return &deploymentScorerImpl{
 		// These multipliers are intentionally ordered based on the order that we want them to be displayed in.
 		// Order aligns with the maximum output multiplier value, which would make sense to correlate
 		// with how important a specific multiplier is.
@@ -43,13 +42,6 @@ func NewDeploymentScorer(alertSearcher getters.AlertSearcher, roles roleStore.Da
 			deployment.NewImageMultiplier(image.ImageAgeHeading),
 		},
 	}
-	if env.IncludeRBACInRisk.BooleanSetting() {
-		scoreImpl.ConfiguredMultipliers = append(scoreImpl.ConfiguredMultipliers,
-			deployment.NewSAPermissionsMultiplier(roles, bindings, serviceAccounts),
-		)
-	}
-
-	return scoreImpl
 }
 
 type deploymentScorerImpl struct {

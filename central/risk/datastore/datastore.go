@@ -34,12 +34,10 @@ func New(riskStore store.Store, searcher search.Searcher) (DataStore, error) {
 		storage:  riskStore,
 		searcher: searcher,
 		entityTypeToRanker: map[string]*ranking.Ranker{
-			storage.RiskSubjectType_CLUSTER.String():   ranking.ClusterRanker(),
-			storage.RiskSubjectType_NAMESPACE.String(): ranking.NamespaceRanker(),
-			storage.RiskSubjectType_NODE.String():      ranking.NodeRanker(),
-			storage.RiskSubjectType_NODE_COMPONENT.String(): func() *ranking.Ranker {
-				return ranking.NodeComponentRanker()
-			}(),
+			storage.RiskSubjectType_CLUSTER.String():         ranking.ClusterRanker(),
+			storage.RiskSubjectType_NAMESPACE.String():       ranking.NamespaceRanker(),
+			storage.RiskSubjectType_NODE.String():            ranking.NodeRanker(),
+			storage.RiskSubjectType_NODE_COMPONENT.String():  ranking.NodeComponentRanker(),
 			storage.RiskSubjectType_DEPLOYMENT.String():      ranking.DeploymentRanker(),
 			storage.RiskSubjectType_IMAGE.String():           ranking.ImageRanker(),
 			storage.RiskSubjectType_IMAGE_COMPONENT.String(): ranking.ComponentRanker(),
