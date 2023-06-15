@@ -28,6 +28,7 @@ import {
     vulnManagementRiskAcceptancePath,
     collectionsPath,
     vulnerabilitiesWorkloadCvesPath,
+    vulnerabilityReportingPath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
@@ -81,6 +82,9 @@ const AsyncConfigManagementPage = asyncComponent(() => import('Containers/Config
 const AsyncWorkloadCvesPage = asyncComponent(
     () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
 );
+const AsyncVulnerabilityReportingPage = asyncComponent(
+    () => import('Containers/Vulnerabilities/VulnerablityReporting/VulnReportingPage')
+);
 const AsyncVulnMgmtReports = asyncComponent(
     () => import('Containers/VulnMgmt/Reports/VulnMgmtReports')
 );
@@ -108,6 +112,9 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const isNetworkGraphPatternflyEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY');
     const isVulnMgmtWorkloadCvesEnabled =
         isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES') && isPostgresEnabled;
+    const isVulnerabilityReportingEnhancementsEnabled = isFeatureFlagEnabled(
+        'ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'
+    );
 
     const hasVulnerabilityReportsPermission = hasReadAccess('WorkflowAdministration');
     const hasCollectionsPermission = hasReadAccess('WorkflowAdministration');
@@ -146,6 +153,12 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         <Route
                             path={vulnerabilitiesWorkloadCvesPath}
                             component={AsyncWorkloadCvesPage}
+                        />
+                    )}
+                    {isVulnerabilityReportingEnhancementsEnabled && (
+                        <Route
+                            path={vulnerabilityReportingPath}
+                            component={AsyncVulnerabilityReportingPage}
                         />
                     )}
                     {hasVulnerabilityReportsPermission && (

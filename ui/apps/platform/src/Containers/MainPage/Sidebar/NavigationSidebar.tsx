@@ -24,6 +24,7 @@ import {
     collectionsBasePath,
     vulnerabilitiesWorkloadCvesPath,
     networkBasePathPF,
+    vulnerabilityReportingPath,
 } from 'routePaths';
 
 import LeftNavItem from './LeftNavItem';
@@ -61,7 +62,6 @@ function NavigationSidebar({
         systemConfigPath,
         systemHealthPath,
     ];
-
     if (hasReadAccess('WorkflowAdministration')) {
         // Insert 'Collections' after 'Policy Management'
         platformConfigurationPaths.splice(
@@ -71,10 +71,14 @@ function NavigationSidebar({
         );
     }
 
-    const vulnerabilitiesPaths = [vulnerabilitiesWorkloadCvesPath];
+    const vulnerabilitiesPaths = [vulnerabilitiesWorkloadCvesPath, vulnerabilityReportingPath];
+
     const isWorkloadCvesEnabled =
         isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES') &&
         isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
+    const isReportingEnhancementsEnabled = isFeatureFlagEnabled(
+        'ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'
+    );
 
     const Navigation = (
         <Nav id="nav-primary-simple">
@@ -99,7 +103,7 @@ function NavigationSidebar({
                     path={complianceBasePath}
                     title={basePathToLabelMap[complianceBasePath]}
                 />
-                {isWorkloadCvesEnabled && (
+                {(isWorkloadCvesEnabled || isReportingEnhancementsEnabled) && (
                     <NavExpandable
                         id="Vulnerabilities"
                         title="Vulnerability Management (2.0)"
@@ -110,13 +114,25 @@ function NavigationSidebar({
                             location.pathname.includes(path)
                         )}
                     >
-                        <BadgedNavItem
-                            variant="TechPreview"
-                            key={vulnerabilitiesWorkloadCvesPath}
-                            isActive={location.pathname.includes(vulnerabilitiesWorkloadCvesPath)}
-                            path={vulnerabilitiesWorkloadCvesPath}
-                            title={basePathToLabelMap[vulnerabilitiesWorkloadCvesPath]}
-                        />
+                        {isWorkloadCvesEnabled && (
+                            <BadgedNavItem
+                                variant="TechPreview"
+                                key={vulnerabilitiesWorkloadCvesPath}
+                                isActive={location.pathname.includes(
+                                    vulnerabilitiesWorkloadCvesPath
+                                )}
+                                path={vulnerabilitiesWorkloadCvesPath}
+                                title={basePathToLabelMap[vulnerabilitiesWorkloadCvesPath]}
+                            />
+                        )}
+                        {isReportingEnhancementsEnabled && (
+                            <LeftNavItem
+                                key={vulnerabilityReportingPath}
+                                isActive={location.pathname.includes(vulnerabilityReportingPath)}
+                                path={vulnerabilityReportingPath}
+                                title={basePathToLabelMap[vulnerabilityReportingPath]}
+                            />
+                        )}
                     </NavExpandable>
                 )}
                 <NavExpandable
