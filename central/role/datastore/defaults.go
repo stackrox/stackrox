@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -20,10 +19,7 @@ type permSetAttributes struct {
 }
 
 func (attributes *permSetAttributes) getID() string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return attributes.postgresID
-	}
-	return rolePkg.EnsureValidPermissionSetID(attributes.idSuffix)
+	return attributes.postgresID
 }
 
 var defaultPermissionSets = map[string]permSetAttributes{
@@ -96,14 +92,6 @@ var defaultPermissionSets = map[string]permSetAttributes{
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.VulnReporter],
 		description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
 		resourceWithAccess: func() []permissions.ResourceWithAccess {
-			if !env.PostgresDatastoreEnabled.BooleanSetting() {
-				return []permissions.ResourceWithAccess{
-					permissions.View(resources.Access),                   // required for scopes
-					permissions.View(resources.Integration),              // required for vuln report configurations
-					permissions.View(resources.WorkflowAdministration),   // required for vuln report configurations prior to collections
-					permissions.Modify(resources.WorkflowAdministration), // required for vuln report configurations prior to collections
-				}
-			}
 			return []permissions.ResourceWithAccess{
 				permissions.View(resources.WorkflowAdministration),   // required for vuln report configurations
 				permissions.Modify(resources.WorkflowAdministration), // required for vuln report configurations

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"strconv"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -20,7 +19,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/batcher"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -605,17 +603,10 @@ func getMapOfAlertCounts(alerts []search.Result, groupByFunc func(alert search.R
 			}
 			// There is a difference in how enum matches are stored in postgres vs rockdb. In postgres they are
 			// stored as string values, in rocksdb as int values. Courtesy: Mandar.
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				severity := storage.Severity_value[a.Matches[field.GetFieldPath()][0]]
-				groups[g][(storage.Severity(severity))]++
-			} else {
-				severity, _ := strconv.Atoi(a.Matches[field.GetFieldPath()][0])
-				groups[g][(storage.Severity(severity))]++
-			}
-
+			severity := storage.Severity_value[a.Matches[field.GetFieldPath()][0]]
+			groups[g][(storage.Severity(severity))]++
 		}
 	}
-
 	return
 }
 
