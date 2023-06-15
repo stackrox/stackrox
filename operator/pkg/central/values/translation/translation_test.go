@@ -8,6 +8,8 @@ import (
 	"github.com/stackrox/rox/operator/pkg/central/common"
 	"github.com/stackrox/rox/operator/pkg/central/extensions"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -32,6 +34,7 @@ func TestTranslate(t *testing.T) {
 		clientSet kubernetes.Interface
 		c         platform.Central
 		pvcs      []*corev1.PersistentVolumeClaim
+		version   string
 	}
 
 	connectivityPolicy := platform.ConnectivityOffline
@@ -42,6 +45,11 @@ func TestTranslate(t *testing.T) {
 	monitoringExposeEndpointDisabled := platform.ExposeEndpointDisabled
 	telemetryEndpoint := "endpoint"
 	telemetryKey := "key"
+	telemetryDisabledKey := map[string]interface{}{
+		"enabled": false,
+		"storage": map[string]interface{}{"key": disabledTelemetryKey}}
+	dirtyVersion := "1.2.3-dirty"
+	releaseVersion := "1.2.3"
 
 	truth := true
 	falsity := false
@@ -771,7 +779,108 @@ func TestTranslate(t *testing.T) {
 				"central": map[string]interface{}{
 					"exposeMonitoring": false,
 					"persistence":      map[string]interface{}{"persistentVolumeClaim": map[string]interface{}{"createClaim": false}},
-					"telemetry":        map[string]interface{}{"enabled": false},
+					"telemetry":        telemetryDisabledKey,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+		"default dev telemetry": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+				},
+				pvcs:    []*corev1.PersistentVolumeClaim{defaultPvc},
+				version: dirtyVersion,
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence":      map[string]interface{}{"persistentVolumeClaim": map[string]interface{}{"createClaim": false}},
+					"telemetry":        telemetryDisabledKey,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+		"enabled telemetry in dev": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							Telemetry: &platform.Telemetry{
+								Enabled: &truth,
+								Storage: &platform.TelemetryStorage{
+									Key:      &telemetryKey,
+									Endpoint: &telemetryEndpoint,
+								},
+							},
+						},
+					},
+				},
+				pvcs:    []*corev1.PersistentVolumeClaim{defaultPvc},
+				version: dirtyVersion,
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence":      map[string]interface{}{"persistentVolumeClaim": map[string]interface{}{"createClaim": false}},
+					"telemetry": map[string]interface{}{
+						"enabled": true,
+						"storage": map[string]interface{}{
+							"endpoint": "endpoint",
+							"key":      "key",
+						},
+					},
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+		"enabled telemetry no key": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							Telemetry: &platform.Telemetry{
+								Enabled: &truth,
+							},
+						},
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence":      map[string]interface{}{"persistentVolumeClaim": map[string]interface{}{"createClaim": false}},
+					"telemetry": map[bool]any{
+						true:  map[string]interface{}{"enabled": true},
+						false: telemetryDisabledKey,
+					}[buildinfo.ReleaseBuild],
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
@@ -786,6 +895,18 @@ func TestTranslate(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			if !buildinfo.ReleaseBuild {
+				wantCentral := tt.want["central"].(map[string]any)
+				if _, ok := wantCentral["telemetry"]; !ok {
+					wantCentral["telemetry"] = telemetryDisabledKey
+				}
+			}
+			if tt.args.version == "" {
+				testutils.SetMainVersion(t, releaseVersion)
+			} else {
+				testutils.SetMainVersion(t, tt.args.version)
+			}
+
 			wantAsValues, err := translation.ToHelmValues(tt.want)
 			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
 			var allExisting []ctrlClient.Object

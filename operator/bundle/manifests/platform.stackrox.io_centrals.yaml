@@ -458,6 +458,7 @@ spec:
                       enabled:
                         description: Specifies if Telemetry is enabled.
                         type: boolean
+                        default: true
                       storage:
                         description: Defines the telemetry storage backend for Central.
                         properties:

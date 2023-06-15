@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/operator/pkg/values/translation"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -25,6 +26,8 @@ import (
 var (
 	//go:embed base-values.yaml
 	baseValuesYAML []byte
+
+	disabledTelemetryKey = "DISABLED"
 )
 
 const (
@@ -65,6 +68,15 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 	return helmUtil.CoalesceTables(baseValues, imageOverrideVals, valsFromCR), nil
 }
 
+func isTelemetryEnabled(t *platform.Telemetry) bool {
+	if version.IsReleaseVersion() {
+		return t == nil || t.Enabled == nil || *t.Enabled
+	}
+	// Allow development versions to configure telemetry for debugging.
+	return t != nil && t.Enabled != nil && *t.Enabled &&
+		(t.Storage != nil && t.Storage.Key != nil && *t.Storage.Key != "")
+}
+
 // translate translates a Central CR into helm values.
 func (t Translator) translate(ctx context.Context, c platform.Central) (chartutil.Values, error) {
 	v := translation.NewValuesBuilder()
@@ -80,6 +92,21 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 	if centralSpec == nil {
 		centralSpec = &platform.CentralComponentSpec{}
 	}
+
+	if telemetry := centralSpec.Telemetry; !isTelemetryEnabled(telemetry) {
+		if telemetry == nil {
+			centralSpec.Telemetry = &platform.Telemetry{}
+			telemetry = centralSpec.Telemetry
+		}
+		// Overwrite the Central CR to disable telemetry for centrals
+		// deployed by a non-release operator version.
+		telemetry.Enabled = &[]bool{false}[0]
+		if telemetry.Storage == nil {
+			telemetry.Storage = &platform.TelemetryStorage{}
+		}
+		telemetry.Storage.Key = &disabledTelemetryKey
+	}
+
 	obsoletePVC := common.ObsoletePVC(c.GetAnnotations())
 	checker := &pvcStateChecker{
 		ctx:       ctx,
