@@ -51,8 +51,7 @@ func constructRole(name, permissionSetID, accessScopeID string) *storage.Role {
 }
 
 func TestValidatePermissionSet(t *testing.T) {
-	var mockGoodID string
-	mockGoodID = uuid.NewDummy().String()
+	mockGoodID := uuid.NewDummy().String()
 	mockBadID := "Tanis Half-Elven"
 	mockName := "Hero of the Lance"
 	mockGoodResource := "K8sRoleBinding"
