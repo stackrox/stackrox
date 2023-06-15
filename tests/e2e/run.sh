@@ -27,6 +27,11 @@ test_e2e() {
     export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
     export ROX_NETPOL_FIELDS=true
 
+    if is_CI && ! command -v roxctl >/dev/null 2>&1; then
+        make cli_linux-amd64
+        make cli-install
+    fi
+
     test_preamble
     setup_deployment_env false false
     remove_existing_stackrox_resources
