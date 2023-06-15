@@ -7,7 +7,6 @@ import (
 
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
-	"github.com/stackrox/rox/central/alert/mappings"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,7 +20,6 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	alertSearchHelper            = sac.ForResource(resources.Alert).MustCreateSearchHelper(mappings.OptionsMap)
 	alertPostgresSACSearchHelper = sac.ForResource(resources.Alert).MustCreatePgSearchHelper()
 )
 
