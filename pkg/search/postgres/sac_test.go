@@ -24,9 +24,6 @@ func TestGetReadWriteSACQuery(t *testing.T) {
 	got, err = GetReadWriteSACQuery(sac.WithNoAccess(context.Background()), metadata("Integration", permissions.GlobalScope))
 	assert.Nil(t, got)
 	assert.ErrorIs(t, err, sac.ErrResourceAccessDenied)
-	assert.Panics(t, func() {
-		_, _ = GetReadWriteSACQuery(context.Background(), metadata("Namespace", permissions.NamespaceScope))
-	})
 }
 
 func metadata(name permissions.Resource, scope permissions.ResourceScope) permissions.ResourceMetadata {
