@@ -44,7 +44,7 @@ store_roxctl() {
 main() {
     # Main uses the version reported by make tag.
     local main_tag
-    main_tag="$(make --quiet tag)"
+    main_tag="$(make --quiet --no-print-directory tag)"
     save "stackrox.io" "main" "${main_tag}" "image-bundle"
 
     # Scanner uses the same version as Main.

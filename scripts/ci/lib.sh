@@ -116,7 +116,7 @@ setup_deployment_env() {
     ci_export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
     ci_export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RO_PASSWORD"
     if [[ -z "${MAIN_IMAGE_TAG:-}" ]]; then
-        ci_export MAIN_IMAGE_TAG "$(make --quiet tag)"
+        ci_export MAIN_IMAGE_TAG "$(make --quiet --no-print-directory tag)"
     fi
 
     REPO=rhacs-eng
@@ -239,7 +239,7 @@ push_main_image_set() {
     fi
 
     local tag
-    tag="$(make --quiet tag)"
+    tag="$(make --quiet --no-print-directory tag)"
     for registry in "${destination_registries[@]}"; do
         registry_rw_login "$registry"
 
@@ -339,7 +339,7 @@ push_operator_image_set() {
     fi
 
     local tag
-    tag="$(make --quiet -C operator tag)"
+    tag="$(make --quiet --no-print-directory -C operator tag)"
     for registry in "${destination_registries[@]}"; do
         registry_rw_login "$registry"
 
@@ -371,12 +371,12 @@ push_race_condition_debug_image() {
 
     local registry="quay.io/rhacs-eng"
     registry_rw_login "$registry"
-    oc_image_mirror "$MAIN_RCD_IMAGE" "${registry}/main:$(make --quiet tag)-rcd"
+    oc_image_mirror "$MAIN_RCD_IMAGE" "${registry}/main:$(make --quiet --no-print-directory tag)-rcd"
 }
 
 push_mock_grpc_server_image() {
     local registry="quay.io/rhacs-eng"
-    image="${registry}/grpc-server:$(make --quiet tag)"
+    image="${registry}/grpc-server:$(make --quiet --no-print-directory tag)"
     info "Pushing the mock grpc server image: $MOCK_GRPC_SERVER_IMAGE to $image"
 
     if ! is_OPENSHIFT_CI; then
@@ -456,11 +456,11 @@ push_matching_collector_scanner_images() {
     }
 
     local main_tag
-    main_tag="$(make --quiet tag)"
+    main_tag="$(make --quiet --no-print-directory tag)"
     local scanner_version
-    scanner_version="$(make --quiet scanner-tag)"
+    scanner_version="$(make --quiet --no-print-directory scanner-tag)"
     local collector_version
-    collector_version="$(make --quiet collector-tag)"
+    collector_version="$(make --quiet --no-print-directory collector-tag)"
 
     for target_registry in "${target_registries[@]}"; do
         registry_rw_login "${target_registry}"
@@ -521,7 +521,7 @@ poll_for_system_test_images() {
     info "Will poll for: ${reqd_images[*]}"
 
     local tag
-    tag="$(make --quiet tag)"
+    tag="$(make --quiet --no-print-directory tag)"
     local start_time
     start_time="$(date '+%s')"
 
@@ -572,14 +572,14 @@ check_rhacs_eng_image_exists() {
 
 
 check_scanner_version() {
-    if ! is_release_version "$(make --quiet scanner-tag)"; then
+    if ! is_release_version "$(make --quiet --no-print-directory scanner-tag)"; then
         echo "::error::Scanner tag does not look like a release tag. Please update SCANNER_VERSION file before releasing."
         exit 1
     fi
 }
 
 check_collector_version() {
-    if ! is_release_version "$(make --quiet collector-tag)"; then
+    if ! is_release_version "$(make --quiet --no-print-directory collector-tag)"; then
         echo "::error::Collector tag does not look like a release tag. Please update COLLECTOR_VERSION file before releasing."
         exit 1
     fi
@@ -1079,7 +1079,7 @@ openshift_ci_mods() {
     info "Status after mods:"
     "$ROOT/status.sh" || true
 
-    STACKROX_BUILD_TAG=$(make --quiet tag)
+    STACKROX_BUILD_TAG=$(make --quiet --no-print-directory tag)
     export STACKROX_BUILD_TAG
 
     info "END OpenShift CI mods"
@@ -1271,7 +1271,7 @@ send_slack_notice_for_failures_on_merge() {
     fi
 
     local tag
-    tag="$(make --quiet tag)"
+    tag="$(make --quiet --no-print-directory tag)"
     if [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]]; then
         return 0
     fi

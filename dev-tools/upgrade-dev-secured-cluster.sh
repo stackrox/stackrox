@@ -28,7 +28,7 @@ if [[ -f  "$default_init_bundle_path" ]]; then
   )
 fi
 
-MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet -C "$DIR/.." tag)}"
+MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "$DIR/.." tag)}"
 
 helm_args+=(
   --set "image.main.tag=$MAIN_IMAGE_TAG"

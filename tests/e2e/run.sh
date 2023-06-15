@@ -100,7 +100,7 @@ test_e2e() {
 test_preamble() {
     require_executable "roxctl"
 
-    MAIN_TAG=$(make --quiet tag)
+    MAIN_TAG=$(make --quiet --no-print-directory tag)
     export MAIN_TAG
 
     export ROX_PLAINTEXT_ENDPOINTS="8080,grpc@8081"
