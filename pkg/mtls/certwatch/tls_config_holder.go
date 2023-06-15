@@ -38,6 +38,7 @@ func (c *TLSConfigHolder) UpdateTLSConfig() {
 	for _, certSrc := range c.serverCertSources {
 		newTLSConfig.Certificates = append(newTLSConfig.Certificates, *certSrc...)
 	}
+	log.Infof("Update TLS config: %v", newTLSConfig.Certificates)
 
 	clientCAs := x509.NewCertPool()
 	hasClientCAs := false

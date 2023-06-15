@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
 	"path/filepath"
 
 	"github.com/pkg/errors"
@@ -25,9 +26,24 @@ type tlsConfigLoader struct {
 	clientCAConfigMap string
 	clientCANamespace string
 	k8sClient         *kubernetes.Clientset
-	tlsConfig         *tls.Config
 
-	cfgMutex sync.RWMutex
+	clientCAs       []*x509.Certificate
+	serverCerts     []tls.Certificate
+	tlsConfigHolder *certwatch.TLSConfigHolder
+
+	mutex sync.RWMutex
+}
+
+func certFilePath() string {
+	certDir := env.SecureMetricsCertDir.Setting()
+	certFile := filepath.Join(certDir, env.TLSCertFileName)
+	return certFile
+}
+
+func keyFilePath() string {
+	certDir := env.SecureMetricsCertDir.Setting()
+	keyFile := filepath.Join(certDir, env.TLSKeyFileName)
+	return keyFile
 }
 
 // NewTLSConfigLoader creates a new TLS config loader.
@@ -38,9 +54,10 @@ func NewTLSConfigLoader(certDir, clientCANamespace, clientCAConfigMap string) (*
 		certDir:           certDir,
 		clientCANamespace: clientCANamespace,
 		clientCAConfigMap: clientCAConfigMap,
-		tlsConfig:         tlsRootConfig,
+		tlsConfigHolder:   certwatch.NewTLSConfigHolder(tlsRootConfig),
 	}
-	loader.tlsConfig.GetConfigForClient = loader.getClientConfigFunc()
+	loader.tlsConfigHolder.AddServerCertSource(&loader.serverCerts)
+	loader.tlsConfigHolder.AddClientCertSource(&loader.clientCAs)
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -63,19 +80,11 @@ func (t *tlsConfigLoader) WatchForChanges() {
 	go t.watchForClientCAChanges()
 }
 
-func (t *tlsConfigLoader) TLSConfig() *tls.Config {
+func (t *tlsConfigLoader) TLSConfig() (*tls.Config, error) {
 	if t == nil {
-		return nil
+		return nil, nil
 	}
-	return t.tlsConfig
-}
-
-func (t *tlsConfigLoader) getClientConfigFunc() func(*tls.ClientHelloInfo) (*tls.Config, error) {
-	return func(clientHello *tls.ClientHelloInfo) (*tls.Config, error) {
-		t.cfgMutex.RLock()
-		defer t.cfgMutex.RUnlock()
-		return t.tlsConfig, nil
-	}
+	return t.tlsConfigHolder.TLSConfig()
 }
 
 func (t *tlsConfigLoader) getCertificateFromDirectory(dir string) (*tls.Certificate, error) {
@@ -111,9 +120,14 @@ func (t *tlsConfigLoader) getCertificateFromDirectory(dir string) (*tls.Certific
 }
 
 func (t *tlsConfigLoader) updateCertificate(cert *tls.Certificate) {
-	t.cfgMutex.Lock()
-	defer t.cfgMutex.Unlock()
-	t.tlsConfig.Certificates = []tls.Certificate{*cert}
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	if cert == nil {
+		t.serverCerts = nil
+	} else {
+		t.serverCerts = []tls.Certificate{*cert}
+	}
+	t.tlsConfigHolder.UpdateTLSConfig()
 }
 
 func (t *tlsConfigLoader) watchForClientCAChanges() {
@@ -141,13 +155,17 @@ func (t *tlsConfigLoader) updateClientCA(eventChannel <-chan watch.Event) {
 			case watch.Modified:
 				if cm, ok := event.Object.(*v1.ConfigMap); ok {
 					if caFile, ok := cm.Data["client-ca-file"]; ok {
-						caCert := []byte(caFile)
-						caCertPool := x509.NewCertPool()
-						caCertPool.AppendCertsFromPEM(caCert)
-
-						t.cfgMutex.Lock()
-						t.tlsConfig.ClientCAs = caCertPool
-						t.cfgMutex.Unlock()
+						certPEM := []byte(caFile)
+						certBlock, _ := pem.Decode([]byte(certPEM))
+						cert, err := x509.ParseCertificate(certBlock.Bytes)
+						if err != nil {
+							log.Errorw("Unable to parse client CA", zap.Error(err))
+							continue
+						}
+						t.mutex.Lock()
+						t.clientCAs = []*x509.Certificate{cert}
+						t.tlsConfigHolder.UpdateTLSConfig()
+						t.mutex.Unlock()
 					}
 				}
 			default:

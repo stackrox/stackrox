@@ -45,10 +45,15 @@ func NewServer(subsystem Subsystem) *Server {
 	var secureMetricsServer *http.Server
 	if secureMetricsEnabled() {
 		tlsConfigLoader = createTLSConfigLoader()
+		tlsConfig, err := tlsConfigLoader.TLSConfig()
+		if err != nil {
+			utils.Should(errors.Wrap(err, "failed to create TLS config loader"))
+			return nil
+		}
 		secureMetricsServer = &http.Server{
 			Addr:      env.SecureMetricsPort.Setting(),
 			Handler:   mux,
-			TLSConfig: tlsConfigLoader.TLSConfig(),
+			TLSConfig: tlsConfig,
 		}
 	}
 
@@ -92,6 +97,10 @@ func (s *Server) RunForever() {
 }
 
 func (s *Server) Stop(ctx context.Context) {
+	if s == nil {
+		return
+	}
+
 	if metricsEnabled() {
 		if err := s.metricsServer.Shutdown(ctx); err != nil {
 			log.Errorw("Failed to shutdown metrics server", zap.Error(err))
@@ -148,6 +157,7 @@ func createTLSConfigLoader() *tlsConfigLoader {
 	if !secureMetricsEnabled() {
 		return nil
 	}
+
 	certDir := env.SecureMetricsCertDir.Setting()
 	clientCANamespace := env.SecureMetricsClientCANamespace.Setting()
 	clientCAConfigMap := env.SecureMetricsClientCAConfigMap.Setting()
@@ -173,7 +183,7 @@ func runForever(server *http.Server) {
 }
 
 func runForeverTLS(server *http.Server) {
-	if err := server.ListenAndServeTLS("", ""); !errors.Is(err, http.ErrServerClosed) {
+	if err := server.ListenAndServeTLS(certFilePath(), keyFilePath()); !errors.Is(err, http.ErrServerClosed) {
 		// The HTTPS server should never terminate.
 		log.Panicf("Unexpected termination of secure metrics server %q: %v", server.Addr, err)
 	}
