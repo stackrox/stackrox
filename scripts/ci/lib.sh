@@ -1236,33 +1236,32 @@ post_process_test_results() {
     fi
 
     local csv_output
-    local common_args
+    local extra_args=()
 
     set +u
     {
-        csv_output="$(mktemp --suffix=.csv)"
-        common_args=(-build-id "${BUILD_ID}" \
-            -build-tag "${STACKROX_BUILD_TAG}" \
-            -job-name "${JOB_NAME}" \
-            -csv-output "${csv_output}")
-
         if is_in_PR_context; then
             info "Converting JUNIT found in ${ARTIFACT_DIR} to CSV"
-            curl --retry 5 -SsfL https://github.com/stackrox/junit2csv/releases/download/v0.0.1/junit2csv -o junit2csv && \
-            chmod +x junit2csv && \
-            ./junit2csv "${common_args[@]}"
+            extra_args=(--dry-run)
         else
             info "Creating JIRA issues for failures found in ${ARTIFACT_DIR}"
-            curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.8/junit2jira -o junit2jira && \
-            chmod +x junit2jira && \
-            ./junit2jira \
-                -base-link "$(echo "$JOB_SPEC" | jq ".refs.base_link" -r)" \
-                -build-link "https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/$JOB_NAME/$BUILD_ID" \
-                -junit-reports-dir "${ARTIFACT_DIR}" \
-                -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
-                -threshold 5 \
-                "${common_args[@]}"
         fi
+
+        csv_output="$(mktemp --suffix=.csv)"
+
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.9/junit2jira -o junit2jira && \
+        chmod +x junit2jira && \
+        ./junit2jira \
+            -base-link "$(echo "$JOB_SPEC" | jq ".refs.base_link" -r)" \
+            -build-id "${BUILD_ID}" \
+            -build-link "https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/$JOB_NAME/$BUILD_ID" \
+            -build-tag "${STACKROX_BUILD_TAG}" \
+            -csv-output "${csv_output}" \
+            -job-name "${JOB_NAME}" \
+            -junit-reports-dir "${ARTIFACT_DIR}" \
+            -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
+            -threshold 5 \
+            "${extra_args[@]}"
 
         info "Creating Big Query test records from ${csv_output}"
         bq load \
