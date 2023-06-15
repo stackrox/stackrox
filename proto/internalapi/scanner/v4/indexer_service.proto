@@ -4,7 +4,7 @@
 
 syntax = "proto3";
 
-package v4;
+package scanner.v4;
 
 import "google/protobuf/empty.proto";
 import "internalapi/scanner/v4/index_report.proto";

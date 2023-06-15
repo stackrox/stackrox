@@ -3,7 +3,7 @@
 
 syntax = "proto3";
 
-package v4;
+package scanner.v4;
 
 import "internalapi/scanner/v4/common.proto";
 
