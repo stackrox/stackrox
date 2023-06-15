@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -17,7 +18,11 @@ func GetReadWriteSACQuery(ctx context.Context, targetResource permissions.Resour
 
 // GetReadSACQuery returns SAC filter for resource or error is permission is denied.
 func GetReadSACQuery(ctx context.Context, targetResource permissions.ResourceMetadata) (*v1.Query, error) {
-	return getSACQuery(ctx, targetResource, storage.Access_READ_ACCESS)
+	sacQuery, err := getSACQuery(ctx, targetResource, storage.Access_READ_ACCESS)
+	if errors.Is(err, sac.ErrResourceAccessDenied) {
+		return getMatchNoneQuery(), nil
+	}
+	return sacQuery, err
 }
 
 func getSACQuery(ctx context.Context, targetResource permissions.ResourceMetadata, access storage.Access) (*v1.Query, error) {
@@ -29,7 +34,7 @@ func getSACQuery(ctx context.Context, targetResource permissions.ResourceMetadat
 	switch targetResource.GetScope() {
 	case permissions.GlobalScope:
 		if !scopeChecker.IsAllowed() {
-			return getMatchNoneQuery(), nil
+			return nil, sac.ErrResourceAccessDenied
 		}
 		return &v1.Query{}, nil
 	case permissions.ClusterScope:

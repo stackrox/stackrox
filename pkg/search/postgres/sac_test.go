@@ -12,15 +12,18 @@ import (
 
 func TestGetReadWriteSACQuery(t *testing.T) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), createTestReadMultipleResourcesSomeWithNamespaceScope(t))
-	got, err := GetReadWriteSACQuery(ctx, metadata("Cluster", permissions.ClusterScope)
+	got, err := GetReadWriteSACQuery(ctx, metadata("Cluster", permissions.ClusterScope))
 	assert.Equal(t, `base_query:<match_field_query:<field:"Cluster ID" value:"\"clusterID\"" > > `, got.String())
 	assert.NoError(t, err)
 	got, err = GetReadWriteSACQuery(ctx, metadata("Namespace", permissions.NamespaceScope))
 	assert.Equal(t, `base_query:<match_none_query:<> > `, got.String())
 	assert.NoError(t, err)
-	got, err = GetReadWriteSACQuery(sac.WithNoAccess(context.Background()), metadata("Integration", permissions.GlobalScope))
+	got, err = GetReadSACQuery(sac.WithNoAccess(context.Background()), metadata("Integration", permissions.GlobalScope))
 	assert.Equal(t, `base_query:<match_none_query:<> > `, got.String())
 	assert.NoError(t, err)
+	got, err = GetReadWriteSACQuery(sac.WithNoAccess(context.Background()), metadata("Integration", permissions.GlobalScope))
+	assert.Nil(t, got)
+	assert.ErrorIs(t, err, sac.ErrResourceAccessDenied)
 	assert.Panics(t, func() {
 		_, _ = GetReadWriteSACQuery(context.Background(), metadata("Namespace", permissions.NamespaceScope))
 	})
