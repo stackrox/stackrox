@@ -10,8 +10,8 @@ option go_package = "v4";
 option java_package = "io.stackrox.proto.internalapi.scanner.v4";
 
 message NormalizedVersion {
-    string kind      = 1;
-    repeated int32 v = 2;
+    string         kind = 1;
+    repeated int32 v    = 2;
 }
 
 message Package {
@@ -54,8 +54,8 @@ message Environment {
     message List {
         repeated Environment environments = 1;
     }
-    string package_db              = 1;
-    string introduced_in           = 2;
-    string distribution_id         = 3;
-    repeated string repository_ids = 4;
+    string          package_db              = 1;
+    string          introduced_in           = 2;
+    string          distribution_id         = 3;
+    repeated string repository_ids          = 4;
 }

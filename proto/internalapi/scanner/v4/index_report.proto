@@ -10,11 +10,10 @@ import "internalapi/scanner/v4/common.proto";
 option go_package = "v4";
 
 message IndexReport {
-    string hash_id = 1;
-    string state   = 2;
-    bool   success = 3;
-    string err     = 4;
-
+    string                        hash_id       = 1;
+    string                        state         = 2;
+    bool                          success       = 3;
+    string                        err           = 4;
     repeated Package              packages      = 5;
     repeated Distribution         distributions = 6;
     repeated Repository           repositories  = 7;
