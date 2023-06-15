@@ -536,7 +536,7 @@ splunk:
         // If the tests are flaky, we have to increase this value.
         withRetry(RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // Expect 6 integration health status for the created resources and one for the config map.
+            // Expect 7 integration health status for the created resources and one for the config map.
             assert response.healthsCount == CREATED_RESOURCES + 1
             for (integrationHealth in response.healthsList) {
                 assert integrationHealth.hasLastTimestamp()
@@ -619,11 +619,14 @@ splunk:
         }
 
         when:
-        def authProvidersResponse = AuthProviderService.getAuthProviders()
-        def authProvider = authProvidersResponse.getAuthProvidersList().find {
-            it.getName() == AUTH_PROVIDER_KEY
+        def authProvider = null
+        withRetry(RETRIES, PAUSE_SECS) {
+            def authProvidersResponse = AuthProviderService.getAuthProviders()
+            authProvider = authProvidersResponse.getAuthProvidersList().find {
+                it.getName() == AUTH_PROVIDER_KEY
+            }
+            assert authProvider
         }
-        assert authProvider
         def imperativeGroup = Group.newBuilder()
                 .setRoleName(ROLE_KEY)
                 .setProps(GroupProperties.newBuilder()
