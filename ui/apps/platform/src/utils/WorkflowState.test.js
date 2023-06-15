@@ -1,5 +1,4 @@
 import entityTypes from 'constants/entityTypes';
-import relationshipTypes from 'constants/relationshipTypes';
 import useCases from 'constants/useCaseTypes';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import {
@@ -13,7 +12,7 @@ import {
     pagingParamValues,
 } from 'test-utils/workflowUtils';
 import {
-    getEntityTypesByRelationship,
+    getVulnerabilityManagementEntityTypesByRelationship as getEntityTypesByRelationship,
     getVulnerabilityManagementEntityTypes,
 } from './entityRelationships';
 import WorkflowEntity from './WorkflowEntity';
@@ -819,16 +818,15 @@ describe('WorkflowState', () => {
          * which eventually returns false, so skimStack returns a shorter slice.
          */
         const pushStacks = (workflowState1, entityTypesForUseCase, output) => {
-            const { stateStack: stateStack1, useCase: useCase1 } = workflowState1;
+            const { stateStack: stateStack1 } = workflowState1;
             const length1 = stateStack1.length; // assume stack has odd length
             const id = String(length1 - 1); // 0, 2, 4, and so on (see examples above)
             const workflowState2 = workflowState1.pushListItem(id);
 
             const { entityType: entityType0 } = stateStack1[length1 - 1];
-            const { CONTAINS, MATCHES, PARENTS } = relationshipTypes;
-            const contains = getEntityTypesByRelationship(entityType0, CONTAINS, useCase1);
-            const matches = getEntityTypesByRelationship(entityType0, MATCHES, useCase1);
-            const parents = getEntityTypesByRelationship(entityType0, PARENTS, useCase1);
+            const contains = getEntityTypesByRelationship(entityType0, 'CONTAINS');
+            const matches = getEntityTypesByRelationship(entityType0, 'MATCHES');
+            const parents = getEntityTypesByRelationship(entityType0, 'PARENTS');
 
             entityTypesForUseCase.forEach((entityType2) => {
                 if (stateStack1.every(({ entityType }) => entityType !== entityType2)) {

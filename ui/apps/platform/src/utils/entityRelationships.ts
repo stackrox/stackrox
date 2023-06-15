@@ -3,8 +3,6 @@
 // note: the relationships are directional!
 // changing direction may change relationship type between entities!!
 
-import uniq from 'lodash/uniq';
-
 import { RelationshipType } from 'constants/relationshipTypes';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 
@@ -236,17 +234,26 @@ const getMatches = (entityType: EntityType): EntityType[] => [
 // this includes all generations of children AND inferred (matches of children down the chain) relationships
 // e.g. namespace inclusively contains policy since ns contains deployment and deployment matches policy
 const getContains = (entityType: EntityType): EntityType[] => {
-    const relationships: string[] = [];
-    const children = getChildren(entityType);
-    if (children) {
-        children.forEach((child) => {
-            const childMatches = getPureMatches(child);
-            const childContains = getContains(child);
-            relationships.push(child, ...childMatches, ...childContains);
-        });
+    const relationships: EntityType[] = [];
+
+    function pushChild(child) {
+        // Do not include itself. Prevent duplicates.
+        if (child !== entityType && !relationships.includes(child)) {
+            relationships.push(child);
+        }
     }
-    // TODO: Should never return a type as a relationship of itself. Seems like logic is off somewhere
-    return uniq(relationships).filter((type) => type !== entityType) as EntityType[];
+
+    getChildren(entityType).forEach((child) => {
+        pushChild(child);
+        getPureMatches(child).forEach((childMatches) => {
+            pushChild(childMatches);
+        });
+        getContains(child).forEach((childContains) => {
+            pushChild(childContains);
+        });
+    });
+
+    return relationships;
 };
 
 const isChild = (parent: EntityType, child: EntityType): boolean =>
@@ -304,13 +311,15 @@ export function getVulnerabilityManagementEntityTypesByRelationship(
     entityType: EntityType,
     relationship: RelationshipType,
     isFeatureFlagEnabled?: IsFeatureFlagEnabled
-): VulnerabilityManagementEntityType[] {
-    const entityTypesByRelationship = getEntityTypesByRelationship(entityType, relationship);
+) {
+    const entityTypes = getVulnerabilityManagementEntityTypes(isFeatureFlagEnabled);
 
-    return getVulnerabilityManagementEntityTypes(isFeatureFlagEnabled).filter(
-        (entityTypeVulnerabilityManagement) =>
-            entityTypesByRelationship.includes(entityTypeVulnerabilityManagement)
-    );
+    // Do not include itself. Filter out any Configuration Management entity types.
+    return getEntityTypesByRelationship(entityType, relationship).filter(
+        (entityTypeByRelationship) =>
+            entityTypeByRelationship !== entityType &&
+            entityTypes.includes(entityTypeByRelationship as VulnerabilityManagementEntityType)
+    ) as VulnerabilityManagementEntityType[];
 }
 
 export default {
