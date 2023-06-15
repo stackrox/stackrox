@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
-	"github.com/stackrox/rox/central/rbac/k8srole/mappings"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -14,7 +13,6 @@ import (
 )
 
 var (
-	k8sRolesSACSearchHelper   = sac.ForResource(resources.K8sRole).MustCreateSearchHelper(mappings.OptionsMap)
 	k8sRolesSACPgSearchHelper = sac.ForResource(resources.K8sRole).MustCreatePgSearchHelper()
 )
 

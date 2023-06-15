@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/processbaseline/index"
-	"github.com/stackrox/rox/central/processbaseline/index/mappings"
 	"github.com/stackrox/rox/central/processbaseline/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -16,7 +15,6 @@ import (
 )
 
 var (
-	deploymentExtensionSACSearchHelper         = sac.ForResource(resources.DeploymentExtension).MustCreateSearchHelper(mappings.OptionsMap)
 	deploymentExtensionPostgresSACSearchHelper = sac.ForResource(resources.DeploymentExtension).MustCreatePgSearchHelper()
 )
 
