@@ -114,7 +114,20 @@ deploy_earlier_central() {
          --set scanner.image.tag="$(cat SCANNER_VERSION)" \
          --set scanner.dbImage.tag="$(cat SCANNER_VERSION)"
 
-    export_central_basic_auth_creds
+#    export_central_basic_auth_creds
+    if [[ -f "/tmp/early-stackrox-central-services-chart/password" ]]; then
+        info "Getting central basic auth creds from central-deploy/password"
+        ROX_PASSWORD="$(cat /tmp/early-stackrox-central-services-chart/password)"
+    elif [[ -n "${ROX_PASSWORD:-}" ]]; then
+        info "Using existing ROX_PASSWORD env"
+    else
+        echo "Expected to find file ${DEPLOY_DIR}/central-deploy/password or ROX_PASSWORD env"
+        exit 1
+    fi
+
+    ROX_USERNAME="admin"
+    ci_export "ROX_USERNAME" "$ROX_USERNAME"
+    ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
 }
 
 restore_backup_test() {
