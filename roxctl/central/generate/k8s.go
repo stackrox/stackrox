@@ -114,7 +114,7 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 			"list of secrets to add as declarative configuration mounts in central", "central")
 	}
 
-	k8sConfig.EnableCentralDB = env.PostgresDatastoreEnabled.BooleanSetting()
+	k8sConfig.EnableCentralDB = true
 
 	return c
 }

@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -33,7 +32,6 @@ func TestAlertsIndex(t *testing.T) {
 }
 
 func (s *AlertsIndexSuite) SetupTest() {
-
 	source := pgtest.GetConnectionString(s.T())
 	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
@@ -48,9 +46,7 @@ func (s *AlertsIndexSuite) SetupTest() {
 }
 
 func (s *AlertsIndexSuite) TearDownTest() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	}
+	s.pool.Close()
 }
 
 func (s *AlertsIndexSuite) TestIndex() {

@@ -41,8 +41,8 @@ func (s *serviceImpl) GetFeatureFlags(context.Context, *v1.Empty) (*v1.GetFeatur
 		// TODO: When GA'ing postgres remove this hack (and all conditional checks). https://issues.redhat.com/browse/ROX-12848
 		{
 			Name:    "Enable Postgres Datastore",
-			EnvVar:  env.PostgresDatastoreEnabled.EnvVar(),
-			Enabled: env.PostgresDatastoreEnabled.BooleanSetting(),
+			EnvVar:  "ROX_POSTGRES_DATASTORE",
+			Enabled: true,
 		},
 		{
 			Name:    "Enable Active Vulnerability Management",

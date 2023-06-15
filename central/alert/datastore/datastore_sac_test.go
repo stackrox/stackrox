@@ -8,7 +8,6 @@ import (
 
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -183,16 +182,12 @@ func (s *alertDatastoreSACTestSuite) TestMarkAlertResolved() {
 				s.NoError(err)
 				// SAC behavior in postgres has changed. Instead of returning error, pg store returns nil result,
 				// hence `missing` var is set indicate that the record is missing.
-			} else if !env.PostgresDatastoreEnabled.BooleanSetting() {
-				s.Equal(c.expectedError, err)
 			}
 			_, err = s.datastore.MarkAlertsResolvedBatch(ctx, alert2.GetId())
 			if !c.expectError {
 				s.NoError(err)
 				// SAC behavior in postgres has changed. Instead of returning error, pg store returns nil result,
 				// hence `missing` var is set indicate that the record is missing.
-			} else if !env.PostgresDatastoreEnabled.BooleanSetting() {
-				s.Equal(c.expectedError, err)
 			}
 		})
 	}

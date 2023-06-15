@@ -11,7 +11,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Removed Features
 
-### Deprecated Fatures
+### Deprecated Features
+- RBAC risk was deprecated in release 4.0 due to poor performance.
 
 ### Technical Changes
 
