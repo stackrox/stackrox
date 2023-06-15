@@ -72,6 +72,20 @@ function tableHeaderRegExp(entitiesKey) {
     return new RegExp(`^(1 ${singular}|(?:0|2|3|4|5|6|7|8|9|[123456789]\\d+) ${plural})$`);
 }
 
+const tableLinkRegExp = {
+    // clusters has singular link by name
+    controls: /\d+ Controls?$/,
+    deployments: /^\d+ deployments?$/,
+    images: /\d+ images?$/,
+    // namespaces
+    // nodes
+    // policies
+    roles: /^\d+ Roles?$/,
+    secrets: /\d+ secrets?$/,
+    serviceaccounts: /^\d+ Service Accounts?$/,
+    subjects: /^\d+ Users & Groups$/,
+};
+
 // Title of widget is title case but has uppercase style.
 const widgetTitleForEntities = {
     clusters: 'Clusters',
@@ -330,7 +344,7 @@ export const hasRelatedEntityFor = (entity) => {
 };
 
 // Assume at either entity page or entity in side panel.
-function entityCountMatchesTableRows(entitiesKey1, entitiesKey2, contextSelector) {
+function verifyWidgetLinkToTable(entitiesKey1, entitiesKey2, contextSelector) {
     const listEntity = widgetTitleForEntities[entitiesKey2];
     cy.get(`${selectors.countWidgets}:contains('${listEntity}')`)
         .find(selectors.countWidgetValue)
@@ -366,20 +380,23 @@ function entityCountMatchesTableRows(entitiesKey1, entitiesKey2, contextSelector
         });
 }
 
-export function pageEntityCountMatchesTableRows(entitiesKey1, entitiesKey2) {
-    entityCountMatchesTableRows(entitiesKey1, entitiesKey2, '[data-testid="panel"]');
+export function verifyWidgetLinkToTableFromSinglePage(entitiesKey1, entitiesKey2) {
+    visitConfigurationManagementEntityInSidePanel(entitiesKey1);
+    navigateToSingleEntityPage(entitiesKey1);
+    verifyWidgetLinkToTable(entitiesKey1, entitiesKey2, '[data-testid="panel"]');
 }
 
-export function sidePanelEntityCountMatchesTableRows(entitiesKey1, entitiesKey2) {
-    entityCountMatchesTableRows(entitiesKey1, entitiesKey2, '[data-testid="side-panel"]');
+export function verifyWidgetLinkToTableFromSidePanel(entitiesKey1, entitiesKey2) {
+    visitConfigurationManagementEntityInSidePanel(entitiesKey1);
+    verifyWidgetLinkToTable(entitiesKey1, entitiesKey2, '[data-testid="side-panel"]');
 }
 
-export function entityListCountMatchesTableLinkCount(entitiesKey1, entitiesKey2, entitiesRegExp2) {
+export function verifyTableLinkToSidePanelTable(entitiesKey1, entitiesKey2) {
     // 1. Visit list page for primary entities.
     visitConfigurationManagementEntities(entitiesKey1);
 
     cy.get('.rt-td')
-        .contains('a', entitiesRegExp2)
+        .contains('a', tableLinkRegExp[entitiesKey2])
         .then(($a) => {
             // 2. Visit secondary entities side panel.
             const opname = opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2);
