@@ -139,7 +139,7 @@ type AdmissionControlComponentSpec struct {
 	//+kubebuilder:validation:Default=3
 	//+kubebuilder:default=3
 	//+kubebuilder:validation:Minimum=1
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Default Replicas",order=8
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=8
 	Replicas *int32 `json:"replicas,omitempty"`
 }
 
