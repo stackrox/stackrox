@@ -15,7 +15,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/zlog"
-	"github.com/stackrox/scanner/v4/internal/sync"
+	"github.com/stackrox/stackrox/scanner/v4/internal/sync"
 	"golang.org/x/sync/errgroup"
 )
 

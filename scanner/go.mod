@@ -1,4 +1,4 @@
-module github.com/stackrox/scanner/v4
+module github.com/stackrox/stackrox/scanner/v4
 
 go 1.20
 
