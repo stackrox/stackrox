@@ -102,6 +102,11 @@ function DeploymentFlows({
 
     const selectedRows = [...selectedAnomalousRows, ...selectedBaselineRows];
 
+    let flowType = edgeState;
+    if (flowType === 'inactive with dns') {
+        flowType = 'inactive';
+    }
+
     const onSelectFlow = (entityId: string) => {
         onNodeSelect(entityId);
     };
@@ -175,7 +180,7 @@ function DeploymentFlows({
                     <Toolbar className="pf-u-p-0">
                         <ToolbarContent className="pf-u-px-0">
                             <ToolbarItem>
-                                <FlowsTableHeaderText type={edgeState} numFlows={totalFlows} />
+                                <FlowsTableHeaderText type={flowType} numFlows={totalFlows} />
                             </ToolbarItem>
                             <ToolbarItem alignment={{ default: 'alignRight' }}>
                                 <FlowsBulkActions
