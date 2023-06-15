@@ -11,7 +11,6 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	search "github.com/stackrox/rox/pkg/search"
-	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 // MockUnsafeSearcher is a mock of UnsafeSearcher interface.
@@ -38,41 +37,31 @@ func (m *MockUnsafeSearcher) EXPECT() *MockUnsafeSearcherMockRecorder {
 }
 
 // Count mocks base method.
-func (m *MockUnsafeSearcher) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+func (m *MockUnsafeSearcher) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, q}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Count", varargs...)
+	ret := m.ctrl.Call(m, "Count", ctx, q)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Count indicates an expected call of Count.
-func (mr *MockUnsafeSearcherMockRecorder) Count(ctx, q interface{}, opts ...interface{}) *gomock.Call {
+func (mr *MockUnsafeSearcherMockRecorder) Count(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, q}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockUnsafeSearcher)(nil).Count), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockUnsafeSearcher)(nil).Count), ctx, q)
 }
 
 // Search mocks base method.
-func (m *MockUnsafeSearcher) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
+func (m *MockUnsafeSearcher) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, q}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Search", varargs...)
+	ret := m.ctrl.Call(m, "Search", ctx, q)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Search indicates an expected call of Search.
-func (mr *MockUnsafeSearcherMockRecorder) Search(ctx, q interface{}, opts ...interface{}) *gomock.Call {
+func (mr *MockUnsafeSearcherMockRecorder) Search(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, q}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockUnsafeSearcher)(nil).Search), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockUnsafeSearcher)(nil).Search), ctx, q)
 }

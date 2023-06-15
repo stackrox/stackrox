@@ -96,11 +96,7 @@ func (h *searchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher 
 		SortOptions: q.GetPagination().GetSortOptions(),
 	}
 
-	var opts []blevesearch.SearchOption
-	if hook := h.resultsChecker.BleveHook(ctx, scopeChecker); hook != nil {
-		opts = append(opts, blevesearch.WithHook(hook))
-	}
-	results, err := searcher.Search(ctx, queryWithFields, opts...)
+	results, err := searcher.Search(ctx, queryWithFields)
 	if err != nil {
 		return nil, err
 	}
@@ -213,8 +209,7 @@ func (h *pgSearchHelper) executeSearch(ctx context.Context, q *v1.Query, searche
 		return nil, err
 	}
 
-	var opts []blevesearch.SearchOption
-	results, err := searcher.Search(ctx, scopedQuery, opts...)
+	results, err := searcher.Search(ctx, scopedQuery)
 	if err != nil {
 		return nil, err
 	}

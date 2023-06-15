@@ -11,24 +11,24 @@ import (
 //
 //go:generate mockgen-wrapper
 type UnsafeSearcher interface {
-	Search(ctx context.Context, q *v1.Query, opts ...SearchOption) ([]search.Result, error)
-	Count(ctx context.Context, q *v1.Query, opts ...SearchOption) (int, error)
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 }
 
 // UnsafeSearcherImpl is a search function that does not take in a context to perform SAC enforcement.
 type UnsafeSearcherImpl struct {
-	SearchFunc func(ctx context.Context, q *v1.Query, opts ...SearchOption) ([]search.Result, error)
-	CountFunc  func(ctx context.Context, q *v1.Query, opts ...SearchOption) (int, error)
+	SearchFunc func(ctx context.Context, q *v1.Query) ([]search.Result, error)
+	CountFunc  func(ctx context.Context, q *v1.Query) (int, error)
 }
 
 // Search implements Search of `UnsafeSearcher` interface.
-func (f UnsafeSearcherImpl) Search(ctx context.Context, q *v1.Query, opts ...SearchOption) ([]search.Result, error) {
-	return f.SearchFunc(ctx, q, opts...)
+func (f UnsafeSearcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return f.SearchFunc(ctx, q)
 }
 
 // Count implements Count of `UnsafeSearcher` interface.
-func (f UnsafeSearcherImpl) Count(ctx context.Context, q *v1.Query, opts ...SearchOption) (int, error) {
-	return f.CountFunc(ctx, q, opts...)
+func (f UnsafeSearcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return f.CountFunc(ctx, q)
 }
 
 // WrapUnsafeSearcherAsSearcher wraps an unsafe searcher not taking a context parameter in its Search method
