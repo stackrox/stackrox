@@ -51,7 +51,6 @@ scale/dev/launch_sensor.sh
 scale/dev/run-many.sh
 scale/launch_workload.sh
 scale/mockcollector/launch_mock_collector.sh
-scale/mocksensor/launch_mock_sensor.sh
 scale/profiler/launch-profiler.sh
 scale/profiler/port-forward.sh
 scale/signatures/create-signature-integrations.sh
