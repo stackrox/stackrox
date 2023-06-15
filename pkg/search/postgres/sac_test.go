@@ -19,6 +19,12 @@ func TestGetReadWriteSACQuery(t *testing.T) {
 	got, err = GetReadWriteSACQuery(ctx, resources.Namespace)
 	assert.Equal(t, `base_query:<match_none_query:<> > `, got.String())
 	assert.NoError(t, err)
+	got, err = GetReadWriteSACQuery(sac.WithNoAccess(context.Background()), resources.Integration)
+	assert.Equal(t, `base_query:<match_none_query:<> > `, got.String())
+	assert.NoError(t, err)
+	assert.Panics(t, func() {
+		_, _ = GetReadWriteSACQuery(context.Background(), resources.Namespace)
+	})
 }
 
 func createTestReadMultipleResourcesSomeWithNamespaceScope(t *testing.T) sac.ScopeCheckerCore {

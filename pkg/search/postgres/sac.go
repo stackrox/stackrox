@@ -29,7 +29,7 @@ func getSACQuery(ctx context.Context, targetResource permissions.ResourceMetadat
 	switch targetResource.GetScope() {
 	case permissions.GlobalScope:
 		if !scopeChecker.IsAllowed() {
-			return nil, sac.ErrResourceAccessDenied
+			return getMatchNoneQuery(), nil
 		}
 		return &v1.Query{}, nil
 	case permissions.ClusterScope:
@@ -46,4 +46,16 @@ func getSACQuery(ctx context.Context, targetResource permissions.ResourceMetadat
 		return sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 	}
 	return nil, fmt.Errorf("could not prepare SAC Query for %s", targetResource)
+}
+
+func getMatchNoneQuery() *v1.Query {
+	return &v1.Query{
+		Query: &v1.Query_BaseQuery{
+			BaseQuery: &v1.BaseQuery{
+				Query: &v1.BaseQuery_MatchNoneQuery{
+					MatchNoneQuery: &v1.MatchNoneQuery{},
+				},
+			},
+		},
+	}
 }
