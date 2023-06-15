@@ -389,7 +389,7 @@ jobs:
           token: ${{ secrets.INFRA_TOKEN }}
           flavor: openshift-4-demo
           name: openshift-4-demo-${{ needs.variables.outputs.milestone }}
-          args: central-services-helm-chart-version=${{ needs.variables.outputs.milestone }},secured-cluster-services-helm-chart-version=${{ needs.variables.outputs.milestone }}
+          args: central-services-helm-chart-version=${{ needs.variables.outputs.milestone }},secured-cluster-services-helm-chart-version=${{ needs.variables.outputs.milestone }},main-image-tag:${{ needs.variables.outputs.milestone }}
           lifespan: 48h
 
   notify-os4-cluster:
