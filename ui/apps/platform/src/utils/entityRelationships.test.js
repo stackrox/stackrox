@@ -2,7 +2,7 @@ import intersection from 'lodash/intersection';
 
 import entityRelationships, {
     entityGroupMap,
-    getVulnerabilityManagementEntityTypes as getEntityTypesByRelationship,
+    getVulnerabilityManagementEntityTypesByRelationship as getEntityTypesByRelationship,
 } from './entityRelationships';
 
 describe('entityRelationshipMap', () => {
