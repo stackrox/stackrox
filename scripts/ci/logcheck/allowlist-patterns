@@ -14,3 +14,7 @@ FATAL:  connection to client lost
 # with operator installs, sensor logs contain this error w.r.t. refreshing a cert for local scanning.
 # TODO: check if this is benign and/or if sensor is configured appropriately for test.
 unexpected owner for certificate secrets
+# By design, we keep installing PodSecurityPolicy objects as long as the server supports them.
+# We detect if they are not supported and in that case do not apply them, so these warnings are not useful at this point.
+# See ROX-17796 ROX-17766 ROX-17734 for related work.
+policy/v1beta1 PodSecurityPolicy is deprecated in v1.21., unavailable in v1.25.
