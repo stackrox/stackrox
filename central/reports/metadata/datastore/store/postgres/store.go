@@ -49,14 +49,14 @@ var (
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ReportMetadata) error
 	UpsertMany(ctx context.Context, objs []*storage.ReportMetadata) error
-	Delete(ctx context.Context, reportId string) error
+	Delete(ctx context.Context, reportID string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, reportId string) (bool, error)
+	Exists(ctx context.Context, reportID string) (bool, error)
 
-	Get(ctx context.Context, reportId string) (*storage.ReportMetadata, bool, error)
+	Get(ctx context.Context, reportID string) (*storage.ReportMetadata, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ReportMetadata, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.ReportMetadata, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
@@ -78,7 +78,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoReportMetadata(ctx context.Context, batch *pgx.Batch, obj *storage.ReportMetadata) error {
+func insertIntoReportMetadata(_ context.Context, batch *pgx.Batch, obj *storage.ReportMetadata) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -301,7 +301,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ReportMetada
 }
 
 // Delete removes the object associated to the specified ID from the store.
-func (s *storeImpl) Delete(ctx context.Context, reportId string) error {
+func (s *storeImpl) Delete(ctx context.Context, reportID string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ReportMetadata")
 
 	var sacQueryFilter *v1.Query
@@ -312,7 +312,7 @@ func (s *storeImpl) Delete(ctx context.Context, reportId string) error {
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(reportId).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(reportID).ProtoQuery(),
 	)
 
 	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
@@ -391,7 +391,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the ID exists in the store.
-func (s *storeImpl) Exists(ctx context.Context, reportId string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, reportID string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ReportMetadata")
 
 	var sacQueryFilter *v1.Query
@@ -402,7 +402,7 @@ func (s *storeImpl) Exists(ctx context.Context, reportId string) (bool, error) {
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(reportId).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(reportID).ProtoQuery(),
 	)
 
 	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
@@ -412,7 +412,7 @@ func (s *storeImpl) Exists(ctx context.Context, reportId string) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, reportId string) (*storage.ReportMetadata, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, reportID string) (*storage.ReportMetadata, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ReportMetadata")
 
 	var sacQueryFilter *v1.Query
@@ -424,7 +424,7 @@ func (s *storeImpl) Get(ctx context.Context, reportId string) (*storage.ReportMe
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(reportId).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(reportID).ProtoQuery(),
 	)
 
 	data, err := pgSearch.RunGetQueryForSchema[storage.ReportMetadata](ctx, schema, q, s.db)
