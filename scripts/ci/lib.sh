@@ -125,33 +125,6 @@ setup_deployment_env() {
     ci_export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
 }
 
-install_built_roxctl_in_gopath() {
-    require_environment "GOPATH"
-
-    local bin_os bin_platform
-    if is_darwin; then
-        bin_os="darwin"
-    elif is_linux; then
-        bin_os="linux"
-    else
-        die "Only linux or darwin are supported for this test"
-    fi
-
-    case "$(uname -m)" in
-        x86_64) bin_platform="${bin_os}_amd64" ;;
-        aarch64) bin_platform="${bin_os}_arm64" ;;
-        ppc64le) bin_platform="${bin_os}_ppc64le" ;;
-        s390x) bin_platform="${bin_os}_s390x" ;;
-        *) die "Unknown architecture" ;;
-    esac
-
-    local roxctl="$SCRIPTS_ROOT/bin/${bin_platform}/roxctl"
-
-    require_executable "$roxctl" "roxctl should be built"
-
-    cp "$roxctl" "$GOPATH/bin/roxctl"
-}
-
 get_central_debug_dump() {
     info "Getting a central debug dump"
 
@@ -1186,8 +1159,8 @@ handle_nightly_binary_version_mismatch() {
     echo "Current roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
 
     if ! [[ "$(roxctl version || true)" =~ nightly-$(date '+%Y%m%d') ]]; then
-        make cli-build upgrader
-        install_built_roxctl_in_gopath
+        make cli_host-arch upgrader
+        make cli-install
         echo "Replacement roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
     fi
 }
