@@ -28,10 +28,11 @@ jobs:
         run: |
           source './scripts/ci/lib.sh'
 
-          matrix='{"pre_build_go_binaries": {"name":[], "arch":[]}, "build_and_push_main": {"name":[], "arch":[]} }'
+          matrix='{"pre_build_go_binaries": {"name":[]}, "pre_build_go_binaries_power": {"name":[]}, "build_and_push_main": {"name":[], "arch":[]} }'
 
           # The base matrix
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries_power.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_main.name += ["STACKROX_BRANDING", "RHACS_BRANDING"]' <<< "$matrix")"
 
           matrix="$(jq '.build_and_push_main.arch += ["amd64", "ppc64le"]' <<< "$matrix")"
@@ -40,6 +41,7 @@ jobs:
           if ! is_tagged; then
             if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
               matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
+              matrix="$(jq '.pre_build_go_binaries_power.name += ["prerelease"]' <<< "$matrix")"
               matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
             fi
           fi
@@ -47,6 +49,7 @@ jobs:
           # Conditionally add a -race debug build (binaries built with -race)
           if ! is_in_PR_context || pr_has_label ci-build-race-condition-debug; then
             matrix="$(jq '.pre_build_go_binaries.name += ["race-condition-debug"]' <<< "$matrix")"
+            matrix="$(jq '.pre_build_go_binaries_power.name += ["race-condition-debug"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.name += ["race-condition-debug"]' <<< "$matrix")"
           fi
 
@@ -202,7 +205,7 @@ jobs:
         run: make build-prep main-build-nodeps
 
       - name: Bundle the build to preserve permissions
-        run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
+        run: tar -cvzf go-binaries-build.tgz bin/linux_amd64
 
       - uses: actions/upload-artifact@v3
         with:
@@ -215,7 +218,7 @@ jobs:
       # default - built with environment defaults (see handle-tagged-build & env.mk)
       # prerelease - built with GOTAGS=release
       # race-condition-debug - built with -race
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries_power }}
     needs: 
       - define-job-matrix
       - build-rocksdb-bins-power
@@ -258,7 +261,7 @@ jobs:
         run: make build-prep main-build-nodeps
 
       - name: Bundle the build to preserve permissions
-        run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
+        run: tar -cvzf go-binaries-build.tgz bin/linux_ppc64le
 
       - uses: actions/upload-artifact@v3
         with:
