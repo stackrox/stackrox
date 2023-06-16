@@ -114,10 +114,12 @@ deploy_earlier_central() {
          --set scanner.image.tag="$(cat SCANNER_VERSION)" \
          --set scanner.dbImage.tag="$(cat SCANNER_VERSION)"
 
+    info "SHREWS -- figure this out"
+    ls /tmp/early-stackrox-central-services-chart
 #    export_central_basic_auth_creds
     if [[ -f "/tmp/early-stackrox-central-services-chart/password" ]]; then
         info "Getting central basic auth creds from central-deploy/password"
-        ROX_PASSWORD="$(cat /tmp/early-stackrox-central-services-chart/password)"
+        ROX_PASSWORD=$(cat /tmp/early-stackrox-central-services-chart/password)
     elif [[ -n "${ROX_PASSWORD:-}" ]]; then
         info "Using existing ROX_PASSWORD env"
     else
