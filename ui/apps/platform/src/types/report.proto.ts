@@ -59,3 +59,18 @@ export type DaysOfWeek = {
 export type DaysOfMonth = {
     days: string[]; // int32
 };
+
+// For v2 of Vulnerability Reporting
+export type ReportStatus = {
+    runState: RunState;
+    runTime: string; // in the format of google.protobuf.Timestamp};
+    errorMsg: string;
+    reportMethod: ReportMethod;
+    reportNotificationMethod: NotificationMethod;
+};
+
+export type RunState = 'WAITING' | 'PREPARING' | 'SUCCESS' | 'FAILURE';
+
+export type ReportMethod = 'ON_DEMAND' | 'SCHEDULED';
+
+export type NotificationMethod = 'UNSET' | 'EMAIL' | 'DOWNLOAD';
