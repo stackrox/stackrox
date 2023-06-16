@@ -34,7 +34,6 @@ jobs:
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_main.name += ["STACKROX_BRANDING", "RHACS_BRANDING"]' <<< "$matrix")"
 
-          matrix="$(jq '.pre_build_go_binaries.arch += ["amd64", "ppc64le"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_main.arch += ["amd64", "ppc64le"]' <<< "$matrix")"
 
           # Conditionally add a prerelease build (binaries built with GOTAGS=release)
