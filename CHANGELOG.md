@@ -51,6 +51,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The default permission set `Vulnerability Management Approver` is deprecated and will be removed in a future release. Customers are advised to use `Vulnerability Management Admin` permission set instead. When `Vulnerability Management Approver` permission set is removed existing roles using it will be updated to use `Vulnerability Management Admin`.
 - The default permission set `Vulnerability Management Requester` is deprecated and will be removed in a future release. Customers are advised to use `Vulnerability Management Consumer` permission set instead. When `Vulnerability Management Requester` permission set is removed existing roles using it will be updated to use `Vulnerability Management Consumer`.
 - The default permission set `Vulnerability Report Creator` is deprecated and will be removed in a future release. Customers are advised to use `Vulnerability Management Admin` permission set instead. When `Vulnerability Report Creator` permission set is removed existing roles using it will be updated to use `Vulnerability Management Admin`.
+- `/v1/imagecves/suppress` and `/v1/imagecves/unsuppress` used to defer image vulnerabilities globally and undo deferral are deprecated and will be removed in a future release. Once removed, use Risk Acceptance workflow to defer image vulnerabilities globally.
 
 ### Technical Changes
 - The Central PVC stackrox-db is no longer required after this upgrade. To obsolete existing PVC, please check the docs online.
