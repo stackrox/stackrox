@@ -6,11 +6,11 @@ import (
 )
 
 // SensorHello returns a fake SensorHello message
-func SensorHello(clsuterID string) *central.MsgToSensor {
+func SensorHello(clusterID string) *central.MsgToSensor {
 	return &central.MsgToSensor{
 		Msg: &central.MsgToSensor_Hello{
 			Hello: &central.CentralHello{
-				ClusterId:  clsuterID,
+				ClusterId:  clusterID,
 				CertBundle: map[string]string{},
 			},
 		},

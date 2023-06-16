@@ -7,25 +7,34 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-type certificateParser struct {
+type fakeCertificateParser struct {
+	clusterID string
 }
 
 // LeafCertificateFromFile returns an empty tls.Certificate.
-func (c *certificateParser) LeafCertificateFromFile() (tls.Certificate, error) {
+func (c *fakeCertificateParser) LeafCertificateFromFile() (tls.Certificate, error) {
 	return tls.Certificate{}, nil
 }
 
 // CACert returns an empty x509.Certificate.
-func (c *certificateParser) CACert() (*x509.Certificate, []byte, error) {
+func (c *fakeCertificateParser) CACert() (*x509.Certificate, []byte, error) {
 	return &x509.Certificate{}, []byte{}, nil
 }
 
 // ParseClusterIDFromServiceCert returns a dummy cluster id.
-func (c *certificateParser) ParseClusterIDFromServiceCert(_ storage.ServiceType) (string, error) {
-	return "00000000-0000-4000-A000-000000000000", nil
+func (c *fakeCertificateParser) ParseClusterIDFromServiceCert(_ storage.ServiceType) (string, error) {
+	return c.clusterID, nil
 }
 
-// NewSensorCertsParser creates a new SensorCertsParser
-func NewSensorCertsParser() *certificateParser {
-	return &certificateParser{}
+// WithClusterID sets the clusterID.
+func (c *fakeCertificateParser) WithClusterID(clusterID string) *fakeCertificateParser {
+	c.clusterID = clusterID
+	return c
+}
+
+// NewSensorFakeCertsParser creates a new CertsParser.
+func NewSensorFakeCertsParser() *fakeCertificateParser {
+	return &fakeCertificateParser{
+		clusterID: "00000000-0000-4000-A000-000000000000",
+	}
 }

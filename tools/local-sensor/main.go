@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	commonSensor "github.com/stackrox/rox/sensor/common/sensor"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
@@ -98,6 +99,10 @@ type localSensorConfig struct {
 const (
 	jsonFormat string = "json"
 	rawFormat  string = "raw"
+)
+
+var (
+	clusterID uuid.UUID = uuid.NewDummy()
 )
 
 func writeOutputInJSONFormat(messages []*central.MsgFromSensor, start, end time.Time, outfile string) {
@@ -311,7 +316,8 @@ func main() {
 		WithWorkloadManager(workloadManager)
 
 	if isFakeCentral {
-		sensorConfig = sensorConfig.WithCertsParser(certs.NewSensorCertsParser())
+		sensorConfig = sensorConfig.WithCertsParser(certs.NewSensorFakeCertsParser().
+			WithClusterID(clusterID.String()))
 	}
 
 	if localConfig.RecordK8sEnabled {
@@ -429,7 +435,7 @@ func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclien
 	}
 
 	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
-		message.SensorHello("00000000-0000-4000-A000-000000000000"),
+		message.SensorHello(clusterID.String()),
 		message.ClusterConfig(),
 		message.PolicySync(policies),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
