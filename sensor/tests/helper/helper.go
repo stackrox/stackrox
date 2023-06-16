@@ -6,7 +6,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"path"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -19,7 +18,9 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
+	"github.com/stackrox/rox/sensor/debugger/certs"
 	"github.com/stackrox/rox/sensor/debugger/message"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
@@ -56,9 +57,11 @@ const (
 
 	// defaultTicker the default interval for the assertion functions to retry the assertion
 	defaultTicker = 500 * time.Millisecond
+)
 
-	// certID is the id in the certificate which is sent on the hello message
-	certID = "00000000-0000-4000-A000-000000000000"
+var (
+	// clusterID is the cluster id sent on the hello message
+	clusterID = uuid.NewDummy()
 )
 
 // K8sResourceInfo is a test file in YAML or a struct
@@ -281,7 +284,7 @@ func (c *TestContext) RestartFakeCentralConnection() {
 // StartFakeGRPC will start a gRPC server to act as Central.
 func (c *TestContext) StartFakeGRPC() {
 	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
-		message.SensorHello(certID),
+		message.SensorHello(clusterID.String()),
 		message.ClusterConfig(),
 		message.PolicySync(c.config.InitialSystemPolicies),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
@@ -618,16 +621,13 @@ type CentralConfig struct {
 }
 
 func (c *TestContext) startSensorInstance(env *envconf.Config) {
-	c.t.Setenv("ROX_MTLS_CERT_FILE", path.Join(c.config.CertFilePath, "/cert.pem"))
-	c.t.Setenv("ROX_MTLS_KEY_FILE", path.Join(c.config.CertFilePath, "/key.pem"))
-	c.t.Setenv("ROX_MTLS_CA_FILE", path.Join(c.config.CertFilePath, "/caCert.pem"))
-	c.t.Setenv("ROX_MTLS_CA_KEY_FILE", path.Join(c.config.CertFilePath, "/caKey.pem"))
-
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(client.MustCreateInterfaceFromRest(env.Client().RESTConfig())).
 		WithLocalSensor(true).
 		WithResyncPeriod(1 * time.Second).
-		WithCentralConnectionFactory(c.grpcFactory))
+		WithCentralConnectionFactory(c.grpcFactory).
+		WithCertsParser(certs.NewSensorFakeCertsParser().
+			WithClusterID(clusterID.String())))
 
 	if err != nil {
 		panic(err)

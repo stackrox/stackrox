@@ -420,11 +420,6 @@ func setupCentralWithRealConnection(localConfig localSensorConfig) centralclient
 }
 
 func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclient.CentralConnectionFactory, *centralDebug.FakeService) {
-	// utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "tools/local-sensor/certs/cert.pem"))
-	// utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "tools/local-sensor/certs/key.pem"))
-	// utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "tools/local-sensor/certs/caCert.pem"))
-	// utils.CrashOnError(os.Setenv("ROX_MTLS_CA_KEY_FILE", "tools/local-sensor/certs/caKey.pem"))
-
 	var policies []*storage.Policy
 	var err error
 	if localConfig.PoliciesFile != "" {

@@ -12,7 +12,9 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
+	"github.com/stackrox/rox/sensor/debugger/certs"
 	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/debugger/message"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
@@ -32,6 +34,7 @@ var (
 	fakeCentral *centralDebug.FakeService
 
 	setupOnce sync.Once
+	clusterID = uuid.NewDummy()
 )
 
 var (
@@ -79,13 +82,8 @@ func Benchmark_Pipeline(b *testing.B) {
 	setupOnce.Do(func() {
 		fakeClient = k8s.MakeFakeClient()
 
-		b.Setenv("ROX_MTLS_CERT_FILE", "../../../tools/local-sensor/certs/cert.pem")
-		b.Setenv("ROX_MTLS_KEY_FILE", "../../../tools/local-sensor/certs/key.pem")
-		b.Setenv("ROX_MTLS_CA_FILE", "../../../tools/local-sensor/certs/caCert.pem")
-		b.Setenv("ROX_MTLS_CA_KEY_FILE", "../../../tools/local-sensor/certs/caKey.pem")
-
 		fakeCentral = centralDebug.MakeFakeCentralWithInitialMessages(
-			message.SensorHello("00000000-0000-4000-A000-000000000000"),
+			message.SensorHello(clusterID.String()),
 			message.ClusterConfig(),
 			message.PolicySync([]*storage.Policy{}),
 			message.BaselineSync([]*storage.ProcessBaseline{}))
@@ -302,7 +300,9 @@ func setupSensor(fakeCentral *centralDebug.FakeService, fakeClient *k8s.ClientSe
 		WithK8sClient(fakeClient).
 		WithLocalSensor(true).
 		WithResyncPeriod(resyncTime).
-		WithCentralConnectionFactory(fakeConnectionFactory))
+		WithCentralConnectionFactory(fakeConnectionFactory).
+		WithCertsParser(certs.NewSensorFakeCertsParser().
+			WithClusterID(clusterID.String())))
 
 	if err != nil {
 		panic(err)

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
+	"github.com/stackrox/rox/sensor/debugger/certs"
 	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/debugger/message"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
@@ -29,6 +30,9 @@ const (
 	// This is because we need to wait for the event outputs of each kubernetes event before sending the next.
 	// If we receive re-sync events before we finish processing all the events, we might run into unknown behaviour
 	resyncTime = 1 * time.Second
+
+	// clusterID is the cluster id sent on the hello message
+	clusterID = "00000000-0000-4000-A000-000000000000"
 )
 
 // Suite defines the interface to be used with these helper functions
@@ -44,17 +48,12 @@ type Suite interface {
 func SetupTest(suite Suite) {
 	suite.SetFakeClient(k8s.MakeFakeClient())
 
-	suite.GetT().Setenv("ROX_MTLS_CERT_FILE", "../../../../tools/local-sensor/certs/cert.pem")
-	suite.GetT().Setenv("ROX_MTLS_KEY_FILE", "../../../../tools/local-sensor/certs/key.pem")
-	suite.GetT().Setenv("ROX_MTLS_CA_FILE", "../../../../tools/local-sensor/certs/caCert.pem")
-	suite.GetT().Setenv("ROX_MTLS_CA_KEY_FILE", "../../../../tools/local-sensor/certs/caKey.pem")
-
 	policies, err := testutils.GetPoliciesFromFile("../data/policies.json")
 	if err != nil {
 		panic(err)
 	}
 	suite.SetFakeCentral(centralDebug.MakeFakeCentralWithInitialMessages(
-		message.SensorHello("00000000-0000-4000-A000-000000000000"),
+		message.SensorHello(clusterID),
 		message.ClusterConfig(),
 		message.PolicySync(policies),
 		message.BaselineSync([]*storage.ProcessBaseline{})),
@@ -77,7 +76,9 @@ func StartTest(suite Suite) *TraceWriterWithChannel {
 		WithLocalSensor(true).
 		WithResyncPeriod(resyncTime).
 		WithCentralConnectionFactory(fakeConnectionFactory).
-		WithTraceWriter(writer))
+		WithTraceWriter(writer).
+		WithCertsParser(certs.NewSensorFakeCertsParser().
+			WithClusterID(clusterID)))
 
 	if err != nil {
 		panic(err)
