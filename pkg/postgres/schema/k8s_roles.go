@@ -35,15 +35,16 @@ var (
 )
 
 const (
+	// K8sRolesTableName specifies the name of the table in postgres.
 	K8sRolesTableName = "k8s_roles"
 )
 
 // K8sRoles holds the Gorm model for Postgres table `k8s_roles`.
 type K8sRoles struct {
-	Id          string            `gorm:"column:id;type:uuid;primaryKey"`
+	ID          string            `gorm:"column:id;type:uuid;primaryKey"`
 	Name        string            `gorm:"column:name;type:varchar"`
 	Namespace   string            `gorm:"column:namespace;type:varchar;index:k8sroles_sac_filter,type:btree"`
-	ClusterId   string            `gorm:"column:clusterid;type:uuid;index:k8sroles_sac_filter,type:btree"`
+	ClusterID   string            `gorm:"column:clusterid;type:uuid;index:k8sroles_sac_filter,type:btree"`
 	ClusterName string            `gorm:"column:clustername;type:varchar"`
 	ClusterRole bool              `gorm:"column:clusterrole;type:bool"`
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`

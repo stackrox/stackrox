@@ -30,6 +30,7 @@ var (
 )
 
 const (
+	// DelegatedRegistryConfigsTableName specifies the name of the table in postgres.
 	DelegatedRegistryConfigsTableName = "delegated_registry_configs"
 )
 

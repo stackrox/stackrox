@@ -12,7 +12,7 @@ func ConvertTestChild1FromProto(obj *storage.TestChild1) (*TestChild1, error) {
 		return nil, err
 	}
 	model := &TestChild1{
-		Id:         obj.GetId(),
+		ID:         obj.GetId(),
 		Val:        obj.GetVal(),
 		Serialized: serialized,
 	}

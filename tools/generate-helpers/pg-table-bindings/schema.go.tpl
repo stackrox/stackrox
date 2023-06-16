@@ -112,6 +112,7 @@ var (
     {{- end }}
 {{- end}}
 {{- define "createTableNames" }}
+    // {{.Table|upperCamelCase}}TableName specifies the name of the table in postgres.
     {{.Table|upperCamelCase}}TableName = "{{.Table|lowerCase}}"
 	{{- range $index, $child := .Children }}
 	   {{- template "createTableNames" $child }}

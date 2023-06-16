@@ -79,7 +79,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoPolicies(ctx context.Context, batch *pgx.Batch, obj *storage.Policy) error {
+func insertIntoPolicies(_ context.Context, batch *pgx.Batch, obj *storage.Policy) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -597,12 +597,12 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Policy) error
 //// Stubs for satisfying legacy interfaces
 
 // RenamePolicyCategory is not implemented in postgres mode.
-func (s *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error {
+func (s *storeImpl) RenamePolicyCategory(_ *v1.RenamePolicyCategoryRequest) error {
 	return errors.New("unimplemented")
 }
 
 // DeletePolicyCategory is not implemented in postgres mode.
-func (s *storeImpl) DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error {
+func (s *storeImpl) DeletePolicyCategory(_ *v1.DeletePolicyCategoryRequest) error {
 	return errors.New("unimplemented")
 }
 

@@ -35,7 +35,9 @@ var (
 )
 
 const (
-	TestMultiKeyStructsTableName        = "test_multi_key_structs"
+	// TestMultiKeyStructsTableName specifies the name of the table in postgres.
+	TestMultiKeyStructsTableName = "test_multi_key_structs"
+	// TestMultiKeyStructsNestedsTableName specifies the name of the table in postgres.
 	TestMultiKeyStructsNestedsTableName = "test_multi_key_structs_nesteds"
 )
 

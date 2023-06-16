@@ -78,7 +78,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoServiceIdentities(ctx context.Context, batch *pgx.Batch, obj *storage.ServiceIdentity) error {
+func insertIntoServiceIdentities(_ context.Context, batch *pgx.Batch, obj *storage.ServiceIdentity) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

@@ -30,6 +30,7 @@ var (
 )
 
 const (
+	// RolesTableName specifies the name of the table in postgres.
 	RolesTableName = "roles"
 )
 

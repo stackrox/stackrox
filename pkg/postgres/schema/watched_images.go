@@ -30,6 +30,7 @@ var (
 )
 
 const (
+	// WatchedImagesTableName specifies the name of the table in postgres.
 	WatchedImagesTableName = "watched_images"
 )
 

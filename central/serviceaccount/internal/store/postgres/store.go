@@ -80,7 +80,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoServiceAccounts(ctx context.Context, batch *pgx.Batch, obj *storage.ServiceAccount) error {
+func insertIntoServiceAccounts(_ context.Context, batch *pgx.Batch, obj *storage.ServiceAccount) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

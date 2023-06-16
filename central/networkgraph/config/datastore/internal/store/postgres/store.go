@@ -77,7 +77,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoNetworkGraphConfigs(ctx context.Context, batch *pgx.Batch, obj *storage.NetworkGraphConfig) error {
+func insertIntoNetworkGraphConfigs(_ context.Context, batch *pgx.Batch, obj *storage.NetworkGraphConfig) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

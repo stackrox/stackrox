@@ -78,7 +78,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoAuthProviders(ctx context.Context, batch *pgx.Batch, obj *storage.AuthProvider) error {
+func insertIntoAuthProviders(_ context.Context, batch *pgx.Batch, obj *storage.AuthProvider) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
