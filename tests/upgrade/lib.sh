@@ -103,7 +103,8 @@ deploy_earlier_central() {
 #    ./deploy/k8s/central.sh
 
     # Let's try helm
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart
+    ROX_PASSWORD=`echo $RANDOM_$(date +%s-%d-%M) |base64|cut -c 1-20`
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --password "${ROX_PASSWORD}"--output-dir /tmp/early-stackrox-central-services-chart
 #    sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/early-stackrox-central-services-chart/internal/defaults.yaml
     helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
          --set central.db.enabled=false \
@@ -117,15 +118,15 @@ deploy_earlier_central() {
     info "SHREWS -- figure this out"
     ls /tmp/early-stackrox-central-services-chart
 #    export_central_basic_auth_creds
-    if [[ -f "/tmp/early-stackrox-central-services-chart/password" ]]; then
-        info "Getting central basic auth creds from central-deploy/password"
-        ROX_PASSWORD=$(cat /tmp/early-stackrox-central-services-chart/password)
-    elif [[ -n "${ROX_PASSWORD:-}" ]]; then
-        info "Using existing ROX_PASSWORD env"
-    else
-        echo "Expected to find file ${DEPLOY_DIR}/central-deploy/password or ROX_PASSWORD env"
-        exit 1
-    fi
+#    if [[ -f "/tmp/early-stackrox-central-services-chart/password" ]]; then
+#        info "Getting central basic auth creds from central-deploy/password"
+#        ROX_PASSWORD=$(cat /tmp/early-stackrox-central-services-chart/password)
+#    elif [[ -n "${ROX_PASSWORD:-}" ]]; then
+#        info "Using existing ROX_PASSWORD env"
+#    else
+#        echo "Expected to find file ${DEPLOY_DIR}/central-deploy/password or ROX_PASSWORD env"
+#        exit 1
+#    fi
 
     ROX_USERNAME="admin"
     ci_export "ROX_USERNAME" "$ROX_USERNAME"
