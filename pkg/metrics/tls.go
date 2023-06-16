@@ -33,6 +33,7 @@ func keyFilePath() string {
 }
 
 // TLSConfigurer instantiates and updates the TLS configuration of a web server.
+// TODO: generate mocks
 type TLSConfigurer interface {
 	TLSConfig() (*tls.Config, error)
 	WatchForChanges()
@@ -67,16 +68,7 @@ type TLSConfigurerImpl struct {
 }
 
 // NewTLSConfigurer creates a new TLS configurer.
-func NewTLSConfigurer(certDir, clientCANamespace, clientCAConfigMap string) (TLSConfigurer, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, err
-	}
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
+func NewTLSConfigurer(certDir string, k8sClient kubernetes.Interface, clientCANamespace, clientCAConfigMap string) (TLSConfigurer, error) {
 	tlsRootConfig := verifier.DefaultTLSServerConfig(nil, nil)
 	tlsRootConfig.ClientAuth = tls.RequireAndVerifyClientCert
 	cfgr := &TLSConfigurerImpl{
@@ -87,7 +79,7 @@ func NewTLSConfigurer(certDir, clientCANamespace, clientCAConfigMap string) (TLS
 	}
 	cfgr.tlsConfigHolder.AddServerCertSource(&cfgr.serverCerts)
 	cfgr.tlsConfigHolder.AddClientCertSource(&cfgr.clientCAs)
-	cfgr.k8sWatcher = k8scfgwatch.NewConfigMapWatcher(clientset, cfgr.updateClientCA)
+	cfgr.k8sWatcher = k8scfgwatch.NewConfigMapWatcher(k8sClient, cfgr.updateClientCA)
 	return cfgr, nil
 }
 
@@ -97,10 +89,18 @@ func NewTLSConfigurerFromEnv() TLSConfigurer {
 		return nil
 	}
 
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil
+	}
 	certDir := env.SecureMetricsCertDir.Setting()
 	clientCANamespace := env.SecureMetricsClientCANamespace.Setting()
 	clientCAConfigMap := env.SecureMetricsClientCAConfigMap.Setting()
-	cfgr, err := NewTLSConfigurer(certDir, clientCANamespace, clientCAConfigMap)
+	cfgr, err := NewTLSConfigurer(certDir, clientset, clientCANamespace, clientCAConfigMap)
 	if err != nil {
 		log.Error(errors.Wrap(err, "failed to create TLS config loader"))
 	}
