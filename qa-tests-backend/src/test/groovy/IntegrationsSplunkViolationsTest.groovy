@@ -158,7 +158,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         Map<String, String> policyInfo = originalEvent.getMap("policyInfo") ?: [:]
         Map<String, String> processInfo = originalEvent.getMap("processInfo") ?: [:]
 
-        assert result.get("app") == "rhacs"
+        assert result.get("app") == "stackrox"
         assert result.get("type") == "alert"
         verifyRequiredResultKey(result, "id", violationInfo.get("violationId"))
         verifyRequiredResultKey(result, "description", violationInfo.get("violationMessage"))
