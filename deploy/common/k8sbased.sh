@@ -209,16 +209,22 @@ function launch_central {
         add_args "--declarative-config-config-maps=declarative-configurations"
     fi
 
+    if [[ -n "${ROX_TELEMETRY_STORAGE_KEY_V1}" ]]; then
+      add_args "--enable-telemetry=true"
+    else
+      add_args "--enable-telemetry=false"
+    fi
+
     local unzip_dir="${k8s_dir}/central-deploy/"
     rm -rf "${unzip_dir}"
     if ! (( use_docker )); then
         rm -rf central-bundle "${k8s_dir}/central-bundle"
-        roxctl central generate --enable-telemetry=false "${ORCH}" "${EXTRA_ARGS[@]}" --output-dir="central-bundle" "${STORAGE}" "${STORAGE_ARGS[@]}"
+        roxctl central generate "${ORCH}" "${EXTRA_ARGS[@]}" --output-dir="central-bundle" "${STORAGE}" "${STORAGE_ARGS[@]}"
         cp -R central-bundle/ "${unzip_dir}/"
         rm -rf central-bundle
     else
         docker run --rm ${DOCKER_PLATFORM_ARGS[@]} "${EXTRA_DOCKER_ARGS[@]}" --env-file <(env | grep '^ROX_') "$ROXCTL_IMAGE" \
-          central generate --enable-telemetry=false "${ORCH}" "${EXTRA_ARGS[@]}" "${STORAGE}" "${STORAGE_ARGS[@]}" > "${k8s_dir}/central.zip"
+          central generate "${ORCH}" "${EXTRA_ARGS[@]}" "${STORAGE}" "${STORAGE_ARGS[@]}" > "${k8s_dir}/central.zip"
         unzip "${k8s_dir}/central.zip" -d "${unzip_dir}"
     fi
 
