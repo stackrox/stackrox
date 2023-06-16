@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/secret/convert"
 )
@@ -112,9 +111,8 @@ func convertOne(secret *storage.ListSecret, result *search.Result) *v1.SearchRes
 }
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
-func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	// Make the UnsafeSearcher safe.
-	filteredSearcher := secretSACPostgresSearchHelper.FilteredSearcher(unsafeSearcher)
+func formatSearcher(searcher search.Searcher) search.Searcher {
+	filteredSearcher := secretSACPostgresSearchHelper.FilteredSearcher(searcher)
 	paginatedSearcher := paginated.Paginated(filteredSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 	return defaultSortedSearcher

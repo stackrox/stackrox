@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -36,12 +35,11 @@ type datastoreImpl struct {
 func newPostgres(pool postgres.DB) *datastoreImpl {
 	storage := postgresStore.New(pool)
 	indexer := postgresStore.NewIndexer(pool)
-	searcher := blevesearch.WrapUnsafeSearcherAsSearcher(indexer)
 	scheduleStorage := scheduleStore.New(pool)
 
 	return &datastoreImpl{
 		storage:         storage,
-		searcher:        searcher,
+		searcher:        indexer,
 		scheduleStorage: scheduleStorage,
 	}
 }

@@ -1,13 +1,6 @@
 package globalindex
 
 import (
-	"math"
-
-	"github.com/blevesearch/bleve"
-	_ "github.com/blevesearch/bleve/analysis/analyzer/keyword"  // Import the keyword analyzer so that it can be referred to from proto files
-	_ "github.com/blevesearch/bleve/analysis/analyzer/standard" // Import the standard analyzer so that it can be referred to from proto files
-	"github.com/blevesearch/bleve/index/store/moss"
-	"github.com/blevesearch/bleve/index/upsidedown"
 	complianceMapping "github.com/stackrox/rox/central/compliance/search"
 	"github.com/stackrox/rox/central/globalindex/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -38,17 +31,4 @@ func optionsMapToSlice(options search.OptionsMap) []search.FieldLabel {
 		labels = append(labels, k)
 	}
 	return labels
-}
-
-func kvConfigForMoss() map[string]interface{} {
-	return map[string]interface{}{
-		"mossCollectionOptions": map[string]interface{}{
-			"MaxPreMergerBatches": math.MaxInt32,
-		},
-	}
-}
-
-// MemOnlyIndex returns a temporary mem-only index.
-func MemOnlyIndex() (bleve.Index, error) {
-	return bleve.NewUsing("", mapping.GetIndexMapping(), upsidedown.Name, moss.Name, kvConfigForMoss())
 }
