@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
@@ -420,11 +419,6 @@ func (d *detectorImpl) ReprocessDeployments(deploymentIDs ...string) {
 }
 
 func (d *detectorImpl) getNetworkPoliciesApplied(deployment *storage.Deployment) *augmentedobjs.NetworkPoliciesApplied {
-	if !features.NetworkPolicySystemPolicy.Enabled() {
-		// If feature flag is disabled we simply don't do the calculation.
-		// It is fine (from the Matcher perspective) to use nil augmented objects
-		return nil
-	}
 	networkPolicies := d.networkPolicyStore.Find(deployment.GetNamespace(), deployment.GetPodLabels())
 	return networkpolicy.GenerateNetworkPoliciesAppliedObj(networkPolicies)
 }
