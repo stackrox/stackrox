@@ -877,10 +877,6 @@ func TestTranslate(t *testing.T) {
 				"central": map[string]interface{}{
 					"exposeMonitoring": false,
 					"persistence":      map[string]interface{}{"persistentVolumeClaim": map[string]interface{}{"createClaim": false}},
-					"telemetry": map[bool]any{
-						true:  map[string]interface{}{"enabled": true},
-						false: telemetryDisabledKey,
-					}[buildinfo.ReleaseBuild],
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{

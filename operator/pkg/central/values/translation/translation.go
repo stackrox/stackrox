@@ -302,19 +302,22 @@ func isTelemetryEnabled(t *platform.Telemetry) bool {
 }
 
 func getTelemetryValues(t *platform.Telemetry) *translation.ValuesBuilder {
-	storage := translation.NewValuesBuilder()
+	tv := translation.NewValuesBuilder()
 	enabled := isTelemetryEnabled(t)
 	if enabled {
-		if t.Storage != nil {
+		if t != nil && t.Storage != nil {
+			tv.SetBoolValue("enabled", true)
+			storage := translation.NewValuesBuilder()
 			storage.SetString("key", t.Storage.Key)
 			storage.SetString("endpoint", t.Storage.Endpoint)
+			tv.AddChild("storage", &storage)
 		}
 	} else {
+		tv.SetBoolValue("enabled", false)
+		storage := translation.NewValuesBuilder()
 		storage.SetString("key", &disabledTelemetryKey)
+		tv.AddChild("storage", &storage)
 	}
-	tv := translation.NewValuesBuilder()
-	tv.SetBoolValue("enabled", enabled)
-	tv.AddChild("storage", &storage)
 
 	return &tv
 }
