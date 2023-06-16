@@ -32,7 +32,7 @@ func (c *fakeCertificateParser) WithClusterID(clusterID string) *fakeCertificate
 	return c
 }
 
-// NewSensorFakeCertsParser creates a new CertsParser.
+// NewSensorFakeCertsParser creates a new fakeCertificateParser.
 func NewSensorFakeCertsParser() *fakeCertificateParser {
 	return &fakeCertificateParser{
 		clusterID: "00000000-0000-4000-A000-000000000000",
