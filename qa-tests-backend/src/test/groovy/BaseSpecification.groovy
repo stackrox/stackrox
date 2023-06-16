@@ -70,7 +70,7 @@ class BaseSpecification extends Specification {
 
     Map<String, List<String>> resourceRecord = [:]
 
-    private static String coreImageIntegrationId = null
+    public static String coreImageIntegrationId = null
 
     private static globalSetup() {
         if (globalSetupDone) {
@@ -213,7 +213,7 @@ class BaseSpecification extends Specification {
         recordResourcesAtSpecStart()
     }
 
-    private static setupCoreImageIntegration() {
+    public static setupCoreImageIntegration() {
         coreImageIntegrationId = ImageIntegrationService.getImageIntegrationByName(
                 Constants.CORE_IMAGE_INTEGRATION_NAME)
         if (!coreImageIntegrationId) {
