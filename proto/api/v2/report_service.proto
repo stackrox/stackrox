@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+option go_package = "v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+import "google/protobuf/timestamp.proto";
+import "api/v2/common.proto";
+import "api/v2/search_query.proto";
+import weak "google/api/annotations.proto";
+
+package v2;
+
+message ReportStatus {
+    enum RunState {
+        WAITING   = 0;
+        PREPARING = 1;
+        SUCCESS   = 2;
+        FAILURE   = 3;
+    }
+
+    enum ReportMethod {
+        ON_DEMAND = 0;
+        SCHEDULED = 1;
+    }
+
+    enum NotificationMethod {
+        UNSET = 0;
+        EMAIL = 1;
+        DOWNLOAD = 2;
+    }
+
+    RunState                   run_state       = 1;
+    google.protobuf.Timestamp  run_time        = 2;
+    string                     error_msg       = 3;
+    ReportMethod               report_method   = 4;
+    NotificationMethod         report_notification_method = 5;
+}
+
+
+service ReportService {
+
+    // ListReportStatus returns report status
+    rpc GetReportStatus (ResourceByID) returns (ReportStatus) {
+        option (google.api.http) = {
+            get: "/v2/reports/status/{id}"
+        };
+    }
+}
