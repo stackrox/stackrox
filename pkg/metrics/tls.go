@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/sync"
 	"go.uber.org/zap"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
