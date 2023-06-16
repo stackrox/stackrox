@@ -68,15 +68,6 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 	return helmUtil.CoalesceTables(baseValues, imageOverrideVals, valsFromCR), nil
 }
 
-func isTelemetryEnabled(t *platform.Telemetry) bool {
-	if version.IsReleaseVersion() {
-		return t == nil || t.Enabled == nil || *t.Enabled
-	}
-	// Allow development versions to configure telemetry for debugging.
-	return t != nil && t.Enabled != nil && *t.Enabled &&
-		(t.Storage != nil && t.Storage.Key != nil && *t.Storage.Key != "")
-}
-
 // translate translates a Central CR into helm values.
 func (t Translator) translate(ctx context.Context, c platform.Central) (chartutil.Values, error) {
 	v := translation.NewValuesBuilder()
@@ -91,20 +82,6 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 	centralSpec := c.Spec.Central
 	if centralSpec == nil {
 		centralSpec = &platform.CentralComponentSpec{}
-	}
-
-	if telemetry := centralSpec.Telemetry; !isTelemetryEnabled(telemetry) {
-		if telemetry == nil {
-			centralSpec.Telemetry = &platform.Telemetry{}
-			telemetry = centralSpec.Telemetry
-		}
-		// Overwrite the Central CR to disable telemetry for centrals
-		// deployed by a non-release operator version.
-		telemetry.Enabled = &[]bool{false}[0]
-		if telemetry.Storage == nil {
-			telemetry.Storage = &platform.TelemetryStorage{}
-		}
-		telemetry.Storage.Key = &disabledTelemetryKey
 	}
 
 	obsoletePVC := common.ObsoletePVC(c.GetAnnotations())
@@ -312,19 +289,33 @@ func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesB
 	return &cv
 }
 
-func getTelemetryValues(t *platform.Telemetry) *translation.ValuesBuilder {
-	tv := translation.NewValuesBuilder()
-	if t == nil {
-		return &tv
+func isTelemetryEnabled(t *platform.Telemetry) bool {
+	if version.IsReleaseVersion() {
+		// Enabled by default. Allow for empty key, as central may download it.
+		return t == nil || t.Enabled == nil || *t.Enabled
 	}
+	// Disabled by default for development versions. But when enabled, allow
+	// developers to configure telemetry for debugging purposes.
+	// A key has to be provided though.
+	return t != nil && t.Enabled != nil && *t.Enabled &&
+		(t.Storage != nil && t.Storage.Key != nil && *t.Storage.Key != "")
+}
 
-	tv.SetBool("enabled", t.Enabled)
+func getTelemetryValues(t *platform.Telemetry) *translation.ValuesBuilder {
 	storage := translation.NewValuesBuilder()
-	if t.Storage != nil {
-		storage.SetString("endpoint", t.Storage.Endpoint)
-		storage.SetString("key", t.Storage.Key)
-		tv.AddChild("storage", &storage)
+	enabled := isTelemetryEnabled(t)
+	if enabled {
+		if t.Storage != nil {
+			storage.SetString("key", t.Storage.Key)
+			storage.SetString("endpoint", t.Storage.Endpoint)
+		}
+	} else {
+		storage.SetString("key", &disabledTelemetryKey)
 	}
+	tv := translation.NewValuesBuilder()
+	tv.SetBoolValue("enabled", enabled)
+	tv.AddChild("storage", &storage)
+
 	return &tv
 }
 
