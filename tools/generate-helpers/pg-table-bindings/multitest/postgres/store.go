@@ -121,7 +121,7 @@ func insertIntoTestMultiKeyStructs(ctx context.Context, batch *pgx.Batch, obj *s
 	return nil
 }
 
-func insertIntoTestMultiKeyStructsNesteds(ctx context.Context, batch *pgx.Batch, obj *storage.TestMultiKeyStruct_Nested, test_multi_key_structs_Key1 string, test_multi_key_structs_Key2 string, idx int) error {
+func insertIntoTestMultiKeyStructsNesteds(_ context.Context, batch *pgx.Batch, obj *storage.TestMultiKeyStruct_Nested, test_multi_key_structs_Key1 string, test_multi_key_structs_Key2 string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

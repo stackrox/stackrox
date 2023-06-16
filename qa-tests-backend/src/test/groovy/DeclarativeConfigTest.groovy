@@ -826,15 +826,18 @@ splunk:
     // shares the same values.
     // The retrieved auth provider from the API will be returned, which will have the ID field populated.
     private AuthProvider verifyDeclarativeAuthProvider(AuthProvider expectedAuthProvider) {
-        def authProviderResponse = AuthProviderService.getAuthProviderService().
-                getAuthProviders(
-                        AuthproviderService.GetAuthProvidersRequest.newBuilder()
-                                .setName(expectedAuthProvider.getName()).build()
-                )
-        assert authProviderResponse.getAuthProvidersCount() == 1 :
-                "expected one auth provider with name ${expectedAuthProvider.getName()} but " +
-                        "got ${authProviderResponse.getAuthProvidersCount()}"
-        def authProvider = authProviderResponse.getAuthProviders(0)
+        def authProvider = null
+        withRetry(RETRIES, PAUSE_SECS) {
+            def authProviderResponse = AuthProviderService.getAuthProviderService().
+                    getAuthProviders(
+                            AuthproviderService.GetAuthProvidersRequest.newBuilder()
+                                    .setName(expectedAuthProvider.getName()).build()
+                    )
+            assert authProviderResponse.getAuthProvidersCount() == 1 :
+                    "expected one auth provider with name ${expectedAuthProvider.getName()} but " +
+                            "got ${authProviderResponse.getAuthProvidersCount()}"
+            authProvider = authProviderResponse.getAuthProviders(0)
+        }
         assert authProvider
         assert authProvider.getName() == expectedAuthProvider.getName()
         assert authProvider.getType() == expectedAuthProvider.getType()

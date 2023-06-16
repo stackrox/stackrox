@@ -47,14 +47,14 @@ var (
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.NetworkEntity) error
 	UpsertMany(ctx context.Context, objs []*storage.NetworkEntity) error
-	Delete(ctx context.Context, infoId string) error
+	Delete(ctx context.Context, infoID string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, infoId string) (bool, error)
+	Exists(ctx context.Context, infoID string) (bool, error)
 
-	Get(ctx context.Context, infoId string) (*storage.NetworkEntity, bool, error)
+	Get(ctx context.Context, infoID string) (*storage.NetworkEntity, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.NetworkEntity, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
@@ -76,7 +76,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoNetworkEntities(ctx context.Context, batch *pgx.Batch, obj *storage.NetworkEntity) error {
+func insertIntoNetworkEntities(_ context.Context, batch *pgx.Batch, obj *storage.NetworkEntity) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -271,7 +271,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkEntit
 }
 
 // Delete removes the object associated to the specified ID from the store.
-func (s *storeImpl) Delete(ctx context.Context, infoId string) error {
+func (s *storeImpl) Delete(ctx context.Context, infoID string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkEntity")
 
 	var sacQueryFilter *v1.Query
@@ -283,7 +283,7 @@ func (s *storeImpl) Delete(ctx context.Context, infoId string) error {
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(infoId).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(infoID).ProtoQuery(),
 	)
 
 	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
@@ -362,7 +362,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the ID exists in the store.
-func (s *storeImpl) Exists(ctx context.Context, infoId string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, infoID string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NetworkEntity")
 
 	var sacQueryFilter *v1.Query
@@ -372,7 +372,7 @@ func (s *storeImpl) Exists(ctx context.Context, infoId string) (bool, error) {
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(infoId).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(infoID).ProtoQuery(),
 	)
 
 	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
@@ -382,7 +382,7 @@ func (s *storeImpl) Exists(ctx context.Context, infoId string) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, infoId string) (*storage.NetworkEntity, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, infoID string) (*storage.NetworkEntity, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkEntity")
 
 	var sacQueryFilter *v1.Query
@@ -392,7 +392,7 @@ func (s *storeImpl) Get(ctx context.Context, infoId string) (*storage.NetworkEnt
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(infoId).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(infoID).ProtoQuery(),
 	)
 
 	data, err := pgSearch.RunGetQueryForSchema[storage.NetworkEntity](ctx, schema, q, s.db)

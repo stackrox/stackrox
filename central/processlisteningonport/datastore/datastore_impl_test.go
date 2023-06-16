@@ -14,7 +14,6 @@ import (
 	postgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/process/id"
@@ -41,10 +40,6 @@ type PLOPDataStoreTestSuite struct {
 }
 
 func (suite *PLOPDataStoreTestSuite) SetupSuite() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.T().Skip("Skip PLOP tests if postgres is disabled")
-		suite.T().SkipNow()
-	}
 	suite.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(

@@ -116,7 +116,7 @@ setup_deployment_env() {
     ci_export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
     ci_export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RO_PASSWORD"
     if [[ -z "${MAIN_IMAGE_TAG:-}" ]]; then
-        ci_export MAIN_IMAGE_TAG "$(make --quiet tag)"
+        ci_export MAIN_IMAGE_TAG "$(make --quiet --no-print-directory tag)"
     fi
 
     REPO=rhacs-eng
@@ -239,7 +239,7 @@ push_main_image_set() {
     fi
 
     local tag
-    tag="$(make --quiet tag)"
+    tag="$(make --quiet --no-print-directory tag)"
     for registry in "${destination_registries[@]}"; do
         registry_rw_login "$registry"
 
@@ -339,7 +339,7 @@ push_operator_image_set() {
     fi
 
     local tag
-    tag="$(make --quiet -C operator tag)"
+    tag="$(make --quiet --no-print-directory -C operator tag)"
     for registry in "${destination_registries[@]}"; do
         registry_rw_login "$registry"
 
@@ -371,12 +371,12 @@ push_race_condition_debug_image() {
 
     local registry="quay.io/rhacs-eng"
     registry_rw_login "$registry"
-    oc_image_mirror "$MAIN_RCD_IMAGE" "${registry}/main:$(make --quiet tag)-rcd"
+    oc_image_mirror "$MAIN_RCD_IMAGE" "${registry}/main:$(make --quiet --no-print-directory tag)-rcd"
 }
 
 push_mock_grpc_server_image() {
     local registry="quay.io/rhacs-eng"
-    image="${registry}/grpc-server:$(make --quiet tag)"
+    image="${registry}/grpc-server:$(make --quiet --no-print-directory tag)"
     info "Pushing the mock grpc server image: $MOCK_GRPC_SERVER_IMAGE to $image"
 
     if ! is_OPENSHIFT_CI; then
@@ -456,11 +456,11 @@ push_matching_collector_scanner_images() {
     }
 
     local main_tag
-    main_tag="$(make --quiet tag)"
+    main_tag="$(make --quiet --no-print-directory tag)"
     local scanner_version
-    scanner_version="$(make --quiet scanner-tag)"
+    scanner_version="$(make --quiet --no-print-directory scanner-tag)"
     local collector_version
-    collector_version="$(make --quiet collector-tag)"
+    collector_version="$(make --quiet --no-print-directory collector-tag)"
 
     for target_registry in "${target_registries[@]}"; do
         registry_rw_login "${target_registry}"
@@ -521,7 +521,7 @@ poll_for_system_test_images() {
     info "Will poll for: ${reqd_images[*]}"
 
     local tag
-    tag="$(make --quiet tag)"
+    tag="$(make --quiet --no-print-directory tag)"
     local start_time
     start_time="$(date '+%s')"
 
@@ -572,14 +572,14 @@ check_rhacs_eng_image_exists() {
 
 
 check_scanner_version() {
-    if ! is_release_version "$(make --quiet scanner-tag)"; then
+    if ! is_release_version "$(make --quiet --no-print-directory scanner-tag)"; then
         echo "::error::Scanner tag does not look like a release tag. Please update SCANNER_VERSION file before releasing."
         exit 1
     fi
 }
 
 check_collector_version() {
-    if ! is_release_version "$(make --quiet collector-tag)"; then
+    if ! is_release_version "$(make --quiet --no-print-directory collector-tag)"; then
         echo "::error::Collector tag does not look like a release tag. Please update COLLECTOR_VERSION file before releasing."
         exit 1
     fi
@@ -1079,7 +1079,7 @@ openshift_ci_mods() {
     info "Status after mods:"
     "$ROOT/status.sh" || true
 
-    STACKROX_BUILD_TAG=$(make --quiet tag)
+    STACKROX_BUILD_TAG=$(make --quiet --no-print-directory tag)
     export STACKROX_BUILD_TAG
 
     info "END OpenShift CI mods"
@@ -1226,7 +1226,7 @@ store_test_results() {
 }
 
 post_process_test_results() {
-    if ! is_OPENSHIFT_CI || is_in_PR_context; then
+    if ! is_OPENSHIFT_CI; then
         return 0
     fi
 
@@ -1236,23 +1236,32 @@ post_process_test_results() {
     fi
 
     local csv_output
+    local extra_args=()
 
     set +u
     {
-        info "Creating JIRA issues for failures found in ${ARTIFACT_DIR}"
+        if is_in_PR_context; then
+            info "Converting JUNIT found in ${ARTIFACT_DIR} to CSV"
+            extra_args=(--dry-run)
+        else
+            info "Creating JIRA issues for failures found in ${ARTIFACT_DIR}"
+        fi
+
         csv_output="$(mktemp --suffix=.csv)"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.8/junit2jira -o junit2jira && \
+
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.9/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "$(echo "$JOB_SPEC" | jq ".refs.base_link" -r)" \
-            -build-id "$BUILD_ID" \
+            -build-id "${BUILD_ID}" \
             -build-link "https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/$JOB_NAME/$BUILD_ID" \
-            -build-tag "$STACKROX_BUILD_TAG" \
-            -job-name "$JOB_NAME" \
+            -build-tag "${STACKROX_BUILD_TAG}" \
+            -csv-output "${csv_output}" \
+            -job-name "${JOB_NAME}" \
             -junit-reports-dir "${ARTIFACT_DIR}" \
             -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
             -threshold 5 \
-            -csv-output "${csv_output}"
+            "${extra_args[@]}"
 
         info "Creating Big Query test records from ${csv_output}"
         bq load \
@@ -1271,7 +1280,7 @@ send_slack_notice_for_failures_on_merge() {
     fi
 
     local tag
-    tag="$(make --quiet tag)"
+    tag="$(make --quiet --no-print-directory tag)"
     if [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]]; then
         return 0
     fi

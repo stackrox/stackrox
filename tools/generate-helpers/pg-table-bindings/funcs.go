@@ -77,13 +77,35 @@ func applyPointwise(ss []string, f func(string) string) {
 	}
 }
 
+var (
+	acronymsToUpperCase = map[string]struct{}{
+		"API":  {},
+		"CPU":  {},
+		"ID":   {},
+		"UID":  {},
+		"UUID": {},
+	}
+)
+
+func upperCaseAcronyms(s string) string {
+	uc := strings.ToUpper(s)
+	if _, found := acronymsToUpperCase[uc]; found {
+		return uc
+	}
+	return s
+}
+
 func lowerCamelCase(s string) string {
 	words := splitWords(s)
 	if len(words) == 0 {
 		return ""
 	}
 	words[0] = strings.ToLower(words[0])
+	if len(words) == 1 && words[0] == "id" {
+		return "id"
+	}
 	applyPointwise(words[1:], strings.Title)
+	applyPointwise(words, upperCaseAcronyms)
 	return strings.Join(words, "")
 }
 
@@ -93,6 +115,7 @@ func upperCamelCase(s string) string {
 		return ""
 	}
 	applyPointwise(words, strings.Title)
+	applyPointwise(words, upperCaseAcronyms)
 	return strings.Join(words, "")
 }
 

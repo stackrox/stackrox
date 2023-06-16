@@ -12,8 +12,8 @@ func ConvertTestParent2FromProto(obj *storage.TestParent2) (*TestParent2, error)
 		return nil, err
 	}
 	model := &TestParent2{
-		Id:         obj.GetId(),
-		ParentId:   obj.GetParentId(),
+		ID:         obj.GetId(),
+		ParentID:   obj.GetParentId(),
 		Val:        obj.GetVal(),
 		Serialized: serialized,
 	}

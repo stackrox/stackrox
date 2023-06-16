@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/google/go-containerregistry v0.15.2
-	github.com/prometheus/client_golang v1.15.1
+	github.com/prometheus/client_golang v1.16.0
 	github.com/quay/claircore v1.5.7
 	github.com/quay/zlog v1.1.4
 	github.com/stretchr/testify v1.8.4
@@ -50,7 +50,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
-	github.com/prometheus/procfs v0.9.0 // indirect
+	github.com/prometheus/procfs v0.10.1 // indirect
 	github.com/quay/alas v1.0.1 // indirect
 	github.com/quay/claircore/toolkit v1.0.0 // indirect
 	github.com/quay/claircore/updater/driver v1.0.0 // indirect

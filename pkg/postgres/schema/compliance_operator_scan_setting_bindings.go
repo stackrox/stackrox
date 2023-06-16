@@ -30,11 +30,12 @@ var (
 )
 
 const (
+	// ComplianceOperatorScanSettingBindingsTableName specifies the name of the table in postgres.
 	ComplianceOperatorScanSettingBindingsTableName = "compliance_operator_scan_setting_bindings"
 )
 
 // ComplianceOperatorScanSettingBindings holds the Gorm model for Postgres table `compliance_operator_scan_setting_bindings`.
 type ComplianceOperatorScanSettingBindings struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

@@ -89,9 +89,9 @@ function compare_fixable_vulns {
 FAIL_SCRIPT=false
 
 # determine all image tags
-RELEASE_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" tag)
-COLLECTOR_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" collector-tag)
-SCANNER_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" scanner-tag)
+RELEASE_TAG=$(make --quiet --no-print-directory -C "${GITROOT}" tag)
+COLLECTOR_TAG=$(make --quiet --no-print-directory -C "${GITROOT}" collector-tag)
+SCANNER_TAG=$(make --quiet --no-print-directory -C "${GITROOT}" scanner-tag)
 
 ALLOWED_VULNS=$(jq -c '.[]' "$DIR/allowed_vulns.json")
 

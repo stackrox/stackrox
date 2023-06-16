@@ -32,7 +32,6 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -486,13 +485,10 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 				return
 			}
 
-			var matched *augmentedobjs.NetworkPoliciesApplied
-			if features.NetworkPolicySystemPolicy.Enabled() {
-				matched, err = s.getNetworkPoliciesForDeployment(ctx, deployment)
-				if err != nil {
-					log.Errorf("failed to fetch network policies for deployment: %s", err.Error())
-					return
-				}
+			matched, err := s.getNetworkPoliciesForDeployment(ctx, deployment)
+			if err != nil {
+				log.Errorf("failed to fetch network policies for deployment: %s", err.Error())
+				return
 			}
 
 			violations, err := compiledPolicy.MatchAgainstDeployment(nil, booleanpolicy.EnhancedDeployment{

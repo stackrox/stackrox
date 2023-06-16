@@ -333,11 +333,11 @@ jobs:
 
       - name: Set build tag for prerelease images
         if: matrix.name == 'prerelease'
-        run: echo "BUILD_TAG=$(make --quiet tag)-prerelease" >> "$GITHUB_ENV"
+        run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
 
       - name: Set build tag for race condition images
         if: matrix.name == 'race-condition-debug'
-        run: echo "BUILD_TAG=$(make --quiet tag)-rcd" >> "$GITHUB_ENV"
+        run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
       - name: Build main images
         run: make docker-build-main-image
@@ -441,7 +441,7 @@ jobs:
         run: make -C operator/ build docker-build
 
       - name: Check that Operator image is runnable
-        run: docker run --rm "quay.io/rhacs-eng/stackrox-operator:$(make --quiet -C operator tag)" --help
+        run: docker run --rm "quay.io/rhacs-eng/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
 
       - name: Push images
         # Skip for external contributions.
@@ -489,7 +489,7 @@ jobs:
     - name: Get tag
       id: tag
       run: |
-        echo "TAG=$(make --quiet tag)" >> "$GITHUB_OUTPUT"
+        echo "TAG=$(make --quiet --no-print-directory tag)" >> "$GITHUB_OUTPUT"
 
     - name: Build image
       run: make mock-grpc-server-image

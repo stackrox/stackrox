@@ -78,7 +78,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoLogImbues(ctx context.Context, batch *pgx.Batch, obj *storage.LogImbue) error {
+func insertIntoLogImbues(_ context.Context, batch *pgx.Batch, obj *storage.LogImbue) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

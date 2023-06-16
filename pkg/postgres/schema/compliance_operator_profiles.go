@@ -30,11 +30,12 @@ var (
 )
 
 const (
+	// ComplianceOperatorProfilesTableName specifies the name of the table in postgres.
 	ComplianceOperatorProfilesTableName = "compliance_operator_profiles"
 )
 
 // ComplianceOperatorProfiles holds the Gorm model for Postgres table `compliance_operator_profiles`.
 type ComplianceOperatorProfiles struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

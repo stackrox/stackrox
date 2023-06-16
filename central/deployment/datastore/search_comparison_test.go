@@ -41,8 +41,6 @@ type SearchComparisonTestSuite struct {
 }
 
 func (s *SearchComparisonTestSuite) SetupSuite() {
-	pgtest.SkipIfPostgresDisabled(s.T())
-
 	s.testDB = pgtest.ForT(s.T())
 
 	deploymentDS, err := GetTestPostgresDataStore(s.T(), s.testDB.DB)

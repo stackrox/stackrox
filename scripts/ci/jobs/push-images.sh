@@ -21,7 +21,7 @@ push_images() {
     [[ "${OPENSHIFT_CI:-false}" == "true" ]] || { die "Only supported in OpenShift CI"; }
 
     local tag
-    tag="$(make --quiet tag)"
+    tag="$(make --quiet --no-print-directory tag)"
 
     if is_release_version "$tag"; then
         check_scanner_and_collector_versions

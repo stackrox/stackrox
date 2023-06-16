@@ -14,7 +14,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -142,9 +141,6 @@ func (s *serviceImpl) GetCollectionCount(ctx context.Context, request *v1.GetCol
 
 // DeleteCollection deletes the collection with the given ID
 func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.Errorf("%s env var is not enabled", env.PostgresDatastoreEnabled.EnvVar())
-	}
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to delete a collection")
 	}
@@ -167,10 +163,6 @@ func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.Resource
 
 // CreateCollection creates a new collection from the given request
 func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCollectionRequest) (*v1.CreateCollectionResponse, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.Errorf("%s env var is not enabled", env.PostgresDatastoreEnabled.EnvVar())
-	}
-
 	collection, err := collectionRequestToCollection(ctx, request, "")
 	if err != nil {
 		return nil, err
@@ -185,10 +177,6 @@ func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCo
 }
 
 func (s *serviceImpl) UpdateCollection(ctx context.Context, request *v1.UpdateCollectionRequest) (*v1.UpdateCollectionResponse, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.Errorf("%s env var is not enabled", env.PostgresDatastoreEnabled.EnvVar())
-	}
-
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to update a collection")
 	}
@@ -262,10 +250,6 @@ func resolveQuery(rawQuery *v1.RawQuery, withPagination bool) (*v1.Query, error)
 }
 
 func (s *serviceImpl) ListCollections(ctx context.Context, request *v1.ListCollectionsRequest) (*v1.ListCollectionsResponse, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.Errorf("%s env var is not enabled", env.PostgresDatastoreEnabled.EnvVar())
-	}
-
 	query, err := resolveQuery(request.GetQuery(), true)
 	if err != nil {
 		return nil, err
@@ -282,10 +266,6 @@ func (s *serviceImpl) ListCollections(ctx context.Context, request *v1.ListColle
 }
 
 func (s *serviceImpl) DryRunCollection(ctx context.Context, request *v1.DryRunCollectionRequest) (*v1.DryRunCollectionResponse, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.Errorf("%s env var is not enabled", env.PostgresDatastoreEnabled.EnvVar())
-	}
-
 	collection, err := collectionRequestToCollection(ctx, request, request.GetId())
 	if err != nil {
 		return nil, err

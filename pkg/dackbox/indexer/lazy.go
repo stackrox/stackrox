@@ -1,15 +1,12 @@
 package indexer
 
 import (
-	"encoding/binary"
 	"fmt"
 	"hash"
 	"hash/fnv"
 	"strings"
 	"time"
 
-	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/document"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
@@ -36,10 +33,9 @@ type Lazy interface {
 
 // NewLazy returns a new instance of a lazy indexer that reads in the values to index from the toIndex queue, indexes
 // them with the given indexer, then acks indexed values with the given acker.
-func NewLazy(toIndex queue.WaitableQueue, wrapper Wrapper, index bleve.Index, acker Acker) Lazy {
+func NewLazy(toIndex queue.WaitableQueue, wrapper Wrapper, _ interface{}, acker Acker) Lazy {
 	return &lazyImpl{
 		wrapper:    wrapper,
-		index:      index,
 		acker:      acker,
 		toIndex:    toIndex,
 		deduper:    make(map[string]uint64),
@@ -51,7 +47,6 @@ func NewLazy(toIndex queue.WaitableQueue, wrapper Wrapper, index bleve.Index, ac
 
 type lazyImpl struct {
 	wrapper Wrapper
-	index   bleve.Index
 	acker   Acker
 	toIndex queue.WaitableQueue
 	deduper map[string]uint64
@@ -91,30 +86,7 @@ func (li *lazyImpl) runIndexing() {
 	}
 }
 
-func (li *lazyImpl) evaluateDeduping(doc *document.Document) bool {
-	li.hasher.Reset()
-	for _, f := range doc.Fields {
-		if _, err := li.hasher.Write([]byte(f.Name())); err != nil {
-			log.Errorf("unable to write hash: %v", err)
-			return false
-		}
-		if _, err := li.hasher.Write(f.Value()); err != nil {
-			log.Errorf("unable to write hash: %v", err)
-			return false
-		}
-		for _, pos := range f.ArrayPositions() {
-			if err := binary.Write(li.hasher, binary.LittleEndian, pos); err != nil {
-				log.Errorf("unable to write hash: %v", err)
-				return false
-			}
-		}
-	}
-	hashValue := li.hasher.Sum64()
-	val, ok := li.deduper[doc.ID]
-	if ok && val == hashValue {
-		return true
-	}
-	li.deduper[doc.ID] = hashValue
+func (li *lazyImpl) evaluateDeduping(_ interface{}) bool {
 	return false
 }
 
@@ -161,33 +133,7 @@ func (li *lazyImpl) flush() {
 	li.buff.Reset()
 }
 
-func (li *lazyImpl) indexItems(itemsToIndex map[string]interface{}) {
-	batch := li.index.NewBatch()
-	for key, value := range itemsToIndex {
-		if value != nil {
-			doc := document.NewDocument(key)
-			if err := li.index.Mapping().MapDocument(doc, value); err != nil {
-				log.Errorf("unable to map document: %v", err)
-				continue
-			}
-			if li.evaluateDeduping(doc) {
-				indexObjectsDeduped.Inc()
-				continue
-			}
-			indexObjectsIndexed.Inc()
-			if err := batch.IndexAdvanced(doc); err != nil {
-				log.Errorf("unable to index item: %q, %v", key, err)
-			}
-		} else {
-			delete(li.deduper, key)
-			batch.Delete(key)
-		}
-	}
-	err := li.index.Batch(batch)
-	if err != nil {
-		log.Errorf("unable to index batch of items: %v", err)
-	}
-}
+func (li *lazyImpl) indexItems(_ map[string]interface{}) {}
 
 func (li *lazyImpl) ackKeys(keysToAck [][]byte) {
 	err := li.acker(keysToAck...)

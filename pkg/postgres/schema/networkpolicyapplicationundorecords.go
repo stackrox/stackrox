@@ -30,11 +30,12 @@ var (
 )
 
 const (
+	// NetworkpolicyapplicationundorecordsTableName specifies the name of the table in postgres.
 	NetworkpolicyapplicationundorecordsTableName = "networkpolicyapplicationundorecords"
 )
 
 // Networkpolicyapplicationundorecords holds the Gorm model for Postgres table `networkpolicyapplicationundorecords`.
 type Networkpolicyapplicationundorecords struct {
-	ClusterId  string `gorm:"column:clusterid;type:uuid;primaryKey"`
+	ClusterID  string `gorm:"column:clusterid;type:uuid;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

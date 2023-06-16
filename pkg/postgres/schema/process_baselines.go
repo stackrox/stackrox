@@ -35,14 +35,15 @@ var (
 )
 
 const (
+	// ProcessBaselinesTableName specifies the name of the table in postgres.
 	ProcessBaselinesTableName = "process_baselines"
 )
 
 // ProcessBaselines holds the Gorm model for Postgres table `process_baselines`.
 type ProcessBaselines struct {
-	Id              string `gorm:"column:id;type:varchar;primaryKey"`
-	KeyDeploymentId string `gorm:"column:key_deploymentid;type:uuid;index:processbaselines_key_deploymentid,type:hash"`
-	KeyClusterId    string `gorm:"column:key_clusterid;type:uuid;index:processbaselines_sac_filter,type:btree"`
+	ID              string `gorm:"column:id;type:varchar;primaryKey"`
+	KeyDeploymentID string `gorm:"column:key_deploymentid;type:uuid;index:processbaselines_key_deploymentid,type:hash"`
+	KeyClusterID    string `gorm:"column:key_clusterid;type:uuid;index:processbaselines_sac_filter,type:btree"`
 	KeyNamespace    string `gorm:"column:key_namespace;type:varchar;index:processbaselines_sac_filter,type:btree"`
 	Serialized      []byte `gorm:"column:serialized;type:bytea"`
 }

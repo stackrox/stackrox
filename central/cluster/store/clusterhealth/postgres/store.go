@@ -79,7 +79,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoClusterHealthStatuses(ctx context.Context, batch *pgx.Batch, obj *storage.ClusterHealthStatus) error {
+func insertIntoClusterHealthStatuses(_ context.Context, batch *pgx.Batch, obj *storage.ClusterHealthStatus) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

@@ -79,7 +79,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoImageIntegrations(ctx context.Context, batch *pgx.Batch, obj *storage.ImageIntegration) error {
+func insertIntoImageIntegrations(_ context.Context, batch *pgx.Batch, obj *storage.ImageIntegration) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

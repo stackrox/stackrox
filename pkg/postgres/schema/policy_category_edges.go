@@ -48,14 +48,15 @@ var (
 )
 
 const (
+	// PolicyCategoryEdgesTableName specifies the name of the table in postgres.
 	PolicyCategoryEdgesTableName = "policy_category_edges"
 )
 
 // PolicyCategoryEdges holds the Gorm model for Postgres table `policy_category_edges`.
 type PolicyCategoryEdges struct {
-	Id                  string           `gorm:"column:id;type:varchar;primaryKey"`
-	PolicyId            string           `gorm:"column:policyid;type:varchar"`
-	CategoryId          string           `gorm:"column:categoryid;type:varchar"`
+	ID                  string           `gorm:"column:id;type:varchar;primaryKey"`
+	PolicyID            string           `gorm:"column:policyid;type:varchar"`
+	CategoryID          string           `gorm:"column:categoryid;type:varchar"`
 	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
 	PoliciesRef         Policies         `gorm:"foreignKey:policyid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	PolicyCategoriesRef PolicyCategories `gorm:"foreignKey:categoryid;references:id;belongsTo;constraint:OnDelete:CASCADE"`

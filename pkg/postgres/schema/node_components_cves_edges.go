@@ -52,16 +52,17 @@ var (
 )
 
 const (
+	// NodeComponentsCvesEdgesTableName specifies the name of the table in postgres.
 	NodeComponentsCvesEdgesTableName = "node_components_cves_edges"
 )
 
 // NodeComponentsCvesEdges holds the Gorm model for Postgres table `node_components_cves_edges`.
 type NodeComponentsCvesEdges struct {
-	Id                string         `gorm:"column:id;type:varchar;primaryKey"`
+	ID                string         `gorm:"column:id;type:varchar;primaryKey"`
 	IsFixable         bool           `gorm:"column:isfixable;type:bool"`
 	FixedBy           string         `gorm:"column:fixedby;type:varchar"`
-	NodeComponentId   string         `gorm:"column:nodecomponentid;type:varchar;index:nodecomponentscvesedges_nodecomponentid,type:hash"`
-	NodeCveId         string         `gorm:"column:nodecveid;type:varchar;index:nodecomponentscvesedges_nodecveid,type:hash"`
+	NodeComponentID   string         `gorm:"column:nodecomponentid;type:varchar;index:nodecomponentscvesedges_nodecomponentid,type:hash"`
+	NodeCveID         string         `gorm:"column:nodecveid;type:varchar;index:nodecomponentscvesedges_nodecveid,type:hash"`
 	Serialized        []byte         `gorm:"column:serialized;type:bytea"`
 	NodeComponentsRef NodeComponents `gorm:"foreignKey:nodecomponentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

@@ -15,7 +15,6 @@ import (
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	podStore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -35,11 +34,6 @@ func TestPruning(t *testing.T) {
 }
 
 func (s *PostgresPruningSuite) SetupSuite() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
-
 	s.testDB = pgtest.ForT(s.T())
 	s.ctx = sac.WithAllAccess(context.Background())
 }

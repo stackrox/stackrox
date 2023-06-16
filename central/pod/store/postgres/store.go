@@ -113,7 +113,7 @@ func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) err
 	return nil
 }
 
-func insertIntoPodsLiveInstances(ctx context.Context, batch *pgx.Batch, obj *storage.ContainerInstance, pods_Id string, idx int) error {
+func insertIntoPodsLiveInstances(_ context.Context, batch *pgx.Batch, obj *storage.ContainerInstance, pods_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

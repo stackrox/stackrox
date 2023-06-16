@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
@@ -33,8 +32,7 @@ func New(storage pgStore.Store, indexer index.Indexer) Searcher {
 	}
 }
 
-func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	safeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher)
-	scopedSafeSearcher := pkgPostgres.WithScoping(safeSearcher)
+func formatSearcherV2(searcher search.Searcher) search.Searcher {
+	scopedSafeSearcher := pkgPostgres.WithScoping(searcher)
 	return sortfields.TransformSortFields(scopedSafeSearcher, schema.CollectionsSchema.OptionsMap)
 }

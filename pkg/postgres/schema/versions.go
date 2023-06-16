@@ -31,6 +31,7 @@ var (
 )
 
 const (
+	// VersionsTableName specifies the name of the table in postgres.
 	VersionsTableName = "versions"
 )
 

@@ -140,7 +140,7 @@ func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.
 	return nil
 }
 
-func insertIntoSecretsFilesRegistries(ctx context.Context, batch *pgx.Batch, obj *storage.ImagePullSecret_Registry, secrets_Id string, secrets_files_idx int, idx int) error {
+func insertIntoSecretsFilesRegistries(_ context.Context, batch *pgx.Batch, obj *storage.ImagePullSecret_Registry, secrets_Id string, secrets_files_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

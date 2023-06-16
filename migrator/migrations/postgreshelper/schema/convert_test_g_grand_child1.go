@@ -12,7 +12,7 @@ func ConvertTestGGrandChild1FromProto(obj *storage.TestGGrandChild1) (*TestGGran
 		return nil, err
 	}
 	model := &TestGGrandChild1{
-		Id:         obj.GetId(),
+		ID:         obj.GetId(),
 		Val:        obj.GetVal(),
 		Serialized: serialized,
 	}

@@ -4,19 +4,16 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/processbaseline/index"
-	"github.com/stackrox/rox/central/processbaseline/index/mappings"
 	"github.com/stackrox/rox/central/processbaseline/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
 )
 
 var (
-	deploymentExtensionSACSearchHelper         = sac.ForResource(resources.DeploymentExtension).MustCreateSearchHelper(mappings.OptionsMap)
 	deploymentExtensionPostgresSACSearchHelper = sac.ForResource(resources.DeploymentExtension).MustCreatePgSearchHelper()
 )
 
@@ -56,8 +53,8 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 // Helper functions which format our searching.
 ///////////////////////////////////////////////
 
-func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	filteredSearcher := deploymentExtensionPostgresSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the
+func formatSearcher(searcher search.Searcher) search.Searcher {
+	filteredSearcher := deploymentExtensionPostgresSACSearchHelper.FilteredSearcher(searcher) // Make the
 	// UnsafeSearcher safe.
 
 	paginatedSearcher := paginated.Paginated(filteredSearcher)

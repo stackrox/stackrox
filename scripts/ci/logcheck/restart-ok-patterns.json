@@ -30,8 +30,8 @@
         "logline": "No suitable kernel object downloaded for kernel"
     },
     {
-        "comment": "collector restart due to bouncing in upgrade test",
-        "job": "upgrade",
+        "comment": "collector restart due to sensor connection failure (likely slow start)",
+        "job": ".*",
         "logfile": "collector-previous",
         "logline": "Unable to connect to Sensor at"
     },

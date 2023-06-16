@@ -35,13 +35,14 @@ var (
 )
 
 const (
+	// NetworkBaselinesTableName specifies the name of the table in postgres.
 	NetworkBaselinesTableName = "network_baselines"
 )
 
 // NetworkBaselines holds the Gorm model for Postgres table `network_baselines`.
 type NetworkBaselines struct {
-	DeploymentId string `gorm:"column:deploymentid;type:uuid;primaryKey"`
-	ClusterId    string `gorm:"column:clusterid;type:uuid;index:networkbaselines_sac_filter,type:btree"`
+	DeploymentID string `gorm:"column:deploymentid;type:uuid;primaryKey"`
+	ClusterID    string `gorm:"column:clusterid;type:uuid;index:networkbaselines_sac_filter,type:btree"`
 	Namespace    string `gorm:"column:namespace;type:varchar;index:networkbaselines_sac_filter,type:btree"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }

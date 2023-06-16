@@ -36,7 +36,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -231,8 +230,8 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 		for _, field := range autocompleteFields {
 			fieldPaths = append(fieldPaths,
 				field.GetFieldPath(),
-				blevesearch.ToMapKeyPath(field.GetFieldPath()),
-				blevesearch.ToMapValuePath(field.GetFieldPath()),
+				search.ToMapKeyPath(field.GetFieldPath()),
+				search.ToMapValuePath(field.GetFieldPath()),
 			)
 		}
 

@@ -41,12 +41,13 @@ var (
 )
 
 const (
+	// ClusterCvesTableName specifies the name of the table in postgres.
 	ClusterCvesTableName = "cluster_cves"
 )
 
 // ClusterCves holds the Gorm model for Postgres table `cluster_cves`.
 type ClusterCves struct {
-	Id                     string                        `gorm:"column:id;type:varchar;primaryKey"`
+	ID                     string                        `gorm:"column:id;type:varchar;primaryKey"`
 	CveBaseInfoCve         string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:clustercves_cvebaseinfo_cve,type:hash"`
 	CveBaseInfoPublishedOn *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
 	CveBaseInfoCreatedAt   *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`

@@ -30,6 +30,7 @@ var (
 )
 
 const (
+	// ServiceIdentitiesTableName specifies the name of the table in postgres.
 	ServiceIdentitiesTableName = "service_identities"
 )
 
