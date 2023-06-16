@@ -36,12 +36,14 @@ type serviceImpl struct {
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	if features.VulnMgmtReportingEnhancements.Enabled() {
+		log.Infof("chsheth: Registering v2 report config server")
 		apiV2.RegisterReportConfigurationServiceServer(grpcServer, s)
 	}
 }
 
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
 	if features.VulnMgmtReportingEnhancements.Enabled() {
+		log.Infof("chsheth: Registering v2 report config handler")
 		return apiV2.RegisterReportConfigurationServiceHandler(ctx, mux, conn)
 	}
 	return nil
@@ -52,6 +54,7 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 }
 
 func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV2.ReportConfiguration) (*apiV2.ReportConfiguration, error) {
+	log.Infof("chsheth: Post v2 report config")
 	if err := s.ValidateReportConfiguration(request); err != nil {
 		return nil, errors.Wrap(err, "Validating report configuration")
 	}
@@ -101,6 +104,7 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 }
 
 func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *apiV2.RawQuery) (*apiV2.GetReportConfigurationsResponse, error) {
+	log.Infof("chsheth: Get v2 report configs")
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
