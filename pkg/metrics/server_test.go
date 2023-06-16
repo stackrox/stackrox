@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -104,7 +105,7 @@ func TestMetricsServerHTTPRequest(t *testing.T) {
 
 	resp, err := http.Get("http://localhost:9090/metrics")
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer utils.IgnoreError(resp.Body.Close)
 	msg, err := io.ReadAll(resp.Body)
 
 	require.NoError(t, err)
@@ -124,7 +125,7 @@ func TestSecureMetricsServerHTTPRequest(t *testing.T) {
 	require.NoError(t, err)
 	resp, err := client.Get("https://localhost:9443/metrics")
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer utils.IgnoreError(resp.Body.Close)
 	msg, err := io.ReadAll(resp.Body)
 
 	require.NoError(t, err)

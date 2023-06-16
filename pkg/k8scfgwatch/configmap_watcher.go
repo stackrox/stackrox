@@ -12,15 +12,19 @@ import (
 
 var log = logging.LoggerForModule()
 
+// ConfigMapWatcher watches a config map in a given namespaces and evokes a callback function
+// when changes are detected.
 type ConfigMapWatcher struct {
 	k8sClient    *kubernetes.Clientset
 	modifiedFunc func(*v1.ConfigMap)
 }
 
+// NewConfigMapWatcher creates a new config map watcher.
 func NewConfigMapWatcher(k8sClient *kubernetes.Clientset, modifiedFunc func(*v1.ConfigMap)) *ConfigMapWatcher {
 	return &ConfigMapWatcher{k8sClient: k8sClient, modifiedFunc: modifiedFunc}
 }
 
+// Watch a config map in the given namespace bound by the context.
 func (w *ConfigMapWatcher) Watch(ctx concurrency.Waitable, namespace string, name string) {
 	for {
 		select {

@@ -3,8 +3,8 @@ package metrics
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/pkg/errors"
 )
@@ -54,7 +54,7 @@ func newFakeTLSConfigurer() (TLSConfigurer, error) {
 	}
 
 	certPool := x509.NewCertPool()
-	pem, err := ioutil.ReadFile(fakeClientCAFile)
+	pem, err := os.ReadFile(fakeClientCAFile)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading test client CA certificate")
 	}
