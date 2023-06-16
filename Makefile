@@ -351,13 +351,16 @@ build-prep: deps
 .PHONY: cli-build
 cli-build: cli-linux cli-darwin cli-windows
 
-.PHONY: cli
-cli: cli-build
+.PHONY: cli-install
+cli-install:
 	# Workaround a bug on MacOS
 	rm -f $(GOPATH)/bin/roxctl
 	# Copy the user's specific OS into gopath
 	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
+
+.PHONY: cli
+cli: cli-build cli-install
 
 cli-linux: cli_linux-amd64 cli_linux-arm64 cli_linux-ppc64le cli_linux-s390x
 cli-darwin: cli_darwin-amd64 cli_darwin-arm64
@@ -368,6 +371,9 @@ cli_%: build-prep
 	$(eval   os := $(firstword $(w)))
 	$(eval arch := $(lastword  $(w)))
 	RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
+
+.PHONY: cli_host-arch
+cli_host-arch: cli_$(HOST_OS)-$(GOARCH)
 
 upgrader: bin/$(HOST_OS)_$(GOARCH)/upgrader
 
