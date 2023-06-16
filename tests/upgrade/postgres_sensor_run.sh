@@ -102,7 +102,10 @@ preamble() {
     esac
 
     require_executable "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl"
-    require_executable "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/upgrader"
+
+    if ! command -v "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/upgrader" >/dev/null 2>&1; then
+        make upgrader
+    fi
 
     info "Will clone or update a clean copy of the rox repo for test at $REPO_FOR_TIME_TRAVEL"
     if [[ -d "$REPO_FOR_TIME_TRAVEL" ]]; then
