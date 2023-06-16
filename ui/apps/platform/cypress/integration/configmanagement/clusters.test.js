@@ -166,7 +166,8 @@ describe('Configuration Management Clusters', () => {
         });
     });
 
-    it('should go from table link to controls table in side panel', () => {
+    // ROX-13011: Prevent failures, pending investigation into reason why No Controls instead of link sometimes.
+    it.skip('should go from table link to controls table in side panel', () => {
         visitConfigurationManagementDashboard();
 
         // This test assumes that scan results are available
