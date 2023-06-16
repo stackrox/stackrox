@@ -105,9 +105,10 @@ deploy_earlier_central() {
     # Let's try helm
     ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
 #    ROX_PASSWORD=`echo $RANDOM_$(date +%s-%d-%M) |base64|cut -c 1-20`
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --password "${ROX_PASSWORD}" --output-dir /tmp/early-stackrox-central-services-chart
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart
 #    sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/early-stackrox-central-services-chart/internal/defaults.yaml
     helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
+         --set central.adminPassword.value="${ROX_PASSWORD}" \
          --set central.db.enabled=false \
          --set central.exposure.loadBalancer.enabled=true \
          --set system.enablePodSecurityPolicies=false \
