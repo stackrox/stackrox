@@ -168,6 +168,9 @@ func (t *TLSConfigurerImpl) updateCertificate(cert *tls.Certificate) {
 }
 
 func (t *TLSConfigurerImpl) updateClientCA(cm *v1.ConfigMap) {
+	if cm == nil {
+		return
+	}
 	if caFile, ok := cm.Data["client-ca-file"]; ok {
 		certPEM := []byte(caFile)
 		certBlock, _ := pem.Decode([]byte(certPEM))
