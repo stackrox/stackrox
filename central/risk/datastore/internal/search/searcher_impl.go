@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
 )
 
@@ -19,7 +18,6 @@ var (
 		Field:    search.RiskScore.String(),
 		Reversed: true,
 	}
-
 	deploymentExtensionSACPostgresSearchHelper = sac.ForResource(resources.DeploymentExtension).MustCreatePgSearchHelper()
 )
 
@@ -55,8 +53,8 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
-func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	filteredSearcher := deploymentExtensionSACPostgresSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
+func formatSearcher(searcher search.Searcher) search.Searcher {
+	filteredSearcher := deploymentExtensionSACPostgresSearchHelper.FilteredSearcher(searcher) // Make the UnsafeSearcher safe.
 	paginatedSearcher := paginated.Paginated(filteredSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 	return defaultSortedSearcher

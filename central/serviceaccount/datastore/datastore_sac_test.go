@@ -6,13 +6,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
@@ -31,9 +29,6 @@ type serviceAccountSACSuite struct {
 	datastore DataStore
 
 	pool postgres.DB
-
-	engine *rocksdb.RocksDB
-	index  bleve.Index
 
 	optionsMap searchPkg.OptionsMap
 

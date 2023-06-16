@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 var (
@@ -128,8 +127,8 @@ func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResu
 // Helper functions which format our searching.
 ///////////////////////////////////////////////
 
-func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	filteredSearcher := alertPostgresSACSearchHelper.FilteredSearcher(unsafeSearcher)
+func formatSearcher(searcher search.Searcher) search.Searcher {
+	filteredSearcher := alertPostgresSACSearchHelper.FilteredSearcher(searcher)
 	withDefaultViolationState := withDefaultActiveViolations(filteredSearcher)
 	return withDefaultViolationState
 }

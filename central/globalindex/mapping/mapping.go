@@ -1,13 +1,6 @@
 package mapping
 
 import (
-	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/analysis/analyzer/custom"
-	_ "github.com/blevesearch/bleve/analysis/analyzer/keyword"  // Import the keyword analyzer so that it can be referred to from proto files
-	_ "github.com/blevesearch/bleve/analysis/analyzer/standard" // Import the standard analyzer so that it can be referred to from proto files
-	"github.com/blevesearch/bleve/analysis/token/lowercase"
-	"github.com/blevesearch/bleve/analysis/tokenizer/whitespace"
-	"github.com/blevesearch/bleve/mapping"
 	alertMapping "github.com/stackrox/rox/central/alert/mappings"
 	"github.com/stackrox/rox/central/compliance/standards/index"
 	subjectMapping "github.com/stackrox/rox/central/rbac/service/mapping"
@@ -15,58 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
-
-var (
-	indexMappingOnce sync.Once
-	indexMapping     *mapping.IndexMappingImpl
-)
-
-// GetIndexMapping returns the current index mapping
-func GetIndexMapping() mapping.IndexMapping {
-	indexMappingOnce.Do(func() {
-		indexMapping = bleve.NewIndexMapping()
-
-		utils.Must(indexMapping.AddCustomAnalyzer("single_term", singleTermAnalyzer()))
-		indexMapping.DefaultAnalyzer = "single_term" // Default to our analyzer
-
-		indexMapping.IndexDynamic = false
-		indexMapping.StoreDynamic = false
-		indexMapping.TypeField = "Type"
-		indexMapping.DefaultMapping = getDefaultDocMapping()
-
-		for category, optMap := range GetEntityOptionsMap() {
-			indexMapping.AddDocumentMapping(category.String(), blevesearch.DocumentMappingFromOptionsMap(optMap.Original()))
-		}
-
-		disabledSection := bleve.NewDocumentDisabledMapping()
-		indexMapping.AddDocumentMapping("_all", disabledSection)
-	})
-	return indexMapping
-}
-
-func getDefaultDocMapping() *mapping.DocumentMapping {
-	return &mapping.DocumentMapping{
-		Enabled: false,
-		Dynamic: false,
-	}
-}
-
-// This is the custom analyzer definition
-func singleTermAnalyzer() map[string]interface{} {
-	return map[string]interface{}{
-		"type":         custom.Name,
-		"char_filters": []string{},
-		"tokenizer":    whitespace.Name,
-		// Ignore case sensitivity
-		"token_filters": []string{
-			lowercase.Name,
-		},
-	}
-}
 
 // GetEntityOptionsMap is a mapping from search categories to the options
 func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {

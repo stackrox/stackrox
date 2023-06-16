@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 )
 
@@ -40,7 +39,7 @@ func New(storage store.Store, indexer index.Indexer) Searcher {
 	}
 }
 
-func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	scopedSearcher := pkgPostgres.WithScoping(sacHelper.FilteredSearcher(unsafeSearcher))
+func formatSearcherV2(searcher search.Searcher) search.Searcher {
+	scopedSearcher := pkgPostgres.WithScoping(sacHelper.FilteredSearcher(searcher))
 	return edgefields.TransformFixableFields(scopedSearcher)
 }
