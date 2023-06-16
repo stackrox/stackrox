@@ -10,13 +10,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/mtls/certwatch"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/sync"
 	"go.uber.org/zap"
 	"k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -58,7 +57,7 @@ type TLSConfigurerImpl struct {
 	certDir           string
 	clientCAConfigMap string
 	clientCANamespace string
-	k8sClient         *kubernetes.Clientset
+	k8sWatcher        *k8scfgwatch.ConfigMapWatcher
 
 	clientCAs       []*x509.Certificate
 	serverCerts     []tls.Certificate
@@ -69,6 +68,15 @@ type TLSConfigurerImpl struct {
 
 // NewTLSConfigurer creates a new TLS configurer.
 func NewTLSConfigurer(certDir, clientCANamespace, clientCAConfigMap string) (TLSConfigurer, error) {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
 	tlsRootConfig := verifier.DefaultTLSServerConfig(nil, nil)
 	tlsRootConfig.ClientAuth = tls.RequireAndVerifyClientCert
 	cfgr := &TLSConfigurerImpl{
@@ -79,16 +87,7 @@ func NewTLSConfigurer(certDir, clientCANamespace, clientCAConfigMap string) (TLS
 	}
 	cfgr.tlsConfigHolder.AddServerCertSource(&cfgr.serverCerts)
 	cfgr.tlsConfigHolder.AddClientCertSource(&cfgr.clientCAs)
-
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, err
-	}
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-	cfgr.k8sClient = clientset
+	cfgr.k8sWatcher = k8scfgwatch.NewConfigMapWatcher(clientset, cfgr.updateClientCA)
 	return cfgr, nil
 }
 
@@ -114,7 +113,7 @@ func (t *TLSConfigurerImpl) WatchForChanges() {
 	certwatch.WatchCertDir(t.certDir, t.getCertificateFromDirectory, t.updateCertificate)
 
 	// Watch for changes of client CA.
-	go t.watchForClientCAChanges()
+	go t.k8sWatcher.Watch(context.Background(), t.clientCANamespace, t.clientCAConfigMap)
 }
 
 // TLSConfig returns the current TLS config.
@@ -168,50 +167,18 @@ func (t *TLSConfigurerImpl) updateCertificate(cert *tls.Certificate) {
 	t.tlsConfigHolder.UpdateTLSConfig()
 }
 
-func (t *TLSConfigurerImpl) watchForClientCAChanges() {
-	for {
-		watcher, err := t.k8sClient.CoreV1().ConfigMaps(t.clientCANamespace).Watch(
-			context.Background(),
-			metav1.SingleObject(metav1.ObjectMeta{
-				Name: t.clientCAConfigMap, Namespace: t.clientCANamespace,
-			}))
+func (t *TLSConfigurerImpl) updateClientCA(cm *v1.ConfigMap) {
+	if caFile, ok := cm.Data["client-ca-file"]; ok {
+		certPEM := []byte(caFile)
+		certBlock, _ := pem.Decode([]byte(certPEM))
+		cert, err := x509.ParseCertificate(certBlock.Bytes)
 		if err != nil {
-			log.Errorw("Unable to create client CA watcher", zap.Error(err))
-			continue
-		}
-		t.updateClientCA(watcher.ResultChan())
-	}
-}
-
-func (t *TLSConfigurerImpl) updateClientCA(eventChannel <-chan watch.Event) {
-	for {
-		event, open := <-eventChannel
-		if open {
-			switch event.Type {
-			case watch.Added:
-				fallthrough
-			case watch.Modified:
-				if cm, ok := event.Object.(*v1.ConfigMap); ok {
-					if caFile, ok := cm.Data["client-ca-file"]; ok {
-						certPEM := []byte(caFile)
-						certBlock, _ := pem.Decode([]byte(certPEM))
-						cert, err := x509.ParseCertificate(certBlock.Bytes)
-						if err != nil {
-							log.Errorw("Unable to parse client CA", zap.Error(err))
-							continue
-						}
-						t.mutex.Lock()
-						t.clientCAs = []*x509.Certificate{cert}
-						t.tlsConfigHolder.UpdateTLSConfig()
-						t.mutex.Unlock()
-					}
-				}
-			default:
-			}
-		} else {
-			// If eventChannel is closed the server has closed the connection.
-			// We want to return and create another watcher.
+			log.Errorw("Unable to parse client CA", zap.Error(err))
 			return
 		}
+		t.mutex.Lock()
+		t.clientCAs = []*x509.Certificate{cert}
+		t.tlsConfigHolder.UpdateTLSConfig()
+		t.mutex.Unlock()
 	}
 }
