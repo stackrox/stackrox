@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/scopecomp"
 	"github.com/stackrox/rox/pkg/set"
@@ -48,10 +47,8 @@ func newPolicyValidator(notifierStorage notifierDataStore.DataStore) *policyVali
 		notifierStorage:            notifierStorage,
 		nonEnforceablePolicyFields: make(map[string]struct{}),
 	}
-	if features.NetworkPolicySystemPolicy.Enabled() {
-		pv.nonEnforceablePolicyFields[augmentedobjs.HasIngressPolicyCustomTag] = struct{}{}
-		pv.nonEnforceablePolicyFields[augmentedobjs.HasEgressPolicyCustomTag] = struct{}{}
-	}
+	pv.nonEnforceablePolicyFields[augmentedobjs.HasIngressPolicyCustomTag] = struct{}{}
+	pv.nonEnforceablePolicyFields[augmentedobjs.HasEgressPolicyCustomTag] = struct{}{}
 	return pv
 }
 

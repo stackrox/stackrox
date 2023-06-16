@@ -9,12 +9,9 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -99,26 +96,8 @@ func getAlertsForPolicy(t testutils.T, client v1.AlertServiceClient, policyName 
 	return alerts
 }
 
-func CheckIfCentralHasFeatureFlag(t *testing.T, conn *grpc.ClientConn) bool {
-	ffClient := v1.NewFeatureFlagServiceClient(conn)
-
-	flags, err := ffClient.GetFeatureFlags(context.Background(), &v1.Empty{})
-	assert.NoError(t, err)
-
-	for _, flag := range flags.FeatureFlags {
-		if flag.Name == features.NetworkPolicySystemPolicy.Name() {
-			return flag.Enabled
-		}
-	}
-
-	return false
-}
-
 func Test_GetViolationForIngressPolicy(t *testing.T) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
-	if buildinfo.ReleaseBuild || !CheckIfCentralHasFeatureFlag(t, conn) {
-		t.Skip("Feature flag disabled")
-	}
 
 	testCases := map[string]struct {
 		policyName        string

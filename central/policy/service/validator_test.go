@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/defaults/policies"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -917,8 +916,6 @@ func (s *PolicyValidatorTestSuite) TestValidateNoDockerfileLineFrom() {
 }
 
 func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
-	s.T().Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
-
 	validatorWithFlag := newPolicyValidator(s.nStorage)
 
 	cases := map[string]struct {
