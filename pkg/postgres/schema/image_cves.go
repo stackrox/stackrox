@@ -47,12 +47,13 @@ var (
 )
 
 const (
+	// ImageCvesTableName specifies the name of the table in postgres.
 	ImageCvesTableName = "image_cves"
 )
 
 // ImageCves holds the Gorm model for Postgres table `image_cves`.
 type ImageCves struct {
-	Id                     string                        `gorm:"column:id;type:varchar;primaryKey"`
+	ID                     string                        `gorm:"column:id;type:varchar;primaryKey"`
 	CveBaseInfoCve         string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:imagecves_cvebaseinfo_cve,type:hash"`
 	CveBaseInfoPublishedOn *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
 	CveBaseInfoCreatedAt   *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`

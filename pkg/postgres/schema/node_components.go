@@ -43,12 +43,13 @@ var (
 )
 
 const (
+	// NodeComponentsTableName specifies the name of the table in postgres.
 	NodeComponentsTableName = "node_components"
 )
 
 // NodeComponents holds the Gorm model for Postgres table `node_components`.
 type NodeComponents struct {
-	Id              string  `gorm:"column:id;type:varchar;primaryKey"`
+	ID              string  `gorm:"column:id;type:varchar;primaryKey"`
 	Name            string  `gorm:"column:name;type:varchar"`
 	Version         string  `gorm:"column:version;type:varchar"`
 	Priority        int64   `gorm:"column:priority;type:bigint"`

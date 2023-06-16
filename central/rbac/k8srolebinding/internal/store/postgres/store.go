@@ -117,7 +117,7 @@ func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.
 	return nil
 }
 
-func insertIntoRoleBindingsSubjects(ctx context.Context, batch *pgx.Batch, obj *storage.Subject, role_bindings_Id string, idx int) error {
+func insertIntoRoleBindingsSubjects(_ context.Context, batch *pgx.Batch, obj *storage.Subject, role_bindings_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

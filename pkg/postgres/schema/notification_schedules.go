@@ -30,6 +30,7 @@ var (
 )
 
 const (
+	// NotificationSchedulesTableName specifies the name of the table in postgres.
 	NotificationSchedulesTableName = "notification_schedules"
 )
 

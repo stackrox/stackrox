@@ -42,7 +42,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.TestSingleUuidKeyStructsSchema
+	schema         = pkgSchema.TestSingleUUIDKeyStructsSchema
 	targetResource = resources.Namespace
 )
 
@@ -80,7 +80,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoTestSingleUuidKeyStructs(ctx context.Context, batch *pgx.Batch, obj *storage.TestSingleUUIDKeyStruct) error {
+func insertIntoTestSingleUUIDKeyStructs(_ context.Context, batch *pgx.Batch, obj *storage.TestSingleUUIDKeyStruct) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -109,7 +109,7 @@ func insertIntoTestSingleUuidKeyStructs(ctx context.Context, batch *pgx.Batch, o
 	return nil
 }
 
-func (s *storeImpl) copyFromTestSingleUuidKeyStructs(ctx context.Context, tx *postgres.Tx, objs ...*storage.TestSingleUUIDKeyStruct) error {
+func (s *storeImpl) copyFromTestSingleUUIDKeyStructs(ctx context.Context, tx *postgres.Tx, objs ...*storage.TestSingleUUIDKeyStruct) error {
 
 	inputRows := [][]interface{}{}
 
@@ -233,7 +233,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestSingleUUI
 		return err
 	}
 
-	if err := s.copyFromTestSingleUuidKeyStructs(ctx, tx, objs...); err != nil {
+	if err := s.copyFromTestSingleUUIDKeyStructs(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -254,7 +254,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestSingleUUIDK
 
 	for _, obj := range objs {
 		batch := &pgx.Batch{}
-		if err := insertIntoTestSingleUuidKeyStructs(ctx, batch, obj); err != nil {
+		if err := insertIntoTestSingleUUIDKeyStructs(ctx, batch, obj); err != nil {
 			return err
 		}
 		batchResults := conn.SendBatch(ctx, batch)
@@ -652,10 +652,10 @@ func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableTestSingleUuidKeyStructs(ctx, db)
+	dropTableTestSingleUUIDKeyStructs(ctx, db)
 }
 
-func dropTableTestSingleUuidKeyStructs(ctx context.Context, db postgres.DB) {
+func dropTableTestSingleUUIDKeyStructs(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_single_uuid_key_structs CASCADE")
 
 }

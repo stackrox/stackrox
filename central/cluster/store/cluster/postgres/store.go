@@ -80,7 +80,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoClusters(ctx context.Context, batch *pgx.Batch, obj *storage.Cluster) error {
+func insertIntoClusters(_ context.Context, batch *pgx.Batch, obj *storage.Cluster) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

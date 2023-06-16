@@ -44,13 +44,14 @@ var (
 )
 
 const (
+	// ReportMetadataTableName specifies the name of the table in postgres.
 	ReportMetadataTableName = "report_metadata"
 )
 
 // ReportMetadata holds the Gorm model for Postgres table `report_metadata`.
 type ReportMetadata struct {
-	ReportId                             string                                  `gorm:"column:reportid;type:uuid;primaryKey"`
-	ReportConfigId                       string                                  `gorm:"column:reportconfigid;type:varchar"`
+	ReportID                             string                                  `gorm:"column:reportid;type:uuid;primaryKey"`
+	ReportConfigID                       string                                  `gorm:"column:reportconfigid;type:varchar"`
 	RequesterName                        string                                  `gorm:"column:requester_name;type:varchar"`
 	ReportStatusRunState                 storage.ReportStatus_RunState           `gorm:"column:reportstatus_runstate;type:integer"`
 	ReportStatusQueuedAt                 *time.Time                              `gorm:"column:reportstatus_queuedat;type:timestamp"`

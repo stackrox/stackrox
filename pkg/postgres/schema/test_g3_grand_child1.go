@@ -35,12 +35,13 @@ var (
 )
 
 const (
+	// TestG3GrandChild1TableName specifies the name of the table in postgres.
 	TestG3GrandChild1TableName = "test_g3_grand_child1"
 )
 
 // TestG3GrandChild1 holds the Gorm model for Postgres table `test_g3_grand_child1`.
 type TestG3GrandChild1 struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Val        string `gorm:"column:val;type:varchar"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

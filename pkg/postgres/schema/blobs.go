@@ -30,6 +30,7 @@ var (
 )
 
 const (
+	// BlobsTableName specifies the name of the table in postgres.
 	BlobsTableName = "blobs"
 )
 

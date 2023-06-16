@@ -51,14 +51,14 @@ var (
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ComplianceRunMetadata) error
 	UpsertMany(ctx context.Context, objs []*storage.ComplianceRunMetadata) error
-	Delete(ctx context.Context, runId string) error
+	Delete(ctx context.Context, runID string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, runId string) (bool, error)
+	Exists(ctx context.Context, runID string) (bool, error)
 
-	Get(ctx context.Context, runId string) (*storage.ComplianceRunMetadata, bool, error)
+	Get(ctx context.Context, runID string) (*storage.ComplianceRunMetadata, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ComplianceRunMetadata, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.ComplianceRunMetadata, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
@@ -80,7 +80,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoComplianceRunMetadata(ctx context.Context, batch *pgx.Batch, obj *storage.ComplianceRunMetadata) error {
+func insertIntoComplianceRunMetadata(_ context.Context, batch *pgx.Batch, obj *storage.ComplianceRunMetadata) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -293,7 +293,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ComplianceRu
 }
 
 // Delete removes the object associated to the specified ID from the store.
-func (s *storeImpl) Delete(ctx context.Context, runId string) error {
+func (s *storeImpl) Delete(ctx context.Context, runID string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ComplianceRunMetadata")
 
 	var sacQueryFilter *v1.Query
@@ -309,7 +309,7 @@ func (s *storeImpl) Delete(ctx context.Context, runId string) error {
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(runId).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(runID).ProtoQuery(),
 	)
 
 	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
@@ -404,7 +404,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the ID exists in the store.
-func (s *storeImpl) Exists(ctx context.Context, runId string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, runID string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ComplianceRunMetadata")
 
 	var sacQueryFilter *v1.Query
@@ -420,7 +420,7 @@ func (s *storeImpl) Exists(ctx context.Context, runId string) (bool, error) {
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(runId).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(runID).ProtoQuery(),
 	)
 
 	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
@@ -430,7 +430,7 @@ func (s *storeImpl) Exists(ctx context.Context, runId string) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, runId string) (*storage.ComplianceRunMetadata, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, runID string) (*storage.ComplianceRunMetadata, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ComplianceRunMetadata")
 
 	var sacQueryFilter *v1.Query
@@ -447,7 +447,7 @@ func (s *storeImpl) Get(ctx context.Context, runId string) (*storage.ComplianceR
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(runId).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(runID).ProtoQuery(),
 	)
 
 	data, err := pgSearch.RunGetQueryForSchema[storage.ComplianceRunMetadata](ctx, schema, q, s.db)

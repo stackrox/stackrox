@@ -35,11 +35,12 @@ var (
 )
 
 const (
+	// ComplianceDomainsTableName specifies the name of the table in postgres.
 	ComplianceDomainsTableName = "compliance_domains"
 )
 
 // ComplianceDomains holds the Gorm model for Postgres table `compliance_domains`.
 type ComplianceDomains struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

@@ -30,6 +30,7 @@ var (
 )
 
 const (
+	// SensorUpgradeConfigsTableName specifies the name of the table in postgres.
 	SensorUpgradeConfigsTableName = "sensor_upgrade_configs"
 )
 

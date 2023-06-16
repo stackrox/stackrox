@@ -77,7 +77,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoIntegrationHealths(ctx context.Context, batch *pgx.Batch, obj *storage.IntegrationHealth) error {
+func insertIntoIntegrationHealths(_ context.Context, batch *pgx.Batch, obj *storage.IntegrationHealth) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
