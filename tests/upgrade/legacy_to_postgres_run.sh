@@ -190,10 +190,10 @@ helm_upgrade_to_latest_postgres() {
     if is_CI; then
         bin/"${TEST_HOST_PLATFORM}"/roxctl version
         bin/"${TEST_HOST_PLATFORM}"/roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart
-        sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
+#        sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     else
         roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart --remove
-        sed -i "" 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
+#        sed -i "" 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     fi
 
 
