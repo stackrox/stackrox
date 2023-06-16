@@ -36,11 +36,7 @@ config_part_1() {
     DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
 
     export_test_environment
-
-    if is_CI && ! command -v roxctl >/dev/null 2>&1; then
-        make cli_linux-amd64
-        make cli-install
-    fi
+    ensure_roxctl
 
     setup_gcp
     setup_deployment_env false false
@@ -64,6 +60,8 @@ reuse_config_part_1() {
     DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
 
     export_test_environment
+    ensure_roxctl
+
     setup_deployment_env false false
     export_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
     export_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"

@@ -39,6 +39,7 @@ test_upgrade() {
     require_environment "KUBECONFIG"
 
     export_test_environment
+    ensure_roxctl
 
     REPO_FOR_TIME_TRAVEL="/tmp/rox-postgres-sensor-upgrade-test"
     DEPLOY_DIR="deploy/k8s"

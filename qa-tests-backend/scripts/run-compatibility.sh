@@ -28,6 +28,7 @@ compatibility_test() {
     info "Starting test (sensor compatibility test ${SENSOR_CHART_VERSION})"
 
     export_test_environment
+    ensure_roxctl
 
     if [[ "${SKIP_DEPLOY:-false}" = "false" ]]; then
         if [[ "${CI:-false}" = "true" ]]; then

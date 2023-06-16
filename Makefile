@@ -372,6 +372,9 @@ cli_%: build-prep
 	$(eval arch := $(lastword  $(w)))
 	RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
 
+.PHONY: cli_host-arch
+cli_host-arch: cli_$(HOST_OS)-$(GOARCH)
+
 upgrader: bin/$(HOST_OS)_$(GOARCH)/upgrader
 
 bin/$(HOST_OS)_$(GOARCH)/upgrader: build-prep

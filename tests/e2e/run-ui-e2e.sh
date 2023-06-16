@@ -23,11 +23,7 @@ test_ui_e2e() {
     export DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
 
     export_test_environment
-
-    if is_CI && ! command -v roxctl >/dev/null 2>&1; then
-        make cli_linux-amd64
-        make cli-install
-    fi
+    ensure_roxctl
 
     setup_deployment_env false false
     remove_existing_stackrox_resources

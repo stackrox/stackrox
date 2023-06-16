@@ -111,6 +111,14 @@ export_test_environment() {
     fi
 }
 
+# ensure_roxctl() - ensure roxctl exists and is executable
+ensure_roxctl() {
+    if ! command -v roxctl >/dev/null 2>&1; then
+        make cli_host-arch
+        make cli-install
+    fi
+}
+
 deploy_stackrox_operator() {
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "false" ]]; then
         return

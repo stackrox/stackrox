@@ -44,6 +44,7 @@ test_upgrade() {
     require_environment "KUBECONFIG"
 
     export_test_environment
+    ensure_roxctl
 
     # repo for old version with legacy database
     REPO_FOR_TIME_TRAVEL="/tmp/rox-postgres-upgrade-test"

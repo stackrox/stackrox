@@ -31,6 +31,7 @@ test_sensor() {
     require_environment "KUBECONFIG"
 
     export_test_environment
+    ensure_roxctl
 
     export SENSOR_HELM_DEPLOY=true
     export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m

@@ -26,6 +26,7 @@ scale_test() {
     require_environment "COMPARISON_METRICS"
 
     export_test_environment
+    ensure_roxctl
 
     setup_gcp
     setup_deployment_env false false
