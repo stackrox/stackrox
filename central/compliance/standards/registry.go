@@ -275,11 +275,11 @@ func (r *Registry) SearchControls(q *v1.Query) ([]search.Result, error) {
 		return nil, errors.Wrap(err, "generating predicate for query")
 	}
 	var results []search.Result
-	for _, standards := range r.AllStandards() {
-		for _, control := range standards.controls {
-			result, ok := pred.Evaluate(control.ToProto())
+	for _, standard := range r.AllStandards() {
+		for _, control := range standard.ToProto().GetControls() {
+			result, ok := pred.Evaluate(control)
 			if ok {
-				result.ID = control.ID
+				result.ID = control.Id
 				results = append(results, *result)
 			}
 		}
