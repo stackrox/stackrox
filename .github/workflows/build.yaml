@@ -141,20 +141,6 @@ jobs:
           name: cli-build
           path: cli-build.tgz
 
-  build-rocksdb-bins-power:
-    runs-on: ubuntu-latest
-    env:
-      ARCH: ppc64le
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Setup prereqs for building on Power
-        uses: ./.github/actions/build-rocksdb-power  
-
   pre-build-go-binaries:
     strategy:
       # Supports three go binary builds:
@@ -221,7 +207,6 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries_power }}
     needs: 
       - define-job-matrix
-      - build-rocksdb-bins-power
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -234,6 +219,9 @@ jobs:
         run: |
           # Prevent fatal error "detected dubious ownership in repository" from recent git.
           git config --global --add safe.directory "$(pwd)"
+
+      - name: Setup prereqs for building on Power
+        uses: ./.github/actions/build-rocksdb-power  
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
