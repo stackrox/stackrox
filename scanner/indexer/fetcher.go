@@ -37,17 +37,25 @@ type localFetchArena struct {
 	// ko is used to ensure each layer is only downloaded once.
 	ko sync.KeyedOnce[string]
 
-	// mu protects rc.
+	// mu protects rc and layers.
 	mu gosync.Mutex
 	// rc is a map of digest to refcount.
 	rc map[string]int
+	// layers is a map of digest to layer.
+	//
+	// The purpose of this map is to give each image's Realizer access to
+	// this v1.Layer which can download the layer.
+	// The Realizer needs to be able to download the layer,
+	// which it will do via (*v1.Layer).Uncompressed().
+	layers map[string]v1.Layer
 }
 
 // newLocalFetchArena initializes a new localFetchArena.
 func newLocalFetchArena(root string) *localFetchArena {
 	return &localFetchArena{
-		root: root,
-		rc:   make(map[string]int),
+		root:   root,
+		rc:     make(map[string]int),
+		layers: make(map[string]v1.Layer),
 	}
 }
 
@@ -99,8 +107,8 @@ func (f *localFetchArena) Get(ctx context.Context, image string, opts ...Option)
 		return nil, err
 	}
 	manifest.Layers = make([]*claircore.Layer, len(layers))
-	for i, layer := range layers {
-		d, err := layer.Digest()
+	for i := range layers {
+		d, err := layers[i].Digest()
 		if err != nil {
 			return nil, err
 		}
@@ -114,18 +122,17 @@ func (f *localFetchArena) Get(ctx context.Context, image string, opts ...Option)
 		}
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
-	// Asynchronously download the layers, if needed.
-	// This is done in a separate loop from the previous one for simpler error handling.
+	// The number of layers tends to be a small, finite number,
+	// so lock once for the image instead of once per layer
+	// to minimize context switches.
+	f.mu.Lock()
 	for i := range layers {
-		// This variable is set like this to prevent errors when reusing a loop variable.
-		layer := layers[i]
-		ccLayer := manifest.Layers[i]
-		g.Go(f.realizeLayer(ctx, ccLayer, layer))
+		key := manifest.Layers[i].Hash.String()
+		if _, exists := f.layers[manifest.Layers[i].Hash.String()]; !exists {
+			f.layers[key] = layers[i]
+		}
 	}
-	if err := g.Wait(); err != nil {
-		return nil, fmt.Errorf("could not realize layer(s) for image manifest %s: %w", manifest.Hash.String(), err)
-	}
+	f.mu.Unlock()
 
 	return manifest, nil
 }
@@ -133,7 +140,7 @@ func (f *localFetchArena) Get(ctx context.Context, image string, opts ...Option)
 // realizeLayer returns a function which downloads the layer once.
 //
 // The function attempts to increment the digest's ref count for each call.
-func (f *localFetchArena) realizeLayer(ctx context.Context, ccLayer *claircore.Layer, layer v1.Layer) func() error {
+func (f *localFetchArena) realizeLayer(ctx context.Context, ccLayer *claircore.Layer) func() error {
 	d := ccLayer.Hash.String()
 	return func() error {
 		path := filepath.Join(f.root, d)
@@ -144,7 +151,7 @@ func (f *localFetchArena) realizeLayer(ctx context.Context, ccLayer *claircore.L
 			return ctx.Err()
 		case res := <-f.ko.DoChan(d, func() (any, error) {
 			// Only the first call to DoChan will make it here.
-			return f.downloadOnce(ctx, d, layer)
+			return f.downloadOnce(ctx, d)
 		}):
 			if err := res.Err; err != nil {
 				return fmt.Errorf("could not download layer %s: %w", d, err)
@@ -171,8 +178,11 @@ func (f *localFetchArena) realizeLayer(ctx context.Context, ccLayer *claircore.L
 		ct++
 		f.rc[d] = ct
 
-		// Set the layer's URI to the local filepath.
+		// Set the URI here for testing purposes.
 		ccLayer.URI = path
+		if err := ccLayer.SetLocal(path); err != nil {
+			return fmt.Errorf("setting local path for %s: %w", ccLayer.Hash.String(), err)
+		}
 
 		return nil
 	}
@@ -180,7 +190,14 @@ func (f *localFetchArena) realizeLayer(ctx context.Context, ccLayer *claircore.L
 
 // downloadOnce downloads the contents of the layer into
 // the arena's root directory at a temporary path.
-func (f *localFetchArena) downloadOnce(ctx context.Context, digest string, layer v1.Layer) (string, error) {
+func (f *localFetchArena) downloadOnce(ctx context.Context, digest string) (string, error) {
+	f.mu.Lock()
+	layer, exists := f.layers[digest]
+	f.mu.Unlock()
+	if !exists {
+		return "", fmt.Errorf("layer %s unknown", digest)
+	}
+
 	// Write the uncompressed layer, as ClairCore's indexer assumes the layer is uncompressed.
 	uncompressed, err := layer.Uncompressed()
 	if err != nil {
@@ -231,6 +248,7 @@ func (f *localFetchArena) forget(d string) error {
 	ct--
 	if ct == 0 {
 		delete(f.rc, d)
+		delete(f.layers, d)
 		defer f.ko.Forget(d)
 		return os.Remove(filepath.Join(f.root, d))
 	}
@@ -263,6 +281,7 @@ func (f *localFetchArena) Close(ctx context.Context) error {
 	var errs []error
 	for d := range f.rc {
 		delete(f.rc, d)
+		delete(f.layers, d)
 		f.ko.Forget(d)
 		if err := os.Remove(filepath.Join(f.root, d)); err != nil {
 			errs = append(errs, err)
@@ -284,14 +303,17 @@ type localRealizer struct {
 // Realize populates the local filepath for each layer.
 //
 // It is assumed the layer's URI is the local filesystem path to the layer.
-func (f *localRealizer) Realize(_ context.Context, ls []*claircore.Layer) error {
+func (f *localRealizer) Realize(ctx context.Context, ls []*claircore.Layer) error {
 	f.clean = make([]string, len(ls))
-	for i, l := range ls {
-		f.clean[i] = l.Hash.String()
-		if err := l.SetLocal(l.URI); err != nil {
-			return err
-		}
+	g, ctx := errgroup.WithContext(ctx)
+	for i := range ls {
+		f.clean[i] = ls[i].Hash.String()
+		g.Go(f.f.realizeLayer(ctx, ls[i]))
 	}
+	if err := g.Wait(); err != nil {
+		return fmt.Errorf("realizing layer(s): %w", err)
+	}
+
 	return nil
 }
 
