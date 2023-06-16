@@ -33,7 +33,8 @@ func keyFilePath() string {
 }
 
 // TLSConfigurer instantiates and updates the TLS configuration of a web server.
-// TODO: generate mocks
+//
+//go:generate mockgen-wrapper
 type TLSConfigurer interface {
 	TLSConfig() (*tls.Config, error)
 	WatchForChanges()
@@ -49,6 +50,8 @@ func (t *NilTLSConfigurer) WatchForChanges() {}
 func (t *NilTLSConfigurer) TLSConfig() (*tls.Config, error) {
 	return nil, nil
 }
+
+var _ TLSConfigurer = (*NilTLSConfigurer)(nil)
 
 // TLSConfigurerImpl holds the current TLS configuration. The configurer
 // watches the certificate directory for changes and updates the server
@@ -66,6 +69,8 @@ type TLSConfigurerImpl struct {
 
 	mutex sync.RWMutex
 }
+
+var _ TLSConfigurer = (*TLSConfigurerImpl)(nil)
 
 // NewTLSConfigurer creates a new TLS configurer.
 func NewTLSConfigurer(certDir string, k8sClient kubernetes.Interface, clientCANamespace, clientCAConfigMap string) (TLSConfigurer, error) {
