@@ -6,7 +6,7 @@ set -euo pipefail
 # Tests upgrade to Postgres.
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-CURRENT_TAG="$(make --quiet tag)"
+CURRENT_TAG="$(make --quiet --no-print-directory tag)"
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
