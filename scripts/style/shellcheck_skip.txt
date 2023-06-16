@@ -50,15 +50,11 @@ scale/dev/launch_central.sh
 scale/dev/launch_sensor.sh
 scale/dev/run-many.sh
 scale/launch_workload.sh
-scale/mockcollector/launch_mock_collector.sh
-scale/mocksensor/launch_mock_sensor.sh
-scale/mocksensor/launch_multiple_mock_sensors.sh
 scale/profiler/launch-profiler.sh
 scale/profiler/port-forward.sh
 scale/signatures/create-signature-integrations.sh
 scale/signatures/deploy.sh
 scripts/certification/run.sh
-scripts/ci/bench-and-graph.sh
 scripts/ci/collect-qa-service-logs.sh
 scripts/ci/complianceoperator/create.sh
 scripts/ci/deployment-minder.sh
