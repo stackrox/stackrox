@@ -75,7 +75,7 @@ describe('Configuration Management Namespaces', () => {
         });
     });
 
-    describe('should go to secrets table from widget lin', () => {
+    describe('should go to secrets table from widget link', () => {
         const entitiesKey2 = 'secrets';
 
         it('in single page', () => {
