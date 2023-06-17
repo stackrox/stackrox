@@ -13,6 +13,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/cloudflare/cfssl/log"
 	"github.com/golang/protobuf/descriptor"
 	"github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -503,6 +504,7 @@ func RegisterReportConfigurationServiceHandler(ctx context.Context, mux *runtime
 func RegisterReportConfigurationServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ReportConfigurationServiceClient) error {
 
 	mux.Handle("POST", pattern_ReportConfigurationService_PostReportConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		log.Info("chsheth: handling post report configuration")
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
