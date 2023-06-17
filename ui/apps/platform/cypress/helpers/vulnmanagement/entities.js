@@ -82,7 +82,7 @@ const countNounRegExp = {
     cves: /^\d+ CVES?$/, // TODO delete later for ROX-17764
     'image-cves': /^\d+ Image CVES?$/, // TODO investigate inconsistent case
     'node-cves': /^\d+ Node CVES?$/, // TODO investigate inconsistent case
-    'cluster-cves': /^\d+ Cluster CVES?$/, // TODO investigate inconsistent case
+    'cluster-cves': /^\d+ Platform CVES?$/, // TODO investigate inconsistent case
     deployments: /^\d+ deployments?$/,
     images: /^\d+ images?$/,
     namespaces: /^\d+ namespaces?$/,
