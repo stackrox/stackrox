@@ -72,6 +72,24 @@ const headingPlural = {
     policies: 'Policies',
 };
 
+// For table links and table headings.
+const countNounRegExp = {
+    clusters: /^\d+ clusters?$/,
+    components: /^\d+ components?$/, // TODO delete later for ROX-17764
+    'image-components': /^\d+ image components?$/,
+    'node-components': /^\d+ node components?$/,
+    // For table links, verifyConditionalCVEs uses allCVEsRegExp and fixableCVEsRegExp.
+    cves: /^\d+ CVES?$/, // TODO delete later for ROX-17764
+    'image-cves': /^\d+ Image CVES?$/, // TODO investigate inconsistent case
+    'node-cves': /^\d+ Node CVES?$/, // TODO investigate inconsistent case
+    'cluster-cves': /^\d+ Platform CVES?$/, // TODO investigate inconsistent case
+    deployments: /^\d+ deployments?$/,
+    images: /^\d+ images?$/,
+    namespaces: /^\d+ namespaces?$/,
+    nodes: /^\d+ nodes?$/,
+    // policies TODO delete from sibling objects because obsolete after #6235
+};
+
 const typeOfEntity = {
     clusters: 'CLUSTER',
     components: 'COMPONENT',
@@ -222,30 +240,15 @@ export function interactAndWaitForVulnerabilityManagementSecondaryEntities(
  * for example, /^\d+ deployments?$/
  */
 
-// ROX-17001: to solve problems where count and singular/plural of noun might have changed,
-// the second and third properties are not used.
-
 // After accessibility-related changes to case of entity types,
 // getCountAndNoun functions might become obsolete, as follows:
 
-// 1. TODO because panelHeaderText theoretically has similar problem.
-//    Replace contains pseudo-selector for panelHeaderText
-//    with contains method and RegExp for exact match:
-//    of digits (not necessarily same as from the link) and
-//    correct case entity type noun with optional plural suffix.
+// 1. Done for ROX-17001
 
 // 2. TODO because visible text is better than data-testid attribute.
 //    Replace selector which has data-testid attribute
 //    with contains method and RegExp for exact match:
 //    correct case entity type noun with optional plural suffix.
-
-function getCountAndNounFromSecondaryEntitiesLinkResults(resultsFromRegExp) {
-    return {
-        panelHeaderText: resultsFromRegExp[0],
-        relatedEntitiesCount: resultsFromRegExp[1],
-        relatedEntitiesNoun: resultsFromRegExp[2].toUpperCase(),
-    };
-}
 
 export function getCountAndNounFromImageCVEsLinkResults([, count]) {
     return {
@@ -283,47 +286,37 @@ export function getCountAndNounFromNodeCVEsLinkResults([, count]) {
 export function verifySecondaryEntities(
     entitiesKey1,
     entitiesKey2,
-    columnIndex, // one-based index includes checkbox, hidden, invisible
-    entitiesRegExp2,
-    getCountAndNounFromLinkResults = getCountAndNounFromSecondaryEntitiesLinkResults
+    columnIndex // one-based index includes checkbox, hidden, invisible
 ) {
     // 1. Visit list page for primary entities.
     visitVulnerabilityManagementEntities(entitiesKey1);
 
     // 2. Find the first link for secondary entities.
-    verifyLinkCountDeep(
-        entitiesKey1,
-        entitiesKey2,
-        columnIndex,
-        entitiesRegExp2,
-        getCountAndNounFromLinkResults
-    );
+    verifyTableLink(entitiesKey1, entitiesKey2, columnIndex);
 }
 
 /*
  * Verify panelHeader text, and then visit related entities pages,
  */
-function verifyLinkCountDeep(
+function verifyTableLink(
     entitiesKey1,
     entitiesKey2,
     columnIndex, // one-based index includes checkbox, hidden, invisible
-    entitiesRegExp2,
-    getCountAndNounFromLinkResults = getCountAndNounFromSecondaryEntitiesLinkResults
+    entitiesRegExp2
 ) {
     // Find the first link for secondary entities.
     cy.get(selectors.getTableDataColumnSelector(columnIndex))
-        .contains('a', entitiesRegExp2)
+        .contains('a', entitiesRegExp2 ?? countNounRegExp[entitiesKey2])
         .then(($a) => {
-            const { panelHeaderText } = getCountAndNounFromLinkResults(
-                /^(\d+) (\D+)$/.exec($a.text())
-            );
-
             // 2. Visit secondary entities side panel.
             interactAndWaitForResponses(() => {
                 cy.wrap($a).click();
             }, getRouteMatcherMapForGraphQL([opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2)]));
 
-            cy.get(`${selectors.entityRowHeader}:contains(${panelHeaderText})`);
+            cy.get('[data-testid="side-panel"] [data-testid="panel-header"]').contains(
+                'div',
+                countNounRegExp[entitiesKey2]
+            );
 
             // 3. Visit primary entity side panel.
             interactAndWaitForResponses(() => {
@@ -342,40 +335,10 @@ function verifyLinkCountDeep(
             // 5. Visit list page for secondary entities.
             cy.get(relatedEntitiesSelector).click(); // might make some requests
 
-            cy.get(`${selectors.tabHeader}:contains("${panelHeaderText}")`);
-        });
-}
-
-/*
- * For filtered secondary entities link, verify panelHeader text only,
- * because related entities has total unfiltered count.
- *
- * For example,
- * 1 Fixable corresponds to any of the following: 1 Image CVE or 1 Node CVE or 1 Platform CVE
- * 2 failing deployments corresponds to 2 deployments
- */
-function verifyLinkCountShallow(
-    entitiesKey1,
-    _entitiesKey2, // unused because response might have been cached
-    columnIndex, // one-based index includes checkbox, hidden, invisible
-    filteredEntitiesRegExp,
-    getCountAndNounFromLinkResults
-) {
-    // 1. Visit list page for primary entities.
-    visitVulnerabilityManagementEntities(entitiesKey1);
-
-    // Find the first link for secondary entities.
-    cy.get(selectors.getTableDataColumnSelector(columnIndex))
-        .contains('a', filteredEntitiesRegExp)
-        .then(($a) => {
-            const { panelHeaderText } = getCountAndNounFromLinkResults(
-                /^(\d+) (\D+)$/.exec($a.text())
+            cy.get(
+                `li[data-testid="grouped-tab"] a[data-testid="tab"].active:contains("${headingPlural[entitiesKey2]}")`
             );
-
-            // 2. Visit secondary entities side panel.
-            cy.wrap($a).click();
-
-            cy.get(`${selectors.entityRowHeader}:contains(${panelHeaderText})`);
+            cy.get('[data-testid="panel"]').contains('div', countNounRegExp[entitiesKey2]);
         });
 }
 
@@ -392,8 +355,7 @@ export function verifyConditionalCVEs(
     entitiesKey1,
     entitiesKey2,
     columnIndex, // one-based index includes checkbox, hidden, invisible
-    vulnCounterKey,
-    getCountAndNounFromLinkResults
+    vulnCounterKey
 ) {
     // 1. Visit list page for primary entities.
     // The first interception is ignored because for searchOptions request.
@@ -411,26 +373,14 @@ export function verifyConditionalCVEs(
                 .contains('a', allCVEsRegExp)
                 .should('exist');
 
-            verifyLinkCountShallow(
-                entitiesKey1,
-                entitiesKey2,
-                columnIndex,
-                fixableCVEsRegExp,
-                getCountAndNounFromLinkResults
-            );
+            verifyTableLink(entitiesKey1, entitiesKey2, columnIndex, fixableCVEsRegExp);
         } else if (hasCVEs) {
             // Fixable link does not exist in any row of entityKeys1 list.
             cy.get(selectors.getTableDataColumnSelector(columnIndex))
                 .contains('a', fixableCVEsRegExp)
                 .should('not.exist');
 
-            verifyLinkCountDeep(
-                entitiesKey1,
-                entitiesKey2,
-                columnIndex,
-                allCVEsRegExp,
-                getCountAndNounFromLinkResults
-            );
+            verifyTableLink(entitiesKey1, entitiesKey2, columnIndex, allCVEsRegExp);
         } else {
             // Neither link exists in any row of entitiesKey1 list.
             cy.get(selectors.getTableDataColumnSelector(columnIndex))
@@ -440,48 +390,6 @@ export function verifyConditionalCVEs(
                 .contains('a', allCVEsRegExp)
                 .should('not.exist');
             cy.get(`${selectors.getTableDataColumnSelector(columnIndex)}:contains("No CVEs")`);
-        }
-    });
-}
-
-const failingDeploymentsRegExp = /^\d+ failing deployments?$/;
-
-/*
- * Conditional test of either links for failing deploymentss or text for No failing deployments.
- */
-export function verifyConditionalFailingDeployments(
-    columnIndex, // one-based index includes checkbox, hidden, invisible
-    getCountAndNounFromLinkResults
-) {
-    const entitiesKey1 = 'policies';
-    const entitiesKey2 = 'deployments';
-
-    // 1. Visit list page for primary entities.
-    // The first interception is ignored because for searchOptions request.
-    // The second interception is for entitiesKey1 request.
-    visitVulnerabilityManagementEntities(entitiesKey1).then(([, { response }]) => {
-        const { results } = response.body.data;
-
-        // Check sources of truth whether or not to assert existence of links.
-        const hasFailingDeployments = results.some((result) => result.deploymentCount > 0);
-
-        if (hasFailingDeployments) {
-            verifyLinkCountShallow(
-                entitiesKey1,
-                entitiesKey2,
-                columnIndex,
-                failingDeploymentsRegExp,
-                getCountAndNounFromLinkResults
-            );
-        } else {
-            cy.get(selectors.getTableDataColumnSelector(columnIndex))
-                .contains('a', failingDeploymentsRegExp)
-                .should('not.exist');
-            cy.get(
-                `${selectors.getTableDataColumnSelector(
-                    columnIndex
-                )}:contains("No failing deployments")`
-            );
         }
     });
 }
