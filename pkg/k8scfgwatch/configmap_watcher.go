@@ -39,6 +39,7 @@ func (w *ConfigMapWatcher) Watch(ctx concurrency.Waitable, namespace string, nam
 				continue
 			}
 			w.onChange(ctx, watcher.ResultChan())
+			watcher.Stop()
 		}
 	}
 }
@@ -57,7 +58,6 @@ func (w *ConfigMapWatcher) onChange(ctx concurrency.Waitable, eventChannel <-cha
 					if cm, ok := event.Object.(*v1.ConfigMap); ok {
 						w.modifiedFunc(cm)
 					}
-				default:
 				}
 			} else {
 				// If eventChannel is closed the server has closed the connection.
