@@ -72,7 +72,7 @@ function tableHeaderRegExp(entitiesKey) {
     return new RegExp(`^(1 ${singular}|(?:0|2|3|4|5|6|7|8|9|[123456789]\\d+) ${plural})$`);
 }
 
-const tableLinkRegExp = {
+const countNounRegExp = {
     // clusters has singular link by name
     controls: /\d+ Controls?$/,
     deployments: /^\d+ deployments?$/,
@@ -396,7 +396,7 @@ export function verifyTableLinkToSidePanelTable(entitiesKey1, entitiesKey2) {
     visitConfigurationManagementEntities(entitiesKey1);
 
     cy.get('.rt-td')
-        .contains('a', tableLinkRegExp[entitiesKey2])
+        .contains('a', countNounRegExp[entitiesKey2])
         .then(($a) => {
             // 2. Visit secondary entities side panel.
             const opname = opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2);
