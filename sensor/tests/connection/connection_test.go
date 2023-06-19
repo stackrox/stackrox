@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,6 +18,10 @@ var (
 )
 
 func Test_SensorReconnects(t *testing.T) {
+	if buildinfo.ReleaseBuild {
+		t.Skipf("Don't run test in release mode: feature flag cannot be enabled")
+	}
+
 	t.Setenv("ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT", "true")
 	t.Setenv("ROX_RESYNC_DISABLED", "true")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
