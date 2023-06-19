@@ -133,9 +133,13 @@ type serviceImpl struct {
 	notifierDataStore    notifierDS.DataStore
 }
 
+// PrivateDiagnosticsHandler returns handler to be served on "private" port.
+// Private port is not exposed via k8s Service and only accessible to callers with k8s/Openshift cluster access.
+// This handler shouldn't be exposed to other callers as it has no authorization and can elevate customer permissions.
 func (s *serviceImpl) PrivateDiagnosticsHandler() http.HandlerFunc {
 	return func(responseWriter http.ResponseWriter, r *http.Request) {
-		ctx := sac.WithGlobalAccessScopeChecker(r.Context(), sac.AllowAllAccessScopeChecker())
+		// Adding scope checker as no authorizer is used, ergo no identity in context by default.
+		ctx := sac.WithGlobalAccessScopeChecker(r.Context(), sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS)))
 		s.getDiagnosticDumpWithCentral(responseWriter, r.WithContext(ctx), true)
 	}
 }
@@ -483,18 +487,20 @@ func (s *serviceImpl) getConfig(_ context.Context) (interface{}, error) {
 	return s.configDataStore.GetConfig(accessConfigCtx)
 }
 
-// DebugHandler is an HTTP handler that outputs debugging information
+// CustomRoutes returns route-handler pairs to be served on HTTP port.
 func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 	customRoutes := []routes.CustomRoute{
 		{
 			Route:         "/debug/dump",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: http.HandlerFunc(s.getDebugDump),
+			Compression:   true,
 		},
 		{
 			Route:         "/api/extensions/diagnostics",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: http.HandlerFunc(s.getDiagnosticDump),
+			Compression:   true,
 		},
 		{
 			Route:         "/debug/versions.json",

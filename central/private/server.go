@@ -6,19 +6,22 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/grpc/metrics"
 )
 
 // HTTPServer is a HTTP server to serve private functionality.
 type HTTPServer struct {
 	Address string
 	mux     *http.ServeMux
+	metrics metrics.HTTPMetrics
 }
 
 // NewHTTPServer creates and returns a new private http server.
-func NewHTTPServer() *HTTPServer {
+func NewHTTPServer(metricsInstance metrics.HTTPMetrics) *HTTPServer {
 	return &HTTPServer{
 		Address: env.PrivatePortSetting.Setting(),
 		mux:     http.NewServeMux(),
+		metrics: metricsInstance,
 	}
 }
 
@@ -28,6 +31,9 @@ func (s *HTTPServer) AddRoutes(routes []*Route) {
 		h := r.ServerHandler
 		if r.Compression {
 			h = gziphandler.GzipHandler(h)
+		}
+		if s.metrics != nil {
+			h = s.metrics.WrapHandler(h, r.Route)
 		}
 		s.mux.Handle(r.Route, h)
 	}
