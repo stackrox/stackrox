@@ -60,7 +60,7 @@ test_upgrade() {
     fi
 
     preamble
-    setup_deployment_env false false
+    setup_deployment_env true false
     setup_podsecuritypolicies_config
     remove_existing_stackrox_resources
 
@@ -135,7 +135,7 @@ test_upgrade_paths() {
     # Postgres and not Rocks
     ci_export ROX_POSTGRES_DATASTORE "false"
     LAST_ROCKS_TAG="3.74.0-1-gfe924fce30"
-    kubectl -n stackrox set image deploy/central "central=stackrox-io/main:${LAST_ROCKS_TAG}"; kubectl -n stackrox set env deploy/central ROX_POSTGRES_DATASTORE=false
+    kubectl -n stackrox set image deploy/central "central=${REGISTRY}/main:${LAST_ROCKS_TAG}"; kubectl -n stackrox set env deploy/central ROX_POSTGRES_DATASTORE=false
     wait_for_api
     wait_for_scanner_to_be_ready
 
@@ -158,10 +158,10 @@ test_upgrade_paths() {
 
     info "Installing sensor"
     ./sensor-remote/sensor.sh
-    kubectl -n stackrox set image deploy/sensor "*=stackrox-io/main:$LAST_ROCKS_TAG"
-    kubectl -n stackrox set image deploy/admission-control "*=stackrox-io/main:$LAST_ROCKS_TAG"
-    kubectl -n stackrox set image ds/collector "collector=stackrox-io/collector:$(make collector-tag)" \
-        "compliance=stackrox-io/main:$LAST_ROCKS_TAG"
+    kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$LAST_ROCKS_TAG"
+    kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$LAST_ROCKS_TAG"
+    kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(make collector-tag)" \
+        "compliance=$REGISTRY/main:$LAST_ROCKS_TAG"
 
     sensor_wait
 
@@ -190,10 +190,10 @@ helm_upgrade_to_latest_postgres() {
     if is_CI; then
         bin/"${TEST_HOST_PLATFORM}"/roxctl version
         bin/"${TEST_HOST_PLATFORM}"/roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart
-#        sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
+        sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     else
         roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart --remove
-#        sed -i "" 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
+        sed -i "" 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     fi
 
 
