@@ -39,9 +39,9 @@ jobs:
 
     - name: Go Unit Tests
       env:
-        TMPDIR: ${{ runner.temp }}
+        TMPDIR: ${{ runner.temp }}/tmp
       run: |
-        chmod a+rwx .
+        chmod a+rwx . "$TMPDIR/tmp"
         ${{ matrix.gotags }} su tester -c "make go-unit-tests"
 
     - name: Generate junit report
