@@ -114,11 +114,11 @@ func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secre
 	return nil
 }
 
-func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.SecretDataFile, secretsID string, idx int) error {
+func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.SecretDataFile, secretID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		pgutils.NilOrUUID(secretsID),
+		pgutils.NilOrUUID(secretID),
 		idx,
 		obj.GetType(),
 		pgutils.NilOrTime(obj.GetCert().GetEndDate()),
@@ -130,22 +130,22 @@ func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.
 	var query string
 
 	for childIndex, child := range obj.GetImagePullSecret().GetRegistries() {
-		if err := insertIntoSecretsFilesRegistries(ctx, batch, child, secretsID, idx, childIndex); err != nil {
+		if err := insertIntoSecretsFilesRegistries(ctx, batch, child, secretID, idx, childIndex); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from secrets_files_registries where secrets_Id = $1 AND secrets_files_idx = $2 AND idx >= $3"
-	batch.Queue(query, pgutils.NilOrUUID(secretsID), idx, len(obj.GetImagePullSecret().GetRegistries()))
+	batch.Queue(query, pgutils.NilOrUUID(secretID), idx, len(obj.GetImagePullSecret().GetRegistries()))
 	return nil
 }
 
-func insertIntoSecretsFilesRegistries(_ context.Context, batch *pgx.Batch, obj *storage.ImagePullSecret_Registry, secretsID string, secretsFilesIdx int, idx int) error {
+func insertIntoSecretsFilesRegistries(_ context.Context, batch *pgx.Batch, obj *storage.ImagePullSecret_Registry, secretID string, secretFileIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		pgutils.NilOrUUID(secretsID),
-		secretsFilesIdx,
+		pgutils.NilOrUUID(secretID),
+		secretFileIdx,
 		idx,
 		obj.GetName(),
 	}
@@ -247,7 +247,7 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx *postgres.Tx, objs .
 	return err
 }
 
-func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx *postgres.Tx, secretsID string, objs ...*storage.SecretDataFile) error {
+func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx *postgres.Tx, secretID string, objs ...*storage.SecretDataFile) error {
 
 	inputRows := [][]interface{}{}
 
@@ -272,7 +272,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx *postgres.Tx, s
 
 		inputRows = append(inputRows, []interface{}{
 
-			pgutils.NilOrUUID(secretsID),
+			pgutils.NilOrUUID(secretID),
 
 			idx,
 
@@ -300,7 +300,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx *postgres.Tx, s
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = s.copyFromSecretsFilesRegistries(ctx, tx, secretsID, idx, obj.GetImagePullSecret().GetRegistries()...); err != nil {
+		if err = s.copyFromSecretsFilesRegistries(ctx, tx, secretID, idx, obj.GetImagePullSecret().GetRegistries()...); err != nil {
 			return err
 		}
 	}
@@ -308,7 +308,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx *postgres.Tx, s
 	return err
 }
 
-func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx *postgres.Tx, secretsID string, secretsFilesIdx int, objs ...*storage.ImagePullSecret_Registry) error {
+func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx *postgres.Tx, secretID string, secretFileIdx int, objs ...*storage.ImagePullSecret_Registry) error {
 
 	inputRows := [][]interface{}{}
 
@@ -333,9 +333,9 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx *post
 
 		inputRows = append(inputRows, []interface{}{
 
-			pgutils.NilOrUUID(secretsID),
+			pgutils.NilOrUUID(secretID),
 
-			secretsFilesIdx,
+			secretFileIdx,
 
 			idx,
 

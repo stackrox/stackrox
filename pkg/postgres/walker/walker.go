@@ -101,7 +101,7 @@ func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
 			} else {
 				columnNameInChild = parentPrimaryKey.ColumnName
 			}
-			columnNameInChildForCodeVariables = snakeCaseToLowerCamelCase(columnNameInChild)
+			columnNameInChildForCodeVariables = snakeCaseToSingularLowerCamelCase(columnNameInChild)
 			additionalFields = append(additionalFields, Field{
 				Schema: s,
 				Name:   columnNameInChildForCodeVariables,

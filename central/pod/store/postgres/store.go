@@ -113,11 +113,11 @@ func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) err
 	return nil
 }
 
-func insertIntoPodsLiveInstances(_ context.Context, batch *pgx.Batch, obj *storage.ContainerInstance, podsID string, idx int) error {
+func insertIntoPodsLiveInstances(_ context.Context, batch *pgx.Batch, obj *storage.ContainerInstance, podID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		pgutils.NilOrUUID(podsID),
+		pgutils.NilOrUUID(podID),
 		idx,
 		obj.GetImageDigest(),
 	}
@@ -215,7 +215,7 @@ func (s *storeImpl) copyFromPods(ctx context.Context, tx *postgres.Tx, objs ...*
 	return err
 }
 
-func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx *postgres.Tx, podsID string, objs ...*storage.ContainerInstance) error {
+func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx *postgres.Tx, podID string, objs ...*storage.ContainerInstance) error {
 
 	inputRows := [][]interface{}{}
 
@@ -238,7 +238,7 @@ func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx *postgres.
 
 		inputRows = append(inputRows, []interface{}{
 
-			pgutils.NilOrUUID(podsID),
+			pgutils.NilOrUUID(podID),
 
 			idx,
 
