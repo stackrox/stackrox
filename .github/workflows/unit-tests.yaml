@@ -38,8 +38,10 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Go Unit Tests
+      env:
+        TMPDIR: ${{ runner.temp }}
       run: |
-        su tester -c "${{ matrix.gotags }} TMPDIR=${{ runner.temp }} make go-unit-tests"
+        ${{ matrix.gotags }} su tester -c "make go-unit-tests"
 
     - name: Generate junit report
       if: always()
