@@ -99,7 +99,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                 ["central_endpoint": "${centralHost}:443",
                  "api_token": tokenResp.getToken(),])
         // create new input to search violations from
-        postToSplunk(port, "/servicesNS/nobody/TA-rhacs/data/inputs/stackrox_violations",
+        postToSplunk(port, "/servicesNS/nobody/TA-rhacs/data/inputs/acs_violations",
                 ["name": SPLUNK_INPUT_NAME, "interval": "1", "from_checkpoint": "2000-01-01T00:00:00.000Z"])
     }
 
