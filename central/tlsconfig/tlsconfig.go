@@ -147,6 +147,7 @@ func MaybeGetDefaultTLSCertificateFromDirectory(dir string) (*tls.Certificate, e
 	certFile := filepath.Join(dir, TLSCertFileName)
 	keyFile := filepath.Join(dir, TLSKeyFileName)
 
+	// TODO: test todos fail style
 	if exists, err := fileutils.Exists(certFile); err != nil || !exists {
 		if err != nil {
 			log.Warnw("Error checking if default TLS certificate file exists", zap.Error(err))
