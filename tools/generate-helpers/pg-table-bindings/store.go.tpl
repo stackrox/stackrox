@@ -492,25 +492,11 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else if .Obj.IsGloballyScoped }}
-    {{ template "defineScopeChecker" "READ_WRITE" }}
-    if !scopeChecker.IsAllowed() {
-        return sac.ErrResourceAccessDenied
+    {{- else }}
+    sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
+    if err != nil {
+        return err
     }
-    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-    {{ template "defineScopeChecker" "READ_WRITE" }}
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
-		return err
-	}
-    {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
-    {{- else}}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-    {{- end }}
-	if err != nil {
-		return err
-	}
     {{- end }}
     {{- end}}{{/* if not .inMigration */}}
 
@@ -545,25 +531,11 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else if .Obj.IsGloballyScoped }}
-    {{ template "defineScopeChecker" "READ_WRITE" }}
-    if !scopeChecker.IsAllowed() {
-        return sac.ErrResourceAccessDenied
+    {{- else }}
+    sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
+    if err != nil {
+        return err
     }
-    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-    {{ template "defineScopeChecker" "READ_WRITE" }}
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
-		return err
-	}
-    {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
-    {{- else}}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-    {{- end }}
-	if err != nil {
-		return err
-	}
     {{- end }}
     {{- end}}{{/* if not .inMigration */}}
 
@@ -593,22 +565,8 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []{{$singlePK.Ty
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else if .Obj.IsGloballyScoped }}
-    {{ template "defineScopeChecker" "READ_WRITE" }}
-    if !scopeChecker.IsAllowed() {
-        return sac.ErrResourceAccessDenied
-    }
-    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-    {{ template "defineScopeChecker" "READ_WRITE" }}
-    scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-    if err != nil {
-        return err
-    }
-    {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
-    {{- else}}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-    {{- end }}
+    {{- else }}
+    sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
     if err != nil {
         return err
     }
@@ -659,23 +617,8 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
     if ok, err := {{ .PermissionChecker }}.CountAllowed(ctx); err != nil || !ok {
         return 0, err
     }
-    {{- else if .Obj.IsGloballyScoped }}
-    {{ template "defineScopeChecker" "READ" }}
-    if !scopeChecker.IsAllowed() {
-        return 0, nil
-    }
-    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-    {{ template "defineScopeChecker" "READ" }}
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return 0, err
-	}
-    {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
-    {{- else}}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-    {{- end }}
-
+    {{- else }}
+    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return 0, err
 	}
@@ -697,22 +640,8 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
     if ok, err := {{ .PermissionChecker }}.ExistsAllowed(ctx); err != nil || !ok {
         return false, err
     }
-    {{- else if .Obj.IsGloballyScoped }}
-    {{ template "defineScopeChecker" "READ" }}
-    if !scopeChecker.IsAllowed() {
-        return false, nil
-    }
-    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-    {{ template "defineScopeChecker" "READ" }}
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return false, err
-	}
-    {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
-    {{- else}}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-    {{- end }}
+    {{- else }}
+    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return false, err
 	}
@@ -748,22 +677,8 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
     if ok, err := {{ .PermissionChecker }}.GetAllowed(ctx); err != nil || !ok {
         return nil, false, err
     }
-    {{- else if .Obj.IsGloballyScoped }}
-    {{ template "defineScopeChecker" "READ" }}
-    if !scopeChecker.IsAllowed() {
-        return nil, false, nil
-    }
-    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-    {{ template "defineScopeChecker" "READ" }}
-    scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-        return nil, false, err
-	}
-    {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
-    {{- else}}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-    {{- end }}
+    {{- else }}
+    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
         return nil, false, err
 	}
@@ -806,25 +721,8 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type
     } else if !ok {
         return nil, nil
     }
-    {{- else if .Obj.IsGloballyScoped }}
-    {{ template "defineScopeChecker" "READ" }}
-    if !scopeChecker.IsAllowed() {
-        return nil, nil
-    }
-    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-    {{ template "defineScopeChecker" "READ" }}
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
-	if err != nil {
-        return nil, err
-	}
-    {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
-    {{- else}}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-    {{- end }}
+    {{- else }}
+    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
         return nil, err
 	}
@@ -869,25 +767,8 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []{{$singlePK.Type}
     } else if !ok {
         return nil, nil, nil
     }
-    {{- else if .Obj.IsGloballyScoped }}
-    {{ template "defineScopeChecker" "READ" }}
-    if !scopeChecker.IsAllowed() {
-        return nil, nil, nil
-    }
-    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-    {{ template "defineScopeChecker" "READ" }}
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
-	if err != nil {
-        return nil, nil, err
-	}
-    {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
-    {{- else}}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-    {{- end }}
+    {{- else }}
+    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
         return nil, nil, err
 	}
@@ -941,22 +822,8 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
     if ok, err := {{ .PermissionChecker }}.GetIDsAllowed(ctx); err != nil || !ok {
         return nil, err
     }
-    {{- else if .Obj.IsGloballyScoped }}
-    {{ template "defineScopeChecker" "READ" }}
-    if !scopeChecker.IsAllowed() {
-        return nil, nil
-    }
-    {{- else if or (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-    {{ template "defineScopeChecker" "READ" }}
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return nil, err
-	}
-    {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
-    {{- else}}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-    {{- end }}
+    {{- else }}
+    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return nil, err
 	}
@@ -1001,25 +868,8 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
     if ok, err := {{ .PermissionChecker }}.WalkAllowed(ctx); err != nil || !ok {
         return err
     }
-{{- else if .Obj.IsGloballyScoped }}
-    {{ template "defineScopeChecker" "READ" }}
-    if !scopeChecker.IsAllowed() {
-        return nil
-    }
-{{- else if .Obj.IsDirectlyScoped }}
-    {{ template "defineScopeChecker" "READ" }}
-    scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-        Resource: targetResource,
-        Access:   storage.Access_READ_ACCESS,
-    })
-    if err != nil {
-        return err
-    }
-    {{- if .Obj.IsClusterScope }}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
-    {{- else}}
-    sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-    {{- end }}
+{{- else }}
+    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
     if err != nil {
         return err
     }
