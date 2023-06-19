@@ -136,8 +136,7 @@ type serviceImpl struct {
 func (s *serviceImpl) PrivateDiagnosticsHandler() http.HandlerFunc {
 	return func(responseWriter http.ResponseWriter, r *http.Request) {
 		ctx := sac.WithGlobalAccessScopeChecker(r.Context(), sac.AllowAllAccessScopeChecker())
-		requestWithContext := r.WithContext(ctx)
-		s.getDiagnosticDumpWithCentral(responseWriter, requestWithContext, true)
+		s.getDiagnosticDumpWithCentral(responseWriter, r.WithContext(ctx), true)
 	}
 }
 
