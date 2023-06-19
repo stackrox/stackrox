@@ -41,6 +41,7 @@ jobs:
       env:
         TMPDIR: ${{ runner.temp }}
       run: |
+        chmod a+rwx .
         ${{ matrix.gotags }} su tester -c "make go-unit-tests"
 
     - name: Generate junit report
