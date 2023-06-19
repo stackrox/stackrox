@@ -14,6 +14,7 @@ import (
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/audit"
@@ -99,12 +100,18 @@ type API interface {
 	Start() *concurrency.Signal
 	// Register adds a new APIService to the list of API services
 	Register(services ...APIService)
+
+	// Stop kills all the listeners and stops the gRPC connection.
+	Stop() *concurrency.Signal
 }
 
 type apiImpl struct {
 	apiServices        []APIService
 	config             Config
 	requestInfoHandler *requestinfo.Handler
+
+	gRPCServer    *grpc.Server
+	allSrvAndLiss []serverAndListener
 }
 
 // A Config configures the server.
@@ -331,12 +338,34 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	return mux
 }
 
+func (a *apiImpl) Stop() *concurrency.Signal {
+	sig := concurrency.NewSignal()
+	go func() {
+		defer sig.Signal()
+		var multiErr error
+		for _, srv := range a.allSrvAndLiss {
+			// stop listeners
+			multiErr = multierror.Append(multiErr, srv.listener.Close())
+		}
+
+		if multiErr != nil {
+			log.Warnf("could not stop listeners: %s", multiErr.Error())
+		}
+
+		a.gRPCServer.Stop()
+
+		log.Infof("Sensor gRPC fully stopped")
+	}()
+
+	return &sig
+}
+
 func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	if len(a.config.Endpoints) == 0 {
 		panic(errors.New("server has no endpoints"))
 	}
 
-	grpcServer := grpc.NewServer(
+	a.gRPCServer = grpc.NewServer(
 		grpc.Creds(credsFromConn{}),
 		grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(a.streamInterceptors()...),
@@ -355,10 +384,10 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	)
 
 	for _, service := range a.apiServices {
-		service.RegisterServiceServer(grpcServer)
+		service.RegisterServiceServer(a.gRPCServer)
 	}
 
-	dialCtxFunc := a.listenOnLocalEndpoint(grpcServer)
+	dialCtxFunc := a.listenOnLocalEndpoint(a.gRPCServer)
 	localConn, err := a.connectToLocalEndpoint(dialCtxFunc)
 	if err != nil {
 		log.Panicf("Could not connect to local endpoint: %v", err)
@@ -366,9 +395,8 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 
 	httpHandler := a.muxer(localConn)
 
-	var allSrvAndLiss []serverAndListener
 	for _, endpointCfg := range a.config.Endpoints {
-		addr, srvAndLiss, err := endpointCfg.instantiate(httpHandler, grpcServer)
+		addr, srvAndLiss, err := endpointCfg.instantiate(httpHandler, a.gRPCServer)
 		if err != nil {
 			if endpointCfg.Optional {
 				log.Errorf("Failed to instantiate endpoint config of kind %s: %v", endpointCfg.Kind(), err)
@@ -377,13 +405,13 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 			}
 		} else {
 			log.Infof("%s server listening on %s", endpointCfg.Kind(), addr.String())
-			allSrvAndLiss = append(allSrvAndLiss, srvAndLiss...)
+			a.allSrvAndLiss = append(a.allSrvAndLiss, srvAndLiss...)
 		}
 	}
 
-	errC := make(chan error, len(allSrvAndLiss))
+	errC := make(chan error, len(a.allSrvAndLiss))
 
-	for _, srvAndLis := range allSrvAndLiss {
+	for _, srvAndLis := range a.allSrvAndLiss {
 		go serveBlocking(srvAndLis, errC)
 	}
 

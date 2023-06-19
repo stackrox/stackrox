@@ -117,6 +117,7 @@ func createKOCacheSource(centralEndpoint string) (probeupload.ProbeSource, error
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating central HTTP transport")
 	}
+	// TODO: Use a real context here that is bound to the gRPC connection
 	return kocache.New(context.Background(), kernelObjsClient, kernelObjsBaseURL, kocache.Options{}), nil
 }
 
