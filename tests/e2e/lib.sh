@@ -368,21 +368,20 @@ setup_generated_certs_for_test() {
 
 setup_podsecuritypolicies_config() {
     info "Set POD_SECURITY_POLICIES variable based on kubernetes version"
-    local version
-    version=$(kubectl version --output json)
-    local majorVersion
-    majorVersion=$(echo "$version" | jq -r .serverVersion.major)
-    local minorVersion
-    minorVersion=$(echo "$version" | jq -r .serverVersion.minor)
+    available_api_resources=$(kubectl api-resources -o name)
 
-    # PodSecurityPolicy was removed in version 1.25
-    if (( "$majorVersion" >= 1 && "$minorVersion" >= 25 )); then
-        ci_export "POD_SECURITY_POLICIES" "false"
-        info "POD_SECURITY_POLICIES set to false"
-    else
+    # using && true to ignore errexit option and store the command exit code in $? instead
+    echo $available_api_resources | grep -Fxq podsecuritypolicies.policy && true
+
+    if [ $? ]
+    then
         ci_export "POD_SECURITY_POLICIES" "true"
         info "POD_SECURITY_POLICIES set to true"
+    else
+        ci_export "POD_SECURITY_POLICIES" "false"
+        info "POD_SECURITY_POLICIES set to false"
     fi
+
 }
 
 # wait_for_collectors_to_be_operational() ensures that collector pods are able
