@@ -371,9 +371,9 @@ setup_podsecuritypolicies_config() {
     available_api_resources=$(kubectl api-resources -o name)
 
     # using && true to ignore errexit option and store the command exit code in $? instead
-    echo $available_api_resources | grep -Fxq podsecuritypolicies.policy && true
+    echo $available_api_resources | grep -q podsecuritypolicies.policu && true
 
-    if [ $? ]
+    if [ $? -eq 0 ]
     then
         ci_export "POD_SECURITY_POLICIES" "true"
         info "POD_SECURITY_POLICIES set to true"
