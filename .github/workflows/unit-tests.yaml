@@ -41,6 +41,7 @@ jobs:
       env:
         TMPDIR: ${{ runner.temp }}/tmp
       run: |
+        mkdir -p "$TMPDIR"
         chmod a+rwx . "$TMPDIR"
         ${{ matrix.gotags }} su tester -c "make go-unit-tests"
 
