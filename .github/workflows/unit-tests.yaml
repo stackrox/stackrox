@@ -39,10 +39,9 @@ jobs:
 
     - name: Go Unit Tests
       env:
-        TMPDIR: ${{ runner.temp }}/tmp
+        TMPDIR: ${{ runner.temp }}
       run: |
-        mkdir -p "$TMPDIR"
-        chmod a+rwx . "$TMPDIR"
+        chmod a+wx . roxctl/connectivity-map "$TMPDIR"
         ${{ matrix.gotags }} su tester -c "make go-unit-tests"
 
     - name: Generate junit report
