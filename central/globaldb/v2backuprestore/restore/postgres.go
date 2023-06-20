@@ -32,13 +32,13 @@ func LoadRestoreStream(fileReader io.Reader) error {
 	}
 
 	// Build the restore database name
-	restoreDB := getRestoreDBName()
+	restoreDB := "central_active" // getRestoreDBName()
 
 	// Now recreate the DB
-	err = pgadmin.CreateDB(sourceMap, dbConfig, pgadmin.EmptyDB, restoreDB)
-	if err != nil {
-		return errors.Wrap(err, "Could not create restore database")
-	}
+	//err = pgadmin.CreateDB(sourceMap, dbConfig, pgadmin.EmptyDB, restoreDB)
+	//if err != nil {
+	//	return errors.Wrap(err, "Could not create restore database")
+	//}
 
 	// Execute the restore on the temporary restore database
 	err = runRestoreStream(fileReader, sourceMap, dbConfig, restoreDB)
