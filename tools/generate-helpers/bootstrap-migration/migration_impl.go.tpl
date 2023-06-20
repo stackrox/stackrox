@@ -1,4 +1,4 @@
-{{define "TODO"}}TODO(do{{- /**/ -}}nt-merge){{end}}
+{{- define "TODO"}}TODO(do{{- /**/ -}}nt-merge){{end -}}
 package {{.packageName}}
 
 import (
