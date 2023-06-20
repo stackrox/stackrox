@@ -30,7 +30,7 @@ const (
 	// Explain Analyze indicated that 2 statements for PLOP is faster than one.
 	deleteOrphanedPLOPDeployments = `DELETE FROM listening_endpoints WHERE processindicatorid in (SELECT id from process_indicators pi WHERE NOT EXISTS
 		(SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id) AND 
-		(signal_time < now() at time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time is NULL)`
+		(signal_time < now() at time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time is NULL))`
 
 	deleteOrphanedPLOPPods = `DELETE FROM listening_endpoints WHERE processindicatorid in (SELECT id from process_indicators pi WHERE NOT EXISTS
 		(SELECT 1 FROM pods WHERE pi.poduid = pods.Id) AND 

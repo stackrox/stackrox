@@ -391,7 +391,6 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 	}
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
-			log.Info("SHREWS -- " + c.name)
 			// Add deployments if necessary
 			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 			s.Nil(err)
