@@ -29,7 +29,7 @@ func TestMigration(t *testing.T) {
 
 func (s *migrationTestSuite) SetupSuite() {
 	s.db = pghelper.ForT(s.T(), true)
-	// TODO: Create the schemas and tables required for the pre-migration dataset push to DB
+	// TODO dont-merge: Create the schemas and tables required for the pre-migration dataset push to DB
 }
 
 func (s *migrationTestSuite) TearDownSuite() {
@@ -39,9 +39,9 @@ func (s *migrationTestSuite) TearDownSuite() {
 
 
 func (s *migrationTestSuite) TestMigration() {
-    // TODO: instantiate any store required for the pre-migration dataset push to DB
+    // TODO dont-merge: instantiate any store required for the pre-migration dataset push to DB
 
-    // TODO: push the pre-migration dataset to DB
+    // TODO dont-merge: push the pre-migration dataset to DB
 
 	dbs := &types.Databases{
 	    GormDB:     s.db.GetGormDB(),
@@ -50,12 +50,12 @@ func (s *migrationTestSuite) TestMigration() {
 
 	s.Require().NoError(migration.Run(dbs))
 
-    // TODO: instantiate any store required for the post-migration dataset pull from DB
+    // TODO dont-merge: instantiate any store required for the post-migration dataset pull from DB
 
-	// TODO: pull the post-migration dataset from DB
+	// TODO dont-merge: pull the post-migration dataset from DB
 
-	// TODO: validate that the post-migration dataset has the expected content
+	// TODO dont-merge: validate that the post-migration dataset has the expected content
 
 }
 
-// TODO: remove any pending TODO
+// TODO dont-merge: remove any pending TODO

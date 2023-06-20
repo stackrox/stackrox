@@ -1,3 +1,4 @@
+
 package {{.packageName}}
 
 import (

@@ -7,7 +7,7 @@ import (
     "github.com/stackrox/rox/pkg/sac"
 )
 
-// TODO: generate/write and import any store required for the migration (skip any unnecessary step):
+// TODO dont-merge: generate/write and import any store required for the migration (skip any unnecessary step):
 //  - create a schema subdirectory
 //  - create a schema/old subdirectory
 //  - create a schema/new subdirectory
@@ -27,13 +27,13 @@ import (
 
 func migrate(database *types.Databases) error {
     ctx := sac.WithAllAccess(context.Background())
-    _ = ctx
+    _ = ctx // TODO dont-merge: remove this line, it is there to make the compiler happy while the migration code is being written.
 
-    // TODO: Migration code comes here
+    // TODO dont-merge: Migration code comes here
 
     return nil
 }
 
-// TODO: Write the additional code to support the migration
+// TODO dont-merge: Write the additional code to support the migration
 
-// TODO: remove any pending TODO
+// TODO done-merge: remove any pending TODO
