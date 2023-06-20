@@ -27,7 +27,7 @@
 {{- else if .Schema.ID.ColumnName}}
 {{ $singlePK = .Schema.ID }}
 {{- end }}
-{{ $inMigration := ne (index . "Migration") nil}}
+{{ $inMigration := false}}
 
 package postgres
 
