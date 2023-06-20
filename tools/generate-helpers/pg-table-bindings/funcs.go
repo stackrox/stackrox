@@ -146,7 +146,12 @@ func dict(values ...interface{}) (map[string]interface{}, error) {
 	return dict, nil
 }
 
+func arr(els ...any) []any {
+	return els
+}
+
 var funcMap = template.FuncMap{
+	"arr":                          arr,
 	"lowerCamelCase":               lowerCamelCase,
 	"upperCamelCase":               upperCamelCase,
 	"valueExpansion":               valueExpansion,
