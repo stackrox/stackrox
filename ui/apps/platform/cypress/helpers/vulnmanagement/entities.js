@@ -8,7 +8,7 @@ import { visit } from '../visit';
 const opnamesForDashboard = [
     'cvesCount',
     'getNodes',
-    'getImagesAtMostRisk',
+    'getImages',
     'topRiskyDeployments',
     'topRiskiestImageVulns',
     'recentlyDetectedImageVulnerabilities',
