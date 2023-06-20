@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/reports/metadata/datastore/search"
-	pgStore "github.com/stackrox/rox/central/reports/metadata/datastore/store/postgres"
+	"github.com/stackrox/rox/central/reports/snapshot/datastore/search"
+	pgStore "github.com/stackrox/rox/central/reports/snapshot/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -13,25 +13,23 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
-// DataStore is the entry point for searching, inserting or modifying ReportMetadatas.
+// DataStore is the entry point for searching, inserting or modifying ReportSnapshots.
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
-	SearchReportMetadatas(ctx context.Context, q *v1.Query) ([]*storage.ReportMetadata, error)
+	SearchReportSnapshots(ctx context.Context, q *v1.Query) ([]*storage.ReportSnapshot, error)
 
 	Exists(ctx context.Context, id string) (bool, error)
-	Get(ctx context.Context, id string) (*storage.ReportMetadata, bool, error)
-	GetMany(ctx context.Context, ids []string) ([]*storage.ReportMetadata, error)
-	// AddReportMetadata adds the given ReportMetadata object; Populates the `ReportId` field on the object and returns
-	// the generated `ReportId`
-	AddReportMetadata(ctx context.Context, report *storage.ReportMetadata) (string, error)
-	DeleteReportMetadata(ctx context.Context, id string) error
-	UpdateReportMetadata(ctx context.Context, report *storage.ReportMetadata) error
+	Get(ctx context.Context, id string) (*storage.ReportSnapshot, bool, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.ReportSnapshot, error)
 
-	Walk(ctx context.Context, fn func(report *storage.ReportMetadata) error) error
+	AddReportSnapshot(ctx context.Context, report *storage.ReportSnapshot) error
+	DeleteReportSnapshot(ctx context.Context, id string) error
+
+	Walk(ctx context.Context, fn func(report *storage.ReportSnapshot) error) error
 }
 
 // New returns a new instance of a DataStore
