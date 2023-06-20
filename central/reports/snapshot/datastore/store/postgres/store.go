@@ -49,14 +49,14 @@ var (
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ReportSnapshot) error
 	UpsertMany(ctx context.Context, objs []*storage.ReportSnapshot) error
-	Delete(ctx context.Context, reportId string) error
+	Delete(ctx context.Context, reportID string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, reportId string) (bool, error)
+	Exists(ctx context.Context, reportID string) (bool, error)
 
-	Get(ctx context.Context, reportId string) (*storage.ReportSnapshot, bool, error)
+	Get(ctx context.Context, reportID string) (*storage.ReportSnapshot, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ReportSnapshot, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.ReportSnapshot, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
@@ -78,7 +78,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoReportSnapshots(ctx context.Context, batch *pgx.Batch, obj *storage.ReportSnapshot) error {
+func insertIntoReportSnapshots(_ context.Context, batch *pgx.Batch, obj *storage.ReportSnapshot) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -306,18 +306,18 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ReportSnapsh
 }
 
 // Delete removes the object associated to the specified ID from the store.
-func (s *storeImpl) Delete(ctx context.Context, reportId string) error {
+func (s *storeImpl) Delete(ctx context.Context, reportID string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ReportSnapshot")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
+	if err != nil {
+		return err
 	}
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(reportId).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(reportID).ProtoQuery(),
 	)
 
 	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
@@ -328,9 +328,9 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ReportSnapshot")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
+	if err != nil {
+		return err
 	}
 
 	q := search.ConjunctionQuery(
@@ -347,9 +347,9 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
+	if err != nil {
+		return err
 	}
 
 	// Batch the deletes
@@ -387,27 +387,27 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return 0, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return 0, err
 	}
 
 	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the ID exists in the store.
-func (s *storeImpl) Exists(ctx context.Context, reportId string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, reportID string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ReportSnapshot")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return false, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return false, err
 	}
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(reportId).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(reportID).ProtoQuery(),
 	)
 
 	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
@@ -417,19 +417,19 @@ func (s *storeImpl) Exists(ctx context.Context, reportId string) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, reportId string) (*storage.ReportSnapshot, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, reportID string) (*storage.ReportSnapshot, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ReportSnapshot")
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil, false, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return nil, false, err
 	}
 
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(reportId).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(reportID).ProtoQuery(),
 	)
 
 	data, err := pgSearch.RunGetQueryForSchema[storage.ReportSnapshot](ctx, schema, q, s.db)
@@ -446,9 +446,9 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return nil, err
 	}
 	pagination := query.GetPagination()
 	q := search.ConjunctionQuery(
@@ -477,9 +477,9 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil, nil, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return nil, nil, err
 	}
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
@@ -520,9 +520,9 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ReportSnapshotIDs")
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return nil, err
 	}
 	result, err := pgSearch.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
@@ -540,9 +540,9 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 // Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ReportSnapshot) error) error {
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return err
 	}
 	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.ReportSnapshot](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {

@@ -44,13 +44,14 @@ var (
 )
 
 const (
+	// ReportSnapshotsTableName specifies the name of the table in postgres.
 	ReportSnapshotsTableName = "report_snapshots"
 )
 
 // ReportSnapshots holds the Gorm model for Postgres table `report_snapshots`.
 type ReportSnapshots struct {
-	ReportId                             string                                  `gorm:"column:reportid;type:uuid;primaryKey"`
-	ReportConfigurationId                string                                  `gorm:"column:reportconfigurationid;type:varchar"`
+	ReportID                             string                                  `gorm:"column:reportid;type:uuid;primaryKey"`
+	ReportConfigurationID                string                                  `gorm:"column:reportconfigurationid;type:varchar"`
 	Name                                 string                                  `gorm:"column:name;type:varchar"`
 	ReportStatusRunState                 storage.ReportStatus_RunState           `gorm:"column:reportstatus_runstate;type:integer"`
 	ReportStatusQueuedAt                 *time.Time                              `gorm:"column:reportstatus_queuedat;type:timestamp"`
