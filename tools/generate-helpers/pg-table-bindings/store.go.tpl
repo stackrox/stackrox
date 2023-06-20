@@ -5,6 +5,17 @@
 {{define "commaSeparatedColumns"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
 {{define "commandSeparatedRefs"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.Reference}}{{end}}{{end}}
 {{define "updateExclusions"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
+{{define "matchQuery" -}}
+    {{- $pks := index . 0 -}}
+    {{- $singlePK := index . 1 -}}
+    {{- range $index, $pk := $pks -}}
+    {{- if eq $pk.Name $singlePK.Name -}}
+        search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
+    {{- else }}
+        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
+    {{- end -}}
+    {{- end -}}
+{{end}}
 
 {{- $ := . }}
 {{- $pks := .Schema.PrimaryKeys }}
@@ -502,13 +513,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
 
     q := search.ConjunctionQuery(
         sacQueryFilter,
-    {{- range $index, $pk := $pks}}
-        {{- if eq $pk.Name $singlePK.Name }}
-        search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
-        {{- else }}
-        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
-        {{- end}}
-    {{- end}}
+        {{template "matchQuery" (arr $pks $singlePK)}}
     )
 
 	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
@@ -650,13 +655,7 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
 
     q := search.ConjunctionQuery(
         sacQueryFilter,
-    {{- range $index, $pk := $pks}}
-        {{- if eq $pk.Name $singlePK.Name }}
-        search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
-        {{- else }}
-        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
-        {{- end}}
-    {{- end}}
+        {{template "matchQuery" (arr $pks $singlePK)}}
     )
 
 	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
@@ -686,14 +685,8 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
     {{- end}}{{/* if not .inMigration */}}
 
     q := search.ConjunctionQuery(
-    sacQueryFilter,
-    {{- range $index, $pk := $pks}}
-        {{- if eq $pk.Name $singlePK.Name }}
-            search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
-        {{- else }}
-            search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
-        {{- end}}
-    {{- end}}
+        sacQueryFilter,
+        {{template "matchQuery" (arr $pks $singlePK)}}
     )
 
 	data, err := pgSearch.RunGetQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
