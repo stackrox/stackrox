@@ -368,17 +368,15 @@ setup_generated_certs_for_test() {
 
 setup_podsecuritypolicies_config() {
     info "Set POD_SECURITY_POLICIES variable based on kubernetes version"
-    available_api_resources=$(kubectl api-resources -o name)
 
-    if echo "$available_api_resources" | grep -q podsecuritypolicies.policy;
-    then
-        ci_export "POD_SECURITY_POLICIES" "true"
-        info "POD_SECURITY_POLICIES set to true"
-    else
+    SUPPORTS_PSP=$(kubectl api-resources | grep "podsecuritypolicies" -c || true)
+    if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
         ci_export "POD_SECURITY_POLICIES" "false"
         info "POD_SECURITY_POLICIES set to false"
+    else
+        ci_export "POD_SECURITY_POLICIES" "true"
+        info "POD_SECURITY_POLICIES set to true"
     fi
-
 }
 
 # wait_for_collectors_to_be_operational() ensures that collector pods are able
