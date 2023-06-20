@@ -5,6 +5,7 @@ import (
 
 	metadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 )
 
@@ -18,6 +19,9 @@ type Service interface {
 
 // New returns a new instance of the service.
 func New(metadataDatastore metadataDS.DataStore) Service {
+	if !features.VulnMgmtReportingEnhancements.Enabled() {
+		return nil
+	}
 	return &serviceImpl{
 		metadataDatastore: metadataDatastore,
 	}

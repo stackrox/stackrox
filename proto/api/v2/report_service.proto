@@ -30,9 +30,9 @@ message ReportStatus {
     }
 
     RunState                   run_state       = 1;
-    google.protobuf.Timestamp  run_time        = 2;
+    google.protobuf.Timestamp  completed_at        = 2;
     string                     error_msg       = 3;
-    ReportMethod               report_method   = 4;
+    ReportMethod               report_request_type   = 4;
     NotificationMethod         report_notification_method = 5;
 }
 
@@ -43,6 +43,13 @@ service ReportService {
     rpc GetReportStatus (ResourceByID) returns (ReportStatus) {
         option (google.api.http) = {
             get: "/v2/reports/status/{id}"
+        };
+    }
+
+    // ListReportStatus returns report status for a report config id
+    rpc GetReportLastStatus (ResourceByID) returns (ReportStatus) {
+        option (google.api.http) = {
+            get: "/v2/reports/last-status/{id}"
         };
     }
 }

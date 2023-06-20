@@ -8,11 +8,11 @@ import (
 func convertPrototoV2Reportstatus(status *storage.ReportStatus) *apiV2.ReportStatus {
 	ret := &apiV2.ReportStatus{}
 	if status == nil {
-		return ret
+		return nil
 	}
 
-	ret.ReportMethod = apiV2.ReportStatus_ReportMethod(status.GetReportRequestType())
-	ret.RunTime = status.GetCompletedAt()
+	ret.ReportRequestType = apiV2.ReportStatus_ReportMethod(status.GetReportRequestType())
+	ret.CompletedAt = status.GetCompletedAt()
 	ret.RunState = apiV2.ReportStatus_RunState(status.GetRunState())
 	ret.ReportNotificationMethod = apiV2.ReportStatus_NotificationMethod(status.GetReportNotificationMethod())
 	ret.ErrorMsg = status.GetErrorMsg()

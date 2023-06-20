@@ -2,6 +2,7 @@ package v2
 
 import (
 	metadataDataStore "github.com/stackrox/rox/central/reports/metadata/datastore"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -18,5 +19,8 @@ func initialize() {
 // Singleton provides the instance of the service to register.
 func Singleton() Service {
 	once.Do(initialize)
+	if !features.VulnMgmtReportingEnhancements.Enabled() {
+		return nil
+	}
 	return svc
 }

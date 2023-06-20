@@ -2,6 +2,7 @@ package v2
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -10,6 +11,7 @@ import (
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 )
 
@@ -31,7 +33,7 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
 	if features.VulnMgmtReportingEnhancements.Enabled() {
-		return apiV2.RegisterReportConfigurationServiceHandler(ctx, mux, conn)
+		return apiV2.RegisterReportServiceHandler(ctx, mux, conn)
 	}
 	return nil
 }
@@ -40,15 +42,32 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 	return ctx, common.Authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) GetReportStatus(ctx context.Context, id *apiV2.ResourceByID) (*apiV2.ReportStatus, error) {
-	rep, found, err := s.metadataDatastore.Get(ctx, id.GetId())
+func (s *serviceImpl) GetReportStatus(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.ReportStatus, error) {
+	if req == nil || req.GetId() == "" {
+		return nil, errors.New("Empty request or id")
+	}
+	rep, found, err := s.metadataDatastore.Get(ctx, req.GetId())
 	if err != nil {
 		return nil, err
 	}
 	if !found {
-		return nil, fmt.Errorf("Report not found for id %s", id.GetId())
+		return nil, fmt.Errorf("Report not found for id %s", req.GetId())
 	}
 	status := convertPrototoV2Reportstatus(rep.GetReportStatus())
+	return status, err
+
+}
+
+func (s *serviceImpl) GetReportStatusConfigID(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.ReportStatus, error) {
+	if req == nil || req.GetId() == "" {
+		return nil, errors.New("Empty request or id")
+	}
+	result, err := s.metadataDatastore.SearchReportMetadatas(ctx, search.MatchFieldQuery(search.ReportConfigID.String(), req.GetId(), false))
+	if err != nil {
+		return nil, err
+	}
+
+	status := convertPrototoV2Reportstatus(result[0].GetReportStatus())
 	return status, err
 
 }
