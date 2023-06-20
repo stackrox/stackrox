@@ -173,12 +173,13 @@ var (
 	PodLabel = newFieldLabel("Pod Label")
 
 	// ProcessIndicator Search fields
-	ProcessID        = newFieldLabel("Process ID")
-	ProcessExecPath  = newFieldLabel("Process Path")
-	ProcessName      = newFieldLabel("Process Name")
-	ProcessArguments = newFieldLabel("Process Arguments")
-	ProcessAncestor  = newFieldLabel("Process Ancestor")
-	ProcessUID       = newFieldLabel("Process UID")
+	ProcessID           = newFieldLabel("Process ID")
+	ProcessExecPath     = newFieldLabel("Process Path")
+	ProcessName         = newFieldLabel("Process Name")
+	ProcessArguments    = newFieldLabel("Process Arguments")
+	ProcessAncestor     = newFieldLabel("Process Ancestor")
+	ProcessUID          = newFieldLabel("Process UID")
+	ProcessCreationTime = newFieldLabel("Process Creation Time")
 
 	// ProcessListeningOnPort Search fields
 	Closed = newFieldLabel("Closed")
