@@ -1,10 +1,10 @@
 package {{.packageName}}
 
 import (
-    "context"
+	"context"
 
-    "github.com/stackrox/rox/migrator/types"
-    "github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 // TODO(dont-merge): generate/write and import any store required for the migration (skip any unnecessary step):
@@ -26,12 +26,12 @@ import (
 //  - remove the metrics collection code from the copied store files
 
 func migrate(database *types.Databases) error {
-    ctx := sac.WithAllAccess(context.Background())
-    _ = ctx // TODO(dont-merge): remove this line, it is there to make the compiler happy while the migration code is being written.
+	ctx := sac.WithAllAccess(context.Background())
+	_ = ctx // TODO(dont-merge): remove this line, it is there to make the compiler happy while the migration code is being written.
 
-    // TODO(dont-merge): Migration code comes here
+	// TODO(dont-merge): Migration code comes here
 
-    return nil
+	return nil
 }
 
 // TODO(dont-merge): Write the additional code to support the migration

@@ -3,17 +3,17 @@
 package {{.packageName}}
 
 import (
-    "context"
-    "testing"
+	"context"
+	"testing"
 
-    pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
+	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
 
 var (
-    ctx = sac.WithAllAccess(context.Background())
+	ctx = sac.WithAllAccess(context.Background())
 )
 
 type migrationTestSuite struct {
@@ -23,7 +23,7 @@ type migrationTestSuite struct {
 }
 
 func TestMigration(t *testing.T) {
-    suite.Run(T, new(migrationTestSuite))
+	suite.Run(T, new(migrationTestSuite))
 }
 
 
@@ -39,18 +39,18 @@ func (s *migrationTestSuite) TearDownSuite() {
 
 
 func (s *migrationTestSuite) TestMigration() {
-    // TODO(dont-merge): instantiate any store required for the pre-migration dataset push to DB
+	// TODO(dont-merge): instantiate any store required for the pre-migration dataset push to DB
 
-    // TODO(dont-merge): push the pre-migration dataset to DB
+	// TODO(dont-merge): push the pre-migration dataset to DB
 
 	dbs := &types.Databases{
-	    GormDB:     s.db.GetGormDB(),
+		GormDB:     s.db.GetGormDB(),
 		PostgresDB: s.db.DB,
 	}
 
 	s.Require().NoError(migration.Run(dbs))
 
-    // TODO(dont-merge): instantiate any store required for the post-migration dataset pull from DB
+	// TODO(dont-merge): instantiate any store required for the post-migration dataset pull from DB
 
 	// TODO(dont-merge): pull the post-migration dataset from DB
 
