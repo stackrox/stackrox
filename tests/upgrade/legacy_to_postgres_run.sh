@@ -60,7 +60,7 @@ test_upgrade() {
     fi
 
     preamble
-    setup_deployment_env true false
+    setup_deployment_env false false
     setup_podsecuritypolicies_config
     remove_existing_stackrox_resources
 
@@ -78,10 +78,10 @@ test_upgrade_paths() {
 
     local log_output_dir="$1"
 
-#    EARLIER_SHA="870568de0830819aae85f255dbdb7e9c19bd74e7"
-#    EARLIER_TAG="3.69.x-1-g870568de08"
-    EARLIER_SHA="fe924fce30bbec4dbd37d731ccd505837a2c2575"
-    EARLIER_TAG="3.74.0-1-gfe924fce30"
+    EARLIER_SHA="870568de0830819aae85f255dbdb7e9c19bd74e7"
+    EARLIER_TAG="3.69.x-1-g870568de08"
+#    EARLIER_SHA="fe924fce30bbec4dbd37d731ccd505837a2c2575"
+#    EARLIER_TAG="3.74.0-1-gfe924fce30"
     FORCE_ROLLBACK_VERSION="$EARLIER_TAG"
 
     cd "$REPO_FOR_TIME_TRAVEL"

@@ -85,8 +85,8 @@ deploy_earlier_central() {
     info "Deploying: $EARLIER_TAG..."
 
     if is_CI; then
-#        gsutil cp "gs://stackrox-ci/roxctl-$EARLIER_TAG" "bin/$TEST_HOST_PLATFORM/roxctl"
-        make cli
+        gsutil cp "gs://stackrox-ci/roxctl-$EARLIER_TAG" "bin/$TEST_HOST_PLATFORM/roxctl"
+#        make cli
     else
         make cli
     fi
@@ -111,11 +111,16 @@ deploy_earlier_central() {
          --set central.adminPassword.value="${ROX_PASSWORD}" \
          --set central.db.enabled=false \
          --set central.exposure.loadBalancer.enabled=true \
-         --set system.enablePodSecurityPolicies=false \
-         --set central.image.tag="${EARLIER_TAG}" \
-         --set central.db.image.tag="${EARLIER_TAG}" \
-         --set scanner.image.tag="$(cat SCANNER_VERSION)" \
-         --set scanner.dbImage.tag="$(cat SCANNER_VERSION)"
+         --set system.enablePodSecurityPolicies=false
+#    helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
+#         --set central.adminPassword.value="${ROX_PASSWORD}" \
+#         --set central.db.enabled=false \
+#         --set central.exposure.loadBalancer.enabled=true \
+#         --set system.enablePodSecurityPolicies=false \
+#         --set central.image.tag="${EARLIER_TAG}" \
+#         --set central.db.image.tag="${EARLIER_TAG}" \
+#         --set scanner.image.tag="$(cat SCANNER_VERSION)" \
+#         --set scanner.dbImage.tag="$(cat SCANNER_VERSION)"
 
     info "SHREWS -- figure this out"
     ls /tmp/early-stackrox-central-services-chart
