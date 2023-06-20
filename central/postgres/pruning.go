@@ -27,14 +27,7 @@ const (
 	getAllOrphanedPods = `SELECT id FROM pods WHERE NOT EXISTS
 		(SELECT 1 FROM clusters WHERE pods.clusterid = clusters.Id)`
 
-	getAllOrphanedProcesses = `SELECT id from process_indicators pi WHERE NOT EXISTS
-		(SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id) AND 
-		(signal_time < now() at time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time is NULL)
-		UNION
-		SELECT id FROM process_indicators pi WHERE NOT EXISTS
-		(SELECT 1 FROM pods WHERE pi.poduid = pods.Id) AND 
-		(signal_time < now() at time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time is NULL)`
-
+	// Explain Analyze indicated that 2 statements for PLOP is faster than one.
 	deleteOrphanedPLOPDeployments = `DELETE FROM listening_endpoints WHERE processindicatorid in (SELECT id from process_indicators pi WHERE NOT EXISTS
 		(SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id) AND 
 		(signal_time < now() at time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time is NULL)`
@@ -108,17 +101,6 @@ func GetOrphanedPodIDs(ctx context.Context, pool postgres.DB) ([]string, error) 
 		defer cancel()
 
 		return getOrphanedIDs(ctx, pool, getAllOrphanedPods)
-	})
-}
-
-// GetOrphanedProcessIndicatorIDs returns the pod IDs for process indicators that are orphaned so they can be removed
-func GetOrphanedProcessIndicatorIDs(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) ([]string, error) {
-	return pgutils.Retry2(func() ([]string, error) {
-		ctx, cancel := context.WithTimeout(ctx, orphanedTimeout)
-		defer cancel()
-
-		query := fmt.Sprintf(getAllOrphanedProcesses, int(orphanWindow.Minutes()), int(orphanWindow.Minutes()))
-		return getOrphanedIDs(ctx, pool, query)
 	})
 }
 
