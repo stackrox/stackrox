@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
     PageSection,
     Title,
@@ -78,7 +78,6 @@ function NetworkGraphPage() {
         undefined
     );
 
-    const [pollEpoch, setPollEpoch] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [timeWindow, setTimeWindow] = useState<(typeof timeWindows)[number]>(timeWindows[0]);
     const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
@@ -126,11 +125,7 @@ function NetworkGraphPage() {
 
     // We will update the poll epoch after 30 seconds to update the node count for a cluster
     useInterval(() => {
-        setPollEpoch(pollEpoch + 1);
-    }, 30000);
-
-    useEffect(() => {
-        if (selectedClusterId && namespacesFromUrl.length > 0 && pollEpoch !== 0) {
+        if (selectedClusterId && namespacesFromUrl.length > 0) {
             fetchNodeUpdates(selectedClusterId)
                 .then((result) => {
                     setCurrentEpochCount(result?.response?.epoch || 0);
@@ -139,7 +134,7 @@ function NetworkGraphPage() {
                     // failure to update the node count is not critical
                 });
         }
-    }, [selectedClusterId, namespacesFromUrl.length, pollEpoch]);
+    }, 30000);
 
     useDeepCompareEffect(() => {
         // check that user is finished adding a complete filter
