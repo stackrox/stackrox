@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     PageSection,
     Title,
@@ -219,6 +219,12 @@ function NetworkGraphPage() {
         }
     }
 
+    // Epoch counts are tracked separately for each cluster, so reset them when the cluster changes.
+    useEffect(() => {
+        setPrevEpochCount(0);
+        setCurrentEpochCount(0);
+    }, [selectedClusterId]);
+
     // TODO - This ignores some dependencies that would normally be included in the dep array of a regular `useEffect`.
     // We can probably remove the effect and rely on callbacks when setting the parameters instead.
     useDeepCompareEffect(() => {
@@ -231,7 +237,6 @@ function NetworkGraphPage() {
         timeWindow,
         deploymentCount,
     ]);
-
     function toggleCIDRBlockForm() {
         setIsCIDRBlockFormOpen(!isCIDRBlockFormOpen);
     }
