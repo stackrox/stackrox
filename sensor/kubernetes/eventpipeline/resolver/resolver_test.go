@@ -114,7 +114,7 @@ func (s *resolverSuite) Test_Send_DeploymentWithRBACs() {
 	for name, testCase := range testCases {
 		s.Run(name, func() {
 			messageReceived := sync.WaitGroup{}
-			messageReceived.Add(1)
+			messageReceived.Add(2)
 
 			s.givenPermissionLevelForDeployment(testCase.deploymentID, testCase.permissionLevel)
 
@@ -124,6 +124,9 @@ func (s *resolverSuite) Test_Send_DeploymentWithRBACs() {
 				expectedExposureInfos: nil,
 			}
 
+			s.mockOutput.EXPECT().Send(gomock.Any()).Times(1).Do(func(arg0 interface{}) {
+				defer messageReceived.Done()
+			})
 			s.mockOutput.EXPECT().Send(&expectedDeployment).Times(1).Do(func(arg0 interface{}) {
 				defer messageReceived.Done()
 			})
@@ -147,7 +150,7 @@ func (s *resolverSuite) Test_Send_DeploymentsWithServiceExposure() {
 	s.NoError(err)
 
 	messageReceived := sync.WaitGroup{}
-	messageReceived.Add(1)
+	messageReceived.Add(2)
 
 	s.givenServiceExposureForDeployment("1234", []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
 		s.givenStubPortExposure(),
@@ -164,6 +167,9 @@ func (s *resolverSuite) Test_Send_DeploymentsWithServiceExposure() {
 			},
 		},
 	}
+	s.mockOutput.EXPECT().Send(gomock.Any()).Times(1).Do(func(arg0 interface{}) {
+		defer messageReceived.Done()
+	})
 
 	s.mockOutput.EXPECT().Send(&expectedDeployment).Times(1).Do(func(arg0 interface{}) {
 		defer messageReceived.Done()
@@ -186,13 +192,16 @@ func (s *resolverSuite) Test_Send_MultipleDeploymentRefs() {
 	s.NoError(err)
 
 	messageReceived := sync.WaitGroup{}
-	messageReceived.Add(1)
+	messageReceived.Add(4)
 
 	s.givenPermissionLevelForDeployment("1234", storage.PermissionLevel_NONE)
 	s.givenPermissionLevelForDeployment("4321", storage.PermissionLevel_ELEVATED_IN_NAMESPACE)
 	s.givenPermissionLevelForDeployment("6543", storage.PermissionLevel_ELEVATED_CLUSTER_WIDE)
 
-	s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: 3}).Times(1).Do(func(arg0 interface{}) {
+	s.mockOutput.EXPECT().Send(gomock.Any()).Times(1).Do(func(arg0 interface{}) {
+		defer messageReceived.Done()
+	})
+	s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: 1}).Times(3).Do(func(arg0 interface{}) {
 		defer messageReceived.Done()
 	})
 
@@ -218,12 +227,15 @@ func (s *resolverSuite) Test_Send_ResourceAction() {
 	for _, action := range []central.ResourceAction{central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE} {
 		s.Run(fmt.Sprintf("ResourceAction: %s", action), func() {
 			messageReceived := sync.WaitGroup{}
-			messageReceived.Add(1)
+			messageReceived.Add(2)
 
 			s.givenPermissionLevelForDeployment("1234", storage.PermissionLevel_NONE)
 			s.mockOutput.EXPECT()
 
 			s.mockOutput.EXPECT().Send(&resourceActionMatcher{resourceAction: action}).Times(1).Do(func(arg0 interface{}) {
+				defer messageReceived.Done()
+			})
+			s.mockOutput.EXPECT().Send(gomock.Any()).Times(1).Do(func(arg0 interface{}) {
 				defer messageReceived.Done()
 			})
 
@@ -246,9 +258,9 @@ func (s *resolverSuite) Test_Send_BuildDeploymentWithDependenciesError() {
 	s.NoError(err)
 
 	messageReceived := sync.WaitGroup{}
-	messageReceived.Add(1)
+	messageReceived.Add(2)
 
-	s.givenBuildDependenciesError("1234")
+	s.givenBuildDependenciesError(&messageReceived, "1234")
 
 	s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: 0}).Times(1).Do(func(arg0 interface{}) {
 		defer messageReceived.Done()
@@ -271,9 +283,9 @@ func (s *resolverSuite) Test_Send_DeploymentNotFound() {
 	s.NoError(err)
 
 	messageReceived := sync.WaitGroup{}
-	messageReceived.Add(1)
+	messageReceived.Add(2)
 
-	s.givenNilDeployment()
+	s.givenNilDeployment(&messageReceived)
 
 	s.mockEndpointManager.EXPECT().OnDeploymentCreateOrUpdateByID(gomock.Any()).Times(0)
 	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(0)
@@ -336,48 +348,45 @@ func (s *resolverSuite) Test_Send_ForwardedMessagesAreSent() {
 		resolver                    resolver.DeploymentReference
 		forwardedMessages           []*central.SensorEvent
 		expectedDeploymentProcessed int
-		expectedEvents              int
 	}{
 		"Single id, no forwarded messages": {
 			resolver:                    resolver.ResolveDeploymentIds("1234"),
 			forwardedMessages:           nil,
 			expectedDeploymentProcessed: 1,
-			expectedEvents:              1,
 		},
 		"Multiple ids, no forwarded messages": {
 			resolver:                    resolver.ResolveDeploymentIds("1234", "4321"),
 			forwardedMessages:           nil,
 			expectedDeploymentProcessed: 2,
-			expectedEvents:              2,
 		},
 		"Single id, one forwarded message": {
 			resolver:                    resolver.ResolveDeploymentIds("1234"),
 			forwardedMessages:           []*central.SensorEvent{s.givenStubSensorEvent()},
 			expectedDeploymentProcessed: 1,
-			expectedEvents:              2,
 		},
 		"Single id, multiple forwarded messages": {
 			resolver:                    resolver.ResolveDeploymentIds("1234"),
 			forwardedMessages:           []*central.SensorEvent{s.givenStubSensorEvent(), s.givenStubSensorEvent()},
 			expectedDeploymentProcessed: 1,
-			expectedEvents:              3,
 		},
 		"No deployment resolver, multiple forwarded messages": {
 			resolver:                    nil,
 			forwardedMessages:           []*central.SensorEvent{s.givenStubSensorEvent(), s.givenStubSensorEvent()},
 			expectedDeploymentProcessed: 0,
-			expectedEvents:              2,
 		},
 	}
 
 	for name, testCase := range testCases {
 		s.Run(name, func() {
 			messageReceived := sync.WaitGroup{}
-			messageReceived.Add(1)
+			messageReceived.Add(testCase.expectedDeploymentProcessed + 1)
 
 			s.givenAnyDeploymentProcessedNTimes(testCase.expectedDeploymentProcessed)
 
-			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: testCase.expectedEvents}).Times(1).Do(func(arg0 interface{}) {
+			s.mockOutput.EXPECT().Send(gomock.Any()).Times(1).Do(func(arg0 interface{}) {
+				defer messageReceived.Done()
+			})
+			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: 1}).Times(testCase.expectedDeploymentProcessed).Do(func(arg0 interface{}) {
 				defer messageReceived.Done()
 			})
 
@@ -394,6 +403,17 @@ func (s *resolverSuite) Test_Send_ForwardedMessagesAreSent() {
 			messageReceived.Wait()
 		})
 	}
+}
+
+func (s *resolverSuite) Test_StartTwice() {
+	s.Assert().NoError(s.resolver.Start())
+	s.Assert().Error(s.resolver.Start())
+}
+
+func (s *resolverSuite) Test_StartAfterStop() {
+	s.Assert().NoError(s.resolver.Start())
+	s.resolver.Stop(nil)
+	s.Assert().NoError(s.resolver.Start())
 }
 
 func (s *resolverSuite) givenStubSensorEvent() *central.SensorEvent {
@@ -415,7 +435,7 @@ func (s *resolverSuite) givenStubPortExposure() map[service.PortRef][]*storage.P
 	}
 }
 
-func (s *resolverSuite) givenBuildDependenciesError(deployment string) {
+func (s *resolverSuite) givenBuildDependenciesError(wg *sync.WaitGroup, deployment string) {
 	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
 		return &storage.Deployment{}
 	})
@@ -432,12 +452,14 @@ func (s *resolverSuite) givenBuildDependenciesError(deployment string) {
 		})).
 		Times(1).
 		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, error) {
+			defer wg.Done()
 			return nil, errors.New("dependency error")
 		})
 }
 
-func (s *resolverSuite) givenNilDeployment() {
+func (s *resolverSuite) givenNilDeployment(wg *sync.WaitGroup) {
 	s.mockDeploymentStore.EXPECT().Get(gomock.Any()).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
+		defer wg.Done()
 		return nil
 	})
 }
