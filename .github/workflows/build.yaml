@@ -558,7 +558,7 @@ jobs:
 
       - name: Install roxctl
         run: |
-          ./scripts/ci/lib.sh install_built_roxctl_in_gopath
+          make cli-install
           roxctl version
 
       - name: Scan images
