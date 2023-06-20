@@ -62,6 +62,7 @@ func runRestoreStream(fileReader io.Reader, sourceMap map[string]string, config 
 		"-Fc",
 		"-vvv",
 		"--single-transaction",
+		"--disable-triggers",
 	}
 
 	// Get the common DB connection info
