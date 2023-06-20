@@ -20,6 +20,7 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
+    # Needed for FS permissions sensitive tests, see ROX-14204.
     - name: Create user
       run: useradd tester
 
@@ -32,7 +33,7 @@ jobs:
       run: |
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
         git config --global --add safe.directory "$(pwd)"
-        su tester -c "git config --global --add safe.directory \"$(pwd)\""
+        su tester -c 'git config --global --add safe.directory "$(pwd)"'
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
