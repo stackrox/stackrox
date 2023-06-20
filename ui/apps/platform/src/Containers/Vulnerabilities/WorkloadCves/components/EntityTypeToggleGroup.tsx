@@ -50,7 +50,7 @@ function EntityTabToggleGroup({
     }
 
     return (
-        <ToggleGroup className={className}>
+        <ToggleGroup className={className} aria-label="Entity type toggle items">
             {entityTabs.includes('CVE') ? (
                 <ToggleGroupItem
                     text={`${cveCount} CVEs`}

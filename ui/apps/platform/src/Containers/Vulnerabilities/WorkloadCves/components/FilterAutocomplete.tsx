@@ -107,7 +107,8 @@ function FilterAutocompleteSelect({
                 supportedResourceFilters={supportedResourceFilters}
             />
             <Select
-                aria-label={`Filter by ${resource as string}`}
+                typeAheadAriaLabel={`Filter by ${resource}`}
+                aria-label={`Filter by ${resource}`}
                 onSelect={(e, value) => {
                     onSelect(value);
                 }}

@@ -21,7 +21,8 @@ function CVEStatusDropdown({ searchFilter, onSelect }: CVEStatusDropdownProps) {
     return (
         <Select
             variant="checkbox"
-            aria-label="cve-fixable-status"
+            aria-label="CVE status filter menu items"
+            toggleAriaLabel="CVE status filter menu toggle"
             onToggle={onCveStatusToggle}
             onSelect={onCveStatusSelect}
             selections={searchFilter.Fixable}
