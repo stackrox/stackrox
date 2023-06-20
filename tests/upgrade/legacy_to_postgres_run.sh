@@ -227,6 +227,8 @@ helm_uninstall_and_cleanup() {
     helm uninstall -n stackrox stackrox-central-services
 
     rm -rf /tmp/stackrox-central-services-chart
+
+    rm -rf /tmp/early-stackrox-central-services-chart
 }
 
 check_legacy_db_status() {
