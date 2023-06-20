@@ -174,6 +174,19 @@ class LoginPage extends Component {
         if (authorizeRoxctlMode) {
             authProviders = authProviders.filter((provider) => provider.type !== 'basic');
             title = 'Authorize roxctl';
+            if (authProviders?.length === 0) {
+                return (
+                    <Alert
+                        variant="danger"
+                        isInline
+                        title="roxct-authorize-error"
+                        className="pf-u-mb-md"
+                    >
+                        Only basic auth provider given. Authorizing roxctl only works with non-basic
+                        auth provider. Configure an auth provider and try again.
+                    </Alert>
+                );
+            }
         }
 
         const options = authProvidersToSelectOptions(authProviders);
@@ -306,7 +319,7 @@ const LoadingOrForm = ({ authProviders, authorizeRoxctlMode = false }) => {
     }
 
     const options = authProvidersToSelectOptions(availableAuthProviders);
-    const initialValues = { authProvider: options[0].value };
+    const initialValues = { authProvider: options[0]?.value };
     return <Form initialValues={initialValues} authorizeRoxctlMode={authorizeRoxctlMode} />;
 };
 
