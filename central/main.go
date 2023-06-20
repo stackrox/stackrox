@@ -96,6 +96,7 @@ import (
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	policyService "github.com/stackrox/rox/central/policy/service"
 	policyCategoryService "github.com/stackrox/rox/central/policycategory/service"
+	"github.com/stackrox/rox/central/private"
 	probeUploadService "github.com/stackrox/rox/central/probeupload/service"
 	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineService "github.com/stackrox/rox/central/processbaseline/service"
@@ -277,9 +278,39 @@ func main() {
 	pkgMetrics.NewDefaultHTTPServer(pkgMetrics.CentralSubsystem).RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
+	if env.PrivateDiagnosticsEnabled.BooleanSetting() {
+		privateServer := private.NewHTTPServer(metrics.HTTPSingleton())
+		privateServer.AddRoutes(privateRoutes())
+		privateServer.RunForever()
+	}
+
 	go startGRPCServer()
 
 	waitForTerminationSignal()
+}
+
+// privateRoutes returns list of route-handler pairs to be served on "private" port.
+// Private port is not exposed to the internet and thus requires no authorization.
+// There are 3 ways to access private port:
+// * kubectl port-forward to central pod
+// * kubectl exec into central pod
+// * modifying central service definition
+func privateRoutes() []*private.Route {
+	result := make([]*private.Route, 0)
+	debugRoutes := debugRoutes()
+	for _, r := range debugRoutes {
+		result = append(result, &private.Route{
+			Route:         r.Route,
+			ServerHandler: r.ServerHandler,
+			Compression:   r.Compression,
+		})
+	}
+	result = append(result, &private.Route{
+		Route:         "/diagnostics",
+		ServerHandler: debugService.Singleton().PrivateDiagnosticsHandler(),
+		Compression:   true,
+	})
+	return result
 }
 
 func ensureDB(ctx context.Context) {
@@ -738,7 +769,8 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	)
 
-	customRoutes = append(customRoutes, debugRoutes()...)
+	debugRoutes := utils.IfThenElse(env.PrivateDiagnosticsEnabled.BooleanSetting(), []routes.CustomRoute{}, debugRoutes())
+	customRoutes = append(customRoutes, debugRoutes...)
 	return
 }
 
