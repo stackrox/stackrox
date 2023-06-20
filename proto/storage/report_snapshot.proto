@@ -3,7 +3,6 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
-import "google/protobuf/timestamp.proto";
 import "gogoproto/gogo.proto";
 import "storage/user.proto";
 import "storage/report_configuration.proto";
@@ -15,10 +14,6 @@ package storage;
 message ReportSnapshot {
     enum ReportType {
         VULNERABILITY = 0;
-    }
-    message CollectionSnapshot {
-        string id   = 1;
-        string name = 2;
     }
 
     string                    report_id                    = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
@@ -33,7 +28,12 @@ message ReportSnapshot {
     storage.Schedule          schedule                     = 8;
     ReportStatus              report_status                = 9;
     repeated NotifierSnapshot notifiers                    = 10;
-    SlimUser                  user                         = 11;
+    SlimUser                  requester                    = 11;
+}
+
+message CollectionSnapshot {
+    string id   = 1;
+    string name = 2;
 }
 
 message NotifierSnapshot {
@@ -45,4 +45,3 @@ message NotifierSnapshot {
 message EmailNotifierSnapshot {
     repeated string mailing_lists = 1;
 }
-
