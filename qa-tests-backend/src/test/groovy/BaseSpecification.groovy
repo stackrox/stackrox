@@ -213,7 +213,7 @@ class BaseSpecification extends Specification {
         recordResourcesAtSpecStart()
     }
 
-    public static setupCoreImageIntegration() {
+    static setupCoreImageIntegration() {
         coreImageIntegrationId = ImageIntegrationService.getImageIntegrationByName(
                 Constants.CORE_IMAGE_INTEGRATION_NAME)
         if (!coreImageIntegrationId) {
