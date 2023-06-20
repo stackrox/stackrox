@@ -52,7 +52,8 @@ test_upgrade() {
     REPO_FOR_POSTGRES_TIME_TRAVEL="/tmp/rox-postgres-postgres-upgrade-test"
     DEPLOY_DIR="deploy/k8s"
     QUAY_REPO="rhacs-eng"
-    REGISTRY="quay.io/$QUAY_REPO"
+#    REGISTRY="quay.io/$QUAY_REPO"
+    REGISTRY="quay.io/stackrox-io"
 
     export OUTPUT_FORMAT="helm"
     export STORAGE="pvc"
@@ -81,8 +82,10 @@ test_upgrade_paths() {
 
     local log_output_dir="$1"
 
-    EARLIER_SHA="870568de0830819aae85f255dbdb7e9c19bd74e7"
-    EARLIER_TAG="3.69.x-1-g870568de08"
+#    EARLIER_SHA="870568de0830819aae85f255dbdb7e9c19bd74e7"
+#    EARLIER_TAG="3.69.x-1-g870568de08"
+    EARLIER_SHA="fe924fce30bbec4dbd37d731ccd505837a2c2575"
+    EARLIER_TAG="3.74.0-1-gfe924fce30"
     FORCE_ROLLBACK_VERSION="$INITIAL_POSTGRES_TAG"
 
     cd "$REPO_FOR_TIME_TRAVEL"
@@ -285,11 +288,11 @@ helm_upgrade_to_postgres() {
         make cli
         bin/"$TEST_HOST_PLATFORM"/roxctl version
         bin/"$TEST_HOST_PLATFORM"/roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart
-        sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
+#        sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     else
         make cli
         roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart --remove
-        sed -i "" 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
+#        sed -i "" 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     fi
 
     local root_certificate_path="$(mktemp -d)/root_certs_values.yaml"
