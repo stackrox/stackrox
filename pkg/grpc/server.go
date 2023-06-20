@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
@@ -325,6 +326,9 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 		}
 	}
 	mux.Handle("/v1/", allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux)))
+	if features.VulnMgmtReportingEnhancements.Enabled() {
+		mux.Handle("/v2/", allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux)))
+	}
 	if err := prometheus.Register(mux); err != nil {
 		log.Warnf("failed to register Prometheus collector: %v", err)
 	}

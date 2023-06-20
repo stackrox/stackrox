@@ -26,8 +26,19 @@ var (
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			"/v1.ReportConfigurationService/DeleteReportConfiguration",
 		},
+
+		// V2 API authorization
+		user.With(permissions.View(resources.WorkflowAdministration)): {
+			"/v2.ReportConfigurationService/GetReportConfigurations",
+			"/v2.ReportConfigurationService/GetReportConfiguration",
+			"/v2.ReportConfigurationService/CountReportConfigurations",
+		},
 		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration)): {
 			"/v2.ReportConfigurationService/PostReportConfiguration",
+			"/v2.ReportConfigurationService/UpdateReportConfiguration",
+		},
+		user.With(permissions.Modify(resources.WorkflowAdministration)): {
+			"/v2.ReportConfigurationService/DeleteReportConfiguration",
 		},
 	})
 )
