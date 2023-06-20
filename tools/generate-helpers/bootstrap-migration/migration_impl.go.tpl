@@ -1,3 +1,4 @@
+{{define "TODO"}}TODO(do{{- /**/ -}}nt-merge){{end}}
 package {{.packageName}}
 
 import (
@@ -7,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 )
 
-// TODO(dont-merge): generate/write and import any store required for the migration (skip any unnecessary step):
+// {{template "TODO"}}: generate/write and import any store required for the migration (skip any unnecessary step):
 //  - create a schema subdirectory
 //  - create a schema/old subdirectory
 //  - create a schema/new subdirectory
@@ -27,13 +28,13 @@ import (
 
 func migrate(database *types.Databases) error {
 	ctx := sac.WithAllAccess(context.Background())
-	_ = ctx // TODO(dont-merge): remove this line, it is there to make the compiler happy while the migration code is being written.
+	_ = ctx // {{template "TODO"}}: remove this line, it is there to make the compiler happy while the migration code is being written.
 
-	// TODO(dont-merge): Migration code comes here
+	// {{template "TODO"}}: Migration code comes here
 
 	return nil
 }
 
-// TODO(dont-merge): Write the additional code to support the migration
+// {{template "TODO"}}: Write the additional code to support the migration
 
-// TODO(done-merge): remove any pending TODO
+// {{template "TODO"}}: remove any pending TODO
