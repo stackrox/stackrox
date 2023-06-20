@@ -8,12 +8,13 @@ import (
 	"github.com/stackrox/rox/central/hash/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-const (
-	flushInterval = 1 * time.Minute
+var (
+	flushInterval = env.HashFlushInterval.DurationSetting()
 )
 
 var (
@@ -74,6 +75,9 @@ func (m *managerImpl) flushHashes(ctx context.Context) {
 }
 
 func (m *managerImpl) Start(ctx context.Context) {
+	if flushInterval == 0 {
+		return
+	}
 	t := time.NewTicker(flushInterval)
 	defer t.Stop()
 	for {
