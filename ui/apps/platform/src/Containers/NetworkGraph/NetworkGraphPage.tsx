@@ -146,10 +146,13 @@ function NetworkGraphPage() {
         const isQueryFilterComplete = isCompleteSearchFilter(remainingQuery);
 
         // only refresh the graph data from the API if both a cluster and at least one namespace are selected
+        // TODO - The deployment count does not update if deployments are added/removed unless the selectedClusterId changes
         const isClusterNamespaceSelected =
             clusterFromUrl && namespacesFromUrl.length > 0 && deploymentCount;
 
         if (isQueryFilterComplete && selectedClusterId && isClusterNamespaceSelected) {
+            // TODO - The below check causes the graph to stop updating when pending updates are available, even if
+            // the user changes the search parameters
             if (nodeUpdatesCount === 0) {
                 setIsLoading(true);
 
