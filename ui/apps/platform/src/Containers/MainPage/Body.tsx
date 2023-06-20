@@ -155,15 +155,20 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                             component={AsyncWorkloadCvesPage}
                         />
                     )}
-                    {isVulnerabilityReportingEnhancementsEnabled && (
-                        <Route
-                            path={vulnerabilityReportingPath}
-                            component={AsyncVulnerabilityReportingPage}
-                        />
-                    )}
-                    {hasVulnerabilityReportsPermission && (
-                        <Route path={vulnManagementReportsPath} component={AsyncVulnMgmtReports} />
-                    )}
+                    {hasVulnerabilityReportsPermission &&
+                        isVulnerabilityReportingEnhancementsEnabled && (
+                            <Route
+                                path={vulnerabilityReportingPath}
+                                component={AsyncVulnerabilityReportingPage}
+                            />
+                        )}
+                    {hasVulnerabilityReportsPermission &&
+                        !isVulnerabilityReportingEnhancementsEnabled && (
+                            <Route
+                                path={vulnManagementReportsPath}
+                                component={AsyncVulnMgmtReports}
+                            />
+                        )}
                     <Route
                         path={vulnManagementRiskAcceptancePath}
                         component={AsyncVulnMgmtRiskAcceptancePage}

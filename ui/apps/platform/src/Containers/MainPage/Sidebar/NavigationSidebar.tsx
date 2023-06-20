@@ -42,6 +42,12 @@ function NavigationSidebar({
     isFeatureFlagEnabled,
 }: NavigationSidebarProps): ReactElement {
     const location: Location = useLocation();
+    const isWorkloadCvesEnabled =
+        isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES') &&
+        isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
+    const isReportingEnhancementsEnabled = isFeatureFlagEnabled(
+        'ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'
+    );
 
     const vulnerabilityManagementPaths = [vulnManagementPath];
     if (
@@ -50,7 +56,7 @@ function NavigationSidebar({
     ) {
         vulnerabilityManagementPaths.push(vulnManagementRiskAcceptancePath);
     }
-    if (hasReadAccess('WorkflowAdministration')) {
+    if (hasReadAccess('WorkflowAdministration') && !isReportingEnhancementsEnabled) {
         vulnerabilityManagementPaths.push(vulnManagementReportsPath);
     }
 
@@ -72,13 +78,6 @@ function NavigationSidebar({
     }
 
     const vulnerabilitiesPaths = [vulnerabilitiesWorkloadCvesPath, vulnerabilityReportingPath];
-
-    const isWorkloadCvesEnabled =
-        isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-        isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-    const isReportingEnhancementsEnabled = isFeatureFlagEnabled(
-        'ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'
-    );
 
     const Navigation = (
         <Nav id="nav-primary-simple">
@@ -125,14 +124,17 @@ function NavigationSidebar({
                                 title={basePathToLabelMap[vulnerabilitiesWorkloadCvesPath]}
                             />
                         )}
-                        {isReportingEnhancementsEnabled && (
-                            <LeftNavItem
-                                key={vulnerabilityReportingPath}
-                                isActive={location.pathname.includes(vulnerabilityReportingPath)}
-                                path={vulnerabilityReportingPath}
-                                title={basePathToLabelMap[vulnerabilityReportingPath]}
-                            />
-                        )}
+                        {isReportingEnhancementsEnabled &&
+                            hasReadAccess('WorkflowAdministration') && (
+                                <LeftNavItem
+                                    key={vulnerabilityReportingPath}
+                                    isActive={location.pathname.includes(
+                                        vulnerabilityReportingPath
+                                    )}
+                                    path={vulnerabilityReportingPath}
+                                    title={basePathToLabelMap[vulnerabilityReportingPath]}
+                                />
+                            )}
                     </NavExpandable>
                 )}
                 <NavExpandable
