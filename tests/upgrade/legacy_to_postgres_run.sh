@@ -160,6 +160,9 @@ test_upgrade_paths() {
     [[ -d sensor-remote ]]
 
     info "Installing sensor"
+    # This old software version doesn't remove PSP from the bundle so we have to do it.
+    info "Removing pod-security files"
+    rm ./sensor-remote/*pod-security.yaml
     ./sensor-remote/sensor.sh
     kubectl -n stackrox set image deploy/sensor "*=quay.io/stackrox-io/main:$LAST_ROCKS_TAG"
     kubectl -n stackrox set image deploy/admission-control "*=quay.io/stackrox-io/main:$LAST_ROCKS_TAG"
