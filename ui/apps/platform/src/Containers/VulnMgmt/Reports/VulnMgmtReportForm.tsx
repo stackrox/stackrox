@@ -35,10 +35,8 @@ import usePermissions from 'hooks/usePermissions';
 import { saveReport } from 'services/ReportsService';
 import { ReportConfiguration } from 'types/report.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import CollectionSelection from './Form/CollectionSelection';
 import NotifierSelection from './Form/NotifierSelection';
-import ResourceScopeSelection from './Form/ResourceScopeSelection';
 import { getMappedFixability, getFixabilityConstantFromMap } from './VulnMgmtReport.utils';
 
 export type VulnMgmtReportFormProps = {
@@ -108,15 +106,8 @@ function VulnMgmtReportForm({
     const history = useHistory();
     const [message, setMessage] = useState<FormResponseMessage>(null);
 
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
-    const { hasReadWriteAccess, hasReadAccess } = usePermissions();
-    const hasAccessWriteAccess = hasReadWriteAccess('Access');
-    const hasClusterReadAccess = hasReadAccess('Cluster');
-    const hasNamespaceReadAccess = hasReadAccess('Namespace');
+    const { hasReadWriteAccess } = usePermissions();
     const hasNotifierWriteAccess = hasReadWriteAccess('Integration');
-    const canWriteScopes = hasAccessWriteAccess && hasClusterReadAccess && hasNamespaceReadAccess;
     const canWriteCollections = hasReadWriteAccess('WorkflowAdministration');
 
     const formik = useFormik<ReportConfiguration>({
@@ -381,20 +372,12 @@ function VulnMgmtReportForm({
                                     </FormLabelGroup>
                                 </GridItem>
                                 <GridItem span={12}>
-                                    {isCollectionsEnabled ? (
-                                        <CollectionSelection
-                                            scopeId={values.scopeId}
-                                            initialReportScope={initialReportScope}
-                                            setFieldValue={setFieldValue}
-                                            allowCreate={canWriteCollections}
-                                        />
-                                    ) : (
-                                        <ResourceScopeSelection
-                                            scopeId={values.scopeId}
-                                            setFieldValue={setFieldValue}
-                                            allowCreate={canWriteScopes}
-                                        />
-                                    )}
+                                    <CollectionSelection
+                                        scopeId={values.scopeId}
+                                        initialReportScope={initialReportScope}
+                                        setFieldValue={setFieldValue}
+                                        allowCreate={canWriteCollections}
+                                    />
                                 </GridItem>
                             </Grid>
                         </GridItem>
