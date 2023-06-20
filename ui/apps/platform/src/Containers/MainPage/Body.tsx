@@ -108,10 +108,8 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
 
     const { isDarkMode } = useTheme();
 
-    const isPostgresEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
     const isNetworkGraphPatternflyEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY');
-    const isVulnMgmtWorkloadCvesEnabled =
-        isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES') && isPostgresEnabled;
+    const isVulnMgmtWorkloadCvesEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES');
     const isVulnerabilityReportingEnhancementsEnabled = isFeatureFlagEnabled(
         'ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'
     );
