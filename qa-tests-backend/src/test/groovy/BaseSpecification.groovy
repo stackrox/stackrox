@@ -70,6 +70,8 @@ class BaseSpecification extends Specification {
 
     Map<String, List<String>> resourceRecord = [:]
 
+    public static String coreImageIntegrationId = null
+
     private static globalSetup() {
         if (globalSetupDone) {
             return
@@ -146,6 +148,8 @@ class BaseSpecification extends Specification {
 
         allAccessToken = tokenResp.token
 
+        setupCoreImageIntegration()
+
         addShutdownHook {
             LOG.info "Performing global shutdown"
             BaseService.useBasicAuth()
@@ -155,6 +159,11 @@ class BaseSpecification extends Specification {
                 if (testRole) {
                     RoleService.deleteRole(testRole.name)
                 }
+            }
+
+            LOG.info "Removing core image registry integration"
+            if (coreImageIntegrationId != null) {
+                ImageIntegrationService.deleteImageIntegration(coreImageIntegrationId)
             }
         }
 
@@ -182,9 +191,6 @@ class BaseSpecification extends Specification {
     long orchestratorCreateTime = System.currentTimeSeconds()
 
     @Shared
-    String coreImageIntegrationId = null
-
-    @Shared
     private long testStartTimeMillis
 
     def setupSpec() {
@@ -204,16 +210,14 @@ class BaseSpecification extends Specification {
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
 
-        setupCoreImageIntegration()
-
         recordResourcesAtSpecStart()
     }
 
-    protected void setupCoreImageIntegration() {
+    static setupCoreImageIntegration() {
         coreImageIntegrationId = ImageIntegrationService.getImageIntegrationByName(
                 Constants.CORE_IMAGE_INTEGRATION_NAME)
         if (!coreImageIntegrationId) {
-            log.info "Adding core image integration"
+            LOG.info "Adding core image registry integration"
             coreImageIntegrationId = ImageIntegrationService.createImageIntegration(
                     ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                             .setName(Constants.CORE_IMAGE_INTEGRATION_NAME)
@@ -229,8 +233,8 @@ class BaseSpecification extends Specification {
             )
         }
         if (!coreImageIntegrationId) {
-            log.warn "Could not create the core image integration."
-            log.warn "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
+            LOG.warn "Could not create the core image integration."
+            LOG.warn "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
         }
     }
 
@@ -272,11 +276,6 @@ class BaseSpecification extends Specification {
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
-
-        log.info "Removing integration"
-        if (coreImageIntegrationId != null) {
-            ImageIntegrationService.deleteImageIntegration(coreImageIntegrationId)
-        }
 
         try {
             orchestrator.cleanup()
