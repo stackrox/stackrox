@@ -137,7 +137,7 @@ test_upgrade_paths() {
     # Postgres and not Rocks
     ci_export ROX_POSTGRES_DATASTORE "false"
     LAST_ROCKS_TAG="3.74.0-1-gfe924fce30"
-    kubectl -n stackrox set image deploy/central "central=stackrox-io/main:${LAST_ROCKS_TAG}"; kubectl -n stackrox set env deploy/central ROX_POSTGRES_DATASTORE=false
+    kubectl -n stackrox set image deploy/central "central=quay.io/stackrox-io/main:${LAST_ROCKS_TAG}"; kubectl -n stackrox set env deploy/central ROX_POSTGRES_DATASTORE=false
     kubectl get pods -n stackrox -o wide
     wait_for_api
     wait_for_scanner_to_be_ready
@@ -161,10 +161,10 @@ test_upgrade_paths() {
 
     info "Installing sensor"
     ./sensor-remote/sensor.sh
-    kubectl -n stackrox set image deploy/sensor "*=stackrox-io/main:$LAST_ROCKS_TAG"
-    kubectl -n stackrox set image deploy/admission-control "*=stackrox-io/main:$LAST_ROCKS_TAG"
-    kubectl -n stackrox set image ds/collector "collector=stackrox-io/collector:$(make collector-tag)" \
-        "compliance=stackrox-io/main:$LAST_ROCKS_TAG"
+    kubectl -n stackrox set image deploy/sensor "*=quay.io/stackrox-io/main:$LAST_ROCKS_TAG"
+    kubectl -n stackrox set image deploy/admission-control "*=quay.io/stackrox-io/main:$LAST_ROCKS_TAG"
+    kubectl -n stackrox set image ds/collector "collector=quay.io/stackrox-io/collector:$(make collector-tag)" \
+        "compliance=quay.io/stackrox-io/main:$LAST_ROCKS_TAG"
 
     sensor_wait
 
