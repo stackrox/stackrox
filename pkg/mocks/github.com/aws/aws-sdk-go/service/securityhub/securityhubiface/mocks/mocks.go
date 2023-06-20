@@ -136,6 +136,56 @@ func (mr *MockSecurityHubAPIMockRecorder) AcceptInvitationWithContext(arg0, arg1
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AcceptInvitationWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).AcceptInvitationWithContext), varargs...)
 }
 
+// BatchDeleteAutomationRules mocks base method.
+func (m *MockSecurityHubAPI) BatchDeleteAutomationRules(arg0 *securityhub.BatchDeleteAutomationRulesInput) (*securityhub.BatchDeleteAutomationRulesOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchDeleteAutomationRules", arg0)
+	ret0, _ := ret[0].(*securityhub.BatchDeleteAutomationRulesOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchDeleteAutomationRules indicates an expected call of BatchDeleteAutomationRules.
+func (mr *MockSecurityHubAPIMockRecorder) BatchDeleteAutomationRules(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchDeleteAutomationRules", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchDeleteAutomationRules), arg0)
+}
+
+// BatchDeleteAutomationRulesRequest mocks base method.
+func (m *MockSecurityHubAPI) BatchDeleteAutomationRulesRequest(arg0 *securityhub.BatchDeleteAutomationRulesInput) (*request.Request, *securityhub.BatchDeleteAutomationRulesOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchDeleteAutomationRulesRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.BatchDeleteAutomationRulesOutput)
+	return ret0, ret1
+}
+
+// BatchDeleteAutomationRulesRequest indicates an expected call of BatchDeleteAutomationRulesRequest.
+func (mr *MockSecurityHubAPIMockRecorder) BatchDeleteAutomationRulesRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchDeleteAutomationRulesRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchDeleteAutomationRulesRequest), arg0)
+}
+
+// BatchDeleteAutomationRulesWithContext mocks base method.
+func (m *MockSecurityHubAPI) BatchDeleteAutomationRulesWithContext(arg0 context.Context, arg1 *securityhub.BatchDeleteAutomationRulesInput, arg2 ...request.Option) (*securityhub.BatchDeleteAutomationRulesOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BatchDeleteAutomationRulesWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.BatchDeleteAutomationRulesOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchDeleteAutomationRulesWithContext indicates an expected call of BatchDeleteAutomationRulesWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) BatchDeleteAutomationRulesWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchDeleteAutomationRulesWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchDeleteAutomationRulesWithContext), varargs...)
+}
+
 // BatchDisableStandards mocks base method.
 func (m *MockSecurityHubAPI) BatchDisableStandards(arg0 *securityhub.BatchDisableStandardsInput) (*securityhub.BatchDisableStandardsOutput, error) {
 	m.ctrl.T.Helper()
@@ -234,6 +284,56 @@ func (mr *MockSecurityHubAPIMockRecorder) BatchEnableStandardsWithContext(arg0, 
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchEnableStandardsWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchEnableStandardsWithContext), varargs...)
+}
+
+// BatchGetAutomationRules mocks base method.
+func (m *MockSecurityHubAPI) BatchGetAutomationRules(arg0 *securityhub.BatchGetAutomationRulesInput) (*securityhub.BatchGetAutomationRulesOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchGetAutomationRules", arg0)
+	ret0, _ := ret[0].(*securityhub.BatchGetAutomationRulesOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchGetAutomationRules indicates an expected call of BatchGetAutomationRules.
+func (mr *MockSecurityHubAPIMockRecorder) BatchGetAutomationRules(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetAutomationRules", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchGetAutomationRules), arg0)
+}
+
+// BatchGetAutomationRulesRequest mocks base method.
+func (m *MockSecurityHubAPI) BatchGetAutomationRulesRequest(arg0 *securityhub.BatchGetAutomationRulesInput) (*request.Request, *securityhub.BatchGetAutomationRulesOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchGetAutomationRulesRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.BatchGetAutomationRulesOutput)
+	return ret0, ret1
+}
+
+// BatchGetAutomationRulesRequest indicates an expected call of BatchGetAutomationRulesRequest.
+func (mr *MockSecurityHubAPIMockRecorder) BatchGetAutomationRulesRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetAutomationRulesRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchGetAutomationRulesRequest), arg0)
+}
+
+// BatchGetAutomationRulesWithContext mocks base method.
+func (m *MockSecurityHubAPI) BatchGetAutomationRulesWithContext(arg0 context.Context, arg1 *securityhub.BatchGetAutomationRulesInput, arg2 ...request.Option) (*securityhub.BatchGetAutomationRulesOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BatchGetAutomationRulesWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.BatchGetAutomationRulesOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchGetAutomationRulesWithContext indicates an expected call of BatchGetAutomationRulesWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) BatchGetAutomationRulesWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetAutomationRulesWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchGetAutomationRulesWithContext), varargs...)
 }
 
 // BatchGetSecurityControls mocks base method.
@@ -386,6 +486,56 @@ func (mr *MockSecurityHubAPIMockRecorder) BatchImportFindingsWithContext(arg0, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchImportFindingsWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchImportFindingsWithContext), varargs...)
 }
 
+// BatchUpdateAutomationRules mocks base method.
+func (m *MockSecurityHubAPI) BatchUpdateAutomationRules(arg0 *securityhub.BatchUpdateAutomationRulesInput) (*securityhub.BatchUpdateAutomationRulesOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchUpdateAutomationRules", arg0)
+	ret0, _ := ret[0].(*securityhub.BatchUpdateAutomationRulesOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchUpdateAutomationRules indicates an expected call of BatchUpdateAutomationRules.
+func (mr *MockSecurityHubAPIMockRecorder) BatchUpdateAutomationRules(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchUpdateAutomationRules", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchUpdateAutomationRules), arg0)
+}
+
+// BatchUpdateAutomationRulesRequest mocks base method.
+func (m *MockSecurityHubAPI) BatchUpdateAutomationRulesRequest(arg0 *securityhub.BatchUpdateAutomationRulesInput) (*request.Request, *securityhub.BatchUpdateAutomationRulesOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchUpdateAutomationRulesRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.BatchUpdateAutomationRulesOutput)
+	return ret0, ret1
+}
+
+// BatchUpdateAutomationRulesRequest indicates an expected call of BatchUpdateAutomationRulesRequest.
+func (mr *MockSecurityHubAPIMockRecorder) BatchUpdateAutomationRulesRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchUpdateAutomationRulesRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchUpdateAutomationRulesRequest), arg0)
+}
+
+// BatchUpdateAutomationRulesWithContext mocks base method.
+func (m *MockSecurityHubAPI) BatchUpdateAutomationRulesWithContext(arg0 context.Context, arg1 *securityhub.BatchUpdateAutomationRulesInput, arg2 ...request.Option) (*securityhub.BatchUpdateAutomationRulesOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BatchUpdateAutomationRulesWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.BatchUpdateAutomationRulesOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchUpdateAutomationRulesWithContext indicates an expected call of BatchUpdateAutomationRulesWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) BatchUpdateAutomationRulesWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchUpdateAutomationRulesWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchUpdateAutomationRulesWithContext), varargs...)
+}
+
 // BatchUpdateFindings mocks base method.
 func (m *MockSecurityHubAPI) BatchUpdateFindings(arg0 *securityhub.BatchUpdateFindingsInput) (*securityhub.BatchUpdateFindingsOutput, error) {
 	m.ctrl.T.Helper()
@@ -534,6 +684,56 @@ func (mr *MockSecurityHubAPIMockRecorder) CreateActionTargetWithContext(arg0, ar
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateActionTargetWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).CreateActionTargetWithContext), varargs...)
+}
+
+// CreateAutomationRule mocks base method.
+func (m *MockSecurityHubAPI) CreateAutomationRule(arg0 *securityhub.CreateAutomationRuleInput) (*securityhub.CreateAutomationRuleOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateAutomationRule", arg0)
+	ret0, _ := ret[0].(*securityhub.CreateAutomationRuleOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateAutomationRule indicates an expected call of CreateAutomationRule.
+func (mr *MockSecurityHubAPIMockRecorder) CreateAutomationRule(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAutomationRule", reflect.TypeOf((*MockSecurityHubAPI)(nil).CreateAutomationRule), arg0)
+}
+
+// CreateAutomationRuleRequest mocks base method.
+func (m *MockSecurityHubAPI) CreateAutomationRuleRequest(arg0 *securityhub.CreateAutomationRuleInput) (*request.Request, *securityhub.CreateAutomationRuleOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateAutomationRuleRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.CreateAutomationRuleOutput)
+	return ret0, ret1
+}
+
+// CreateAutomationRuleRequest indicates an expected call of CreateAutomationRuleRequest.
+func (mr *MockSecurityHubAPIMockRecorder) CreateAutomationRuleRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAutomationRuleRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).CreateAutomationRuleRequest), arg0)
+}
+
+// CreateAutomationRuleWithContext mocks base method.
+func (m *MockSecurityHubAPI) CreateAutomationRuleWithContext(arg0 context.Context, arg1 *securityhub.CreateAutomationRuleInput, arg2 ...request.Option) (*securityhub.CreateAutomationRuleOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CreateAutomationRuleWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.CreateAutomationRuleOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateAutomationRuleWithContext indicates an expected call of CreateAutomationRuleWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) CreateAutomationRuleWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAutomationRuleWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).CreateAutomationRuleWithContext), varargs...)
 }
 
 // CreateFindingAggregator mocks base method.
@@ -2548,6 +2748,56 @@ func (mr *MockSecurityHubAPIMockRecorder) InviteMembersWithContext(arg0, arg1 in
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InviteMembersWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).InviteMembersWithContext), varargs...)
+}
+
+// ListAutomationRules mocks base method.
+func (m *MockSecurityHubAPI) ListAutomationRules(arg0 *securityhub.ListAutomationRulesInput) (*securityhub.ListAutomationRulesOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAutomationRules", arg0)
+	ret0, _ := ret[0].(*securityhub.ListAutomationRulesOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAutomationRules indicates an expected call of ListAutomationRules.
+func (mr *MockSecurityHubAPIMockRecorder) ListAutomationRules(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAutomationRules", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListAutomationRules), arg0)
+}
+
+// ListAutomationRulesRequest mocks base method.
+func (m *MockSecurityHubAPI) ListAutomationRulesRequest(arg0 *securityhub.ListAutomationRulesInput) (*request.Request, *securityhub.ListAutomationRulesOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAutomationRulesRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.ListAutomationRulesOutput)
+	return ret0, ret1
+}
+
+// ListAutomationRulesRequest indicates an expected call of ListAutomationRulesRequest.
+func (mr *MockSecurityHubAPIMockRecorder) ListAutomationRulesRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAutomationRulesRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListAutomationRulesRequest), arg0)
+}
+
+// ListAutomationRulesWithContext mocks base method.
+func (m *MockSecurityHubAPI) ListAutomationRulesWithContext(arg0 context.Context, arg1 *securityhub.ListAutomationRulesInput, arg2 ...request.Option) (*securityhub.ListAutomationRulesOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListAutomationRulesWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.ListAutomationRulesOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAutomationRulesWithContext indicates an expected call of ListAutomationRulesWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) ListAutomationRulesWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAutomationRulesWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListAutomationRulesWithContext), varargs...)
 }
 
 // ListEnabledProductsForImport mocks base method.
