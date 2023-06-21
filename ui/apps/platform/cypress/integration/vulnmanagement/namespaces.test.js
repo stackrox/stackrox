@@ -89,10 +89,10 @@ describe('Vulnerability Management Namespaces', () => {
     });
 
     it('should display links for deployments', () => {
-        verifySecondaryEntities(entitiesKey, 'deployments', 5, /^\d+ deployments?$/);
+        verifySecondaryEntities(entitiesKey, 'deployments', 5);
     });
 
     it('should display links for images', () => {
-        verifySecondaryEntities(entitiesKey, 'images', 6, /^\d+ images?$/);
+        verifySecondaryEntities(entitiesKey, 'images', 6);
     });
 });

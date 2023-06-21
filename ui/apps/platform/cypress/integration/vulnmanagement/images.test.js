@@ -122,11 +122,11 @@ describe('Vulnerability Management Images', () => {
     });
 
     it('should display links for deployments', () => {
-        verifySecondaryEntities(entitiesKey, 'deployments', 9, /^\d+ deployments?$/);
+        verifySecondaryEntities(entitiesKey, 'deployments', 9);
     });
 
     it('should display links for image-components', () => {
-        verifySecondaryEntities(entitiesKey, 'image-components', 9, /^\d+ image components?$/);
+        verifySecondaryEntities(entitiesKey, 'image-components', 9);
     });
 
     it('should show entity icon, not back button, if there is only one item on the side panel stack', () => {
